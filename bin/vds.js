@@ -1,2 +1,5 @@
 #!/usr/bin/env node
-require('../lib/server')
+const { createServer } = require('../lib/server')
+
+// TODO pass cli args
+createServer()

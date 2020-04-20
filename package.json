@@ -4,13 +4,15 @@
   "bin": {
     "vds": "bin/vds.js"
   },
+  "main": "lib/server.js",
   "dependencies": {
     "@babel/parser": "^7.9.4",
     "@vue/compiler-sfc": "^3.0.0-beta.2",
     "chokidar": "^3.3.1",
     "magic-string": "^0.25.7",
+    "resolve-cwd": "^3.0.0",
     "serve-handler": "^6.1.2",
-    "vue": "^3.0.0-beta.2",
+    "vue": "^3.0.0-beta.3",
     "ws": "^7.2.3"
   }
 }
