@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "sourceMap": false,
+    "target": "esnext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "declaration": true,
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "removeComments": false,
+    "lib": [
+      "esnext",
+      "DOM"
+    ]
+  }
+}

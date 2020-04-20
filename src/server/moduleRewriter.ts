@@ -1,7 +1,7 @@
-const { parse } = require('@babel/parser')
-const ms = require('magic-string')
+import { parse } from '@babel/parser'
+import MagicString from 'magic-string'
 
-exports.rewrite = (source, asSFCScript = false) => {
+export function rewrite(source: string, asSFCScript = false) {
   const ast = parse(source, {
     sourceType: 'module',
     plugins: [
@@ -14,27 +14,27 @@ exports.rewrite = (source, asSFCScript = false) => {
     ]
   }).program.body
 
-  let s
+  const s = new MagicString(source)
   ast.forEach((node) => {
     if (node.type === 'ImportDeclaration') {
       if (/^[^\.\/]/.test(node.source.value)) {
         // module import
         // import { foo } from 'vue' --> import { foo } from '/__modules/vue'
-        ;(s || (s = new ms(source))).overwrite(
-          node.source.start,
-          node.source.end,
+        s.overwrite(
+          node.source.start!,
+          node.source.end!,
           `"/__modules/${node.source.value}"`
         )
       }
-    } else if (node.type === 'ExportDefaultDeclaration') {
-      ;(s || (s = new ms(source))).overwrite(
-        node.start,
-        node.declaration.start,
+    } else if (asSFCScript && node.type === 'ExportDefaultDeclaration') {
+      s.overwrite(
+        node.start!,
+        node.declaration.start!,
         `let __script; export default (__script = `
       )
-      s.appendRight(node.end, `)`)
+      s.appendRight(node.end!, `)`)
     }
   })
 
-  return s ? s.toString() : source
+  return s.toString()
 }

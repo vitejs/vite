@@ -1,10 +1,34 @@
 {
   "name": "@vue/dev-server",
   "version": "0.2.0",
+  "license": "MIT",
+  "author": "Evan You",
   "bin": {
     "vds": "bin/vds.js"
   },
-  "main": "lib/server.js",
+  "main": "dist/server/index.js",
+  "types": "dist/server/index.d.ts",
+  "scripts": {
+    "dev": "run-p dev-client dev-server",
+    "dev-client": "tsc -w --p src/client",
+    "dev-server": "tsc -w --p src/server",
+    "build": "tsc -p src/client && tsc -p src/server",
+    "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
+    "prepublishOnly": "tsc"
+  },
+  "gitHooks": {
+    "pre-commit": "lint-staged"
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "git add"
+    ],
+    "*.ts": [
+      "prettier --parser=typescript --write",
+      "git add"
+    ]
+  },
   "dependencies": {
     "@babel/parser": "^7.9.4",
     "@vue/compiler-sfc": "^3.0.0-beta.2",
@@ -14,5 +38,15 @@
     "serve-handler": "^6.1.2",
     "vue": "^3.0.0-beta.3",
     "ws": "^7.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^13.13.1",
+    "@types/serve-handler": "^6.1.0",
+    "@types/ws": "^7.2.4",
+    "lint-staged": "^10.1.6",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.0.4",
+    "typescript": "^3.8.3",
+    "yorkie": "^2.0.0"
   }
 }

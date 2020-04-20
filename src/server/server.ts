@@ -1,28 +1,32 @@
-const fs = require('fs').promises
-const path = require('path')
-const http = require('http')
-const url = require('url')
-const ws = require('ws')
-const serve = require('serve-handler')
-const vue = require('./vueMiddleware')
-const { moduleMiddleware } = require('./moduleMiddleware')
-const { createFileWatcher } = require('./hmrWatcher')
-const { sendJS } = require('./utils')
-const { rewrite } = require('./moduleRewriter')
+import { promises as fs } from 'fs'
+import path from 'path'
+import http from 'http'
+import url from 'url'
+import WebSocket from 'ws'
+import serve from 'serve-handler'
+import { vueMiddleware } from './vueMiddleware'
+import { moduleMiddleware } from './moduleMiddleware'
+import { createFileWatcher } from './hmrWatcher'
+import { sendJS } from './utils'
+import { rewrite } from './moduleRewriter'
 
-exports.createServer = async ({ port = 3000 } = {}) => {
+export interface ServerConfig {
+  port?: number
+}
+
+export async function createServer({ port = 3000 }: ServerConfig = {}) {
   const hmrClientCode = await fs.readFile(
-    path.resolve(__dirname, './hmrClient.js')
+    path.resolve(__dirname, '../client/client.js')
   )
 
   const server = http.createServer(async (req, res) => {
-    const pathname = url.parse(req.url).pathname
+    const pathname = url.parse(req.url!).pathname!
     if (pathname === '/__hmrClient') {
-      return sendJS(res, await hmrClientCode)
+      return sendJS(res, hmrClientCode)
     } else if (pathname.startsWith('/__modules/')) {
       return moduleMiddleware(pathname.replace('/__modules/', ''), res)
     } else if (pathname.endsWith('.vue')) {
-      return vue(req, res)
+      return vueMiddleware(req, res)
     } else if (pathname.endsWith('.js')) {
       const filename = path.join(process.cwd(), pathname.slice(1))
       try {
@@ -42,8 +46,8 @@ exports.createServer = async ({ port = 3000 } = {}) => {
     })
   })
 
-  const wss = new ws.Server({ server })
-  const sockets = new Set()
+  const wss = new WebSocket.Server({ server })
+  const sockets = new Set<WebSocket>()
 
   wss.on('connection', (socket) => {
     sockets.add(socket)
@@ -53,7 +57,7 @@ exports.createServer = async ({ port = 3000 } = {}) => {
     })
   })
 
-  wss.on('error', (e) => {
+  wss.on('error', (e: Error & { code: string }) => {
     if (e.code !== 'EADDRINUSE') {
       console.error(e)
     }
@@ -64,7 +68,7 @@ exports.createServer = async ({ port = 3000 } = {}) => {
   )
 
   return new Promise((resolve, reject) => {
-    server.on('error', (e) => {
+    server.on('error', (e: Error & { code: string }) => {
       if (e.code === 'EADDRINUSE') {
         console.log(`port ${port} is in use, trying another one...`)
         setTimeout(() => {
@@ -73,6 +77,7 @@ exports.createServer = async ({ port = 3000 } = {}) => {
         }, 100)
       } else {
         console.error(e)
+        reject(e)
       }
     })
 

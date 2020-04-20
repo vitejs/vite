@@ -1,9 +1,15 @@
-const fs = require('fs')
-const path = require('path')
-const chokidar = require('chokidar')
-const { parseSFC } = require('./parseSFC')
+import path from 'path'
+import chokidar from 'chokidar'
+import { parseSFC } from './parseSFC'
 
-exports.createFileWatcher = (notify) => {
+export interface ServerNotification {
+  type: string
+  path?: string
+}
+
+export function createFileWatcher(
+  notify: (payload: ServerNotification) => void
+) {
   const fileWatcher = chokidar.watch(process.cwd(), {
     ignored: [/node_modules/]
   })

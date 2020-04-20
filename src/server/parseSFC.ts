@@ -1,9 +1,9 @@
-const fs = require('fs').promises
-const { parse } = require('@vue/compiler-sfc')
+import { promises as fs } from 'fs'
+import { parse } from '@vue/compiler-sfc'
 
 const cache = new Map()
 
-exports.parseSFC = async (filename, saveCache = false) => {
+export async function parseSFC(filename: string, saveCache = false) {
   const content = await fs.readFile(filename, 'utf-8')
   const { descriptor, errors } = parse(content, {
     filename

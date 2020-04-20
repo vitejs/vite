@@ -1,16 +1,15 @@
-const fs = require('fs')
-const url = require('url')
-const path = require('path')
-const qs = require('querystring')
-const { parseSFC } = require('./parseSFC')
-const { compileTemplate } = require('@vue/compiler-sfc')
-const { read, sendJS } = require('./utils')
-const { rewrite } = require('./moduleRewriter')
+import url from 'url'
+import path from 'path'
+import { IncomingMessage, ServerResponse } from 'http'
+import { parseSFC } from './parseSFC'
+import { compileTemplate } from '@vue/compiler-sfc'
+import { sendJS } from './utils'
+import { rewrite } from './moduleRewriter'
 
-module.exports = async (req, res) => {
-  const parsed = url.parse(req.url, true)
+export async function vueMiddleware(req: IncomingMessage, res: ServerResponse) {
+  const parsed = url.parse(req.url!, true)
   const query = parsed.query
-  const filename = path.join(process.cwd(), parsed.pathname.slice(1))
+  const filename = path.join(process.cwd(), parsed.pathname!.slice(1))
   const [descriptor] = await parseSFC(
     filename,
     true /* save last accessed descriptor on the client */

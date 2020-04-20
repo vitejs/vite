@@ -1,9 +1,10 @@
-const path = require('path')
-const resolve = require('resolve-cwd')
-const { sendJSStream } = require('./utils')
+import path from 'path'
+import resolve from 'resolve-cwd'
+import { sendJSStream } from './utils'
+import { ServerResponse } from 'http'
 
-exports.moduleMiddleware = (id, res) => {
-  let modulePath
+export function moduleMiddleware(id: string, res: ServerResponse) {
+  let modulePath: string
   // TODO support custom imports map e.g. for snowpack web_modules
 
   // fallback to node resolve
@@ -15,10 +16,9 @@ exports.moduleMiddleware = (id, res) => {
         'dist/vue.runtime.esm-browser.js'
       )
     }
+    sendJSStream(res, modulePath)
   } catch (e) {
-    res.setStatus(404)
+    res.statusCode = 404
     res.end()
   }
-
-  sendJSStream(res, modulePath)
 }
