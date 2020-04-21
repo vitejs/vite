@@ -39,13 +39,16 @@
   },
   "dependencies": {
     "@babel/parser": "^7.9.4",
+    "@types/koa": "^2.11.3",
     "@vue/compiler-sfc": "^3.0.0-beta.3",
     "chokidar": "^3.3.1",
     "hash-sum": "^2.0.0",
+    "koa": "^2.11.0",
+    "koa-static": "^5.0.0",
+    "koa2-history-api-fallback": "^0.1.0",
     "magic-string": "^0.25.7",
     "minimist": "^1.2.5",
     "resolve-from": "^5.0.0",
-    "serve-handler": "^6.1.2",
     "vue": "^3.0.0-beta.3",
     "ws": "^7.2.3"
   },
