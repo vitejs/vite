@@ -44,7 +44,9 @@ test('test', async () => {
     })
   })
 
-  browser = await puppeteer.launch()
+  browser = await puppeteer.launch(
+    process.env.CI ? { args: ['--no-sandbox', '--disable-setuid-sandbox'] } : {}
+  )
 
   const page = await browser.newPage()
   await page.goto('http://localhost:3000')
