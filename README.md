@@ -46,6 +46,8 @@ Then run:
 npx vite
 ```
 
+Go to `http://localhost:3000`, edit the `.vue` file to see changes hot-updated instantly.
+
 ## How It Works
 
 - Imports are requested by the browser as native ES module imports - there's no bundling.
@@ -57,3 +59,9 @@ npx vite
   Note this rewrite currently doesn't work in `index.html`, but can probably be made to.
 
 - For libraries that provide ES modules builds that work in browsers, you can also directly import them from a CDN.
+
+## TODOs
+
+- SourceMap
+- Snowpack integration
+- Custom imports map support
