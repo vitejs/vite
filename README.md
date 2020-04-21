@@ -10,16 +10,12 @@ Create the following files:
 
 ```html
 <div id="app"></div>
-<script type="module" src="/main.js"></script>
-```
-
-**main.js**
-
-```js
+<script type="module">
 import { createApp } from 'vue'
 import Comp from './Comp.vue'
 
 createApp(Comp).mount('#app')
+</script>
 ```
 
 **Comp.vue**
@@ -54,9 +50,7 @@ Go to `http://localhost:3000`, edit the `.vue` file to see changes hot-updated i
 
 - The server intercepts requests to `*.vue` files, compiles them on the fly, and sends them back as JavaScript.
 
-- Imports to npm packages inside `.js` files are re-written on the fly to point to locally installed files (only packages that provide ES module builds will work - `"module"` field will be used if present in `package.json`). There is also plans to integrate with [Snowpack](https://www.snowpack.dev/) to leverage its `web_modules`.
-
-  Note this rewrite currently doesn't work in `index.html`, but can probably be made to.
+- Imports to npm packages inside `.js` files (and in `<script>` of `index.html`) are re-written on the fly to point to locally installed files (only packages that provide ES module builds will work - `"module"` field will be used if present in `package.json`). There is also plans to integrate with [Snowpack](https://www.snowpack.dev/) to leverage its `web_modules`.
 
 - For libraries that provide ES modules builds that work in browsers, you can also directly import them from a CDN.
 

@@ -4,11 +4,28 @@ import path from 'path'
 import { promises as fs, createReadStream } from 'fs'
 import resolve from 'resolve-from'
 import { rewrite } from '../moduleRewriter'
+import { Readable } from 'stream'
 
 const idToFileMap = new Map()
 const fileToIdMap = new Map()
 
 export const moduleResolverMiddleware: Middleware = ({ cwd, app }) => {
+  // rewrite <script> imports in index.html
+  app.use(async (ctx, next) => {
+    await next()
+    if (ctx.url === '/index.html') {
+      const html = ctx.body.pipe ? await readStream(ctx.body) : String(ctx.body)
+      ctx.body = html.replace(
+        /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
+        (_, openTag, script) => {
+          return `${openTag}${rewrite(script)}</script>`
+        }
+      )
+      console.log(ctx.body)
+    }
+  })
+
+  // rewrite imports in all js files to /__modules/:id
   app.use(async (ctx, next) => {
     if (!ctx.path.endsWith('.js')) {
       return next()
@@ -26,6 +43,7 @@ export const moduleResolverMiddleware: Middleware = ({ cwd, app }) => {
     }
   })
 
+  // handle /__modules/:id requests
   const moduleRE = /^\/__modules\//
   app.use(async (ctx, next) => {
     if (!moduleRE.test(ctx.path)) {
@@ -92,5 +110,17 @@ export const moduleResolverMiddleware: Middleware = ({ cwd, app }) => {
       console.error(e)
       ctx.status = 404
     }
+  })
+}
+
+async function readStream(stream: Readable): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let res = ''
+    stream
+      .on('data', (chunk) => (res += chunk))
+      .on('error', reject)
+      .on('end', () => {
+        resolve(res)
+      })
   })
 }
