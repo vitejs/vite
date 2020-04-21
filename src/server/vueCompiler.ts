@@ -3,20 +3,19 @@ import path from 'path'
 import { promises as fs } from 'fs'
 import { IncomingMessage, ServerResponse } from 'http'
 import {
-  parse,
-  compileTemplate,
   SFCDescriptor,
-  compileStyle,
   SFCStyleBlock,
   SFCTemplateBlock
 } from '@vue/compiler-sfc'
 import { sendJS } from './utils'
 import { rewrite } from './moduleRewriter'
+import { resolveCompiler } from './moduleResolver'
 import hash from 'hash-sum'
 
 const cache = new Map()
 
 export async function parseSFC(
+  cwd: string,
   filename: string,
   saveCache = false
 ): Promise<[SFCDescriptor, SFCDescriptor | undefined] | []> {
@@ -26,7 +25,7 @@ export async function parseSFC(
   } catch (e) {
     return []
   }
-  const { descriptor, errors } = parse(content, {
+  const { descriptor, errors } = resolveCompiler(cwd).parse(content, {
     filename
   })
 
@@ -51,6 +50,7 @@ export async function vueMiddleware(
   const query = parsed.query
   const filename = path.join(cwd, pathname.slice(1))
   const [descriptor] = await parseSFC(
+    cwd,
     filename,
     true /* save last accessed descriptor on the client */
   )
@@ -63,6 +63,7 @@ export async function vueMiddleware(
   }
   if (query.type === 'template') {
     return compileSFCTemplate(
+      cwd,
       res,
       descriptor.template!,
       filename,
@@ -72,6 +73,7 @@ export async function vueMiddleware(
   }
   if (query.type === 'style') {
     return compileSFCStyle(
+      cwd,
       res,
       descriptor.styles[Number(query.index)],
       query.index as string,
@@ -122,13 +124,14 @@ function compileSFCMain(
 }
 
 function compileSFCTemplate(
+  cwd: string,
   res: ServerResponse,
   template: SFCTemplateBlock,
   filename: string,
   pathname: string,
   scoped: boolean
 ) {
-  const { code, errors } = compileTemplate({
+  const { code, errors } = resolveCompiler(cwd).compileTemplate({
     source: template.content,
     filename,
     compilerOptions: {
@@ -144,6 +147,7 @@ function compileSFCTemplate(
 }
 
 function compileSFCStyle(
+  cwd: string,
   res: ServerResponse,
   style: SFCStyleBlock,
   index: string,
@@ -151,7 +155,7 @@ function compileSFCStyle(
   pathname: string
 ) {
   const id = hash(pathname)
-  const { code, errors } = compileStyle({
+  const { code, errors } = resolveCompiler(cwd).compileStyle({
     source: style.content,
     filename,
     id: `data-v-${id}`,

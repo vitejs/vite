@@ -28,7 +28,7 @@ export function createFileWatcher(
 
     if (file.endsWith('.vue')) {
       // check which part of the file changed
-      const [descriptor, prevDescriptor] = await parseSFC(file)
+      const [descriptor, prevDescriptor] = await parseSFC(cwd, file)
       if (!descriptor || !prevDescriptor) {
         // the file has never been accessed yet
         return
