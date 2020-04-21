@@ -9,6 +9,9 @@ interface ResolvedVuePaths {
 
 let resolved: ResolvedVuePaths | undefined = undefined
 
+// Resolve the correct `vue` and `@vue.compiler-sfc` to use.
+// If the user project has local installations of these, they should be used;
+// otherwise, fallback to the dependency of Vite itself.
 export function resolveVue(cwd: string): ResolvedVuePaths {
   if (resolved) {
     return resolved

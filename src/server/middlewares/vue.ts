@@ -6,9 +6,8 @@ import {
   SFCTemplateBlock,
   SFCStyleBlock
 } from '@vue/compiler-sfc'
-import { resolveCompiler } from '../vueResolver'
+import { resolveCompiler } from '../resolveVue'
 import hash_sum from 'hash-sum'
-import { rewrite } from '../moduleRewriter'
 
 export const vueMiddleware: Middleware = ({ cwd, app }) => {
   app.use(async (ctx, next) => {
@@ -100,13 +99,12 @@ export function compileSFCMain(
   // inject hmr client
   let code = `import "/__hmrClient"\n`
   if (descriptor.script) {
-    code += rewrite(
-      descriptor.script.content,
-      true /* rewrite default export to `script` */
-    )
+    code += descriptor.script.content
   } else {
-    code += `const __script = {}; export default __script`
+    code += `export default {}`
   }
+  // The module rewriter will rewrite `export default {}` to
+  // `let __script; export default (__script = {})
   let hasScoped = false
   if (descriptor.styles) {
     descriptor.styles.forEach((s, i) => {
