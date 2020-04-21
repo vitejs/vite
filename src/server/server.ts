@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs'
 import path from 'path'
-import http from 'http'
+import http, { Server } from 'http'
 import url from 'url'
 import WebSocket from 'ws'
 import serve from 'serve-handler'
@@ -12,9 +12,12 @@ import { rewrite } from './moduleRewriter'
 
 export interface ServerConfig {
   port?: number
+  cwd?: string
 }
 
-export async function createServer({ port = 3000 }: ServerConfig = {}) {
+export async function createServer({ port = 3000 }: ServerConfig = {}): Promise<
+  Server
+> {
   const hmrClientCode = await fs.readFile(
     path.resolve(__dirname, '../client/client.js')
   )
@@ -83,7 +86,7 @@ export async function createServer({ port = 3000 }: ServerConfig = {}) {
 
     server.on('listening', () => {
       console.log(`Running at http://localhost:${port}`)
-      resolve()
+      resolve(server)
     })
 
     server.listen(port)

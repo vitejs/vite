@@ -14,6 +14,7 @@
     "dev-server": "tsc -w --p src/server",
     "build": "tsc -p src/client && tsc -p src/server",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
+    "test": "yarn build && jest",
     "prepublishOnly": "tsc"
   },
   "gitHooks": {
@@ -29,6 +30,9 @@
       "git add"
     ]
   },
+  "jest": {
+    "watchPathIgnorePatterns": ["<rootDir>/test/temp"]
+  },
   "dependencies": {
     "@babel/parser": "^7.9.4",
     "@vue/compiler-sfc": "^3.0.0-beta.2",
@@ -43,9 +47,12 @@
     "@types/node": "^13.13.1",
     "@types/serve-handler": "^6.1.0",
     "@types/ws": "^7.2.4",
+    "execa": "^4.0.0",
+    "jest": "^25.4.0",
     "lint-staged": "^10.1.6",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.0.4",
+    "puppeteer": "^3.0.0",
     "typescript": "^3.8.3",
     "yorkie": "^2.0.0"
   }
