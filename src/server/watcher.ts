@@ -1,6 +1,6 @@
 import path from 'path'
 import chokidar from 'chokidar'
-import { parseSFC } from './parseSFC'
+import { parseSFC } from './vueCompiler'
 
 export interface ServerNotification {
   type: string
@@ -8,14 +8,15 @@ export interface ServerNotification {
 }
 
 export function createFileWatcher(
+  cwd: string,
   notify: (payload: ServerNotification) => void
 ) {
-  const fileWatcher = chokidar.watch(process.cwd(), {
+  const fileWatcher = chokidar.watch(cwd, {
     ignored: [/node_modules/]
   })
 
   fileWatcher.on('change', async (file) => {
-    const resourcePath = '/' + path.relative(process.cwd(), file)
+    const resourcePath = '/' + path.relative(cwd, file)
 
     if (file.endsWith('.vue')) {
       // check which part of the file changed

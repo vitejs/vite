@@ -1,19 +1,51 @@
 import url from 'url'
 import path from 'path'
+import { promises as fs } from 'fs'
 import { IncomingMessage, ServerResponse } from 'http'
-import { parseSFC } from './parseSFC'
-import { compileTemplate } from '@vue/compiler-sfc'
+import { parse, compileTemplate } from '@vue/compiler-sfc'
 import { sendJS } from './utils'
 import { rewrite } from './moduleRewriter'
 
-export async function vueMiddleware(req: IncomingMessage, res: ServerResponse) {
+const cache = new Map()
+
+export async function parseSFC(filename: string, saveCache = false) {
+  let content: string
+  try {
+    content = await fs.readFile(filename, 'utf-8')
+  } catch (e) {
+    return []
+  }
+  const { descriptor, errors } = parse(content, {
+    filename
+  })
+
+  if (errors) {
+    // TODO
+  }
+
+  const prev = cache.get(filename)
+  if (saveCache) {
+    cache.set(filename, descriptor)
+  }
+  return [descriptor, prev]
+}
+
+export async function vueMiddleware(
+  cwd: string,
+  req: IncomingMessage,
+  res: ServerResponse
+) {
   const parsed = url.parse(req.url!, true)
   const query = parsed.query
-  const filename = path.join(process.cwd(), parsed.pathname!.slice(1))
+  const filename = path.join(cwd, parsed.pathname!.slice(1))
   const [descriptor] = await parseSFC(
     filename,
     true /* save last accessed descriptor on the client */
   )
+  if (!descriptor) {
+    res.statusCode = 404
+    return res.end()
+  }
   if (!query.type) {
     // inject hmr client
     let code = `import "/__hmrClient"\n`

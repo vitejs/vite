@@ -4,9 +4,9 @@ import http, { Server } from 'http'
 import url from 'url'
 import WebSocket from 'ws'
 import serve from 'serve-handler'
-import { vueMiddleware } from './vueMiddleware'
-import { moduleMiddleware } from './moduleMiddleware'
-import { createFileWatcher } from './hmrWatcher'
+import { vueMiddleware } from './vueCompiler'
+import { resolveModule } from './moduleResolver'
+import { createFileWatcher } from './watcher'
 import { sendJS } from './utils'
 import { rewrite } from './moduleRewriter'
 
@@ -15,9 +15,10 @@ export interface ServerConfig {
   cwd?: string
 }
 
-export async function createServer({ port = 3000 }: ServerConfig = {}): Promise<
-  Server
-> {
+export async function createServer({
+  port = 3000,
+  cwd = process.cwd()
+}: ServerConfig = {}): Promise<Server> {
   const hmrClientCode = await fs.readFile(
     path.resolve(__dirname, '../client/client.js')
   )
@@ -27,11 +28,11 @@ export async function createServer({ port = 3000 }: ServerConfig = {}): Promise<
     if (pathname === '/__hmrClient') {
       return sendJS(res, hmrClientCode)
     } else if (pathname.startsWith('/__modules/')) {
-      return moduleMiddleware(pathname.replace('/__modules/', ''), res)
+      return resolveModule(pathname.replace('/__modules/', ''), cwd, res)
     } else if (pathname.endsWith('.vue')) {
-      return vueMiddleware(req, res)
+      return vueMiddleware(cwd, req, res)
     } else if (pathname.endsWith('.js')) {
-      const filename = path.join(process.cwd(), pathname.slice(1))
+      const filename = path.join(cwd, pathname.slice(1))
       try {
         const content = await fs.readFile(filename, 'utf-8')
         return sendJS(res, rewrite(content))
@@ -45,6 +46,7 @@ export async function createServer({ port = 3000 }: ServerConfig = {}): Promise<
     }
 
     serve(req, res, {
+      public: cwd ? path.relative(process.cwd(), cwd) : '/',
       rewrites: [{ source: '**', destination: '/index.html' }]
     })
   })
@@ -66,7 +68,7 @@ export async function createServer({ port = 3000 }: ServerConfig = {}): Promise<
     }
   })
 
-  createFileWatcher((payload) =>
+  createFileWatcher(cwd, (payload) =>
     sockets.forEach((s) => s.send(JSON.stringify(payload)))
   )
 
