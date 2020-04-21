@@ -45,7 +45,6 @@
     "hash-sum": "^2.0.0",
     "koa": "^2.11.0",
     "koa-static": "^5.0.0",
-    "koa2-history-api-fallback": "^0.1.0",
     "magic-string": "^0.25.7",
     "minimist": "^1.2.5",
     "resolve-from": "^5.0.0",

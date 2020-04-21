@@ -4,6 +4,7 @@ import { hmrMiddleware } from './middlewares/hmr'
 import { moduleResolverMiddleware } from './middlewares/modules'
 import { vueMiddleware } from './middlewares/vue'
 import { serveMiddleware } from './middlewares/serve'
+import { historyFallbackMiddleware } from './middlewares/historyFallback'
 
 export type Middleware = (ctx: MiddlewareCtx) => void
 
@@ -23,6 +24,7 @@ const middlewares: Middleware[] = [
   hmrMiddleware,
   moduleResolverMiddleware,
   vueMiddleware,
+  historyFallbackMiddleware,
   serveMiddleware
 ]
 
