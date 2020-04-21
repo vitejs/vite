@@ -9,6 +9,7 @@
   "main": "dist/server/index.js",
   "types": "dist/server/index.d.ts",
   "files": [
+    "bin",
     "dist"
   ],
   "scripts": {
