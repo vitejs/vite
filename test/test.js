@@ -33,7 +33,7 @@ afterAll(async () => {
 })
 
 test('test', async () => {
-  server = execa(path.resolve(__dirname, '../bin/vds.js'), {
+  server = execa(path.resolve(__dirname, '../bin/vite.js'), {
     cwd: tempDir
   })
   await new Promise((resolve) => {

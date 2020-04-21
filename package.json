@@ -1,13 +1,16 @@
 {
-  "name": "@vue/dev-server",
-  "version": "0.2.0",
+  "name": "vite",
+  "version": "0.1.0",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
-    "vds": "bin/vds.js"
+    "vite": "bin/vite.js"
   },
   "main": "dist/server/index.js",
   "types": "dist/server/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "run-p dev-client dev-server",
     "dev-client": "tsc -w --p src/client",
