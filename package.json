@@ -37,6 +37,7 @@
     "@babel/parser": "^7.9.4",
     "@vue/compiler-sfc": "^3.0.0-beta.3",
     "chokidar": "^3.3.1",
+    "hash-sum": "^2.0.0",
     "magic-string": "^0.25.7",
     "minimist": "^1.2.5",
     "resolve-from": "^5.0.0",
@@ -45,6 +46,7 @@
     "ws": "^7.2.3"
   },
   "devDependencies": {
+    "@types/hash-sum": "^1.0.0",
     "@types/node": "^13.13.1",
     "@types/serve-handler": "^6.1.0",
     "@types/ws": "^7.2.4",

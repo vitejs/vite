@@ -7,7 +7,7 @@ const socket = new WebSocket(`ws://${location.host}`)
 
 // Listen for messages
 socket.addEventListener('message', ({ data }) => {
-  const { type, path, index } = JSON.parse(data)
+  const { type, path, id, index } = JSON.parse(data)
   switch (type) {
     case 'connected':
       console.log(`[vds] connected.`)
@@ -24,10 +24,15 @@ socket.addEventListener('message', ({ data }) => {
         console.log(`[vds] ${path} template updated.`)
       })
       break
-    case 'update-style':
-      import(`${path}?type=style&index=${index}&t=${Date.now()}`).then((m) => {
-        // TODO style hmr
-      })
+    case 'style-update':
+      console.log(`[vds] ${path} style${index > 0 ? `#${index}` : ``} updated.`)
+      import(`${path}?type=style&index=${index}&t=${Date.now()}`)
+      break
+    case 'style-remove':
+      const style = document.getElementById(`vue-style-${id}`)
+      if (style) {
+        style.parentNode!.removeChild(style)
+      }
       break
     case 'full-reload':
       location.reload()
