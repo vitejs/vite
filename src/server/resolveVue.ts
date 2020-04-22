@@ -12,7 +12,7 @@ let resolved: ResolvedVuePaths | undefined = undefined
 // Resolve the correct `vue` and `@vue.compiler-sfc` to use.
 // If the user project has local installations of these, they should be used;
 // otherwise, fallback to the dependency of Vite itself.
-export function resolveVue(cwd: string): ResolvedVuePaths {
+export function resolveVue(root: string): ResolvedVuePaths {
   if (resolved) {
     return resolved
   }
@@ -20,7 +20,7 @@ export function resolveVue(cwd: string): ResolvedVuePaths {
   let compilerPath: string
   try {
     // see if user has local vue installation
-    const userVuePkg = resolve(cwd, 'vue/package.json')
+    const userVuePkg = resolve(root, 'vue/package.json')
     vuePath = path.join(
       path.dirname(userVuePkg),
       'dist/vue.runtime.esm-browser.js'
@@ -28,7 +28,7 @@ export function resolveVue(cwd: string): ResolvedVuePaths {
 
     // also resolve matching sfc compiler
     try {
-      const compilerPkgPath = resolve(cwd, '@vue/compiler-sfc/package.json')
+      const compilerPkgPath = resolve(root, '@vue/compiler-sfc/package.json')
       const compilerPkg = require(compilerPkgPath)
       if (compilerPkg.version !== require(userVuePkg).version) {
         throw new Error()

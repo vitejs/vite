@@ -1,5 +1,4 @@
 import http, { Server } from 'http'
-import https from 'https'
 import Koa from 'koa'
 import { hmrMiddleware } from './middlewares/hmr'
 import { moduleResolverMiddleware } from './middlewares/modules'
@@ -10,14 +9,13 @@ import { historyFallbackMiddleware } from './middlewares/historyFallback'
 export type Middleware = (ctx: MiddlewareCtx) => void
 
 export interface MiddlewareCtx {
-  cwd: string
+  root: string
   app: Koa
   server: Server
 }
 
 export interface ServerConfig {
-  cwd?: string
-  https?: boolean
+  root?: string
   middlewares?: Middleware[]
 }
 
@@ -30,18 +28,15 @@ const middlewares: Middleware[] = [
 ]
 
 export function createServer({
-  cwd = process.cwd(),
-  middlewares: userMiddlewares = [],
-  https: useHttps = false
+  root = process.cwd(),
+  middlewares: userMiddlewares = []
 }: ServerConfig = {}): Server {
   const app = new Koa()
-  const server = useHttps
-    ? https.createServer(app.callback())
-    : http.createServer(app.callback())
+  const server = http.createServer(app.callback())
 
   ;[...userMiddlewares, ...middlewares].forEach((m) =>
     m({
-      cwd,
+      root,
       app,
       server
     })
