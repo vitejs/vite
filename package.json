@@ -16,7 +16,7 @@
     "dev": "run-p dev-client dev-server",
     "dev-client": "tsc -w --p src/client",
     "dev-server": "tsc -w --p src/server",
-    "build": "tsc -p src/client && tsc -p src/server",
+    "build": "rm -rf dist && tsc -p src/client && tsc -p src/server",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "yarn build && jest",
     "prepublishOnly": "yarn build"

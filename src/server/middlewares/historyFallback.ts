@@ -1,6 +1,6 @@
 import { Middleware } from '../index'
 
-export const historyFallbackMiddleware: Middleware = ({ cwd, app }) => {
+export const historyFallbackMiddleware: Middleware = ({ app }) => {
   app.use((ctx, next) => {
     const cleanUrl = ctx.url.split('?')[0].split('#')[0]
     if (ctx.method !== 'GET' || cleanUrl.includes('.')) {

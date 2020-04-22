@@ -10,10 +10,6 @@
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
-    "removeComments": false,
-    "lib": [
-      "esnext",
-      "DOM"
-    ]
+    "removeComments": false
   }
 }
