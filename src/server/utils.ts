@@ -18,7 +18,6 @@ export async function cachedRead(path: string, encoding?: string) {
   if (cached && cached.lastModified === lastModified) {
     return cached.content
   }
-  console.log('reading from disk: ', path)
   const content = await fs.readFile(path, encoding)
   moduleReadCache.set(path, {
     content,

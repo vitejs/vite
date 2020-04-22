@@ -8,6 +8,18 @@ import {
 import { resolveCompiler } from '../resolveVue'
 import hash_sum from 'hash-sum'
 import { cachedRead } from '../utils'
+import LRUCache from 'lru-cache'
+
+interface CacheEntry {
+  descriptor?: SFCDescriptor
+  template?: string
+  script?: string
+  styles: string[]
+}
+
+export const vueCache = new LRUCache<string, CacheEntry>({
+  max: 65535
+})
 
 export const vuePlugin: Plugin = ({ root, app }) => {
   app.use(async (ctx, next) => {
@@ -18,11 +30,7 @@ export const vuePlugin: Plugin = ({ root, app }) => {
     const pathname = ctx.path
     const query = ctx.query
     const filename = path.join(root, pathname.slice(1))
-    const [descriptor] = await parseSFC(
-      root,
-      filename,
-      true /* save last accessed descriptor on the client */
-    )
+    const descriptor = await parseSFC(root, filename)
 
     if (!descriptor) {
       ctx.status = 404
@@ -31,7 +39,12 @@ export const vuePlugin: Plugin = ({ root, app }) => {
 
     if (!query.type) {
       ctx.type = 'js'
-      ctx.body = compileSFCMain(descriptor, pathname, query.t as string)
+      ctx.body = compileSFCMain(
+        descriptor,
+        filename,
+        pathname,
+        query.t as string
+      )
       return
     }
 
@@ -48,10 +61,12 @@ export const vuePlugin: Plugin = ({ root, app }) => {
     }
 
     if (query.type === 'style') {
+      const index = Number(query.index)
       ctx.type = 'css'
       ctx.body = compileSFCStyle(
         root,
-        descriptor.styles[Number(query.index)],
+        descriptor.styles[index],
+        index,
         filename,
         pathname
       )
@@ -62,18 +77,20 @@ export const vuePlugin: Plugin = ({ root, app }) => {
   })
 }
 
-const parseCache = new Map()
-
 export async function parseSFC(
   root: string,
-  filename: string,
-  saveCache = false
-): Promise<[SFCDescriptor, SFCDescriptor | undefined] | []> {
+  filename: string
+): Promise<SFCDescriptor | undefined> {
+  let cached = vueCache.get(filename)
+  if (cached && cached.descriptor) {
+    return cached.descriptor
+  }
+
   let content: string
   try {
     content = await cachedRead(filename, 'utf-8')
   } catch (e) {
-    return []
+    return
   }
   const { descriptor, errors } = resolveCompiler(root).parse(content, {
     filename
@@ -83,18 +100,23 @@ export async function parseSFC(
     // TODO
   }
 
-  const prev = parseCache.get(filename)
-  if (saveCache) {
-    parseCache.set(filename, descriptor)
-  }
-  return [descriptor, prev]
+  cached = cached || { styles: [] }
+  cached.descriptor = descriptor
+  vueCache.set(filename, cached)
+  return descriptor
 }
 
 function compileSFCMain(
   descriptor: SFCDescriptor,
+  filename: string,
   pathname: string,
   timestamp: string | undefined
 ): string {
+  let cached = vueCache.get(filename)
+  if (cached && cached.script) {
+    return cached.script
+  }
+
   timestamp = timestamp ? `&t=${timestamp}` : ``
   // inject hmr client
   let code = `import { updateStyle } from "/__hmrClient"\n`
@@ -129,6 +151,10 @@ function compileSFCMain(
   }
   code += `\n__script.__hmrId = ${JSON.stringify(pathname)}`
   code += `\nexport default __script`
+
+  cached = cached || { styles: [] }
+  cached.script = code
+  vueCache.set(filename, cached)
   return code
 }
 
@@ -139,6 +165,11 @@ function compileSFCTemplate(
   pathname: string,
   scoped: boolean
 ): string {
+  let cached = vueCache.get(filename)
+  if (cached && cached.template) {
+    return cached.template
+  }
+
   const { code, errors } = resolveCompiler(root).compileTemplate({
     source: template.content,
     filename,
@@ -151,15 +182,25 @@ function compileSFCTemplate(
   if (errors) {
     // TODO
   }
+
+  cached = cached || { styles: [] }
+  cached.template = code
+  vueCache.set(filename, cached)
   return code
 }
 
 function compileSFCStyle(
   root: string,
   style: SFCStyleBlock,
+  index: number,
   filename: string,
   pathname: string
 ): string {
+  let cached = vueCache.get(filename)
+  if (cached && cached.styles && cached.styles[index]) {
+    return cached.styles[index]
+  }
+
   const id = hash_sum(pathname)
   const { code, errors } = resolveCompiler(root).compileStyle({
     source: style.content,
@@ -173,5 +214,8 @@ function compileSFCStyle(
     // TODO
   }
 
+  cached = cached || { styles: [] }
+  cached.styles[index] = code
+  vueCache.set(filename, cached)
   return code
 }
