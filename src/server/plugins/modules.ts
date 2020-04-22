@@ -15,6 +15,10 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
   app.use(async (ctx, next) => {
     await next()
 
+    if (ctx.status === 304) {
+      return
+    }
+
     if (ctx.url === '/index.html') {
       const html = await readBody(ctx.body)
       await initLexer
