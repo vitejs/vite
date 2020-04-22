@@ -29,5 +29,7 @@ export const servePlugin: Plugin = ({ root, app }) => {
     return next()
   })
 
+  app.use(require('koa-conditional-get')())
+  app.use(require('koa-etag')())
   app.use(require('koa-static')(root))
 }

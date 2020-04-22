@@ -1,11 +1,11 @@
 import { Plugin } from '../index'
 import { resolveVue } from '../resolveVue'
 import path from 'path'
-import { createReadStream } from 'fs'
 import resolve from 'resolve-from'
 import { Readable } from 'stream'
 import { init as initLexer, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
+import { cachedRead } from '../utils'
 
 const idToFileMap = new Map()
 const fileToIdMap = new Map()
@@ -16,7 +16,7 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
     await next()
 
     if (ctx.url === '/index.html') {
-      const html = await readStream(ctx.body)
+      const html = await readBody(ctx.body)
       await initLexer
       ctx.body = html.replace(
         /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
@@ -37,7 +37,7 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
       !(ctx.path.endsWith('.vue') && ctx.query.type != null)
     ) {
       await initLexer
-      ctx.body = rewriteImports(await readStream(ctx.body))
+      ctx.body = rewriteImports(await readBody(ctx.body))
     }
   })
 
@@ -53,14 +53,14 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
 
     // special handling for vue's runtime.
     if (id === 'vue') {
-      ctx.body = createReadStream(resolveVue(root).vue)
+      ctx.body = await cachedRead(resolveVue(root).vue)
       return
     }
 
     // already resolved and cached
     const cachedPath = idToFileMap.get(id)
     if (cachedPath) {
-      ctx.body = createReadStream(cachedPath)
+      ctx.body = await cachedRead(cachedPath)
       return
     }
 
@@ -86,7 +86,7 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
         )
         idToFileMap.set(sourceMapRequest, sourceMapPath)
         ctx.type = 'application/json'
-        ctx.body = createReadStream(sourceMapPath)
+        ctx.body = await cachedRead(sourceMapPath)
         return
       }
     }
@@ -103,7 +103,7 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
       )
       idToFileMap.set(id, modulePath)
       fileToIdMap.set(path.basename(modulePath), id)
-      ctx.body = createReadStream(modulePath)
+      ctx.body = await cachedRead(modulePath)
     } catch (e) {
       console.error(e)
       ctx.status = 404
@@ -111,7 +111,7 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
   })
 }
 
-async function readStream(stream: Readable | string): Promise<string> {
+async function readBody(stream: Readable | string): Promise<string> {
   if (stream instanceof Readable) {
     return new Promise((resolve, reject) => {
       let res = ''

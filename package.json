@@ -45,7 +45,10 @@
     "es-module-lexer": "^0.3.18",
     "hash-sum": "^2.0.0",
     "koa": "^2.11.0",
+    "koa-conditional-get": "^2.0.0",
+    "koa-etag": "^3.0.0",
     "koa-static": "^5.0.0",
+    "lru-cache": "^5.1.1",
     "magic-string": "^0.25.7",
     "minimist": "^1.2.5",
     "resolve-from": "^5.0.0",
@@ -55,6 +58,7 @@
   "devDependencies": {
     "@types/es-module-lexer": "^0.3.0",
     "@types/hash-sum": "^1.0.0",
+    "@types/lru-cache": "^5.1.0",
     "@types/node": "^13.13.1",
     "@types/serve-handler": "^6.1.0",
     "@types/ws": "^7.2.4",

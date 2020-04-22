@@ -5,7 +5,7 @@ import hash_sum from 'hash-sum'
 import chokidar from 'chokidar'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC } from './vue'
-import { createReadStream } from 'fs'
+import { cachedRead } from '../utils'
 
 const hmrClientPath = path.resolve(__dirname, '../../client/client.js')
 
@@ -17,12 +17,12 @@ interface HMRPayload {
 }
 
 export const hmrPlugin: Plugin = ({ root, app, server }) => {
-  app.use((ctx, next) => {
+  app.use(async (ctx, next) => {
     if (ctx.path !== '/__hmrClient') {
       return next()
     }
     ctx.type = 'js'
-    ctx.body = createReadStream(hmrClientPath)
+    ctx.body = await cachedRead(hmrClientPath)
   })
 
   // start a websocket server to send hmr notifications to the client
