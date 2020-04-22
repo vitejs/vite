@@ -4,7 +4,7 @@ import path from 'path'
 import { createReadStream } from 'fs'
 import resolve from 'resolve-from'
 import { Readable } from 'stream'
-import { parse } from '@babel/parser'
+import { init as initLexer, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 
 const idToFileMap = new Map()
@@ -17,6 +17,7 @@ export const moduleResolverMiddleware: Middleware = ({ root, app }) => {
 
     if (ctx.url === '/index.html') {
       const html = await readStream(ctx.body)
+      await initLexer
       ctx.body = html.replace(
         /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
         (_, openTag, script) => {
@@ -35,11 +36,8 @@ export const moduleResolverMiddleware: Middleware = ({ root, app }) => {
       // only need to rewrite for <script> part in vue files
       !(ctx.path.endsWith('.vue') && ctx.query.type != null)
     ) {
-      ctx.body = rewriteImports(
-        await readStream(ctx.body),
-        // if this is a vue file script, rewrite default export
-        ctx.path.endsWith('.vue')
-      )
+      await initLexer
+      ctx.body = rewriteImports(await readStream(ctx.body))
     }
   })
 
@@ -129,40 +127,25 @@ async function readStream(stream: Readable | string): Promise<string> {
   }
 }
 
-function rewriteImports(source: string, asSFCScript = false) {
-  const ast = parse(source, {
-    sourceType: 'module',
-    plugins: [
-      // by default we enable proposals slated for ES2020.
-      // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
-      // this will need to be updated as the spec moves forward.
-      'bigInt',
-      'optionalChaining',
-      'nullishCoalescingOperator'
-    ]
-  }).program.body
+function rewriteImports(source: string) {
+  const [imports] = parse(source)
 
-  const s = new MagicString(source)
-  ast.forEach((node) => {
-    if (node.type === 'ImportDeclaration') {
-      if (/^[^\.\/]/.test(node.source.value)) {
-        // module import
-        // import { foo } from 'vue' --> import { foo } from '/__modules/vue'
-        s.overwrite(
-          node.source.start!,
-          node.source.end!,
-          `"/__modules/${node.source.value}"`
-        )
+  if (imports.length) {
+    const s = new MagicString(source)
+    let hasReplaced = false
+    imports.forEach(({ s: start, e: end, d: dynamicIndex }) => {
+      const id = source.substring(start, end)
+      if (dynamicIndex < 0) {
+        if (/^[^\/\.]/.test(id)) {
+          s.overwrite(start, end, `/__modules/${id}`)
+          hasReplaced = true
+        }
+      } else {
+        // TODO dynamic import
       }
-    } else if (asSFCScript && node.type === 'ExportDefaultDeclaration') {
-      s.overwrite(
-        node.start!,
-        node.declaration.start!,
-        `let __script; export default (__script = `
-      )
-      s.appendRight(node.end!, `)`)
-    }
-  })
+    })
+    return hasReplaced ? s.toString() : source
+  }
 
-  return s.toString()
+  return source
 }

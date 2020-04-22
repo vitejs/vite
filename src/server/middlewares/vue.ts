@@ -90,7 +90,7 @@ export async function parseSFC(
   return [descriptor, prev]
 }
 
-export function compileSFCMain(
+function compileSFCMain(
   descriptor: SFCDescriptor,
   pathname: string,
   timestamp: string | undefined
@@ -99,12 +99,13 @@ export function compileSFCMain(
   // inject hmr client
   let code = `import "/__hmrClient"\n`
   if (descriptor.script) {
-    code += descriptor.script.content
+    code += descriptor.script.content.replace(
+      `export default`,
+      'const __script ='
+    )
   } else {
-    code += `export default {}`
+    code += `const __script = {}`
   }
-  // The module rewriter will rewrite `export default {}` to
-  // `let __script; export default (__script = {})
   let hasScoped = false
   if (descriptor.styles) {
     descriptor.styles.forEach((s, i) => {
@@ -124,10 +125,11 @@ export function compileSFCMain(
     code += `\n__script.render = __render`
   }
   code += `\n__script.__hmrId = ${JSON.stringify(pathname)}`
+  code += `\nexport default __script`
   return code
 }
 
-export function compileSFCTemplate(
+function compileSFCTemplate(
   root: string,
   template: SFCTemplateBlock,
   filename: string,
@@ -149,7 +151,7 @@ export function compileSFCTemplate(
   return code
 }
 
-export function compileSFCStyle(
+function compileSFCStyle(
   root: string,
   style: SFCStyleBlock,
   index: string,

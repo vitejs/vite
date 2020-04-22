@@ -42,6 +42,7 @@
     "@types/koa": "^2.11.3",
     "@vue/compiler-sfc": "^3.0.0-beta.3",
     "chokidar": "^3.3.1",
+    "es-module-lexer": "^0.3.18",
     "hash-sum": "^2.0.0",
     "koa": "^2.11.0",
     "koa-static": "^5.0.0",
@@ -52,6 +53,7 @@
     "ws": "^7.2.3"
   },
   "devDependencies": {
+    "@types/es-module-lexer": "^0.3.0",
     "@types/hash-sum": "^1.0.0",
     "@types/node": "^13.13.1",
     "@types/serve-handler": "^6.1.0",
