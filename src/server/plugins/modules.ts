@@ -128,24 +128,29 @@ async function readStream(stream: Readable | string): Promise<string> {
 }
 
 function rewriteImports(source: string) {
-  const [imports] = parse(source)
+  try {
+    const [imports] = parse(source)
 
-  if (imports.length) {
-    const s = new MagicString(source)
-    let hasReplaced = false
-    imports.forEach(({ s: start, e: end, d: dynamicIndex }) => {
-      const id = source.substring(start, end)
-      if (dynamicIndex < 0) {
-        if (/^[^\/\.]/.test(id)) {
-          s.overwrite(start, end, `/__modules/${id}`)
-          hasReplaced = true
+    if (imports.length) {
+      const s = new MagicString(source)
+      let hasReplaced = false
+      imports.forEach(({ s: start, e: end, d: dynamicIndex }) => {
+        const id = source.substring(start, end)
+        if (dynamicIndex < 0) {
+          if (/^[^\/\.]/.test(id)) {
+            s.overwrite(start, end, `/__modules/${id}`)
+            hasReplaced = true
+          }
+        } else {
+          // TODO dynamic import
         }
-      } else {
-        // TODO dynamic import
-      }
-    })
-    return hasReplaced ? s.toString() : source
-  }
+      })
+      return hasReplaced ? s.toString() : source
+    }
 
-  return source
+    return source
+  } catch (e) {
+    console.error(`Error: module imports rewrite failed for source:\n`, source)
+    return source
+  }
 }
