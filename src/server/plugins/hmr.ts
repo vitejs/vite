@@ -1,4 +1,4 @@
-import { Middleware } from '../index'
+import { Plugin } from '../index'
 import path from 'path'
 import WebSocket from 'ws'
 import hash_sum from 'hash-sum'
@@ -16,7 +16,7 @@ interface HMRPayload {
   index?: number
 }
 
-export const hmrMiddleware: Middleware = ({ root, app, server }) => {
+export const hmrPlugin: Plugin = ({ root, app, server }) => {
   app.use((ctx, next) => {
     if (ctx.path !== '/__hmrClient') {
       return next()

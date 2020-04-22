@@ -1,14 +1,13 @@
 import http, { Server } from 'http'
 import Koa from 'koa'
-import { hmrMiddleware } from './middlewares/hmr'
-import { moduleResolverMiddleware } from './middlewares/modules'
-import { vueMiddleware } from './middlewares/vue'
-import { serveMiddleware } from './middlewares/serve'
-import { historyFallbackMiddleware } from './middlewares/historyFallback'
+import { modulesPlugin } from './plugins/modules'
+import { vuePlugin } from './plugins/vue'
+import { hmrPlugin } from './plugins/hmr'
+import { servePlugin } from './plugins/serve'
 
-export type Middleware = (ctx: MiddlewareCtx) => void
+export type Plugin = (ctx: PluginContext) => void
 
-export interface MiddlewareCtx {
+export interface PluginContext {
   root: string
   app: Koa
   server: Server
@@ -16,25 +15,24 @@ export interface MiddlewareCtx {
 
 export interface ServerConfig {
   root?: string
-  middlewares?: Middleware[]
+  plugins?: Plugin[]
 }
 
-const middlewares: Middleware[] = [
-  hmrMiddleware,
-  moduleResolverMiddleware,
-  vueMiddleware,
-  historyFallbackMiddleware,
-  serveMiddleware
+const internalPlugins: Plugin[] = [
+  modulesPlugin,
+  vuePlugin,
+  hmrPlugin,
+  servePlugin
 ]
 
 export function createServer({
   root = process.cwd(),
-  middlewares: userMiddlewares = []
+  plugins = []
 }: ServerConfig = {}): Server {
   const app = new Koa()
   const server = http.createServer(app.callback())
 
-  ;[...userMiddlewares, ...middlewares].forEach((m) =>
+  ;[...plugins, ...internalPlugins].forEach((m) =>
     m({
       root,
       app,

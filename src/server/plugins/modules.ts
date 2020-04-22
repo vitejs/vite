@@ -1,4 +1,4 @@
-import { Middleware } from '../index'
+import { Plugin } from '../index'
 import { resolveVue } from '../resolveVue'
 import path from 'path'
 import { createReadStream } from 'fs'
@@ -10,7 +10,7 @@ import MagicString from 'magic-string'
 const idToFileMap = new Map()
 const fileToIdMap = new Map()
 
-export const moduleResolverMiddleware: Middleware = ({ root, app }) => {
+export const modulesPlugin: Plugin = ({ root, app }) => {
   // rewrite named module imports to `/__modules/:id` requests
   app.use(async (ctx, next) => {
     await next()

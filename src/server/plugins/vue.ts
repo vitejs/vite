@@ -1,4 +1,4 @@
-import { Middleware } from '../index'
+import { Plugin } from '../index'
 import path from 'path'
 import { promises as fs } from 'fs'
 import {
@@ -9,7 +9,7 @@ import {
 import { resolveCompiler } from '../resolveVue'
 import hash_sum from 'hash-sum'
 
-export const vueMiddleware: Middleware = ({ root, app }) => {
+export const vuePlugin: Plugin = ({ root, app }) => {
   app.use(async (ctx, next) => {
     if (!ctx.path.endsWith('.vue')) {
       return next()

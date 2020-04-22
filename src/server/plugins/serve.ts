@@ -1,6 +1,7 @@
-import { Middleware } from '../index'
+import { Plugin } from '../index'
 
-export const historyFallbackMiddleware: Middleware = ({ app }) => {
+export const servePlugin: Plugin = ({ root, app }) => {
+  // history API fallback
   app.use((ctx, next) => {
     const cleanUrl = ctx.url.split('?')[0].split('#')[0]
     if (ctx.method !== 'GET' || cleanUrl.includes('.')) {
@@ -27,4 +28,6 @@ export const historyFallbackMiddleware: Middleware = ({ app }) => {
     ctx.url = '/index.html'
     return next()
   })
+
+  app.use(require('koa-static')(root))
 }
