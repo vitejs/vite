@@ -119,12 +119,19 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
 
     // resolve from node_modules
     try {
-      const pkgPath = resolve(root, `${id}/package.json`)
+      // get the module name in case of deep imports like 'foo/dist/bar.js'
+      let moduleName = id
+      const deepIndex = id.indexOf('/')
+      if (deepIndex > 0) {
+        moduleName = id.slice(0, deepIndex)
+      }
+      const pkgPath = resolve(root, `${moduleName}/package.json`)
       const pkg = require(pkgPath)
-      const modulePath = path.join(
-        path.dirname(pkgPath),
-        pkg.module || pkg.main
-      )
+      const moduleRelativePath =
+        deepIndex > 0
+          ? id.slice(deepIndex + 1)
+          : pkg.module || pkg.main || 'index.js'
+      const modulePath = path.join(path.dirname(pkgPath), moduleRelativePath)
       idToFileMap.set(id, modulePath)
       fileToIdMap.set(path.basename(modulePath), id)
       ctx.body = await cachedRead(modulePath)
