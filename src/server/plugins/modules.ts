@@ -7,13 +7,14 @@ import { init as initLexer, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { cachedRead } from '../utils'
 import { promises as fs } from 'fs'
+import { hmrClientPublicPath } from './hmr'
 
 const idToFileMap = new Map()
 const fileToIdMap = new Map()
 const webModulesMap = new Map()
 
 export const modulesPlugin: Plugin = ({ root, app }) => {
-  // rewrite named module imports to `/__modules/:id` requests
+  // rewrite named module imports to `/@modules/:id` requests
   app.use(async (ctx, next) => {
     await next()
 
@@ -37,8 +38,8 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
     // regardless of the extension of the original files.
     if (
       ctx.response.is('js') &&
-      // skip dependency modules
-      !ctx.path.startsWith(`/__`) &&
+      // skip special requests (internal scripts & module redirects)
+      !ctx.path.startsWith(`/@`) &&
       // only need to rewrite for <script> part in vue files
       !(ctx.path.endsWith('.vue') && ctx.query.type != null)
     ) {
@@ -51,8 +52,8 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
     }
   })
 
-  // handle /__modules/:id requests
-  const moduleRE = /^\/__modules\//
+  // handle /@modules/:id requests
+  const moduleRE = /^\/@modules\//
   app.use(async (ctx, next) => {
     if (!moduleRE.test(ctx.path)) {
       return next()
@@ -175,6 +176,7 @@ async function resolveWebModule(
 // so that we can determine what files to hot reload
 export const importerMap = new Map<string, Set<string>>()
 export const importeeMap = new Map<string, Set<string>>()
+export const hotBoundariesMap = new Map<string, Set<string>>()
 
 function rewriteImports(source: string, importer: string, timestamp?: string) {
   try {
@@ -190,11 +192,12 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
 
       imports.forEach(({ s: start, e: end, d: dynamicIndex }) => {
         const id = source.substring(start, end)
-        if (dynamicIndex < 0) {
+        if (dynamicIndex === -1) {
           if (/^[^\/\.]/.test(id)) {
-            s.overwrite(start, end, `/__modules/${id}`)
+            s.overwrite(start, end, `/@modules/${id}`)
             hasReplaced = true
-          } else if (importer && !id.startsWith(`/__`)) {
+          } else if (id === hmrClientPublicPath) {
+          } else {
             // force re-fetch all imports by appending timestamp
             // if this is a hmr refresh request
             if (timestamp) {
@@ -215,7 +218,7 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
             }
             importers.add(importer)
           }
-        } else {
+        } else if (dynamicIndex >= 0) {
           // TODO dynamic import
         }
       })
@@ -238,6 +241,7 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
 
     return source
   } catch (e) {
+    debugger
     console.error(`Error: module imports rewrite failed for source:\n`, source)
     return source
   }

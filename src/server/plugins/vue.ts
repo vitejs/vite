@@ -9,6 +9,7 @@ import { resolveCompiler } from '../resolveVue'
 import hash_sum from 'hash-sum'
 import { cachedRead } from '../utils'
 import LRUCache from 'lru-cache'
+import { hmrClientPublicPath } from './hmr'
 
 interface CacheEntry {
   descriptor?: SFCDescriptor
@@ -119,7 +120,7 @@ function compileSFCMain(
 
   timestamp = timestamp ? `&t=${timestamp}` : ``
   // inject hmr client
-  let code = `import { updateStyle } from "/__hmrClient"\n`
+  let code = `import { updateStyle } from "${hmrClientPublicPath}"\n`
   if (descriptor.script) {
     code += descriptor.script.content.replace(
       `export default`,
@@ -175,7 +176,7 @@ function compileSFCTemplate(
     filename,
     compilerOptions: {
       scopeId: scoped ? `data-v-${hash_sum(pathname)}` : null,
-      runtimeModuleName: '/__modules/vue'
+      runtimeModuleName: '/@modules/vue'
     }
   })
 

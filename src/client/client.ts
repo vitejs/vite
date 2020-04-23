@@ -65,3 +65,13 @@ export function updateStyle(id: string, url: string) {
   }
   link.setAttribute('href', url)
 }
+
+export const hot = {
+  accept(
+    boundaryUrl: string,
+    deps: string[],
+    callback: (modules: object[]) => void
+  ) {
+    // TODO
+  }
+}
