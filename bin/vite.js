@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const argv = require('minimist')(process.argv.slice(2))
-const server = require('../dist/server').createServer(argv)
+const server = require('../dist').createServer(argv)
 
 let port = argv.port || 3000
 

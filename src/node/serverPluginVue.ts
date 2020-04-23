@@ -1,15 +1,15 @@
-import { Plugin } from '../index'
+import { Plugin } from './server'
 import path from 'path'
 import {
   SFCDescriptor,
   SFCTemplateBlock,
   SFCStyleBlock
 } from '@vue/compiler-sfc'
-import { resolveCompiler } from '../resolveVue'
+import { resolveCompiler } from './resolveVue'
 import hash_sum from 'hash-sum'
-import { cachedRead } from '../utils'
+import { cachedRead } from './utils'
 import LRUCache from 'lru-cache'
-import { hmrClientPublicPath } from './hmr'
+import { hmrClientPublicPath } from './serverPluginHmr'
 
 interface CacheEntry {
   descriptor?: SFCDescriptor

@@ -1,10 +1,10 @@
 import http, { Server } from 'http'
 import Koa from 'koa'
 import chokidar, { FSWatcher } from 'chokidar'
-import { modulesPlugin } from './plugins/modules'
-import { vuePlugin } from './plugins/vue'
-import { hmrPlugin } from './plugins/hmr'
-import { servePlugin } from './plugins/serve'
+import { modulesPlugin } from './serverPluginModules'
+import { vuePlugin } from './serverPluginVue'
+import { hmrPlugin } from './serverPluginHmr'
+import { servePlugin } from './serverPluginServe'
 
 export type Plugin = (ctx: PluginContext) => void
 

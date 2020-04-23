@@ -1,4 +1,4 @@
-import { Plugin } from '../index'
+import { Plugin } from './server'
 
 const debug = require('debug')('vite:history')
 

@@ -28,18 +28,19 @@
 //    so that on the client, the `hot.accept` call would have reigstered for
 //    updates using the full paths of the dependencies.
 
-import { Plugin } from '../index'
+import { Plugin } from './server'
 import path from 'path'
 import WebSocket from 'ws'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
-import { parseSFC, vueCache } from './vue'
-import { cachedRead } from '../utils'
-import { importerMap, hmrBoundariesMap } from './modules'
+import { parseSFC, vueCache } from './serverPluginVue'
+import { cachedRead } from './utils'
+import { importerMap, hmrBoundariesMap } from './serverPluginModules'
 
 const debug = require('debug')('vite:hmr')
 
-const hmrClientFilePath = path.resolve(__dirname, '../../client/client.js')
+// client and node files are placed flat in the dist folder
+const hmrClientFilePath = path.resolve(__dirname, './client.js')
 export const hmrClientPublicPath = '/@hmr'
 
 interface HMRPayload {

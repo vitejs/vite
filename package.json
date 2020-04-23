@@ -6,17 +6,17 @@
   "bin": {
     "vite": "bin/vite.js"
   },
-  "main": "dist/server/index.js",
-  "types": "dist/server/index.d.ts",
+  "main": "dist/node/index.js",
+  "types": "dist/node/index.d.ts",
   "files": [
     "bin",
     "dist"
   ],
   "scripts": {
-    "dev": "run-p dev-client dev-server",
+    "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --p src/client",
-    "dev-server": "tsc -w --p src/server",
-    "build": "rm -rf dist && tsc -p src/client && tsc -p src/server",
+    "dev-node": "tsc -w --p src/node",
+    "build": "rm -rf dist && tsc -p src/client && tsc -p src/node",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "yarn build && jest",
     "prepublishOnly": "yarn build"
