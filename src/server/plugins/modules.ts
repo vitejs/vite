@@ -6,9 +6,11 @@ import { Readable } from 'stream'
 import { init as initLexer, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { cachedRead } from '../utils'
+import { promises as fs } from 'fs'
 
 const idToFileMap = new Map()
 const fileToIdMap = new Map()
+const webModulesMap = new Map()
 
 export const modulesPlugin: Plugin = ({ root, app }) => {
   // rewrite named module imports to `/__modules/:id` requests
@@ -99,7 +101,18 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
       }
     }
 
-    // TODO support resolving from Snowpack's web_modules
+    try {
+      const webModulePath = await resolveWebModule(root, id)
+      if (webModulePath) {
+        idToFileMap.set(id, webModulePath)
+        fileToIdMap.set(path.basename(webModulePath), id)
+        ctx.body = await cachedRead(webModulePath)
+        return
+      }
+    } catch (e) {
+      console.error(e)
+      ctx.status = 404
+    }
 
     // resolve from node_modules
     try {
@@ -132,6 +145,29 @@ async function readBody(stream: Readable | string): Promise<string> {
     })
   } else {
     return stream
+  }
+}
+
+async function resolveWebModule(
+  root: string,
+  id: string
+): Promise<string | undefined> {
+  const webModulePath = webModulesMap.get(id)
+  if (webModulePath) {
+    return webModulePath
+  }
+  const importMapPath = path.join(root, 'web_modules', 'import-map.json')
+  if (await fs.stat(importMapPath).catch((e) => false)) {
+    const importMap = require(importMapPath)
+    if (importMap.imports) {
+      const webModulesDir = path.dirname(importMapPath)
+      Object.entries(
+        importMap.imports
+      ).forEach(([key, val]: [string, string]) =>
+        webModulesMap.set(key, path.join(webModulesDir, val))
+      )
+      return webModulesMap.get(id)
+    }
   }
 }
 
