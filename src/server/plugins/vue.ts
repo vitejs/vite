@@ -64,7 +64,7 @@ export const vuePlugin: Plugin = ({ root, app }) => {
     if (query.type === 'style') {
       const index = Number(query.index)
       ctx.type = 'css'
-      ctx.body = compileSFCStyle(
+      ctx.body = await compileSFCStyle(
         root,
         descriptor.styles[index],
         index,
@@ -190,25 +190,28 @@ function compileSFCTemplate(
   return code
 }
 
-function compileSFCStyle(
+async function compileSFCStyle(
   root: string,
   style: SFCStyleBlock,
   index: number,
   filename: string,
   pathname: string
-): string {
+): Promise<string> {
   let cached = vueCache.get(filename)
   if (cached && cached.styles && cached.styles[index]) {
     return cached.styles[index]
   }
 
   const id = hash_sum(pathname)
-  const { code, errors } = resolveCompiler(root).compileStyle({
+  const { code, errors } = await resolveCompiler(root).compileStyleAsync({
     source: style.content,
     filename,
     id: `data-v-${id}`,
-    scoped: style.scoped != null
+    scoped: style.scoped != null,
+    preprocessLang: style.lang as any
+    // TODO load postcss config if present
   })
+
   // TODO css modules
 
   if (errors) {
