@@ -5,3 +5,5 @@ TODOs.md
 playground
 *.log
 test/temp
+.vscode
+.circleci
