@@ -6,6 +6,7 @@ import chokidar from 'chokidar'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache } from './vue'
 import { cachedRead } from '../utils'
+import { importerMap } from './modules'
 
 const hmrClientPath = path.resolve(__dirname, '../../client/client.js')
 
@@ -43,87 +44,141 @@ export const hmrPlugin: Plugin = ({ root, app, server }) => {
     }
   })
 
-  const notify = (payload: HMRPayload) =>
-    sockets.forEach((s) => s.send(JSON.stringify(payload)))
+  const notify = (payload: HMRPayload) => {
+    const stringified = JSON.stringify(payload)
+    console.log(`[hmr] ${stringified}`)
+    sockets.forEach((s) => s.send(stringified))
+  }
 
   const watcher = chokidar.watch(root, {
     ignored: [/node_modules/]
   })
 
   watcher.on('change', async (file) => {
-    const resourcePath = '/' + path.relative(root, file)
-    const send = (payload: HMRPayload) => {
-      console.log(`[hmr] ${JSON.stringify(payload)}`)
-      notify(payload)
-    }
-
+    const servedPath = '/' + path.relative(root, file)
     if (file.endsWith('.vue')) {
-      const cacheEntry = vueCache.get(file)
-      vueCache.del(file)
-
-      const descriptor = await parseSFC(root, file)
-      if (!descriptor) {
-        // read failed
-        return
-      }
-
-      const prevDescriptor = cacheEntry && cacheEntry.descriptor
-      if (!prevDescriptor) {
-        // the file has never been accessed yet
-        return
-      }
-
-      // check which part of the file changed
-      if (!isEqual(descriptor.script, prevDescriptor.script)) {
-        send({
-          type: 'reload',
-          path: resourcePath
-        })
-        return
-      }
-
-      if (!isEqual(descriptor.template, prevDescriptor.template)) {
-        send({
-          type: 'rerender',
-          path: resourcePath
-        })
-        return
-      }
-
-      const prevStyles = prevDescriptor.styles || []
-      const nextStyles = descriptor.styles || []
-      if (
-        prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)
-      ) {
-        send({
-          type: 'reload',
-          path: resourcePath
-        })
-      }
-      const styleId = hash_sum(resourcePath)
-      nextStyles.forEach((_, i) => {
-        if (!prevStyles[i] || !isEqual(prevStyles[i], nextStyles[i])) {
-          send({
-            type: 'style-update',
-            path: resourcePath,
-            index: i,
-            id: `${styleId}-${i}`
-          })
-        }
-      })
-      prevStyles.slice(nextStyles.length).forEach((_, i) => {
-        send({
-          type: 'style-remove',
-          path: resourcePath,
-          id: `${styleId}-${i + nextStyles.length}`
-        })
-      })
+      handleVueSFCReload(file, servedPath)
     } else {
-      send({
-        type: 'full-reload'
-      })
+      // normal js file
+      const importers = importerMap.get(servedPath)
+      if (importers) {
+        const vueImporters = new Set<string>()
+        const jsHotImporters = new Set<string>()
+        const hasDeadEnd = walkImportChain(
+          importers,
+          vueImporters,
+          jsHotImporters
+        )
+
+        if (hasDeadEnd) {
+          notify({
+            type: 'full-reload'
+          })
+        } else {
+          vueImporters.forEach((vueImporter) => {
+            notify({
+              type: 'reload',
+              path: vueImporter
+            })
+          })
+          console.log(jsHotImporters)
+        }
+      }
     }
   })
+
+  function walkImportChain(
+    currentImporters: Set<string>,
+    vueImporters: Set<string>,
+    jsHotImporters: Set<string>
+  ): boolean {
+    let hasDeadEnd = false
+    for (const importer of currentImporters) {
+      if (importer.endsWith('.vue')) {
+        vueImporters.add(importer)
+      } else if (isHotBoundary(importer)) {
+        jsHotImporters.add(importer)
+      } else {
+        const parentImpoters = importerMap.get(importer)
+        if (!parentImpoters) {
+          hasDeadEnd = true
+        } else {
+          hasDeadEnd = walkImportChain(
+            parentImpoters,
+            vueImporters,
+            jsHotImporters
+          )
+        }
+      }
+    }
+    return hasDeadEnd
+  }
+
+  function isHotBoundary(servedPath: string): boolean {
+    // TODO
+    return false
+  }
+
+  async function handleVueSFCReload(file: string, servedPath: string) {
+    const cacheEntry = vueCache.get(file)
+    vueCache.del(file)
+
+    const descriptor = await parseSFC(root, file)
+    if (!descriptor) {
+      // read failed
+      return
+    }
+
+    const prevDescriptor = cacheEntry && cacheEntry.descriptor
+    if (!prevDescriptor) {
+      // the file has never been accessed yet
+      return
+    }
+
+    // check which part of the file changed
+    if (!isEqual(descriptor.script, prevDescriptor.script)) {
+      notify({
+        type: 'reload',
+        path: servedPath
+      })
+      return
+    }
+
+    if (!isEqual(descriptor.template, prevDescriptor.template)) {
+      notify({
+        type: 'rerender',
+        path: servedPath
+      })
+      return
+    }
+
+    const prevStyles = prevDescriptor.styles || []
+    const nextStyles = descriptor.styles || []
+    if (prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)) {
+      notify({
+        type: 'reload',
+        path: servedPath
+      })
+    }
+    const styleId = hash_sum(servedPath)
+    nextStyles.forEach((_, i) => {
+      if (!prevStyles[i] || !isEqual(prevStyles[i], nextStyles[i])) {
+        notify({
+          type: 'style-update',
+          path: servedPath,
+          index: i,
+          id: `${styleId}-${i}`
+        })
+      }
+    })
+    prevStyles.slice(nextStyles.length).forEach((_, i) => {
+      notify({
+        type: 'style-remove',
+        path: servedPath,
+        id: `${styleId}-${i + nextStyles.length}`
+      })
+    })
+  }
 }
 
 function isEqual(a: SFCBlock | null, b: SFCBlock | null) {

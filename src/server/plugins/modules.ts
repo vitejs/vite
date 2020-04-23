@@ -25,13 +25,13 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
       ctx.body = html.replace(
         /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
         (_, openTag, script) => {
-          return `${openTag}${rewriteImports(script)}</script>`
+          return `${openTag}${rewriteImports(script, '/index.html')}</script>`
         }
       )
     }
 
     // we are doing the js rewrite after all other middlewares have finished;
-    // this allows us to post-process javascript produced any user middlewares
+    // this allows us to post-process javascript produced by user middlewares
     // regardless of the extension of the original files.
     if (
       ctx.response.is('js') &&
@@ -41,7 +41,11 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
       !(ctx.path.endsWith('.vue') && ctx.query.type != null)
     ) {
       await initLexer
-      ctx.body = rewriteImports(await readBody(ctx.body))
+      ctx.body = rewriteImports(
+        await readBody(ctx.body),
+        ctx.url.replace(/(&|\?)t=\d+/, ''),
+        ctx.query.t
+      )
     }
   })
 
@@ -131,24 +135,68 @@ async function readBody(stream: Readable | string): Promise<string> {
   }
 }
 
-function rewriteImports(source: string) {
+// while we lex the files for imports we also build a import graph
+// so that we can determine what files to hot reload
+export const importerMap = new Map<string, Set<string>>()
+export const importeeMap = new Map<string, Set<string>>()
+
+function rewriteImports(source: string, importer: string, timestamp?: string) {
   try {
     const [imports] = parse(source)
 
     if (imports.length) {
       const s = new MagicString(source)
       let hasReplaced = false
+
+      const prevImportees = importeeMap.get(importer)
+      const currentImportees = new Set<string>()
+      importeeMap.set(importer, currentImportees)
+
       imports.forEach(({ s: start, e: end, d: dynamicIndex }) => {
         const id = source.substring(start, end)
         if (dynamicIndex < 0) {
           if (/^[^\/\.]/.test(id)) {
             s.overwrite(start, end, `/__modules/${id}`)
             hasReplaced = true
+          } else if (importer && !id.startsWith(`/__`)) {
+            // force re-fetch all imports by appending timestamp
+            // if this is a hmr refresh request
+            if (timestamp) {
+              s.overwrite(
+                start,
+                end,
+                `${id}${/\?/.test(id) ? `&` : `?`}t=${timestamp}`
+              )
+              hasReplaced = true
+            }
+            // save the import chain for hmr analysis
+            const importee = path.join(path.dirname(importer), id)
+            currentImportees.add(importee)
+            let importers = importerMap.get(importee)
+            if (!importers) {
+              importers = new Set()
+              importerMap.set(importee, importers)
+            }
+            importers.add(importer)
           }
         } else {
           // TODO dynamic import
         }
       })
+
+      // since the importees may have changed due to edits,
+      // check if we need to remove this importer from certain importees
+      if (prevImportees) {
+        prevImportees.forEach((importee) => {
+          if (!currentImportees.has(importee)) {
+            const importers = importerMap.get(importee)
+            if (importers) {
+              importers.delete(importer)
+            }
+          }
+        })
+      }
+
       return hasReplaced ? s.toString() : source
     }
 
