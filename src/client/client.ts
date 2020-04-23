@@ -9,33 +9,44 @@ const socket = new WebSocket(`ws://${location.host}`)
 
 // Listen for messages
 socket.addEventListener('message', ({ data }) => {
-  const { type, path, id, index } = JSON.parse(data)
+  const { type, path, id, index, timestamp } = JSON.parse(data)
   switch (type) {
     case 'connected':
       console.log(`[vite] connected.`)
       break
-    case 'reload':
-      import(`${path}?t=${Date.now()}`).then((m) => {
+    case 'vue-reload':
+      import(`${path}?t=${timestamp}`).then((m) => {
         __VUE_HMR_RUNTIME__.reload(path, m.default)
         console.log(`[vite] ${path} reloaded.`)
       })
       break
-    case 'rerender':
-      import(`${path}?type=template&t=${Date.now()}`).then((m) => {
+    case 'vue-rerender':
+      import(`${path}?type=template&t=${timestamp}`).then((m) => {
         __VUE_HMR_RUNTIME__.rerender(path, m.render)
         console.log(`[vite] ${path} template updated.`)
       })
       break
-    case 'style-update':
+    case 'vue-style-update':
+      updateStyle(id, `${path}?type=style&index=${index}&t=${timestamp}`)
       console.log(
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
-      updateStyle(id, `${path}?type=style&index=${index}&t=${Date.now()}`)
       break
-    case 'style-remove':
+    case 'vue-style-remove':
       const link = document.getElementById(`vite-css-${id}`)
       if (link) {
         document.head.removeChild(link)
+      }
+      break
+    case 'js-update':
+      const update = jsUpdateMap.get(path)
+      if (update) {
+        update(timestamp)
+        console.log(`[vite]: js module reloaded: `, path)
+      } else {
+        console.error(
+          `[vite] got js update notification but no client callback was registered. Something is wrong.`
+        )
       }
       break
     case 'full-reload':
@@ -66,12 +77,22 @@ export function updateStyle(id: string, url: string) {
   link.setAttribute('href', url)
 }
 
+const jsUpdateMap = new Map<string, (timestamp: number) => void>()
+
 export const hot = {
   accept(
-    boundaryUrl: string,
-    deps: string[],
-    callback: (modules: object[]) => void
+    importer: string,
+    deps: string | string[],
+    callback: (modules: object | object[]) => void
   ) {
-    // TODO
+    jsUpdateMap.set(importer, (timestamp: number) => {
+      if (Array.isArray(deps)) {
+        Promise.all(deps.map((dep) => import(dep + `?t=${timestamp}`))).then(
+          callback
+        )
+      } else {
+        import(deps + `?t=${timestamp}`).then(callback)
+      }
+    })
   }
 }

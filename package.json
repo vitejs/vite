@@ -38,6 +38,7 @@
     ]
   },
   "dependencies": {
+    "@babel/parser": "^7.9.4",
     "@types/koa": "^2.11.3",
     "@vue/compiler-sfc": "^3.0.0-beta.3",
     "chokidar": "^3.3.1",
