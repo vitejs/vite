@@ -83,7 +83,7 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
       // assumes the `.js` and `.js.map` files to have the same prefix.
       const sourceMapRequest = id
       const jsRequest = sourceMapRequest.replace(/\.map$/, '')
-      const moduleId = fileToIdMap.get(jsRequest)
+      const moduleId = fileToIdMap.get(path.basename(jsRequest))
       if (!moduleId) {
         console.error(
           `[vite] failed to infer original js file for source map request ` +
@@ -95,7 +95,7 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
         const modulePath = idToFileMap.get(moduleId)
         const sourceMapPath = path.join(
           path.dirname(modulePath),
-          sourceMapRequest
+          path.basename(sourceMapRequest)
         )
         idToFileMap.set(sourceMapRequest, sourceMapPath)
         ctx.type = 'application/json'
