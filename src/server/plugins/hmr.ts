@@ -37,6 +37,8 @@ import { parseSFC, vueCache } from './vue'
 import { cachedRead } from '../utils'
 import { importerMap, hmrBoundariesMap } from './modules'
 
+const debug = require('debug')('vite:hmr')
+
 const hmrClientFilePath = path.resolve(__dirname, '../../client/client.js')
 export const hmrClientPublicPath = '/@hmr'
 
@@ -53,6 +55,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher }) => {
     if (ctx.path !== hmrClientPublicPath) {
       return next()
     }
+    debug('serving hmr client')
     ctx.type = 'js'
     ctx.body = await cachedRead(hmrClientFilePath)
   })
@@ -62,6 +65,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher }) => {
   const sockets = new Set<WebSocket>()
 
   wss.on('connection', (socket) => {
+    debug('ws client connected')
     sockets.add(socket)
     socket.send(JSON.stringify({ type: 'connected' }))
     socket.on('close', () => {
@@ -76,8 +80,8 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher }) => {
   })
 
   const notify = (payload: HMRPayload) => {
-    const stringified = JSON.stringify(payload)
-    console.log(`[hmr] ${stringified}`)
+    const stringified = JSON.stringify(payload, null, 2)
+    debug(`update: ${stringified}`)
     sockets.forEach((s) => s.send(stringified))
   }
 

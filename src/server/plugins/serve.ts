@@ -1,18 +1,28 @@
 import { Plugin } from '../index'
 
+const debug = require('debug')('vite:history')
+
 export const servePlugin: Plugin = ({ root, app }) => {
   // history API fallback
   app.use((ctx, next) => {
     const cleanUrl = ctx.url.split('?')[0].split('#')[0]
-    if (ctx.method !== 'GET' || cleanUrl.includes('.')) {
+    if (ctx.method !== 'GET') {
+      debug(`not redirecting ${ctx.url} (not GET)`)
+      return next()
+    }
+
+    if (cleanUrl.includes('.')) {
+      debug(`not redirecting ${ctx.url} (relative url)`)
       return next()
     }
 
     if (!ctx.headers || typeof ctx.headers.accept !== 'string') {
+      debug(`not redirecting ${ctx.url} (no headers.accept)`)
       return next()
     }
 
     if (ctx.headers.accept.includes('application/json')) {
+      debug(`not redirecting ${ctx.url} (json)`)
       return next()
     }
 
@@ -22,9 +32,11 @@ export const servePlugin: Plugin = ({ root, app }) => {
         ctx.headers.accept.includes('*/*')
       )
     ) {
+      debug(`not redirecting ${ctx.url} (not accepting html)`)
       return next()
     }
 
+    debug(`redirecting ${ctx.url} to /index.html`)
     ctx.url = '/index.html'
     return next()
   })

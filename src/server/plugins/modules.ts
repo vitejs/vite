@@ -12,6 +12,9 @@ import { parse } from '@babel/parser'
 import { StringLiteral } from '@babel/types'
 import LRUCache from 'lru-cache'
 
+const debugImportRewrite = require('debug')('vite:rewrite')
+const debugModuleResolution = require('debug')('vite:resolve')
+
 const idToFileMap = new Map()
 const fileToIdMap = new Map()
 const webModulesMap = new Map()
@@ -20,7 +23,9 @@ const rewriteCache = new LRUCache({ max: 65535 })
 export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
   // bust module rewrite cache on file change
   watcher.on('change', (file) => {
-    rewriteCache.del('/' + path.relative(root, file))
+    const servedPath = '/' + path.relative(root, file)
+    debugImportRewrite(`${servedPath}: cache busted`)
+    rewriteCache.del(servedPath)
   })
 
   // rewrite named module imports to `/@modules/:id` requests
@@ -33,6 +38,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
 
     if (ctx.url === '/index.html') {
       if (rewriteCache.has('/index.html')) {
+        debugImportRewrite('/index.html: serving from cache')
         ctx.body = rewriteCache.get('/index.html')
       } else {
         const html = await readBody(ctx.body)
@@ -59,6 +65,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
       !(ctx.path.endsWith('.vue') && ctx.query.type != null)
     ) {
       if (rewriteCache.has(ctx.path)) {
+        debugImportRewrite(`${ctx.path}: serving from cache`)
         ctx.body = rewriteCache.get(ctx.path)
       } else {
         await initLexer
@@ -74,6 +81,11 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
 
   // handle /@modules/:id requests
   const moduleRE = /^\/@modules\//
+  const getDebugPath = (p: string) => {
+    const relative = path.relative(root, p)
+    return relative.startsWith('..') ? p : relative
+  }
+
   app.use(async (ctx, next) => {
     if (!moduleRE.test(ctx.path)) {
       return next()
@@ -84,13 +96,16 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
 
     // special handling for vue's runtime.
     if (id === 'vue') {
-      ctx.body = await cachedRead(resolveVue(root).vue)
+      const vuePath = resolveVue(root).vue
+      ctx.body = await cachedRead(vuePath)
+      debugModuleResolution(`vue -> ${getDebugPath(vuePath)}`)
       return
     }
 
     // already resolved and cached
     const cachedPath = idToFileMap.get(id)
     if (cachedPath) {
+      debugModuleResolution(`(cached) ${id} -> ${getDebugPath(cachedPath)}`)
       ctx.body = await cachedRead(cachedPath)
       return
     }
@@ -118,6 +133,9 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
         idToFileMap.set(sourceMapRequest, sourceMapPath)
         ctx.type = 'application/json'
         ctx.body = await cachedRead(sourceMapPath)
+        debugModuleResolution(
+          `(source map) ${id} -> ${getDebugPath(sourceMapPath)}`
+        )
         return
       }
     }
@@ -128,6 +146,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
         idToFileMap.set(id, webModulePath)
         fileToIdMap.set(path.basename(webModulePath), id)
         ctx.body = await cachedRead(webModulePath)
+        debugModuleResolution(`${id} -> ${getDebugPath(webModulePath)}`)
         return
       }
     } catch (e) {
@@ -152,6 +171,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
       const modulePath = path.join(path.dirname(pkgPath), moduleRelativePath)
       idToFileMap.set(id, modulePath)
       fileToIdMap.set(path.basename(modulePath), id)
+      debugModuleResolution(`${id} -> ${getDebugPath(modulePath)}`)
       ctx.body = await cachedRead(modulePath)
     } catch (e) {
       console.error(e)
@@ -224,6 +244,7 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
     const [imports] = parseImports(source)
 
     if (imports.length) {
+      debugImportRewrite(`${importer}: rewriting`)
       const s = new MagicString(source)
       let hasReplaced = false
 
@@ -235,8 +256,10 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
         const id = source.substring(start, end)
         if (dynamicIndex === -1) {
           if (/^[^\/\.]/.test(id)) {
-            s.overwrite(start, end, `/@modules/${id}`)
+            const rewritten = `/@modules/${id}`
+            s.overwrite(start, end, rewritten)
             hasReplaced = true
+            debugImportRewrite(`    "${id}" --> "${rewritten}"`)
           } else if (id === hmrClientPublicPath) {
             if (!/.vue$|.vue\?type=/.test(importer)) {
               // the user explicit imports the HMR API in a js file
@@ -249,6 +272,7 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
             // force re-fetch all imports by appending timestamp
             // if this is a hmr refresh request
             if (timestamp) {
+              debugImportRewrite(`    appending hmr timestamp to "${id}"`)
               s.overwrite(
                 start,
                 end,
@@ -279,7 +303,13 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
         })
       }
 
+      if (!hasReplaced) {
+        debugImportRewrite(`    no imports rewritten.`)
+      }
+
       return hasReplaced ? s.toString() : source
+    } else {
+      debugImportRewrite(`${importer}: no imports found.`)
     }
 
     return source
@@ -288,6 +318,7 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
       `[vite] Error: module imports rewrite failed for ${importer}.\n`,
       e
     )
+    debugImportRewrite(source)
     return source
   }
 }
