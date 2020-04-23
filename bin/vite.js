@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const argv = require('minimist')(process.argv.slice(2))
 const server = require('../dist/server').createServer(argv)
+const getIPv4AddressList = require('../dist/server/utils').getIPv4AddressList
 
 let port = argv.port || 3000
 
@@ -17,7 +18,11 @@ server.on('error', (e) => {
 })
 
 server.on('listening', () => {
-  console.log(`Running at http://localhost:${port}`)
+  console.log(`Running at:`)
+  getIPv4AddressList().forEach((ip) => {
+    console.log(`  > http://${ip}:${port}`)
+  })
+  console.log(' ')
 })
 
 server.listen(port)

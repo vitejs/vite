@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs'
 import LRUCache from 'lru-cache'
+import os from 'os'
 
 interface CacheEntry {
   lastModified: number
@@ -24,4 +25,19 @@ export async function cachedRead(path: string, encoding?: string) {
     lastModified
   })
   return content
+}
+
+export function getIPv4AddressList(): string[] {
+  const networkInterfaces = os.networkInterfaces()
+  let result: string[] = []
+
+  Object.keys(networkInterfaces).forEach((key) => {
+    const ips = (networkInterfaces[key] || [])
+      .filter((details) => details.family === 'IPv4')
+      .map((detail) => detail.address)
+
+    result = result.concat(ips)
+  })
+
+  return result
 }
