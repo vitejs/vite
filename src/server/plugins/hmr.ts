@@ -32,7 +32,6 @@ import { Plugin } from '../index'
 import path from 'path'
 import WebSocket from 'ws'
 import hash_sum from 'hash-sum'
-import chokidar from 'chokidar'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache } from './vue'
 import { cachedRead } from '../utils'
@@ -49,7 +48,7 @@ interface HMRPayload {
   index?: number
 }
 
-export const hmrPlugin: Plugin = ({ root, app, server }) => {
+export const hmrPlugin: Plugin = ({ root, app, server, watcher }) => {
   app.use(async (ctx, next) => {
     if (ctx.path !== hmrClientPublicPath) {
       return next()
@@ -81,10 +80,6 @@ export const hmrPlugin: Plugin = ({ root, app, server }) => {
     console.log(`[hmr] ${stringified}`)
     sockets.forEach((s) => s.send(stringified))
   }
-
-  const watcher = chokidar.watch(root, {
-    ignored: [/node_modules/]
-  })
 
   watcher.on('change', async (file) => {
     const timestamp = Date.now()

@@ -40,8 +40,8 @@ export const modulesPlugin: Plugin = ({ root, app }) => {
     // regardless of the extension of the original files.
     if (
       ctx.response.is('js') &&
-      // skip special requests (internal scripts & module redirects)
-      !ctx.path.startsWith(`/@`) &&
+      // skip internal client
+      !ctx.path.startsWith(`/@hmr`) &&
       // only need to rewrite for <script> part in vue files
       !(ctx.path.endsWith('.vue') && ctx.query.type != null)
     ) {

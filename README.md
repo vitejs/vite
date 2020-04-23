@@ -135,7 +135,8 @@ const { createServer } = require('vite')
 const myPlugin = ({
   root, // project root directory, absolute path
   app, // Koa app instance
-  server // raw http server instance
+  server, // raw http server instance
+  watcher // chokidar file watcher instance
 }) => {
   app.use(async (ctx, next) => {
     // You can do pre-processing here - this will be the raw incoming requests
