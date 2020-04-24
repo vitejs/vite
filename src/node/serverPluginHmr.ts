@@ -40,7 +40,7 @@ import { importerMap, hmrBoundariesMap } from './serverPluginModules'
 const debug = require('debug')('vite:hmr')
 
 // client and node files are placed flat in the dist folder
-const hmrClientFilePath = path.resolve(__dirname, './client.js')
+export const hmrClientFilePath = path.resolve(__dirname, './client.js')
 export const hmrClientPublicPath = '/@hmr'
 
 interface HMRPayload {

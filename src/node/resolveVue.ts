@@ -4,20 +4,27 @@ import sfcCompiler from '@vue/compiler-sfc'
 
 interface ResolvedVuePaths {
   vue: string
+  hasLocalVue: boolean
   compiler: string
 }
 
 let resolved: ResolvedVuePaths | undefined = undefined
 
+const toBuildPaths = (p: ResolvedVuePaths) => ({
+  ...p,
+  vue: p.vue.replace('esm-browser', 'esm-bundler')
+})
+
 // Resolve the correct `vue` and `@vue.compiler-sfc` to use.
 // If the user project has local installations of these, they should be used;
 // otherwise, fallback to the dependency of Vite itself.
-export function resolveVue(root: string): ResolvedVuePaths {
+export function resolveVue(root: string, isBuild = false): ResolvedVuePaths {
   if (resolved) {
-    return resolved
+    return isBuild ? toBuildPaths(resolved) : resolved
   }
   let vuePath: string
   let compilerPath: string
+  let hasLocalVue = true
   try {
     // see if user has local vue installation
     const userVuePkg = resolve(root, 'vue/package.json')
@@ -45,13 +52,16 @@ export function resolveVue(root: string): ResolvedVuePaths {
     }
   } catch (e) {
     // user has no local vue, use vite's dependency version
+    hasLocalVue = false
     vuePath = require.resolve('vue/dist/vue.runtime.esm-browser.js')
     compilerPath = require.resolve('@vue/compiler-sfc')
   }
-  return (resolved = {
+  resolved = {
     vue: vuePath,
+    hasLocalVue,
     compiler: compilerPath
-  })
+  }
+  return isBuild ? toBuildPaths(resolved) : resolved
 }
 
 export function resolveCompiler(cwd: string): typeof sfcCompiler {

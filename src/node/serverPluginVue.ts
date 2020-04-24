@@ -151,6 +151,7 @@ function compileSFCMain(
     code += `\n__script.render = __render`
   }
   code += `\n__script.__hmrId = ${JSON.stringify(pathname)}`
+  code += `\n__script.__file = ${JSON.stringify(filename)}`
   code += `\nexport default __script`
 
   cached = cached || { styles: [] }
