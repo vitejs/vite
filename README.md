@@ -44,11 +44,7 @@ Then run:
 npx vite
 ```
 
-Go to `http://localhost:3000`, edit the `.vue` file to see changes hot-updated instantly.
-
-## How It Works
-
-Imports are requested by the browser as native ES module imports - there's no bundling. The server intercepts requests to `*.vue` files, compiles them on the fly, and sends them back as JavaScript.
+`npx` will automatically install `vite` to `npm`'s global cache before running it. Go to `http://localhost:3000`, edit the `.vue` file to see changes hot-updated instantly.
 
 ## Local Installation
 
@@ -77,6 +73,10 @@ yarn dev
 ```
 
 If you are placing your files in a sub-directory, you can also ask `vite` to serve a different directory with `vite --root some-dir`.
+
+## How It Works
+
+Imports are requested by the browser as native ES module imports - there's no bundling. The server intercepts requests to `*.vue` files, compiles them on the fly, and sends them back as JavaScript.
 
 ## Bare Module Resolving
 
