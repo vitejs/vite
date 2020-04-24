@@ -65,7 +65,7 @@ Add scripts to `package.json` (here showing that serving the files in `src` inst
 ```json
 {
   "scripts": {
-    "dev": "vite --root src"
+    "dev": "vite"
   }
 }
 ```
@@ -75,6 +75,8 @@ npm run dev
 # OR
 yarn dev
 ```
+
+If you are placing your files in a sub-directory, you can also ask `vite` to serve a different directory with `vite --root some-dir`.
 
 ## Bare Module Resolving
 
