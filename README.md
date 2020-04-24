@@ -173,11 +173,15 @@ createServer({
 }).listen(3000)
 ```
 
-## Deploying for Production
+## Building for Production
 
 Starting with version `^0.5.0`, you can run `vite build` to bundle the app and deploy it for production.
 
-Internally, we use a highly opinionated rollup config to generate the build. There is currently intentionally no exposed way to configure the build -- but we will likely tackle that at a later stage.
+- `vite build --root dir`: build files in the target directory instead of current working directory.
+
+- `vite build --cdn`: import `vue` from a CDN link in the built js. This will make the build faster, but overall the page payload will be larger because therer will be no tree-shaking for Vue APIs.
+
+Internally, we use a highly opinionated Rollup config to generate the build. There is currently intentionally no exposed way to configure the build -- we will likely tackle that at a later stage.
 
 ## TODOs
 
