@@ -4,7 +4,7 @@
 
 **⚠️ Warning: Experimental ⚠️**
 
-Create a new project following files:
+Create a new project with the following files:
 
 **package.json**
 
