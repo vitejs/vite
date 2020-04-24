@@ -4,7 +4,19 @@
 
 **⚠️ Warning: Experimental ⚠️**
 
-Create the following files:
+Create a new project following files:
+
+**package.json**
+
+```json
+{
+  "name": "test", 
+  "dependencies": {
+    "vite": "^0.4.0",
+    "vue-next": "^0.0.1"
+  }
+}
+```
 
 **index.html**
 
