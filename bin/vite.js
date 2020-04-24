@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const chalk = require('chalk')
 const argv = require('minimist')(process.argv.slice(2))
+const getIPv4AddressList = require('../dist/utils').getIPv4AddressList
 
 if (argv._[0] === 'build') {
   require('../dist')
@@ -28,7 +29,11 @@ if (argv._[0] === 'build') {
   })
 
   server.on('listening', () => {
-    console.log(`Running at http://localhost:${port}`)
+    console.log(`Running at:`)
+    getIPv4AddressList().forEach((ip) => {
+      console.log(`  > http://${ip}:${port}`)
+    })
+    console.log(' ')
   })
 
   server.listen(port)
