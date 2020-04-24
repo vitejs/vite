@@ -175,7 +175,9 @@ createServer({
 
 ## Deploying for Production
 
-This project is highly experimental at this stage and is not production oriented. However, a valid Vite application can in theory be bundled with [Rollup](https://rollupjs.org/guide/en/) + [`rollup-plugin-vue@next`](https://github.com/vuejs/rollup-plugin-vue/tree/next) so it can be deployed as a static site.
+Starting with version `^0.5.0`, you can run `vite build` to bundle the app and deploy it for production.
+
+Internally, we use a highly opinionated rollup config to generate the build. There is currently intentionally no exposed way to configure the build -- but we will likely tackle that at a later stage.
 
 ## TODOs
 
