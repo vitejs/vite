@@ -3,6 +3,7 @@ import { promises as fs } from 'fs'
 import { rollup as Rollup, Plugin } from 'rollup'
 import { resolveVue } from './resolveVue'
 import { hmrClientPublicPath } from './serverPluginHmr'
+import resolve from 'resolve-from'
 import chalk from 'chalk'
 
 export interface BuildOptions {
@@ -84,7 +85,15 @@ export async function build({
     input: path.resolve(root, 'index.html'),
     plugins: [
       vitePlugin,
-      require('rollup-plugin-vue')(),
+      require('rollup-plugin-vue')({
+        // TODO: for now we directly handle pre-processors in rollup-plugin-vue
+        // so that we don't need to install dedicated rollup plugins.
+        // In the future we probably want to still use rollup plugins so that
+        // preprocessors are also supported by importing from js files.
+        preprocessStyles: true,
+        preprocessCustomRequire: (id: string) => require(resolve(root, id))
+        // TODO proxy cssModules config
+      }),
       require('@rollup/plugin-node-resolve')({
         rootDir: root
       }),

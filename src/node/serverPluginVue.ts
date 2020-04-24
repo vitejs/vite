@@ -235,9 +235,7 @@ async function compileSFCStyle(
     scoped: style.scoped != null,
     modules: style.module != null,
     preprocessLang: style.lang as any,
-    preprocessCustomRequire: style.lang
-      ? (id: string) => require(resolve(root, id))
-      : undefined
+    preprocessCustomRequire: (id: string) => require(resolve(root, id))
     // TODO load postcss config if present
   })
 

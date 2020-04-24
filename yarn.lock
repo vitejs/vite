@@ -3665,25 +3665,6 @@ lines-and-columns@^1.1.6:
   resolved "https://registry.yarnpkg.com/lines-and-columns/-/lines-and-columns-1.1.6.tgz#1c00c743b433cd0a4e80758f7b64a57440d9ff00"
   integrity sha1-HADHQ7QzzQpOgHWPe2SldEDZ/wA=
 
-lint-staged@^10.1.1:
-  version "10.1.7"
-  resolved "https://registry.yarnpkg.com/lint-staged/-/lint-staged-10.1.7.tgz#b628f8b010083fe4e116d0af7949a32f1ea6b3a7"
-  integrity sha512-ZkK8t9Ep/AHuJQKV95izSa+DqotftGnSsNeEmCSqbQ6j4C4H0jDYhEZqVOGD1Q2Oe227igbqjMWycWyYbQtpoA==
-  dependencies:
-    chalk "^4.0.0"
-    commander "^5.0.0"
-    cosmiconfig "^6.0.0"
-    debug "^4.1.1"
-    dedent "^0.7.0"
-    execa "^4.0.0"
-    listr "^0.14.3"
-    log-symbols "^3.0.0"
-    micromatch "^4.0.2"
-    normalize-path "^3.0.0"
-    please-upgrade-node "^3.2.0"
-    string-argv "0.3.1"
-    stringify-object "^3.3.0"
-
 lint-staged@^10.1.6:
   version "10.1.6"
   resolved "https://registry.yarnpkg.com/lint-staged/-/lint-staged-10.1.6.tgz#086db5e4f5906642ccf648e9b54375d794a9be81"
@@ -5174,14 +5155,13 @@ rollup-plugin-terser@^5.3.0:
     serialize-javascript "^2.1.2"
     terser "^4.6.2"
 
-rollup-plugin-vue@^6.0.0-alpha.2:
-  version "6.0.0-alpha.2"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-vue/-/rollup-plugin-vue-6.0.0-alpha.2.tgz#4c6efc5080a2227f9ed972f5ac67af0f76fae283"
-  integrity sha512-UFT9km5Zliaeva4bvc3ATlbRJqksiZBx+6TdBFFIkaIJP0reTFg1gtzEohrs9aYNPaM9tF5bH6uBq3aoMwJxCA==
+rollup-plugin-vue@^6.0.0-alpha.4:
+  version "6.0.0-alpha.4"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-vue/-/rollup-plugin-vue-6.0.0-alpha.4.tgz#68055d93a60bed4eb66f94c355ea5485570fa274"
+  integrity sha512-3Ern1zolR2xxXpX1ZuZNYe7U6+lHN5FV9gkDMOk3EFqrDzSNyRGn28xqpC06cOxQg+mVEs0TQW5NzqT786VI2A==
   dependencies:
     debug "^4.1.1"
     hash-sum "^2.0.0"
-    lint-staged "^10.1.1"
     rollup-pluginutils "^2.8.2"
     sourcemap-codec "^1.4.8"
 
