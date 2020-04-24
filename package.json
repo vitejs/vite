@@ -43,7 +43,7 @@
     "@rollup/plugin-node-resolve": "^7.1.3",
     "@rollup/plugin-replace": "^2.3.2",
     "@types/koa": "^2.11.3",
-    "@vue/compiler-sfc": "^3.0.0-beta.3",
+    "@vue/compiler-sfc": "^3.0.0-beta.4",
     "chalk": "^4.0.0",
     "chokidar": "^3.3.1",
     "cssnano": "^4.1.10",
@@ -62,7 +62,7 @@
     "rollup": "^2.7.2",
     "rollup-plugin-terser": "^5.3.0",
     "rollup-plugin-vue": "^6.0.0-alpha.2",
-    "vue": "^3.0.0-beta.3",
+    "vue": "^3.0.0-beta.4",
     "ws": "^7.2.3"
   },
   "devDependencies": {

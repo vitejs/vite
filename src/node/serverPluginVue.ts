@@ -3,19 +3,23 @@ import path from 'path'
 import {
   SFCDescriptor,
   SFCTemplateBlock,
-  SFCStyleBlock
+  SFCStyleBlock,
+  SFCStyleCompileResults
 } from '@vue/compiler-sfc'
 import { resolveCompiler } from './resolveVue'
 import hash_sum from 'hash-sum'
 import { cachedRead } from './utils'
 import LRUCache from 'lru-cache'
 import { hmrClientPublicPath } from './serverPluginHmr'
+import resolve from 'resolve-from'
+
+const debug = require('debug')('vite:sfc')
 
 interface CacheEntry {
   descriptor?: SFCDescriptor
   template?: string
   script?: string
-  styles: string[]
+  styles: SFCStyleCompileResults[]
 }
 
 export const vueCache = new LRUCache<string, CacheEntry>({
@@ -34,6 +38,7 @@ export const vuePlugin: Plugin = ({ root, app }) => {
     const descriptor = await parseSFC(root, filename)
 
     if (!descriptor) {
+      debug(`${ctx.url} - 404`)
       ctx.status = 404
       return
     }
@@ -63,14 +68,21 @@ export const vuePlugin: Plugin = ({ root, app }) => {
 
     if (query.type === 'style') {
       const index = Number(query.index)
-      ctx.type = 'css'
-      ctx.body = await compileSFCStyle(
+      const styleBlock = descriptor.styles[index]
+      const result = await compileSFCStyle(
         root,
-        descriptor.styles[index],
+        styleBlock,
         index,
         filename,
         pathname
       )
+      if (query.module != null) {
+        ctx.type = 'js'
+        ctx.body = `export default ${JSON.stringify(result.modules)}`
+      } else {
+        ctx.type = 'css'
+        ctx.body = result.code
+      }
       return
     }
 
@@ -132,12 +144,24 @@ function compileSFCMain(
 
   const id = hash_sum(pathname)
   let hasScoped = false
+  let hasCSSModules = false
   if (descriptor.styles) {
     descriptor.styles.forEach((s, i) => {
+      const styleRequest = pathname + `?type=style&index=${i}${timestamp}`
       if (s.scoped) hasScoped = true
-      code += `\nupdateStyle("${id}-${i}", ${JSON.stringify(
-        pathname + `?type=style&index=${i}${timestamp}`
-      )})`
+      if (s.module) {
+        if (!hasCSSModules) {
+          code += `\nconst __cssModules = __script.__cssModules = {}`
+          hasCSSModules = true
+        }
+        const styleVar = `__style${i}`
+        const moduleName = typeof s.module === 'string' ? s.module : '$style'
+        code += `\nimport ${styleVar} from ${JSON.stringify(
+          styleRequest + '&module'
+        )}`
+        code += `\n__cssModules[${JSON.stringify(moduleName)}] = ${styleVar}`
+      }
+      code += `\nupdateStyle("${id}-${i}", ${JSON.stringify(styleRequest)})`
     })
     if (hasScoped) {
       code += `\n__script.__scopeId = "data-v-${id}"`
@@ -197,30 +221,32 @@ async function compileSFCStyle(
   index: number,
   filename: string,
   pathname: string
-): Promise<string> {
+): Promise<SFCStyleCompileResults> {
   let cached = vueCache.get(filename)
   if (cached && cached.styles && cached.styles[index]) {
     return cached.styles[index]
   }
 
   const id = hash_sum(pathname)
-  const { code, errors } = await resolveCompiler(root).compileStyleAsync({
+  const result = await resolveCompiler(root).compileStyleAsync({
     source: style.content,
     filename,
     id: `data-v-${id}`,
     scoped: style.scoped != null,
-    preprocessLang: style.lang as any
+    modules: style.module != null,
+    preprocessLang: style.lang as any,
+    preprocessCustomRequire: style.lang
+      ? (id: string) => require(resolve(root, id))
+      : undefined
     // TODO load postcss config if present
   })
 
-  // TODO css modules
-
-  if (errors) {
+  if (result.errors) {
     // TODO
   }
 
   cached = cached || { styles: [] }
-  cached.styles[index] = code
+  cached.styles[index] = result
   vueCache.set(filename, cached)
-  return code
+  return result
 }
