@@ -107,7 +107,7 @@ The above will throw an error by default. `vite` detects such bare module import
   foo()
 
   hot.accept('./foo.js', ({ foo }) => {
-    // the callback recevies the updated './foo.js' module
+    // the callback receives the updated './foo.js' module
     foo()
   })
   ```
