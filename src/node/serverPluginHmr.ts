@@ -36,6 +36,7 @@ import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache } from './serverPluginVue'
 import { cachedRead } from './utils'
 import { importerMap, hmrBoundariesMap } from './serverPluginModules'
+import chalk from 'chalk'
 
 const debug = require('debug')('vite:hmr')
 
@@ -76,6 +77,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher }) => {
 
   wss.on('error', (e: Error & { code: string }) => {
     if (e.code !== 'EADDRINUSE') {
+      console.error(chalk.red(`[vite] WebSocket server error:`))
       console.error(e)
     }
   })

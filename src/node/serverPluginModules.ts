@@ -11,6 +11,7 @@ import { hmrClientPublicPath } from './serverPluginHmr'
 import { parse } from '@babel/parser'
 import { StringLiteral } from '@babel/types'
 import LRUCache from 'lru-cache'
+import chalk from 'chalk'
 
 const debugImportRewrite = require('debug')('vite:rewrite')
 const debugModuleResolution = require('debug')('vite:resolve')
@@ -119,8 +120,10 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
       const moduleId = fileToIdMap.get(path.basename(jsRequest))
       if (!moduleId) {
         console.error(
-          `[vite] failed to infer original js file for source map request ` +
-            sourceMapRequest
+          chalk.red(
+            `[vite] failed to infer original js file for source map request: ` +
+              sourceMapRequest
+          )
         )
         ctx.status = 404
         return
@@ -150,6 +153,9 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
         return
       }
     } catch (e) {
+      console.error(
+        chalk.red(`[vite] Error while resolving web_modules with id "${id}":`)
+      )
       console.error(e)
       ctx.status = 404
     }
@@ -174,6 +180,9 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
       debugModuleResolution(`${id} -> ${getDebugPath(modulePath)}`)
       ctx.body = await cachedRead(modulePath)
     } catch (e) {
+      console.error(
+        chalk.red(`[vite] Error while resolving node_modules with id "${id}":`)
+      )
       console.error(e)
       ctx.status = 404
     }

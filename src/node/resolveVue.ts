@@ -1,6 +1,7 @@
 import path from 'path'
 import resolve from 'resolve-from'
 import sfcCompiler from '@vue/compiler-sfc'
+import chalk from 'chalk'
 
 interface ResolvedVuePaths {
   vue: string
@@ -44,9 +45,11 @@ export function resolveVue(root: string, isBuild = false): ResolvedVuePaths {
     } catch (e) {
       // user has local vue but has no compiler-sfc
       console.error(
-        `[vite] Error: a local installation of \`vue\` is detected but ` +
-          `no matching \`@vue/compiler-sfc\` is found. Make sure to install ` +
-          `both and use the same version.`
+        chalk.red(
+          `[vite] Error: a local installation of \`vue\` is detected but ` +
+            `no matching \`@vue/compiler-sfc\` is found. Make sure to install ` +
+            `both and use the same version.`
+        )
       )
       compilerPath = require.resolve('@vue/compiler-sfc')
     }

@@ -81,10 +81,6 @@ export async function build({
   }
 
   const bundle = await rollup({
-    // TODO
-    // parse index.html
-    // find entry file or script
-    // if inline script, create a temp main file next to it before bundling
     input: path.resolve(root, 'index.html'),
     plugins: [
       vitePlugin,
