@@ -8,12 +8,12 @@ import chalk from 'chalk'
 
 export interface BuildOptions {
   root?: string
-  inlineVue?: boolean
+  cdn?: boolean
 }
 
 export async function build({
   root = process.cwd(),
-  inlineVue = resolveVue(root).hasLocalVue
+  cdn = !resolveVue(root).hasLocalVue
 }: BuildOptions = {}) {
   const start = Date.now()
 
@@ -43,7 +43,7 @@ export async function build({
           return id.startsWith(root) ? id : path.resolve(root, id.slice(1))
         }
       } else if (id === 'vue') {
-        if (inlineVue) {
+        if (!cdn) {
           return resolveVue(root, true).vue
         } else {
           return {
@@ -139,7 +139,7 @@ export async function build({
     ).css
   )
 
-  if (!inlineVue) {
+  if (cdn) {
     // if not inlining vue, inject cdn link so it can start the fetch early
     generatedIndex = injectScript(generatedIndex, cdnLink)
   }
