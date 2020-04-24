@@ -5,6 +5,7 @@ import chalk from 'chalk'
 
 interface ResolvedVuePaths {
   vue: string
+  version: string
   hasLocalVue: boolean
   compiler: string
 }
@@ -26,9 +27,11 @@ export function resolveVue(root: string, isBuild = false): ResolvedVuePaths {
   let vuePath: string
   let compilerPath: string
   let hasLocalVue = true
+  let vueVersion: string
   try {
     // see if user has local vue installation
     const userVuePkg = resolve(root, 'vue/package.json')
+    vueVersion = require(userVuePkg).version
     vuePath = path.join(
       path.dirname(userVuePkg),
       'dist/vue.runtime.esm-browser.js'
@@ -57,10 +60,12 @@ export function resolveVue(root: string, isBuild = false): ResolvedVuePaths {
     // user has no local vue, use vite's dependency version
     hasLocalVue = false
     vuePath = require.resolve('vue/dist/vue.runtime.esm-browser.js')
+    vueVersion = require('vue/package.json').version
     compilerPath = require.resolve('@vue/compiler-sfc')
   }
   resolved = {
     vue: vuePath,
+    version: vueVersion,
     hasLocalVue,
     compiler: compilerPath
   }

@@ -28,9 +28,8 @@ export async function build({
 
   const cssFilename = 'style.css'
 
-  // make sure to use the same verison of vue as the one bundled with
-  // this version of vite.
-  const vueVersion = require('vue/package.json').version
+  // make sure to use the same verison of vue from the CDN.
+  const vueVersion = resolveVue(root).version
   const cdnLink = `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.prod.js`
 
   const vitePlugin: Plugin = {
