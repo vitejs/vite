@@ -34,7 +34,7 @@ export function getIPv4AddressList(): string[] {
   Object.keys(networkInterfaces).forEach((key) => {
     const ips = (networkInterfaces[key] || [])
       .filter((details) => details.family === 'IPv4')
-      .map((detail) => detail.address)
+      .map((detail) => detail.address.replace('127.0.0.1', 'localhost'))
 
     result = result.concat(ips)
   })
