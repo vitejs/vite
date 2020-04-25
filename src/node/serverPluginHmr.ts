@@ -210,7 +210,14 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher }) => {
 
     const prevStyles = prevDescriptor.styles || []
     const nextStyles = descriptor.styles || []
-    if (prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)) {
+    if (
+      prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped) ||
+      // TODO for now we force the component to reload on <style module> change
+      // but this should be optimizable to replace the __cssMoudles object
+      // on script and only trigger a rerender.
+      prevStyles.some((s) => s.module != null) ||
+      nextStyles.some((s) => s.module != null)
+    ) {
       notify({
         type: 'vue-reload',
         path: servedPath,
