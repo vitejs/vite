@@ -1,4 +1,4 @@
-# vite
+# vite ⚡
 
 > No-bundle Dev Server for Vue 3 Single-File Components
 
