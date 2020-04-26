@@ -4,81 +4,45 @@
 
 **⚠️ Warning: Experimental ⚠️**
 
-Create the following files:
-
-**index.html**
-
-```html
-<div id="app"></div>
-<script type="module">
-  import { createApp } from 'vue'
-  import Comp from './Comp.vue'
-
-  createApp(Comp).mount('#app')
-</script>
-```
-
-**Comp.vue**
-
-```vue
-<template>
-  <button @click="count++">{{ count }}</button>
-</template>
-
-<script>
-export default {
-  data: () => ({ count: 0 })
-}
-</script>
-
-<style scoped>
-button {
-  color: red;
-}
-</style>
-```
-
-Then run:
+## Getting Started
 
 ```bash
-npx vite
+$ npx create-vite-app <project-name>
+$ cd <project-name>
+$ npm install
+$ npm run dev
 ```
 
-`npx` will automatically install `vite` to `npm`'s global cache before running it. Go to `http://localhost:3000`, edit the `.vue` file to see changes hot-updated instantly.
+If using Yarn:
 
-## Local Installation
-
-Alternatively, you can install `vite` locally as a dev dependency and run it via npm scripts:
-
-```bash
-npm install -D vite
-# OR
-yarn add -D vite
+``` bash
+$ yarn create vite-app <project-name>
+$ cd <project-name>
+$ yarn
+$ yarn dev
 ```
 
-Add scripts to `package.json` (here showing that serving the files in `src` instead of project root):
+## How is This Different from a Bundler-based Setup?
 
-```json
-{
-  "scripts": {
-    "dev": "vite"
-  }
-}
-```
+The primary difference is that for `vite` there is no bundling during development. The ES Import syntax in your source code is served directly to the browser, and the browser parses them via native `<script module>` support, making HTTP requests for each import. The dev server intercepts the requests and performs code transforms if necessary. For example, an import to a `*.vue` file is compiled on the fly right before it's sent back to the browser.
 
-```bash
-npm run dev
-# OR
-yarn dev
-```
+There are a few advantages of this approach:
 
-If you are placing your files in a sub-directory, you can also ask `vite` to serve a different directory with `vite --root some-dir`.
+- Since there is no bundling work to be done, the server cold start is extremely fast.
 
-## How It Works
+- Code is compiled on demand, so only code actually imported on the current screen is compiled. You don't have to wait until your entire app to be bundled to start developing. This can be a huge difference in apps with dozens of screens.
 
-Imports are requested by the browser as native ES module imports - there's no bundling. The server intercepts requests to `*.vue` files, compiles them on the fly, and sends them back as JavaScript.
+- Hot module replacement (HMR) performance is decoupled from the total number of modules. This makes HMR consistently fast no matter how big your app is.
 
-## Bare Module Resolving
+Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However since this is local development, the difference should be trivial compared to actual compilation time. (There is no compile cost on page reload since already compiled files are cached in memory.)
+
+Finally, because compilation is still done in Node, it can technically support any code transforms a bundler can, and nothing prevents you from eventually bundling the code for production. In fact, `vite` provides a `vite build` command to do exactly that so the app doesn't suffer from network waterfall in production.
+
+`vite` is highly experimental at this stage and is not suitable for production use, but we hope to one day make it so.
+
+## Features
+
+### Bare Module Resolving
 
 Native ES imports doesn't support bare module imports like
 
@@ -94,7 +58,7 @@ The above will throw an error by default. `vite` detects such bare module import
 
 - Finally we will try resolving the module from `node_modules`, using the package's `module` entry if available.
 
-## Hot Module Replacement
+### Hot Module Replacement
 
 - `*.vue` files come with HMR out of the box.
 
@@ -114,9 +78,9 @@ The above will throw an error by default. `vite` detects such bare module import
 
   Note it's simplified and not fully compatible with webpack's HMR API, for example there is no self-accepting modules, and if you re-export `foo` from this file, it won't reflect changes in modules that import this file.
 
-## CSS Pre-Processors
+### CSS Pre-Processors
 
-Install the corresponding pre-processor and just use it! (**Currently requires local installation of `vite` for correct resolution**).
+Install the corresponding pre-processor and just use it!
 
 ``` bash
 yarn add -D sass
@@ -127,7 +91,19 @@ yarn add -D sass
 </style>
 ```
 
-## API
+Note importing CSS / preprocessor files from `.js` files, and HMR from imported pre-proccessor files are currently not supported, but can be in the future.
+
+### Building for Production
+
+Starting with version `^0.5.0`, you can run `vite build` to bundle the app and deploy it for production.
+
+- `vite build --root dir`: build files in the target directory instead of current working directory.
+
+- `vite build --cdn`: import `vue` from a CDN link in the built js. This will make the build faster, but overall the page payload will be larger because therer will be no tree-shaking for Vue APIs.
+
+Internally, we use a highly opinionated Rollup config to generate the build. There is currently intentionally no exposed way to configure the build -- we will likely tackle that at a later stage.
+
+### API
 
 You can customize the server using the API. The server can accept plugins which have access to the internal Koa app instance. You can then add custom Koa middlewares to add pre-processor support:
 
@@ -172,16 +148,6 @@ createServer({
   ]
 }).listen(3000)
 ```
-
-## Building for Production
-
-Starting with version `^0.5.0`, you can run `vite build` to bundle the app and deploy it for production.
-
-- `vite build --root dir`: build files in the target directory instead of current working directory.
-
-- `vite build --cdn`: import `vue` from a CDN link in the built js. This will make the build faster, but overall the page payload will be larger because therer will be no tree-shaking for Vue APIs.
-
-Internally, we use a highly opinionated Rollup config to generate the build. There is currently intentionally no exposed way to configure the build -- we will likely tackle that at a later stage.
 
 ## TODOs
 

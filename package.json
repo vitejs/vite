@@ -12,6 +12,14 @@
     "bin",
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vuejs/vite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vuejs/vite/issues"
+  },
+  "homepage": "https://github.com/vuejs/vite/tree/master/#readme",
   "scripts": {
     "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --p src/client",
