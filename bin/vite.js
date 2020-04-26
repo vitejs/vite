@@ -3,9 +3,15 @@ const chalk = require('chalk')
 const argv = require('minimist')(process.argv.slice(2))
 const getIPv4AddressList = require('../dist/utils').getIPv4AddressList
 
+console.log(chalk.cyan(`vite v${require('../package.json').version}`))
+
 if (argv._[0] === 'build') {
+  console.log(chalk.yellow('Building for production...'))
   require('../dist')
-    .build(argv)
+    .build({
+      ...argv,
+      cdn: argv.cdn === 'false' ? false : argv.cdn
+    })
     .catch((err) => {
       console.error(chalk.red(`[vite] Build errored out.`))
       console.log(err)
@@ -17,7 +23,7 @@ if (argv._[0] === 'build') {
 
   server.on('error', (e) => {
     if (e.code === 'EADDRINUSE') {
-      console.log(`port ${port} is in use, trying another one...`)
+      console.log(`Port ${port} is in use, trying another one...`)
       setTimeout(() => {
         server.close()
         server.listen(++port)
@@ -29,7 +35,7 @@ if (argv._[0] === 'build') {
   })
 
   server.on('listening', () => {
-    console.log(`Running at:`)
+    console.log(`Dev server running at:`)
     getIPv4AddressList().forEach((ip) => {
       console.log(`  > http://${ip}:${port}`)
     })
