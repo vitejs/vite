@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const path = require('path')
 const chalk = require('chalk')
 const argv = require('minimist')(process.argv.slice(2))
 const getIPv4AddressList = require('../dist/utils').getIPv4AddressList
