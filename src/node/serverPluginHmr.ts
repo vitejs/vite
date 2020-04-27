@@ -90,95 +90,28 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
 
   watcher.on('change', async (file) => {
     const timestamp = Date.now()
-    const publicPath = resolver.fileToPublic(file)
-
     if (file.endsWith('.vue')) {
-      handleVueSFCReload(file, publicPath, timestamp)
-    } else {
-      handleJSReload(publicPath, timestamp)
+      handleVueReload(file, timestamp)
+    } else if (file.endsWith('.js')) {
+      handleJSReload(file, timestamp)
     }
   })
 
-  function handleJSReload(publicPath: string, timestamp: number) {
-    // normal js file
-    const importers = importerMap.get(publicPath)
-    if (importers) {
-      const vueImporters = new Set<string>()
-      const jsHotImporters = new Set<string>()
-      const hasDeadEnd = walkImportChain(
-        publicPath,
-        importers,
-        vueImporters,
-        jsHotImporters
-      )
+  watcher.handleVueReload = handleVueReload
+  watcher.handleJSReload = handleJSReload
 
-      if (hasDeadEnd) {
-        notify({
-          type: 'full-reload',
-          timestamp
-        })
-      } else {
-        vueImporters.forEach((vueImporter) => {
-          notify({
-            type: 'vue-reload',
-            path: vueImporter,
-            timestamp
-          })
-        })
-        jsHotImporters.forEach((jsImporter) => {
-          notify({
-            type: 'js-update',
-            path: jsImporter,
-            timestamp
-          })
-        })
-      }
-    }
-  }
-
-  function walkImportChain(
-    importee: string,
-    currentImporters: Set<string>,
-    vueImporters: Set<string>,
-    jsHotImporters: Set<string>
-  ): boolean {
-    let hasDeadEnd = false
-    for (const importer of currentImporters) {
-      if (importer.endsWith('.vue')) {
-        vueImporters.add(importer)
-      } else if (isHMRBoundary(importer, importee)) {
-        jsHotImporters.add(importer)
-      } else {
-        const parentImpoters = importerMap.get(importer)
-        if (!parentImpoters) {
-          hasDeadEnd = true
-        } else {
-          hasDeadEnd = walkImportChain(
-            importer,
-            parentImpoters,
-            vueImporters,
-            jsHotImporters
-          )
-        }
-      }
-    }
-    return hasDeadEnd
-  }
-
-  function isHMRBoundary(importer: string, dep: string): boolean {
-    const deps = hmrBoundariesMap.get(importer)
-    return deps ? deps.has(dep) : false
-  }
-
-  async function handleVueSFCReload(
+  async function handleVueReload(
     file: string,
-    publicPath: string,
-    timestamp: number
+    timestamp: number,
+    content?: string
   ) {
+    const publicPath = resolver.fileToPublic(file)
     const cacheEntry = vueCache.get(file)
+
+    debug(`busting Vue cache for ${file}`)
     vueCache.del(file)
 
-    const descriptor = await parseSFC(root, file)
+    const descriptor = await parseSFC(root, file, content)
     if (!descriptor) {
       // read failed
       return
@@ -257,6 +190,77 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
         timestamp
       })
     }
+  }
+
+  function handleJSReload(publicPath: string, timestamp: number) {
+    // normal js file
+    const importers = importerMap.get(publicPath)
+    if (importers) {
+      const vueImporters = new Set<string>()
+      const jsHotImporters = new Set<string>()
+      const hasDeadEnd = walkImportChain(
+        publicPath,
+        importers,
+        vueImporters,
+        jsHotImporters
+      )
+
+      if (hasDeadEnd) {
+        notify({
+          type: 'full-reload',
+          timestamp
+        })
+      } else {
+        vueImporters.forEach((vueImporter) => {
+          notify({
+            type: 'vue-reload',
+            path: vueImporter,
+            timestamp
+          })
+        })
+        jsHotImporters.forEach((jsImporter) => {
+          notify({
+            type: 'js-update',
+            path: jsImporter,
+            timestamp
+          })
+        })
+      }
+    }
+  }
+
+  function walkImportChain(
+    importee: string,
+    currentImporters: Set<string>,
+    vueImporters: Set<string>,
+    jsHotImporters: Set<string>
+  ): boolean {
+    let hasDeadEnd = false
+    for (const importer of currentImporters) {
+      if (importer.endsWith('.vue')) {
+        vueImporters.add(importer)
+      } else if (isHMRBoundary(importer, importee)) {
+        jsHotImporters.add(importer)
+      } else {
+        const parentImpoters = importerMap.get(importer)
+        if (!parentImpoters) {
+          hasDeadEnd = true
+        } else {
+          hasDeadEnd = walkImportChain(
+            importer,
+            parentImpoters,
+            vueImporters,
+            jsHotImporters
+          )
+        }
+      }
+    }
+    return hasDeadEnd
+  }
+
+  function isHMRBoundary(importer: string, dep: string): boolean {
+    const deps = hmrBoundariesMap.get(importer)
+    return deps ? deps.has(dep) : false
   }
 }
 

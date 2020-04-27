@@ -25,6 +25,8 @@ export async function cachedRead(ctx: Context, file: string) {
     ctx.etag = cached.etag
     ctx.lastModified = new Date(cached.lastModified)
     ctx.status = 304
+    // still set the content for *.vue requests
+    ctx.body = cached.content
     return cached.content
   }
   const content = await fs.readFile(file, 'utf-8')

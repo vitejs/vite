@@ -66,9 +66,9 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
       // only need to rewrite for <script> part in vue files
       !(ctx.path.endsWith('.vue') && ctx.query.type != null)
     ) {
-      if (rewriteCache.has(ctx.path)) {
-        debugImportRewrite(`${ctx.path}: serving from cache`)
-        ctx.body = rewriteCache.get(ctx.path)
+      if (rewriteCache.has(ctx.url)) {
+        debugImportRewrite(`${ctx.url}: serving from cache`)
+        ctx.body = rewriteCache.get(ctx.url)
       } else {
         await initLexer
         ctx.body = rewriteImports(
@@ -76,7 +76,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
           ctx.url.replace(/(&|\?)t=\d+/, ''),
           ctx.query.t
         )
-        rewriteCache.set(ctx.path, ctx.body)
+        rewriteCache.set(ctx.url, ctx.body)
       }
     }
   })
