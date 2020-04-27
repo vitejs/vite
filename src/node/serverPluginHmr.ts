@@ -59,7 +59,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
     }
     debug('serving hmr client')
     ctx.type = 'js'
-    ctx.body = await cachedRead(hmrClientFilePath)
+    await cachedRead(ctx, hmrClientFilePath)
   })
 
   // start a websocket server to send hmr notifications to the client

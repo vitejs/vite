@@ -21,13 +21,13 @@ const fileToIdMap = new Map()
 const webModulesMap = new Map()
 const rewriteCache = new LRUCache({ max: 65535 })
 
-export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
+export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
   // bust module rewrite cache on file change
   watcher.on('change', (file) => {
-    // TODO also need logic for reverse mapping file to servedPath
-    const servedPath = '/' + path.relative(root, file)
-    debugImportRewrite(`${servedPath}: cache busted`)
-    rewriteCache.del(servedPath)
+    // TODO also need logic for reverse mapping file to publicPath
+    const publicPath = resolver.fileToPublic(file)
+    debugImportRewrite(`${publicPath}: cache busted`)
+    rewriteCache.del(publicPath)
   })
 
   // rewrite named module imports to `/@modules/:id` requests
@@ -99,7 +99,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
     // special handling for vue's runtime.
     if (id === 'vue') {
       const vuePath = resolveVue(root).vue
-      ctx.body = await cachedRead(vuePath)
+      await cachedRead(ctx, vuePath)
       debugModuleResolution(`vue -> ${getDebugPath(vuePath)}`)
       return
     }
@@ -107,8 +107,8 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
     // already resolved and cached
     const cachedPath = idToFileMap.get(id)
     if (cachedPath) {
+      await cachedRead(ctx, cachedPath)
       debugModuleResolution(`(cached) ${id} -> ${getDebugPath(cachedPath)}`)
-      ctx.body = await cachedRead(cachedPath)
       return
     }
 
@@ -135,8 +135,8 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
           path.basename(sourceMapRequest)
         )
         idToFileMap.set(sourceMapRequest, sourceMapPath)
+        await cachedRead(ctx, sourceMapPath)
         ctx.type = 'application/json'
-        ctx.body = await cachedRead(sourceMapPath)
         debugModuleResolution(
           `(source map) ${id} -> ${getDebugPath(sourceMapPath)}`
         )
@@ -149,7 +149,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
       if (webModulePath) {
         idToFileMap.set(id, webModulePath)
         fileToIdMap.set(path.basename(webModulePath), id)
-        ctx.body = await cachedRead(webModulePath)
+        await cachedRead(ctx, webModulePath)
         debugModuleResolution(`${id} -> ${getDebugPath(webModulePath)}`)
         return
       }
@@ -179,7 +179,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
       idToFileMap.set(id, modulePath)
       fileToIdMap.set(path.basename(modulePath), id)
       debugModuleResolution(`${id} -> ${getDebugPath(modulePath)}`)
-      ctx.body = await cachedRead(modulePath)
+      await cachedRead(ctx, modulePath)
     } catch (e) {
       console.error(
         chalk.red(`[vite] Error while resolving node_modules with id "${id}":`)

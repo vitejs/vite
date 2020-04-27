@@ -1,9 +1,14 @@
+import path from 'path'
 import { promises as fs } from 'fs'
 import LRUCache from 'lru-cache'
 import os from 'os'
+import { Context } from 'koa'
+
+const getETag = require('etag')
 
 interface CacheEntry {
   lastModified: number
+  etag: string
   content: Buffer | string
 }
 
@@ -11,20 +16,28 @@ const moduleReadCache = new LRUCache<string, CacheEntry>({
   max: 10000
 })
 
-export function cachedRead(path: string): Promise<Buffer>
-export function cachedRead(path: string, encoding: string): Promise<string>
-export async function cachedRead(path: string, encoding?: string) {
-  const lastModified = (await fs.stat(path)).mtimeMs
-  const cached = moduleReadCache.get(path)
+export async function cachedRead(ctx: Context, file: string) {
+  const lastModified = (await fs.stat(file)).mtimeMs
+  const cached = moduleReadCache.get(file)
+  ctx.set('Cache-Control', 'no-cache')
+  ctx.type = path.basename(file)
   if (cached && cached.lastModified === lastModified) {
+    ctx.etag = cached.etag
+    ctx.lastModified = new Date(cached.lastModified)
+    ctx.status = 304
     return cached.content
   }
-  const content = await fs.readFile(path, encoding)
-  moduleReadCache.set(path, {
+  const content = await fs.readFile(file, 'utf-8')
+  const etag = getETag(content)
+  moduleReadCache.set(file, {
     content,
+    etag,
     lastModified
   })
-  return content
+  ctx.etag = etag
+  ctx.lastModified = new Date(lastModified)
+  ctx.body = content
+  ctx.status = 200
 }
 
 export function getIPv4AddressList(): string[] {
