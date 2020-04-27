@@ -38,7 +38,7 @@ test('test', async () => {
   })
   await new Promise((resolve) => {
     server.stdout.on('data', (data) => {
-      if (data.toString().match('Running')) {
+      if (data.toString().match('running')) {
         resolve()
       }
     })
