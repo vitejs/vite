@@ -1,5 +1,4 @@
 import { Plugin } from './server'
-import path from 'path'
 import {
   SFCDescriptor,
   SFCTemplateBlock,
@@ -26,16 +25,16 @@ export const vueCache = new LRUCache<string, CacheEntry>({
   max: 65535
 })
 
-export const vuePlugin: Plugin = ({ root, app }) => {
+export const vuePlugin: Plugin = ({ root, app, resolver }) => {
   app.use(async (ctx, next) => {
     if (!ctx.path.endsWith('.vue')) {
       return next()
     }
 
-    const pathname = ctx.path
     const query = ctx.query
-    const filename = path.join(root, pathname.slice(1))
-    const descriptor = await parseSFC(root, filename)
+    const publicPath = ctx.path
+    const filePath = resolver.publicToFile(publicPath)
+    const descriptor = await parseSFC(root, filePath)
 
     if (!descriptor) {
       debug(`${ctx.url} - 404`)
@@ -47,8 +46,8 @@ export const vuePlugin: Plugin = ({ root, app }) => {
       ctx.type = 'js'
       ctx.body = compileSFCMain(
         descriptor,
-        filename,
-        pathname,
+        filePath,
+        publicPath,
         query.t as string
       )
       return
@@ -59,8 +58,8 @@ export const vuePlugin: Plugin = ({ root, app }) => {
       ctx.body = compileSFCTemplate(
         root,
         descriptor.template!,
-        filename,
-        pathname,
+        filePath,
+        publicPath,
         descriptor.styles.some((s) => s.scoped)
       )
       return
@@ -73,8 +72,8 @@ export const vuePlugin: Plugin = ({ root, app }) => {
         root,
         styleBlock,
         index,
-        filename,
-        pathname
+        filePath,
+        publicPath
       )
       if (query.module != null) {
         ctx.type = 'js'
@@ -92,19 +91,26 @@ export const vuePlugin: Plugin = ({ root, app }) => {
 
 export async function parseSFC(
   root: string,
-  filename: string
+  filename: string,
+  content?: string | Buffer
 ): Promise<SFCDescriptor | undefined> {
   let cached = vueCache.get(filename)
   if (cached && cached.descriptor) {
     return cached.descriptor
   }
 
-  let content: string
-  try {
-    content = await cachedRead(filename, 'utf-8')
-  } catch (e) {
-    return
+  if (!content) {
+    try {
+      content = await cachedRead(filename, 'utf-8')
+    } catch (e) {
+      return
+    }
   }
+
+  if (typeof content !== 'string') {
+    content = content.toString()
+  }
+
   const { descriptor, errors } = resolveCompiler(root).parse(content, {
     filename
   })

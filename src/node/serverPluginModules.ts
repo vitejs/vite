@@ -24,6 +24,7 @@ const rewriteCache = new LRUCache({ max: 65535 })
 export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
   // bust module rewrite cache on file change
   watcher.on('change', (file) => {
+    // TODO also need logic for reverse mapping file to servedPath
     const servedPath = '/' + path.relative(root, file)
     debugImportRewrite(`${servedPath}: cache busted`)
     rewriteCache.del(servedPath)
@@ -37,11 +38,11 @@ export const modulesPlugin: Plugin = ({ root, app, watcher }) => {
       return
     }
 
-    if (ctx.url === '/index.html') {
+    if (ctx.path === '/index.html') {
       if (rewriteCache.has('/index.html')) {
         debugImportRewrite('/index.html: serving from cache')
         ctx.body = rewriteCache.get('/index.html')
-      } else {
+      } else if (ctx.body) {
         const html = await readBody(ctx.body)
         await initLexer
         ctx.body = html.replace(
