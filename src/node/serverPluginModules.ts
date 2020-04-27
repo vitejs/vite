@@ -64,7 +64,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
       // skip internal client
       !ctx.path.startsWith(`/@hmr`) &&
       // only need to rewrite for <script> part in vue files
-      !(ctx.path.endsWith('.vue') && ctx.query.type != null)
+      !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
     ) {
       if (rewriteCache.has(ctx.url)) {
         debugImportRewrite(`${ctx.url}: serving from cache`)

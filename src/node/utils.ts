@@ -9,24 +9,31 @@ const getETag = require('etag')
 interface CacheEntry {
   lastModified: number
   etag: string
-  content: Buffer | string
+  content: string
 }
 
 const moduleReadCache = new LRUCache<string, CacheEntry>({
   max: 10000
 })
 
-export async function cachedRead(ctx: Context, file: string) {
+export async function cachedRead(
+  ctx: Context | null,
+  file: string
+): Promise<string> {
   const lastModified = (await fs.stat(file)).mtimeMs
   const cached = moduleReadCache.get(file)
-  ctx.set('Cache-Control', 'no-cache')
-  ctx.type = path.basename(file)
+  if (ctx) {
+    ctx.set('Cache-Control', 'no-cache')
+    ctx.type = path.basename(file)
+  }
   if (cached && cached.lastModified === lastModified) {
-    ctx.etag = cached.etag
-    ctx.lastModified = new Date(cached.lastModified)
-    ctx.status = 304
-    // still set the content for *.vue requests
-    ctx.body = cached.content
+    if (ctx) {
+      ctx.etag = cached.etag
+      ctx.lastModified = new Date(cached.lastModified)
+      ctx.status = 304
+      // still set the content for *.vue requests
+      ctx.body = cached.content
+    }
     return cached.content
   }
   const content = await fs.readFile(file, 'utf-8')
@@ -36,10 +43,13 @@ export async function cachedRead(ctx: Context, file: string) {
     etag,
     lastModified
   })
-  ctx.etag = etag
-  ctx.lastModified = new Date(lastModified)
-  ctx.body = content
-  ctx.status = 200
+  if (ctx) {
+    ctx.etag = etag
+    ctx.lastModified = new Date(lastModified)
+    ctx.body = content
+    ctx.status = 200
+  }
+  return content
 }
 
 export function getIPv4AddressList(): string[] {
