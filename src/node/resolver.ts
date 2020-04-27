@@ -1,4 +1,5 @@
 import path from 'path'
+import slash from 'slash'
 
 export interface Resolver {
   publicToFile(publicPath: string, root: string): string | undefined
@@ -14,7 +15,7 @@ const defaultPublicToFile = (publicPath: string, root: string) =>
   path.join(root, publicPath.slice(1))
 
 const defaultFileToPublic = (filePath: string, root: string) =>
-  `/${path.relative(root, filePath)}`
+  `/${slash(path.relative(root, filePath))}`
 
 export function createResolver(
   root: string,

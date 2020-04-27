@@ -70,6 +70,7 @@
     "rollup": "^2.7.2",
     "rollup-plugin-terser": "^5.3.0",
     "rollup-plugin-vue": "^6.0.0-alpha.4",
+    "slash": "^3.0.0",
     "vue": "^3.0.0-beta.4",
     "ws": "^7.2.3"
   },
