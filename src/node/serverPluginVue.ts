@@ -31,6 +31,8 @@ const etagCacheCheck = (ctx: Context) => {
   ctx.etag = getEtag(ctx.body)
   if (ctx.etag !== ctx.get('If-None-Match')) {
     ctx.status = 200
+  } else {
+    ctx.status = 304
   }
 }
 
