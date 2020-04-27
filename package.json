@@ -27,7 +27,8 @@
     "build": "rm -rf dist && tsc -p src/client && tsc -p src/node",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "yarn build && jest",
-    "prepublishOnly": "yarn build"
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "prepublishOnly": "yarn build && yarn changelog"
   },
   "gitHooks": {
     "pre-commit": "lint-staged"
@@ -81,6 +82,7 @@
     "@types/node": "^13.13.1",
     "@types/serve-handler": "^6.1.0",
     "@types/ws": "^7.2.4",
+    "conventional-changelog-cli": "^2.0.31",
     "execa": "^4.0.0",
     "jest": "^25.4.0",
     "lint-staged": "^10.1.6",
