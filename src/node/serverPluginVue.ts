@@ -29,11 +29,7 @@ export const vueCache = new LRUCache<string, CacheEntry>({
 
 const etagCacheCheck = (ctx: Context) => {
   ctx.etag = getEtag(ctx.body)
-  if (ctx.etag !== ctx.get('If-None-Match')) {
-    ctx.status = 200
-  } else {
-    ctx.status = 304
-  }
+  ctx.status = ctx.etag === ctx.get('If-None-Match') ? 304 : 200
 }
 
 export const vuePlugin: Plugin = ({ root, app, resolver }) => {
