@@ -16,8 +16,8 @@ import chalk from 'chalk'
 const debugImportRewrite = require('debug')('vite:rewrite')
 const debugModuleResolution = require('debug')('vite:resolve')
 
+const idToEntryMap = new Map()
 const idToFileMap = new Map()
-const fileToIdMap = new Map()
 const webModulesMap = new Map()
 const rewriteCache = new LRUCache({ max: 65535 })
 
@@ -112,45 +112,22 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
       return
     }
 
-    // source map request
-    if (id.endsWith('.map')) {
-      // try to reverse-infer the original file that made the sourcemap request.
-      // assumes the `.js` and `.js.map` files to have the same prefix.
-      const sourceMapRequest = id
-      const jsRequest = sourceMapRequest.replace(/\.map$/, '')
-      const moduleId = fileToIdMap.get(path.basename(jsRequest))
-      if (!moduleId) {
-        console.error(
-          chalk.red(
-            `[vite] failed to infer original js file for source map request: ` +
-              sourceMapRequest
-          )
-        )
-        ctx.status = 404
-        return
-      } else {
-        const modulePath = idToFileMap.get(moduleId)
-        const sourceMapPath = path.join(
-          path.dirname(modulePath),
-          path.basename(sourceMapRequest)
-        )
-        idToFileMap.set(sourceMapRequest, sourceMapPath)
-        await cachedRead(ctx, sourceMapPath)
-        ctx.type = 'application/json'
-        debugModuleResolution(
-          `(source map) ${id} -> ${getDebugPath(sourceMapPath)}`
-        )
-        return
-      }
+    // package entries need redirect to ensure correct relative import paths
+    // check if the entry was already resolved
+    const cachedEntry = idToEntryMap.get(id)
+    if (cachedEntry) {
+      return ctx.redirect(path.join(ctx.path, cachedEntry))
     }
 
+    // resolve from web_modules
     try {
       const webModulePath = await resolveWebModule(root, id)
       if (webModulePath) {
         idToFileMap.set(id, webModulePath)
-        fileToIdMap.set(path.basename(webModulePath), id)
         await cachedRead(ctx, webModulePath)
-        debugModuleResolution(`${id} -> ${getDebugPath(webModulePath)}`)
+        debugModuleResolution(
+          `web_modules: ${id} -> ${getDebugPath(webModulePath)}`
+        )
         return
       }
     } catch (e) {
@@ -163,18 +140,23 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
 
     // resolve from node_modules
     try {
-      let moduleName = id
-      if (!path.extname(moduleName)) {
-        const pkgPath = resolve(root, `${moduleName}/package.json`)
+      let pkgPath
+      try {
+        pkgPath = resolve(root, `${id}/package.json`)
+      } catch (e) {}
+      if (pkgPath) {
         const pkg = require(pkgPath)
         const entryPoint = pkg.module || pkg.main || 'index.js'
+        debugModuleResolution(`node_modules entry: ${id} -> ${entryPoint}`)
+        idToEntryMap.set(id, entryPoint)
         return ctx.redirect(path.join(ctx.path, entryPoint))
       }
       // in case of deep imports like 'foo/dist/bar.js'
       const modulePath = resolve(root, id)
       idToFileMap.set(id, modulePath)
-      fileToIdMap.set(path.basename(modulePath), id)
-      debugModuleResolution(`${id} -> ${getDebugPath(modulePath)}`)
+      debugModuleResolution(
+        `node_modules import: ${id} -> ${getDebugPath(modulePath)}`
+      )
       await cachedRead(ctx, modulePath)
     } catch (e) {
       console.error(
