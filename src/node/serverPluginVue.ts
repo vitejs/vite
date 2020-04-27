@@ -11,8 +11,10 @@ import LRUCache from 'lru-cache'
 import { hmrClientPublicPath } from './serverPluginHmr'
 import resolve from 'resolve-from'
 import { cachedRead } from './utils'
+import { Context } from 'koa'
 
 const debug = require('debug')('vite:sfc')
+const getEtag = require('etag')
 
 interface CacheEntry {
   descriptor?: SFCDescriptor
@@ -24,6 +26,13 @@ interface CacheEntry {
 export const vueCache = new LRUCache<string, CacheEntry>({
   max: 65535
 })
+
+const etagCacheCheck = (ctx: Context) => {
+  ctx.etag = getEtag(ctx.body)
+  if (ctx.etag !== ctx.get('If-None-Match')) {
+    ctx.status = 200
+  }
+}
 
 export const vuePlugin: Plugin = ({ root, app, resolver }) => {
   app.use(async (ctx, next) => {
@@ -37,9 +46,6 @@ export const vuePlugin: Plugin = ({ root, app, resolver }) => {
     const timestamp = query.t
 
     // upstream plugins could've already read the file
-    if (!ctx.body) {
-      await cachedRead(ctx, filePath)
-    }
     const descriptor = await parseSFC(root, filePath, ctx.body)
 
     if (!descriptor) {
@@ -48,12 +54,10 @@ export const vuePlugin: Plugin = ({ root, app, resolver }) => {
       return
     }
 
-    ctx.status = 200
-
     if (!query.type) {
       ctx.type = 'js'
       ctx.body = compileSFCMain(descriptor, filePath, publicPath, timestamp)
-      return
+      return etagCacheCheck(ctx)
     }
 
     if (query.type === 'template') {
@@ -65,7 +69,7 @@ export const vuePlugin: Plugin = ({ root, app, resolver }) => {
         publicPath,
         descriptor.styles.some((s) => s.scoped)
       )
-      return
+      return etagCacheCheck(ctx)
     }
 
     if (query.type === 'style') {
@@ -85,7 +89,7 @@ export const vuePlugin: Plugin = ({ root, app, resolver }) => {
         ctx.type = 'css'
         ctx.body = result.code
       }
-      return
+      return etagCacheCheck(ctx)
     }
 
     // TODO custom blocks
