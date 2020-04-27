@@ -163,19 +163,15 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
 
     // resolve from node_modules
     try {
-      // get the module name in case of deep imports like 'foo/dist/bar.js'
       let moduleName = id
-      const deepIndex = id.indexOf('/')
-      if (deepIndex > 0) {
-        moduleName = id.slice(0, deepIndex)
+      if (!path.extname(moduleName)) {
+        const pkgPath = resolve(root, `${moduleName}/package.json`)
+        const pkg = require(pkgPath)
+        const entryPoint = pkg.module || pkg.main || 'index.js'
+        return ctx.redirect(path.join(ctx.path, entryPoint))
       }
-      const pkgPath = resolve(root, `${moduleName}/package.json`)
-      const pkg = require(pkgPath)
-      const moduleRelativePath =
-        deepIndex > 0
-          ? id.slice(deepIndex + 1)
-          : pkg.module || pkg.main || 'index.js'
-      const modulePath = path.join(path.dirname(pkgPath), moduleRelativePath)
+      // in case of deep imports like 'foo/dist/bar.js'
+      const modulePath = resolve(root, id)
       idToFileMap.set(id, modulePath)
       fileToIdMap.set(path.basename(modulePath), id)
       debugModuleResolution(`${id} -> ${getDebugPath(modulePath)}`)
