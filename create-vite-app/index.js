@@ -2,15 +2,33 @@
 const path = require('path')
 const { promises: fs } = require('fs')
 
-async function init() {
-  const targetDir = process.argv[2]
+const { name, version } = require('./package')
 
-  if (!targetDir) {
+async function init() {
+  const [, , ...args] = process.argv
+
+  if (!args.length) {
     console.error(
       `Error: Please specify target directory. Example: create-vite-app my-project`
     )
     return
   }
+
+  const helpInfo = `Usage: ${name} <target-dir> [options]\n\n Available options\n\n --help, -h\n -- version, -v`
+
+  if (args[0].startsWith('-')) {
+    if (['-h', '--help'].includes(args[0])) {
+      console.log(helpInfo)
+    } else if (['-v', '--version'].includes(args[0])) {
+      console.log(version)
+    } else {
+      console.error(`Invalid option, use ${name} --help to know more`)
+    }
+    return
+  }
+
+  const targetDir = args[0]
+
   const root = path.join(process.cwd(), targetDir || '')
   console.log(`Scaffolding project in ${root}...`)
 
