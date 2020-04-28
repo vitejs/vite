@@ -8,7 +8,7 @@ import {
 import { resolveCompiler } from './resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
-import { hmrClientPublicPath } from './serverPluginHmr'
+import { hmrClientId } from './serverPluginHmr'
 import resolve from 'resolve-from'
 import { cachedRead } from './utils'
 import { Context } from 'koa'
@@ -140,7 +140,7 @@ function compileSFCMain(
   }
 
   // inject hmr client
-  let code = `import { updateStyle } from "${hmrClientPublicPath}"\n`
+  let code = `import { updateStyle } from "${hmrClientId}"\n`
   if (descriptor.script) {
     code += descriptor.script.content.replace(
       `export default`,
