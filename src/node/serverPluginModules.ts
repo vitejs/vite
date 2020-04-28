@@ -66,7 +66,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
       // only need to rewrite for <script> part in vue files
       !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
     ) {
-      if (ctx.status === 304 && rewriteCache.has(ctx.url)) {
+      if (rewriteCache.has(ctx.url)) {
         debugImportRewrite(`${ctx.url}: serving from cache`)
         ctx.body = rewriteCache.get(ctx.url)
       } else {
@@ -78,6 +78,8 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
         )
         rewriteCache.set(ctx.url, ctx.body)
       }
+    } else {
+      debugImportRewrite(`not rewriting: ${ctx.url}`)
     }
   })
 
@@ -258,15 +260,24 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
               hasReplaced = true
             }
           } else {
+            const queryRE = /\?.*$/
+            let pathname = id.replace(queryRE, '')
+            const queryMatch = id.match(queryRE)
+            let query = queryMatch ? queryMatch[0] : ''
+            // append .js for extension-less imports
+            // for now we don't attemp to resolve other extensions
+            if (!/\.\w+/.test(pathname)) {
+              pathname += '.js'
+            }
             // force re-fetch all imports by appending timestamp
             // if this is a hmr refresh request
             if (timestamp) {
-              debugImportRewrite(`    appending hmr timestamp to "${id}"`)
-              s.overwrite(
-                start,
-                end,
-                `${id}${/\?/.test(id) ? `&` : `?`}t=${timestamp}`
-              )
+              query += `${query ? `&` : `?`}=${timestamp}`
+            }
+            const resolved = pathname + query
+            if (resolved !== id) {
+              debugImportRewrite(`    "${id}" --> "${resolved}"`)
+              s.overwrite(start, end, resolved)
               hasReplaced = true
             }
             // save the import chain for hmr analysis
@@ -276,6 +287,7 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
           }
         } else if (dynamicIndex >= 0) {
           // TODO dynamic import
+          debugImportRewrite(`    dynamic import "${id}" (ignored)`)
         }
       })
 
