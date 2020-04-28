@@ -44,7 +44,6 @@ export const vuePlugin: Plugin = ({ root, app, resolver }) => {
 
     // upstream plugins could've already read the file
     const descriptor = await parseSFC(root, filePath, ctx.body)
-
     if (!descriptor) {
       debug(`${ctx.url} - 404`)
       ctx.status = 404
@@ -119,8 +118,11 @@ export async function parseSFC(
     filename
   })
 
-  if (errors) {
-    // TODO
+  if (errors.length) {
+    errors.forEach((e) => {
+      console.error(`[vite] SFC parse error: `, e)
+    })
+    console.error(`source:\n`, content)
   }
 
   cached = cached || { styles: [] }
@@ -213,8 +215,11 @@ function compileSFCTemplate(
     }
   })
 
-  if (errors) {
-    // TODO
+  if (errors.length) {
+    errors.forEach((e) => {
+      console.error(`[vite] SFC template compilation error: `, e)
+    })
+    console.error(`source:\n`, template.content)
   }
 
   cached = cached || { styles: [] }
@@ -248,8 +253,11 @@ async function compileSFCStyle(
     // TODO load postcss config if present
   })
 
-  if (result.errors) {
-    // TODO
+  if (result.errors.length) {
+    result.errors.forEach((e) => {
+      console.error(`[vite] SFC style compilation error: `, e)
+    })
+    console.error(`source:\n`, style.content)
   }
 
   cached = cached || { styles: [] }
