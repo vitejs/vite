@@ -12,6 +12,7 @@ import { parse } from '@babel/parser'
 import { StringLiteral } from '@babel/types'
 import LRUCache from 'lru-cache'
 import chalk from 'chalk'
+import { InternalResolver } from './resolver'
 
 const debugImportRewrite = require('debug')('vite:rewrite')
 const debugModuleResolution = require('debug')('vite:resolve')
@@ -48,7 +49,11 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
         ctx.body = html.replace(
           /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
           (_, openTag, script) => {
-            return `${openTag}${rewriteImports(script, '/index.html')}</script>`
+            return `${openTag}${rewriteImports(
+              script,
+              '/index.html',
+              resolver
+            )}</script>`
           }
         )
         rewriteCache.set('/index.html', ctx.body)
@@ -74,6 +79,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
         ctx.body = rewriteImports(
           await readBody(ctx.body),
           ctx.url.replace(/(&|\?)t=\d+/, ''),
+          resolver,
           ctx.query.t
         )
         rewriteCache.set(ctx.url, ctx.body)
@@ -227,7 +233,12 @@ const ensureMapEntry = (map: HMRStateMap, key: string): Set<string> => {
   return entry
 }
 
-function rewriteImports(source: string, importer: string, timestamp?: string) {
+function rewriteImports(
+  source: string,
+  importer: string,
+  resolver: InternalResolver,
+  timestamp?: string
+) {
   if (typeof source !== 'string') {
     source = String(source)
   }
@@ -247,7 +258,7 @@ function rewriteImports(source: string, importer: string, timestamp?: string) {
         const id = source.substring(start, end)
         if (dynamicIndex === -1) {
           if (/^[^\/\.]/.test(id)) {
-            const rewritten = `/@modules/${id}`
+            const rewritten = resolver.idToRequest(id) || `/@modules/${id}`
             s.overwrite(start, end, rewritten)
             hasReplaced = true
             debugImportRewrite(`    "${id}" --> "${rewritten}"`)
