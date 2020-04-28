@@ -102,7 +102,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
 
   async function handleVueReload(
     file: string,
-    timestamp: number,
+    timestamp: number = Date.now(),
     content?: string
   ) {
     const publicPath = resolver.fileToRequest(file)
@@ -192,7 +192,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
     }
   }
 
-  function handleJSReload(filePath: string, timestamp: number) {
+  function handleJSReload(filePath: string, timestamp: number = Date.now()) {
     // normal js file
     const publicPath = resolver.fileToRequest(filePath)
     const importers = importerMap.get(publicPath)

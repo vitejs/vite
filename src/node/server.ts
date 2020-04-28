@@ -12,8 +12,8 @@ export { Resolver }
 export type Plugin = (ctx: PluginContext) => void
 
 export type ViteWatcher = FSWatcher & {
-  handleVueReload: (file: string, timestamp: number, content?: string) => void
-  handleJSReload: (file: string, timestamp: number) => void
+  handleVueReload: (file: string, timestamp?: number, content?: string) => void
+  handleJSReload: (file: string, timestamp?: number) => void
 }
 
 export interface PluginContext {
