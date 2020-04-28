@@ -3,6 +3,14 @@ import { Plugin } from './server'
 const debug = require('debug')('vite:history')
 
 export const servePlugin: Plugin = ({ root, app }) => {
+  // short circuit requests that have already been explicitly handled
+  app.use((ctx, next) => {
+    if (ctx.body || ctx.status !== 404) {
+      return
+    }
+    return next()
+  })
+
   // history API fallback
   app.use((ctx, next) => {
     const cleanUrl = ctx.url.split('?')[0].split('#')[0]
