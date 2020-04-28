@@ -354,7 +354,7 @@ function parseAcceptedDeps(source: string, importer: string, s: MagicString) {
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrBoundariesMap, importer)
-    const depPublicPath = path.join(path.dirname(importer), e.value)
+    const depPublicPath = slash(path.resolve(path.dirname(importer), e.value))
     deps.add(depPublicPath)
     s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))
   }
