@@ -66,7 +66,7 @@ The above will throw an error by default. `vite` detects such bare module import
 
   ```js
   import { foo } from './foo.js'
-  import { hot } from '/@hmr'
+  import { hot } from '@hmr'
 
   foo()
 
