@@ -40,7 +40,7 @@ export const vuePlugin: Plugin = ({ root, app, resolver }) => {
 
     const query = ctx.query
     const publicPath = ctx.path
-    const filePath = resolver.publicToFile(publicPath)
+    const filePath = resolver.requestToFile(publicPath)
 
     // upstream plugins could've already read the file
     const descriptor = await parseSFC(root, filePath, ctx.body)

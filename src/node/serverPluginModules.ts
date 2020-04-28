@@ -25,7 +25,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
   // bust module rewrite cache on file change
   watcher.on('change', (file) => {
     // TODO also need logic for reverse mapping file to publicPath
-    const publicPath = resolver.fileToPublic(file)
+    const publicPath = resolver.fileToRequest(file)
     debugImportRewrite(`${publicPath}: cache busted`)
     rewriteCache.del(publicPath)
   })

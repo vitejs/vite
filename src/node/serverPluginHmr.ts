@@ -105,7 +105,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
     timestamp: number,
     content?: string
   ) {
-    const publicPath = resolver.fileToPublic(file)
+    const publicPath = resolver.fileToRequest(file)
     const cacheEntry = vueCache.get(file)
 
     debug(`busting Vue cache for ${file}`)

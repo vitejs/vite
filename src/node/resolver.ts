@@ -2,19 +2,19 @@ import path from 'path'
 import slash from 'slash'
 
 export interface Resolver {
-  publicToFile(publicPath: string, root: string): string | undefined
-  fileToPublic(filePath: string, root: string): string | undefined
+  requestToFile(publicPath: string, root: string): string | undefined
+  fileToRequest(filePath: string, root: string): string | undefined
 }
 
 export interface InternalResolver {
-  publicToFile(publicPath: string): string
-  fileToPublic(filePath: string): string
+  requestToFile(publicPath: string): string
+  fileToRequest(filePath: string): string
 }
 
-const defaultPublicToFile = (publicPath: string, root: string) =>
+const defaultrequestToFile = (publicPath: string, root: string) =>
   path.join(root, publicPath.slice(1))
 
-const defaultFileToPublic = (filePath: string, root: string) =>
+const defaultfileToRequest = (filePath: string, root: string) =>
   `/${slash(path.relative(root, filePath))}`
 
 export function createResolver(
@@ -22,19 +22,19 @@ export function createResolver(
   resolvers: Resolver[]
 ): InternalResolver {
   return {
-    publicToFile: (publicPath) => {
+    requestToFile: (publicPath) => {
       for (const r of resolvers) {
-        const filepath = r.publicToFile(publicPath, root)
+        const filepath = r.requestToFile(publicPath, root)
         if (filepath) return filepath
       }
-      return defaultPublicToFile(publicPath, root)
+      return defaultrequestToFile(publicPath, root)
     },
-    fileToPublic: (filePath) => {
+    fileToRequest: (filePath) => {
       for (const r of resolvers) {
-        const filepath = r.fileToPublic(filePath, root)
+        const filepath = r.fileToRequest(filePath, root)
         if (filepath) return filepath
       }
-      return defaultFileToPublic(filePath, root)
+      return defaultfileToRequest(filePath, root)
     }
   }
 }
