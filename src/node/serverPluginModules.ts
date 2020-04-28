@@ -41,11 +41,11 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
     }
 
     if (ctx.path === '/index.html') {
-      if (rewriteCache.has('/index.html')) {
+      const html = await readBody(ctx.body)
+      if (rewriteCache.has(html)) {
         debugImportRewrite('/index.html: serving from cache')
-        ctx.body = rewriteCache.get('/index.html')
+        ctx.body = rewriteCache.get(html)
       } else if (ctx.body) {
-        const html = await readBody(ctx.body)
         await initLexer
         ctx.body = html.replace(
           /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
@@ -57,7 +57,7 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
             )}</script>`
           }
         )
-        rewriteCache.set('/index.html', ctx.body)
+        rewriteCache.set(html, ctx.body)
       }
     }
 
@@ -72,18 +72,19 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
       // only need to rewrite for <script> part in vue files
       !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
     ) {
-      if (rewriteCache.has(ctx.url)) {
+      const content = await readBody(ctx.body)
+      if (rewriteCache.has(content)) {
         debugImportRewrite(`${ctx.url}: serving from cache`)
-        ctx.body = rewriteCache.get(ctx.url)
+        ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
         ctx.body = rewriteImports(
-          await readBody(ctx.body),
+          content,
           ctx.url.replace(/(&|\?)t=\d+/, ''),
           resolver,
           ctx.query.t
         )
-        rewriteCache.set(ctx.url, ctx.body)
+        rewriteCache.set(content, ctx.body)
       }
     } else {
       debugImportRewrite(`not rewriting: ${ctx.url}`)
