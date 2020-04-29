@@ -16,7 +16,7 @@ import { Resolver, createResolver } from './resolver'
 const debugBuild = require('debug')('vite:build')
 const scriptRE = /<script\b[^>]*>([\s\S]*?)<\/script>/gm
 
-export interface BuildOptions {
+interface BuildOptionsBase {
   root?: string
   cdn?: boolean
   cssFileName?: string
@@ -24,11 +24,20 @@ export interface BuildOptions {
   // list files that are included in the build, but not inside project root.
   srcRoots?: string[]
   rollupInputOptions?: InputOptions
-  rollupOutputOptions?: OutputOptions | OutputOptions[]
   write?: boolean // if false, does not write to disk.
   debug?: boolean // if true, generates non-minified code for inspection.
   silent?: boolean
 }
+
+interface SingleBuildOptions extends BuildOptionsBase {
+  rollupOutputOptions?: OutputOptions
+}
+
+interface MultiBuildOptions extends BuildOptionsBase {
+  rollupOutputOptions?: OutputOptions[]
+}
+
+export type BuildOptions = SingleBuildOptions | MultiBuildOptions
 
 export interface BuildResult {
   js: RollupOutput['output']
@@ -36,6 +45,8 @@ export interface BuildResult {
   html: string
 }
 
+export async function build(options: SingleBuildOptions): Promise<BuildResult>
+export async function build(options: MultiBuildOptions): Promise<BuildResult[]>
 export async function build({
   root = process.cwd(),
   cdn = !resolveVue(root).hasLocalVue,
