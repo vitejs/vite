@@ -2,7 +2,7 @@ import path from 'path'
 import { promises as fs } from 'fs'
 import { rollup as Rollup, Plugin } from 'rollup'
 import { resolveVue } from './resolveVue'
-import { hmrClientPublicPath } from './serverPluginHmr'
+import { hmrClientId } from './serverPluginHmr'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
 
@@ -37,12 +37,10 @@ export async function build({
   const vitePlugin: Plugin = {
     name: 'vite',
     resolveId(id: string) {
-      if (id.startsWith('/')) {
-        if (id === hmrClientPublicPath) {
-          return hmrClientPublicPath
-        } else {
-          return id.startsWith(root) ? id : path.resolve(root, id.slice(1))
-        }
+      if (id === hmrClientId) {
+        return hmrClientId
+      } else if (id.startsWith('/')) {
+        return id.startsWith(root) ? id : path.resolve(root, id.slice(1))
       } else if (id === 'vue') {
         if (!cdn) {
           return resolveVue(root, true).vue
@@ -55,8 +53,8 @@ export async function build({
       }
     },
     load(id: string) {
-      if (id === hmrClientPublicPath) {
-        return `export function hot() {}`
+      if (id === hmrClientId) {
+        return `export const hot = {}`
       } else if (id === indexPath) {
         let script = ''
         let match
@@ -100,7 +98,8 @@ export async function build({
         rootDir: root
       }),
       require('@rollup/plugin-replace')({
-        'process.env.NODE_ENV': '"production"'
+        'process.env.NODE_ENV': '"production"',
+        __DEV__: 'false'
       }),
       cssExtractPlugin,
       require('rollup-plugin-terser').terser()
