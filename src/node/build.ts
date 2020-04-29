@@ -163,7 +163,6 @@ export async function build({
 
   const bundle = await rollup({
     input: path.resolve(root, 'index.html'),
-    preserveEntrySignatures: false,
     ...rollupInputOptions,
     plugins: [
       ...(rollupInputOptions.plugins || []),
