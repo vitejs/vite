@@ -19,6 +19,7 @@ const scriptRE = /<script\b[^>]*>([\s\S]*?)<\/script>/gm
 export interface BuildOptions {
   root?: string
   cdn?: boolean
+  cssFileName?: string
   resolvers?: Resolver[]
   // list files that are included in the build, but not inside project root.
   srcRoots?: string[]
@@ -26,7 +27,7 @@ export interface BuildOptions {
   rollupOutputOptions?: OutputOptions | OutputOptions[]
   write?: boolean // if false, does not write to disk.
   debug?: boolean // if true, generates non-minified code for inspection.
-  cssFileName?: string
+  silent?: boolean
 }
 
 export interface BuildResult {
@@ -38,13 +39,14 @@ export interface BuildResult {
 export async function build({
   root = process.cwd(),
   cdn = !resolveVue(root).hasLocalVue,
+  cssFileName = 'style.css',
   resolvers = [],
   srcRoots = [],
   rollupInputOptions = {},
   rollupOutputOptions = {},
   write = true,
   debug = false,
-  cssFileName = 'style.css'
+  silent = false
 }: BuildOptions = {}): Promise<BuildResult | BuildResult[]> {
   process.env.NODE_ENV = 'production'
 
@@ -76,12 +78,11 @@ export async function build({
       } else if (id.startsWith('/')) {
         // if id starts with any of the src root directories, it's a file request
         if (srcRoots.some((root) => id.startsWith(root))) {
-          debugBuild(`[resolve] pass `, id)
           return
-        } else {
-          debugBuild(`[resolve]`, id, `-->`, resolver.requestToFile(id))
-          return resolver.requestToFile(id)
         }
+        const resolved = resolver.requestToFile(id)
+        debugBuild(`[resolve]`, id, `-->`, resolved)
+        return resolved
       } else if (id === 'vue') {
         if (!cdn) {
           return resolveVue(root, true).vue
@@ -94,15 +95,9 @@ export async function build({
       } else {
         const request = resolver.idToRequest(id)
         if (request) {
-          debugBuild(
-            `[resolve]`,
-            id,
-            `-->`,
-            request,
-            `--> `,
-            resolver.requestToFile(request)
-          )
-          return resolver.requestToFile(request)
+          const resolved = resolver.requestToFile(request)
+          debugBuild(`[resolve]`, id, `-->`, request, `--> `, resolved)
+          return resolved
         }
       }
     },
@@ -227,9 +222,10 @@ export async function build({
         // write chunk
         if (write) {
           const filepath = path.join(outDir, chunk.fileName)
-          console.log(
-            `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
-          )
+          !silent &&
+            console.log(
+              `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
+            )
           await fs.mkdir(path.dirname(filepath), { recursive: true })
           await fs.writeFile(filepath, chunk.code)
         }
@@ -239,9 +235,10 @@ export async function build({
           css = chunk.source.toString()
         }
         const filepath = path.join(outDir, chunk.fileName)
-        console.log(
-          `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
-        )
+        !silent &&
+          console.log(
+            `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
+          )
         await fs.mkdir(path.dirname(filepath), { recursive: true })
         await fs.writeFile(filepath, chunk.source)
       }
@@ -251,9 +248,10 @@ export async function build({
       // write html
       if (generatedIndex) {
         const indexOutPath = path.join(outDir, 'index.html')
-        console.log(
-          `write ${chalk.green(path.relative(process.cwd(), indexOutPath))}`
-        )
+        !silent &&
+          console.log(
+            `write ${chalk.green(path.relative(process.cwd(), indexOutPath))}`
+          )
         await fs.writeFile(indexOutPath, generatedIndex)
       }
     }
@@ -275,9 +273,10 @@ export async function build({
   } else {
     result = await generate(rollupOutputOptions)
   }
-  console.log(
-    `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.`
-  )
+  !silent &&
+    console.log(
+      `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.`
+    )
   return result
 }
 
