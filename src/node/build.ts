@@ -12,6 +12,7 @@ import { hmrClientId } from './serverPluginHmr'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
 import { Resolver, createResolver } from './resolver'
+import { Options } from 'rollup-plugin-vue'
 
 const debugBuild = require('debug')('vite:build')
 const scriptRE = /<script\b[^>]*>([\s\S]*?)<\/script>/gm
@@ -27,6 +28,7 @@ interface BuildOptionsBase {
   write?: boolean // if false, does not write to disk.
   debug?: boolean // if true, generates non-minified code for inspection.
   silent?: boolean
+  rollupPluginVueOptions?: Partial<Options>
 }
 
 interface SingleBuildOptions extends BuildOptionsBase {
@@ -57,7 +59,8 @@ export async function build({
   rollupOutputOptions = {},
   write = true,
   debug = false,
-  silent = false
+  silent = false,
+  rollupPluginVueOptions = {}
 }: BuildOptions = {}): Promise<BuildResult | BuildResult[]> {
   process.env.NODE_ENV = 'production'
 
@@ -176,8 +179,9 @@ export async function build({
         // In the future we probably want to still use rollup plugins so that
         // preprocessors are also supported by importing from js files.
         preprocessStyles: true,
-        preprocessCustomRequire: (id: string) => require(resolve(root, id))
+        preprocessCustomRequire: (id: string) => require(resolve(root, id)),
         // TODO proxy cssModules config
+        ...rollupPluginVueOptions
       }),
       require('@rollup/plugin-node-resolve')({
         rootDir: root
