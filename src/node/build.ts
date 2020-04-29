@@ -210,6 +210,7 @@ export async function build({
         console.log(
           `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
         )
+        await fs.mkdir(path.dirname(filepath), { recursive: true })
         await fs.writeFile(filepath, chunk.code)
       }
     }
