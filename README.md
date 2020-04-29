@@ -1,8 +1,6 @@
 # vite ⚡
 
-> No-bundle Dev Server for Vue 3 Single-File Components
-
-**⚠️ Warning: Experimental ⚠️**
+> No-bundle Dev Server for Vue 3 Single-File Components.
 
 ## Getting Started
 
@@ -101,7 +99,7 @@ Starting with version `^0.5.0`, you can run `vite build` to bundle the app and d
 
 - `vite build --cdn`: import `vue` from a CDN link in the built js. This will make the build faster, but overall the page payload will be larger because therer will be no tree-shaking for Vue APIs.
 
-Internally, we use a highly opinionated Rollup config to generate the build. There is currently intentionally no exposed way to configure the build -- we will likely tackle that at a later stage.
+Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - check out `src/node/build.ts` for more details.
 
 ### API
 
@@ -151,6 +149,13 @@ createServer({
 
 ## TODOs
 
-- Vue SFC Source Map support
-- Custom imports map (alias) support
+- Source Map support
 - Auto loading postcss config
+
+## Trivia
+
+[vite](https://en.wiktionary.org/wiki/vite) is the french word for "fast" and is pronounced `/vit/`.
+
+## License
+
+MIT
