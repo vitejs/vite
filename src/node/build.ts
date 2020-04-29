@@ -14,6 +14,7 @@ import chalk from 'chalk'
 import { Resolver, createResolver } from './resolver'
 
 const debugBuild = require('debug')('vite:build')
+const scriptRE = /<script\b[^>]*>([\s\S]*?)<\/script>/gm
 
 export interface BuildOptions {
   root?: string
@@ -22,7 +23,7 @@ export interface BuildOptions {
   // list files that are included in the build, but not inside project root.
   srcRoots?: string[]
   rollupInputOptions?: InputOptions
-  rollupOutputOptions?: OutputOptions
+  rollupOutputOptions?: OutputOptions | OutputOptions[]
   write?: boolean // if false, does not write to disk.
   debug?: boolean // if true, generates non-minified code for inspection.
   cssFileName?: string
@@ -44,7 +45,7 @@ export async function build({
   write = true,
   debug = false,
   cssFileName = 'style.css'
-}: BuildOptions = {}): Promise<BuildResult> {
+}: BuildOptions = {}): Promise<BuildResult | BuildResult[]> {
   process.env.NODE_ENV = 'production'
 
   const start = Date.now()
@@ -52,10 +53,10 @@ export async function build({
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
-  const outDir = rollupOutputOptions.dir || path.resolve(root, 'dist')
-
   const indexPath = path.resolve(root, 'index.html')
-  const scriptRE = /<script\b[^>]*>([\s\S]*?)<\/script>/gm
+  // make sure to use the same verison of vue from the CDN.
+  const vueVersion = resolveVue(root).version
+  const cdnLink = `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.prod.js`
 
   let indexContent: string | null = null
   try {
@@ -63,10 +64,6 @@ export async function build({
   } catch (e) {
     // no index
   }
-
-  // make sure to use the same verison of vue from the CDN.
-  const vueVersion = resolveVue(root).version
-  const cdnLink = `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.prod.js`
 
   const resolver = createResolver(root, resolvers)
   srcRoots.push(root)
@@ -128,7 +125,6 @@ export async function build({
   }
 
   const styles: Map<string, string> = new Map()
-  let css = ''
   const cssExtractPlugin: Plugin = {
     name: 'vite-css',
     transform(code: string, id: string) {
@@ -139,6 +135,7 @@ export async function build({
     },
 
     async generateBundle(_options, bundle) {
+      let css = ''
       // finalize extracted css
       styles.forEach((s) => {
         css += s
@@ -193,73 +190,95 @@ export async function build({
     }
   })
 
-  const { output } = await bundle.generate({
-    dir: outDir,
-    format: 'es',
-    ...rollupOutputOptions
-  })
+  async function generate(options: OutputOptions) {
+    const outDir = options.dir || path.resolve(root, 'dist')
+    const { output } = await bundle.generate({
+      dir: outDir,
+      format: 'es',
+      ...options
+    })
 
-  let generatedIndex = indexContent && indexContent.replace(scriptRE, '').trim()
-  // TODO handle public path for injections?
-  // this would also affect paths in templates and css.
-  if (generatedIndex) {
-    // inject css link
-    generatedIndex = injectCSS(generatedIndex, cssFileName)
-    if (cdn) {
-      // if not inlining vue, inject cdn link so it can start the fetch early
-      generatedIndex = injectScript(generatedIndex, cdnLink)
-    }
-  }
-
-  if (write) {
-    await fs.rmdir(outDir, { recursive: true })
-    await fs.mkdir(outDir, { recursive: true })
-  }
-
-  // inject / write bundle
-  for (const chunk of output) {
-    if (chunk.type === 'chunk') {
-      if (chunk.isEntry && generatedIndex) {
-        // inject chunk to html
-        generatedIndex = injectScript(generatedIndex, chunk.fileName)
+    let generatedIndex =
+      indexContent && indexContent.replace(scriptRE, '').trim()
+    // TODO handle public path for injections?
+    // this would also affect paths in templates and css.
+    if (generatedIndex) {
+      // inject css link
+      generatedIndex = injectCSS(generatedIndex, cssFileName)
+      if (cdn) {
+        // if not inlining vue, inject cdn link so it can start the fetch early
+        generatedIndex = injectScript(generatedIndex, cdnLink)
       }
-      // write chunk
-      if (write) {
+    }
+
+    if (write) {
+      await fs.rmdir(outDir, { recursive: true })
+      await fs.mkdir(outDir, { recursive: true })
+    }
+
+    let css = ''
+    // inject / write bundle
+    for (const chunk of output) {
+      if (chunk.type === 'chunk') {
+        if (chunk.isEntry && generatedIndex) {
+          // inject chunk to html
+          generatedIndex = injectScript(generatedIndex, chunk.fileName)
+        }
+        // write chunk
+        if (write) {
+          const filepath = path.join(outDir, chunk.fileName)
+          console.log(
+            `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
+          )
+          await fs.mkdir(path.dirname(filepath), { recursive: true })
+          await fs.writeFile(filepath, chunk.code)
+        }
+      } else {
+        // write asset
+        if (chunk.fileName === cssFileName) {
+          css = chunk.source.toString()
+        }
         const filepath = path.join(outDir, chunk.fileName)
         console.log(
-          `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
+          `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
         )
         await fs.mkdir(path.dirname(filepath), { recursive: true })
-        await fs.writeFile(filepath, chunk.code)
+        await fs.writeFile(filepath, chunk.source)
       }
-    } else {
-      // write asset
-      const filepath = path.join(outDir, chunk.fileName)
-      console.log(
-        `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
-      )
-      await fs.mkdir(path.dirname(filepath), { recursive: true })
-      await fs.writeFile(filepath, chunk.source)
+    }
+
+    if (write) {
+      // write html
+      if (generatedIndex) {
+        const indexOutPath = path.join(outDir, 'index.html')
+        console.log(
+          `write ${chalk.green(path.relative(process.cwd(), indexOutPath))}`
+        )
+        await fs.writeFile(indexOutPath, generatedIndex)
+      }
+    }
+
+    return {
+      js: output,
+      html: generatedIndex || '',
+      css
     }
   }
 
-  if (write) {
-    // write html
-    if (generatedIndex) {
-      const indexOutPath = path.join(outDir, 'index.html')
-      console.log(
-        `write ${chalk.green(path.relative(process.cwd(), indexOutPath))}`
-      )
-      await fs.writeFile(indexOutPath, generatedIndex)
+  let result: BuildResult | BuildResult[]
+  if (Array.isArray(rollupOutputOptions)) {
+    result = []
+    // make sure to build sequentially for correct css extraction
+    for (const options of rollupOutputOptions) {
+      result.push(await generate(options))
     }
+  } else {
+    result = await generate(rollupOutputOptions)
   }
-  console.log(`done in ${((Date.now() - start) / 1000).toFixed(2)}s.`)
-
-  return {
-    js: output,
-    html: generatedIndex || '',
-    css
-  }
+  console.log(
+    `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.`
+  )
+  return result
 }
 
 function injectCSS(html: string, filename: string) {
