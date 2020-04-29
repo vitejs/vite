@@ -47,10 +47,16 @@ export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
         ctx.body = rewriteCache.get(html)
       } else if (ctx.body) {
         await initLexer
+        let hasInjectedDevFlag = false
         ctx.body = html.replace(
           /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
           (_, openTag, script) => {
-            return `${openTag}${rewriteImports(
+            // also inject __DEV__ flag
+            const devFlag = hasInjectedDevFlag
+              ? ``
+              : `\n<script>window.__DEV__ = true</script>\n`
+            hasInjectedDevFlag = true
+            return `${devFlag}${openTag}${rewriteImports(
               script,
               '/index.html',
               resolver
