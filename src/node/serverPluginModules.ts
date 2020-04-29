@@ -27,7 +27,6 @@ const rewriteCache = new LRUCache({ max: 1024 })
 export const modulesPlugin: Plugin = ({ root, app, watcher, resolver }) => {
   // bust module rewrite cache on file change
   watcher.on('change', (file) => {
-    // TODO also need logic for reverse mapping file to publicPath
     const publicPath = resolver.fileToRequest(file)
     debugImportRewrite(`${publicPath}: cache busted`)
     rewriteCache.del(publicPath)
@@ -286,7 +285,7 @@ function rewriteImports(
             // force re-fetch all imports by appending timestamp
             // if this is a hmr refresh request
             if (timestamp) {
-              query += `${query ? `&` : `?`}=${timestamp}`
+              query += `${query ? `&` : `?`}t=${timestamp}`
             }
             resolved = pathname + query
           }
@@ -342,7 +341,6 @@ function rewriteImports(
 }
 
 function parseAcceptedDeps(source: string, importer: string, s: MagicString) {
-  console.log(source)
   const ast = parse(source, {
     sourceType: 'module',
     plugins: [

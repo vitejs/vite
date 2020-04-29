@@ -13,16 +13,27 @@ export interface InternalResolver {
   idToRequest(id: string): string | undefined
 }
 
-const defaultrequestToFile = (publicPath: string, root: string) =>
+const defaultRequestToFile = (publicPath: string, root: string) =>
   path.join(root, publicPath.slice(1))
 
-const defaultfileToRequest = (filePath: string, root: string) =>
+const defaultFileToRequest = (filePath: string, root: string) =>
   `/${slash(path.relative(root, filePath))}`
 
 const defaultIdToRquest = (id: string) => {
-  if (id.startsWith('@')) {
+  if (id.startsWith('@') && id.indexOf('/') < 0) {
     return `/${id}`
   }
+}
+
+const queryRE = /\?.*$/
+const ensureJs = (id: string) => {
+  const cleanId = id.replace(queryRE, '')
+  if (!/\.\w+/.test(cleanId)) {
+    const queryMatch = id.match(queryRE)
+    const query = queryMatch ? queryMatch[0] : ''
+    return cleanId + '.js' + query
+  }
+  return id
 }
 
 export function createResolver(
@@ -31,18 +42,30 @@ export function createResolver(
 ): InternalResolver {
   return {
     requestToFile: (publicPath) => {
+      let resolved: string | undefined
       for (const r of resolvers) {
         const filepath = r.requestToFile(publicPath, root)
-        if (filepath) return filepath
+        if (filepath) {
+          resolved = filepath
+          break
+        }
       }
-      return defaultrequestToFile(publicPath, root)
+      if (!resolved) {
+        resolved = defaultRequestToFile(publicPath, root)
+      }
+      // @ is reserved for special modules, leave as-is
+      if (resolved.startsWith(`/@`)) {
+        return resolved
+      } else {
+        return ensureJs(resolved)
+      }
     },
     fileToRequest: (filePath) => {
       for (const r of resolvers) {
         const request = r.fileToRequest(filePath, root)
         if (request) return request
       }
-      return defaultfileToRequest(filePath, root)
+      return defaultFileToRequest(filePath, root)
     },
     idToRequest: (id: string) => {
       for (const r of resolvers) {
