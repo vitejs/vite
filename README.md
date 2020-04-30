@@ -99,9 +99,11 @@ Starting with version `^0.5.0`, you can run `vite build` to bundle the app and d
 
 - `vite build --cdn`: import `vue` from a CDN link in the built js. This will make the build faster, but overall the page payload will be larger because therer will be no tree-shaking for Vue APIs.
 
-Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - check out `src/node/build.ts` for more details.
+Internally, we use a highly opinionated Rollup config to generate the build. There's not much you can configure from the command line, but if you use the API, then the build is configurable by passing on most options to Rollup (see below).
 
 ### API
+
+#### Dev Server
 
 You can customize the server using the API. The server can accept plugins which have access to the internal Koa app instance. You can then add custom Koa middlewares to add pre-processor support:
 
@@ -147,9 +149,36 @@ createServer({
 }).listen(3000)
 ```
 
+#### Build
+
+``` js
+const { build } = require('vite')
+
+;(async () => {
+  // All options are optional.
+  // check out `src/node/build.ts` for full options interface.
+  const result = await build({
+    rollupInputOptions: {
+      // https://rollupjs.org/guide/en/#big-list-of-options
+    },
+    rollupOutputOptions: {
+      // https://rollupjs.org/guide/en/#big-list-of-options
+    },
+    rollupPluginVueOptions: {
+      // https://github.com/vuejs/rollup-plugin-vue/tree/next#options
+    },
+    root: process.cwd(),
+    cdn: false,
+    write: true,
+    minify: true,
+    silent: false
+  })
+})()
+```
+
 ## TODOs
 
-- Source Map support
+- Vue file source maps
 - Auto loading postcss config
 
 ## Trivia
