@@ -38,6 +38,16 @@ Finally, because compilation is still done in Node, it can technically support a
 
 `vite` is highly experimental at this stage and is not suitable for production use, but we hope to one day make it so.
 
+## How is This Different from [es-dev-server](https://open-wc.org/developing/es-dev-server.html)?
+
+`es-dev-server` is a great project and we did take some inspiration from it when refactoring `vite` in the early stages. That said, here is why `vite` is different from `es-dev-server` and why we didn't just implement `vite` as a middleware for `es-dev-server`:
+
+- `vite` supports Hot Module Replacement, which surgically updates the updated module without reloading the page. This is a fundamental difference in terms of development experience. `es-dev-server` internals is a bit too opaque to get this working nicely via a middleware.
+
+- `vite` aims to be a single tool that integrates both the dev and the build process. You can use `vite` to both serve and bundle the same source code, with zero configuration.
+
+- `vite` requires native ES module imports. It does not intend to burden itself with support for legacy browsers.
+
 ## Features
 
 ### Bare Module Resolving
