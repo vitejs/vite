@@ -5,13 +5,14 @@ import LRUCache from 'lru-cache'
 import MagicString from 'magic-string'
 import { Readable } from 'stream'
 import { init as initLexer, parse as parseImports } from 'es-module-lexer'
-import { hmrClientPublicPath, debugHmr } from './serverPluginHmr'
 import { InternalResolver } from './resolver'
 import {
+  debugHmr,
   importerMap,
   importeeMap,
   ensureMapEntry,
-  rewriteFileWithHMR
+  rewriteFileWithHMR,
+  hmrClientPublicPath
 } from './serverPluginHmr'
 
 const debug = require('debug')('vite:rewrite')
