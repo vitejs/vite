@@ -1,5 +1,6 @@
 import path from 'path'
 import slash from 'slash'
+import { statSync } from 'fs'
 
 export interface Resolver {
   requestToFile(publicPath: string, root: string): string | undefined
@@ -28,7 +29,14 @@ const defaultIdToRequest = (id: string) => {
 const queryRE = /\?.*$/
 const ensureJs = (id: string) => {
   const cleanId = id.replace(queryRE, '')
-  if (!/\.\w+/.test(cleanId)) {
+  if (!/\.\w+$/.test(cleanId)) {
+    // try to see if there is actually a corresponding .js file on disk.
+    // if not, return the id as-is
+    try {
+      statSync(cleanId + '.js')
+    } catch (e) {
+      return id
+    }
     const queryMatch = id.match(queryRE)
     const query = queryMatch ? queryMatch[0] : ''
     return cleanId + '.js' + query
@@ -53,12 +61,8 @@ export function createResolver(
       if (!resolved) {
         resolved = defaultRequestToFile(publicPath, root)
       }
-      // @ is reserved for special modules, leave as-is
-      if (resolved.startsWith(`/@`)) {
-        return resolved
-      } else {
-        return ensureJs(resolved)
-      }
+      resolved = ensureJs(resolved)
+      return resolved
     },
     fileToRequest: (filePath) => {
       for (const r of resolvers) {
