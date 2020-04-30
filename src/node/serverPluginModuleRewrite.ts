@@ -1,15 +1,18 @@
 import { Plugin } from './server'
 import path from 'path'
+import slash from 'slash'
+import LRUCache from 'lru-cache'
+import MagicString from 'magic-string'
 import { Readable } from 'stream'
 import { init as initLexer, parse as parseImports } from 'es-module-lexer'
-import MagicString from 'magic-string'
 import { hmrClientPublicPath, debugHmr } from './serverPluginHmr'
-import { parse } from '@babel/parser'
-import { StringLiteral } from '@babel/types'
-import LRUCache from 'lru-cache'
 import { InternalResolver } from './resolver'
-import slash from 'slash'
-import { Statement, Expression } from '@babel/types'
+import {
+  importerMap,
+  importeeMap,
+  ensureMapEntry,
+  rewriteFileWithHMR
+} from './serverPluginHmr'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -117,23 +120,6 @@ async function readBody(stream: Readable | string): Promise<string> {
   }
 }
 
-// while we lex the files for imports we also build a import graph
-// so that we can determine what files to hot reload
-type HMRStateMap = Map<string, Set<string>>
-
-export const importerMap: HMRStateMap = new Map()
-export const importeeMap: HMRStateMap = new Map()
-export const hmrBoundariesMap: HMRStateMap = new Map()
-
-const ensureMapEntry = (map: HMRStateMap, key: string): Set<string> => {
-  let entry = map.get(key)
-  if (!entry) {
-    entry = new Set<string>()
-    map.set(key, entry)
-  }
-  return entry
-}
-
 function rewriteImports(
   source: string,
   importer: string,
@@ -167,7 +153,7 @@ function rewriteImports(
             ) {
               // the user explicit imports the HMR API in a js file
               // making the module hot.
-              parseAcceptedDeps(source, importer, s)
+              rewriteFileWithHMR(source, importer, s)
               // we rewrite the hot.accept call
               hasReplaced = true
             }
@@ -237,90 +223,4 @@ function rewriteImports(
     debug(source)
     return source
   }
-}
-
-function parseAcceptedDeps(source: string, importer: string, s: MagicString) {
-  const ast = parse(source, {
-    sourceType: 'module',
-    plugins: [
-      // by default we enable proposals slated for ES2020.
-      // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
-      // this should be kept in async with @vue/compiler-core's support range
-      'bigInt',
-      'optionalChaining',
-      'nullishCoalescingOperator'
-    ]
-  }).program.body
-
-  const registerDep = (e: StringLiteral) => {
-    const deps = ensureMapEntry(hmrBoundariesMap, importer)
-    const depPublicPath = slash(path.resolve(path.dirname(importer), e.value))
-    deps.add(depPublicPath)
-    debugHmr(`        ${importer} accepts ${depPublicPath}`)
-    s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))
-  }
-
-  const checkAcceptCall = (node: Expression) => {
-    if (
-      node.type === 'CallExpression' &&
-      node.callee.type === 'MemberExpression' &&
-      node.callee.object.type === 'Identifier' &&
-      node.callee.object.name === 'hot' &&
-      node.callee.property.name === 'accept'
-    ) {
-      const args = node.arguments
-      // inject the imports's own path so it becomes
-      // hot.accept('/foo.js', ['./bar.js'], () => {})
-      s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
-      // register the accepted deps
-      if (args[0].type === 'ArrayExpression') {
-        args[0].elements.forEach((e) => {
-          if (e && e.type !== 'StringLiteral') {
-            console.error(
-              `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
-            )
-          } else if (e) {
-            registerDep(e)
-          }
-        })
-      } else if (args[0].type === 'StringLiteral') {
-        registerDep(args[0])
-      } else {
-        console.error(
-          `[vite] HMR syntax error in ${importer}: hot.accept() expects a dep string or an array of deps.`
-        )
-      }
-    }
-  }
-
-  const checkStatements = (node: Statement) => {
-    if (node.type === 'ExpressionStatement') {
-      // top level hot.accept() call
-      checkAcceptCall(node.expression)
-      // __DEV__ && hot.accept()
-      if (
-        node.expression.type === 'LogicalExpression' &&
-        node.expression.operator === '&&' &&
-        node.expression.left.type === 'Identifier' &&
-        node.expression.left.name === '__DEV__'
-      ) {
-        checkAcceptCall(node.expression.right)
-      }
-    }
-    // if (__DEV__) ...
-    if (
-      node.type === 'IfStatement' &&
-      node.test.type === 'Identifier' &&
-      node.test.name === '__DEV__'
-    ) {
-      if (node.consequent.type === 'BlockStatement') {
-        node.consequent.body.forEach(checkStatements)
-      }
-      if (node.consequent.type === 'ExpressionStatement') {
-        checkAcceptCall(node.consequent.expression)
-      }
-    }
-  }
-
-  ast.forEach(checkStatements)
 }

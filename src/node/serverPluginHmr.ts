@@ -29,15 +29,20 @@
 //    updates using the full paths of the dependencies.
 
 import { Plugin } from './server'
-import path from 'path'
 import WebSocket from 'ws'
+import path from 'path'
+import slash from 'slash'
+import chalk from 'chalk'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache } from './serverPluginVue'
 import { cachedRead } from './utils'
-import { importerMap, hmrBoundariesMap } from './serverPluginModuleRewrite'
-import chalk from 'chalk'
 import { FSWatcher } from 'chokidar'
+import MagicString from 'magic-string'
+import { parse } from '@babel/parser'
+import { StringLiteral, Statement, Expression } from '@babel/types'
+
+export const debugHmr = require('debug')('vite:hmr')
 
 export type HMRWatcher = FSWatcher & {
   handleVueReload: (file: string, timestamp?: number, content?: string) => void
@@ -45,7 +50,13 @@ export type HMRWatcher = FSWatcher & {
   send: (payload: HMRPayload) => void
 }
 
-export const debugHmr = require('debug')('vite:hmr')
+// while we lex the files for imports we also build a import graph
+// so that we can determine what files to hot reload
+type HMRStateMap = Map<string, Set<string>>
+
+export const hmrBoundariesMap: HMRStateMap = new Map()
+export const importerMap: HMRStateMap = new Map()
+export const importeeMap: HMRStateMap = new Map()
 
 // client and node files are placed flat in the dist folder
 export const hmrClientFilePath = path.resolve(__dirname, './client.js')
@@ -241,40 +252,40 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
       debugHmr(`no importers for ${publicPath}.`)
     }
   }
+}
 
-  function walkImportChain(
-    importee: string,
-    currentImporters: Set<string>,
-    vueImporters: Set<string>,
-    jsHotImporters: Set<string>
-  ): boolean {
-    let hasDeadEnd = false
-    for (const importer of currentImporters) {
-      if (importer.endsWith('.vue')) {
-        vueImporters.add(importer)
-      } else if (isHMRBoundary(importer, importee)) {
-        jsHotImporters.add(importer)
+function walkImportChain(
+  importee: string,
+  currentImporters: Set<string>,
+  vueImporters: Set<string>,
+  jsHotImporters: Set<string>
+): boolean {
+  let hasDeadEnd = false
+  for (const importer of currentImporters) {
+    if (importer.endsWith('.vue')) {
+      vueImporters.add(importer)
+    } else if (isHMRBoundary(importer, importee)) {
+      jsHotImporters.add(importer)
+    } else {
+      const parentImpoters = importerMap.get(importer)
+      if (!parentImpoters) {
+        hasDeadEnd = true
       } else {
-        const parentImpoters = importerMap.get(importer)
-        if (!parentImpoters) {
-          hasDeadEnd = true
-        } else {
-          hasDeadEnd = walkImportChain(
-            importer,
-            parentImpoters,
-            vueImporters,
-            jsHotImporters
-          )
-        }
+        hasDeadEnd = walkImportChain(
+          importer,
+          parentImpoters,
+          vueImporters,
+          jsHotImporters
+        )
       }
     }
-    return hasDeadEnd
   }
+  return hasDeadEnd
+}
 
-  function isHMRBoundary(importer: string, dep: string): boolean {
-    const deps = hmrBoundariesMap.get(importer)
-    return deps ? deps.has(dep) : false
-  }
+function isHMRBoundary(importer: string, dep: string): boolean {
+  const deps = hmrBoundariesMap.get(importer)
+  return deps ? deps.has(dep) : false
 }
 
 function isEqual(a: SFCBlock | null, b: SFCBlock | null) {
@@ -287,4 +298,103 @@ function isEqual(a: SFCBlock | null, b: SFCBlock | null) {
     return false
   }
   return keysA.every((key) => a.attrs[key] === b.attrs[key])
+}
+
+export function ensureMapEntry(map: HMRStateMap, key: string): Set<string> {
+  let entry = map.get(key)
+  if (!entry) {
+    entry = new Set<string>()
+    map.set(key, entry)
+  }
+  return entry
+}
+
+export function rewriteFileWithHMR(
+  source: string,
+  importer: string,
+  s: MagicString
+) {
+  const ast = parse(source, {
+    sourceType: 'module',
+    plugins: [
+      // by default we enable proposals slated for ES2020.
+      // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
+      // this should be kept in async with @vue/compiler-core's support range
+      'bigInt',
+      'optionalChaining',
+      'nullishCoalescingOperator'
+    ]
+  }).program.body
+
+  const registerDep = (e: StringLiteral) => {
+    const deps = ensureMapEntry(hmrBoundariesMap, importer)
+    const depPublicPath = slash(path.resolve(path.dirname(importer), e.value))
+    deps.add(depPublicPath)
+    debugHmr(`        ${importer} accepts ${depPublicPath}`)
+    s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))
+  }
+
+  const checkAcceptCall = (node: Expression) => {
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'MemberExpression' &&
+      node.callee.object.type === 'Identifier' &&
+      node.callee.object.name === 'hot' &&
+      node.callee.property.name === 'accept'
+    ) {
+      const args = node.arguments
+      // inject the imports's own path so it becomes
+      // hot.accept('/foo.js', ['./bar.js'], () => {})
+      s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+      // register the accepted deps
+      if (args[0].type === 'ArrayExpression') {
+        args[0].elements.forEach((e) => {
+          if (e && e.type !== 'StringLiteral') {
+            console.error(
+              `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
+            )
+          } else if (e) {
+            registerDep(e)
+          }
+        })
+      } else if (args[0].type === 'StringLiteral') {
+        registerDep(args[0])
+      } else {
+        console.error(
+          `[vite] HMR syntax error in ${importer}: hot.accept() expects a dep string or an array of deps.`
+        )
+      }
+    }
+  }
+
+  const checkStatements = (node: Statement) => {
+    if (node.type === 'ExpressionStatement') {
+      // top level hot.accept() call
+      checkAcceptCall(node.expression)
+      // __DEV__ && hot.accept()
+      if (
+        node.expression.type === 'LogicalExpression' &&
+        node.expression.operator === '&&' &&
+        node.expression.left.type === 'Identifier' &&
+        node.expression.left.name === '__DEV__'
+      ) {
+        checkAcceptCall(node.expression.right)
+      }
+    }
+    // if (__DEV__) ...
+    if (
+      node.type === 'IfStatement' &&
+      node.test.type === 'Identifier' &&
+      node.test.name === '__DEV__'
+    ) {
+      if (node.consequent.type === 'BlockStatement') {
+        node.consequent.body.forEach(checkStatements)
+      }
+      if (node.consequent.type === 'ExpressionStatement') {
+        checkAcceptCall(node.consequent.expression)
+      }
+    }
+  }
+
+  ast.forEach(checkStatements)
 }
