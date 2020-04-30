@@ -2,10 +2,11 @@ import http, { Server } from 'http'
 import Koa from 'koa'
 import chokidar from 'chokidar'
 import { Resolver, createResolver, InternalResolver } from './resolver'
-import { modulesPlugin } from './serverPluginModules'
+import { moduleRewritePlugin } from './serverPluginModuleRewrite'
+import { moduleResolvePlugin } from './serverPluginModueResolve'
 import { vuePlugin } from './serverPluginVue'
 import { hmrPlugin, HMRWatcher } from './serverPluginHmr'
-import { servePlugin } from './serverPluginServe'
+import { serveStaticPlugin } from './serverPluginServeStatic'
 
 export { Resolver }
 
@@ -26,10 +27,11 @@ export interface ServerConfig {
 }
 
 const internalPlugins: Plugin[] = [
-  modulesPlugin,
+  moduleRewritePlugin,
+  moduleResolvePlugin,
   vuePlugin,
   hmrPlugin,
-  servePlugin
+  serveStaticPlugin
 ]
 
 export function createServer(config: ServerConfig = {}): Server {

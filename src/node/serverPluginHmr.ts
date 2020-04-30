@@ -35,7 +35,7 @@ import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache } from './serverPluginVue'
 import { cachedRead } from './utils'
-import { importerMap, hmrBoundariesMap } from './serverPluginModules'
+import { importerMap, hmrBoundariesMap } from './serverPluginModuleRewrite'
 import chalk from 'chalk'
 import { FSWatcher } from 'chokidar'
 

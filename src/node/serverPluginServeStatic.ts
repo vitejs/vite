@@ -2,7 +2,7 @@ import { Plugin } from './server'
 
 const debug = require('debug')('vite:history')
 
-export const servePlugin: Plugin = ({ root, app }) => {
+export const serveStaticPlugin: Plugin = ({ root, app }) => {
   // short circuit requests that have already been explicitly handled
   app.use((ctx, next) => {
     if (ctx.body || ctx.status !== 404) {
