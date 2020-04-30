@@ -19,7 +19,7 @@ const defaultRequestToFile = (publicPath: string, root: string) =>
 const defaultFileToRequest = (filePath: string, root: string) =>
   `/${slash(path.relative(root, filePath))}`
 
-const defaultIdToRquest = (id: string) => {
+const defaultIdToRequest = (id: string) => {
   if (id.startsWith('@') && id.indexOf('/') < 0) {
     return `/${id}`
   }
@@ -72,7 +72,7 @@ export function createResolver(
         const request = r.idToRequest && r.idToRequest(id)
         if (request) return request
       }
-      return defaultIdToRquest(id)
+      return defaultIdToRequest(id)
     }
   }
 }
