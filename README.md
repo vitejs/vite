@@ -78,13 +78,32 @@ The above will throw an error by default. `vite` detects such bare module import
 
   foo()
 
-  hot.accept('./foo.js', ({ foo }) => {
+  hot.accept('./foo.js', (newFoo) => {
     // the callback receives the updated './foo.js' module
-    foo()
+    newFoo.foo()
+  })
+
+  // Can also accept an array of dep modules:
+  hot.accept(['./foo.js', './bar.js'], ([newFooModule, newBarModule]) => {
+    // the callback receives the updated mdoules in an Array
   })
   ```
 
-  Note it's simplified and not fully compatible with webpack's HMR API, for example there is no self-accepting modules, and if you re-export `foo` from this file, it won't reflect changes in modules that import this file.
+  Modules can also be self-accepting:
+
+  ```js
+  import { hot } from '@hmr'
+
+  export const count = 1
+
+  hot.accept(newModule => {
+    console.log('updated: count is now ', newModule.count)
+  })
+  ```
+
+  Note that `vite`'s HMR does not actually swap the originally imported module: if an accepting module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the accepting module will not be notified of the change.
+
+  This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
 
 ### CSS Pre-Processors
 

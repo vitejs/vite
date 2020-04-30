@@ -90,7 +90,7 @@ export const hot = {
   accept(
     importer: string,
     deps: string | string[],
-    callback: (modules: object | object[]) => void
+    callback: (modules: object | object[]) => void = () => {}
   ) {
     jsUpdateMap.set(importer, (timestamp: number) => {
       if (Array.isArray(deps)) {
