@@ -3,6 +3,12 @@ const path = require('path')
 const { promises: fs } = require('fs')
 
 async function init() {
+
+  if (!fs) {
+    console.info(`Error: Current node version doesn't support \`require('fs').promises\` API.`)
+    return
+  }
+
   const targetDir = process.argv[2]
 
   if (!targetDir) {
