@@ -42,8 +42,8 @@ export function createServer(config: ServerConfig = {}): Server {
     ignored: [/node_modules/]
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers)
-
-  ;[...plugins, ...internalPlugins].forEach((m) =>
+  
+  plugins.concat(...internalPlugins).forEach((m) =>
     m({
       root,
       app,
