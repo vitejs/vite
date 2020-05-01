@@ -32,52 +32,64 @@ afterAll(async () => {
     })
 })
 
-test('test', async () => {
-  server = execa(path.resolve(__dirname, '../bin/vite.js'), {
-    cwd: tempDir
-  })
-  await new Promise((resolve) => {
-    server.stdout.on('data', (data) => {
-      if (data.toString().match('running')) {
-        resolve()
-      }
+describe('vite', () => {
+  let page
+
+  beforeAll(async () => {
+    server = execa(path.resolve(__dirname, '../bin/vite.js'), {
+      cwd: tempDir
     })
+    await new Promise((resolve) => {
+      server.stdout.on('data', (data) => {
+        if (data.toString().match('running')) {
+          resolve()
+        }
+      })
+    })
+
+    browser = await puppeteer.launch(
+      process.env.CI
+        ? { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
+        : {}
+    )
+
+    page = await browser.newPage()
+    await page.goto('http://localhost:3000')
   })
 
-  browser = await puppeteer.launch(
-    process.env.CI ? { args: ['--no-sandbox', '--disable-setuid-sandbox'] } : {}
-  )
+  test('nested components rendering', async () => {
+    const button = await page.$('button')
+    expect(await button.evaluate((b) => b.textContent)).toBe('0')
+    const child = await page.$('.child')
+    expect(await child.evaluate((e) => e.textContent)).toBe('This is child')
+  })
 
-  const page = await browser.newPage()
-  await page.goto('http://localhost:3000')
+  test('interaction', async () => {
+    const button = await page.$('button')
+    await button.click()
+    expect(await button.evaluate((b) => b.textContent)).toBe('1')
+  })
 
-  // test nested components rendering
-  const button = await page.$('button')
-  expect(await button.evaluate((b) => b.textContent)).toBe('0')
-  const child = await page.$('.child')
-  expect(await child.evaluate((e) => e.textContent)).toBe('This is child')
+  test('hmr', async () => {
+    const compPath = path.join(tempDir, 'Comp.vue')
+    const content = await fs.readFile(compPath, 'utf-8')
+    await fs.writeFile(
+      compPath,
+      content.replace('{{ count }}', 'count is {{ count }}')
+    )
 
-  // test interaction
-  await button.click()
-  expect(await button.evaluate((b) => b.textContent)).toBe('1')
-
-  // test HMR
-  const compPath = path.join(tempDir, 'Comp.vue')
-  const content = await fs.readFile(compPath, 'utf-8')
-  await fs.writeFile(
-    compPath,
-    content.replace('{{ count }}', 'count is {{ count }}')
-  )
-  // poll until it updates
-  const maxTries = 10
-  for (let tries = 0; tries < maxTries; tries++) {
-    const text = await button.evaluate((b) => b.textContent)
-    if (text === 'count is 1' || tries === maxTries - 1) {
-      expect(text).toBe('count is 1')
-    } else {
-      await timeout(200)
+    // poll until it updates
+    const button = await page.$('button')
+    const maxTries = 10
+    for (let tries = 0; tries < maxTries; tries++) {
+      const text = await button.evaluate((b) => b.textContent)
+      if (text === 'count is 1' || tries === maxTries - 1) {
+        expect(text).toBe('count is 1')
+      } else {
+        await timeout(200)
+      }
     }
-  }
+  })
 
   // TODO test style HMR
   // TODO test node_modules resolution
