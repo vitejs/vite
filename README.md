@@ -118,7 +118,7 @@ yarn add -D sass
 </style>
 ```
 
-Note importing CSS / preprocessor files from `.js` files, and HMR from imported pre-proccessor files are currently not supported, but can be in the future.
+Note importing CSS / preprocessor files from `.js` files, and HMR from imported pre-processor files are currently not supported, but can be in the future.
 
 ### Building for Production
 
