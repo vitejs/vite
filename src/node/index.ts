@@ -1,3 +1,3 @@
 export * from './server'
 export * from './build'
-export { cachedRead } from './utils'
+export { cachedRead, isStaticAsset } from './utils'

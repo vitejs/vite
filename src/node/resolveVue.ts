@@ -4,27 +4,25 @@ import sfcCompiler from '@vue/compiler-sfc'
 import chalk from 'chalk'
 
 interface ResolvedVuePaths {
-  vue: string
+  browser: string
+  bundler: string
   version: string
   hasLocalVue: boolean
   compiler: string
+  cdnLink: string
 }
 
 let resolved: ResolvedVuePaths | undefined = undefined
 
-const toBuildPaths = (p: ResolvedVuePaths) => ({
-  ...p,
-  vue: p.vue.replace('esm-browser', 'esm-bundler')
-})
-
 // Resolve the correct `vue` and `@vue.compiler-sfc` to use.
 // If the user project has local installations of these, they should be used;
 // otherwise, fallback to the dependency of Vite itself.
-export function resolveVue(root: string, isBuild = false): ResolvedVuePaths {
+export function resolveVue(root: string): ResolvedVuePaths {
   if (resolved) {
-    return isBuild ? toBuildPaths(resolved) : resolved
+    return resolved
   }
-  let vuePath: string
+  let browserPath: string
+  let bundlerPath: string
   let compilerPath: string
   let hasLocalVue = true
   let vueVersion: string
@@ -32,9 +30,13 @@ export function resolveVue(root: string, isBuild = false): ResolvedVuePaths {
     // see if user has local vue installation
     const userVuePkg = resolve(root, 'vue/package.json')
     vueVersion = require(userVuePkg).version
-    vuePath = path.join(
+    browserPath = path.join(
       path.dirname(userVuePkg),
       'dist/vue.runtime.esm-browser.js'
+    )
+    bundlerPath = path.join(
+      path.dirname(userVuePkg),
+      'dist/vue.runtime.esm-bundler.js'
     )
 
     // also resolve matching sfc compiler
@@ -59,17 +61,20 @@ export function resolveVue(root: string, isBuild = false): ResolvedVuePaths {
   } catch (e) {
     // user has no local vue, use vite's dependency version
     hasLocalVue = false
-    vuePath = require.resolve('vue/dist/vue.runtime.esm-browser.js')
+    browserPath = require.resolve('vue/dist/vue.runtime.esm-browser.js')
+    bundlerPath = require.resolve('vue/dist/vue.runtime.esm-bundler.js')
     vueVersion = require('vue/package.json').version
     compilerPath = require.resolve('@vue/compiler-sfc')
   }
   resolved = {
-    vue: vuePath,
+    browser: browserPath,
+    bundler: bundlerPath,
     version: vueVersion,
     hasLocalVue,
-    compiler: compilerPath
+    compiler: compilerPath,
+    cdnLink: `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.prod.js`
   }
-  return isBuild ? toBuildPaths(resolved) : resolved
+  return resolved
 }
 
 export function resolveCompiler(cwd: string): typeof sfcCompiler {

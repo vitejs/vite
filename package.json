@@ -65,6 +65,7 @@
     "koa": "^2.11.0",
     "koa-conditional-get": "^2.0.0",
     "koa-etag": "^3.0.0",
+    "koa-send": "^5.0.0",
     "koa-static": "^5.0.0",
     "lru-cache": "^5.1.1",
     "magic-string": "^0.25.7",

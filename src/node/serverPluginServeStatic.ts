@@ -1,10 +1,11 @@
 import { Plugin } from './server'
 
+const send = require('koa-send')
 const debug = require('debug')('vite:history')
 
-export const serveStaticPlugin: Plugin = ({ root, app }) => {
-  // short circuit requests that have already been explicitly handled
+export const serveStaticPlugin: Plugin = ({ root, app, resolver }) => {
   app.use((ctx, next) => {
+    // short circuit requests that have already been explicitly handled
     if (ctx.body || ctx.status !== 404) {
       return
     }
@@ -51,5 +52,16 @@ export const serveStaticPlugin: Plugin = ({ root, app }) => {
 
   app.use(require('koa-conditional-get')())
   app.use(require('koa-etag')())
+
+  app.use((ctx, next) => {
+    const redirect = resolver.requestToFile(ctx.path)
+    if (!redirect.startsWith(root)) {
+      // resolver resolved to a file that is outside of project root,
+      // manually send here
+      return send(ctx, redirect, { root: '/' })
+    }
+    return next()
+  })
+
   app.use(require('koa-static')(root))
 }

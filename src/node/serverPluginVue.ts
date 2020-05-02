@@ -1,3 +1,4 @@
+import path from 'path'
 import { Plugin } from './server'
 import {
   SFCDescriptor,
@@ -209,7 +210,8 @@ function compileSFCTemplate(
   const { code, errors } = resolveCompiler(root).compileTemplate({
     source: template.content,
     filename: filePath,
-    transformAssetUrls: false,
+    // @ts-ignore
+    transformAssetUrlsBase: path.posix.dirname(publicPath),
     compilerOptions: {
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: '/@modules/vue'

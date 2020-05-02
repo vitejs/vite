@@ -4,6 +4,16 @@ import LRUCache from 'lru-cache'
 import os from 'os'
 import { Context } from 'koa'
 
+export const scriptRE = /<script\b[^>]*>([\s\S]*?)<\/script>/gm
+
+const imageRE = /\.(png|jpe?g|gif|svg)(\?.*)?$/
+const mediaRE = /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/
+const fontsRE = /\.(woff2?|eot|ttf|otf)(\?.*)?$/i
+
+export const isStaticAsset = (file: string) => {
+  return imageRE.test(file) || mediaRE.test(file) || fontsRE.test(file)
+}
+
 const getETag = require('etag')
 
 interface CacheEntry {
