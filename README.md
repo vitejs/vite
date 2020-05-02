@@ -207,10 +207,10 @@ const { build } = require('vite')
 
 ## TODOs
 
-- Support importing `.css` and `.json`
-- Public path handling
-- Config file support
+- Relative path and base public path handling
 - Auto loading postcss config
+- Support importing `.css` and `.json`
+- Config file support (custom import maps)
 - Vue file source maps
 
 ## Trivia
