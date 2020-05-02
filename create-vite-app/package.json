@@ -1,0 +1,25 @@
+{
+  "name": "create-vite-app",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "Evan You",
+  "main": "index.js",
+  "bin": {
+    "create-vite-app": "index.js"
+  },
+  "files": [
+    "index.js",
+    "template"
+  ],
+  "scripts": {
+    "prepublishOnly": "node updateVersions.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vuejs/vite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vuejs/vite/issues"
+  },
+  "homepage": "https://github.com/vuejs/vite/tree/master/#readme"
+}

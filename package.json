@@ -1,25 +1,37 @@
 {
   "name": "vite",
-  "version": "0.3.2",
+  "version": "0.8.1",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
     "vite": "bin/vite.js"
   },
-  "main": "dist/server/index.js",
-  "types": "dist/server/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "bin",
     "dist"
   ],
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vuejs/vite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vuejs/vite/issues"
+  },
+  "homepage": "https://github.com/vuejs/vite/tree/master/#readme",
   "scripts": {
-    "dev": "run-p dev-client dev-server",
+    "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --p src/client",
-    "dev-server": "tsc -w --p src/server",
-    "build": "rm -rf dist && tsc -p src/client && tsc -p src/server",
+    "dev-node": "tsc -w --p src/node",
+    "build": "rm -rf dist && tsc -p src/client && tsc -p src/node",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "yarn build && jest",
-    "prepublishOnly": "yarn build"
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "prepublishOnly": "yarn build && yarn changelog"
   },
   "gitHooks": {
     "pre-commit": "lint-staged"
@@ -38,9 +50,16 @@
     ]
   },
   "dependencies": {
+    "@babel/parser": "^7.9.4",
+    "@rollup/plugin-alias": "^3.1.0",
+    "@rollup/plugin-node-resolve": "^7.1.3",
+    "@rollup/plugin-replace": "^2.3.2",
     "@types/koa": "^2.11.3",
-    "@vue/compiler-sfc": "^3.0.0-beta.3",
+    "@vue/compiler-sfc": "^3.0.0-beta.5",
+    "chalk": "^4.0.0",
     "chokidar": "^3.3.1",
+    "cssnano": "^4.1.10",
+    "debug": "^4.1.1",
     "es-module-lexer": "^0.3.18",
     "hash-sum": "^2.0.0",
     "koa": "^2.11.0",
@@ -50,8 +69,13 @@
     "lru-cache": "^5.1.1",
     "magic-string": "^0.25.7",
     "minimist": "^1.2.5",
+    "postcss": "^7.0.27",
     "resolve-from": "^5.0.0",
-    "vue": "^3.0.0-beta.3",
+    "rollup": "^2.7.2",
+    "rollup-plugin-terser": "^5.3.0",
+    "rollup-plugin-vue": "^6.0.0-alpha.7",
+    "slash": "^3.0.0",
+    "vue": "^3.0.0-beta.5",
     "ws": "^7.2.3"
   },
   "devDependencies": {
@@ -61,6 +85,7 @@
     "@types/node": "^13.13.1",
     "@types/serve-handler": "^6.1.0",
     "@types/ws": "^7.2.4",
+    "conventional-changelog-cli": "^2.0.31",
     "execa": "^4.0.0",
     "jest": "^25.4.0",
     "lint-staged": "^10.1.6",
