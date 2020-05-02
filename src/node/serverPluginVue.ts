@@ -209,6 +209,7 @@ function compileSFCTemplate(
   const { code, errors } = resolveCompiler(root).compileTemplate({
     source: template.content,
     filename: filePath,
+    transformAssetUrls: false,
     compilerOptions: {
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: '/@modules/vue'
