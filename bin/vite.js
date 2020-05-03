@@ -2,7 +2,6 @@
 const path = require('path')
 const chalk = require('chalk')
 const argv = require('minimist')(process.argv.slice(2))
-const getIPv4AddressList = require('../dist/utils').getIPv4AddressList
 
 console.log(chalk.cyan(`vite v${require('../package.json').version}`))
 
@@ -50,4 +49,19 @@ if (argv._[0] === 'build') {
   })
 
   server.listen(port)
+}
+
+function getIPv4AddressList() {
+  const networkInterfaces = require('os').networkInterfaces()
+  let result = []
+
+  Object.keys(networkInterfaces).forEach((key) => {
+    const ips = (networkInterfaces[key] || [])
+      .filter((details) => details.family === 'IPv4')
+      .map((detail) => detail.address.replace('127.0.0.1', 'localhost'))
+
+    result = result.concat(ips)
+  })
+
+  return result
 }

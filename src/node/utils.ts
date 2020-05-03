@@ -1,19 +1,31 @@
 import path from 'path'
 import { promises as fs } from 'fs'
 import LRUCache from 'lru-cache'
-import os from 'os'
 import { Context } from 'koa'
 import { Readable } from 'stream'
+const getETag = require('etag')
 
 const imageRE = /\.(png|jpe?g|gif|svg)(\?.*)?$/
 const mediaRE = /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/
 const fontsRE = /\.(woff2?|eot|ttf|otf)(\?.*)?$/i
 
+/**
+ * Check if a file is a static asset that vite can process.
+ */
 export const isStaticAsset = (file: string) => {
   return imageRE.test(file) || mediaRE.test(file) || fontsRE.test(file)
 }
 
-const getETag = require('etag')
+/**
+ * Check if a request is an import from js (instead of fetch() or ajax requests)
+ * A request qualifies as long as it's not from page (no ext or .html).
+ * this is because non-js files can be transformed into js and import json
+ * as well.
+ */
+export const isImportRequest = (ctx: Context) => {
+  const referer = ctx.get('referer')
+  return /\.\w+$/.test(referer) && !referer.endsWith('.html')
+}
 
 interface CacheEntry {
   lastModified: number
@@ -25,6 +37,10 @@ const moduleReadCache = new LRUCache<string, CacheEntry>({
   max: 10000
 })
 
+/**
+ * Read a file with in-memory cache.
+ * Also sets approrpriate headers and body on the Koa context.
+ */
 export async function cachedRead(
   ctx: Context | null,
   file: string
@@ -63,6 +79,10 @@ export async function cachedRead(
   return content
 }
 
+/**
+ * Read already set body on a Koa context and normalize it into a string.
+ * Useful in post-processing middlewares.
+ */
 export async function readBody(
   stream: Readable | Buffer | string
 ): Promise<string> {
@@ -79,19 +99,4 @@ export async function readBody(
   } else {
     return typeof stream === 'string' ? stream : stream.toString()
   }
-}
-
-export function getIPv4AddressList(): string[] {
-  const networkInterfaces = os.networkInterfaces()
-  let result: string[] = []
-
-  Object.keys(networkInterfaces).forEach((key) => {
-    const ips = (networkInterfaces[key] || [])
-      .filter((details) => details.family === 'IPv4')
-      .map((detail) => detail.address.replace('127.0.0.1', 'localhost'))
-
-    result = result.concat(ips)
-  })
-
-  return result
 }
