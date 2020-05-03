@@ -1,8 +1,8 @@
 // How HMR works
 // 1. `.vue` files are transformed into `.js` files before being served
 // 2. All `.js` files, before being served, are parsed to detect their imports
-//    (this is done in `./modules.ts`) for module import rewriting. During this
-//    we also record the importer/importee relationships which can be used for
+//    (this is done in `./serverPluginModuleRewrite.ts`) for module import rewriting.
+//    During this we also record the importer/importee relationships which can be used for
 //    HMR analysis (we do both at the same time to avoid double parse costs)
 // 3. When a `.vue` file changes, we directly read, parse it again and
 //    send the client because Vue components are self-accepting by nature
