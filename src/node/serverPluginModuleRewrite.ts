@@ -13,7 +13,7 @@ import {
   rewriteFileWithHMR,
   hmrClientPublicPath
 } from './serverPluginHmr'
-import { readBody } from './utils'
+import { readBody, cleanUrl, queryRE } from './utils'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -87,17 +87,12 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
     ) {
       const content = await readBody(ctx.body)
-      if (rewriteCache.has(content)) {
+      if (!ctx.query.t && rewriteCache.has(content)) {
         debug(`${ctx.url}: serving from cache`)
         ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
-        ctx.body = rewriteImports(
-          content!,
-          ctx.url.replace(/(&|\?)t=\d+/, ''),
-          resolver,
-          ctx.query.t
-        )
+        ctx.body = rewriteImports(content!, ctx.path, resolver, ctx.query.t)
         rewriteCache.set(content, ctx.body)
       }
     } else {
@@ -152,8 +147,7 @@ function rewriteImports(
               hasReplaced = true
             }
           } else {
-            const queryRE = /\?.*$/
-            let pathname = id.replace(queryRE, '')
+            let pathname = cleanUrl(id)
             const queryMatch = id.match(queryRE)
             let query = queryMatch ? queryMatch[0] : ''
             // append .js for extension-less imports
@@ -180,7 +174,9 @@ function rewriteImports(
           }
 
           // save the import chain for hmr analysis
-          const importee = slash(path.resolve(path.dirname(importer), resolved))
+          const importee = cleanUrl(
+            slash(path.resolve(path.dirname(importer), resolved))
+          )
           currentImportees.add(importee)
           debugHmr(`        ${importer} imports ${importee}`)
           ensureMapEntry(importerMap, importee).add(importer)

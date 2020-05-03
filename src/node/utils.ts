@@ -3,7 +3,6 @@ import { promises as fs } from 'fs'
 import LRUCache from 'lru-cache'
 import { Context } from 'koa'
 import { Readable } from 'stream'
-import { URL } from 'url'
 const getETag = require('etag')
 
 const imageRE = /\.(png|jpe?g|gif|svg)(\?.*)?$/
@@ -24,9 +23,15 @@ export const isStaticAsset = (file: string) => {
  * as well.
  */
 export const isImportRequest = (ctx: Context) => {
-  const referer = new URL(ctx.get('referer')).pathname
+  const referer = cleanUrl(ctx.get('referer'))
   return /\.\w+$/.test(referer) && !referer.endsWith('.html')
 }
+
+export const queryRE = /\?.*$/
+export const hashRE = /\#.*$/
+
+export const cleanUrl = (url: string) =>
+  url.replace(hashRE, '').replace(queryRE, '')
 
 interface CacheEntry {
   lastModified: number
