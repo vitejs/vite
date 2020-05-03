@@ -26,7 +26,7 @@ async function init() {
   try {
     await fs.mkdir(root)
   } catch (e) {
-    console.error(`Error: target directory alreay exists.`)
+    console.error(`Error: target directory already exists.`)
     return
   }
 
