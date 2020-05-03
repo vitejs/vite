@@ -33,7 +33,11 @@ socket.addEventListener('message', ({ data }) => {
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
       break
-    case 'vue-style-remove':
+    case 'style-update':
+      updateStyle(id, `${path}?raw&t=${timestamp}`)
+      console.log(`[vite] ${path} updated.`)
+      break
+    case 'style-remove':
       const link = document.getElementById(`vite-css-${id}`)
       if (link) {
         document.head.removeChild(link)
@@ -65,9 +69,12 @@ socket.addEventListener('message', ({ data }) => {
 socket.addEventListener('close', () => {
   console.log(`[vite] server connection lost. polling for restart...`)
   setInterval(() => {
-    new WebSocket(`${socketProtocol}://${location.host}`).addEventListener('open', () => {
-      location.reload()
-    })
+    new WebSocket(`${socketProtocol}://${location.host}`).addEventListener(
+      'open',
+      () => {
+        location.reload()
+      }
+    )
   }, 1000)
 })
 

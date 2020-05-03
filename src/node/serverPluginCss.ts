@@ -3,7 +3,7 @@ import { isImportRequest } from './utils'
 import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
 
-export const cssPlugin: Plugin = ({ app }) => {
+export const cssPlugin: Plugin = ({ app, watcher, resolver }) => {
   app.use(async (ctx, next) => {
     await next()
     // handle .css imports
@@ -24,6 +24,20 @@ export const cssPlugin: Plugin = ({ app }) => {
 import { updateStyle } from "${hmrClientId}"\n
 updateStyle(${id}, ${rawPath})
 `.trim()
+    }
+  })
+
+  // handle hmr
+  watcher.on('change', (file) => {
+    if (file.endsWith('.css')) {
+      const publicPath = resolver.fileToRequest(file)
+      const id = hash_sum(publicPath)
+      watcher.send({
+        type: 'style-update',
+        id,
+        path: publicPath,
+        timestamp: Date.now()
+      })
     }
   })
 }
