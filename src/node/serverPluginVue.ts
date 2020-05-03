@@ -12,8 +12,9 @@ import LRUCache from 'lru-cache'
 import { hmrClientId } from './serverPluginHmr'
 import resolve from 'resolve-from'
 import { cachedRead } from './utils'
+import { loadPostcssConfig } from './config'
 import { Context } from 'koa'
-import postcssrc from 'postcss-load-config'
+
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
 
@@ -245,6 +246,8 @@ async function compileSFCStyle(
   }
 
   const id = hash_sum(publicPath)
+  const postcssConfig = await loadPostcssConfig(root)
+
   const result = await resolveCompiler(root).compileStyleAsync({
     source: style.content,
     filename: filePath,
@@ -253,7 +256,12 @@ async function compileSFCStyle(
     modules: style.module != null,
     preprocessLang: style.lang as any,
     preprocessCustomRequire: (id: string) => require(resolve(root, id)),
-    ...loadPostCssConfig(root)
+    ...(postcssConfig
+      ? {
+          postcssOptions: postcssConfig.options,
+          postcssPlugins: postcssConfig.plugins
+        }
+      : {})
   })
 
   if (result.errors.length) {
@@ -267,12 +275,4 @@ async function compileSFCStyle(
   cached.styles[index] = result
   vueCache.set(filePath, cached)
   return result
-}
-
-function loadPostCssConfig(root: string) {
-  const config = postcssrc.sync({}, root)
-  return {
-    postcssOptions: config.options,
-    postcssPlugins: config.plugins
-  }
 }
