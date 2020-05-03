@@ -71,7 +71,7 @@
     "lru-cache": "^5.1.1",
     "magic-string": "^0.25.7",
     "minimist": "^1.2.5",
-    "postcss": "^7.0.27",
+    "postcss": "^7.0.28",
     "postcss-load-config": "^2.1.0",
     "resolve-from": "^5.0.0",
     "rollup": "^2.7.2",
