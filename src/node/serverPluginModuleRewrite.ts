@@ -143,8 +143,16 @@ function rewriteImports(
       importeeMap.set(importer, currentImportees)
 
       imports.forEach(({ s: start, e: end, d: dynamicIndex }) => {
-        const id = source.substring(start, end)
-        if (dynamicIndex === -1) {
+        let id = source.substring(start, end)
+        let hasLiteralDynamicId = false
+        if (dynamicIndex >= 0) {
+          const literalIdMatch = id.match(/^(?:'([^']+)'|"([^"]+)")$/)
+          if (literalIdMatch) {
+            hasLiteralDynamicId = true
+            id = literalIdMatch[1] || literalIdMatch[2]
+          }
+        }
+        if (dynamicIndex === -1 || hasLiteralDynamicId) {
           let resolved
           if (/^[^\/\.]/.test(id)) {
             resolved = resolver.idToRequest(id) || `/@modules/${id}`
@@ -178,7 +186,11 @@ function rewriteImports(
 
           if (resolved !== id) {
             debug(`    "${id}" --> "${resolved}"`)
-            s.overwrite(start, end, resolved)
+            s.overwrite(
+              start,
+              end,
+              hasLiteralDynamicId ? `'${resolved}'` : resolved
+            )
             hasReplaced = true
           }
 
@@ -187,9 +199,8 @@ function rewriteImports(
           currentImportees.add(importee)
           debugHmr(`        ${importer} imports ${importee}`)
           ensureMapEntry(importerMap, importee).add(importer)
-        } else if (dynamicIndex >= 0) {
-          // TODO dynamic import
-          debug(`    dynamic import "${id}" (ignored)`)
+        } else {
+          console.log(`[vite] ignored dynamic import(${id})`)
         }
       })
 
