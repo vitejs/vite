@@ -3,7 +3,6 @@ import path from 'path'
 import slash from 'slash'
 import LRUCache from 'lru-cache'
 import MagicString from 'magic-string'
-import { Readable } from 'stream'
 import { init as initLexer, parse as parseImports } from 'es-module-lexer'
 import { InternalResolver } from './resolver'
 import {
@@ -14,6 +13,7 @@ import {
   rewriteFileWithHMR,
   hmrClientPublicPath
 } from './serverPluginHmr'
+import { readBody } from './utils'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -103,22 +103,6 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       debug(`not rewriting: ${ctx.url}`)
     }
   })
-}
-
-async function readBody(stream: Readable | string): Promise<string> {
-  if (stream instanceof Readable) {
-    return new Promise((resolve, reject) => {
-      let res = ''
-      stream
-        .on('data', (chunk) => (res += chunk))
-        .on('error', reject)
-        .on('end', () => {
-          resolve(res)
-        })
-    })
-  } else {
-    return stream
-  }
 }
 
 function rewriteImports(

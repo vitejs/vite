@@ -3,6 +3,7 @@ import { promises as fs } from 'fs'
 import LRUCache from 'lru-cache'
 import os from 'os'
 import { Context } from 'koa'
+import { Readable } from 'stream'
 
 const imageRE = /\.(png|jpe?g|gif|svg)(\?.*)?$/
 const mediaRE = /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/
@@ -60,6 +61,24 @@ export async function cachedRead(
     ctx.status = 200
   }
   return content
+}
+
+export async function readBody(
+  stream: Readable | Buffer | string
+): Promise<string> {
+  if (stream instanceof Readable) {
+    return new Promise((resolve, reject) => {
+      let res = ''
+      stream
+        .on('data', (chunk) => (res += chunk))
+        .on('error', reject)
+        .on('end', () => {
+          resolve(res)
+        })
+    })
+  } else {
+    return typeof stream === 'string' ? stream : stream.toString()
+  }
 }
 
 export function getIPv4AddressList(): string[] {
