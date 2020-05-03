@@ -186,7 +186,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
       nextStyles.forEach((_, i) => {
         if (!prevStyles[i] || !isEqual(prevStyles[i], nextStyles[i])) {
           send({
-            type: 'style-update',
+            type: 'vue-style-update',
             path: publicPath,
             index: i,
             id: `${styleId}-${i}`,
