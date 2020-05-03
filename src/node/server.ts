@@ -8,6 +8,7 @@ import { vuePlugin } from './serverPluginVue'
 import { hmrPlugin, HMRWatcher } from './serverPluginHmr'
 import { serveStaticPlugin } from './serverPluginServeStatic'
 import { jsonPlugin } from './serverPluginJson'
+import { cssPlugin } from './serverPluginCss'
 
 export { Resolver }
 
@@ -32,6 +33,7 @@ const internalPlugins: Plugin[] = [
   moduleResolvePlugin,
   vuePlugin,
   jsonPlugin,
+  cssPlugin,
   hmrPlugin,
   serveStaticPlugin
 ]
