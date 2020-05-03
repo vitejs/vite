@@ -64,6 +64,11 @@ describe('vite', () => {
     expect(await child.evaluate((e) => e.textContent)).toBe('This is child')
   })
 
+  test('json data import', async () => {
+    const jsonComp = await page.$('.json')
+    expect(await jsonComp.evaluate((e) => e.textContent)).toBe('hello world')
+  })
+
   test('interaction', async () => {
     const button = await page.$('button')
     await button.click()
