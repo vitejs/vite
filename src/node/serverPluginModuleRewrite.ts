@@ -51,13 +51,13 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
 
     if (ctx.path === '/index.html') {
       const html = await readBody(ctx.body)
-      if (rewriteCache.has(html)) {
+      if (html && rewriteCache.has(html)) {
         debug('/index.html: serving from cache')
         ctx.body = rewriteCache.get(html)
       } else if (ctx.body) {
         await initLexer
         let hasInjectedDevFlag = false
-        ctx.body = html.replace(
+        ctx.body = html!.replace(
           /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
           (_, openTag, script) => {
             // also inject __DEV__ flag
@@ -78,6 +78,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
     // this allows us to post-process javascript produced by user middlewares
     // regardless of the extension of the original files.
     if (
+      ctx.body &&
       ctx.response.is('js') &&
       !ctx.url.endsWith('.map') &&
       // skip internal client
@@ -92,7 +93,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       } else {
         await initLexer
         ctx.body = rewriteImports(
-          content,
+          content!,
           ctx.url.replace(/(&|\?)t=\d+/, ''),
           resolver,
           ctx.query.t

@@ -84,8 +84,8 @@ export async function cachedRead(
  * Useful in post-processing middlewares.
  */
 export async function readBody(
-  stream: Readable | Buffer | string
-): Promise<string> {
+  stream: Readable | Buffer | string | null
+): Promise<string | null> {
   if (stream instanceof Readable) {
     return new Promise((resolve, reject) => {
       let res = ''
@@ -97,6 +97,6 @@ export async function readBody(
         })
     })
   } else {
-    return typeof stream === 'string' ? stream : stream.toString()
+    return !stream || typeof stream === 'string' ? stream : stream.toString()
   }
 }
