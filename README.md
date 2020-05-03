@@ -14,7 +14,7 @@ $ npm run dev
 If using Yarn:
 
 ``` bash
-$ yarn create vite-app <project-name>
+$ yarn create-vite-app <project-name>
 $ cd <project-name>
 $ yarn
 $ yarn dev
