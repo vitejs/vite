@@ -64,6 +64,11 @@ describe('vite', () => {
     expect(await child.evaluate((e) => e.textContent)).toBe('This is child')
   })
 
+  test('json data import', async () => {
+    const jsonComp = await page.$('.json')
+    expect(await jsonComp.evaluate((e) => e.textContent)).toBe('hello world')
+  })
+
   test('interaction', async () => {
     const button = await page.$('button')
     await button.click()
@@ -78,19 +83,46 @@ describe('vite', () => {
       content.replace('{{ count }}', 'count is {{ count }}')
     )
 
-    // poll until it updates
     const button = await page.$('button')
-    const maxTries = 10
-    for (let tries = 0; tries < maxTries; tries++) {
-      const text = await button.evaluate((b) => b.textContent)
-      if (text === 'count is 1' || tries === maxTries - 1) {
-        expect(text).toBe('count is 1')
-      } else {
-        await timeout(200)
-      }
-    }
+    testByPolling('count is 1', () => {
+      return button.evaluate((b) => b.textContent)
+    })
   })
 
-  // TODO test style HMR
+  test('import plain css', async () => {
+    const child = await page.$('.child')
+    const color = await child.evaluate((e) => {
+      return window.getComputedStyle(e).color
+    })
+    expect(color).toBe('rgb(79, 192, 141)')
+  })
+
+  test('style hmr', async () => {
+    const stylePath = path.join(tempDir, 'main.css')
+    const content = await fs.readFile(stylePath, 'utf-8')
+    await fs.writeFile(
+      stylePath,
+      content.replace('color: #4fc08d', 'color: red')
+    )
+
+    const child = await page.$('.child')
+    testByPolling('rgb(255, 0, 0)', () => {
+      return child.evaluate((e) => getComputedStyle(e).color)
+    })
+  })
+
   // TODO test node_modules resolution
 })
+
+// poll until it updates
+async function testByPolling(expect, poll) {
+  const maxTries = 10
+  for (let tries = 0; tries < maxTries; tries++) {
+    const actual = await poll()
+    if (actual === expect || tries === maxTries - 1) {
+      expect(actual).toBe(expect)
+    } else {
+      await timeout(200)
+    }
+  }
+}
