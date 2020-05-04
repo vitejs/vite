@@ -84,7 +84,7 @@ describe('vite', () => {
     )
 
     const button = await page.$('button')
-    testByPolling('count is 1', () => {
+    await testByPolling('count is 1', () => {
       return button.evaluate((b) => b.textContent)
     })
   })
@@ -106,7 +106,7 @@ describe('vite', () => {
     )
 
     const child = await page.$('.child')
-    testByPolling('rgb(255, 0, 0)', () => {
+    await testByPolling('rgb(255, 0, 0)', () => {
       return child.evaluate((e) => getComputedStyle(e).color)
     })
   })
@@ -115,12 +115,12 @@ describe('vite', () => {
 })
 
 // poll until it updates
-async function testByPolling(expect, poll) {
+async function testByPolling(expectValue, poll) {
   const maxTries = 10
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = await poll()
-    if (actual === expect || tries === maxTries - 1) {
-      expect(actual).toBe(expect)
+    if (actual === expectValue || tries === maxTries - 1) {
+      expect(actual).toBe(expectValue)
     } else {
       await timeout(200)
     }
