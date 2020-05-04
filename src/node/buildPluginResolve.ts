@@ -1,7 +1,7 @@
 import { Plugin } from 'rollup'
 import { hmrClientId } from './serverPluginHmr'
 import { InternalResolver } from './resolver'
-import { resolveVue } from './resolveVue'
+import { resolveVue } from './vueResolver'
 
 const debug = require('debug')('vite:build:resolve')
 

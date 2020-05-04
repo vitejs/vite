@@ -1,12 +1,12 @@
 import path from 'path'
-import { promises as fs } from 'fs'
+import fs from 'fs-extra'
 import {
   rollup as Rollup,
   InputOptions,
   OutputOptions,
   RollupOutput
 } from 'rollup'
-import { resolveVue } from './resolveVue'
+import { resolveVue } from './vueResolver'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
 import { Resolver, createResolver } from './resolver'
@@ -15,6 +15,7 @@ import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin, scriptRE } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
 import { createBuildAssetPlugin } from './buildPluginAsset'
+import { isExternalUrl } from './utils'
 
 export interface BuildOptions {
   root?: string
@@ -46,7 +47,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     root = process.cwd(),
     cdn = !resolveVue(root).hasLocalVue,
     outDir = path.resolve(root, 'dist'),
-    assetsDir = '.',
+    assetsDir = 'assets',
     resolvers = [],
     srcRoots = [],
     rollupInputOptions = {},
@@ -87,7 +88,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       ...(indexContent ? [createBuildHtmlPlugin(indexPath, indexContent)] : []),
       // vue
       require('rollup-plugin-vue')({
-        transformAssetUrls: true,
+        transformAssetUrls: {
+          includeAbsolute: true
+        },
         // TODO: for now we directly handle pre-processors in rollup-plugin-vue
         // so that we don't need to install dedicated rollup plugins.
         // In the future we probably want to still use rollup plugins so that
@@ -126,6 +129,31 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   })
 
   let generatedIndex = indexContent && indexContent.replace(scriptRE, '').trim()
+
+  const injectCSS = (html: string, filename: string) => {
+    const tag = `<link rel="stylesheet" href="/${path.posix.join(
+      assetsDir,
+      filename
+    )}">`
+    if (/<\/head>/.test(html)) {
+      return html.replace(/<\/head>/, `${tag}\n</head>`)
+    } else {
+      return tag + '\n' + html
+    }
+  }
+
+  const injectScript = (html: string, filename: string) => {
+    filename = isExternalUrl(filename)
+      ? filename
+      : `/${path.posix.join(assetsDir, filename)}`
+    const tag = `<script type="module" src="${filename}"></script>`
+    if (/<\/body>/.test(html)) {
+      return html.replace(/<\/body>/, `${tag}\n</body>`)
+    } else {
+      return html + '\n' + tag
+    }
+  }
+
   // TODO handle public path for injections?
   // this would also affect paths in templates and css.
   if (generatedIndex) {
@@ -138,8 +166,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   }
 
   if (write) {
-    await fs.rmdir(outDir, { recursive: true })
-    await fs.mkdir(outDir, { recursive: true })
+    await fs.remove(outDir)
+    await fs.ensureDir(outDir)
   }
 
   // inject / write bundle
@@ -156,20 +184,17 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
           console.log(
             `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
           )
-        await fs.mkdir(path.dirname(filepath), { recursive: true })
+        await fs.ensureDir(path.dirname(filepath))
         await fs.writeFile(filepath, chunk.code)
       }
-    } else if (emitAssets) {
-      // write asset
-      if (write) {
-        const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-        !silent &&
-          console.log(
-            `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
-          )
-        await fs.mkdir(path.dirname(filepath), { recursive: true })
-        await fs.writeFile(filepath, chunk.source)
-      }
+    } else if (emitAssets && write) {
+      const filepath = path.join(resolvedAssetsPath, chunk.fileName)
+      !silent &&
+        console.log(
+          `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
+        )
+      await fs.ensureDir(path.dirname(filepath))
+      await fs.writeFile(filepath, chunk.source)
     }
   }
 
@@ -193,24 +218,5 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   return {
     assets: output,
     html: generatedIndex || ''
-  }
-}
-
-function injectCSS(html: string, filename: string) {
-  const tag = `<link rel="stylesheet" href="./${filename}">`
-  if (/<\/head>/.test(html)) {
-    return html.replace(/<\/head>/, `${tag}\n</head>`)
-  } else {
-    return tag + '\n' + html
-  }
-}
-
-function injectScript(html: string, filename: string) {
-  filename = /^https?:\/\//.test(filename) ? filename : `./${filename}`
-  const tag = `<script type="module" src="${filename}"></script>`
-  if (/<\/body>/.test(html)) {
-    return html.replace(/<\/body>/, `${tag}\n</body>`)
-  } else {
-    return html + '\n' + tag
   }
 }

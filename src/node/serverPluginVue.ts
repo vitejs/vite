@@ -6,7 +6,7 @@ import {
   SFCStyleBlock,
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
-import { resolveCompiler } from './resolveVue'
+import { resolveCompiler } from './vueResolver'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import { hmrClientId } from './serverPluginHmr'
@@ -163,7 +163,7 @@ function compileSFCMain(
   let hasScoped = false
   let hasCSSModules = false
   if (descriptor.styles) {
-    code += `import { updateStyle } from "${hmrClientId}"\n`
+    code += `\nimport { updateStyle } from "${hmrClientId}"\n`
     descriptor.styles.forEach((s, i) => {
       const styleRequest = publicPath + `?type=style&index=${i}`
       if (s.scoped) hasScoped = true
@@ -224,11 +224,15 @@ function compileSFCTemplate(
     source: template.content,
     filename: filePath,
     inMap: template.map,
-    transformAssetUrlsBase: path.posix.dirname(publicPath),
+    transformAssetUrls: {
+      base: path.posix.dirname(publicPath)
+    },
     compilerOptions: {
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: '/@modules/vue'
-    }
+    },
+    preprocessLang: template.lang,
+    preprocessCustomRequire: (id: string) => require(resolve(root, id))
   })
 
   if (errors.length) {

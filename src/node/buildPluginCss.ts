@@ -2,10 +2,11 @@ import path from 'path'
 import { Plugin } from 'rollup'
 import { getAssetPublicPath, registerAssets } from './buildPluginAsset'
 import { loadPostcssConfig } from './config'
+import { isExternalUrl } from './utils'
 
 const debug = require('debug')('vite:css')
 
-const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/g
+const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
 export const createBuildCssPlugin = (
   root: string,
@@ -18,20 +19,25 @@ export const createBuildCssPlugin = (
 
   return {
     name: 'vite:css',
-    async transform(code: string, id: string) {
+    async transform(css: string, id: string) {
       if (id.endsWith('.css')) {
         // process url() - register referenced files as assets
         // and rewrite the url to the resolved public path
-        if (urlRE.test(code)) {
+        if (urlRE.test(css)) {
           const fileDir = path.dirname(id)
-          urlRE.lastIndex = 0
           let match
-          let remaining = code
+          let remaining = css
           let rewritten = ''
           while ((match = urlRE.exec(remaining))) {
             rewritten += remaining.slice(0, match.index)
             const [matched, before, rawUrl, after] = match
-            const file = path.resolve(fileDir, rawUrl)
+            if (isExternalUrl(rawUrl)) {
+              rewritten += matched
+              remaining = remaining.slice(match.index + matched.length)
+              return
+            }
+
+            const file = path.join(fileDir, rawUrl)
             const { fileName, content, url } = await getAssetPublicPath(
               file,
               assetsDir
@@ -41,27 +47,40 @@ export const createBuildCssPlugin = (
             rewritten += `${before}${url}${after}`
             remaining = remaining.slice(match.index + matched.length)
           }
-          code = rewritten + remaining
+          css = rewritten + remaining
         }
 
         // postcss
+        let modules
         const postcssConfig = await loadPostcssConfig(root)
-        if (postcssConfig) {
+        const expectsModule = id.endsWith('.module.css')
+        if (postcssConfig || expectsModule) {
           try {
-            const result = await require('postcss')(
-              postcssConfig.plugins
-            ).process(code, {
-              ...postcssConfig.options,
+            const result = await require('postcss')([
+              ...((postcssConfig && postcssConfig.plugins) || []),
+              ...(expectsModule
+                ? [
+                    require('postcss-modules')({
+                      getJSON(_: string, json: Record<string, string>) {
+                        modules = json
+                      }
+                    })
+                  ]
+                : [])
+            ]).process(css, {
+              ...(postcssConfig && postcssConfig.options),
               from: id
             })
-            code = result.css
+            css = result.css
           } catch (e) {
             console.error(`[vite] error applying postcss transforms: `, e)
           }
         }
 
-        styles.set(id, code)
-        return '/* css extracted by vite */'
+        styles.set(id, css)
+        return modules
+          ? `export default ${JSON.stringify(modules)}`
+          : '/* css extracted by vite */'
       }
     },
 
