@@ -18,15 +18,15 @@ export const createBuildCssPlugin = (
 
   return {
     name: 'vite:css',
-    async transform(code: string, id: string) {
+    async transform(css: string, id: string) {
       if (id.endsWith('.css')) {
         // process url() - register referenced files as assets
         // and rewrite the url to the resolved public path
-        if (urlRE.test(code)) {
+        if (urlRE.test(css)) {
           const fileDir = path.dirname(id)
           urlRE.lastIndex = 0
           let match
-          let remaining = code
+          let remaining = css
           let rewritten = ''
           while ((match = urlRE.exec(remaining))) {
             rewritten += remaining.slice(0, match.index)
@@ -41,27 +41,40 @@ export const createBuildCssPlugin = (
             rewritten += `${before}${url}${after}`
             remaining = remaining.slice(match.index + matched.length)
           }
-          code = rewritten + remaining
+          css = rewritten + remaining
         }
 
         // postcss
+        let modules
         const postcssConfig = await loadPostcssConfig(root)
-        if (postcssConfig) {
+        const expectsModule = id.endsWith('.module.css')
+        if (postcssConfig || expectsModule) {
           try {
-            const result = await require('postcss')(
-              postcssConfig.plugins
-            ).process(code, {
-              ...postcssConfig.options,
+            const result = await require('postcss')([
+              ...((postcssConfig && postcssConfig.plugins) || []),
+              ...(expectsModule
+                ? [
+                    require('postcss-modules')({
+                      getJSON(_: string, json: Record<string, string>) {
+                        modules = json
+                      }
+                    })
+                  ]
+                : [])
+            ]).process(css, {
+              ...(postcssConfig && postcssConfig.options),
               from: id
             })
-            code = result.css
+            css = result.css
           } catch (e) {
             console.error(`[vite] error applying postcss transforms: `, e)
           }
         }
 
-        styles.set(id, code)
-        return '/* css extracted by vite */'
+        styles.set(id, css)
+        return modules
+          ? `export default ${JSON.stringify(modules)}`
+          : '/* css extracted by vite */'
       }
     },
 

@@ -130,7 +130,9 @@ Referenced assets will be copied to the dist folder with a hashed file name in t
 
 `vite` automatically applies your PostCSS config to all styles in `*.vue` files and imported plain `.css` files. Just install necessary plugins and add a `postcss.config.js` in your project root.
 
-Note that you do **not** need to configure PostCSS if you want to use `<style module>` in `*vue` files: it's supported out of the box.
+### CSS Modules
+
+Note that you do **not** need to configure PostCSS if you want to use CSS Modules: it works out of the box. Inside `*.vue` components you can use `<style module>`, and for plain `.css` files, you need name CSS modules files as `*.module.css` which allows you to import the naming hash from it.
 
 ### CSS Pre-Processors
 
