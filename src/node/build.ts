@@ -6,7 +6,7 @@ import {
   OutputOptions,
   RollupOutput
 } from 'rollup'
-import { resolveVue } from './resolveVue'
+import { resolveVue } from './vueResolver'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
 import { Resolver, createResolver } from './resolver'

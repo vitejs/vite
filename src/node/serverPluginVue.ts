@@ -6,7 +6,7 @@ import {
   SFCStyleBlock,
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
-import { resolveCompiler } from './resolveVue'
+import { resolveCompiler } from './vueResolver'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import { hmrClientId } from './serverPluginHmr'

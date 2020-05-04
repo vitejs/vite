@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import resolve from 'resolve-from'
 import { promises as fs } from 'fs'
 import { Plugin } from './server'
-import { resolveVue } from './resolveVue'
+import { resolveVue } from './vueResolver'
 import { cachedRead } from './utils'
 
 const debug = require('debug')('vite:resolve')
