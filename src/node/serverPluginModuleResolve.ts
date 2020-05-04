@@ -1,7 +1,7 @@
 import path from 'path'
+import fs from 'fs-extra'
 import chalk from 'chalk'
 import resolve from 'resolve-from'
-import { promises as fs } from 'fs'
 import { Plugin } from './server'
 import { resolveVue } from './vueResolver'
 import { cachedRead } from './utils'
@@ -100,7 +100,7 @@ async function resolveWebModule(
     return webModulePath
   }
   const importMapPath = path.join(root, 'web_modules', 'import-map.json')
-  if (await fs.stat(importMapPath).catch((e) => false)) {
+  if (await fs.pathExists(importMapPath)) {
     const importMap = require(importMapPath)
     if (importMap.imports) {
       const webModulesDir = path.dirname(importMapPath)

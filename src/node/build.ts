@@ -1,5 +1,5 @@
 import path from 'path'
-import { promises as fs } from 'fs'
+import fs from 'fs-extra'
 import {
   rollup as Rollup,
   InputOptions,
@@ -166,8 +166,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   }
 
   if (write) {
-    await fs.rmdir(outDir, { recursive: true })
-    await fs.mkdir(outDir, { recursive: true })
+    await fs.remove(outDir)
+    await fs.ensureDir(outDir)
   }
 
   // inject / write bundle
@@ -184,7 +184,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
           console.log(
             `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
           )
-        await fs.mkdir(path.dirname(filepath), { recursive: true })
+        await fs.ensureDir(path.dirname(filepath))
         await fs.writeFile(filepath, chunk.code)
       }
     } else if (emitAssets && write) {
@@ -194,7 +194,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         console.log(
           `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
         )
-      await fs.mkdir(path.dirname(filepath), { recursive: true })
+      await fs.ensureDir(path.dirname(filepath))
       await fs.writeFile(filepath, chunk.source)
     }
   }

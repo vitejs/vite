@@ -1,5 +1,5 @@
 import path from 'path'
-import { promises as fs } from 'fs'
+import fs from 'fs-extra'
 import LRUCache from 'lru-cache'
 import { Context } from 'koa'
 import { Readable } from 'stream'

@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 const path = require('path')
-const { promises: fs } = require('fs')
+const fs = require('fs')
+const { promisify } = require('util')
+const writeFile = promisify(fs.writeFile)
+const copyFile = promisify(fs.copyFile)
+const mkdir = promisify(fs.mkdir)
 
 async function init() {
   const targetDir = process.argv[2]
@@ -17,14 +21,14 @@ async function init() {
   const write = async (file, content) => {
     const writePath = path.join(root, file)
     if (content) {
-      await fs.writeFile(writePath, content)
+      await writeFile(writePath, content)
     } else {
-      await fs.copyFile(path.join(__dirname, `template/_${file}`), writePath)
+      await copyFile(path.join(__dirname, `template/_${file}`), writePath)
     }
   }
 
   try {
-    await fs.mkdir(root)
+    await mkdir(root)
   } catch (e) {
     console.error(`Error: target directory already exists.`)
     return

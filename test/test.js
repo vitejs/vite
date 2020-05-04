@@ -1,4 +1,4 @@
-const fs = require('fs').promises
+const fs = require('fs-extra')
 const path = require('path')
 const execa = require('execa')
 const puppeteer = require('puppeteer')
@@ -13,18 +13,12 @@ let browser
 jest.setTimeout(100000)
 
 beforeAll(async () => {
-  await fs.rmdir(tempDir, { recursive: true })
-  await fs.mkdir(tempDir)
-  for (const file of await fs.readdir(fixtureDir)) {
-    await fs.copyFile(
-      path.join(__dirname, 'fixtures', file),
-      path.join(tempDir, file)
-    )
-  }
+  await fs.remove(tempDir)
+  await fs.copy(fixtureDir, tempDir)
 })
 
 afterAll(async () => {
-  await fs.rmdir(tempDir, { recursive: true })
+  await fs.remove(tempDir)
   if (browser) await browser.close()
   if (server)
     server.kill('SIGTERM', {

@@ -1,5 +1,5 @@
 import path from 'path'
-import { promises as fs } from 'fs'
+import fs from 'fs-extra'
 import { Plugin, OutputBundle } from 'rollup'
 import { isStaticAsset } from './utils'
 import hash_sum from 'hash-sum'

@@ -13,7 +13,7 @@
     "dist"
   ],
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=10.0.0"
   },
   "repository": {
     "type": "git",
@@ -63,6 +63,7 @@
     "cssnano": "^4.1.10",
     "debug": "^4.1.1",
     "es-module-lexer": "^0.3.18",
+    "fs-extra": "^9.0.0",
     "hash-sum": "^2.0.0",
     "koa": "^2.11.0",
     "koa-conditional-get": "^2.0.0",
@@ -85,6 +86,7 @@
   },
   "devDependencies": {
     "@types/es-module-lexer": "^0.3.0",
+    "@types/fs-extra": "^8.1.0",
     "@types/hash-sum": "^1.0.0",
     "@types/lru-cache": "^5.1.0",
     "@types/node": "^13.13.1",
