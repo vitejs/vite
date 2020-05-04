@@ -161,13 +161,15 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       }
     } else if (emitAssets) {
       // write asset
-      const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-      !silent &&
-        console.log(
-          `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
-        )
-      await fs.mkdir(path.dirname(filepath), { recursive: true })
-      await fs.writeFile(filepath, chunk.source)
+      if (write) {
+        const filepath = path.join(resolvedAssetsPath, chunk.fileName)
+        !silent &&
+          console.log(
+            `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
+          )
+        await fs.mkdir(path.dirname(filepath), { recursive: true })
+        await fs.writeFile(filepath, chunk.source)
+      }
     }
   }
 
