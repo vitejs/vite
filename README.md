@@ -105,9 +105,32 @@ The above will throw an error by default. `vite` detects such bare module import
 
   This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
 
+
+### CSS / JSON Importing
+
+You can directly import `.css` and `.json` files from JavaScript (including `<script>` tags of `*.vue` files, of course).
+
+- `.json` files exports its content as an object as the default export.
+
+- `.css` files do not export anything. Importing them leads to the side effect of them being injected to the page during dev, or being included in the final `style.css` of the production build.
+
+Both CSS and JSON imports also support Hot Module Replacement.
+
+### Relative Asset URL Handling
+
+You can reference static assets in your `*.vue` templates, styles and plain `.css` files using relative URLs based on the asset's location to the source file on your file system. This is similar to the behavior you are used to if you have used `vue-cli` or webpack's `file-loader`.
+
+Referenced assets will be copied to the dist folder with a hashed file name in the production build.
+
+### PostCSS
+
+`vite` automatically applies your PostCSS config to all styles in `*.vue` files and imported plain `.css` files. Just install necessary plugins and add a `postcss.config.js` in your project root.
+
+Note that you do **not** need to configure PostCSS if you want to use `<style module>` in `*vue` files: it's supported out of the box.
+
 ### CSS Pre-Processors
 
-Install the corresponding pre-processor and just use it!
+Because `vite` targets modern browsers only, it is recommend to use native CSS variables with PostCSS plugins that implements CSSWG drafts (e.g. [postcss-nesting]()) and author plain, future-standards-compliant CSS. That said, if you insist on using a CSS pre-processor, you can install the corresponding pre-processor and just use it:
 
 ``` bash
 yarn add -D sass
