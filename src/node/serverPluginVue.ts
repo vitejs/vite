@@ -225,13 +225,14 @@ function compileSFCTemplate(
     filename: filePath,
     inMap: template.map,
     transformAssetUrls: {
-      // @ts-ignore
       base: path.posix.dirname(publicPath)
     },
     compilerOptions: {
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: '/@modules/vue'
-    }
+    },
+    preprocessLang: template.lang,
+    preprocessCustomRequire: (id: string) => require(resolve(root, id))
   })
 
   if (errors.length) {
