@@ -46,7 +46,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     root = process.cwd(),
     cdn = !resolveVue(root).hasLocalVue,
     outDir = path.resolve(root, 'dist'),
-    assetsDir = '.',
+    assetsDir = 'assets',
     resolvers = [],
     srcRoots = [],
     rollupInputOptions = {},
@@ -126,6 +126,31 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   })
 
   let generatedIndex = indexContent && indexContent.replace(scriptRE, '').trim()
+
+  const injectCSS = (html: string, filename: string) => {
+    const tag = `<link rel="stylesheet" href="/${path.posix.join(
+      assetsDir,
+      filename
+    )}">`
+    if (/<\/head>/.test(html)) {
+      return html.replace(/<\/head>/, `${tag}\n</head>`)
+    } else {
+      return tag + '\n' + html
+    }
+  }
+
+  const injectScript = (html: string, filename: string) => {
+    filename = /^https?:\/\//.test(filename)
+      ? filename
+      : `/${path.posix.join(assetsDir, filename)}`
+    const tag = `<script type="module" src="${filename}"></script>`
+    if (/<\/body>/.test(html)) {
+      return html.replace(/<\/body>/, `${tag}\n</body>`)
+    } else {
+      return html + '\n' + tag
+    }
+  }
+
   // TODO handle public path for injections?
   // this would also affect paths in templates and css.
   if (generatedIndex) {
@@ -191,24 +216,5 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   return {
     assets: output,
     html: generatedIndex || ''
-  }
-}
-
-function injectCSS(html: string, filename: string) {
-  const tag = `<link rel="stylesheet" href="./${filename}">`
-  if (/<\/head>/.test(html)) {
-    return html.replace(/<\/head>/, `${tag}\n</head>`)
-  } else {
-    return tag + '\n' + html
-  }
-}
-
-function injectScript(html: string, filename: string) {
-  filename = /^https?:\/\//.test(filename) ? filename : `./${filename}`
-  const tag = `<script type="module" src="${filename}"></script>`
-  if (/<\/body>/.test(html)) {
-    return html.replace(/<\/body>/, `${tag}\n</body>`)
-  } else {
-    return html + '\n' + tag
   }
 }
