@@ -31,7 +31,8 @@
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "yarn build && jest",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "prepublishOnly": "yarn build && yarn changelog"
+    "prepublishOnly": "yarn build && yarn changelog",
+    "postpublish": "git add CHANGELOG.md && git commit -m 'chore: changelog [ci skip]' && git push"
   },
   "gitHooks": {
     "pre-commit": "lint-staged"
