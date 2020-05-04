@@ -1,6 +1,6 @@
 {
   "name": "create-vite-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "author": "Evan You",
   "main": "index.js",
