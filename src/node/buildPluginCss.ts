@@ -1,12 +1,14 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { getAssetPublicPath, registerAssets } from './buildPluginAsset'
+import { loadPostcssConfig } from './config'
 
 const debug = require('debug')('vite:css')
 
 const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/g
 
 export const createBuildCssPlugin = (
+  root: string,
   assetsDir: string,
   cssFileName: string,
   minify: boolean
@@ -41,6 +43,23 @@ export const createBuildCssPlugin = (
           }
           code = rewritten + remaining
         }
+
+        // postcss
+        const postcssConfig = await loadPostcssConfig(root)
+        if (postcssConfig) {
+          try {
+            const result = await require('postcss')(
+              postcssConfig.plugins
+            ).process(code, {
+              ...postcssConfig.options,
+              from: id
+            })
+            code = result.css
+          } catch (e) {
+            console.error(`[vite] error applying postcss transforms: `, e)
+          }
+        }
+
         styles.set(id, code)
         return '/* css extracted by vite */'
       }

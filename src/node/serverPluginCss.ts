@@ -36,8 +36,8 @@ export const cssPlugin: Plugin = ({ root, app, watcher, resolver }) => {
             const result = await require('postcss')(
               postcssConfig.plugins
             ).process(css, {
-              from: resolver.requestToFile(ctx.path),
-              ...postcssConfig.options
+              ...postcssConfig.options,
+              from: resolver.requestToFile(ctx.path)
             })
             ctx.body = result.css
           } catch (e) {

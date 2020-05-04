@@ -106,7 +106,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         __DEV__: 'false'
       }),
       // vite:css
-      createBuildCssPlugin(assetsDir, cssFileName, minify),
+      createBuildCssPlugin(root, assetsDir, cssFileName, minify),
       // vite:asset
       createBuildAssetPlugin(assetsDir),
       // minify with terser
