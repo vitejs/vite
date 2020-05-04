@@ -224,7 +224,10 @@ function compileSFCTemplate(
     source: template.content,
     filename: filePath,
     inMap: template.map,
-    transformAssetUrlsBase: path.posix.dirname(publicPath),
+    transformAssetUrls: {
+      // @ts-ignore
+      base: path.posix.dirname(publicPath)
+    },
     compilerOptions: {
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: '/@modules/vue'

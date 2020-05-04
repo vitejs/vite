@@ -2,10 +2,11 @@ import path from 'path'
 import { Plugin } from 'rollup'
 import { getAssetPublicPath, registerAssets } from './buildPluginAsset'
 import { loadPostcssConfig } from './config'
+import { isExternalUrl } from './utils'
 
 const debug = require('debug')('vite:css')
 
-const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/g
+const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
 export const createBuildCssPlugin = (
   root: string,
@@ -24,14 +25,19 @@ export const createBuildCssPlugin = (
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {
           const fileDir = path.dirname(id)
-          urlRE.lastIndex = 0
           let match
           let remaining = css
           let rewritten = ''
           while ((match = urlRE.exec(remaining))) {
             rewritten += remaining.slice(0, match.index)
             const [matched, before, rawUrl, after] = match
-            const file = path.resolve(fileDir, rawUrl)
+            if (isExternalUrl(rawUrl)) {
+              rewritten += matched
+              remaining = remaining.slice(match.index + matched.length)
+              return
+            }
+
+            const file = path.join(fileDir, rawUrl)
             const { fileName, content, url } = await getAssetPublicPath(
               file,
               assetsDir

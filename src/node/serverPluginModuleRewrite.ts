@@ -13,7 +13,7 @@ import {
   rewriteFileWithHMR,
   hmrClientPublicPath
 } from './serverPluginHmr'
-import { readBody, cleanUrl, queryRE } from './utils'
+import { readBody, cleanUrl, queryRE, isExternalUrl } from './utils'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -135,7 +135,7 @@ function rewriteImports(
         }
         if (dynamicIndex === -1 || hasLiteralDynamicId) {
           // do not rewrite external imports
-          if (/https?:\/\//.test(id)) {
+          if (isExternalUrl(id)) {
             return
           }
 
