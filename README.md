@@ -230,7 +230,9 @@ const { build } = require('vite')
 
 ## TODOs
 
+- Public base path support
 - Config file support (custom import maps and plugins)
+- Support TypeScript / Flow /(P)React JSX via [Sucrase](https://github.com/alangpierce/sucrase)
 
 ## Trivia
 
