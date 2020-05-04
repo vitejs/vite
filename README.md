@@ -50,7 +50,7 @@ Finally, because compilation is still done in Node, it can technically support a
 
 `vite` requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
 
-`vite` assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented traspilations by default. Technically, you *can* add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not `vite`'s concern by design.
+`vite` assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented code transforms by default. Technically, you *can* add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not `vite`'s concern by design.
 
 ## Features
 
