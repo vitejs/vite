@@ -11,7 +11,8 @@ import {
   importeeMap,
   ensureMapEntry,
   rewriteFileWithHMR,
-  hmrClientPublicPath
+  hmrClientPublicPath,
+  hmrClientId
 } from './serverPluginHmr'
 import { readBody, cleanUrl, queryRE } from './utils'
 
@@ -37,7 +38,8 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
   const devInjectionCode =
-    `\n<script>` +
+    `\n<script type="module">` +
+    `import "${hmrClientId}"\n` +
     `window.__DEV__ = true\n` +
     `window.process = { env: { NODE_ENV: 'development' }}\n` +
     `</script>\n`

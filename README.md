@@ -207,9 +207,7 @@ const { build } = require('vite')
 
 ## TODOs
 
-- Auto loading postcss config
-- Config file support (custom import maps)
-- Vue file source maps
+- Config file support (custom import maps and plugins)
 
 ## Trivia
 
