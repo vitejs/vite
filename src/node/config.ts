@@ -6,10 +6,12 @@ type Result = ReturnType<typeof postcssrc> extends Promise<infer T> ? T : never
 let cachedPostcssConfig: Result | null | undefined
 
 export async function loadPostcssConfig(root: string): Promise<Result | null> {
+  if (cachedPostcssConfig !== undefined) {
+    return cachedPostcssConfig
+  }
   try {
-    return (
-      cachedPostcssConfig || (cachedPostcssConfig = await postcssrc({}, root))
-    )
+    const load = require('postcss-load-config') as typeof postcssrc
+    return (cachedPostcssConfig = await load({}, root))
   } catch (e) {
     return (cachedPostcssConfig = null)
   }
