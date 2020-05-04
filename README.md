@@ -134,7 +134,7 @@ Note that you do **not** need to configure PostCSS if you want to use `<style mo
 
 ### CSS Pre-Processors
 
-Because `vite` targets modern browsers only, it is recommended to use native CSS variables with PostCSS plugins that implements CSSWG drafts (e.g. [postcss-nesting]()) and author plain, future-standards-compliant CSS. That said, if you insist on using a CSS pre-processor, you can install the corresponding pre-processor and just use it:
+Because `vite` targets modern browsers only, it is recommended to use native CSS variables with PostCSS plugins that implements CSSWG drafts (e.g. [postcss-nesting](https://github.com/jonathantneal/postcss-nesting)) and author plain, future-standards-compliant CSS. That said, if you insist on using a CSS pre-processor, you can install the corresponding pre-processor and just use it:
 
 ``` bash
 yarn add -D sass
