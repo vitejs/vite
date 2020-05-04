@@ -134,6 +134,11 @@ function rewriteImports(
           }
         }
         if (dynamicIndex === -1 || hasLiteralDynamicId) {
+          // do not rewrite external imports
+          if (/https?:\/\//.test(id)) {
+            return
+          }
+
           let resolved
           if (/^[^\/\.]/.test(id)) {
             resolved = resolver.idToRequest(id) || `/@modules/${id}`
