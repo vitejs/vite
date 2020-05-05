@@ -9,6 +9,7 @@ import { hmrPlugin, HMRWatcher } from './serverPluginHmr'
 import { serveStaticPlugin } from './serverPluginServeStatic'
 import { jsonPlugin } from './serverPluginJson'
 import { cssPlugin } from './serverPluginCss'
+import { tsPlugin } from './serverPluginTypeScript'
 
 export { Resolver }
 
@@ -35,6 +36,7 @@ const internalPlugins: Plugin[] = [
   jsonPlugin,
   cssPlugin,
   hmrPlugin,
+  tsPlugin,
   serveStaticPlugin
 ]
 

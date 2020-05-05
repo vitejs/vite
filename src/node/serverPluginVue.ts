@@ -14,6 +14,7 @@ import resolve from 'resolve-from'
 import { cachedRead } from './utils'
 import { loadPostcssConfig } from './config'
 import { Context } from 'koa'
+import { compileTs } from './serverPluginTypeScript'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -54,7 +55,7 @@ export const vuePlugin: Plugin = ({ root, app, resolver }) => {
 
     if (!query.type) {
       ctx.type = 'js'
-      ctx.body = compileSFCMain(descriptor, filePath, publicPath)
+      ctx.body = compileSFCMain(descriptor, filePath, publicPath, root)
       return etagCacheCheck(ctx)
     }
 
@@ -141,7 +142,8 @@ export async function parseSFC(
 function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
-  publicPath: string
+  publicPath: string,
+  root: string
 ): string {
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
@@ -151,6 +153,12 @@ function compileSFCMain(
   // inject hmr client
   let code = ''
   if (descriptor.script) {
+    if (
+      descriptor.script.lang === 'ts' ||
+      descriptor.script.lang === 'typescript'
+    ) {
+      descriptor.script.content = compileTs(descriptor.script.content, root)
+    }
     code += descriptor.script.content.replace(
       `export default`,
       'const __script ='

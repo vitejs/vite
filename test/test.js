@@ -105,6 +105,20 @@ describe('vite', () => {
     })
   })
 
+  test('ts', async () => {
+    const Ts = await page.$('.ts')
+    expect(await Ts.evaluate((e) => e.textContent)).toBe('1')
+  })
+
+  test('ts hmr', async () => {
+    const TsPath = path.join(tempDir, 'data.ts')
+    const content = await fs.readFile(TsPath, 'utf-8')
+    await fs.writeFile(TsPath, content.replace('1', '2'))
+
+    const Ts = await page.$('.ts')
+    testByPolling('2', () => Ts.evaluate((e) => e.textContent))
+  })
+
   // TODO test node_modules resolution
 })
 
