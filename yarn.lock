@@ -5813,10 +5813,10 @@ rollup-plugin-terser@^5.3.0:
     serialize-javascript "^2.1.2"
     terser "^4.6.2"
 
-rollup-plugin-vue@^6.0.0-alpha.7:
-  version "6.0.0-alpha.7"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-vue/-/rollup-plugin-vue-6.0.0-alpha.7.tgz#178504007cbe996b24b715a4aa525614fa0feab4"
-  integrity sha512-hzI1aYE5GdLGMge4KDDgSoJ908wi3VbxsNP+t5nGimy/qD+hMb64hoHYH6MLvVDPLEvjU8zUTp35GO4JVCHYoQ==
+rollup-plugin-vue@^6.0.0-alpha.8:
+  version "6.0.0-alpha.8"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-vue/-/rollup-plugin-vue-6.0.0-alpha.8.tgz#06f1794b44b5779a432581fc5fd35f9d2577da9b"
+  integrity sha512-R3SivtQt9J0Fq8A4DKwTrKiW0DvhjPxO4kKZsqm20HbmTJvWGImupaPh036kKla9sU4XMjr9V8+5c1ZMQDm7bg==
   dependencies:
     debug "^4.1.1"
     hash-sum "^2.0.0"
