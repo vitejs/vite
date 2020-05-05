@@ -1,10 +1,6 @@
 import path from 'path'
 import { Plugin } from 'rollup'
-import {
-  AssetsOptions,
-  getAssetPublicPath,
-  registerAssets
-} from './buildPluginAsset'
+import { resolveAsset, registerAssets } from './buildPluginAsset'
 import { loadPostcssConfig } from './config'
 import { isExternalUrl } from './utils'
 
@@ -18,7 +14,7 @@ export const createBuildCssPlugin = (
   assetsDir: string,
   cssFileName: string,
   minify: boolean,
-  assetsOptions: AssetsOptions
+  inlineLimit: number
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map()
@@ -44,11 +40,11 @@ export const createBuildCssPlugin = (
             }
 
             const file = path.join(fileDir, rawUrl)
-            const { fileName, content, url } = await getAssetPublicPath(
+            const { fileName, content, url } = await resolveAsset(
               file,
               publicBase,
               assetsDir,
-              assetsOptions
+              inlineLimit
             )
             assets.set(fileName, content)
             debug(`url(${rawUrl}) -> url(${url})`)

@@ -1,51 +1,51 @@
 import { Plugin, RollupOutput } from 'rollup'
 import path from 'path'
-import { isExternalUrl } from './utils'
+import fs from 'fs-extra'
+import { isExternalUrl, cleanUrl, isStaticAsset } from './utils'
 import { resolveVue } from './vueResolver'
+import { resolveAsset } from './buildPluginAsset'
+import {
+  parse,
+  transform,
+  NodeTransform,
+  NodeTypes,
+  TextNode,
+  AttributeNode
+} from '@vue/compiler-dom'
+import MagicString from 'magic-string'
+import { InternalResolver } from './resolver'
 
-export const scriptRE = /<script\b([^>]*)>([\s\S]*?)<\/script>/gm
-const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
+export const createBuildHtmlPlugin = async (
+  indexPath: string | null,
+  publicBasePath: string,
+  assetsDir: string,
+  inlineLimit: number,
+  resolver: InternalResolver
+) => {
+  if (!indexPath || !(await fs.pathExists(indexPath))) {
+    return {
+      renderIndex: (...args: any[]) => '',
+      htmlPlugin: null
+    }
+  }
 
-export const createBuildHtmlPlugin = (
-  indexPath: string,
-  indexContent: string
-): Plugin => {
-  return {
+  const rawHtml = await fs.readFile(indexPath, 'utf-8')
+  let { html: processedHtml, js } = await compileHtml(
+    rawHtml,
+    publicBasePath,
+    assetsDir,
+    inlineLimit,
+    resolver
+  )
+
+  const htmlPlugin: Plugin = {
     name: 'vite:html',
-    load(id) {
+    async load(id) {
       if (id === indexPath) {
-        let script = ''
-        let match
-        while ((match = scriptRE.exec(indexContent))) {
-          // <script type="module" src="..."/>
-          // add it as an import
-          const tagAttr = match[1]
-          const srcMatch = tagAttr && tagAttr.match(srcRE)
-          if (srcMatch) {
-            script += `\nimport "${
-              srcMatch[1] || srcMatch[2] || srcMatch[3]
-            }"\n`
-          }
-          // <script type="module">...</script>
-          // add its content
-          script += match[2]
-        }
-        return script
+        return js
       }
     }
   }
-}
-
-export const genIndex = (
-  root: string,
-  rawIndexContent: string,
-  publicBasePath: string,
-  assetsDir: string,
-  cdn: boolean,
-  cssFileName: string,
-  bundleOutput: RollupOutput['output']
-) => {
-  let generatedIndex = rawIndexContent.replace(scriptRE, '').trim()
 
   const injectCSS = (html: string, filename: string) => {
     const tag = `<link rel="stylesheet" href="${publicBasePath}${path.posix.join(
@@ -71,21 +71,120 @@ export const genIndex = (
     }
   }
 
-  if (generatedIndex) {
+  const renderIndex = (
+    root: string,
+    cdn: boolean,
+    cssFileName: string,
+    bundleOutput: RollupOutput['output']
+  ) => {
     // inject css link
-    generatedIndex = injectCSS(generatedIndex, cssFileName)
+    processedHtml = injectCSS(processedHtml, cssFileName)
+    // if not inlining vue, inject cdn link so it can start the fetch early
     if (cdn) {
-      // if not inlining vue, inject cdn link so it can start the fetch early
-      generatedIndex = injectScript(generatedIndex, resolveVue(root).cdnLink)
+      processedHtml = injectScript(processedHtml, resolveVue(root).cdnLink)
+    }
+    // inject js entry chunks
+    for (const chunk of bundleOutput) {
+      if (chunk.type === 'chunk' && chunk.isEntry) {
+        processedHtml = injectScript(processedHtml, chunk.fileName)
+      }
+    }
+    return processedHtml
+  }
+
+  return {
+    renderIndex,
+    htmlPlugin
+  }
+}
+
+// this extends the config in @vue/compiler-sfc with <link href>
+const assetAttrsConfig: Record<string, string[]> = {
+  link: ['href'],
+  video: ['src', 'poster'],
+  source: ['src'],
+  img: ['src'],
+  image: ['xlink:href', 'href'],
+  use: ['xlink:href', 'href']
+}
+
+// compile index.html to a JS module, importing referenced assets
+// and scripts
+const compileHtml = async (
+  html: string,
+  publicBasePath: string,
+  assetsDir: string,
+  inlineLimit: number,
+  resolver: InternalResolver
+) => {
+  const ast = parse(html)
+
+  let js = ''
+  const s = new MagicString(html)
+  const assetUrls: AttributeNode[] = []
+  const viteHtmlTrasnfrom: NodeTransform = (node, context) => {
+    if (node.type === NodeTypes.ELEMENT) {
+      if (node.tag === 'script') {
+        const srcAttr = node.props.find(
+          (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
+        ) as AttributeNode
+        if (srcAttr && srcAttr.value) {
+          // <script type="module" src="..."/>
+          // add it as an import
+          js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
+        } else if (node.children.length) {
+          // <script type="module">...</script>
+          // add its content
+          // TODO: if there are multiple inline module scripts on the page,
+          // they should technically be turned into separate modules, but
+          // it's hard to imagine any reason for anyone to do that.
+          js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
+        }
+        // remove the script tag from the html. we are going to inject new
+        // ones in the end.
+        s.remove(node.loc.start.offset, node.loc.end.offset)
+      }
+      // For asset references in index.html, also generate an import
+      // statement for each - this will be handled by the asset plugin
+      const assetAttrs = assetAttrsConfig[node.tag]
+      if (assetAttrs) {
+        for (const p of node.props) {
+          if (
+            p.type === NodeTypes.ATTRIBUTE &&
+            p.value &&
+            assetAttrs.includes(p.name) &&
+            !isExternalUrl(p.value.content)
+          ) {
+            const url = cleanUrl(p.value.content)
+            js += `\nimport ${JSON.stringify(url)}`
+            if (isStaticAsset(url)) {
+              assetUrls.push(p)
+            }
+          }
+        }
+      }
     }
   }
 
-  for (const chunk of bundleOutput) {
-    if (chunk.type === 'chunk' && chunk.isEntry) {
-      // inject entry chunk to html
-      generatedIndex = injectScript(generatedIndex, chunk.fileName)
-    }
+  transform(ast, {
+    nodeTransforms: [viteHtmlTrasnfrom]
+  })
+
+  // for each encountered asset url, rewrite original html so that it
+  // references the post-build location.
+  for (const attr of assetUrls) {
+    const value = attr.value!
+    const { url } = await resolveAsset(
+      resolver.requestToFile(value.content),
+      publicBasePath,
+      assetsDir,
+      inlineLimit
+    )
+    s.overwrite(value.loc.start.offset, value.loc.end.offset, url)
   }
 
-  return generatedIndex
+  return {
+    html: s.toString(),
+    js
+  }
 }
