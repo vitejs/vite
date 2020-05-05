@@ -16,6 +16,7 @@ import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
 import { createBuildAssetPlugin } from './buildPluginAsset'
+import { createMinifyPlugin } from './esbuildService'
 
 export interface BuildOptions {
   /**
@@ -89,7 +90,7 @@ export interface BuildOptions {
   /**
    * Whether to minify output
    */
-  minify?: boolean
+  minify?: boolean | 'terser' | 'esbuild'
   /**
    * Whether to log asset info to console
    */
@@ -157,6 +158,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     resolver
   )
 
+  const minifyPlugin = minify
+    ? minify === 'terser'
+      ? require('rollup-plugin-terser').terser()
+      : await createMinifyPlugin()
+    : null
+
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
@@ -199,14 +206,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         publicBasePath,
         assetsDir,
         cssFileName,
-        minify,
+        !!minify,
         assetsInlineLimit
       ),
       // vite:asset
       createBuildAssetPlugin(publicBasePath, assetsDir, assetsInlineLimit),
-      // minify with terser
-      // modules: true and toplevel: true are implied with format: 'es'
-      ...(minify ? [require('rollup-plugin-terser').terser()] : [])
+      // minify
+      ...(minifyPlugin ? [minifyPlugin] : [])
     ],
     onwarn(warning, warn) {
       if (warning.code !== 'CIRCULAR_DEPENDENCY') {
