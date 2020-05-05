@@ -30,7 +30,11 @@ async function init() {
   try {
     await mkdir(root)
   } catch (e) {
-    console.error(`Error: target directory already exists.`)
+    if (e.code === 'EEXIST') {
+      console.error(`Error: target directory already exists.`)
+    } else {
+      throw e
+    }
     return
   }
 
