@@ -2,6 +2,15 @@
 
 > No-bundle Dev Server for Vue 3 Single-File Components.
 
+- Super fast cold server start
+- Super fast hot module replacement (HMR)
+- True on-demand compilation
+- More details in [How and Why](#how-and-why)
+
+## Status
+
+Still experimental, but we intend to make it suitable for production.
+
 ## Getting Started
 
 ```bash
@@ -20,32 +29,6 @@ $ yarn
 $ yarn dev
 ```
 
-## How is This Different from a Bundler-based Setup?
-
-The primary difference is that for `vite` there is no bundling during development. The ES Import syntax in your source code is served directly to the browser, and the browser parses them via native `<script module>` support, making HTTP requests for each import. The dev server intercepts the requests and performs code transforms if necessary. For example, an import to a `*.vue` file is compiled on the fly right before it's sent back to the browser.
-
-There are a few advantages of this approach:
-
-- Since there is no bundling work to be done, the server cold start is extremely fast.
-
-- Code is compiled on demand, so only code actually imported on the current screen is compiled. You don't have to wait until your entire app to be bundled to start developing. This can be a huge difference in apps with dozens of screens.
-
-- Hot module replacement (HMR) performance is decoupled from the total number of modules. This makes HMR consistently fast no matter how big your app is.
-
-Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However since this is local development, the difference should be trivial compared to actual compilation time. (There is no compile cost on page reload since already compiled files are cached in memory.)
-
-Finally, because compilation is still done in Node, it can technically support any code transforms a bundler can, and nothing prevents you from eventually bundling the code for production. In fact, `vite` provides a `vite build` command to do exactly that so the app doesn't suffer from network waterfall in production.
-
-`vite` is highly experimental at this stage and is not suitable for production use, but we hope to one day make it so.
-
-## How is This Different from [es-dev-server](https://open-wc.org/developing/es-dev-server.html)?
-
-`es-dev-server` is a great project and we did take some inspiration from it when refactoring `vite` in the early stages. That said, here is why `vite` is different from `es-dev-server` and why we didn't just implement `vite` as a middleware for `es-dev-server`:
-
-- `vite` supports Hot Module Replacement, which surgically updates the updated module without reloading the page. This is a fundamental difference in terms of development experience. `es-dev-server` internals is a bit too opaque to get this working nicely via a middleware.
-
-- `vite` aims to be a single tool that integrates both the dev and the build process. You can use `vite` to both serve and bundle the same source code, with zero configuration.
-
 ## Browser Support
 
 `vite` requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
@@ -53,6 +36,17 @@ Finally, because compilation is still done in Node, it can technically support a
 `vite` assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented code transforms by default. Technically, you *can* add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not `vite`'s concern by design.
 
 ## Features
+
+- [Bare Module Resolving](#bare-module-resolving)
+- [Hot Module Replacement](#hot-module-replacement)
+- [CSS / JSON Importing](#css--json-importing)
+- [Asset URL Handling](#asset-url-handling)
+- [PostCSS](#postcss)
+- [CSS Modules](#css-modules)
+- [CSS Pre-processors](#css-pre-processors)
+- [Production Build](#production-build)
+
+`vite` tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org/) as much as possible. If you've used `vue-cli` or other webpack-based boilerplates before, you should feel right at home. That said, do expect things to be different here and there.
 
 ### Bare Module Resolving
 
@@ -120,11 +114,13 @@ You can directly import `.css` and `.json` files from JavaScript (including `<sc
 
 Both CSS and JSON imports also support Hot Module Replacement.
 
-### Relative Asset URL Handling
+### Asset URL Handling
 
-You can reference static assets in your `*.vue` templates, styles and plain `.css` files using relative URLs based on the asset's location to the source file on your file system. This is similar to the behavior you are used to if you have used `vue-cli` or webpack's `file-loader`.
+You can reference static assets in your `*.vue` templates, styles and plain `.css` files either using absolute public paths (based on project root) or relative paths (based on your file system). The latter is similar to the behavior you are used to if you have used `vue-cli` or webpack's `file-loader`.
 
-Referenced assets will be copied to the dist folder with a hashed file name in the production build.
+There is no conventional `public` directory. All referenced assets, including those using absolute paths, will be copied to the dist folder with a hashed file name in the production build. Never-referenced assets will not be copied.
+
+Similar to `vue-cli`, image assets smaller than 4kb will be base64 inlined.
 
 ### PostCSS
 
@@ -149,9 +145,11 @@ yarn add -D sass
 
 Note importing CSS / preprocessor files from `.js` files, and HMR from imported pre-processor files are currently not supported, but can be in the future.
 
-### Building for Production
+### Production Build
 
-Starting with version `^0.5.0`, you can run `vite build` to bundle the app and deploy it for production.
+`vite` does utilize bundling for production builds, because native ES module imports result in waterfall network requests that are simply too punishing for page load time in production.
+
+You can run `vite build` to bundle the app.
 
 - `vite build --root dir`: build files in the target directory instead of current working directory.
 
@@ -234,11 +232,41 @@ const { build } = require('vite')
 })()
 ```
 
+
+
+## How and Why
+
+### How is This Different from `vue-cli` or other Bundler-based Solutions?
+
+The primary difference is that for `vite` there is no bundling during development. The ES Import syntax in your source code is served directly to the browser, and the browser parses them via native `<script module>` support, making HTTP requests for each import. The dev server intercepts the requests and performs code transforms if necessary. For example, an import to a `*.vue` file is compiled on the fly right before it's sent back to the browser.
+
+There are a few advantages of this approach:
+
+- Since there is no bundling work to be done, the server cold start is extremely fast.
+
+- Code is compiled on demand, so only code actually imported on the current screen is compiled. You don't have to wait until your entire app to be bundled to start developing. This can be a huge difference in apps with dozens of screens.
+
+- Hot module replacement (HMR) performance is decoupled from the total number of modules. This makes HMR consistently fast no matter how big your app is.
+
+Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However since this is local development, the difference should be trivial compared to actual compilation time. (There is no compile cost on page reload since already compiled files are cached in memory.)
+
+Finally, because compilation is still done in Node, it can technically support any code transforms a bundler can, and nothing prevents you from eventually bundling the code for production. In fact, `vite` provides a `vite build` command to do exactly that so the app doesn't suffer from network waterfall in production.
+
+### How is This Different from [es-dev-server](https://open-wc.org/developing/es-dev-server.html)?
+
+`es-dev-server` is a great project and we did take some inspiration from it when refactoring `vite` in the early stages. That said, here is why `vite` is different from `es-dev-server` and why we didn't just implement `vite` as a middleware for `es-dev-server`:
+
+- `vite` supports Hot Module Replacement, which surgically updates the updated module without reloading the page. This is a fundamental difference in terms of development experience. `es-dev-server` internals is a bit too opaque to get this working nicely via a middleware.
+
+- `vite` aims to be a single tool that integrates both the dev and the build process. You can use `vite` to both serve and bundle the same source code, with zero configuration.
+
+- `vite` is more opinionated on how certain types of imports are handled, e.g. `.css` and static assets. The handling is similar to `vue-cli` for obvious reasons.
+
 ## TODOs
 
 - Public base path support
 - Config file support (custom import maps and plugins)
-- Support TypeScript / Flow /(P)React JSX via [Sucrase](https://github.com/alangpierce/sucrase)
+- Support TypeScript / Flow /(P)React JSX via [Sucrase](https://github.com/alangpierce/sucrase) or [esbuild](https://github.com/evanw/esbuild)
 
 ## Trivia
 

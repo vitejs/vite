@@ -9,7 +9,7 @@ import mime from 'mime-types'
 const debug = require('debug')('vite:build:asset')
 
 // TODO make this configurable
-const inlineThreshold = 10000
+const inlineThreshold = 4096
 
 export const getAssetPublicPath = async (id: string, assetsDir: string) => {
   const ext = path.extname(id)
