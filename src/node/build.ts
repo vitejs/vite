@@ -159,6 +159,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
   const bundle = await rollup({
     input: path.resolve(root, 'index.html'),
+    preserveEntrySignatures: false,
     ...rollupInputOptions,
     plugins: [
       // user plugins
