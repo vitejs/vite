@@ -80,6 +80,20 @@ export interface BuildResult {
   assets: RollupOutput['output']
 }
 
+const enum WriteType {
+  JS,
+  CSS,
+  ASSET,
+  HTML
+}
+
+const writeColors = {
+  [WriteType.JS]: chalk.cyan,
+  [WriteType.CSS]: chalk.magenta,
+  [WriteType.ASSET]: chalk.green,
+  [WriteType.HTML]: chalk.blue
+}
+
 /**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
@@ -110,6 +124,23 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const indexPath = path.resolve(root, 'index.html')
   const cssFileName = 'style.css'
   const resolvedAssetsPath = path.join(outDir, assetsDir)
+
+  const cwd = process.cwd()
+  const writeFile = async (
+    filepath: string,
+    content: string | Uint8Array,
+    type: WriteType
+  ) => {
+    await fs.ensureDir(path.dirname(filepath))
+    await fs.writeFile(filepath, content)
+    if (!silent) {
+      console.log(
+        `${chalk.gray(`[write]`)} ${writeColors[type](
+          path.relative(cwd, filepath)
+        )} ${(content.length / 1024).toFixed(2)}kb`
+      )
+    }
+  }
 
   let indexContent: string | null = null
   try {
@@ -225,22 +256,16 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       // write chunk
       if (write) {
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-        !silent &&
-          console.log(
-            `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
-          )
-        await fs.ensureDir(path.dirname(filepath))
-        await fs.writeFile(filepath, chunk.code)
+        await writeFile(filepath, chunk.code, WriteType.JS)
       }
     } else if (emitAssets && write) {
       // write asset
       const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-      !silent &&
-        console.log(
-          `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
-        )
-      await fs.ensureDir(path.dirname(filepath))
-      await fs.writeFile(filepath, chunk.source)
+      await writeFile(
+        filepath,
+        chunk.source,
+        chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
+      )
     }
   }
 
@@ -248,11 +273,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // write html
     if (generatedIndex) {
       const indexOutPath = path.join(outDir, 'index.html')
-      !silent &&
-        console.log(
-          `write ${chalk.green(path.relative(process.cwd(), indexOutPath))}`
-        )
-      await fs.writeFile(indexOutPath, generatedIndex)
+      await writeFile(indexOutPath, generatedIndex, WriteType.HTML)
     }
   }
 

@@ -12,7 +12,7 @@ Object.keys(argv).forEach((key) => {
 })
 
 if (argv._[0] === 'build') {
-  console.log(chalk.yellow('Building for production...'))
+  console.log('Building for production...')
   require('../dist')
     .build({
       ...argv,
