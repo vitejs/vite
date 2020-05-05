@@ -8,7 +8,7 @@ const getETag = require('etag')
 const httpRE = /^https?:\/\//
 export const isExternalUrl = (url: string) => httpRE.test(url)
 
-const imageRE = /\.(png|jpe?g|gif|svg)(\?.*)?$/
+const imageRE = /\.(png|jpe?g|gif|svg|ico)(\?.*)?$/
 const mediaRE = /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/
 const fontsRE = /\.(woff2?|eot|ttf|otf)(\?.*)?$/i
 

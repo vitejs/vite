@@ -5,6 +5,7 @@ import resolve from 'resolve-from'
 import { Plugin } from './server'
 import { resolveVue } from './vueResolver'
 import { cachedRead } from './utils'
+import slash from 'slash'
 
 const debug = require('debug')('vite:resolve')
 
@@ -53,7 +54,7 @@ export const moduleResolvePlugin: Plugin = ({ root, app }) => {
     const cachedEntry = idToEntryMap.get(id)
     if (cachedEntry) {
       debug(`(cached redirect) ${id} -> ${cachedEntry}`)
-      return ctx.redirect(path.join(ctx.path, cachedEntry))
+      return ctx.redirect(slash(path.join(ctx.path, cachedEntry)))
     }
 
     // resolve from web_modules
@@ -72,7 +73,7 @@ export const moduleResolvePlugin: Plugin = ({ root, app }) => {
 
     const entryPoint = await resolveNodeModuleEntry(root, id)
     if (entryPoint) {
-      return ctx.redirect(path.join(ctx.path, entryPoint))
+      return ctx.redirect(slash(path.join(ctx.path, entryPoint)))
     }
 
     // resolve from node_modules
