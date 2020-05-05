@@ -13,10 +13,9 @@ import chalk from 'chalk'
 import { Resolver, createResolver } from './resolver'
 import { Options } from 'rollup-plugin-vue'
 import { createBuildResolvePlugin } from './buildPluginResolve'
-import { createBuildHtmlPlugin, scriptRE } from './buildPluginHtml'
+import { createBuildHtmlPlugin, genIndex } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
 import { AssetsOptions, createBuildAssetPlugin } from './buildPluginAsset'
-import { isExternalUrl } from './utils'
 
 export interface BuildOptions {
   /**
@@ -60,12 +59,18 @@ export interface BuildOptions {
   srcRoots?: string[]
   /**
    * Will be passed to rollup.rollup()
+   * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupInputOptions?: InputOptions
   /**
    * Will be passed to bundle.generate()
+   * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupOutputOptions?: OutputOptions
+  /**
+   * Will be passed to rollup-plugin-vue
+   * https://github.com/vuejs/rollup-plugin-vue/blob/next/src/index.ts
+   */
   rollupPluginVueOptions?: Partial<Options>
   /**
    * Whether to emit assets other than JavaScript
@@ -225,76 +230,45 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     ...rollupOutputOptions
   })
 
-  let generatedIndex = indexContent && indexContent.replace(scriptRE, '').trim()
-
-  const injectCSS = (html: string, filename: string) => {
-    const tag = `<link rel="stylesheet" href="${publicBasePath}${path.posix.join(
-      assetsDir,
-      filename
-    )}">`
-    if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
-    } else {
-      return tag + '\n' + html
-    }
-  }
-
-  const injectScript = (html: string, filename: string) => {
-    filename = isExternalUrl(filename)
-      ? filename
-      : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
-    const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/body>/.test(html)) {
-      return html.replace(/<\/body>/, `${tag}\n</body>`)
-    } else {
-      return html + '\n' + tag
-    }
-  }
-
-  // TODO handle base path for injections?
-  // this would also affect paths in templates and css.
-  if (generatedIndex) {
-    // inject css link
-    generatedIndex = injectCSS(generatedIndex, cssFileName)
-    if (cdn) {
-      // if not inlining vue, inject cdn link so it can start the fetch early
-      generatedIndex = injectScript(generatedIndex, resolveVue(root).cdnLink)
-    }
-  }
+  const indexHtml = indexContent
+    ? genIndex(
+        root,
+        indexContent,
+        publicBasePath,
+        assetsDir,
+        cdn,
+        cssFileName,
+        output
+      )
+    : ''
 
   if (write) {
     await fs.remove(outDir)
     await fs.ensureDir(outDir)
-  }
 
-  // inject / write bundle
-  for (const chunk of output) {
-    if (chunk.type === 'chunk') {
-      if (chunk.isEntry && generatedIndex) {
-        // inject chunk to html
-        generatedIndex = injectScript(generatedIndex, chunk.fileName)
-      }
-      // write chunk
-      if (write) {
+    for (const chunk of output) {
+      if (chunk.type === 'chunk') {
+        // write chunk
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)
         await writeFile(filepath, chunk.code, WriteType.JS)
+      } else if (emitAssets) {
+        // write asset
+        const filepath = path.join(resolvedAssetsPath, chunk.fileName)
+        await writeFile(
+          filepath,
+          chunk.source,
+          chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
+        )
       }
-    } else if (emitAssets && write) {
-      // write asset
-      const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-      await writeFile(
-        filepath,
-        chunk.source,
-        chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
-      )
     }
-  }
 
-  if (write) {
     // write html
-    if (generatedIndex) {
-      const indexOutPath = path.join(outDir, 'index.html')
-      await writeFile(indexOutPath, generatedIndex, WriteType.HTML)
+    if (indexHtml) {
+      await writeFile(
+        path.join(outDir, 'index.html'),
+        indexHtml,
+        WriteType.HTML
+      )
     }
   }
 
@@ -305,7 +279,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
   return {
     assets: output,
-    html: generatedIndex || ''
+    html: indexHtml
   }
 }
 
