@@ -15,7 +15,7 @@ import { Options } from 'rollup-plugin-vue'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin, scriptRE } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
-import { createBuildAssetPlugin } from './buildPluginAsset'
+import { AssetsOptions, createBuildAssetPlugin } from './buildPluginAsset'
 import { isExternalUrl } from './utils'
 
 export interface BuildOptions {
@@ -42,6 +42,10 @@ export interface BuildOptions {
    * Defaults to `assets`
    */
   assetsDir?: string
+  /**
+   * The option with process assets. eg.image
+   */
+  assetsOptions?: AssetsOptions
   /**
    * List files that are included in the build, but not inside project root.
    * e.g. if you are building a higher level tool on top of vite and includes
@@ -107,6 +111,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     cdn = !resolveVue(root).hasLocalVue,
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
+    assetsOptions = {},
     resolvers = [],
     srcRoots = [],
     rollupInputOptions = {},
@@ -185,9 +190,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         __DEV__: 'false'
       }),
       // vite:css
-      createBuildCssPlugin(root, assetsDir, cssFileName, minify),
+      createBuildCssPlugin(root, assetsDir, cssFileName, minify, assetsOptions),
       // vite:asset
-      createBuildAssetPlugin(assetsDir),
+      createBuildAssetPlugin(assetsDir, assetsOptions),
       // minify with terser
       // modules: true and toplevel: true are implied with format: 'es'
       ...(minify ? [require('rollup-plugin-terser').terser()] : [])
