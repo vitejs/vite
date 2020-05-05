@@ -264,7 +264,6 @@ Finally, because compilation is still done in Node, it can technically support a
 
 ## TODOs
 
-- Public base path support
 - Config file support (custom import maps and plugins)
 - Support TypeScript / Flow /(P)React JSX via [Sucrase](https://github.com/alangpierce/sucrase) or [esbuild](https://github.com/evanw/esbuild)
 

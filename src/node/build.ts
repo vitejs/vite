@@ -21,8 +21,14 @@ import { isExternalUrl } from './utils'
 export interface BuildOptions {
   /**
    * Project root path on file system.
+   * Defaults to `process.cwd()`
    */
   root?: string
+  /**
+   * Base public path when served in production.
+   * Defaults to /
+   */
+  base?: string
   /**
    * If true, will be importing Vue from a CDN.
    * Dsiabled automatically when a local vue installation is present.
@@ -108,6 +114,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
   const {
     root = process.cwd(),
+    base = '/',
     cdn = !resolveVue(root).hasLocalVue,
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
@@ -127,8 +134,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
   const indexPath = path.resolve(root, 'index.html')
-  const cssFileName = 'style.css'
+  const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
+  const cssFileName = 'style.css'
 
   const cwd = process.cwd()
   const writeFile = async (
@@ -191,9 +199,16 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         __DEV__: 'false'
       }),
       // vite:css
-      createBuildCssPlugin(root, assetsDir, cssFileName, minify, assetsOptions),
+      createBuildCssPlugin(
+        root,
+        publicBasePath,
+        assetsDir,
+        cssFileName,
+        minify,
+        assetsOptions
+      ),
       // vite:asset
-      createBuildAssetPlugin(assetsDir, assetsOptions),
+      createBuildAssetPlugin(publicBasePath, assetsDir, assetsOptions),
       // minify with terser
       // modules: true and toplevel: true are implied with format: 'es'
       ...(minify ? [require('rollup-plugin-terser').terser()] : [])
@@ -213,7 +228,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   let generatedIndex = indexContent && indexContent.replace(scriptRE, '').trim()
 
   const injectCSS = (html: string, filename: string) => {
-    const tag = `<link rel="stylesheet" href="/${path.posix.join(
+    const tag = `<link rel="stylesheet" href="${publicBasePath}${path.posix.join(
       assetsDir,
       filename
     )}">`
@@ -227,7 +242,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const injectScript = (html: string, filename: string) => {
     filename = isExternalUrl(filename)
       ? filename
-      : `/${path.posix.join(assetsDir, filename)}`
+      : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
     if (/<\/body>/.test(html)) {
       return html.replace(/<\/body>/, `${tag}\n</body>`)

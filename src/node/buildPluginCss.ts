@@ -8,12 +8,13 @@ import {
 import { loadPostcssConfig } from './config'
 import { isExternalUrl } from './utils'
 
-const debug = require('debug')('vite:css')
+const debug = require('debug')('vite:build:css')
 
 const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
 export const createBuildCssPlugin = (
   root: string,
+  publicBase: string,
   assetsDir: string,
   cssFileName: string,
   minify: boolean,
@@ -45,6 +46,7 @@ export const createBuildCssPlugin = (
             const file = path.join(fileDir, rawUrl)
             const { fileName, content, url } = await getAssetPublicPath(
               file,
+              publicBase,
               assetsDir,
               assetsOptions
             )
