@@ -158,10 +158,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     resolver
   )
 
+  // terser is used by default for better compression, but the user can also
+  // opt-in to use esbuild which is orders of magnitude faster.
   const minifyPlugin = minify
-    ? minify === 'terser'
-      ? require('rollup-plugin-terser').terser()
-      : await createMinifyPlugin()
+    ? minify === 'esbuild'
+      ? await createMinifyPlugin()
+      : require('rollup-plugin-terser').terser()
     : null
 
   // lazy require rollup so that we don't load it when only using the dev server

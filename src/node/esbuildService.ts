@@ -7,7 +7,6 @@ const transform = async (
   options: TransformOptions,
   operation: string
 ) => {
-  console.log(operation)
   try {
     const result = await service.transform(code, options)
     if (result.warnings.length) {
