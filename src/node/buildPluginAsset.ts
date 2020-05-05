@@ -12,7 +12,7 @@ export interface AssetsOptions {
   inlineThreshold?: number
 }
 
-const defaultAssetOptions: AssetsOptions = {
+const defaultAssetsOptions: AssetsOptions = {
   inlineThreshold: 4096
 }
 
@@ -59,7 +59,7 @@ export const createBuildAssetPlugin = (
   assetsOptions: AssetsOptions
 ): Plugin => {
   const assets = new Map()
-  assetsOptions = { ...defaultAssetOptions, ...assetsOptions }
+  assetsOptions = { ...defaultAssetsOptions, ...assetsOptions }
   return {
     name: 'vite:asset',
     async load(id) {

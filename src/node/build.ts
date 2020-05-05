@@ -4,7 +4,8 @@ import {
   rollup as Rollup,
   InputOptions,
   OutputOptions,
-  RollupOutput
+  RollupOutput,
+  ExternalOption
 } from 'rollup'
 import { resolveVue } from './vueResolver'
 import resolve from 'resolve-from'
@@ -18,20 +19,63 @@ import { AssetsOptions, createBuildAssetPlugin } from './buildPluginAsset'
 import { isExternalUrl } from './utils'
 
 export interface BuildOptions {
+  /**
+   * Project root path on file system.
+   */
   root?: string
+  /**
+   * If true, will be importing Vue from a CDN.
+   * Dsiabled automatically when a local vue installation is present.
+   */
   cdn?: boolean
+  /**
+   * Resolvers to map dev server public path requests to/from file system paths,
+   * and optionally map module ids to public path requests.
+   */
   resolvers?: Resolver[]
+  /**
+   * Defaults to `dist`
+   */
   outDir?: string
+  /**
+   * Nest js / css / static assets under a directory under `outDir`.
+   * Defaults to `assets`
+   */
   assetsDir?: string
+  /**
+   * The option with process assets. eg.image
+   */
   assetsOptions?: AssetsOptions
-  // list files that are included in the build, but not inside project root.
+  /**
+   * List files that are included in the build, but not inside project root.
+   * e.g. if you are building a higher level tool on top of vite and includes
+   * some code that will be bundled into the final build.
+   */
   srcRoots?: string[]
+  /**
+   * Will be passed to rollup.rollup()
+   */
   rollupInputOptions?: InputOptions
+  /**
+   * Will be passed to bundle.generate()
+   */
   rollupOutputOptions?: OutputOptions
   rollupPluginVueOptions?: Partial<Options>
+  /**
+   * Whether to emit assets other than JavaScript
+   */
   emitAssets?: boolean
-  write?: boolean // if false, does not write to disk.
+  /**
+   * Whether to write bundle to disk
+   */
+  write?: boolean
+  /**
+   * Whether to minify output
+   */
   minify?: boolean
+  /**
+   * Whether to log asset info to console
+   */
   silent?: boolean
 }
 
@@ -40,6 +84,24 @@ export interface BuildResult {
   assets: RollupOutput['output']
 }
 
+const enum WriteType {
+  JS,
+  CSS,
+  ASSET,
+  HTML
+}
+
+const writeColors = {
+  [WriteType.JS]: chalk.cyan,
+  [WriteType.CSS]: chalk.magenta,
+  [WriteType.ASSET]: chalk.green,
+  [WriteType.HTML]: chalk.blue
+}
+
+/**
+ * Bundles the app for production.
+ * Returns a Promise containing the build result.
+ */
 export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   process.env.NODE_ENV = 'production'
   const start = Date.now()
@@ -67,6 +129,23 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const indexPath = path.resolve(root, 'index.html')
   const cssFileName = 'style.css'
   const resolvedAssetsPath = path.join(outDir, assetsDir)
+
+  const cwd = process.cwd()
+  const writeFile = async (
+    filepath: string,
+    content: string | Uint8Array,
+    type: WriteType
+  ) => {
+    await fs.ensureDir(path.dirname(filepath))
+    await fs.writeFile(filepath, content)
+    if (!silent) {
+      console.log(
+        `${chalk.gray(`[write]`)} ${writeColors[type](
+          path.relative(cwd, filepath)
+        )} ${(content.length / 1024).toFixed(2)}kb`
+      )
+    }
+  }
 
   let indexContent: string | null = null
   try {
@@ -156,7 +235,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
   }
 
-  // TODO handle public path for injections?
+  // TODO handle base path for injections?
   // this would also affect paths in templates and css.
   if (generatedIndex) {
     // inject css link
@@ -182,22 +261,16 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       // write chunk
       if (write) {
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-        !silent &&
-          console.log(
-            `write ${chalk.cyan(path.relative(process.cwd(), filepath))}`
-          )
-        await fs.ensureDir(path.dirname(filepath))
-        await fs.writeFile(filepath, chunk.code)
+        await writeFile(filepath, chunk.code, WriteType.JS)
       }
     } else if (emitAssets && write) {
       // write asset
       const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-      !silent &&
-        console.log(
-          `write ${chalk.magenta(path.relative(process.cwd(), filepath))}`
-        )
-      await fs.ensureDir(path.dirname(filepath))
-      await fs.writeFile(filepath, chunk.source)
+      await writeFile(
+        filepath,
+        chunk.source,
+        chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
+      )
     }
   }
 
@@ -205,11 +278,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // write html
     if (generatedIndex) {
       const indexOutPath = path.join(outDir, 'index.html')
-      !silent &&
-        console.log(
-          `write ${chalk.green(path.relative(process.cwd(), indexOutPath))}`
-        )
-      await fs.writeFile(indexOutPath, generatedIndex)
+      await writeFile(indexOutPath, generatedIndex, WriteType.HTML)
     }
   }
 
@@ -221,5 +290,61 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   return {
     assets: output,
     html: generatedIndex || ''
+  }
+}
+
+/**
+ * Bundles the app in SSR mode.
+ * - All Vue dependencies are automatically externalized
+ * - Imports to dependencies are compiled into require() calls
+ * - Templates are compiled with SSR specific optimizations.
+ */
+export async function ssrBuild(
+  options: BuildOptions = {}
+): Promise<BuildResult> {
+  const {
+    rollupInputOptions,
+    rollupOutputOptions,
+    rollupPluginVueOptions
+  } = options
+
+  return build({
+    ...options,
+    rollupPluginVueOptions: {
+      ...rollupPluginVueOptions,
+      target: 'node'
+    },
+    rollupInputOptions: {
+      ...rollupInputOptions,
+      external: resolveExternal(
+        rollupInputOptions && rollupInputOptions.external
+      )
+    },
+    rollupOutputOptions: {
+      ...rollupOutputOptions,
+      format: 'cjs',
+      exports: 'named'
+    }
+  })
+}
+
+function resolveExternal(
+  userExternal: ExternalOption | undefined
+): ExternalOption {
+  const required = ['vue', /^@vue\//]
+  if (!userExternal) {
+    return required
+  }
+  if (Array.isArray(userExternal)) {
+    return [...required, ...userExternal]
+  } else if (typeof userExternal === 'function') {
+    return (src, importer, isResolved) => {
+      if (src === 'vue' || /^@vue\//.test(src)) {
+        return true
+      }
+      return userExternal(src, importer, isResolved)
+    }
+  } else {
+    return [...required, userExternal]
   }
 }
