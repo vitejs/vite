@@ -14,7 +14,7 @@ import { Options } from 'rollup-plugin-vue'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin, scriptRE } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
-import { AssetOptions, createBuildAssetPlugin } from './buildPluginAsset'
+import { AssetsOptions, createBuildAssetPlugin } from './buildPluginAsset'
 import { isExternalUrl } from './utils'
 
 export interface BuildOptions {
@@ -23,7 +23,7 @@ export interface BuildOptions {
   resolvers?: Resolver[]
   outDir?: string
   assetsDir?: string
-  assetOptions?: AssetOptions
+  assetsOptions?: AssetsOptions
   // list files that are included in the build, but not inside project root.
   srcRoots?: string[]
   rollupInputOptions?: InputOptions
@@ -49,7 +49,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     cdn = !resolveVue(root).hasLocalVue,
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
-    assetOptions = {},
+    assetsOptions = {},
     resolvers = [],
     srcRoots = [],
     rollupInputOptions = {},
@@ -111,9 +111,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         __DEV__: 'false'
       }),
       // vite:css
-      createBuildCssPlugin(root, assetsDir, cssFileName, minify, assetOptions),
+      createBuildCssPlugin(root, assetsDir, cssFileName, minify, assetsOptions),
       // vite:asset
-      createBuildAssetPlugin(assetsDir, assetOptions),
+      createBuildAssetPlugin(assetsDir, assetsOptions),
       // minify with terser
       // modules: true and toplevel: true are implied with format: 'es'
       ...(minify ? [require('rollup-plugin-terser').terser()] : [])

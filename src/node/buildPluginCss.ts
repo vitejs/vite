@@ -1,7 +1,7 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import {
-  AssetOptions,
+  AssetsOptions,
   getAssetPublicPath,
   registerAssets
 } from './buildPluginAsset'
@@ -17,7 +17,7 @@ export const createBuildCssPlugin = (
   assetsDir: string,
   cssFileName: string,
   minify: boolean,
-  assetOptions: AssetOptions
+  assetsOptions: AssetsOptions
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map()
@@ -46,7 +46,7 @@ export const createBuildCssPlugin = (
             const { fileName, content, url } = await getAssetPublicPath(
               file,
               assetsDir,
-              assetOptions
+              assetsOptions
             )
             assets.set(fileName, content)
             debug(`url(${rawUrl}) -> url(${url})`)
