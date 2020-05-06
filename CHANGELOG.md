@@ -1,3 +1,20 @@
+# [0.11.0](https://github.com/vuejs/vite/compare/v0.10.3...v0.11.0) (2020-05-06)
+
+
+### Bug Fixes
+
+* fix direct index script src hmr ([73d94b9](https://github.com/vuejs/vite/commit/73d94b9ba75836b995ed276747a32ce94344c1eb))
+
+
+### Features
+
+* dev support for ts ([7cbaf5d](https://github.com/vuejs/vite/commit/7cbaf5d8e5b70db2ec642bd1d34f1e0322927ccf))
+* support minification with esbuild ([b87ba7e](https://github.com/vuejs/vite/commit/b87ba7e321b9dd319009a55154540805969f0039))
+* ts build support for vue files ([8262108](https://github.com/vuejs/vite/commit/8262108db14b35126bcaae3253bf3f6391c9d283))
+* tsx? support for build ([81ffbc5](https://github.com/vuejs/vite/commit/81ffbc548c3d5f9db1f040c360167f95963674d6))
+
+
+
 ## [0.10.3](https://github.com/vuejs/vite/compare/v0.10.2...v0.10.3) (2020-05-05)
 
 
