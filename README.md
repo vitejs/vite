@@ -39,11 +39,13 @@ $ yarn dev
 
 - [Bare Module Resolving](#bare-module-resolving)
 - [Hot Module Replacement](#hot-module-replacement)
+- [TypeScript](#typescript)
 - [CSS / JSON Importing](#css--json-importing)
 - [Asset URL Handling](#asset-url-handling)
 - [PostCSS](#postcss)
 - [CSS Modules](#css-modules)
 - [CSS Pre-processors](#css-pre-processors)
+- [JSX](#jsx)
 - [Production Build](#production-build)
 
 `vite` tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org/) as much as possible. If you've used `vue-cli` or other webpack-based boilerplates before, you should feel right at home. That said, do expect things to be different here and there.
@@ -103,6 +105,9 @@ The above will throw an error by default. `vite` detects such bare module import
 
   This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
 
+### TypeScript
+
+Starting with v0.11, `vite` supports `<script lang="ts">` in `*.vue` files, and importing `.ts` files out of the box. Note that `vite` does **NOT** perform type checking - it assumes type checking is taken care of by your IDE and build process (you can run `tsc --noEmit` in the build script). With that in mind, `vite` uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`.
 
 ### CSS / JSON Importing
 
@@ -145,17 +150,37 @@ yarn add -D sass
 
 Note importing CSS / preprocessor files from `.js` files, and HMR from imported pre-processor files are currently not supported, but can be in the future.
 
+### JSX
+
+`.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via `esbuild`, and can be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` fro the API. For example, to use [Preact](https://preactjs.com/) with `vite`:
+
+``` json
+{
+  "scripts": {
+    "dev": "vite --jsx-factory=h"
+  }
+}
+```
+``` jsx
+import { h, render } from "preact"
+render(<h1>Hello, what!</h1>, document.getElementById("app"))
+```
+
+#### Notes on JSX Support
+
+- Vue 3's JSX transform is still WIP, so `vite`'s JSX support currently only targets React/Preact.
+
+- React doesn't ship ES module builds, so it must be pre-bundled with Snowpack to work.
+
+- There is no out-of-the-box HMR when using non-Vue frameworks, but userland HMR support is technically via the server API.
+
 ### Production Build
 
 `vite` does utilize bundling for production builds, because native ES module imports result in waterfall network requests that are simply too punishing for page load time in production.
 
 You can run `vite build` to bundle the app.
 
-- `vite build --root dir`: build files in the target directory instead of current working directory.
-
-- `vite build --cdn`: import `vue` from a CDN link in the built js. This will make the build faster, but overall the page payload will be larger because therer will be no tree-shaking for Vue APIs.
-
-Internally, we use a highly opinionated Rollup config to generate the build. There's not much you can configure from the command line, but if you use the API, then the build is configurable by passing on most options to Rollup (see below).
+Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flag in the CLI (see [src/node/build.ts](https://github.com/vuejs/vite/blob/master/src/node/build.ts) for full details).
 
 ### API
 
@@ -207,6 +232,8 @@ createServer({
 
 #### Build
 
+Check out the full options interface in [src/node/build.ts](https://github.com/vuejs/vite/blob/master/src/node/build.ts).
+
 ``` js
 const { build } = require('vite')
 
@@ -222,12 +249,8 @@ const { build } = require('vite')
     },
     rollupPluginVueOptions: {
       // https://github.com/vuejs/rollup-plugin-vue/tree/next#options
-    },
-    root: process.cwd(),
-    cdn: false,
-    write: true,
-    minify: true,
-    silent: false
+    }
+    // ...
   })
 })()
 ```
