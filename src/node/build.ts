@@ -203,7 +203,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       }),
       require('@rollup/plugin-replace')({
         'process.env.NODE_ENV': '"production"',
-        __DEV__: 'false'
+        __DEV__: 'false',
+        include: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx']
       }),
       // vite:css
       createBuildCssPlugin(

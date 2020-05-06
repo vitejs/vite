@@ -50,7 +50,7 @@ export const createBuildResolvePlugin = (
     },
     load(id: string) {
       if (id === hmrClientId) {
-        return `export const hot = {}`
+        return `export const hot = {accept(){},on(){}}`
       }
     }
   }
