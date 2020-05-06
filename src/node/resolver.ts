@@ -1,6 +1,7 @@
 import path from 'path'
 import slash from 'slash'
 import { statSync } from 'fs'
+import { cleanUrl } from './utils'
 
 export interface Resolver {
   requestToFile(publicPath: string, root: string): string | undefined
@@ -26,20 +27,22 @@ const defaultIdToRequest = (id: string) => {
   }
 }
 
-const queryRE = /\?.*$/
-const ensureJs = (id: string) => {
-  const cleanId = id.replace(queryRE, '')
+export const supportedExts = ['.js', '.jsx', '.ts', '.tsx', '.json']
+
+export const ensureExt = (id: string) => {
+  const cleanId = cleanUrl(id)
   if (!/\.\w+$/.test(cleanId)) {
-    // try to see if there is actually a corresponding .js file on disk.
-    // if not, return the id as-is
-    try {
-      statSync(cleanId + '.js')
-    } catch (e) {
-      return id
+    let inferredExt = ''
+    for (const ext of supportedExts) {
+      try {
+        statSync(id + ext)
+        inferredExt = ext
+        break
+      } catch (e) {}
     }
-    const queryMatch = id.match(queryRE)
+    const queryMatch = id.match(/\?.*$/)
     const query = queryMatch ? queryMatch[0] : ''
-    return cleanId + '.js' + query
+    return cleanId + inferredExt + query
   }
   return id
 }
@@ -61,7 +64,7 @@ export function createResolver(
       if (!resolved) {
         resolved = defaultRequestToFile(publicPath, root)
       }
-      resolved = ensureJs(resolved)
+      resolved = ensureExt(resolved)
       return resolved
     },
     fileToRequest: (filePath) => {

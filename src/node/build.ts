@@ -10,13 +10,13 @@ import {
 import { resolveVue } from './vueResolver'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
-import { Resolver, createResolver } from './resolver'
+import { Resolver, createResolver, supportedExts } from './resolver'
 import { Options } from 'rollup-plugin-vue'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
 import { createBuildAssetPlugin } from './buildPluginAsset'
-import { createMinifyPlugin } from './esbuildService'
+import { createEsbuildPlugin } from './buildPluginEsbuild'
 
 export interface BuildOptions {
   /**
@@ -75,6 +75,13 @@ export interface BuildOptions {
    * https://github.com/vuejs/rollup-plugin-vue/blob/next/src/index.ts
    */
   rollupPluginVueOptions?: Partial<Options>
+  /**
+   * Configure what to use for jsx factory and fragment
+   */
+  jsx?: {
+    factory?: string
+    fragment?: string
+  }
   /**
    * Whether to emit index.html
    */
@@ -136,6 +143,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
+    jsx = {},
     emitIndex = true,
     emitAssets = true,
     write = true,
@@ -158,14 +166,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     resolver
   )
 
-  // terser is used by default for better compression, but the user can also
-  // opt-in to use esbuild which is orders of magnitude faster.
-  const minifyPlugin = minify
-    ? minify === 'esbuild'
-      ? await createMinifyPlugin()
-      : require('rollup-plugin-terser').terser()
-    : null
-
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
@@ -180,6 +180,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       createBuildResolvePlugin(root, cdn, [root, ...srcRoots], resolver),
       // vite:html
       ...(htmlPlugin ? [htmlPlugin] : []),
+      // vite:esbuild
+      await createEsbuildPlugin(minify === 'esbuild', jsx),
       // vue
       require('rollup-plugin-vue')({
         transformAssetUrls: {
@@ -196,7 +198,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       }),
       require('@rollup/plugin-json')(),
       require('@rollup/plugin-node-resolve')({
-        rootDir: root
+        rootDir: root,
+        extensions: supportedExts
       }),
       require('@rollup/plugin-replace')({
         'process.env.NODE_ENV': '"production"',
@@ -213,8 +216,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       ),
       // vite:asset
       createBuildAssetPlugin(publicBasePath, assetsDir, assetsInlineLimit),
-      // minify
-      ...(minifyPlugin ? [minifyPlugin] : [])
+      // minify with terser
+      // this is the default which has better compression, but slow
+      // the user can opt-in to use esbuild which is much faster but results
+      // in ~8-10% larger file size.
+      ...(minify && minify !== 'esbuild'
+        ? [require('rollup-plugin-terser').terser()]
+        : [])
     ],
     onwarn(warning, warn) {
       if (warning.code !== 'CIRCULAR_DEPENDENCY') {

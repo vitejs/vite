@@ -9,6 +9,7 @@ import { hmrPlugin, HMRWatcher } from './serverPluginHmr'
 import { serveStaticPlugin } from './serverPluginServeStatic'
 import { jsonPlugin } from './serverPluginJson'
 import { cssPlugin } from './serverPluginCss'
+import { esbuildPlugin } from './serverPluginEsbuild'
 
 export { Resolver }
 
@@ -20,18 +21,27 @@ export interface PluginContext {
   server: Server
   watcher: HMRWatcher
   resolver: InternalResolver
+  jsxConfig: {
+    jsxFactory: string | undefined
+    jsxFragment: string | undefined
+  }
 }
 
 export interface ServerConfig {
   root?: string
   plugins?: Plugin[]
   resolvers?: Resolver[]
+  jsx?: {
+    factory?: string
+    fragment?: string
+  }
 }
 
 const internalPlugins: Plugin[] = [
   moduleRewritePlugin,
   moduleResolvePlugin,
   vuePlugin,
+  esbuildPlugin,
   jsonPlugin,
   cssPlugin,
   hmrPlugin,
@@ -39,23 +49,31 @@ const internalPlugins: Plugin[] = [
 ]
 
 export function createServer(config: ServerConfig = {}): Server {
-  const { root = process.cwd(), plugins = [], resolvers = [] } = config
+  const {
+    root = process.cwd(),
+    plugins = [],
+    resolvers = [],
+    jsx = {}
+  } = config
   const app = new Koa()
   const server = http.createServer(app.callback())
   const watcher = chokidar.watch(root, {
     ignored: [/node_modules/]
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers)
+  const context = {
+    root,
+    app,
+    server,
+    watcher,
+    resolver,
+    jsxConfig: {
+      jsxFactory: jsx.factory,
+      jsxFragment: jsx.fragment
+    }
+  }
 
-  ;[...plugins, ...internalPlugins].forEach((m) =>
-    m({
-      root,
-      app,
-      server,
-      watcher,
-      resolver
-    })
-  )
+  ;[...plugins, ...internalPlugins].forEach((m) => m(context))
 
   return server
 }
