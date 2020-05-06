@@ -121,7 +121,7 @@ You can directly import `.css` and `.json` files from JavaScript (including `<sc
 
 - `.json` files export their content as an object that is the default export.
 
-- `.css` files do not export anything. Importing them leads to the side effect of them being injected to the page during dev, or being included in the final `style.css` of the production build.
+- `.css` files do not export anything unless it ends with `.module.css` (See [CSS Modules](#css-modules) below). Importing them leads to the side effect of them being injected to the page during dev, and being included in the final `style.css` of the production build.
 
 Both CSS and JSON imports also support Hot Module Replacement.
 
@@ -301,8 +301,9 @@ Finally, because compilation is still done in Node, it can technically support a
 
 ## TODOs
 
-- Config file support (custom import maps and plugins)
-- Support TypeScript / Flow /(P)React JSX via [Sucrase](https://github.com/alangpierce/sucrase) or [esbuild](https://github.com/evanw/esbuild)
+- Config file support
+  - Define config options
+  - Define plugin format
 
 ## Trivia
 
