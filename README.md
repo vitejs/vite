@@ -58,7 +58,7 @@ Native ES imports doesn't support bare module imports like
 import { createApp } from 'vue'
 ```
 
-The above will throw an error by default. `vite` detects such bare module imports in all served `.js` files and rewrite them with special paths like `/@modules/vue`. Under these special paths, `vite` performs module resolution to locate the correct files on disk:
+The above will throw an error by default. `vite` detects such bare module imports in all served `.js` files and rewrites them with special paths like `/@modules/vue`. Under these special paths, `vite` performs module resolution to locate the correct files on disk:
 
 - `vue` has special handling: you don't need to install it since `vite` will serve it by default. But if you want to use a specific version of `vue` (only supports Vue 3.x), you can install `vue` locally into `node_modules` and it will be preferred (`@vue/compiler-sfc` of the same version will also need to be installed).
 
@@ -119,7 +119,7 @@ Starting with v0.11, `vite` supports `<script lang="ts">` in `*.vue` files, and 
 
 You can directly import `.css` and `.json` files from JavaScript (including `<script>` tags of `*.vue` files, of course).
 
-- `.json` files exports its content as an object as the default export.
+- `.json` files export their content as an object that is the default export.
 
 - `.css` files do not export anything. Importing them leads to the side effect of them being injected to the page during dev, or being included in the final `style.css` of the production build.
 
@@ -139,11 +139,11 @@ Similar to `vue-cli`, image assets smaller than 4kb will be base64 inlined.
 
 ### CSS Modules
 
-Note that you do **not** need to configure PostCSS if you want to use CSS Modules: it works out of the box. Inside `*.vue` components you can use `<style module>`, and for plain `.css` files, you need name CSS modules files as `*.module.css` which allows you to import the naming hash from it.
+Note that you do **not** need to configure PostCSS if you want to use CSS Modules: it works out of the box. Inside `*.vue` components you can use `<style module>`, and for plain `.css` files, you need to name CSS modules files as `*.module.css` which allows you to import the naming hash from it.
 
 ### CSS Pre-Processors
 
-Because `vite` targets modern browsers only, it is recommended to use native CSS variables with PostCSS plugins that implements CSSWG drafts (e.g. [postcss-nesting](https://github.com/jonathantneal/postcss-nesting)) and author plain, future-standards-compliant CSS. That said, if you insist on using a CSS pre-processor, you can install the corresponding pre-processor and just use it:
+Because `vite` targets modern browsers only, it is recommended to use native CSS variables with PostCSS plugins that implement CSSWG drafts (e.g. [postcss-nesting](https://github.com/jonathantneal/postcss-nesting)) and author plain, future-standards-compliant CSS. That said, if you insist on using a CSS pre-processor, you can install the corresponding pre-processor and just use it:
 
 ``` bash
 yarn add -D sass
@@ -194,7 +194,7 @@ render(<h1>Hello, what!</h1>, document.getElementById("app"))
 
 You can run `vite build` to bundle the app.
 
-Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flag in the CLI (see [src/node/build.ts](https://github.com/vuejs/vite/blob/master/src/node/build.ts) for full details).
+Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flags in the CLI (see [src/node/build.ts](https://github.com/vuejs/vite/blob/master/src/node/build.ts) for full details).
 
 ### API
 
