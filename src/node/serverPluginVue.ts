@@ -153,9 +153,7 @@ async function compileSFCMain(
   if (descriptor.script) {
     let content = descriptor.script.content
     if (descriptor.script.lang === 'ts') {
-      content = (
-        await transform(content, { loader: 'ts' }, `transpiling ${publicPath}`)
-      ).code
+      content = (await transform(content, publicPath, { loader: 'ts' })).code
     }
 
     code += content.replace(`export default`, 'const __script =')

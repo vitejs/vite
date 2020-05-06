@@ -20,6 +20,8 @@ if (argv._[0] === 'build') {
     })
     .catch((err) => {
       console.error(chalk.red(`[vite] Build errored out.`))
+      // TODO pretty print this
+      // rollup errors contain helpful information
       console.log(err)
     })
 } else {
