@@ -2,6 +2,5 @@
 node_modules
 dist
 TODOs.md
-playground
 *.log
 test/temp
