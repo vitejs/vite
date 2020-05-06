@@ -28,6 +28,8 @@ export const transform = async (
   return transformWithService(await ensureService(), code, file, options)
 }
 
+const sourceMapRE = /\/\/# sourceMappingURL.*/
+
 // trasnform that takes the service via arguments, used in build plugins
 export const transformWithService = async (
   service: Service,
@@ -47,15 +49,15 @@ export const transformWithService = async (
       result.warnings.forEach((w) => console.error(w))
     }
     return {
-      code: result.js || '',
-      map: result.jsSourceMap || ''
+      code: (result.js || '').replace(sourceMapRE, ''),
+      map: result.jsSourceMap
     }
   } catch (e) {
     console.error(`[vite] error while transforming ${file} with esbuild:`)
     console.error(e)
     return {
       code: '',
-      map: ''
+      map: undefined
     }
   }
 }

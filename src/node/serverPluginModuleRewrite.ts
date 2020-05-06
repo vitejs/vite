@@ -43,6 +43,8 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
     `window.process = { env: { NODE_ENV: 'development' }}\n` +
     `</script>\n`
 
+  const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
+
   app.use(async (ctx, next) => {
     await next()
 
@@ -58,19 +60,16 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       } else if (ctx.body) {
         await initLexer
         let hasInjectedDevFlag = false
-        ctx.body = html!.replace(
-          /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm,
-          (_, openTag, script) => {
-            // also inject __DEV__ flag
-            const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
-            hasInjectedDevFlag = true
-            return `${devFlag}${openTag}${rewriteImports(
-              script,
-              '/index.html',
-              resolver
-            )}</script>`
-          }
-        )
+        ctx.body = html!.replace(scriptRE, ([_, openTag, script]) => {
+          // also inject __DEV__ flag
+          const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
+          hasInjectedDevFlag = true
+          return `${devFlag}${openTag}${rewriteImports(
+            script,
+            '/index.html',
+            resolver
+          )}</script>`
+        })
         rewriteCache.set(html, ctx.body)
       }
     }
@@ -93,7 +92,12 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
         ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
-        ctx.body = rewriteImports(content!, ctx.path, resolver, ctx.query.t)
+        ctx.body = await rewriteImports(
+          content!,
+          ctx.path,
+          resolver,
+          ctx.query.t
+        )
         rewriteCache.set(content, ctx.body)
       }
     } else {
@@ -123,7 +127,8 @@ function rewriteImports(
       const currentImportees = new Set<string>()
       importeeMap.set(importer, currentImportees)
 
-      imports.forEach(({ s: start, e: end, d: dynamicIndex }) => {
+      for (let i = 0; i < imports.length; i++) {
+        const { s: start, e: end, d: dynamicIndex } = imports[i]
         let id = source.substring(start, end)
         let hasLiteralDynamicId = false
         if (dynamicIndex >= 0) {
@@ -159,7 +164,8 @@ function rewriteImports(
             // append .js for extension-less imports
             // for now we don't attemp to resolve other extensions
             if (!/\.\w+/.test(pathname)) {
-              pathname += '.js'
+              const file = resolver.requestToFile(pathname)
+              pathname += path.extname(file)
             }
             // force re-fetch all imports by appending timestamp
             // if this is a hmr refresh request
@@ -189,7 +195,7 @@ function rewriteImports(
         } else {
           console.log(`[vite] ignored dynamic import(${id})`)
         }
-      })
+      }
 
       // since the importees may have changed due to edits,
       // check if we need to remove this importer from certain importees

@@ -19,13 +19,14 @@ export const createEsbuildPlugin = async (
   return {
     name: 'vite:esbuild',
 
-    async transform(code, file) {
-      if (tjsxRE.test(file)) {
+    async transform(code, id) {
+      const isVueTs = /\.vue\?/.test(id) && id.endsWith('lang=ts')
+      if (tjsxRE.test(id) || isVueTs) {
         return transformWithService(
           service || (service = await startService()),
           code,
-          file,
-          { ...jsxConfig }
+          id,
+          { ...jsxConfig, ...(isVueTs ? { loader: 'ts' } : null) }
         )
       }
     },

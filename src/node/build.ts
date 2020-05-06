@@ -10,7 +10,7 @@ import {
 import { resolveVue } from './vueResolver'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
-import { Resolver, createResolver } from './resolver'
+import { Resolver, createResolver, supportedExts } from './resolver'
 import { Options } from 'rollup-plugin-vue'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'
@@ -198,7 +198,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       }),
       require('@rollup/plugin-json')(),
       require('@rollup/plugin-node-resolve')({
-        rootDir: root
+        rootDir: root,
+        extensions: supportedExts
       }),
       require('@rollup/plugin-replace')({
         'process.env.NODE_ENV': '"production"',

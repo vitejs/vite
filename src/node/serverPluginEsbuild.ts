@@ -11,7 +11,6 @@ export const esbuildPlugin: Plugin = ({ app, watcher, jsxConfig }) => {
       const { code, map } = await transform(src!, ctx.path, jsxConfig)
       let res = code
       if (map) {
-        res = res.replace(/\/\/# sourceMappingURL.*/, '')
         res += genSourceMapString(map)
       }
       ctx.body = res
