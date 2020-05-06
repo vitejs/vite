@@ -2,6 +2,7 @@ import { Plugin } from 'rollup'
 import { hmrClientId } from './serverPluginHmr'
 import { InternalResolver } from './resolver'
 import { resolveVue } from './vueResolver'
+import { resolveWebModule } from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:build:resolve')
 
@@ -13,7 +14,7 @@ export const createBuildResolvePlugin = (
 ): Plugin => {
   return {
     name: 'vite:resolve',
-    resolveId(id: string) {
+    async resolveId(id: string) {
       if (id === hmrClientId) {
         return hmrClientId
       } else if (id.startsWith('/')) {
@@ -33,12 +34,17 @@ export const createBuildResolvePlugin = (
             external: true
           }
         }
-      } else {
+      } else if (!id.startsWith('.')) {
         const request = resolver.idToRequest(id)
         if (request) {
           const resolved = resolver.requestToFile(request)
           debug(id, `-->`, request, `--> `, resolved)
           return resolved
+        } else {
+          const webModulePath = await resolveWebModule(root, id)
+          if (webModulePath) {
+            return webModulePath
+          }
         }
       }
     },

@@ -92,7 +92,7 @@ export const moduleResolvePlugin: Plugin = ({ root, app }) => {
   })
 }
 
-async function resolveWebModule(
+export async function resolveWebModule(
   root: string,
   id: string
 ): Promise<string | undefined> {
