@@ -10,19 +10,25 @@ import {
 import { resolveVue } from './vueResolver'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
-import { Resolver, createResolver } from './resolver'
+import { Resolver, createResolver, supportedExts } from './resolver'
 import { Options } from 'rollup-plugin-vue'
 import { createBuildResolvePlugin } from './buildPluginResolve'
-import { createBuildHtmlPlugin, scriptRE } from './buildPluginHtml'
+import { createBuildHtmlPlugin } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
 import { createBuildAssetPlugin } from './buildPluginAsset'
-import { isExternalUrl } from './utils'
+import { createEsbuildPlugin } from './buildPluginEsbuild'
 
 export interface BuildOptions {
   /**
    * Project root path on file system.
+   * Defaults to `process.cwd()`
    */
   root?: string
+  /**
+   * Base public path when served in production.
+   * Defaults to /
+   */
+  base?: string
   /**
    * If true, will be importing Vue from a CDN.
    * Dsiabled automatically when a local vue installation is present.
@@ -43,6 +49,12 @@ export interface BuildOptions {
    */
   assetsDir?: string
   /**
+   * Static asset files smaller than this number (in bytes) will be inlined as
+   * base64 strings.
+   * Default: 4096 (4kb)
+   */
+  assetsInlineLimit?: number
+  /**
    * List files that are included in the build, but not inside project root.
    * e.g. if you are building a higher level tool on top of vite and includes
    * some code that will be bundled into the final build.
@@ -50,13 +62,30 @@ export interface BuildOptions {
   srcRoots?: string[]
   /**
    * Will be passed to rollup.rollup()
+   * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupInputOptions?: InputOptions
   /**
    * Will be passed to bundle.generate()
+   * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupOutputOptions?: OutputOptions
+  /**
+   * Will be passed to rollup-plugin-vue
+   * https://github.com/vuejs/rollup-plugin-vue/blob/next/src/index.ts
+   */
   rollupPluginVueOptions?: Partial<Options>
+  /**
+   * Configure what to use for jsx factory and fragment
+   */
+  jsx?: {
+    factory?: string
+    fragment?: string
+  }
+  /**
+   * Whether to emit index.html
+   */
+  emitIndex?: boolean
   /**
    * Whether to emit assets other than JavaScript
    */
@@ -68,7 +97,7 @@ export interface BuildOptions {
   /**
    * Whether to minify output
    */
-  minify?: boolean
+  minify?: boolean | 'terser' | 'esbuild'
   /**
    * Whether to log asset info to console
    */
@@ -104,64 +133,55 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
   const {
     root = process.cwd(),
+    base = '/',
     cdn = !resolveVue(root).hasLocalVue,
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
+    assetsInlineLimit = 4096,
     resolvers = [],
     srcRoots = [],
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
+    jsx = {},
+    emitIndex = true,
     emitAssets = true,
     write = true,
     minify = true,
     silent = false
   } = options
 
+  const indexPath = emitIndex ? path.resolve(root, 'index.html') : null
+  const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
+  const resolvedAssetsPath = path.join(outDir, assetsDir)
+  const cssFileName = 'style.css'
+
+  const resolver = createResolver(root, resolvers)
+
+  const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
+    indexPath,
+    publicBasePath,
+    assetsDir,
+    assetsInlineLimit,
+    resolver
+  )
+
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
-  const indexPath = path.resolve(root, 'index.html')
-  const cssFileName = 'style.css'
-  const resolvedAssetsPath = path.join(outDir, assetsDir)
-
-  const cwd = process.cwd()
-  const writeFile = async (
-    filepath: string,
-    content: string | Uint8Array,
-    type: WriteType
-  ) => {
-    await fs.ensureDir(path.dirname(filepath))
-    await fs.writeFile(filepath, content)
-    if (!silent) {
-      console.log(
-        `${chalk.gray(`[write]`)} ${writeColors[type](
-          path.relative(cwd, filepath)
-        )} ${(content.length / 1024).toFixed(2)}kb`
-      )
-    }
-  }
-
-  let indexContent: string | null = null
-  try {
-    indexContent = await fs.readFile(indexPath, 'utf-8')
-  } catch (e) {
-    // no index
-  }
-
-  const resolver = createResolver(root, resolvers)
-  srcRoots.push(root)
-
   const bundle = await rollup({
     input: path.resolve(root, 'index.html'),
+    preserveEntrySignatures: false,
     ...rollupInputOptions,
     plugins: [
       // user plugins
       ...(rollupInputOptions.plugins || []),
       // vite:resolve
-      createBuildResolvePlugin(root, cdn, srcRoots, resolver),
+      createBuildResolvePlugin(root, cdn, [root, ...srcRoots], resolver),
       // vite:html
-      ...(indexContent ? [createBuildHtmlPlugin(indexPath, indexContent)] : []),
+      ...(htmlPlugin ? [htmlPlugin] : []),
+      // vite:esbuild
+      await createEsbuildPlugin(minify === 'esbuild', jsx),
       // vue
       require('rollup-plugin-vue')({
         transformAssetUrls: {
@@ -178,19 +198,31 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       }),
       require('@rollup/plugin-json')(),
       require('@rollup/plugin-node-resolve')({
-        rootDir: root
+        rootDir: root,
+        extensions: supportedExts
       }),
       require('@rollup/plugin-replace')({
         'process.env.NODE_ENV': '"production"',
         __DEV__: 'false'
       }),
       // vite:css
-      createBuildCssPlugin(root, assetsDir, cssFileName, minify),
+      createBuildCssPlugin(
+        root,
+        publicBasePath,
+        assetsDir,
+        cssFileName,
+        !!minify,
+        assetsInlineLimit
+      ),
       // vite:asset
-      createBuildAssetPlugin(assetsDir),
+      createBuildAssetPlugin(publicBasePath, assetsDir, assetsInlineLimit),
       // minify with terser
-      // modules: true and toplevel: true are implied with format: 'es'
-      ...(minify ? [require('rollup-plugin-terser').terser()] : [])
+      // this is the default which has better compression, but slow
+      // the user can opt-in to use esbuild which is much faster but results
+      // in ~8-10% larger file size.
+      ...(minify && minify !== 'esbuild'
+        ? [require('rollup-plugin-terser').terser()]
+        : [])
     ],
     onwarn(warning, warn) {
       if (warning.code !== 'CIRCULAR_DEPENDENCY') {
@@ -204,76 +236,52 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     ...rollupOutputOptions
   })
 
-  let generatedIndex = indexContent && indexContent.replace(scriptRE, '').trim()
-
-  const injectCSS = (html: string, filename: string) => {
-    const tag = `<link rel="stylesheet" href="/${path.posix.join(
-      assetsDir,
-      filename
-    )}">`
-    if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
-    } else {
-      return tag + '\n' + html
-    }
-  }
-
-  const injectScript = (html: string, filename: string) => {
-    filename = isExternalUrl(filename)
-      ? filename
-      : `/${path.posix.join(assetsDir, filename)}`
-    const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/body>/.test(html)) {
-      return html.replace(/<\/body>/, `${tag}\n</body>`)
-    } else {
-      return html + '\n' + tag
-    }
-  }
-
-  // TODO handle base path for injections?
-  // this would also affect paths in templates and css.
-  if (generatedIndex) {
-    // inject css link
-    generatedIndex = injectCSS(generatedIndex, cssFileName)
-    if (cdn) {
-      // if not inlining vue, inject cdn link so it can start the fetch early
-      generatedIndex = injectScript(generatedIndex, resolveVue(root).cdnLink)
-    }
-  }
+  const indexHtml = renderIndex(root, cdn, cssFileName, output)
 
   if (write) {
+    const cwd = process.cwd()
+    const writeFile = async (
+      filepath: string,
+      content: string | Uint8Array,
+      type: WriteType
+    ) => {
+      await fs.ensureDir(path.dirname(filepath))
+      await fs.writeFile(filepath, content)
+      if (!silent) {
+        console.log(
+          `${chalk.gray(`[write]`)} ${writeColors[type](
+            path.relative(cwd, filepath)
+          )} ${(content.length / 1024).toFixed(2)}kb`
+        )
+      }
+    }
+
     await fs.remove(outDir)
     await fs.ensureDir(outDir)
-  }
 
-  // inject / write bundle
-  for (const chunk of output) {
-    if (chunk.type === 'chunk') {
-      if (chunk.isEntry && generatedIndex) {
-        // inject chunk to html
-        generatedIndex = injectScript(generatedIndex, chunk.fileName)
-      }
-      // write chunk
-      if (write) {
+    for (const chunk of output) {
+      if (chunk.type === 'chunk') {
+        // write chunk
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)
         await writeFile(filepath, chunk.code, WriteType.JS)
+      } else if (emitAssets) {
+        // write asset
+        const filepath = path.join(resolvedAssetsPath, chunk.fileName)
+        await writeFile(
+          filepath,
+          chunk.source,
+          chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
+        )
       }
-    } else if (emitAssets && write) {
-      // write asset
-      const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-      await writeFile(
-        filepath,
-        chunk.source,
-        chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
-      )
     }
-  }
 
-  if (write) {
     // write html
-    if (generatedIndex) {
-      const indexOutPath = path.join(outDir, 'index.html')
-      await writeFile(indexOutPath, generatedIndex, WriteType.HTML)
+    if (indexHtml && emitIndex) {
+      await writeFile(
+        path.join(outDir, 'index.html'),
+        indexHtml,
+        WriteType.HTML
+      )
     }
   }
 
@@ -284,7 +292,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
   return {
     assets: output,
-    html: generatedIndex || ''
+    html: indexHtml
   }
 }
 
@@ -319,7 +327,10 @@ export async function ssrBuild(
       ...rollupOutputOptions,
       format: 'cjs',
       exports: 'named'
-    }
+    },
+    emitIndex: false,
+    emitAssets: false,
+    minify: false
   })
 }
 

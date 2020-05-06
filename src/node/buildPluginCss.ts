@@ -1,18 +1,20 @@
 import path from 'path'
 import { Plugin } from 'rollup'
-import { getAssetPublicPath, registerAssets } from './buildPluginAsset'
+import { resolveAsset, registerAssets } from './buildPluginAsset'
 import { loadPostcssConfig } from './config'
-import { isExternalUrl } from './utils'
+import { isExternalUrl, asyncReplace } from './utils'
 
-const debug = require('debug')('vite:css')
+const debug = require('debug')('vite:build:css')
 
 const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
 export const createBuildCssPlugin = (
   root: string,
+  publicBase: string,
   assetsDir: string,
   cssFileName: string,
-  minify: boolean
+  minify: boolean,
+  inlineLimit: number
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map()
@@ -25,29 +27,25 @@ export const createBuildCssPlugin = (
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {
           const fileDir = path.dirname(id)
-          let match
-          let remaining = css
-          let rewritten = ''
-          while ((match = urlRE.exec(remaining))) {
-            rewritten += remaining.slice(0, match.index)
-            const [matched, before, rawUrl, after] = match
-            if (isExternalUrl(rawUrl)) {
-              rewritten += matched
-              remaining = remaining.slice(match.index + matched.length)
-              return
+          css = await asyncReplace(
+            css,
+            urlRE,
+            async ([matched, before, rawUrl, after]) => {
+              if (isExternalUrl(rawUrl)) {
+                return matched
+              }
+              const file = path.join(fileDir, rawUrl)
+              const { fileName, content, url } = await resolveAsset(
+                file,
+                publicBase,
+                assetsDir,
+                inlineLimit
+              )
+              assets.set(fileName, content)
+              debug(`url(${rawUrl}) -> url(${url})`)
+              return `${before}${url}${after}`
             }
-
-            const file = path.join(fileDir, rawUrl)
-            const { fileName, content, url } = await getAssetPublicPath(
-              file,
-              assetsDir
-            )
-            assets.set(fileName, content)
-            debug(`url(${rawUrl}) -> url(${url})`)
-            rewritten += `${before}${url}${after}`
-            remaining = remaining.slice(match.index + matched.length)
-          }
-          css = rewritten + remaining
+          )
         }
 
         // postcss

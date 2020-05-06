@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "0.10.2",
+  "version": "0.11.1",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
@@ -63,6 +63,7 @@
     "cssnano": "^4.1.10",
     "debug": "^4.1.1",
     "es-module-lexer": "^0.3.18",
+    "esbuild": "^0.2.0",
     "fs-extra": "^9.0.0",
     "hash-sum": "^2.0.0",
     "koa": "^2.11.0",
@@ -79,7 +80,7 @@
     "resolve-from": "^5.0.0",
     "rollup": "^2.7.2",
     "rollup-plugin-terser": "^5.3.0",
-    "rollup-plugin-vue": "^6.0.0-alpha.7",
+    "rollup-plugin-vue": "^6.0.0-alpha.8",
     "slash": "^3.0.0",
     "vue": "^3.0.0-beta.9",
     "ws": "^7.2.3"

@@ -1,3 +1,47 @@
+## [0.11.1](https://github.com/vuejs/vite/compare/v0.11.0...v0.11.1) (2020-05-06)
+
+
+### Bug Fixes
+
+* fix rewrite when encountering external url ([e78c9f7](https://github.com/vuejs/vite/commit/e78c9f7680c2652b13f4270182c860417e388b2e))
+
+
+
+# [0.11.0](https://github.com/vuejs/vite/compare/v0.10.3...v0.11.0) (2020-05-06)
+
+
+### Bug Fixes
+
+* fix direct index script src hmr ([73d94b9](https://github.com/vuejs/vite/commit/73d94b9ba75836b995ed276747a32ce94344c1eb))
+
+
+### Features
+
+* dev support for ts ([7cbaf5d](https://github.com/vuejs/vite/commit/7cbaf5d8e5b70db2ec642bd1d34f1e0322927ccf))
+* support minification with esbuild ([b87ba7e](https://github.com/vuejs/vite/commit/b87ba7e321b9dd319009a55154540805969f0039))
+* ts build support for vue files ([8262108](https://github.com/vuejs/vite/commit/8262108db14b35126bcaae3253bf3f6391c9d283))
+* tsx? support for build ([81ffbc5](https://github.com/vuejs/vite/commit/81ffbc548c3d5f9db1f040c360167f95963674d6))
+
+
+
+## [0.10.3](https://github.com/vuejs/vite/compare/v0.10.2...v0.10.3) (2020-05-05)
+
+
+### Bug Fixes
+
+* fix module entry redirect on Windows (fix [#55](https://github.com/vuejs/vite/issues/55)) ([01135fa](https://github.com/vuejs/vite/commit/01135fa1edede1f46acd7c83d18e5131ebc7cbd7))
+* only log target exist when error says so ([59b8638](https://github.com/vuejs/vite/commit/59b8638d966feb7c9433911d7ba2a66617cb708c))
+
+
+### Features
+
+* add asset options into build options ([#53](https://github.com/vuejs/vite/issues/53)) ([a5c608d](https://github.com/vuejs/vite/commit/a5c608d2a0b98fc7b121d9c5eb1a4b7238dfb74b))
+* public base path support ([c82a597](https://github.com/vuejs/vite/commit/c82a5976acd2ad3f39f6ee2b9efc20b1f918e687))
+* support ssrBuild ([4808f41](https://github.com/vuejs/vite/commit/4808f4106fe0d71c3178c1d66272eef913efd61f))
+* support template pre-processors ([b6cafee](https://github.com/vuejs/vite/commit/b6cafee5ce9e4e141bd2ba2f2646ad5db78caf0f)), closes [#17](https://github.com/vuejs/vite/issues/17)
+
+
+
 ## [0.10.2](https://github.com/vuejs/vite/compare/v0.10.1...v0.10.2) (2020-05-04)
 
 

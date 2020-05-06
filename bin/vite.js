@@ -9,6 +9,12 @@ Object.keys(argv).forEach((key) => {
   if (argv[key] === 'false') {
     argv[key] = false
   }
+  if (key === 'jsx-factory') {
+    ;(argv.jsx || (argv.jsx = {})).factory = argv[key]
+  }
+  if (key === 'jsx-fragment') {
+    ;(argv.jsx || (argv.jsx = {})).fragment = argv[key]
+  }
 })
 
 if (argv._[0] === 'build') {
@@ -20,7 +26,10 @@ if (argv._[0] === 'build') {
     })
     .catch((err) => {
       console.error(chalk.red(`[vite] Build errored out.`))
-      console.log(err)
+      // TODO pretty print this
+      // rollup errors contain helpful information
+      console.error(err)
+      process.exit(1)
     })
 } else {
   const server = require('../dist').createServer(argv)
