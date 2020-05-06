@@ -1,16 +1,19 @@
 import { Plugin } from './server'
 import { readBody, isImportRequest } from './utils'
-import ts, { CompilerOptions } from 'typescript'
 import { parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
-import path from 'path'
+import { transform } from './esbuildService'
 
 export const tsPlugin: Plugin = ({ root, app, watcher }) => {
   app.use(async (ctx, next) => {
     await next()
     if (ctx.path.endsWith('.ts') && isImportRequest(ctx) && ctx.body) {
       ctx.type = 'js'
-      ctx.body = compileTs((await readBody(ctx.body)) as string, root)
+      ctx.body = await compileTs(
+        (await readBody(ctx.body)) as string,
+        ctx.path,
+        root
+      )
     }
   })
 
@@ -21,24 +24,13 @@ export const tsPlugin: Plugin = ({ root, app, watcher }) => {
   })
 }
 
-export function compileTs(source: string, root: string): string {
-  let { outputText } = ts.transpileModule(source, {
-    compilerOptions: loadTsconfig(root)
-  })
-  return renameTsImport(outputText)
-}
-
-let cachedTsConfig: undefined | CompilerOptions
-
-function loadTsconfig(root: string): CompilerOptions {
-  if (cachedTsConfig) return cachedTsConfig
-  let compilerOptions = { module: ts.ModuleKind.ESNext }
-  try {
-    const tsconfigPath = path.resolve(root, 'tsconfig.json')
-    const tsconfig = require(tsconfigPath)
-    compilerOptions = { ...tsconfig.compilerOptions, ...compilerOptions }
-  } catch (e) {}
-  return (cachedTsConfig = compilerOptions)
+export async function compileTs(
+  source: string,
+  path: string,
+  root: string
+): Promise<string> {
+  const { code } = await transform(source, path, { loader: 'ts' })
+  return renameTsImport(code)
 }
 
 // import './a' => import './a.ts
