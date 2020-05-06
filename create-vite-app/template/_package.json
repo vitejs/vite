@@ -9,7 +9,7 @@
     "vue": "^3.0.0-beta.9"
   },
   "devDependencies": {
-    "vite": "^0.10.3",
+    "vite": "^0.11.0",
     "@vue/compiler-sfc": "^3.0.0-beta.9"
   }
 }
