@@ -1,11 +1,11 @@
 import { Plugin } from './server'
-import { readBody, isImportRequest, genSourceMapString } from './utils'
+import { readBody, genSourceMapString } from './utils'
 import { tjsxRE, transform } from './esbuildService'
 
 export const esbuildPlugin: Plugin = ({ app, watcher, jsxConfig }) => {
   app.use(async (ctx, next) => {
     await next()
-    if (isImportRequest(ctx) && ctx.body && tjsxRE.test(ctx.path)) {
+    if (ctx.body && tjsxRE.test(ctx.path)) {
       ctx.type = 'js'
       const src = await readBody(ctx.body)
       const { code, map } = await transform(src!, ctx.path, jsxConfig)

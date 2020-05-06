@@ -60,17 +60,19 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       } else if (ctx.body) {
         await initLexer
         let hasInjectedDevFlag = false
-        ctx.body = html!.replace(scriptRE, ([_, openTag, script]) => {
+        ctx.body = html!.replace(scriptRE, (_, openTag, script) => {
           // also inject __DEV__ flag
           const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
           hasInjectedDevFlag = true
-          return `${devFlag}${openTag}${rewriteImports(
+          const ret = `${devFlag}${openTag}${rewriteImports(
             script,
             '/index.html',
             resolver
           )}</script>`
+          return ret
         })
         rewriteCache.set(html, ctx.body)
+        return
       }
     }
 
@@ -92,12 +94,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
         ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
-        ctx.body = await rewriteImports(
-          content!,
-          ctx.path,
-          resolver,
-          ctx.query.t
-        )
+        ctx.body = rewriteImports(content!, ctx.path, resolver, ctx.query.t)
         rewriteCache.set(content, ctx.body)
       }
     } else {

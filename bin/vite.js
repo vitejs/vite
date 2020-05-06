@@ -9,6 +9,12 @@ Object.keys(argv).forEach((key) => {
   if (argv[key] === 'false') {
     argv[key] = false
   }
+  if (key === 'jsx-factory') {
+    ;(argv.jsx || (argv.jsx = {})).factory = argv[key]
+  }
+  if (key === 'jsx-fragment') {
+    ;(argv.jsx || (argv.jsx = {})).fragment = argv[key]
+  }
 })
 
 if (argv._[0] === 'build') {
