@@ -152,7 +152,17 @@ Note importing CSS / preprocessor files from `.js` files, and HMR from imported 
 
 ### JSX
 
-`.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via `esbuild`, and can be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` fro the API. For example, to use [Preact](https://preactjs.com/) with `vite`:
+`.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via `esbuild`.
+
+Because React doesn't ship ES module builds, you either need to use [es-react](https://github.com/lukejacksonn/es-react), or pre-bundle React into a ES module with Snowpack. Easiest way to get it running is:
+
+``` js
+import { React, ReactDOM } from 'https://unpkg.com/es-react'
+
+ReactDOM.render(<h1>Hello, what!</h1>, document.getElementById("app"));
+```
+
+JSX can also be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` fro the API. For example, to use [Preact](https://preactjs.com/) with `vite`:
 
 ``` json
 {
@@ -169,8 +179,6 @@ render(<h1>Hello, what!</h1>, document.getElementById("app"))
 #### Notes on JSX Support
 
 - Vue 3's JSX transform is still WIP, so `vite`'s JSX support currently only targets React/Preact.
-
-- React doesn't ship ES module builds, so it must be pre-bundled with Snowpack to work.
 
 - There is no out-of-the-box HMR when using non-Vue frameworks, but userland HMR support is technically via the server API.
 
