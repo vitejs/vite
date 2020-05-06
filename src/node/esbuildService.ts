@@ -37,11 +37,12 @@ export const transformWithService = async (
   file: string,
   options: TransformOptions = {}
 ) => {
+  options = {
+    ...options,
+    loader: options.loader || (path.extname(file).slice(1) as any),
+    sourcemap: true
+  }
   try {
-    if (!options.loader) {
-      options.loader = path.extname(file).slice(1) as any
-    }
-    options.sourcemap = true
     const result = await service.transform(code, options)
     if (result.warnings.length) {
       console.error(`[vite] warnings while transforming ${file} with esbuild:`)
@@ -54,6 +55,7 @@ export const transformWithService = async (
     }
   } catch (e) {
     console.error(`[vite] error while transforming ${file} with esbuild:`)
+    console.error(`options: `, options)
     console.error(e)
     return {
       code: '',
