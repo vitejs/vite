@@ -44,6 +44,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
     `</script>\n`
 
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
+  const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
 
   app.use(async (ctx, next) => {
     await next()
@@ -60,16 +61,26 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       } else if (ctx.body) {
         await initLexer
         let hasInjectedDevFlag = false
-        ctx.body = html!.replace(scriptRE, (_, openTag, script) => {
-          // also inject __DEV__ flag
+        const importer = '/index.html'
+        ctx.body = html!.replace(scriptRE, (matched, openTag, script) => {
           const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
           hasInjectedDevFlag = true
-          const ret = `${devFlag}${openTag}${rewriteImports(
-            script,
-            '/index.html',
-            resolver
-          )}</script>`
-          return ret
+          if (script) {
+            return `${devFlag}${openTag}${rewriteImports(
+              script,
+              importer,
+              resolver
+            )}</script>`
+          } else {
+            const srcAttr = openTag.match(srcRE)
+            if (srcAttr) {
+              // register script as a import dep for hmr
+              const importee = cleanUrl(slash(path.resolve('/', srcAttr[1])))
+              debugHmr(`        ${importer} imports ${importee}`)
+              ensureMapEntry(importerMap, importee).add(importer)
+            }
+            return `${devFlag}${matched}`
+          }
         })
         rewriteCache.set(html, ctx.body)
         return
