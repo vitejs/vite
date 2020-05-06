@@ -149,7 +149,7 @@ function rewriteImports(
         if (dynamicIndex === -1 || hasLiteralDynamicId) {
           // do not rewrite external imports
           if (isExternalUrl(id)) {
-            return
+            break
           }
 
           let resolved
