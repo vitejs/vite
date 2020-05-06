@@ -78,15 +78,18 @@ The above will throw an error by default. `vite` detects such bare module import
 
   foo()
 
-  hot.accept('./foo.js', (newFoo) => {
-    // the callback receives the updated './foo.js' module
-    newFoo.foo()
-  })
+  // this code will be stripped out when building
+  if (__DEV__) {
+    hot.accept('./foo.js', (newFoo) => {
+      // the callback receives the updated './foo.js' module
+      newFoo.foo()
+    })
 
-  // Can also accept an array of dep modules:
-  hot.accept(['./foo.js', './bar.js'], ([newFooModule, newBarModule]) => {
-    // the callback receives the updated mdoules in an Array
-  })
+    // Can also accept an array of dep modules:
+    hot.accept(['./foo.js', './bar.js'], ([newFooModule, newBarModule]) => {
+      // the callback receives the updated mdoules in an Array
+    })
+  }
   ```
 
   Modules can also be self-accepting:
@@ -96,9 +99,12 @@ The above will throw an error by default. `vite` detects such bare module import
 
   export const count = 1
 
-  hot.accept(newModule => {
-    console.log('updated: count is now ', newModule.count)
-  })
+  // this code will be stripped out when building
+  if (__DEV__) {
+    hot.accept(newModule => {
+      console.log('updated: count is now ', newModule.count)
+    })
+  }
   ```
 
   Note that `vite`'s HMR does not actually swap the originally imported module: if an accepting module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the accepting module will not be notified of the change.
