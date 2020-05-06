@@ -96,22 +96,14 @@ async function resolveWebModule(
   root: string,
   id: string
 ): Promise<string | undefined> {
-  const webModulePath = webModulesMap.get(id)
+  let webModulePath = webModulesMap.get(id)
   if (webModulePath) {
     return webModulePath
   }
-  const importMapPath = path.join(root, 'web_modules', 'import-map.json')
-  if (await fs.pathExists(importMapPath)) {
-    const importMap = require(importMapPath)
-    if (importMap.imports) {
-      const webModulesDir = path.dirname(importMapPath)
-      Object.entries(
-        importMap.imports
-      ).forEach(([key, val]: [string, string]) =>
-        webModulesMap.set(key, path.join(webModulesDir, val))
-      )
-      return webModulesMap.get(id)
-    }
+  webModulePath = path.join(root, 'web_modules', id + '.js')
+  if (await fs.pathExists(webModulePath)) {
+    webModulesMap.set(id, webModulePath)
+    return webModulePath
   }
 }
 

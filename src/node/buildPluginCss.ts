@@ -31,7 +31,7 @@ export const createBuildCssPlugin = (
             css,
             urlRE,
             async ([matched, before, rawUrl, after]) => {
-              if (isExternalUrl(rawUrl)) {
+              if (isExternalUrl(rawUrl) || rawUrl.startsWith('data:')) {
                 return matched
               }
               const file = path.join(fileDir, rawUrl)
@@ -42,7 +42,11 @@ export const createBuildCssPlugin = (
                 inlineLimit
               )
               assets.set(fileName, content)
-              debug(`url(${rawUrl}) -> url(${url})`)
+              debug(
+                `url(${rawUrl}) -> ${
+                  url.startsWith('data:') ? `base64 inlined` : `url(${url})`
+                }`
+              )
               return `${before}${url}${after}`
             }
           )
