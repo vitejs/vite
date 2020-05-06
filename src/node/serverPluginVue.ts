@@ -11,9 +11,10 @@ import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import { hmrClientId } from './serverPluginHmr'
 import resolve from 'resolve-from'
-import { cachedRead } from './utils'
+import { cachedRead, genSourceMapString } from './utils'
 import { loadPostcssConfig } from './config'
 import { Context } from 'koa'
+import { transform } from './esbuildService'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -54,7 +55,7 @@ export const vuePlugin: Plugin = ({ root, app, resolver }) => {
 
     if (!query.type) {
       ctx.type = 'js'
-      ctx.body = compileSFCMain(descriptor, filePath, publicPath)
+      ctx.body = await compileSFCMain(descriptor, filePath, publicPath)
       return etagCacheCheck(ctx)
     }
 
@@ -138,23 +139,26 @@ export async function parseSFC(
   return descriptor
 }
 
-function compileSFCMain(
+async function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
   publicPath: string
-): string {
+): Promise<string> {
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
     return cached.script
   }
 
-  // inject hmr client
   let code = ''
   if (descriptor.script) {
-    code += descriptor.script.content.replace(
-      `export default`,
-      'const __script ='
-    )
+    let content = descriptor.script.content
+    if (descriptor.script.lang === 'ts') {
+      content = (
+        await transform(content, { loader: 'ts' }, `transpiling ${publicPath}`)
+      ).code
+    }
+
+    code += content.replace(`export default`, 'const __script =')
   } else {
     code += `const __script = {}`
   }
@@ -298,13 +302,4 @@ async function compileSFCStyle(
 
   debug(`${publicPath} style compiled in ${Date.now() - start}ms`)
   return result
-}
-
-function genSourceMapString(map: object | undefined) {
-  if (!map) {
-    return ''
-  }
-  return `\n//# sourceMappingURL=data:application/json;base64,${Buffer.from(
-    JSON.stringify(map)
-  ).toString('base64')}`
 }

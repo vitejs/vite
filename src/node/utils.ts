@@ -109,3 +109,15 @@ export async function readBody(
     return !stream || typeof stream === 'string' ? stream : stream.toString()
   }
 }
+
+export function genSourceMapString(map: object | string | undefined) {
+  if (!map) {
+    return ''
+  }
+  if (typeof map !== 'string') {
+    map = JSON.stringify(map)
+  }
+  return `\n//# sourceMappingURL=data:application/json;base64,${Buffer.from(
+    map
+  ).toString('base64')}`
+}

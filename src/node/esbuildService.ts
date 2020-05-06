@@ -1,7 +1,33 @@
 import { startService, Service, TransformOptions } from 'esbuild'
 import { Plugin } from 'rollup'
 
-const transform = async (
+// Note: when the esbuild service is held in a module level variable, it
+// somehow prevents the build process from exiting even after explicitly
+// calling service.stop(). Therefore make sure to only use `ensureService`
+// in server plugins. Build plugins should contain the service in its creation
+// closure and close it in `generateBundle`.
+
+// lazy start the service
+let _service: Service | undefined
+
+const ensureService = async () => {
+  if (!_service) {
+    _service = await startService()
+  }
+  return _service
+}
+
+// transform used in server plugins with a more friendly API
+export const transform = async (
+  code: string,
+  options: TransformOptions,
+  operation: string
+) => {
+  return _transform(await ensureService(), code, options, operation)
+}
+
+// trasnform that takes the service via arguments, used in build plugins
+const _transform = async (
   service: Service,
   code: string,
   options: TransformOptions,
@@ -33,7 +59,7 @@ export const createMinifyPlugin = async (): Promise<Plugin> => {
   return {
     name: 'vite:minify',
     async renderChunk(code, chunk) {
-      return transform(
+      return _transform(
         service,
         code,
         { minify: true },
