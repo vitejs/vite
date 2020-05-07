@@ -34,7 +34,7 @@ import qs from 'querystring'
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
 
-export const styleSrcImportMap = new Map()
+export const srcImportMap = new Map()
 
 interface CacheEntry {
   descriptor?: SFCDescriptor
@@ -100,7 +100,6 @@ export const vuePlugin: Plugin = ({ root, app, resolver, watcher }) => {
       const styleBlock = descriptor.styles[index]
       if (styleBlock.src) {
         filename = await resolveSrcImport(styleBlock, ctx, resolver)
-        styleSrcImportMap.set(filename, ctx.url)
       }
       const result = await compileSFCStyle(
         root,
@@ -125,7 +124,7 @@ export const vuePlugin: Plugin = ({ root, app, resolver, watcher }) => {
   // handle HMR for <style src="xxx.css">
   // it cannot be handled as simple css import because it may be scoped
   watcher.on('change', (file) => {
-    const styleImport = styleSrcImportMap.get(file)
+    const styleImport = srcImportMap.get(file)
     if (styleImport) {
       vueCache.del(file)
       const publicPath = cleanUrl(styleImport)
@@ -155,6 +154,7 @@ async function resolveSrcImport(
   // register HMR import relationship
   debugHmr(`        ${importer} imports ${importee}`)
   ensureMapEntry(importerMap, importee).add(ctx.path)
+  srcImportMap.set(filename, ctx.url)
   return filename
 }
 
@@ -209,7 +209,6 @@ export async function parseSFC(
   cached = cached || { styles: [] }
   cached.descriptor = descriptor
   vueCache.set(filename, cached)
-
   debug(`${filename} parsed in ${Date.now() - start}ms.`)
   return descriptor
 }

@@ -160,7 +160,7 @@ describe('vite', () => {
       }
     })
 
-    test('<style module>', async () => {
+    test('SFC <style module>', async () => {
       const el = await page.$('.css-modules-sfc')
       expect(await getComputedColor(el)).toBe('rgb(0, 0, 255)')
       if (!isBuild) {
@@ -205,7 +205,7 @@ describe('vite', () => {
       }
     })
 
-    test('sfc src imports', async () => {
+    test('SFC src imports', async () => {
       expect(await getText('.src-imports-script')).toMatch('src="./script.ts"')
       const el = await getEl('.src-imports-style')
       expect(await getComputedColor(el)).toBe('rgb(119, 136, 153)')

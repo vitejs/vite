@@ -35,7 +35,7 @@ import slash from 'slash'
 import chalk from 'chalk'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
-import { parseSFC, vueCache } from './serverPluginVue'
+import { parseSFC, vueCache, srcImportMap } from './serverPluginVue'
 import { cachedRead } from '../utils'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
@@ -227,8 +227,10 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
   function handleJSReload(filePath: string, timestamp: number = Date.now()) {
     // normal js file, but could be compiled from anything.
     // bust the vue cache in case this is a src imported file
-    debugHmr(`busting Vue cache for ${filePath}`)
-    vueCache.del(filePath)
+    if (srcImportMap.has(filePath)) {
+      debugHmr(`busting Vue cache for ${filePath}`)
+      vueCache.del(filePath)
+    }
 
     const publicPath = resolver.fileToRequest(filePath)
     const importers = importerMap.get(publicPath)
