@@ -33,12 +33,16 @@ const getComputedColor = async (selectorOrEl) => {
 }
 
 beforeAll(async () => {
-  await fs.remove(tempDir)
+  try {
+    await fs.remove(tempDir)
+  } catch (e) {}
   await fs.copy(fixtureDir, tempDir)
 })
 
 afterAll(async () => {
-  await fs.remove(tempDir)
+  try {
+    await fs.remove(tempDir)
+  } catch (e) {}
   if (browser) await browser.close()
   if (devServer) {
     devServer.kill('SIGTERM', {
