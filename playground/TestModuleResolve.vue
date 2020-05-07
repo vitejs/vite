@@ -1,8 +1,8 @@
 <template>
   <h2>Module Resolving</h2>
-  <div :class="router">vue-router@next {{ router }}</div>
-  <div :class="store">vuex@next {{ store }}</div>
-  <div :class="web_modules">web_modules {{ web_modules }}</div>
+  <div class="module-resolve-router" :class="router">vue-router@next {{ router }}</div>
+  <div class="module-resolve-store" :class="store">vuex@next {{ store }}</div>
+  <div class="module-resolve-web" :class="web_modules">web_modules {{ web_modules }}</div>
 </template>
 
 <script>

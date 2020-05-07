@@ -5,7 +5,9 @@
       HMR: click button and edit template part of <code>./TestHmr.vue</code>,
       count should not reset
     </span>
-    <button @click="count++">&gt;&gt;&gt; {{ count }} &lt;&lt;&lt;</button>
+    <button class="hmr-increment" @click="count++">
+      &gt;&gt;&gt; {{ count }} &lt;&lt;&lt;
+    </button>
   </p>
   <p>
     <span>
@@ -13,7 +15,7 @@
       <code>./testHmrPropagation.js</code>, should update without reloading
       page:
     </span>
-    <span>{{ foo() }}</span>
+    <span class="hmr-propagation">{{ foo() }}</span>
   </p>
   <p>
     HMR: manual API (see console) - edit <code>./testHmrManual.js</code> and it
@@ -22,14 +24,14 @@
 </template>
 
 <script>
-import { foo } from "./testHmrPropagation";
+import { foo } from './testHmrPropagation'
 
 export default {
   setup() {
     return {
       count: 0,
-      foo,
-    };
-  },
-};
+      foo
+    }
+  }
+}
 </script>

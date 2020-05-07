@@ -1,5 +1,7 @@
 <template>
-  <h1>Vite Playground <code>__DEV__</code></h1>
+  <h1>Vite Playground</h1>
+  <p class="dev"><code>__DEV__: {{ dev }}</code></p>
+  <p class="node_env"><code>process.env.NODE_ENV: {{ env }}</code></p>
   <TestModuleResolve />
   <TestHmr />
   <TestPostCss />
@@ -26,6 +28,10 @@ import TestJsonImport from "./TestJsonImport.vue";
 import TestJsx from "./TestJsx.vue";
 
 export default {
+  data: () => ({
+    dev: __DEV__,
+    env: process.env.NODE_ENV
+  }),
   components: {
     TestModuleResolve,
     TestHmr,

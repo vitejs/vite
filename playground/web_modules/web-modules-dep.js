@@ -1,3 +1,3 @@
 export function dep() {
-  return __DEV__
+  return true
 }

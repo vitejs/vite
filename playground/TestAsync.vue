@@ -1,3 +1,3 @@
 <template>
-  <div>This should show up...</div>
+  <div class="async">This should show up...</div>
 </template>

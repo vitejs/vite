@@ -3,15 +3,5 @@
     "dev": "DEBUG=vite:* vite --jsx-factory=h",
     "build": "DEBUG=vite:* vite build --jsx-factory=h",
     "serve": "serve dist"
-  },
-  "dependencies": {
-    "preact": "^10.4.1",
-    "vue-router": "^4.0.0-alpha.9",
-    "vuex": "^4.0.0-beta.1"
-  },
-  "devDependencies": {
-    "postcss-nesting": "^7.0.1",
-    "pug": "^2.0.4",
-    "sass": "^1.26.3"
   }
 }

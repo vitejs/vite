@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>JSX</h2>
-    <div ref="root"></div>
+    <div class="jsx-root" ref="root"></div>
   </div>
 </template>
 

@@ -29,7 +29,7 @@
     "dev-node": "tsc -w --p src/node",
     "build": "rm -rf dist && tsc -p src/client && tsc -p src/node",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
-    "test": "yarn build && jest",
+    "test": "yarn build && jest --runInBand",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "prepublishOnly": "yarn build && yarn changelog",
     "postpublish": "git add CHANGELOG.md && git commit -m 'chore: changelog [ci skip]' && git push"
@@ -52,10 +52,8 @@
   },
   "dependencies": {
     "@babel/parser": "^7.9.4",
-    "@rollup/plugin-alias": "^3.1.0",
     "@rollup/plugin-json": "^4.0.3",
     "@rollup/plugin-node-resolve": "^7.1.3",
-    "@rollup/plugin-replace": "^2.3.2",
     "@types/koa": "^2.11.3",
     "@vue/compiler-sfc": "^3.0.0-beta.9",
     "chalk": "^4.0.0",
@@ -89,6 +87,7 @@
     "@types/es-module-lexer": "^0.3.0",
     "@types/fs-extra": "^8.1.0",
     "@types/hash-sum": "^1.0.0",
+    "@types/jest": "^25.2.1",
     "@types/lru-cache": "^5.1.0",
     "@types/node": "^13.13.1",
     "@types/postcss-load-config": "^2.0.1",
@@ -99,9 +98,15 @@
     "jest": "^25.4.0",
     "lint-staged": "^10.1.6",
     "npm-run-all": "^4.1.5",
+    "postcss-nesting": "^7.0.1",
+    "preact": "^10.4.1",
     "prettier": "^2.0.4",
+    "pug": "^2.0.4",
     "puppeteer": "^3.0.0",
+    "sass": "^1.26.5",
     "typescript": "^3.8.3",
+    "vue-router": "^4.0.0-alpha.10",
+    "vuex": "^4.0.0-beta.1",
     "yorkie": "^2.0.0"
   }
 }

@@ -1,5 +1,6 @@
 <template>
-  <pre>Imported JSON: {{ json }}</pre>
+  <h2>JSON</h2>
+  <pre class="json">Imported JSON: {{ json }}</pre>
 </template>
 
 <script>
