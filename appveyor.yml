@@ -9,7 +9,7 @@ test_script:
   - git --version
   - node --version
   - yarn --version
-  - yarn test
+  - yarn windows-ci
 
 cache:
   - node_modules -> yarn.lock
