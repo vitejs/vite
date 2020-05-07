@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { Ora } from 'ora'
 import { RollupError } from 'rollup'
 import { networkInterfaces } from 'os'
 
@@ -25,17 +26,29 @@ Object.keys(argv).forEach((key) => {
 })
 
 if (argv._[0] === 'build') {
-  console.log('Building for production...')
+  let spinner: Ora
+  const msg = 'Building for production...'
+  if (process.env.DEBUG) {
+    console.log(msg)
+  } else {
+    spinner = require('ora')(msg + '\n').start()
+  }
   require('../dist')
     .build({
       ...argv,
       cdn: argv.cdn === 'false' ? false : argv.cdn
     })
+    .then(() => {
+      spinner && spinner.stop()
+    })
     .catch((err: RollupError) => {
+      spinner && spinner.stop()
       console.error(chalk.red(`[vite] Build errored out.`))
       // TODO pretty print this
       // rollup errors contain helpful information
-      console.error(err)
+      if (err.code) {
+        console.log(chalk.yellow(`${err.code}:`), err.message)
+      }
       process.exit(1)
     })
 } else {
