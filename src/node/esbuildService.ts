@@ -1,7 +1,7 @@
 import path from 'path'
 import { startService, Service, TransformOptions, Message } from 'esbuild'
 import chalk from 'chalk'
-import { generateCodeFrame } from '@vue/shared'
+import { generateCodeFrame } from '@vue/compiler-sfc'
 
 const debug = require('debug')('vite:esbuild')
 
