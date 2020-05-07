@@ -113,6 +113,8 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
         ctx.body = rewriteImports(content!, ctx.path, resolver, ctx.query.t)
         rewriteCache.set(content, ctx.body)
       }
+    } else {
+      debug(`(skipped) ${ctx.url}`)
     }
   })
 }
@@ -176,7 +178,7 @@ function rewriteImports(
               const file = resolver.requestToFile(pathname)
               const indexMatch = file.match(/\/index\.\w+$/)
               if (indexMatch) {
-                pathname = pathname.replace(/\/$/, '') + indexMatch[0]
+                pathname = pathname.replace(/\/(index)?$/, '') + indexMatch[0]
               } else {
                 pathname += path.extname(file)
               }
@@ -201,9 +203,11 @@ function rewriteImports(
 
           // save the import chain for hmr analysis
           const importee = cleanUrl(resolved)
-          currentImportees.add(importee)
-          debugHmr(`        ${importer} imports ${importee}`)
-          ensureMapEntry(importerMap, importee).add(importer)
+          if (importee !== importer) {
+            currentImportees.add(importee)
+            debugHmr(`        ${importer} imports ${importee}`)
+            ensureMapEntry(importerMap, importee).add(importer)
+          }
         } else {
           console.log(`[vite] ignored dynamic import(${id})`)
         }

@@ -46,6 +46,8 @@ const defaultIdToRequest = (id: string) => {
 
 export const supportedExts = ['.js', '.ts', '.jsx', '.tsx', '.json']
 
+const debug = require('debug')('vite:resolve')
+
 const resolveExt = (id: string) => {
   const cleanId = cleanUrl(id)
   if (!/\.\w+$/.test(cleanId)) {
@@ -53,13 +55,13 @@ const resolveExt = (id: string) => {
     for (const ext of supportedExts) {
       try {
         // foo -> foo.js
-        statSync(id + ext)
+        statSync(cleanId + ext)
         inferredExt = ext
         break
       } catch (e) {
         try {
           // foo -> foo/index.js
-          statSync(path.join(id, '/index' + ext))
+          statSync(path.join(cleanId, '/index' + ext))
           inferredExt = '/index' + ext
           break
         } catch (e) {}
@@ -67,7 +69,9 @@ const resolveExt = (id: string) => {
     }
     const queryMatch = id.match(/\?.*$/)
     const query = queryMatch ? queryMatch[0] : ''
-    return cleanId + inferredExt + query
+    const reoslved = cleanId + inferredExt + query
+    debug(`ext: ${id} -> ${reoslved}`)
+    return reoslved
   }
   return id
 }
