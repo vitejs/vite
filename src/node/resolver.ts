@@ -32,30 +32,20 @@ export const supportedExts = ['.js', '.ts', '.jsx', '.tsx', '.json']
 const resolveExt = (id: string) => {
   const cleanId = cleanUrl(id)
   if (!/\.\w+$/.test(cleanId)) {
-    const expectsIndex = id[id.length - 1] === '/'
     let inferredExt = ''
     for (const ext of supportedExts) {
-      if (expectsIndex) {
+      try {
+        // foo -> foo.js
+        statSync(id + ext)
+        inferredExt = ext
+        break
+      } catch (e) {
         try {
-          // foo/ -> foo/index.js
-          statSync(id + 'index' + ext)
-          inferredExt = 'index' + ext
+          // foo -> foo/index.js
+          statSync(path.join(id, '/index' + ext))
+          inferredExt = '/index' + ext
           break
         } catch (e) {}
-      } else {
-        try {
-          // foo -> foo.js
-          statSync(id + ext)
-          inferredExt = ext
-          break
-        } catch (e) {
-          try {
-            // foo -> foo/index.js
-            statSync(id + '/index' + ext)
-            inferredExt = '/index' + ext
-            break
-          } catch (e) {}
-        }
       }
     }
     const queryMatch = id.match(/\?.*$/)
