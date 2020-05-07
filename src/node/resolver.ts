@@ -23,11 +23,26 @@ const defaultFileToRequest = (filePath: string, root: string) =>
 
 const defaultIdToRequest = (id: string) => {
   if (id.startsWith('@') && id.indexOf('/') < 0) {
+    return `/${id}`
+  }
+}
+
+/**
+ * Vue runtime resolver, resolves `@vue/runtime-*` dependencies
+ * to `vue`
+ */
+export const VueRuntimeResolver: Resolver = {
+  fileToRequest(fp, root) {
+    return undefined
+  },
+  requestToFile(fp, root) {
+    return undefined
+  },
+  idToRequest(id) {
     // If requires `@vue/runtime-*` default to the runtime vue
     if (id.startsWith('@vue/runtime-')) {
       return '/@modules/vue'
     }
-    return `/${id}`
   }
 }
 
