@@ -84,6 +84,7 @@ describe('vite', () => {
       expect(await getText('.module-resolve-router')).toMatch('ok')
       expect(await getText('.module-resolve-store')).toMatch('ok')
       expect(await getText('.module-resolve-web')).toMatch('ok')
+      expect(await getText('.index-resolve')).toMatch('ok')
     })
 
     if (!isBuild) {

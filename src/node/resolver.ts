@@ -27,18 +27,36 @@ const defaultIdToRequest = (id: string) => {
   }
 }
 
-export const supportedExts = ['.js', '.jsx', '.ts', '.tsx', '.json']
+export const supportedExts = ['.js', '.ts', '.jsx', '.tsx', '.json']
 
-export const ensureExt = (id: string) => {
+const resolveExt = (id: string) => {
   const cleanId = cleanUrl(id)
   if (!/\.\w+$/.test(cleanId)) {
+    const expectsIndex = id[id.length - 1] === '/'
     let inferredExt = ''
     for (const ext of supportedExts) {
-      try {
-        statSync(id + ext)
-        inferredExt = ext
-        break
-      } catch (e) {}
+      if (expectsIndex) {
+        try {
+          // foo/ -> foo/index.js
+          statSync(id + 'index' + ext)
+          inferredExt = 'index' + ext
+          break
+        } catch (e) {}
+      } else {
+        try {
+          // foo -> foo.js
+          statSync(id + ext)
+          inferredExt = ext
+          break
+        } catch (e) {
+          try {
+            // foo -> foo/index.js
+            statSync(id + '/index' + ext)
+            inferredExt = '/index' + ext
+            break
+          } catch (e) {}
+        }
+      }
     }
     const queryMatch = id.match(/\?.*$/)
     const query = queryMatch ? queryMatch[0] : ''
@@ -64,7 +82,7 @@ export function createResolver(
       if (!resolved) {
         resolved = defaultRequestToFile(publicPath, root)
       }
-      resolved = ensureExt(resolved)
+      resolved = resolveExt(resolved)
       return resolved
     },
     fileToRequest: (filePath) => {

@@ -106,15 +106,13 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
     ) {
       const content = await readBody(ctx.body)
       if (!ctx.query.t && rewriteCache.has(content)) {
-        debug(`${ctx.url}: serving from cache`)
+        debug(`(cached) ${ctx.url}`)
         ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
         ctx.body = rewriteImports(content!, ctx.path, resolver, ctx.query.t)
         rewriteCache.set(content, ctx.body)
       }
-    } else {
-      debug(`not rewriting: ${ctx.url}`)
     }
   })
 }
@@ -174,9 +172,14 @@ function rewriteImports(
             let { pathname, query } = resolveRelativeRequest(importer, id)
             // append .js or .ts for extension-less imports
             // for now we don't attemp to resolve other extensions
-            if (!/\.\w+/.test(pathname)) {
+            if (!/\.\w+$/.test(pathname)) {
               const file = resolver.requestToFile(pathname)
-              pathname += path.extname(file)
+              const indexMatch = file.match(/\/index\.\w+$/)
+              if (indexMatch) {
+                pathname = pathname.replace(/\/$/, '') + indexMatch[0]
+              } else {
+                pathname += path.extname(file)
+              }
             }
             // force re-fetch all imports by appending timestamp
             // if this is a hmr refresh request
