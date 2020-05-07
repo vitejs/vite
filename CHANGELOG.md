@@ -1,3 +1,17 @@
+## [0.11.3](https://github.com/vuejs/vite/compare/v0.11.2...v0.11.3) (2020-05-07)
+
+
+### Bug Fixes
+
+* fix module rewrite resolution with base paths (fix [#61](https://github.com/vuejs/vite/issues/61)) ([ca421cd](https://github.com/vuejs/vite/commit/ca421cdf9348076a53ad1ff1a9e6ee4095776eae))
+
+
+### Features
+
+* improve build error output ([b1d6be7](https://github.com/vuejs/vite/commit/b1d6be7cf3e436fce7b187d2139ee43349ca5f40))
+
+
+
 ## [0.11.2](https://github.com/vuejs/vite/compare/v0.11.1...v0.11.2) (2020-05-07)
 
 
