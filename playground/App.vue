@@ -13,6 +13,7 @@
   <TestCssModules />
   <TestPreprocessors />
   <TestAssets />
+  <TestSrcImport/>
   <TestJsonImport />
   <TestTs />
   <TestJsx />
@@ -28,6 +29,7 @@ import TestPostCss from './TestPostCss.vue'
 import TestScopedCss from './TestScopedCss.vue'
 import TestCssModules from './TestCssModules.vue'
 import TestPreprocessors from './TestPreprocessors.vue'
+import TestSrcImport from './src-import/TestBlockSrcImport.vue'
 import TestAssets from './TestAssets.vue'
 import TestJsonImport from './TestJsonImport.vue'
 import TestTs from './ts/TestTs.vue'
@@ -45,6 +47,7 @@ export default {
     TestScopedCss,
     TestCssModules,
     TestPreprocessors,
+    TestSrcImport,
     TestAssets,
     TestJsonImport,
     TestTs,

@@ -124,7 +124,9 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
     const timestamp = Date.now()
     if (file.endsWith('.vue')) {
       handleVueReload(file, timestamp)
-    } else if (file.endsWith('.js')) {
+    } else if (!file.endsWith('.css') || file.endsWith('.module.css')) {
+      // everything except plain .css are considered HMR dependencies.
+      // plain css has its own HMR logic in ./serverPluginCss.ts.
       handleJSReload(file, timestamp)
     }
   })
@@ -222,7 +224,11 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
   }
 
   function handleJSReload(filePath: string, timestamp: number = Date.now()) {
-    // normal js file
+    // normal js file, but could be compiled from anything.
+    // bust the vue cache in case this is a src imported file
+    debugHmr(`busting Vue cache for ${filePath}`)
+    vueCache.del(filePath)
+
     const publicPath = resolver.fileToRequest(filePath)
     const importers = importerMap.get(publicPath)
     if (importers) {

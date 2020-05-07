@@ -24,7 +24,7 @@ export async function cachedRead(
   ctx: Context | null,
   file: string
 ): Promise<string> {
-  const lastModified = (await fs.stat(file)).mtimeMs
+  const lastModified = fs.statSync(file).mtimeMs
   const cached = moduleReadCache.get(file)
   if (ctx) {
     ctx.set('Cache-Control', 'no-cache')
