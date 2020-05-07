@@ -194,7 +194,7 @@ render(<h1>Hello, what!</h1>, document.getElementById("app"))
 
 You can run `vite build` to bundle the app.
 
-Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flags in the CLI (see [src/node/build.ts](https://github.com/vuejs/vite/blob/master/src/node/build.ts) for full details).
+Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flags in the CLI (see [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts) for full details).
 
 ### API
 
@@ -246,7 +246,7 @@ createServer({
 
 #### Build
 
-Check out the full options interface in [src/node/build.ts](https://github.com/vuejs/vite/blob/master/src/node/build.ts).
+Check out the full options interface in [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts).
 
 ``` js
 const { build } = require('vite')

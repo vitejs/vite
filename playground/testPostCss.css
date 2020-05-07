@@ -1,0 +1,6 @@
+/* postcss-nesting */
+body {
+  & .postcss-from-css {
+    color: red;
+  }
+}

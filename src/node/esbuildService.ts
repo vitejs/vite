@@ -1,5 +1,9 @@
 import path from 'path'
-import { startService, Service, TransformOptions } from 'esbuild'
+import { startService, Service, TransformOptions, Message } from 'esbuild'
+import chalk from 'chalk'
+import { generateCodeFrame } from '@vue/shared'
+
+const debug = require('debug')('vite:esbuild')
 
 export const tjsxRE = /\.(tsx?|jsx)$/
 
@@ -46,20 +50,36 @@ export const transformWithService = async (
     const result = await service.transform(code, options)
     if (result.warnings.length) {
       console.error(`[vite] warnings while transforming ${file} with esbuild:`)
-      // TODO pretty print this
-      result.warnings.forEach((w) => console.error(w))
+      result.warnings.forEach((m) => printMessage(m, code))
     }
     return {
       code: (result.js || '').replace(sourceMapRE, ''),
       map: result.jsSourceMap
     }
   } catch (e) {
-    console.error(`[vite] error while transforming ${file} with esbuild:`)
-    console.error(`options: `, options)
-    console.error(e)
+    console.error(
+      chalk.red(`[vite] error while transforming ${file} with esbuild:`)
+    )
+    e.errors.forEach((m: Message) => printMessage(m, code))
+    debug(`options used: `, options)
     return {
       code: '',
       map: undefined
     }
+  }
+}
+
+function printMessage(m: Message, code: string) {
+  console.error(chalk.yellow(m.text))
+  if (m.location) {
+    const lines = code.split(/\r?\n/g)
+    const line = Number(m.location.line)
+    const column = Number(m.location.column)
+    const offset =
+      lines
+        .slice(0, line - 1)
+        .map((l) => l.length)
+        .reduce((total, l) => total + l + 1, 0) + column
+    console.error(generateCodeFrame(code, offset, offset + 1))
   }
 }
