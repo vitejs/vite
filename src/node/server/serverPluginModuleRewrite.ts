@@ -166,10 +166,12 @@ function rewriteImports(
               hasReplaced = true
             }
           } else {
-            let pathname = cleanUrl(id)
+            let pathname = cleanUrl(
+              slash(path.resolve(path.dirname(importer), id))
+            )
             const queryMatch = id.match(queryRE)
             let query = queryMatch ? queryMatch[0] : ''
-            // append .js for extension-less imports
+            // append .js or .ts for extension-less imports
             // for now we don't attemp to resolve other extensions
             if (!/\.\w+/.test(pathname)) {
               const file = resolver.requestToFile(pathname)
@@ -194,9 +196,7 @@ function rewriteImports(
           }
 
           // save the import chain for hmr analysis
-          const importee = cleanUrl(
-            slash(path.resolve(path.dirname(importer), resolved))
-          )
+          const importee = cleanUrl(resolved)
           currentImportees.add(importee)
           debugHmr(`        ${importer} imports ${importee}`)
           ensureMapEntry(importerMap, importee).add(importer)

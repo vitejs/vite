@@ -210,6 +210,22 @@ describe('vite', () => {
       }
     })
 
+    test('typescript', async () => {
+      expect(await getText('.ts-self')).toMatch('from ts')
+      expect(await getText('.ts-import')).toMatch('1')
+      if (!isBuild) {
+        await updateFile('ts/TestTs.vue', (c) =>
+          c.replace(`m: string = 'from ts'`, `m: number = 123`)
+        )
+        await expectByPolling(() => getText('.ts-self'), '123')
+
+        await updateFile('ts/testTs.ts', (c) =>
+          c.replace(`n: number = 1`, `n: number = 2`)
+        )
+        await expectByPolling(() => getText('.ts-import'), '2')
+      }
+    })
+
     test('jsx', async () => {
       const text = await getText('.jsx-root')
       expect(text).toMatch('from Preact')
