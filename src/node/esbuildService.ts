@@ -7,12 +7,6 @@ const debug = require('debug')('vite:esbuild')
 
 export const tjsxRE = /\.(tsx?|jsx)$/
 
-// Note: when the esbuild service is held in a module level variable, it
-// somehow prevents the build process from exiting even after explicitly
-// calling service.stop(). Therefore make sure to only use `ensureService`
-// in server plugins. Build plugins should contain the service in its creation
-// closure and close it in `generateBundle`.
-
 // lazy start the service
 let _service: Service | undefined
 
@@ -23,24 +17,19 @@ const ensureService = async () => {
   return _service
 }
 
+export const stopService = () => {
+  _service && _service.stop()
+}
+
+const sourceMapRE = /\/\/# sourceMappingURL.*/
+
 // transform used in server plugins with a more friendly API
 export const transform = async (
   code: string,
   file: string,
   options: TransformOptions = {}
 ) => {
-  return transformWithService(await ensureService(), code, file, options)
-}
-
-const sourceMapRE = /\/\/# sourceMappingURL.*/
-
-// trasnform that takes the service via arguments, used in build plugins
-export const transformWithService = async (
-  service: Service,
-  code: string,
-  file: string,
-  options: TransformOptions = {}
-) => {
+  const service = await ensureService()
   options = {
     ...options,
     loader: options.loader || (path.extname(file).slice(1) as any),

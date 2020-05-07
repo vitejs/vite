@@ -18,6 +18,7 @@ import { createBuildCssPlugin } from './buildPluginCss'
 import { createBuildAssetPlugin } from './buildPluginAsset'
 import { createEsbuildPlugin } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
+import { stopService } from '../esbuildService'
 
 export interface BuildOptions {
   /**
@@ -308,10 +309,14 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
   }
 
-  !silent &&
+  if (!silent) {
     console.log(
-      `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.`
+      `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.\n`
     )
+  }
+
+  // stop the esbuild service after each build
+  stopService()
 
   return {
     assets: output,

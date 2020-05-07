@@ -40,6 +40,7 @@ if (argv._[0] === 'build') {
     })
     .then(() => {
       spinner && spinner.stop()
+      process.exit(0)
     })
     .catch((err: RollupError) => {
       spinner && spinner.stop()
