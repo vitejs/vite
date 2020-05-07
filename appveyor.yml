@@ -1,8 +1,8 @@
 environment:
-  nodejs_version: "12"
+  nodejs_version: '12'
 
 install:
-  - ps: Install-Product node $env:nodejs_version
+  - ps: Install-Product node $env:nodejs_version x64
   - yarn
 
 test_script:
