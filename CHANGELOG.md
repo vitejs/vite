@@ -1,3 +1,20 @@
+## [0.11.2](https://github.com/vuejs/vite/compare/v0.11.1...v0.11.2) (2020-05-07)
+
+
+### Bug Fixes
+
+* avoid mutating esbuild options ([bd58858](https://github.com/vuejs/vite/commit/bd588584231cd41fb016811cf22f76d0ffa13c72))
+* fix web_modules resolving for build ([fc75323](https://github.com/vuejs/vite/commit/fc75323ff5861318a77c0680eb94a094ceee0b27))
+* skip asset processing for data uri in css ([e01e26d](https://github.com/vuejs/vite/commit/e01e26dc93070b995d75784bb48e97a024148338)), closes [#66](https://github.com/vuejs/vite/issues/66)
+* warn non wrapped hot.accept calls ([7aaf458](https://github.com/vuejs/vite/commit/7aaf45816fe5ceadb163b5faa294eebf26044c62))
+
+
+### Features
+
+* support --open flag ([957945f](https://github.com/vuejs/vite/commit/957945faada703513174151a4fff4cf2f97f6efc))
+
+
+
 ## [0.11.1](https://github.com/vuejs/vite/compare/v0.11.0...v0.11.1) (2020-05-06)
 
 
