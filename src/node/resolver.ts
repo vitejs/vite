@@ -22,11 +22,11 @@ const defaultFileToRequest = (filePath: string, root: string) =>
   `/${slash(path.relative(root, filePath))}`
 
 const defaultIdToRequest = (id: string) => {
-  // If requires `@vue/runtime-*` default to the runtime vue
-  if (id.startsWith('@vue/runtime-')) {
-    return '/@modules/vue'
-  }
   if (id.startsWith('@') && id.indexOf('/') < 0) {
+    // If requires `@vue/runtime-*` default to the runtime vue
+    if (id.startsWith('@vue/runtime-')) {
+      return '/@modules/vue'
+    }
     return `/${id}`
   }
 }
