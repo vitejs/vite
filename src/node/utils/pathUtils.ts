@@ -1,4 +1,22 @@
 import { Context } from 'koa'
+import path from 'path'
+import slash from 'slash'
+
+export const queryRE = /\?.*$/
+export const hashRE = /\#.*$/
+
+export const cleanUrl = (url: string) =>
+  url.replace(hashRE, '').replace(queryRE, '')
+
+export const resolveRelativeRequest = (importer: string, id: string) => {
+  const resolved = slash(path.posix.resolve(path.dirname(importer), id))
+  const queryMatch = id.match(queryRE)
+  return {
+    url: resolved,
+    pathname: cleanUrl(resolved),
+    query: queryMatch ? queryMatch[0] : ''
+  }
+}
 
 const httpRE = /^https?:\/\//
 export const isExternalUrl = (url: string) => httpRE.test(url)
@@ -24,9 +42,3 @@ export const isImportRequest = (ctx: Context) => {
   const referer = cleanUrl(ctx.get('referer'))
   return /\.\w+$/.test(referer) && !referer.endsWith('.html')
 }
-
-export const queryRE = /\?.*$/
-export const hashRE = /\#.*$/
-
-export const cleanUrl = (url: string) =>
-  url.replace(hashRE, '').replace(queryRE, '')

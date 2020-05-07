@@ -23,12 +23,12 @@ import {
   cachedRead,
   genSourceMapString,
   loadPostcssConfig,
-  cleanUrl
+  cleanUrl,
+  resolveRelativeRequest
 } from '../utils'
 import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
-import slash from 'slash'
 import qs from 'querystring'
 
 const debug = require('debug')('vite:sfc')
@@ -147,7 +147,7 @@ async function resolveSrcImport(
   resolver: InternalResolver
 ) {
   const importer = ctx.path
-  const importee = slash(path.resolve(path.dirname(importer), block.src!))
+  const importee = resolveRelativeRequest(importer, block.src!).url
   const filename = resolver.requestToFile(importee)
   await cachedRead(ctx, filename)
   block.content = ctx.body
