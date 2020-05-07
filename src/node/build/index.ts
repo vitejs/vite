@@ -142,7 +142,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const {
     root = process.cwd(),
     base = '/',
-    cdn = !resolveVue(root).hasLocalVue,
+    cdn = !resolveVue(root).isLocal,
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
     assetsInlineLimit = 4096,

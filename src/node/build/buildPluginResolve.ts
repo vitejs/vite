@@ -27,7 +27,7 @@ export const createBuildResolvePlugin = (
         return resolved
       } else if (id === 'vue') {
         if (!cdn) {
-          return resolveVue(root).bundler
+          return resolveVue(root).runtime
         } else {
           return {
             id: resolveVue(root).cdnLink,

@@ -39,7 +39,7 @@ export const moduleResolvePlugin: Plugin = ({ root, app }) => {
 
     // special handling for vue's runtime.
     if (id === 'vue') {
-      return serve(id, resolveVue(root).browser, 'vue')
+      return serve(id, resolveVue(root).runtime, 'vue')
     }
 
     // already resolved and cached
