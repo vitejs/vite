@@ -1,6 +1,6 @@
-import { Plugin } from './server'
-import { readBody, genSourceMapString } from './utils'
-import { tjsxRE, transform } from './esbuildService'
+import { Plugin } from '.'
+import { tjsxRE, transform } from '../esbuildService'
+import { readBody, genSourceMapString } from '../utils'
 
 export const esbuildPlugin: Plugin = ({ app, watcher, jsxConfig }) => {
   app.use(async (ctx, next) => {

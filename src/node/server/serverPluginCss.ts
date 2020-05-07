@@ -1,9 +1,8 @@
-import { Plugin } from './server'
-import { isImportRequest, readBody } from './utils'
+import { Plugin } from '.'
 import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
-import { loadPostcssConfig } from './config'
 import { Context } from 'koa'
+import { isImportRequest, readBody, loadPostcssConfig } from '../utils'
 
 interface ProcessedEntry {
   css: string

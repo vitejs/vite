@@ -1,8 +1,7 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
-import { loadPostcssConfig } from './config'
-import { isExternalUrl, asyncReplace } from './utils'
+import { isExternalUrl, asyncReplace, loadPostcssConfig } from '../utils'
 
 const debug = require('debug')('vite:build:css')
 

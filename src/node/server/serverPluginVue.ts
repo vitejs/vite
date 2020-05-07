@@ -1,20 +1,19 @@
 import path from 'path'
-import { Plugin } from './server'
+import { Plugin } from '.'
 import {
   SFCDescriptor,
   SFCTemplateBlock,
   SFCStyleBlock,
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
-import { resolveCompiler } from './vueResolver'
+import { resolveCompiler } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import { hmrClientId } from './serverPluginHmr'
 import resolve from 'resolve-from'
-import { cachedRead, genSourceMapString } from './utils'
-import { loadPostcssConfig } from './config'
+import { cachedRead, genSourceMapString, loadPostcssConfig } from '../utils'
 import { Context } from 'koa'
-import { transform } from './esbuildService'
+import { transform } from '../esbuildService'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')

@@ -1,7 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { Plugin, OutputBundle } from 'rollup'
-import { isStaticAsset } from './utils'
+import { isStaticAsset } from '../utils'
 import hash_sum from 'hash-sum'
 import slash from 'slash'
 import mime from 'mime-types'

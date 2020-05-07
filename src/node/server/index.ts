@@ -1,7 +1,7 @@
 import http, { Server } from 'http'
 import Koa from 'koa'
 import chokidar from 'chokidar'
-import { Resolver, createResolver, InternalResolver } from './resolver'
+import { Resolver, createResolver, InternalResolver } from '../resolver'
 import { moduleRewritePlugin } from './serverPluginModuleRewrite'
 import { moduleResolvePlugin } from './serverPluginModuleResolve'
 import { vuePlugin } from './serverPluginVue'

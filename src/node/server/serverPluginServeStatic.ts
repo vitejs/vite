@@ -1,4 +1,4 @@
-import { Plugin } from './server'
+import { Plugin } from '.'
 
 const send = require('koa-send')
 const debug = require('debug')('vite:history')

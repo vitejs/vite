@@ -1,10 +1,10 @@
-import { Plugin } from './server'
+import { Plugin } from '.'
 import path from 'path'
 import slash from 'slash'
 import LRUCache from 'lru-cache'
 import MagicString from 'magic-string'
 import { init as initLexer, parse as parseImports } from 'es-module-lexer'
-import { InternalResolver } from './resolver'
+import { InternalResolver } from '../resolver'
 import {
   debugHmr,
   importerMap,
@@ -13,7 +13,7 @@ import {
   rewriteFileWithHMR,
   hmrClientPublicPath
 } from './serverPluginHmr'
-import { readBody, cleanUrl, queryRE, isExternalUrl } from './utils'
+import { readBody, cleanUrl, queryRE, isExternalUrl } from '../utils'
 
 const debug = require('debug')('vite:rewrite')
 

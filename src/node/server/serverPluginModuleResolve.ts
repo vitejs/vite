@@ -2,9 +2,8 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import resolve from 'resolve-from'
-import { Plugin } from './server'
-import { resolveVue } from './vueResolver'
-import { cachedRead } from './utils'
+import { Plugin } from '.'
+import { resolveVue, cachedRead } from '../utils'
 import slash from 'slash'
 
 const debug = require('debug')('vite:resolve')

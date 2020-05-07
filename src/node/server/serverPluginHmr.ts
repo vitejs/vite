@@ -28,7 +28,7 @@
 //    so that on the client, the `hot.accept` call would have registered for
 //    updates using the full paths of the dependencies.
 
-import { Plugin } from './server'
+import { Plugin } from '.'
 import WebSocket from 'ws'
 import path from 'path'
 import slash from 'slash'
@@ -36,7 +36,7 @@ import chalk from 'chalk'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache } from './serverPluginVue'
-import { cachedRead } from './utils'
+import { cachedRead } from '../utils'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '@babel/parser'
@@ -59,7 +59,7 @@ export const importerMap: HMRStateMap = new Map()
 export const importeeMap: HMRStateMap = new Map()
 
 // client and node files are placed flat in the dist folder
-export const hmrClientFilePath = path.resolve(__dirname, './client.js')
+export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
 export const hmrClientId = '@hmr'
 export const hmrClientPublicPath = `/${hmrClientId}`
 

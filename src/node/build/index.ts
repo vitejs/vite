@@ -7,10 +7,10 @@ import {
   RollupOutput,
   ExternalOption
 } from 'rollup'
-import { resolveVue } from './vueResolver'
+import { resolveVue } from '../utils/resolveVue'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
-import { Resolver, createResolver, supportedExts } from './resolver'
+import { Resolver, createResolver, supportedExts } from '../resolver'
 import { Options } from 'rollup-plugin-vue'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'

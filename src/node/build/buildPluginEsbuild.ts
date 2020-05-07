@@ -1,6 +1,6 @@
 import { Plugin } from 'rollup'
 import { startService, Service } from 'esbuild'
-import { tjsxRE, transformWithService } from './esbuildService'
+import { tjsxRE, transformWithService } from '../esbuildService'
 
 export const createEsbuildPlugin = async (
   minify: boolean,

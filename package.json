@@ -72,6 +72,7 @@
     "lru-cache": "^5.1.1",
     "magic-string": "^0.25.7",
     "minimist": "^1.2.5",
+    "open": "^7.0.3",
     "postcss": "^7.0.28",
     "postcss-load-config": "^2.1.0",
     "postcss-modules": "^2.0.0",
