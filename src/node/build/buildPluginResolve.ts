@@ -1,4 +1,5 @@
 import { Plugin } from 'rollup'
+import fs from 'fs-extra'
 import { hmrClientId } from '../server/serverPluginHmr'
 import { InternalResolver } from '../resolver'
 import { resolveVue } from '../utils/resolveVue'
@@ -9,7 +10,6 @@ const debug = require('debug')('vite:build:resolve')
 export const createBuildResolvePlugin = (
   root: string,
   cdn: boolean,
-  srcRoots: string[],
   resolver: InternalResolver
 ): Plugin => {
   return {
@@ -18,21 +18,20 @@ export const createBuildResolvePlugin = (
       if (id === hmrClientId) {
         return hmrClientId
       } else if (id.startsWith('/')) {
-        // if id starts with any of the src root directories, it's a file request
-        if (srcRoots.some((root) => id.startsWith(root))) {
-          return
-        }
         const resolved = resolver.requestToFile(id)
-        debug(id, `-->`, resolved)
-        return resolved
-      } else if (id === 'vue') {
-        if (!cdn) {
-          return resolveVue(root).runtime
-        } else {
+        if (await fs.pathExists(resolved)) {
+          debug(id, `-->`, resolved)
+          return resolved
+        }
+      } else if (id === 'vue' || id.startsWith('@vue/')) {
+        const vuePaths = resolveVue(root)
+        if (id === 'vue' && cdn) {
           return {
-            id: resolveVue(root).cdnLink,
+            id: vuePaths.cdnLink,
             external: true
           }
+        } else if (id in vuePaths) {
+          return (vuePaths as any)[id]
         }
       } else if (!id.startsWith('.')) {
         const request = resolver.idToRequest(id)

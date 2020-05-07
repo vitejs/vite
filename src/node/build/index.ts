@@ -57,12 +57,6 @@ export interface BuildOptions {
    */
   assetsInlineLimit?: number
   /**
-   * List files that are included in the build, but not inside project root.
-   * e.g. if you are building a higher level tool on top of vite and includes
-   * some code that will be bundled into the final build.
-   */
-  srcRoots?: string[]
-  /**
    * Will be passed to rollup.rollup()
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
@@ -147,7 +141,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     assetsDir = 'assets',
     assetsInlineLimit = 4096,
     resolvers = [],
-    srcRoots = [],
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
@@ -186,7 +179,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       // user plugins
       ...(rollupInputOptions.plugins || []),
       // vite:resolve
-      createBuildResolvePlugin(root, cdn, [root, ...srcRoots], resolver),
+      createBuildResolvePlugin(root, cdn, resolver),
       // vite:html
       ...(htmlPlugin ? [htmlPlugin] : []),
       // vite:esbuild

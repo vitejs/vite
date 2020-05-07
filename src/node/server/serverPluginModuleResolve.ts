@@ -44,9 +44,10 @@ export const moduleResolvePlugin: Plugin = ({ root, app, watcher }) => {
       await next()
     }
 
-    // special handling for vue's runtime.
-    if (id === 'vue') {
-      return serve(id, resolveVue(root).runtime, 'vue')
+    // speical handling for vue runtime packages
+    const vuePaths = resolveVue(root)
+    if (id in vuePaths) {
+      return serve(id, (vuePaths as any)[id], 'vue')
     }
 
     // already resolved and cached
