@@ -167,7 +167,7 @@ function rewriteImports(
             }
           } else {
             let pathname = cleanUrl(
-              slash(path.resolve(path.dirname(importer), id))
+              slash(path.posix.resolve(path.dirname(importer), id))
             )
             const queryMatch = id.match(queryRE)
             let query = queryMatch ? queryMatch[0] : ''
