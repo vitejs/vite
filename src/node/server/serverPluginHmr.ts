@@ -151,6 +151,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
     const prevDescriptor = cacheEntry && cacheEntry.descriptor
     if (!prevDescriptor) {
       // the file has never been accessed yet
+      debugHmr(`no existing descriptor found for ${file}`)
       return
     }
 

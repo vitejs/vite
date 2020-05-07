@@ -9,10 +9,11 @@ import slash from 'slash'
 const debug = require('debug')('vite:resolve')
 
 const idToEntryMap = new Map()
-const idToFileMap = new Map()
+export const idToFileMap = new Map()
+export const fileToRequestMap = new Map()
 const webModulesMap = new Map()
 
-const moduleRE = /^\/@modules\//
+export const moduleRE = /^\/@modules\//
 
 const getDebugPath = (root: string, p: string) => {
   const relative = path.relative(root, p)
@@ -20,7 +21,7 @@ const getDebugPath = (root: string, p: string) => {
 }
 
 // plugin for resolving /@modules/:id requests.
-export const moduleResolvePlugin: Plugin = ({ root, app }) => {
+export const moduleResolvePlugin: Plugin = ({ root, app, watcher }) => {
   app.use(async (ctx, next) => {
     if (!moduleRE.test(ctx.path)) {
       return next()
@@ -31,10 +32,16 @@ export const moduleResolvePlugin: Plugin = ({ root, app }) => {
 
     const serve = async (id: string, file: string, type: string) => {
       idToFileMap.set(id, file)
+      fileToRequestMap.set(file, ctx.path)
       debug(`(${type}) ${id} -> ${getDebugPath(root, file)}`)
-      // cached read sets etag, body and status on ctx so there is no need
-      // to go further to other middlewares.
       await cachedRead(ctx, file)
+
+      // resolved module file is outside of root dir, but is not in node_modules.
+      // this is likely a linked monorepo/workspace, watch the file for HMR.
+      if (!file.startsWith(root) && !/node_modules/.test(file)) {
+        watcher.add(file)
+      }
+      await next()
     }
 
     // special handling for vue's runtime.

@@ -2,6 +2,11 @@ import path from 'path'
 import slash from 'slash'
 import { statSync } from 'fs'
 import { cleanUrl } from './utils'
+import {
+  idToFileMap,
+  moduleRE,
+  fileToRequestMap
+} from './server/serverPluginModuleResolve'
 
 export interface Resolver {
   requestToFile(publicPath: string, root: string): string | undefined
@@ -15,11 +20,23 @@ export interface InternalResolver {
   idToRequest(id: string): string | undefined
 }
 
-const defaultRequestToFile = (publicPath: string, root: string) =>
-  path.join(root, publicPath.slice(1))
+const defaultRequestToFile = (publicPath: string, root: string): string => {
+  if (moduleRE.test(publicPath)) {
+    const moduleFilePath = idToFileMap.get(publicPath.replace(moduleRE, ''))
+    if (moduleFilePath) {
+      return moduleFilePath
+    }
+  }
+  return path.join(root, publicPath.slice(1))
+}
 
-const defaultFileToRequest = (filePath: string, root: string) =>
-  `/${slash(path.relative(root, filePath))}`
+const defaultFileToRequest = (filePath: string, root: string): string => {
+  const moduleRequest = fileToRequestMap.get(filePath)
+  if (moduleRequest) {
+    return moduleRequest
+  }
+  return `/${slash(path.relative(root, filePath))}`
+}
 
 const defaultIdToRequest = (id: string) => {
   if (id.startsWith('@') && id.indexOf('/') < 0) {
