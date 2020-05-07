@@ -92,6 +92,10 @@ export interface BuildOptions {
    */
   emitAssets?: boolean
   /**
+   * Whether to generate sourcemap
+   */
+  sourcemap?: boolean
+  /**
    * Whether to write bundle to disk
    */
   write?: boolean
@@ -114,14 +118,16 @@ const enum WriteType {
   JS,
   CSS,
   ASSET,
-  HTML
+  HTML,
+  SOURCE_MAP
 }
 
 const writeColors = {
   [WriteType.JS]: chalk.cyan,
   [WriteType.CSS]: chalk.magenta,
   [WriteType.ASSET]: chalk.green,
-  [WriteType.HTML]: chalk.blue
+  [WriteType.HTML]: chalk.blue,
+  [WriteType.SOURCE_MAP]: chalk.gray
 }
 
 /**
@@ -149,7 +155,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     emitAssets = true,
     write = true,
     minify = true,
-    silent = false
+    silent = false,
+    sourcemap = false
   } = options
 
   const indexPath = emitIndex ? path.resolve(root, 'index.html') : null
@@ -188,10 +195,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         transformAssetUrls: {
           includeAbsolute: true
         },
-        // TODO: for now we directly handle pre-processors in rollup-plugin-vue
-        // so that we don't need to install dedicated rollup plugins.
-        // In the future we probably want to still use rollup plugins so that
-        // preprocessors are also supported by importing from js files.
         preprocessStyles: true,
         preprocessCustomRequire: (id: string) => require(resolve(root, id)),
         // TODO proxy cssModules config
@@ -206,10 +209,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       // performs replacements twice, once at transform and once at renderChunk
       // - which makes it impossible to exclude Vue templates from it since
       // Vue templates are compiled into js and included in chunks.
-      createReplacePlugin({
-        'process.env.NODE_ENV': '"production"',
-        __DEV__: 'false'
-      }),
+      createReplacePlugin(
+        {
+          'process.env.NODE_ENV': '"production"',
+          __DEV__: 'false'
+        },
+        sourcemap
+      ),
       // vite:css
       createBuildCssPlugin(
         root,
@@ -238,6 +244,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
   const { output } = await bundle.generate({
     format: 'es',
+    sourcemap,
     ...rollupOutputOptions
   })
 
@@ -268,7 +275,18 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       if (chunk.type === 'chunk') {
         // write chunk
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-        await writeFile(filepath, chunk.code, WriteType.JS)
+        let code = chunk.code
+        if (chunk.map) {
+          code += `\n//# sourceMappingURL=${path.basename(filepath)}.map`
+        }
+        await writeFile(filepath, code, WriteType.JS)
+        if (chunk.map) {
+          await writeFile(
+            filepath + '.map',
+            chunk.map.toString(),
+            WriteType.SOURCE_MAP
+          )
+        }
       } else if (emitAssets) {
         // write asset
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)

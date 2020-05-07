@@ -12,22 +12,23 @@
     <img src="/public/icon.png" style="width: 30px;" />
   </p>
   <div class="css-bg">
-    <span style="background:#fff">CSS background</span>
+    <span style="background: #fff;">CSS background</span>
   </div>
   <div class="css-bg-data-uri">
-    <span style="background:#fff">CSS background with Data URI</span>
+    <span style="background: #fff;">CSS background with Data URI</span>
   </div>
 </template>
 
 <style>
 @font-face {
   font-family: 'Inter';
-  font-style:  italic;
+  font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/Inter-Italic.woff2") format("woff2"),
-       url("./fonts/Inter-Italic.woff") format("woff");
+  src: url('fonts/Inter-Italic.woff2') format('woff2'),
+    url('fonts/Inter-Italic.woff') format('woff');
 }
+
 body {
   font-family: 'Inter';
 }

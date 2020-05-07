@@ -4,7 +4,8 @@ import MagicString from 'magic-string'
 const filter = /\.(j|t)sx?$/
 
 export const createReplacePlugin = (
-  replacements: Record<string, string>
+  replacements: Record<string, string>,
+  sourcemap: boolean
 ): Plugin => {
   const pattern = new RegExp(
     '\\b(' +
@@ -38,8 +39,9 @@ export const createReplacePlugin = (
         }
 
         const result: TransformResult = { code: s.toString() }
-        // TODO source map
-        // result.map = s.generateMap({ hires: true })
+        if (sourcemap) {
+          result.map = s.generateMap({ hires: true })
+        }
         return result
       }
     }
