@@ -2492,7 +2492,7 @@ es-to-primitive@^1.2.1:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
-esbuild@^0.2.4:
+esbuild@^0.2.6:
   version "0.2.6"
   resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.2.6.tgz#262b91f79de561a81e6291bad8b3a682834f5670"
   integrity sha512-Kfz9T3nSRBURQDigsT+pbC85q45l7yEU5oQIik94UNPa5iY4IWY2G5HgMhrXS1U47eo6whnD3x/WZN7KkcJ/bA==
