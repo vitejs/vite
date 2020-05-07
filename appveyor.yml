@@ -1,0 +1,17 @@
+environment:
+  nodejs_version: "12"
+
+install:
+  - ps: Install-Product node $env:nodejs_version
+  - yarn
+
+test_script:
+  - git --version
+  - node --version
+  - yarn --version
+  - yarn test
+
+cache:
+  - node_modules -> yarn.lock
+
+build: off
