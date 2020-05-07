@@ -40,15 +40,12 @@ if (argv._[0] === 'build') {
     })
     .then(() => {
       spinner && spinner.stop()
+      process.exit(0)
     })
     .catch((err: RollupError) => {
       spinner && spinner.stop()
       console.error(chalk.red(`[vite] Build errored out.`))
-      // TODO pretty print this
-      // rollup errors contain helpful information
-      if (err.code) {
-        console.log(chalk.yellow(`${err.code}:`), err.message)
-      }
+      console.error(err)
       process.exit(1)
     })
 } else {

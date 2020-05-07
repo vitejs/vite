@@ -13,7 +13,12 @@ import {
   rewriteFileWithHMR,
   hmrClientPublicPath
 } from './serverPluginHmr'
-import { readBody, cleanUrl, queryRE, isExternalUrl } from '../utils'
+import {
+  readBody,
+  cleanUrl,
+  isExternalUrl,
+  resolveRelativeRequest
+} from '../utils'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -101,7 +106,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
     ) {
       const content = await readBody(ctx.body)
       if (!ctx.query.t && rewriteCache.has(content)) {
-        debug(`${ctx.url}: serving from cache`)
+        debug(`(cached) ${ctx.url}`)
         ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
@@ -109,7 +114,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
         rewriteCache.set(content, ctx.body)
       }
     } else {
-      debug(`not rewriting: ${ctx.url}`)
+      debug(`(skipped) ${ctx.url}`)
     }
   })
 }
@@ -166,16 +171,17 @@ function rewriteImports(
               hasReplaced = true
             }
           } else {
-            let pathname = cleanUrl(
-              slash(path.resolve(path.dirname(importer), id))
-            )
-            const queryMatch = id.match(queryRE)
-            let query = queryMatch ? queryMatch[0] : ''
+            let { pathname, query } = resolveRelativeRequest(importer, id)
             // append .js or .ts for extension-less imports
             // for now we don't attemp to resolve other extensions
-            if (!/\.\w+/.test(pathname)) {
+            if (!/\.\w+$/.test(pathname)) {
               const file = resolver.requestToFile(pathname)
-              pathname += path.extname(file)
+              const indexMatch = file.match(/\/index\.\w+$/)
+              if (indexMatch) {
+                pathname = pathname.replace(/\/(index)?$/, '') + indexMatch[0]
+              } else {
+                pathname += path.extname(file)
+              }
             }
             // force re-fetch all imports by appending timestamp
             // if this is a hmr refresh request
@@ -197,9 +203,11 @@ function rewriteImports(
 
           // save the import chain for hmr analysis
           const importee = cleanUrl(resolved)
-          currentImportees.add(importee)
-          debugHmr(`        ${importer} imports ${importee}`)
-          ensureMapEntry(importerMap, importee).add(importer)
+          if (importee !== importer) {
+            currentImportees.add(importee)
+            debugHmr(`        ${importer} imports ${importee}`)
+            ensureMapEntry(importerMap, importee).add(importer)
+          }
         } else {
           console.log(`[vite] ignored dynamic import(${id})`)
         }

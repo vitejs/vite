@@ -4,11 +4,14 @@ import sfcCompiler from '@vue/compiler-sfc'
 import chalk from 'chalk'
 
 interface ResolvedVuePaths {
-  browser: string
-  bundler: string
-  version: string
-  hasLocalVue: boolean
+  vue: string
+  '@vue/runtime-dom': string
+  '@vue/runtime-core': string
+  '@vue/reactivity': string
+  '@vue/shared': string
   compiler: string
+  version: string
+  isLocal: boolean
   cdnLink: string
 }
 
@@ -21,24 +24,20 @@ export function resolveVue(root: string): ResolvedVuePaths {
   if (resolved) {
     return resolved
   }
-  let browserPath: string
-  let bundlerPath: string
+  let runtimeDomPath: string
   let compilerPath: string
-  let hasLocalVue = true
+  let isLocal = true
   let vueVersion: string
   try {
     // see if user has local vue installation
     const userVuePkg = resolve(root, 'vue/package.json')
     vueVersion = require(userVuePkg).version
-    browserPath = path.join(
-      path.dirname(userVuePkg),
-      'dist/vue.runtime.esm-browser.js'
+    // as long as vue is present,
+    // dom, core and reactivity are guarunteed to coexist
+    runtimeDomPath = resolve(
+      root,
+      '@vue/runtime-dom/dist/runtime-dom.esm-bundler.js'
     )
-    bundlerPath = path.join(
-      path.dirname(userVuePkg),
-      'dist/vue.runtime.esm-bundler.js'
-    )
-
     // also resolve matching sfc compiler
     try {
       const compilerPkgPath = resolve(root, '@vue/compiler-sfc/package.json')
@@ -60,18 +59,22 @@ export function resolveVue(root: string): ResolvedVuePaths {
     }
   } catch (e) {
     // user has no local vue, use vite's dependency version
-    hasLocalVue = false
-    browserPath = require.resolve('vue/dist/vue.runtime.esm-browser.js')
-    bundlerPath = require.resolve('vue/dist/vue.runtime.esm-bundler.js')
+    isLocal = false
     vueVersion = require('vue/package.json').version
+    runtimeDomPath = require.resolve(
+      '@vue/runtime-dom/dist/runtime-dom.esm-bundler.js'
+    )
     compilerPath = require.resolve('@vue/compiler-sfc')
   }
   resolved = {
-    browser: browserPath,
-    bundler: bundlerPath,
     version: vueVersion,
-    hasLocalVue,
+    vue: runtimeDomPath,
+    '@vue/runtime-dom': runtimeDomPath,
+    '@vue/runtime-core': runtimeDomPath.replace(/runtime-dom/g, 'runtime-core'),
+    '@vue/reactivity': runtimeDomPath.replace(/runtime-dom/g, 'reactivity'),
+    '@vue/shared': runtimeDomPath.replace(/runtime-dom/g, 'shared'),
     compiler: compilerPath,
+    isLocal,
     cdnLink: `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.prod.js`
   }
   return resolved

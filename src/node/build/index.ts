@@ -18,6 +18,7 @@ import { createBuildCssPlugin } from './buildPluginCss'
 import { createBuildAssetPlugin } from './buildPluginAsset'
 import { createEsbuildPlugin } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
+import { stopService } from '../esbuildService'
 
 export interface BuildOptions {
   /**
@@ -55,12 +56,6 @@ export interface BuildOptions {
    * Default: 4096 (4kb)
    */
   assetsInlineLimit?: number
-  /**
-   * List files that are included in the build, but not inside project root.
-   * e.g. if you are building a higher level tool on top of vite and includes
-   * some code that will be bundled into the final build.
-   */
-  srcRoots?: string[]
   /**
    * Will be passed to rollup.rollup()
    * https://rollupjs.org/guide/en/#big-list-of-options
@@ -141,12 +136,11 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const {
     root = process.cwd(),
     base = '/',
-    cdn = !resolveVue(root).hasLocalVue,
+    cdn = !resolveVue(root).isLocal,
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
     assetsInlineLimit = 4096,
     resolvers = [],
-    srcRoots = [],
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
@@ -185,7 +179,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       // user plugins
       ...(rollupInputOptions.plugins || []),
       // vite:resolve
-      createBuildResolvePlugin(root, cdn, [root, ...srcRoots], resolver),
+      createBuildResolvePlugin(root, cdn, resolver),
       // vite:html
       ...(htmlPlugin ? [htmlPlugin] : []),
       // vite:esbuild
@@ -308,10 +302,14 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
   }
 
-  !silent &&
+  if (!silent) {
     console.log(
-      `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.`
+      `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.\n`
     )
+  }
+
+  // stop the esbuild service after each build
+  stopService()
 
   return {
     assets: output,

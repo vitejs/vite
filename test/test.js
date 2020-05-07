@@ -33,12 +33,16 @@ const getComputedColor = async (selectorOrEl) => {
 }
 
 beforeAll(async () => {
-  await fs.remove(tempDir)
+  try {
+    await fs.remove(tempDir)
+  } catch (e) {}
   await fs.copy(fixtureDir, tempDir)
 })
 
 afterAll(async () => {
-  await fs.remove(tempDir)
+  try {
+    await fs.remove(tempDir)
+  } catch (e) {}
   if (browser) await browser.close()
   if (devServer) {
     devServer.kill('SIGTERM', {
@@ -80,6 +84,7 @@ describe('vite', () => {
       expect(await getText('.module-resolve-router')).toMatch('ok')
       expect(await getText('.module-resolve-store')).toMatch('ok')
       expect(await getText('.module-resolve-web')).toMatch('ok')
+      expect(await getText('.index-resolve')).toMatch('ok')
     })
 
     if (!isBuild) {
@@ -155,7 +160,7 @@ describe('vite', () => {
       }
     })
 
-    test('<style module>', async () => {
+    test('SFC <style module>', async () => {
       const el = await page.$('.css-modules-sfc')
       expect(await getComputedColor(el)).toBe('rgb(0, 0, 255)')
       if (!isBuild) {
@@ -197,6 +202,29 @@ describe('vite', () => {
           c.replace('rendered from', 'pug with hmr')
         )
         await expectByPolling(() => getText('.pug'), 'pug with hmr')
+      }
+    })
+
+    test('SFC src imports', async () => {
+      expect(await getText('.src-imports-script')).toMatch('src="./script.ts"')
+      const el = await getEl('.src-imports-style')
+      expect(await getComputedColor(el)).toBe('rgb(119, 136, 153)')
+      if (!isBuild) {
+        // test style first, should not reload the component
+        await updateFile('src-import/style.css', (c) =>
+          c.replace('rgb(119, 136, 153)', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+        // script
+        await updateFile('src-import/script.ts', (c) =>
+          c.replace('hello', 'bye')
+        )
+        await expectByPolling(() => getText('.src-imports-script'), 'bye from')
+        // template
+        await updateFile('src-import/template.html', (c) =>
+          c.replace('{{ msg }}', 'changed')
+        )
+        await expectByPolling(() => getText('.src-imports-script'), 'changed')
       }
     })
 

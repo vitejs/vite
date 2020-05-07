@@ -3,6 +3,7 @@ import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
 import { Context } from 'koa'
 import { isImportRequest, readBody, loadPostcssConfig } from '../utils'
+import { srcImportMap } from './serverPluginVue'
 
 interface ProcessedEntry {
   css: string
@@ -53,15 +54,19 @@ export const cssPlugin: Plugin = ({ root, app, watcher, resolver }) => {
   // handle hmr
   watcher.on('change', (file) => {
     if (file.endsWith('.css')) {
+      if (srcImportMap.has(file)) {
+        // this is a vue src import, skip
+        return
+      }
+
       const publicPath = resolver.fileToRequest(file)
       const id = hash_sum(publicPath)
 
       // bust process cache
       processedCSS.delete(publicPath)
 
-      if (file.endsWith('.module.css')) {
-        watcher.handleJSReload(file)
-      } else {
+      // css modules are updated as js
+      if (!file.endsWith('.module.css')) {
         watcher.send({
           type: 'style-update',
           id,

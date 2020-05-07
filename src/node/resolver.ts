@@ -2,6 +2,11 @@ import path from 'path'
 import slash from 'slash'
 import { statSync } from 'fs'
 import { cleanUrl } from './utils'
+import {
+  idToFileMap,
+  moduleRE,
+  fileToRequestMap
+} from './server/serverPluginModuleResolve'
 
 export interface Resolver {
   requestToFile(publicPath: string, root: string): string | undefined
@@ -15,11 +20,23 @@ export interface InternalResolver {
   idToRequest(id: string): string | undefined
 }
 
-const defaultRequestToFile = (publicPath: string, root: string) =>
-  path.join(root, publicPath.slice(1))
+const defaultRequestToFile = (publicPath: string, root: string): string => {
+  if (moduleRE.test(publicPath)) {
+    const moduleFilePath = idToFileMap.get(publicPath.replace(moduleRE, ''))
+    if (moduleFilePath) {
+      return moduleFilePath
+    }
+  }
+  return path.join(root, publicPath.slice(1))
+}
 
-const defaultFileToRequest = (filePath: string, root: string) =>
-  `/${slash(path.relative(root, filePath))}`
+const defaultFileToRequest = (filePath: string, root: string): string => {
+  const moduleRequest = fileToRequestMap.get(filePath)
+  if (moduleRequest) {
+    return moduleRequest
+  }
+  return `/${slash(path.relative(root, filePath))}`
+}
 
 const defaultIdToRequest = (id: string) => {
   if (id.startsWith('@') && id.indexOf('/') < 0) {
@@ -27,22 +44,34 @@ const defaultIdToRequest = (id: string) => {
   }
 }
 
-export const supportedExts = ['.js', '.jsx', '.ts', '.tsx', '.json']
+export const supportedExts = ['.js', '.ts', '.jsx', '.tsx', '.json']
 
-export const ensureExt = (id: string) => {
+const debug = require('debug')('vite:resolve')
+
+const resolveExt = (id: string) => {
   const cleanId = cleanUrl(id)
   if (!/\.\w+$/.test(cleanId)) {
     let inferredExt = ''
     for (const ext of supportedExts) {
       try {
-        statSync(id + ext)
+        // foo -> foo.js
+        statSync(cleanId + ext)
         inferredExt = ext
         break
-      } catch (e) {}
+      } catch (e) {
+        try {
+          // foo -> foo/index.js
+          statSync(path.join(cleanId, '/index' + ext))
+          inferredExt = '/index' + ext
+          break
+        } catch (e) {}
+      }
     }
     const queryMatch = id.match(/\?.*$/)
     const query = queryMatch ? queryMatch[0] : ''
-    return cleanId + inferredExt + query
+    const reoslved = cleanId + inferredExt + query
+    debug(`ext: ${id} -> ${reoslved}`)
+    return reoslved
   }
   return id
 }
@@ -64,7 +93,7 @@ export function createResolver(
       if (!resolved) {
         resolved = defaultRequestToFile(publicPath, root)
       }
-      resolved = ensureExt(resolved)
+      resolved = resolveExt(resolved)
       return resolved
     },
     fileToRequest: (filePath) => {
