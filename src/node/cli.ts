@@ -28,7 +28,7 @@ Object.keys(argv).forEach((key) => {
 if (argv._[0] === 'build') {
   let spinner: Ora
   const msg = 'Building for production...'
-  if (process.env.DEBUG) {
+  if (process.env.DEBUG || process.env.NODE_ENV === 'test') {
     console.log(msg)
   } else {
     spinner = require('ora')(msg + '\n').start()
