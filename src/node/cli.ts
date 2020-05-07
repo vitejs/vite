@@ -58,11 +58,18 @@ if (argv._[0] === 'build') {
 
   server.on('listening', () => {
     console.log(`Dev server running at:`)
-    getIPv4AddressList().forEach((ip) => {
+    const addresses = getIPv4AddressList()
+    addresses.forEach((ip) => {
       console.log(`  > http://${ip}:${port}`)
     })
     console.log()
     require('debug')('vite:server')(`server ready in ${Date.now() - s}ms.`)
+
+    if (argv.open) {
+      require('./utils/openBrowser').openBrowser(
+        `http://${addresses[0]}:${port}`
+      )
+    }
   })
 
   server.listen(port)
