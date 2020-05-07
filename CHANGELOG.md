@@ -1,3 +1,24 @@
+## [0.11.4](https://github.com/vuejs/vite/compare/v0.11.3...v0.11.4) (2020-05-07)
+
+
+### Bug Fixes
+
+* avoid spinner in tests ([19f8358](https://github.com/vuejs/vite/commit/19f8358a47251b35557f4c2bdd8a3ac2b7ef96c0))
+* fix resolve path on windows ([#73](https://github.com/vuejs/vite/issues/73)) ([9f6f0a6](https://github.com/vuejs/vite/commit/9f6f0a619af6f7fba22033b9540680862df3dc09))
+* fix windows path resolution ([82414b8](https://github.com/vuejs/vite/commit/82414b88bb057630f096123fb820105817c4707c)), closes [#69](https://github.com/vuejs/vite/issues/69) [#72](https://github.com/vuejs/vite/issues/72)
+* support directory index resolving (close [#74](https://github.com/vuejs/vite/issues/74)) ([904266b](https://github.com/vuejs/vite/commit/904266bc726e672926da3b01a8990dccd16d4e8b))
+* use esm-bundler build of vue ([5741b79](https://github.com/vuejs/vite/commit/5741b798c1dc535d83154e5c0e9f1c3e7e5f92b7)), closes [#71](https://github.com/vuejs/vite/issues/71)
+
+
+### Features
+
+* **create-vite-app:** use valid html file ([#76](https://github.com/vuejs/vite/issues/76)) ([f3265c1](https://github.com/vuejs/vite/commit/f3265c1a833ac74403a673004a0127801bf02a99))
+* improve sfc compilation error output ([44a8250](https://github.com/vuejs/vite/commit/44a8250fc69e2d2c06d80a711a2598e4dc449f53))
+* src import support ([ffd1fee](https://github.com/vuejs/vite/commit/ffd1fee9e04073ff87faa1b730c07dd828c70664))
+* support build sourcemap ([6b63b34](https://github.com/vuejs/vite/commit/6b63b34a521df17b645bb4ec72df03294cb3b5c6))
+
+
+
 ## [0.11.3](https://github.com/vuejs/vite/compare/v0.11.2...v0.11.3) (2020-05-07)
 
 
