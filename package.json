@@ -56,7 +56,6 @@
     "@rollup/plugin-node-resolve": "^7.1.3",
     "@types/koa": "^2.11.3",
     "@vue/compiler-sfc": "^3.0.0-beta.9",
-    "@vue/shared": "^3.0.0-beta.9",
     "chalk": "^4.0.0",
     "chokidar": "^3.3.1",
     "cssnano": "^4.1.10",

@@ -1,10 +1,12 @@
+import chalk from 'chalk'
 import path from 'path'
 import { Plugin } from '.'
 import {
   SFCDescriptor,
   SFCTemplateBlock,
   SFCStyleBlock,
-  SFCStyleCompileResults
+  SFCStyleCompileResults,
+  generateCodeFrame
 } from '@vue/compiler-sfc'
 import { resolveCompiler } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -124,10 +126,22 @@ export async function parseSFC(
   })
 
   if (errors.length) {
+    console.error(chalk.red(`\n[vite] SFC parse error: `))
     errors.forEach((e) => {
-      console.error(`[vite] SFC parse error: `, e)
+      console.error(
+        chalk.underline(
+          `${filename}:${e.loc!.start.line}:${e.loc!.start.column}`
+        )
+      )
+      console.error(chalk.yellow(e.message))
+      console.error(
+        generateCodeFrame(
+          content as string,
+          e.loc!.start.offset,
+          e.loc!.end.offset
+        )
+      )
     })
-    console.error(`source:\n`, content)
   }
 
   cached = cached || { styles: [] }
@@ -210,11 +224,11 @@ async function compileSFCMain(
 function compileSFCTemplate(
   root: string,
   template: SFCTemplateBlock,
-  filePath: string,
+  filename: string,
   publicPath: string,
   scoped: boolean
 ): string {
-  let cached = vueCache.get(filePath)
+  let cached = vueCache.get(filename)
   if (cached && cached.template) {
     debug(`${publicPath} template cache hit`)
     return cached.template
@@ -223,7 +237,7 @@ function compileSFCTemplate(
   const start = Date.now()
   const { code, map, errors } = resolveCompiler(root).compileTemplate({
     source: template.content,
-    filename: filePath,
+    filename,
     inMap: template.map,
     transformAssetUrls: {
       base: path.posix.dirname(publicPath)
@@ -237,16 +251,29 @@ function compileSFCTemplate(
   })
 
   if (errors.length) {
+    console.error(chalk.red(`\n[vite] SFC template compilation error: `))
     errors.forEach((e) => {
-      console.error(`[vite] SFC template compilation error: `, e)
+      if (typeof e === 'string') {
+        console.error(e)
+      } else {
+        console.error(
+          chalk.underline(
+            `${filename}:${e.loc!.start.line}:${e.loc!.start.column}`
+          )
+        )
+        console.error(chalk.yellow(e.message))
+        const original = template.map!.sourcesContent![0]
+        console.error(
+          generateCodeFrame(original, e.loc!.start.offset, e.loc!.end.offset)
+        )
+      }
     })
-    console.error(`source:\n`, template.content)
   }
 
   const finalCode = code + genSourceMapString(map)
   cached = cached || { styles: [] }
   cached.template = finalCode
-  vueCache.set(filePath, cached)
+  vueCache.set(filename, cached)
 
   debug(`${publicPath} template compiled in ${Date.now() - start}ms.`)
   return finalCode
@@ -256,10 +283,10 @@ async function compileSFCStyle(
   root: string,
   style: SFCStyleBlock,
   index: number,
-  filePath: string,
+  filename: string,
   publicPath: string
 ): Promise<SFCStyleCompileResults> {
-  let cached = vueCache.get(filePath)
+  let cached = vueCache.get(filename)
   const cachedEntry = cached && cached.styles && cached.styles[index]
   if (cachedEntry) {
     debug(`${publicPath} style cache hit`)
@@ -272,7 +299,7 @@ async function compileSFCStyle(
 
   const result = await resolveCompiler(root).compileStyleAsync({
     source: style.content,
-    filename: filePath,
+    filename,
     id: `data-v-${id}`,
     scoped: style.scoped != null,
     modules: style.module != null,
@@ -287,15 +314,45 @@ async function compileSFCStyle(
   })
 
   if (result.errors.length) {
-    result.errors.forEach((e) => {
-      console.error(`[vite] SFC style compilation error: `, e)
+    console.error(chalk.red(`\n[vite] SFC style compilation error: `))
+    result.errors.forEach((e: any) => {
+      if (typeof e === 'string') {
+        console.error(e)
+      } else {
+        const lineOffset = style.loc.start.line - 1
+        if (e.line && e.column) {
+          console.log(
+            chalk.underline(`${filename}:${e.line + lineOffset}:${e.column}`)
+          )
+        } else {
+          console.log(chalk.underline(filename))
+        }
+        const filenameRE = new RegExp(
+          '.*' +
+            path.basename(filename).replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&') +
+            '(:\\d+:\\d+:\\s*)?'
+        )
+        const cleanMsg = e.message.replace(filenameRE, '')
+        console.error(chalk.yellow(cleanMsg))
+        if (e.line && e.column && cleanMsg.split(/\n/g).length === 1) {
+          const original = style.map!.sourcesContent![0]
+          const offset =
+            original
+              .split(/\r?\n/g)
+              .slice(0, e.line + lineOffset - 1)
+              .map((l) => l.length)
+              .reduce((total, l) => total + l + 1, 0) +
+            e.column -
+            1
+          console.error(generateCodeFrame(original, offset, offset + 1))
+        }
+      }
     })
-    console.error(`source:\n`, style.content)
   }
 
   cached = cached || { styles: [] }
   cached.styles[index] = result
-  vueCache.set(filePath, cached)
+  vueCache.set(filename, cached)
 
   debug(`${publicPath} style compiled in ${Date.now() - start}ms`)
   return result
