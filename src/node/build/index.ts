@@ -41,13 +41,6 @@ export interface BuildOptions {
    */
   assetsInlineLimit?: number
   /**
-   * Configure what to use for jsx factory and fragment
-   */
-  jsx?: {
-    factory?: string
-    fragment?: string
-  }
-  /**
    * Whether to generate sourcemap
    */
   sourcemap?: boolean
@@ -55,6 +48,13 @@ export interface BuildOptions {
    * Whether to minify output
    */
   minify?: boolean | 'terser' | 'esbuild'
+  /**
+   * Configure what to use for jsx factory and fragment
+   */
+  jsx?: {
+    factory?: string
+    fragment?: string
+  }
 
   // The following are API only and not documented in the CLI. -----------------
 
