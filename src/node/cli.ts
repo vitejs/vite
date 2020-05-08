@@ -13,7 +13,7 @@ if (argv.help) {
 
 // convert debug flag
 if (argv.debug) {
-  process.env.DEBUG = argv.debug === true ? 'vite:*' : argv.debug
+  process.env.DEBUG = `vite:` + (argv.debug === true ? '*' : argv.debug)
 }
 
 Object.keys(argv).forEach((key) => {
