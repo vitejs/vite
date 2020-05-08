@@ -100,7 +100,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       ctx.response.is('js') &&
       !ctx.url.endsWith('.map') &&
       // skip internal client
-      !ctx.path.startsWith(`/@hmr`) &&
+      !ctx.path.startsWith(`/vite/hmr`) &&
       // only need to rewrite for <script> part in vue files
       !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
     ) {
