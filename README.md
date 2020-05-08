@@ -207,7 +207,7 @@ render(<h1>Hello, what!</h1>, document.getElementById('app'))
 
 - Vue 3's JSX transform is still WIP, so Vite's JSX support currently only targets React/Preact.
 
-- There is no out-of-the-box HMR when using non-Vue frameworks, but userland HMR support is technically via the server API.
+- There is no out-of-the-box HMR when using non-Vue frameworks, but userland HMR support is technically possible via the server API.
 
 ### Production Build
 
