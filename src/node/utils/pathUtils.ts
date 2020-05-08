@@ -65,7 +65,7 @@ export const resolveImport = ({
   timestamp?: string
 }): string => {
   if (moduleRE.test(id)) {
-    return resolver ? resolver.idToRequest(id) ?? `/@modules/${id}` : id
+    return resolver ? resolver.idToRequest(id) || `/@modules/${id}` : id
   } else {
     let { pathname, query } = resolveRelativeRequest(importer, id)
     // append an extension to extension-less imports
