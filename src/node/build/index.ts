@@ -259,7 +259,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         console.log(
           `${chalk.gray(`[write]`)} ${writeColors[type](
             path.relative(cwd, filepath)
-          )} ${(content.length / 1024).toFixed(2)}kb`
+          )} ${(content.length / 1024).toFixed(2)}kb, brotli: ${(
+            require('brotli-size').sync(content) / 1024
+          ).toFixed(2)}kb`
         )
       }
     }
