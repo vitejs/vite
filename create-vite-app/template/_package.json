@@ -3,12 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
+    "debug": "cross-env DEBUG=vite:* vite",
     "build": "vite build"
   },
   "dependencies": {
     "vue": "^3.0.0-beta.10"
   },
   "devDependencies": {
+    "cross-env": "7.0.2",
     "vite": "^0.12.0",
     "@vue/compiler-sfc": "^3.0.0-beta.10"
   }
