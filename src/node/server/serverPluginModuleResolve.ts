@@ -107,10 +107,19 @@ export async function resolveWebModule(
   if (webModulePath) {
     return webModulePath
   }
-  webModulePath = path.join(root, 'web_modules', id + '.js')
-  if (await fs.pathExists(webModulePath)) {
-    webModulesMap.set(id, webModulePath)
-    return webModulePath
+  if (!id.endsWith('.js')) {
+    webModulePath = path.join(root, 'web_modules', id + '.js')
+    if (await fs.pathExists(webModulePath)) {
+      webModulesMap.set(id, webModulePath)
+      return webModulePath
+    }
+  } else {
+    // id could be a common chunk
+    webModulePath = path.join(root, 'web_modules', id)
+    if (await fs.pathExists(webModulePath)) {
+      webModulesMap.set(id, webModulePath)
+      return webModulePath
+    }
   }
 }
 

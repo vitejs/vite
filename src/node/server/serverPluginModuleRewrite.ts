@@ -3,7 +3,11 @@ import path from 'path'
 import slash from 'slash'
 import LRUCache from 'lru-cache'
 import MagicString from 'magic-string'
-import { init as initLexer, parse as parseImports } from 'es-module-lexer'
+import {
+  init as initLexer,
+  parse as parseImports,
+  ImportSpecifier
+} from 'es-module-lexer'
 import { InternalResolver } from '../resolver'
 import {
   debugHmr,
@@ -20,6 +24,7 @@ import {
   isExternalUrl,
   resolveRelativeRequest
 } from '../utils'
+import chalk from 'chalk'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -130,7 +135,19 @@ function rewriteImports(
     source = String(source)
   }
   try {
-    const [imports] = parseImports(source)
+    let imports: ImportSpecifier[] = []
+    try {
+      imports = parseImports(source)[0]
+    } catch (e) {
+      console.error(
+        chalk.yellow(
+          `[vite] failed to parse ${chalk.cyan(
+            importer
+          )} for import rewrite.\nIf you are using ` +
+            `JSX, make sure to named the file with the .jsx extension.`
+        )
+      )
+    }
 
     if (imports.length) {
       debug(`${importer}: rewriting`)
