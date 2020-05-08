@@ -311,6 +311,8 @@ Snowpack 2 is closer to Vite in scope - both offer bundle-free dev servers and c
 
 - While Vite can technically be used to develop apps with any framework, its main focus is to provide the best Vue development experience possible. 3rd party framework support is currently not a priority in the roadmap. On the other hand, Snowpack aims to be more flexible and support multiple frameworks at the same time.
 
+That said, because Vite supports resolving `web_modules`, you can use Snowpack to pre-bundle dependencies (which reduces network requests during dev) in your Vite project to speed up full page reloads.
+
 ## TODOs
 
 - Config file support
