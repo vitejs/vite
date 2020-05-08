@@ -11,6 +11,11 @@ if (argv.help) {
   // TODO print supported args on --help
 }
 
+interface Address {
+  type: String
+  ip: string
+}
+
 Object.keys(argv).forEach((key) => {
   // cast xxx=false into actual `false`
   if (argv[key] === 'false') {
@@ -67,17 +72,20 @@ if (argv._[0] === 'build') {
   })
 
   server.on('listening', () => {
-    console.log(`Dev server running at:`)
+    console.log()
+    console.log(`  Dev server running at:`)
     const addresses = getIPv4AddressList()
-    addresses.forEach((ip) => {
-      console.log(`  > http://${ip}:${port}`)
+    addresses.forEach((address) => {
+      const url = `http://${address.ip}:${chalk.bold(port)}/`
+      console.log(`  > ${address.type} ${chalk.cyan(url)}`)
     })
     console.log()
     require('debug')('vite:server')(`server ready in ${Date.now() - s}ms.`)
 
     if (argv.open) {
+      const [localAddress] = addresses
       require('./utils/openBrowser').openBrowser(
-        `http://${addresses[0]}:${port}`
+        `http://${localAddress.ip}:${port}`
       )
     }
   })
@@ -87,15 +95,19 @@ if (argv._[0] === 'build') {
 
 function getIPv4AddressList() {
   const interfaces = networkInterfaces()
-  let result: string[] = []
-
+  let result: Address[] = []
   Object.keys(interfaces).forEach((key) => {
     const ips = (interfaces[key] || [])
       .filter((details) => details.family === 'IPv4')
-      .map((detail) => detail.address.replace('127.0.0.1', 'localhost'))
-
+      .map((detail) => {
+        return {
+          type: detail.address.includes('127.0.0.1')
+            ? 'Local:   '
+            : 'Network: ',
+          ip: detail.address.replace('127.0.0.1', 'localhost')
+        }
+      })
     result = result.concat(ips)
   })
-
   return result
 }
