@@ -21,20 +21,10 @@ import { stopService } from '../esbuildService'
 
 export interface BuildOptions {
   /**
-   * Project root path on file system.
-   * Defaults to `process.cwd()`
-   */
-  root?: string
-  /**
    * Base public path when served in production.
    * Defaults to /
    */
   base?: string
-  /**
-   * Resolvers to map dev server public path requests to/from file system paths,
-   * and optionally map module ids to public path requests.
-   */
-  resolvers?: Resolver[]
   /**
    * Defaults to `dist`
    */
@@ -51,6 +41,34 @@ export interface BuildOptions {
    */
   assetsInlineLimit?: number
   /**
+   * Configure what to use for jsx factory and fragment
+   */
+  jsx?: {
+    factory?: string
+    fragment?: string
+  }
+  /**
+   * Whether to generate sourcemap
+   */
+  sourcemap?: boolean
+  /**
+   * Whether to minify output
+   */
+  minify?: boolean | 'terser' | 'esbuild'
+
+  // The following are API only and not documented in the CLI. -----------------
+
+  /**
+   * Project root path on file system.
+   * Defaults to `process.cwd()`
+   */
+  root?: string
+  /**
+   * Resolvers to map dev server public path requests to/from file system paths,
+   * and optionally map module ids to public path requests.
+   */
+  resolvers?: Resolver[]
+  /**
    * Will be passed to rollup.rollup()
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
@@ -66,12 +84,13 @@ export interface BuildOptions {
    */
   rollupPluginVueOptions?: Partial<Options>
   /**
-   * Configure what to use for jsx factory and fragment
+   * Whether to log asset info to console
    */
-  jsx?: {
-    factory?: string
-    fragment?: string
-  }
+  silent?: boolean
+  /**
+   * Whether to write bundle to disk
+   */
+  write?: boolean
   /**
    * Whether to emit index.html
    */
@@ -80,22 +99,6 @@ export interface BuildOptions {
    * Whether to emit assets other than JavaScript
    */
   emitAssets?: boolean
-  /**
-   * Whether to generate sourcemap
-   */
-  sourcemap?: boolean
-  /**
-   * Whether to write bundle to disk
-   */
-  write?: boolean
-  /**
-   * Whether to minify output
-   */
-  minify?: boolean | 'terser' | 'esbuild'
-  /**
-   * Whether to log asset info to console
-   */
-  silent?: boolean
 }
 
 export interface BuildResult {
