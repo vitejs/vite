@@ -32,13 +32,19 @@ export const isStaticAsset = (file: string) => {
   return imageRE.test(file) || mediaRE.test(file) || fontsRE.test(file)
 }
 
+const timeStampRE = /(&|\?)t=\d+/
+const jsSrcFileRE = /\.(vue|jsx?|tsx?)$/
+
 /**
  * Check if a request is an import from js (instead of fetch() or ajax requests)
- * A request qualifies as long as it's not from page (no ext or .html).
- * this is because non-js files can be transformed into js and import json
- * as well.
+ * A request qualifies as long as it's from one of the supported js source file
+ * formats (vue,js,ts,jsx,tsx)
  */
-export const isImportRequest = (ctx: Context) => {
-  const referer = cleanUrl(ctx.get('referer'))
-  return /\.\w+$/.test(referer) && !referer.endsWith('.html')
+export const isImportRequest = (ctx: Context): boolean => {
+  if (!ctx.accepts('js')) {
+    return false
+  }
+  // strip HMR timestamps
+  const referer = ctx.get('referer').replace(timeStampRE, '')
+  return jsSrcFileRE.test(referer)
 }

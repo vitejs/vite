@@ -3,6 +3,9 @@
   <p>
     Fonts should be italic if font asset reference from CSS works.
   </p>
+  <p class="asset-import">
+    Path for assets import from js: <code>{{ filepath }}</code>
+  </p>
   <p>
     Relative asset reference in template:
     <img src="./testAssets.png" style="width: 30px;" />
@@ -18,6 +21,18 @@
     <span style="background: #fff;">CSS background with Data URI</span>
   </div>
 </template>
+
+<script>
+import filepath from './testAssets.png'
+
+export default {
+  data() {
+    return {
+      filepath
+    }
+  }
+}
+</script>
 
 <style>
 @font-face {

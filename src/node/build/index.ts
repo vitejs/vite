@@ -161,6 +161,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const resolver = createResolver(root, resolvers)
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
+    root,
     indexPath,
     publicBasePath,
     assetsDir,
@@ -220,7 +221,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         assetsInlineLimit
       ),
       // vite:asset
-      createBuildAssetPlugin(publicBasePath, assetsDir, assetsInlineLimit),
+      createBuildAssetPlugin(
+        root,
+        publicBasePath,
+        assetsDir,
+        assetsInlineLimit
+      ),
       // minify with terser
       // this is the default which has better compression, but slow
       // the user can opt-in to use esbuild which is much faster but results
@@ -265,6 +271,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     await fs.remove(outDir)
     await fs.ensureDir(outDir)
 
+    // write js chunks and assets
     for (const chunk of output) {
       if (chunk.type === 'chunk') {
         // write chunk
@@ -299,6 +306,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         indexHtml,
         WriteType.HTML
       )
+    }
+
+    // copy over /public if it exists
+    const publicDir = path.resolve(root, 'public')
+    if (await fs.pathExists(publicDir)) {
+      await fs.copy(publicDir, path.resolve(outDir, 'public'))
     }
   }
 

@@ -16,7 +16,7 @@ export const createBuildCssPlugin = (
   inlineLimit: number
 ): Plugin => {
   const styles: Map<string, string> = new Map()
-  const assets = new Map()
+  const assets = new Map<string, Buffer>()
 
   return {
     name: 'vite:css',
@@ -36,11 +36,14 @@ export const createBuildCssPlugin = (
               const file = path.join(fileDir, rawUrl)
               const { fileName, content, url } = await resolveAsset(
                 file,
+                root,
                 publicBase,
                 assetsDir,
                 inlineLimit
               )
-              assets.set(fileName, content)
+              if (fileName && content) {
+                assets.set(fileName, content)
+              }
               debug(
                 `url(${rawUrl}) -> ${
                   url.startsWith('data:') ? `base64 inlined` : `url(${url})`

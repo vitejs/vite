@@ -16,6 +16,7 @@ import MagicString from 'magic-string'
 import { InternalResolver } from '../resolver'
 
 export const createBuildHtmlPlugin = async (
+  root: string,
   indexPath: string | null,
   publicBasePath: string,
   assetsDir: string,
@@ -31,6 +32,7 @@ export const createBuildHtmlPlugin = async (
 
   const rawHtml = await fs.readFile(indexPath, 'utf-8')
   let { html: processedHtml, js } = await compileHtml(
+    root,
     rawHtml,
     publicBasePath,
     assetsDir,
@@ -111,6 +113,7 @@ const assetAttrsConfig: Record<string, string[]> = {
 // compile index.html to a JS module, importing referenced assets
 // and scripts
 const compileHtml = async (
+  root: string,
   html: string,
   publicBasePath: string,
   assetsDir: string,
@@ -176,6 +179,7 @@ const compileHtml = async (
     const value = attr.value!
     const { url } = await resolveAsset(
       resolver.requestToFile(value.content),
+      root,
       publicBasePath,
       assetsDir,
       inlineLimit

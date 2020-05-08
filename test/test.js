@@ -73,6 +73,16 @@ describe('vite', () => {
       expect(has404).toBe(false)
     })
 
+    test('asset import from js', async () => {
+      expect(await getText('.asset-import')).toMatch(
+        isBuild
+          ? // hashed in production
+            /\/assets\/testAssets\.([\w\d]+)\.png$/
+          : // only resolved to absolute in dev
+            '/testAssets.png'
+      )
+    })
+
     test('env variables', async () => {
       expect(await getText('.dev')).toMatch(`__DEV__: ${!isBuild}`)
       expect(await getText('.node_env')).toMatch(

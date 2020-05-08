@@ -129,9 +129,11 @@ Both CSS and JSON imports also support Hot Module Replacement.
 
 You can reference static assets in your `*.vue` templates, styles and plain `.css` files either using absolute public paths (based on project root) or relative paths (based on your file system). The latter is similar to the behavior you are used to if you have used `vue-cli` or webpack's `file-loader`.
 
-There is no conventional `public` directory. All referenced assets, including those using absolute paths, will be copied to the dist folder with a hashed file name in the production build. Never-referenced assets will not be copied.
+All referenced assets, including those using absolute paths, will be copied to the dist folder with a hashed file name in the production build. Never-referenced assets will not be copied. Similar to `vue-cli`, image assets smaller than 4kb will be base64 inlined.
 
-Similar to `vue-cli`, image assets smaller than 4kb will be base64 inlined.
+The exception is the `public` directory - assets placed in this directory will be copied to the dist directory as-is. It can be used to provide assets that are never referenced in your code - e.g. `robots.txt`.
+
+All path references, including absolute paths and those starting with `/public`, should be based on your working directory structure. If you are deploying your project under a nested public path, simply specify `--base=/your/public/path/` and all asset paths will be rewritten accordingly. **You never need to think about the public path during development.**
 
 ### PostCSS
 
