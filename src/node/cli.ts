@@ -11,6 +11,11 @@ if (argv.help) {
   // TODO print supported args on --help
 }
 
+// convert debug flag
+if (argv.debug) {
+  process.env.DEBUG = argv.debug === true ? 'vite:*' : argv.debug
+}
+
 Object.keys(argv).forEach((key) => {
   // cast xxx=false into actual `false`
   if (argv[key] === 'false') {
