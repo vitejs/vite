@@ -74,7 +74,7 @@ The above will throw an error by default. Vite detects such bare module imports 
 
   ```js
   import { foo } from './foo.js'
-  import { hot } from '@hmr'
+  import { hot } from 'vite/hmr'
 
   foo()
 
@@ -95,7 +95,7 @@ The above will throw an error by default. Vite detects such bare module imports 
   Modules can also be self-accepting:
 
   ```js
-  import { hot } from '@hmr'
+  import { hot } from 'vite/hmr'
 
   export const count = 1
 
@@ -110,6 +110,8 @@ The above will throw an error by default. Vite detects such bare module imports 
   A self-accepting module, or a module that expects to be accepted by others can use `hot.dispose` to cleanup any persistent side effects created by its updated copy:
 
   ```js
+  import { hot } from 'vite/hmr'
+
   function setupSideEffect() {}
   function cleanupSideEffect() {}
 

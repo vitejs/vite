@@ -9,7 +9,7 @@
 // 4. When a js file changes, it triggers an HMR graph analysis, where we try to
 //    walk its importer chains and see if we reach a "HMR boundary". An HMR
 //    boundary is either a `.vue` file or a `.js` file that explicitly indicated
-//    that it accepts hot updates (by importing from the `/@hmr` special module)
+//    that it accepts hot updates (by importing from the `/vite/hmr` special module)
 // 5. If any parent chain exhausts without ever running into an HMR boundary,
 //    it's considered a "dead end". This causes a full page reload.
 // 6. If a `.vue` boundary is encountered, we add it to the `vueImports` Set.
@@ -21,7 +21,7 @@
 //    client to update all `jsImporters` and `vueImporters`.
 
 // How do we get a js HMR boundary's accepted list on the server
-// 1. During the import rewriting, if `/@hmr` import is present in a js file,
+// 1. During the import rewriting, if `/vite/hmr` import is present in a js file,
 //    we will do a fullblown parse of the file to find the `hot.accept` call,
 //    and records the file and its accepted dependencies in a `hmrBoundariesMap`
 // 2. We also inject the boundary file's full path into the `hot.accept` call
@@ -60,7 +60,7 @@ export const importeeMap: HMRStateMap = new Map()
 
 // client and node files are placed flat in the dist folder
 export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
-export const hmrClientId = '@hmr'
+export const hmrClientId = 'vite/hmr'
 export const hmrClientPublicPath = `/${hmrClientId}`
 
 interface HMRPayload {

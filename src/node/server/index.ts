@@ -39,6 +39,7 @@ export interface ServerConfig {
 }
 
 const internalPlugins: Plugin[] = [
+  hmrPlugin,
   moduleRewritePlugin,
   moduleResolvePlugin,
   vuePlugin,
@@ -46,7 +47,6 @@ const internalPlugins: Plugin[] = [
   jsonPlugin,
   cssPlugin,
   assetPathPlugin,
-  hmrPlugin,
   serveStaticPlugin
 ]
 

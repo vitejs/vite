@@ -11,7 +11,8 @@ import {
   importeeMap,
   ensureMapEntry,
   rewriteFileWithHMR,
-  hmrClientPublicPath
+  hmrClientPublicPath,
+  hmrClientId
 } from './serverPluginHmr'
 import {
   readBody,
@@ -100,7 +101,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       ctx.response.is('js') &&
       !ctx.url.endsWith('.map') &&
       // skip internal client
-      !ctx.path.startsWith(`/@hmr`) &&
+      !ctx.path.startsWith(hmrClientPublicPath) &&
       // only need to rewrite for <script> part in vue files
       !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
     ) {
@@ -154,22 +155,21 @@ function rewriteImports(
         if (dynamicIndex === -1 || hasLiteralDynamicId) {
           // do not rewrite external imports
           if (isExternalUrl(id)) {
-            break
+            continue
           }
 
           let resolved
-          if (/^[^\/\.]/.test(id)) {
-            resolved = resolver.idToRequest(id) || `/@modules/${id}`
-            if (
-              resolved === hmrClientPublicPath &&
-              !/.vue$|.vue\?type=/.test(importer)
-            ) {
+          if (id === hmrClientId) {
+            resolved = hmrClientPublicPath
+            if (!/.vue$|.vue\?type=/.test(importer)) {
               // the user explicit imports the HMR API in a js file
               // making the module hot.
               rewriteFileWithHMR(source, importer, s)
               // we rewrite the hot.accept call
               hasReplaced = true
             }
+          } else if (/^[^\/\.]/.test(id)) {
+            resolved = resolver.idToRequest(id) || `/@modules/${id}`
           } else {
             let { pathname, query } = resolveRelativeRequest(importer, id)
             // append .js or .ts for extension-less imports

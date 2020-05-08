@@ -1,4 +1,4 @@
-import { hot } from '@hmr'
+import { hot } from 'vite/hmr'
 
 export const foo = 1
 

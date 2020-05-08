@@ -10,7 +10,8 @@
   "types": "dist/index.d.ts",
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "hmr.d.ts"
   ],
   "engines": {
     "node": ">=10.0.0"
@@ -29,7 +30,7 @@
     "dev-node": "tsc -w --p src/node",
     "build": "rm -rf dist && tsc -p src/client && tsc -p src/node",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
-    "test": "jest --runInBand",
+    "test": "jest --clearCache && jest --runInBand",
     "windows-ci": "yarn build && jest --runInBand --forceExit",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "prepublishOnly": "yarn build && yarn changelog",
