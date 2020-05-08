@@ -9,7 +9,9 @@
 * support --debug flag from cli ([12a5d47](https://github.com/vuejs/vite/commit/12a5d47b2bf2cb7e1badae2e2ee1129c0ae29fe5))
 * support asset path import from js + special treatment of /public dir ([9061e44](https://github.com/vuejs/vite/commit/9061e442a7de8f94ca2931299450464f78f82148))
 
+### Breaking Changes
 
+- HMR API import path has changed from `@hmr` to `vite/hmr` so that it can enjoy type support.
 
 # [0.12.0](https://github.com/vuejs/vite/compare/v0.11.5...v0.12.0) (2020-05-07)
 
