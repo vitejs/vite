@@ -128,6 +128,8 @@ The above will throw an error by default. Vite detects such bare module imports 
 
 Starting with v0.11, Vite supports `<script lang="ts">` in `*.vue` files, and importing `.ts` files out of the box. Note that Vite does **NOT** perform type checking - it assumes type checking is taken care of by your IDE and build process (you can run `tsc --noEmit` in the build script). With that in mind, Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
 
+Note that because `esbuild` only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports. You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOptions` so that TS will warn you against the features that do not work with isolated transpilation.
+
 ### CSS / JSON Importing
 
 You can directly import `.css` and `.json` files from JavaScript (including `<script>` tags of `*.vue` files, of course).
