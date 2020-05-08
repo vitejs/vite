@@ -36,7 +36,7 @@ import chalk from 'chalk'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache, srcImportMap } from './serverPluginVue'
-import { cachedRead } from '../utils'
+import { cachedRead, resolveRelativeRequest } from '../utils'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '@babel/parser'
@@ -354,7 +354,7 @@ export function rewriteFileWithHMR(
     const depPublicPath = slash(
       path.isAbsolute(e.value)
         ? e.value
-        : path.join(path.dirname(importer), e.value)
+        : resolveRelativeRequest(importer, e.value).url
     )
     deps.add(depPublicPath)
     debugHmr(`        ${importer} accepts ${depPublicPath}`)
