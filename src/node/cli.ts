@@ -1,11 +1,38 @@
+const start = Date.now()
+
 import os from 'os'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 import { ServerConfig } from './server'
 import { BuildOptions } from './build'
 
+function logHelp() {
+  console.log(`
+Usage: vite [command] [args] [--options]
+
+Commands:
+  vite                       Start server in current directory.
+  vite serve [root=cwd]      Start server in target directory.
+  vite build [root=cwd]      Build target directory.
+
+Options:
+  --help, -h                 [boolean] show help
+  --version, -v              [boolean] show version
+  --port                     [number]  port to use for serve
+  --open                     [boolean] open browser on server start
+  --base                     [string]  public base path for build (default: /)
+  --outDir                   [string]  output directory for build (default: dist)
+  --assetsDir                [string]  directory under outDir to place assets in (default: assets)
+  --assetsInlineLimit        [number]  static asset base64 inline threshold in bytes (default: 4096)
+  --sourcemap                [boolean] output source maps for build (default: false)
+  --minify                   [boolean | 'terser' | 'esbuild'] disable minification, or specify
+                                       minifier to use. (default: 'terser')
+  --jsx-factory              [string]  (default: React.createElement)
+  --jsx-fragment             [string]  (default: React.Fragment)
+`)
+}
+
 console.log(chalk.cyan(`vite v${require('../package.json').version}`))
-const s = Date.now()
 
 const args = parseArgs()
 if (args.help || args.h) {
@@ -54,32 +81,6 @@ function parseArgs() {
   return argv
 }
 
-function logHelp() {
-  console.log(`
-Usage: vite [command] [args] [--options]
-
-Commands:
-  vite                       Start server in current directory.
-  vite serve [root=cwd]      Start server in target directory.
-  vite build [root=cwd]      Build target directory.
-
-Options:
-  --help, -h                 [boolean] show help
-  --version, -v              [boolean] show version
-  --port                     [number]  port to use for serve
-  --open                     [boolean] open browser on server start
-  --base                     [string]  public base path for build (default: /)
-  --outDir                   [string]  output directory for build (default: dist)
-  --assetsDir                [string]  directory under outDir to place assets in (default: assets)
-  --assetsInlineLimit        [number]  static asset base64 inline threshold in bytes (default: 4096)
-  --sourcemap                [boolean] output source maps for build (default: false)
-  --minify                   [boolean | 'terser' | 'esbuild'] disable minification, or specify
-                                       minifier to use. (default: 'terser')
-  --jsx-factory              [string]  (default: React.createElement)
-  --jsx-fragment             [string]  (default: React.Fragment)
-`)
-}
-
 function runServe(
   args: ServerConfig & {
     port?: number
@@ -112,7 +113,7 @@ function runServe(
         .forEach((ip) => console.log(`  > http://${ip}:${port}`))
     })
     console.log()
-    require('debug')('vite:server')(`server ready in ${Date.now() - s}ms.`)
+    require('debug')('vite:server')(`server ready in ${Date.now() - start}ms.`)
 
     if (args.open) {
       require('./utils/openBrowser').openBrowser(`http://localhost:${port}`)
