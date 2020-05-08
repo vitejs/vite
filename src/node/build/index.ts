@@ -7,7 +7,6 @@ import {
   RollupOutput,
   ExternalOption
 } from 'rollup'
-import { resolveVue } from '../utils/resolveVue'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
 import { Resolver, createResolver, supportedExts } from '../resolver'
@@ -31,11 +30,6 @@ export interface BuildOptions {
    * Defaults to /
    */
   base?: string
-  /**
-   * If true, will be importing Vue from a CDN.
-   * Dsiabled automatically when a local vue installation is present.
-   */
-  cdn?: boolean
   /**
    * Resolvers to map dev server public path requests to/from file system paths,
    * and optionally map module ids to public path requests.
@@ -136,7 +130,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const {
     root = process.cwd(),
     base = '/',
-    cdn = !resolveVue(root).isLocal,
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
     assetsInlineLimit = 4096,
@@ -180,7 +173,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       // user plugins
       ...(rollupInputOptions.plugins || []),
       // vite:resolve
-      createBuildResolvePlugin(root, cdn, resolver),
+      createBuildResolvePlugin(root, resolver),
       // vite:html
       ...(htmlPlugin ? [htmlPlugin] : []),
       // vite:esbuild
@@ -248,7 +241,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     ...rollupOutputOptions
   })
 
-  const indexHtml = renderIndex(root, cdn, cssFileName, output)
+  const indexHtml = renderIndex(root, cssFileName, output)
 
   if (write) {
     const cwd = process.cwd()

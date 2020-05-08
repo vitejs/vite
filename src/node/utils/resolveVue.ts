@@ -12,7 +12,6 @@ interface ResolvedVuePaths {
   compiler: string
   version: string
   isLocal: boolean
-  cdnLink: string
 }
 
 let resolved: ResolvedVuePaths | undefined = undefined
@@ -74,8 +73,7 @@ export function resolveVue(root: string): ResolvedVuePaths {
     '@vue/reactivity': runtimeDomPath.replace(/runtime-dom/g, 'reactivity'),
     '@vue/shared': runtimeDomPath.replace(/runtime-dom/g, 'shared'),
     compiler: compilerPath,
-    isLocal,
-    cdnLink: `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.prod.js`
+    isLocal
   }
   return resolved
 }

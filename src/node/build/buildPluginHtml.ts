@@ -2,7 +2,6 @@ import { Plugin, RollupOutput } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
 import { isExternalUrl, cleanUrl, isStaticAsset } from '../utils/pathUtils'
-import { resolveVue } from '../utils/resolveVue'
 import { resolveAsset } from './buildPluginAsset'
 import {
   parse,
@@ -75,16 +74,11 @@ export const createBuildHtmlPlugin = async (
 
   const renderIndex = (
     root: string,
-    cdn: boolean,
     cssFileName: string,
     bundleOutput: RollupOutput['output']
   ) => {
     // inject css link
     processedHtml = injectCSS(processedHtml, cssFileName)
-    // if not inlining vue, inject cdn link so it can start the fetch early
-    if (cdn) {
-      processedHtml = injectScript(processedHtml, resolveVue(root).cdnLink)
-    }
     // inject js entry chunks
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk' && chunk.isEntry) {
@@ -125,7 +119,7 @@ const compileHtml = async (
   let js = ''
   const s = new MagicString(html)
   const assetUrls: AttributeNode[] = []
-  const viteHtmlTrasnfrom: NodeTransform = (node, context) => {
+  const viteHtmlTrasnfrom: NodeTransform = (node) => {
     if (node.type === NodeTypes.ELEMENT) {
       if (node.tag === 'script') {
         const srcAttr = node.props.find(

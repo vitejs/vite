@@ -9,7 +9,6 @@ const debug = require('debug')('vite:build:resolve')
 
 export const createBuildResolvePlugin = (
   root: string,
-  cdn: boolean,
   resolver: InternalResolver
 ): Plugin => {
   return {
@@ -25,12 +24,7 @@ export const createBuildResolvePlugin = (
         }
       } else if (id === 'vue' || id.startsWith('@vue/')) {
         const vuePaths = resolveVue(root)
-        if (id === 'vue' && cdn) {
-          return {
-            id: vuePaths.cdnLink,
-            external: true
-          }
-        } else if (id in vuePaths) {
+        if (id in vuePaths) {
           return (vuePaths as any)[id]
         }
       } else if (!id.startsWith('.')) {
