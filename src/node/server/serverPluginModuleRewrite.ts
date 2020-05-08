@@ -18,12 +18,7 @@ import {
   hmrClientPublicPath,
   hmrClientId
 } from './serverPluginHmr'
-import {
-  readBody,
-  cleanUrl,
-  isExternalUrl,
-  resolveRelativeRequest
-} from '../utils'
+import { readBody, cleanUrl, isExternalUrl, resolveImport } from '../utils'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:rewrite')
@@ -181,31 +176,12 @@ function rewriteImports(
             if (!/.vue$|.vue\?type=/.test(importer)) {
               // the user explicit imports the HMR API in a js file
               // making the module hot.
-              rewriteFileWithHMR(source, importer, s)
+              rewriteFileWithHMR(source, importer, resolver, s)
               // we rewrite the hot.accept call
               hasReplaced = true
             }
-          } else if (/^[^\/\.]/.test(id)) {
-            resolved = resolver.idToRequest(id) || `/@modules/${id}`
           } else {
-            let { pathname, query } = resolveRelativeRequest(importer, id)
-            // append .js or .ts for extension-less imports
-            // for now we don't attemp to resolve other extensions
-            if (!/\.\w+$/.test(pathname)) {
-              const file = resolver.requestToFile(pathname)
-              const indexMatch = file.match(/\/index\.\w+$/)
-              if (indexMatch) {
-                pathname = pathname.replace(/\/(index)?$/, '') + indexMatch[0]
-              } else {
-                pathname += path.extname(file)
-              }
-            }
-            // force re-fetch all imports by appending timestamp
-            // if this is a hmr refresh request
-            if (timestamp) {
-              query += `${query ? `&` : `?`}t=${timestamp}`
-            }
-            resolved = pathname + query
+            resolved = resolveImport({ importer, id, resolver, timestamp })
           }
 
           if (resolved !== id) {
