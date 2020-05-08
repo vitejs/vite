@@ -1,63 +1,67 @@
+import os from 'os'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { RollupError } from 'rollup'
-import { networkInterfaces } from 'os'
+import { ServerConfig } from './server'
+import { BuildOptions } from './build'
 
 console.log(chalk.cyan(`vite v${require('../package.json').version}`))
 const s = Date.now()
-const argv = require('minimist')(process.argv.slice(2))
 
-if (argv.help) {
-  // TODO print supported args on --help
+const args = parseArgs()
+if (!args.command || args.command === 'serve') {
+  runServe(args)
+} else if (args.command === 'build') {
+  runBuild(args)
+} else if (args.command === 'optimize') {
+  // runOptimize()
+} else {
+  console.error(chalk.red(`unknown command: ${args.command}`))
+  process.exit(1)
 }
 
-// convert debug flag
-if (argv.debug) {
-  process.env.DEBUG = `vite:` + (argv.debug === true ? '*' : argv.debug)
-}
-
-Object.keys(argv).forEach((key) => {
-  // cast xxx=false into actual `false`
-  if (argv[key] === 'false') {
-    argv[key] = false
+function parseArgs() {
+  const argv = require('minimist')(process.argv.slice(2))
+  if (argv.help) {
+    // TODO print supported args on --help
+  }
+  // convert debug flag
+  if (argv.debug) {
+    process.env.DEBUG = `vite:` + (argv.debug === true ? '*' : argv.debug)
   }
   // map jsx args
-  if (key === 'jsx-factory') {
-    ;(argv.jsx || (argv.jsx = {})).factory = argv[key]
+  if (argv['jsx-factory']) {
+    ;(argv.jsx || (argv.jsx = {})).factory = argv['jsx-factory']
   }
-  if (key === 'jsx-fragment') {
-    ;(argv.jsx || (argv.jsx = {})).fragment = argv[key]
+  if (argv['jsx-fragment']) {
+    ;(argv.jsx || (argv.jsx = {})).fragment = argv['jsx-fragment']
   }
-})
-
-if (argv._[0] === 'build') {
-  let spinner: Ora
-  const msg = 'Building for production...'
-  if (process.env.DEBUG || process.env.NODE_ENV === 'test') {
-    console.log(msg)
-  } else {
-    spinner = require('ora')(msg + '\n').start()
+  // cast xxx=false into actual `false`
+  Object.keys(argv).forEach((key) => {
+    if (argv[key] === 'false') {
+      argv[key] = false
+    }
+  })
+  // command
+  if (argv._[0]) {
+    argv.command = argv._[0]
   }
-  require('../dist')
-    .build({
-      ...argv,
-      cdn: argv.cdn === 'false' ? false : argv.cdn
-    })
-    .then(() => {
-      spinner && spinner.stop()
-      process.exit(0)
-    })
-    .catch((err: RollupError) => {
-      spinner && spinner.stop()
-      console.error(chalk.red(`[vite] Build errored out.`))
-      console.error(err)
-      process.exit(1)
-    })
-} else {
-  const server = require('../dist').createServer(argv)
+  // normalize root
+  // assumes all commands are in the form of `vite [command] [root]`
+  if (argv._[1] && !argv.root) {
+    argv.root = argv._[1]
+  }
+  return argv
+}
 
-  let port = argv.port || 3000
+function runServe(
+  args: ServerConfig & {
+    port?: number
+    open?: boolean
+  }
+) {
+  const server = require('../dist').createServer(args)
 
+  let port = args.port || 3000
   server.on('error', (e: Error & { code?: string }) => {
     if (e.code === 'EADDRINUSE') {
       console.log(`Port ${port} is in use, trying another one...`)
@@ -71,36 +75,40 @@ if (argv._[0] === 'build') {
     }
   })
 
-  server.on('listening', () => {
+  server.listen(port, () => {
     console.log(`Dev server running at:`)
-    const addresses = getIPv4AddressList()
-    addresses.forEach((ip) => {
-      console.log(`  > http://${ip}:${port}`)
+    const interfaces = os.networkInterfaces()
+    Object.keys(interfaces).forEach((key) => {
+      ;(interfaces[key] || [])
+        .filter((details) => details.family === 'IPv4')
+        .map((detail) => detail.address.replace('127.0.0.1', 'localhost'))
+        .forEach((ip) => console.log(`  > http://${ip}:${port}`))
     })
     console.log()
     require('debug')('vite:server')(`server ready in ${Date.now() - s}ms.`)
 
-    if (argv.open) {
-      require('./utils/openBrowser').openBrowser(
-        `http://${addresses[0]}:${port}`
-      )
+    if (args.open) {
+      require('./utils/openBrowser').openBrowser(`http://localhost:${port}`)
     }
   })
-
-  server.listen(port)
 }
 
-function getIPv4AddressList() {
-  const interfaces = networkInterfaces()
-  let result: string[] = []
-
-  Object.keys(interfaces).forEach((key) => {
-    const ips = (interfaces[key] || [])
-      .filter((details) => details.family === 'IPv4')
-      .map((detail) => detail.address.replace('127.0.0.1', 'localhost'))
-
-    result = result.concat(ips)
-  })
-
-  return result
+async function runBuild(args: BuildOptions) {
+  let spinner: Ora | undefined
+  const msg = 'Building for production...'
+  if (process.env.DEBUG || process.env.NODE_ENV === 'test') {
+    console.log(msg)
+  } else {
+    spinner = require('ora')(msg + '\n').start()
+  }
+  try {
+    await require('../dist').build(args)
+    spinner && spinner.stop()
+    process.exit(0)
+  } catch (err) {
+    spinner && spinner.stop()
+    console.error(chalk.red(`[vite] Build errored out.`))
+    console.error(err)
+    process.exit(1)
+  }
 }
