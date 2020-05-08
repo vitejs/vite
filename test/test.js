@@ -132,6 +132,9 @@ describe('vite', () => {
           content.replace('foo = 1', 'foo = 2')
         )
         await expectByPolling(() => logs[logs.length - 1], 'foo is now:  2')
+        // there will be a "js module reloaded" message in between because
+        // disposers are called before the new module is loaded.
+        expect(logs[logs.length - 3]).toMatch('foo was:  1')
       })
     }
 

@@ -92,23 +92,34 @@ export function updateStyle(id: string, url: string) {
 }
 
 const jsUpdateMap = new Map<string, (timestamp: number) => void>()
+const jsDisposeMap = new Map<string, () => void | Promise<void>>()
 const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 
 export const hot = {
   accept(
-    importer: string,
+    id: string,
     deps: string | string[],
     callback: (modules: object | object[]) => void = () => {}
   ) {
-    jsUpdateMap.set(importer, (timestamp: number) => {
+    jsUpdateMap.set(id, async (timestamp: number) => {
       if (Array.isArray(deps)) {
+        for (const id of deps) {
+          const disposer = jsDisposeMap.get(id)
+          if (disposer) await disposer()
+        }
         Promise.all(deps.map((dep) => import(dep + `?t=${timestamp}`))).then(
           callback
         )
       } else {
+        const disposer = jsDisposeMap.get(deps)
+        disposer && (await disposer())
         import(deps + `?t=${timestamp}`).then(callback)
       }
     })
+  },
+
+  dispose(id: string, cb: () => void) {
+    jsDisposeMap.set(id, cb)
   },
 
   on(event: string, cb: () => void) {

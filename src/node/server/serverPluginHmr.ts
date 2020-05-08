@@ -357,50 +357,58 @@ export function rewriteFileWithHMR(
     s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))
   }
 
-  const checkAcceptCall = (node: Expression, isTopLevel = false) => {
+  const checkHotCall = (node: Expression, isTopLevel = false) => {
     if (
       node.type === 'CallExpression' &&
       node.callee.type === 'MemberExpression' &&
       node.callee.object.type === 'Identifier' &&
-      node.callee.object.name === 'hot' &&
-      node.callee.property.name === 'accept'
+      node.callee.object.name === 'hot'
     ) {
       if (isTopLevel) {
         console.warn(
           chalk.yellow(
-            `[vite warn] hot.accept() in ${importer} should be wrapped in ` +
+            `[vite warn] HMR API calls in ${importer} should be wrapped in ` +
               `\`if (__DEV__) {}\` conditional blocks so that they can be ` +
               `tree-shaken in production.`
           )
+          // TODO generateCodeFrame
         )
       }
-      const args = node.arguments
-      // inject the imports's own path so it becomes
-      // hot.accept('/foo.js', ['./bar.js'], () => {})
-      s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
-      // register the accepted deps
-      if (args[0].type === 'ArrayExpression') {
-        args[0].elements.forEach((e) => {
-          if (e && e.type !== 'StringLiteral') {
-            console.error(
-              `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
-            )
-          } else if (e) {
-            registerDep(e)
-          }
-        })
-      } else if (args[0].type === 'StringLiteral') {
-        registerDep(args[0])
-      } else if (args[0].type.endsWith('FunctionExpression')) {
-        // self accepting, rewrite to inject itself
-        // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
+
+      if (node.callee.property.name === 'accept') {
+        const args = node.arguments
+        // inject the imports's own path so it becomes
+        // hot.accept('/foo.js', ['./bar.js'], () => {})
         s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
-        ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
-      } else {
-        console.error(
-          `[vite] HMR syntax error in ${importer}: ` +
-            `hot.accept() expects a dep string, an array of deps, or a callback.`
-        )
+        // register the accepted deps
+        if (args[0].type === 'ArrayExpression') {
+          args[0].elements.forEach((e) => {
+            if (e && e.type !== 'StringLiteral') {
+              console.error(
+                `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
+              )
+            } else if (e) {
+              registerDep(e)
+            }
+          })
+        } else if (args[0].type === 'StringLiteral') {
+          registerDep(args[0])
+        } else if (args[0].type.endsWith('FunctionExpression')) {
+          // self accepting, rewrite to inject itself
+          // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
+          s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+          ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
+        } else {
+          console.error(
+            `[vite] HMR syntax error in ${importer}: ` +
+              `hot.accept() expects a dep string, an array of deps, or a callback.`
+          )
+        }
+      }
+
+      if (node.callee.property.name === 'dispose') {
+        // inject the imports's own path to dispose calls as well
+        s.appendLeft(node.arguments[0].start!, JSON.stringify(importer) + ', ')
       }
     }
   }
@@ -408,7 +416,7 @@ export function rewriteFileWithHMR(
   const checkStatements = (node: Statement, isTopLevel = false) => {
     if (node.type === 'ExpressionStatement') {
       // top level hot.accept() call
-      checkAcceptCall(node.expression, isTopLevel)
+      checkHotCall(node.expression, isTopLevel)
       // __DEV__ && hot.accept()
       if (
         node.expression.type === 'LogicalExpression' &&
@@ -416,7 +424,7 @@ export function rewriteFileWithHMR(
         node.expression.left.type === 'Identifier' &&
         node.expression.left.name === '__DEV__'
       ) {
-        checkAcceptCall(node.expression.right)
+        checkHotCall(node.expression.right)
       }
     }
     // if (__DEV__) ...
@@ -429,7 +437,7 @@ export function rewriteFileWithHMR(
         node.consequent.body.forEach((s) => checkStatements(s))
       }
       if (node.consequent.type === 'ExpressionStatement') {
-        checkAcceptCall(node.consequent.expression)
+        checkHotCall(node.consequent.expression)
       }
     }
   }

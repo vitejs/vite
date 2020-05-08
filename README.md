@@ -22,7 +22,7 @@ $ npm run dev
 
 If using Yarn:
 
-``` bash
+```bash
 $ yarn create vite-app <project-name>
 $ cd <project-name>
 $ yarn
@@ -33,7 +33,7 @@ $ yarn dev
 
 Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
 
-Vite assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented code transforms by default. Technically, you *can* add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not Vite's concern by design.
+Vite assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented code transforms by default. Technically, you _can_ add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not Vite's concern by design.
 
 ## Features
 
@@ -101,9 +101,22 @@ The above will throw an error by default. Vite detects such bare module imports 
 
   // this code will be stripped out when building
   if (__DEV__) {
-    hot.accept(newModule => {
+    hot.accept((newModule) => {
       console.log('updated: count is now ', newModule.count)
     })
+  }
+  ```
+
+  A self-accepting module, or a module that expects to be accepted by others can use `hot.dispose` to cleanup any persistent side effects created by its updated copy:
+
+  ```js
+  function setupSideEffect() {}
+  function cleanupSideEffect() {}
+
+  setupSideEffect()
+
+  if (__DEV__) {
+    hot.dispose(cleanupSideEffect)
   }
   ```
 
@@ -147,10 +160,11 @@ Note that you do **not** need to configure PostCSS if you want to use CSS Module
 
 Because Vite targets modern browsers only, it is recommended to use native CSS variables with PostCSS plugins that implement CSSWG drafts (e.g. [postcss-nesting](https://github.com/jonathantneal/postcss-nesting)) and author plain, future-standards-compliant CSS. That said, if you insist on using a CSS pre-processor, you can install the corresponding pre-processor and just use it:
 
-``` bash
+```bash
 yarn add -D sass
 ```
-``` vue
+
+```vue
 <style lang="scss">
 /* use scss */
 </style>
@@ -164,24 +178,25 @@ Note importing CSS / preprocessor files from `.js` files, and HMR from imported 
 
 Because React doesn't ship ES module builds, you either need to use [es-react](https://github.com/lukejacksonn/es-react), or pre-bundle React into a ES module with Snowpack. Easiest way to get it running is:
 
-``` js
+```js
 import { React, ReactDOM } from 'https://unpkg.com/es-react'
 
-ReactDOM.render(<h1>Hello, what!</h1>, document.getElementById("app"));
+ReactDOM.render(<h1>Hello, what!</h1>, document.getElementById('app'))
 ```
 
 JSX can also be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` fro the API. For example, to use [Preact](https://preactjs.com/) with Vite:
 
-``` json
+```json
 {
   "scripts": {
     "dev": "vite --jsx-factory=h"
   }
 }
 ```
-``` jsx
-import { h, render } from "preact"
-render(<h1>Hello, what!</h1>, document.getElementById("app"))
+
+```jsx
+import { h, render } from 'preact'
+render(<h1>Hello, what!</h1>, document.getElementById('app'))
 ```
 
 #### Notes on JSX Support
@@ -204,7 +219,7 @@ Internally, we use a highly opinionated Rollup config to generate the build. The
 
 You can customize the server using the API. The server can accept plugins which have access to the internal Koa app instance. You can then add custom Koa middlewares to add pre-processor support:
 
-``` js
+```js
 const { createServer } = require('vite')
 
 const myPlugin = ({
@@ -240,9 +255,7 @@ const myPlugin = ({
 }
 
 createServer({
-  plugins: [
-    myPlugin
-  ]
+  plugins: [myPlugin]
 }).listen(3000)
 ```
 
@@ -250,7 +263,7 @@ createServer({
 
 Check out the full options interface in [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts).
 
-``` js
+```js
 const { build } = require('vite')
 
 ;(async () => {
