@@ -1,3 +1,33 @@
+## [0.13.1](https://github.com/vuejs/vite/compare/v0.13.0...v0.13.1) (2020-05-09)
+
+
+### Bug Fixes
+
+* **hmr:** fix hot.accept() module resolution ([#97](https://github.com/vuejs/vite/issues/97)) ([7ffa9c0](https://github.com/vuejs/vite/commit/7ffa9c0b953f4a78251a8c379a2edf8e31fd368b))
+* fix snowpack common chunk resolving + warn jsx in non jsx files ([3653793](https://github.com/vuejs/vite/commit/3653793a2f713b126aaefb01b00878614fc4c63c)), closes [#94](https://github.com/vuejs/vite/issues/94)
+
+
+### Features
+
+* **build:** log brotli-compressed size of outputs ([#95](https://github.com/vuejs/vite/issues/95)) ([b7f5ad2](https://github.com/vuejs/vite/commit/b7f5ad245f10efac89be0954155639e310c46e00))
+
+
+
+# [0.13.0](https://github.com/vuejs/vite/compare/v0.12.0...v0.13.0) (2020-05-08)
+
+
+### Features
+
+* **hmr:** change hmr API path to `vite/hmr` and provide typing ([eab49a4](https://github.com/vuejs/vite/commit/eab49a4b7dd7e3bb0ff215c7e7937814cd63bb4f)), closes [#92](https://github.com/vuejs/vite/issues/92)
+* cli help message ([a882aa4](https://github.com/vuejs/vite/commit/a882aa48cb447ec3b84019a2ce838ee75d848555))
+* **hmr:** support hot.dispose ([e5cf447](https://github.com/vuejs/vite/commit/e5cf447762c73aafd686a69a8b0d8e24c4e00048))
+* support --debug flag from cli ([12a5d47](https://github.com/vuejs/vite/commit/12a5d47b2bf2cb7e1badae2e2ee1129c0ae29fe5))
+* support asset path import from js + special treatment of /public dir ([9061e44](https://github.com/vuejs/vite/commit/9061e442a7de8f94ca2931299450464f78f82148))
+
+### Breaking Changes
+
+- HMR API import path has changed from `@hmr` to `vite/hmr` so that it can enjoy type support.
+
 # [0.12.0](https://github.com/vuejs/vite/compare/v0.11.5...v0.12.0) (2020-05-07)
 
 

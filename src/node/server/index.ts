@@ -9,6 +9,7 @@ import { hmrPlugin, HMRWatcher } from './serverPluginHmr'
 import { serveStaticPlugin } from './serverPluginServeStatic'
 import { jsonPlugin } from './serverPluginJson'
 import { cssPlugin } from './serverPluginCss'
+import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
 
 export { Resolver }
@@ -38,13 +39,14 @@ export interface ServerConfig {
 }
 
 const internalPlugins: Plugin[] = [
+  hmrPlugin,
   moduleRewritePlugin,
   moduleResolvePlugin,
   vuePlugin,
   esbuildPlugin,
   jsonPlugin,
   cssPlugin,
-  hmrPlugin,
+  assetPathPlugin,
   serveStaticPlugin
 ]
 

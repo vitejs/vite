@@ -22,7 +22,7 @@ $ npm run dev
 
 If using Yarn:
 
-``` bash
+```bash
 $ yarn create vite-app <project-name>
 $ cd <project-name>
 $ yarn
@@ -33,7 +33,7 @@ $ yarn dev
 
 Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
 
-Vite assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented code transforms by default. Technically, you *can* add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not Vite's concern by design.
+Vite assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented code transforms by default. Technically, you _can_ add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not Vite's concern by design.
 
 ## Features
 
@@ -74,7 +74,7 @@ The above will throw an error by default. Vite detects such bare module imports 
 
   ```js
   import { foo } from './foo.js'
-  import { hot } from '@hmr'
+  import { hot } from 'vite/hmr'
 
   foo()
 
@@ -95,15 +95,30 @@ The above will throw an error by default. Vite detects such bare module imports 
   Modules can also be self-accepting:
 
   ```js
-  import { hot } from '@hmr'
+  import { hot } from 'vite/hmr'
 
   export const count = 1
 
   // this code will be stripped out when building
   if (__DEV__) {
-    hot.accept(newModule => {
+    hot.accept((newModule) => {
       console.log('updated: count is now ', newModule.count)
     })
+  }
+  ```
+
+  A self-accepting module, or a module that expects to be accepted by others can use `hot.dispose` to cleanup any persistent side effects created by its updated copy:
+
+  ```js
+  import { hot } from 'vite/hmr'
+
+  function setupSideEffect() {}
+  function cleanupSideEffect() {}
+
+  setupSideEffect()
+
+  if (__DEV__) {
+    hot.dispose(cleanupSideEffect)
   }
   ```
 
@@ -114,6 +129,8 @@ The above will throw an error by default. Vite detects such bare module imports 
 ### TypeScript
 
 Starting with v0.11, Vite supports `<script lang="ts">` in `*.vue` files, and importing `.ts` files out of the box. Note that Vite does **NOT** perform type checking - it assumes type checking is taken care of by your IDE and build process (you can run `tsc --noEmit` in the build script). With that in mind, Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
+
+Note that because `esbuild` only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports. You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOptions` so that TS will warn you against the features that do not work with isolated transpilation.
 
 ### CSS / JSON Importing
 
@@ -129,9 +146,11 @@ Both CSS and JSON imports also support Hot Module Replacement.
 
 You can reference static assets in your `*.vue` templates, styles and plain `.css` files either using absolute public paths (based on project root) or relative paths (based on your file system). The latter is similar to the behavior you are used to if you have used `vue-cli` or webpack's `file-loader`.
 
-There is no conventional `public` directory. All referenced assets, including those using absolute paths, will be copied to the dist folder with a hashed file name in the production build. Never-referenced assets will not be copied.
+All referenced assets, including those using absolute paths, will be copied to the dist folder with a hashed file name in the production build. Never-referenced assets will not be copied. Similar to `vue-cli`, image assets smaller than 4kb will be base64 inlined.
 
-Similar to `vue-cli`, image assets smaller than 4kb will be base64 inlined.
+The exception is the `public` directory - assets placed in this directory will be copied to the dist directory as-is. It can be used to provide assets that are never referenced in your code - e.g. `robots.txt`.
+
+All path references, including absolute paths and those starting with `/public`, should be based on your working directory structure. If you are deploying your project under a nested public path, simply specify `--base=/your/public/path/` and all asset paths will be rewritten accordingly. **You never need to think about the public path during development.**
 
 ### PostCSS
 
@@ -145,10 +164,11 @@ Note that you do **not** need to configure PostCSS if you want to use CSS Module
 
 Because Vite targets modern browsers only, it is recommended to use native CSS variables with PostCSS plugins that implement CSSWG drafts (e.g. [postcss-nesting](https://github.com/jonathantneal/postcss-nesting)) and author plain, future-standards-compliant CSS. That said, if you insist on using a CSS pre-processor, you can install the corresponding pre-processor and just use it:
 
-``` bash
+```bash
 yarn add -D sass
 ```
-``` vue
+
+```vue
 <style lang="scss">
 /* use scss */
 </style>
@@ -162,31 +182,32 @@ Note importing CSS / preprocessor files from `.js` files, and HMR from imported 
 
 Because React doesn't ship ES module builds, you either need to use [es-react](https://github.com/lukejacksonn/es-react), or pre-bundle React into a ES module with Snowpack. Easiest way to get it running is:
 
-``` js
+```js
 import { React, ReactDOM } from 'https://unpkg.com/es-react'
 
-ReactDOM.render(<h1>Hello, what!</h1>, document.getElementById("app"));
+ReactDOM.render(<h1>Hello, what!</h1>, document.getElementById('app'))
 ```
 
 JSX can also be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` fro the API. For example, to use [Preact](https://preactjs.com/) with Vite:
 
-``` json
+```json
 {
   "scripts": {
     "dev": "vite --jsx-factory=h"
   }
 }
 ```
-``` jsx
-import { h, render } from "preact"
-render(<h1>Hello, what!</h1>, document.getElementById("app"))
+
+```jsx
+import { h, render } from 'preact'
+render(<h1>Hello, what!</h1>, document.getElementById('app'))
 ```
 
 #### Notes on JSX Support
 
 - Vue 3's JSX transform is still WIP, so Vite's JSX support currently only targets React/Preact.
 
-- There is no out-of-the-box HMR when using non-Vue frameworks, but userland HMR support is technically via the server API.
+- There is no out-of-the-box HMR when using non-Vue frameworks, but userland HMR support is technically possible via the server API.
 
 ### Production Build
 
@@ -202,7 +223,7 @@ Internally, we use a highly opinionated Rollup config to generate the build. The
 
 You can customize the server using the API. The server can accept plugins which have access to the internal Koa app instance. You can then add custom Koa middlewares to add pre-processor support:
 
-``` js
+```js
 const { createServer } = require('vite')
 
 const myPlugin = ({
@@ -238,9 +259,7 @@ const myPlugin = ({
 }
 
 createServer({
-  plugins: [
-    myPlugin
-  ]
+  plugins: [myPlugin]
 }).listen(3000)
 ```
 
@@ -248,7 +267,7 @@ createServer({
 
 Check out the full options interface in [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts).
 
-``` js
+```js
 const { build } = require('vite')
 
 ;(async () => {
@@ -310,6 +329,8 @@ Snowpack 2 is closer to Vite in scope - both offer bundle-free dev servers and c
 - Vite is a bit more opinionated and aims to minimize the amount of configuration required. All the features listed above like TypeScript transpilation, CSS import, and PostCSS support just work out of the box.
 
 - While Vite can technically be used to develop apps with any framework, its main focus is to provide the best Vue development experience possible. 3rd party framework support is currently not a priority in the roadmap. On the other hand, Snowpack aims to be more flexible and support multiple frameworks at the same time.
+
+That said, because Vite supports resolving `web_modules`, you can use Snowpack to pre-bundle dependencies (which reduces network requests during dev) in your Vite project to speed up full page reloads.
 
 ## TODOs
 

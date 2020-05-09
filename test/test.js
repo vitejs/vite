@@ -73,6 +73,16 @@ describe('vite', () => {
       expect(has404).toBe(false)
     })
 
+    test('asset import from js', async () => {
+      expect(await getText('.asset-import')).toMatch(
+        isBuild
+          ? // hashed in production
+            /\/assets\/testAssets\.([\w\d]+)\.png$/
+          : // only resolved to absolute in dev
+            '/testAssets.png'
+      )
+    })
+
     test('env variables', async () => {
       expect(await getText('.dev')).toMatch(`__DEV__: ${!isBuild}`)
       expect(await getText('.node_env')).toMatch(
@@ -122,6 +132,9 @@ describe('vite', () => {
           content.replace('foo = 1', 'foo = 2')
         )
         await expectByPolling(() => logs[logs.length - 1], 'foo is now:  2')
+        // there will be a "js module reloaded" message in between because
+        // disposers are called before the new module is loaded.
+        expect(logs[logs.length - 3]).toMatch('foo was:  1')
       })
     }
 

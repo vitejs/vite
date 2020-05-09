@@ -3,7 +3,11 @@ import path from 'path'
 import slash from 'slash'
 import LRUCache from 'lru-cache'
 import MagicString from 'magic-string'
-import { init as initLexer, parse as parseImports } from 'es-module-lexer'
+import {
+  init as initLexer,
+  parse as parseImports,
+  ImportSpecifier
+} from 'es-module-lexer'
 import { InternalResolver } from '../resolver'
 import {
   debugHmr,
@@ -11,14 +15,11 @@ import {
   importeeMap,
   ensureMapEntry,
   rewriteFileWithHMR,
-  hmrClientPublicPath
+  hmrClientPublicPath,
+  hmrClientId
 } from './serverPluginHmr'
-import {
-  readBody,
-  cleanUrl,
-  isExternalUrl,
-  resolveRelativeRequest
-} from '../utils'
+import { readBody, cleanUrl, isExternalUrl, resolveImport } from '../utils'
+import chalk from 'chalk'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -100,7 +101,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
       ctx.response.is('js') &&
       !ctx.url.endsWith('.map') &&
       // skip internal client
-      !ctx.path.startsWith(`/@hmr`) &&
+      !ctx.path.startsWith(hmrClientPublicPath) &&
       // only need to rewrite for <script> part in vue files
       !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
     ) {
@@ -129,7 +130,19 @@ function rewriteImports(
     source = String(source)
   }
   try {
-    const [imports] = parseImports(source)
+    let imports: ImportSpecifier[] = []
+    try {
+      imports = parseImports(source)[0]
+    } catch (e) {
+      console.error(
+        chalk.yellow(
+          `[vite] failed to parse ${chalk.cyan(
+            importer
+          )} for import rewrite.\nIf you are using ` +
+            `JSX, make sure to named the file with the .jsx extension.`
+        )
+      )
+    }
 
     if (imports.length) {
       debug(`${importer}: rewriting`)
@@ -154,41 +167,21 @@ function rewriteImports(
         if (dynamicIndex === -1 || hasLiteralDynamicId) {
           // do not rewrite external imports
           if (isExternalUrl(id)) {
-            break
+            continue
           }
 
           let resolved
-          if (/^[^\/\.]/.test(id)) {
-            resolved = resolver.idToRequest(id) || `/@modules/${id}`
-            if (
-              resolved === hmrClientPublicPath &&
-              !/.vue$|.vue\?type=/.test(importer)
-            ) {
+          if (id === hmrClientId) {
+            resolved = hmrClientPublicPath
+            if (!/.vue$|.vue\?type=/.test(importer)) {
               // the user explicit imports the HMR API in a js file
               // making the module hot.
-              rewriteFileWithHMR(source, importer, s)
+              rewriteFileWithHMR(source, importer, resolver, s)
               // we rewrite the hot.accept call
               hasReplaced = true
             }
           } else {
-            let { pathname, query } = resolveRelativeRequest(importer, id)
-            // append .js or .ts for extension-less imports
-            // for now we don't attemp to resolve other extensions
-            if (!/\.\w+$/.test(pathname)) {
-              const file = resolver.requestToFile(pathname)
-              const indexMatch = file.match(/\/index\.\w+$/)
-              if (indexMatch) {
-                pathname = pathname.replace(/\/(index)?$/, '') + indexMatch[0]
-              } else {
-                pathname += path.extname(file)
-              }
-            }
-            // force re-fetch all imports by appending timestamp
-            // if this is a hmr refresh request
-            if (timestamp) {
-              query += `${query ? `&` : `?`}t=${timestamp}`
-            }
-            resolved = pathname + query
+            resolved = resolveImport(importer, id, resolver, timestamp)
           }
 
           if (resolved !== id) {
@@ -203,7 +196,11 @@ function rewriteImports(
 
           // save the import chain for hmr analysis
           const importee = cleanUrl(resolved)
-          if (importee !== importer) {
+          if (
+            importee !== importer &&
+            // no need to track hmr client or module dependencies
+            importee !== hmrClientPublicPath
+          ) {
             currentImportees.add(importee)
             debugHmr(`        ${importer} imports ${importee}`)
             ensureMapEntry(importerMap, importee).add(importer)

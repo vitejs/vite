@@ -107,7 +107,9 @@ export async function resolveWebModule(
   if (webModulePath) {
     return webModulePath
   }
-  webModulePath = path.join(root, 'web_modules', id + '.js')
+  // id could be a common chunk
+  if (!id.endsWith('.js')) id += '.js'
+  webModulePath = path.join(root, 'web_modules', id)
   if (await fs.pathExists(webModulePath)) {
     webModulesMap.set(id, webModulePath)
     return webModulePath

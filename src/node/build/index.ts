@@ -7,7 +7,6 @@ import {
   RollupOutput,
   ExternalOption
 } from 'rollup'
-import { resolveVue } from '../utils/resolveVue'
 import resolve from 'resolve-from'
 import chalk from 'chalk'
 import { Resolver, createResolver, supportedExts } from '../resolver'
@@ -22,25 +21,10 @@ import { stopService } from '../esbuildService'
 
 export interface BuildOptions {
   /**
-   * Project root path on file system.
-   * Defaults to `process.cwd()`
-   */
-  root?: string
-  /**
    * Base public path when served in production.
    * Defaults to /
    */
   base?: string
-  /**
-   * If true, will be importing Vue from a CDN.
-   * Dsiabled automatically when a local vue installation is present.
-   */
-  cdn?: boolean
-  /**
-   * Resolvers to map dev server public path requests to/from file system paths,
-   * and optionally map module ids to public path requests.
-   */
-  resolvers?: Resolver[]
   /**
    * Defaults to `dist`
    */
@@ -57,6 +41,34 @@ export interface BuildOptions {
    */
   assetsInlineLimit?: number
   /**
+   * Whether to generate sourcemap
+   */
+  sourcemap?: boolean
+  /**
+   * Whether to minify output
+   */
+  minify?: boolean | 'terser' | 'esbuild'
+  /**
+   * Configure what to use for jsx factory and fragment
+   */
+  jsx?: {
+    factory?: string
+    fragment?: string
+  }
+
+  // The following are API only and not documented in the CLI. -----------------
+
+  /**
+   * Project root path on file system.
+   * Defaults to `process.cwd()`
+   */
+  root?: string
+  /**
+   * Resolvers to map dev server public path requests to/from file system paths,
+   * and optionally map module ids to public path requests.
+   */
+  resolvers?: Resolver[]
+  /**
    * Will be passed to rollup.rollup()
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
@@ -72,12 +84,13 @@ export interface BuildOptions {
    */
   rollupPluginVueOptions?: Partial<Options>
   /**
-   * Configure what to use for jsx factory and fragment
+   * Whether to log asset info to console
    */
-  jsx?: {
-    factory?: string
-    fragment?: string
-  }
+  silent?: boolean
+  /**
+   * Whether to write bundle to disk
+   */
+  write?: boolean
   /**
    * Whether to emit index.html
    */
@@ -86,22 +99,6 @@ export interface BuildOptions {
    * Whether to emit assets other than JavaScript
    */
   emitAssets?: boolean
-  /**
-   * Whether to generate sourcemap
-   */
-  sourcemap?: boolean
-  /**
-   * Whether to write bundle to disk
-   */
-  write?: boolean
-  /**
-   * Whether to minify output
-   */
-  minify?: boolean | 'terser' | 'esbuild'
-  /**
-   * Whether to log asset info to console
-   */
-  silent?: boolean
 }
 
 export interface BuildResult {
@@ -136,7 +133,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const {
     root = process.cwd(),
     base = '/',
-    cdn = !resolveVue(root).isLocal,
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
     assetsInlineLimit = 4096,
@@ -161,6 +157,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const resolver = createResolver(root, resolvers)
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
+    root,
     indexPath,
     publicBasePath,
     assetsDir,
@@ -179,7 +176,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       // user plugins
       ...(rollupInputOptions.plugins || []),
       // vite:resolve
-      createBuildResolvePlugin(root, cdn, resolver),
+      createBuildResolvePlugin(root, resolver),
       // vite:html
       ...(htmlPlugin ? [htmlPlugin] : []),
       // vite:esbuild
@@ -220,7 +217,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         assetsInlineLimit
       ),
       // vite:asset
-      createBuildAssetPlugin(publicBasePath, assetsDir, assetsInlineLimit),
+      createBuildAssetPlugin(
+        root,
+        publicBasePath,
+        assetsDir,
+        assetsInlineLimit
+      ),
       // minify with terser
       // this is the default which has better compression, but slow
       // the user can opt-in to use esbuild which is much faster but results
@@ -242,7 +244,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     ...rollupOutputOptions
   })
 
-  const indexHtml = renderIndex(root, cdn, cssFileName, output)
+  const indexHtml = renderIndex(root, cssFileName, output)
 
   if (write) {
     const cwd = process.cwd()
@@ -257,7 +259,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         console.log(
           `${chalk.gray(`[write]`)} ${writeColors[type](
             path.relative(cwd, filepath)
-          )} ${(content.length / 1024).toFixed(2)}kb`
+          )} ${(content.length / 1024).toFixed(2)}kb, brotli: ${(
+            require('brotli-size').sync(content) / 1024
+          ).toFixed(2)}kb`
         )
       }
     }
@@ -265,6 +269,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     await fs.remove(outDir)
     await fs.ensureDir(outDir)
 
+    // write js chunks and assets
     for (const chunk of output) {
       if (chunk.type === 'chunk') {
         // write chunk
@@ -299,6 +304,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         indexHtml,
         WriteType.HTML
       )
+    }
+
+    // copy over /public if it exists
+    const publicDir = path.resolve(root, 'public')
+    if (await fs.pathExists(publicDir)) {
+      await fs.copy(publicDir, path.resolve(outDir, 'public'))
     }
   }
 

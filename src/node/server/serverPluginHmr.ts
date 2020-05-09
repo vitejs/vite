@@ -9,7 +9,7 @@
 // 4. When a js file changes, it triggers an HMR graph analysis, where we try to
 //    walk its importer chains and see if we reach a "HMR boundary". An HMR
 //    boundary is either a `.vue` file or a `.js` file that explicitly indicated
-//    that it accepts hot updates (by importing from the `/@hmr` special module)
+//    that it accepts hot updates (by importing from the `/vite/hmr` special module)
 // 5. If any parent chain exhausts without ever running into an HMR boundary,
 //    it's considered a "dead end". This causes a full page reload.
 // 6. If a `.vue` boundary is encountered, we add it to the `vueImports` Set.
@@ -21,7 +21,7 @@
 //    client to update all `jsImporters` and `vueImporters`.
 
 // How do we get a js HMR boundary's accepted list on the server
-// 1. During the import rewriting, if `/@hmr` import is present in a js file,
+// 1. During the import rewriting, if `/vite/hmr` import is present in a js file,
 //    we will do a fullblown parse of the file to find the `hot.accept` call,
 //    and records the file and its accepted dependencies in a `hmrBoundariesMap`
 // 2. We also inject the boundary file's full path into the `hot.accept` call
@@ -31,16 +31,16 @@
 import { Plugin } from '.'
 import WebSocket from 'ws'
 import path from 'path'
-import slash from 'slash'
 import chalk from 'chalk'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache, srcImportMap } from './serverPluginVue'
-import { cachedRead } from '../utils'
+import { cachedRead, resolveImport } from '../utils'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '@babel/parser'
 import { StringLiteral, Statement, Expression } from '@babel/types'
+import { InternalResolver } from '../resolver'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -60,7 +60,7 @@ export const importeeMap: HMRStateMap = new Map()
 
 // client and node files are placed flat in the dist folder
 export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
-export const hmrClientId = '@hmr'
+export const hmrClientId = 'vite/hmr'
 export const hmrClientPublicPath = `/${hmrClientId}`
 
 interface HMRPayload {
@@ -236,12 +236,12 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
     const importers = importerMap.get(publicPath)
     if (importers) {
       const vueImporters = new Set<string>()
-      const jsHotImporters = new Set<string>()
+      const jsImporters = new Set<string>()
       const hasDeadEnd = walkImportChain(
         publicPath,
         importers,
         vueImporters,
-        jsHotImporters
+        jsImporters
       )
 
       if (hasDeadEnd) {
@@ -257,7 +257,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
             timestamp
           })
         })
-        jsHotImporters.forEach((jsImporter) => {
+        jsImporters.forEach((jsImporter) => {
           send({
             type: 'js-update',
             path: jsImporter,
@@ -335,6 +335,7 @@ export function ensureMapEntry(map: HMRStateMap, key: string): Set<string> {
 export function rewriteFileWithHMR(
   source: string,
   importer: string,
+  resolver: InternalResolver,
   s: MagicString
 ) {
   const ast = parse(source, {
@@ -351,56 +352,65 @@ export function rewriteFileWithHMR(
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
-    const depPublicPath = slash(path.resolve(path.dirname(importer), e.value))
+    const depPublicPath = resolveImport(importer, e.value, resolver)
     deps.add(depPublicPath)
     debugHmr(`        ${importer} accepts ${depPublicPath}`)
+    ensureMapEntry(importerMap, depPublicPath).add(importer)
     s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))
   }
 
-  const checkAcceptCall = (node: Expression, isTopLevel = false) => {
+  const checkHotCall = (node: Expression, isTopLevel = false) => {
     if (
       node.type === 'CallExpression' &&
       node.callee.type === 'MemberExpression' &&
       node.callee.object.type === 'Identifier' &&
-      node.callee.object.name === 'hot' &&
-      node.callee.property.name === 'accept'
+      node.callee.object.name === 'hot'
     ) {
       if (isTopLevel) {
         console.warn(
           chalk.yellow(
-            `[vite warn] hot.accept() in ${importer} should be wrapped in ` +
+            `[vite warn] HMR API calls in ${importer} should be wrapped in ` +
               `\`if (__DEV__) {}\` conditional blocks so that they can be ` +
               `tree-shaken in production.`
           )
+          // TODO generateCodeFrame
         )
       }
-      const args = node.arguments
-      // inject the imports's own path so it becomes
-      // hot.accept('/foo.js', ['./bar.js'], () => {})
-      s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
-      // register the accepted deps
-      if (args[0].type === 'ArrayExpression') {
-        args[0].elements.forEach((e) => {
-          if (e && e.type !== 'StringLiteral') {
-            console.error(
-              `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
-            )
-          } else if (e) {
-            registerDep(e)
-          }
-        })
-      } else if (args[0].type === 'StringLiteral') {
-        registerDep(args[0])
-      } else if (args[0].type.endsWith('FunctionExpression')) {
-        // self accepting, rewrite to inject itself
-        // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
+
+      if (node.callee.property.name === 'accept') {
+        const args = node.arguments
+        // inject the imports's own path so it becomes
+        // hot.accept('/foo.js', ['./bar.js'], () => {})
         s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
-        ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
-      } else {
-        console.error(
-          `[vite] HMR syntax error in ${importer}: ` +
-            `hot.accept() expects a dep string, an array of deps, or a callback.`
-        )
+        // register the accepted deps
+        if (args[0].type === 'ArrayExpression') {
+          args[0].elements.forEach((e) => {
+            if (e && e.type !== 'StringLiteral') {
+              console.error(
+                `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
+              )
+            } else if (e) {
+              registerDep(e)
+            }
+          })
+        } else if (args[0].type === 'StringLiteral') {
+          registerDep(args[0])
+        } else if (args[0].type.endsWith('FunctionExpression')) {
+          // self accepting, rewrite to inject itself
+          // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
+          s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+          ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
+        } else {
+          console.error(
+            `[vite] HMR syntax error in ${importer}: ` +
+              `hot.accept() expects a dep string, an array of deps, or a callback.`
+          )
+        }
+      }
+
+      if (node.callee.property.name === 'dispose') {
+        // inject the imports's own path to dispose calls as well
+        s.appendLeft(node.arguments[0].start!, JSON.stringify(importer) + ', ')
       }
     }
   }
@@ -408,7 +418,7 @@ export function rewriteFileWithHMR(
   const checkStatements = (node: Statement, isTopLevel = false) => {
     if (node.type === 'ExpressionStatement') {
       // top level hot.accept() call
-      checkAcceptCall(node.expression, isTopLevel)
+      checkHotCall(node.expression, isTopLevel)
       // __DEV__ && hot.accept()
       if (
         node.expression.type === 'LogicalExpression' &&
@@ -416,7 +426,7 @@ export function rewriteFileWithHMR(
         node.expression.left.type === 'Identifier' &&
         node.expression.left.name === '__DEV__'
       ) {
-        checkAcceptCall(node.expression.right)
+        checkHotCall(node.expression.right)
       }
     }
     // if (__DEV__) ...
@@ -429,7 +439,7 @@ export function rewriteFileWithHMR(
         node.consequent.body.forEach((s) => checkStatements(s))
       }
       if (node.consequent.type === 'ExpressionStatement') {
-        checkAcceptCall(node.consequent.expression)
+        checkHotCall(node.consequent.expression)
       }
     }
   }
