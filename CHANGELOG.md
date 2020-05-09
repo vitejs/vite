@@ -1,3 +1,21 @@
+## [0.13.2](https://github.com/vuejs/vite/compare/v0.13.1...v0.13.2) (2020-05-09)
+
+
+### Bug Fixes
+
+* --open throwing error ([#105](https://github.com/vuejs/vite/issues/105)) ([6ee0168](https://github.com/vuejs/vite/commit/6ee016892d7b375cc8dd8cbc4dc10c03325d4dc8))
+* handle lowercase doctypes (close [#107](https://github.com/vuejs/vite/issues/107)) ([32cf37f](https://github.com/vuejs/vite/commit/32cf37fd5125be7dd3b65de2024e89685d7cbc8e))
+* single quote 'src' attribute for <script> ([#106](https://github.com/vuejs/vite/issues/106)) ([9336dac](https://github.com/vuejs/vite/commit/9336dacaeaae37bd2adf36ab1816c063eddbd4eb))
+* **cva:** fix package.json files include for template-* ([#100](https://github.com/vuejs/vite/issues/100)) ([122851e](https://github.com/vuejs/vite/commit/122851ee802c8e6374be42e704883e6ed91b0b02))
+
+
+### Features
+
+* improve cli output looks like vue-cli ([#98](https://github.com/vuejs/vite/issues/98)) ([e00bf3a](https://github.com/vuejs/vite/commit/e00bf3a7fb029416c394e2606a3ce4ed8f3079b1))
+* **cva:** support multiple templates ([decbfc2](https://github.com/vuejs/vite/commit/decbfc2ee9e0c88c9e94a8f4f39032cdf5b5d6c5))
+
+
+
 ## [0.13.1](https://github.com/vuejs/vite/compare/v0.13.0...v0.13.1) (2020-05-09)
 
 
