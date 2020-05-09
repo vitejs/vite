@@ -13,6 +13,7 @@ import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
 
 export { Resolver }
+export { rewriteImports } from './serverPluginModuleRewrite'
 
 export type Plugin = (ctx: PluginContext) => void
 
