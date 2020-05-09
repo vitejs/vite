@@ -5,7 +5,8 @@
   "author": "Evan You",
   "main": "index.js",
   "bin": {
-    "create-vite-app": "index.js"
+    "create-vite-app": "index.js",
+    "cva": "index.js"
   },
   "files": [
     "index.js",
@@ -21,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/vuejs/vite/issues"
   },
-  "homepage": "https://github.com/vuejs/vite/tree/master/#readme"
+  "homepage": "https://github.com/vuejs/vite/tree/master/#readme",
+  "dependencies": {
+    "minimist": "^1.2.5"
+  }
 }
