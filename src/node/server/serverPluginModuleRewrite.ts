@@ -120,7 +120,7 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
   })
 }
 
-function rewriteImports(
+export function rewriteImports(
   source: string,
   importer: string,
   resolver: InternalResolver,
