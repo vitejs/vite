@@ -27,6 +27,7 @@ Options:
   --sourcemap                [boolean] output source maps for build (default: false)
   --minify                   [boolean | 'terser' | 'esbuild'] disable minification, or specify
                                        minifier to use. (default: 'terser')
+  --ssr                      [boolean] build for server-side rendering
   --jsx-factory              [string]  (default: React.createElement)
   --jsx-fragment             [string]  (default: React.Fragment)
 `)

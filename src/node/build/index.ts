@@ -55,6 +55,10 @@ export interface BuildOptions {
     factory?: string
     fragment?: string
   }
+  /**
+   * Build for server-side rendering
+   */
+  ssr?: boolean
 
   // The following are API only and not documented in the CLI. -----------------
 
@@ -127,6 +131,11 @@ const writeColors = {
  * Returns a Promise containing the build result.
  */
 export async function build(options: BuildOptions = {}): Promise<BuildResult> {
+  if (options.ssr) {
+    delete options.ssr
+    return ssrBuild(options)
+  }
+
   process.env.NODE_ENV = 'production'
   const start = Date.now()
 
@@ -149,7 +158,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     sourcemap = false
   } = options
 
-  const indexPath = emitIndex ? path.resolve(root, 'index.html') : null
+  const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
   const cssFileName = 'style.css'
@@ -244,7 +253,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     ...rollupOutputOptions
   })
 
-  const indexHtml = renderIndex(root, cssFileName, output)
+  const indexHtml = emitIndex ? renderIndex(output, cssFileName) : ''
 
   if (write) {
     const cwd = process.cwd()
@@ -307,9 +316,11 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
 
     // copy over /public if it exists
-    const publicDir = path.resolve(root, 'public')
-    if (await fs.pathExists(publicDir)) {
-      await fs.copy(publicDir, path.resolve(outDir, 'public'))
+    if (emitAssets) {
+      const publicDir = path.resolve(root, 'public')
+      if (await fs.pathExists(publicDir)) {
+        await fs.copy(publicDir, path.resolve(outDir, 'public'))
+      }
     }
   }
 
@@ -344,6 +355,8 @@ export async function ssrBuild(
   } = options
 
   return build({
+    outDir: path.resolve(options.root || process.cwd(), 'dist-ssr'),
+    assetsDir: '.',
     ...options,
     rollupPluginVueOptions: {
       ...rollupPluginVueOptions,

@@ -73,9 +73,8 @@ export const createBuildHtmlPlugin = async (
   }
 
   const renderIndex = (
-    root: string,
-    cssFileName: string,
-    bundleOutput: RollupOutput['output']
+    bundleOutput: RollupOutput['output'],
+    cssFileName: string
   ) => {
     // inject css link
     processedHtml = injectCSS(processedHtml, cssFileName)
