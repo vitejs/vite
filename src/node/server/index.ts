@@ -14,7 +14,6 @@ import { esbuildPlugin } from './serverPluginEsbuild'
 
 export { Resolver }
 export { rewriteImports } from './serverPluginModuleRewrite'
-export { compileSFCStyle } from './serverPluginVue'
 
 export type Plugin = (ctx: PluginContext) => void
 
