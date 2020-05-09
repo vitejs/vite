@@ -114,6 +114,8 @@ const compileHtml = async (
   inlineLimit: number,
   resolver: InternalResolver
 ) => {
+  // @vue/compiler-core doesn't like lowercase doctypes
+  html = html.replace(/<!doctype\s/i, '<!DOCTYPE ')
   const ast = parse(html)
 
   let js = ''
