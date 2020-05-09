@@ -1,7 +1,7 @@
 import http, { Server } from 'http'
 import Koa from 'koa'
 import chokidar from 'chokidar'
-import { Resolver, createResolver, InternalResolver } from '../resolver'
+import { createResolver, InternalResolver } from '../resolver'
 import { moduleRewritePlugin } from './serverPluginModuleRewrite'
 import { moduleResolvePlugin } from './serverPluginModuleResolve'
 import { vuePlugin } from './serverPluginVue'
@@ -11,13 +11,13 @@ import { jsonPlugin } from './serverPluginJson'
 import { cssPlugin } from './serverPluginCss'
 import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
+import { ServerConfig } from '../config'
 
-export { Resolver }
 export { rewriteImports } from './serverPluginModuleRewrite'
 
-export type Plugin = (ctx: PluginContext) => void
+export type ServerPlugin = (ctx: ServerPluginContext) => void
 
-export interface PluginContext {
+export interface ServerPluginContext {
   root: string
   app: Koa
   server: Server
@@ -29,17 +29,7 @@ export interface PluginContext {
   }
 }
 
-export interface ServerConfig {
-  root?: string
-  plugins?: Plugin[]
-  resolvers?: Resolver[]
-  jsx?: {
-    factory?: string
-    fragment?: string
-  }
-}
-
-const internalPlugins: Plugin[] = [
+const internalPlugins: ServerPlugin[] = [
   hmrPlugin,
   moduleRewritePlugin,
   moduleResolvePlugin,

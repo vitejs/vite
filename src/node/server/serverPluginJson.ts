@@ -1,7 +1,7 @@
-import { Plugin } from '.'
+import { ServerPlugin } from '.'
 import { readBody, isImportRequest } from '../utils'
 
-export const jsonPlugin: Plugin = ({ app }) => {
+export const jsonPlugin: ServerPlugin = ({ app }) => {
   app.use(async (ctx, next) => {
     await next()
     // handle .json imports

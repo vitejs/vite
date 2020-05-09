@@ -1,8 +1,8 @@
-import { Plugin } from '.'
+import { ServerPlugin } from '.'
 import { tjsxRE, transform } from '../esbuildService'
 import { readBody, genSourceMapString } from '../utils'
 
-export const esbuildPlugin: Plugin = ({ app, jsxConfig }) => {
+export const esbuildPlugin: ServerPlugin = ({ app, jsxConfig }) => {
   app.use(async (ctx, next) => {
     await next()
     if (ctx.body && tjsxRE.test(ctx.path)) {

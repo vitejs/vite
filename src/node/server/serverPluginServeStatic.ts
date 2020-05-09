@@ -1,9 +1,9 @@
-import { Plugin } from '.'
+import { ServerPlugin } from '.'
 
 const send = require('koa-send')
 const debug = require('debug')('vite:history')
 
-export const serveStaticPlugin: Plugin = ({ root, app, resolver }) => {
+export const serveStaticPlugin: ServerPlugin = ({ root, app, resolver }) => {
   app.use((ctx, next) => {
     // short circuit requests that have already been explicitly handled
     if (ctx.body || ctx.status !== 404) {

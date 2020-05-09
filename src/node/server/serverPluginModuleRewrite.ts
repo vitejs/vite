@@ -1,4 +1,4 @@
-import { Plugin } from '.'
+import { ServerPlugin } from '.'
 import path from 'path'
 import slash from 'slash'
 import LRUCache from 'lru-cache'
@@ -32,7 +32,11 @@ const rewriteCache = new LRUCache({ max: 1024 })
 //   `hot.accept('./dep.js', cb)` -> `hot.accept('/importer.js', './dep.js', cb)`
 // - Also tracks importer/importee relationship graph during the rewrite.
 //   The graph is used by the HMR plugin to perform analysis on file change.
-export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
+export const moduleRewritePlugin: ServerPlugin = ({
+  app,
+  watcher,
+  resolver
+}) => {
   // bust module rewrite cache on file change
   watcher.on('change', (file) => {
     const publicPath = resolver.fileToRequest(file)

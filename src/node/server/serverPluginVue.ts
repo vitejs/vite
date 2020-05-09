@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import path from 'path'
-import { Plugin } from '.'
+import { ServerPlugin } from '.'
 import {
   SFCBlock,
   SFCDescriptor,
@@ -52,7 +52,7 @@ const etagCacheCheck = (ctx: Context) => {
   ctx.status = ctx.etag === ctx.get('If-None-Match') ? 304 : 200
 }
 
-export const vuePlugin: Plugin = ({ root, app, resolver, watcher }) => {
+export const vuePlugin: ServerPlugin = ({ root, app, resolver, watcher }) => {
   app.use(async (ctx, next) => {
     if (!ctx.path.endsWith('.vue') && !ctx.vue) {
       return next()

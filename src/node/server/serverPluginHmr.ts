@@ -28,7 +28,7 @@
 //    so that on the client, the `hot.accept` call would have registered for
 //    updates using the full paths of the dependencies.
 
-import { Plugin } from '.'
+import { ServerPlugin } from '.'
 import WebSocket from 'ws'
 import path from 'path'
 import chalk from 'chalk'
@@ -80,7 +80,13 @@ interface HMRPayload {
   customData?: any
 }
 
-export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
+export const hmrPlugin: ServerPlugin = ({
+  root,
+  app,
+  server,
+  watcher,
+  resolver
+}) => {
   app.use(async (ctx, next) => {
     if (ctx.path !== hmrClientPublicPath) {
       return next()
