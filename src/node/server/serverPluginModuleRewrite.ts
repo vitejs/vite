@@ -81,7 +81,9 @@ export const moduleRewritePlugin: Plugin = ({ app, watcher, resolver }) => {
             const srcAttr = openTag.match(srcRE)
             if (srcAttr) {
               // register script as a import dep for hmr
-              const importee = cleanUrl(slash(path.resolve('/', srcAttr[1])))
+              const importee = cleanUrl(
+                slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
+              )
               debugHmr(`        ${importer} imports ${importee}`)
               ensureMapEntry(importerMap, importee).add(importer)
             }
