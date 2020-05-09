@@ -23,10 +23,7 @@ export interface ServerPluginContext {
   server: Server
   watcher: HMRWatcher
   resolver: InternalResolver
-  jsxConfig: {
-    jsxFactory: string | undefined
-    jsxFragment: string | undefined
-  }
+  config: ServerConfig
 }
 
 const internalPlugins: ServerPlugin[] = [
@@ -42,12 +39,7 @@ const internalPlugins: ServerPlugin[] = [
 ]
 
 export function createServer(config: ServerConfig = {}): Server {
-  const {
-    root = process.cwd(),
-    plugins = [],
-    resolvers = [],
-    jsx = {}
-  } = config
+  const { root = process.cwd(), plugins = [], resolvers = [] } = config
   const app = new Koa()
   const server = http.createServer(app.callback())
   const watcher = chokidar.watch(root, {
@@ -60,10 +52,7 @@ export function createServer(config: ServerConfig = {}): Server {
     server,
     watcher,
     resolver,
-    jsxConfig: {
-      jsxFactory: jsx.factory,
-      jsxFragment: jsx.fragment
-    }
+    config
   }
 
   ;[...plugins, ...internalPlugins].forEach((m) => m(context))

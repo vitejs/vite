@@ -56,6 +56,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     assetsDir = 'assets',
     assetsInlineLimit = 4096,
     resolvers = [],
+    vueCompilerOptions,
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
@@ -102,13 +103,13 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       await createEsbuildPlugin(minify === 'esbuild', jsx),
       // vue
       require('rollup-plugin-vue')({
+        ...rollupPluginVueOptions,
         transformAssetUrls: {
           includeAbsolute: true
         },
         preprocessStyles: true,
         preprocessCustomRequire: (id: string) => require(resolve(root, id)),
-        // TODO proxy cssModules config
-        ...rollupPluginVueOptions
+        compilerOptions: vueCompilerOptions
       }),
       require('@rollup/plugin-json')(),
       require('@rollup/plugin-node-resolve')({

@@ -7,7 +7,8 @@ import {
   SFCTemplateBlock,
   SFCStyleBlock,
   SFCStyleCompileResults,
-  generateCodeFrame
+  generateCodeFrame,
+  CompilerOptions
 } from '@vue/compiler-sfc'
 import { resolveCompiler } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -52,7 +53,13 @@ const etagCacheCheck = (ctx: Context) => {
   ctx.status = ctx.etag === ctx.get('If-None-Match') ? 304 : 200
 }
 
-export const vuePlugin: ServerPlugin = ({ root, app, resolver, watcher }) => {
+export const vuePlugin: ServerPlugin = ({
+  root,
+  app,
+  resolver,
+  watcher,
+  config
+}) => {
   app.use(async (ctx, next) => {
     if (!ctx.path.endsWith('.vue') && !ctx.vue) {
       return next()
@@ -90,7 +97,8 @@ export const vuePlugin: ServerPlugin = ({ root, app, resolver, watcher }) => {
         templateBlock,
         filename,
         publicPath,
-        descriptor.styles.some((s) => s.scoped)
+        descriptor.styles.some((s) => s.scoped),
+        config.vueCompilerOptions
       )
       return etagCacheCheck(ctx)
     }
@@ -287,7 +295,8 @@ function compileSFCTemplate(
   template: SFCTemplateBlock,
   filename: string,
   publicPath: string,
-  scoped: boolean
+  scoped: boolean,
+  userOptions: CompilerOptions | undefined
 ): string {
   let cached = vueCache.get(filename)
   if (cached && cached.template) {
@@ -304,6 +313,7 @@ function compileSFCTemplate(
       base: path.posix.dirname(publicPath)
     },
     compilerOptions: {
+      ...userOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: '/@modules/vue'
     },

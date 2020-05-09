@@ -1,10 +1,15 @@
+import path from 'path'
+import fs from 'fs-extra'
+import chalk from 'chalk'
+import { createEsbuildPlugin } from './build/buildPluginEsbuild'
 import { ServerPlugin } from './server'
 import { Resolver } from './resolver'
-import {
+import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
+import { CompilerOptions } from '@vue/compiler-sfc'
+import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions
 } from 'rollup'
-import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
 
 /**
  * Options shared between server and build.
@@ -29,6 +34,10 @@ export interface SharedConfig {
    * and optionally map module ids to public path requests.
    */
   resolvers?: Resolver[]
+  /**
+   * Options to pass to @vue/compiler-dom
+   */
+  vueCompilerOptions?: CompilerOptions
   /**
    * Configure what to use for jsx factory and fragment.
    * @default
@@ -127,6 +136,7 @@ export interface BuildConfig extends SharedConfig {
 }
 
 export interface UserConfig extends BuildConfig {
+  configureServer?: ServerPlugin
   plugins?: Plugin[]
 }
 
@@ -144,19 +154,16 @@ export interface Transform {
 }
 
 export interface Plugin
-  extends Pick<SharedConfig, 'alias' | 'transforms' | 'resolvers'>,
-    Pick<
-      BuildConfig,
-      'rollupInputOptions' | 'rollupOutputOptions' | 'rollupPluginVueOptions'
-    > {
-  configureServer?: ServerPlugin
-}
-
-import path from 'path'
-import fs from 'fs-extra'
-import chalk from 'chalk'
-import type Rollup from 'rollup'
-import { createEsbuildPlugin } from './build/buildPluginEsbuild'
+  extends Pick<
+    UserConfig,
+    | 'alias'
+    | 'transforms'
+    | 'resolvers'
+    | 'configureServer'
+    | 'vueCompilerOptions'
+    | 'rollupInputOptions'
+    | 'rollupOutputOptions'
+  > {}
 
 export async function resolveConfig(
   configPath: string | undefined
@@ -168,11 +175,12 @@ export async function resolveConfig(
   )
   try {
     if (await fs.pathExists(resolvedPath)) {
+      let config: UserConfig | undefined
       const isTs = path.extname(resolvedPath) === '.ts'
       // 1. try loading the config file directly
       if (!isTs) {
         try {
-          return require(resolvedPath)
+          config = require(resolvedPath)
         } catch (e) {
           if (
             !/Cannot use import statement|Unexpected token 'export'/.test(
@@ -184,30 +192,40 @@ export async function resolveConfig(
         }
       }
 
-      // 2. if we reach here, the file is ts or using es import syntax.
-      // transpile es import syntax to require syntax using rollup.
-      const rollup = require('rollup') as typeof Rollup
-      const esbuilPlugin = await createEsbuildPlugin(false, {})
-      const bundle = await rollup.rollup({
-        external: (id: string) =>
-          (id[0] !== '.' && !path.isAbsolute(id)) ||
-          id.slice(-5, id.length) === '.json',
-        input: resolvedPath,
-        treeshake: false,
-        plugins: [esbuilPlugin]
-      })
+      if (!config) {
+        // 2. if we reach here, the file is ts or using es import syntax.
+        // transpile es import syntax to require syntax using rollup.
+        const rollup = require('rollup') as typeof Rollup
+        const esbuilPlugin = await createEsbuildPlugin(false, {})
+        const bundle = await rollup.rollup({
+          external: (id: string) =>
+            (id[0] !== '.' && !path.isAbsolute(id)) ||
+            id.slice(-5, id.length) === '.json',
+          input: resolvedPath,
+          treeshake: false,
+          plugins: [esbuilPlugin]
+        })
 
-      const {
-        output: [{ code }]
-      } = await bundle.generate({
-        exports: 'named',
-        format: 'cjs'
-      })
+        const {
+          output: [{ code }]
+        } = await bundle.generate({
+          exports: 'named',
+          format: 'cjs'
+        })
 
-      const config = await loadConfigFromBundledFile(resolvedPath, code)
+        config = await loadConfigFromBundledFile(resolvedPath, code)
+      }
+
       // normalize config root to absolute
       if (config.root && !path.isAbsolute(config.root)) {
         config.root = path.resolve(path.dirname(resolvedPath), config.root)
+      }
+
+      // resolve plugins
+      if (config.plugins) {
+        for (const plugin of config.plugins) {
+          config = resolvePlugin(config, plugin)
+        }
       }
 
       require('debug')('vite:config')(
@@ -232,7 +250,7 @@ interface NodeModuleWithCompile extends NodeModule {
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string
-) {
+): Promise<UserConfig> {
   const extension = path.extname(fileName)
   const defaultLoader = require.extensions[extension]!
   require.extensions[extension] = (module: NodeModule, filename: string) => {
@@ -247,4 +265,35 @@ async function loadConfigFromBundledFile(
   const config = raw.__esModule ? raw.default : raw
   require.extensions[extension] = defaultLoader
   return config
+}
+
+function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
+  return {
+    alias: {
+      ...plugin.alias,
+      ...config.alias
+    },
+    transforms: [...(config.transforms || []), ...(plugin.transforms || [])],
+    resolvers: [...(config.resolvers || []), ...(plugin.resolvers || [])],
+    configureServer: (ctx) => {
+      if (config.configureServer) {
+        config.configureServer(ctx)
+      }
+      if (plugin.configureServer) {
+        plugin.configureServer(ctx)
+      }
+    },
+    vueCompilerOptions: {
+      ...config.vueCompilerOptions,
+      ...plugin.vueCompilerOptions
+    },
+    rollupInputOptions: {
+      ...config.rollupInputOptions,
+      ...plugin.rollupInputOptions
+    },
+    rollupOutputOptions: {
+      ...config.rollupOutputOptions,
+      ...plugin.rollupOutputOptions
+    }
+  }
 }
