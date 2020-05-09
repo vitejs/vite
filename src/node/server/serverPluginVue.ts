@@ -340,7 +340,7 @@ function compileSFCTemplate(
   return finalCode
 }
 
-async function compileSFCStyle(
+export async function compileSFCStyle(
   root: string,
   style: SFCStyleBlock,
   index: number,
