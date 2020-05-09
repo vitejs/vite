@@ -31,7 +31,6 @@
 import { Plugin } from '.'
 import WebSocket from 'ws'
 import path from 'path'
-import slash from 'slash'
 import chalk from 'chalk'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
@@ -237,12 +236,12 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
     const importers = importerMap.get(publicPath)
     if (importers) {
       const vueImporters = new Set<string>()
-      const jsHotImporters = new Set<string>()
+      const jsImporters = new Set<string>()
       const hasDeadEnd = walkImportChain(
         publicPath,
         importers,
         vueImporters,
-        jsHotImporters
+        jsImporters
       )
 
       if (hasDeadEnd) {
@@ -258,7 +257,7 @@ export const hmrPlugin: Plugin = ({ root, app, server, watcher, resolver }) => {
             timestamp
           })
         })
-        jsHotImporters.forEach((jsImporter) => {
+        jsImporters.forEach((jsImporter) => {
           send({
             type: 'js-update',
             path: jsImporter,
@@ -353,13 +352,10 @@ export function rewriteFileWithHMR(
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
-    const depPublicPath = slash(
-      path.isAbsolute(e.value)
-        ? e.value
-        : resolveImport({ importer, id: e.value, resolver })
-    )
+    const depPublicPath = resolveImport(importer, e.value, resolver)
     deps.add(depPublicPath)
     debugHmr(`        ${importer} accepts ${depPublicPath}`)
+    ensureMapEntry(importerMap, depPublicPath).add(importer)
     s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))
   }
 

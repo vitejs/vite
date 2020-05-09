@@ -181,7 +181,7 @@ function rewriteImports(
               hasReplaced = true
             }
           } else {
-            resolved = resolveImport({ importer, id, resolver, timestamp })
+            resolved = resolveImport(importer, id, resolver, timestamp)
           }
 
           if (resolved !== id) {
@@ -196,7 +196,11 @@ function rewriteImports(
 
           // save the import chain for hmr analysis
           const importee = cleanUrl(resolved)
-          if (importee !== importer) {
+          if (
+            importee !== importer &&
+            // no need to track hmr client or module dependencies
+            importee !== hmrClientPublicPath
+          ) {
             currentImportees.add(importee)
             debugHmr(`        ${importer} imports ${importee}`)
             ensureMapEntry(importerMap, importee).add(importer)

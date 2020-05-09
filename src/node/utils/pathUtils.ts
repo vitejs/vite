@@ -53,19 +53,14 @@ export const isImportRequest = (ctx: Context): boolean => {
 const moduleRE = /^[^\/\.]/
 const fileExtensionRE = /\.\w+$/
 
-export const resolveImport = ({
-  importer,
-  id,
-  resolver,
-  timestamp
-}: {
-  importer: string
-  id: string
-  resolver: InternalResolver
+export const resolveImport = (
+  importer: string,
+  id: string,
+  resolver: InternalResolver,
   timestamp?: string
-}): string => {
+): string => {
   if (moduleRE.test(id)) {
-    return resolver ? resolver.idToRequest(id) || `/@modules/${id}` : id
+    return resolver.idToRequest(id) || `/@modules/${id}`
   } else {
     let { pathname, query } = resolveRelativeRequest(importer, id)
     // append an extension to extension-less imports
