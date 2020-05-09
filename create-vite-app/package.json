@@ -10,7 +10,7 @@
   },
   "files": [
     "index.js",
-    "template"
+    "template-*"
   ],
   "scripts": {
     "prepublishOnly": "node updateVersions.js"
