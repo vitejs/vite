@@ -104,13 +104,24 @@ function runServe(
   })
 
   server.listen(port, () => {
-    console.log(`Dev server running at:`)
+    console.log()
+    console.log(`  Dev server running at:`)
     const interfaces = os.networkInterfaces()
     Object.keys(interfaces).forEach((key) => {
       ;(interfaces[key] || [])
         .filter((details) => details.family === 'IPv4')
-        .map((detail) => detail.address.replace('127.0.0.1', 'localhost'))
-        .forEach((ip) => console.log(`  > http://${ip}:${port}`))
+        .map((detail) => {
+          return {
+            type: detail.address.includes('127.0.0.1')
+              ? 'Local:   '
+              : 'Network: ',
+            ip: detail.address.replace('127.0.0.1', 'localhost')
+          }
+        })
+        .forEach((address: { type?: String; ip?: String }) => {
+          const url = `http://${address.ip}:${chalk.bold(port)}/`
+          console.log(`  > ${address.type} ${chalk.cyan(url)}`)
+        })
     })
     console.log()
     require('debug')('vite:server')(`server ready in ${Date.now() - start}ms.`)
