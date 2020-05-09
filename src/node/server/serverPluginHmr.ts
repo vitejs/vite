@@ -36,11 +36,12 @@ import chalk from 'chalk'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache, srcImportMap } from './serverPluginVue'
-import { cachedRead } from '../utils'
+import { cachedRead, resolveImport } from '../utils'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '@babel/parser'
 import { StringLiteral, Statement, Expression } from '@babel/types'
+import { InternalResolver } from '../resolver'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -335,6 +336,7 @@ export function ensureMapEntry(map: HMRStateMap, key: string): Set<string> {
 export function rewriteFileWithHMR(
   source: string,
   importer: string,
+  resolver: InternalResolver,
   s: MagicString
 ) {
   const ast = parse(source, {
@@ -351,7 +353,11 @@ export function rewriteFileWithHMR(
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
-    const depPublicPath = slash(path.resolve(path.dirname(importer), e.value))
+    const depPublicPath = slash(
+      path.isAbsolute(e.value)
+        ? e.value
+        : resolveImport({ importer, id: e.value, resolver })
+    )
     deps.add(depPublicPath)
     debugHmr(`        ${importer} accepts ${depPublicPath}`)
     s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))

@@ -1,6 +1,7 @@
 import { Context } from 'koa'
 import path from 'path'
 import slash from 'slash'
+import { InternalResolver } from '../resolver'
 
 export const queryRE = /\?.*$/
 export const hashRE = /\#.*$/
@@ -47,4 +48,41 @@ export const isImportRequest = (ctx: Context): boolean => {
   // strip HMR timestamps
   const referer = ctx.get('referer').replace(timeStampRE, '')
   return jsSrcFileRE.test(referer)
+}
+
+const moduleRE = /^[^\/\.]/
+const fileExtensionRE = /\.\w+$/
+
+export const resolveImport = ({
+  importer,
+  id,
+  resolver,
+  timestamp
+}: {
+  importer: string
+  id: string
+  resolver: InternalResolver
+  timestamp?: string
+}): string => {
+  if (moduleRE.test(id)) {
+    return resolver ? resolver.idToRequest(id) || `/@modules/${id}` : id
+  } else {
+    let { pathname, query } = resolveRelativeRequest(importer, id)
+    // append an extension to extension-less imports
+    if (!fileExtensionRE.test(pathname)) {
+      const file = resolver.requestToFile(pathname)
+      const indexMatch = file.match(/\/index\.\w+$/)
+      if (indexMatch) {
+        pathname = pathname.replace(/\/(index)?$/, '') + indexMatch[0]
+      } else {
+        pathname += path.extname(file)
+      }
+    }
+    // force re-fetch all imports by appending timestamp
+    // if this is a hmr refresh request
+    if (timestamp) {
+      query += `${query ? `&` : `?`}t=${timestamp}`
+    }
+    return pathname + query
+  }
 }
