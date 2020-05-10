@@ -1,7 +1,7 @@
 import http, { Server } from 'http'
 import Koa from 'koa'
 import chokidar from 'chokidar'
-import { Resolver, createResolver, InternalResolver } from '../resolver'
+import { createResolver, InternalResolver } from '../resolver'
 import { moduleRewritePlugin } from './serverPluginModuleRewrite'
 import { moduleResolvePlugin } from './serverPluginModuleResolve'
 import { vuePlugin } from './serverPluginVue'
@@ -11,34 +11,22 @@ import { jsonPlugin } from './serverPluginJson'
 import { cssPlugin } from './serverPluginCss'
 import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
+import { ServerConfig } from '../config'
 
-export { Resolver }
+export { rewriteImports } from './serverPluginModuleRewrite'
 
-export type Plugin = (ctx: PluginContext) => void
+export type ServerPlugin = (ctx: ServerPluginContext) => void
 
-export interface PluginContext {
+export interface ServerPluginContext {
   root: string
   app: Koa
   server: Server
   watcher: HMRWatcher
   resolver: InternalResolver
-  jsxConfig: {
-    jsxFactory: string | undefined
-    jsxFragment: string | undefined
-  }
+  config: ServerConfig
 }
 
-export interface ServerConfig {
-  root?: string
-  plugins?: Plugin[]
-  resolvers?: Resolver[]
-  jsx?: {
-    factory?: string
-    fragment?: string
-  }
-}
-
-const internalPlugins: Plugin[] = [
+const internalPlugins: ServerPlugin[] = [
   hmrPlugin,
   moduleRewritePlugin,
   moduleResolvePlugin,
@@ -51,12 +39,7 @@ const internalPlugins: Plugin[] = [
 ]
 
 export function createServer(config: ServerConfig = {}): Server {
-  const {
-    root = process.cwd(),
-    plugins = [],
-    resolvers = [],
-    jsx = {}
-  } = config
+  const { root = process.cwd(), plugins = [], resolvers = [] } = config
   const app = new Koa()
   const server = http.createServer(app.callback())
   const watcher = chokidar.watch(root, {
@@ -69,10 +52,7 @@ export function createServer(config: ServerConfig = {}): Server {
     server,
     watcher,
     resolver,
-    jsxConfig: {
-      jsxFactory: jsx.factory,
-      jsxFragment: jsx.fragment
-    }
+    config
   }
 
   ;[...plugins, ...internalPlugins].forEach((m) => m(context))

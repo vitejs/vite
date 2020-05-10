@@ -1,16 +1,9 @@
 import path from 'path'
 import fs from 'fs-extra'
-import {
-  rollup as Rollup,
-  InputOptions,
-  OutputOptions,
-  RollupOutput,
-  ExternalOption
-} from 'rollup'
-import resolve from 'resolve-from'
 import chalk from 'chalk'
-import { Resolver, createResolver, supportedExts } from '../resolver'
-import { Options } from 'rollup-plugin-vue'
+import resolve from 'resolve-from'
+import { rollup as Rollup, RollupOutput, ExternalOption } from 'rollup'
+import { createResolver, supportedExts } from '../resolver'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
@@ -18,88 +11,7 @@ import { createBuildAssetPlugin } from './buildPluginAsset'
 import { createEsbuildPlugin } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
 import { stopService } from '../esbuildService'
-
-export interface BuildOptions {
-  /**
-   * Base public path when served in production.
-   * Defaults to /
-   */
-  base?: string
-  /**
-   * Defaults to `dist`
-   */
-  outDir?: string
-  /**
-   * Nest js / css / static assets under a directory under `outDir`.
-   * Defaults to `assets`
-   */
-  assetsDir?: string
-  /**
-   * Static asset files smaller than this number (in bytes) will be inlined as
-   * base64 strings.
-   * Default: 4096 (4kb)
-   */
-  assetsInlineLimit?: number
-  /**
-   * Whether to generate sourcemap
-   */
-  sourcemap?: boolean
-  /**
-   * Whether to minify output
-   */
-  minify?: boolean | 'terser' | 'esbuild'
-  /**
-   * Configure what to use for jsx factory and fragment
-   */
-  jsx?: {
-    factory?: string
-    fragment?: string
-  }
-
-  // The following are API only and not documented in the CLI. -----------------
-
-  /**
-   * Project root path on file system.
-   * Defaults to `process.cwd()`
-   */
-  root?: string
-  /**
-   * Resolvers to map dev server public path requests to/from file system paths,
-   * and optionally map module ids to public path requests.
-   */
-  resolvers?: Resolver[]
-  /**
-   * Will be passed to rollup.rollup()
-   * https://rollupjs.org/guide/en/#big-list-of-options
-   */
-  rollupInputOptions?: InputOptions
-  /**
-   * Will be passed to bundle.generate()
-   * https://rollupjs.org/guide/en/#big-list-of-options
-   */
-  rollupOutputOptions?: OutputOptions
-  /**
-   * Will be passed to rollup-plugin-vue
-   * https://github.com/vuejs/rollup-plugin-vue/blob/next/src/index.ts
-   */
-  rollupPluginVueOptions?: Partial<Options>
-  /**
-   * Whether to log asset info to console
-   */
-  silent?: boolean
-  /**
-   * Whether to write bundle to disk
-   */
-  write?: boolean
-  /**
-   * Whether to emit index.html
-   */
-  emitIndex?: boolean
-  /**
-   * Whether to emit assets other than JavaScript
-   */
-  emitAssets?: boolean
-}
+import { BuildConfig } from '../config'
 
 export interface BuildResult {
   html: string
@@ -126,7 +38,14 @@ const writeColors = {
  * Bundles the app for production.
  * Returns a Promise containing the build result.
  */
-export async function build(options: BuildOptions = {}): Promise<BuildResult> {
+export async function build(options: BuildConfig = {}): Promise<BuildResult> {
+  if (options.ssr) {
+    return ssrBuild({
+      ...options,
+      ssr: false // since ssrBuild calls build, this avoids an infinite loop.
+    })
+  }
+
   process.env.NODE_ENV = 'production'
   const start = Date.now()
 
@@ -137,6 +56,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     assetsDir = 'assets',
     assetsInlineLimit = 4096,
     resolvers = [],
+    vueCompilerOptions,
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
@@ -149,7 +69,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     sourcemap = false
   } = options
 
-  const indexPath = emitIndex ? path.resolve(root, 'index.html') : null
+  const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
   const cssFileName = 'style.css'
@@ -183,13 +103,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       await createEsbuildPlugin(minify === 'esbuild', jsx),
       // vue
       require('rollup-plugin-vue')({
+        ...rollupPluginVueOptions,
         transformAssetUrls: {
           includeAbsolute: true
         },
         preprocessStyles: true,
         preprocessCustomRequire: (id: string) => require(resolve(root, id)),
-        // TODO proxy cssModules config
-        ...rollupPluginVueOptions
+        compilerOptions: vueCompilerOptions
       }),
       require('@rollup/plugin-json')(),
       require('@rollup/plugin-node-resolve')({
@@ -244,7 +164,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     ...rollupOutputOptions
   })
 
-  const indexHtml = renderIndex(root, cssFileName, output)
+  const indexHtml = emitIndex ? renderIndex(output, cssFileName) : ''
 
   if (write) {
     const cwd = process.cwd()
@@ -307,9 +227,11 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
 
     // copy over /public if it exists
-    const publicDir = path.resolve(root, 'public')
-    if (await fs.pathExists(publicDir)) {
-      await fs.copy(publicDir, path.resolve(outDir, 'public'))
+    if (emitAssets) {
+      const publicDir = path.resolve(root, 'public')
+      if (await fs.pathExists(publicDir)) {
+        await fs.copy(publicDir, path.resolve(outDir, 'public'))
+      }
     }
   }
 
@@ -335,7 +257,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
  * - Templates are compiled with SSR specific optimizations.
  */
 export async function ssrBuild(
-  options: BuildOptions = {}
+  options: BuildConfig = {}
 ): Promise<BuildResult> {
   const {
     rollupInputOptions,
@@ -344,6 +266,8 @@ export async function ssrBuild(
   } = options
 
   return build({
+    outDir: path.resolve(options.root || process.cwd(), 'dist-ssr'),
+    assetsDir: '.',
     ...options,
     rollupPluginVueOptions: {
       ...rollupPluginVueOptions,

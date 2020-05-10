@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "baseUrl": "../",
+    "paths": {
+      "vite": ["dist/index.d.ts"]
+    }
+  }
+}

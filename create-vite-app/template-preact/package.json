@@ -1,5 +1,5 @@
 {
-  "name": "project",
+  "name": "vite-preact-starter",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite --jsx-factory=h --jsx-fragment=Fragment",

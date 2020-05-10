@@ -1,4 +1,4 @@
-import { Plugin } from '.'
+import { ServerPlugin } from '.'
 import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
 import { Context } from 'koa'
@@ -12,7 +12,7 @@ interface ProcessedEntry {
 
 const processedCSS = new Map<string, ProcessedEntry>()
 
-export const cssPlugin: Plugin = ({ root, app, watcher, resolver }) => {
+export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   app.use(async (ctx, next) => {
     await next()
     // handle .css imports

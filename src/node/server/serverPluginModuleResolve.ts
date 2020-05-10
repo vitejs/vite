@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import resolve from 'resolve-from'
-import { Plugin } from '.'
+import { ServerPlugin } from '.'
 import { resolveVue, cachedRead } from '../utils'
 import slash from 'slash'
 
@@ -21,7 +21,7 @@ const getDebugPath = (root: string, p: string) => {
 }
 
 // plugin for resolving /@modules/:id requests.
-export const moduleResolvePlugin: Plugin = ({ root, app, watcher }) => {
+export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
   app.use(async (ctx, next) => {
     if (!moduleRE.test(ctx.path)) {
       return next()

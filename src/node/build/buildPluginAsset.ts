@@ -48,7 +48,7 @@ export const resolveAsset = async (
 
     let url = slash(path.join(publicBase, assetsDir, resolvedFileName))
     const content = await fs.readFile(id)
-    if (!id.endsWith(`.svg`) && content.length < inlineLimit) {
+    if (!id.endsWith(`.svg`) && content.length < Number(inlineLimit)) {
       url = `data:${mime.lookup(id)};base64,${content.toString('base64')}`
     }
 
