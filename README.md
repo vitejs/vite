@@ -1,6 +1,8 @@
 # vite ⚡
 
-> Make Web Dev Fast Again
+[![vuejs](https://circleci.com/gh/vuejs/vite.svg?style=shield)](https://app.circleci.com/pipelines/github/vuejs/vite) [![Build status](https://ci.appveyor.com/api/projects/status/a6gd7l0s0wysn3qm/branch/master?svg=true)](https://ci.appveyor.com/project/yyx990803/vite/branch/master)
+
+Vite is an opinionated web dev build tool that serves your code via native ES Module imports during dev and bundles it with [Rollup](https://rollupjs.org/) for production.
 
 - Lightning fast cold server start
 - Instant hot module replacement (HMR)
@@ -128,7 +130,11 @@ The above will throw an error by default. Vite detects such bare module imports 
 
 ### TypeScript
 
-Starting with v0.11, Vite supports `<script lang="ts">` in `*.vue` files, and importing `.ts` files out of the box. Note that Vite does **NOT** perform type checking - it assumes type checking is taken care of by your IDE and build process (you can run `tsc --noEmit` in the build script). With that in mind, Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
+Vite supports importing `.ts` files and `<script lang="ts">` in Vue SFCs out of the box.
+
+Vite only performs transpilation on `.ts` files and does **NOT** perform type checking. It assumes type checking is taken care of by your IDE and build process (you can run `tsc --noEmit` in the build script).
+
+Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
 
 Note that because `esbuild` only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports. You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOptions` so that TS will warn you against the features that do not work with isolated transpilation.
 
@@ -150,7 +156,13 @@ All referenced assets, including those using absolute paths, will be copied to t
 
 The exception is the `public` directory - assets placed in this directory will be copied to the dist directory as-is. It can be used to provide assets that are never referenced in your code - e.g. `robots.txt`.
 
-All path references, including absolute paths and those starting with `/public`, should be based on your working directory structure. If you are deploying your project under a nested public path, simply specify `--base=/your/public/path/` and all asset paths will be rewritten accordingly. **You never need to think about the public path during development.**
+All **static** path references, including absolute paths and those starting with `/public`, should be based on your working directory structure. If you are deploying your project under a nested public path, simply specify `--base=/your/public/path/` and all asset paths will be rewritten accordingly.
+
+For dynamic path references, there are two options:
+
+- You can get the resolved public path of a static asset file by importing it from JavaScript. e.g. `import path from './foo.png'` will give you its resolved public path as a string.
+
+- If you need to concatenate paths on the fly, you can use the globally injected `__BASE__` variable with will be the public base path.
 
 ### PostCSS
 
@@ -178,7 +190,29 @@ Note importing CSS / preprocessor files from `.js` files, and HMR from imported 
 
 ### JSX
 
-`.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via `esbuild`.
+`.jsx` and `.tsx` files are also supported. JSX transpilation is also handled via `esbuild`. Note that there is currently no auto-HMR support for any JSX-based usage.
+
+The default JSX configuration works out of the box with Vue 3:
+
+```jsx
+import { createApp } from 'vue'
+
+function App() {
+  return <Child>{() => 'bar'}</Child>
+}
+
+function Child(_, { slots }) {
+  return <div onClick={console.log('hello')}>{slots.default()}</div>
+}
+
+createApp(App).mount('#app')
+```
+
+Currently this is auto-importing a `jsx` compatible function that converts esbuild-produced JSX calls into Vue 3 compatible vnode calls, which is sub-optimal. Vue 3 will eventually provide a custom JSX transform that can take advantage of Vue 3's runtime fast paths.
+
+#### JSX with React/Preact
+
+There are two other presets provided: `react` and `preact`. You can specify the preset by running Vite with `--jsx react` or `--jsx preact`. For the Preact preset, `h` is also auto injected so you don't need to manually import it.
 
 Because React doesn't ship ES module builds, you either need to use [es-react](https://github.com/lukejacksonn/es-react), or pre-bundle React into a ES module with Snowpack. Easiest way to get it running is:
 
@@ -188,26 +222,7 @@ import { React, ReactDOM } from 'https://unpkg.com/es-react'
 ReactDOM.render(<h1>Hello, what!</h1>, document.getElementById('app'))
 ```
 
-JSX can also be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` fro the API. For example, to use [Preact](https://preactjs.com/) with Vite:
-
-```json
-{
-  "scripts": {
-    "dev": "vite --jsx-factory=h"
-  }
-}
-```
-
-```jsx
-import { h, render } from 'preact'
-render(<h1>Hello, what!</h1>, document.getElementById('app'))
-```
-
-#### Notes on JSX Support
-
-- Vue 3's JSX transform is still WIP, so Vite's JSX support currently only targets React/Preact.
-
-- There is no out-of-the-box HMR when using non-Vue frameworks, but userland HMR support is technically possible via the server API.
+If you need a custom JSX pragma, JSX can also be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` from the API. For example, you can run `vite --jsx-factory=h` to use `h` for JSX element creation calls.
 
 ### Production Build
 
@@ -217,11 +232,17 @@ You can run `vite build` to bundle the app.
 
 Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flags in the CLI (see [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts) for full details).
 
-### API
+## Config File
 
-#### Dev Server
+You can create a `vite.config.js` or `vite.config.ts` file in your project. Vite will automatically use it if one is found in the current working directory. You can also explicitly specify a config file via `vite --config my-config.js`.
 
-You can customize the server using the API. The server can accept plugins which have access to the internal Koa app instance. You can then add custom Koa middlewares to add pre-processor support:
+In addition to options mapped from CLI flags, it also supports `alias`, `transforms`, and plugins (which is a subset of the config interface). For now, see [config.ts](https://github.com/vuejs/vite/blob/master/src/node/config.ts) for full details before more thorough documentation is available.
+
+## API
+
+### Dev Server
+
+You can customize the server using the API. The server can accept plugins which have access to the internal Koa app instance:
 
 ```js
 const { createServer } = require('vite')
@@ -263,7 +284,7 @@ createServer({
 }).listen(3000)
 ```
 
-#### Build
+### Build
 
 Check out the full options interface in [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts).
 
