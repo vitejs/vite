@@ -1,11 +1,38 @@
 import path from 'path'
-import { startService, Service, TransformOptions, Message } from 'esbuild'
 import chalk from 'chalk'
-import { generateCodeFrame } from '@vue/compiler-sfc'
+import { startService, Service, TransformOptions, Message } from 'esbuild'
+import { SharedConfig } from './config'
 
 const debug = require('debug')('vite:esbuild')
 
 export const tjsxRE = /\.(tsx?|jsx)$/
+
+export const vueJsxPublicPath = '/vite/jsx'
+
+export const vueJsxFilePath = path.resolve(__dirname, 'vueJsxCompat.js')
+
+const JsxPresets: Record<
+  string,
+  Pick<TransformOptions, 'jsxFactory' | 'jsxFragment'>
+> = {
+  vue: { jsxFactory: 'jsx', jsxFragment: 'Fragment' },
+  preact: { jsxFactory: 'h', jsxFragment: 'Fragment' },
+  react: {} // use esbuild default
+}
+
+export function reoslveJsxOptions(options: SharedConfig['jsx'] = 'vue') {
+  if (typeof options === 'string') {
+    if (!(options in JsxPresets)) {
+      console.error(`[vite] unknown jsx preset: '${options}'.`)
+    }
+    return JsxPresets[options] || {}
+  } else if (options) {
+    return {
+      jsxFactory: options.factory,
+      jsxFragment: options.fragment
+    }
+  }
+}
 
 // lazy start the service
 let _service: Service | undefined
@@ -25,9 +52,10 @@ const sourceMapRE = /\/\/# sourceMappingURL.*/
 
 // transform used in server plugins with a more friendly API
 export const transform = async (
-  code: string,
+  src: string,
   file: string,
-  options: TransformOptions = {}
+  options: TransformOptions = {},
+  jsxOption?: SharedConfig['jsx']
 ) => {
   const service = await ensureService()
   options = {
@@ -36,20 +64,36 @@ export const transform = async (
     sourcemap: true
   }
   try {
-    const result = await service.transform(code, options)
+    const result = await service.transform(src, options)
     if (result.warnings.length) {
       console.error(`[vite] warnings while transforming ${file} with esbuild:`)
-      result.warnings.forEach((m) => printMessage(m, code))
+      result.warnings.forEach((m) => printMessage(m, src))
     }
+
+    let code = (result.js || '').replace(sourceMapRE, '')
+
+    // if transpiling (j|t)sx file, inject the imports for the jsx helper and
+    // Fragment.
+    if (file.endsWith('x')) {
+      if (!jsxOption || jsxOption === 'vue') {
+        code +=
+          `\nimport { jsx } from '${vueJsxPublicPath}'` +
+          `\nimport { Fragment } from 'vue'`
+      }
+      if (jsxOption === 'preact') {
+        code += `\nimport { h, Fragment } from 'preact'`
+      }
+    }
+
     return {
-      code: (result.js || '').replace(sourceMapRE, ''),
+      code,
       map: result.jsSourceMap
     }
   } catch (e) {
     console.error(
       chalk.red(`[vite] error while transforming ${file} with esbuild:`)
     )
-    e.errors.forEach((m: Message) => printMessage(m, code))
+    e.errors.forEach((m: Message) => printMessage(m, src))
     debug(`options used: `, options)
     return {
       code: '',
@@ -69,6 +113,8 @@ function printMessage(m: Message, code: string) {
         .slice(0, line - 1)
         .map((l) => l.length)
         .reduce((total, l) => total + l + 1, 0) + column
-    console.error(generateCodeFrame(code, offset, offset + 1))
+    console.error(
+      require('@vue/compiler-core').generateCodeFrame(code, offset, offset + 1)
+    )
   }
 }

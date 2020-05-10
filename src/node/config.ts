@@ -25,11 +25,11 @@ export interface SharedConfig {
    */
   root?: string
   /**
-   * TODO
+   * Import alias. Can only be exact mapping, does not support wildcard syntax.
    */
   alias?: Record<string, string>
   /**
-   * TODO
+   * Custom file transforms.
    */
   transforms?: Transform[]
   /**
@@ -49,10 +49,14 @@ export interface SharedConfig {
    *   fragment: 'React.Fragment'
    * }
    */
-  jsx?: {
-    factory?: string
-    fragment?: string
-  }
+  jsx?:
+    | 'vue'
+    | 'preact'
+    | 'react'
+    | {
+        factory?: string
+        fragment?: string
+      }
 }
 
 export interface ServerConfig extends SharedConfig {
@@ -165,17 +169,11 @@ export async function resolveConfig(
   if (configPath) {
     resolvedPath = path.resolve(process.cwd(), configPath)
   } else {
-    const jsConfigPath = path.resolve(
-      process.cwd(),
-      configPath || 'vite.config.js'
-    )
+    const jsConfigPath = path.resolve(process.cwd(), 'vite.config.js')
     if (await fs.pathExists(jsConfigPath)) {
       resolvedPath = jsConfigPath
     } else {
-      const tsConfigPath = path.resolve(
-        process.cwd(),
-        configPath || 'vite.config.ts'
-      )
+      const tsConfigPath = path.resolve(process.cwd(), 'vite.config.ts')
       if (await fs.pathExists(tsConfigPath)) {
         isTS = true
         resolvedPath = tsConfigPath

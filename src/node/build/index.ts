@@ -127,7 +127,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       createReplacePlugin(
         {
           'process.env.NODE_ENV': '"production"',
-          __DEV__: 'false'
+          __DEV__: 'false',
+          __BASE__: JSON.stringify(publicBasePath)
         },
         sourcemap
       ),

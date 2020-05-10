@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "jsx": "preserve",
     "baseUrl": "../",
     "paths": {
       "vite": ["dist/index.d.ts"]

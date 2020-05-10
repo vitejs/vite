@@ -1,4 +1,4 @@
-import { h, render } from 'preact'
+import { render } from 'preact'
 import { Test } from './testTsx.tsx'
 
 const Component = () => <div>
@@ -7,5 +7,5 @@ const Component = () => <div>
 </div>
 
 export function renderPreact(el) {
-  render(h(Component), el)
+  render(<Component/>, el)
 }

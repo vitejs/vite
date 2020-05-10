@@ -6,10 +6,7 @@ const config: UserConfig = {
   alias: {
     alias: '/aliased'
   },
-  jsx: {
-    factory: 'h',
-    fragment: 'Fragment'
-  },
+  jsx: 'preact',
   minify: false,
   plugins: [sassPlugin, jsPlugin]
 }

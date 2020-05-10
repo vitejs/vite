@@ -47,11 +47,13 @@ export function createBuildJsTransformPlugin(
     name: 'vite:transforms',
     async transform(code, id) {
       const { path, query } = parseWithQuery(id)
+      let result: string | Promise<string> = code
       for (const t of transforms) {
         if (t.test(path, query)) {
-          return t.transform(code, true)
+          result = await t.transform(result, true)
         }
       }
+      return result
     }
   }
 }

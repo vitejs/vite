@@ -7,7 +7,6 @@ import {
   SFCTemplateBlock,
   SFCStyleBlock,
   SFCStyleCompileResults,
-  generateCodeFrame,
   CompilerOptions
 } from '@vue/compiler-sfc'
 import { resolveCompiler } from '../utils/resolveVue'
@@ -137,6 +136,7 @@ export const vuePlugin: ServerPlugin = ({
       vueCache.del(file)
       const publicPath = cleanUrl(styleImport)
       const index = qs.parse(styleImport.split('?', 2)[1]).index
+      console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
       watcher.send({
         type: 'vue-style-update',
         path: publicPath,
@@ -190,7 +190,8 @@ export async function parseSFC(
   }
 
   const start = Date.now()
-  const { descriptor, errors } = resolveCompiler(root).parse(content, {
+  const { parse, generateCodeFrame } = resolveCompiler(root)
+  const { descriptor, errors } = parse(content, {
     filename,
     sourceMap: true
   })
@@ -305,7 +306,8 @@ function compileSFCTemplate(
   }
 
   const start = Date.now()
-  const { code, map, errors } = resolveCompiler(root).compileTemplate({
+  const { compileTemplate, generateCodeFrame } = resolveCompiler(root)
+  const { code, map, errors } = compileTemplate({
     source: template.content,
     filename,
     inMap: template.map,
@@ -367,8 +369,9 @@ async function compileSFCStyle(
   const start = Date.now()
   const id = hash_sum(publicPath)
   const postcssConfig = await loadPostcssConfig(root)
+  const { compileStyleAsync, generateCodeFrame } = resolveCompiler(root)
 
-  const result = await resolveCompiler(root).compileStyleAsync({
+  const result = await compileStyleAsync({
     source: style.content,
     filename,
     id: `data-v-${id}`,
