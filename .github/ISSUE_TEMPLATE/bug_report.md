@@ -23,18 +23,7 @@ A clear and concise description of what the bug is.
 
 ## Logs
 
-1.  **run `vite` or `vite build` with the `DEBUG` environment variable set to `vite:*`** - e.g. modify the `dev` script in your `package.json` to:
-
-    ``` bash
-    DEBUG=vite:* vite
-    ```
-
-    On windows, you will need [cross-env](https://www.npmjs.com/package/cross-env):
-
-    ``` bash
-    cross-env DEBUG=vite:* vite
-    ```
-
+1. Run `vite` or `vite build` with the `--debug` flag.
 2. Provide the error log here.
 
 ## Reproduction
