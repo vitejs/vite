@@ -7,6 +7,10 @@ assignees: ''
 
 ---
 
+## Before you continue...
+
+If you just upgraded Vite and suddenly everything stops working, try opening the Network tab in your browser devtools, tick "disable cache" and refresh the page.
+
 ## Describe the bug
 
 A clear and concise description of what the bug is.
