@@ -171,71 +171,89 @@ export async function resolveConfig(
   configPath: string | undefined
 ): Promise<UserConfig | undefined> {
   const start = Date.now()
-  const resolvedPath = path.resolve(
-    process.cwd(),
-    configPath || 'vite.config.js'
-  )
-  try {
-    if (await fs.pathExists(resolvedPath)) {
-      let config: UserConfig | undefined
-      const isTs = path.extname(resolvedPath) === '.ts'
-      // 1. try loading the config file directly
-      if (!isTs) {
-        try {
-          config = require(resolvedPath)
-        } catch (e) {
-          if (
-            !/Cannot use import statement|Unexpected token 'export'/.test(
-              e.message
-            )
-          ) {
-            throw e
-          }
-        }
-      }
-
-      if (!config) {
-        // 2. if we reach here, the file is ts or using es import syntax.
-        // transpile es import syntax to require syntax using rollup.
-        const rollup = require('rollup') as typeof Rollup
-        const esbuilPlugin = await createEsbuildPlugin(false, {})
-        const bundle = await rollup.rollup({
-          external: (id: string) =>
-            (id[0] !== '.' && !path.isAbsolute(id)) ||
-            id.slice(-5, id.length) === '.json',
-          input: resolvedPath,
-          treeshake: false,
-          plugins: [esbuilPlugin]
-        })
-
-        const {
-          output: [{ code }]
-        } = await bundle.generate({
-          exports: 'named',
-          format: 'cjs'
-        })
-
-        config = await loadConfigFromBundledFile(resolvedPath, code)
-      }
-
-      // normalize config root to absolute
-      if (config.root && !path.isAbsolute(config.root)) {
-        config.root = path.resolve(path.dirname(resolvedPath), config.root)
-      }
-
-      // resolve plugins
-      if (config.plugins) {
-        for (const plugin of config.plugins) {
-          config = resolvePlugin(config, plugin)
-        }
-      }
-
-      require('debug')('vite:config')(
-        `config resolved in ${Date.now() - start}ms`
+  let config: UserConfig | undefined
+  let resolvedPath: string | undefined
+  let isTS = false
+  if (configPath) {
+    resolvedPath = path.resolve(process.cwd(), configPath)
+  } else {
+    const jsConfigPath = path.resolve(
+      process.cwd(),
+      configPath || 'vite.config.js'
+    )
+    if (await fs.pathExists(jsConfigPath)) {
+      resolvedPath = jsConfigPath
+    } else {
+      const tsConfigPath = path.resolve(
+        process.cwd(),
+        configPath || 'vite.config.ts'
       )
-      console.log(config)
-      return config
+      if (await fs.pathExists(tsConfigPath)) {
+        isTS = true
+        resolvedPath = tsConfigPath
+      }
     }
+  }
+
+  if (!resolvedPath) {
+    return
+  }
+
+  try {
+    if (!isTS) {
+      try {
+        config = require(resolvedPath)
+      } catch (e) {
+        if (
+          !/Cannot use import statement|Unexpected token 'export'/.test(
+            e.message
+          )
+        ) {
+          throw e
+        }
+      }
+    }
+
+    if (!config) {
+      // 2. if we reach here, the file is ts or using es import syntax.
+      // transpile es import syntax to require syntax using rollup.
+      const rollup = require('rollup') as typeof Rollup
+      const esbuilPlugin = await createEsbuildPlugin(false, {})
+      const bundle = await rollup.rollup({
+        external: (id: string) =>
+          (id[0] !== '.' && !path.isAbsolute(id)) ||
+          id.slice(-5, id.length) === '.json',
+        input: resolvedPath,
+        treeshake: false,
+        plugins: [esbuilPlugin]
+      })
+
+      const {
+        output: [{ code }]
+      } = await bundle.generate({
+        exports: 'named',
+        format: 'cjs'
+      })
+
+      config = await loadConfigFromBundledFile(resolvedPath, code)
+    }
+
+    // normalize config root to absolute
+    if (config.root && !path.isAbsolute(config.root)) {
+      config.root = path.resolve(path.dirname(resolvedPath), config.root)
+    }
+
+    // resolve plugins
+    if (config.plugins) {
+      for (const plugin of config.plugins) {
+        config = resolvePlugin(config, plugin)
+      }
+    }
+
+    require('debug')('vite:config')(
+      `config resolved in ${Date.now() - start}ms`
+    )
+    return config
   } catch (e) {
     console.error(
       chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
