@@ -55,6 +55,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     outDir = path.resolve(root, 'dist'),
     assetsDir = 'assets',
     assetsInlineLimit = 4096,
+    alias = {},
     resolvers = [],
     vueCompilerOptions,
     rollupInputOptions = {},
@@ -74,7 +75,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
   const resolvedAssetsPath = path.join(outDir, assetsDir)
   const cssFileName = 'style.css'
 
-  const resolver = createResolver(root, resolvers)
+  const resolver = createResolver(root, resolvers, alias)
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,

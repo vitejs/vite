@@ -39,13 +39,18 @@ const internalPlugins: ServerPlugin[] = [
 ]
 
 export function createServer(config: ServerConfig = {}): Server {
-  const { root = process.cwd(), plugins = [], resolvers = [] } = config
+  const {
+    root = process.cwd(),
+    plugins = [],
+    resolvers = [],
+    alias = {}
+  } = config
   const app = new Koa()
   const server = http.createServer(app.callback())
   const watcher = chokidar.watch(root, {
     ignored: [/node_modules/]
   }) as HMRWatcher
-  const resolver = createResolver(root, resolvers)
+  const resolver = createResolver(root, resolvers, alias)
   const context = {
     root,
     app,

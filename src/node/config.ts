@@ -11,6 +11,8 @@ import Rollup, {
   OutputOptions as RollupOutputOptions
 } from 'rollup'
 
+export { Resolver }
+
 /**
  * Options shared between server and build.
  */
