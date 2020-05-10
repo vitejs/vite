@@ -182,6 +182,7 @@ export const hmrPlugin: ServerPlugin = ({
       needRerender = true
     }
 
+    let didUpdateStyle = false
     const styleId = hash_sum(publicPath)
     const prevStyles = prevDescriptor.styles || []
     const nextStyles = descriptor.styles || []
@@ -203,6 +204,7 @@ export const hmrPlugin: ServerPlugin = ({
     if (!needReload) {
       nextStyles.forEach((_, i) => {
         if (!prevStyles[i] || !isEqual(prevStyles[i], nextStyles[i])) {
+          didUpdateStyle = true
           send({
             type: 'vue-style-update',
             path: publicPath,
@@ -216,6 +218,7 @@ export const hmrPlugin: ServerPlugin = ({
 
     // stale styles always need to be removed
     prevStyles.slice(nextStyles.length).forEach((_, i) => {
+      didUpdateStyle = true
       send({
         type: 'style-remove',
         path: publicPath,
@@ -236,6 +239,17 @@ export const hmrPlugin: ServerPlugin = ({
         path: publicPath,
         timestamp
       })
+    }
+
+    if (needReload || needRerender || didUpdateStyle) {
+      let updateType = needReload ? `reload` : needRerender ? `template` : ``
+      if (didUpdateStyle) {
+        updateType += ` & style`
+      }
+      console.log(
+        chalk.green(`[vite:hmr] `) +
+          `${path.relative(root, file)} updated. (${updateType})`
+      )
     }
   }
 
