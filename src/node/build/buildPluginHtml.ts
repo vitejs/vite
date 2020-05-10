@@ -123,13 +123,18 @@ const compileHtml = async (
   const viteHtmlTrasnfrom: NodeTransform = (node) => {
     if (node.type === NodeTypes.ELEMENT) {
       if (node.tag === 'script') {
+        let shouldRemove = true
         const srcAttr = node.props.find(
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
         ) as AttributeNode
         if (srcAttr && srcAttr.value) {
-          // <script type="module" src="..."/>
-          // add it as an import
-          js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
+          if (!isExternalUrl(srcAttr.value.content)) {
+            // <script type="module" src="..."/>
+            // add it as an import
+            js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
+          } else {
+            shouldRemove = false
+          }
         } else if (node.children.length) {
           // <script type="module">...</script>
           // add its content
@@ -138,9 +143,11 @@ const compileHtml = async (
           // it's hard to imagine any reason for anyone to do that.
           js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
         }
-        // remove the script tag from the html. we are going to inject new
-        // ones in the end.
-        s.remove(node.loc.start.offset, node.loc.end.offset)
+        if (shouldRemove) {
+          // remove the script tag from the html. we are going to inject new
+          // ones in the end.
+          s.remove(node.loc.start.offset, node.loc.end.offset)
+        }
       }
       // For asset references in index.html, also generate an import
       // statement for each - this will be handled by the asset plugin
