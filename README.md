@@ -270,7 +270,7 @@ Check out the full options interface in [build/index.ts](https://github.com/vuej
 ```js
 const { build } = require('vite')
 
-;(async () => {
+(async () => {
   // All options are optional.
   // check out `src/node/build.ts` for full options interface.
   const result = await build({
