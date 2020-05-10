@@ -1,7 +1,13 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
-import { isExternalUrl, asyncReplace, loadPostcssConfig } from '../utils'
+import {
+  isExternalUrl,
+  asyncReplace,
+  loadPostcssConfig,
+  parseWithQuery
+} from '../utils'
+import { Transform } from '../config'
 
 const debug = require('debug')('vite:build:css')
 
@@ -13,15 +19,30 @@ export const createBuildCssPlugin = (
   assetsDir: string,
   cssFileName: string,
   minify: boolean,
-  inlineLimit: number
+  inlineLimit: number,
+  transforms: Transform[]
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
+  transforms = transforms.filter((t) => t.as === 'css')
 
   return {
     name: 'vite:css',
     async transform(css: string, id: string) {
-      if (id.endsWith('.css')) {
+      let transformed = false
+
+      if (transforms.length) {
+        const { path, query } = parseWithQuery(id)
+        for (const t of transforms) {
+          if (t.test(path, query)) {
+            css = await t.transform(css, true)
+            transformed = true
+            break
+          }
+        }
+      }
+
+      if (transformed || id.endsWith('.css')) {
         // process url() - register referenced files as assets
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {

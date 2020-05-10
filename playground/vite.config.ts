@@ -1,4 +1,6 @@
 import type { UserConfig } from 'vite'
+import { sassPlugin } from './plugins/sassPlugin'
+import { jsPlugin } from './plugins/jsPlugin'
 
 const config: UserConfig = {
   alias: {
@@ -8,7 +10,8 @@ const config: UserConfig = {
     factory: 'h',
     fragment: 'Fragment'
   },
-  minify: false
+  minify: false,
+  plugins: [sassPlugin, jsPlugin]
 }
 
 export default config

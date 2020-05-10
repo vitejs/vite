@@ -1,6 +1,7 @@
 import { Context } from 'koa'
 import path from 'path'
 import slash from 'slash'
+import qs from 'querystring'
 import { InternalResolver } from '../resolver'
 
 export const queryRE = /\?.*$/
@@ -16,6 +17,25 @@ export const resolveRelativeRequest = (importer: string, id: string) => {
     url: resolved,
     pathname: cleanUrl(resolved),
     query: queryMatch ? queryMatch[0] : ''
+  }
+}
+
+export const parseWithQuery = (
+  id: string
+): {
+  path: string
+  query: Record<string, string | string[] | undefined>
+} => {
+  const queryMatch = id.match(queryRE)
+  if (queryMatch) {
+    return {
+      path: slash(cleanUrl(id)),
+      query: qs.parse(queryMatch[0].slice(1))
+    }
+  }
+  return {
+    path: id,
+    query: {}
   }
 }
 

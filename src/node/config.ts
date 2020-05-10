@@ -10,8 +10,9 @@ import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions
 } from 'rollup'
+import { Transform } from './transform'
 
-export { Resolver }
+export { Resolver, Transform }
 
 /**
  * Options shared between server and build.
@@ -138,21 +139,8 @@ export interface BuildConfig extends SharedConfig {
 }
 
 export interface UserConfig extends BuildConfig {
-  configureServer?: ServerPlugin
   plugins?: Plugin[]
-}
-
-export type Condition = RegExp | RegExp[] | (() => boolean)
-
-export interface Transform {
-  include?: Condition
-  exclude?: Condition
-  query?: Condition
-  /**
-   * @default 'js'
-   */
-  as?: 'js' | 'css'
-  transform?: (code: string) => string | Promise<string>
+  configureServer?: ServerPlugin
 }
 
 export interface Plugin
@@ -248,6 +236,9 @@ export async function resolveConfig(
       for (const plugin of config.plugins) {
         config = resolvePlugin(config, plugin)
       }
+      // delete plugins so it doesn't get passed to `createServer` as server
+      // plugins.
+      delete config.plugins
     }
 
     require('debug')('vite:config')(
@@ -289,6 +280,7 @@ async function loadConfigFromBundledFile(
 
 function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   return {
+    ...config,
     alias: {
       ...plugin.alias,
       ...config.alias

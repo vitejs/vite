@@ -12,6 +12,7 @@ import { cssPlugin } from './serverPluginCss'
 import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
+import { createServerTransformPlugin } from '../transform'
 
 export { rewriteImports } from './serverPluginModuleRewrite'
 
@@ -26,25 +27,15 @@ export interface ServerPluginContext {
   config: ServerConfig
 }
 
-const internalPlugins: ServerPlugin[] = [
-  hmrPlugin,
-  moduleRewritePlugin,
-  moduleResolvePlugin,
-  vuePlugin,
-  esbuildPlugin,
-  jsonPlugin,
-  cssPlugin,
-  assetPathPlugin,
-  serveStaticPlugin
-]
-
 export function createServer(config: ServerConfig = {}): Server {
   const {
     root = process.cwd(),
     plugins = [],
     resolvers = [],
-    alias = {}
+    alias = {},
+    transforms = []
   } = config
+
   const app = new Koa()
   const server = http.createServer(app.callback())
   const watcher = chokidar.watch(root, {
@@ -60,7 +51,20 @@ export function createServer(config: ServerConfig = {}): Server {
     config
   }
 
-  ;[...plugins, ...internalPlugins].forEach((m) => m(context))
+  const resolvedPlugins = [
+    ...plugins,
+    hmrPlugin,
+    moduleRewritePlugin,
+    moduleResolvePlugin,
+    vuePlugin,
+    esbuildPlugin,
+    jsonPlugin,
+    cssPlugin,
+    assetPathPlugin,
+    ...(transforms.length ? [createServerTransformPlugin(transforms)] : []),
+    serveStaticPlugin
+  ]
+  resolvedPlugins.forEach((m) => m(context))
 
   return server
 }

@@ -12,12 +12,18 @@ interface ProcessedEntry {
 
 const processedCSS = new Map<string, ProcessedEntry>()
 
-export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
+export const cssPlugin: ServerPlugin = ({
+  root,
+  app,
+  watcher,
+  resolver,
+  config
+}) => {
   app.use(async (ctx, next) => {
     await next()
     // handle .css imports
     if (
-      ctx.path.endsWith('.css') &&
+      ctx.response.is('css') &&
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
@@ -46,14 +52,19 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
         if (!processedCSS.has(ctx.path)) {
           await processCss(ctx)
         }
+        ctx.type = 'css'
         ctx.body = processedCSS.get(ctx.path)!.css
       }
     }
   })
 
   // handle hmr
+  const cssTransforms = config.transforms
+    ? config.transforms.filter((t) => t.as === 'css')
+    : []
+
   watcher.on('change', (file) => {
-    if (file.endsWith('.css')) {
+    if (file.endsWith('.css') || cssTransforms.some((t) => t.test(file, {}))) {
       if (srcImportMap.has(file)) {
         // this is a vue src import, skip
         return

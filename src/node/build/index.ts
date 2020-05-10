@@ -12,6 +12,7 @@ import { createEsbuildPlugin } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
 import { stopService } from '../esbuildService'
 import { BuildConfig } from '../config'
+import { createBuildJsTransformPlugin } from '../transform'
 
 export interface BuildResult {
   html: string
@@ -56,6 +57,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     assetsDir = 'assets',
     assetsInlineLimit = 4096,
     alias = {},
+    transforms = [],
     resolvers = [],
     vueCompilerOptions,
     rollupInputOptions = {},
@@ -113,6 +115,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         compilerOptions: vueCompilerOptions
       }),
       require('@rollup/plugin-json')(),
+      // user transforms
+      ...(transforms.length ? [createBuildJsTransformPlugin(transforms)] : []),
       require('@rollup/plugin-node-resolve')({
         rootDir: root,
         extensions: supportedExts
@@ -135,7 +139,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         assetsDir,
         cssFileName,
         !!minify,
-        assetsInlineLimit
+        assetsInlineLimit,
+        transforms
       ),
       // vite:asset
       createBuildAssetPlugin(
