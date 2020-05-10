@@ -278,6 +278,30 @@ describe('vite', () => {
       }
     })
 
+    test('alias', async () => {
+      expect(await getText('.alias')).toMatch('alias works')
+      if (!isBuild) {
+        await updateFile('aliased/index.js', (c) =>
+          c.replace('works', 'hmr works')
+        )
+        await expectByPolling(() => getText('.alias'), 'alias hmr works')
+      }
+    })
+
+    test('transforms', async () => {
+      const el = await getEl('.transform-scss')
+      expect(await getComputedColor(el)).toBe('rgb(0, 255, 255)')
+      expect(await getText('.transform-js')).toBe('2')
+      if (!isBuild) {
+        await updateFile('testTransform.scss', (c) =>
+          c.replace('cyan', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+        await updateFile('testTransform.js', (c) => c.replace('= 1', '= 2'))
+        await expectByPolling(() => getText('.transform-js'), '3')
+      }
+    })
+
     test('async component', async () => {
       await expectByPolling(() => getText('.async'), 'should show up')
     })

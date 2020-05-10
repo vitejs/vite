@@ -8,5 +8,5 @@ export declare const hot: {
   // dispose
   dispose(cb: () => void): void
   // custom events
-  on(event: string, cb: () => void): void
+  on(event: string, cb: (data: any) => void): void
 }

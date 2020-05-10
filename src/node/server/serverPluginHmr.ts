@@ -85,7 +85,8 @@ export const hmrPlugin: ServerPlugin = ({
   app,
   server,
   watcher,
-  resolver
+  resolver,
+  config
 }) => {
   app.use(async (ctx, next) => {
     if (ctx.path !== hmrClientPublicPath) {
@@ -126,11 +127,19 @@ export const hmrPlugin: ServerPlugin = ({
   watcher.handleJSReload = handleJSReload
   watcher.send = send
 
+  // exclude files declared as css by user transforms
+  const cssTransforms = config.transforms
+    ? config.transforms.filter((t) => t.as === 'css')
+    : []
+
   watcher.on('change', async (file) => {
     const timestamp = Date.now()
     if (file.endsWith('.vue')) {
       handleVueReload(file, timestamp)
-    } else if (!file.endsWith('.css') || file.endsWith('.module.css')) {
+    } else if (
+      file.endsWith('.module.css') ||
+      !(file.endsWith('.css') || cssTransforms.some((t) => t.test(file, {})))
+    ) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
       handleJSReload(file, timestamp)

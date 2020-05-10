@@ -8,7 +8,7 @@ if (argv.debug) {
 import os from 'os'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { ServerConfig, BuildConfig, resolveConfig } from './config'
+import { UserConfig, resolveConfig } from './config'
 
 function logHelp() {
   console.log(`
@@ -91,7 +91,7 @@ async function resolveOptions() {
 }
 
 async function runServe(
-  options: ServerConfig & {
+  options: UserConfig & {
     port?: number
     open?: boolean
   }
@@ -141,7 +141,7 @@ async function runServe(
   })
 }
 
-async function runBuild(options: BuildConfig) {
+async function runBuild(options: UserConfig) {
   let spinner: Ora | undefined
   const msg = 'Building for production...'
   if (process.env.DEBUG || process.env.NODE_ENV === 'test') {

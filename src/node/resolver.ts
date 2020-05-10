@@ -11,13 +11,13 @@ import {
 export interface Resolver {
   requestToFile(publicPath: string, root: string): string | undefined
   fileToRequest(filePath: string, root: string): string | undefined
-  idToRequest?(id: string): string | undefined
+  alias?(id: string): string | undefined
 }
 
 export interface InternalResolver {
   requestToFile(publicPath: string): string
   fileToRequest(filePath: string): string
-  idToRequest(id: string): string | undefined
+  alias(id: string): string | undefined
 }
 
 const defaultRequestToFile = (publicPath: string, root: string): string => {
@@ -36,12 +36,6 @@ const defaultFileToRequest = (filePath: string, root: string): string => {
     return moduleRequest
   }
   return `/${slash(path.relative(root, filePath))}`
-}
-
-const defaultIdToRequest = (id: string) => {
-  if (id.startsWith('@') && id.indexOf('/') < 0) {
-    return `/${id}`
-  }
 }
 
 export const supportedExts = ['.js', '.ts', '.jsx', '.tsx', '.json']
@@ -78,7 +72,8 @@ const resolveExt = (id: string) => {
 
 export function createResolver(
   root: string,
-  resolvers: Resolver[]
+  resolvers: Resolver[],
+  alias: Record<string, string>
 ): InternalResolver {
   return {
     requestToFile: (publicPath) => {
@@ -103,12 +98,17 @@ export function createResolver(
       }
       return defaultFileToRequest(filePath, root)
     },
-    idToRequest: (id: string) => {
-      for (const r of resolvers) {
-        const request = r.idToRequest && r.idToRequest(id)
-        if (request) return request
+    alias: (id: string) => {
+      let aliased: string | undefined = alias[id]
+      if (aliased) {
+        return aliased
       }
-      return defaultIdToRequest(id)
+      for (const r of resolvers) {
+        aliased = r.alias && r.alias(id)
+        if (aliased) {
+          return aliased
+        }
+      }
     }
   }
 }

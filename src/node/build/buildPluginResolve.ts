@@ -14,32 +14,29 @@ export const createBuildResolvePlugin = (
   return {
     name: 'vite:resolve',
     async resolveId(id: string) {
+      id = resolver.alias(id) || id
       if (id === hmrClientId) {
         return hmrClientId
-      } else if (id.startsWith('/')) {
+      }
+      if (id === 'vue' || id.startsWith('@vue/')) {
+        const vuePaths = resolveVue(root)
+        if (id in vuePaths) {
+          return (vuePaths as any)[id]
+        }
+      }
+      if (id.startsWith('/')) {
         const resolved = resolver.requestToFile(id)
         if (await fs.pathExists(resolved)) {
           debug(id, `-->`, resolved)
           return resolved
         }
-      } else if (id === 'vue' || id.startsWith('@vue/')) {
-        const vuePaths = resolveVue(root)
-        if (id in vuePaths) {
-          return (vuePaths as any)[id]
-        }
       } else if (!id.startsWith('.')) {
-        const request = resolver.idToRequest(id)
-        if (request) {
-          const resolved = resolver.requestToFile(request)
-          debug(id, `-->`, request, `--> `, resolved)
-          return resolved
-        } else {
-          const webModulePath = await resolveWebModule(root, id)
-          if (webModulePath) {
-            return webModulePath
-          }
+        const webModulePath = await resolveWebModule(root, id)
+        if (webModulePath) {
+          return webModulePath
         }
       }
+      // fallback to node-resolve
     },
     load(id: string) {
       if (id === hmrClientId) {
