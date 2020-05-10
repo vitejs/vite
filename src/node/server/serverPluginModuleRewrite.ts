@@ -56,6 +56,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
     `\n<script type="module">` +
     `import "${hmrClientPublicPath}"\n` +
     `window.__DEV__ = true\n` +
+    `window.__BASE__ = '/'\n` +
     `window.process = { env: { NODE_ENV: 'development' }}\n` +
     `</script>\n`
 

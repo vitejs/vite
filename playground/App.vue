@@ -3,6 +3,9 @@
   <p class="dev">
     <code>__DEV__: {{ dev }}</code>
   </p>
+  <p class="base">
+    <code>__BASE__: {{ base }}</code>
+  </p>
   <p class="node_env">
     <code>process.env.NODE_ENV: {{ env }}</code>
   </p>
@@ -42,6 +45,7 @@ import TestTransform from './TestTransform.vue'
 export default {
   data: () => ({
     dev: __DEV__,
+    base: __BASE__,
     env: process.env.NODE_ENV
   }),
   components: {

@@ -88,6 +88,7 @@ describe('vite', () => {
 
     test('env variables', async () => {
       expect(await getText('.dev')).toMatch(`__DEV__: ${!isBuild}`)
+      expect(await getText('.base')).toMatch(`__BASE__: /`)
       expect(await getText('.node_env')).toMatch(
         `process.env.NODE_ENV: ${isBuild ? 'production' : 'development'}`
       )
