@@ -294,10 +294,7 @@ export const hmrPlugin: ServerPlugin = ({
           type: 'full-reload',
           timestamp
         })
-        console.log(
-          chalk.green(`[vite:hmr] `) +
-            `changed file ${relativeFile} has no hot acceptor, forcing full page reload.`
-        )
+        console.log(chalk.green(`[vite] `) + `page reloaded.`)
       } else {
         vueBoundaries.forEach((vueImporter) => {
           console.log(

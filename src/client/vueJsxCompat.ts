@@ -10,8 +10,9 @@ if (__DEV__) {
   )
 }
 
-export function jsx(tag: any, props = null) {
-  const c =
-    arguments.length > 2 ? Array.prototype.slice.call(arguments, 2) : null
-  return createVNode(tag, props, typeof tag === 'string' ? c : () => c)
+export function jsx(tag: any, props = null, children: any = null) {
+  if (arguments.length > 3 || (children && '__v_isVNode' in children)) {
+    children = Array.prototype.slice.call(arguments, 2)
+  }
+  return createVNode(tag, props, children)
 }
