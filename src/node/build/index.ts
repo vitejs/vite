@@ -247,9 +247,6 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     )
   }
 
-  // stop the esbuild service after each build
-  stopService()
-
   return {
     assets: output,
     html: indexHtml

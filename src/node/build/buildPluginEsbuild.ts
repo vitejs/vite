@@ -1,5 +1,5 @@
 import { Plugin } from 'rollup'
-import { tjsxRE, transform } from '../esbuildService'
+import { tjsxRE, transform, stopService } from '../esbuildService'
 
 export const createEsbuildPlugin = async (
   minify: boolean,
@@ -34,6 +34,10 @@ export const createEsbuildPlugin = async (
       } else {
         return null
       }
+    },
+
+    generateBundle() {
+      stopService()
     }
   }
 }
