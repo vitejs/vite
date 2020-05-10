@@ -2,8 +2,8 @@
   "name": "vite-preact-starter",
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite --jsx-factory=h --jsx-fragment=Fragment",
-    "build": "vite build --jsx-factory=h --jsx-fragment=Fragment"
+    "dev": "vite --jsx preact",
+    "build": "vite build --jsx preact"
   },
   "dependencies": {
     "preact": "^10.4.1"

@@ -13,7 +13,8 @@ const tempDir = path.join(__dirname, 'temp')
 let devServer
 let browser
 let page
-const logs = []
+const browserLogs = []
+const serverLogs = []
 
 const getEl = async (selectorOrEl) => {
   return typeof selectorOrEl === 'string'
@@ -49,6 +50,8 @@ afterAll(async () => {
       forceKillAfterTimeout: 2000
     })
   }
+  // console.log(browserLogs)
+  // console.log(serverLogs)
 })
 
 describe('vite', () => {
@@ -66,9 +69,9 @@ describe('vite', () => {
     })
 
     test('should generate correct asset paths', async () => {
-      const has404 = logs.some((msg) => msg.match('404'))
+      const has404 = browserLogs.some((msg) => msg.match('404'))
       if (has404) {
-        console.log(logs)
+        console.log(browserLogs)
       }
       expect(has404).toBe(false)
     })
@@ -131,10 +134,13 @@ describe('vite', () => {
         await updateFile('testHmrManual.js', (content) =>
           content.replace('foo = 1', 'foo = 2')
         )
-        await expectByPolling(() => logs[logs.length - 1], 'foo is now:  2')
+        await expectByPolling(
+          () => browserLogs[browserLogs.length - 1],
+          'foo is now:  2'
+        )
         // there will be a "js module reloaded" message in between because
         // disposers are called before the new module is loaded.
-        expect(logs[logs.length - 3]).toMatch('foo was:  1')
+        expect(browserLogs[browserLogs.length - 3]).toMatch('foo was:  1')
       })
     }
 
@@ -269,8 +275,8 @@ describe('vite', () => {
 
     test('jsx', async () => {
       const text = await getText('.jsx-root')
-      expect(text).toMatch('from Preact')
-      expect(text).toMatch('from TSX')
+      expect(text).toMatch('from Preact JSX')
+      expect(text).toMatch('from Preact TSX')
       expect(text).toMatch('count is 1337')
       if (!isBuild) {
         await updateFile('testJsx.jsx', (c) => c.replace('1337', '2046'))
@@ -315,7 +321,7 @@ describe('vite', () => {
     })
 
     test('should build without error', async () => {
-      const buildOutput = await execa(binPath, ['build', '--jsx-factory=h'], {
+      const buildOutput = await execa(binPath, ['build'], {
         cwd: tempDir
       })
       expect(buildOutput.stdout).toMatch('Build completed')
@@ -340,13 +346,14 @@ describe('vite', () => {
 
   describe('dev', () => {
     beforeAll(async () => {
-      logs.length = 0
+      browserLogs.length = 0
       // start dev server
-      devServer = execa(binPath, ['--jsx-factory=h'], {
+      devServer = execa(binPath, {
         cwd: tempDir
       })
       await new Promise((resolve) => {
         devServer.stdout.on('data', (data) => {
+          serverLogs.push(data.toString())
           if (data.toString().match('running')) {
             resolve()
           }
@@ -354,7 +361,9 @@ describe('vite', () => {
       })
 
       page = await browser.newPage()
-      page.on('console', (msg) => logs.push(msg.text()))
+      page.on('console', (msg) => {
+        browserLogs.push(msg.text())
+      })
       await page.goto('http://localhost:3000')
     })
 

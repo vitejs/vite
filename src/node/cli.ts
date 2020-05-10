@@ -22,6 +22,7 @@ Commands:
 Options:
   --help, -h                 [boolean] show help
   --version, -v              [boolean] show version
+  --config, -c               [string]  use specified config file
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
   --base                     [string]  public base path for build (default: /)
@@ -32,6 +33,7 @@ Options:
   --minify                   [boolean | 'terser' | 'esbuild'] disable minification, or specify
                                        minifier to use. (default: 'terser')
   --ssr                      [boolean] build for server-side rendering
+  --jsx                      ['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')
   --jsx-factory              [string]  (default: React.createElement)
   --jsx-fragment             [string]  (default: React.Fragment)
 `)

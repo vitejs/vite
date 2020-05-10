@@ -1,4 +1,4 @@
-import { h, render } from 'preact'
+import { render } from 'preact'
 
 function MyComponent(props) {
   return <div>{props.msg}</div>

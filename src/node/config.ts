@@ -25,11 +25,11 @@ export interface SharedConfig {
    */
   root?: string
   /**
-   * TODO
+   * Import alias. Can only be exact mapping, does not support wildcard syntax.
    */
   alias?: Record<string, string>
   /**
-   * TODO
+   * Custom file transforms.
    */
   transforms?: Transform[]
   /**
@@ -49,10 +49,14 @@ export interface SharedConfig {
    *   fragment: 'React.Fragment'
    * }
    */
-  jsx?: {
-    factory?: string
-    fragment?: string
-  }
+  jsx?:
+    | 'vue'
+    | 'preact'
+    | 'react'
+    | {
+        factory?: string
+        fragment?: string
+      }
 }
 
 export interface ServerConfig extends SharedConfig {
