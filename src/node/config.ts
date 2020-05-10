@@ -165,17 +165,11 @@ export async function resolveConfig(
   if (configPath) {
     resolvedPath = path.resolve(process.cwd(), configPath)
   } else {
-    const jsConfigPath = path.resolve(
-      process.cwd(),
-      configPath || 'vite.config.js'
-    )
+    const jsConfigPath = path.resolve(process.cwd(), 'vite.config.js')
     if (await fs.pathExists(jsConfigPath)) {
       resolvedPath = jsConfigPath
     } else {
-      const tsConfigPath = path.resolve(
-        process.cwd(),
-        configPath || 'vite.config.ts'
-      )
+      const tsConfigPath = path.resolve(process.cwd(), 'vite.config.ts')
       if (await fs.pathExists(tsConfigPath)) {
         isTS = true
         resolvedPath = tsConfigPath
