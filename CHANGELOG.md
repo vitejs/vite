@@ -1,3 +1,47 @@
+# [0.14.0](https://github.com/vuejs/vite/compare/v0.13.2...v0.14.0) (2020-05-10)
+
+
+### Bug Fixes
+
+* do not rewrite external scripts in index.html (fix [#116](https://github.com/vuejs/vite/issues/116)) ([06e51cc](https://github.com/vuejs/vite/commit/06e51cc3ce2fbaeec3150394dac0b630b7601b78))
+* fix loading ts config ([b85de93](https://github.com/vuejs/vite/commit/b85de93c49952b4de56a319915ef1527c30b8f93))
+* run all transforms that pass particular `test` ([#113](https://github.com/vuejs/vite/issues/113)) ([ed5b9e7](https://github.com/vuejs/vite/commit/ed5b9e7f51e906d3a42d056571c0d5091ed5cd4c))
+* **types:** fix hmr hot.on callback type ([a4524b4](https://github.com/vuejs/vite/commit/a4524b443ba6bfb53b78c053c27ac7ccb9f66749))
+
+
+### Features
+
+* expose base path as __BASE__ ([97ae7c3](https://github.com/vuejs/vite/commit/97ae7c3d19453eb72aeb958d95e58bbaeedbc4ae))
+* **cva:** support creating project in cwd (close [#111](https://github.com/vuejs/vite/issues/111), [#112](https://github.com/vuejs/vite/issues/112)) ([02491a4](https://github.com/vuejs/vite/commit/02491a4be84cce43a4c84598e4a51b9b247d0b71))
+* build --ssr ([49e79e7](https://github.com/vuejs/vite/commit/49e79e7603f5a53756f016494dd17ee5f76f37b6))
+* expose `rewriteImports` ([#104](https://github.com/vuejs/vite/issues/104)) ([d6151bf](https://github.com/vuejs/vite/commit/d6151bf06d555693211693d9a45ef11cb45adc13))
+* log hmr updates from server ([b0713fe](https://github.com/vuejs/vite/commit/b0713fed745988162ed507ea2bd06fff10d85280))
+* resolve plugins + support vueCompilerOptions ([7cdaa0b](https://github.com/vuejs/vite/commit/7cdaa0bfd3d9acd6f3a4a2d92989a82f6864ffb9))
+* support alias in config ([86d550a](https://github.com/vuejs/vite/commit/86d550a434505a2efa62602bf39ab4959b92356a))
+* support config file ([ab940fd](https://github.com/vuejs/vite/commit/ab940fdf409ea44754b5e5e9550ff9dcc5ee562d))
+* transforms ([87ee998](https://github.com/vuejs/vite/commit/87ee9981f8cd03b13f959e3754f9e48697e66022))
+* Vue JSX support ([efc853f](https://github.com/vuejs/vite/commit/efc853fcfecd23df2024fd3e134754c9c7f65d63))
+
+
+### Performance Improvements
+
+* **hmr:** avoid re-fetching files not in the direct import chain ([2ac7469](https://github.com/vuejs/vite/commit/2ac746933603bd55431fe8f7be1b0373f51e5b29))
+* lazy load all compiler-sfc imports ([d6dd2f0](https://github.com/vuejs/vite/commit/d6dd2f061537e658bb7e768adf4d6a1b60eb4e19))
+
+
+### BREAKING CHANGES
+
+* JSX support has been adjusted
+
+  - Default JSX support is now configured for Vue 3 JSX
+  - `jsx` option now accepts string presets ('vue' | 'preact' | 'react')
+    e.g. to Use Preact with Vite, use `vite --jsx preact`. In addition,
+    when using the Preact preset, Vite auto injects `h` import in `.jsx`
+    and `.tsx` files so the user no longer need to import it.
+* in resolvers, idToRequest has been renamed to alias
+
+
+
 ## [0.13.2](https://github.com/vuejs/vite/compare/v0.13.1...v0.13.2) (2020-05-09)
 
 
