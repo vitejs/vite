@@ -1,7 +1,6 @@
 import path from 'path'
-import { startService, Service, TransformOptions, Message } from 'esbuild'
 import chalk from 'chalk'
-import { generateCodeFrame } from '@vue/compiler-sfc'
+import { startService, Service, TransformOptions, Message } from 'esbuild'
 
 const debug = require('debug')('vite:esbuild')
 
@@ -69,6 +68,8 @@ function printMessage(m: Message, code: string) {
         .slice(0, line - 1)
         .map((l) => l.length)
         .reduce((total, l) => total + l + 1, 0) + column
-    console.error(generateCodeFrame(code, offset, offset + 1))
+    console.error(
+      require('@vue/compiler-core').generateCodeFrame(code, offset, offset + 1)
+    )
   }
 }
