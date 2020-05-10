@@ -16,17 +16,18 @@ async function init() {
     )
     return
   }
-  const root = path.join(process.cwd(), targetDir || '')
+  const root = path.resolve(process.cwd(), targetDir || '')
   console.log(`Scaffolding project in ${root}...`)
 
-  try {
-    await mkdir(root)
-  } catch (e) {
-    if (e.code === 'EEXIST') {
-      console.error(`Error: target directory already exists.`)
-    } else {
-      throw e
+  const filesInRoot = await readdir(root).then(null, async (error) => {
+    if (error.code === 'ENOENT') {
+      await mkdir(root)
     }
+    return []
+  })
+
+  if (filesInRoot.length > 0) {
+    console.error(`Error: target directory is not empty`)
     return
   }
 
