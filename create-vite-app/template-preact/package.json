@@ -9,6 +9,6 @@
     "preact": "^10.4.1"
   },
   "devDependencies": {
-    "vite": "^0.13.1"
+    "vite": "^0.14.0"
   }
 }
