@@ -47,7 +47,7 @@ socket.addEventListener('message', ({ data }) => {
       const update = jsUpdateMap.get(path)
       if (update) {
         update(timestamp)
-        console.log(`[vite]: js module reloaded: `, path)
+        console.log(`[vite]: js module hot updated: `, path)
       } else {
         console.error(
           `[vite] got js update notification but no client callback was registered. Something is wrong.`

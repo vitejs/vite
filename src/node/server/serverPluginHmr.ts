@@ -35,12 +35,15 @@ import chalk from 'chalk'
 import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache, srcImportMap } from './serverPluginVue'
-import { cachedRead, resolveImport } from '../utils'
+import { resolveImport } from './serverPluginModuleRewrite'
+import { cachedRead } from '../utils'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '@babel/parser'
 import { StringLiteral, Statement, Expression } from '@babel/types'
 import { InternalResolver } from '../resolver'
+import LRUCache from 'lru-cache'
+import slash from 'slash'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -57,6 +60,10 @@ type HMRStateMap = Map<string, Set<string>>
 export const hmrAcceptanceMap: HMRStateMap = new Map()
 export const importerMap: HMRStateMap = new Map()
 export const importeeMap: HMRStateMap = new Map()
+
+// files that are dirty (i.e. in the import chain between the accept boundrary
+// and the actual changed file) for an hmr update at a given timestamp.
+export const hmrDirtyFilesMap = new LRUCache<string, Set<string>>({ max: 10 })
 
 // client and node files are placed flat in the dist folder
 export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
@@ -264,29 +271,50 @@ export const hmrPlugin: ServerPlugin = ({
     const publicPath = resolver.fileToRequest(filePath)
     const importers = importerMap.get(publicPath)
     if (importers) {
-      const vueImporters = new Set<string>()
-      const jsImporters = new Set<string>()
+      const vueBoundaries = new Set<string>()
+      const jsBoundaries = new Set<string>()
+      const dirtyFiles = new Set<string>()
+      dirtyFiles.add(publicPath)
+
       const hasDeadEnd = walkImportChain(
         publicPath,
         importers,
-        vueImporters,
-        jsImporters
+        vueBoundaries,
+        jsBoundaries,
+        dirtyFiles
       )
 
+      // record dirty files - this is used when HMR requests coming in with
+      // timestamp to determine what files need to be force re-fetched
+      hmrDirtyFilesMap.set(String(timestamp), dirtyFiles)
+
+      const relativeFile = '/' + slash(path.relative(root, filePath))
       if (hasDeadEnd) {
         send({
           type: 'full-reload',
           timestamp
         })
+        console.log(
+          chalk.green(`[vite:hmr] `) +
+            `changed file ${relativeFile} has no hot acceptor, forcing full page reload.`
+        )
       } else {
-        vueImporters.forEach((vueImporter) => {
+        vueBoundaries.forEach((vueImporter) => {
+          console.log(
+            chalk.green(`[vite:hmr] `) +
+              `${vueImporter} reloaded due to change in ${relativeFile}.`
+          )
           send({
             type: 'vue-reload',
             path: vueImporter,
             timestamp
           })
         })
-        jsImporters.forEach((jsImporter) => {
+        jsBoundaries.forEach((jsImporter) => {
+          console.log(
+            chalk.green(`[vite:hmr] `) +
+              `${jsImporter} updated due to change in ${relativeFile}.`
+          )
           send({
             type: 'js-update',
             path: jsImporter,
@@ -302,22 +330,29 @@ export const hmrPlugin: ServerPlugin = ({
 
 function walkImportChain(
   importee: string,
-  currentImporters: Set<string>,
-  vueImporters: Set<string>,
-  jsHotImporters: Set<string>
+  importers: Set<string>,
+  vueBoundaries: Set<string>,
+  jsBoundaries: Set<string>,
+  dirtyFiles: Set<string>,
+  currentChain: string[] = []
 ): boolean {
   if (isHmrAccepted(importee, importee)) {
     // self-accepting module.
-    jsHotImporters.add(importee)
+    jsBoundaries.add(importee)
+    dirtyFiles.add(importee)
     return false
   }
 
   let hasDeadEnd = false
-  for (const importer of currentImporters) {
+  for (const importer of importers) {
     if (importer.endsWith('.vue')) {
-      vueImporters.add(importer)
+      vueBoundaries.add(importer)
+      dirtyFiles.add(importer)
+      currentChain.forEach((file) => dirtyFiles.add(file))
     } else if (isHmrAccepted(importer, importee)) {
-      jsHotImporters.add(importer)
+      jsBoundaries.add(importer)
+      // js boundaries themselves are not considered dirty
+      currentChain.forEach((file) => dirtyFiles.add(file))
     } else {
       const parentImpoters = importerMap.get(importer)
       if (!parentImpoters) {
@@ -326,8 +361,10 @@ function walkImportChain(
         hasDeadEnd = walkImportChain(
           importer,
           parentImpoters,
-          vueImporters,
-          jsHotImporters
+          vueBoundaries,
+          jsBoundaries,
+          dirtyFiles,
+          currentChain.concat(importer)
         )
       }
     }

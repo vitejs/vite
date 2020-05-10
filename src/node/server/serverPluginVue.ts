@@ -136,6 +136,7 @@ export const vuePlugin: ServerPlugin = ({
       vueCache.del(file)
       const publicPath = cleanUrl(styleImport)
       const index = qs.parse(styleImport.split('?', 2)[1]).index
+      console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
       watcher.send({
         type: 'vue-style-update',
         path: publicPath,

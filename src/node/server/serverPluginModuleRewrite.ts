@@ -16,9 +16,15 @@ import {
   ensureMapEntry,
   rewriteFileWithHMR,
   hmrClientPublicPath,
-  hmrClientId
+  hmrClientId,
+  hmrDirtyFilesMap
 } from './serverPluginHmr'
-import { readBody, cleanUrl, isExternalUrl, resolveImport } from '../utils'
+import {
+  readBody,
+  cleanUrl,
+  isExternalUrl,
+  resolveRelativeRequest
+} from '../utils'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:rewrite')
@@ -246,5 +252,43 @@ export function rewriteImports(
     )
     debug(source)
     return source
+  }
+}
+
+const bareImportRE = /^[^\/\.]/
+const fileExtensionRE = /\.\w+$/
+
+export const resolveImport = (
+  importer: string,
+  id: string,
+  resolver: InternalResolver,
+  timestamp?: string
+): string => {
+  id = resolver.alias(id) || id
+  if (bareImportRE.test(id)) {
+    return `/@modules/${id}`
+  } else {
+    let { pathname, query } = resolveRelativeRequest(importer, id)
+    // append an extension to extension-less imports
+    if (!fileExtensionRE.test(pathname)) {
+      const file = resolver.requestToFile(pathname)
+      const indexMatch = file.match(/\/index\.\w+$/)
+      if (indexMatch) {
+        pathname = pathname.replace(/\/(index)?$/, '') + indexMatch[0]
+      } else {
+        pathname += path.extname(file)
+      }
+    }
+    // force re-fetch dirty imports by appending timestamp
+    if (timestamp) {
+      const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
+      // only force re-fetch if this is a marked dirty file (in the import
+      // chain of the changed file) or a vue part request (made by a dirty
+      // vue main request)
+      if ((dirtyFiles && dirtyFiles.has(pathname)) || /\.vue\?type/.test(id)) {
+        query += `${query ? `&` : `?`}t=${timestamp}`
+      }
+    }
+    return pathname + query
   }
 }
