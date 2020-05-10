@@ -17,6 +17,7 @@
   <TestJsonImport />
   <TestTs />
   <TestJsx />
+  <TestAlias />
   <h2>Async Component</h2>
   <TestAsync />
 </template>
@@ -34,6 +35,7 @@ import TestAssets from './TestAssets.vue'
 import TestJsonImport from './TestJsonImport.vue'
 import TestTs from './ts/TestTs.vue'
 import TestJsx from './TestJsx.vue'
+import TestAlias from './TestAlias.vue'
 
 export default {
   data: () => ({
@@ -52,6 +54,7 @@ export default {
     TestJsonImport,
     TestTs,
     TestJsx,
+    TestAlias,
     TestAsync: defineAsyncComponent(() => import('./TestAsync.vue'))
   }
 }

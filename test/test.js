@@ -278,6 +278,16 @@ describe('vite', () => {
       }
     })
 
+    test('alias', async () => {
+      expect(await getText('.alias')).toMatch('alias works')
+      if (!isBuild) {
+        await updateFile('aliased/index.js', (c) =>
+          c.replace('works', 'hmr works')
+        )
+        await expectByPolling(() => getText('.alias'), 'alias hmr works')
+      }
+    })
+
     test('async component', async () => {
       await expectByPolling(() => getText('.async'), 'should show up')
     })
