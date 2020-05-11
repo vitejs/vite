@@ -1,3 +1,17 @@
+## [0.14.1](https://github.com/vuejs/vite/compare/v0.14.0...v0.14.1) (2020-05-11)
+
+
+### Bug Fixes
+
+* stop spinner before logging writes ([3d16951](https://github.com/vuejs/vite/commit/3d1695100a17502dcb49d074ed15627604cd03f0))
+
+
+### Features
+
+* **cva:** update templates ([8cd2354](https://github.com/vuejs/vite/commit/8cd235451f91b9a73c5419067af0c1bf7c992655))
+
+
+
 # [0.14.0](https://github.com/vuejs/vite/compare/v0.13.2...v0.14.0) (2020-05-10)
 
 
