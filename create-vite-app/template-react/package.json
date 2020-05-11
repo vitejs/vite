@@ -9,6 +9,6 @@
     "es-react": "^16.12.0"
   },
   "devDependencies": {
-    "vite": "^0.14.0"
+    "vite": "^0.14.1"
   }
 }
