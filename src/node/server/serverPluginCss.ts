@@ -32,7 +32,6 @@ export const cssPlugin: ServerPlugin = ({
         // skip raw requests
         ctx.query.raw == null
       ) {
-        await processCss(ctx)
         // we rewrite it to JS that injects a <style> tag pointing to the same url
         // but with a `?raw` query which returns the actual css
         ctx.type = 'js'
@@ -42,6 +41,7 @@ export const cssPlugin: ServerPlugin = ({
           `import { updateStyle } from "${hmrClientId}"\n` +
           `updateStyle(${id}, ${rawPath})\n`
         if (ctx.path.endsWith('.module.css')) {
+          await processCss(ctx)
           code += `export default ${JSON.stringify(
             processedCSS.get(ctx.path)!.modules
           )}`
