@@ -31,6 +31,8 @@ $ yarn
 $ yarn dev
 ```
 
+> Although Vite is primarily designed to work with Vue 3, it can actually support other frameworks as well. For example, try `npx create-vite-app` with `--template react` or `--template preact`.
+
 ## Browser Support
 
 Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
