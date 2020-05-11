@@ -210,7 +210,7 @@ export async function parseSFC(
           content as string,
           e.loc!.start.offset,
           e.loc!.end.offset
-        )
+        ) + `\n`
       )
     })
   }
@@ -337,7 +337,8 @@ function compileSFCTemplate(
         console.error(chalk.yellow(e.message))
         const original = template.map!.sourcesContent![0]
         console.error(
-          generateCodeFrame(original, e.loc!.start.offset, e.loc!.end.offset)
+          generateCodeFrame(original, e.loc!.start.offset, e.loc!.end.offset) +
+            `\n`
         )
       }
     })
@@ -418,7 +419,7 @@ async function compileSFCStyle(
               .reduce((total, l) => total + l + 1, 0) +
             e.column -
             1
-          console.error(generateCodeFrame(original, offset, offset + 1))
+          console.error(generateCodeFrame(original, offset, offset + 1)) + `\n`
         }
       }
     })
