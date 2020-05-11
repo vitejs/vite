@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
+import { Ora } from 'ora'
 import resolve from 'resolve-from'
 import { rollup as Rollup, RollupOutput, ExternalOption } from 'rollup'
 import { createResolver, supportedExts } from '../resolver'
@@ -47,6 +48,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     })
   }
 
+  const isTest = process.env.NODE_ENV === 'test'
   process.env.NODE_ENV = 'production'
   const start = Date.now()
 
@@ -71,6 +73,17 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     silent = false,
     sourcemap = false
   } = options
+
+  let spinner: Ora | undefined
+  const msg = 'Building for production...'
+  if (!silent) {
+    if (process.env.DEBUG || isTest) {
+      console.log(msg)
+    } else {
+      console.log(process.env.NODE_ENV)
+      spinner = require('ora')(msg + '\n').start()
+    }
+  }
 
   const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
@@ -170,6 +183,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     sourcemap,
     ...rollupOutputOptions
   })
+
+  spinner && spinner.stop()
 
   const indexHtml = emitIndex ? renderIndex(output, cssFileName) : ''
 

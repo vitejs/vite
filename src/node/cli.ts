@@ -7,7 +7,6 @@ if (argv.debug) {
 
 import os from 'os'
 import chalk from 'chalk'
-import { Ora } from 'ora'
 import { UserConfig, resolveConfig } from './config'
 
 function logHelp() {
@@ -144,19 +143,10 @@ async function runServe(
 }
 
 async function runBuild(options: UserConfig) {
-  let spinner: Ora | undefined
-  const msg = 'Building for production...'
-  if (process.env.DEBUG || process.env.NODE_ENV === 'test') {
-    console.log(msg)
-  } else {
-    spinner = require('ora')(msg + '\n').start()
-  }
   try {
     await require('../dist').build(options)
-    spinner && spinner.stop()
     process.exit(0)
   } catch (err) {
-    spinner && spinner.stop()
     console.error(chalk.red(`[vite] Build errored out.`))
     console.error(err)
     process.exit(1)
