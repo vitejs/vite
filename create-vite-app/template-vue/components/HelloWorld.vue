@@ -2,7 +2,7 @@
   <div class="hello">
     <h1>{{ msg }}</h1>
     <button @click="count++">count is: {{ count }}</button>
-    <p>Edit <code>src/HelloWorld.vue</code> to test hot module replacement.</p>
+    <p>Edit <code>components/HelloWorld.vue</code> to test hot module replacement.</p>
   </div>
 </template>
 
