@@ -1,3 +1,7 @@
+## [0.14.2](https://github.com/vuejs/vite/compare/v0.14.1...v0.14.2) (2020-05-11)
+
+
+
 ## [0.14.1](https://github.com/vuejs/vite/compare/v0.14.0...v0.14.1) (2020-05-11)
 
 
