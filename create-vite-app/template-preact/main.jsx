@@ -1,7 +1,24 @@
 import { render } from 'preact'
+import { Logo } from './logo'
+import './index.css'
 
-function MyComponent(props) {
-  return <div>{props.msg}</div>
+function App(props) {
+  return (
+    <>
+      <Logo />
+      <p>Hello Vite + Preact!</p>
+      <p>
+        <a
+          class="link"
+          href="https://preactjs.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn Preact
+        </a>
+      </p>
+    </>
+  )
 }
 
-render(<MyComponent msg="Hello Preact!" />, document.getElementById('app'))
+render(<App />, document.getElementById('app'))

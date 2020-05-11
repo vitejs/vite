@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/vuejs/vite/tree/master/#readme",
   "dependencies": {
+    "fs-extra": "^9.0.0",
     "minimist": "^1.2.5"
   }
 }
