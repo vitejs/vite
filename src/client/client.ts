@@ -6,11 +6,16 @@ navigator.serviceWorker.register('/sw.js').catch((e) => {
   console.log('[vite] failed to register service worker:', e)
 })
 
+// Notify the user to reload the page if a new service worker has taken
+// control.
 if (navigator.serviceWorker.controller) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (window.confirm('[vite] Service worker cache updated. Reload?')) {
       window.location.reload()
     }
+    // in case the user dismisses it, or the prompt failed to pop because
+    // the tab was inactive
+    console.warn(`[vite] Service worker cache updated. A reload is required.`)
   })
 }
 
@@ -104,9 +109,12 @@ socket.addEventListener('message', async ({ data }) => {
       }
       break
     case 'sw-bust-cache':
+      // this is only called on file deletion
       bustSwCache(path)
       break
     case 'full-reload':
+      // make sure to bust the cache for the file that changed before
+      // reloading the page!
       await bustSwCache(path)
       location.reload()
   }
