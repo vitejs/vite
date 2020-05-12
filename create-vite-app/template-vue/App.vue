@@ -1,24 +1,15 @@
 <template>
-  <h1>Hello Vite + Vue 3!</h1>
-  <p>Edit ./App.vue to test hot module replacement (HMR).</p>
-  <p>
-    <span>Count is: {{ count }}</span>
-    <button @click="count++">increment</button>
-  </p>
+  <img alt="Vue logo" src="./logo.png" />
+  <HelloWorld msg="Hello Vue 3.0 + Vite" />
 </template>
 
 <script>
+import HelloWorld from './components/HelloWorld.vue'
+
 export default {
-  data: () => ({ count: 0 })
+  name: 'App',
+  components: {
+    HelloWorld
+  }
 }
 </script>
-
-<style scoped>
-h1 {
-  color: #4fc08d;
-}
-
-h1, p {
-  font-family: Arial, Helvetica, sans-serif;
-}
-</style>

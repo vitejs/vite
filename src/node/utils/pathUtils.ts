@@ -52,19 +52,22 @@ export const isStaticAsset = (file: string) => {
   return imageRE.test(file) || mediaRE.test(file) || fontsRE.test(file)
 }
 
-const timeStampRE = /(&|\?)t=\d+/
-const jsSrcFileRE = /\.(vue|jsx?|tsx?)$/
-
 /**
- * Check if a request is an import from js (instead of fetch() or ajax requests)
- * A request qualifies as long as it's from one of the supported js source file
- * formats (vue,js,ts,jsx,tsx)
+ * Check if a request is an import from js instead of a native resource request
+ * i.e. differentiate
+ * `import('/style.css')`
+ * from
+ * `<link rel="stylesheet" href="/style.css">`
+ *
+ * Note: we could technically use a more strict check by checking whether the
+ * request's referer is in fact a compile-to-JS source file, but that does not
+ * work in Safari because Safari uses the page URL as referer even for ES module
+ * imports.
  */
 export const isImportRequest = (ctx: Context): boolean => {
-  if (!ctx.accepts('js')) {
+  const dest = ctx.get('sec-fetch-dest')
+  if (dest && dest !== 'script') {
     return false
   }
-  // strip HMR timestamps
-  const referer = ctx.get('referer').replace(timeStampRE, '')
-  return jsSrcFileRE.test(referer)
+  return ctx.get('accept') === '*/*'
 }

@@ -8,6 +8,17 @@ declare var __VUE_HMR_RUNTIME__: HMRRuntime
 const socketProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
 const socket = new WebSocket(`${socketProtocol}://${location.host}`)
 
+function warnFailedFetch(err: Error, path: string | string[]) {
+  if (!err.message.match('fetch')) {
+    console.error(err)
+  }
+  console.error(
+    `[hmr] Failed to reload ${path}. ` +
+      `This could be due to syntax errors or importing non-existent ` +
+      `modules. (see errors above)`
+  )
+}
+
 // Listen for messages
 socket.addEventListener('message', ({ data }) => {
   const { type, path, id, index, timestamp, customData } = JSON.parse(data)
@@ -16,10 +27,12 @@ socket.addEventListener('message', ({ data }) => {
       console.log(`[vite] connected.`)
       break
     case 'vue-reload':
-      import(`${path}?t=${timestamp}`).then((m) => {
-        __VUE_HMR_RUNTIME__.reload(path, m.default)
-        console.log(`[vite] ${path} reloaded.`)
-      })
+      import(`${path}?t=${timestamp}`)
+        .then((m) => {
+          __VUE_HMR_RUNTIME__.reload(path, m.default)
+          console.log(`[vite] ${path} reloaded.`)
+        })
+        .catch((err) => warnFailedFetch(err, path))
       break
     case 'vue-rerender':
       import(`${path}?type=template&t=${timestamp}`).then((m) => {
@@ -107,13 +120,15 @@ export const hot = {
           const disposer = jsDisposeMap.get(id)
           if (disposer) await disposer()
         }
-        Promise.all(deps.map((dep) => import(dep + `?t=${timestamp}`))).then(
-          callback
-        )
+        Promise.all(deps.map((dep) => import(dep + `?t=${timestamp}`)))
+          .then(callback)
+          .catch((err) => warnFailedFetch(err, deps))
       } else {
         const disposer = jsDisposeMap.get(deps)
         disposer && (await disposer())
-        import(deps + `?t=${timestamp}`).then(callback)
+        import(deps + `?t=${timestamp}`)
+          .then(callback)
+          .catch((err) => warnFailedFetch(err, deps))
       }
     })
   },

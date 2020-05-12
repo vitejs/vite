@@ -31,6 +31,8 @@ $ yarn
 $ yarn dev
 ```
 
+> Although Vite is primarily designed to work with Vue 3, it can actually support other frameworks as well. For example, try `npx create-vite-app` with `--template react` or `--template preact`.
+
 ## Browser Support
 
 Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
@@ -341,11 +343,7 @@ Finally, because compilation is still done in Node, it can technically support a
 
 Snowpack 2 is closer to Vite in scope - both offer bundle-free dev servers and can bundle the app for production. Some notable differences are:
 
-- Vite has HMR, while Snowpack simply reloads the page on any file edit. This is a fundamental difference in terms of development experience:
-
-  - Since both solutions rely on native ES imports, the network waterfall of full page reloads can actually become the bottleneck in edit-to-feedback speed. HMR allows you to avoid reloading the page for the majority of your development time. The difference is already obvious in a hello world app, and will be more significant as the app size grows.
-
-  - When working on apps with complex state, HMR precisely reflects the minimum changes made while preserving unaffected application state, saving the time needed to reproduce the state you were in.
+- Specifically for Vue, Vite provides built-in HMR, while Snowpack simply reloads the page on any file edit. Since both solutions rely on native ES imports, the network waterfall of full page reloads can actually become the bottleneck in edit-to-feedback speed. HMR allows you to avoid reloading the page for a decent part of your development time.
 
 - Vite is a bit more opinionated and aims to minimize the amount of configuration required. All the features listed above like TypeScript transpilation, CSS import, and PostCSS support just work out of the box.
 
