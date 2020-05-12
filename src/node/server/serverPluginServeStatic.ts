@@ -57,8 +57,8 @@ export const serveStaticPlugin: ServerPlugin = ({
 
   if (config.serviceWorker !== true) {
     app.use(require('koa-conditional-get')())
-    app.use(require('koa-etag')())
   }
+  app.use(require('koa-etag')())
 
   app.use((ctx, next) => {
     const redirect = resolver.requestToFile(ctx.path)

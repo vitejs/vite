@@ -55,9 +55,9 @@ export const vuePlugin: ServerPlugin = ({
   config
 }) => {
   const etagCacheCheck = (ctx: Context) => {
+    ctx.etag = getEtag(ctx.body)
     // only add 304 tag check if not using service worker to cache user code
     if (config.serviceWorker !== true) {
-      ctx.etag = getEtag(ctx.body)
       ctx.status = ctx.etag === ctx.get('If-None-Match') ? 304 : 200
     }
   }

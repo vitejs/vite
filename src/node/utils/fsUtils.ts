@@ -32,13 +32,14 @@ export async function cachedRead(
   }
   if (cached && cached.lastModified === lastModified) {
     if (ctx) {
-      if (ctx.__serviceWorker !== true) {
-        ctx.etag = cached.etag
-        if (ctx.get('If-None-Match') === ctx.etag) {
-          ctx.status = 304
-        }
-      }
+      ctx.etag = cached.etag
       ctx.lastModified = new Date(cached.lastModified)
+      if (
+        ctx.__serviceWorker !== true &&
+        ctx.get('If-None-Match') === ctx.etag
+      ) {
+        ctx.status = 304
+      }
       ctx.body = cached.content
     }
     return cached.content

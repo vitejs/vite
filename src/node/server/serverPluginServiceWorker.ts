@@ -28,7 +28,7 @@ export const serviceWorkerPlugin: ServerPlugin = ({
     // inject server start time so the sw cache is invalidated
     .replace(
       /const __SERVER_TIMESTAMP__ =.*/,
-      `const __SERVER_TIMESTAMP__ = ${Date.now()}`
+      `const __SERVER_TIMESTAMP__ = ${config.serviceWorker ? Date.now() : '0'}`
     )
 
   // enable console logs in debug mode
