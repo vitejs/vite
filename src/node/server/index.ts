@@ -37,10 +37,6 @@ export function createServer(config: ServerConfig = {}): Server {
     transforms = []
   } = config
 
-  if (config.serviceWorker == null) {
-    config.serviceWorker = true
-  }
-
   const app = new Koa()
   const server = http.createServer(app.callback())
   const watcher = chokidar.watch(root, {

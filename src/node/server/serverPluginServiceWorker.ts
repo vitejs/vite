@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
 import { ServerPlugin } from '.'
+import chalk from 'chalk'
 
 export const serviceWorkerPlugin: ServerPlugin = ({
   root,
@@ -10,10 +11,22 @@ export const serviceWorkerPlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
+  let enabled = config.serviceWorker
+  if (typeof enabled === 'string' && enabled !== 'deps-only') {
+    console.error(
+      chalk.red(
+        `[vite] options error: option "serviceWorker" only accepts true, ` +
+          `false or "deps-only", but got "${enabled}"`
+      )
+    )
+    enabled = config.serviceWorker = true
+  }
+  if (enabled == null) {
+    enabled = config.serviceWorker = true
+  }
+
   const enabledString =
-    typeof config.serviceWorker === 'boolean'
-      ? String(config.serviceWorker)
-      : JSON.stringify(config.serviceWorker)
+    typeof enabled === 'boolean' ? String(enabled) : JSON.stringify(enabled)
 
   let swScript = fs
     .readFileSync(path.resolve(__dirname, '../serviceWorker.js'), 'utf-8')
@@ -27,10 +40,14 @@ export const serviceWorkerPlugin: ServerPlugin = ({
       /const __LOCKFILE_HASH__ =.*/,
       `const __LOCKFILE_HASH__ = ${JSON.stringify(getLockfileHash(root))}`
     )
-    // inject server start time so the sw cache is invalidated
+    // inject server id so the sw cache is invalidated on restart.
     .replace(
       /const __SERVER_ID__ =.*/,
-      `const __SERVER_ID__ = ${config.serviceWorker ? Date.now() : '0'}`
+      `const __SERVER_ID__ = ${
+        // only inject if caching user files. When caching deps only, only
+        // the lockfile change invalidates the cache.
+        config.serviceWorker === true ? Date.now() : '0'
+      }`
     )
 
   // enable console logs in debug mode
@@ -52,7 +69,7 @@ export const serviceWorkerPlugin: ServerPlugin = ({
 
   app.use(async (ctx, next) => {
     // expose config to cachedRead
-    ctx.__serviceWorker = config.serviceWorker
+    ctx.__serviceWorker = enabled
 
     if (ctx.path === '/sw.js') {
       ctx.type = 'js'

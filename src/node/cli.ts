@@ -74,10 +74,13 @@ async function resolveOptions() {
   if (argv['jsx-fragment']) {
     ;(argv.jsx || (argv.jsx = {})).fragment = argv['jsx-fragment']
   }
-  // cast xxx=false into actual `false`
+  // cast xxx=true | false into actual booleans
   Object.keys(argv).forEach((key) => {
     if (argv[key] === 'false') {
       argv[key] = false
+    }
+    if (argv[key] === 'true') {
+      argv[key] = true
     }
   })
   // command
