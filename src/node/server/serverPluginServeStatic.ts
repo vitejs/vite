@@ -3,7 +3,12 @@ import { ServerPlugin } from '.'
 const send = require('koa-send')
 const debug = require('debug')('vite:history')
 
-export const serveStaticPlugin: ServerPlugin = ({ root, app, resolver }) => {
+export const serveStaticPlugin: ServerPlugin = ({
+  root,
+  app,
+  resolver,
+  config
+}) => {
   app.use((ctx, next) => {
     // short circuit requests that have already been explicitly handled
     if (ctx.body || ctx.status !== 404) {
@@ -50,8 +55,10 @@ export const serveStaticPlugin: ServerPlugin = ({ root, app, resolver }) => {
     return next()
   })
 
-  app.use(require('koa-conditional-get')())
-  app.use(require('koa-etag')())
+  if (config.serviceWorker !== true) {
+    app.use(require('koa-conditional-get')())
+    app.use(require('koa-etag')())
+  }
 
   app.use((ctx, next) => {
     const redirect = resolver.requestToFile(ctx.path)

@@ -47,11 +47,6 @@ export const vueCache = new LRUCache<string, CacheEntry>({
   max: 65535
 })
 
-const etagCacheCheck = (ctx: Context) => {
-  ctx.etag = getEtag(ctx.body)
-  ctx.status = ctx.etag === ctx.get('If-None-Match') ? 304 : 200
-}
-
 export const vuePlugin: ServerPlugin = ({
   root,
   app,
@@ -59,6 +54,14 @@ export const vuePlugin: ServerPlugin = ({
   watcher,
   config
 }) => {
+  const etagCacheCheck = (ctx: Context) => {
+    // only add 304 tag check if not using service worker to cache user code
+    if (config.serviceWorker !== true) {
+      ctx.etag = getEtag(ctx.body)
+      ctx.status = ctx.etag === ctx.get('If-None-Match') ? 304 : 200
+    }
+  }
+
   app.use(async (ctx, next) => {
     if (!ctx.path.endsWith('.vue') && !ctx.vue) {
       return next()

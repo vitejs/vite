@@ -32,12 +32,13 @@ export async function cachedRead(
   }
   if (cached && cached.lastModified === lastModified) {
     if (ctx) {
-      ctx.etag = cached.etag
-      ctx.lastModified = new Date(cached.lastModified)
-      if (ctx.get('If-None-Match') === ctx.etag) {
-        ctx.status = 304
+      if (ctx.__serviceWorker !== true) {
+        ctx.etag = cached.etag
+        if (ctx.get('If-None-Match') === ctx.etag) {
+          ctx.status = 304
+        }
       }
-      // still set the content for *.vue requests
+      ctx.lastModified = new Date(cached.lastModified)
       ctx.body = cached.content
     }
     return cached.content

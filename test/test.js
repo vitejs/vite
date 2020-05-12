@@ -242,7 +242,7 @@ describe('vite', () => {
         await expectByPolling(() => getText('.src-imports-script'), 'bye from')
         // template
         await updateFile('src-import/template.html', (c) =>
-          c.replace('{{ msg }}', 'changed')
+          c.replace('{{ msg }}', '{{ msg }} changed')
         )
         await expectByPolling(() => getText('.src-imports-script'), 'changed')
       }
@@ -317,16 +317,16 @@ describe('vite', () => {
   // test build first since we are going to edit the fixtures when testing dev
   describe('build', () => {
     let staticServer
-    afterAll(() => {
-      if (staticServer) staticServer.close()
-    })
-
-    test('should build without error', async () => {
+    beforeAll(async () => {
       const buildOutput = await execa(binPath, ['build'], {
         cwd: tempDir
       })
       expect(buildOutput.stdout).toMatch('Build completed')
       expect(buildOutput.stderr).toBe('')
+    })
+
+    afterAll(() => {
+      if (staticServer) staticServer.close()
     })
 
     describe('assertions', () => {
@@ -369,6 +369,30 @@ describe('vite', () => {
     })
 
     declareTests(false)
+
+    // Assert that all edited files are reflected on page reload
+    // i.e. service-worker cache is correctly busted
+    test('sw cache busting', async () => {
+      await page.reload()
+
+      expect(await getText('.hmr-increment')).toMatch('>>> count is 1337 <<<')
+      expect(await getText('.hmr-propagation')).toMatch('666')
+      expect(await getComputedColor('.postcss-from-css')).toBe('rgb(0, 128, 0)')
+      expect(await getComputedColor('.postcss-from-sfc')).toBe('rgb(255, 0, 0)')
+      expect(await getComputedColor('.style-scoped')).toBe('rgb(0, 0, 0)')
+      expect(await getComputedColor('.css-modules-sfc')).toBe('rgb(0, 0, 0)')
+      expect(await getComputedColor('.css-modules-import')).toBe('rgb(0, 0, 1)')
+      expect(await getComputedColor('.pug')).toBe('rgb(0, 0, 0)')
+      expect(await getText('.pug')).toMatch('pug with hmr')
+      expect(await getComputedColor('.src-imports-style')).toBe('rgb(0, 0, 0)')
+      expect(await getText('.src-imports-script')).toMatch('bye from')
+      expect(await getText('.src-imports-script')).toMatch('changed')
+      expect(await getText('.jsx-root')).toMatch('2046')
+      expect(await getText('.alias')).toMatch('alias hmr works')
+      expect(await getComputedColor('.transform-scss')).toBe('rgb(0, 0, 0)')
+      expect(await getText('.transform-js')).toMatch('3')
+      expect(await getText('.json')).toMatch('with hmr')
+    })
   })
 })
 
@@ -380,7 +404,7 @@ async function updateFile(file, replacer) {
 
 // poll until it updates
 async function expectByPolling(poll, expected) {
-  const maxTries = 10
+  const maxTries = 20
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = await poll()
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {

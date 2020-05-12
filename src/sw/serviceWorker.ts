@@ -1,4 +1,5 @@
 // These are injected by the server on the fly so that we invalidate the cache.
+const __ENABLED__ = true as boolean | 'deps-only'
 const __PROJECT_ROOT__ = '/'
 const __SERVER_TIMESTAMP__ = 1
 const __LOCKFILE_HASH__ = 'a'
@@ -51,7 +52,15 @@ const depsRE = /^\/@modules\//
 const hmrRequestRE = /(&|\?)t=\d+/
 
 sw.addEventListener('fetch', (e) => {
+  if (!__ENABLED__) {
+    return
+  }
+
   const url = new URL(e.request.url)
+  if (__ENABLED__ === 'deps-only' && !url.pathname.startsWith(`/@modules/`)) {
+    return
+  }
+
   if (
     // cacheableRequestRE.test(url.pathname) &&
     // no need to cache hmr update requests

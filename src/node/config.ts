@@ -60,6 +60,15 @@ export interface SharedConfig {
 }
 
 export interface ServerConfig extends SharedConfig {
+  /**
+   * Whether to use a Service Worker to cache served code. This greatly improves
+   * full page reload performance. Set to false to disable so that every
+   * request will hit the server (returns 304 if file didn't change), or set
+   * to 'deps-only' so that it only caches 3rd party dependencies.
+   *
+   * @default true
+   */
+  serviceWorker?: boolean | 'deps-only'
   plugins?: ServerPlugin[]
 }
 
@@ -142,7 +151,9 @@ export interface BuildConfig extends SharedConfig {
   emitAssets?: boolean
 }
 
-export interface UserConfig extends BuildConfig {
+export interface UserConfig
+  extends BuildConfig,
+    Pick<ServerConfig, 'serviceWorker'> {
   plugins?: Plugin[]
   configureServer?: ServerPlugin
 }

@@ -29,6 +29,7 @@
 //    updates using the full paths of the dependencies.
 
 import { ServerPlugin } from '.'
+import fs from 'fs'
 import WebSocket from 'ws'
 import path from 'path'
 import chalk from 'chalk'
@@ -36,7 +37,6 @@ import hash_sum from 'hash-sum'
 import { SFCBlock } from '@vue/compiler-sfc'
 import { parseSFC, vueCache, srcImportMap } from './serverPluginVue'
 import { resolveImport } from './serverPluginModuleRewrite'
-import { cachedRead } from '../utils'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '@babel/parser'
@@ -97,13 +97,16 @@ export const hmrPlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
+  const hmrClient = fs.readFileSync(hmrClientFilePath, 'utf-8')
+
   app.use(async (ctx, next) => {
-    if (ctx.path !== hmrClientPublicPath) {
+    if (ctx.path === hmrClientPublicPath) {
+      ctx.type = 'js'
+      ctx.status = 200
+      ctx.body = hmrClient
+    } else {
       return next()
     }
-    debugHmr('serving hmr client')
-    ctx.type = 'js'
-    await cachedRead(ctx, hmrClientFilePath)
   })
 
   // start a websocket server to send hmr notifications to the client

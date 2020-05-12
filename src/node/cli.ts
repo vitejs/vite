@@ -22,6 +22,7 @@ Options:
   --help, -h                 [boolean] show help
   --version, -v              [boolean] show version
   --config, -c               [string]  use specified config file
+  --serviceWorker, -sw       [boolean | 'deps-only'] configure service worker caching behavior
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
   --base                     [string]  public base path for build (default: /)
@@ -29,7 +30,7 @@ Options:
   --assetsDir                [string]  directory under outDir to place assets in (default: assets)
   --assetsInlineLimit        [number]  static asset base64 inline threshold in bytes (default: 4096)
   --sourcemap                [boolean] output source maps for build (default: false)
-  --minify                   [boolean | 'terser' | 'esbuild'] disable minification, or specify
+  --minify                   [boolean | 'terser' | 'esbuild'] enable/disable minification, or specify
                                        minifier to use. (default: 'terser')
   --ssr                      [boolean] build for server-side rendering
   --jsx                      ['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')
@@ -58,6 +59,10 @@ console.log(chalk.cyan(`vite v${require('../package.json').version}`))
 })()
 
 async function resolveOptions() {
+  // shorthand for serviceWorker option
+  if (argv['sw']) {
+    argv.serviceWorker = argv['sw']
+  }
   // map jsx args
   if (argv['jsx-factory']) {
     ;(argv.jsx || (argv.jsx = {})).factory = argv['jsx-factory']

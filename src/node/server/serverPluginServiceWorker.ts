@@ -3,22 +3,33 @@ import path from 'path'
 import { ServerPlugin } from '.'
 
 // TODO inject lockfile hash
+// TODO use file content / lastModified hash instead of timestamp?
 
 export const serviceWorkerPlugin: ServerPlugin = ({
   root,
   app,
   watcher,
-  resolver
+  resolver,
+  config
 }) => {
+  const enabledString =
+    typeof config.serviceWorker === 'boolean'
+      ? String(config.serviceWorker)
+      : JSON.stringify(config.serviceWorker)
+
   let swScript = fs
     .readFileSync(path.resolve(__dirname, '../serviceWorker.js'), 'utf-8')
+    .replace(/const __ENABLED__ =.*/, `const __ENABLED__ = ${enabledString}`)
     // make sure the sw cache is unique per project
     .replace(
-      /__PROJECT_ROOT__ =.*/,
-      `__PROJECT_ROOT__ = ${JSON.stringify(root)}`
+      /const __PROJECT_ROOT__ =.*/,
+      `const __PROJECT_ROOT__ = ${JSON.stringify(root)}`
     )
     // inject server start time so the sw cache is invalidated
-    .replace(/__SERVER_TIMESTAMP__ =.*/, `__SERVER_TIMESTAMP__ = ${Date.now()}`)
+    .replace(
+      /const __SERVER_TIMESTAMP__ =.*/,
+      `const __SERVER_TIMESTAMP__ = ${Date.now()}`
+    )
 
   // enable console logs in debug mode
   if (process.env.DEBUG === 'vite:sw') {
@@ -38,6 +49,9 @@ export const serviceWorkerPlugin: ServerPlugin = ({
   // - notify the client to update the sw
 
   app.use(async (ctx, next) => {
+    // expose config to cachedRead
+    ctx.__serviceWorker = config.serviceWorker
+
     if (ctx.path === '/sw.js') {
       ctx.type = 'js'
       ctx.status = 200

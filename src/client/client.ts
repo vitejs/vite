@@ -52,6 +52,9 @@ socket.addEventListener('message', async ({ data }) => {
   if (changeSrcPath) {
     await bustSwCache(changeSrcPath)
   }
+  if (path !== changeSrcPath) {
+    await bustSwCache(path)
+  }
 
   switch (type) {
     case 'connected':
@@ -108,14 +111,7 @@ socket.addEventListener('message', async ({ data }) => {
         cbs.forEach((cb) => cb(customData))
       }
       break
-    case 'sw-bust-cache':
-      // this is only called on file deletion
-      bustSwCache(path)
-      break
     case 'full-reload':
-      // make sure to bust the cache for the file that changed before
-      // reloading the page!
-      await bustSwCache(path)
       location.reload()
   }
 })
