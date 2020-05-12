@@ -392,6 +392,12 @@ describe('vite', () => {
       expect(await getComputedColor('.transform-scss')).toBe('rgb(0, 0, 0)')
       expect(await getText('.transform-js')).toMatch('3')
       expect(await getText('.json')).toMatch('with hmr')
+
+      // ensure import graph is still working
+      await updateFile('testJsonImport.json', (c) =>
+        c.replace('with hmr', 'with sw reload')
+      )
+      await expectByPolling(() => getText('.json'), 'with sw reload')
     })
   })
 })
