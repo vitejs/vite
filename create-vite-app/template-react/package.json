@@ -2,11 +2,12 @@
   "name": "vite-react-starter",
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite --jsx react",
-    "build": "vite build --jsx react"
+    "dev": "vite serve src --jsx react",
+    "build": "vite build src --jsx react"
   },
   "dependencies": {
-    "es-react": "^16.12.0"
+    "@pika/react": "^16.13.1",
+    "@pika/react-dom": "^16.13.1"
   },
   "devDependencies": {
     "vite": "^0.14.2"
