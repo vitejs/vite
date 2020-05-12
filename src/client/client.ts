@@ -2,25 +2,29 @@
 import { HMRRuntime } from 'vue'
 
 // register service worker
-const hasExistingSw = !!navigator.serviceWorker.controller
-if (__SW_ENABLED__ || hasExistingSw) {
-  // if not enabled but has existing sw, registering the sw will force the
-  // cache to be busted.
-  navigator.serviceWorker.register('/sw.js').catch((e) => {
-    console.log('[vite] failed to register service worker:', e)
-  })
-
-  // Notify the user to reload the page if a new service worker has taken
-  // control.
-  if (hasExistingSw) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (window.confirm('[vite] Service worker cache updated. Reload?')) {
-        window.location.reload()
-      }
-      // in case the user dismisses it, or the prompt failed to pop because
-      // the tab was inactive
-      console.warn(`[vite] Service worker cache updated. A reload is required.`)
+if ('serviceWorker' in navigator) {
+  const hasExistingSw = !!navigator.serviceWorker.controller
+  if (__SW_ENABLED__ || hasExistingSw) {
+    // if not enabled but has existing sw, registering the sw will force the
+    // cache to be busted.
+    navigator.serviceWorker.register('/sw.js').catch((e) => {
+      console.log('[vite] failed to register service worker:', e)
     })
+
+    // Notify the user to reload the page if a new service worker has taken
+    // control.
+    if (hasExistingSw) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (window.confirm('[vite] Service worker cache updated. Reload?')) {
+          window.location.reload()
+        }
+        // in case the user dismisses it, or the prompt failed to pop because
+        // the tab was inactive
+        console.warn(
+          `[vite] Service worker cache updated. A reload is required.`
+        )
+      })
+    }
   }
 }
 
@@ -188,7 +192,7 @@ export const hot = {
 }
 
 function bustSwCache(path: string) {
-  const sw = navigator.serviceWorker.controller
+  const sw = navigator.serviceWorker && navigator.serviceWorker.controller
   if (sw) {
     return new Promise((r) => {
       const channel = new MessageChannel()
