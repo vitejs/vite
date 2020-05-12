@@ -2,7 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
 import { ServerPlugin } from '.'
-import chalk from 'chalk'
 
 export const serviceWorkerPlugin: ServerPlugin = ({
   root,
@@ -11,26 +10,11 @@ export const serviceWorkerPlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  let enabled = config.serviceWorker
-  if (typeof enabled === 'string' && enabled !== 'deps-only') {
-    console.error(
-      chalk.red(
-        `[vite] options error: option "serviceWorker" only accepts true, ` +
-          `false or "deps-only", but got "${enabled}"`
-      )
-    )
-    enabled = config.serviceWorker = true
-  }
-  if (enabled == null) {
-    enabled = config.serviceWorker = true
-  }
-
-  const enabledString =
-    typeof enabled === 'boolean' ? String(enabled) : JSON.stringify(enabled)
+  const enabled = (config.serviceWorker = !!config.serviceWorker)
 
   let swScript = fs
     .readFileSync(path.resolve(__dirname, '../serviceWorker.js'), 'utf-8')
-    .replace(/const __ENABLED__ =.*/, `const __ENABLED__ = ${enabledString}`)
+    .replace(/const __ENABLED__ =.*/, `const __ENABLED__ = ${enabled}`)
     // make sure the sw cache is unique per project
     .replace(
       /const __PROJECT_ROOT__ =.*/,

@@ -55,7 +55,7 @@ export const serveStaticPlugin: ServerPlugin = ({
     return next()
   })
 
-  if (config.serviceWorker !== true) {
+  if (!config.serviceWorker) {
     app.use(require('koa-conditional-get')())
   }
   app.use(require('koa-etag')())

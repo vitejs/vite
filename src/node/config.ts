@@ -61,15 +61,13 @@ export interface SharedConfig {
 
 export interface ServerConfig extends SharedConfig {
   /**
-   * Whether to use a Service Worker to cache served code. This greatly improves
-   * full page reload performance.
-   * - `true`: caches everything, including src code.
-   * - `false`: disable sw caching
-   * - `'deps-only'`: only caches dependencies.
+   * Whether to use a Service Worker to cache served code. This can greatly
+   * improve full page reload performance, but requires a Service Worker
+   * update + reload on each server restart.
    *
-   * @default true
+   * @default false
    */
-  serviceWorker?: boolean | 'deps-only'
+  serviceWorker?: boolean
   plugins?: ServerPlugin[]
 }
 

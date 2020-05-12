@@ -22,7 +22,7 @@ Options:
   --help, -h                 [boolean] show help
   --version, -v              [boolean] show version
   --config, -c               [string]  use specified config file
-  --serviceWorker, -sw       [boolean | 'deps-only'] configure service worker caching (default: true)
+  --serviceWorker, -sw       [boolean] configure service worker caching (default: false)
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
   --base                     [string]  public base path for build (default: /)

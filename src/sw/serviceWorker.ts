@@ -1,5 +1,5 @@
 // These are injected by the server on the fly so that we invalidate the cache.
-const __ENABLED__ = true as boolean | 'deps-only'
+const __ENABLED__ = true
 const __PROJECT_ROOT__ = '/'
 const __SERVER_ID__ = 1
 const __LOCKFILE_HASH__ = 'a'
@@ -57,15 +57,8 @@ sw.addEventListener('fetch', (e) => {
   }
 
   const url = new URL(e.request.url)
-  if (__ENABLED__ === 'deps-only' && !url.pathname.startsWith(`/@modules/`)) {
-    return
-  }
-
-  if (
-    // cacheableRequestRE.test(url.pathname) &&
-    // no need to cache hmr update requests
-    !url.search.match(hmrRequestRE)
-  ) {
+  // no need to cache hmr update requests
+  if (!url.search.match(hmrRequestRE)) {
     const cacheToUse = depsRE.test(url.pathname)
       ? DEPS_CACHE_NAME
       : USER_CACHE_NAME

@@ -46,7 +46,8 @@ export const moduleRewritePlugin: ServerPlugin = ({
   root,
   app,
   watcher,
-  resolver
+  resolver,
+  config
 }) => {
   // bust module rewrite cache on file change
   watcher.on('change', (file) => {
@@ -58,12 +59,13 @@ export const moduleRewritePlugin: ServerPlugin = ({
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
   const devInjectionCode =
-    `\n<script type="module">` +
-    `import "${hmrClientPublicPath}"\n` +
+    `\n<script>\n` +
     `window.__DEV__ = true\n` +
     `window.__BASE__ = '/'\n` +
+    `window.__SW_ENABLED__ = ${!!config.serviceWorker}\n` +
     `window.process = { env: { NODE_ENV: 'development' }}\n` +
-    `</script>\n`
+    `</script>` +
+    `\n<script type="module" src="${hmrClientPublicPath}"></script>\n`
 
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
