@@ -49,19 +49,17 @@ socket.addEventListener('message', ({ data }) => {
       })
       break
     case 'vue-style-update':
-      modulePath = `${modulePath}?type=style&index=${index}`
-      updateStyle(id, `${path}&t=${timestamp}`)
+      modulePath = `${path}?type=style&index=${index}`
+      updateStyle(id, `${modulePath}&t=${timestamp}`)
       console.log(
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
       break
     case 'style-update':
-      modulePath = `${path}?raw`
-      updateStyle(id, `${modulePath}&t=${timestamp}`)
+      updateStyle(id, `${path}?t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
-      modulePath = `${path}?raw`
       const link = document.getElementById(`vite-css-${id}`)
       if (link) {
         document.head.removeChild(link)

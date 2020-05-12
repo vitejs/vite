@@ -59,15 +59,8 @@ export const isStaticAsset = (file: string) => {
  * from
  * `<link rel="stylesheet" href="/style.css">`
  *
- * Note: we could technically use a more strict check by checking whether the
- * request's referer is in fact a compile-to-JS source file, but that does not
- * work in Safari because Safari uses the page URL as referer even for ES module
- * imports.
+ * The ?import query is injected by serverPluginModuleRewrite.
  */
 export const isImportRequest = (ctx: Context): boolean => {
-  const dest = ctx.get('sec-fetch-dest')
-  if (dest && dest !== 'script') {
-    return false
-  }
-  return ctx.get('accept') === '*/*'
+  return ctx.query.import != null
 }

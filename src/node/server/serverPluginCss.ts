@@ -27,17 +27,13 @@ export const cssPlugin: ServerPlugin = ({
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
-      if (
-        isImportRequest(ctx) &&
-        // skip raw requests
-        ctx.query.raw == null
-      ) {
+      if (isImportRequest(ctx)) {
         await processCss(ctx)
         // we rewrite it to JS that injects a <style> tag pointing to the same url
         // but with a `?raw` query which returns the actual css
         ctx.type = 'js'
         const id = JSON.stringify(hash_sum(ctx.path))
-        const rawPath = JSON.stringify(ctx.path + '?raw')
+        const rawPath = JSON.stringify(ctx.path)
         let code =
           `import { updateStyle } from "${hmrClientId}"\n` +
           `updateStyle(${id}, ${rawPath})\n`

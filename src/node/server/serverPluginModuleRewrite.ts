@@ -23,9 +23,11 @@ import {
   readBody,
   cleanUrl,
   isExternalUrl,
-  resolveRelativeRequest
+  resolveRelativeRequest,
+  isStaticAsset
 } from '../utils'
 import chalk from 'chalk'
+import { tjsxRE } from '../esbuildService'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -280,6 +282,12 @@ export const resolveImport = (
         pathname += path.extname(file)
       }
     }
+
+    // mark non-src imports
+    if (!tjsxRE.test(pathname) && !pathname.endsWith('vue')) {
+      query += `${query ? `&` : `?`}import`
+    }
+
     // force re-fetch dirty imports by appending timestamp
     if (timestamp) {
       const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
