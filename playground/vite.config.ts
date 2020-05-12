@@ -8,6 +8,7 @@ const config: UserConfig = {
   },
   jsx: 'preact',
   minify: false,
+  serviceWorker: !!process.env.USE_SW,
   plugins: [sassPlugin, jsPlugin]
 }
 
