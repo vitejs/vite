@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import { createHash } from 'crypto'
 import { ServerPlugin } from '.'
+import { getDepHash } from '../optimizer'
 
 export const serviceWorkerPlugin: ServerPlugin = ({
   root,
@@ -22,7 +22,9 @@ export const serviceWorkerPlugin: ServerPlugin = ({
     )
     .replace(
       /const __LOCKFILE_HASH__ =.*/,
-      `const __LOCKFILE_HASH__ = ${JSON.stringify(getLockfileHash(root))}`
+      `const __LOCKFILE_HASH__ = ${JSON.stringify(
+        getDepHash(root, config.__path)
+      )}`
     )
     // inject server id so the sw cache is invalidated on restart.
     .replace(
@@ -63,22 +65,4 @@ export const serviceWorkerPlugin: ServerPlugin = ({
     }
     return next()
   })
-}
-
-const lockfileFormats = [
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
-  'package.json'
-]
-
-function getLockfileHash(root: string): string {
-  for (const format of lockfileFormats) {
-    const fullPath = path.join(root, format)
-    if (fs.existsSync(fullPath)) {
-      const content = fs.readFileSync(fullPath, 'utf-8')
-      return createHash('sha1').update(content).digest('base64')
-    }
-  }
-  return ``
 }

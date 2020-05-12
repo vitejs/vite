@@ -169,11 +169,13 @@ export interface Plugin
     | 'rollupOutputOptions'
   > {}
 
+export type ResolvedConfig = UserConfig & { __path?: string }
+
 export async function resolveConfig(
   configPath: string | undefined
-): Promise<UserConfig | undefined> {
+): Promise<ResolvedConfig | undefined> {
   const start = Date.now()
-  let config: UserConfig | undefined
+  let config: ResolvedConfig | undefined
   let resolvedPath: string | undefined
   let isTS = false
   if (configPath) {
@@ -252,6 +254,8 @@ export async function resolveConfig(
     require('debug')('vite:config')(
       `config resolved in ${Date.now() - start}ms`
     )
+
+    config.__path = resolvedPath
     return config
   } catch (e) {
     console.error(

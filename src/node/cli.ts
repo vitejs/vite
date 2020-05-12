@@ -55,7 +55,7 @@ console.log(chalk.cyan(`vite v${require('../package.json').version}`))
   } else if (options.command === 'build') {
     runBuild(options)
   } else if (options.command === 'optimize') {
-    // runOptimize()
+    runOptimize(options)
   } else {
     console.error(chalk.red(`unknown command: ${options.command}`))
     process.exit(1)
@@ -160,6 +160,17 @@ async function runBuild(options: UserConfig) {
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Build errored out.`))
+    console.error(err)
+    process.exit(1)
+  }
+}
+
+async function runOptimize(options: UserConfig) {
+  try {
+    await require('../dist').optimize(options)
+    process.exit(0)
+  } catch (err) {
+    console.error(chalk.red(`[vite] Dep optimization errored out.`))
     console.error(err)
     process.exit(1)
   }
