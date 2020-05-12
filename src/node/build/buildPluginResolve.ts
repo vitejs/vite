@@ -3,7 +3,10 @@ import fs from 'fs-extra'
 import { hmrClientId } from '../server/serverPluginHmr'
 import { InternalResolver } from '../resolver'
 import { resolveVue } from '../utils/resolveVue'
-import { resolveWebModule } from '../server/serverPluginModuleResolve'
+import {
+  resolveWebModule,
+  resolveOptimizedModule
+} from '../server/serverPluginModuleResolve'
 
 const debug = require('debug')('vite:build:resolve')
 
@@ -31,7 +34,11 @@ export const createBuildResolvePlugin = (
           return resolved
         }
       } else if (!id.startsWith('.')) {
-        const webModulePath = await resolveWebModule(root, id)
+        const optimizedModule = resolveOptimizedModule(root, id)
+        if (optimizedModule) {
+          return optimizedModule
+        }
+        const webModulePath = resolveWebModule(root, id)
         if (webModulePath) {
           return webModulePath
         }

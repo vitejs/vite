@@ -97,6 +97,7 @@ describe('vite', () => {
     test('module resolving', async () => {
       expect(await getText('.module-resolve-router')).toMatch('ok')
       expect(await getText('.module-resolve-store')).toMatch('ok')
+      expect(await getText('.module-resolve-optimize')).toMatch('ok')
       expect(await getText('.module-resolve-web')).toMatch('ok')
       expect(await getText('.index-resolve')).toMatch('ok')
     })
@@ -313,6 +314,16 @@ describe('vite', () => {
       await expectByPolling(() => getText('.async'), 'should show up')
     })
   }
+
+  describe('optimize', () => {
+    test('should build deps', async () => {
+      await execa(binPath, ['optimize'], {
+        cwd: tempDir
+      })
+      const file = path.join(tempDir, 'node_modules', '.vite', 'lodash-es.js')
+      expect(fs.existsSync(file)).toBe(true)
+    })
+  })
 
   // test build first since we are going to edit the fixtures when testing dev
   describe('build', () => {

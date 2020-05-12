@@ -53,34 +53,64 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       return serve(id, cachedPath, 'cached')
     }
 
-    // resolve from web_modules
-    try {
-      const webModulePath = resolveWebModule(root, id)
-      if (webModulePath) {
-        return serve(id, webModulePath, 'web_modules')
-      }
-    } catch (e) {
-      console.error(
-        chalk.red(`[vite] Error while resolving web_modules with id "${id}":`)
-      )
-      console.error(e)
-      ctx.status = 404
+    // resolve from vite optimized modules
+    const optimized = resolveOptimizedModule(root, id)
+    if (optimized) {
+      return serve(id, optimized, 'optimized')
     }
 
-    // resolve from node_modules
+    // resolve from web_modules
+    const webModulePath = resolveWebModule(root, id)
+    if (webModulePath) {
+      return serve(id, webModulePath, 'web_modules')
+    }
+
     try {
       // we land here after a module entry redirect
       // or a direct deep import like 'foo/bar/baz.js'.
       const file = resolve(root, id)
       return serve(id, file, 'node_modules')
     } catch (e) {
-      console.error(
-        chalk.red(`[vite] Error while resolving node_modules with id "${id}":`)
-      )
+      console.error(chalk.red(`[vite] Error while resolving /@modules/${id} :`))
       console.error(e)
       ctx.status = 404
     }
   })
+}
+
+export function resolveBareModule(root: string, id: string) {
+  const optimized = resolveOptimizedModule(root, id)
+  if (optimized) {
+    return id + '.js'
+  }
+  const web = resolveWebModule(root, id)
+  if (web) {
+    return id + '.js'
+  }
+  const nodeEntry = resolveNodeModuleEntry(root, id)
+  if (nodeEntry) {
+    return nodeEntry
+  }
+  return id
+}
+
+const viteOptimizedMap = new Map()
+
+export function resolveOptimizedModule(
+  root: string,
+  id: string
+): string | undefined {
+  const cached = viteOptimizedMap.get(id)
+  if (cached) {
+    return cached
+  }
+
+  if (!id.endsWith('.js')) id += '.js'
+  const file = path.join(root, `node_modules`, `.vite`, id)
+  if (fs.existsSync(file)) {
+    viteOptimizedMap.set(id, file)
+    return file
+  }
 }
 
 const webModulesMap = new Map()
@@ -101,10 +131,7 @@ export function resolveWebModule(root: string, id: string): string | undefined {
 
 const idToEntryMap = new Map()
 
-export function resolveNodeModuleEntry(
-  root: string,
-  id: string
-): string | undefined {
+function resolveNodeModuleEntry(root: string, id: string): string | undefined {
   const cached = idToEntryMap.get(id)
   if (cached) {
     return cached

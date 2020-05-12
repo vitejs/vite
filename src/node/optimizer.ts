@@ -3,6 +3,7 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { ResolvedConfig } from './config'
 import type Rollup from 'rollup'
+import resolveFrom from 'resolve-from'
 import { supportedExts } from './resolver'
 
 export interface OptimizeOptions extends ResolvedConfig {
@@ -28,6 +29,7 @@ export async function optimize(config: OptimizeOptions) {
     }
   }
 
+  await fs.remove(cacheDir)
   await fs.ensureDir(cacheDir)
   await fs.writeFile(hashPath, depHash)
 
@@ -45,9 +47,24 @@ export async function optimize(config: OptimizeOptions) {
   }
 
   console.log(`optimizing dependencies...`)
-  const rollup = require('rollup') as typeof Rollup
 
-  await rollup.rollup({
+  const entriesToNameMap = new Map()
+  depKeys.forEach((id) => {
+    // TODO:
+    // - check if the package is installed
+    // - check if it has module entry
+    // - if it has module entry, scan it with es-module-lexer to see if it
+    //   imports other files
+    // - if it does, bundle it...
+
+    // Problem: users may do deep import from dependencies which are not
+    // bundled, e.g. lodash-es/cloneDeep <-- maybe we still need a scan? But
+    // the scan would be quite expensive...
+    entriesToNameMap.set(resolveFrom(root, id), id)
+  })
+
+  const rollup = require('rollup') as typeof Rollup
+  const bundle = await rollup.rollup({
     input: depKeys,
     plugins: [
       require('@rollup/plugin-node-resolve')({
@@ -57,8 +74,25 @@ export async function optimize(config: OptimizeOptions) {
       require('@rollup/plugin-commonjs')({
         sourceMap: false
       })
-    ]
+    ],
+    onwarn(warning, warn) {
+      if (warning.code !== 'CIRCULAR_DEPENDENCY') {
+        warn(warning)
+      }
+    }
   })
+
+  const { output } = await bundle.generate({
+    format: 'es'
+  })
+
+  for (const chunk of output) {
+    if (chunk.type === 'chunk') {
+      const id = entriesToNameMap.get(chunk.facadeModuleId)
+      const fileName = id ? id + '.js' : chunk.fileName
+      await fs.writeFile(path.join(cacheDir, fileName), chunk.code)
+    }
+  }
 }
 
 const lockfileFormats = [

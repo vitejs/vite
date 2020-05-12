@@ -4,6 +4,9 @@
     vue-router@next {{ router }}
   </div>
   <div class="module-resolve-store" :class="store">vuex@next {{ store }}</div>
+  <div class="module-resolve-optimize" :class="optResolve">
+    optimized {{ optResolve }}
+  </div>
   <div class="module-resolve-web" :class="web_modules">
     web_modules {{ web_modules }}
   </div>
@@ -15,6 +18,7 @@
 <script>
 import { createRouter } from 'vue-router'
 import { createStore } from 'vuex'
+import { add } from 'lodash-es'
 import { dep } from 'web-modules-dep'
 import { foo } from './util'
 
@@ -23,6 +27,7 @@ export default {
     return {
       router: typeof createRouter === 'function' ? 'ok' : 'error',
       store: typeof createStore === 'function' ? 'ok' : 'error',
+      optResolve: typeof add === 'function' ? 'ok' : 'error',
       web_modules: dep() ? 'ok' : 'error',
       indexResolve: foo() ? 'ok' : 'error'
     }
