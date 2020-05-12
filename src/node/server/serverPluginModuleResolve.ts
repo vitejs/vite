@@ -9,7 +9,6 @@ const debug = require('debug')('vite:resolve')
 
 export const idToFileMap = new Map()
 export const fileToRequestMap = new Map()
-const webModulesMap = new Map()
 
 export const moduleRE = /^\/@modules\//
 
@@ -56,7 +55,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
 
     // resolve from web_modules
     try {
-      const webModulePath = await resolveWebModule(root, id)
+      const webModulePath = resolveWebModule(root, id)
       if (webModulePath) {
         return serve(id, webModulePath, 'web_modules')
       }
@@ -84,17 +83,16 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
   })
 }
 
-export async function resolveWebModule(
-  root: string,
-  id: string
-): Promise<string | undefined> {
-  let webModulePath = webModulesMap.get(id)
-  if (webModulePath) {
-    return webModulePath
+const webModulesMap = new Map()
+
+export function resolveWebModule(root: string, id: string): string | undefined {
+  const cached = webModulesMap.get(id)
+  if (cached) {
+    return cached
   }
   // id could be a common chunk
   if (!id.endsWith('.js')) id += '.js'
-  webModulePath = path.join(root, 'web_modules', id)
+  const webModulePath = path.join(root, 'web_modules', id)
   if (fs.existsSync(webModulePath)) {
     webModulesMap.set(id, webModulePath)
     return webModulePath

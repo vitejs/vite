@@ -26,7 +26,10 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
-import { resolveNodeModuleEntry } from './serverPluginModuleResolve'
+import {
+  resolveNodeModuleEntry,
+  resolveWebModule
+} from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -281,7 +284,9 @@ export const resolveImport = (
   if (bareImportRE.test(id)) {
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
-    return `/@modules/${resolveNodeModuleEntry(root, id) || id}`
+    return `/@modules/${
+      resolveWebModule(root, id) || resolveNodeModuleEntry(root, id) || id
+    }`
   } else {
     let { pathname, query } = resolveRelativeRequest(importer, id)
     // append an extension to extension-less imports
