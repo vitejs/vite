@@ -9,6 +9,8 @@
   <p class="node_env">
     <code>process.env.NODE_ENV: {{ env }}</code>
   </p>
+  <h2>Async Component</h2>
+  <TestAsync />
   <TestModuleResolve />
   <TestHmr />
   <TestPostCss />
@@ -22,8 +24,6 @@
   <TestJsx />
   <TestAlias />
   <TestTransform />
-  <h2>Async Component</h2>
-  <TestAsync />
 </template>
 
 <script>
