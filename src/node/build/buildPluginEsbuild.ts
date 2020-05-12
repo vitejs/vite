@@ -1,5 +1,5 @@
 import { Plugin } from 'rollup'
-import { tjsxRE, transform, reoslveJsxOptions, stopService } from '../esbuildService'
+import { tjsxRE, transform, reoslveJsxOptions } from '../esbuildService'
 import { SharedConfig } from '../config'
 
 export const createEsbuildPlugin = async (
@@ -34,10 +34,6 @@ export const createEsbuildPlugin = async (
       } else {
         return null
       }
-    },
-
-    generateBundle() {
-      stopService()
     }
   }
 }
