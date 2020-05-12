@@ -29,8 +29,8 @@ export const cssPlugin: ServerPlugin = ({
     ) {
       if (isImportRequest(ctx)) {
         await processCss(ctx)
-        // we rewrite it to JS that injects a <style> tag pointing to the same url
-        // but with a `?raw` query which returns the actual css
+        // we rewrite css with `?import` to a js module that inserts a style
+        // tag linking to the actual raw url
         ctx.type = 'js'
         const id = JSON.stringify(hash_sum(ctx.path))
         const rawPath = JSON.stringify(ctx.path)

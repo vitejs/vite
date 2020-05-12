@@ -4,11 +4,9 @@ import chalk from 'chalk'
 import resolve from 'resolve-from'
 import { ServerPlugin } from '.'
 import { resolveVue, cachedRead } from '../utils'
-import slash from 'slash'
 
 const debug = require('debug')('vite:resolve')
 
-const idToEntryMap = new Map()
 export const idToFileMap = new Map()
 export const fileToRequestMap = new Map()
 const webModulesMap = new Map()
@@ -56,14 +54,6 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       return serve(id, cachedPath, 'cached')
     }
 
-    // package entries need redirect to ensure correct relative import paths
-    // check if the entry was already resolved
-    const cachedEntry = idToEntryMap.get(id)
-    if (cachedEntry) {
-      debug(`(cached redirect) ${id} -> ${cachedEntry}`)
-      return ctx.redirect(slash(path.join(ctx.path, cachedEntry)))
-    }
-
     // resolve from web_modules
     try {
       const webModulePath = await resolveWebModule(root, id)
@@ -76,11 +66,6 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       )
       console.error(e)
       ctx.status = 404
-    }
-
-    const entryPoint = await resolveNodeModuleEntry(root, id)
-    if (entryPoint) {
-      return ctx.redirect(slash(path.join(ctx.path, entryPoint)))
     }
 
     // resolve from node_modules
@@ -116,10 +101,17 @@ export async function resolveWebModule(
   }
 }
 
-async function resolveNodeModuleEntry(
+const idToEntryMap = new Map()
+
+export function resolveNodeModuleEntry(
   root: string,
   id: string
-): Promise<string | undefined> {
+): string | undefined {
+  const cached = idToEntryMap.get(id)
+  if (cached) {
+    return cached
+  }
+
   let pkgPath
   try {
     // see if the id is a valid package name
@@ -129,8 +121,8 @@ async function resolveNodeModuleEntry(
   if (pkgPath) {
     // if yes, resolve entry file
     const pkg = require(pkgPath)
-    const entryPoint = pkg.module || pkg.main || 'index.js'
-    debug(`(redirect) ${id} -> ${entryPoint}`)
+    const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
+    debug(`(node_module entry) ${id} -> ${entryPoint}`)
     idToEntryMap.set(id, entryPoint)
     return entryPoint
   }

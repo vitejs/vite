@@ -83,6 +83,7 @@ interface HMRPayload {
     | 'custom'
   timestamp: number
   path?: string
+  changeSrcPath?: string
   id?: string
   index?: number
   customData?: any
@@ -180,6 +181,7 @@ export const hmrPlugin: ServerPlugin = ({
 
     // check which part of the file changed
     let needReload = false
+    let needCssModuleReload = false
     let needRerender = false
 
     if (!isEqual(descriptor.script, prevDescriptor.script)) {
@@ -195,16 +197,20 @@ export const hmrPlugin: ServerPlugin = ({
     const prevStyles = prevDescriptor.styles || []
     const nextStyles = descriptor.styles || []
     if (
-      (!needReload &&
-        prevStyles.some((s) => s.scoped) !==
-          nextStyles.some((s) => s.scoped)) ||
-      // TODO for now we force the component to reload on <style module> change
-      // but this should be optimizable to replace the __cssMoudles object
-      // on script and only trigger a rerender.
+      !needReload &&
+      prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)
+    ) {
+      needReload = true
+    }
+
+    // css modules update causes a reload because the $style object is changed
+    // and it may be used in JS. It also needs to trigger a vue-style-update
+    // event so the client busts the sw cache.
+    if (
       prevStyles.some((s) => s.module != null) ||
       nextStyles.some((s) => s.module != null)
     ) {
-      needReload = true
+      needCssModuleReload = true
     }
 
     // only need to update styles if not reloading, since reload forces
@@ -235,7 +241,7 @@ export const hmrPlugin: ServerPlugin = ({
       })
     })
 
-    if (needReload) {
+    if (needReload || needCssModuleReload) {
       send({
         type: 'vue-reload',
         path: publicPath,
@@ -306,6 +312,7 @@ export const hmrPlugin: ServerPlugin = ({
           send({
             type: 'vue-reload',
             path: vueImporter,
+            changeSrcPath: publicPath,
             timestamp
           })
         })
@@ -317,6 +324,7 @@ export const hmrPlugin: ServerPlugin = ({
           send({
             type: 'js-update',
             path: jsImporter,
+            changeSrcPath: publicPath,
             timestamp
           })
         })
@@ -398,6 +406,7 @@ export function ensureMapEntry(map: HMRStateMap, key: string): Set<string> {
 }
 
 export function rewriteFileWithHMR(
+  root: string,
   source: string,
   importer: string,
   resolver: InternalResolver,
@@ -417,7 +426,7 @@ export function rewriteFileWithHMR(
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
-    const depPublicPath = resolveImport(importer, e.value, resolver)
+    const depPublicPath = resolveImport(root, importer, e.value, resolver)
     deps.add(depPublicPath)
     debugHmr(`        ${importer} accepts ${depPublicPath}`)
     ensureMapEntry(importerMap, depPublicPath).add(importer)

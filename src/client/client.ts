@@ -6,6 +6,14 @@ navigator.serviceWorker.register('/sw.js').catch((e) => {
   console.log('[vite] failed to register service worker:', e)
 })
 
+if (navigator.serviceWorker.controller) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (window.confirm('[vite] Service worker cache updated. Reload?')) {
+      window.location.reload()
+    }
+  })
+}
+
 console.log('[vite] connecting...')
 
 declare var __VUE_HMR_RUNTIME__: HMRRuntime
@@ -25,9 +33,20 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 }
 
 // Listen for messages
-socket.addEventListener('message', ({ data }) => {
-  const { type, path, id, index, timestamp, customData } = JSON.parse(data)
-  let modulePath = path
+socket.addEventListener('message', async ({ data }) => {
+  const {
+    type,
+    path,
+    changeSrcPath,
+    id,
+    index,
+    timestamp,
+    customData
+  } = JSON.parse(data)
+
+  if (changeSrcPath) {
+    await bustSwCache(changeSrcPath)
+  }
 
   switch (type) {
     case 'connected':
@@ -42,15 +61,17 @@ socket.addEventListener('message', ({ data }) => {
         .catch((err) => warnFailedFetch(err, path))
       break
     case 'vue-rerender':
-      modulePath = `${path}?type=template`
-      import(`${modulePath}&t=${timestamp}`).then((m) => {
+      const templatePath = `${path}?type=template`
+      await bustSwCache(templatePath)
+      import(`${templatePath}&t=${timestamp}`).then((m) => {
         __VUE_HMR_RUNTIME__.rerender(path, m.render)
         console.log(`[vite] ${path} template updated.`)
       })
       break
     case 'vue-style-update':
-      modulePath = `${path}?type=style&index=${index}`
-      updateStyle(id, `${modulePath}&t=${timestamp}`)
+      const stylePath = `${path}?type=style&index=${index}`
+      await bustSwCache(stylePath)
+      updateStyle(id, stylePath)
       console.log(
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
@@ -82,15 +103,12 @@ socket.addEventListener('message', ({ data }) => {
         cbs.forEach((cb) => cb(customData))
       }
       break
+    case 'sw-bust-cache':
+      bustSwCache(path)
+      break
     case 'full-reload':
+      await bustSwCache(path)
       location.reload()
-  }
-
-  if (path) {
-    bustSwCache(path)
-  }
-  if (modulePath) {
-    bustSwCache(modulePath)
   }
 })
 
@@ -161,10 +179,21 @@ export const hot = {
 }
 
 function bustSwCache(path: string) {
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'bust-cache',
-      path: `${location.protocol}//${location.host}${path}`
+  const sw = navigator.serviceWorker.controller
+  if (sw) {
+    return new Promise((r) => {
+      const channel = new MessageChannel()
+      channel.port1.onmessage = (e) => {
+        if (e.data.busted) r()
+      }
+
+      sw.postMessage(
+        {
+          type: 'bust-cache',
+          path: `${location.protocol}//${location.host}${path}`
+        },
+        [channel.port2]
+      )
     })
   }
 }

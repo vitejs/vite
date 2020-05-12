@@ -1,24 +1,33 @@
-// These two are injected by the server on the fly so that we invalidate the
-// cache when the server restarts, or when the user lockfile has changed.
+// These are injected by the server on the fly so that we invalidate the cache.
+const __PROJECT_ROOT__ = '/'
 const __SERVER_TIMESTAMP__ = 1
 const __LOCKFILE_HASH__ = 'a'
 
-const CACHE_NAME = `vite-cache-${__SERVER_TIMESTAMP__ + __LOCKFILE_HASH__}`
+// We use two separate caches:
+// 1. The user files cache is based on the server start timestamp: i.e. it
+//    persists only for the session of a server process. It is reset every time
+//    the user restarts the server.
+const USER_CACHE_NAME = `vite-cache-${__PROJECT_ROOT__}-${__SERVER_TIMESTAMP__}`
+// 2. The deps cache is based on the project's lockfile. They are less likely
+//    to change, so they are only invalidated when the lockfile has changed.
+const DEPS_CACHE_NAME = `vite-cache-${__PROJECT_ROOT__}-${__LOCKFILE_HASH__}`
 
 const sw = (self as any) as ServiceWorkerGlobalScope
 
 sw.addEventListener('install', () => {
+  // console.log('[vite:sw] install')
   sw.skipWaiting()
 })
 
 sw.addEventListener('activate', (e) => {
+  // console.log('[vite:sw] activated')
   sw.clients.claim()
   // delete any non-matching caches
   e.waitUntil(
     (async () => {
       const keys = await caches.keys()
       for (const key of keys) {
-        if (key !== CACHE_NAME) {
+        if (key !== USER_CACHE_NAME && key !== DEPS_CACHE_NAME) {
           await caches.delete(key)
         }
       }
@@ -28,41 +37,48 @@ sw.addEventListener('activate', (e) => {
 
 sw.addEventListener('message', async (e) => {
   if (e.data.type === 'bust-cache') {
-    const cache = await caches.open(CACHE_NAME)
-    // console.log(`busted cache for ${e.data.path}`)
-    cache.delete(e.data.path)
+    // console.log(`[vite:sw] busted cache for ${e.data.path}`)
+    ;(await caches.open(USER_CACHE_NAME)).delete(e.data.path)
+    ;(await caches.open(DEPS_CACHE_NAME)).delete(e.data.path)
+    // notify the client that cache has been busted
+    e.ports[0].postMessage({
+      busted: true
+    })
   }
 })
 
-const cacheableRequestRE = /^\/@modules\/|\.vue($|\?)|\.(t|j)sx?$|\.css$/
+const depsRE = /^\/@modules\//
 const hmrRequestRE = /(&|\?)t=\d+/
 
 sw.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url)
   if (
-    cacheableRequestRE.test(url.pathname) &&
+    // cacheableRequestRE.test(url.pathname) &&
     // no need to cache hmr update requests
     !url.search.match(hmrRequestRE)
   ) {
-    e.respondWith(tryCache(e.request))
+    const cacheToUse = depsRE.test(url.pathname)
+      ? DEPS_CACHE_NAME
+      : USER_CACHE_NAME
+    e.respondWith(tryCache(e.request, cacheToUse))
   }
 })
 
-async function tryCache(req: Request) {
-  const cached = await caches.match(req)
+async function tryCache(req: Request, cacheName: string) {
+  const cache = await caches.open(cacheName)
+  const cached = await cache.match(req)
   if (cached) {
-    // console.log(`serving ${req.url} from cache`)
+    // console.log(`[vite:sw] serving ${req.url} from cache`)
     return cached
   } else {
-    // console.log(`fetching`, req)
+    // console.log(`[vite:sw] fetching`, req)
     const res = await fetch(req)
-    // console.log(`got res:`, res)
+    // console.log(`[vite:sw] got res:`, res)
     if (!res || res.status !== 200 || res.type !== 'basic') {
       // console.log(`not caching ${req.url}`)
       return res
     }
-    // console.log(`caching ${req.url}`)
-    const cache = await caches.open(CACHE_NAME)
+    // console.log(`[vite:sw] caching ${req.url}`)
     cache.put(req, res.clone())
     return res
   }
