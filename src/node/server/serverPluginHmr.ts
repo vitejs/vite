@@ -79,6 +79,7 @@ interface HMRPayload {
     | 'style-update'
     | 'style-remove'
     | 'full-reload'
+    | 'sw-bust-cache'
     | 'custom'
   timestamp: number
   path?: string
@@ -292,6 +293,7 @@ export const hmrPlugin: ServerPlugin = ({
       if (hasDeadEnd) {
         send({
           type: 'full-reload',
+          path: publicPath,
           timestamp
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)

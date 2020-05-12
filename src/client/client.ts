@@ -1,6 +1,11 @@
 // This file runs in the browser.
 import { HMRRuntime } from 'vue'
 
+// register service worker
+navigator.serviceWorker.register('/sw.js').catch((e) => {
+  console.log('[vite] failed to register service worker:', e)
+})
+
 console.log('[vite] connecting...')
 
 declare var __VUE_HMR_RUNTIME__: HMRRuntime
@@ -22,6 +27,8 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 // Listen for messages
 socket.addEventListener('message', ({ data }) => {
   const { type, path, id, index, timestamp, customData } = JSON.parse(data)
+  let modulePath = path
+
   switch (type) {
     case 'connected':
       console.log(`[vite] connected.`)
@@ -35,22 +42,26 @@ socket.addEventListener('message', ({ data }) => {
         .catch((err) => warnFailedFetch(err, path))
       break
     case 'vue-rerender':
-      import(`${path}?type=template&t=${timestamp}`).then((m) => {
+      modulePath = `${path}?type=template`
+      import(`${modulePath}&t=${timestamp}`).then((m) => {
         __VUE_HMR_RUNTIME__.rerender(path, m.render)
         console.log(`[vite] ${path} template updated.`)
       })
       break
     case 'vue-style-update':
-      updateStyle(id, `${path}?type=style&index=${index}&t=${timestamp}`)
+      modulePath = `${modulePath}?type=style&index=${index}`
+      updateStyle(id, `${path}&t=${timestamp}`)
       console.log(
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
       break
     case 'style-update':
-      updateStyle(id, `${path}?raw&t=${timestamp}`)
+      modulePath = `${path}?raw`
+      updateStyle(id, `${modulePath}&t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
+      modulePath = `${path}?raw`
       const link = document.getElementById(`vite-css-${id}`)
       if (link) {
         document.head.removeChild(link)
@@ -75,6 +86,13 @@ socket.addEventListener('message', ({ data }) => {
       break
     case 'full-reload':
       location.reload()
+  }
+
+  if (path) {
+    bustSwCache(path)
+  }
+  if (modulePath) {
+    bustSwCache(modulePath)
   }
 })
 
@@ -141,5 +159,14 @@ export const hot = {
     const exisitng = customUpdateMap.get(event) || []
     exisitng.push(cb)
     customUpdateMap.set(event, exisitng)
+  }
+}
+
+function bustSwCache(path: string) {
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'bust-cache',
+      path: `${location.protocol}//${location.host}${path}`
+    })
   }
 }

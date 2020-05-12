@@ -25,10 +25,11 @@
   },
   "homepage": "https://github.com/vuejs/vite/tree/master/#readme",
   "scripts": {
-    "dev": "run-p dev-client dev-node",
+    "dev": "run-p dev-client dev-node dev-sw",
     "dev-client": "tsc -w --p src/client",
     "dev-node": "tsc -w --p src/node",
-    "build": "rm -rf dist && tsc -p src/client && tsc -p src/node",
+    "dev-sw": "tsc -w --p src/sw",
+    "build": "rm -rf dist && tsc -p src/client && tsc -p src/node && tsc -p src/sw",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "jest --clearCache && jest --runInBand",
     "windows-ci": "yarn build && jest --runInBand --forceExit",
