@@ -10,8 +10,6 @@ export const serviceWorkerPlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  // TODO use file content / lastModified hash instead of timestamp?
-
   const enabledString =
     typeof config.serviceWorker === 'boolean'
       ? String(config.serviceWorker)
