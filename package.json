@@ -32,7 +32,9 @@
     "build": "rm -rf dist && tsc -p src/client && tsc -p src/node && tsc -p src/sw",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "jest --clearCache && jest --runInBand --forceExit",
-    "test-sw": "cross-env USE_SW=1 yarn test",
+    "test-sw": "USE_SW=1 yarn test",
+    "ci-windows": "jest --runInBand --forceExit",
+    "ci-windows-sw": "cross-env USE_SW=1 yarn ci-windows",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "prepublishOnly": "yarn build && yarn changelog",
     "postpublish": "git add CHANGELOG.md && git commit -m 'chore: changelog [ci skip]' && git push"

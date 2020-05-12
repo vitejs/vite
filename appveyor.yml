@@ -10,8 +10,8 @@ test_script:
   - node --version
   - yarn --version
   - yarn build
-  - yarn test
-  - yarn test-sw
+  - yarn ci-windows
+  - yarn ci-windows-sw
 
 cache:
   - node_modules -> yarn.lock
