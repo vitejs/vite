@@ -30,6 +30,7 @@ import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import qs from 'querystring'
+import { seenUrls } from './serverPluginServeStatic'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -58,7 +59,11 @@ export const vuePlugin: ServerPlugin = ({
     ctx.etag = getEtag(ctx.body)
     // only add 304 tag check if not using service worker to cache user code
     if (!config.serviceWorker) {
-      ctx.status = ctx.etag === ctx.get('If-None-Match') ? 304 : 200
+      ctx.status =
+        seenUrls.has(ctx.url) && ctx.etag === ctx.get('If-None-Match')
+          ? 304
+          : 200
+      seenUrls.add(ctx.url)
     }
   }
 
