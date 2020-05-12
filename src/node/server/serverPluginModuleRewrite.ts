@@ -286,8 +286,9 @@ export const resolveImport = (
   if (bareImportRE.test(id)) {
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
+    const isWebModule = !!resolveWebModule(root, id)
     return `/@modules/${
-      resolveWebModule(root, id) || resolveNodeModuleEntry(root, id) || id
+      isWebModule ? id : resolveNodeModuleEntry(root, id) || id
     }`
   } else {
     let { pathname, query } = resolveRelativeRequest(importer, id)
