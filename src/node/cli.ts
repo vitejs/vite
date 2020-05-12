@@ -22,7 +22,7 @@ Options:
   --help, -h                 [boolean] show help
   --version, -v              [boolean] show version
   --config, -c               [string]  use specified config file
-  --serviceWorker, -sw       [boolean | 'deps-only'] configure service worker caching behavior
+  --serviceWorker, -sw       [boolean | 'deps-only'] configure service worker caching (default: true)
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
   --base                     [string]  public base path for build (default: /)
@@ -41,12 +41,16 @@ Options:
 
 console.log(chalk.cyan(`vite v${require('../package.json').version}`))
 ;(async () => {
-  const options = await resolveOptions()
-  if (options.help || options.h) {
+  if (argv.help || argv.h) {
     logHelp()
-  } else if (options.version || options.v) {
-    // noop
-  } else if (!options.command || options.command === 'serve') {
+    return
+  } else if (argv.version || argv.v) {
+    // noop, already logged
+    return
+  }
+
+  const options = await resolveOptions()
+  if (!options.command || options.command === 'serve') {
     runServe(options)
   } else if (options.command === 'build') {
     runBuild(options)

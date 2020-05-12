@@ -1,14 +1,14 @@
 // These are injected by the server on the fly so that we invalidate the cache.
 const __ENABLED__ = true as boolean | 'deps-only'
 const __PROJECT_ROOT__ = '/'
-const __SERVER_TIMESTAMP__ = 1
+const __SERVER_ID__ = 1
 const __LOCKFILE_HASH__ = 'a'
 
 // We use two separate caches:
 // 1. The user files cache is based on the server start timestamp: i.e. it
 //    persists only for the session of a server process. It is reset every time
 //    the user restarts the server.
-const USER_CACHE_NAME = `vite-cache-${__PROJECT_ROOT__}-${__SERVER_TIMESTAMP__}`
+const USER_CACHE_NAME = `vite-cache-${__PROJECT_ROOT__}-${__SERVER_ID__}`
 // 2. The deps cache is based on the project's lockfile. They are less likely
 //    to change, so they are only invalidated when the lockfile has changed.
 const DEPS_CACHE_NAME = `vite-cache-${__PROJECT_ROOT__}-${__LOCKFILE_HASH__}`

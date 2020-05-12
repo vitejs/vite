@@ -22,7 +22,7 @@ export const createBuildHtmlPlugin = async (
   inlineLimit: number,
   resolver: InternalResolver
 ) => {
-  if (!indexPath || !(await fs.pathExists(indexPath))) {
+  if (!indexPath || !fs.existsSync(indexPath)) {
     return {
       renderIndex: (...args: any[]) => '',
       htmlPlugin: null

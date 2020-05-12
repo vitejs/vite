@@ -1,9 +1,7 @@
 import fs from 'fs'
 import path from 'path'
+import { createHash } from 'crypto'
 import { ServerPlugin } from '.'
-
-// TODO inject lockfile hash
-// TODO use file content / lastModified hash instead of timestamp?
 
 export const serviceWorkerPlugin: ServerPlugin = ({
   root,
@@ -12,6 +10,8 @@ export const serviceWorkerPlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
+  // TODO use file content / lastModified hash instead of timestamp?
+
   const enabledString =
     typeof config.serviceWorker === 'boolean'
       ? String(config.serviceWorker)
@@ -25,10 +25,14 @@ export const serviceWorkerPlugin: ServerPlugin = ({
       /const __PROJECT_ROOT__ =.*/,
       `const __PROJECT_ROOT__ = ${JSON.stringify(root)}`
     )
+    .replace(
+      /const __LOCKFILE_HASH__ =.*/,
+      `const __LOCKFILE_HASH__ = ${JSON.stringify(getLockfileHash(root))}`
+    )
     // inject server start time so the sw cache is invalidated
     .replace(
-      /const __SERVER_TIMESTAMP__ =.*/,
-      `const __SERVER_TIMESTAMP__ = ${config.serviceWorker ? Date.now() : '0'}`
+      /const __SERVER_ID__ =.*/,
+      `const __SERVER_ID__ = ${config.serviceWorker ? Date.now() : '0'}`
     )
 
   // enable console logs in debug mode
@@ -60,4 +64,22 @@ export const serviceWorkerPlugin: ServerPlugin = ({
     }
     return next()
   })
+}
+
+const lockfileFormats = [
+  'package-lock.json',
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  'package.json'
+]
+
+function getLockfileHash(root: string): string {
+  for (const format of lockfileFormats) {
+    const fullPath = path.join(root, format)
+    if (fs.existsSync(fullPath)) {
+      const content = fs.readFileSync(fullPath, 'utf-8')
+      return createHash('sha1').update(content).digest('base64')
+    }
+  }
+  return ``
 }
