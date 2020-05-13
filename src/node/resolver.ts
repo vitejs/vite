@@ -44,7 +44,7 @@ const debug = require('debug')('vite:resolve')
 
 const resolveExt = (id: string) => {
   const cleanId = cleanUrl(id)
-  if (!/\.\w+$/.test(cleanId)) {
+  if (!path.extname(cleanId)) {
     let inferredExt = ''
     for (const ext of supportedExts) {
       try {

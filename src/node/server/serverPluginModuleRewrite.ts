@@ -273,7 +273,6 @@ export function rewriteImports(
 }
 
 const bareImportRE = /^[^\/\.]/
-const fileExtensionRE = /\.\w+$/
 const jsSrcRE = /\.(?:(?:j|t)sx?|vue)$/
 
 export const resolveImport = (
@@ -291,7 +290,7 @@ export const resolveImport = (
   } else {
     let { pathname, query } = resolveRelativeRequest(importer, id)
     // append an extension to extension-less imports
-    if (!fileExtensionRE.test(pathname)) {
+    if (!path.extname(pathname)) {
       const file = resolver.requestToFile(pathname)
       const indexMatch = file.match(/\/index\.\w+$/)
       if (indexMatch) {
