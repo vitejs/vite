@@ -4,6 +4,7 @@ import chalk from 'chalk'
 import resolve from 'resolve-from'
 import { ServerPlugin } from '.'
 import { resolveVue, cachedRead } from '../utils'
+import { URL } from 'url'
 
 const debug = require('debug')('vite:resolve')
 
@@ -65,16 +66,19 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       return serve(id, webModulePath, 'web_modules')
     }
 
-    try {
-      // we land here after a module entry redirect
-      // or a direct deep import like 'foo/bar/baz.js'.
-      const file = resolve(root, id)
-      return serve(id, file, 'node_modules')
-    } catch (e) {
-      console.error(chalk.red(`[vite] Error while resolving /@modules/${id} :`))
-      console.error(e)
-      ctx.status = 404
+    const nodeModulePath = resolveNodeModule(root, id)
+    if (nodeModulePath) {
+      return serve(id, nodeModulePath, 'node_modules')
     }
+
+    const importer = new URL(ctx.get('referer')).pathname
+    console.error(
+      chalk.red(
+        `[vite] Failed to resolve module import "${id}". ` +
+          `(imported by ${importer})`
+      )
+    )
+    ctx.status = 404
   })
 }
 
@@ -87,7 +91,7 @@ export function resolveBareModule(root: string, id: string) {
   if (web) {
     return id + '.js'
   }
-  const nodeEntry = resolveNodeModuleEntry(root, id)
+  const nodeEntry = resolveNodeModule(root, id)
   if (nodeEntry) {
     return nodeEntry
   }
@@ -129,10 +133,10 @@ export function resolveWebModule(root: string, id: string): string | undefined {
   }
 }
 
-const idToEntryMap = new Map()
+const nodeModulesMap = new Map()
 
-function resolveNodeModuleEntry(root: string, id: string): string | undefined {
-  const cached = idToEntryMap.get(id)
+function resolveNodeModule(root: string, id: string): string | undefined {
+  const cached = nodeModulesMap.get(id)
   if (cached) {
     return cached
   }
@@ -144,11 +148,16 @@ function resolveNodeModuleEntry(root: string, id: string): string | undefined {
   } catch (e) {}
 
   if (pkgPath) {
-    // if yes, resolve entry file
+    // if yes, this is a entry import. resolve entry file
     const pkg = require(pkgPath)
-    const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
+    const entryPoint = path.join(id, '/', pkg.module || pkg.main || 'index.js')
     debug(`(node_module entry) ${id} -> ${entryPoint}`)
-    idToEntryMap.set(id, entryPoint)
+    nodeModulesMap.set(id, entryPoint)
     return entryPoint
+  } else {
+    // possibly a deep import, try resolving directly
+    try {
+      return resolve(root, id)
+    } catch (e) {}
   }
 }

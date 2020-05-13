@@ -46,13 +46,6 @@ export const moduleRewritePlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  // bust module rewrite cache on file change
-  watcher.on('change', (file) => {
-    const publicPath = resolver.fileToRequest(file)
-    debug(`${publicPath}: cache busted`)
-    rewriteCache.del(publicPath)
-  })
-
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
   const devInjectionCode =
@@ -67,6 +60,35 @@ export const moduleRewritePlugin: ServerPlugin = ({
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
 
+  async function rewriteIndex(html: string) {
+    await initLexer
+    let hasInjectedDevFlag = false
+    const importer = '/index.html'
+    return html!.replace(scriptRE, (matched, openTag, script) => {
+      const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
+      hasInjectedDevFlag = true
+      if (script) {
+        return `${devFlag}${openTag}${rewriteImports(
+          root,
+          script,
+          importer,
+          resolver
+        )}</script>`
+      } else {
+        const srcAttr = openTag.match(srcRE)
+        if (srcAttr) {
+          // register script as a import dep for hmr
+          const importee = cleanUrl(
+            slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
+          )
+          debugHmr(`        ${importer} imports ${importee}`)
+          ensureMapEntry(importerMap, importee).add(importer)
+        }
+        return `${devFlag}${matched}`
+      }
+    })
+  }
+
   app.use(async (ctx, next) => {
     await next()
 
@@ -75,37 +97,12 @@ export const moduleRewritePlugin: ServerPlugin = ({
     }
 
     if (ctx.path === '/index.html') {
-      const html = await readBody(ctx.body)
+      let html = await readBody(ctx.body)
       if (html && rewriteCache.has(html)) {
         debug('/index.html: serving from cache')
         ctx.body = rewriteCache.get(html)
-      } else if (ctx.body) {
-        await initLexer
-        let hasInjectedDevFlag = false
-        const importer = '/index.html'
-        ctx.body = html!.replace(scriptRE, (matched, openTag, script) => {
-          const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
-          hasInjectedDevFlag = true
-          if (script) {
-            return `${devFlag}${openTag}${rewriteImports(
-              root,
-              script,
-              importer,
-              resolver
-            )}</script>`
-          } else {
-            const srcAttr = openTag.match(srcRE)
-            if (srcAttr) {
-              // register script as a import dep for hmr
-              const importee = cleanUrl(
-                slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
-              )
-              debugHmr(`        ${importer} imports ${importee}`)
-              ensureMapEntry(importerMap, importee).add(importer)
-            }
-            return `${devFlag}${matched}`
-          }
-        })
+      } else if (html) {
+        ctx.body = await rewriteIndex(html)
         rewriteCache.set(html, ctx.body)
         return
       }
@@ -141,6 +138,13 @@ export const moduleRewritePlugin: ServerPlugin = ({
     } else {
       debug(`(skipped) ${ctx.url}`)
     }
+  })
+
+  // bust module rewrite cache on file change
+  watcher.on('change', (file) => {
+    const publicPath = resolver.fileToRequest(file)
+    debug(`${publicPath}: cache busted`)
+    rewriteCache.del(publicPath)
   })
 }
 
