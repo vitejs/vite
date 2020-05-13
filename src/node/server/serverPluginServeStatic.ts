@@ -3,7 +3,14 @@ import { ServerPlugin } from '.'
 const send = require('koa-send')
 const debug = require('debug')('vite:history')
 
-export const serveStaticPlugin: ServerPlugin = ({ root, app, resolver }) => {
+export const seenUrls = new Set()
+
+export const serveStaticPlugin: ServerPlugin = ({
+  root,
+  app,
+  resolver,
+  config
+}) => {
   app.use((ctx, next) => {
     // short circuit requests that have already been explicitly handled
     if (ctx.body || ctx.status !== 404) {
@@ -50,7 +57,16 @@ export const serveStaticPlugin: ServerPlugin = ({ root, app, resolver }) => {
     return next()
   })
 
-  app.use(require('koa-conditional-get')())
+  if (!config.serviceWorker) {
+    app.use(async (ctx, next) => {
+      await next()
+      // the first request to the server should never 304
+      if (seenUrls.has(ctx.url) && ctx.fresh) {
+        ctx.status = 304
+      }
+      seenUrls.add(ctx.url)
+    })
+  }
   app.use(require('koa-etag')())
 
   app.use((ctx, next) => {

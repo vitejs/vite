@@ -13,6 +13,7 @@ import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
+import { serviceWorkerPlugin } from './serverPluginServiceWorker'
 
 export { rewriteImports } from './serverPluginModuleRewrite'
 
@@ -42,6 +43,7 @@ export function createServer(config: ServerConfig = {}): Server {
     ignored: [/node_modules/]
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers, alias)
+
   const context = {
     root,
     app,
@@ -53,6 +55,7 @@ export function createServer(config: ServerConfig = {}): Server {
 
   const resolvedPlugins = [
     ...plugins,
+    serviceWorkerPlugin,
     hmrPlugin,
     moduleRewritePlugin,
     moduleResolvePlugin,

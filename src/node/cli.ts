@@ -22,6 +22,7 @@ Options:
   --help, -h                 [boolean] show help
   --version, -v              [boolean] show version
   --config, -c               [string]  use specified config file
+  --serviceWorker, -sw       [boolean] configure service worker caching (default: false)
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
   --base                     [string]  public base path for build (default: /)
@@ -29,7 +30,7 @@ Options:
   --assetsDir                [string]  directory under outDir to place assets in (default: assets)
   --assetsInlineLimit        [number]  static asset base64 inline threshold in bytes (default: 4096)
   --sourcemap                [boolean] output source maps for build (default: false)
-  --minify                   [boolean | 'terser' | 'esbuild'] disable minification, or specify
+  --minify                   [boolean | 'terser' | 'esbuild'] enable/disable minification, or specify
                                        minifier to use. (default: 'terser')
   --ssr                      [boolean] build for server-side rendering
   --jsx                      ['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')
@@ -40,12 +41,16 @@ Options:
 
 console.log(chalk.cyan(`vite v${require('../package.json').version}`))
 ;(async () => {
-  const options = await resolveOptions()
-  if (options.help || options.h) {
+  if (argv.help || argv.h) {
     logHelp()
-  } else if (options.version || options.v) {
-    // noop
-  } else if (!options.command || options.command === 'serve') {
+    return
+  } else if (argv.version || argv.v) {
+    // noop, already logged
+    return
+  }
+
+  const options = await resolveOptions()
+  if (!options.command || options.command === 'serve') {
     runServe(options)
   } else if (options.command === 'build') {
     runBuild(options)
@@ -58,6 +63,10 @@ console.log(chalk.cyan(`vite v${require('../package.json').version}`))
 })()
 
 async function resolveOptions() {
+  // shorthand for serviceWorker option
+  if (argv['sw']) {
+    argv.serviceWorker = argv['sw']
+  }
   // map jsx args
   if (argv['jsx-factory']) {
     ;(argv.jsx || (argv.jsx = {})).factory = argv['jsx-factory']
@@ -65,10 +74,13 @@ async function resolveOptions() {
   if (argv['jsx-fragment']) {
     ;(argv.jsx || (argv.jsx = {})).fragment = argv['jsx-fragment']
   }
-  // cast xxx=false into actual `false`
+  // cast xxx=true | false into actual booleans
   Object.keys(argv).forEach((key) => {
     if (argv[key] === 'false') {
       argv[key] = false
+    }
+    if (argv[key] === 'true') {
+      argv[key] = true
     }
   })
   // command

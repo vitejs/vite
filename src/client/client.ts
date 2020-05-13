@@ -1,6 +1,33 @@
 // This file runs in the browser.
 import { HMRRuntime } from 'vue'
 
+// register service worker
+if ('serviceWorker' in navigator) {
+  const hasExistingSw = !!navigator.serviceWorker.controller
+  if (__SW_ENABLED__ || hasExistingSw) {
+    // if not enabled but has existing sw, registering the sw will force the
+    // cache to be busted.
+    navigator.serviceWorker.register('/sw.js').catch((e) => {
+      console.log('[vite] failed to register service worker:', e)
+    })
+
+    // Notify the user to reload the page if a new service worker has taken
+    // control.
+    if (hasExistingSw) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (window.confirm('[vite] Service worker cache updated. Reload?')) {
+          window.location.reload()
+        }
+        // in case the user dismisses it, or the prompt failed to pop because
+        // the tab was inactive
+        console.warn(
+          `[vite] Service worker cache updated. A reload is required.`
+        )
+      })
+    }
+  }
+}
+
 console.log('[vite] connecting...')
 
 declare var __VUE_HMR_RUNTIME__: HMRRuntime
@@ -20,8 +47,24 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 }
 
 // Listen for messages
-socket.addEventListener('message', ({ data }) => {
-  const { type, path, id, index, timestamp, customData } = JSON.parse(data)
+socket.addEventListener('message', async ({ data }) => {
+  const {
+    type,
+    path,
+    changeSrcPath,
+    id,
+    index,
+    timestamp,
+    customData
+  } = JSON.parse(data)
+
+  if (changeSrcPath) {
+    await bustSwCache(changeSrcPath)
+  }
+  if (path !== changeSrcPath) {
+    await bustSwCache(path)
+  }
+
   switch (type) {
     case 'connected':
       console.log(`[vite] connected.`)
@@ -35,19 +78,23 @@ socket.addEventListener('message', ({ data }) => {
         .catch((err) => warnFailedFetch(err, path))
       break
     case 'vue-rerender':
-      import(`${path}?type=template&t=${timestamp}`).then((m) => {
+      const templatePath = `${path}?type=template`
+      await bustSwCache(templatePath)
+      import(`${templatePath}&t=${timestamp}`).then((m) => {
         __VUE_HMR_RUNTIME__.rerender(path, m.render)
         console.log(`[vite] ${path} template updated.`)
       })
       break
     case 'vue-style-update':
-      updateStyle(id, `${path}?type=style&index=${index}&t=${timestamp}`)
+      const stylePath = `${path}?type=style&index=${index}`
+      await bustSwCache(stylePath)
+      updateStyle(id, stylePath)
       console.log(
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
       break
     case 'style-update':
-      updateStyle(id, `${path}?raw&t=${timestamp}`)
+      updateStyle(id, `${path}?t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
@@ -141,5 +188,25 @@ export const hot = {
     const exisitng = customUpdateMap.get(event) || []
     exisitng.push(cb)
     customUpdateMap.set(event, exisitng)
+  }
+}
+
+function bustSwCache(path: string) {
+  const sw = navigator.serviceWorker && navigator.serviceWorker.controller
+  if (sw) {
+    return new Promise((r) => {
+      const channel = new MessageChannel()
+      channel.port1.onmessage = (e) => {
+        if (e.data.busted) r()
+      }
+
+      sw.postMessage(
+        {
+          type: 'bust-cache',
+          path: `${location.protocol}//${location.host}${path}`
+        },
+        [channel.port2]
+      )
+    })
   }
 }

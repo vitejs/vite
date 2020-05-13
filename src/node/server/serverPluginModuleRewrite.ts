@@ -26,6 +26,10 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
+import {
+  resolveNodeModuleEntry,
+  resolveWebModule
+} from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -39,9 +43,11 @@ const rewriteCache = new LRUCache({ max: 1024 })
 // - Also tracks importer/importee relationship graph during the rewrite.
 //   The graph is used by the HMR plugin to perform analysis on file change.
 export const moduleRewritePlugin: ServerPlugin = ({
+  root,
   app,
   watcher,
-  resolver
+  resolver,
+  config
 }) => {
   // bust module rewrite cache on file change
   watcher.on('change', (file) => {
@@ -53,12 +59,13 @@ export const moduleRewritePlugin: ServerPlugin = ({
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
   const devInjectionCode =
-    `\n<script type="module">` +
-    `import "${hmrClientPublicPath}"\n` +
+    `\n<script>\n` +
     `window.__DEV__ = true\n` +
     `window.__BASE__ = '/'\n` +
+    `window.__SW_ENABLED__ = ${!!config.serviceWorker}\n` +
     `window.process = { env: { NODE_ENV: 'development' }}\n` +
-    `</script>\n`
+    `</script>` +
+    `\n<script type="module" src="${hmrClientPublicPath}"></script>\n`
 
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
@@ -84,6 +91,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
           hasInjectedDevFlag = true
           if (script) {
             return `${devFlag}${openTag}${rewriteImports(
+              root,
               script,
               importer,
               resolver
@@ -124,7 +132,13 @@ export const moduleRewritePlugin: ServerPlugin = ({
         ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
-        ctx.body = rewriteImports(content!, ctx.path, resolver, ctx.query.t)
+        ctx.body = rewriteImports(
+          root,
+          content!,
+          ctx.path,
+          resolver,
+          ctx.query.t
+        )
         rewriteCache.set(content, ctx.body)
       }
     } else {
@@ -134,6 +148,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
 }
 
 export function rewriteImports(
+  root: string,
   source: string,
   importer: string,
   resolver: InternalResolver,
@@ -189,12 +204,12 @@ export function rewriteImports(
             if (!/.vue$|.vue\?type=/.test(importer)) {
               // the user explicit imports the HMR API in a js file
               // making the module hot.
-              rewriteFileWithHMR(source, importer, resolver, s)
+              rewriteFileWithHMR(root, source, importer, resolver, s)
               // we rewrite the hot.accept call
               hasReplaced = true
             }
           } else {
-            resolved = resolveImport(importer, id, resolver, timestamp)
+            resolved = resolveImport(root, importer, id, resolver, timestamp)
           }
 
           if (resolved !== id) {
@@ -258,8 +273,10 @@ export function rewriteImports(
 
 const bareImportRE = /^[^\/\.]/
 const fileExtensionRE = /\.\w+$/
+const jsSrcRE = /\.(?:(?:j|t)sx?|vue)$/
 
 export const resolveImport = (
+  root: string,
   importer: string,
   id: string,
   resolver: InternalResolver,
@@ -267,7 +284,12 @@ export const resolveImport = (
 ): string => {
   id = resolver.alias(id) || id
   if (bareImportRE.test(id)) {
-    return `/@modules/${id}`
+    // directly resolve bare module names to its entry path so that relative
+    // imports from it (including source map urls) can work correctly
+    const isWebModule = !!resolveWebModule(root, id)
+    return `/@modules/${
+      isWebModule ? id : resolveNodeModuleEntry(root, id) || id
+    }`
   } else {
     let { pathname, query } = resolveRelativeRequest(importer, id)
     // append an extension to extension-less imports
@@ -280,6 +302,12 @@ export const resolveImport = (
         pathname += path.extname(file)
       }
     }
+
+    // mark non-src imports
+    if (!jsSrcRE.test(pathname)) {
+      query += `${query ? `&` : `?`}import`
+    }
+
     // force re-fetch dirty imports by appending timestamp
     if (timestamp) {
       const dirtyFiles = hmrDirtyFilesMap.get(timestamp)

@@ -33,6 +33,7 @@ jobs:
       - *save_cache
       - run: yarn build
       - run: yarn test
+      - run: yarn test-sw
 
 workflows:
   version: 2

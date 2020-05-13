@@ -251,7 +251,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     // copy over /public if it exists
     if (emitAssets) {
       const publicDir = path.resolve(root, 'public')
-      if (await fs.pathExists(publicDir)) {
+      if (fs.existsSync(publicDir)) {
         await fs.copy(publicDir, path.resolve(outDir, 'public'))
       }
     }

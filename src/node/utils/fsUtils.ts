@@ -3,6 +3,7 @@ import fs from 'fs-extra'
 import LRUCache from 'lru-cache'
 import { Context } from 'koa'
 import { Readable } from 'stream'
+import { seenUrls } from '../server/serverPluginServeStatic'
 
 const getETag = require('etag')
 
@@ -34,10 +35,14 @@ export async function cachedRead(
     if (ctx) {
       ctx.etag = cached.etag
       ctx.lastModified = new Date(cached.lastModified)
-      if (ctx.get('If-None-Match') === ctx.etag) {
+      if (
+        ctx.__serviceWorker !== true &&
+        ctx.get('If-None-Match') === ctx.etag &&
+        seenUrls.has(ctx.url)
+      ) {
         ctx.status = 304
       }
-      // still set the content for *.vue requests
+      seenUrls.add(ctx.url)
       ctx.body = cached.content
     }
     return cached.content

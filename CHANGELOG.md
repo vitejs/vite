@@ -1,3 +1,23 @@
+## [0.14.3](https://github.com/vuejs/vite/compare/v0.14.2...v0.14.3) (2020-05-12)
+
+
+### Bug Fixes
+
+* first request on server start should never 304 ([c8a1ffd](https://github.com/vuejs/vite/commit/c8a1ffd71db0916cd6386130e3eb170fa09c31d2))
+* fix web modules resolve ([ce41994](https://github.com/vuejs/vite/commit/ce41994ee4e395bb304191b5d9a26f0f32d3b47a))
+* make transformed imports work in Safari ([b2377bf](https://github.com/vuejs/vite/commit/b2377bf3b6b14ed972327930644fe6937fa814dd))
+* only register sw if available ([2efe9b3](https://github.com/vuejs/vite/commit/2efe9b3215f04e751d19cd50169bddf4250d114d))
+* should resolve web_modules during rewrite too ([b5871eb](https://github.com/vuejs/vite/commit/b5871eba505e5a109b8b8ae07d6f8a70c6d970eb))
+
+
+### Features
+
+* **cva:** use @pika/react + alias ([f9b267f](https://github.com/vuejs/vite/commit/f9b267fbe3f6e8cc11a3e6855f7775aeb863b0f8))
+* **sw:** use lockfile hash ([3bb1324](https://github.com/vuejs/vite/commit/3bb13240d9d6c3ef84020cd69b2e60835f206f8f))
+* service worker caching ([ee6a03d](https://github.com/vuejs/vite/commit/ee6a03d3497433150c13fc9370b17daaa43e1e1d))
+
+
+
 ## [0.14.2](https://github.com/vuejs/vite/compare/v0.14.1...v0.14.2) (2020-05-11)
 
 

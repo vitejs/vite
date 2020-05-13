@@ -60,6 +60,14 @@ export interface SharedConfig {
 }
 
 export interface ServerConfig extends SharedConfig {
+  /**
+   * Whether to use a Service Worker to cache served code. This can greatly
+   * improve full page reload performance, but requires a Service Worker
+   * update + reload on each server restart.
+   *
+   * @default false
+   */
+  serviceWorker?: boolean
   plugins?: ServerPlugin[]
 }
 
@@ -142,7 +150,9 @@ export interface BuildConfig extends SharedConfig {
   emitAssets?: boolean
 }
 
-export interface UserConfig extends BuildConfig {
+export interface UserConfig
+  extends BuildConfig,
+    Pick<ServerConfig, 'serviceWorker'> {
   plugins?: Plugin[]
   configureServer?: ServerPlugin
 }
@@ -170,11 +180,11 @@ export async function resolveConfig(
     resolvedPath = path.resolve(process.cwd(), configPath)
   } else {
     const jsConfigPath = path.resolve(process.cwd(), 'vite.config.js')
-    if (await fs.pathExists(jsConfigPath)) {
+    if (fs.existsSync(jsConfigPath)) {
       resolvedPath = jsConfigPath
     } else {
       const tsConfigPath = path.resolve(process.cwd(), 'vite.config.ts')
-      if (await fs.pathExists(tsConfigPath)) {
+      if (fs.existsSync(tsConfigPath)) {
         isTS = true
         resolvedPath = tsConfigPath
       }

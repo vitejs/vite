@@ -4,14 +4,11 @@ import chalk from 'chalk'
 import resolve from 'resolve-from'
 import { ServerPlugin } from '.'
 import { resolveVue, cachedRead } from '../utils'
-import slash from 'slash'
 
 const debug = require('debug')('vite:resolve')
 
-const idToEntryMap = new Map()
 export const idToFileMap = new Map()
 export const fileToRequestMap = new Map()
-const webModulesMap = new Map()
 
 export const moduleRE = /^\/@modules\//
 
@@ -56,17 +53,9 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       return serve(id, cachedPath, 'cached')
     }
 
-    // package entries need redirect to ensure correct relative import paths
-    // check if the entry was already resolved
-    const cachedEntry = idToEntryMap.get(id)
-    if (cachedEntry) {
-      debug(`(cached redirect) ${id} -> ${cachedEntry}`)
-      return ctx.redirect(slash(path.join(ctx.path, cachedEntry)))
-    }
-
     // resolve from web_modules
     try {
-      const webModulePath = await resolveWebModule(root, id)
+      const webModulePath = resolveWebModule(root, id)
       if (webModulePath) {
         return serve(id, webModulePath, 'web_modules')
       }
@@ -76,11 +65,6 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       )
       console.error(e)
       ctx.status = 404
-    }
-
-    const entryPoint = await resolveNodeModuleEntry(root, id)
-    if (entryPoint) {
-      return ctx.redirect(slash(path.join(ctx.path, entryPoint)))
     }
 
     // resolve from node_modules
@@ -99,27 +83,33 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
   })
 }
 
-export async function resolveWebModule(
-  root: string,
-  id: string
-): Promise<string | undefined> {
-  let webModulePath = webModulesMap.get(id)
-  if (webModulePath) {
-    return webModulePath
+const webModulesMap = new Map()
+
+export function resolveWebModule(root: string, id: string): string | undefined {
+  const cached = webModulesMap.get(id)
+  if (cached) {
+    return cached
   }
   // id could be a common chunk
   if (!id.endsWith('.js')) id += '.js'
-  webModulePath = path.join(root, 'web_modules', id)
-  if (await fs.pathExists(webModulePath)) {
+  const webModulePath = path.join(root, 'web_modules', id)
+  if (fs.existsSync(webModulePath)) {
     webModulesMap.set(id, webModulePath)
     return webModulePath
   }
 }
 
-async function resolveNodeModuleEntry(
+const idToEntryMap = new Map()
+
+export function resolveNodeModuleEntry(
   root: string,
   id: string
-): Promise<string | undefined> {
+): string | undefined {
+  const cached = idToEntryMap.get(id)
+  if (cached) {
+    return cached
+  }
+
   let pkgPath
   try {
     // see if the id is a valid package name
@@ -129,8 +119,8 @@ async function resolveNodeModuleEntry(
   if (pkgPath) {
     // if yes, resolve entry file
     const pkg = require(pkgPath)
-    const entryPoint = pkg.module || pkg.main || 'index.js'
-    debug(`(redirect) ${id} -> ${entryPoint}`)
+    const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
+    debug(`(node_module entry) ${id} -> ${entryPoint}`)
     idToEntryMap.set(id, entryPoint)
     return entryPoint
   }

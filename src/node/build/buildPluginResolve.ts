@@ -26,7 +26,7 @@ export const createBuildResolvePlugin = (
       }
       if (id.startsWith('/')) {
         const resolved = resolver.requestToFile(id)
-        if (await fs.pathExists(resolved)) {
+        if (fs.existsSync(resolved)) {
           debug(id, `-->`, resolved)
           return resolved
         }
