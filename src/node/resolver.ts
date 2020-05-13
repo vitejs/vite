@@ -38,7 +38,7 @@ const defaultFileToRequest = (filePath: string, root: string): string => {
   return `/${slash(path.relative(root, filePath))}`
 }
 
-export const supportedExts = ['.js', '.ts', '.jsx', '.tsx', '.json']
+export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
 
 const debug = require('debug')('vite:resolve')
 
