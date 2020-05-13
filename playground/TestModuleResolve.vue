@@ -7,9 +7,6 @@
   <div class="module-resolve-optimize" :class="optResolve">
     optimized {{ optResolve }}
   </div>
-  <div class="module-resolve-web" :class="web_modules">
-    web_modules {{ web_modules }}
-  </div>
   <div class="index-resolve" :class="indexResolve">
     directory index resolve: {{ indexResolve }}
   </div>
@@ -19,7 +16,6 @@
 import { createRouter } from 'vue-router'
 import { createStore } from 'vuex'
 import { add } from 'lodash-es'
-import { dep } from 'web-modules-dep'
 import { foo } from './util'
 
 export default {
@@ -28,7 +24,6 @@ export default {
       router: typeof createRouter === 'function' ? 'ok' : 'error',
       store: typeof createStore === 'function' ? 'ok' : 'error',
       optResolve: typeof add === 'function' ? 'ok' : 'error',
-      web_modules: dep() ? 'ok' : 'error',
       indexResolve: foo() ? 'ok' : 'error'
     }
   }

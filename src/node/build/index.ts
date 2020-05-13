@@ -2,9 +2,9 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import resolve from 'resolve-from'
-import { rollup as Rollup, RollupOutput, ExternalOption } from 'rollup'
-import { createResolver, supportedExts } from '../resolver'
+import { resolveFrom } from '../utils'
+import { rollup as Rollup, RollupOutput, ExternalOption, Plugin } from 'rollup'
+import { createResolver, supportedExts, InternalResolver } from '../resolver'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
@@ -36,6 +36,84 @@ const writeColors = {
   [WriteType.SOURCE_MAP]: chalk.gray
 }
 
+const PACKAGES_TO_AUTO_DETECT_EXPORTS = [
+  path.join('react', 'index.js'),
+  path.join('react-dom', 'index.js'),
+  'react-is',
+  'prop-types',
+  'scheduler',
+  'rxjs',
+  'exenv',
+  'body-scroll-lock'
+]
+
+function detectExports(root: string, id: string): string[] | undefined {
+  try {
+    const fileLoc = resolveFrom(root, id)
+    if (fs.existsSync(fileLoc)) {
+      return Object.keys(require(fileLoc)).filter((e) => e[0] !== '_')
+    }
+  } catch (err) {
+    // ignore
+  }
+}
+
+/**
+ * Creates non-application specific plugins that are shared between the main
+ * app and the dependencies. This is used by the `optimize` command to
+ * pre-bundle dependencies.
+ */
+export async function createBaseRollupPlugins(
+  root: string,
+  resolver: InternalResolver,
+  options: BuildConfig
+): Promise<Plugin[]> {
+  const { rollupInputOptions = {}, transforms = [] } = options
+
+  // TODO allow user to configure known named exports
+  const knownNamedExports: Record<string, string[]> = {}
+  for (const id of PACKAGES_TO_AUTO_DETECT_EXPORTS) {
+    knownNamedExports[id] =
+      knownNamedExports[id] || detectExports(root, id) || []
+  }
+
+  return [
+    // user plugins
+    ...(rollupInputOptions.plugins || []),
+    // vite:resolve
+    createBuildResolvePlugin(root, resolver),
+    // vite:esbuild
+    await createEsbuildPlugin(options.minify === 'esbuild', options.jsx),
+    // vue
+    require('rollup-plugin-vue')({
+      ...options.rollupPluginVueOptions,
+      transformAssetUrls: {
+        includeAbsolute: true
+      },
+      preprocessStyles: true,
+      preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
+      compilerOptions: options.vueCompilerOptions
+    }),
+    require('@rollup/plugin-json')({
+      preferConst: true,
+      indent: '  ',
+      compact: false,
+      namedExports: true
+    }),
+    // user transforms
+    ...(transforms.length ? [createBuildJsTransformPlugin(transforms)] : []),
+    require('@rollup/plugin-node-resolve')({
+      rootDir: root,
+      extensions: supportedExts,
+      preferBuiltins: false
+    }),
+    require('@rollup/plugin-commonjs')({
+      extensions: ['.js', '.cjs'],
+      namedExports: knownNamedExports
+    })
+  ].filter(Boolean)
+}
+
 /**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
@@ -61,11 +139,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     alias = {},
     transforms = [],
     resolvers = [],
-    vueCompilerOptions,
     rollupInputOptions = {},
     rollupOutputOptions = {},
-    rollupPluginVueOptions = {},
-    jsx = {},
     emitIndex = true,
     emitAssets = true,
     write = true,
@@ -101,39 +176,25 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     resolver
   )
 
+  const basePlugins = await createBaseRollupPlugins(root, resolver, options)
+
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
   const bundle = await rollup({
     input: path.resolve(root, 'index.html'),
     preserveEntrySignatures: false,
+    treeshake: { moduleSideEffects: 'no-external' },
+    onwarn(warning, warn) {
+      if (warning.code !== 'CIRCULAR_DEPENDENCY') {
+        warn(warning)
+      }
+    },
     ...rollupInputOptions,
     plugins: [
-      // user plugins
-      ...(rollupInputOptions.plugins || []),
-      // vite:resolve
-      createBuildResolvePlugin(root, resolver),
+      ...basePlugins,
       // vite:html
-      ...(htmlPlugin ? [htmlPlugin] : []),
-      // vite:esbuild
-      await createEsbuildPlugin(minify === 'esbuild', jsx),
-      // vue
-      require('rollup-plugin-vue')({
-        ...rollupPluginVueOptions,
-        transformAssetUrls: {
-          includeAbsolute: true
-        },
-        preprocessStyles: true,
-        preprocessCustomRequire: (id: string) => require(resolve(root, id)),
-        compilerOptions: vueCompilerOptions
-      }),
-      require('@rollup/plugin-json')(),
-      // user transforms
-      ...(transforms.length ? [createBuildJsTransformPlugin(transforms)] : []),
-      require('@rollup/plugin-node-resolve')({
-        rootDir: root,
-        extensions: supportedExts
-      }),
+      htmlPlugin,
       // we use a custom replacement plugin because @rollup/plugin-replace
       // performs replacements twice, once at transform and once at renderChunk
       // - which makes it impossible to exclude Vue templates from it since
@@ -141,6 +202,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       createReplacePlugin(
         {
           'process.env.NODE_ENV': '"production"',
+          'process.env.': `({}).`,
           __DEV__: 'false',
           __BASE__: JSON.stringify(publicBasePath)
         },
@@ -167,15 +229,10 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       // this is the default which has better compression, but slow
       // the user can opt-in to use esbuild which is much faster but results
       // in ~8-10% larger file size.
-      ...(minify && minify !== 'esbuild'
-        ? [require('rollup-plugin-terser').terser()]
-        : [])
-    ],
-    onwarn(warning, warn) {
-      if (warning.code !== 'CIRCULAR_DEPENDENCY') {
-        warn(warning)
-      }
-    }
+      minify && minify !== 'esbuild'
+        ? require('rollup-plugin-terser').terser()
+        : undefined
+    ]
   })
 
   const { output } = await bundle.generate({

@@ -8,7 +8,7 @@ import {
   parse as parseImports,
   ImportSpecifier
 } from 'es-module-lexer'
-import { InternalResolver } from '../resolver'
+import { InternalResolver, resolveBareModule } from '../resolver'
 import {
   debugHmr,
   importerMap,
@@ -26,7 +26,6 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
-import { resolveBareModule } from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -52,7 +51,6 @@ export const moduleRewritePlugin: ServerPlugin = ({
     `\n<script>\n` +
     `window.__DEV__ = true\n` +
     `window.__BASE__ = '/'\n` +
-    `window.__SW_ENABLED__ = ${!!config.serviceWorker}\n` +
     `window.process = { env: { NODE_ENV: 'development' }}\n` +
     `</script>` +
     `\n<script type="module" src="${hmrClientPublicPath}"></script>\n`

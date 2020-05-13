@@ -1,12 +1,8 @@
 import { Plugin } from 'rollup'
 import fs from 'fs-extra'
 import { hmrClientId } from '../server/serverPluginHmr'
-import { InternalResolver } from '../resolver'
 import { resolveVue } from '../utils/resolveVue'
-import {
-  resolveWebModule,
-  resolveOptimizedModule
-} from '../server/serverPluginModuleResolve'
+import { InternalResolver, resolveOptimizedModule } from '../resolver'
 
 const debug = require('debug')('vite:build:resolve')
 
@@ -37,10 +33,6 @@ export const createBuildResolvePlugin = (
         const optimizedModule = resolveOptimizedModule(root, id)
         if (optimizedModule) {
           return optimizedModule
-        }
-        const webModulePath = resolveWebModule(root, id)
-        if (webModulePath) {
-          return webModulePath
         }
       }
       // fallback to node-resolve

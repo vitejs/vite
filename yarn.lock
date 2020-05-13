@@ -465,7 +465,7 @@
   resolved "https://registry.yarnpkg.com/@pika/react/-/react-16.13.1.tgz#20e47997d2a2f1e5da39a8e28b75db2ec77d99c6"
   integrity sha512-v33Ub2QxntNpDFRnkj3tCbT6jMb7Etu7LOMQO/YAulLRIDtDvJdMwuOVJDdPYUmDtWjfWOB5xSP7nl7k0BApbQ==
 
-"@rollup/plugin-commonjs@11.0.2":
+"@rollup/plugin-commonjs@~11.0.0":
   version "11.0.2"
   resolved "https://registry.yarnpkg.com/@rollup/plugin-commonjs/-/plugin-commonjs-11.0.2.tgz#837cc6950752327cb90177b608f0928a4e60b582"
   integrity sha512-MPYGZr0qdbV5zZj8/2AuomVpnRVXRU5XKXb3HVniwRoRCreGlf5kOE081isNWeiLIi6IYkwTX9zE0/c7V8g81g==

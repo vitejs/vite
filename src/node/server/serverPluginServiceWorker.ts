@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { ServerPlugin } from '.'
-import { getDepHash } from '../optimizer'
+import { getDepHash } from '../depOptimizer'
 
 export const serviceWorkerPlugin: ServerPlugin = ({
   root,

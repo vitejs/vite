@@ -109,6 +109,8 @@ async function runServe(
     open?: boolean
   }
 ) {
+  await require('../dist').optimizeDeps(options)
+
   const server = require('../dist').createServer(options)
 
   let port = options.port || 3000
@@ -167,7 +169,7 @@ async function runBuild(options: UserConfig) {
 
 async function runOptimize(options: UserConfig) {
   try {
-    await require('../dist').optimize(options)
+    await require('../dist').optimizeDeps(options)
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Dep optimization errored out.`))
