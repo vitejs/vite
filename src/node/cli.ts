@@ -169,7 +169,7 @@ async function runBuild(options: UserConfig) {
 
 async function runOptimize(options: UserConfig) {
   try {
-    await require('../dist').optimizeDeps(options)
+    await require('../dist').optimizeDeps(options, true /* as cli command */)
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Dep optimization errored out.`))

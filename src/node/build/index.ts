@@ -155,7 +155,6 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     if (process.env.DEBUG || isTest) {
       console.log(msg)
     } else {
-      console.log(process.env.NODE_ENV)
       spinner = require('ora')(msg + '\n').start()
     }
   }

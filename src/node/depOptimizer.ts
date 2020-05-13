@@ -8,6 +8,7 @@ import { createBaseRollupPlugins } from './build'
 import { resolveFrom } from './utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
+import { Ora } from 'ora'
 
 export const OPTIMIZE_CACHE_DIR = `node_modules/.vite_opt_cache`
 
@@ -15,7 +16,7 @@ export interface OptimizeOptions extends ResolvedConfig {
   force?: boolean
 }
 
-export async function optimizeDeps(config: OptimizeOptions) {
+export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
   const root = config.root || process.cwd()
   // warn presence of web_modules
   if (fs.existsSync(path.join(root, 'web_modules'))) {
@@ -38,7 +39,8 @@ export async function optimizeDeps(config: OptimizeOptions) {
     } catch (e) {}
     // hash is consistent, no need to re-bundle
     if (prevhash === depHash) {
-      console.log('Hash is consistent. Skipping. Use --force to override.')
+      asCommand &&
+        console.log('Hash is consistent. Skipping. Use --force to override.')
       return
     }
   }
@@ -48,17 +50,16 @@ export async function optimizeDeps(config: OptimizeOptions) {
 
   const pkg = lookupFile(root, [`package.json`])
   if (!pkg) {
-    console.log(`package.json not found. Skipping.`)
+    asCommand && console.log(`package.json not found. Skipping.`)
     return
   }
 
   const deps = Object.keys(JSON.parse(pkg).dependencies || {})
   if (!deps.length) {
-    console.log(`No dependencies listed in package.json. Skipping.`)
+    asCommand &&
+      console.log(`No dependencies listed in package.json. Skipping.`)
     return
   }
-
-  console.log(`Optimizing dependencies...`)
 
   const resolver = createResolver(root, config.resolvers, config.alias)
 
@@ -90,49 +91,84 @@ export async function optimizeDeps(config: OptimizeOptions) {
     }
   })
 
-  // Non qualified deps are marked as externals, since they will be preserved
-  // and resolved from their original node_modules locations.
-  const preservedDeps = deps.filter((id) => !qualifiedDeps.includes(id))
-
-  const input = qualifiedDeps.reduce((entries, name) => {
-    entries[name] = name
-    return entries
-  }, {} as Record<string, string>)
-
-  const rollup = require('rollup') as typeof Rollup
-  const bundle = await rollup.rollup({
-    input,
-    external: preservedDeps,
-    treeshake: { moduleSideEffects: 'no-external' },
-    onwarn(warning, warn) {
-      if (warning.code !== 'CIRCULAR_DEPENDENCY') {
-        warn(warning)
-      }
-    },
-    ...config.rollupInputOptions,
-    plugins: await createBaseRollupPlugins(root, resolver, config)
-  })
-
-  const { output } = await bundle.generate({
-    ...config.rollupOutputOptions,
-    format: 'es',
-    exports: 'named',
-    chunkFileNames: 'common/[name]-[hash].js'
-  })
-
-  for (const chunk of output) {
-    if (chunk.type === 'chunk') {
-      const fileName = chunk.fileName
-      const filePath = path.join(cacheDir, fileName)
-      await fs.ensureDir(path.dirname(filePath))
-      await fs.writeFile(filePath, chunk.code)
-      console.log(
-        `${fileName.replace(/\.js$/, '')} -> ${path.relative(root, filePath)}`
-      )
-    }
+  if (!qualifiedDeps.length) {
+    asCommand && console.log(`No listed dependency requires optimization.`)
+    return
   }
 
-  await fs.writeFile(hashPath, depHash)
+  if (!asCommand) {
+    // This is auto run on server start - let the user know that we are
+    // pre-optimizing deps
+    console.log(chalk.greenBright(`[vite] Optimizable dependencies detected.`))
+  }
+
+  let spinner: Ora | undefined
+  const msg = asCommand
+    ? `Pre-bundling dependencies to speed up dev server page load...`
+    : `Pre-bundling them to speed up dev server page load...\n` +
+      `  (this will be run only when your dependencies have changed)`
+  if (process.env.DEBUG || process.env.NODE_ENV === 'test') {
+    console.log(msg)
+  } else {
+    spinner = require('ora')(msg + '\n').start()
+  }
+
+  try {
+    // Non qualified deps are marked as externals, since they will be preserved
+    // and resolved from their original node_modules locations.
+    const preservedDeps = deps.filter((id) => !qualifiedDeps.includes(id))
+
+    const input = qualifiedDeps.reduce((entries, name) => {
+      entries[name] = name
+      return entries
+    }, {} as Record<string, string>)
+
+    const rollup = require('rollup') as typeof Rollup
+    const bundle = await rollup.rollup({
+      input,
+      external: preservedDeps,
+      treeshake: { moduleSideEffects: 'no-external' },
+      onwarn(warning, warn) {
+        if (warning.code !== 'CIRCULAR_DEPENDENCY') {
+          warn(warning)
+        }
+      },
+      ...config.rollupInputOptions,
+      plugins: await createBaseRollupPlugins(root, resolver, config)
+    })
+
+    const { output } = await bundle.generate({
+      ...config.rollupOutputOptions,
+      format: 'es',
+      exports: 'named',
+      chunkFileNames: 'common/[name]-[hash].js'
+    })
+
+    spinner && spinner.stop()
+
+    for (const chunk of output) {
+      if (chunk.type === 'chunk') {
+        const fileName = chunk.fileName
+        const filePath = path.join(cacheDir, fileName)
+        await fs.ensureDir(path.dirname(filePath))
+        await fs.writeFile(filePath, chunk.code)
+        console.log(
+          `${chalk.yellow(fileName.replace(/\.js$/, ''))} -> ${chalk.dim(
+            path.relative(root, filePath)
+          )}`
+        )
+      }
+    }
+
+    await fs.writeFile(hashPath, depHash)
+  } catch (e) {
+    spinner && spinner.stop()
+    if (asCommand) {
+      throw e
+    } else {
+      console.error(`[vite] `)
+    }
+  }
 }
 
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
