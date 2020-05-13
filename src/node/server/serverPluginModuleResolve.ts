@@ -71,6 +71,18 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
     try {
       // we land here after a module entry redirect
       // or a direct deep import like 'foo/bar/baz.js'.
+
+      // some packages (i.e. graphql) ship .mjs files with ES exports
+      // when a file without an extension was requested, we will try an mjs file first
+      // as resolve defaults to the .js extension
+      if (path.extname(id) === '') {
+        try {
+          return serve(id, resolve(root, `${id}.mjs`), 'node_modules')
+        } catch (e) {
+          // ignore module not found (and all other) errors
+        }
+      }
+
       const file = resolve(root, id)
       return serve(id, file, 'node_modules')
     } catch (e) {
