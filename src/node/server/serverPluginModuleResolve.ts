@@ -151,7 +151,7 @@ function resolveNodeModule(root: string, id: string): string | undefined {
   if (pkgPath) {
     // if yes, this is a entry import. resolve entry file
     const pkg = require(pkgPath)
-    const entryPoint = path.join(id, '/', pkg.module || pkg.main || 'index.js')
+    const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
     debug(`(node_module entry) ${id} -> ${entryPoint}`)
     nodeModulesMap.set(id, entryPoint)
     return entryPoint
