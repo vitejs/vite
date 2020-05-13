@@ -21,13 +21,12 @@ export const serveStaticPlugin: ServerPlugin = ({
 
   // history API fallback
   app.use((ctx, next) => {
-    const cleanUrl = ctx.url.split('?')[0].split('#')[0]
     if (ctx.method !== 'GET') {
       debug(`not redirecting ${ctx.url} (not GET)`)
       return next()
     }
 
-    if (cleanUrl.includes('.')) {
+    if (ctx.path.includes('.')) {
       debug(`not redirecting ${ctx.url} (relative url)`)
       return next()
     }
