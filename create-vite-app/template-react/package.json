@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite serve src --jsx react",
-    "build": "vite build src --jsx react"
+    "build": "vite build src --jsx react --outDir dist "
   },
   "dependencies": {
     "@pika/react": "^16.13.1",

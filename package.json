@@ -92,6 +92,8 @@
     "ws": "^7.2.3"
   },
   "devDependencies": {
+    "@pika/react": "^16.13.1",
+    "@pika/react-dom": "^16.13.1",
     "@types/es-module-lexer": "^0.3.0",
     "@types/fs-extra": "^8.1.0",
     "@types/hash-sum": "^1.0.0",
