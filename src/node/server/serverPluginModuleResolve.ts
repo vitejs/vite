@@ -5,6 +5,7 @@ import resolve from 'resolve-from'
 import { ServerPlugin } from '.'
 import { resolveVue, cachedRead } from '../utils'
 import { URL } from 'url'
+import { supportedExts } from '../resolver'
 
 const debug = require('debug')('vite:resolve')
 
@@ -155,9 +156,18 @@ function resolveNodeModule(root: string, id: string): string | undefined {
     nodeModulesMap.set(id, entryPoint)
     return entryPoint
   } else {
-    // possibly a deep import, try resolving directly
+    // possibly a deep import
     try {
       return resolve(root, id)
     } catch (e) {}
+
+    // no match and no ext, try all exts
+    if (!path.extname(id)) {
+      for (const ext of supportedExts) {
+        try {
+          return resolve(root, id + ext)
+        } catch (e) {}
+      }
+    }
   }
 }
