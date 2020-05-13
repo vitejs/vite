@@ -104,8 +104,8 @@ export const moduleRewritePlugin: ServerPlugin = ({
       } else if (html) {
         ctx.body = await rewriteIndex(html)
         rewriteCache.set(html, ctx.body)
-        return
       }
+      return
     }
 
     // we are doing the js rewrite after all other middlewares have finished;

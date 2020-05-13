@@ -1,3 +1,4 @@
+import path from 'path'
 import { ServerPlugin } from '.'
 
 const send = require('koa-send')
@@ -26,28 +27,25 @@ export const serveStaticPlugin: ServerPlugin = ({
       return next()
     }
 
-    if (ctx.path.includes('.')) {
-      debug(`not redirecting ${ctx.url} (relative url)`)
-      return next()
-    }
-
-    if (!ctx.headers || typeof ctx.headers.accept !== 'string') {
+    const accept = ctx.headers && ctx.headers.accept
+    if (typeof accept !== 'string') {
       debug(`not redirecting ${ctx.url} (no headers.accept)`)
       return next()
     }
 
-    if (ctx.headers.accept.includes('application/json')) {
+    if (accept.includes('application/json')) {
       debug(`not redirecting ${ctx.url} (json)`)
       return next()
     }
 
-    if (
-      !(
-        ctx.headers.accept.includes('text/html') ||
-        ctx.headers.accept.includes('*/*')
-      )
-    ) {
+    if (!(accept.includes('text/html') || accept.includes('*/*'))) {
       debug(`not redirecting ${ctx.url} (not accepting html)`)
+      return next()
+    }
+
+    const ext = path.extname(ctx.path)
+    if (ext && !accept.includes('text/html')) {
+      debug(`not redirecting ${ctx.url} (has file extension)`)
       return next()
     }
 
