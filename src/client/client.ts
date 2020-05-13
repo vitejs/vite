@@ -3,29 +3,44 @@ import { HMRRuntime } from 'vue'
 
 // register service worker
 if ('serviceWorker' in navigator) {
-  const hasExistingSw = !!navigator.serviceWorker.controller
-  if (__SW_ENABLED__ || hasExistingSw) {
-    // if not enabled but has existing sw, registering the sw will force the
-    // cache to be busted.
-    navigator.serviceWorker.register('/sw.js').catch((e) => {
-      console.log('[vite] failed to register service worker:', e)
-    })
+  ;(async () => {
+    const hasExistingSw = !!navigator.serviceWorker.controller
 
-    // Notify the user to reload the page if a new service worker has taken
-    // control.
-    if (hasExistingSw) {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (window.confirm('[vite] Service worker cache updated. Reload?')) {
-          window.location.reload()
-        }
-        // in case the user dismisses it, or the prompt failed to pop because
-        // the tab was inactive
-        console.warn(
-          `[vite] Service worker cache updated. A reload is required.`
-        )
-      })
+    const prompt = (msg: string) => {
+      if (confirm(msg)) {
+        location.reload()
+      } else {
+        console.warn(msg)
+      }
     }
-  }
+
+    if (__SW_ENABLED__) {
+      // if not enabled but has existing sw, registering the sw will force the
+      // cache to be busted.
+      try {
+        navigator.serviceWorker.register('/sw.js')
+      } catch (e) {
+        console.log('[vite] failed to register service worker:', e)
+      }
+      // Notify the user to reload the page if a new service worker has taken
+      // control.
+      if (hasExistingSw) {
+        navigator.serviceWorker.addEventListener('controllerchange', () =>
+          prompt(`[vite] Service worker cache invalidated. Reload is required.`)
+        )
+      } else {
+        console.log(`[vite] service worker registered.`)
+      }
+    } else if (hasExistingSw) {
+      for (const reg of await navigator.serviceWorker.getRegistrations()) {
+        await reg.unregister()
+      }
+      prompt(
+        `[vite] Unregistered stale service worker. ` +
+          `Reload is required to invalidate cache.`
+      )
+    }
+  })()
 }
 
 console.log('[vite] connecting...')
