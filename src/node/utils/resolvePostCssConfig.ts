@@ -14,8 +14,10 @@ export async function loadPostcssConfig(root: string): Promise<Result | null> {
     const load = require('postcss-load-config') as typeof postcssrc
     return (cachedPostcssConfig = await load({}, root))
   } catch (e) {
-    console.error(chalk.red(`[vite] Error loading postcss config:`))
-    console.error(e)
+    if (!/No PostCSS Config found/.test(e.message)) {
+      console.error(chalk.red(`[vite] Error loading postcss config:`))
+      console.error(e)
+    }
     return (cachedPostcssConfig = null)
   }
 }
