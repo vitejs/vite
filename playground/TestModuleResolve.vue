@@ -4,8 +4,8 @@
     vue-router@next {{ router }}
   </div>
   <div class="module-resolve-store" :class="store">vuex@next {{ store }}</div>
-  <div class="module-resolve-web" :class="web_modules">
-    web_modules {{ web_modules }}
+  <div class="module-resolve-optimize" :class="optResolve">
+    optimized {{ optResolve }}
   </div>
   <div class="index-resolve" :class="indexResolve">
     directory index resolve: {{ indexResolve }}
@@ -15,7 +15,7 @@
 <script>
 import { createRouter } from 'vue-router'
 import { createStore } from 'vuex'
-import { dep } from 'web-modules-dep'
+import { add } from 'lodash-es'
 import { foo } from './util'
 
 export default {
@@ -23,7 +23,7 @@ export default {
     return {
       router: typeof createRouter === 'function' ? 'ok' : 'error',
       store: typeof createStore === 'function' ? 'ok' : 'error',
-      web_modules: dep() ? 'ok' : 'error',
+      optResolve: typeof add === 'function' ? 'ok' : 'error',
       indexResolve: foo() ? 'ok' : 'error'
     }
   }

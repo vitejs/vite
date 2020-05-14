@@ -1,9 +1,9 @@
 import path from 'path'
-import fs from 'fs-extra'
 import chalk from 'chalk'
-import resolve from 'resolve-from'
 import { ServerPlugin } from '.'
 import { resolveVue, cachedRead } from '../utils'
+import { URL } from 'url'
+import { resolveOptimizedModule, resolveNodeModule } from '../resolver'
 
 const debug = require('debug')('vite:resolve')
 
@@ -53,75 +53,24 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       return serve(id, cachedPath, 'cached')
     }
 
-    // resolve from web_modules
-    try {
-      const webModulePath = resolveWebModule(root, id)
-      if (webModulePath) {
-        return serve(id, webModulePath, 'web_modules')
-      }
-    } catch (e) {
-      console.error(
-        chalk.red(`[vite] Error while resolving web_modules with id "${id}":`)
-      )
-      console.error(e)
-      ctx.status = 404
+    // resolve from vite optimized modules
+    const optimized = resolveOptimizedModule(root, id)
+    if (optimized) {
+      return serve(id, optimized, 'optimized')
     }
 
-    // resolve from node_modules
-    try {
-      // we land here after a module entry redirect
-      // or a direct deep import like 'foo/bar/baz.js'.
-      const file = resolve(root, id)
-      return serve(id, file, 'node_modules')
-    } catch (e) {
-      console.error(
-        chalk.red(`[vite] Error while resolving node_modules with id "${id}":`)
-      )
-      console.error(e)
-      ctx.status = 404
+    const nodeModulePath = resolveNodeModule(root, id)
+    if (nodeModulePath) {
+      return serve(id, nodeModulePath, 'node_modules')
     }
+
+    const importer = new URL(ctx.get('referer')).pathname
+    console.error(
+      chalk.red(
+        `[vite] Failed to resolve module import "${id}". ` +
+          `(imported by ${importer})`
+      )
+    )
+    ctx.status = 404
   })
-}
-
-const webModulesMap = new Map()
-
-export function resolveWebModule(root: string, id: string): string | undefined {
-  const cached = webModulesMap.get(id)
-  if (cached) {
-    return cached
-  }
-  // id could be a common chunk
-  if (!id.endsWith('.js')) id += '.js'
-  const webModulePath = path.join(root, 'web_modules', id)
-  if (fs.existsSync(webModulePath)) {
-    webModulesMap.set(id, webModulePath)
-    return webModulePath
-  }
-}
-
-const idToEntryMap = new Map()
-
-export function resolveNodeModuleEntry(
-  root: string,
-  id: string
-): string | undefined {
-  const cached = idToEntryMap.get(id)
-  if (cached) {
-    return cached
-  }
-
-  let pkgPath
-  try {
-    // see if the id is a valid package name
-    pkgPath = resolve(root, `${id}/package.json`)
-  } catch (e) {}
-
-  if (pkgPath) {
-    // if yes, resolve entry file
-    const pkg = require(pkgPath)
-    const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
-    debug(`(node_module entry) ${id} -> ${entryPoint}`)
-    idToEntryMap.set(id, entryPoint)
-    return entryPoint
-  }
 }

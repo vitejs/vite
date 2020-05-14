@@ -37,7 +37,9 @@ beforeAll(async () => {
   try {
     await fs.remove(tempDir)
   } catch (e) {}
-  await fs.copy(fixtureDir, tempDir)
+  await fs.copy(fixtureDir, tempDir, {
+    filter: (file) => !/dist|node_modules/.test(file)
+  })
 })
 
 afterAll(async () => {
@@ -97,7 +99,7 @@ describe('vite', () => {
     test('module resolving', async () => {
       expect(await getText('.module-resolve-router')).toMatch('ok')
       expect(await getText('.module-resolve-store')).toMatch('ok')
-      expect(await getText('.module-resolve-web')).toMatch('ok')
+      expect(await getText('.module-resolve-optimize')).toMatch('ok')
       expect(await getText('.index-resolve')).toMatch('ok')
     })
 

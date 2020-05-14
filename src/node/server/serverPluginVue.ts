@@ -18,8 +18,8 @@ import {
   importerMap,
   ensureMapEntry
 } from './serverPluginHmr'
-import resolve from 'resolve-from'
 import {
+  resolveFrom,
   cachedRead,
   genSourceMapString,
   loadPostcssConfig,
@@ -328,7 +328,7 @@ function compileSFCTemplate(
       runtimeModuleName: '/@modules/vue'
     },
     preprocessLang: template.lang,
-    preprocessCustomRequire: (id: string) => require(resolve(root, id))
+    preprocessCustomRequire: (id: string) => require(resolveFrom(root, id))
   })
 
   if (errors.length) {
@@ -387,7 +387,7 @@ async function compileSFCStyle(
     scoped: style.scoped != null,
     modules: style.module != null,
     preprocessLang: style.lang as any,
-    preprocessCustomRequire: (id: string) => require(resolve(root, id)),
+    preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
     ...(postcssConfig
       ? {
           postcssOptions: postcssConfig.options,

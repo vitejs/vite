@@ -25,7 +25,7 @@ export interface ServerPluginContext {
   server: Server
   watcher: HMRWatcher
   resolver: InternalResolver
-  config: ServerConfig
+  config: ServerConfig & { __path?: string }
 }
 
 export function createServer(config: ServerConfig = {}): Server {
