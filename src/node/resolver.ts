@@ -119,7 +119,7 @@ export function resolveBareModule(root: string, id: string) {
   if (optimized) {
     return id
   }
-  const nodeEntry = resolveNodeModule(root, id)
+  const nodeEntry = resolveNodeModuleEntry(root, id)
   if (nodeEntry) {
     return nodeEntry
   }
@@ -145,17 +145,13 @@ export function resolveOptimizedModule(
   }
 }
 
-const nodeModulesMap = new Map()
+const nodeModulesEntryMap = new Map()
 
-export function resolveNodeModule(
-  root: string,
-  id: string
-): string | undefined {
-  const cached = nodeModulesMap.get(id)
+export function resolveNodeModuleEntry(root: string, id: string) {
+  const cached = nodeModulesEntryMap.get(id)
   if (cached) {
     return cached
   }
-
   let pkgPath
   try {
     // see if the id is a valid package name
@@ -167,21 +163,42 @@ export function resolveNodeModule(
     const pkg = require(pkgPath)
     const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
     debug(`(node_module entry) ${id} -> ${entryPoint}`)
-    nodeModulesMap.set(id, entryPoint)
+    nodeModulesEntryMap.set(id, entryPoint)
     return entryPoint
-  } else {
-    // possibly a deep import
-    try {
-      return resolveFrom(root, id)
-    } catch (e) {}
+  }
+}
 
-    // no match and no ext, try all exts
+const nodeModulesMap = new Map()
+
+export function resolveNodeModule(
+  root: string,
+  id: string
+): string | undefined {
+  const cached = nodeModulesMap.get(id)
+  if (cached) {
+    return cached
+  }
+
+  let resolved
+  // possibly a deep import
+  try {
+    resolved = resolveFrom(root, id)
+  } catch (e) {}
+
+  // no match and no ext, try all exts
+  if (!resolved) {
     if (!path.extname(id)) {
       for (const ext of supportedExts) {
         try {
-          return resolveFrom(root, id + ext)
+          resolved = resolveFrom(root, id + ext)
         } catch (e) {}
+        if (resolved) {
+          break
+        }
       }
     }
   }
+
+  nodeModulesMap.set(id, resolved)
+  return resolved
 }

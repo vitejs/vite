@@ -3,7 +3,7 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { ResolvedConfig } from './config'
 import type Rollup from 'rollup'
-import { createResolver, resolveNodeModule } from './resolver'
+import { createResolver, resolveNodeModule, supportedExts } from './resolver'
 import { createBaseRollupPlugins } from './build'
 import { resolveFrom, lookupFile } from './utils'
 import { init, parse } from 'es-module-lexer'
@@ -73,6 +73,9 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
   const qualifiedDeps = deps.filter((id) => {
     const entry = resolveNodeModule(root, id)
     if (!entry) {
+      return false
+    }
+    if (!supportedExts.includes(path.extname(entry))) {
       return false
     }
     const content = fs.readFileSync(resolveFrom(root, entry), 'utf-8')
