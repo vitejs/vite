@@ -1,5 +1,5 @@
 import path from 'path'
-import resolve from 'resolve-from'
+import { resolveFrom } from './pathUtils'
 import sfcCompiler from '@vue/compiler-sfc'
 import chalk from 'chalk'
 
@@ -29,17 +29,20 @@ export function resolveVue(root: string): ResolvedVuePaths {
   let vueVersion: string
   try {
     // see if user has local vue installation
-    const userVuePkg = resolve(root, 'vue/package.json')
+    const userVuePkg = resolveFrom(root, 'vue/package.json')
     vueVersion = require(userVuePkg).version
     // as long as vue is present,
     // dom, core and reactivity are guarunteed to coexist
-    runtimeDomPath = resolve(
+    runtimeDomPath = resolveFrom(
       root,
       '@vue/runtime-dom/dist/runtime-dom.esm-bundler.js'
     )
     // also resolve matching sfc compiler
     try {
-      const compilerPkgPath = resolve(root, '@vue/compiler-sfc/package.json')
+      const compilerPkgPath = resolveFrom(
+        root,
+        '@vue/compiler-sfc/package.json'
+      )
       const compilerPkg = require(compilerPkgPath)
       if (compilerPkg.version !== require(userVuePkg).version) {
         throw new Error()

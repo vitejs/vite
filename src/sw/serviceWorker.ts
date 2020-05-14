@@ -49,6 +49,7 @@ sw.addEventListener('message', async (e) => {
 })
 
 const depsRE = /^\/@modules\//
+const hmrClientPath = `/vite/hmr`
 const hmrRequestRE = /(&|\?)t=\d+/
 
 sw.addEventListener('fetch', (e) => {
@@ -58,7 +59,7 @@ sw.addEventListener('fetch', (e) => {
 
   const url = new URL(e.request.url)
   // no need to cache hmr update requests
-  if (!url.search.match(hmrRequestRE)) {
+  if (url.pathname !== hmrClientPath && !url.search.match(hmrRequestRE)) {
     const cacheToUse = depsRE.test(url.pathname)
       ? DEPS_CACHE_NAME
       : USER_CACHE_NAME

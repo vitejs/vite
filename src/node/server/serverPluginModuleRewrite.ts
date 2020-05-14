@@ -8,7 +8,7 @@ import {
   parse as parseImports,
   ImportSpecifier
 } from 'es-module-lexer'
-import { InternalResolver } from '../resolver'
+import { InternalResolver, resolveBareModule } from '../resolver'
 import {
   debugHmr,
   importerMap,
@@ -26,10 +26,6 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
-import {
-  resolveNodeModuleEntry,
-  resolveWebModule
-} from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -49,26 +45,47 @@ export const moduleRewritePlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  // bust module rewrite cache on file change
-  watcher.on('change', (file) => {
-    const publicPath = resolver.fileToRequest(file)
-    debug(`${publicPath}: cache busted`)
-    rewriteCache.del(publicPath)
-  })
-
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
   const devInjectionCode =
     `\n<script>\n` +
     `window.__DEV__ = true\n` +
     `window.__BASE__ = '/'\n` +
-    `window.__SW_ENABLED__ = ${!!config.serviceWorker}\n` +
     `window.process = { env: { NODE_ENV: 'development' }}\n` +
     `</script>` +
     `\n<script type="module" src="${hmrClientPublicPath}"></script>\n`
 
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
+
+  async function rewriteIndex(html: string) {
+    await initLexer
+    let hasInjectedDevFlag = false
+    const importer = '/index.html'
+    return html!.replace(scriptRE, (matched, openTag, script) => {
+      const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
+      hasInjectedDevFlag = true
+      if (script) {
+        return `${devFlag}${openTag}${rewriteImports(
+          root,
+          script,
+          importer,
+          resolver
+        )}</script>`
+      } else {
+        const srcAttr = openTag.match(srcRE)
+        if (srcAttr) {
+          // register script as a import dep for hmr
+          const importee = cleanUrl(
+            slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
+          )
+          debugHmr(`        ${importer} imports ${importee}`)
+          ensureMapEntry(importerMap, importee).add(importer)
+        }
+        return `${devFlag}${matched}`
+      }
+    })
+  }
 
   app.use(async (ctx, next) => {
     await next()
@@ -78,40 +95,15 @@ export const moduleRewritePlugin: ServerPlugin = ({
     }
 
     if (ctx.path === '/index.html') {
-      const html = await readBody(ctx.body)
+      let html = await readBody(ctx.body)
       if (html && rewriteCache.has(html)) {
         debug('/index.html: serving from cache')
         ctx.body = rewriteCache.get(html)
-      } else if (ctx.body) {
-        await initLexer
-        let hasInjectedDevFlag = false
-        const importer = '/index.html'
-        ctx.body = html!.replace(scriptRE, (matched, openTag, script) => {
-          const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
-          hasInjectedDevFlag = true
-          if (script) {
-            return `${devFlag}${openTag}${rewriteImports(
-              root,
-              script,
-              importer,
-              resolver
-            )}</script>`
-          } else {
-            const srcAttr = openTag.match(srcRE)
-            if (srcAttr) {
-              // register script as a import dep for hmr
-              const importee = cleanUrl(
-                slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
-              )
-              debugHmr(`        ${importer} imports ${importee}`)
-              ensureMapEntry(importerMap, importee).add(importer)
-            }
-            return `${devFlag}${matched}`
-          }
-        })
+      } else if (html) {
+        ctx.body = await rewriteIndex(html)
         rewriteCache.set(html, ctx.body)
-        return
       }
+      return
     }
 
     // we are doing the js rewrite after all other middlewares have finished;
@@ -144,6 +136,13 @@ export const moduleRewritePlugin: ServerPlugin = ({
     } else {
       debug(`(skipped) ${ctx.url}`)
     }
+  })
+
+  // bust module rewrite cache on file change
+  watcher.on('change', (file) => {
+    const publicPath = resolver.fileToRequest(file)
+    debug(`${publicPath}: cache busted`)
+    rewriteCache.del(publicPath)
   })
 }
 
@@ -272,7 +271,6 @@ export function rewriteImports(
 }
 
 const bareImportRE = /^[^\/\.]/
-const fileExtensionRE = /\.\w+$/
 const jsSrcRE = /\.(?:(?:j|t)sx?|vue)$/
 
 export const resolveImport = (
@@ -286,14 +284,11 @@ export const resolveImport = (
   if (bareImportRE.test(id)) {
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
-    const isWebModule = !!resolveWebModule(root, id)
-    return `/@modules/${
-      isWebModule ? id : resolveNodeModuleEntry(root, id) || id
-    }`
+    return `/@modules/${resolveBareModule(root, id)}`
   } else {
     let { pathname, query } = resolveRelativeRequest(importer, id)
     // append an extension to extension-less imports
-    if (!fileExtensionRE.test(pathname)) {
+    if (!path.extname(pathname)) {
       const file = resolver.requestToFile(pathname)
       const indexMatch = file.match(/\/index\.\w+$/)
       if (indexMatch) {

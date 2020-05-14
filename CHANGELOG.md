@@ -1,3 +1,21 @@
+## [0.14.4](https://github.com/vuejs/vite/compare/v0.14.3...v0.14.4) (2020-05-13)
+
+
+### Bug Fixes
+
+* fix cva react template build + handle alias during build ([c243d09](https://github.com/vuejs/vite/commit/c243d09dbb7cbc7aaf5c79e2e2ea3be899d37933))
+* fix windows node resolving ([4f2953e](https://github.com/vuejs/vite/commit/4f2953e429718c28ec4f1a8e6559d7c75630e70b))
+* support resolving .mjs and other exts in module deep imports ([02753b7](https://github.com/vuejs/vite/commit/02753b7fda300bd15b7fa61d5e9ed2cce1a6ac4f)), closes [#127](https://github.com/vuejs/vite/issues/127)
+* **history-fallback:** properly redirect urls with dot ([7f5e459](https://github.com/vuejs/vite/commit/7f5e4596a4e7254cc5f173fbf5261f3f47c926a9)), closes [#130](https://github.com/vuejs/vite/issues/130)
+* replace cleanUrl with ctx.path ([#133](https://github.com/vuejs/vite/issues/133)) ([f558a88](https://github.com/vuejs/vite/commit/f558a880a3aa04f6024ff05f25924568a94a9b54))
+
+
+### Features
+
+* improve module resolving ([405f685](https://github.com/vuejs/vite/commit/405f685f7b0772881f5bd296b136296e94e35085))
+
+
+
 ## [0.14.3](https://github.com/vuejs/vite/compare/v0.14.2...v0.14.3) (2020-05-12)
 
 

@@ -97,7 +97,9 @@ export const hmrPlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  const hmrClient = fs.readFileSync(hmrClientFilePath, 'utf-8')
+  const hmrClient = fs
+    .readFileSync(hmrClientFilePath, 'utf-8')
+    .replace(`__SW_ENABLED__`, String(!!config.serviceWorker))
 
   app.use(async (ctx, next) => {
     if (ctx.path === hmrClientPublicPath) {

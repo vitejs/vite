@@ -1,9 +1,8 @@
 import { Plugin } from 'rollup'
 import fs from 'fs-extra'
 import { hmrClientId } from '../server/serverPluginHmr'
-import { InternalResolver } from '../resolver'
 import { resolveVue } from '../utils/resolveVue'
-import { resolveWebModule } from '../server/serverPluginModuleResolve'
+import { InternalResolver } from '../resolver'
 
 const debug = require('debug')('vite:build:resolve')
 
@@ -13,7 +12,7 @@ export const createBuildResolvePlugin = (
 ): Plugin => {
   return {
     name: 'vite:resolve',
-    async resolveId(id: string) {
+    async resolveId(id, importer) {
       id = resolver.alias(id) || id
       if (id === hmrClientId) {
         return hmrClientId
@@ -30,13 +29,10 @@ export const createBuildResolvePlugin = (
           debug(id, `-->`, resolved)
           return resolved
         }
-      } else if (!id.startsWith('.')) {
-        const webModulePath = await resolveWebModule(root, id)
-        if (webModulePath) {
-          return webModulePath
-        }
       }
-      // fallback to node-resolve
+      // fallback to node-resolve becuase alias
+      const resolved = this.resolve(id, importer, { skipSelf: true })
+      return resolved || { id }
     },
     load(id: string) {
       if (id === hmrClientId) {

@@ -3,6 +3,9 @@ import path from 'path'
 import slash from 'slash'
 import qs from 'querystring'
 
+export const resolveFrom = (root: string, id: string) =>
+  require.resolve(id, { paths: [root] })
+
 export const queryRE = /\?.*$/
 export const hashRE = /\#.*$/
 

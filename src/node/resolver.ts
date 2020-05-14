@@ -1,12 +1,13 @@
+import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
-import { statSync } from 'fs'
-import { cleanUrl } from './utils'
+import { cleanUrl, resolveFrom } from './utils'
 import {
   idToFileMap,
   moduleRE,
   fileToRequestMap
 } from './server/serverPluginModuleResolve'
+import { OPTIMIZE_CACHE_DIR } from './depOptimizer'
 
 export interface Resolver {
   requestToFile(publicPath: string, root: string): string | undefined
@@ -38,24 +39,24 @@ const defaultFileToRequest = (filePath: string, root: string): string => {
   return `/${slash(path.relative(root, filePath))}`
 }
 
-export const supportedExts = ['.js', '.ts', '.jsx', '.tsx', '.json']
+export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
 
 const debug = require('debug')('vite:resolve')
 
-const resolveExt = (id: string) => {
+export const resolveExt = (id: string) => {
   const cleanId = cleanUrl(id)
-  if (!/\.\w+$/.test(cleanId)) {
+  if (!path.extname(cleanId)) {
     let inferredExt = ''
     for (const ext of supportedExts) {
       try {
         // foo -> foo.js
-        statSync(cleanId + ext)
+        fs.statSync(cleanId + ext)
         inferredExt = ext
         break
       } catch (e) {
         try {
           // foo -> foo/index.js
-          statSync(path.join(cleanId, '/index' + ext))
+          fs.statSync(path.join(cleanId, '/index' + ext))
           inferredExt = '/index' + ext
           break
         } catch (e) {}
@@ -64,7 +65,7 @@ const resolveExt = (id: string) => {
     const queryMatch = id.match(/\?.*$/)
     const query = queryMatch ? queryMatch[0] : ''
     const reoslved = cleanId + inferredExt + query
-    debug(`ext: ${id} -> ${reoslved}`)
+    debug(`(extension) ${id} -> ${reoslved}`)
     return reoslved
   }
   return id
@@ -72,8 +73,8 @@ const resolveExt = (id: string) => {
 
 export function createResolver(
   root: string,
-  resolvers: Resolver[],
-  alias: Record<string, string>
+  resolvers: Resolver[] = [],
+  alias: Record<string, string> = {}
 ): InternalResolver {
   return {
     requestToFile: (publicPath) => {
@@ -108,6 +109,78 @@ export function createResolver(
         if (aliased) {
           return aliased
         }
+      }
+    }
+  }
+}
+
+export function resolveBareModule(root: string, id: string) {
+  const optimized = resolveOptimizedModule(root, id)
+  if (optimized) {
+    return id + '.js'
+  }
+  const nodeEntry = resolveNodeModule(root, id)
+  if (nodeEntry) {
+    return nodeEntry
+  }
+  return id
+}
+
+const viteOptimizedMap = new Map()
+
+export function resolveOptimizedModule(
+  root: string,
+  id: string
+): string | undefined {
+  const cached = viteOptimizedMap.get(id)
+  if (cached) {
+    return cached
+  }
+
+  if (!id.endsWith('.js')) id += '.js'
+  const file = path.join(root, OPTIMIZE_CACHE_DIR, id)
+  if (fs.existsSync(file)) {
+    viteOptimizedMap.set(id, file)
+    return file
+  }
+}
+
+const nodeModulesMap = new Map()
+
+export function resolveNodeModule(
+  root: string,
+  id: string
+): string | undefined {
+  const cached = nodeModulesMap.get(id)
+  if (cached) {
+    return cached
+  }
+
+  let pkgPath
+  try {
+    // see if the id is a valid package name
+    pkgPath = resolveFrom(root, `${id}/package.json`)
+  } catch (e) {}
+
+  if (pkgPath) {
+    // if yes, this is a entry import. resolve entry file
+    const pkg = require(pkgPath)
+    const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
+    debug(`(node_module entry) ${id} -> ${entryPoint}`)
+    nodeModulesMap.set(id, entryPoint)
+    return entryPoint
+  } else {
+    // possibly a deep import
+    try {
+      return resolveFrom(root, id)
+    } catch (e) {}
+
+    // no match and no ext, try all exts
+    if (!path.extname(id)) {
+      for (const ext of supportedExts) {
+        try {
+          return resolveFrom(root, id + ext)
+        } catch (e) {}
       }
     }
   }
