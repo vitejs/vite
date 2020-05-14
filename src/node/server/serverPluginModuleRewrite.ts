@@ -285,7 +285,8 @@ export const resolveImport = (
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
     let resolvedModulePath = resolveBareModule(root, id)
-    if (!jsSrcRE.test(resolvedModulePath)) {
+    const ext = path.extname(resolvedModulePath)
+    if (ext && !jsSrcRE.test(ext)) {
       resolvedModulePath += `?import`
     }
     return `/@modules/${resolvedModulePath}`
