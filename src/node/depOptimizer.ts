@@ -16,13 +16,28 @@ import { Ora } from 'ora'
 
 const KNOWN_IGNORE_LIST = new Set(['tailwindcss'])
 
-export const OPTIMIZE_CACHE_DIR = `node_modules/.vite_opt_cache`
-
-export interface OptimizeOptions extends ResolvedConfig {
-  force?: boolean
+export interface DepOptimizationOptions {
+  /**
+   * Only optimize explicitly listed dependencies.
+   */
+  include?: string[]
+  /**
+   * Do not optimize these dependencies.
+   */
+  exclude?: string[]
+  /**
+   * Automatically run `vite optimize` on server start?
+   * @default true
+   */
+  auto?: boolean
 }
 
-export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
+export const OPTIMIZE_CACHE_DIR = `node_modules/.vite_opt_cache`
+
+export async function optimizeDeps(
+  config: ResolvedConfig & { force?: boolean },
+  asCommand = false
+) {
   const log = asCommand ? console.log : require('debug')('vite:optimize')
   const root = config.root || process.cwd()
   // warn presence of web_modules
@@ -68,6 +83,7 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
   }
 
   const resolver = createResolver(root, config.resolvers, config.alias)
+  const { include, exclude } = config.optimizeDeps || {}
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
@@ -77,6 +93,12 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
   await init
   const qualifiedDeps = deps.filter((id) => {
+    if (include && !include.includes(id)) {
+      return false
+    }
+    if (exclude && exclude.includes(id)) {
+      return false
+    }
     if (KNOWN_IGNORE_LIST.has(id)) {
       return false
     }

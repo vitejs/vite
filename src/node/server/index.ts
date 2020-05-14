@@ -34,7 +34,8 @@ export function createServer(config: ServerConfig = {}): Server {
     plugins = [],
     resolvers = [],
     alias = {},
-    transforms = []
+    transforms = [],
+    optimizeDeps = {}
   } = config
 
   const app = new Koa()
@@ -68,6 +69,14 @@ export function createServer(config: ServerConfig = {}): Server {
     serveStaticPlugin
   ]
   resolvedPlugins.forEach((m) => m(context))
+
+  const listen = server.listen.bind(server)
+  server.listen = (async (...args: any[]) => {
+    if (optimizeDeps.auto !== false) {
+      await require('../depOptimizer').optimizeDeps(config)
+    }
+    return listen(...args)
+  }) as any
 
   return server
 }

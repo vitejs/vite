@@ -113,8 +113,6 @@ async function runServe(
     open?: boolean
   }
 ) {
-  await require('../dist').optimizeDeps(options)
-
   const server = require('../dist').createServer(options)
 
   let port = options.port || 3000

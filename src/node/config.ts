@@ -11,6 +11,7 @@ import Rollup, {
   OutputOptions as RollupOutputOptions
 } from 'rollup'
 import { Transform } from './transform'
+import { DepOptimizationOptions } from './depOptimizer'
 
 export { Resolver, Transform }
 
@@ -37,6 +38,10 @@ export interface SharedConfig {
    * and optionally map module ids to public path requests.
    */
   resolvers?: Resolver[]
+  /**
+   * Configure dep optimization behavior.
+   */
+  optimizeDeps?: DepOptimizationOptions
   /**
    * Options to pass to @vue/compiler-dom
    */
