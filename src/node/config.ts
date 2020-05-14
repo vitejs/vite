@@ -155,7 +155,7 @@ export interface BuildConfig extends SharedConfig {
    */
   emitAssets?: boolean
   /**
-   * Predicate function that determines wheter a link rel=modulepreload shall be
+   * Predicate function that determines whether a link rel=modulepreload shall be
    * added to the index.html for the chunk passed in
    */
   shouldPreload?: (chunk: OutputChunk) => boolean
