@@ -1,3 +1,22 @@
+# [0.15.0](https://github.com/vuejs/vite/compare/v0.14.4...v0.15.0) (2020-05-14)
+
+
+### Bug Fixes
+
+* fix support for non-js module imports ([d7fb6a9](https://github.com/vuejs/vite/commit/d7fb6a9e8a6caf4041a2a602564583e4c34346e0)), closes [#132](https://github.com/vuejs/vite/issues/132)
+* forward source file path to esbuild ([#141](https://github.com/vuejs/vite/issues/141)) ([b1726d8](https://github.com/vuejs/vite/commit/b1726d84e1bf694797f30c62ca509644577ef583)), closes [#137](https://github.com/vuejs/vite/issues/137)
+* log postcss config loading error (close [#140](https://github.com/vuejs/vite/issues/140)) ([0819bcb](https://github.com/vuejs/vite/commit/0819bcb597673c329e5699b91295b22dd07c4dc7))
+* only add ?import when bare import has extension ([2dd45af](https://github.com/vuejs/vite/commit/2dd45affef2ece21821b208910fc00c23775c331))
+* respect exports field in package.json ([e49742e](https://github.com/vuejs/vite/commit/e49742e40dcc385c03c1e16a3a0a3fad60fcb417))
+
+
+### Features
+
+* automatically optimize deps on server start ([49a44b6](https://github.com/vuejs/vite/commit/49a44b648f263ff058f730913ea1ee6c62e3cd2d))
+* reload page when editing index.html ([a6a76a7](https://github.com/vuejs/vite/commit/a6a76a7946bd4d4c68edd22eb0295f758ea48990))
+
+
+
 ## [0.14.4](https://github.com/vuejs/vite/compare/v0.14.3...v0.14.4) (2020-05-13)
 
 
