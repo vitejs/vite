@@ -36,6 +36,11 @@ const writeColors = {
   [WriteType.SOURCE_MAP]: chalk.gray
 }
 
+/**
+ * Named exports detection logic from Snowpack
+ * MIT License
+ * https://github.com/pikapkg/snowpack/blob/master/LICENSE
+ */
 const PACKAGES_TO_AUTO_DETECT_EXPORTS = [
   path.join('react', 'index.js'),
   path.join('react-dom', 'index.js'),
