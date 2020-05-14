@@ -6,6 +6,10 @@ import { lookupFile } from './fsUtils'
 
 interface ResolvedVuePaths {
   vue: string | undefined
+  '@vue/runtime-dom': string | undefined
+  '@vue/runtime-core': string | undefined
+  '@vue/reactivity': string | undefined
+  '@vue/shared': string | undefined
   compiler: string
   version: string
   isLocal: boolean
@@ -65,9 +69,16 @@ export function resolveVue(root: string): ResolvedVuePaths {
     compilerPath = require.resolve('@vue/compiler-sfc')
   }
 
+  const inferPath = (name: string) =>
+    vuePath && vuePath.replace(/runtime-dom/g, name)
+
   resolved = {
     version: vueVersion!,
     vue: vuePath,
+    '@vue/runtime-dom': vuePath,
+    '@vue/runtime-core': inferPath('runtime-core'),
+    '@vue/reactivity': inferPath('reactivity'),
+    '@vue/shared': inferPath('shared'),
     compiler: compilerPath,
     isLocal
   }

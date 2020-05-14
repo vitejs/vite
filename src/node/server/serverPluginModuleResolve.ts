@@ -19,6 +19,8 @@ const getDebugPath = (root: string, p: string) => {
 
 // plugin for resolving /@modules/:id requests.
 export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
+  const vueResolved = resolveVue(root)
+
   app.use(async (ctx, next) => {
     if (!moduleRE.test(ctx.path)) {
       return next()
@@ -42,11 +44,8 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
     }
 
     // speical handling for vue runtime in case it's not installed
-    if (id === 'vue') {
-      const vuePath = resolveVue(root).vue
-      if (vuePath) {
-        return serve(id, vuePath, '(non-local vue)')
-      }
+    if (!vueResolved.isLocal && id in vueResolved) {
+      return serve(id, (vueResolved as any)[id], 'non-local vue')
     }
 
     // already resolved and cached
