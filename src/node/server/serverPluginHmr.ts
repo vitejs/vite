@@ -148,7 +148,14 @@ export const hmrPlugin: ServerPlugin = ({
 
   watcher.on('change', async (file) => {
     const timestamp = Date.now()
-    if (file.endsWith('.vue')) {
+    if (resolver.fileToRequest(file) === '/index.html') {
+      send({
+        type: 'full-reload',
+        path: '/index.html',
+        timestamp
+      })
+      console.log(chalk.green(`[vite] `) + `page reloaded.`)
+    } else if (file.endsWith('.vue')) {
       handleVueReload(file, timestamp)
     } else if (
       file.endsWith('.module.css') ||
