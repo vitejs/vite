@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "0.15.2",
+  "version": "0.15.3",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
