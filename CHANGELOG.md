@@ -1,3 +1,12 @@
+## [0.15.2](https://github.com/vuejs/vite/compare/v0.15.1...v0.15.2) (2020-05-14)
+
+
+### Bug Fixes
+
+* fix non-local vue resolving ([39a7640](https://github.com/vuejs/vite/commit/39a76408c8722a7eaa3f371d2e08114eea25c82a))
+
+
+
 ## [0.15.1](https://github.com/vuejs/vite/compare/v0.15.0...v0.15.1) (2020-05-14)
 
 
