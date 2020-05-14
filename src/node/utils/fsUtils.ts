@@ -84,3 +84,16 @@ export async function readBody(
     return !stream || typeof stream === 'string' ? stream : stream.toString()
   }
 }
+
+export function lookupFile(dir: string, formats: string[]): string | undefined {
+  for (const format of formats) {
+    const fullPath = path.join(dir, format)
+    if (fs.existsSync(fullPath)) {
+      return fs.readFileSync(fullPath, 'utf-8')
+    }
+  }
+  const parentDir = path.dirname(dir)
+  if (parentDir !== dir) {
+    return lookupFile(parentDir, formats)
+  }
+}

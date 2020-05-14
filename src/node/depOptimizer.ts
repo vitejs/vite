@@ -5,7 +5,7 @@ import { ResolvedConfig } from './config'
 import type Rollup from 'rollup'
 import { createResolver, resolveNodeModule } from './resolver'
 import { createBaseRollupPlugins } from './build'
-import { resolveFrom } from './utils'
+import { resolveFrom, lookupFile } from './utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
@@ -17,6 +17,7 @@ export interface OptimizeOptions extends ResolvedConfig {
 }
 
 export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
+  const log = asCommand ? console.log : require('debug')('vite:optimize')
   const root = config.root || process.cwd()
   // warn presence of web_modules
   if (fs.existsSync(path.join(root, 'web_modules'))) {
@@ -39,8 +40,7 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
     } catch (e) {}
     // hash is consistent, no need to re-bundle
     if (prevhash === depHash) {
-      asCommand &&
-        console.log('Hash is consistent. Skipping. Use --force to override.')
+      log('Hash is consistent. Skipping. Use --force to override.')
       return
     }
   }
@@ -50,14 +50,14 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
 
   const pkg = lookupFile(root, [`package.json`])
   if (!pkg) {
-    asCommand && console.log(`package.json not found. Skipping.`)
+    log(`package.json not found. Skipping.`)
     return
   }
 
   const deps = Object.keys(JSON.parse(pkg).dependencies || {})
   if (!deps.length) {
-    asCommand &&
-      console.log(`No dependencies listed in package.json. Skipping.`)
+    await fs.writeFile(hashPath, depHash)
+    log(`No dependencies listed in package.json. Skipping.`)
     return
   }
 
@@ -92,7 +92,8 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
   })
 
   if (!qualifiedDeps.length) {
-    asCommand && console.log(`No listed dependency requires optimization.`)
+    await fs.writeFile(hashPath, depHash)
+    log(`No listed dependency requires optimization. Skipping.`)
     return
   }
 
@@ -146,6 +147,7 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
 
     spinner && spinner.stop()
 
+    const optimized = []
     for (const chunk of output) {
       if (chunk.type === 'chunk') {
         const fileName = chunk.fileName
@@ -153,14 +155,16 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
         await fs.ensureDir(path.dirname(filePath))
         await fs.writeFile(filePath, chunk.code)
         if (!fileName.startsWith('common/')) {
-          console.log(
-            `${chalk.yellow(fileName.replace(/\.js$/, ''))} -> ${chalk.dim(
-              path.relative(root, filePath)
-            )}`
-          )
+          optimized.push(fileName.replace(/\.js$/, ''))
         }
       }
     }
+
+    console.log(
+      `Optimized modules:\n${optimized
+        .map((id) => chalk.yellowBright(id))
+        .join(`, `)}`
+    )
 
     await fs.writeFile(hashPath, depHash)
   } catch (e) {
@@ -168,7 +172,8 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
     if (asCommand) {
       throw e
     } else {
-      console.error(`[vite] `)
+      console.error(chalk.red(`[vite] Dep optimization failed with error:`))
+      console.error(e)
     }
   }
 }
@@ -192,17 +197,4 @@ export function getDepHash(
     content += fs.readFileSync(configPath, 'utf-8')
   }
   return createHash('sha1').update(content).digest('base64')
-}
-
-function lookupFile(dir: string, formats: string[]): string | undefined {
-  for (const format of formats) {
-    const fullPath = path.join(dir, format)
-    if (fs.existsSync(fullPath)) {
-      return fs.readFileSync(fullPath, 'utf-8')
-    }
-  }
-  const parentDir = path.dirname(dir)
-  if (parentDir !== dir) {
-    return lookupFile(parentDir, formats)
-  }
 }

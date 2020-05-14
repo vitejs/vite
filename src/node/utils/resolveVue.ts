@@ -2,6 +2,7 @@ import path from 'path'
 import { resolveFrom } from './pathUtils'
 import sfcCompiler from '@vue/compiler-sfc'
 import chalk from 'chalk'
+import { lookupFile } from './fsUtils'
 
 interface ResolvedVuePaths {
   vue: string | undefined
@@ -19,16 +20,12 @@ export function resolveVue(root: string): ResolvedVuePaths {
   if (resolved) {
     return resolved
   }
+  let vueVersion: string | undefined
   let vuePath: string | undefined
   let compilerPath: string
-  let isLocal = false
-  let vueVersion: string | undefined
 
-  try {
-    const userVuePkg = resolveFrom(root, 'vue/package.json')
-    vueVersion = require(userVuePkg).version
-    isLocal = true
-  } catch (e) {}
+  const projectPkg = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+  const isLocal = !!(projectPkg.dependencies && projectPkg.dependencies.vue)
 
   if (isLocal) {
     // user has local vue, verify that the same version of @vue/compiler-sfc
@@ -37,6 +34,8 @@ export function resolveVue(root: string): ResolvedVuePaths {
     // optimized by the deps optimizer and we can just let the resolver locate
     // it.
     try {
+      const userVuePkg = resolveFrom(root, 'vue/package.json')
+      vueVersion = require(userVuePkg).version
       const compilerPkgPath = resolveFrom(
         root,
         '@vue/compiler-sfc/package.json'

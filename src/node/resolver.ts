@@ -117,7 +117,7 @@ export function createResolver(
 export function resolveBareModule(root: string, id: string) {
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
-    return id + '.js'
+    return id
   }
   const nodeEntry = resolveNodeModule(root, id)
   if (nodeEntry) {
