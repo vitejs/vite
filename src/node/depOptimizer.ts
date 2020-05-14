@@ -3,7 +3,11 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { ResolvedConfig } from './config'
 import type Rollup from 'rollup'
-import { createResolver, resolveNodeModule, supportedExts } from './resolver'
+import {
+  createResolver,
+  supportedExts,
+  resolveNodeModuleEntry
+} from './resolver'
 import { createBaseRollupPlugins } from './build'
 import { resolveFrom, lookupFile } from './utils'
 import { init, parse } from 'es-module-lexer'
@@ -71,7 +75,7 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
   await init
   const qualifiedDeps = deps.filter((id) => {
-    const entry = resolveNodeModule(root, id)
+    const entry = resolveNodeModuleEntry(root, id)
     if (!entry) {
       return false
     }
@@ -84,7 +88,6 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
       // no exports, likely a commonjs module
       return true
     }
-    //
     for (const { s, e } of imports) {
       let i = content.slice(s, e).trim()
       i = resolver.alias(i) || i

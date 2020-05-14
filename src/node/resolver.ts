@@ -160,8 +160,23 @@ export function resolveNodeModuleEntry(root: string, id: string) {
 
   if (pkgPath) {
     // if yes, this is a entry import. resolve entry file
-    const pkg = require(pkgPath)
-    const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+    let entryPoint: string | undefined
+    if (pkg.exports) {
+      if (typeof pkg.exports === 'string') {
+        entryPoint = pkg.exports
+      } else if (pkg.exports['.']) {
+        if (typeof pkg.exports['.'] === 'string') {
+          entryPoint = pkg.exports['.']
+        } else {
+          entryPoint = pkg.exports['.'].import
+        }
+      }
+    }
+    if (!entryPoint) {
+      entryPoint = pkg.module || pkg.main || 'index.js'
+    }
+    entryPoint = path.posix.join(id, '/', entryPoint!)
     debug(`(node_module entry) ${id} -> ${entryPoint}`)
     nodeModulesEntryMap.set(id, entryPoint)
     return entryPoint
