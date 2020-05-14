@@ -8,6 +8,7 @@ import {
   fileToRequestMap
 } from './server/serverPluginModuleResolve'
 import { OPTIMIZE_CACHE_DIR } from './depOptimizer'
+import chalk from 'chalk'
 
 export interface Resolver {
   requestToFile(publicPath: string, root: string): string | undefined
@@ -114,7 +115,9 @@ export function createResolver(
   }
 }
 
-export function resolveBareModule(root: string, id: string) {
+const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
+
+export function resolveBareModule(root: string, id: string, importer: string) {
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
     return id
@@ -122,6 +125,20 @@ export function resolveBareModule(root: string, id: string) {
   const nodeEntry = resolveNodeModuleEntry(root, id)
   if (nodeEntry) {
     return nodeEntry
+  }
+  const deepMatch = id.match(deepImportRE)
+  if (deepMatch) {
+    const depId = deepMatch[1] || deepMatch[2]
+    if (resolveOptimizedModule(root, depId)) {
+      console.error(
+        chalk.yellow(
+          `\n[vite] Avoid deep import "${id}" since "${depId}" is a ` +
+            `pre-optimized dependency.\n` +
+            `Prefer importing from the module directly.\n` +
+            `Importer: ${importer}\n`
+        )
+      )
+    }
   }
   return id
 }
@@ -195,23 +212,21 @@ export function resolveNodeModule(
   }
 
   let resolved
-  // possibly a deep import
-  try {
-    resolved = resolveFrom(root, id)
-  } catch (e) {}
-
-  // no match and no ext, try all exts
-  if (!resolved) {
-    if (!path.extname(id)) {
-      for (const ext of supportedExts) {
-        try {
-          resolved = resolveFrom(root, id + ext)
-        } catch (e) {}
-        if (resolved) {
-          break
-        }
+  if (!path.extname(id)) {
+    for (const ext of supportedExts) {
+      try {
+        resolved = resolveFrom(root, id + ext)
+      } catch (e) {}
+      if (resolved) {
+        break
       }
     }
+  }
+
+  if (!resolved) {
+    try {
+      resolved = resolveFrom(root, id)
+    } catch (e) {}
   }
 
   nodeModulesMap.set(id, resolved)
