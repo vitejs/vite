@@ -14,6 +14,8 @@ import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 
+const KNOWN_IGNORE_LIST = new Set(['tailwindcss'])
+
 export const OPTIMIZE_CACHE_DIR = `node_modules/.vite_opt_cache`
 
 export interface OptimizeOptions extends ResolvedConfig {
@@ -75,6 +77,9 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
   await init
   const qualifiedDeps = deps.filter((id) => {
+    if (KNOWN_IGNORE_LIST.has(id)) {
+      return false
+    }
     const entry = resolveNodeModuleEntry(root, id)
     if (!entry) {
       return false
