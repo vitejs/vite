@@ -152,11 +152,13 @@ export async function optimizeDeps(config: OptimizeOptions, asCommand = false) {
         const filePath = path.join(cacheDir, fileName)
         await fs.ensureDir(path.dirname(filePath))
         await fs.writeFile(filePath, chunk.code)
-        console.log(
-          `${chalk.yellow(fileName.replace(/\.js$/, ''))} -> ${chalk.dim(
-            path.relative(root, filePath)
-          )}`
-        )
+        if (!fileName.startsWith('common/')) {
+          console.log(
+            `${chalk.yellow(fileName.replace(/\.js$/, ''))} -> ${chalk.dim(
+              path.relative(root, filePath)
+            )}`
+          )
+        }
       }
     }
 
@@ -183,7 +185,8 @@ export function getDepHash(
     return cachedHash
   }
   let content = lookupFile(root, lockfileFormats) || ''
-  content += lookupFile(root, [`package.json`]) || ''
+  const pkg = JSON.parse(lookupFile(root, [`package.json`]) || '{}')
+  content += JSON.stringify(pkg.dependencies)
   // also take config into account
   if (configPath) {
     content += fs.readFileSync(configPath, 'utf-8')

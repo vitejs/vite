@@ -41,10 +41,12 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       await next()
     }
 
-    // speical handling for vue runtime packages
-    const vuePaths = resolveVue(root)
-    if (id in vuePaths) {
-      return serve(id, (vuePaths as any)[id], 'vue')
+    // speical handling for vue runtime in case it's not installed
+    if (id === 'vue') {
+      const vuePath = resolveVue(root).vue
+      if (vuePath) {
+        return serve(id, vuePath, '(non-local vue)')
+      }
     }
 
     // already resolved and cached
