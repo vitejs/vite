@@ -1,4 +1,5 @@
 import postcssrc from 'postcss-load-config'
+import chalk from 'chalk'
 
 // postcss-load-config doesn't expose Result type
 type Result = ReturnType<typeof postcssrc> extends Promise<infer T> ? T : never
@@ -13,6 +14,8 @@ export async function loadPostcssConfig(root: string): Promise<Result | null> {
     const load = require('postcss-load-config') as typeof postcssrc
     return (cachedPostcssConfig = await load({}, root))
   } catch (e) {
+    console.error(chalk.red(`[vite] Error loading postcss config:`))
+    console.error(e)
     return (cachedPostcssConfig = null)
   }
 }
