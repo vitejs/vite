@@ -10,7 +10,8 @@
   "types": "dist/index.d.ts",
   "files": [
     "bin",
-    "dist",
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
     "hmr.d.ts"
   ],
   "engines": {
