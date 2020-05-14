@@ -4237,14 +4237,6 @@ koa-convert@^1.2.0:
     co "^4.6.0"
     koa-compose "^3.0.0"
 
-koa-etag@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/koa-etag/-/koa-etag-3.0.0.tgz#9ef7382ddd5a82ab0deb153415c915836f771d3f"
-  integrity sha1-nvc4Ld1agqsN6xU0FckVg293HT8=
-  dependencies:
-    etag "^1.3.0"
-    mz "^2.1.0"
-
 koa-send@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/koa-send/-/koa-send-5.0.0.tgz#5e8441e07ef55737734d7ced25b842e50646e7eb"

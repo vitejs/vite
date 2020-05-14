@@ -1,9 +1,17 @@
+import { statSync, ReadStream } from 'fs'
+import { createHash } from 'crypto'
 import { ServerPlugin } from '.'
 
 const send = require('koa-send')
 const debug = require('debug')('vite:history')
 
 export const seenUrls = new Set()
+
+const generateETag = (content: string, length: number) => {
+  if (!length) return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"'
+  const hash = createHash('sha1').update(content, 'utf8').digest('hex')
+  return `${length.toString(16)}-${hash}`
+}
 
 export const serveStaticPlugin: ServerPlugin = ({
   root,
@@ -66,7 +74,43 @@ export const serveStaticPlugin: ServerPlugin = ({
       seenUrls.add(ctx.url)
     })
   }
-  app.use(require('koa-etag')())
+  app.use(async (ctx, next) => {
+    await next()
+
+    let etag = null
+    const { body, status, response } = ctx
+
+    if (!body || response.get('etag')) {
+      debug(`${ctx.url} response body is empty or an etag already exists`)
+      return
+    }
+
+    /** status 2xx */
+    if (Math.ceil(status / 100) !== 2) {
+      debug(`${ctx.url} response status code is abnormal`)
+      return
+    }
+
+    if (body instanceof ReadStream) {
+      /** isStream */
+      if (!body.path) return
+      const { mtime, size } = statSync(body.path)
+      debug(`${ctx.url} to /index.html`)
+      etag = `${size.toString(16)}-${mtime.getTime().toString(16)}`
+    } else if (Buffer.isBuffer(body)) {
+      /** isBuffer */
+      const target = body.toString()
+      const length = Buffer.byteLength(body, 'utf8')
+      etag = generateETag(target, length)
+    } else {
+      /** other */
+      const target = JSON.stringify(body)
+      const length = target.length
+      etag = generateETag(target, length)
+    }
+
+    if (etag) response.etag = etag
+  })
 
   app.use((ctx, next) => {
     const redirect = resolver.requestToFile(ctx.path)
