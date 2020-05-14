@@ -1,3 +1,17 @@
+## [0.15.3](https://github.com/vuejs/vite/compare/v0.15.2...v0.15.3) (2020-05-14)
+
+
+### Bug Fixes
+
+* add tailwind to dep optimization ignore list ([fc7b978](https://github.com/vuejs/vite/commit/fc7b978ac334422e919ad026b800a674cbf3d875)), closes [#146](https://github.com/vuejs/vite/issues/146)
+
+
+### Features
+
+* add optimizeDeps option for customizing dep optimization behavior ([57c1b66](https://github.com/vuejs/vite/commit/57c1b6691c06408cc56b4625e3245ed2de32b317))
+
+
+
 ## [0.15.2](https://github.com/vuejs/vite/compare/v0.15.1...v0.15.2) (2020-05-14)
 
 
