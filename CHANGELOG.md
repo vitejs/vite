@@ -1,3 +1,12 @@
+## [0.15.1](https://github.com/vuejs/vite/compare/v0.15.0...v0.15.1) (2020-05-14)
+
+
+### Bug Fixes
+
+* do not warn when postcss config is not present ([b03d1c3](https://github.com/vuejs/vite/commit/b03d1c3091ac870ad6b86c796ee584417393fb6e))
+
+
+
 # [0.15.0](https://github.com/vuejs/vite/compare/v0.14.4...v0.15.0) (2020-05-14)
 
 
