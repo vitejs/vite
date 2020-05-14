@@ -38,7 +38,8 @@ export async function optimizeDeps(
   config: ResolvedConfig & { force?: boolean },
   asCommand = false
 ) {
-  const log = asCommand ? console.log : require('debug')('vite:optimize')
+  const debug = require('debug')('vite:optimize')
+  const log = asCommand ? console.log : debug
   const root = config.root || process.cwd()
   // warn presence of web_modules
   if (fs.existsSync(path.join(root, 'web_modules'))) {
@@ -93,35 +94,48 @@ export async function optimizeDeps(
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
   await init
   const qualifiedDeps = deps.filter((id) => {
+    console.log(id)
     if (include && !include.includes(id)) {
+      debug(`skipping ${id} (not included)`)
       return false
     }
     if (exclude && exclude.includes(id)) {
+      debug(`skipping ${id} (excluded)`)
       return false
     }
     if (KNOWN_IGNORE_LIST.has(id)) {
+      debug(`skipping ${id} (internal excluded)`)
       return false
     }
     const entry = resolveNodeModuleEntry(root, id)
     if (!entry) {
+      debug(`skipping ${id} (cannot resolve entry)`)
       return false
     }
     if (!supportedExts.includes(path.extname(entry))) {
+      debug(`skipping ${id} (entry is not js)`)
       return false
     }
     const content = fs.readFileSync(resolveFrom(root, entry), 'utf-8')
     const [imports, exports] = parse(content)
     if (!exports.length) {
+      debug(`optimizing ${id} (no exports, likely commonjs)`)
       // no exports, likely a commonjs module
       return true
     }
     for (const { s, e } of imports) {
       let i = content.slice(s, e).trim()
       i = resolver.alias(i) || i
-      if (i.startsWith('.') || !deps.includes(i)) {
+      if (i.startsWith('.')) {
+        debug(`optimizing ${id} (contains relative imports)`)
+        return true
+      }
+      if (!deps.includes(i)) {
+        debug(`optimizing ${id} (imports sub dependencies)`)
         return true
       }
     }
+    debug(`skipping ${id} (single esm file, doesn't need optimization)`)
   })
 
   if (!qualifiedDeps.length) {
@@ -140,7 +154,7 @@ export async function optimizeDeps(
   const msg = asCommand
     ? `Pre-bundling dependencies to speed up dev server page load...`
     : `Pre-bundling them to speed up dev server page load...\n` +
-      `  (this will be run only when your dependencies have changed)`
+      `(this will be run only when your dependencies have changed)`
   if (process.env.DEBUG || process.env.NODE_ENV === 'test') {
     console.log(msg)
   } else {
@@ -207,6 +221,13 @@ export async function optimizeDeps(
     } else {
       console.error(chalk.red(`[vite] Dep optimization failed with error:`))
       console.error(e)
+      console.log()
+      console.log(
+        chalk.yellow(
+          `Tip: You can configure what deps to include/exclude for optimization\n` +
+            `using the \`optimizeDeps\` option in the Vite config file.`
+        )
+      )
     }
   }
 }
