@@ -1,4 +1,4 @@
-import { Plugin, RollupOutput } from 'rollup'
+import { Plugin, RollupOutput, OutputChunk } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
 import { isExternalUrl, cleanUrl, isStaticAsset } from '../utils/pathUtils'
@@ -20,7 +20,8 @@ export const createBuildHtmlPlugin = async (
   publicBasePath: string,
   assetsDir: string,
   inlineLimit: number,
-  resolver: InternalResolver
+  resolver: InternalResolver,
+  shouldPreload: ((chunk: OutputChunk) => boolean) | null
 ) => {
   if (!indexPath || !fs.existsSync(indexPath)) {
     return {
@@ -72,6 +73,18 @@ export const createBuildHtmlPlugin = async (
     }
   }
 
+  const injectPreload = (html: string, filename: string) => {
+    filename = isExternalUrl(filename)
+      ? filename
+      : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
+    const tag = `<link rel="modulepreload" href="${filename}" />`
+    if (/<\/head>/.test(html)) {
+      return html.replace(/<\/head>/, `${tag}\n</head>`)
+    } else {
+      return tag + '\n' + html
+    }
+  }
+
   const renderIndex = (
     bundleOutput: RollupOutput['output'],
     cssFileName: string
@@ -80,8 +93,12 @@ export const createBuildHtmlPlugin = async (
     processedHtml = injectCSS(processedHtml, cssFileName)
     // inject js entry chunks
     for (const chunk of bundleOutput) {
-      if (chunk.type === 'chunk' && chunk.isEntry) {
-        processedHtml = injectScript(processedHtml, chunk.fileName)
+      if (chunk.type === 'chunk') {
+        if (chunk.isEntry) {
+          processedHtml = injectScript(processedHtml, chunk.fileName)
+        } else if (shouldPreload && shouldPreload(chunk)) {
+          processedHtml = injectPreload(processedHtml, chunk.fileName)
+        }
       }
     }
     return processedHtml
