@@ -8,7 +8,8 @@ import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
 import { CompilerOptions } from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
-  OutputOptions as RollupOutputOptions
+  OutputOptions as RollupOutputOptions,
+  OutputChunk
 } from 'rollup'
 import { Transform } from './transform'
 import { DepOptimizationOptions } from './depOptimizer'
@@ -153,6 +154,11 @@ export interface BuildConfig extends SharedConfig {
    * @default true
    */
   emitAssets?: boolean
+  /**
+   * Predicate function that determines whether a link rel=modulepreload shall be
+   * added to the index.html for the chunk passed in
+   */
+  shouldPreload?: (chunk: OutputChunk) => boolean
 }
 
 export interface UserConfig
