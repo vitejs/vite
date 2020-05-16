@@ -27,6 +27,11 @@ export interface SharedConfig {
    */
   root?: string
   /**
+   * todo work for build
+   * Project entry. The `index.html` is default included.
+   * */
+  entry?: Record<string, string>
+  /**
    * Import alias. Can only be exact mapping, does not support wildcard syntax.
    */
   alias?: Record<string, string>

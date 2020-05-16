@@ -372,6 +372,11 @@ describe('vite', () => {
 
     declareTests(false)
 
+    test('multi entry', async () => {
+      await page.goto('http://localhost:3000/test.html')
+      expect(await getText('h1')).toMatch('Vite Playground')
+    })
+
     // Assert that all edited files are reflected on page reload
     // i.e. service-worker cache is correctly busted
     test('sw cache busting', async () => {

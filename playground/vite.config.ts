@@ -6,6 +6,9 @@ const config: UserConfig = {
   alias: {
     alias: '/aliased'
   },
+  entry: {
+    test: './test.html'
+  },
   jsx: 'preact',
   minify: false,
   serviceWorker: !!process.env.USE_SW,
