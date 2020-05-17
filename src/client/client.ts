@@ -172,10 +172,10 @@ async function updateModule(path: string, timestamp: string) {
 
   for (let i = 0; i < length; i++) {
     const { deps, id } = existing[i]
+    const disposer = jsDisposeMap.get(id)
+    if (disposer) await disposer()
     for (let dep of deps) {
       moduleSet.add(dep)
-      const disposer = jsDisposeMap.get(id)
-      if (disposer) await disposer()
     }
   }
 
