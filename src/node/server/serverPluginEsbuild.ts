@@ -2,14 +2,14 @@ import { ServerPlugin } from '.'
 import {
   tjsxRE,
   transform,
-  reoslveJsxOptions,
+  resolveJsxOptions,
   vueJsxPublicPath,
   vueJsxFilePath
 } from '../esbuildService'
 import { readBody, genSourceMapString, cachedRead } from '../utils'
 
 export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
-  const jsxConfig = reoslveJsxOptions(config.jsx)
+  const jsxConfig = resolveJsxOptions(config.jsx)
 
   app.use(async (ctx, next) => {
     // intercept and return vue jsx helper import
