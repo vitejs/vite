@@ -224,10 +224,10 @@ export const hot = {
     callback: HotModule['callback'] = () => {}
   ) {
     const modules = Array.isArray(deps) ? deps : [deps]
-    for (const dep of modules) {
-      const existing = jsUpdateMap.get(dep) || []
+    for (const module of modules) {
+      const existing = jsUpdateMap.get(module) || []
       existing.push({ id, modules, deps, callback })
-      jsUpdateMap.set(dep, existing)
+      jsUpdateMap.set(module, existing)
     }
   },
 
