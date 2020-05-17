@@ -194,7 +194,7 @@ async function updateModule(path: string, timestamp: string) {
       deps.map((dep) => moduleMap.get(dep))
     )
     // if re-import module which accepted self will record twice.
-    // so we can remove before record after next re-import.
+    // so we can remove pre-record after next re-import.
     if (deps.includes(id)) {
       existing.splice(i, 1)
       i--
