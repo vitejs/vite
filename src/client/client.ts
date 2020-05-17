@@ -119,15 +119,7 @@ socket.addEventListener('message', async ({ data }) => {
       }
       break
     case 'js-update':
-      const update = jsUpdateMap.get(path)
-      if (update) {
-        update(timestamp)
-        console.log(`[vite]: js module hot updated: `, path)
-      } else {
-        console.error(
-          `[vite] got js update notification but no client callback was registered. Something is wrong.`
-        )
-      }
+      await updateModule(path, timestamp)
       break
     case 'custom':
       const cbs = customUpdateMap.get(id)
@@ -166,7 +158,60 @@ export function updateStyle(id: string, url: string) {
   link.setAttribute('href', url)
 }
 
-const jsUpdateMap = new Map<string, (timestamp: number) => void>()
+async function updateModule(path: string, timestamp: string) {
+  const existing = jsUpdateMap.get(path)
+  if (!existing) {
+    console.error(
+      `[vite] got js update notification but no client callback was registered. Something is wrong.`
+    )
+    return
+  }
+  const moduleMap = new Map()
+  const moduleSet = new Set()
+  let length = existing.length
+
+  for (let i = 0; i < length; i++) {
+    const { deps, id } = existing[i]
+    for (let dep of deps) {
+      moduleSet.add(dep)
+      const disposer = jsDisposeMap.get(id)
+      if (disposer) await disposer()
+    }
+  }
+
+  await Promise.all(
+    Array.from(moduleSet).map((dep) => import(dep + `?t=${timestamp}`))
+  ).then((modules) => {
+    Array.from(moduleSet).forEach((module, i) =>
+      moduleMap.set(module, modules[i])
+    )
+  })
+
+  for (let i = 0; i < length; i++) {
+    const { id, deps, callback } = existing[i]
+    callback.call(
+      null,
+      deps.map((dep) => moduleMap.get(dep))
+    )
+    // if re-import module which accepted self will record twice.
+    // so we can remove before record after next re-import.
+    if (deps.includes(id)) {
+      existing.splice(i, 1)
+      i--
+      length--
+    }
+  }
+
+  console.log(`[vite]: js module hot updated: `, path)
+}
+
+type HotModule = {
+  id: string
+  deps: string[]
+  callback: (modules: object | object[]) => void
+}
+
+const jsUpdateMap = new Map<string, HotModule[]>()
 const jsDisposeMap = new Map<string, () => void | Promise<void>>()
 const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 
@@ -174,25 +219,14 @@ export const hot = {
   accept(
     id: string,
     deps: string | string[],
-    callback: (modules: object | object[]) => void = () => {}
+    callback: HotModule['callback'] = () => {}
   ) {
-    jsUpdateMap.set(id, async (timestamp: number) => {
-      if (Array.isArray(deps)) {
-        for (const id of deps) {
-          const disposer = jsDisposeMap.get(id)
-          if (disposer) await disposer()
-        }
-        Promise.all(deps.map((dep) => import(dep + `?t=${timestamp}`)))
-          .then(callback)
-          .catch((err) => warnFailedFetch(err, deps))
-      } else {
-        const disposer = jsDisposeMap.get(deps)
-        disposer && (await disposer())
-        import(deps + `?t=${timestamp}`)
-          .then(callback)
-          .catch((err) => warnFailedFetch(err, deps))
-      }
-    })
+    deps = Array.isArray(deps) ? deps : [deps]
+    for (const dep of deps) {
+      const existing = jsUpdateMap.get(dep) || []
+      existing.push({ id, deps, callback })
+      jsUpdateMap.set(dep, existing)
+    }
   },
 
   dispose(id: string, cb: () => void) {
