@@ -62,7 +62,8 @@ export const transform = async (
     ...options,
     loader: options.loader || (path.extname(file).slice(1) as any),
     sourcemap: true,
-    sourcefile: file
+    sourcefile: file,
+    target: 'es2019'
   }
   try {
     const result = await service.transform(src, options)
