@@ -171,11 +171,11 @@ async function updateModule(path: string, timestamp: string) {
   let length = existing.length
 
   for (let i = 0; i < length; i++) {
-    const { deps, id } = existing[i]
+    const { modules, id } = existing[i]
     const disposer = jsDisposeMap.get(id)
     if (disposer) await disposer()
-    for (let dep of deps) {
-      moduleSet.add(dep)
+    for (let module of modules) {
+      moduleSet.add(module)
     }
   }
 
@@ -188,14 +188,15 @@ async function updateModule(path: string, timestamp: string) {
   })
 
   for (let i = 0; i < length; i++) {
-    const { id, deps, callback } = existing[i]
-    callback.call(
-      null,
-      deps.map((dep) => moduleMap.get(dep))
-    )
+    const { id, deps, modules, callback } = existing[i]
+    if (Array.isArray(deps)) {
+      callback(deps.map((dep) => moduleMap.get(dep)))
+    } else {
+      callback(moduleMap.get(deps))
+    }
     // if re-import module which accepted self will record twice.
     // so we can remove pre-record after next re-import.
-    if (deps.includes(id)) {
+    if (modules.includes(id)) {
       existing.splice(i, 1)
       i--
       length--
@@ -207,7 +208,8 @@ async function updateModule(path: string, timestamp: string) {
 
 type HotModule = {
   id: string
-  deps: string[]
+  modules: string[]
+  deps: string | string[]
   callback: (modules: object | object[]) => void
 }
 
@@ -218,13 +220,13 @@ const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 export const hot = {
   accept(
     id: string,
-    deps: string | string[],
+    deps: HotModule['deps'],
     callback: HotModule['callback'] = () => {}
   ) {
-    deps = Array.isArray(deps) ? deps : [deps]
-    for (const dep of deps) {
+    const modules = Array.isArray(deps) ? deps : [deps]
+    for (const dep of modules) {
       const existing = jsUpdateMap.get(dep) || []
-      existing.push({ id, deps, callback })
+      existing.push({ id, modules, deps, callback })
       jsUpdateMap.set(dep, existing)
     }
   },

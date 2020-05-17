@@ -138,7 +138,7 @@ describe('vite', () => {
           content.replace('foo = 1', 'foo = 2')
         )
         await expectByPolling(
-          () => browserLogs[browserLogs.length - 1],
+          () => browserLogs[browserLogs.length - 2],
           'foo is now:  2'
         )
         // there will be a "js module reloaded" message in between because
