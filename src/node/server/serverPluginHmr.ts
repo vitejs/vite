@@ -343,6 +343,14 @@ export const hmrPlugin: ServerPlugin = ({
       }
     } else {
       debugHmr(`no importers for ${publicPath}.`)
+      //TODO: Check for static assets from a certain folder like /public.
+      if (publicPath.startsWith('/public')) {
+        send({
+          type: 'full-reload',
+          timestamp,
+          path: publicPath
+        })
+      }
     }
   }
 }
