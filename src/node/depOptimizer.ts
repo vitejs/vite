@@ -14,7 +14,7 @@ import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 
-const KNOWN_IGNORE_LIST = new Set(['tailwindcss'])
+const KNOWN_IGNORE_LIST = new Set(['tailwindcss', '@tailwindcss/ui'])
 
 export interface DepOptimizationOptions {
   /**
