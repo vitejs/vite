@@ -141,12 +141,12 @@ async function runServe(
             type: detail.address.includes('127.0.0.1')
               ? 'Local:   '
               : 'Network: ',
-            ip: detail.address.replace('127.0.0.1', 'localhost')
+            host: detail.address.replace('127.0.0.1', 'localhost')
           }
         })
-        .forEach((address: { type?: String; ip?: String }) => {
-          const url = `http://${address.ip}:${chalk.bold(port)}/`
-          console.log(`  > ${address.type} ${chalk.cyan(url)}`)
+        .forEach(({ type, host }) => {
+          const url = `http://${host}:${chalk.bold(port)}/`
+          console.log(`  > ${type} ${chalk.cyan(url)}`)
         })
     })
     console.log()
