@@ -76,15 +76,12 @@ export const cssPlugin: ServerPlugin = ({
       // bust process cache
       processedCSS.delete(publicPath)
 
-      // css modules are updated as js
-      if (!file.endsWith('.module.css')) {
-        watcher.send({
-          type: 'style-update',
-          id,
-          path: publicPath,
-          timestamp: Date.now()
-        })
-      }
+      watcher.send({
+        type: 'style-update',
+        id,
+        path: publicPath,
+        timestamp: Date.now()
+      })
     }
   })
 
@@ -93,6 +90,7 @@ export const cssPlugin: ServerPlugin = ({
     let modules
     const postcssConfig = await loadPostcssConfig(root)
     const expectsModule = ctx.path.endsWith('.module.css')
+    const id = JSON.stringify(hash_sum(ctx.path))
 
     // postcss processing
     if (postcssConfig || expectsModule) {
@@ -103,6 +101,7 @@ export const cssPlugin: ServerPlugin = ({
             ...(expectsModule
               ? [
                   require('postcss-modules')({
+                    generateScopedName: `[local]_${id}`,
                     getJSON(_: string, json: Record<string, string>) {
                       modules = json
                     }

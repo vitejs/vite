@@ -93,7 +93,7 @@ socket.addEventListener('message', async ({ data }) => {
         .catch((err) => warnFailedFetch(err, path))
       break
     case 'vue-rerender':
-      const templatePath = `${path}?type=template&t=${timestamp}`
+      const templatePath = `${path}?type=template`
       await bustSwCache(templatePath)
       import(`${templatePath}&t=${timestamp}`).then((m) => {
         __VUE_HMR_RUNTIME__.rerender(path, m.render)
@@ -101,15 +101,16 @@ socket.addEventListener('message', async ({ data }) => {
       })
       break
     case 'vue-style-update':
-      const stylePath = `${path}?type=style&index=${index}&t=${timestamp}`
+      const stylePath = `${path}?type=style&index=${index}`
       await bustSwCache(stylePath)
-      const content = await import(stylePath)
+      const content = await import(stylePath + `&t=${timestamp}`)
       updateStyle(id, content.default)
       console.log(
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
       break
     case 'style-update':
+      await bustSwCache(`${path}?import`)
       const style = await import(`${path}?t=${timestamp}`)
       updateStyle(id, style.default)
       console.log(`[vite] ${path} updated.`)
