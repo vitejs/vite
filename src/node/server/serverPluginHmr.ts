@@ -113,15 +113,10 @@ export const hmrPlugin: ServerPlugin = ({
 
   // start a websocket server to send hmr notifications to the client
   const wss = new WebSocket.Server({ server })
-  const sockets = new Set<WebSocket>()
 
   wss.on('connection', (socket) => {
     debugHmr('ws client connected')
-    sockets.add(socket)
     socket.send(JSON.stringify({ type: 'connected' }))
-    socket.on('close', () => {
-      sockets.delete(socket)
-    })
   })
 
   wss.on('error', (e: Error & { code: string }) => {
@@ -134,7 +129,12 @@ export const hmrPlugin: ServerPlugin = ({
   const send = (payload: HMRPayload) => {
     const stringified = JSON.stringify(payload, null, 2)
     debugHmr(`update: ${stringified}`)
-    sockets.forEach((s) => s.send(stringified))
+
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(stringified)
+      }
+    })
   }
 
   watcher.handleVueReload = handleVueReload
