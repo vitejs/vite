@@ -1,4 +1,5 @@
 import { hot } from 'vite/hmr'
+import './testHmrManualDep'
 
 export const foo = 1
 
@@ -12,6 +13,14 @@ if (__DEV__) {
   })
 
   hot.dispose(() => {
-    console.log('foo was: ', foo)
+    console.log(`foo was: ${foo}`)
+  })
+
+  hot.accept('./testHmrManualDep.js', ({ foo }) => {
+    console.log('(single dep) foo is now:', foo)
+  })
+
+  hot.accept(['./testHmrManualDep.js'], (modules) => {
+    console.log('(multiple deps) foo is now:', modules[0].foo)
   })
 }
