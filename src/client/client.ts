@@ -119,15 +119,7 @@ socket.addEventListener('message', async ({ data }) => {
       }
       break
     case 'js-update':
-      const update = jsUpdateMap.get(path)
-      if (update) {
-        update(timestamp)
-        console.log(`[vite]: js module hot updated: `, path)
-      } else {
-        console.error(
-          `[vite] got js update notification but no client callback was registered. Something is wrong.`
-        )
-      }
+      await updateModule(path, changeSrcPath, timestamp)
       break
     case 'custom':
       const cbs = customUpdateMap.get(id)
@@ -166,33 +158,97 @@ export function updateStyle(id: string, url: string) {
   link.setAttribute('href', url)
 }
 
-const jsUpdateMap = new Map<string, (timestamp: number) => void>()
+async function updateModule(
+  id: string,
+  changedPath: string,
+  timestamp: string
+) {
+  const mod = jsHotModuleMap.get(id)
+  if (!mod) {
+    console.error(
+      `[vite] got js update notification but no client callback was registered. Something is wrong.`
+    )
+    return
+  }
+
+  const moduleMap = new Map()
+  const isSelfUpdate = id === changedPath
+
+  // make sure we only import each dep once
+  const modulesToUpdate = new Set<string>()
+  if (isSelfUpdate) {
+    // self update - only update self
+    modulesToUpdate.add(id)
+  } else {
+    // dep update
+    for (const { deps } of mod.callbacks) {
+      if (Array.isArray(deps)) {
+        deps.forEach((dep) => modulesToUpdate.add(dep))
+      } else if (deps !== id) {
+        // exclude self accept calls
+        modulesToUpdate.add(deps)
+      }
+    }
+  }
+
+  // determine the qualified callbacks before we re-import the modules
+  const callbacks = mod.callbacks.filter(({ deps }) => {
+    return Array.isArray(deps)
+      ? deps.some((dep) => modulesToUpdate.has(dep))
+      : modulesToUpdate.has(deps)
+  })
+  // reset callbacks on self update since they are going to be registered again
+  if (isSelfUpdate) {
+    mod.callbacks = []
+  }
+
+  await Promise.all(
+    Array.from(modulesToUpdate).map(async (dep) => {
+      debugger
+      const disposer = jsDisposeMap.get(dep)
+      if (disposer) await disposer()
+      const newMod = await import(dep + `?t=${timestamp}`)
+      moduleMap.set(dep, newMod)
+    })
+  )
+
+  for (const { deps, fn } of callbacks) {
+    if (Array.isArray(deps)) {
+      fn(deps.map((dep) => moduleMap.get(dep)))
+    } else {
+      fn(moduleMap.get(deps))
+    }
+  }
+
+  console.log(`[vite]: js module hot updated: `, id)
+}
+
+interface HotModule {
+  id: string
+  callbacks: HotCallback[]
+}
+
+interface HotCallback {
+  deps: string | string[]
+  fn: (modules: object | object[]) => void
+}
+
+const jsHotModuleMap = new Map<string, HotModule>()
 const jsDisposeMap = new Map<string, () => void | Promise<void>>()
 const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 
 export const hot = {
   accept(
     id: string,
-    deps: string | string[],
-    callback: (modules: object | object[]) => void = () => {}
+    deps: HotCallback['deps'],
+    callback: HotCallback['fn'] = () => {}
   ) {
-    jsUpdateMap.set(id, async (timestamp: number) => {
-      if (Array.isArray(deps)) {
-        for (const id of deps) {
-          const disposer = jsDisposeMap.get(id)
-          if (disposer) await disposer()
-        }
-        Promise.all(deps.map((dep) => import(dep + `?t=${timestamp}`)))
-          .then(callback)
-          .catch((err) => warnFailedFetch(err, deps))
-      } else {
-        const disposer = jsDisposeMap.get(deps)
-        disposer && (await disposer())
-        import(deps + `?t=${timestamp}`)
-          .then(callback)
-          .catch((err) => warnFailedFetch(err, deps))
-      }
-    })
+    const mod: HotModule = jsHotModuleMap.get(id) || {
+      id,
+      callbacks: []
+    }
+    mod.callbacks.push({ deps, fn: callback })
+    jsHotModuleMap.set(id, mod)
   },
 
   dispose(id: string, cb: () => void) {

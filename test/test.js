@@ -133,17 +133,39 @@ describe('vite', () => {
         await expectByPolling(() => getText('.hmr-propagation'), '666')
       })
 
-      test('hmr (manual API)', async () => {
+      test('hmr (manual API, self accepting)', async () => {
         await updateFile('testHmrManual.js', (content) =>
           content.replace('foo = 1', 'foo = 2')
         )
         await expectByPolling(
           () => browserLogs[browserLogs.length - 1],
-          'foo is now:  2'
+          'js module hot updated:  /testHmrManual.js'
         )
-        // there will be a "js module reloaded" message in between because
-        // disposers are called before the new module is loaded.
-        expect(browserLogs[browserLogs.length - 3]).toMatch('foo was:  1')
+        expect(
+          browserLogs.slice(browserLogs.length - 4, browserLogs.length - 1)
+        ).toEqual([
+          `foo was: 1`,
+          `(self-accepting)1.foo is now: 2`,
+          `(self-accepting)2.foo is now: 2`
+        ])
+      })
+
+      test('hmr (manual API, accepting deps)', async () => {
+        browserLogs.length = 0
+        await updateFile('testHmrManualDep.js', (content) =>
+          content.replace('foo = 1', 'foo = 2')
+        )
+        await expectByPolling(
+          () => browserLogs[browserLogs.length - 1],
+          'js module hot updated:  /testHmrManual.js'
+        )
+        expect(
+          browserLogs.slice(browserLogs.length - 4, browserLogs.length - 1)
+        ).toEqual([
+          `(dep) foo was: 1`,
+          `(single dep) foo is now: 2`,
+          `(multiple deps) foo is now: 2`
+        ])
       })
     }
 
@@ -414,7 +436,7 @@ async function updateFile(file, replacer) {
 async function expectByPolling(poll, expected) {
   const maxTries = 20
   for (let tries = 0; tries < maxTries; tries++) {
-    const actual = await poll()
+    const actual = (await poll()) || ''
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
       expect(actual).toMatch(expected)
       break

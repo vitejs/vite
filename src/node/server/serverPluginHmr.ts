@@ -316,26 +316,26 @@ export const hmrPlugin: ServerPlugin = ({
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
       } else {
-        vueBoundaries.forEach((vueImporter) => {
+        vueBoundaries.forEach((vueBoundary) => {
           console.log(
             chalk.green(`[vite:hmr] `) +
-              `${vueImporter} reloaded due to change in ${relativeFile}.`
+              `${vueBoundary} reloaded due to change in ${relativeFile}.`
           )
           send({
             type: 'vue-reload',
-            path: vueImporter,
+            path: vueBoundary,
             changeSrcPath: publicPath,
             timestamp
           })
         })
-        jsBoundaries.forEach((jsImporter) => {
+        jsBoundaries.forEach((jsBoundary) => {
           console.log(
             chalk.green(`[vite:hmr] `) +
-              `${jsImporter} updated due to change in ${relativeFile}.`
+              `${jsBoundary} updated due to change in ${relativeFile}.`
           )
           send({
             type: 'js-update',
-            path: jsImporter,
+            path: jsBoundary,
             changeSrcPath: publicPath,
             timestamp
           })
