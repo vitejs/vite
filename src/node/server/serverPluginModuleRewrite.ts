@@ -58,10 +58,9 @@ export const moduleRewritePlugin: ServerPlugin = ({
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
 
-  async function rewriteIndex(html: string) {
+  async function rewriteIndex(importer: string, html: string) {
     await initLexer
     let hasInjectedDevFlag = false
-    const importer = '/index.html'
     return html!.replace(scriptRE, (matched, openTag, script) => {
       const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
       hasInjectedDevFlag = true
@@ -94,13 +93,13 @@ export const moduleRewritePlugin: ServerPlugin = ({
       return
     }
 
-    if (ctx.path === '/index.html') {
+    if (ctx.path.endsWith('.html')) {
       let html = await readBody(ctx.body)
       if (html && rewriteCache.has(html)) {
-        debug('/index.html: serving from cache')
+        debug(`${ctx.path}: serving from cache`)
         ctx.body = rewriteCache.get(html)
       } else if (html) {
-        ctx.body = await rewriteIndex(html)
+        ctx.body = await rewriteIndex(ctx.path, html)
         rewriteCache.set(html, ctx.body)
       }
       return

@@ -44,6 +44,11 @@ export const serveStaticPlugin: ServerPlugin = ({
     }
 
     const ext = path.extname(ctx.path)
+    if (ext === '.html') {
+      debug(`not redirecting ${ctx.url} (is html page)`)
+      return next()
+    }
+
     if (ext && !accept.includes('text/html')) {
       debug(`not redirecting ${ctx.url} (has file extension)`)
       return next()
