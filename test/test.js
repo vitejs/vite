@@ -138,12 +138,24 @@ describe('vite', () => {
           content.replace('foo = 1', 'foo = 2')
         )
         await expectByPolling(
+          () => browserLogs[browserLogs.length - 5],
+          '(self-accepting)1.foo is now: 2'
+        )
+        await expectByPolling(
+          () => browserLogs[browserLogs.length - 4],
+          '(self-accepting)2.foo is now: 2'
+        )
+        await expectByPolling(
+          () => browserLogs[browserLogs.length - 3],
+          '(single dep)foo is now: 2'
+        )
+        await expectByPolling(
           () => browserLogs[browserLogs.length - 2],
-          'foo is now:  2'
+          '(multiple deps)foo is now: 2'
         )
         // there will be a "js module reloaded" message in between because
         // disposers are called before the new module is loaded.
-        expect(browserLogs[browserLogs.length - 3]).toMatch('foo was:  1')
+        expect(browserLogs[browserLogs.length - 6]).toMatch('foo was:  1')
       })
     }
 
