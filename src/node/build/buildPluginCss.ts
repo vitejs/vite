@@ -8,6 +8,7 @@ import {
   parseWithQuery
 } from '../utils'
 import { Transform } from '../config'
+import hash_sum from 'hash-sum'
 
 const debug = require('debug')('vite:build:css')
 
@@ -17,7 +18,6 @@ export const createBuildCssPlugin = (
   root: string,
   publicBase: string,
   assetsDir: string,
-  cssFileName: string,
   minify: boolean,
   inlineLimit: number,
   transforms: Transform[]
@@ -126,6 +126,8 @@ export const createBuildCssPlugin = (
           })
         ).css
       }
+
+      const cssFileName = `style.${hash_sum(css)}.css`
 
       bundle[cssFileName] = {
         isAsset: true,

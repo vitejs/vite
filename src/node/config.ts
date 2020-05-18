@@ -92,7 +92,7 @@ export interface BuildConfig extends SharedConfig {
   /**
    * Directory relative from `outDir` where the built js/css/image assets will
    * be placed.
-   * @default 'assets'
+   * @default '_assets'
    */
   assetsDir?: string
   /**

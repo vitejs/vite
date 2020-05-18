@@ -82,7 +82,7 @@ describe('vite', () => {
       expect(await getText('.asset-import')).toMatch(
         isBuild
           ? // hashed in production
-            /\/assets\/testAssets\.([\w\d]+)\.png$/
+            /\/_assets\/testAssets\.([\w\d]+)\.png$/
           : // only resolved to absolute in dev
             '/testAssets.png'
       )
