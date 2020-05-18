@@ -60,30 +60,30 @@ export const moduleRewritePlugin: ServerPlugin = ({
 
   async function rewriteIndex(importer: string, html: string) {
     await initLexer
-    let hasInjectedDevFlag = false
-    return html!.replace(scriptRE, (matched, openTag, script) => {
-      const devFlag = hasInjectedDevFlag ? `` : devInjectionCode
-      hasInjectedDevFlag = true
-      if (script) {
-        return `${devFlag}${openTag}${rewriteImports(
-          root,
-          script,
-          importer,
-          resolver
-        )}</script>`
-      } else {
-        const srcAttr = openTag.match(srcRE)
-        if (srcAttr) {
-          // register script as a import dep for hmr
-          const importee = cleanUrl(
-            slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
-          )
-          debugHmr(`        ${importer} imports ${importee}`)
-          ensureMapEntry(importerMap, importee).add(importer)
+    return (
+      devInjectionCode +
+      html!.replace(scriptRE, (matched, openTag, script) => {
+        if (script) {
+          return `${openTag}${rewriteImports(
+            root,
+            script,
+            importer,
+            resolver
+          )}</script>`
+        } else {
+          const srcAttr = openTag.match(srcRE)
+          if (srcAttr) {
+            // register script as a import dep for hmr
+            const importee = cleanUrl(
+              slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
+            )
+            debugHmr(`        ${importer} imports ${importee}`)
+            ensureMapEntry(importerMap, importee).add(importer)
+          }
+          return matched
         }
-        return `${devFlag}${matched}`
-      }
-    })
+      })
+    )
   }
 
   app.use(async (ctx, next) => {
