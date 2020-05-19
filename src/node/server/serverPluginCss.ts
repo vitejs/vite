@@ -33,14 +33,16 @@ export const cssPlugin: ServerPlugin = ({
         // tag linking to the actual raw url
         ctx.type = 'js'
         const id = JSON.stringify(hash_sum(ctx.path))
-        const rawPath = JSON.stringify(ctx.path)
         let code =
           `import { updateStyle } from "${hmrClientId}"\n` +
-          `updateStyle(${id}, ${rawPath})\n`
+          `const css = ${JSON.stringify(processedCSS.get(ctx.path)!.css)}\n` +
+          `updateStyle(${id}, css)\n`
         if (ctx.path.endsWith('.module.css')) {
           code += `export default ${JSON.stringify(
             processedCSS.get(ctx.path)!.modules
           )}`
+        } else {
+          code += `export default css`
         }
         ctx.body = code.trim()
       } else {
@@ -48,8 +50,10 @@ export const cssPlugin: ServerPlugin = ({
         if (!processedCSS.has(ctx.path)) {
           await processCss(ctx)
         }
-        ctx.type = 'css'
-        ctx.body = processedCSS.get(ctx.path)!.css
+        ctx.type = 'js'
+        ctx.body = `export default ${JSON.stringify(
+          processedCSS.get(ctx.path)!.css
+        )}`
       }
     }
   })
@@ -72,15 +76,12 @@ export const cssPlugin: ServerPlugin = ({
       // bust process cache
       processedCSS.delete(publicPath)
 
-      // css modules are updated as js
-      if (!file.endsWith('.module.css')) {
-        watcher.send({
-          type: 'style-update',
-          id,
-          path: publicPath,
-          timestamp: Date.now()
-        })
-      }
+      watcher.send({
+        type: 'style-update',
+        id,
+        path: publicPath,
+        timestamp: Date.now()
+      })
     }
   })
 
@@ -99,6 +100,7 @@ export const cssPlugin: ServerPlugin = ({
             ...(expectsModule
               ? [
                   require('postcss-modules')({
+                    generateScopedName: `[local]_${hash_sum(ctx.path)}`,
                     getJSON(_: string, json: Record<string, string>) {
                       modules = json
                     }

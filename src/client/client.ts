@@ -103,13 +103,16 @@ socket.addEventListener('message', async ({ data }) => {
     case 'vue-style-update':
       const stylePath = `${path}?type=style&index=${index}`
       await bustSwCache(stylePath)
-      updateStyle(id, stylePath)
+      const content = await import(stylePath + `&t=${timestamp}`)
+      updateStyle(id, content.default)
       console.log(
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
       break
     case 'style-update':
-      updateStyle(id, `${path}?t=${timestamp}`)
+      await bustSwCache(`${path}?import`)
+      const style = await import(`${path}?t=${timestamp}`)
+      updateStyle(id, style.default)
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
@@ -145,17 +148,16 @@ socket.addEventListener('close', () => {
   }, 1000)
 })
 
-export function updateStyle(id: string, url: string) {
+export function updateStyle(id: string, content: string) {
   const linkId = `vite-css-${id}`
   let link = document.getElementById(linkId)
   if (!link) {
-    link = document.createElement('link')
+    link = document.createElement('style')
     link.id = linkId
-    link.setAttribute('rel', 'stylesheet')
     link.setAttribute('type', 'text/css')
     document.head.appendChild(link)
   }
-  link.setAttribute('href', url)
+  link.innerHTML = content
 }
 
 async function updateModule(

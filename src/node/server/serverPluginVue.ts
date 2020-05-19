@@ -127,8 +127,8 @@ export const vuePlugin: ServerPlugin = ({
         ctx.type = 'js'
         ctx.body = `export default ${JSON.stringify(result.modules)}`
       } else {
-        ctx.type = 'css'
-        ctx.body = result.code
+        ctx.type = 'js'
+        ctx.body = `export default ${JSON.stringify(result.code)}`
       }
       return etagCacheCheck(ctx)
     }
@@ -272,7 +272,8 @@ async function compileSFCMain(
         )}`
         code += `\n__cssModules[${JSON.stringify(moduleName)}] = ${styleVar}`
       }
-      code += `\nupdateStyle("${id}-${i}", ${JSON.stringify(styleRequest)})`
+      code += `\nimport css_${i} from ${JSON.stringify(styleRequest)}`
+      code += `\nupdateStyle("${id}-${i}", css_${i})`
     })
     if (hasScoped) {
       code += `\n__script.__scopeId = "data-v-${id}"`
