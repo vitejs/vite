@@ -14,8 +14,6 @@ export interface Transform {
   transform: (code: string, isImport: boolean) => string | Promise<string>
 }
 
-export function normalizeTransforms(transforms: Transform[]) {}
-
 export function createServerTransformPlugin(
   transforms: Transform[]
 ): ServerPlugin {

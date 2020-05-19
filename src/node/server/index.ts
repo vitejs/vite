@@ -63,11 +63,11 @@ export function createServer(config: ServerConfig = {}): Server {
     moduleRewritePlugin,
     moduleResolvePlugin,
     vuePlugin,
+    cssPlugin,
+    ...(transforms.length ? [createServerTransformPlugin(transforms)] : []),
     esbuildPlugin,
     jsonPlugin,
-    cssPlugin,
     assetPathPlugin,
-    ...(transforms.length ? [createServerTransformPlugin(transforms)] : []),
     serveStaticPlugin
   ]
   resolvedPlugins.forEach((m) => m(context))
