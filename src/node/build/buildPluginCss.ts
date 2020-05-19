@@ -18,9 +18,9 @@ export const createBuildCssPlugin = (
   root: string,
   publicBase: string,
   assetsDir: string,
-  minify: boolean,
-  inlineLimit: number,
-  transforms: Transform[]
+  minify = false,
+  inlineLimit = 0,
+  transforms: Transform[] = []
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()

@@ -1,3 +1,13 @@
+## [0.15.5](https://github.com/vuejs/vite/compare/v0.15.4...v0.15.5) (2020-05-19)
+
+
+### Features
+
+* more detailed warning for non esm dependencies ([0e68cc1](https://github.com/vuejs/vite/commit/0e68cc18bc0ad60b6d469b41da66d5bfa7f86109))
+* support css imports in bundled deps ([62a720a](https://github.com/vuejs/vite/commit/62a720a8f23b958f91d5f6ae79989535b356cec6))
+
+
+
 ## [0.15.4](https://github.com/vuejs/vite/compare/v0.15.3...v0.15.4) (2020-05-19)
 
 
