@@ -32,7 +32,7 @@ export interface ServerPluginContext {
 export function createServer(config: ServerConfig = {}): Server {
   const {
     root = process.cwd(),
-    plugins = [],
+    configureServer = [],
     resolvers = [],
     alias = {},
     transforms = [],
@@ -56,7 +56,7 @@ export function createServer(config: ServerConfig = {}): Server {
   }
 
   const resolvedPlugins = [
-    ...plugins,
+    ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
     proxyPlugin,
     serviceWorkerPlugin,
     hmrPlugin,

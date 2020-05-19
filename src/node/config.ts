@@ -118,11 +118,7 @@ export interface ServerConfig extends SharedConfig {
    * @default false
    */
   serviceWorker?: boolean
-  /**
-   * Resolved server plugins.
-   * @internal
-   */
-  plugins?: ServerPlugin[]
+  configureServer?: ServerPlugin | ServerPlugin[]
 }
 
 export interface BuildConfig extends SharedConfig {
@@ -212,11 +208,8 @@ export interface BuildConfig extends SharedConfig {
   shouldPreload?: (chunk: OutputChunk) => boolean
 }
 
-export interface UserConfig
-  extends BuildConfig,
-    Pick<ServerConfig, 'serviceWorker'> {
+export interface UserConfig extends BuildConfig, ServerConfig {
   plugins?: Plugin[]
-  configureServer?: ServerPlugin
 }
 
 export interface Plugin
@@ -308,9 +301,6 @@ export async function resolveConfig(
       for (const plugin of config.plugins) {
         config = resolvePlugin(config, plugin)
       }
-      // delete plugins so it doesn't get passed to `createServer` as server
-      // plugins.
-      delete config.plugins
     }
 
     require('debug')('vite:config')(
@@ -361,14 +351,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
     },
     transforms: [...(config.transforms || []), ...(plugin.transforms || [])],
     resolvers: [...(config.resolvers || []), ...(plugin.resolvers || [])],
-    configureServer: (ctx) => {
-      if (config.configureServer) {
-        config.configureServer(ctx)
-      }
-      if (plugin.configureServer) {
-        plugin.configureServer(ctx)
-      }
-    },
+    configureServer: ([] as any[]).concat(
+      config.configureServer || [],
+      plugin.configureServer || []
+    ),
     vueCompilerOptions: {
       ...config.vueCompilerOptions,
       ...plugin.vueCompilerOptions
