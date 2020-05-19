@@ -12,13 +12,13 @@
 //    that it accepts hot updates (by importing from the `/vite/hmr` special module)
 // 5. If any parent chain exhausts without ever running into an HMR boundary,
 //    it's considered a "dead end". This causes a full page reload.
-// 6. If a `.vue` boundary is encountered, we add it to the `vueImports` Set.
+// 6. If a `.vue` boundary is encountered, we add it to the `vueBoundaries` Set.
 // 7. If a `.js` boundary is encountered, we check if the boundary's current
 //    child importer is in the accepted list of the boundary (see additional
 //    explanation below). If yes, record current child importer in the
-//    `jsImporters` Set.
+//    `jsBoundaries` Set.
 // 8. If the graph walk finished without running into dead ends, send the
-//    client to update all `jsImporters` and `vueImporters`.
+//    client to update all `jsBoundaries` and `vueBoundaries`.
 
 // How do we get a js HMR boundary's accepted list on the server
 // 1. During the import rewriting, if `/vite/hmr` import is present in a js file,
