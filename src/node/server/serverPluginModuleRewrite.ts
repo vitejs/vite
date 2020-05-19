@@ -303,7 +303,8 @@ export const resolveImport = (
     }
 
     // mark non-src imports
-    if (!jsSrcRE.test(pathname)) {
+    const ext = path.extname(pathname)
+    if (ext && !jsSrcRE.test(pathname)) {
       query += `${query ? `&` : `?`}import`
     }
 
