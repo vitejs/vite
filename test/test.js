@@ -33,6 +33,12 @@ const getComputedColor = async (selectorOrEl) => {
   )
 }
 
+const navigateFinish = async () => {
+  return await page.waitForNavigation({
+    waitUntil: 'domcontentloaded'
+  })
+}
+
 beforeAll(async () => {
   try {
     await fs.remove(tempDir)
@@ -400,6 +406,7 @@ describe('vite', () => {
       await updateFile('index.html', (content) =>
         content.replace('Vite App', 'Vite App Test')
       )
+      await navigateFinish()
       await expectByPolling(() => getText('title'), 'Vite App Test')
     })
 
@@ -410,6 +417,7 @@ describe('vite', () => {
       await updateFile('test.html', (content) =>
         content.replace('Vite App', 'Vite App Test')
       )
+      await navigateFinish()
       await expectByPolling(() => getText('title'), 'Vite App Test')
     })
 
