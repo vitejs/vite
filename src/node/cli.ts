@@ -3,9 +3,14 @@ const argv = require('minimist')(process.argv.slice(2))
 // make sure to set debug flag before requiring anything
 if (argv.debug) {
   process.env.DEBUG = `vite:` + (argv.debug === true ? '*' : argv.debug)
+  try {
+    // this is only present during local development
+    require('source-map-support').install()
+  } catch (e) {}
 }
 
 import os from 'os'
+import path from 'path'
 import chalk from 'chalk'
 import { UserConfig, resolveConfig } from './config'
 
@@ -90,7 +95,7 @@ async function resolveOptions() {
   // normalize root
   // assumes all commands are in the form of `vite [command] [root]`
   if (argv._[1] && !argv.root) {
-    argv.root = argv._[1]
+    argv.root = path.isAbsolute(argv._[1]) ? argv._[1] : path.resolve(argv._[1])
   }
 
   const userConfig = await resolveConfig(argv.config || argv.c)
@@ -109,8 +114,6 @@ async function runServe(
     open?: boolean
   }
 ) {
-  await require('../dist').optimizeDeps(options)
-
   const server = require('../dist').createServer(options)
 
   let port = options.port || 3000
@@ -139,12 +142,12 @@ async function runServe(
             type: detail.address.includes('127.0.0.1')
               ? 'Local:   '
               : 'Network: ',
-            ip: detail.address.replace('127.0.0.1', 'localhost')
+            host: detail.address.replace('127.0.0.1', 'localhost')
           }
         })
-        .forEach((address: { type?: String; ip?: String }) => {
-          const url = `http://${address.ip}:${chalk.bold(port)}/`
-          console.log(`  > ${address.type} ${chalk.cyan(url)}`)
+        .forEach(({ type, host }) => {
+          const url = `http://${host}:${chalk.bold(port)}/`
+          console.log(`  > ${type} ${chalk.cyan(url)}`)
         })
     })
     console.log()

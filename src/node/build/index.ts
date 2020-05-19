@@ -14,6 +14,7 @@ import { createReplacePlugin } from './buildPluginReplace'
 import { stopService } from '../esbuildService'
 import { BuildConfig } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
+import hash_sum from 'hash-sum'
 
 export interface BuildResult {
   html: string
@@ -36,6 +37,11 @@ const writeColors = {
   [WriteType.SOURCE_MAP]: chalk.gray
 }
 
+/**
+ * Named exports detection logic from Snowpack
+ * MIT License
+ * https://github.com/pikapkg/snowpack/blob/master/LICENSE
+ */
 const PACKAGES_TO_AUTO_DETECT_EXPORTS = [
   path.join('react', 'index.js'),
   path.join('react-dom', 'index.js'),
@@ -71,6 +77,7 @@ export async function createBaseRollupPlugins(
   const { rollupInputOptions = {}, transforms = [] } = options
 
   // TODO allow user to configure known named exports
+  // or upgrade @rollup/plugin-commonjs when the new version is out
   const knownNamedExports: Record<string, string[]> = {}
   for (const id of PACKAGES_TO_AUTO_DETECT_EXPORTS) {
     knownNamedExports[id] =
@@ -92,7 +99,11 @@ export async function createBaseRollupPlugins(
       },
       preprocessStyles: true,
       preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
-      compilerOptions: options.vueCompilerOptions
+      compilerOptions: options.vueCompilerOptions,
+      cssModulesOptions: {
+        generateScopedName: (local: string, filename: string) =>
+          `${local}_${hash_sum(filename)}`
+      }
     }),
     require('@rollup/plugin-json')({
       preferConst: true,
@@ -134,7 +145,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     root = process.cwd(),
     base = '/',
     outDir = path.resolve(root, 'dist'),
-    assetsDir = 'assets',
+    assetsDir = '_assets',
     assetsInlineLimit = 4096,
     alias = {},
     transforms = [],
@@ -146,7 +157,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     write = true,
     minify = true,
     silent = false,
-    sourcemap = false
+    sourcemap = false,
+    shouldPreload = null
   } = options
 
   let spinner: Ora | undefined
@@ -162,7 +174,6 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
   const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
-  const cssFileName = 'style.css'
 
   const resolver = createResolver(root, resolvers, alias)
 
@@ -172,7 +183,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     publicBasePath,
     assetsDir,
     assetsInlineLimit,
-    resolver
+    resolver,
+    shouldPreload
   )
 
   const basePlugins = await createBaseRollupPlugins(root, resolver, options)
@@ -212,7 +224,6 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         root,
         publicBasePath,
         assetsDir,
-        cssFileName,
         !!minify,
         assetsInlineLimit,
         transforms
@@ -237,11 +248,16 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
   const { output } = await bundle.generate({
     format: 'es',
     sourcemap,
+    entryFileNames: `[name].[hash].js`,
+    chunkFileNames: `common.[hash].js`,
     ...rollupOutputOptions
   })
 
   spinner && spinner.stop()
 
+  const cssFileName = output.find(
+    (a) => a.type === 'asset' && a.fileName.endsWith('.css')
+  )!.fileName
   const indexHtml = emitIndex ? renderIndex(output, cssFileName) : ''
 
   if (write) {

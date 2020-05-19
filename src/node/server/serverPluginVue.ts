@@ -31,6 +31,7 @@ import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import qs from 'querystring'
 import { seenUrls } from './serverPluginServeStatic'
+import { rewriteCssUrls } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -127,8 +128,8 @@ export const vuePlugin: ServerPlugin = ({
         ctx.type = 'js'
         ctx.body = `export default ${JSON.stringify(result.modules)}`
       } else {
-        ctx.type = 'css'
-        ctx.body = result.code
+        ctx.type = 'js'
+        ctx.body = `export default ${JSON.stringify(result.code)}`
       }
       return etagCacheCheck(ctx)
     }
@@ -272,7 +273,8 @@ async function compileSFCMain(
         )}`
         code += `\n__cssModules[${JSON.stringify(moduleName)}] = ${styleVar}`
       }
-      code += `\nupdateStyle("${id}-${i}", ${JSON.stringify(styleRequest)})`
+      code += `\nimport css_${i} from ${JSON.stringify(styleRequest)}`
+      code += `\nupdateStyle("${id}-${i}", css_${i})`
     })
     if (hasScoped) {
       code += `\n__script.__scopeId = "data-v-${id}"`
@@ -386,6 +388,9 @@ async function compileSFCStyle(
     id: `data-v-${id}`,
     scoped: style.scoped != null,
     modules: style.module != null,
+    modulesOptions: {
+      generateScopedName: `[local]_${id}`
+    },
     preprocessLang: style.lang as any,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
     ...(postcssConfig
@@ -432,6 +437,9 @@ async function compileSFCStyle(
       }
     })
   }
+
+  // rewrite relative urls
+  result.code = await rewriteCssUrls(result.code, publicPath)
 
   cached = cached || { styles: [] }
   cached.styles[index] = result

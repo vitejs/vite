@@ -2,13 +2,14 @@ import path from 'path'
 import { resolveFrom } from './pathUtils'
 import sfcCompiler from '@vue/compiler-sfc'
 import chalk from 'chalk'
+import { lookupFile } from './fsUtils'
 
 interface ResolvedVuePaths {
-  vue: string
-  '@vue/runtime-dom': string
-  '@vue/runtime-core': string
-  '@vue/reactivity': string
-  '@vue/shared': string
+  vue: string | undefined
+  '@vue/runtime-dom': string | undefined
+  '@vue/runtime-core': string | undefined
+  '@vue/reactivity': string | undefined
+  '@vue/shared': string | undefined
   compiler: string
   version: string
   isLocal: boolean
@@ -23,28 +24,36 @@ export function resolveVue(root: string): ResolvedVuePaths {
   if (resolved) {
     return resolved
   }
-  let runtimeDomPath: string
+  let vueVersion: string | undefined
+  let vuePath: string | undefined
   let compilerPath: string
-  let isLocal = true
-  let vueVersion: string
-  try {
-    // see if user has local vue installation
-    const userVuePkg = resolveFrom(root, 'vue/package.json')
-    vueVersion = require(userVuePkg).version
-    // as long as vue is present,
-    // dom, core and reactivity are guarunteed to coexist
-    runtimeDomPath = resolveFrom(
-      root,
-      '@vue/runtime-dom/dist/runtime-dom.esm-bundler.js'
-    )
-    // also resolve matching sfc compiler
+
+  const projectPkg = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+  let isLocal = !!(projectPkg.dependencies && projectPkg.dependencies.vue)
+  if (isLocal) {
     try {
+      resolveFrom(root, 'vue')
+    } catch (e) {
+      // user has vue listed but not actually installed.
+      isLocal = false
+    }
+  }
+
+  if (isLocal) {
+    // user has local vue, verify that the same version of @vue/compiler-sfc
+    // is also installed.
+    // vuePath will be undefined in this case since vue itself will be
+    // optimized by the deps optimizer and we can just let the resolver locate
+    // it.
+    try {
+      const userVuePkg = resolveFrom(root, 'vue/package.json')
+      vueVersion = require(userVuePkg).version
       const compilerPkgPath = resolveFrom(
         root,
         '@vue/compiler-sfc/package.json'
       )
       const compilerPkg = require(compilerPkgPath)
-      if (compilerPkg.version !== require(userVuePkg).version) {
+      if (compilerPkg.version !== vueVersion) {
         throw new Error()
       }
       compilerPath = path.join(path.dirname(compilerPkgPath), compilerPkg.main)
@@ -59,22 +68,25 @@ export function resolveVue(root: string): ResolvedVuePaths {
       )
       compilerPath = require.resolve('@vue/compiler-sfc')
     }
-  } catch (e) {
+  } else {
     // user has no local vue, use vite's dependency version
-    isLocal = false
     vueVersion = require('vue/package.json').version
-    runtimeDomPath = require.resolve(
+    vuePath = require.resolve(
       '@vue/runtime-dom/dist/runtime-dom.esm-bundler.js'
     )
     compilerPath = require.resolve('@vue/compiler-sfc')
   }
+
+  const inferPath = (name: string) =>
+    vuePath && vuePath.replace(/runtime-dom/g, name)
+
   resolved = {
-    version: vueVersion,
-    vue: runtimeDomPath,
-    '@vue/runtime-dom': runtimeDomPath,
-    '@vue/runtime-core': runtimeDomPath.replace(/runtime-dom/g, 'runtime-core'),
-    '@vue/reactivity': runtimeDomPath.replace(/runtime-dom/g, 'reactivity'),
-    '@vue/shared': runtimeDomPath.replace(/runtime-dom/g, 'shared'),
+    version: vueVersion!,
+    vue: vuePath,
+    '@vue/runtime-dom': vuePath,
+    '@vue/runtime-core': inferPath('runtime-core'),
+    '@vue/reactivity': inferPath('reactivity'),
+    '@vue/shared': inferPath('shared'),
     compiler: compilerPath,
     isLocal
   }

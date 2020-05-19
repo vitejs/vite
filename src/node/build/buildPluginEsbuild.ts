@@ -1,12 +1,12 @@
 import { Plugin } from 'rollup'
-import { tjsxRE, transform, reoslveJsxOptions } from '../esbuildService'
+import { tjsxRE, transform, resolveJsxOptions } from '../esbuildService'
 import { SharedConfig } from '../config'
 
 export const createEsbuildPlugin = async (
   minify: boolean,
   jsx: SharedConfig['jsx']
 ): Promise<Plugin> => {
-  const jsxConfig = reoslveJsxOptions(jsx)
+  const jsxConfig = resolveJsxOptions(jsx)
 
   return {
     name: 'vite:esbuild',

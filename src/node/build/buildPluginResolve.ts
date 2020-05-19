@@ -13,6 +13,7 @@ export const createBuildResolvePlugin = (
   return {
     name: 'vite:resolve',
     async resolveId(id, importer) {
+      const original = id
       id = resolver.alias(id) || id
       if (id === hmrClientId) {
         return hmrClientId
@@ -31,8 +32,10 @@ export const createBuildResolvePlugin = (
         }
       }
       // fallback to node-resolve becuase alias
-      const resolved = this.resolve(id, importer, { skipSelf: true })
-      return resolved || { id }
+      if (id !== original) {
+        const resolved = this.resolve(id, importer, { skipSelf: true })
+        return resolved || { id }
+      }
     },
     load(id: string) {
       if (id === hmrClientId) {

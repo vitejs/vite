@@ -20,7 +20,7 @@ const JsxPresets: Record<
   react: {} // use esbuild default
 }
 
-export function reoslveJsxOptions(options: SharedConfig['jsx'] = 'vue') {
+export function resolveJsxOptions(options: SharedConfig['jsx'] = 'vue') {
   if (typeof options === 'string') {
     if (!(options in JsxPresets)) {
       console.error(`[vite] unknown jsx preset: '${options}'.`)
@@ -61,7 +61,9 @@ export const transform = async (
   options = {
     ...options,
     loader: options.loader || (path.extname(file).slice(1) as any),
-    sourcemap: true
+    sourcemap: true,
+    sourcefile: file,
+    target: 'es2019'
   }
   try {
     const result = await service.transform(src, options)

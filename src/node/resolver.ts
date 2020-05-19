@@ -8,10 +8,11 @@ import {
   fileToRequestMap
 } from './server/serverPluginModuleResolve'
 import { OPTIMIZE_CACHE_DIR } from './depOptimizer'
+import chalk from 'chalk'
 
 export interface Resolver {
-  requestToFile(publicPath: string, root: string): string | undefined
-  fileToRequest(filePath: string, root: string): string | undefined
+  requestToFile?(publicPath: string, root: string): string | undefined
+  fileToRequest?(filePath: string, root: string): string | undefined
   alias?(id: string): string | undefined
 }
 
@@ -80,7 +81,7 @@ export function createResolver(
     requestToFile: (publicPath) => {
       let resolved: string | undefined
       for (const r of resolvers) {
-        const filepath = r.requestToFile(publicPath, root)
+        const filepath = r.requestToFile && r.requestToFile(publicPath, root)
         if (filepath) {
           resolved = filepath
           break
@@ -94,7 +95,7 @@ export function createResolver(
     },
     fileToRequest: (filePath) => {
       for (const r of resolvers) {
-        const request = r.fileToRequest(filePath, root)
+        const request = r.fileToRequest && r.fileToRequest(filePath, root)
         if (request) return request
       }
       return defaultFileToRequest(filePath, root)
@@ -114,14 +115,30 @@ export function createResolver(
   }
 }
 
-export function resolveBareModule(root: string, id: string) {
+const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
+
+export function resolveBareModule(root: string, id: string, importer: string) {
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
-    return id + '.js'
+    return id
   }
-  const nodeEntry = resolveNodeModule(root, id)
-  if (nodeEntry) {
-    return nodeEntry
+  const pkgInfo = resolveNodeModuleEntry(root, id)
+  if (pkgInfo) {
+    return pkgInfo[0]
+  }
+  const deepMatch = id.match(deepImportRE)
+  if (deepMatch) {
+    const depId = deepMatch[1] || deepMatch[2]
+    if (resolveOptimizedModule(root, depId)) {
+      console.error(
+        chalk.yellow(
+          `\n[vite] Avoid deep import "${id}" since "${depId}" is a ` +
+            `pre-optimized dependency.\n` +
+            `Prefer importing from the module directly.\n` +
+            `Importer: ${importer}\n`
+        )
+      )
+    }
   }
   return id
 }
@@ -145,6 +162,46 @@ export function resolveOptimizedModule(
   }
 }
 
+const nodeModulesEntryMap = new Map<string, [string, any]>()
+
+export function resolveNodeModuleEntry(root: string, id: string) {
+  const cached = nodeModulesEntryMap.get(id)
+  if (cached) {
+    return cached
+  }
+  let pkgPath
+  try {
+    // see if the id is a valid package name
+    pkgPath = resolveFrom(root, `${id}/package.json`)
+  } catch (e) {}
+
+  if (pkgPath) {
+    // if yes, this is a entry import. resolve entry file
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+    let entryPoint: string | undefined
+    if (pkg.exports) {
+      if (typeof pkg.exports === 'string') {
+        entryPoint = pkg.exports
+      } else if (pkg.exports['.']) {
+        if (typeof pkg.exports['.'] === 'string') {
+          entryPoint = pkg.exports['.']
+        } else {
+          entryPoint = pkg.exports['.'].import
+        }
+      }
+    }
+    if (!entryPoint) {
+      entryPoint = pkg.module || pkg.main || 'index.js'
+    }
+    entryPoint = path.posix.join(id, '/', entryPoint!)
+    debug(`(node_module entry) ${id} -> ${entryPoint}`)
+
+    const result: [string, any] = [entryPoint, pkg]
+    nodeModulesEntryMap.set(id, result)
+    return result
+  }
+}
+
 const nodeModulesMap = new Map()
 
 export function resolveNodeModule(
@@ -156,32 +213,24 @@ export function resolveNodeModule(
     return cached
   }
 
-  let pkgPath
-  try {
-    // see if the id is a valid package name
-    pkgPath = resolveFrom(root, `${id}/package.json`)
-  } catch (e) {}
-
-  if (pkgPath) {
-    // if yes, this is a entry import. resolve entry file
-    const pkg = require(pkgPath)
-    const entryPoint = id + '/' + (pkg.module || pkg.main || 'index.js')
-    debug(`(node_module entry) ${id} -> ${entryPoint}`)
-    nodeModulesMap.set(id, entryPoint)
-    return entryPoint
-  } else {
-    // possibly a deep import
-    try {
-      return resolveFrom(root, id)
-    } catch (e) {}
-
-    // no match and no ext, try all exts
-    if (!path.extname(id)) {
-      for (const ext of supportedExts) {
-        try {
-          return resolveFrom(root, id + ext)
-        } catch (e) {}
+  let resolved
+  if (!path.extname(id)) {
+    for (const ext of supportedExts) {
+      try {
+        resolved = resolveFrom(root, id + ext)
+      } catch (e) {}
+      if (resolved) {
+        break
       }
     }
   }
+
+  if (!resolved) {
+    try {
+      resolved = resolveFrom(root, id)
+    } catch (e) {}
+  }
+
+  nodeModulesMap.set(id, resolved)
+  return resolved
 }

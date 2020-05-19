@@ -14,6 +14,7 @@ import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
 import { serviceWorkerPlugin } from './serverPluginServiceWorker'
+import { proxyPlugin } from './serverPluginProxy'
 
 export { rewriteImports } from './serverPluginModuleRewrite'
 
@@ -31,10 +32,11 @@ export interface ServerPluginContext {
 export function createServer(config: ServerConfig = {}): Server {
   const {
     root = process.cwd(),
-    plugins = [],
+    configureServer = [],
     resolvers = [],
     alias = {},
-    transforms = []
+    transforms = [],
+    optimizeDeps = {}
   } = config
 
   const app = new Koa()
@@ -54,20 +56,29 @@ export function createServer(config: ServerConfig = {}): Server {
   }
 
   const resolvedPlugins = [
-    ...plugins,
+    ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
+    proxyPlugin,
     serviceWorkerPlugin,
     hmrPlugin,
     moduleRewritePlugin,
     moduleResolvePlugin,
     vuePlugin,
+    cssPlugin,
+    ...(transforms.length ? [createServerTransformPlugin(transforms)] : []),
     esbuildPlugin,
     jsonPlugin,
-    cssPlugin,
     assetPathPlugin,
-    ...(transforms.length ? [createServerTransformPlugin(transforms)] : []),
     serveStaticPlugin
   ]
   resolvedPlugins.forEach((m) => m(context))
+
+  const listen = server.listen.bind(server)
+  server.listen = (async (...args: any[]) => {
+    if (optimizeDeps.auto !== false) {
+      await require('../depOptimizer').optimizeDeps(config)
+    }
+    return listen(...args)
+  }) as any
 
   return server
 }
