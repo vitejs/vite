@@ -426,6 +426,7 @@ export function rewriteFileWithHMR(
   const ast = parse(source, {
     sourceType: 'module',
     plugins: [
+      'importMeta',
       // by default we enable proposals slated for ES2020.
       // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
       // this should be kept in async with @vue/compiler-core's support range
@@ -464,12 +465,14 @@ export function rewriteFileWithHMR(
 
       if (node.callee.property.name === 'accept') {
         const args = node.arguments
+        const appendPoint = args.length ? args[0].start! : node.end! - 1
         // inject the imports's own path so it becomes
         // hot.accept('/foo.js', ['./bar.js'], () => {})
-        s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+        s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
         // register the accepted deps
-        if (args[0].type === 'ArrayExpression') {
-          args[0].elements.forEach((e) => {
+        const accepted = args[0]
+        if (accepted && accepted.type === 'ArrayExpression') {
+          accepted.elements.forEach((e) => {
             if (e && e.type !== 'StringLiteral') {
               console.error(
                 `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
@@ -478,12 +481,12 @@ export function rewriteFileWithHMR(
               registerDep(e)
             }
           })
-        } else if (args[0].type === 'StringLiteral') {
-          registerDep(args[0])
-        } else if (args[0].type.endsWith('FunctionExpression')) {
+        } else if (accepted && accepted.type === 'StringLiteral') {
+          registerDep(accepted)
+        } else if (!accepted || accepted.type.endsWith('FunctionExpression')) {
           // self accepting, rewrite to inject itself
           // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
-          s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+          s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
           ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
         } else {
           console.error(
