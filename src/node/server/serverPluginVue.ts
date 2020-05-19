@@ -387,6 +387,9 @@ async function compileSFCStyle(
     id: `data-v-${id}`,
     scoped: style.scoped != null,
     modules: style.module != null,
+    modulesOptions: {
+      generateScopedName: `[local]_${id}`
+    },
     preprocessLang: style.lang as any,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
     ...(postcssConfig

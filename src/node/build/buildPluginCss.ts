@@ -86,6 +86,7 @@ export const createBuildCssPlugin = (
               ...(expectsModule
                 ? [
                     require('postcss-modules')({
+                      generateScopedName: `[local]_${hash_sum(id)}`,
                       getJSON(_: string, json: Record<string, string>) {
                         modules = json
                       }

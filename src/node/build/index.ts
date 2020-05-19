@@ -14,6 +14,7 @@ import { createReplacePlugin } from './buildPluginReplace'
 import { stopService } from '../esbuildService'
 import { BuildConfig } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
+import hash_sum from 'hash-sum'
 
 export interface BuildResult {
   html: string
@@ -97,7 +98,11 @@ export async function createBaseRollupPlugins(
       },
       preprocessStyles: true,
       preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
-      compilerOptions: options.vueCompilerOptions
+      compilerOptions: options.vueCompilerOptions,
+      cssModulesOptions: {
+        generateScopedName: (local: string, filename: string) =>
+          `${local}_${hash_sum(filename)}`
+      }
     }),
     require('@rollup/plugin-json')({
       preferConst: true,
