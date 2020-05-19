@@ -31,7 +31,7 @@ export const createBuildCssPlugin = (
         const { path, query } = parseWithQuery(id)
         for (const t of transforms) {
           if (t.test(path, query)) {
-            css = await t.transform(css, true)
+            css = await t.transform(css, true, true, path, query)
             transformed = true
             break
           }

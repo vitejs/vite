@@ -2,16 +2,25 @@ import { ServerPlugin } from './server'
 import { Plugin as RollupPlugin } from 'rollup'
 import { parseWithQuery, readBody, isImportRequest } from './utils'
 
+type ParsedQuery = Record<string, string | string[] | undefined>
+
 export interface Transform {
   /**
    * @default 'js'
    */
   as?: 'js' | 'css'
-  test: (
+  test: (path: string, query: ParsedQuery) => boolean
+  transform: (
+    code: string,
+    /**
+     * Indicates whether this is a request made by js import(), or natively by
+     * the browser (e.g. `<img src="...">`).
+     */
+    isImport: boolean,
+    isBuild: boolean,
     path: string,
-    query: Record<string, string | string[] | undefined>
-  ) => boolean
-  transform: (code: string, isImport: boolean) => string | Promise<string>
+    query: ParsedQuery
+  ) => string | Promise<string>
 }
 
 export function createServerTransformPlugin(
@@ -26,7 +35,13 @@ export function createServerTransformPlugin(
           if (ctx.body) {
             const code = await readBody(ctx.body)
             if (code) {
-              ctx.body = await t.transform(code, isImportRequest(ctx))
+              ctx.body = await t.transform(
+                code,
+                isImportRequest(ctx),
+                false,
+                ctx.path,
+                ctx.query
+              )
               ctx._transformed = true
             }
           }
@@ -48,7 +63,7 @@ export function createBuildJsTransformPlugin(
       let result: string | Promise<string> = code
       for (const t of transforms) {
         if (t.test(path, query)) {
-          result = await t.transform(result, true)
+          result = await t.transform(result, true, true, path, query)
         }
       }
       return result
