@@ -1,3 +1,18 @@
+## [0.15.6](https://github.com/vuejs/vite/compare/v0.15.5...v0.15.6) (2020-05-19)
+
+
+### Bug Fixes
+
+* fix configureServer option ([45fde5b](https://github.com/vuejs/vite/commit/45fde5ba3171c7788535a67a5abc0b171b38e3f1)), closes [#188](https://github.com/vuejs/vite/issues/188)
+* fix css relative url during dev ([e483fc6](https://github.com/vuejs/vite/commit/e483fc67a16392d15a56001da9a795473d495b8d))
+
+
+### Features
+
+* build-in dev server proxy support ([dafaccb](https://github.com/vuejs/vite/commit/dafaccbe291f8cc1db9716827366ddd418637f40)), closes [#147](https://github.com/vuejs/vite/issues/147)
+
+
+
 ## [0.15.5](https://github.com/vuejs/vite/compare/v0.15.4...v0.15.5) (2020-05-19)
 
 
