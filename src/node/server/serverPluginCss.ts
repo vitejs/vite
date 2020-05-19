@@ -90,7 +90,6 @@ export const cssPlugin: ServerPlugin = ({
     let modules
     const postcssConfig = await loadPostcssConfig(root)
     const expectsModule = ctx.path.endsWith('.module.css')
-    const id = JSON.stringify(hash_sum(ctx.path))
 
     // postcss processing
     if (postcssConfig || expectsModule) {
@@ -101,7 +100,7 @@ export const cssPlugin: ServerPlugin = ({
             ...(expectsModule
               ? [
                   require('postcss-modules')({
-                    generateScopedName: `[local]_${id}`,
+                    generateScopedName: `[local]_${hash_sum(ctx.path)}`,
                     getJSON(_: string, json: Record<string, string>) {
                       modules = json
                     }
