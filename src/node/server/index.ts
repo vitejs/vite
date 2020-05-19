@@ -15,6 +15,7 @@ import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
 import { serviceWorkerPlugin } from './serverPluginServiceWorker'
 import { htmlPlugin } from './serverPluginHtml'
+import { proxyPlugin } from './serverPluginProxy'
 
 export { rewriteImports } from './serverPluginModuleRewrite'
 
@@ -32,7 +33,7 @@ export interface ServerPluginContext {
 export function createServer(config: ServerConfig = {}): Server {
   const {
     root = process.cwd(),
-    plugins = [],
+    configureServer = [],
     resolvers = [],
     alias = {},
     transforms = [],
@@ -56,7 +57,8 @@ export function createServer(config: ServerConfig = {}): Server {
   }
 
   const resolvedPlugins = [
-    ...plugins,
+    ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
+    proxyPlugin,
     serviceWorkerPlugin,
     hmrPlugin,
     moduleRewritePlugin,

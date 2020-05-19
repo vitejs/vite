@@ -50,6 +50,8 @@ Vite assumes you are targeting modern browsers and therefore does not perform an
 - [CSS Modules](#css-modules)
 - [CSS Pre-processors](#css-pre-processors)
 - [JSX](#jsx)
+- [Config File](#config-file)
+- [Dev Server Proxy](#dev-server-proxy)
 - [Production Build](#production-build)
 
 Vite tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org/) as much as possible. If you've used `vue-cli` or other webpack-based boilerplates before, you should feel right at home. That said, do expect things to be different here and there.
@@ -222,6 +224,38 @@ ReactDOM.render(<h1>Hello, what!</h1>, document.getElementById('app'))
 
 If you need a custom JSX pragma, JSX can also be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` from the API. For example, you can run `vite --jsx-factory=h` to use `h` for JSX element creation calls.
 
+### Config File
+
+You can create a `vite.config.js` or `vite.config.ts` file in your project. Vite will automatically use it if one is found in the current working directory. You can also explicitly specify a config file via `vite --config my-config.js`.
+
+In addition to options mapped from CLI flags, it also supports `alias`, `transforms`, and plugins (which is a subset of the config interface). For now, see [config.ts](https://github.com/vuejs/vite/blob/master/src/node/config.ts) for full details before more thorough documentation is available.
+
+### Dev Server Proxy
+
+> 0.15.6+
+
+You can use the `proxy` option in the config file to configure custom proxies for the dev server. Vite uses [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Each key can be a path Full options [here](https://github.com/http-party/node-http-proxy#options).
+
+Example:
+
+``` js
+// vite.config.js
+module.exports = {
+  proxy: {
+    proxy: {
+      // string shorthand
+      '/foo': 'http://localhost:4567/foo',
+      // with options
+      '/api': {
+        target: 'http://jsonplaceholder.typicode.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api/, '')
+      }
+    }
+  }
+}
+```
+
 ### Production Build
 
 Vite does utilize bundling for production builds, because native ES module imports result in waterfall network requests that are simply too punishing for page load time in production.
@@ -229,12 +263,6 @@ Vite does utilize bundling for production builds, because native ES module impor
 You can run `vite build` to bundle the app.
 
 Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flags in the CLI (see [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts) for full details).
-
-## Config File
-
-You can create a `vite.config.js` or `vite.config.ts` file in your project. Vite will automatically use it if one is found in the current working directory. You can also explicitly specify a config file via `vite --config my-config.js`.
-
-In addition to options mapped from CLI flags, it also supports `alias`, `transforms`, and plugins (which is a subset of the config interface). For now, see [config.ts](https://github.com/vuejs/vite/blob/master/src/node/config.ts) for full details before more thorough documentation is available.
 
 ## API
 
@@ -344,12 +372,6 @@ Snowpack 2 is closer to Vite in scope - both offer bundle-free dev servers and c
 - Vite is a bit more opinionated and aims to minimize the amount of configuration required. All the features listed above like TypeScript transpilation, CSS import, and PostCSS support work out of the box.
 
 - While Vite can technically be used to develop apps with any framework, its main focus is to provide the best Vue development experience possible. 3rd party frameworks are supported, but not as the utmost priority.
-
-## TODOs
-
-- Config file support
-  - Define config options
-  - Define plugin format
 
 ## Trivia
 
