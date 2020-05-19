@@ -15,7 +15,12 @@ import chalk from 'chalk'
 import { Ora } from 'ora'
 import { createBuildCssPlugin } from './build/buildPluginCss'
 
-const KNOWN_IGNORE_LIST = new Set(['tailwindcss', '@tailwindcss/ui'])
+const KNOWN_IGNORE_LIST = new Set([
+  'tailwindcss',
+  '@tailwindcss/ui',
+  '@pika/react',
+  '@pika/react-dom'
+])
 
 export interface DepOptimizationOptions {
   /**
@@ -56,7 +61,13 @@ export async function optimizeDeps(
     )
   }
 
-  const cacheDir = path.join(root, OPTIMIZE_CACHE_DIR)
+  const pkgPath = lookupFile(root, [`package.json`], true /* pathOnly */)
+  if (!pkgPath) {
+    log(`package.json not found. Skipping.`)
+    return
+  }
+
+  const cacheDir = path.join(path.dirname(pkgPath), OPTIMIZE_CACHE_DIR)
   const hashPath = path.join(cacheDir, 'hash')
   const depHash = getDepHash(root, config.__path)
 
@@ -75,13 +86,7 @@ export async function optimizeDeps(
   await fs.remove(cacheDir)
   await fs.ensureDir(cacheDir)
 
-  const pkg = lookupFile(root, [`package.json`])
-  if (!pkg) {
-    log(`package.json not found. Skipping.`)
-    return
-  }
-
-  const deps = Object.keys(JSON.parse(pkg).dependencies || {})
+  const deps = Object.keys(require(pkgPath).dependencies || {})
   if (!deps.length) {
     await fs.writeFile(hashPath, depHash)
     log(`No dependencies listed in package.json. Skipping.`)
