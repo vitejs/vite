@@ -12,13 +12,13 @@
 //    that it accepts hot updates (by importing from the `/vite/hmr` special module)
 // 5. If any parent chain exhausts without ever running into an HMR boundary,
 //    it's considered a "dead end". This causes a full page reload.
-// 6. If a `.vue` boundary is encountered, we add it to the `vueImports` Set.
+// 6. If a `.vue` boundary is encountered, we add it to the `vueBoundaries` Set.
 // 7. If a `.js` boundary is encountered, we check if the boundary's current
 //    child importer is in the accepted list of the boundary (see additional
 //    explanation below). If yes, record current child importer in the
-//    `jsImporters` Set.
+//    `jsBoundaries` Set.
 // 8. If the graph walk finished without running into dead ends, send the
-//    client to update all `jsImporters` and `vueImporters`.
+//    client to update all `jsBoundaries` and `vueBoundaries`.
 
 // How do we get a js HMR boundary's accepted list on the server
 // 1. During the import rewriting, if `/vite/hmr` import is present in a js file,
@@ -113,15 +113,10 @@ export const hmrPlugin: ServerPlugin = ({
 
   // start a websocket server to send hmr notifications to the client
   const wss = new WebSocket.Server({ server })
-  const sockets = new Set<WebSocket>()
 
   wss.on('connection', (socket) => {
     debugHmr('ws client connected')
-    sockets.add(socket)
     socket.send(JSON.stringify({ type: 'connected' }))
-    socket.on('close', () => {
-      sockets.delete(socket)
-    })
   })
 
   wss.on('error', (e: Error & { code: string }) => {
@@ -134,7 +129,12 @@ export const hmrPlugin: ServerPlugin = ({
   const send = (payload: HMRPayload) => {
     const stringified = JSON.stringify(payload, null, 2)
     debugHmr(`update: ${stringified}`)
-    sockets.forEach((s) => s.send(stringified))
+
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(stringified)
+      }
+    })
   }
 
   watcher.handleVueReload = handleVueReload
@@ -158,7 +158,6 @@ export const hmrPlugin: ServerPlugin = ({
     } else if (file.endsWith('.vue')) {
       handleVueReload(file, timestamp)
     } else if (
-      file.endsWith('.module.css') ||
       !(file.endsWith('.css') || cssTransforms.some((t) => t.test(file, {})))
     ) {
       // everything except plain .css are considered HMR dependencies.
@@ -316,26 +315,26 @@ export const hmrPlugin: ServerPlugin = ({
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
       } else {
-        vueBoundaries.forEach((vueImporter) => {
+        vueBoundaries.forEach((vueBoundary) => {
           console.log(
             chalk.green(`[vite:hmr] `) +
-              `${vueImporter} reloaded due to change in ${relativeFile}.`
+              `${vueBoundary} reloaded due to change in ${relativeFile}.`
           )
           send({
             type: 'vue-reload',
-            path: vueImporter,
+            path: vueBoundary,
             changeSrcPath: publicPath,
             timestamp
           })
         })
-        jsBoundaries.forEach((jsImporter) => {
+        jsBoundaries.forEach((jsBoundary) => {
           console.log(
             chalk.green(`[vite:hmr] `) +
-              `${jsImporter} updated due to change in ${relativeFile}.`
+              `${jsBoundary} updated due to change in ${relativeFile}.`
           )
           send({
             type: 'js-update',
-            path: jsImporter,
+            path: jsBoundary,
             changeSrcPath: publicPath,
             timestamp
           })
@@ -435,6 +434,7 @@ export function rewriteFileWithHMR(
   const ast = parse(source, {
     sourceType: 'module',
     plugins: [
+      'importMeta',
       // by default we enable proposals slated for ES2020.
       // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
       // this should be kept in async with @vue/compiler-core's support range
@@ -473,12 +473,14 @@ export function rewriteFileWithHMR(
 
       if (node.callee.property.name === 'accept') {
         const args = node.arguments
+        const appendPoint = args.length ? args[0].start! : node.end! - 1
         // inject the imports's own path so it becomes
         // hot.accept('/foo.js', ['./bar.js'], () => {})
-        s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+        s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
         // register the accepted deps
-        if (args[0].type === 'ArrayExpression') {
-          args[0].elements.forEach((e) => {
+        const accepted = args[0]
+        if (accepted && accepted.type === 'ArrayExpression') {
+          accepted.elements.forEach((e) => {
             if (e && e.type !== 'StringLiteral') {
               console.error(
                 `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
@@ -487,12 +489,12 @@ export function rewriteFileWithHMR(
               registerDep(e)
             }
           })
-        } else if (args[0].type === 'StringLiteral') {
-          registerDep(args[0])
-        } else if (args[0].type.endsWith('FunctionExpression')) {
+        } else if (accepted && accepted.type === 'StringLiteral') {
+          registerDep(accepted)
+        } else if (!accepted || accepted.type.endsWith('FunctionExpression')) {
           // self accepting, rewrite to inject itself
           // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
-          s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+          s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
           ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
         } else {
           console.error(

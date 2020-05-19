@@ -1,13 +1,10 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
-import {
-  isExternalUrl,
-  asyncReplace,
-  loadPostcssConfig,
-  parseWithQuery
-} from '../utils'
+import { loadPostcssConfig, parseWithQuery } from '../utils'
 import { Transform } from '../config'
+import hash_sum from 'hash-sum'
+import { rewriteCssUrls } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:build:css')
 
@@ -17,10 +14,9 @@ export const createBuildCssPlugin = (
   root: string,
   publicBase: string,
   assetsDir: string,
-  cssFileName: string,
-  minify: boolean,
-  inlineLimit: number,
-  transforms: Transform[]
+  minify = false,
+  inlineLimit = 0,
+  transforms: Transform[] = []
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
@@ -35,7 +31,7 @@ export const createBuildCssPlugin = (
         const { path, query } = parseWithQuery(id)
         for (const t of transforms) {
           if (t.test(path, query)) {
-            css = await t.transform(css, true)
+            css = await t.transform(css, true, true, path, query)
             transformed = true
             break
           }
@@ -47,32 +43,27 @@ export const createBuildCssPlugin = (
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {
           const fileDir = path.dirname(id)
-          css = await asyncReplace(
-            css,
-            urlRE,
-            async ([matched, before, rawUrl, after]) => {
-              if (isExternalUrl(rawUrl) || rawUrl.startsWith('data:')) {
-                return matched
-              }
-              const file = path.join(fileDir, rawUrl)
-              const { fileName, content, url } = await resolveAsset(
-                file,
-                root,
-                publicBase,
-                assetsDir,
-                inlineLimit
-              )
-              if (fileName && content) {
-                assets.set(fileName, content)
-              }
-              debug(
-                `url(${rawUrl}) -> ${
-                  url.startsWith('data:') ? `base64 inlined` : `url(${url})`
-                }`
-              )
-              return `${before}${url}${after}`
+          css = await rewriteCssUrls(css, async (rawUrl) => {
+            const file = path.posix.isAbsolute(rawUrl)
+              ? path.join(root, rawUrl)
+              : path.join(fileDir, rawUrl)
+            const { fileName, content, url } = await resolveAsset(
+              file,
+              root,
+              publicBase,
+              assetsDir,
+              inlineLimit
+            )
+            if (fileName && content) {
+              assets.set(fileName, content)
             }
-          )
+            debug(
+              `url(${rawUrl}) -> ${
+                url.startsWith('data:') ? `base64 inlined` : `url(${url})`
+              }`
+            )
+            return url
+          })
         }
 
         // postcss
@@ -86,6 +77,7 @@ export const createBuildCssPlugin = (
               ...(expectsModule
                 ? [
                     require('postcss-modules')({
+                      generateScopedName: `[local]_${hash_sum(id)}`,
                       getJSON(_: string, json: Record<string, string>) {
                         modules = json
                       }
@@ -126,6 +118,8 @@ export const createBuildCssPlugin = (
           })
         ).css
       }
+
+      const cssFileName = `style.${hash_sum(css)}.css`
 
       bundle[cssFileName] = {
         isAsset: true,

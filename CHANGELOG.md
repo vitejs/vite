@@ -1,3 +1,70 @@
+# [0.16.0](https://github.com/vuejs/vite/compare/v0.15.5...v0.16.0) (2020-05-19)
+
+
+### Bug Fixes
+
+* apply user transforms after esbuild ([5b75f56](https://github.com/vuejs/vite/commit/5b75f567a5c2e17d48fde0e2df6666f456eccc58))
+* fix configureServer option ([45fde5b](https://github.com/vuejs/vite/commit/45fde5ba3171c7788535a67a5abc0b171b38e3f1)), closes [#188](https://github.com/vuejs/vite/issues/188)
+* fix css relative url during dev ([e483fc6](https://github.com/vuejs/vite/commit/e483fc67a16392d15a56001da9a795473d495b8d))
+* fix dep optimize cache path when serving nested directory ([86e9fb5](https://github.com/vuejs/vite/commit/86e9fb598ffb702074f8b6153493ca5c6597f671))
+* only append ?import when request has extension ([6683bb8](https://github.com/vuejs/vite/commit/6683bb8fb819c6f4935b40f25c2a377037e5ec7d))
+
+
+### Features
+
+* build-in dev server proxy support ([dafaccb](https://github.com/vuejs/vite/commit/dafaccbe291f8cc1db9716827366ddd418637f40)), closes [#147](https://github.com/vuejs/vite/issues/147)
+* pass isBuild, path & query to transform functions ([ce4032b](https://github.com/vuejs/vite/commit/ce4032b4e12adf2dd4c5480b596d532e0f27d086))
+* support arg-less hot.accept() call ([ef4fc42](https://github.com/vuejs/vite/commit/ef4fc42291d9ddb34400da1c93680edfb965530d))
+
+
+
+## [0.15.6](https://github.com/vuejs/vite/compare/v0.15.5...v0.15.6) (2020-05-19)
+
+
+### Bug Fixes
+
+* fix configureServer option ([45fde5b](https://github.com/vuejs/vite/commit/45fde5ba3171c7788535a67a5abc0b171b38e3f1)), closes [#188](https://github.com/vuejs/vite/issues/188)
+* fix css relative url during dev ([e483fc6](https://github.com/vuejs/vite/commit/e483fc67a16392d15a56001da9a795473d495b8d))
+
+
+### Features
+
+* build-in dev server proxy support ([dafaccb](https://github.com/vuejs/vite/commit/dafaccbe291f8cc1db9716827366ddd418637f40)), closes [#147](https://github.com/vuejs/vite/issues/147)
+
+
+
+## [0.15.5](https://github.com/vuejs/vite/compare/v0.15.4...v0.15.5) (2020-05-19)
+
+
+### Features
+
+* more detailed warning for non esm dependencies ([0e68cc1](https://github.com/vuejs/vite/commit/0e68cc18bc0ad60b6d469b41da66d5bfa7f86109))
+* support css imports in bundled deps ([62a720a](https://github.com/vuejs/vite/commit/62a720a8f23b958f91d5f6ae79989535b356cec6))
+
+
+
+## [0.15.4](https://github.com/vuejs/vite/compare/v0.15.3...v0.15.4) (2020-05-19)
+
+
+### Bug Fixes
+
+* ensure vue is actually installed in resolveVue ([84cff52](https://github.com/vuejs/vite/commit/84cff5282a56369eeea360cf001e398a2d25dd56))
+* fix history fallback redirect for html files ([d16f567](https://github.com/vuejs/vite/commit/d16f567ef2b6fb7b764b5be4402dd81ba7061596)), closes [#160](https://github.com/vuejs/vite/issues/160)
+* fix resolve plugin infinite loop with node-resolve plugin ([d1bdf5a](https://github.com/vuejs/vite/commit/d1bdf5a07fdae032a69987ac238bc0d68881b3f2))
+* force esbuild to output ES2019 ([#155](https://github.com/vuejs/vite/issues/155)) ([00f4a83](https://github.com/vuejs/vite/commit/00f4a8319fcc79ebdf939ecb5aea990c46690fd8))
+* ignore tailwindui for dep optimization ([#169](https://github.com/vuejs/vite/issues/169)) ([1f3a9b1](https://github.com/vuejs/vite/commit/1f3a9b1adc73e2569425e7ab4c129734d59bdfcd)), closes [#168](https://github.com/vuejs/vite/issues/168)
+* inject dev only script tags directly ([89ac245](https://github.com/vuejs/vite/commit/89ac24552f5cf644d416230058293d0d0d8eef5f)), closes [#161](https://github.com/vuejs/vite/issues/161)
+* make style injection sync on component mount ([#176](https://github.com/vuejs/vite/issues/176)) ([f6a21b2](https://github.com/vuejs/vite/commit/f6a21b268b262ddbdd585288e599fed2b3a41ec6)), closes [#175](https://github.com/vuejs/vite/issues/175)
+* **hmr:** support multiple accept calls ([#170](https://github.com/vuejs/vite/issues/170)) ([59da38c](https://github.com/vuejs/vite/commit/59da38c185b428a178d320b8bd5187b34bd942aa)), closes [#158](https://github.com/vuejs/vite/issues/158)
+
+
+### Features
+
+* add `shouldPreload` option ([#144](https://github.com/vuejs/vite/issues/144)) ([bdc7e70](https://github.com/vuejs/vite/commit/bdc7e70499916d7668d40a84c3f726ab50fbce9a))
+* use hashed filenames for entry and css ([0cc57c8](https://github.com/vuejs/vite/commit/0cc57c80d92dabb024a18d81d92a1dabe8eda702))
+
+
+
 ## [0.15.3](https://github.com/vuejs/vite/compare/v0.15.2...v0.15.3) (2020-05-14)
 
 

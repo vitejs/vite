@@ -13,8 +13,14 @@ import { resolveFrom, lookupFile } from './utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
+import { createBuildCssPlugin } from './build/buildPluginCss'
 
-const KNOWN_IGNORE_LIST = new Set(['tailwindcss', '@tailwindcss/ui'])
+const KNOWN_IGNORE_LIST = new Set([
+  'tailwindcss',
+  '@tailwindcss/ui',
+  '@pika/react',
+  '@pika/react-dom'
+])
 
 export interface DepOptimizationOptions {
   /**
@@ -25,6 +31,10 @@ export interface DepOptimizationOptions {
    * Do not optimize these dependencies.
    */
   exclude?: string[]
+  /**
+   * Explicitly allow these CommonJS deps to be bundled.
+   */
+  commonJSWhitelist?: string[]
   /**
    * Automatically run `vite optimize` on server start?
    * @default true
@@ -51,7 +61,13 @@ export async function optimizeDeps(
     )
   }
 
-  const cacheDir = path.join(root, OPTIMIZE_CACHE_DIR)
+  const pkgPath = lookupFile(root, [`package.json`], true /* pathOnly */)
+  if (!pkgPath) {
+    log(`package.json not found. Skipping.`)
+    return
+  }
+
+  const cacheDir = path.join(path.dirname(pkgPath), OPTIMIZE_CACHE_DIR)
   const hashPath = path.join(cacheDir, 'hash')
   const depHash = getDepHash(root, config.__path)
 
@@ -70,13 +86,7 @@ export async function optimizeDeps(
   await fs.remove(cacheDir)
   await fs.ensureDir(cacheDir)
 
-  const pkg = lookupFile(root, [`package.json`])
-  if (!pkg) {
-    log(`package.json not found. Skipping.`)
-    return
-  }
-
-  const deps = Object.keys(JSON.parse(pkg).dependencies || {})
+  const deps = Object.keys(require(pkgPath).dependencies || {})
   if (!deps.length) {
     await fs.writeFile(hashPath, depHash)
     log(`No dependencies listed in package.json. Skipping.`)
@@ -84,17 +94,16 @@ export async function optimizeDeps(
   }
 
   const resolver = createResolver(root, config.resolvers, config.alias)
-  const { include, exclude } = config.optimizeDeps || {}
+  const { include, exclude, commonJSWhitelist } = config.optimizeDeps || {}
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
-  // 1. Is CommonJS module
-  // 2. Has imports to relative files (e.g. lodash-es, lit-html)
-  // 3. Has imports to bare modules that are not in the project's own deps
+  // 1. Has imports to relative files (e.g. lodash-es, lit-html)
+  // 2. Has imports to bare modules that are not in the project's own deps
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
   await init
+  const cjsDeps: string[] = []
   const qualifiedDeps = deps.filter((id) => {
-    console.log(id)
     if (include && !include.includes(id)) {
       debug(`skipping ${id} (not included)`)
       return false
@@ -103,25 +112,32 @@ export async function optimizeDeps(
       debug(`skipping ${id} (excluded)`)
       return false
     }
+    if (commonJSWhitelist && commonJSWhitelist.includes(id)) {
+      debug(`optimizing ${id} (commonJSWhitelist)`)
+      return true
+    }
     if (KNOWN_IGNORE_LIST.has(id)) {
       debug(`skipping ${id} (internal excluded)`)
       return false
     }
-    const entry = resolveNodeModuleEntry(root, id)
-    if (!entry) {
+    const pkgInfo = resolveNodeModuleEntry(root, id)
+    if (!pkgInfo) {
       debug(`skipping ${id} (cannot resolve entry)`)
       return false
     }
+    const [entry, pkg] = pkgInfo
     if (!supportedExts.includes(path.extname(entry))) {
       debug(`skipping ${id} (entry is not js)`)
       return false
     }
     const content = fs.readFileSync(resolveFrom(root, entry), 'utf-8')
     const [imports, exports] = parse(content)
-    if (!exports.length) {
-      debug(`optimizing ${id} (no exports, likely commonjs)`)
-      // no exports, likely a commonjs module
-      return true
+    if (!exports.length && !/export\s+\*\s+from/.test(content)) {
+      if (!pkg.module) {
+        cjsDeps.push(id)
+      }
+      debug(`skipping ${id} (no exports, likely commonjs)`)
+      return false
     }
     for (const { s, e } of imports) {
       let i = content.slice(s, e).trim()
@@ -139,8 +155,30 @@ export async function optimizeDeps(
   })
 
   if (!qualifiedDeps.length) {
-    await fs.writeFile(hashPath, depHash)
-    log(`No listed dependency requires optimization. Skipping.`)
+    if (!cjsDeps.length) {
+      await fs.writeFile(hashPath, depHash)
+      log(`No listed dependency requires optimization. Skipping.`)
+    } else {
+      console.error(
+        chalk.yellow(
+          `[vite] The following dependencies seem to be CommonJS modules that\n` +
+            `do not provide ESM-friendly file formats:\n\n  ` +
+            cjsDeps.map((dep) => chalk.magenta(dep)).join(`\n  `) +
+            `\n` +
+            `\n- If you are not using them in browser code, you can move them\n` +
+            `to devDependencies or exclude them from this check by adding\n` +
+            `them to ${chalk.cyan(
+              `optimizeDeps.exclude`
+            )} in vue.config.js.\n` +
+            `\n- If you do intend to use them in the browser, you can try adding\n` +
+            `them to ${chalk.cyan(
+              `optimizeDeps.commonJSWhitelist`
+            )} in vue.config.js but they\n` +
+            `may fail to bundle or work properly. Consider choosing more modern\n` +
+            `alternatives that provide ES module build formts.`
+        )
+      )
+    }
     return
   }
 
@@ -172,17 +210,21 @@ export async function optimizeDeps(
     }, {} as Record<string, string>)
 
     const rollup = require('rollup') as typeof Rollup
+    const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
     const bundle = await rollup.rollup({
       input,
       external: preservedDeps,
       treeshake: { moduleSideEffects: 'no-external' },
       onwarn(warning, warn) {
-        if (warning.code !== 'CIRCULAR_DEPENDENCY') {
+        if (!warningIgnoreList.includes(warning.code!)) {
           warn(warning)
         }
       },
       ...config.rollupInputOptions,
-      plugins: await createBaseRollupPlugins(root, resolver, config)
+      plugins: [
+        ...(await createBaseRollupPlugins(root, resolver, config)),
+        createBuildCssPlugin(root, '/', 'assets')
+      ]
     })
 
     const { output } = await bundle.generate({

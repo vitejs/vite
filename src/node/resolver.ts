@@ -11,8 +11,8 @@ import { OPTIMIZE_CACHE_DIR } from './depOptimizer'
 import chalk from 'chalk'
 
 export interface Resolver {
-  requestToFile(publicPath: string, root: string): string | undefined
-  fileToRequest(filePath: string, root: string): string | undefined
+  requestToFile?(publicPath: string, root: string): string | undefined
+  fileToRequest?(filePath: string, root: string): string | undefined
   alias?(id: string): string | undefined
 }
 
@@ -81,7 +81,7 @@ export function createResolver(
     requestToFile: (publicPath) => {
       let resolved: string | undefined
       for (const r of resolvers) {
-        const filepath = r.requestToFile(publicPath, root)
+        const filepath = r.requestToFile && r.requestToFile(publicPath, root)
         if (filepath) {
           resolved = filepath
           break
@@ -95,7 +95,7 @@ export function createResolver(
     },
     fileToRequest: (filePath) => {
       for (const r of resolvers) {
-        const request = r.fileToRequest(filePath, root)
+        const request = r.fileToRequest && r.fileToRequest(filePath, root)
         if (request) return request
       }
       return defaultFileToRequest(filePath, root)
@@ -122,9 +122,9 @@ export function resolveBareModule(root: string, id: string, importer: string) {
   if (optimized) {
     return id
   }
-  const nodeEntry = resolveNodeModuleEntry(root, id)
-  if (nodeEntry) {
-    return nodeEntry
+  const pkgInfo = resolveNodeModuleEntry(root, id)
+  if (pkgInfo) {
+    return pkgInfo[0]
   }
   const deepMatch = id.match(deepImportRE)
   if (deepMatch) {
@@ -162,7 +162,7 @@ export function resolveOptimizedModule(
   }
 }
 
-const nodeModulesEntryMap = new Map()
+const nodeModulesEntryMap = new Map<string, [string, any]>()
 
 export function resolveNodeModuleEntry(root: string, id: string) {
   const cached = nodeModulesEntryMap.get(id)
@@ -195,8 +195,10 @@ export function resolveNodeModuleEntry(root: string, id: string) {
     }
     entryPoint = path.posix.join(id, '/', entryPoint!)
     debug(`(node_module entry) ${id} -> ${entryPoint}`)
-    nodeModulesEntryMap.set(id, entryPoint)
-    return entryPoint
+
+    const result: [string, any] = [entryPoint, pkg]
+    nodeModulesEntryMap.set(id, result)
+    return result
   }
 }
 
