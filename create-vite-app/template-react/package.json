@@ -10,6 +10,6 @@
     "@pika/react-dom": "^16.13.1"
   },
   "devDependencies": {
-    "vite": "^0.15.0"
+    "vite": "^0.15.4"
   }
 }
