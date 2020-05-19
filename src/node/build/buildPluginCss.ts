@@ -1,14 +1,10 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
-import {
-  isExternalUrl,
-  asyncReplace,
-  loadPostcssConfig,
-  parseWithQuery
-} from '../utils'
+import { loadPostcssConfig, parseWithQuery } from '../utils'
 import { Transform } from '../config'
 import hash_sum from 'hash-sum'
+import { rewriteCssUrls } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:build:css')
 
@@ -47,32 +43,27 @@ export const createBuildCssPlugin = (
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {
           const fileDir = path.dirname(id)
-          css = await asyncReplace(
-            css,
-            urlRE,
-            async ([matched, before, rawUrl, after]) => {
-              if (isExternalUrl(rawUrl) || rawUrl.startsWith('data:')) {
-                return matched
-              }
-              const file = path.join(fileDir, rawUrl)
-              const { fileName, content, url } = await resolveAsset(
-                file,
-                root,
-                publicBase,
-                assetsDir,
-                inlineLimit
-              )
-              if (fileName && content) {
-                assets.set(fileName, content)
-              }
-              debug(
-                `url(${rawUrl}) -> ${
-                  url.startsWith('data:') ? `base64 inlined` : `url(${url})`
-                }`
-              )
-              return `${before}${url}${after}`
+          css = await rewriteCssUrls(css, async (rawUrl) => {
+            const file = path.posix.isAbsolute(rawUrl)
+              ? path.join(root, rawUrl)
+              : path.join(fileDir, rawUrl)
+            const { fileName, content, url } = await resolveAsset(
+              file,
+              root,
+              publicBase,
+              assetsDir,
+              inlineLimit
+            )
+            if (fileName && content) {
+              assets.set(fileName, content)
             }
-          )
+            debug(
+              `url(${rawUrl}) -> ${
+                url.startsWith('data:') ? `base64 inlined` : `url(${url})`
+              }`
+            )
+            return url
+          })
         }
 
         // postcss

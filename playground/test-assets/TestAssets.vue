@@ -8,7 +8,7 @@
   </p>
   <p>
     Relative asset reference in template:
-    <img src="./testAssets.png" style="width: 30px;" />
+    <img src="../testAssets.png" style="width: 30px;" />
   </p>
   <p>
     Absolute asset reference in template:
@@ -17,13 +17,17 @@
   <div class="css-bg">
     <span style="background: #fff;">CSS background</span>
   </div>
+  <div class="css-import-bg">
+    <span style="background: #fff;">CSS background with relative paths</span>
+  </div>
   <div class="css-bg-data-uri">
     <span style="background: #fff;">CSS background with Data URI</span>
   </div>
 </template>
 
 <script>
-import filepath from './testAssets.png'
+import './testAssets.css'
+import filepath from '../testAssets.png'
 
 export default {
   data() {
@@ -40,8 +44,8 @@ export default {
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('fonts/Inter-Italic.woff2') format('woff2'),
-    url('fonts/Inter-Italic.woff') format('woff');
+  src: url('../fonts/Inter-Italic.woff2') format('woff2'),
+    url('/fonts/Inter-Italic.woff') format('woff');
 }
 
 body {
