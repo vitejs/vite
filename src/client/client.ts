@@ -131,7 +131,12 @@ socket.addEventListener('message', async ({ data }) => {
       }
       break
     case 'full-reload':
-      location.reload()
+      if (
+        location.pathname === path ||
+        (location.pathname === '/' && path === '/index.html')
+      ) {
+        location.reload()
+      }
   }
 })
 

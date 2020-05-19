@@ -14,6 +14,7 @@ import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
 import { serviceWorkerPlugin } from './serverPluginServiceWorker'
+import { htmlPlugin } from './serverPluginHtml'
 
 export { rewriteImports } from './serverPluginModuleRewrite'
 
@@ -64,6 +65,7 @@ export function createServer(config: ServerConfig = {}): Server {
     esbuildPlugin,
     jsonPlugin,
     cssPlugin,
+    htmlPlugin,
     assetPathPlugin,
     ...(transforms.length ? [createServerTransformPlugin(transforms)] : []),
     serveStaticPlugin
