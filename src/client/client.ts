@@ -206,7 +206,6 @@ async function updateModule(
 
   await Promise.all(
     Array.from(modulesToUpdate).map(async (dep) => {
-      debugger
       const disposer = jsDisposeMap.get(dep)
       if (disposer) await disposer()
       const newMod = await import(dep + `?t=${timestamp}`)
