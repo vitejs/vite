@@ -13,6 +13,7 @@ import { resolveFrom, lookupFile } from './utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
+import { createBuildCssPlugin } from './build/buildPluginCss'
 
 const KNOWN_IGNORE_LIST = new Set(['tailwindcss', '@tailwindcss/ui'])
 
@@ -204,17 +205,21 @@ export async function optimizeDeps(
     }, {} as Record<string, string>)
 
     const rollup = require('rollup') as typeof Rollup
+    const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
     const bundle = await rollup.rollup({
       input,
       external: preservedDeps,
       treeshake: { moduleSideEffects: 'no-external' },
       onwarn(warning, warn) {
-        if (warning.code !== 'CIRCULAR_DEPENDENCY') {
+        if (!warningIgnoreList.includes(warning.code!)) {
           warn(warning)
         }
       },
       ...config.rollupInputOptions,
-      plugins: await createBaseRollupPlugins(root, resolver, config)
+      plugins: [
+        ...(await createBaseRollupPlugins(root, resolver, config)),
+        createBuildCssPlugin(root, '/', 'assets')
+      ]
     })
 
     const { output } = await bundle.generate({
