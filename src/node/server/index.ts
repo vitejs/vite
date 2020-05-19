@@ -14,6 +14,7 @@ import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
 import { serviceWorkerPlugin } from './serverPluginServiceWorker'
+import { proxyPlugin } from './serverPluginProxy'
 
 export { rewriteImports } from './serverPluginModuleRewrite'
 
@@ -56,6 +57,7 @@ export function createServer(config: ServerConfig = {}): Server {
 
   const resolvedPlugins = [
     ...plugins,
+    proxyPlugin,
     serviceWorkerPlugin,
     hmrPlugin,
     moduleRewritePlugin,

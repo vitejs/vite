@@ -13,6 +13,7 @@ import Rollup, {
 } from 'rollup'
 import { Transform } from './transform'
 import { DepOptimizationOptions } from './depOptimizer'
+import { IKoaProxiesOptions } from 'koa-proxies'
 
 export { Resolver, Transform }
 
@@ -28,6 +29,16 @@ export interface SharedConfig {
   root?: string
   /**
    * Import alias. Can only be exact mapping, does not support wildcard syntax.
+   *
+   * Example `vite.config.js`:
+   * ``` js
+   * module.exports = {
+   *   alias: {
+   *     'react': '@pika/react',
+   *     'react-dom': '@pika/react-dom'
+   *   }
+   * }
+   * ```
    */
   alias?: Record<string, string>
   /**
@@ -41,19 +52,26 @@ export interface SharedConfig {
   resolvers?: Resolver[]
   /**
    * Configure dep optimization behavior.
+   *
+   * Example `vite.config.js`:
+   * ``` js
+   * module.exports = {
+   *   optimizeDeps: {
+   *     exclude: ['dep-a', 'dep-b']
+   *   }
+   * }
+   * ```
    */
   optimizeDeps?: DepOptimizationOptions
   /**
-   * Options to pass to @vue/compiler-dom
+   * Options to pass to `@vue/compiler-dom`
+   *
+   * https://github.com/vuejs/vue-next/blob/master/packages/compiler-core/src/options.ts
    */
   vueCompilerOptions?: CompilerOptions
   /**
    * Configure what to use for jsx factory and fragment.
-   * @default
-   * {
-   *   factory: 'React.createElement',
-   *   fragment: 'React.Fragment'
-   * }
+   * @default 'vue'
    */
   jsx?:
     | 'vue'
@@ -67,6 +85,32 @@ export interface SharedConfig {
 
 export interface ServerConfig extends SharedConfig {
   /**
+   * Configure custom proxy rules for the dev server. Uses
+   * [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses
+   * [`http-proxy`](https://github.com/http-party/node-http-proxy). Each key can
+   * be a path Full options
+   * [here](https://github.com/http-party/node-http-proxy#options).
+   *
+   * Example `vite.config.js`:
+   * ``` js
+   * module.exports = {
+   *   proxy: {
+   *     proxy: {
+   *       // string shorthand
+   *       '/foo': 'http://localhost:4567/foo',
+   *       // with options
+   *       '/api': {
+   *         target: 'http://jsonplaceholder.typicode.com',
+   *         changeOrigin: true,
+   *         rewrite: path => path.replace(/^\/api/, '')
+   *       }
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  proxy?: Record<string, string | IKoaProxiesOptions>
+  /**
    * Whether to use a Service Worker to cache served code. This can greatly
    * improve full page reload performance, but requires a Service Worker
    * update + reload on each server restart.
@@ -74,6 +118,10 @@ export interface ServerConfig extends SharedConfig {
    * @default false
    */
   serviceWorker?: boolean
+  /**
+   * Resolved server plugins.
+   * @internal
+   */
   plugins?: ServerPlugin[]
 }
 
@@ -121,16 +169,19 @@ export interface BuildConfig extends SharedConfig {
   // The following are API only and not documented in the CLI. -----------------
   /**
    * Will be passed to rollup.rollup()
+   *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupInputOptions?: RollupInputOptions
   /**
    * Will be passed to bundle.generate()
+   *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupOutputOptions?: RollupOutputOptions
   /**
    * Will be passed to rollup-plugin-vue
+   *
    * https://github.com/vuejs/rollup-plugin-vue/blob/next/src/index.ts
    */
   rollupPluginVueOptions?: Partial<RollupPluginVueOptions>
