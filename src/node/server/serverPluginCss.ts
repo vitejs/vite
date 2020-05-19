@@ -2,7 +2,12 @@ import { ServerPlugin } from '.'
 import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
 import { Context } from 'koa'
-import { isImportRequest, readBody, loadPostcssConfig } from '../utils'
+import {
+  isImportRequest,
+  readBody,
+  loadPostcssConfig,
+  replaceStyleUrl
+} from '../utils'
 import { srcImportMap } from './serverPluginVue'
 
 interface ProcessedEntry {
@@ -92,10 +97,11 @@ export const cssPlugin: ServerPlugin = ({
     const expectsModule = ctx.path.endsWith('.module.css')
 
     // postcss processing
-    if (postcssConfig || expectsModule) {
-      try {
+    try {
+      const postcss = require('postcss')
+      if (postcssConfig || expectsModule) {
         css = (
-          await require('postcss')([
+          await postcss([
             ...((postcssConfig && postcssConfig.plugins) || []),
             ...(expectsModule
               ? [
@@ -112,9 +118,10 @@ export const cssPlugin: ServerPlugin = ({
             from: resolver.requestToFile(ctx.path)
           })
         ).css
-      } catch (e) {
-        console.error(`[vite] error applying postcss transforms: `, e)
       }
+      css = replaceStyleUrl(css, ctx.path)
+    } catch (e) {
+      console.error(`[vite] error applying postcss transforms: `, e)
     }
 
     processedCSS.set(ctx.path, {

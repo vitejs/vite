@@ -31,6 +31,7 @@ import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import qs from 'querystring'
 import { seenUrls } from './serverPluginServeStatic'
+import { replaceStyleUrl } from '../utils'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -128,7 +129,9 @@ export const vuePlugin: ServerPlugin = ({
         ctx.body = `export default ${JSON.stringify(result.modules)}`
       } else {
         ctx.type = 'js'
-        ctx.body = `export default ${JSON.stringify(result.code)}`
+        ctx.body = `export default ${JSON.stringify(
+          replaceStyleUrl(result.code, ctx.path)
+        )}`
       }
       return etagCacheCheck(ctx)
     }
