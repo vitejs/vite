@@ -43,7 +43,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       await next()
     }
 
-    // speical handling for vue runtime in case it's not installed
+    // special handling for vue runtime in case it's not installed
     if (!vueResolved.isLocal && id in vueResolved) {
       return serve(id, (vueResolved as any)[id], 'non-local vue')
     }
