@@ -304,7 +304,7 @@ const myPlugin = ({
 }
 
 createServer({
-  plugins: [myPlugin]
+  configureServer: [myPlugin]
 }).listen(3000)
 ```
 
