@@ -170,6 +170,14 @@ export interface BuildConfig extends SharedConfig {
    */
   rollupInputOptions?: RollupInputOptions
   /**
+   * Will be passed to @rollup/plugin-commonjs
+   * https://github.com/rollup/plugins/tree/commonjs-v11.1.0/packages/commonjs#namedexports
+   * This config can be removed after master branch is released.
+   * But there are some issues blocking it:
+   * https://github.com/rollup/plugins/issues/392
+   */
+  rollupPluginCommonJSNamedExports?: Record<string, string[]>
+  /**
    * Will be passed to bundle.generate()
    *
    * https://rollupjs.org/guide/en/#big-list-of-options

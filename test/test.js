@@ -33,6 +33,12 @@ const getComputedColor = async (selectorOrEl) => {
   )
 }
 
+const navigateFinish = async () => {
+  return await page.waitForNavigation({
+    waitUntil: 'domcontentloaded'
+  })
+}
+
 beforeAll(async () => {
   try {
     await fs.remove(tempDir)
@@ -160,9 +166,15 @@ describe('vite', () => {
           'js module hot updated:  /testHmrManual.js'
         )
         expect(
-          browserLogs.slice(browserLogs.length - 4, browserLogs.length - 1)
+          browserLogs.slice(browserLogs.length - 7, browserLogs.length - 1)
         ).toEqual([
+          // dispose for both dep and self
+          `foo was: 2`,
           `(dep) foo was: 1`,
+          // self callbacks
+          `(self-accepting)1.foo is now: 2`,
+          `(self-accepting)2.foo is now: 2`,
+          // dep callbacks
           `(single dep) foo is now: 2`,
           `(multiple deps) foo is now: 2`
         ])
@@ -393,6 +405,27 @@ describe('vite', () => {
     })
 
     declareTests(false)
+
+    test('hmr (index.html full-reload)', async () => {
+      expect(await getText('title')).toMatch('Vite App')
+      // hmr
+      await updateFile('index.html', (content) =>
+        content.replace('Vite App', 'Vite App Test')
+      )
+      await navigateFinish()
+      await expectByPolling(() => getText('title'), 'Vite App Test')
+    })
+
+    test('hmr (html full-reload)', async () => {
+      await page.goto('http://localhost:3000/test.html')
+      expect(await getText('title')).toMatch('Vite App')
+      // hmr
+      await updateFile('test.html', (content) =>
+        content.replace('Vite App', 'Vite App Test')
+      )
+      await navigateFinish()
+      await expectByPolling(() => getText('title'), 'Vite App Test')
+    })
 
     // Assert that all edited files are reflected on page reload
     // i.e. service-worker cache is correctly busted
