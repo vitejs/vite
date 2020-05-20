@@ -7,7 +7,7 @@ import {
   moduleRE,
   fileToRequestMap
 } from './server/serverPluginModuleResolve'
-import { OPTIMIZE_CACHE_DIR } from './depOptimizer'
+import { resolveOptimizedCacheDir } from './depOptimizer'
 import chalk from 'chalk'
 
 export interface Resolver {
@@ -155,7 +155,9 @@ export function resolveOptimizedModule(
   }
 
   if (!id.endsWith('.js')) id += '.js'
-  const file = path.join(root, OPTIMIZE_CACHE_DIR, id)
+  const cacheDir = resolveOptimizedCacheDir(root)
+  if (!cacheDir) return
+  const file = path.join(cacheDir, id)
   if (fs.existsSync(file)) {
     viteOptimizedMap.set(id, file)
     return file
