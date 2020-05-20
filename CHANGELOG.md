@@ -1,3 +1,13 @@
+## [0.16.4](https://github.com/vuejs/vite/compare/v0.16.3...v0.16.4) (2020-05-20)
+
+
+### Features
+
+* **dev:** support dev https server ([#208](https://github.com/vuejs/vite/issues/208)) ([8b95954](https://github.com/vuejs/vite/commit/8b95954c87a04fae90be0a3e769f385a87182c8e))
+* css code splitting in async chunks ([09879b3](https://github.com/vuejs/vite/commit/09879b30f321ca70789fd8afc3cd95bf68947698)), closes [#190](https://github.com/vuejs/vite/issues/190)
+
+
+
 ## [0.16.3](https://github.com/vuejs/vite/compare/v0.16.1...v0.16.3) (2020-05-20)
 
 
