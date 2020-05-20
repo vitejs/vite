@@ -14,6 +14,7 @@ import Rollup, {
 import { Transform } from './transform'
 import { DepOptimizationOptions } from './depOptimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
+import { ServerOptions } from 'https'
 
 export { Resolver, Transform }
 
@@ -84,6 +85,13 @@ export interface SharedConfig {
 }
 
 export interface ServerConfig extends SharedConfig {
+  port?: number
+  open?: boolean
+  /**
+   * Configure https.
+   */
+  https?: boolean
+  httpsOption?: ServerOptions
   /**
    * Configure custom proxy rules for the dev server. Uses
    * [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses

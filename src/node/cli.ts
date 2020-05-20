@@ -108,15 +108,11 @@ async function resolveOptions() {
   return argv
 }
 
-async function runServe(
-  options: UserConfig & {
-    port?: number
-    open?: boolean
-  }
-) {
+async function runServe(options: UserConfig) {
   const server = require('../dist').createServer(options)
 
   let port = options.port || 3000
+  const protocol = options.https ? 'https' : 'http'
   server.on('error', (e: Error & { code?: string }) => {
     if (e.code === 'EADDRINUSE') {
       console.log(`Port ${port} is in use, trying another one...`)
@@ -146,7 +142,7 @@ async function runServe(
           }
         })
         .forEach(({ type, host }) => {
-          const url = `http://${host}:${chalk.bold(port)}/`
+          const url = `${protocol}://${host}:${chalk.bold(port)}/`
           console.log(`  > ${type} ${chalk.cyan(url)}`)
         })
     })
