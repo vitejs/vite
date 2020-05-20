@@ -131,7 +131,20 @@ socket.addEventListener('message', async ({ data }) => {
       }
       break
     case 'full-reload':
-      location.reload()
+      if (path.endsWith('.html')) {
+        // if html file is edited, only reload the page if the browser is
+        // currently on that page.
+        const pagePath = location.pathname
+        if (
+          pagePath === path ||
+          (pagePath.endsWith('/') && pagePath + 'index.html' === path)
+        ) {
+          location.reload()
+        }
+        return
+      } else {
+        location.reload()
+      }
   }
 })
 

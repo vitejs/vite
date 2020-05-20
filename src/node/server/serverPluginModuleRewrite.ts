@@ -1,6 +1,5 @@
 import { ServerPlugin } from '.'
 import path from 'path'
-import slash from 'slash'
 import LRUCache from 'lru-cache'
 import MagicString from 'magic-string'
 import {
@@ -45,63 +44,10 @@ export const moduleRewritePlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  // inject __DEV__ and process.env.NODE_ENV flags
-  // since some ESM builds expect these to be replaced by the bundler
-  const devInjectionCode =
-    `\n<script>\n` +
-    `window.__DEV__ = true\n` +
-    `window.__BASE__ = '/'\n` +
-    `window.process = { env: { NODE_ENV: 'development' }}\n` +
-    `</script>` +
-    `\n<script type="module" src="${hmrClientPublicPath}"></script>\n`
-
-  const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
-  const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
-
-  async function rewriteIndex(importer: string, html: string) {
-    await initLexer
-    return (
-      devInjectionCode +
-      html!.replace(scriptRE, (matched, openTag, script) => {
-        if (script) {
-          return `${openTag}${rewriteImports(
-            root,
-            script,
-            importer,
-            resolver
-          )}</script>`
-        } else {
-          const srcAttr = openTag.match(srcRE)
-          if (srcAttr) {
-            // register script as a import dep for hmr
-            const importee = cleanUrl(
-              slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
-            )
-            debugHmr(`        ${importer} imports ${importee}`)
-            ensureMapEntry(importerMap, importee).add(importer)
-          }
-          return matched
-        }
-      })
-    )
-  }
-
   app.use(async (ctx, next) => {
     await next()
 
     if (ctx.status === 304) {
-      return
-    }
-
-    if (ctx.path.endsWith('.html')) {
-      let html = await readBody(ctx.body)
-      if (html && rewriteCache.has(html)) {
-        debug(`${ctx.path}: serving from cache`)
-        ctx.body = rewriteCache.get(html)
-      } else if (html) {
-        ctx.body = await rewriteIndex(ctx.path, html)
-        rewriteCache.set(html, ctx.body)
-      }
       return
     }
 
