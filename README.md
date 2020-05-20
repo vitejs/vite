@@ -70,9 +70,9 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
 
 ### Hot Module Replacement
 
-- `*.vue` files come with HMR out of the box.
+- The `vue`, `react` and `preact` templates of `create-vite-app` all come with HMR out of the box.
 
-- For `*.js` files, a simple HMR API is provided:
+- For manual HMR, a dedicated API is provided:
 
   ```js
   import { foo } from './foo.js'
@@ -190,9 +190,9 @@ Note importing CSS / preprocessor files from `.js` files, and HMR from imported 
 
 ### JSX
 
-`.jsx` and `.tsx` files are also supported. JSX transpilation is also handled via `esbuild`. Note that there is currently no auto-HMR support for any JSX-based usage.
+`.jsx` and `.tsx` files are also supported. JSX transpilation is also handled via `esbuild`.
 
-The default JSX configuration works out of the box with Vue 3:
+The default JSX configuration works out of the box with Vue 3 (note there is currently no JSX-based HMR for Vue):
 
 ```jsx
 import { createApp } from 'vue'
@@ -363,13 +363,17 @@ Finally, because compilation is still done in Node, it can technically support a
 
 ### How is This Different from [Snowpack](https://www.snowpack.dev/)?
 
-Snowpack 2 is closer to Vite in scope - both offer bundle-free dev servers and can bundle the app for production. Some notable differences are:
+Both Snowpack v2 and Vite offer native ES module import based dev servers. Vite's dependency pre-optimization is also heavily inspired by Snowpack v1. Some notable differences are:
 
-- Specifically for Vue, Vite provides built-in HMR, while Snowpack simply reloads the page on any file edit. Since both solutions rely on native ES imports, the network waterfall of full page reloads can actually become the bottleneck in edit-to-feedback speed. HMR allows you to avoid reloading the page for a decent part of your development time.
+- Vite was created with HMR as a first-class concern. Vite provides out-of-the-box HMR integration in `create-vite-app` templates for Vue, React and Preact.
 
-- Vite is a bit more opinionated and aims to minimize the amount of configuration required. All the features listed above like TypeScript transpilation, CSS import, and PostCSS support work out of the box.
+  Full page reload speed of native ES import based dev servers suffer from the network waterfall when the project gets big, and HMR allows you to avoid reloading the page for a decent part of your development time.
 
-- While Vite can technically be used to develop apps with any framework, its main focus is to provide the best Vue development experience possible. 3rd party frameworks are supported, but not as the utmost priority.
+  Snowpack as of now doesn't support HMR but there is work being done in this area.
+
+- Vite is more opinionated and supports more opt-in features by default - for example, features listed above like TypeScript transpilation, CSS import, CSS modules and PostCSS support all work out of the box without the need for configuration.
+
+- Both solutions can also bundle the app for production, but Vite uses Rollup with custom config while Snowpack delegate it to Parcel. This isn't a significant difference, but worth being aware of if you intend to customize the build.
 
 ## Trivia
 
