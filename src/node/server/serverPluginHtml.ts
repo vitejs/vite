@@ -16,13 +16,7 @@ const debug = require('debug')('vite:rewrite')
 
 const rewriteHtmlPluginCache = new LRUCache({ max: 20 })
 
-export const htmlPlugin: ServerPlugin = ({
-  root,
-  app,
-  watcher,
-  resolver,
-  config
-}) => {
+export const htmlPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
   const devInjectionCode =
@@ -71,17 +65,16 @@ export const htmlPlugin: ServerPlugin = ({
       return
     }
 
-    const { path } = ctx
-
-    if (ctx.response.is('html')) {
-      if (rewriteHtmlPluginCache.has(path)) {
-        debug(`${path}: serving from cache`)
-        ctx.body = rewriteHtmlPluginCache.get(path)
+    if (ctx.response.is('html') && ctx.body) {
+      const importer = ctx.path
+      const html = await readBody(ctx.body)
+      if (rewriteHtmlPluginCache.has(html)) {
+        debug(`${ctx.path}: serving from cache`)
+        ctx.body = rewriteHtmlPluginCache.get(html)
       } else {
-        const html = await readBody(ctx.body)
         if (!html) return
-        ctx.body = await rewriteHtml(path, html)
-        rewriteHtmlPluginCache.set(path, ctx.body)
+        ctx.body = await rewriteHtml(importer, html)
+        rewriteHtmlPluginCache.set(html, ctx.body)
       }
       return
     }
@@ -90,7 +83,6 @@ export const htmlPlugin: ServerPlugin = ({
   watcher.on('change', (file) => {
     const path = resolver.fileToRequest(file)
     if (path.endsWith('.html')) {
-      rewriteHtmlPluginCache.del(path)
       debug(`${path}: cache busted`)
       watcher.send({
         type: 'full-reload',
