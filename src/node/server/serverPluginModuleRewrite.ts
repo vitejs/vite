@@ -41,8 +41,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
   root,
   app,
   watcher,
-  resolver,
-  config
+  resolver
 }) => {
   app.use(async (ctx, next) => {
     await next()
