@@ -76,9 +76,9 @@ export async function createBaseRollupPlugins(
 ): Promise<Plugin[]> {
   const { rollupInputOptions = {}, transforms = [] } = options
 
-  // TODO allow user to configure known named exports
-  // or upgrade @rollup/plugin-commonjs when the new version is out
-  const knownNamedExports: Record<string, string[]> = {}
+  const knownNamedExports: Record<string, string[]> = {
+    ...options.rollupPluginCommonJSNamedExports
+  }
   for (const id of PACKAGES_TO_AUTO_DETECT_EXPORTS) {
     knownNamedExports[id] =
       knownNamedExports[id] || detectExports(root, id) || []
