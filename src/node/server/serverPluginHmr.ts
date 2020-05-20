@@ -192,7 +192,6 @@ export const hmrPlugin: ServerPlugin = ({
 
     // check which part of the file changed
     let needReload = false
-    let needCssModuleReload = false
     let needRerender = false
 
     if (!isEqual(descriptor.script, prevDescriptor.script)) {
@@ -212,16 +211,6 @@ export const hmrPlugin: ServerPlugin = ({
       prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)
     ) {
       needReload = true
-    }
-
-    // css modules update causes a reload because the $style object is changed
-    // and it may be used in JS. It also needs to trigger a vue-style-update
-    // event so the client busts the sw cache.
-    if (
-      prevStyles.some((s) => s.module != null) ||
-      nextStyles.some((s) => s.module != null)
-    ) {
-      needCssModuleReload = true
     }
 
     // only need to update styles if not reloading, since reload forces
@@ -252,7 +241,7 @@ export const hmrPlugin: ServerPlugin = ({
       })
     })
 
-    if (needReload || needCssModuleReload) {
+    if (needReload) {
       send({
         type: 'vue-reload',
         path: publicPath,
