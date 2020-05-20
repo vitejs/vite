@@ -26,12 +26,12 @@ export const htmlPlugin: ServerPlugin = ({
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
   const devInjectionCode =
-    `\n<script>\n` +
+    `\n<script type="module">\n` +
+    `import "${hmrClientPublicPath}"\n` +
     `window.__DEV__ = true\n` +
     `window.__BASE__ = '/'\n` +
     `window.process = { env: { NODE_ENV: 'development' }}\n` +
-    `</script>` +
-    `\n<script type="module" src="${hmrClientPublicPath}"></script>\n`
+    `</script>\n`
 
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
@@ -73,7 +73,7 @@ export const htmlPlugin: ServerPlugin = ({
 
     const { path } = ctx
 
-    if (isHtml(path)) {
+    if (ctx.response.is('html')) {
       if (rewriteHtmlPluginCache.has(path)) {
         debug(`${path}: serving from cache`)
         ctx.body = rewriteHtmlPluginCache.get(path)
@@ -89,7 +89,7 @@ export const htmlPlugin: ServerPlugin = ({
 
   watcher.on('change', (file) => {
     const path = resolver.fileToRequest(file)
-    if (isHtml(path)) {
+    if (path.endsWith('.html')) {
       rewriteHtmlPluginCache.del(path)
       debug(`${path}: cache busted`)
       watcher.send({
@@ -100,8 +100,4 @@ export const htmlPlugin: ServerPlugin = ({
       console.log(chalk.green(`[vite] `) + ` ${path} page reloaded.`)
     }
   })
-}
-
-function isHtml(path: string): boolean {
-  return path.endsWith('.html')
 }
