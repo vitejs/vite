@@ -7,7 +7,7 @@ import {
   parse as parseImports,
   ImportSpecifier
 } from 'es-module-lexer'
-import { InternalResolver, resolveBareModule } from '../resolver'
+import { InternalResolver, resolveBareModule, jsSrcRE } from '../resolver'
 import {
   debugHmr,
   importerMap,
@@ -218,7 +218,6 @@ export function rewriteImports(
 }
 
 const bareImportRE = /^[^\/\.]/
-const jsSrcRE = /\.(?:(?:j|t)sx?|vue)$/
 
 export const resolveImport = (
   root: string,

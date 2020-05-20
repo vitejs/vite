@@ -115,6 +115,7 @@ export function createResolver(
   }
 }
 
+export const jsSrcRE = /\.(?:(?:j|t)sx?|vue)$|\.mjs$/
 const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 export function resolveBareModule(root: string, id: string, importer: string) {
@@ -126,18 +127,23 @@ export function resolveBareModule(root: string, id: string, importer: string) {
   if (pkgInfo) {
     return pkgInfo[0]
   }
-  const deepMatch = id.match(deepImportRE)
-  if (deepMatch) {
-    const depId = deepMatch[1] || deepMatch[2]
-    if (resolveOptimizedModule(root, depId)) {
-      console.error(
-        chalk.yellow(
-          `\n[vite] Avoid deep import "${id}" since "${depId}" is a ` +
-            `pre-optimized dependency.\n` +
-            `Prefer importing from the module directly.\n` +
-            `Importer: ${importer}\n`
+
+  // check and warn deep imports on optimized modules
+  const ext = path.extname(id)
+  if (!ext || jsSrcRE.test(ext)) {
+    const deepMatch = id.match(deepImportRE)
+    if (deepMatch) {
+      const depId = deepMatch[1] || deepMatch[2]
+      if (resolveOptimizedModule(root, depId)) {
+        console.error(
+          chalk.yellow(
+            `\n[vite] Avoid deep import "${id}" since "${depId}" is a ` +
+              `pre-optimized dependency.\n` +
+              `Prefer importing from the module directly.\n` +
+              `Importer: ${importer}\n`
+          )
         )
-      )
+      }
     }
   }
   return id
