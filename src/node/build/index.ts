@@ -224,7 +224,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         root,
         publicBasePath,
         assetsDir,
-        !!minify,
+        minify,
         assetsInlineLimit,
         transforms
       ),
@@ -249,7 +249,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     format: 'es',
     sourcemap,
     entryFileNames: `[name].[hash].js`,
-    chunkFileNames: `common.[hash].js`,
+    chunkFileNames: `[name].[hash].js`,
     ...rollupOutputOptions
   })
 

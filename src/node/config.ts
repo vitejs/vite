@@ -146,6 +146,13 @@ export interface BuildConfig extends SharedConfig {
    */
   assetsInlineLimit?: number
   /**
+   * Whether to code-split CSS. When enabled, CSS in async chunks will be
+   * inlined as strings in the chunk and inserted via dynamically created
+   * style tags when the chunk is loaded.
+   * @default true
+   */
+  cssCodeSplit?: boolean
+  /**
    * Whether to generate sourcemap
    * @default false
    */

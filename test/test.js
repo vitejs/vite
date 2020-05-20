@@ -347,6 +347,7 @@ describe('vite', () => {
 
     test('async component', async () => {
       await expectByPolling(() => getText('.async'), 'should show up')
+      expect(await getComputedColor('.async')).toBe('rgb(139, 69, 19)')
     })
   }
 
@@ -378,6 +379,29 @@ describe('vite', () => {
       })
 
       declareTests(true)
+    })
+
+    test('css codesplit in async chunks', async () => {
+      const colorToMatch = /#8B4513/i // from TestAsync.vue
+
+      const files = await fs.readdir(path.join(tempDir, 'dist/_assets'))
+      const cssFile = files.find((f) => f.endsWith('.css'))
+      const css = await fs.readFile(
+        path.join(tempDir, 'dist/_assets', cssFile),
+        'utf-8'
+      )
+      // should be extracted from the main css file
+      expect(css).not.toMatch(colorToMatch)
+      // should be inside the split chunk file
+      const asyncChunk = files.find(
+        (f) => f.startsWith('TestAsync') && f.endsWith('.js')
+      )
+      const code = await fs.readFile(
+        path.join(tempDir, 'dist/_assets', asyncChunk),
+        'utf-8'
+      )
+      // should be inside the async chunk
+      expect(code).toMatch(colorToMatch)
     })
   })
 
