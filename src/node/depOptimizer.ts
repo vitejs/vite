@@ -66,11 +66,8 @@ export async function optimizeDeps(
     log(`package.json not found. Skipping.`)
     return
   }
-  const cacheDir = resolveOptimizedCacheDir(root)
-  if (!cacheDir) {
-    log(`Optimized cache dir not found. Skipping.`)
-    return
-  }
+
+  const cacheDir = resolveOptimizedCacheDir(root, pkgPath)!
   const hashPath = path.join(cacheDir, 'hash')
   const depHash = getDepHash(root, config.__path)
 
@@ -298,15 +295,19 @@ export function getDepHash(
   return createHash('sha1').update(content).digest('base64')
 }
 
-const resolveOptimizedCacheDirCache = new Map<string, string | null>()
-export function resolveOptimizedCacheDir(root: string): string | null {
-  const cached = resolveOptimizedCacheDirCache.get(root)
+const cacheDirCache = new Map<string, string | null>()
+
+export function resolveOptimizedCacheDir(
+  root: string,
+  pkgPath?: string
+): string | null {
+  const cached = cacheDirCache.get(root)
   if (cached !== undefined) return cached
-  const pkgPath = lookupFile(root, [`package.json`], true /* pathOnly */)
+  pkgPath = pkgPath || lookupFile(root, [`package.json`], true /* pathOnly */)
   if (!pkgPath) {
     return null
   }
   const cacheDir = path.join(path.dirname(pkgPath), OPTIMIZE_CACHE_DIR)
-  resolveOptimizedCacheDirCache.set(root, cacheDir)
+  cacheDirCache.set(root, cacheDir)
   return cacheDir
 }

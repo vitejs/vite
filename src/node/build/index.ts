@@ -77,7 +77,7 @@ export async function createBaseRollupPlugins(
   const { rollupInputOptions = {}, transforms = [] } = options
 
   const knownNamedExports: Record<string, string[]> = {
-    ...options.rollupCommonjsPluginNamedExports
+    ...options.rollupPluginCommonJSNamedExports
   }
   for (const id of PACKAGES_TO_AUTO_DETECT_EXPORTS) {
     knownNamedExports[id] =
