@@ -1,4 +1,5 @@
-import http, { Server } from 'http'
+import { RequestListener, Server } from 'http'
+import { ServerOptions } from 'https'
 import Koa from 'koa'
 import chokidar from 'chokidar'
 import { createResolver, InternalResolver } from '../resolver'
@@ -16,7 +17,9 @@ import { createServerTransformPlugin } from '../transform'
 import { serviceWorkerPlugin } from './serverPluginServiceWorker'
 import { htmlPlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
-
+import { createCertificate } from '../utils/createCertificate'
+import fs from 'fs-extra'
+import path from 'path'
 export { rewriteImports } from './serverPluginModuleRewrite'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
@@ -41,7 +44,7 @@ export function createServer(config: ServerConfig = {}): Server {
   } = config
 
   const app = new Koa()
-  const server = http.createServer(app.callback())
+  const server = resolveServer(config, app.callback())
   const watcher = chokidar.watch(root, {
     ignored: [/node_modules/]
   }) as HMRWatcher
@@ -83,4 +86,43 @@ export function createServer(config: ServerConfig = {}): Server {
   }) as any
 
   return server
+}
+
+function resolveServer(
+  { https = false, httpsOption = {} }: ServerConfig,
+  requestListener: RequestListener
+) {
+  if (https) {
+    return require('https').createServer(
+      resolveHttpsConfig(httpsOption),
+      requestListener
+    )
+  } else {
+    return require('http').createServer(requestListener)
+  }
+}
+
+function resolveHttpsConfig(httpsOption: ServerOptions) {
+  const { ca, cert, key, pfx } = httpsOption
+  Object.assign(httpsOption, {
+    ca: readFileIfExits(ca),
+    cert: readFileIfExits(cert),
+    key: readFileIfExits(key),
+    pfx: readFileIfExits(pfx)
+  })
+  if (!httpsOption.key || !httpsOption.cert) {
+    httpsOption.cert = httpsOption.key = createCertificate()
+  }
+  return httpsOption
+}
+
+function readFileIfExits(value?: string | Buffer | any) {
+  if (value && !Buffer.isBuffer(value)) {
+    try {
+      return fs.readFileSync(path.resolve(value as string))
+    } catch (e) {
+      return value
+    }
+  }
+  return value
 }
