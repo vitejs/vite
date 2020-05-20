@@ -180,7 +180,7 @@ export function rewriteImports(
       importeeMap.set(importer, currentImportees)
 
       for (let i = 0; i < imports.length; i++) {
-        const { s: start, e: end, d: dynamicIndex } = imports[i]
+        const { s: start, e: end, ss, se, d: dynamicIndex } = imports[i]
         let id = source.substring(start, end)
         let hasLiteralDynamicId = false
         if (dynamicIndex >= 0) {
@@ -199,7 +199,10 @@ export function rewriteImports(
           let resolved
           if (id === hmrClientId) {
             resolved = hmrClientPublicPath
-            if (!/.vue$|.vue\?type=/.test(importer)) {
+            if (
+              /\bhot\b/.test(source.substring(ss, se)) &&
+              !/.vue$|.vue\?type=/.test(importer)
+            ) {
               // the user explicit imports the HMR API in a js file
               // making the module hot.
               rewriteFileWithHMR(root, source, importer, resolver, s)
