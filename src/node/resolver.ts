@@ -154,7 +154,6 @@ export function resolveOptimizedModule(
     return cached
   }
 
-  if (!id.endsWith('.js')) id += '.js'
   const cacheDir = resolveOptimizedCacheDir(root)
   if (!cacheDir) return
   const file = path.join(cacheDir, id)

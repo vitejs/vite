@@ -231,6 +231,7 @@ export async function optimizeDeps(
       ...config.rollupOutputOptions,
       format: 'es',
       exports: 'named',
+      entryFileNames: '[name]',
       chunkFileNames: 'common/[name]-[hash].js'
     })
 

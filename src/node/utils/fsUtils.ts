@@ -29,7 +29,7 @@ export async function cachedRead(
   const cached = moduleReadCache.get(file)
   if (ctx) {
     ctx.set('Cache-Control', 'no-cache')
-    ctx.type = path.basename(file)
+    ctx.type = path.extname(file) || 'js'
   }
   if (cached && cached.lastModified === lastModified) {
     if (ctx) {
