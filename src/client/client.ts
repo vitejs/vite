@@ -269,9 +269,9 @@ export const hot = {
   },
 
   on(event: string, cb: () => void) {
-    const exisitng = customUpdateMap.get(event) || []
-    exisitng.push(cb)
-    customUpdateMap.set(event, exisitng)
+    const existing = customUpdateMap.get(event) || []
+    existing.push(cb)
+    customUpdateMap.set(event, existing)
   }
 }
 

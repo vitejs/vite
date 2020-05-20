@@ -137,7 +137,7 @@ const compileHtml = async (
   let js = ''
   const s = new MagicString(html)
   const assetUrls: AttributeNode[] = []
-  const viteHtmlTrasnfrom: NodeTransform = (node) => {
+  const viteHtmlTransfrom: NodeTransform = (node) => {
     if (node.type === NodeTypes.ELEMENT) {
       if (node.tag === 'script') {
         let shouldRemove = true
@@ -189,7 +189,7 @@ const compileHtml = async (
   }
 
   transform(ast, {
-    nodeTransforms: [viteHtmlTrasnfrom]
+    nodeTransforms: [viteHtmlTransfrom]
   })
 
   // for each encountered asset url, rewrite original html so that it

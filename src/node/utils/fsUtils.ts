@@ -19,7 +19,7 @@ const moduleReadCache = new LRUCache<string, CacheEntry>({
 
 /**
  * Read a file with in-memory cache.
- * Also sets approrpriate headers and body on the Koa context.
+ * Also sets appropriate headers and body on the Koa context.
  */
 export async function cachedRead(
   ctx: Context | null,
