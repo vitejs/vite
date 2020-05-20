@@ -191,8 +191,7 @@ async function updateModule(
     for (const { deps } of mod.callbacks) {
       if (Array.isArray(deps)) {
         deps.forEach((dep) => modulesToUpdate.add(dep))
-      } else if (deps !== id) {
-        // exclude self accept calls
+      } else {
         modulesToUpdate.add(deps)
       }
     }
@@ -211,7 +210,6 @@ async function updateModule(
 
   await Promise.all(
     Array.from(modulesToUpdate).map(async (dep) => {
-      debugger
       const disposer = jsDisposeMap.get(dep)
       if (disposer) await disposer()
       const newMod = await import(dep + `?t=${timestamp}`)

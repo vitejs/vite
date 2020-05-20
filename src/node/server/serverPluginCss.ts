@@ -4,6 +4,7 @@ import hash_sum from 'hash-sum'
 import { Context } from 'koa'
 import { isImportRequest, readBody, loadPostcssConfig } from '../utils'
 import { srcImportMap } from './serverPluginVue'
+import { rewriteCssUrls } from '../utils/cssUtils'
 
 interface ProcessedEntry {
   css: string
@@ -116,6 +117,8 @@ export const cssPlugin: ServerPlugin = ({
         console.error(`[vite] error applying postcss transforms: `, e)
       }
     }
+
+    css = await rewriteCssUrls(css, ctx.path)
 
     processedCSS.set(ctx.path, {
       css,

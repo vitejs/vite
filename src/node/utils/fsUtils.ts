@@ -85,15 +85,19 @@ export async function readBody(
   }
 }
 
-export function lookupFile(dir: string, formats: string[]): string | undefined {
+export function lookupFile(
+  dir: string,
+  formats: string[],
+  pathOnly = false
+): string | undefined {
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (fs.existsSync(fullPath)) {
-      return fs.readFileSync(fullPath, 'utf-8')
+      return pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
     }
   }
   const parentDir = path.dirname(dir)
   if (parentDir !== dir) {
-    return lookupFile(parentDir, formats)
+    return lookupFile(parentDir, formats, pathOnly)
   }
 }

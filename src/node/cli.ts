@@ -10,6 +10,7 @@ if (argv.debug) {
 }
 
 import os from 'os'
+import path from 'path'
 import chalk from 'chalk'
 import { UserConfig, resolveConfig } from './config'
 
@@ -94,7 +95,7 @@ async function resolveOptions() {
   // normalize root
   // assumes all commands are in the form of `vite [command] [root]`
   if (argv._[1] && !argv.root) {
-    argv.root = argv._[1]
+    argv.root = path.isAbsolute(argv._[1]) ? argv._[1] : path.resolve(argv._[1])
   }
 
   const userConfig = await resolveConfig(argv.config || argv.c)

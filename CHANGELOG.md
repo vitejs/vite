@@ -1,3 +1,57 @@
+## [0.16.1](https://github.com/vuejs/vite/compare/v0.16.0...v0.16.1) (2020-05-20)
+
+
+### Bug Fixes
+
+* **hmr:** should fire self accept callback on hmr propagation ([c553de2](https://github.com/vuejs/vite/commit/c553de26234e64ed3cdccd216630a6b5cd49f8f8))
+
+
+### Features
+
+* warn against conditional hot.accept() calls ([feb3b6d](https://github.com/vuejs/vite/commit/feb3b6d29381c80e6e24a7f629941d1401401cf5))
+
+
+### Performance Improvements
+
+* only perform hmr rewrite if import from client has hot ([02e2d94](https://github.com/vuejs/vite/commit/02e2d94bb77b93103987f6940ca3b11ae30d65b4))
+
+
+
+# [0.16.0](https://github.com/vuejs/vite/compare/v0.15.5...v0.16.0) (2020-05-19)
+
+
+### Bug Fixes
+
+* apply user transforms after esbuild ([5b75f56](https://github.com/vuejs/vite/commit/5b75f567a5c2e17d48fde0e2df6666f456eccc58))
+* fix configureServer option ([45fde5b](https://github.com/vuejs/vite/commit/45fde5ba3171c7788535a67a5abc0b171b38e3f1)), closes [#188](https://github.com/vuejs/vite/issues/188)
+* fix css relative url during dev ([e483fc6](https://github.com/vuejs/vite/commit/e483fc67a16392d15a56001da9a795473d495b8d))
+* fix dep optimize cache path when serving nested directory ([86e9fb5](https://github.com/vuejs/vite/commit/86e9fb598ffb702074f8b6153493ca5c6597f671))
+* only append ?import when request has extension ([6683bb8](https://github.com/vuejs/vite/commit/6683bb8fb819c6f4935b40f25c2a377037e5ec7d))
+
+
+### Features
+
+* build-in dev server proxy support ([dafaccb](https://github.com/vuejs/vite/commit/dafaccbe291f8cc1db9716827366ddd418637f40)), closes [#147](https://github.com/vuejs/vite/issues/147)
+* pass isBuild, path & query to transform functions ([ce4032b](https://github.com/vuejs/vite/commit/ce4032b4e12adf2dd4c5480b596d532e0f27d086))
+* support arg-less hot.accept() call ([ef4fc42](https://github.com/vuejs/vite/commit/ef4fc42291d9ddb34400da1c93680edfb965530d))
+
+
+
+## [0.15.6](https://github.com/vuejs/vite/compare/v0.15.5...v0.15.6) (2020-05-19)
+
+
+### Bug Fixes
+
+* fix configureServer option ([45fde5b](https://github.com/vuejs/vite/commit/45fde5ba3171c7788535a67a5abc0b171b38e3f1)), closes [#188](https://github.com/vuejs/vite/issues/188)
+* fix css relative url during dev ([e483fc6](https://github.com/vuejs/vite/commit/e483fc67a16392d15a56001da9a795473d495b8d))
+
+
+### Features
+
+* build-in dev server proxy support ([dafaccb](https://github.com/vuejs/vite/commit/dafaccbe291f8cc1db9716827366ddd418637f40)), closes [#147](https://github.com/vuejs/vite/issues/147)
+
+
+
 ## [0.15.5](https://github.com/vuejs/vite/compare/v0.15.4...v0.15.5) (2020-05-19)
 
 

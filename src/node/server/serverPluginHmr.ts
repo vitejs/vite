@@ -12,13 +12,13 @@
 //    that it accepts hot updates (by importing from the `/vite/hmr` special module)
 // 5. If any parent chain exhausts without ever running into an HMR boundary,
 //    it's considered a "dead end". This causes a full page reload.
-// 6. If a `.vue` boundary is encountered, we add it to the `vueImports` Set.
+// 6. If a `.vue` boundary is encountered, we add it to the `vueBoundaries` Set.
 // 7. If a `.js` boundary is encountered, we check if the boundary's current
 //    child importer is in the accepted list of the boundary (see additional
 //    explanation below). If yes, record current child importer in the
-//    `jsImporters` Set.
+//    `jsBoundaries` Set.
 // 8. If the graph walk finished without running into dead ends, send the
-//    client to update all `jsImporters` and `vueImporters`.
+//    client to update all `jsBoundaries` and `vueBoundaries`.
 
 // How do we get a js HMR boundary's accepted list on the server
 // 1. During the import rewriting, if `/vite/hmr` import is present in a js file,
@@ -416,18 +416,6 @@ export function rewriteFileWithHMR(
   resolver: InternalResolver,
   s: MagicString
 ) {
-  const ast = parse(source, {
-    sourceType: 'module',
-    plugins: [
-      // by default we enable proposals slated for ES2020.
-      // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
-      // this should be kept in async with @vue/compiler-core's support range
-      'bigInt',
-      'optionalChaining',
-      'nullishCoalescingOperator'
-    ]
-  }).program.body
-
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
     const depPublicPath = resolveImport(root, importer, e.value, resolver)
@@ -437,7 +425,11 @@ export function rewriteFileWithHMR(
     s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))
   }
 
-  const checkHotCall = (node: Expression, isTopLevel = false) => {
+  const checkHotCall = (
+    node: Expression,
+    isTopLevel: boolean,
+    isDevBlock: boolean
+  ) => {
     if (
       node.type === 'CallExpression' &&
       node.callee.type === 'MemberExpression' &&
@@ -447,41 +439,57 @@ export function rewriteFileWithHMR(
       if (isTopLevel) {
         console.warn(
           chalk.yellow(
-            `[vite warn] HMR API calls in ${importer} should be wrapped in ` +
-              `\`if (__DEV__) {}\` conditional blocks so that they can be ` +
-              `tree-shaken in production.`
+            `[vite warn] HMR syntax error in ${importer}: hot.accept() should be` +
+              `wrapped in \`if (__DEV__) {}\` conditional blocks so that they ` +
+              `can be tree-shaken in production.`
           )
           // TODO generateCodeFrame
         )
       }
 
       if (node.callee.property.name === 'accept') {
+        if (!isDevBlock) {
+          console.error(
+            chalk.yellow(
+              `[vite] HMR syntax error in ${importer}: hot.accept() cannot be ` +
+                `conditional except for __DEV__ check because the server relies ` +
+                `on static analysis to construct the HMR graph.`
+            )
+          )
+        }
         const args = node.arguments
+        const appendPoint = args.length ? args[0].start! : node.end! - 1
         // inject the imports's own path so it becomes
         // hot.accept('/foo.js', ['./bar.js'], () => {})
-        s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+        s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
         // register the accepted deps
-        if (args[0].type === 'ArrayExpression') {
-          args[0].elements.forEach((e) => {
+        const accepted = args[0]
+        if (accepted && accepted.type === 'ArrayExpression') {
+          accepted.elements.forEach((e) => {
             if (e && e.type !== 'StringLiteral') {
               console.error(
-                `[vite] HMR syntax error in ${importer}: hot.accept() deps list can only contain string literals.`
+                chalk.yellow(
+                  `[vite] HMR syntax error in ${importer}: hot.accept() deps ` +
+                    `list can only contain string literals.`
+                )
               )
             } else if (e) {
               registerDep(e)
             }
           })
-        } else if (args[0].type === 'StringLiteral') {
-          registerDep(args[0])
-        } else if (args[0].type.endsWith('FunctionExpression')) {
+        } else if (accepted && accepted.type === 'StringLiteral') {
+          registerDep(accepted)
+        } else if (!accepted || accepted.type.endsWith('FunctionExpression')) {
           // self accepting, rewrite to inject itself
           // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
-          s.appendLeft(args[0].start!, JSON.stringify(importer) + ', ')
+          s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
           ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
         } else {
           console.error(
-            `[vite] HMR syntax error in ${importer}: ` +
-              `hot.accept() expects a dep string, an array of deps, or a callback.`
+            chalk.yellow(
+              `[vite] HMR syntax error in ${importer}: ` +
+                `hot.accept() expects a dep string, an array of deps, or a callback.`
+            )
           )
         }
       }
@@ -493,10 +501,14 @@ export function rewriteFileWithHMR(
     }
   }
 
-  const checkStatements = (node: Statement, isTopLevel = false) => {
+  const checkStatements = (
+    node: Statement,
+    isTopLevel: boolean,
+    isDevBlock: boolean
+  ) => {
     if (node.type === 'ExpressionStatement') {
       // top level hot.accept() call
-      checkHotCall(node.expression, isTopLevel)
+      checkHotCall(node.expression, isTopLevel, isDevBlock)
       // __DEV__ && hot.accept()
       if (
         node.expression.type === 'LogicalExpression' &&
@@ -504,23 +516,36 @@ export function rewriteFileWithHMR(
         node.expression.left.type === 'Identifier' &&
         node.expression.left.name === '__DEV__'
       ) {
-        checkHotCall(node.expression.right)
+        checkHotCall(node.expression.right, false, isDevBlock)
       }
     }
     // if (__DEV__) ...
-    if (
-      node.type === 'IfStatement' &&
-      node.test.type === 'Identifier' &&
-      node.test.name === '__DEV__'
-    ) {
+    if (node.type === 'IfStatement') {
+      const isDevBlock =
+        node.test.type === 'Identifier' && node.test.name === '__DEV__'
       if (node.consequent.type === 'BlockStatement') {
-        node.consequent.body.forEach((s) => checkStatements(s))
+        node.consequent.body.forEach((s) =>
+          checkStatements(s, false, isDevBlock)
+        )
       }
       if (node.consequent.type === 'ExpressionStatement') {
-        checkHotCall(node.consequent.expression)
+        checkHotCall(node.consequent.expression, false, isDevBlock)
       }
     }
   }
 
-  ast.forEach((s) => checkStatements(s, true))
+  const ast = parse(source, {
+    sourceType: 'module',
+    plugins: [
+      'importMeta',
+      // by default we enable proposals slated for ES2020.
+      // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
+      // this should be kept in async with @vue/compiler-core's support range
+      'bigInt',
+      'optionalChaining',
+      'nullishCoalescingOperator'
+    ]
+  }).program.body
+
+  ast.forEach((s) => checkStatements(s, true, false))
 }
