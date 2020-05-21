@@ -28,7 +28,6 @@ export const createBuildCssPlugin = (
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
-  transforms = transforms.filter((t) => t.as === 'css')
 
   return {
     name: 'vite:css',
