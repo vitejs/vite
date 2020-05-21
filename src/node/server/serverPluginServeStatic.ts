@@ -44,7 +44,7 @@ export const serveStaticPlugin: ServerPlugin = ({
   app.use(require('koa-static')(root))
 
   // history API fallback
-  app.use((ctx, next) => {
+  app.use(async (ctx, next) => {
     if (ctx.status !== 404) {
       return next()
     }
@@ -71,6 +71,12 @@ export const serveStaticPlugin: ServerPlugin = ({
     }
 
     debug(`redirecting ${ctx.url} to /index.html`)
-    return send(ctx, `/index.html`)
+    try {
+      await send(ctx, `/index.html`)
+    } catch (e) {
+      ctx.url = '/index.html'
+      ctx.status = 404
+      return next()
+    }
   })
 }
