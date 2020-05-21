@@ -202,7 +202,11 @@ export async function optimizeDeps(
   try {
     // Non qualified deps are marked as externals, since they will be preserved
     // and resolved from their original node_modules locations.
-    const preservedDeps = deps.filter((id) => !qualifiedDeps.includes(id))
+    const preservedDeps = deps
+      .filter((id) => !qualifiedDeps.includes(id))
+      // make sure aliased deps are external
+      // https://github.com/vitejs/vite-plugin-react/issues/4
+      .map((id) => resolver.alias(id) || id)
 
     const input = qualifiedDeps.reduce((entries, name) => {
       entries[name] = name
