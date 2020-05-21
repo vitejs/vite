@@ -1,3 +1,14 @@
+## [0.16.6](https://github.com/vuejs/vite/compare/v0.16.4...v0.16.6) (2020-05-21)
+
+
+### Bug Fixes
+
+* make sure aliased deps are externaled correctly ([#218](https://github.com/vuejs/vite/issues/218)) ([a1f5488](https://github.com/vuejs/vite/commit/a1f54889a95a24f89804b0fbdfc876cde5615c98))
+* redirect url in case index.html is not present ([8a9710b](https://github.com/vuejs/vite/commit/8a9710b1a90cadfa69889cf00c224ea41ca13a9f))
+* respect cssCodeSplit option ([4a0b6cc](https://github.com/vuejs/vite/commit/4a0b6cc573840f3f74ac4f1b59bc957f1c626a92))
+
+
+
 ## [0.16.5](https://github.com/vuejs/vite/compare/v0.16.4...v0.16.5) (2020-05-21)
 
 
