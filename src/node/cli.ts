@@ -108,12 +108,7 @@ async function resolveOptions() {
   return argv
 }
 
-async function runServe(
-  options: UserConfig & {
-    port?: number
-    open?: boolean
-  }
-) {
+async function runServe(options: UserConfig) {
   const server = require('../dist').createServer(options)
 
   let port = options.port || 3000
