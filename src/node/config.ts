@@ -85,6 +85,16 @@ export interface SharedConfig {
 
 export interface ServerConfig extends SharedConfig {
   /**
+   * Vite server port to listen on
+   * @default 3000
+   */
+  port?: number
+  /**
+   * Auto open browser
+   * @default true
+   */
+  open?: boolean
+  /**
    * Configure custom proxy rules for the dev server. Uses
    * [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses
    * [`http-proxy`](https://github.com/http-party/node-http-proxy). Each key can
