@@ -16,7 +16,12 @@ const debug = require('debug')('vite:rewrite')
 
 const rewriteHtmlPluginCache = new LRUCache({ max: 20 })
 
-export const htmlPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
+export const htmlRewritePlugin: ServerPlugin = ({
+  root,
+  app,
+  watcher,
+  resolver
+}) => {
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
   const devInjectionCode =
