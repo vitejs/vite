@@ -1,3 +1,65 @@
+## [0.16.4](https://github.com/vuejs/vite/compare/v0.16.3...v0.16.4) (2020-05-20)
+
+
+### Features
+
+* **dev:** support dev https server ([#208](https://github.com/vuejs/vite/issues/208)) ([8b95954](https://github.com/vuejs/vite/commit/8b95954c87a04fae90be0a3e769f385a87182c8e))
+* css code splitting in async chunks ([09879b3](https://github.com/vuejs/vite/commit/09879b30f321ca70789fd8afc3cd95bf68947698)), closes [#190](https://github.com/vuejs/vite/issues/190)
+
+
+
+## [0.16.3](https://github.com/vuejs/vite/compare/v0.16.1...v0.16.3) (2020-05-20)
+
+
+### Bug Fixes
+
+* adjust history fallback ([ba614ef](https://github.com/vuejs/vite/commit/ba614ef59b576c2ea34baa580adb59d6d16625e8)), closes [#193](https://github.com/vuejs/vite/issues/193)
+* fix cross import between optimized modules and avoid duplication ([eedc985](https://github.com/vuejs/vite/commit/eedc985b1f7108373a762b9d1fc94842fd40c17f)), closes [#210](https://github.com/vuejs/vite/issues/210)
+* fix external url check for protocol-less urls ([91f829d](https://github.com/vuejs/vite/commit/91f829dc1bfb5c1ed8411751b31f17c2322ed0a7))
+* html rewrite cache should be based on content ([3752874](https://github.com/vuejs/vite/commit/3752874481ceef6188d5783d21e1fbc5e150a932))
+* only warn deep imports on js src types ([ada8886](https://github.com/vuejs/vite/commit/ada8886e36578c7f43b7cd12bacd65e5a7c4c6e4))
+
+
+### Features
+
+* allow user to configure known named exports ([#206](https://github.com/vuejs/vite/issues/206)) ([25852fa](https://github.com/vuejs/vite/commit/25852fa8f7087ed50764a4a955a9397b930c1f87))
+
+
+
+## [0.16.2](https://github.com/vuejs/vite/compare/v0.16.1...v0.16.2) (2020-05-20)
+
+
+### Bug Fixes
+
+* adjust history fallback ([ba614ef](https://github.com/vuejs/vite/commit/ba614ef59b576c2ea34baa580adb59d6d16625e8)), closes [#193](https://github.com/vuejs/vite/issues/193)
+* html rewrite cache should be based on content ([3752874](https://github.com/vuejs/vite/commit/3752874481ceef6188d5783d21e1fbc5e150a932))
+
+
+### Features
+
+* allow user to configure known named exports ([#206](https://github.com/vuejs/vite/issues/206)) ([25852fa](https://github.com/vuejs/vite/commit/25852fa8f7087ed50764a4a955a9397b930c1f87))
+
+
+
+## [0.16.1](https://github.com/vuejs/vite/compare/v0.16.0...v0.16.1) (2020-05-20)
+
+
+### Bug Fixes
+
+* **hmr:** should fire self accept callback on hmr propagation ([c553de2](https://github.com/vuejs/vite/commit/c553de26234e64ed3cdccd216630a6b5cd49f8f8))
+
+
+### Features
+
+* warn against conditional hot.accept() calls ([feb3b6d](https://github.com/vuejs/vite/commit/feb3b6d29381c80e6e24a7f629941d1401401cf5))
+
+
+### Performance Improvements
+
+* only perform hmr rewrite if import from client has hot ([02e2d94](https://github.com/vuejs/vite/commit/02e2d94bb77b93103987f6940ca3b11ae30d65b4))
+
+
+
 # [0.16.0](https://github.com/vuejs/vite/compare/v0.15.5...v0.16.0) (2020-05-19)
 
 

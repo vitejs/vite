@@ -41,8 +41,8 @@ export const parseWithQuery = (
   }
 }
 
-const httpRE = /^https?:\/\//
-export const isExternalUrl = (url: string) => httpRE.test(url)
+const externalRE = /^(https?:)?\/\//
+export const isExternalUrl = (url: string) => externalRE.test(url)
 
 const imageRE = /\.(png|jpe?g|gif|svg|ico)(\?.*)?$/
 const mediaRE = /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/

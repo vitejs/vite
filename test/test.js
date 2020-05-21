@@ -33,6 +33,12 @@ const getComputedColor = async (selectorOrEl) => {
   )
 }
 
+const navigateFinish = async () => {
+  return await page.waitForNavigation({
+    waitUntil: 'domcontentloaded'
+  })
+}
+
 beforeAll(async () => {
   try {
     await fs.remove(tempDir)
@@ -160,9 +166,15 @@ describe('vite', () => {
           'js module hot updated:  /testHmrManual.js'
         )
         expect(
-          browserLogs.slice(browserLogs.length - 4, browserLogs.length - 1)
+          browserLogs.slice(browserLogs.length - 7, browserLogs.length - 1)
         ).toEqual([
+          // dispose for both dep and self
+          `foo was: 2`,
           `(dep) foo was: 1`,
+          // self callbacks
+          `(self-accepting)1.foo is now: 2`,
+          `(self-accepting)2.foo is now: 2`,
+          // dep callbacks
           `(single dep) foo is now: 2`,
           `(multiple deps) foo is now: 2`
         ])
@@ -335,6 +347,7 @@ describe('vite', () => {
 
     test('async component', async () => {
       await expectByPolling(() => getText('.async'), 'should show up')
+      expect(await getComputedColor('.async')).toBe('rgb(139, 69, 19)')
     })
   }
 
@@ -367,6 +380,29 @@ describe('vite', () => {
 
       declareTests(true)
     })
+
+    test('css codesplit in async chunks', async () => {
+      const colorToMatch = /#8B4513/i // from TestAsync.vue
+
+      const files = await fs.readdir(path.join(tempDir, 'dist/_assets'))
+      const cssFile = files.find((f) => f.endsWith('.css'))
+      const css = await fs.readFile(
+        path.join(tempDir, 'dist/_assets', cssFile),
+        'utf-8'
+      )
+      // should be extracted from the main css file
+      expect(css).not.toMatch(colorToMatch)
+      // should be inside the split chunk file
+      const asyncChunk = files.find(
+        (f) => f.startsWith('TestAsync') && f.endsWith('.js')
+      )
+      const code = await fs.readFile(
+        path.join(tempDir, 'dist/_assets', asyncChunk),
+        'utf-8'
+      )
+      // should be inside the async chunk
+      expect(code).toMatch(colorToMatch)
+    })
   })
 
   describe('dev', () => {
@@ -393,6 +429,27 @@ describe('vite', () => {
     })
 
     declareTests(false)
+
+    test('hmr (index.html full-reload)', async () => {
+      expect(await getText('title')).toMatch('Vite App')
+      // hmr
+      await updateFile('index.html', (content) =>
+        content.replace('Vite App', 'Vite App Test')
+      )
+      await navigateFinish()
+      await expectByPolling(() => getText('title'), 'Vite App Test')
+    })
+
+    test('hmr (html full-reload)', async () => {
+      await page.goto('http://localhost:3000/test.html')
+      expect(await getText('title')).toMatch('Vite App')
+      // hmr
+      await updateFile('test.html', (content) =>
+        content.replace('Vite App', 'Vite App Test')
+      )
+      await navigateFinish()
+      await expectByPolling(() => getText('title'), 'Vite App Test')
+    })
 
     // Assert that all edited files are reflected on page reload
     // i.e. service-worker cache is correctly busted

@@ -1,5 +1,5 @@
 <template>
-  <div class="async">This should show up...</div>
+  <div class="async">This should show up... and be brown</div>
   <div>Loaded in {{ time }}ms.</div>
 </template>
 
@@ -10,3 +10,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.async {
+  color: #8B4513;
+}
+</style>

@@ -76,9 +76,9 @@ export async function createBaseRollupPlugins(
 ): Promise<Plugin[]> {
   const { rollupInputOptions = {}, transforms = [] } = options
 
-  // TODO allow user to configure known named exports
-  // or upgrade @rollup/plugin-commonjs when the new version is out
-  const knownNamedExports: Record<string, string[]> = {}
+  const knownNamedExports: Record<string, string[]> = {
+    ...options.rollupPluginCommonJSNamedExports
+  }
   for (const id of PACKAGES_TO_AUTO_DETECT_EXPORTS) {
     knownNamedExports[id] =
       knownNamedExports[id] || detectExports(root, id) || []
@@ -224,7 +224,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         root,
         publicBasePath,
         assetsDir,
-        !!minify,
+        minify,
         assetsInlineLimit,
         transforms
       ),
@@ -249,7 +249,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     format: 'es',
     sourcemap,
     entryFileNames: `[name].[hash].js`,
-    chunkFileNames: `common.[hash].js`,
+    chunkFileNames: `[name].[hash].js`,
     ...rollupOutputOptions
   })
 

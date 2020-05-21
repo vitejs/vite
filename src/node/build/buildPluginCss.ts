@@ -2,7 +2,7 @@ import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
 import { loadPostcssConfig, parseWithQuery } from '../utils'
-import { Transform } from '../config'
+import { Transform, BuildConfig } from '../config'
 import hash_sum from 'hash-sum'
 import { rewriteCssUrls } from '../utils/cssUtils'
 
@@ -10,11 +10,14 @@ const debug = require('debug')('vite:build:css')
 
 const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
+const cssInjectionMarker = `__VITE_CSS__`
+const cssInjectionRE = /__VITE_CSS__\(\)/g
+
 export const createBuildCssPlugin = (
   root: string,
   publicBase: string,
   assetsDir: string,
-  minify = false,
+  minify: BuildConfig['minify'] = false,
   inlineLimit = 0,
   transforms: Transform[] = []
 ): Plugin => {
@@ -98,9 +101,48 @@ export const createBuildCssPlugin = (
         return {
           code: modules
             ? `export default ${JSON.stringify(modules)}`
-            : '/* css extracted by vite */',
+            : // a fake marker to avoid the module from being tree-shaken.
+              // this preserves the .css file as a module in the bundle metadata
+              // so that we can perform chunk-based css code splitting.
+              // this is removed by terser during minification.
+              `${cssInjectionMarker}()\n`,
           map: null
         }
+      }
+    },
+
+    async renderChunk(code, chunk) {
+      // for each dynamic entry chunk, collect its css and inline it as JS
+      // strings.
+      if (chunk.isDynamicEntry) {
+        let chunkCSS = ''
+        for (const id in chunk.modules) {
+          if (styles.has(id)) {
+            chunkCSS += styles.get(id)
+            styles.delete(id) // remove inlined css
+          }
+        }
+        chunkCSS = await minifyCSS(chunkCSS)
+        let isFirst = true
+        code = code.replace(cssInjectionRE, () => {
+          if (isFirst) {
+            isFirst = false
+            // make sure the code is in one line so that source map is preserved.
+            return (
+              `let ${cssInjectionMarker} = document.createElement('style');` +
+              `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+              `document.head.appendChild(${cssInjectionMarker});`
+            )
+          } else {
+            return ''
+          }
+        })
+      } else {
+        code = code.replace(cssInjectionRE, '')
+      }
+      return {
+        code,
+        map: null
       }
     },
 
@@ -112,11 +154,7 @@ export const createBuildCssPlugin = (
       })
       // minify with cssnano
       if (minify) {
-        css = (
-          await require('postcss')([require('cssnano')]).process(css, {
-            from: undefined
-          })
-        ).css
+        css = await minifyCSS(css)
       }
 
       const cssFileName = `style.${hash_sum(css)}.css`
@@ -131,4 +169,13 @@ export const createBuildCssPlugin = (
       registerAssets(assets, bundle)
     }
   }
+}
+
+let postcss: any
+let cssnano: any
+
+async function minifyCSS(css: string) {
+  postcss = postcss || require('postcss')
+  cssnano = cssnano || require('cssnano')
+  return (await postcss(cssnano).process(css, { from: undefined })).css
 }

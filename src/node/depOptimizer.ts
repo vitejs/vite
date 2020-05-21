@@ -67,7 +67,7 @@ export async function optimizeDeps(
     return
   }
 
-  const cacheDir = path.join(path.dirname(pkgPath), OPTIMIZE_CACHE_DIR)
+  const cacheDir = resolveOptimizedCacheDir(root, pkgPath)!
   const hashPath = path.join(cacheDir, 'hash')
   const depHash = getDepHash(root, config.__path)
 
@@ -231,6 +231,7 @@ export async function optimizeDeps(
       ...config.rollupOutputOptions,
       format: 'es',
       exports: 'named',
+      entryFileNames: '[name]',
       chunkFileNames: 'common/[name]-[hash].js'
     })
 
@@ -293,4 +294,21 @@ export function getDepHash(
     content += fs.readFileSync(configPath, 'utf-8')
   }
   return createHash('sha1').update(content).digest('base64')
+}
+
+const cacheDirCache = new Map<string, string | null>()
+
+export function resolveOptimizedCacheDir(
+  root: string,
+  pkgPath?: string
+): string | null {
+  const cached = cacheDirCache.get(root)
+  if (cached !== undefined) return cached
+  pkgPath = pkgPath || lookupFile(root, [`package.json`], true /* pathOnly */)
+  if (!pkgPath) {
+    return null
+  }
+  const cacheDir = path.join(path.dirname(pkgPath), OPTIMIZE_CACHE_DIR)
+  cacheDirCache.set(root, cacheDir)
+  return cacheDir
 }

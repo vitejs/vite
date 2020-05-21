@@ -31,7 +31,7 @@ export const createBuildResolvePlugin = (
           return resolved
         }
       }
-      // fallback to node-resolve becuase alias
+      // fallback to node-resolve because alias
       if (id !== original) {
         const resolved = this.resolve(id, importer, { skipSelf: true })
         return resolved || { id }

@@ -14,6 +14,7 @@ import Rollup, {
 import { Transform } from './transform'
 import { DepOptimizationOptions } from './depOptimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
+import { ServerOptions } from 'https'
 
 export { Resolver, Transform }
 
@@ -84,6 +85,13 @@ export interface SharedConfig {
 }
 
 export interface ServerConfig extends SharedConfig {
+  port?: number
+  open?: boolean
+  /**
+   * Configure https.
+   */
+  https?: boolean
+  httpsOption?: ServerOptions
   /**
    * Configure custom proxy rules for the dev server. Uses
    * [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses
@@ -146,6 +154,13 @@ export interface BuildConfig extends SharedConfig {
    */
   assetsInlineLimit?: number
   /**
+   * Whether to code-split CSS. When enabled, CSS in async chunks will be
+   * inlined as strings in the chunk and inserted via dynamically created
+   * style tags when the chunk is loaded.
+   * @default true
+   */
+  cssCodeSplit?: boolean
+  /**
    * Whether to generate sourcemap
    * @default false
    */
@@ -169,6 +184,14 @@ export interface BuildConfig extends SharedConfig {
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupInputOptions?: RollupInputOptions
+  /**
+   * Will be passed to @rollup/plugin-commonjs
+   * https://github.com/rollup/plugins/tree/commonjs-v11.1.0/packages/commonjs#namedexports
+   * This config can be removed after master branch is released.
+   * But there are some issues blocking it:
+   * https://github.com/rollup/plugins/issues/392
+   */
+  rollupPluginCommonJSNamedExports?: Record<string, string[]>
   /**
    * Will be passed to bundle.generate()
    *

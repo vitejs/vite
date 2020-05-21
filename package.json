@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "0.16.0",
+  "version": "0.16.4",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
@@ -36,7 +36,7 @@
     "test-sw": "cross-env USE_SW=1 yarn test",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "prepublishOnly": "yarn build && yarn changelog",
-    "postpublish": "git add CHANGELOG.md && git commit -m 'chore: changelog [ci skip]' && git push"
+    "postpublish": "git add CHANGELOG.md && git commit -m 'chore: changelog [ci skip]'"
   },
   "gitHooks": {
     "pre-commit": "lint-staged"
@@ -91,6 +91,7 @@
     "rollup": "^2.7.2",
     "rollup-plugin-terser": "^5.3.0",
     "rollup-plugin-vue": "^6.0.0-beta.1",
+    "selfsigned": "^1.10.7",
     "slash": "^3.0.0",
     "vue": "^3.0.0-beta.14",
     "ws": "^7.2.3"

@@ -19,7 +19,7 @@ const moduleReadCache = new LRUCache<string, CacheEntry>({
 
 /**
  * Read a file with in-memory cache.
- * Also sets approrpriate headers and body on the Koa context.
+ * Also sets appropriate headers and body on the Koa context.
  */
 export async function cachedRead(
   ctx: Context | null,
@@ -29,7 +29,7 @@ export async function cachedRead(
   const cached = moduleReadCache.get(file)
   if (ctx) {
     ctx.set('Cache-Control', 'no-cache')
-    ctx.type = path.basename(file)
+    ctx.type = path.extname(file) || 'js'
   }
   if (cached && cached.lastModified === lastModified) {
     if (ctx) {
