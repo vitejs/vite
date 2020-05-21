@@ -292,14 +292,15 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         if (chunk.map) {
           code += `\n//# sourceMappingURL=${path.basename(filepath)}.map`
         }
-        await writeFile(filepath, code, WriteType.JS)
-        if (chunk.map) {
-          await writeFile(
-            filepath + '.map',
-            chunk.map.toString(),
-            WriteType.SOURCE_MAP
-          )
-        }
+        await Promise.all([
+          writeFile(filepath, code, WriteType.JS),
+          chunk.map &&
+            writeFile(
+              filepath + '.map',
+              chunk.map.toString(),
+              WriteType.SOURCE_MAP
+            )
+        ])
       } else if (emitAssets) {
         // write asset
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)
