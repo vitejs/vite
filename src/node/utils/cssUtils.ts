@@ -1,8 +1,10 @@
 import path from 'path'
 import { asyncReplace } from './transformUtils'
 import { isExternalUrl } from './pathUtils'
+import { PreprocessLang, processors } from './stylePreprocessors'
 
 const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
+export const cssPreprocessLangReg = /.(less|sass|scss|styl|stylus)$/
 
 type Replacer = (url: string) => string | Promise<string>
 
@@ -26,4 +28,19 @@ export function rewriteCssUrls(
     }
     return before + (await replacer(rawUrl)) + after
   })
+}
+
+export function processorCss(css: string, pathUrl: string) {
+  const ext = path.extname(pathUrl)
+  if (cssPreprocessLangReg.test(ext)) {
+    const preprocessor = processors[ext.replace('.', '') as PreprocessLang]
+    if (preprocessor) {
+      const result = preprocessor.render(css, undefined, {})
+      if (result.errors) {
+        result.errors.forEach(console.error)
+      }
+      return result.code
+    }
+  }
+  return css
 }

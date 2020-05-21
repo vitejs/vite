@@ -4,7 +4,12 @@ import hash_sum from 'hash-sum'
 import { Context } from 'koa'
 import { isImportRequest, readBody, loadPostcssConfig } from '../utils'
 import { srcImportMap } from './serverPluginVue'
-import { rewriteCssUrls } from '../utils/cssUtils'
+import {
+  cssPreprocessLangReg,
+  processorCss,
+  rewriteCssUrls
+} from '../utils/cssUtils'
+import path from 'path'
 
 interface ProcessedEntry {
   css: string
@@ -24,7 +29,8 @@ export const cssPlugin: ServerPlugin = ({
     await next()
     // handle .css imports
     if (
-      ctx.response.is('css') &&
+      (cssPreprocessLangReg.test(path.extname(ctx.path)) ||
+        ctx.response.is('css')) &&
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
@@ -59,13 +65,13 @@ export const cssPlugin: ServerPlugin = ({
     }
   })
 
-  // handle hmr
-  const cssTransforms = config.transforms
-    ? config.transforms.filter((t) => t.as === 'css')
-    : []
-
   watcher.on('change', (file) => {
-    if (file.endsWith('.css') || cssTransforms.some((t) => t.test(file, {}))) {
+    if (file.endsWith('.module.css')) {
+      watcher.handleJSReload(file, Date.now())
+    } else if (
+      file.endsWith('.css') ||
+      cssPreprocessLangReg.test(path.extname(file))
+    ) {
       if (srcImportMap.has(file)) {
         // this is a vue src import, skip
         return
@@ -88,6 +94,7 @@ export const cssPlugin: ServerPlugin = ({
 
   async function processCss(ctx: Context) {
     let css = (await readBody(ctx.body))!
+    css = processorCss(css, ctx.path)
     let modules
     const postcssConfig = await loadPostcssConfig(root)
     const expectsModule = ctx.path.endsWith('.module.css')

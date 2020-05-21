@@ -1,10 +1,14 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
-import { loadPostcssConfig, parseWithQuery } from '../utils'
+import { loadPostcssConfig } from '../utils'
 import { Transform, BuildConfig } from '../config'
 import hash_sum from 'hash-sum'
-import { rewriteCssUrls } from '../utils/cssUtils'
+import {
+  cssPreprocessLangReg,
+  processorCss,
+  rewriteCssUrls
+} from '../utils/cssUtils'
 
 const debug = require('debug')('vite:build:css')
 
@@ -29,20 +33,8 @@ export const createBuildCssPlugin = (
   return {
     name: 'vite:css',
     async transform(css: string, id: string) {
-      let transformed = false
-
-      if (transforms.length) {
-        const { path, query } = parseWithQuery(id)
-        for (const t of transforms) {
-          if (t.test(path, query)) {
-            css = await t.transform(css, true, true, path, query)
-            transformed = true
-            break
-          }
-        }
-      }
-
-      if (transformed || id.endsWith('.css')) {
+      if (id.endsWith('.css') || cssPreprocessLangReg.test(path.extname(id))) {
+        css = processorCss(css, id)
         // process url() - register referenced files as assets
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {
