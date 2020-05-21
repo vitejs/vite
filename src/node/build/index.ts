@@ -383,6 +383,7 @@ export async function ssrBuild(
     },
     emitIndex: false,
     emitAssets: false,
+    cssCodeSplit: false,
     minify: false
   })
 }
