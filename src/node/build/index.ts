@@ -147,6 +147,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     outDir = path.resolve(root, 'dist'),
     assetsDir = '_assets',
     assetsInlineLimit = 4096,
+    cssCodeSplit = true,
     alias = {},
     transforms = [],
     resolvers = [],
@@ -226,6 +227,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         assetsDir,
         minify,
         assetsInlineLimit,
+        cssCodeSplit,
         transforms
       ),
       // vite:asset
@@ -376,7 +378,8 @@ export async function ssrBuild(
     rollupOutputOptions: {
       ...rollupOutputOptions,
       format: 'cjs',
-      exports: 'named'
+      exports: 'named',
+      entryFileNames: '[name].js'
     },
     emitIndex: false,
     emitAssets: false,

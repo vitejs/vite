@@ -19,6 +19,7 @@ export const createBuildCssPlugin = (
   assetsDir: string,
   minify: BuildConfig['minify'] = false,
   inlineLimit = 0,
+  cssCodeSplit = true,
   transforms: Transform[] = []
 ): Plugin => {
   const styles: Map<string, string> = new Map()
@@ -101,17 +102,22 @@ export const createBuildCssPlugin = (
         return {
           code: modules
             ? `export default ${JSON.stringify(modules)}`
-            : // a fake marker to avoid the module from being tree-shaken.
-              // this preserves the .css file as a module in the bundle metadata
-              // so that we can perform chunk-based css code splitting.
-              // this is removed by terser during minification.
-              `${cssInjectionMarker}()\n`,
+            : cssCodeSplit
+            ? // If code-splitting CSS, inject a fake marker to avoid the module
+              // from being tree-shaken. This preserves the .css file as a
+              // module in the chunk's metadata so that we can retrive them in
+              // renderChunk.
+              `${cssInjectionMarker}()\n`
+            : ``,
           map: null
         }
       }
     },
 
     async renderChunk(code, chunk) {
+      if (!cssCodeSplit) {
+        return null
+      }
       // for each dynamic entry chunk, collect its css and inline it as JS
       // strings.
       if (chunk.isDynamicEntry) {
