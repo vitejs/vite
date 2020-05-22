@@ -214,8 +214,10 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       // Vue templates are compiled into js and included in chunks.
       createReplacePlugin(
         {
-          'process.env.NODE_ENV': '"production"',
-          'process.env.': `(${JSON.stringify(env)}).`,
+          'process.env.': `(${JSON.stringify({
+            ...env,
+            NODE_ENV: 'production'
+          })}).`,
           __DEV__: 'false',
           __BASE__: JSON.stringify(publicBasePath)
         },
