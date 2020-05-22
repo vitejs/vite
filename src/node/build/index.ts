@@ -130,7 +130,8 @@ export async function createBaseRollupPlugins(
     require('@rollup/plugin-node-resolve')({
       rootDir: root,
       extensions: supportedExts,
-      preferBuiltins: false
+      preferBuiltins: false,
+      browser: true
     }),
     require('@rollup/plugin-commonjs')({
       extensions: ['.js', '.cjs'],
