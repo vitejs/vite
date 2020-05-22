@@ -1,6 +1,6 @@
 # vite ⚡
 
-[![vuejs](https://circleci.com/gh/vuejs/vite.svg?style=shield)](https://app.circleci.com/pipelines/github/vuejs/vite) [![Build status](https://ci.appveyor.com/api/projects/status/a6gd7l0s0wysn3qm/branch/master?svg=true)](https://ci.appveyor.com/project/yyx990803/vite/branch/master)
+[![vuejs](https://circleci.com/gh/vitejs/vite.svg?style=shield)](https://app.circleci.com/pipelines/github/vuejs/vite) [![Build status](https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/master?svg=true)](https://ci.appveyor.com/project/yyx990803/vite/branch/master)
 
 Vite is an opinionated web dev build tool that serves your code via native ES Module imports during dev and bundles it with [Rollup](https://rollupjs.org/) for production.
 
