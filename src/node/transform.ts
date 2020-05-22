@@ -5,10 +5,6 @@ import { parseWithQuery, readBody, isImportRequest } from './utils'
 type ParsedQuery = Record<string, string | string[] | undefined>
 
 export interface Transform {
-  /**
-   * @default 'js'
-   */
-  as?: 'js'
   test: (path: string, query: ParsedQuery) => boolean
   transform: (
     code: string,
@@ -31,7 +27,7 @@ export function createServerTransformPlugin(
       await next()
       for (const t of transforms) {
         if (t.test(ctx.path, ctx.query)) {
-          ctx.type = t.as || 'js'
+          ctx.type = 'js'
           if (ctx.body) {
             const code = await readBody(ctx.body)
             if (code) {
@@ -54,8 +50,6 @@ export function createServerTransformPlugin(
 export function createBuildJsTransformPlugin(
   transforms: Transform[]
 ): RollupPlugin {
-  transforms = transforms.filter((t) => t.as === 'js' || !t.as)
-
   return {
     name: 'vite:transforms',
     async transform(code, id) {

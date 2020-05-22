@@ -1,7 +1,7 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
-import { Transform, BuildConfig } from '../config'
+import { BuildConfig } from '../config'
 import hash_sum from 'hash-sum'
 import {
   urlRE,
@@ -22,8 +22,7 @@ export const createBuildCssPlugin = (
   assetsDir: string,
   minify: BuildConfig['minify'] = false,
   inlineLimit = 0,
-  cssCodeSplit = true,
-  transforms: Transform[] = []
+  cssCodeSplit = true
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()

@@ -163,7 +163,6 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     assetsInlineLimit = 4096,
     cssCodeSplit = true,
     alias = {},
-    transforms = [],
     resolvers = [],
     rollupInputOptions = {},
     rollupOutputOptions = {},
@@ -253,8 +252,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         assetsDir,
         minify,
         assetsInlineLimit,
-        cssCodeSplit,
-        transforms
+        cssCodeSplit
       ),
       // vite:asset
       createBuildAssetPlugin(
