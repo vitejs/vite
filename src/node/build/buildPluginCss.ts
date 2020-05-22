@@ -40,12 +40,16 @@ export const createBuildCssPlugin = (
           preprocessLang: id.replace(cssPreprocessLangRE, '$2') as any
         })
 
-        if (result.errors.length) {
-          console.error(`[vite] error applying css transforms: `)
-          result.errors.forEach(console.error)
+        if (typeof result === 'string') {
+          css = result
+        } else {
+          if (result.errors.length) {
+            console.error(`[vite] error applying css transforms: `)
+            result.errors.forEach(console.error)
+          }
+          css = result.code
         }
 
-        css = result.code
         // process url() - register referenced files as assets
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {
