@@ -64,11 +64,13 @@ export const cssPlugin: ServerPlugin = ({
   })
 
   watcher.on('change', (file) => {
-    if (file.endsWith('.module.css')) {
-      watcher.handleJSReload(file, Date.now())
-    } else if (file.endsWith('.css') || cssPreprocessLangReg.test(file)) {
+    if (file.endsWith('.css') || cssPreprocessLangReg.test(file)) {
       if (srcImportMap.has(file)) {
         // this is a vue src import, skip
+        return
+      }
+      if (file.endsWith('.module.css')) {
+        watcher.handleJSReload(file, Date.now())
         return
       }
 
