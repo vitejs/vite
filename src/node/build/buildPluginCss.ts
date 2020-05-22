@@ -1,10 +1,15 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
-import { loadPostcssConfig, parseWithQuery } from '../utils'
 import { Transform, BuildConfig } from '../config'
 import hash_sum from 'hash-sum'
-import { urlRE, rewriteCssUrls } from '../utils/cssUtils'
+import {
+  urlRE,
+  compileCss,
+  cssPreprocessLangRE,
+  rewriteCssUrls
+} from '../utils/cssUtils'
+import { SFCStyleCompileResults } from '@vue/compiler-sfc'
 
 const debug = require('debug')('vite:build:css')
 
@@ -22,25 +27,32 @@ export const createBuildCssPlugin = (
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
-  transforms = transforms.filter((t) => t.as === 'css')
 
   return {
     name: 'vite:css',
     async transform(css: string, id: string) {
-      let transformed = false
+      if (id.endsWith('.css') || cssPreprocessLangRE.test(id)) {
+        const result = await compileCss(root, id, {
+          id: '',
+          source: css,
+          filename: path.basename(id),
+          scoped: false,
+          modules: id.endsWith('.module.css'),
+          preprocessLang: id.replace(cssPreprocessLangRE, '$2') as any
+        })
 
-      if (transforms.length) {
-        const { path, query } = parseWithQuery(id)
-        for (const t of transforms) {
-          if (t.test(path, query)) {
-            css = await t.transform(css, true, true, path, query)
-            transformed = true
-            break
+        let modules: SFCStyleCompileResults['modules']
+        if (typeof result === 'string') {
+          css = result
+        } else {
+          if (result.errors.length) {
+            console.error(`[vite] error applying css transforms: `)
+            result.errors.forEach(console.error)
           }
+          css = result.code
+          modules = result.modules
         }
-      }
 
-      if (transformed || id.endsWith('.css')) {
         // process url() - register referenced files as assets
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {
@@ -66,34 +78,6 @@ export const createBuildCssPlugin = (
             )
             return url
           })
-        }
-
-        // postcss
-        let modules
-        const postcssConfig = await loadPostcssConfig(root)
-        const expectsModule = id.endsWith('.module.css')
-        if (postcssConfig || expectsModule) {
-          try {
-            const result = await require('postcss')([
-              ...((postcssConfig && postcssConfig.plugins) || []),
-              ...(expectsModule
-                ? [
-                    require('postcss-modules')({
-                      generateScopedName: `[local]_${hash_sum(id)}`,
-                      getJSON(_: string, json: Record<string, string>) {
-                        modules = json
-                      }
-                    })
-                  ]
-                : [])
-            ]).process(css, {
-              ...(postcssConfig && postcssConfig.options),
-              from: id
-            })
-            css = result.css
-          } catch (e) {
-            console.error(`[vite] error applying postcss transforms: `, e)
-          }
         }
 
         styles.set(id, css)

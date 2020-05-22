@@ -44,6 +44,7 @@ import { StringLiteral, Statement, Expression } from '@babel/types'
 import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
+import { cssPreprocessLangRE } from '../utils/cssUtils'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -141,18 +142,11 @@ export const hmrPlugin: ServerPlugin = ({
   watcher.handleJSReload = handleJSReload
   watcher.send = send
 
-  // exclude files declared as css by user transforms
-  const cssTransforms = config.transforms
-    ? config.transforms.filter((t) => t.as === 'css')
-    : []
-
   watcher.on('change', async (file) => {
     const timestamp = Date.now()
     if (file.endsWith('.vue')) {
       handleVueReload(file, timestamp)
-    } else if (
-      !(file.endsWith('.css') || cssTransforms.some((t) => t.test(file, {})))
-    ) {
+    } else if (!(file.endsWith('.css') || cssPreprocessLangRE.test(file))) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
       handleJSReload(file, timestamp)

@@ -22,16 +22,13 @@ import {
   resolveFrom,
   cachedRead,
   genSourceMapString,
-  loadPostcssConfig,
-  cleanUrl,
   resolveRelativeRequest
 } from '../utils'
 import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
-import qs from 'querystring'
 import { seenUrls } from './serverPluginServeStatic'
-import { rewriteCssUrls } from '../utils/cssUtils'
+import { compileCss, rewriteCssUrls } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -135,25 +132,6 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     // TODO custom blocks
-  })
-
-  // handle HMR for <style src="xxx.css">
-  // it cannot be handled as simple css import because it may be scoped
-  watcher.on('change', (file) => {
-    const styleImport = srcImportMap.get(file)
-    if (styleImport) {
-      vueCache.del(file)
-      const publicPath = cleanUrl(styleImport)
-      const index = qs.parse(styleImport.split('?', 2)[1]).index
-      console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
-      watcher.send({
-        type: 'vue-style-update',
-        path: publicPath,
-        index: Number(index),
-        id: `${hash_sum(publicPath)}-${index}`,
-        timestamp: Date.now()
-      })
-    }
   })
 }
 
@@ -378,28 +356,17 @@ async function compileSFCStyle(
   }
 
   const start = Date.now()
-  const id = hash_sum(publicPath)
-  const postcssConfig = await loadPostcssConfig(root)
-  const { compileStyleAsync, generateCodeFrame } = resolveCompiler(root)
 
-  const result = await compileStyleAsync({
+  const { generateCodeFrame } = resolveCompiler(root)
+
+  const result = (await compileCss(root, publicPath, {
     source: style.content,
     filename,
-    id: `data-v-${id}`,
+    id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,
-    modulesOptions: {
-      generateScopedName: `[local]_${id}`
-    },
-    preprocessLang: style.lang as any,
-    preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
-    ...(postcssConfig
-      ? {
-          postcssOptions: postcssConfig.options,
-          postcssPlugins: postcssConfig.plugins
-        }
-      : {})
-  })
+    preprocessLang: style.lang as any
+  })) as SFCStyleCompileResults
 
   if (result.errors.length) {
     console.error(chalk.red(`\n[vite] SFC style compilation error: `))
@@ -438,7 +405,6 @@ async function compileSFCStyle(
     })
   }
 
-  // rewrite relative urls
   result.code = await rewriteCssUrls(result.code, publicPath)
 
   cached = cached || { styles: [] }

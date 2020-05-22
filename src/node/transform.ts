@@ -8,7 +8,7 @@ export interface Transform {
   /**
    * @default 'js'
    */
-  as?: 'js' | 'css'
+  as?: 'js'
   test: (path: string, query: ParsedQuery) => boolean
   transform: (
     code: string,
