@@ -42,8 +42,7 @@ export async function compileCss(
     scoped,
     modules,
     preprocessLang
-  }: SFCAsyncStyleCompileOptions,
-  isBuild: boolean = false
+  }: SFCAsyncStyleCompileOptions
 ) {
   const id = hash_sum(publicPath)
   const postcssConfig = await loadPostcssConfig(root)
