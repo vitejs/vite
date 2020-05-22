@@ -48,7 +48,7 @@ export async function compileCss(
   const postcssConfig = await loadPostcssConfig(root)
   const { compileStyleAsync } = resolveCompiler(root)
 
-  const result = await compileStyleAsync({
+  return await compileStyleAsync({
     source,
     filename,
     id: `data-v-${id}`,
@@ -66,6 +66,4 @@ export async function compileCss(
         }
       : {})
   })
-
-  return result
 }
