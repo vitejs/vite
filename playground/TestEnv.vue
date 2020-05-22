@@ -4,10 +4,7 @@
     <code>process.env.NODE_ENV: {{ NODE_ENV }}</code>
   </p>
   <p class="customize-env-variable">
-    <code>process.env.CUSTOMIZE_ENV_VARIABLE: {{ CUSTOMIZE_ENV_VARIABLE }}</code>
-  </p>
-  <p class="defined-variable-names">
-    <code>Defined environment variable names: {{ variableNames }}</code>
+    <code>process.env.CUSTOM_ENV_VARIABLE: {{ CUSTOM_ENV_VARIABLE }}</code>
   </p>
 </template>
 
@@ -15,9 +12,8 @@
 export default {
   data() {
     return {
-      NODE_ENV: process.env['NODE_ENV'],
-      CUSTOMIZE_ENV_VARIABLE: process.env.CUSTOMIZE_ENV_VARIABLE,
-      variableNames: Object.keys(process.env).join(",")
+      NODE_ENV: process.env.NODE_ENV,
+      CUSTOM_ENV_VARIABLE: process.env.CUSTOM_ENV_VARIABLE
     }
   }
 }

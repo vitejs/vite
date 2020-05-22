@@ -191,6 +191,12 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
 
   const basePlugins = await createBaseRollupPlugins(root, resolver, options)
 
+  env.NODE_ENV = 'production'
+  const envReplacements = Object.keys(env).reduce((replacements, key) => {
+    replacements[`process.env.${key}`] = JSON.stringify(env[key])
+    return replacements
+  }, {} as Record<string, string>)
+
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
@@ -214,10 +220,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       // Vue templates are compiled into js and included in chunks.
       createReplacePlugin(
         {
-          'process.env': `(${JSON.stringify({
-            ...env,
-            NODE_ENV: 'production'
-          })})`,
+          ...envReplacements,
+          'process.env.': `({}).`,
           __DEV__: 'false',
           __BASE__: JSON.stringify(publicBasePath)
         },

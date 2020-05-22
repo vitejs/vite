@@ -101,10 +101,7 @@ describe('vite', () => {
         `process.env.NODE_ENV: ${isBuild ? 'production' : 'development'}`
       )
       expect(await getText('.customize-env-variable')).toMatch(
-        'process.env.CUSTOMIZE_ENV_VARIABLE: 9527'
-      )
-      expect(await getText('.defined-variable-names')).toMatch(
-        'Defined environment variable names: CUSTOMIZE_ENV_VARIABLE,NODE_ENV'
+        'process.env.CUSTOM_ENV_VARIABLE: 9527'
       )
     })
 
