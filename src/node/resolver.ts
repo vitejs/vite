@@ -30,9 +30,10 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
       return cachedModuleFilePath
     }
     const resolved = resolveNodeModuleFile(root, id)
-    if (!resolved) throw new Error(`Can't resolve "${id}"`)
-    idToFileMap.set(id, resolved)
-    return resolved
+    if (resolved) {
+      idToFileMap.set(id, resolved)
+      return resolved
+    }
   }
   return path.join(root, publicPath.slice(1))
 }
