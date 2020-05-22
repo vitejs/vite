@@ -2,13 +2,9 @@ import { ServerPlugin } from '.'
 import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
 import { Context } from 'koa'
-import { isImportRequest, readBody, loadPostcssConfig } from '../utils'
+import { isImportRequest, readBody } from '../utils'
 import { srcImportMap } from './serverPluginVue'
-import {
-  cssPreprocessLangReg,
-  processorCss,
-  rewriteCssUrls
-} from '../utils/cssUtils'
+import { compileCss, cssPreprocessLangReg } from '../utils/cssUtils'
 import path from 'path'
 
 interface ProcessedEntry {
@@ -29,13 +25,12 @@ export const cssPlugin: ServerPlugin = ({
     await next()
     // handle .css imports
     if (
-      (cssPreprocessLangReg.test(path.extname(ctx.path)) ||
-        ctx.response.is('css')) &&
+      (cssPreprocessLangReg.test(ctx.path) || ctx.response.is('css')) &&
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
       if (isImportRequest(ctx)) {
-        await processCss(ctx)
+        await processCss(root, ctx)
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url
         ctx.type = 'js'
@@ -55,7 +50,7 @@ export const cssPlugin: ServerPlugin = ({
       } else {
         // raw request, return compiled css
         if (!processedCSS.has(ctx.path)) {
-          await processCss(ctx)
+          await processCss(root, ctx)
         }
         ctx.type = 'js'
         ctx.body = `export default ${JSON.stringify(
@@ -68,10 +63,7 @@ export const cssPlugin: ServerPlugin = ({
   watcher.on('change', (file) => {
     if (file.endsWith('.module.css')) {
       watcher.handleJSReload(file, Date.now())
-    } else if (
-      file.endsWith('.css') ||
-      cssPreprocessLangReg.test(path.extname(file))
-    ) {
+    } else if (file.endsWith('.css') || cssPreprocessLangReg.test(file)) {
       if (srcImportMap.has(file)) {
         // this is a vue src import, skip
         return
@@ -92,44 +84,26 @@ export const cssPlugin: ServerPlugin = ({
     }
   })
 
-  async function processCss(ctx: Context) {
+  async function processCss(root: string, ctx: Context) {
     let css = (await readBody(ctx.body))!
-    css = processorCss(css, ctx.path)
-    let modules
-    const postcssConfig = await loadPostcssConfig(root)
-    const expectsModule = ctx.path.endsWith('.module.css')
 
-    // postcss processing
-    if (postcssConfig || expectsModule) {
-      try {
-        css = (
-          await require('postcss')([
-            ...((postcssConfig && postcssConfig.plugins) || []),
-            ...(expectsModule
-              ? [
-                  require('postcss-modules')({
-                    generateScopedName: `[local]_${hash_sum(ctx.path)}`,
-                    getJSON(_: string, json: Record<string, string>) {
-                      modules = json
-                    }
-                  })
-                ]
-              : [])
-          ]).process(css, {
-            ...(postcssConfig && postcssConfig.options),
-            from: resolver.requestToFile(ctx.path)
-          })
-        ).css
-      } catch (e) {
-        console.error(`[vite] error applying postcss transforms: `, e)
-      }
+    const result = await compileCss(root, ctx.path, {
+      id: '',
+      source: css,
+      filename: resolver.requestToFile(ctx.path),
+      scoped: false,
+      modules: ctx.path.endsWith('.module.css'),
+      preprocessLang: ctx.path.replace(cssPreprocessLangReg, '$2') as any
+    })
+
+    if (result.errors.length) {
+      console.error(`[vite] error applying css transforms: `)
+      result.errors.forEach(console.error)
     }
 
-    css = await rewriteCssUrls(css, ctx.path)
-
     processedCSS.set(ctx.path, {
-      css,
-      modules
+      css: result.code,
+      modules: result.modules
     })
   }
 }

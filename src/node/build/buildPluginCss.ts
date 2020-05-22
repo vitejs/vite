@@ -1,12 +1,11 @@
 import path from 'path'
 import { Plugin } from 'rollup'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
-import { loadPostcssConfig } from '../utils'
 import { Transform, BuildConfig } from '../config'
 import hash_sum from 'hash-sum'
 import {
+  compileCss,
   cssPreprocessLangReg,
-  processorCss,
   rewriteCssUrls
 } from '../utils/cssUtils'
 
@@ -32,8 +31,27 @@ export const createBuildCssPlugin = (
   return {
     name: 'vite:css',
     async transform(css: string, id: string) {
-      if (id.endsWith('.css') || cssPreprocessLangReg.test(path.extname(id))) {
-        css = processorCss(css, id)
+      if (id.endsWith('.css') || cssPreprocessLangReg.test(id)) {
+        const result = await compileCss(
+          root,
+          id,
+          {
+            id: '',
+            source: css,
+            filename: path.basename(id),
+            scoped: false,
+            modules: id.endsWith('.module.css'),
+            preprocessLang: id.replace(cssPreprocessLangReg, '$2') as any
+          },
+          true
+        )
+
+        if (result.errors.length) {
+          console.error(`[vite] error applying css transforms: `)
+          result.errors.forEach(console.error)
+        }
+
+        css = result.code
         // process url() - register referenced files as assets
         // and rewrite the url to the resolved public path
         if (urlRE.test(css)) {
@@ -61,38 +79,10 @@ export const createBuildCssPlugin = (
           })
         }
 
-        // postcss
-        let modules
-        const postcssConfig = await loadPostcssConfig(root)
-        const expectsModule = id.endsWith('.module.css')
-        if (postcssConfig || expectsModule) {
-          try {
-            const result = await require('postcss')([
-              ...((postcssConfig && postcssConfig.plugins) || []),
-              ...(expectsModule
-                ? [
-                    require('postcss-modules')({
-                      generateScopedName: `[local]_${hash_sum(id)}`,
-                      getJSON(_: string, json: Record<string, string>) {
-                        modules = json
-                      }
-                    })
-                  ]
-                : [])
-            ]).process(css, {
-              ...(postcssConfig && postcssConfig.options),
-              from: id
-            })
-            css = result.css
-          } catch (e) {
-            console.error(`[vite] error applying postcss transforms: `, e)
-          }
-        }
-
         styles.set(id, css)
         return {
-          code: modules
-            ? `export default ${JSON.stringify(modules)}`
+          code: result.modules
+            ? `export default ${JSON.stringify(result.modules)}`
             : cssCodeSplit
             ? // If code-splitting CSS, inject a fake marker to avoid the module
               // from being tree-shaken. This preserves the .css file as a

@@ -22,7 +22,6 @@ import {
   resolveFrom,
   cachedRead,
   genSourceMapString,
-  loadPostcssConfig,
   cleanUrl,
   resolveRelativeRequest
 } from '../utils'
@@ -31,7 +30,7 @@ import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import qs from 'querystring'
 import { seenUrls } from './serverPluginServeStatic'
-import { rewriteCssUrls } from '../utils/cssUtils'
+import { compileCss } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -378,27 +377,16 @@ async function compileSFCStyle(
   }
 
   const start = Date.now()
-  const id = hash_sum(publicPath)
-  const postcssConfig = await loadPostcssConfig(root)
-  const { compileStyleAsync, generateCodeFrame } = resolveCompiler(root)
 
-  const result = await compileStyleAsync({
+  const { generateCodeFrame } = resolveCompiler(root)
+
+  const result = await compileCss(root, publicPath, {
     source: style.content,
     filename,
-    id: `data-v-${id}`,
+    id: ``,
     scoped: style.scoped != null,
     modules: style.module != null,
-    modulesOptions: {
-      generateScopedName: `[local]_${id}`
-    },
-    preprocessLang: style.lang as any,
-    preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
-    ...(postcssConfig
-      ? {
-          postcssOptions: postcssConfig.options,
-          postcssPlugins: postcssConfig.plugins
-        }
-      : {})
+    preprocessLang: style.lang as any
   })
 
   if (result.errors.length) {
@@ -437,9 +425,6 @@ async function compileSFCStyle(
       }
     })
   }
-
-  // rewrite relative urls
-  result.code = await rewriteCssUrls(result.code, publicPath)
 
   cached = cached || { styles: [] }
   cached.styles[index] = result

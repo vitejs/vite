@@ -146,9 +146,7 @@ export const hmrPlugin: ServerPlugin = ({
     const timestamp = Date.now()
     if (file.endsWith('.vue')) {
       handleVueReload(file, timestamp)
-    } else if (
-      !(file.endsWith('.css') || cssPreprocessLangReg.test(path.extname(file)))
-    ) {
+    } else if (!(file.endsWith('.css') || cssPreprocessLangReg.test(file))) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
       handleJSReload(file, timestamp)

@@ -1,10 +1,13 @@
 import path from 'path'
 import { asyncReplace } from './transformUtils'
-import { isExternalUrl } from './pathUtils'
-import { PreprocessLang, processors } from './stylePreprocessors'
+import { isExternalUrl, resolveFrom } from './pathUtils'
+import { resolveCompiler } from './resolveVue'
+import { loadPostcssConfig } from './resolvePostCssConfig'
+import hash_sum from 'hash-sum'
+import { SFCAsyncStyleCompileOptions } from '@vue/compiler-sfc'
 
 const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
-export const cssPreprocessLangReg = /.(less|sass|scss|styl|stylus)$/
+export const cssPreprocessLangReg = /(.+).(less|sass|scss|styl|stylus)$/
 
 type Replacer = (url: string) => string | Promise<string>
 
@@ -30,17 +33,43 @@ export function rewriteCssUrls(
   })
 }
 
-export function processorCss(css: string, pathUrl: string) {
-  const ext = path.extname(pathUrl)
-  if (cssPreprocessLangReg.test(ext)) {
-    const preprocessor = processors[ext.replace('.', '') as PreprocessLang]
-    if (preprocessor) {
-      const result = preprocessor.render(css, undefined, {})
-      if (result.errors) {
-        result.errors.forEach(console.error)
-      }
-      return result.code
-    }
+export async function compileCss(
+  root: string,
+  publicPath: string,
+  {
+    source,
+    filename,
+    scoped,
+    modules,
+    preprocessLang
+  }: SFCAsyncStyleCompileOptions,
+  isBuild: boolean = false
+) {
+  const id = hash_sum(publicPath)
+  const postcssConfig = await loadPostcssConfig(root)
+  const { compileStyleAsync } = resolveCompiler(root)
+
+  const result = await compileStyleAsync({
+    source,
+    filename,
+    id: `data-v-${id}`,
+    scoped,
+    modules,
+    modulesOptions: {
+      generateScopedName: `[local]_${id}`
+    },
+    preprocessLang: preprocessLang,
+    preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
+    ...(postcssConfig
+      ? {
+          postcssOptions: postcssConfig.options,
+          postcssPlugins: postcssConfig.plugins
+        }
+      : {})
+  })
+  if (!isBuild) {
+    // rewrite relative urls
+    result.code = await rewriteCssUrls(result.code, publicPath)
   }
-  return css
+  return result
 }
