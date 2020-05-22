@@ -9,6 +9,7 @@ import {
   cssPreprocessLangRE,
   rewriteCssUrls
 } from '../utils/cssUtils'
+import { SFCStyleCompileResults } from '@vue/compiler-sfc'
 
 const debug = require('debug')('vite:build:css')
 
@@ -40,6 +41,7 @@ export const createBuildCssPlugin = (
           preprocessLang: id.replace(cssPreprocessLangRE, '$2') as any
         })
 
+        let modules: SFCStyleCompileResults['modules']
         if (typeof result === 'string') {
           css = result
         } else {
@@ -48,6 +50,7 @@ export const createBuildCssPlugin = (
             result.errors.forEach(console.error)
           }
           css = result.code
+          modules = result.modules
         }
 
         // process url() - register referenced files as assets
@@ -79,8 +82,8 @@ export const createBuildCssPlugin = (
 
         styles.set(id, css)
         return {
-          code: result.modules
-            ? `export default ${JSON.stringify(result.modules)}`
+          code: modules
+            ? `export default ${JSON.stringify(modules)}`
             : cssCodeSplit
             ? // If code-splitting CSS, inject a fake marker to avoid the module
               // from being tree-shaken. This preserves the .css file as a
