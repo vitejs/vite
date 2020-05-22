@@ -6,7 +6,7 @@ import { cleanUrl, isImportRequest, readBody } from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {
   compileCss,
-  cssPreprocessLangReg,
+  cssPreprocessLangRE,
   rewriteCssUrls
 } from '../utils/cssUtils'
 import qs from 'querystring'
@@ -30,7 +30,7 @@ export const cssPlugin: ServerPlugin = ({
     await next()
     // handle .css imports
     if (
-      (cssPreprocessLangReg.test(ctx.path) || ctx.response.is('css')) &&
+      (cssPreprocessLangRE.test(ctx.path) || ctx.response.is('css')) &&
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
@@ -66,7 +66,7 @@ export const cssPlugin: ServerPlugin = ({
   })
 
   watcher.on('change', (file) => {
-    if (file.endsWith('.css') || cssPreprocessLangReg.test(file)) {
+    if (file.endsWith('.css') || cssPreprocessLangRE.test(file)) {
       if (srcImportMap.has(file)) {
         // handle HMR for <style src="xxx.css">
         // it cannot be handled as simple css import because it may be scoped
@@ -117,7 +117,7 @@ export const cssPlugin: ServerPlugin = ({
       filename: resolver.requestToFile(ctx.path),
       scoped: false,
       modules: ctx.path.endsWith('.module.css'),
-      preprocessLang: ctx.path.replace(cssPreprocessLangReg, '$2') as any
+      preprocessLang: ctx.path.replace(cssPreprocessLangRE, '$2') as any
     })
 
     if (result.errors.length) {

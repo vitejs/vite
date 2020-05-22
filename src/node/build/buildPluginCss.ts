@@ -6,7 +6,7 @@ import hash_sum from 'hash-sum'
 import {
   urlRE,
   compileCss,
-  cssPreprocessLangReg,
+  cssPreprocessLangRE,
   rewriteCssUrls
 } from '../utils/cssUtils'
 
@@ -30,14 +30,14 @@ export const createBuildCssPlugin = (
   return {
     name: 'vite:css',
     async transform(css: string, id: string) {
-      if (id.endsWith('.css') || cssPreprocessLangReg.test(id)) {
+      if (id.endsWith('.css') || cssPreprocessLangRE.test(id)) {
         const result = await compileCss(root, id, {
           id: '',
           source: css,
           filename: path.basename(id),
           scoped: false,
           modules: id.endsWith('.module.css'),
-          preprocessLang: id.replace(cssPreprocessLangReg, '$2') as any
+          preprocessLang: id.replace(cssPreprocessLangRE, '$2') as any
         })
 
         if (result.errors.length) {

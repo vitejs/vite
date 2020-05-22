@@ -7,7 +7,7 @@ import hash_sum from 'hash-sum'
 import { SFCAsyncStyleCompileOptions } from '@vue/compiler-sfc'
 
 export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
-export const cssPreprocessLangReg = /(.+).(less|sass|scss|styl|stylus)$/
+export const cssPreprocessLangRE = /(.+).(less|sass|scss|styl|stylus)$/
 
 type Replacer = (url: string) => string | Promise<string>
 
