@@ -2,7 +2,7 @@ import path from 'path'
 import { asyncReplace } from './transformUtils'
 import { isExternalUrl } from './pathUtils'
 
-const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
+const urlRE = /(?<!(?:fill:\s*|\w))(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
 type Replacer = (url: string) => string | Promise<string>
 

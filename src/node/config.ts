@@ -229,6 +229,11 @@ export interface BuildConfig extends SharedConfig {
    * added to the index.html for the chunk passed in
    */
   shouldPreload?: (chunk: OutputChunk) => boolean
+  /**
+   * Turn of `__DEV__` variable flag injection when build
+   * user can define there own variable using process.env.NODE_ENV
+   */
+  noDevFlag?: boolean
 }
 
 export interface UserConfig extends BuildConfig, ServerConfig {

@@ -30,6 +30,7 @@ Options:
   --serviceWorker, -sw       [boolean] configure service worker caching (default: false)
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
+  --noDevFlag                [boolean] build without __DEV__ flag variable injection (default: false)
   --base                     [string]  public base path for build (default: /)
   --outDir                   [string]  output directory for build (default: dist)
   --assetsDir                [string]  directory under outDir to place assets in (default: assets)

@@ -143,6 +143,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
 
   const {
     root = process.cwd(),
+    noDevFlag = false,
     base = '/',
     outDir = path.resolve(root, 'dist'),
     assetsDir = '_assets',
@@ -215,7 +216,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
         {
           'process.env.NODE_ENV': '"production"',
           'process.env.': `({}).`,
-          __DEV__: 'false',
+          ...(noDevFlag ? {} : { __DEV__: 'false' }),
           __BASE__: JSON.stringify(publicBasePath)
         },
         sourcemap
