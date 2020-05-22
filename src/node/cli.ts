@@ -109,7 +109,7 @@ async function resolveOptions() {
 }
 
 async function runServe(options: UserConfig) {
-  const server = require('../dist').createServer(options)
+  const server = require('./server').createServer(options)
 
   let port = options.port || 3000
   const protocol = options.https ? 'https' : 'http'
@@ -157,7 +157,7 @@ async function runServe(options: UserConfig) {
 
 async function runBuild(options: UserConfig) {
   try {
-    await require('../dist').build(options)
+    await require('./build').build(options)
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Build errored out.`))
@@ -168,7 +168,10 @@ async function runBuild(options: UserConfig) {
 
 async function runOptimize(options: UserConfig) {
   try {
-    await require('../dist').optimizeDeps(options, true /* as cli command */)
+    await require('./depOptimizer').optimizeDeps(
+      options,
+      true /* as cli command */
+    )
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Dep optimization errored out.`))

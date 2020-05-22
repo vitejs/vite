@@ -4,14 +4,13 @@ import { resolveAsset, registerAssets } from './buildPluginAsset'
 import { Transform, BuildConfig } from '../config'
 import hash_sum from 'hash-sum'
 import {
+  urlRE,
   compileCss,
   cssPreprocessLangReg,
   rewriteCssUrls
 } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:build:css')
-
-const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
 const cssInjectionMarker = `__VITE_CSS__`
 const cssInjectionRE = /__VITE_CSS__\(\)/g

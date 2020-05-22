@@ -3,13 +3,9 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { ResolvedConfig } from './config'
 import type Rollup from 'rollup'
-import {
-  createResolver,
-  supportedExts,
-  resolveNodeModuleEntry
-} from './resolver'
-import { createBaseRollupPlugins } from './build'
-import { resolveFrom, lookupFile } from './utils'
+import { createResolver, supportedExts, resolveNodeModule } from './resolver'
+import { createBaseRollupPlugins, onRollupWarning } from './build'
+import { lookupFile } from './utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
@@ -120,17 +116,17 @@ export async function optimizeDeps(
       debug(`skipping ${id} (internal excluded)`)
       return false
     }
-    const pkgInfo = resolveNodeModuleEntry(root, id)
+    const pkgInfo = resolveNodeModule(root, id)
     if (!pkgInfo) {
       debug(`skipping ${id} (cannot resolve entry)`)
       return false
     }
-    const [entry, pkg] = pkgInfo
-    if (!supportedExts.includes(path.extname(entry))) {
+    const { entryFilePath, pkg } = pkgInfo
+    if (!supportedExts.includes(path.extname(entryFilePath))) {
       debug(`skipping ${id} (entry is not js)`)
       return false
     }
-    const content = fs.readFileSync(resolveFrom(root, entry), 'utf-8')
+    const content = fs.readFileSync(entryFilePath, 'utf-8')
     const [imports, exports] = parse(content)
     if (!exports.length && !/export\s+\*\s+from/.test(content)) {
       if (!pkg.module) {
@@ -214,16 +210,11 @@ export async function optimizeDeps(
     }, {} as Record<string, string>)
 
     const rollup = require('rollup') as typeof Rollup
-    const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
     const bundle = await rollup.rollup({
       input,
       external: preservedDeps,
       treeshake: { moduleSideEffects: 'no-external' },
-      onwarn(warning, warn) {
-        if (!warningIgnoreList.includes(warning.code!)) {
-          warn(warning)
-        }
-      },
+      onwarn: onRollupWarning,
       ...config.rollupInputOptions,
       plugins: [
         ...(await createBaseRollupPlugins(root, resolver, config)),

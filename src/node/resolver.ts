@@ -123,9 +123,9 @@ export function resolveBareModule(root: string, id: string, importer: string) {
   if (optimized) {
     return id
   }
-  const pkgInfo = resolveNodeModuleEntry(root, id)
+  const pkgInfo = resolveNodeModule(root, id)
   if (pkgInfo) {
-    return pkgInfo[0]
+    return pkgInfo.entry
   }
 
   // check and warn deep imports on optimized modules
@@ -169,10 +169,19 @@ export function resolveOptimizedModule(
   }
 }
 
-const nodeModulesEntryMap = new Map<string, [string, any]>()
+interface NodeModuleInfo {
+  entry: string
+  entryFilePath: string
+  pkg: any
+}
+const nodeModulesInfoMap = new Map<string, NodeModuleInfo>()
+const nodeModulesFileMap = new Map()
 
-export function resolveNodeModuleEntry(root: string, id: string) {
-  const cached = nodeModulesEntryMap.get(id)
+export function resolveNodeModule(
+  root: string,
+  id: string
+): NodeModuleInfo | undefined {
+  const cached = nodeModulesInfoMap.get(id)
   if (cached) {
     return cached
   }
@@ -182,9 +191,35 @@ export function resolveNodeModuleEntry(root: string, id: string) {
     pkgPath = resolveFrom(root, `${id}/package.json`)
   } catch (e) {}
 
+  if (!pkgPath) {
+    // if the above resolve failed, it's either the package is not installed,
+    // or the package has explicit exports field preventing us from resolving
+    // its package.json. Try to resovle the package.json's path by sniffing
+    // the node_modules in the path.
+    try {
+      const entryPath = resolveFrom(root, id)
+      if (entryPath) {
+        const moduleIndex = entryPath.lastIndexOf(path.join(`node_modules`, id))
+        if (moduleIndex > 0) {
+          pkgPath = path.join(
+            entryPath.slice(0, moduleIndex),
+            'node_modules',
+            id,
+            'package.json'
+          )
+        }
+      }
+    } catch (e) {}
+  }
+
   if (pkgPath) {
     // if yes, this is a entry import. resolve entry file
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+    let pkg
+    try {
+      pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+    } catch (e) {
+      return
+    }
     let entryPoint: string | undefined
     if (pkg.exports) {
       if (typeof pkg.exports === 'string') {
@@ -200,22 +235,36 @@ export function resolveNodeModuleEntry(root: string, id: string) {
     if (!entryPoint) {
       entryPoint = pkg.module || pkg.main || 'index.js'
     }
-    entryPoint = path.posix.join(id, '/', entryPoint!)
+
     debug(`(node_module entry) ${id} -> ${entryPoint}`)
 
-    const result: [string, any] = [entryPoint, pkg]
-    nodeModulesEntryMap.set(id, result)
+    const entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
+
+    // save resolved entry file path using the deep import path as key
+    // e.g. foo/dist/foo.js
+    // this is the path raw imports will be rewritten to, and is what will
+    // be passed to resolveNodeModuleFile().
+    entryPoint = path.posix.join(id, entryPoint!)
+
+    // save the resolved file path now so we don't need to do it again in
+    // resolveNodeModuleFile()
+    nodeModulesFileMap.set(entryPoint, entryFilePath)
+
+    const result: NodeModuleInfo = {
+      entry: entryPoint!,
+      entryFilePath,
+      pkg
+    }
+    nodeModulesInfoMap.set(id, result)
     return result
   }
 }
 
-const nodeModulesMap = new Map()
-
-export function resolveNodeModule(
+export function resolveNodeModuleFile(
   root: string,
   id: string
 ): string | undefined {
-  const cached = nodeModulesMap.get(id)
+  const cached = nodeModulesFileMap.get(id)
   if (cached) {
     return cached
   }
@@ -238,6 +287,6 @@ export function resolveNodeModule(
     } catch (e) {}
   }
 
-  nodeModulesMap.set(id, resolved)
+  nodeModulesFileMap.set(id, resolved)
   return resolved
 }

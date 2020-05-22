@@ -6,7 +6,7 @@ import { loadPostcssConfig } from './resolvePostCssConfig'
 import hash_sum from 'hash-sum'
 import { SFCAsyncStyleCompileOptions } from '@vue/compiler-sfc'
 
-const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
+export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 export const cssPreprocessLangReg = /(.+).(less|sass|scss|styl|stylus)$/
 
 type Replacer = (url: string) => string | Promise<string>
@@ -26,7 +26,11 @@ export function rewriteCssUrls(
 
   return asyncReplace(css, urlRE, async (match) => {
     const [matched, before, rawUrl, after] = match
-    if (isExternalUrl(rawUrl) || rawUrl.startsWith('data:')) {
+    if (
+      isExternalUrl(rawUrl) ||
+      rawUrl.startsWith('data:') ||
+      rawUrl.startsWith('#')
+    ) {
       return matched
     }
     return before + (await replacer(rawUrl)) + after

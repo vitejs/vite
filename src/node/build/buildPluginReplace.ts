@@ -1,9 +1,8 @@
 import { Plugin, TransformResult } from 'rollup'
 import MagicString from 'magic-string'
 
-const filter = /\.(j|t)sx?$/
-
 export const createReplacePlugin = (
+  test: (id: string) => boolean,
   replacements: Record<string, string>,
   sourcemap: boolean
 ): Plugin => {
@@ -21,7 +20,7 @@ export const createReplacePlugin = (
   return {
     name: 'vite:replace',
     transform(code, id) {
-      if (filter.test(id)) {
+      if (test(id)) {
         const s = new MagicString(code)
         let hasReplaced = false
         let match

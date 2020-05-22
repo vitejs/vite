@@ -15,7 +15,7 @@ import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
 import { serviceWorkerPlugin } from './serverPluginServiceWorker'
-import { htmlPlugin } from './serverPluginHtml'
+import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
 import fs from 'fs-extra'
@@ -60,18 +60,21 @@ export function createServer(config: ServerConfig = {}): Server {
   }
 
   const resolvedPlugins = [
+    // the import rewrite and html rewrite both take highest priority and runs
+    // after all other middlewares have finished
+    moduleRewritePlugin,
+    htmlRewritePlugin,
+    // user plugins
     ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
+    moduleResolvePlugin,
     proxyPlugin,
     serviceWorkerPlugin,
     hmrPlugin,
-    moduleRewritePlugin,
-    moduleResolvePlugin,
     vuePlugin,
     cssPlugin,
     ...(transforms.length ? [createServerTransformPlugin(transforms)] : []),
     esbuildPlugin,
     jsonPlugin,
-    htmlPlugin,
     assetPathPlugin,
     serveStaticPlugin
   ]

@@ -1,9 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
-import { createEsbuildPlugin } from './build/buildPluginEsbuild'
-import { ServerPlugin } from './server'
-import { Resolver } from './resolver'
+import { DotenvParseOutput } from 'dotenv'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
 import { CompilerOptions } from '@vue/compiler-sfc'
 import Rollup, {
@@ -11,6 +9,9 @@ import Rollup, {
   OutputOptions as RollupOutputOptions,
   OutputChunk
 } from 'rollup'
+import { createEsbuildPlugin } from './build/buildPluginEsbuild'
+import { ServerPlugin } from './server'
+import { Resolver } from './resolver'
 import { Transform } from './transform'
 import { DepOptimizationOptions } from './depOptimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
@@ -82,6 +83,10 @@ export interface SharedConfig {
         factory?: string
         fragment?: string
       }
+  /**
+   * Environment variables .
+   */
+  env?: DotenvParseOutput
 }
 
 export interface ServerConfig extends SharedConfig {
@@ -253,17 +258,18 @@ export async function resolveConfig(
   configPath: string | undefined
 ): Promise<ResolvedConfig | undefined> {
   const start = Date.now()
+  const cwd = process.cwd()
   let config: ResolvedConfig | undefined
   let resolvedPath: string | undefined
   let isTS = false
   if (configPath) {
-    resolvedPath = path.resolve(process.cwd(), configPath)
+    resolvedPath = path.resolve(cwd, configPath)
   } else {
-    const jsConfigPath = path.resolve(process.cwd(), 'vite.config.js')
+    const jsConfigPath = path.resolve(cwd, 'vite.config.js')
     if (fs.existsSync(jsConfigPath)) {
       resolvedPath = jsConfigPath
     } else {
-      const tsConfigPath = path.resolve(process.cwd(), 'vite.config.ts')
+      const tsConfigPath = path.resolve(cwd, 'vite.config.ts')
       if (fs.existsSync(tsConfigPath)) {
         isTS = true
         resolvedPath = tsConfigPath
@@ -324,6 +330,17 @@ export async function resolveConfig(
       for (const plugin of config.plugins) {
         config = resolvePlugin(config, plugin)
       }
+    }
+
+    // load environment variables
+    const envConfigPath = path.resolve(cwd, '.env')
+    if (fs.existsSync(envConfigPath) && fs.statSync(envConfigPath).isFile()) {
+      const env = require('dotenv').config()
+      if (env.error) {
+        throw env.error
+      }
+
+      config.env = env.parsed
     }
 
     require('debug')('vite:config')(
