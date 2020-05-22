@@ -4,7 +4,10 @@ import { isExternalUrl, resolveFrom } from './pathUtils'
 import { resolveCompiler } from './resolveVue'
 import { loadPostcssConfig } from './resolvePostCssConfig'
 import hash_sum from 'hash-sum'
-import { SFCAsyncStyleCompileOptions } from '@vue/compiler-sfc'
+import {
+  SFCAsyncStyleCompileOptions,
+  SFCStyleCompileResults
+} from '@vue/compiler-sfc'
 
 export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 export const cssPreprocessLangRE = /(.+).(less|sass|scss|styl|stylus)$/
@@ -47,10 +50,15 @@ export async function compileCss(
     modules,
     preprocessLang
   }: SFCAsyncStyleCompileOptions
-) {
+): Promise<SFCStyleCompileResults | string> {
   const id = hash_sum(publicPath)
   const postcssConfig = await loadPostcssConfig(root)
   const { compileStyleAsync } = resolveCompiler(root)
+
+  if (publicPath.endsWith('.css') && !modules && !postcssConfig) {
+    // no need to invoke compile for plain css if no postcss config is present
+    return source
+  }
 
   return await compileStyleAsync({
     source,

@@ -359,14 +359,14 @@ async function compileSFCStyle(
 
   const { generateCodeFrame } = resolveCompiler(root)
 
-  const result = await compileCss(root, publicPath, {
+  const result = (await compileCss(root, publicPath, {
     source: style.content,
     filename,
-    id: ``,
+    id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,
     preprocessLang: style.lang as any
-  })
+  })) as SFCStyleCompileResults
 
   if (result.errors.length) {
     console.error(chalk.red(`\n[vite] SFC style compilation error: `))

@@ -14,7 +14,7 @@ import chalk from 'chalk'
 
 interface ProcessedEntry {
   css: string
-  modules: Record<string, string> | undefined
+  modules?: Record<string, string>
 }
 
 const processedCSS = new Map<string, ProcessedEntry>()
@@ -119,6 +119,11 @@ export const cssPlugin: ServerPlugin = ({
       modules: ctx.path.endsWith('.module.css'),
       preprocessLang: ctx.path.replace(cssPreprocessLangRE, '$2') as any
     })
+
+    if (typeof result === 'string') {
+      processedCSS.set(ctx.path, { css })
+      return
+    }
 
     if (result.errors.length) {
       console.error(`[vite] error applying css transforms: `)
