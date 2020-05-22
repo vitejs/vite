@@ -2,7 +2,7 @@ import path from 'path'
 import { asyncReplace } from './transformUtils'
 import { isExternalUrl } from './pathUtils'
 
-const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
+export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
 type Replacer = (url: string) => string | Promise<string>
 
@@ -21,7 +21,11 @@ export function rewriteCssUrls(
 
   return asyncReplace(css, urlRE, async (match) => {
     const [matched, before, rawUrl, after] = match
-    if (isExternalUrl(rawUrl) || rawUrl.startsWith('data:')) {
+    if (
+      isExternalUrl(rawUrl) ||
+      rawUrl.startsWith('data:') ||
+      rawUrl.startsWith('#')
+    ) {
       return matched
     }
     return before + (await replacer(rawUrl)) + after

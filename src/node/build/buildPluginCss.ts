@@ -4,11 +4,9 @@ import { resolveAsset, registerAssets } from './buildPluginAsset'
 import { loadPostcssConfig, parseWithQuery } from '../utils'
 import { Transform, BuildConfig } from '../config'
 import hash_sum from 'hash-sum'
-import { rewriteCssUrls } from '../utils/cssUtils'
+import { urlRE, rewriteCssUrls } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:build:css')
-
-const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 
 const cssInjectionMarker = `__VITE_CSS__`
 const cssInjectionRE = /__VITE_CSS__\(\)/g
