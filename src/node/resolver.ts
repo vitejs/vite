@@ -24,9 +24,15 @@ export interface InternalResolver {
 
 const defaultRequestToFile = (publicPath: string, root: string): string => {
   if (moduleRE.test(publicPath)) {
-    const moduleFilePath = idToFileMap.get(publicPath.replace(moduleRE, ''))
-    if (moduleFilePath) {
-      return moduleFilePath
+    const id = publicPath.replace(moduleRE, '')
+    const cachedModuleFilePath = idToFileMap.get(id)
+    if (cachedModuleFilePath) {
+      return cachedModuleFilePath
+    }
+    const resolved = resolveNodeModuleFile(root, id)
+    if (resolved) {
+      idToFileMap.set(id, resolved)
+      return resolved
     }
   }
   return path.join(root, publicPath.slice(1))
