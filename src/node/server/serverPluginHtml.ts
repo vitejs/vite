@@ -20,16 +20,21 @@ export const htmlRewritePlugin: ServerPlugin = ({
   root,
   app,
   watcher,
-  resolver
+  resolver,
+  config
 }) => {
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
+  const { env = {} } = config
   const devInjectionCode =
     `\n<script type="module">\n` +
     `import "${hmrClientPublicPath}"\n` +
     `window.__DEV__ = true\n` +
     `window.__BASE__ = '/'\n` +
-    `window.process = { env: { NODE_ENV: 'development' }}\n` +
+    `window.process = { env: ${JSON.stringify({
+      ...env,
+      NODE_ENV: 'development'
+    })}}\n` +
     `</script>\n`
 
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm

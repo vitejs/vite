@@ -9,6 +9,11 @@
   <p class="node_env">
     <code>process.env.NODE_ENV: {{ env }}</code>
   </p>
+  <p class="customize_env_variable">
+    <code
+      >process.env.CUSTOMIZE_ENV_VARIABLE: {{ CUSTOMIZE_ENV_VARIABLE }}</code
+    >
+  </p>
   <h2>Async Component</h2>
   <TestAsync />
   <TestModuleResolve />
@@ -46,7 +51,8 @@ export default {
   data: () => ({
     dev: __DEV__,
     base: __BASE__,
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    CUSTOMIZE_ENV_VARIABLE: process.env.CUSTOMIZE_ENV_VARIABLE
   }),
   components: {
     TestModuleResolve,

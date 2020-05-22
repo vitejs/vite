@@ -159,7 +159,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     minify = true,
     silent = false,
     sourcemap = false,
-    shouldPreload = null
+    shouldPreload = null,
+    env = {}
   } = options
 
   let spinner: Ora | undefined
@@ -214,7 +215,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       createReplacePlugin(
         {
           'process.env.NODE_ENV': '"production"',
-          'process.env.': `({}).`,
+          'process.env.': `(${JSON.stringify(env)}).`,
           __DEV__: 'false',
           __BASE__: JSON.stringify(publicBasePath)
         },
