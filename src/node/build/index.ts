@@ -3,7 +3,13 @@ import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 import { resolveFrom } from '../utils'
-import { rollup as Rollup, RollupOutput, ExternalOption, Plugin } from 'rollup'
+import {
+  rollup as Rollup,
+  RollupOutput,
+  ExternalOption,
+  Plugin,
+  InputOptions
+} from 'rollup'
 import { createResolver, supportedExts, InternalResolver } from '../resolver'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'
@@ -35,6 +41,14 @@ const writeColors = {
   [WriteType.ASSET]: chalk.green,
   [WriteType.HTML]: chalk.blue,
   [WriteType.SOURCE_MAP]: chalk.gray
+}
+
+const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
+
+export const onRollupWarning: InputOptions['onwarn'] = (warning, warn) => {
+  if (!warningIgnoreList.includes(warning.code!)) {
+    warn(warning)
+  }
 }
 
 /**
@@ -204,11 +218,7 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     input: path.resolve(root, 'index.html'),
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
-    onwarn(warning, warn) {
-      if (warning.code !== 'CIRCULAR_DEPENDENCY') {
-        warn(warning)
-      }
-    },
+    onwarn: onRollupWarning,
     ...rollupInputOptions,
     plugins: [
       ...basePlugins,
@@ -219,10 +229,19 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       // - which makes it impossible to exclude Vue templates from it since
       // Vue templates are compiled into js and included in chunks.
       createReplacePlugin(
+        (id) => /\.(j|t)sx?$/.test(id),
         {
           ...envReplacements,
-          'process.env.': `({}).`,
-          __DEV__: 'false',
+          'process.env.': `({}).`
+        },
+        sourcemap
+      ),
+      // for vite spcific replacements, make sure to only apply them to
+      // non-dependency code to avoid collision (e.g. #224 antd has __DEV__)
+      createReplacePlugin(
+        (id) => !id.includes('node_modules') && /\.(j|t)sx?$/.test(id),
+        {
+          __DEV__: `false`,
           __BASE__: JSON.stringify(publicBasePath)
         },
         sourcemap

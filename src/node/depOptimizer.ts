@@ -8,7 +8,7 @@ import {
   supportedExts,
   resolveNodeModuleEntry
 } from './resolver'
-import { createBaseRollupPlugins } from './build'
+import { createBaseRollupPlugins, onRollupWarning } from './build'
 import { resolveFrom, lookupFile } from './utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
@@ -214,16 +214,11 @@ export async function optimizeDeps(
     }, {} as Record<string, string>)
 
     const rollup = require('rollup') as typeof Rollup
-    const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
     const bundle = await rollup.rollup({
       input,
       external: preservedDeps,
       treeshake: { moduleSideEffects: 'no-external' },
-      onwarn(warning, warn) {
-        if (!warningIgnoreList.includes(warning.code!)) {
-          warn(warning)
-        }
-      },
+      onwarn: onRollupWarning,
       ...config.rollupInputOptions,
       plugins: [
         ...(await createBaseRollupPlugins(root, resolver, config)),
