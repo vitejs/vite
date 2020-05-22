@@ -67,6 +67,7 @@
     "chokidar": "^3.3.1",
     "cssnano": "^4.1.10",
     "debug": "^4.1.1",
+    "dotenv": "^8.2.0",
     "es-module-lexer": "^0.3.18",
     "esbuild": "^0.3.2",
     "etag": "^1.8.1",

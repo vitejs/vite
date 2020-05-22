@@ -159,7 +159,8 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     minify = true,
     silent = false,
     sourcemap = false,
-    shouldPreload = null
+    shouldPreload = null,
+    env = {}
   } = options
 
   let spinner: Ora | undefined
@@ -213,8 +214,10 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
       // Vue templates are compiled into js and included in chunks.
       createReplacePlugin(
         {
-          'process.env.NODE_ENV': '"production"',
-          'process.env.': `({}).`,
+          'process.env': `(${JSON.stringify({
+            ...env,
+            NODE_ENV: 'production'
+          })})`,
           __DEV__: 'false',
           __BASE__: JSON.stringify(publicBasePath)
         },

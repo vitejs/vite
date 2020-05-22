@@ -6,9 +6,7 @@
   <p class="base">
     <code>__BASE__: {{ base }}</code>
   </p>
-  <p class="node_env">
-    <code>process.env.NODE_ENV: {{ env }}</code>
-  </p>
+  <TestEnv />
   <h2>Async Component</h2>
   <TestAsync />
   <TestModuleResolve />
@@ -28,6 +26,7 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import TestEnv from './TestEnv.vue'
 import TestModuleResolve from './TestModuleResolve.vue'
 import TestHmr from './TestHmr.vue'
 import TestPostCss from './TestPostCss.vue'
@@ -45,10 +44,10 @@ import TestTransform from './TestTransform.vue'
 export default {
   data: () => ({
     dev: __DEV__,
-    base: __BASE__,
-    env: process.env.NODE_ENV
+    base: __BASE__
   }),
   components: {
+    TestEnv,
     TestModuleResolve,
     TestHmr,
     TestPostCss,
