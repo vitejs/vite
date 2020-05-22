@@ -67,9 +67,6 @@ export async function compileCss(
         }
       : {})
   })
-  if (!isBuild) {
-    // rewrite relative urls
-    result.code = await rewriteCssUrls(result.code, publicPath)
-  }
+
   return result
 }

@@ -4,7 +4,11 @@ import hash_sum from 'hash-sum'
 import { Context } from 'koa'
 import { isImportRequest, readBody } from '../utils'
 import { srcImportMap } from './serverPluginVue'
-import { compileCss, cssPreprocessLangReg } from '../utils/cssUtils'
+import {
+  compileCss,
+  cssPreprocessLangReg,
+  rewriteCssUrls
+} from '../utils/cssUtils'
 
 interface ProcessedEntry {
   css: string
@@ -99,6 +103,8 @@ export const cssPlugin: ServerPlugin = ({
       console.error(`[vite] error applying css transforms: `)
       result.errors.forEach(console.error)
     }
+
+    result.code = await rewriteCssUrls(result.code, ctx.path)
 
     processedCSS.set(ctx.path, {
       css: result.code,

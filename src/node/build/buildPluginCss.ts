@@ -32,19 +32,14 @@ export const createBuildCssPlugin = (
     name: 'vite:css',
     async transform(css: string, id: string) {
       if (id.endsWith('.css') || cssPreprocessLangReg.test(id)) {
-        const result = await compileCss(
-          root,
-          id,
-          {
-            id: '',
-            source: css,
-            filename: path.basename(id),
-            scoped: false,
-            modules: id.endsWith('.module.css'),
-            preprocessLang: id.replace(cssPreprocessLangReg, '$2') as any
-          },
-          true
-        )
+        const result = await compileCss(root, id, {
+          id: '',
+          source: css,
+          filename: path.basename(id),
+          scoped: false,
+          modules: id.endsWith('.module.css'),
+          preprocessLang: id.replace(cssPreprocessLangReg, '$2') as any
+        })
 
         if (result.errors.length) {
           console.error(`[vite] error applying css transforms: `)

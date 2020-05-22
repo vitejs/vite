@@ -30,7 +30,7 @@ import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import qs from 'querystring'
 import { seenUrls } from './serverPluginServeStatic'
-import { compileCss } from '../utils/cssUtils'
+import { compileCss, rewriteCssUrls } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -425,6 +425,8 @@ async function compileSFCStyle(
       }
     })
   }
+
+  result.code = await rewriteCssUrls(result.code, publicPath)
 
   cached = cached || { styles: [] }
   cached.styles[index] = result
