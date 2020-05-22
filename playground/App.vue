@@ -10,9 +10,7 @@
     <code>process.env.NODE_ENV: {{ env }}</code>
   </p>
   <p class="customize_env_variable">
-    <code
-      >process.env.CUSTOMIZE_ENV_VARIABLE: {{ CUSTOMIZE_ENV_VARIABLE }}</code
-    >
+    <code>process.env.CUSTOMIZE_ENV_VARIABLE: {{ CUSTOMIZE_ENV_VARIABLE }}</code>
   </p>
   <h2>Async Component</h2>
   <TestAsync />

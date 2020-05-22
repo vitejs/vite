@@ -100,6 +100,9 @@ describe('vite', () => {
       expect(await getText('.node_env')).toMatch(
         `process.env.NODE_ENV: ${isBuild ? 'production' : 'development'}`
       )
+      expect(await getText('.customize_env_variable')).toMatch(
+        'process.env.CUSTOMIZE_ENV_VARIABLE: 9527'
+      )
     })
 
     test('module resolving', async () => {
