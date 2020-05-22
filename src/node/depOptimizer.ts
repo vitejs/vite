@@ -3,13 +3,9 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { ResolvedConfig } from './config'
 import type Rollup from 'rollup'
-import {
-  createResolver,
-  supportedExts,
-  resolveNodeModuleEntry
-} from './resolver'
+import { createResolver, supportedExts, resolveNodeModule } from './resolver'
 import { createBaseRollupPlugins, onRollupWarning } from './build'
-import { resolveFrom, lookupFile } from './utils'
+import { lookupFile } from './utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
@@ -120,17 +116,17 @@ export async function optimizeDeps(
       debug(`skipping ${id} (internal excluded)`)
       return false
     }
-    const pkgInfo = resolveNodeModuleEntry(root, id)
+    const pkgInfo = resolveNodeModule(root, id)
     if (!pkgInfo) {
       debug(`skipping ${id} (cannot resolve entry)`)
       return false
     }
-    const [entry, pkg] = pkgInfo
-    if (!supportedExts.includes(path.extname(entry))) {
+    const { entryFilePath, pkg } = pkgInfo
+    if (!supportedExts.includes(path.extname(entryFilePath))) {
       debug(`skipping ${id} (entry is not js)`)
       return false
     }
-    const content = fs.readFileSync(resolveFrom(root, entry), 'utf-8')
+    const content = fs.readFileSync(entryFilePath, 'utf-8')
     const [imports, exports] = parse(content)
     if (!exports.length && !/export\s+\*\s+from/.test(content)) {
       if (!pkg.module) {

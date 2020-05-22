@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import { ServerPlugin } from '.'
 import { resolveVue, cachedRead } from '../utils'
 import { URL } from 'url'
-import { resolveOptimizedModule, resolveNodeModule } from '../resolver'
+import { resolveOptimizedModule, resolveNodeModuleFile } from '../resolver'
 
 const debug = require('debug')('vite:resolve')
 
@@ -60,7 +60,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       return serve(id, optimized, 'optimized')
     }
 
-    const nodeModulePath = resolveNodeModule(root, id)
+    const nodeModulePath = resolveNodeModuleFile(root, id)
     if (nodeModulePath) {
       return serve(id, nodeModulePath, 'node_modules')
     }
