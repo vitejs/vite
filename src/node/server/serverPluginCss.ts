@@ -5,7 +5,6 @@ import { Context } from 'koa'
 import { isImportRequest, readBody } from '../utils'
 import { srcImportMap } from './serverPluginVue'
 import { compileCss, cssPreprocessLangReg } from '../utils/cssUtils'
-import path from 'path'
 
 interface ProcessedEntry {
   css: string
