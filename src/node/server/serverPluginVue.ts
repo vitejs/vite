@@ -22,13 +22,11 @@ import {
   resolveFrom,
   cachedRead,
   genSourceMapString,
-  cleanUrl,
   resolveRelativeRequest
 } from '../utils'
 import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
-import qs from 'querystring'
 import { seenUrls } from './serverPluginServeStatic'
 import { compileCss, rewriteCssUrls } from '../utils/cssUtils'
 
@@ -134,25 +132,6 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     // TODO custom blocks
-  })
-
-  // handle HMR for <style src="xxx.css">
-  // it cannot be handled as simple css import because it may be scoped
-  watcher.on('change', (file) => {
-    const styleImport = srcImportMap.get(file)
-    if (styleImport) {
-      vueCache.del(file)
-      const publicPath = cleanUrl(styleImport)
-      const index = qs.parse(styleImport.split('?', 2)[1]).index
-      console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
-      watcher.send({
-        type: 'vue-style-update',
-        path: publicPath,
-        index: Number(index),
-        id: `${hash_sum(publicPath)}-${index}`,
-        timestamp: Date.now()
-      })
-    }
   })
 }
 

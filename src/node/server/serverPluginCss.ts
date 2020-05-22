@@ -2,13 +2,15 @@ import { ServerPlugin } from '.'
 import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
 import { Context } from 'koa'
-import { isImportRequest, readBody } from '../utils'
-import { srcImportMap } from './serverPluginVue'
+import { cleanUrl, isImportRequest, readBody } from '../utils'
+import { srcImportMap, vueCache } from './serverPluginVue'
 import {
   compileCss,
   cssPreprocessLangReg,
   rewriteCssUrls
 } from '../utils/cssUtils'
+import qs from 'querystring'
+import chalk from 'chalk'
 
 interface ProcessedEntry {
   css: string
@@ -66,9 +68,26 @@ export const cssPlugin: ServerPlugin = ({
   watcher.on('change', (file) => {
     if (file.endsWith('.css') || cssPreprocessLangReg.test(file)) {
       if (srcImportMap.has(file)) {
-        // this is a vue src import, skip
+        // handle HMR for <style src="xxx.css">
+        // it cannot be handled as simple css import because it may be scoped
+        const styleImport = srcImportMap.get(file)
+        vueCache.del(file)
+        const publicPath = cleanUrl(styleImport)
+        const index = qs.parse(styleImport.split('?', 2)[1]).index
+        console.log(
+          chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`
+        )
+        watcher.send({
+          type: 'vue-style-update',
+          path: publicPath,
+          index: Number(index),
+          id: `${hash_sum(publicPath)}-${index}`,
+          timestamp: Date.now()
+        })
         return
       }
+      // handle HMR for module.css
+      // it cannot process with normal css, the class which in module.css maybe removed
       if (file.endsWith('.module.css')) {
         watcher.handleJSReload(file, Date.now())
         return
