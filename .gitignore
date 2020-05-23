@@ -4,6 +4,6 @@ dist
 dist-ssr
 TODOs.md
 *.log
-test/temp
+temp
 explorations
 .idea
