@@ -8,7 +8,10 @@ const config: UserConfig = {
   jsx: 'preact',
   minify: false,
   serviceWorker: !!process.env.USE_SW,
-  plugins: [jsPlugin]
+  plugins: [jsPlugin],
+  optimizeDeps: {
+    commonJSWhitelist: ['moment']
+  }
 }
 
 export default config

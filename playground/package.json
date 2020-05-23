@@ -5,6 +5,8 @@
     "serve": "serve dist"
   },
   "dependencies": {
-    "lodash-es": "^4.17.15"
+    "lodash-es": "link:../node_modules/lodash-es",
+    "moment": "link:../node_modules/moment",
+    "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package"
   }
 }

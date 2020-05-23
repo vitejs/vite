@@ -2,6 +2,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const execa = require('execa')
 const puppeteer = require('puppeteer')
+const moment = require('moment')
 
 jest.setTimeout(100000)
 
@@ -9,7 +10,7 @@ const timeout = (n) => new Promise((r) => setTimeout(r, n))
 
 const binPath = path.resolve(__dirname, '../bin/vite.js')
 const fixtureDir = path.join(__dirname, '../playground')
-const tempDir = path.join(__dirname, 'temp')
+const tempDir = path.join(__dirname, '../temp')
 let devServer
 let browser
 let page
@@ -46,6 +47,7 @@ beforeAll(async () => {
   await fs.copy(fixtureDir, tempDir, {
     filter: (file) => !/dist|node_modules/.test(file)
   })
+  await execa('yarn', { cwd: tempDir })
 })
 
 afterAll(async () => {
@@ -351,6 +353,12 @@ describe('vite', () => {
     test('async component', async () => {
       await expectByPolling(() => getText('.async'), 'should show up')
       expect(await getComputedColor('.async')).toBe('rgb(139, 69, 19)')
+    })
+
+    test('rewrite import in optimized deps', async () => {
+      expect(await getText('.test-rewrite-in-optimized')).toMatch(
+        moment(1590231082886).format('MMMM Do YYYY, h:mm:ss a')
+      )
     })
   }
 

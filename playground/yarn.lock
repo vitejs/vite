@@ -2,7 +2,14 @@
 # yarn lockfile v1
 
 
-lodash-es@^4.17.15:
-  version "4.17.15"
-  resolved "https://registry.yarnpkg.com/lodash-es/-/lodash-es-4.17.15.tgz#21bd96839354412f23d7a10340e5eac6ee455d78"
-  integrity sha512-rlrc3yU3+JNOpZ9zj5pQtxnx2THmvRykwL4Xlxoa8I9lHBlVbbyPhgyPMioxVZ4NqyxaVVtaJnzsyOidQIhyyQ==
+"lodash-es@link:../node_modules/lodash-es":
+  version "0.0.0"
+  uid ""
+
+"moment@link:../node_modules/moment":
+  version "0.0.0"
+  uid ""
+
+"rewrite-optimized-test-package@link:./rewrite-optimized/test-package":
+  version "0.0.0"
+  uid ""
