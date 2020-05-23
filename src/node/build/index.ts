@@ -350,7 +350,9 @@ export async function build(options: BuildConfig = {}): Promise<BuildResult> {
     if (emitAssets) {
       const publicDir = path.resolve(root, 'public')
       if (fs.existsSync(publicDir)) {
-        await fs.copy(publicDir, path.resolve(outDir, 'public'))
+        for (const file of await fs.readdir(publicDir)) {
+          await fs.copy(path.join(publicDir, file), path.resolve(outDir, file))
+        }
       }
     }
   }
