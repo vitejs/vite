@@ -203,27 +203,6 @@ export function resolveNodeModule(
     pkgPath = resolveFrom(root, `${id}/package.json`)
   } catch (e) {}
 
-  if (!pkgPath) {
-    // if the above resolve failed, it's either the package is not installed,
-    // or the package has explicit exports field preventing us from resolving
-    // its package.json. Try to resovle the package.json's path by sniffing
-    // the node_modules in the path.
-    try {
-      const entryPath = resolveFrom(root, id)
-      if (entryPath) {
-        const moduleIndex = entryPath.lastIndexOf(path.join(`node_modules`, id))
-        if (moduleIndex > 0) {
-          pkgPath = path.join(
-            entryPath.slice(0, moduleIndex),
-            'node_modules',
-            id,
-            'package.json'
-          )
-        }
-      }
-    } catch (e) {}
-  }
-
   if (pkgPath) {
     // if yes, this is a entry import. resolve entry file
     let pkg
@@ -280,25 +259,11 @@ export function resolveNodeModuleFile(
   if (cached) {
     return cached
   }
-
-  let resolved
-  if (!path.extname(id)) {
-    for (const ext of supportedExts) {
-      try {
-        resolved = resolveFrom(root, id + ext)
-      } catch (e) {}
-      if (resolved) {
-        break
-      }
-    }
+  try {
+    const resolved = resolveFrom(root, id)
+    nodeModulesFileMap.set(id, resolved)
+    return resolved
+  } catch (e) {
+    // error will be reported downstream
   }
-
-  if (!resolved) {
-    try {
-      resolved = resolveFrom(root, id)
-    } catch (e) {}
-  }
-
-  nodeModulesFileMap.set(id, resolved)
-  return resolved
 }

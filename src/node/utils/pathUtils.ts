@@ -2,9 +2,11 @@ import { Context } from 'koa'
 import path from 'path'
 import slash from 'slash'
 import qs from 'querystring'
+import resolve from 'resolve'
+import { supportedExts } from '../resolver'
 
 export const resolveFrom = (root: string, id: string) =>
-  require.resolve(id, { paths: [root] })
+  resolve.sync(id, { basedir: root, extensions: supportedExts })
 
 export const queryRE = /\?.*$/
 export const hashRE = /\#.*$/

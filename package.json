@@ -89,6 +89,7 @@
     "postcss": "^7.0.28",
     "postcss-load-config": "^2.1.0",
     "postcss-modules": "^2.0.0",
+    "resolve": "^1.17.0",
     "rollup": "^2.7.2",
     "rollup-plugin-terser": "^5.3.0",
     "rollup-plugin-vue": "^6.0.0-beta.1",
