@@ -1,0 +1,11 @@
+{
+  "name": "conditional-exports",
+  "version": "1.0.0",
+  "main": "files/index.js",
+  "exports": {
+    ".": {
+      "import": "files/index.mjs",
+      "require": "files/index.js"
+    }
+  }
+}

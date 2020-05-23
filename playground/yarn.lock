@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"conditional-exports@link:./conditional-exports":
+  version "0.0.0"
+  uid ""
+
 "lodash-es@link:../node_modules/lodash-es":
   version "0.0.0"
   uid ""

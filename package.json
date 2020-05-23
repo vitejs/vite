@@ -49,11 +49,6 @@
       "prettier --parser=typescript --write"
     ]
   },
-  "jest": {
-    "watchPathIgnorePatterns": [
-      "<rootDir>/test/temp"
-    ]
-  },
   "dependencies": {
     "@babel/parser": "^7.9.4",
     "@rollup/plugin-commonjs": "~11.0.0",

@@ -111,6 +111,7 @@ describe('vite', () => {
       expect(await getText('.module-resolve-router')).toMatch('ok')
       expect(await getText('.module-resolve-store')).toMatch('ok')
       expect(await getText('.module-resolve-optimize')).toMatch('ok')
+      expect(await getText('.module-resolve-conditional')).toMatch('ok')
       expect(await getText('.index-resolve')).toMatch('ok')
       expect(await getText('.dot-resolve')).toMatch('ok')
     })
@@ -367,14 +368,17 @@ describe('vite', () => {
   describe('build', () => {
     let staticServer
     beforeAll(async () => {
+      console.log('building...')
       const buildOutput = await execa(binPath, ['build'], {
         cwd: tempDir
       })
       expect(buildOutput.stdout).toMatch('Build completed')
       expect(buildOutput.stderr).toBe('')
+      console.log('build complete. running build tests...')
     })
 
     afterAll(() => {
+      console.log('build test done.')
       if (staticServer) staticServer.close()
     })
 
@@ -420,6 +424,7 @@ describe('vite', () => {
   describe('dev', () => {
     beforeAll(async () => {
       browserLogs.length = 0
+      console.log('starting dev server...')
       // start dev server
       devServer = execa(binPath, {
         cwd: tempDir
@@ -428,11 +433,13 @@ describe('vite', () => {
         devServer.stdout.on('data', (data) => {
           serverLogs.push(data.toString())
           if (data.toString().match('running')) {
+            console.log('dev server running.')
             resolve()
           }
         })
       })
 
+      console.log('launching browser')
       page = await browser.newPage()
       page.on('console', (msg) => {
         browserLogs.push(msg.text())

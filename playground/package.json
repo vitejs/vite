@@ -7,6 +7,7 @@
   "dependencies": {
     "lodash-es": "link:../node_modules/lodash-es",
     "moment": "link:../node_modules/moment",
-    "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package"
+    "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package",
+    "conditional-exports": "link:./conditional-exports"
   }
 }
