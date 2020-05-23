@@ -203,7 +203,7 @@ const compileHtml = async (
       assetsDir,
       inlineLimit
     )
-    s.overwrite(value.loc.start.offset, value.loc.end.offset, url)
+    s.overwrite(value.loc.start.offset, value.loc.end.offset, `"${url}"`)
   }
 
   return {
