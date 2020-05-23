@@ -258,8 +258,6 @@ export interface Plugin
 
 export type ResolvedConfig = UserConfig & { __path?: string }
 
-const cwd = process.cwd()
-
 const debug = require('debug')('vite:config')
 
 export async function resolveConfig(
@@ -342,7 +340,7 @@ export async function resolveConfig(
     }
 
     // load environment variables
-    const env = loadEnv(mode)
+    const env = loadEnv(mode, config.root || cwd)
     debug(`env: %O`, env)
     config.env = env
 
@@ -411,20 +409,15 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   }
 }
 
-function loadEnv(mode?: string) {
+function loadEnv(mode: string, projectRoot: string) {
   debug(`env mode: ${mode}`)
   const { resolve } = path
-  const envFiles = mode
-    ? [
-        /** default file */ resolve(cwd, '.env'),
-        /** local file */ resolve(cwd, `.env.local`),
-        /** mode file */ resolve(cwd, `.env.${mode}`),
-        /** mode local file */ resolve(cwd, `.env.${mode}.local`)
-      ]
-    : [
-        /** default file */ resolve(cwd, '.env'),
-        /** local file */ resolve(cwd, `.env.local`)
-      ]
+  const envFiles = [
+    /** default file */ resolve(projectRoot, '.env'),
+    /** local file */ resolve(projectRoot, `.env.local`),
+    /** mode file */ resolve(projectRoot, `.env.${mode}`),
+    /** mode local file */ resolve(projectRoot, `.env.${mode}.local`)
+  ]
 
   return envFiles.reduce((envs, path) => {
     if (!(existsSync(path) && statSync(path).isFile())) return envs

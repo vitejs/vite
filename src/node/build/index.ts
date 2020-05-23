@@ -205,7 +205,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
   const basePlugins = await createBaseRollupPlugins(root, resolver, options)
 
-  env.NODE_ENV = mode
+  env.NODE_ENV = mode!
   const envReplacements = Object.keys(env).reduce((replacements, key) => {
     replacements[`process.env.${key}`] = JSON.stringify(env[key])
     return replacements
