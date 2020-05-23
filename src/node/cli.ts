@@ -40,7 +40,7 @@ Options:
   --sourcemap                [boolean] output source maps for build (default: false)
   --minify                   [boolean | 'terser' | 'esbuild'] enable/disable minification, or specify
                                        minifier to use. (default: 'terser')
-  --mode, -m                 [string]  specify env mode (default: ${defaultMode})
+  --mode, -m                 [string]  specify env mode (default: 'development' for dev, 'production' for build)
   --ssr                      [boolean] build for server-side rendering
   --jsx                      ['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')
   --jsx-factory              [string]  (default: React.createElement)
