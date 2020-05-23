@@ -352,6 +352,12 @@ describe('vite', () => {
       await expectByPolling(() => getText('.async'), 'should show up')
       expect(await getComputedColor('.async')).toBe('rgb(139, 69, 19)')
     })
+
+    test('rewrite import in optimized deps', async () => {
+      expect(await getText('.test-rewrite-in-optimized')).toMatch(
+        'May 23rd 2020, 6:51:22 pm'
+      )
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev

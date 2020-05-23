@@ -22,6 +22,7 @@
   <TestJsx />
   <TestAlias />
   <TestTransform />
+  <TestRewriteOptimized />
 </template>
 
 <script>
@@ -40,6 +41,7 @@ import TestTs from './ts/TestTs.vue'
 import TestJsx from './TestJsx.vue'
 import TestAlias from './TestAlias.vue'
 import TestTransform from './TestTransform.vue'
+import TestRewriteOptimized from "./rewrite-optimized/TestRewriteOptimized.vue";
 
 export default {
   data: () => ({
@@ -61,7 +63,8 @@ export default {
     TestJsx,
     TestAlias,
     TestTransform,
-    TestAsync: defineAsyncComponent(() => import('./TestAsync.vue'))
+    TestAsync: defineAsyncComponent(() => import('./TestAsync.vue')),
+    TestRewriteOptimized
   }
 }
 </script>
