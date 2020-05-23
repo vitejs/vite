@@ -1,3 +1,13 @@
+## [0.16.9](https://github.com/vuejs/vite/compare/v0.16.8...v0.16.9) (2020-05-23)
+
+
+### Bug Fixes
+
+* public dir should be copied to dist root ([bf2b2a9](https://github.com/vuejs/vite/commit/bf2b2a9c7d66b001260e60d825ae72e8c3e0c301))
+* quote resolved urls in rendered html ([fd68ecf](https://github.com/vuejs/vite/commit/fd68ecfa5c5e74a1a463ed5c91b9fecba356f846))
+
+
+
 ## [0.16.8](https://github.com/vuejs/vite/compare/v0.16.7...v0.16.8) (2020-05-23)
 
 
