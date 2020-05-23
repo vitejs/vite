@@ -10,6 +10,9 @@
   <div class="index-resolve" :class="indexResolve">
     directory index resolve: {{ indexResolve }}
   </div>
+  <div class="dot-resolve" :class="dotResolve">
+    filename with dot resolve: {{ dotResolve }}
+  </div>
 </template>
 
 <script>
@@ -17,6 +20,7 @@ import { createRouter } from 'vue-router'
 import { createStore } from 'vuex'
 import { add } from 'lodash-es'
 import { foo } from './util'
+import { bar } from './util/bar.util'
 
 export default {
   setup() {
@@ -24,7 +28,8 @@ export default {
       router: typeof createRouter === 'function' ? 'ok' : 'error',
       store: typeof createStore === 'function' ? 'ok' : 'error',
       optResolve: typeof add === 'function' ? 'ok' : 'error',
-      indexResolve: foo() ? 'ok' : 'error'
+      indexResolve: foo() ? 'ok' : 'error',
+      dotResolve: bar() ? 'ok' : 'error'
     }
   }
 }

@@ -112,6 +112,7 @@ describe('vite', () => {
       expect(await getText('.module-resolve-store')).toMatch('ok')
       expect(await getText('.module-resolve-optimize')).toMatch('ok')
       expect(await getText('.index-resolve')).toMatch('ok')
+      expect(await getText('.dot-resolve')).toMatch('ok')
     })
 
     if (!isBuild) {

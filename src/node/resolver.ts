@@ -10,6 +10,8 @@ import {
 import { resolveOptimizedCacheDir } from './depOptimizer'
 import chalk from 'chalk'
 
+const debug = require('debug')('vite:resolve')
+
 export interface Resolver {
   requestToFile?(publicPath: string, root: string): string | undefined
   fileToRequest?(filePath: string, root: string): string | undefined
@@ -22,19 +24,21 @@ export interface InternalResolver {
   alias(id: string): string | undefined
 }
 
+export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+
 const defaultRequestToFile = (publicPath: string, root: string): string => {
   if (moduleRE.test(publicPath)) {
     const id = publicPath.replace(moduleRE, '')
+    const cachedNodeModule = idToFileMap.get(id)
+    if (cachedNodeModule) {
+      return cachedNodeModule
+    }
     // try to resolve from optimized modules
     const optimizedModule = resolveOptimizedModule(root, id)
     if (optimizedModule) {
       return optimizedModule
     }
     // try to resolve from normal node_modules
-    const cachedNodeModule = idToFileMap.get(id)
-    if (cachedNodeModule) {
-      return cachedNodeModule
-    }
     const nodeModule = resolveNodeModuleFile(root, id)
     if (nodeModule) {
       idToFileMap.set(id, nodeModule)
@@ -52,27 +56,26 @@ const defaultFileToRequest = (filePath: string, root: string): string => {
   return `/${slash(path.relative(root, filePath))}`
 }
 
-export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
-
-const debug = require('debug')('vite:resolve')
+const isFile = (file: string): boolean => {
+  try {
+    return fs.statSync(file).isFile()
+  } catch (e) {
+    return false
+  }
+}
 
 export const resolveExt = (id: string) => {
   const cleanId = cleanUrl(id)
-  if (!path.extname(cleanId)) {
+  if (!isFile(cleanId)) {
     let inferredExt = ''
     for (const ext of supportedExts) {
-      try {
-        // foo -> foo.js
-        fs.statSync(cleanId + ext)
+      if (isFile(cleanId + ext)) {
         inferredExt = ext
         break
-      } catch (e) {
-        try {
-          // foo -> foo/index.js
-          fs.statSync(path.join(cleanId, '/index' + ext))
-          inferredExt = '/index' + ext
-          break
-        } catch (e) {}
+      }
+      if (isFile(path.join(cleanId, '/index' + ext))) {
+        inferredExt = '/index' + ext
+        break
       }
     }
     const queryMatch = id.match(/\?.*$/)
@@ -130,7 +133,19 @@ export function createResolver(
 export const jsSrcRE = /\.(?:(?:j|t)sx?|vue)$|\.mjs$/
 const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-export function resolveBareModule(root: string, id: string, importer: string) {
+/**
+ * Redirects a bare module request to a full path under /@modules/
+ * It resolves a bare node module id to its full entry path so that relative
+ * imports from the entry can be correctly resolved.
+ * e.g.:
+ * - `import 'foo'` -> `import '/@modules/foo/dist/index.js'`
+ * - `import 'foo/bar/baz'` -> `import '/@modules/foo/bar/baz'`
+ */
+export function resolveBareModuleRequest(
+  root: string,
+  id: string,
+  importer: string
+) {
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
     return id

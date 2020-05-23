@@ -7,7 +7,11 @@ import {
   parse as parseImports,
   ImportSpecifier
 } from 'es-module-lexer'
-import { InternalResolver, resolveBareModule, jsSrcRE } from '../resolver'
+import {
+  InternalResolver,
+  resolveBareModuleRequest,
+  jsSrcRE
+} from '../resolver'
 import {
   debugHmr,
   importerMap,
@@ -25,6 +29,8 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
+import slash from 'slash'
+import { moduleRE } from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -230,27 +236,29 @@ export const resolveImport = (
   if (bareImportRE.test(id)) {
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
-    return `/@modules/${resolveBareModule(root, id, importer)}`
+    return `/@modules/${resolveBareModuleRequest(root, id, importer)}`
   } else {
+    // 1. relative to absolute
+    //    ./foo -> /some/path/foo
     let { pathname, query } = resolveRelativeRequest(importer, id)
-    // append an extension to extension-less imports
-    if (!path.extname(pathname)) {
-      const file = resolver.requestToFile(pathname)
-      const indexMatch = file.match(/\/index\.\w+$/)
-      if (indexMatch) {
-        pathname = pathname.replace(/\/(index)?$/, '') + indexMatch[0]
-      } else {
-        pathname += path.extname(file)
-      }
+
+    // 2. if this is a relative import between files under /@modules/, preserve
+    // them as-is
+    if (moduleRE.test(pathname)) {
+      return pathname
     }
 
-    // mark non-src imports
+    // 3. resolve extensions.
+    const file = resolver.requestToFile(pathname)
+    pathname = '/' + slash(path.relative(root, file))
+
+    // 4. mark non-src imports
     const ext = path.extname(pathname)
     if (ext && !jsSrcRE.test(pathname)) {
       query += `${query ? `&` : `?`}import`
     }
 
-    // force re-fetch dirty imports by appending timestamp
+    // 5. force re-fetch dirty imports by appending timestamp
     if (timestamp) {
       const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
       // only force re-fetch if this is a marked dirty file (in the import
