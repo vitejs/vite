@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
-import { cleanUrl, resolveFrom } from './utils'
+import { cleanUrl, resolveFrom, queryRE } from './utils'
 import {
   idToFileMap,
   moduleRE,
@@ -157,8 +157,11 @@ export function resolveBareModule(root: string, id: string, importer: string) {
         )
       }
     }
+    return id
+  } else {
+    // append import query for non-js deep imports
+    return id + (queryRE.test(id) ? '&import' : '?import')
   }
-  return id
 }
 
 const viteOptimizedMap = new Map()

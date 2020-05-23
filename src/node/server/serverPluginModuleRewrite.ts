@@ -230,12 +230,7 @@ export const resolveImport = (
   if (bareImportRE.test(id)) {
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
-    let resolvedModulePath = resolveBareModule(root, id, importer)
-    const ext = path.extname(resolvedModulePath)
-    if (ext && !jsSrcRE.test(ext)) {
-      resolvedModulePath += `?import`
-    }
-    return `/@modules/${resolvedModulePath}`
+    return `/@modules/${resolveBareModule(root, id, importer)}`
   } else {
     let { pathname, query } = resolveRelativeRequest(importer, id)
     // append an extension to extension-less imports
