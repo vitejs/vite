@@ -90,7 +90,7 @@ export interface SharedConfig {
   /**
    * Environment mode
    */
-  mode: string
+  mode?: string
 }
 
 export interface ServerConfig extends SharedConfig {
