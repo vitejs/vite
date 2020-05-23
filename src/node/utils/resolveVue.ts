@@ -42,12 +42,10 @@ export function resolveVue(root: string): ResolvedVuePaths {
   if (isLocal) {
     // user has local vue, verify that the same version of @vue/compiler-sfc
     // is also installed.
-    // vuePath will be undefined in this case since vue itself will be
-    // optimized by the deps optimizer and we can just let the resolver locate
-    // it.
     try {
       const userVuePkg = resolveFrom(root, 'vue/package.json')
       vueVersion = require(userVuePkg).version
+      vuePath = require.resolve('vue/dist/vue.esm-browser.js', { paths: [ root ]})
       const compilerPkgPath = resolveFrom(
         root,
         '@vue/compiler-sfc/package.json'
