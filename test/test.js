@@ -34,12 +34,6 @@ const getComputedColor = async (selectorOrEl) => {
   )
 }
 
-const navigateFinish = async () => {
-  return await page.waitForNavigation({
-    waitUntil: 'domcontentloaded'
-  })
-}
-
 beforeAll(async () => {
   try {
     await fs.remove(tempDir)
@@ -452,10 +446,13 @@ describe('vite', () => {
     test('hmr (index.html full-reload)', async () => {
       expect(await getText('title')).toMatch('Vite App')
       // hmr
+      const reload = page.waitForNavigation({
+        waitUntil: 'domcontentloaded'
+      })
       await updateFile('index.html', (content) =>
         content.replace('Vite App', 'Vite App Test')
       )
-      await navigateFinish()
+      await reload
       await expectByPolling(() => getText('title'), 'Vite App Test')
     })
 
@@ -463,10 +460,13 @@ describe('vite', () => {
       await page.goto('http://localhost:3000/test.html')
       expect(await getText('title')).toMatch('Vite App')
       // hmr
+      const reload = page.waitForNavigation({
+        waitUntil: 'domcontentloaded'
+      })
       await updateFile('test.html', (content) =>
         content.replace('Vite App', 'Vite App Test')
       )
-      await navigateFinish()
+      await reload
       await expectByPolling(() => getText('title'), 'Vite App Test')
     })
 
