@@ -73,8 +73,6 @@ export const hmrClientPublicPath = `/${hmrClientId}`
 
 interface HMRPayload {
   type:
-    | 'vue-rerender'
-    | 'vue-reload'
     | 'vue-style-update'
     | 'js-update'
     | 'style-update'
@@ -178,12 +176,21 @@ export const hmrPlugin: ServerPlugin = ({
     }
 
     // check which part of the file changed
-    let needReload = false
-    let needCssModuleReload = false
     let needRerender = false
 
     if (!isEqual(descriptor.script, prevDescriptor.script)) {
-      needReload = true
+      // reload
+      send({
+        type: 'js-update',
+        path: publicPath,
+        changeSrcPath: publicPath,
+        timestamp
+      })
+      console.log(
+        chalk.green(`[vite:hmr] `) +
+          `${path.relative(root, file)} updated. (reload)`
+      )
+      return
     }
 
     if (!isEqual(descriptor.template, prevDescriptor.template)) {
@@ -194,12 +201,6 @@ export const hmrPlugin: ServerPlugin = ({
     const styleId = hash_sum(publicPath)
     const prevStyles = prevDescriptor.styles || []
     const nextStyles = descriptor.styles || []
-    if (
-      !needReload &&
-      prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)
-    ) {
-      needReload = true
-    }
 
     // css modules update causes a reload because the $style object is changed
     // and it may be used in JS. It also needs to trigger a vue-style-update
@@ -208,25 +209,40 @@ export const hmrPlugin: ServerPlugin = ({
       prevStyles.some((s) => s.module != null) ||
       nextStyles.some((s) => s.module != null)
     ) {
-      needCssModuleReload = true
+      send({
+        type: 'js-update',
+        path: publicPath,
+        changeSrcPath: publicPath,
+        timestamp
+      })
+      console.log(
+        chalk.green(`[vite:hmr] `) +
+          `${path.relative(root, file)} updated. (reload)`
+      )
+      return
+    }
+
+    if (prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)) {
+      needRerender = true
     }
 
     // only need to update styles if not reloading, since reload forces
     // style updates as well.
-    if (!needReload) {
-      nextStyles.forEach((_, i) => {
-        if (!prevStyles[i] || !isEqual(prevStyles[i], nextStyles[i])) {
-          didUpdateStyle = true
-          send({
-            type: 'vue-style-update',
-            path: publicPath,
-            index: i,
-            id: `${styleId}-${i}`,
-            timestamp
-          })
-        }
-      })
-    }
+    nextStyles.forEach((_, i) => {
+      if (!prevStyles[i] || !isEqual(prevStyles[i], nextStyles[i])) {
+        didUpdateStyle = true
+        send({
+          type: 'vue-style-update',
+          path: publicPath,
+          changeSrcPath:
+            `${publicPath}?type=style&index=${i}` +
+            (nextStyles[i].module ? '&module' : ''),
+          index: i,
+          id: `${styleId}-${i}`,
+          timestamp
+        })
+      }
+    })
 
     // stale styles always need to be removed
     prevStyles.slice(nextStyles.length).forEach((_, i) => {
@@ -239,22 +255,17 @@ export const hmrPlugin: ServerPlugin = ({
       })
     })
 
-    if (needReload || needCssModuleReload) {
+    if (needRerender) {
       send({
-        type: 'vue-reload',
+        type: 'js-update',
         path: publicPath,
-        timestamp
-      })
-    } else if (needRerender) {
-      send({
-        type: 'vue-rerender',
-        path: publicPath,
+        changeSrcPath: `${publicPath}?type=template`,
         timestamp
       })
     }
 
-    if (needReload || needRerender || didUpdateStyle) {
-      let updateType = needReload ? `reload` : needRerender ? `template` : ``
+    if (needRerender || didUpdateStyle) {
+      let updateType = needRerender ? `template` : ``
       if (didUpdateStyle) {
         updateType += ` & style`
       }
@@ -308,9 +319,9 @@ export const hmrPlugin: ServerPlugin = ({
               `${vueBoundary} reloaded due to change in ${relativeFile}.`
           )
           send({
-            type: 'vue-reload',
+            type: 'js-update',
             path: vueBoundary,
-            changeSrcPath: publicPath,
+            changeSrcPath: vueBoundary,
             timestamp
           })
         })
@@ -385,6 +396,7 @@ function isHmrAccepted(importer: string, dep: string): boolean {
 function isEqual(a: SFCBlock | null, b: SFCBlock | null) {
   if (!a && !b) return true
   if (!a || !b) return false
+  if (a.content.length !== b.content.length) return false
   if (a.content !== b.content) return false
   const keysA = Object.keys(a.attrs)
   const keysB = Object.keys(b.attrs)

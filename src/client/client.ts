@@ -84,22 +84,6 @@ socket.addEventListener('message', async ({ data }) => {
     case 'connected':
       console.log(`[vite] connected.`)
       break
-    case 'vue-reload':
-      import(`${path}?t=${timestamp}`)
-        .then((m) => {
-          __VUE_HMR_RUNTIME__.reload(path, m.default)
-          console.log(`[vite] ${path} reloaded.`)
-        })
-        .catch((err) => warnFailedFetch(err, path))
-      break
-    case 'vue-rerender':
-      const templatePath = `${path}?type=template`
-      await bustSwCache(templatePath)
-      import(`${templatePath}&t=${timestamp}`).then((m) => {
-        __VUE_HMR_RUNTIME__.rerender(path, m.render)
-        console.log(`[vite] ${path} template updated.`)
-      })
-      break
     case 'vue-style-update':
       const stylePath = `${path}?type=style&index=${index}`
       await bustSwCache(stylePath)
@@ -220,8 +204,14 @@ async function updateModule(
     Array.from(modulesToUpdate).map(async (dep) => {
       const disposer = jsDisposeMap.get(dep)
       if (disposer) await disposer()
-      const newMod = await import(dep + `?t=${timestamp}`)
-      moduleMap.set(dep, newMod)
+      try {
+        const newMod = await import(
+          dep + (dep.includes('?') ? '&' : '?') + `t=${timestamp}`
+        )
+        moduleMap.set(dep, newMod)
+      } catch (e) {
+        warnFailedFetch(e, dep)
+      }
     })
   )
 
