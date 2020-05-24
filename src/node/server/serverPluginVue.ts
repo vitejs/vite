@@ -257,8 +257,7 @@ async function compileSFCMain(
   })
 }`
       } else {
-        code += `\nimport css_${i} from ${JSON.stringify(styleRequest)}`
-        code += `\nupdateStyle("${id}-${i}", css_${i})`
+        code += `\nimport ${JSON.stringify(styleRequest)}`
       }
     })
     if (hasScoped) {

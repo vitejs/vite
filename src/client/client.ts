@@ -87,8 +87,7 @@ socket.addEventListener('message', async ({ data }) => {
     case 'vue-style-update':
       const stylePath = `${path}?type=style&index=${index}`
       await bustSwCache(stylePath)
-      const content = await import(stylePath + `&t=${timestamp}`)
-      updateStyle(id, content.default)
+      await import(stylePath + `&t=${timestamp}`)
       console.log(
         `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
       )
