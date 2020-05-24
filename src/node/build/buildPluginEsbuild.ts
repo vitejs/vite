@@ -1,5 +1,12 @@
+import fs from 'fs-extra'
 import { Plugin } from 'rollup'
-import { tjsxRE, transform, resolveJsxOptions } from '../esbuildService'
+import {
+  tjsxRE,
+  transform,
+  resolveJsxOptions,
+  vueJsxPublicPath,
+  vueJsxFilePath
+} from '../esbuildService'
 import { SharedConfig } from '../config'
 
 export const createEsbuildPlugin = async (
@@ -10,6 +17,18 @@ export const createEsbuildPlugin = async (
 
   return {
     name: 'vite:esbuild',
+
+    resolveId(id) {
+      if (id === vueJsxPublicPath) {
+        return vueJsxPublicPath
+      }
+    },
+
+    load(id) {
+      if (id === vueJsxPublicPath) {
+        return fs.readFileSync(vueJsxFilePath, 'utf-8')
+      }
+    },
 
     async transform(code, id) {
       const isVueTs = /\.vue\?/.test(id) && id.endsWith('lang=ts')
