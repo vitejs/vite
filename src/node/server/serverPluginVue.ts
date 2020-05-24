@@ -228,9 +228,8 @@ async function compileSFCMain(
     code += `const __script = {}`
   }
 
-  code += `\n if (hot) {
+  code += `\n if (__DEV__) {
   hot.accept((m) => {
-    console.log(m)
     __VUE_HMR_RUNTIME__.reload("${id}", m.default)
   })
 }`
@@ -251,7 +250,7 @@ async function compileSFCMain(
         const moduleRequest = styleRequest + '&module'
         code += `\nimport ${styleVar} from ${JSON.stringify(moduleRequest)}`
         code += `\n__cssModules[${JSON.stringify(moduleName)}] = ${styleVar}`
-        code += `\n if (hot) {
+        code += `\n if (__DEV__) {
   hot.accept(${JSON.stringify(moduleRequest)}, (a) => {
     __cssModules[${JSON.stringify(moduleName)}] = ${styleVar}
     __VUE_HMR_RUNTIME__.rerender("${id}")
@@ -273,7 +272,7 @@ async function compileSFCMain(
       templateRequest
     )}`
     code += `\n__script.render = __render`
-    code += `\n if (hot) {
+    code += `\n if (__DEV__) {
   hot.accept(${JSON.stringify(templateRequest)}, (m) => {
     __VUE_HMR_RUNTIME__.rerender("${id}", m.render)
   })
