@@ -1,6 +1,8 @@
 import { ServerPlugin } from './server'
 import { Plugin as RollupPlugin } from 'rollup'
 import { parseWithQuery, readBody, isImportRequest } from './utils'
+import { Service } from 'esbuild'
+import { ensureService } from './esbuildService'
 
 type ParsedQuery = Record<string, string | string[] | undefined>
 
@@ -15,7 +17,8 @@ export interface Transform {
     isImport: boolean,
     isBuild: boolean,
     path: string,
-    query: ParsedQuery
+    query: ParsedQuery,
+    getEsBuild: () => Promise<Service>
   ) => string | Promise<string>
 }
 
@@ -36,7 +39,8 @@ export function createServerTransformPlugin(
                 isImportRequest(ctx),
                 false,
                 ctx.path,
-                ctx.query
+                ctx.query,
+                ensureService
               )
               ctx._transformed = true
             }
@@ -57,7 +61,14 @@ export function createBuildJsTransformPlugin(
       let result: string | Promise<string> = code
       for (const t of transforms) {
         if (t.test(path, query)) {
-          result = await t.transform(result, true, true, path, query)
+          result = await t.transform(
+            result,
+            true,
+            true,
+            path,
+            query,
+            ensureService
+          )
         }
       }
       return result

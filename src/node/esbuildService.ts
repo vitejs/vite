@@ -37,7 +37,7 @@ export function resolveJsxOptions(options: SharedConfig['jsx'] = 'vue') {
 // lazy start the service
 let _service: Service | undefined
 
-const ensureService = async () => {
+export const ensureService = async () => {
   if (!_service) {
     _service = await startService()
   }
