@@ -103,11 +103,15 @@ async function resolveOptions(mode: string) {
   }
   // normalize root
   // assumes all commands are in the form of `vite [command] [root]`
-  if (argv._[1] && !argv.root) {
-    argv.root = path.isAbsolute(argv._[1]) ? argv._[1] : path.resolve(argv._[1])
+  if (!argv.root && argv._[1]) {
+    argv.root = argv._[1]
   }
 
-  const userConfig = await resolveConfig(mode, argv.config || argv.c)
+  if (argv.root) {
+    argv.root = path.isAbsolute(argv.root) ? argv.root : path.resolve(argv.root)
+  }
+
+  const userConfig = await resolveConfig(mode, argv.root, argv.config || argv.c)
   if (userConfig) {
     return {
       ...userConfig,

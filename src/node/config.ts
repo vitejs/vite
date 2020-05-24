@@ -256,27 +256,33 @@ export interface Plugin
     | 'rollupOutputOptions'
   > {}
 
-export type ResolvedConfig = UserConfig & { __path?: string }
+export type ResolvedConfig = UserConfig & {
+  /**
+   * Path of config file.
+   */
+  __path?: string
+}
 
 const debug = require('debug')('vite:config')
 
 export async function resolveConfig(
   mode: string,
+  specifiedRoot?: string,
   configPath?: string
 ): Promise<ResolvedConfig | undefined> {
   const start = Date.now()
-  const cwd = process.cwd()
+  const root = specifiedRoot || process.cwd()
   let config: ResolvedConfig | undefined
   let resolvedPath: string | undefined
   let isTS = false
   if (configPath) {
-    resolvedPath = path.resolve(cwd, configPath)
+    resolvedPath = path.resolve(root, configPath)
   } else {
-    const jsConfigPath = path.resolve(cwd, 'vite.config.js')
+    const jsConfigPath = path.resolve(root, 'vite.config.js')
     if (fs.existsSync(jsConfigPath)) {
       resolvedPath = jsConfigPath
     } else {
-      const tsConfigPath = path.resolve(cwd, 'vite.config.ts')
+      const tsConfigPath = path.resolve(root, 'vite.config.ts')
       if (fs.existsSync(tsConfigPath)) {
         isTS = true
         resolvedPath = tsConfigPath
@@ -328,8 +334,14 @@ export async function resolveConfig(
     }
 
     // normalize config root to absolute
-    if (config.root && !path.isAbsolute(config.root)) {
-      config.root = path.resolve(path.dirname(resolvedPath), config.root)
+    if (config.root) {
+      if (!specifiedRoot) {
+        if (!path.isAbsolute(config.root)) {
+          config.root = path.resolve(config.root)
+        }
+      } else {
+        debug(`configured root option will be ignored`)
+      }
     }
 
     // resolve plugins
@@ -340,7 +352,7 @@ export async function resolveConfig(
     }
 
     // load environment variables
-    const env = loadEnv(mode, config.root || cwd)
+    const env = loadEnv(mode, root)
     debug(`env: %O`, env)
     config.env = env
 
