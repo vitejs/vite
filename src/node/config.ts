@@ -434,7 +434,9 @@ function loadEnv(mode: string, projectRoot: string) {
   return envFiles.reduce((envs, path) => {
     if (!(existsSync(path) && statSync(path).isFile())) return envs
 
-    const result = dotenv.config({ debug: !!process.env.DEBUG, path })
+    const result = dotenv.config(
+      !!process.env.DEBUG ? { debug: true, path } : { path }
+    )
 
     if (result.error) {
       throw result.error
