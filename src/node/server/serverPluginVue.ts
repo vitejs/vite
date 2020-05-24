@@ -247,15 +247,10 @@ async function compileSFCMain(
         }
         const styleVar = `__style${i}`
         const moduleName = typeof s.module === 'string' ? s.module : '$style'
-        const moduleRequest = styleRequest + '&module'
-        code += `\nimport ${styleVar} from ${JSON.stringify(moduleRequest)}`
+        code += `\nimport ${styleVar} from ${JSON.stringify(
+          styleRequest + '&module'
+        )}`
         code += `\n__cssModules[${JSON.stringify(moduleName)}] = ${styleVar}`
-        code += `\n if (__DEV__) {
-  hot.accept(${JSON.stringify(moduleRequest)}, (a) => {
-    __cssModules[${JSON.stringify(moduleName)}] = ${styleVar}
-    __VUE_HMR_RUNTIME__.rerender("${id}")
-  })
-}`
       } else {
         code += `\nimport ${JSON.stringify(styleRequest)}`
       }

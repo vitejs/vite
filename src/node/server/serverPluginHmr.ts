@@ -234,9 +234,6 @@ export const hmrPlugin: ServerPlugin = ({
         send({
           type: 'vue-style-update',
           path: publicPath,
-          changeSrcPath:
-            `${publicPath}?type=style&index=${i}` +
-            (nextStyles[i].module ? '&module' : ''),
           index: i,
           id: `${styleId}-${i}`,
           timestamp
