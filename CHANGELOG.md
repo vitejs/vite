@@ -1,3 +1,13 @@
+## [0.16.10](https://github.com/vuejs/vite/compare/v0.16.9...v0.16.10) (2020-05-24)
+
+
+### Bug Fixes
+
+* __DEV__ replace should also apply to vite modules ([7c4b64c](https://github.com/vuejs/vite/commit/7c4b64c47ae5271fe262796e1459ff02baf132e2))
+* fix build resolve for vue jsx shim ([1f4518b](https://github.com/vuejs/vite/commit/1f4518b69b6d6d4afdb485570ed795fe4f557a77))
+
+
+
 ## [0.16.9](https://github.com/vuejs/vite/compare/v0.16.8...v0.16.9) (2020-05-23)
 
 
