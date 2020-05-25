@@ -45,8 +45,8 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
         if (!processedCSS.has(ctx.path)) {
           await processCss(root, ctx)
         }
-        ctx.type = 'js'
-        ctx.body = codegenCss(id, processedCSS.get(ctx.path)!.css)
+        ctx.type = 'css'
+        ctx.body = processedCSS.get(ctx.path)!.css
       }
     }
   })

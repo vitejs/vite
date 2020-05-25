@@ -79,9 +79,9 @@ socket.addEventListener('message', async ({ data }) => {
       console.log(`[vite] connected.`)
       break
     case 'style-update':
-      const hasQuery = path.includes('?') ? '&' : '?'
-      await bustSwCache(`${path}${hasQuery}import`)
-      await import(`${path}${hasQuery}t=${timestamp}`)
+      const importQuery = path.includes('?') ? '&import' : '?import'
+      await bustSwCache(`${path}${importQuery}`)
+      await import(`${path}${importQuery}&t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
