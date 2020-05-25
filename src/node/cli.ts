@@ -111,7 +111,7 @@ async function resolveOptions(mode: string) {
     argv.root = path.isAbsolute(argv.root) ? argv.root : path.resolve(argv.root)
   }
 
-  const userConfig = await resolveConfig(mode, argv.root, argv.config || argv.c)
+  const userConfig = await resolveConfig(mode, argv.config || argv.c)
   if (userConfig) {
     return {
       ...userConfig,
