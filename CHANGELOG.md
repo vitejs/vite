@@ -1,3 +1,18 @@
+## [0.16.12](https://github.com/vuejs/vite/compare/v0.16.11...v0.16.12) (2020-05-25)
+
+
+### Bug Fixes
+
+* fix rewrite extension appending for out of root files ([84fcfb6](https://github.com/vuejs/vite/commit/84fcfb66ecd9822ebb9dd56505332acce20da568))
+* use upward search for env files ([4fceaea](https://github.com/vuejs/vite/commit/4fceaea1b60ba71f954796dfc601e91300344d3f))
+
+
+### Features
+
+* support webp as static assets ([5589fa3](https://github.com/vuejs/vite/commit/5589fa3ea51f5442083eb4a31844e23386c89af4))
+
+
+
 ## [0.16.11](https://github.com/vuejs/vite/compare/v0.16.10...v0.16.11) (2020-05-25)
 
 
