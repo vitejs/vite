@@ -12,6 +12,7 @@ import {
 } from '../utils/cssUtils'
 import qs from 'querystring'
 import chalk from 'chalk'
+import slash from 'slash'
 
 interface ProcessedEntry {
   css: string
@@ -54,7 +55,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     /** filter unused files */
     if (
       !Array.from(processedCSS.keys()).some((processed) =>
-        file.includes(processed)
+        slash(file).includes(processed)
       ) &&
       !srcImportMap.has(file)
     ) {
