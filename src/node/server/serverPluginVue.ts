@@ -231,14 +231,17 @@ export const vuePlugin: ServerPlugin = ({
       })
     }
 
-    if (needRerender || didUpdateStyle) {
-      let updateType = needRerender ? `template` : ``
-      if (didUpdateStyle) {
-        updateType += ` & style`
-      }
+    let updateType = []
+    if (needRerender) {
+      updateType.push(`template`)
+    }
+    if (didUpdateStyle) {
+      updateType.push(`style`)
+    }
+    if (updateType.length) {
       console.log(
         chalk.green(`[vite:hmr] `) +
-          `${path.relative(root, file)} updated. (${updateType})`
+          `${path.relative(root, file)} updated. (${updateType.join(' & ')})`
       )
     }
   })
