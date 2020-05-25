@@ -164,17 +164,17 @@ describe('vite', () => {
         )
         await expectByPolling(
           () => browserLogs[browserLogs.length - 1],
-          'js module hot updated:  /testHmrManualDep.js'
+          'js module hot updated:  /testHmrManual.js'
         )
         expect(
-          browserLogs.slice(browserLogs.length - 4, browserLogs.length - 1)
+          browserLogs.slice(browserLogs.length - 7, browserLogs.length - 1)
         ).toEqual([
           // dispose for both dep and self
-          // `foo was: 2`,
+          `foo was: 2`,
           `(dep) foo was: 1`,
           // self callbacks
-          // `(self-accepting)1.foo is now: 2`,
-          // `(self-accepting)2.foo is now: 2`,
+          `(self-accepting)1.foo is now: 2`,
+          `(self-accepting)2.foo is now: 2`,
           // dep callbacks
           `(single dep) foo is now: 2`,
           `(multiple deps) foo is now: 2`

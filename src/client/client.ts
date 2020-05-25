@@ -166,9 +166,9 @@ async function updateModule(
   } else {
     // dep update
     for (const { deps } of mod.callbacks) {
-      if (Array.isArray(deps) && deps.includes(changedPath)) {
+      if (Array.isArray(deps)) {
         deps.forEach((dep) => modulesToUpdate.add(dep))
-      } else if (deps === changedPath) {
+      } else {
         modulesToUpdate.add(deps)
       }
     }
@@ -181,7 +181,7 @@ async function updateModule(
       : modulesToUpdate.has(deps)
   })
   // reset callbacks on self update since they are going to be registered again
-  if (modulesToUpdate.has(id)) {
+  if (isSelfUpdate) {
     mod.callbacks = []
   }
 
@@ -208,7 +208,7 @@ async function updateModule(
     }
   }
 
-  console.log(`[vite]: js module hot updated: `, changedPath)
+  console.log(`[vite]: js module hot updated: `, id)
 }
 
 interface HotModule {

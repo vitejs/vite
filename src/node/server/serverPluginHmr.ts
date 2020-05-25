@@ -309,7 +309,7 @@ export const hmrPlugin: ServerPlugin = ({
           send({
             type: 'js-update',
             path: vueBoundary,
-            changeSrcPath: vueBoundary,
+            changeSrcPath: publicPath,
             timestamp
           })
         })
