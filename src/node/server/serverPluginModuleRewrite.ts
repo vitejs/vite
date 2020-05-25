@@ -150,10 +150,7 @@ export function rewriteImports(
           let resolved
           if (id === hmrClientId) {
             resolved = hmrClientPublicPath
-            if (
-              /\bhot\b/.test(source.substring(ss, se)) &&
-              !/.vue$|.vue\?type=/.test(importer)
-            ) {
+            if (/\bhot\b/.test(source.substring(ss, se))) {
               // the user explicit imports the HMR API in a js file
               // making the module hot.
               rewriteFileWithHMR(root, source, importer, resolver, s)

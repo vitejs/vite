@@ -1,11 +1,11 @@
 import { basename } from 'path'
 import { ServerPlugin } from '.'
-import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
 import { Context } from 'koa'
 import { cleanUrl, isImportRequest, readBody } from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {
+  codegenCss,
   compileCss,
   cssPreprocessLangRE,
   rewriteCssUrls
@@ -31,33 +31,21 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
+      const id = JSON.stringify(hash_sum(ctx.path))
       if (isImportRequest(ctx)) {
         await processCss(root, ctx)
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url
         ctx.type = 'js'
-        const id = JSON.stringify(hash_sum(ctx.path))
-        let code =
-          `import { updateStyle } from "${hmrClientId}"\n` +
-          `const css = ${JSON.stringify(processedCSS.get(ctx.path)!.css)}\n` +
-          `updateStyle(${id}, css)\n`
-        if (ctx.path.endsWith('.module.css')) {
-          code += `export default ${JSON.stringify(
-            processedCSS.get(ctx.path)!.modules
-          )}`
-        } else {
-          code += `export default css`
-        }
-        ctx.body = code.trim()
+        const { css, modules } = processedCSS.get(ctx.path)!
+        ctx.body = codegenCss(id, css, modules)
       } else {
         // raw request, return compiled css
         if (!processedCSS.has(ctx.path)) {
           await processCss(root, ctx)
         }
         ctx.type = 'js'
-        ctx.body = `export default ${JSON.stringify(
-          processedCSS.get(ctx.path)!.css
-        )}`
+        ctx.body = codegenCss(id, processedCSS.get(ctx.path)!.css)
       }
     }
   })
@@ -87,10 +75,8 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
           chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`
         )
         watcher.send({
-          type: 'vue-style-update',
-          path: publicPath,
-          index: Number(index),
-          id: `${hash_sum(publicPath)}-${index}`,
+          type: 'style-update',
+          path: `${publicPath}?type=style&index=${index}`,
           timestamp: Date.now()
         })
         return
@@ -103,14 +89,12 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       }
 
       const publicPath = resolver.fileToRequest(file)
-      const id = hash_sum(publicPath)
 
       // bust process cache
       processedCSS.delete(publicPath)
 
       watcher.send({
         type: 'style-update',
-        id,
         path: publicPath,
         timestamp: Date.now()
       })

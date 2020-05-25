@@ -63,15 +63,9 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 
 // Listen for messages
 socket.addEventListener('message', async ({ data }) => {
-  const {
-    type,
-    path,
-    changeSrcPath,
-    id,
-    index,
-    timestamp,
-    customData
-  } = JSON.parse(data)
+  const { type, path, changeSrcPath, id, timestamp, customData } = JSON.parse(
+    data
+  )
 
   if (changeSrcPath) {
     await bustSwCache(changeSrcPath)
@@ -84,35 +78,10 @@ socket.addEventListener('message', async ({ data }) => {
     case 'connected':
       console.log(`[vite] connected.`)
       break
-    case 'vue-reload':
-      import(`${path}?t=${timestamp}`)
-        .then((m) => {
-          __VUE_HMR_RUNTIME__.reload(path, m.default)
-          console.log(`[vite] ${path} reloaded.`)
-        })
-        .catch((err) => warnFailedFetch(err, path))
-      break
-    case 'vue-rerender':
-      const templatePath = `${path}?type=template`
-      await bustSwCache(templatePath)
-      import(`${templatePath}&t=${timestamp}`).then((m) => {
-        __VUE_HMR_RUNTIME__.rerender(path, m.render)
-        console.log(`[vite] ${path} template updated.`)
-      })
-      break
-    case 'vue-style-update':
-      const stylePath = `${path}?type=style&index=${index}`
-      await bustSwCache(stylePath)
-      const content = await import(stylePath + `&t=${timestamp}`)
-      updateStyle(id, content.default)
-      console.log(
-        `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
-      )
-      break
     case 'style-update':
-      await bustSwCache(`${path}?import`)
-      const style = await import(`${path}?t=${timestamp}`)
-      updateStyle(id, style.default)
+      const hasQuery = path.includes('?') ? '&' : '?'
+      await bustSwCache(`${path}${hasQuery}import`)
+      await import(`${path}${hasQuery}t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
@@ -220,8 +189,14 @@ async function updateModule(
     Array.from(modulesToUpdate).map(async (dep) => {
       const disposer = jsDisposeMap.get(dep)
       if (disposer) await disposer()
-      const newMod = await import(dep + `?t=${timestamp}`)
-      moduleMap.set(dep, newMod)
+      try {
+        const newMod = await import(
+          dep + (dep.includes('?') ? '&' : '?') + `t=${timestamp}`
+        )
+        moduleMap.set(dep, newMod)
+      } catch (e) {
+        warnFailedFetch(e, dep)
+      }
     })
   )
 

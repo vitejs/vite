@@ -28,7 +28,7 @@ import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'
-import { compileCss, rewriteCssUrls } from '../utils/cssUtils'
+import { codegenCss, compileCss, rewriteCssUrls } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -114,6 +114,7 @@ export const vuePlugin: ServerPlugin = ({
       if (styleBlock.src) {
         filename = await resolveSrcImport(styleBlock, ctx, resolver)
       }
+      const id = hash_sum(publicPath)
       const result = await compileSFCStyle(
         root,
         styleBlock,
@@ -121,13 +122,8 @@ export const vuePlugin: ServerPlugin = ({
         filename,
         publicPath
       )
-      if (query.module != null) {
-        ctx.type = 'js'
-        ctx.body = `export default ${JSON.stringify(result.modules)}`
-      } else {
-        ctx.type = 'js'
-        ctx.body = `export default ${JSON.stringify(result.code)}`
-      }
+      ctx.type = 'js'
+      ctx.body = codegenCss(`${id}-${index}`, result.code, result.modules)
       return etagCacheCheck(ctx)
     }
 
@@ -219,7 +215,8 @@ async function compileSFCMain(
     return cached.script
   }
 
-  let code = ''
+  const id = hash_sum(publicPath)
+  let code = `\nimport { updateStyle, hot } from "${hmrClientId}"\n`
   if (descriptor.script) {
     let content = descriptor.script.content
     if (descriptor.script.lang === 'ts') {
@@ -231,11 +228,15 @@ async function compileSFCMain(
     code += `const __script = {}`
   }
 
-  const id = hash_sum(publicPath)
+  code += `\n if (__DEV__) {
+  hot.accept((m) => {
+    __VUE_HMR_RUNTIME__.reload("${id}", m.default)
+  })
+}`
+
   let hasScoped = false
   let hasCSSModules = false
   if (descriptor.styles) {
-    code += `\nimport { updateStyle } from "${hmrClientId}"\n`
     descriptor.styles.forEach((s, i) => {
       const styleRequest = publicPath + `?type=style&index=${i}`
       if (s.scoped) hasScoped = true
@@ -250,9 +251,9 @@ async function compileSFCMain(
           styleRequest + '&module'
         )}`
         code += `\n__cssModules[${JSON.stringify(moduleName)}] = ${styleVar}`
+      } else {
+        code += `\nimport ${JSON.stringify(styleRequest)}`
       }
-      code += `\nimport css_${i} from ${JSON.stringify(styleRequest)}`
-      code += `\nupdateStyle("${id}-${i}", css_${i})`
     })
     if (hasScoped) {
       code += `\n__script.__scopeId = "data-v-${id}"`
@@ -260,12 +261,18 @@ async function compileSFCMain(
   }
 
   if (descriptor.template) {
+    const templateRequest = publicPath + `?type=template`
     code += `\nimport { render as __render } from ${JSON.stringify(
-      publicPath + `?type=template`
+      templateRequest
     )}`
     code += `\n__script.render = __render`
+    code += `\n if (__DEV__) {
+  hot.accept(${JSON.stringify(templateRequest)}, (m) => {
+    __VUE_HMR_RUNTIME__.rerender("${id}", m.render)
+  })
+}`
   }
-  code += `\n__script.__hmrId = ${JSON.stringify(publicPath)}`
+  code += `\n__script.__hmrId = ${JSON.stringify(id)}`
   code += `\n__script.__file = ${JSON.stringify(filePath)}`
   code += `\nexport default __script`
 
