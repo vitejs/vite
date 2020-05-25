@@ -44,7 +44,7 @@ export default {
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('../fonts/Inter-Italic.woff2') format('woff2'),
+  src: url('../fonts/Inter-Italic.woff2?#iefix') format('woff2'),
     url('/fonts/Inter-Italic.woff') format('woff');
 }
 
