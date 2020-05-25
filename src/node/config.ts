@@ -1,7 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
-import { DotenvParseOutput } from 'dotenv'
+import dotenv, { DotenvParseOutput } from 'dotenv'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
 import { CompilerOptions } from '@vue/compiler-sfc'
 import Rollup, {
@@ -84,9 +84,13 @@ export interface SharedConfig {
         fragment?: string
       }
   /**
-   * Environment variables .
+   * Environment variables
    */
   env?: DotenvParseOutput
+  /**
+   * Environment mode
+   */
+  mode?: string
 }
 
 export interface ServerConfig extends SharedConfig {
@@ -252,10 +256,18 @@ export interface Plugin
     | 'rollupOutputOptions'
   > {}
 
-export type ResolvedConfig = UserConfig & { __path?: string }
+export type ResolvedConfig = UserConfig & {
+  /**
+   * Path of config file.
+   */
+  __path?: string
+}
+
+const debug = require('debug')('vite:config')
 
 export async function resolveConfig(
-  configPath: string | undefined
+  mode: string,
+  configPath?: string
 ): Promise<ResolvedConfig | undefined> {
   const start = Date.now()
   const cwd = process.cwd()
@@ -333,19 +345,11 @@ export async function resolveConfig(
     }
 
     // load environment variables
-    const envConfigPath = path.resolve(cwd, '.env')
-    if (fs.existsSync(envConfigPath) && fs.statSync(envConfigPath).isFile()) {
-      const env = require('dotenv').config()
-      if (env.error) {
-        throw env.error
-      }
+    const env = loadEnv(mode, cwd)
+    debug(`env: %O`, env)
+    config.env = env
 
-      config.env = env.parsed
-    }
-
-    require('debug')('vite:config')(
-      `config resolved in ${Date.now() - start}ms`
-    )
+    debug(`config resolved in ${Date.now() - start}ms`)
 
     config.__path = resolvedPath
     return config
@@ -408,4 +412,31 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
       ...plugin.rollupOutputOptions
     }
   }
+}
+
+function loadEnv(mode: string, cwd: string): Record<string, string> {
+  debug(`env mode: ${mode}`)
+  const { resolve } = path
+  const envFiles = [
+    /** default file */ resolve(cwd, '.env'),
+    /** local file */ resolve(cwd, `.env.local`),
+    /** mode file */ resolve(cwd, `.env.${mode}`),
+    /** mode local file */ resolve(cwd, `.env.${mode}.local`)
+  ]
+
+  const env: Record<string, string> = {}
+  for (const file of envFiles) {
+    if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+      const result = dotenv.config({
+        debug: !!process.env.DEBUG,
+        path: file
+      })
+      if (result.error) {
+        throw result.error
+      }
+      Object.assign(env, result.parsed)
+    }
+  }
+
+  return env
 }

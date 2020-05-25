@@ -96,7 +96,7 @@ describe('vite', () => {
       expect(await getText('.node-env')).toMatch(
         `process.env.NODE_ENV: ${isBuild ? 'production' : 'development'}`
       )
-      expect(await getText('.customize-env-variable')).toMatch(
+      expect(await getText('.custom-env-variable')).toMatch(
         'process.env.CUSTOM_ENV_VARIABLE: 9527'
       )
     })

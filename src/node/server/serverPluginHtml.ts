@@ -25,7 +25,8 @@ export const htmlRewritePlugin: ServerPlugin = ({
 }) => {
   // inject __DEV__ and process.env.NODE_ENV flags
   // since some ESM builds expect these to be replaced by the bundler
-  const { env = {} } = config
+  const { env = {}, mode } = config
+
   const devInjectionCode =
     `\n<script type="module">\n` +
     `import "${hmrClientPublicPath}"\n` +
@@ -33,7 +34,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
     `window.__BASE__ = '/'\n` +
     `window.process = { env: ${JSON.stringify({
       ...env,
-      NODE_ENV: 'development'
+      NODE_ENV: mode
     })}}\n` +
     `</script>\n`
 

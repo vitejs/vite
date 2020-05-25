@@ -33,7 +33,7 @@ export interface ServerPluginContext {
   config: ServerConfig & { __path?: string }
 }
 
-export function createServer(config: ServerConfig = {}): Server {
+export function createServer(config: ServerConfig): Server {
   const {
     root = process.cwd(),
     configureServer = [],
