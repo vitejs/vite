@@ -145,14 +145,22 @@ export function resolveBareModuleRequest(
   root: string,
   id: string,
   importer: string
-) {
+): string {
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
     return id
   }
   const pkgInfo = resolveNodeModule(root, id)
   if (pkgInfo) {
-    return pkgInfo.entry
+    if (!pkgInfo.entry) {
+      console.error(
+        chalk.yellow(
+          `[vite] dependency ${id} does not have default entry defined in ` +
+            `package.json.`
+        )
+      )
+    }
+    return pkgInfo.entry || id
   }
 
   // check and warn deep imports on optimized modules
@@ -200,8 +208,8 @@ export function resolveOptimizedModule(
 }
 
 interface NodeModuleInfo {
-  entry: string
-  entryFilePath: string
+  entry: string | null
+  entryFilePath: string | null
   pkg: any
 }
 const nodeModulesInfoMap = new Map<string, NodeModuleInfo>()
@@ -242,22 +250,23 @@ export function resolveNodeModule(
       }
     }
     if (!entryPoint) {
-      entryPoint = pkg.module || pkg.main || 'index.js'
+      entryPoint = pkg.module || pkg.main || null
     }
 
     debug(`(node_module entry) ${id} -> ${entryPoint}`)
-
-    const entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
 
     // save resolved entry file path using the deep import path as key
     // e.g. foo/dist/foo.js
     // this is the path raw imports will be rewritten to, and is what will
     // be passed to resolveNodeModuleFile().
-    entryPoint = path.posix.join(id, entryPoint!)
-
-    // save the resolved file path now so we don't need to do it again in
-    // resolveNodeModuleFile()
-    nodeModulesFileMap.set(entryPoint, entryFilePath)
+    let entryFilePath: string | null = null
+    if (entryPoint) {
+      entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
+      entryPoint = path.posix.join(id, entryPoint!)
+      // save the resolved file path now so we don't need to do it again in
+      // resolveNodeModuleFile()
+      nodeModulesFileMap.set(entryPoint, entryFilePath)
+    }
 
     const result: NodeModuleInfo = {
       entry: entryPoint!,

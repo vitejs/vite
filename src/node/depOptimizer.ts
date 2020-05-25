@@ -117,13 +117,22 @@ export async function optimizeDeps(
       return false
     }
     const pkgInfo = resolveNodeModule(root, id)
-    if (!pkgInfo) {
+    if (!pkgInfo || !pkgInfo.entryFilePath) {
       debug(`skipping ${id} (cannot resolve entry)`)
       return false
     }
     const { entryFilePath, pkg } = pkgInfo
     if (!supportedExts.includes(path.extname(entryFilePath))) {
       debug(`skipping ${id} (entry is not js)`)
+      return false
+    }
+    if (!fs.existsSync(entryFilePath)) {
+      debug(`skipping ${id} (entry file does not exist)`)
+      console.error(
+        chalk.yellow(
+          `[vite] dependency ${id} declares non-existent entry file ${entryFilePath}.`
+        )
+      )
       return false
     }
     const content = fs.readFileSync(entryFilePath, 'utf-8')
