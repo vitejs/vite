@@ -67,7 +67,8 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     if (
       !Array.from(processedCSS.keys()).some((processed) =>
         file.includes(processed)
-      )
+      ) &&
+      !srcImportMap.has(file)
     ) {
       return debugCSS(
         `${basename(file)} has changed, but it is not currently in use`
