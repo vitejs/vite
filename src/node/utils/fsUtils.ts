@@ -92,7 +92,7 @@ export function lookupFile(
 ): string | undefined {
   for (const format of formats) {
     const fullPath = path.join(dir, format)
-    if (fs.existsSync(fullPath)) {
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
       return pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
     }
   }

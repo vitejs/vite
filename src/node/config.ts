@@ -16,6 +16,7 @@ import { Transform } from './transform'
 import { DepOptimizationOptions } from './depOptimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
+import { lookupFile } from './utils'
 
 export { Resolver, Transform }
 
@@ -345,7 +346,7 @@ export async function resolveConfig(
     }
 
     // load environment variables
-    const env = loadEnv(mode, cwd)
+    const env = loadEnv(mode, config.root || cwd)
     debug(`env: %O`, env)
     config.env = env
 
@@ -414,22 +415,22 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   }
 }
 
-function loadEnv(mode: string, cwd: string): Record<string, string> {
+function loadEnv(mode: string, root: string): Record<string, string> {
   debug(`env mode: ${mode}`)
-  const { resolve } = path
   const envFiles = [
-    /** default file */ resolve(cwd, '.env'),
-    /** local file */ resolve(cwd, `.env.local`),
-    /** mode file */ resolve(cwd, `.env.${mode}`),
-    /** mode local file */ resolve(cwd, `.env.${mode}.local`)
+    /** default file */ `.env`,
+    /** local file */ `.env.local`,
+    /** mode file */ `.env.${mode}`,
+    /** mode local file */ `.env.${mode}.local`
   ]
 
   const env: Record<string, string> = {}
   for (const file of envFiles) {
-    if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+    const path = lookupFile(root, [file], true)
+    if (path) {
       const result = dotenv.config({
         debug: !!process.env.DEBUG,
-        path: file
+        path
       })
       if (result.error) {
         throw result.error
