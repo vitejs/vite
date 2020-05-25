@@ -73,7 +73,6 @@ export const hmrClientPublicPath = `/${hmrClientId}`
 
 interface HMRPayload {
   type:
-    | 'vue-style-update'
     | 'js-update'
     | 'style-update'
     | 'style-remove'
@@ -178,8 +177,7 @@ export const hmrPlugin: ServerPlugin = ({
     // check which part of the file changed
     let needRerender = false
 
-    if (!isEqual(descriptor.script, prevDescriptor.script)) {
-      // reload
+    const vueReload = () => {
       send({
         type: 'js-update',
         path: publicPath,
@@ -190,6 +188,10 @@ export const hmrPlugin: ServerPlugin = ({
         chalk.green(`[vite:hmr] `) +
           `${path.relative(root, file)} updated. (reload)`
       )
+    }
+
+    if (!isEqual(descriptor.script, prevDescriptor.script)) {
+      vueReload()
       return
     }
 
@@ -209,16 +211,7 @@ export const hmrPlugin: ServerPlugin = ({
       prevStyles.some((s) => s.module != null) ||
       nextStyles.some((s) => s.module != null)
     ) {
-      send({
-        type: 'js-update',
-        path: publicPath,
-        changeSrcPath: publicPath,
-        timestamp
-      })
-      console.log(
-        chalk.green(`[vite:hmr] `) +
-          `${path.relative(root, file)} updated. (reload)`
-      )
+      vueReload()
       return
     }
 
@@ -232,10 +225,8 @@ export const hmrPlugin: ServerPlugin = ({
       if (!prevStyles[i] || !isEqual(prevStyles[i], nextStyles[i])) {
         didUpdateStyle = true
         send({
-          type: 'vue-style-update',
-          path: publicPath,
-          index: i,
-          id: `${styleId}-${i}`,
+          type: 'style-update',
+          path: `${publicPath}?type=style&index=${i}`,
           timestamp
         })
       }

@@ -88,9 +88,9 @@ export function codegenCss(
   modules?: Record<string, string>
 ): string {
   let code =
-    `import { hot, updateStyle } from "${hmrClientPublicPath}"\n` +
+    `import { updateStyle } from "${hmrClientPublicPath}"\n` +
     `const css = ${JSON.stringify(css)}\n` +
-    `updateStyle("${id}", css)\n`
+    `updateStyle(${JSON.stringify(id)}, css)\n`
   if (modules) {
     code += `export default ${JSON.stringify(modules)}`
   } else {

@@ -63,15 +63,9 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 
 // Listen for messages
 socket.addEventListener('message', async ({ data }) => {
-  const {
-    type,
-    path,
-    changeSrcPath,
-    id,
-    index,
-    timestamp,
-    customData
-  } = JSON.parse(data)
+  const { type, path, changeSrcPath, id, timestamp, customData } = JSON.parse(
+    data
+  )
 
   if (changeSrcPath) {
     await bustSwCache(changeSrcPath)
@@ -84,18 +78,10 @@ socket.addEventListener('message', async ({ data }) => {
     case 'connected':
       console.log(`[vite] connected.`)
       break
-    case 'vue-style-update':
-      const stylePath = `${path}?type=style&index=${index}`
-      await bustSwCache(stylePath)
-      await import(stylePath + `&t=${timestamp}`)
-      console.log(
-        `[vite] ${path} style${index > 0 ? `#${index}` : ``} updated.`
-      )
-      break
     case 'style-update':
-      await bustSwCache(`${path}?import`)
-      const style = await import(`${path}?t=${timestamp}`)
-      updateStyle(id, style.default)
+      const hasQuery = path.includes('?') ? '&' : '?'
+      await bustSwCache(`${path}${hasQuery}import`)
+      await import(`${path}${hasQuery}t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
