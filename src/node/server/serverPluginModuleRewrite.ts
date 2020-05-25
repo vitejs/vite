@@ -221,6 +221,8 @@ export function rewriteImports(
 }
 
 const bareImportRE = /^[^\/\.]/
+const indexRE = /\/index\.\w+$/
+const indexRemoveRE = /\/index(\.\w+)?$/
 
 export const resolveImport = (
   root: string,
@@ -246,8 +248,16 @@ export const resolveImport = (
     }
 
     // 3. resolve extensions.
-    const file = resolver.requestToFile(pathname)
-    pathname = '/' + slash(path.relative(root, file))
+    const file = slash(resolver.requestToFile(pathname))
+    const resolvedExt = path.extname(file)
+    if (resolvedExt !== path.extname(pathname)) {
+      const indexMatch = file.match(indexRE)
+      if (indexMatch) {
+        pathname = pathname.replace(indexRemoveRE, '') + indexMatch[0]
+      } else {
+        pathname += resolvedExt
+      }
+    }
 
     // 4. mark non-src imports
     const ext = path.extname(pathname)
