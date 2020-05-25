@@ -72,7 +72,7 @@ export const serveStaticPlugin: ServerPlugin = ({
 
     debug(`redirecting ${ctx.url} to /index.html`)
     try {
-      await send(ctx, `/index.html`)
+      await send(ctx, `index.html`, { root })
     } catch (e) {
       ctx.url = '/index.html'
       ctx.status = 404
