@@ -1,5 +1,5 @@
 import path from 'path'
-import fs, { existsSync, statSync } from 'fs-extra'
+import fs from 'fs-extra'
 import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
@@ -426,7 +426,7 @@ function loadEnv(mode: string, cwd: string): Record<string, string> {
 
   const env: Record<string, string> = {}
   for (const file of envFiles) {
-    if (!(existsSync(file) && statSync(file).isFile())) {
+    if (fs.existsSync(file) && fs.statSync(file).isFile()) {
       const result = dotenv.config({
         debug: !!process.env.DEBUG,
         path: file
