@@ -1,3 +1,4 @@
+import { basename } from 'path'
 import { ServerPlugin } from '.'
 import { hmrClientId } from './serverPluginHmr'
 import hash_sum from 'hash-sum'
@@ -17,15 +18,11 @@ interface ProcessedEntry {
   modules?: Record<string, string>
 }
 
+export const debugCSS = require('debug')('vite:css')
+
 const processedCSS = new Map<string, ProcessedEntry>()
 
-export const cssPlugin: ServerPlugin = ({
-  root,
-  app,
-  watcher,
-  resolver,
-  config
-}) => {
+export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   app.use(async (ctx, next) => {
     await next()
     // handle .css imports
@@ -66,6 +63,18 @@ export const cssPlugin: ServerPlugin = ({
   })
 
   watcher.on('change', (file) => {
+    /** filter unused files */
+    if (
+      !Array.from(processedCSS.keys()).some((processed) =>
+        file.includes(processed)
+      ) &&
+      !srcImportMap.has(file)
+    ) {
+      return debugCSS(
+        `${basename(file)} has changed, but it is not currently in use`
+      )
+    }
+
     if (file.endsWith('.css') || cssPreprocessLangRE.test(file)) {
       if (srcImportMap.has(file)) {
         // handle HMR for <style src="xxx.css">
