@@ -414,27 +414,29 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   }
 }
 
-function loadEnv(mode: string, projectRoot: string) {
+function loadEnv(mode: string, cwd: string): Record<string, string> {
   debug(`env mode: ${mode}`)
   const { resolve } = path
   const envFiles = [
-    /** default file */ resolve(projectRoot, '.env'),
-    /** local file */ resolve(projectRoot, `.env.local`),
-    /** mode file */ resolve(projectRoot, `.env.${mode}`),
-    /** mode local file */ resolve(projectRoot, `.env.${mode}.local`)
+    /** default file */ resolve(cwd, '.env'),
+    /** local file */ resolve(cwd, `.env.local`),
+    /** mode file */ resolve(cwd, `.env.${mode}`),
+    /** mode local file */ resolve(cwd, `.env.${mode}.local`)
   ]
 
-  return envFiles.reduce((envs, path) => {
-    if (!(existsSync(path) && statSync(path).isFile())) return envs
-
-    const result = dotenv.config(
-      !!process.env.DEBUG ? { debug: true, path } : { path }
-    )
-
-    if (result.error) {
-      throw result.error
+  const env: Record<string, string> = {}
+  for (const file of envFiles) {
+    if (!(existsSync(file) && statSync(file).isFile())) {
+      const result = dotenv.config({
+        debug: !!process.env.DEBUG,
+        path: file
+      })
+      if (result.error) {
+        throw result.error
+      }
+      Object.assign(env, result.parsed)
     }
+  }
 
-    return { ...envs, ...result.parsed }
-  }, {})
+  return env
 }
