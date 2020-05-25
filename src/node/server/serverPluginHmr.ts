@@ -9,7 +9,7 @@
 // 4. When a js file changes, it triggers an HMR graph analysis, where we try to
 //    walk its importer chains and see if we reach a "HMR boundary". An HMR
 //    boundary is either a `.vue` file or a `.js` file that explicitly indicated
-//    that it accepts hot updates (by importing from the `/vite/hmr` special module)
+//    that it accepts hot updates (by calling `import.meta.hot` APIs)
 // 5. If any parent chain exhausts without ever running into an HMR boundary,
 //    it's considered a "dead end". This causes a full page reload.
 // 6. If a `.vue` boundary is encountered, we add it to the `vueBoundaries` Set.
@@ -21,7 +21,7 @@
 //    client to update all `jsBoundaries` and `vueBoundaries`.
 
 // How do we get a js HMR boundary's accepted list on the server
-// 1. During the import rewriting, if `/vite/hmr` import is present in a js file,
+// 1. During the import rewriting, if `import.meta.hot` is present in a js file,
 //    we will do a fullblown parse of the file to find the `hot.accept` call,
 //    and records the file and its accepted dependencies in a `hmrBoundariesMap`
 // 2. We also inject the boundary file's full path into the `hot.accept` call
@@ -40,7 +40,7 @@ import { resolveImport } from './serverPluginModuleRewrite'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '@babel/parser'
-import { StringLiteral, Statement, Expression } from '@babel/types'
+import { Node, StringLiteral, Statement, Expression } from '@babel/types'
 import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
@@ -59,6 +59,7 @@ export type HMRWatcher = FSWatcher & {
 type HMRStateMap = Map<string, Set<string>>
 
 export const hmrAcceptanceMap: HMRStateMap = new Map()
+export const hmrDeclineSet = new Set<string>()
 export const importerMap: HMRStateMap = new Map()
 export const importeeMap: HMRStateMap = new Map()
 
@@ -68,8 +69,7 @@ export const hmrDirtyFilesMap = new LRUCache<string, Set<string>>({ max: 10 })
 
 // client and node files are placed flat in the dist folder
 export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
-export const hmrClientId = 'vite/hmr'
-export const hmrClientPublicPath = `/${hmrClientId}`
+export const hmrClientPublicPath = `/vite/hmr`
 
 interface HMRPayload {
   type:
@@ -340,6 +340,11 @@ function walkImportChain(
   dirtyFiles: Set<string>,
   currentChain: string[] = []
 ): boolean {
+  if (hmrDeclineSet.has(importee)) {
+    // module explicitly declines HMR = dead end
+    return true
+  }
+
   if (isHmrAccepted(importee, importee)) {
     // self-accepting module.
     jsBoundaries.add(importee)
@@ -410,6 +415,8 @@ export function rewriteFileWithHMR(
   resolver: InternalResolver,
   s: MagicString
 ) {
+  let hasDeclined
+
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
     const depPublicPath = resolveImport(root, importer, e.value, resolver)
@@ -427,15 +434,14 @@ export function rewriteFileWithHMR(
     if (
       node.type === 'CallExpression' &&
       node.callee.type === 'MemberExpression' &&
-      node.callee.object.type === 'Identifier' &&
-      node.callee.object.name === 'hot'
+      isMetaHot(node.callee.object)
     ) {
       if (isTopLevel) {
         console.warn(
           chalk.yellow(
-            `[vite warn] HMR syntax error in ${importer}: hot.accept() should be` +
-              `wrapped in \`if (__DEV__) {}\` conditional blocks so that they ` +
-              `can be tree-shaken in production.`
+            `[vite warn] HMR syntax error in ${importer}: import.meta.hot.accept() ` +
+              `should be wrapped in \`if (import.meta.hot) {}\` conditional ` +
+              `blocks so that they can be tree-shaken in production.`
           )
           // TODO generateCodeFrame
         )
@@ -445,20 +451,17 @@ export function rewriteFileWithHMR(
         if (!isDevBlock) {
           console.error(
             chalk.yellow(
-              `[vite] HMR syntax error in ${importer}: hot.accept() cannot be ` +
-                `conditional except for __DEV__ check because the server relies ` +
-                `on static analysis to construct the HMR graph.`
+              `[vite] HMR syntax error in ${importer}: import.meta.hot.accept() ` +
+                `cannot be conditional except for \`if (import.meta.hot)\` check ` +
+                `because the server relies on static analysis to construct the HMR graph.`
             )
           )
         }
         const args = node.arguments
-        const appendPoint = args.length ? args[0].start! : node.end! - 1
-        // inject the imports's own path so it becomes
-        // hot.accept('/foo.js', ['./bar.js'], () => {})
-        s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
         // register the accepted deps
         const accepted = args[0]
         if (accepted && accepted.type === 'ArrayExpression') {
+          // import.meta.hot.accept(['./foo', './bar'], () => {})
           accepted.elements.forEach((e) => {
             if (e && e.type !== 'StringLiteral') {
               console.error(
@@ -472,25 +475,26 @@ export function rewriteFileWithHMR(
             }
           })
         } else if (accepted && accepted.type === 'StringLiteral') {
+          // import.meta.hot.accept('./foo', () => {})
           registerDep(accepted)
         } else if (!accepted || accepted.type.endsWith('FunctionExpression')) {
-          // self accepting, rewrite to inject itself
-          // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
-          s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
+          // self accepting
+          // import.meta.hot.accept() OR import.meta.hot.accept(() => {})
           ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
         } else {
           console.error(
             chalk.yellow(
               `[vite] HMR syntax error in ${importer}: ` +
-                `hot.accept() expects a dep string, an array of deps, or a callback.`
+                `import.meta.hot.accept() expects a dep string, an array of ` +
+                `deps, or a callback.`
             )
           )
         }
       }
 
-      if (node.callee.property.name === 'dispose') {
-        // inject the imports's own path to dispose calls as well
-        s.appendLeft(node.arguments[0].start!, JSON.stringify(importer) + ', ')
+      if (node.callee.property.name === 'decline') {
+        hasDeclined = true
+        hmrDeclineSet.add(importer)
       }
     }
   }
@@ -503,20 +507,18 @@ export function rewriteFileWithHMR(
     if (node.type === 'ExpressionStatement') {
       // top level hot.accept() call
       checkHotCall(node.expression, isTopLevel, isDevBlock)
-      // __DEV__ && hot.accept()
+      // import.meta.hot && import.meta.hot.accept()
       if (
         node.expression.type === 'LogicalExpression' &&
         node.expression.operator === '&&' &&
-        node.expression.left.type === 'Identifier' &&
-        node.expression.left.name === '__DEV__'
+        isMetaHot(node.expression.left)
       ) {
         checkHotCall(node.expression.right, false, isDevBlock)
       }
     }
-    // if (__DEV__) ...
+    // if (import.meta.hot) ...
     if (node.type === 'IfStatement') {
-      const isDevBlock =
-        node.test.type === 'Identifier' && node.test.name === '__DEV__'
+      const isDevBlock = isMetaHot(node.test)
       if (node.consequent.type === 'BlockStatement') {
         node.consequent.body.forEach((s) =>
           checkStatements(s, false, isDevBlock)
@@ -531,6 +533,7 @@ export function rewriteFileWithHMR(
   const ast = parse(source, {
     sourceType: 'module',
     plugins: [
+      // required for import.meta.hot
       'importMeta',
       // by default we enable proposals slated for ES2020.
       // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
@@ -542,4 +545,24 @@ export function rewriteFileWithHMR(
   }).program.body
 
   ast.forEach((s) => checkStatements(s, true, false))
+
+  // inject import.meta.hot
+  s.prepend(`
+import { createHotContext } from "${hmrClientPublicPath}"
+import.meta.hot = createHotContext(${JSON.stringify(importer)})
+  `)
+
+  // clear decline state
+  if (!hasDeclined) {
+    hmrDeclineSet.delete(importer)
+  }
+}
+
+function isMetaHot(node: Node) {
+  return (
+    node.type === 'MemberExpression' &&
+    node.object.type === 'MetaProperty' &&
+    node.property.type === 'Identifier' &&
+    node.property.name === 'hot'
+  )
 }

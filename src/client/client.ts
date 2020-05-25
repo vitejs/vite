@@ -225,28 +225,51 @@ const jsHotModuleMap = new Map<string, HotModule>()
 const jsDisposeMap = new Map<string, () => void | Promise<void>>()
 const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 
-export const hot = {
-  accept(
-    id: string,
-    deps: HotCallback['deps'],
-    callback: HotCallback['fn'] = () => {}
-  ) {
-    const mod: HotModule = jsHotModuleMap.get(id) || {
-      id,
-      callbacks: []
+export const createHotContext = (id: string) => {
+  return {
+    accept(
+      deps?: HotCallback['deps'] | HotCallback['fn'],
+      callback: HotCallback['fn'] = () => {}
+    ) {
+      // accept()
+      if (!deps && !callback) {
+        deps = id
+      }
+
+      // accept(() => {})
+      if (typeof deps === 'function') {
+        callback = deps
+        deps = id
+      }
+
+      const mod: HotModule = jsHotModuleMap.get(id) || {
+        id,
+        callbacks: []
+      }
+      mod.callbacks.push({
+        deps: deps as HotCallback['deps'],
+        fn: callback
+      })
+      jsHotModuleMap.set(id, mod)
+    },
+
+    dispose(cb: () => void) {
+      jsDisposeMap.set(id, cb)
+    },
+
+    // noop, used for static analysis only
+    decline() {},
+
+    invalidate() {
+      location.reload()
+    },
+
+    // custom events
+    on(event: string, cb: () => void) {
+      const existing = customUpdateMap.get(event) || []
+      existing.push(cb)
+      customUpdateMap.set(event, existing)
     }
-    mod.callbacks.push({ deps, fn: callback })
-    jsHotModuleMap.set(id, mod)
-  },
-
-  dispose(id: string, cb: () => void) {
-    jsDisposeMap.set(id, cb)
-  },
-
-  on(event: string, cb: () => void) {
-    const existing = customUpdateMap.get(event) || []
-    existing.push(cb)
-    customUpdateMap.set(event, existing)
   }
 }
 

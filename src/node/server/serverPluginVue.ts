@@ -13,10 +13,10 @@ import { resolveCompiler } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import {
-  hmrClientId,
   debugHmr,
   importerMap,
-  ensureMapEntry
+  ensureMapEntry,
+  hmrClientPublicPath
 } from './serverPluginHmr'
 import {
   resolveFrom,
@@ -216,7 +216,7 @@ async function compileSFCMain(
   }
 
   const id = hash_sum(publicPath)
-  let code = `\nimport { updateStyle, hot } from "${hmrClientId}"\n`
+  let code = `\nimport { updateStyle } from "${hmrClientPublicPath}"\n`
   if (descriptor.script) {
     let content = descriptor.script.content
     if (descriptor.script.lang === 'ts') {
@@ -228,8 +228,8 @@ async function compileSFCMain(
     code += `const __script = {}`
   }
 
-  code += `\n if (__DEV__) {
-  hot.accept((m) => {
+  code += `\n if (import.meta.hot) {
+  import.meta.hot.accept((m) => {
     __VUE_HMR_RUNTIME__.reload("${id}", m.default)
   })
 }`
@@ -266,8 +266,8 @@ async function compileSFCMain(
       templateRequest
     )}`
     code += `\n__script.render = __render`
-    code += `\n if (__DEV__) {
-  hot.accept(${JSON.stringify(templateRequest)}, (m) => {
+    code += `\n if (import.meta.hot) {
+  import.meta.hot.accept(${JSON.stringify(templateRequest)}, (m) => {
     __VUE_HMR_RUNTIME__.rerender("${id}", m.render)
   })
 }`

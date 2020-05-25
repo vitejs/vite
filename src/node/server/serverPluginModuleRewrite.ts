@@ -19,7 +19,6 @@ import {
   ensureMapEntry,
   rewriteFileWithHMR,
   hmrClientPublicPath,
-  hmrClientId,
   hmrDirtyFilesMap
 } from './serverPluginHmr'
 import {
@@ -39,8 +38,8 @@ const rewriteCache = new LRUCache({ max: 1024 })
 // Plugin for rewriting served js.
 // - Rewrites named module imports to `/@modules/:id` requests, e.g.
 //   "vue" => "/@modules/vue"
-// - Rewrites HMR `hot.accept` calls to inject the file's own path. e.g.
-//   `hot.accept('./dep.js', cb)` -> `hot.accept('/importer.js', './dep.js', cb)`
+// - Rewrites files containing HMR code (reference to `import.meta.hot`) to
+//   inject `import.meta.hot` and track HMR boundary accept whitelists.
 // - Also tracks importer/importee relationship graph during the rewrite.
 //   The graph is used by the HMR plugin to perform analysis on file change.
 export const moduleRewritePlugin: ServerPlugin = ({
@@ -125,13 +124,14 @@ export function rewriteImports(
       debug(`${importer}: rewriting`)
       const s = new MagicString(source)
       let hasReplaced = false
+      let hasRewrittenForHMR = false
 
       const prevImportees = importeeMap.get(importer)
       const currentImportees = new Set<string>()
       importeeMap.set(importer, currentImportees)
 
       for (let i = 0; i < imports.length; i++) {
-        const { s: start, e: end, ss, se, d: dynamicIndex } = imports[i]
+        const { s: start, e: end, d: dynamicIndex } = imports[i]
         let id = source.substring(start, end)
         let hasLiteralDynamicId = false
         if (dynamicIndex >= 0) {
@@ -147,19 +147,13 @@ export function rewriteImports(
             continue
           }
 
-          let resolved
-          if (id === hmrClientId) {
-            resolved = hmrClientPublicPath
-            if (/\bhot\b/.test(source.substring(ss, se))) {
-              // the user explicit imports the HMR API in a js file
-              // making the module hot.
-              rewriteFileWithHMR(root, source, importer, resolver, s)
-              // we rewrite the hot.accept call
-              hasReplaced = true
-            }
-          } else {
-            resolved = resolveImport(root, importer, id, resolver, timestamp)
-          }
+          const resolved = resolveImport(
+            root,
+            importer,
+            id,
+            resolver,
+            timestamp
+          )
 
           if (resolved !== id) {
             debug(`    "${id}" --> "${resolved}"`)
@@ -183,7 +177,19 @@ export function rewriteImports(
             ensureMapEntry(importerMap, importee).add(importer)
           }
         } else {
-          console.log(`[vite] ignored dynamic import(${id})`)
+          if (id === 'import.meta') {
+            if (
+              !hasRewrittenForHMR &&
+              source.substring(start, end + 4) === 'import.meta.hot'
+            ) {
+              debugHmr(`rewriting ${importer} for HMR.`)
+              rewriteFileWithHMR(root, source, importer, resolver, s)
+              hasRewrittenForHMR = true
+              hasReplaced = true
+            }
+          } else {
+            console.log(`[vite] ignored dynamic import(${id})`)
+          }
         }
       }
 
