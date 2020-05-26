@@ -26,7 +26,7 @@ import { vueCache, srcImportMap } from './serverPluginVue'
 import { resolveImport } from './serverPluginModuleRewrite'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
-import { parse } from '@babel/parser'
+import { parse } from '../utils/babelParse'
 import { Node, StringLiteral, Statement, Expression } from '@babel/types'
 import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
@@ -406,20 +406,7 @@ export function rewriteFileWithHMR(
     }
   }
 
-  const ast = parse(source, {
-    sourceType: 'module',
-    plugins: [
-      // required for import.meta.hot
-      'importMeta',
-      // by default we enable proposals slated for ES2020.
-      // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
-      // this should be kept in async with @vue/compiler-core's support range
-      'bigInt',
-      'optionalChaining',
-      'nullishCoalescingOperator'
-    ]
-  }).program.body
-
+  const ast = parse(source)
   ast.forEach((s) => checkStatements(s, true, false))
 
   // inject import.meta.hot

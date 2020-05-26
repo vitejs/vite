@@ -29,6 +29,8 @@ import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'
 import { codegenCss, compileCss, rewriteCssUrls } from '../utils/cssUtils'
+import { parse } from '../utils/babelParse'
+import MagicString from 'magic-string'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -340,6 +342,8 @@ export async function parseSFC(
   return descriptor
 }
 
+const defaultExportRE = /((?:\n|;)\s*)export default/
+
 async function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
@@ -351,14 +355,22 @@ async function compileSFCMain(
   }
 
   const id = hash_sum(publicPath)
-  let code = `\nimport { updateStyle } from "${hmrClientPublicPath}"\n`
+  let code = ``
   if (descriptor.script) {
     let content = descriptor.script.content
     if (descriptor.script.lang === 'ts') {
+      // TODO merge lang=ts source map
       content = (await transform(content, publicPath, { loader: 'ts' })).code
     }
-
-    code += content.replace(`export default`, 'const __script =')
+    // rewrite export default.
+    // fast path: simple regex replacement to avoid full-blown babel parse.
+    let replaced = content.replace(defaultExportRE, '$1const __script =')
+    // if the script somehow still contains `default export`, it probably has
+    // multi-line comments or template strings. fallback to a full parse.
+    if (defaultExportRE.test(replaced)) {
+      replaced = rewriteDefaultExport(content)
+    }
+    code += replaced
   } else {
     code += `const __script = {}`
   }
@@ -366,6 +378,7 @@ async function compileSFCMain(
   let hasScoped = false
   let hasCSSModules = false
   if (descriptor.styles) {
+    code += `\nimport { updateStyle } from "${hmrClientPublicPath}"\n`
     descriptor.styles.forEach((s, i) => {
       const styleRequest = publicPath + `?type=style&index=${i}`
       if (s.scoped) hasScoped = true
@@ -544,4 +557,16 @@ async function compileSFCStyle(
 
   debug(`${publicPath} style compiled in ${Date.now() - start}ms`)
   return result
+}
+
+function rewriteDefaultExport(code: string): string {
+  const s = new MagicString(code)
+  const ast = parse(code)
+  ast.forEach((node) => {
+    if (node.type === 'ExportDefaultDeclaration') {
+      s.overwrite(node.start!, node.declaration.start!, `const __script = `)
+    }
+  })
+  const ret = s.toString()
+  return ret
 }
