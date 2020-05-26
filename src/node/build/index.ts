@@ -116,7 +116,9 @@ export async function createBaseRollupPlugins(
       compilerOptions: options.vueCompilerOptions,
       cssModulesOptions: {
         generateScopedName: (local: string, filename: string) =>
-          `${local}_${hash_sum(filename)}`
+          `${local}_${hash_sum(filename)}`,
+        ...(options.rollupPluginVueOptions &&
+          options.rollupPluginVueOptions.cssModulesOptions)
       }
     }),
     require('@rollup/plugin-json')({
