@@ -218,7 +218,6 @@ function walkImportChain(
     return false
   }
 
-  let hasDeadEnd = false
   for (const importer of importers) {
     if (importer.endsWith('.vue') || isHmrAccepted(importer, importee)) {
       // vue boundaries are considered dirty for the reload
@@ -230,19 +229,21 @@ function walkImportChain(
     } else {
       const parentImpoters = importerMap.get(importer)
       if (!parentImpoters) {
-        hasDeadEnd = true
-      } else {
-        hasDeadEnd = walkImportChain(
+        return true
+      } else if (
+        walkImportChain(
           importer,
           parentImpoters,
           hmrBoundaries,
           dirtyFiles,
           currentChain.concat(importer)
         )
+      ) {
+        return true
       }
     }
   }
-  return hasDeadEnd
+  return false
 }
 
 function isHmrAccepted(importer: string, dep: string): boolean {
