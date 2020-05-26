@@ -429,7 +429,7 @@ function loadEnv(mode: string, root: string): Record<string, string> {
     const path = lookupFile(root, [file], true)
     if (path) {
       const result = dotenv.config({
-        debug: !!process.env.DEBUG,
+        debug: !!process.env.DEBUG || undefined,
         path
       })
       if (result.error) {
