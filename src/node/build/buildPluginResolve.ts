@@ -29,7 +29,7 @@ export const createBuildResolvePlugin = (
       }
       // fallback to node-resolve because alias
       if (id !== original) {
-        const resolved = this.resolve(id, importer, { skipSelf: true })
+        const resolved = await this.resolve(id, importer, { skipSelf: true })
         return resolved || { id }
       }
     }
