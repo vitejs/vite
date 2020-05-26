@@ -32,6 +32,7 @@ import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
 import { cssPreprocessLangRE } from '../utils/cssUtils'
+import { isStaticAsset } from '../utils'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -183,6 +184,7 @@ export const hmrPlugin: ServerPlugin = ({
   watcher.on('change', (file) => {
     if (
       !(
+        isStaticAsset(file) ||
         file.endsWith('.vue') ||
         file.endsWith('.css') ||
         cssPreprocessLangRE.test(file)
