@@ -170,7 +170,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     sourcemap = false,
     shouldPreload = null,
     env = {},
-    mode
+    mode = 'production'
   } = options
 
   const isTest = process.env.NODE_ENV === 'test'
