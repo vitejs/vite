@@ -1,9 +1,11 @@
-import { hot } from 'vite/hmr'
-
 export const foo = 1
 
-if (__DEV__) {
-  hot.dispose(() => {
+if (import.meta.hot) {
+  const data = import.meta.hot.data
+  console.log(`(dep) foo from dispose: ${data.fromDispose}`)
+
+  import.meta.hot.dispose((data) => {
     console.log(`(dep) foo was: ${foo}`)
+    data.fromDispose = foo * 10
   })
 }

@@ -1,6 +1,5 @@
 import { Plugin } from 'rollup'
 import fs from 'fs-extra'
-import { hmrClientId } from '../server/serverPluginHmr'
 import { resolveVue } from '../utils/resolveVue'
 import { InternalResolver } from '../resolver'
 
@@ -15,9 +14,6 @@ export const createBuildResolvePlugin = (
     async resolveId(id, importer) {
       const original = id
       id = resolver.alias(id) || id
-      if (id === hmrClientId) {
-        return hmrClientId
-      }
       if (id === 'vue' || id.startsWith('@vue/')) {
         const vuePaths = resolveVue(root)
         if (id in vuePaths) {
@@ -35,11 +31,6 @@ export const createBuildResolvePlugin = (
       if (id !== original) {
         const resolved = this.resolve(id, importer, { skipSelf: true })
         return resolved || { id }
-      }
-    },
-    load(id: string) {
-      if (id === hmrClientId) {
-        return `export const hot = {accept(){},dispose(){},on(){}}`
       }
     }
   }

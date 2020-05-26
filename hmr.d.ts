@@ -1,12 +1,17 @@
-export declare const hot: {
-  // single dep
-  accept(dep: string, cb?: (newModule: any) => void): void
-  // multiple deps
-  accept(deps: string[], cb?: (newModules: any[]) => void): void
-  // self-accepting
-  accept(cb: (newModule: any) => void): void
-  // dispose
-  dispose(cb: () => void): void
-  // custom events
-  on(event: string, cb: (data: any) => void): void
+declare interface ImportMeta {
+  hot: {
+    data: any
+
+    accept(): void
+    accept(cb: (mod: any) => void): void
+
+    acceptDeps(dep: string, cb: (mod: any) => void): void
+    acceptDeps(deps: string[], cb: (mods: any[]) => void): void
+
+    dispose(cb: (data: any) => void): void
+    decline(): void
+    invalidate(): void
+
+    on(event: string, cb: (...args: any[]) => void): void
+  }
 }

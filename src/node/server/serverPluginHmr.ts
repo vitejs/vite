@@ -4,43 +4,30 @@
 //    (this is done in `./serverPluginModuleRewrite.ts`) for module import rewriting.
 //    During this we also record the importer/importee relationships which can be used for
 //    HMR analysis (we do both at the same time to avoid double parse costs)
-// 3. When a `.vue` file changes, we directly read, parse it again and
-//    send the client because Vue components are self-accepting by nature
-// 4. When a js file changes, it triggers an HMR graph analysis, where we try to
+// 3. When a file changes, it triggers an HMR graph analysis, where we try to
 //    walk its importer chains and see if we reach a "HMR boundary". An HMR
-//    boundary is either a `.vue` file or a `.js` file that explicitly indicated
-//    that it accepts hot updates (by importing from the `/vite/hmr` special module)
-// 5. If any parent chain exhausts without ever running into an HMR boundary,
+//    boundary is a file that explicitly indicated that it accepts hot updates
+//    (by calling `import.meta.hot` APIs)
+// 4. If any parent chain exhausts without ever running into an HMR boundary,
 //    it's considered a "dead end". This causes a full page reload.
-// 6. If a `.vue` boundary is encountered, we add it to the `vueBoundaries` Set.
-// 7. If a `.js` boundary is encountered, we check if the boundary's current
-//    child importer is in the accepted list of the boundary (see additional
-//    explanation below). If yes, record current child importer in the
-//    `jsBoundaries` Set.
-// 8. If the graph walk finished without running into dead ends, send the
-//    client to update all `jsBoundaries` and `vueBoundaries`.
-
-// How do we get a js HMR boundary's accepted list on the server
-// 1. During the import rewriting, if `/vite/hmr` import is present in a js file,
-//    we will do a fullblown parse of the file to find the `hot.accept` call,
-//    and records the file and its accepted dependencies in a `hmrBoundariesMap`
-// 2. We also inject the boundary file's full path into the `hot.accept` call
-//    so that on the client, the `hot.accept` call would have registered for
-//    updates using the full paths of the dependencies.
+// 5. If a boundary is encountered, we check if the boundary's current
+//    child importer is in the accepted list of the boundary (recorded while
+//    parsing the file for HRM rewrite). If yes, record current child importer
+//    in the `hmrBoundaries` Set.
+// 6. If the graph walk finished without running into dead ends, send the
+//    client to update all `hmrBoundaries`.
 
 import { ServerPlugin } from '.'
 import fs from 'fs'
 import WebSocket from 'ws'
 import path from 'path'
 import chalk from 'chalk'
-import hash_sum from 'hash-sum'
-import { SFCBlock } from '@vue/compiler-sfc'
-import { parseSFC, vueCache, srcImportMap } from './serverPluginVue'
+import { vueCache, srcImportMap } from './serverPluginVue'
 import { resolveImport } from './serverPluginModuleRewrite'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '@babel/parser'
-import { StringLiteral, Statement, Expression } from '@babel/types'
+import { Node, StringLiteral, Statement, Expression } from '@babel/types'
 import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
@@ -59,6 +46,7 @@ export type HMRWatcher = FSWatcher & {
 type HMRStateMap = Map<string, Set<string>>
 
 export const hmrAcceptanceMap: HMRStateMap = new Map()
+export const hmrDeclineSet = new Set<string>()
 export const importerMap: HMRStateMap = new Map()
 export const importeeMap: HMRStateMap = new Map()
 
@@ -68,8 +56,7 @@ export const hmrDirtyFilesMap = new LRUCache<string, Set<string>>({ max: 10 })
 
 // client and node files are placed flat in the dist folder
 export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
-export const hmrClientId = 'vite/hmr'
-export const hmrClientPublicPath = `/${hmrClientId}`
+export const hmrClientPublicPath = `/vite/hmr`
 
 interface HMRPayload {
   type:
@@ -124,7 +111,7 @@ export const hmrPlugin: ServerPlugin = ({
     }
   })
 
-  const send = (payload: HMRPayload) => {
+  const send = (watcher.send = (payload: HMRPayload) => {
     const stringified = JSON.stringify(payload, null, 2)
     debugHmr(`update: ${stringified}`)
 
@@ -133,138 +120,12 @@ export const hmrPlugin: ServerPlugin = ({
         client.send(stringified)
       }
     })
-  }
-
-  watcher.handleVueReload = handleVueReload
-  watcher.handleJSReload = handleJSReload
-  watcher.send = send
-
-  watcher.on('change', async (file) => {
-    const timestamp = Date.now()
-    if (file.endsWith('.vue')) {
-      handleVueReload(file, timestamp)
-    } else if (!(file.endsWith('.css') || cssPreprocessLangRE.test(file))) {
-      // everything except plain .css are considered HMR dependencies.
-      // plain css has its own HMR logic in ./serverPluginCss.ts.
-      handleJSReload(file, timestamp)
-    }
   })
 
-  async function handleVueReload(
-    file: string,
-    timestamp: number = Date.now(),
-    content?: string
-  ) {
-    const publicPath = resolver.fileToRequest(file)
-    const cacheEntry = vueCache.get(file)
-
-    debugHmr(`busting Vue cache for ${file}`)
-    vueCache.del(file)
-
-    const descriptor = await parseSFC(root, file, content)
-    if (!descriptor) {
-      // read failed
-      return
-    }
-
-    const prevDescriptor = cacheEntry && cacheEntry.descriptor
-    if (!prevDescriptor) {
-      // the file has never been accessed yet
-      debugHmr(`no existing descriptor found for ${file}`)
-      return
-    }
-
-    // check which part of the file changed
-    let needRerender = false
-
-    const vueReload = () => {
-      send({
-        type: 'js-update',
-        path: publicPath,
-        changeSrcPath: publicPath,
-        timestamp
-      })
-      console.log(
-        chalk.green(`[vite:hmr] `) +
-          `${path.relative(root, file)} updated. (reload)`
-      )
-    }
-
-    if (!isEqual(descriptor.script, prevDescriptor.script)) {
-      vueReload()
-      return
-    }
-
-    if (!isEqual(descriptor.template, prevDescriptor.template)) {
-      needRerender = true
-    }
-
-    let didUpdateStyle = false
-    const styleId = hash_sum(publicPath)
-    const prevStyles = prevDescriptor.styles || []
-    const nextStyles = descriptor.styles || []
-
-    // css modules update causes a reload because the $style object is changed
-    // and it may be used in JS. It also needs to trigger a vue-style-update
-    // event so the client busts the sw cache.
-    if (
-      prevStyles.some((s) => s.module != null) ||
-      nextStyles.some((s) => s.module != null)
-    ) {
-      vueReload()
-      return
-    }
-
-    if (prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)) {
-      needRerender = true
-    }
-
-    // only need to update styles if not reloading, since reload forces
-    // style updates as well.
-    nextStyles.forEach((_, i) => {
-      if (!prevStyles[i] || !isEqual(prevStyles[i], nextStyles[i])) {
-        didUpdateStyle = true
-        send({
-          type: 'style-update',
-          path: `${publicPath}?type=style&index=${i}`,
-          timestamp
-        })
-      }
-    })
-
-    // stale styles always need to be removed
-    prevStyles.slice(nextStyles.length).forEach((_, i) => {
-      didUpdateStyle = true
-      send({
-        type: 'style-remove',
-        path: publicPath,
-        id: `${styleId}-${i + nextStyles.length}`,
-        timestamp
-      })
-    })
-
-    if (needRerender) {
-      send({
-        type: 'js-update',
-        path: publicPath,
-        changeSrcPath: `${publicPath}?type=template`,
-        timestamp
-      })
-    }
-
-    if (needRerender || didUpdateStyle) {
-      let updateType = needRerender ? `template` : ``
-      if (didUpdateStyle) {
-        updateType += ` & style`
-      }
-      console.log(
-        chalk.green(`[vite:hmr] `) +
-          `${path.relative(root, file)} updated. (${updateType})`
-      )
-    }
-  }
-
-  function handleJSReload(filePath: string, timestamp: number = Date.now()) {
+  const handleJSReload = (watcher.handleJSReload = (
+    filePath: string,
+    timestamp: number = Date.now()
+  ) => {
     // normal js file, but could be compiled from anything.
     // bust the vue cache in case this is a src imported file
     if (srcImportMap.has(filePath)) {
@@ -275,16 +136,14 @@ export const hmrPlugin: ServerPlugin = ({
     const publicPath = resolver.fileToRequest(filePath)
     const importers = importerMap.get(publicPath)
     if (importers) {
-      const vueBoundaries = new Set<string>()
-      const jsBoundaries = new Set<string>()
+      const hmrBoundaries = new Set<string>()
       const dirtyFiles = new Set<string>()
       dirtyFiles.add(publicPath)
 
       const hasDeadEnd = walkImportChain(
         publicPath,
         importers,
-        vueBoundaries,
-        jsBoundaries,
+        hmrBoundaries,
         dirtyFiles
       )
 
@@ -301,19 +160,7 @@ export const hmrPlugin: ServerPlugin = ({
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
       } else {
-        vueBoundaries.forEach((vueBoundary) => {
-          console.log(
-            chalk.green(`[vite:hmr] `) +
-              `${vueBoundary} reloaded due to change in ${relativeFile}.`
-          )
-          send({
-            type: 'js-update',
-            path: vueBoundary,
-            changeSrcPath: publicPath,
-            timestamp
-          })
-        })
-        jsBoundaries.forEach((jsBoundary) => {
+        hmrBoundaries.forEach((jsBoundary) => {
           console.log(
             chalk.green(`[vite:hmr] `) +
               `${jsBoundary} updated due to change in ${relativeFile}.`
@@ -329,32 +176,46 @@ export const hmrPlugin: ServerPlugin = ({
     } else {
       debugHmr(`no importers for ${publicPath}.`)
     }
-  }
+  })
+
+  watcher.on('change', (file) => {
+    if (
+      !(
+        file.endsWith('.vue') ||
+        file.endsWith('.css') ||
+        cssPreprocessLangRE.test(file)
+      )
+    ) {
+      // everything except plain .css are considered HMR dependencies.
+      // plain css has its own HMR logic in ./serverPluginCss.ts.
+      handleJSReload(file)
+    }
+  })
 }
 
 function walkImportChain(
   importee: string,
   importers: Set<string>,
-  vueBoundaries: Set<string>,
-  jsBoundaries: Set<string>,
+  hmrBoundaries: Set<string>,
   dirtyFiles: Set<string>,
   currentChain: string[] = []
 ): boolean {
+  if (hmrDeclineSet.has(importee)) {
+    // module explicitly declines HMR = dead end
+    return true
+  }
+
   if (isHmrAccepted(importee, importee)) {
     // self-accepting module.
-    jsBoundaries.add(importee)
+    hmrBoundaries.add(importee)
     dirtyFiles.add(importee)
     return false
   }
 
   let hasDeadEnd = false
   for (const importer of importers) {
-    if (importer.endsWith('.vue')) {
-      vueBoundaries.add(importer)
-      dirtyFiles.add(importer)
-      currentChain.forEach((file) => dirtyFiles.add(file))
-    } else if (isHmrAccepted(importer, importee)) {
-      jsBoundaries.add(importer)
+    if (isHmrAccepted(importer, importee)) {
+      hmrBoundaries.add(importer)
       // js boundaries themselves are not considered dirty
       currentChain.forEach((file) => dirtyFiles.add(file))
     } else {
@@ -365,8 +226,7 @@ function walkImportChain(
         hasDeadEnd = walkImportChain(
           importer,
           parentImpoters,
-          vueBoundaries,
-          jsBoundaries,
+          hmrBoundaries,
           dirtyFiles,
           currentChain.concat(importer)
         )
@@ -379,19 +239,6 @@ function walkImportChain(
 function isHmrAccepted(importer: string, dep: string): boolean {
   const deps = hmrAcceptanceMap.get(importer)
   return deps ? deps.has(dep) : false
-}
-
-function isEqual(a: SFCBlock | null, b: SFCBlock | null) {
-  if (!a && !b) return true
-  if (!a || !b) return false
-  if (a.content.length !== b.content.length) return false
-  if (a.content !== b.content) return false
-  const keysA = Object.keys(a.attrs)
-  const keysB = Object.keys(b.attrs)
-  if (keysA.length !== keysB.length) {
-    return false
-  }
-  return keysA.every((key) => a.attrs[key] === b.attrs[key])
 }
 
 export function ensureMapEntry(map: HMRStateMap, key: string): Set<string> {
@@ -410,6 +257,8 @@ export function rewriteFileWithHMR(
   resolver: InternalResolver,
   s: MagicString
 ) {
+  let hasDeclined
+
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
     const depPublicPath = resolveImport(root, importer, e.value, resolver)
@@ -427,38 +276,42 @@ export function rewriteFileWithHMR(
     if (
       node.type === 'CallExpression' &&
       node.callee.type === 'MemberExpression' &&
-      node.callee.object.type === 'Identifier' &&
-      node.callee.object.name === 'hot'
+      isMetaHot(node.callee.object)
     ) {
       if (isTopLevel) {
         console.warn(
           chalk.yellow(
-            `[vite warn] HMR syntax error in ${importer}: hot.accept() should be` +
-              `wrapped in \`if (__DEV__) {}\` conditional blocks so that they ` +
-              `can be tree-shaken in production.`
+            `[vite warn] HMR syntax error in ${importer}: import.meta.hot.accept() ` +
+              `should be wrapped in \`if (import.meta.hot) {}\` conditional ` +
+              `blocks so that they can be tree-shaken in production.`
           )
           // TODO generateCodeFrame
         )
       }
 
-      if (node.callee.property.name === 'accept') {
+      const method = node.callee.property.name
+      if (method === 'accept' || method === 'acceptDeps') {
         if (!isDevBlock) {
           console.error(
             chalk.yellow(
-              `[vite] HMR syntax error in ${importer}: hot.accept() cannot be ` +
-                `conditional except for __DEV__ check because the server relies ` +
-                `on static analysis to construct the HMR graph.`
+              `[vite] HMR syntax error in ${importer}: import.meta.hot.${method}() ` +
+                `cannot be conditional except for \`if (import.meta.hot)\` check ` +
+                `because the server relies on static analysis to construct the HMR graph.`
             )
           )
         }
-        const args = node.arguments
-        const appendPoint = args.length ? args[0].start! : node.end! - 1
-        // inject the imports's own path so it becomes
-        // hot.accept('/foo.js', ['./bar.js'], () => {})
-        s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
         // register the accepted deps
-        const accepted = args[0]
+        const accepted = node.arguments[0]
         if (accepted && accepted.type === 'ArrayExpression') {
+          if (method !== 'acceptDeps') {
+            console.error(
+              chalk.yellow(
+                `[vite] HMR syntax error in ${importer}: hot.accept() only accepts ` +
+                  `a single callback. Use hot.acceptDeps() to handle dep updates.`
+              )
+            )
+          }
+          // import.meta.hot.accept(['./foo', './bar'], () => {})
           accepted.elements.forEach((e) => {
             if (e && e.type !== 'StringLiteral') {
               console.error(
@@ -472,25 +325,43 @@ export function rewriteFileWithHMR(
             }
           })
         } else if (accepted && accepted.type === 'StringLiteral') {
+          if (method !== 'acceptDeps') {
+            console.error(
+              chalk.yellow(
+                `[vite] HMR syntax error in ${importer}: hot.accept() only accepts ` +
+                  `a single callback. Use hot.acceptDeps() to handle dep updates.`
+              )
+            )
+          }
+          // import.meta.hot.accept('./foo', () => {})
           registerDep(accepted)
         } else if (!accepted || accepted.type.endsWith('FunctionExpression')) {
-          // self accepting, rewrite to inject itself
-          // hot.accept(() => {})  -->  hot.accept('/foo.js', '/foo.js', () => {})
-          s.appendLeft(appendPoint, JSON.stringify(importer) + ', ')
+          if (method !== 'accept') {
+            console.error(
+              chalk.yellow(
+                `[vite] HMR syntax error in ${importer}: hot.acceptDeps() ` +
+                  `expects a dependency or an array of dependencies. ` +
+                  `Use hot.accept() for handling self updates.`
+              )
+            )
+          }
+          // self accepting
+          // import.meta.hot.accept() OR import.meta.hot.accept(() => {})
           ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
         } else {
           console.error(
             chalk.yellow(
               `[vite] HMR syntax error in ${importer}: ` +
-                `hot.accept() expects a dep string, an array of deps, or a callback.`
+                `import.meta.hot.accept() expects a dep string, an array of ` +
+                `deps, or a callback.`
             )
           )
         }
       }
 
-      if (node.callee.property.name === 'dispose') {
-        // inject the imports's own path to dispose calls as well
-        s.appendLeft(node.arguments[0].start!, JSON.stringify(importer) + ', ')
+      if (method === 'decline') {
+        hasDeclined = true
+        hmrDeclineSet.add(importer)
       }
     }
   }
@@ -503,20 +374,18 @@ export function rewriteFileWithHMR(
     if (node.type === 'ExpressionStatement') {
       // top level hot.accept() call
       checkHotCall(node.expression, isTopLevel, isDevBlock)
-      // __DEV__ && hot.accept()
+      // import.meta.hot && import.meta.hot.accept()
       if (
         node.expression.type === 'LogicalExpression' &&
         node.expression.operator === '&&' &&
-        node.expression.left.type === 'Identifier' &&
-        node.expression.left.name === '__DEV__'
+        isMetaHot(node.expression.left)
       ) {
         checkHotCall(node.expression.right, false, isDevBlock)
       }
     }
-    // if (__DEV__) ...
+    // if (import.meta.hot) ...
     if (node.type === 'IfStatement') {
-      const isDevBlock =
-        node.test.type === 'Identifier' && node.test.name === '__DEV__'
+      const isDevBlock = isMetaHot(node.test)
       if (node.consequent.type === 'BlockStatement') {
         node.consequent.body.forEach((s) =>
           checkStatements(s, false, isDevBlock)
@@ -531,6 +400,7 @@ export function rewriteFileWithHMR(
   const ast = parse(source, {
     sourceType: 'module',
     plugins: [
+      // required for import.meta.hot
       'importMeta',
       // by default we enable proposals slated for ES2020.
       // full list at https://babeljs.io/docs/en/next/babel-parser#plugins
@@ -542,4 +412,24 @@ export function rewriteFileWithHMR(
   }).program.body
 
   ast.forEach((s) => checkStatements(s, true, false))
+
+  // inject import.meta.hot
+  s.prepend(`
+import { createHotContext } from "${hmrClientPublicPath}"
+import.meta.hot = createHotContext(${JSON.stringify(importer)})
+  `)
+
+  // clear decline state
+  if (!hasDeclined) {
+    hmrDeclineSet.delete(importer)
+  }
+}
+
+function isMetaHot(node: Node) {
+  return (
+    node.type === 'MemberExpression' &&
+    node.object.type === 'MetaProperty' &&
+    node.property.type === 'Identifier' &&
+    node.property.name === 'hot'
+  )
 }

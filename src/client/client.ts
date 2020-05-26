@@ -147,7 +147,7 @@ async function updateModule(
   changedPath: string,
   timestamp: string
 ) {
-  const mod = jsHotModuleMap.get(id)
+  const mod = hotModulesMap.get(id)
   if (!mod) {
     console.error(
       `[vite] got js update notification but no client callback was registered. Something is wrong.`
@@ -187,8 +187,8 @@ async function updateModule(
 
   await Promise.all(
     Array.from(modulesToUpdate).map(async (dep) => {
-      const disposer = jsDisposeMap.get(dep)
-      if (disposer) await disposer()
+      const disposer = disposeMap.get(dep)
+      if (disposer) await disposer(dataMap.get(dep))
       try {
         const newMod = await import(
           dep + (dep.includes('?') ? '&' : '?') + `t=${timestamp}`
@@ -221,33 +221,60 @@ interface HotCallback {
   fn: (modules: object | object[]) => void
 }
 
-const jsHotModuleMap = new Map<string, HotModule>()
-const jsDisposeMap = new Map<string, () => void | Promise<void>>()
+const hotModulesMap = new Map<string, HotModule>()
+const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
+const dataMap = new Map<string, any>()
 const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 
-export const hot = {
-  accept(
-    id: string,
-    deps: HotCallback['deps'],
-    callback: HotCallback['fn'] = () => {}
-  ) {
-    const mod: HotModule = jsHotModuleMap.get(id) || {
-      id,
-      callbacks: []
-    }
-    mod.callbacks.push({ deps, fn: callback })
-    jsHotModuleMap.set(id, mod)
-  },
-
-  dispose(id: string, cb: () => void) {
-    jsDisposeMap.set(id, cb)
-  },
-
-  on(event: string, cb: () => void) {
-    const existing = customUpdateMap.get(event) || []
-    existing.push(cb)
-    customUpdateMap.set(event, existing)
+export const createHotContext = (id: string) => {
+  if (!dataMap.has(id)) {
+    dataMap.set(id, {})
   }
+
+  const hot = {
+    get data() {
+      return dataMap.get(id)
+    },
+
+    accept(callback: HotCallback['fn'] = () => {}) {
+      hot.acceptDeps(id, callback)
+    },
+
+    acceptDeps(
+      deps: HotCallback['deps'],
+      callback: HotCallback['fn'] = () => {}
+    ) {
+      const mod: HotModule = hotModulesMap.get(id) || {
+        id,
+        callbacks: []
+      }
+      mod.callbacks.push({
+        deps: deps as HotCallback['deps'],
+        fn: callback
+      })
+      hotModulesMap.set(id, mod)
+    },
+
+    dispose(cb: (data: any) => void) {
+      disposeMap.set(id, cb)
+    },
+
+    // noop, used for static analysis only
+    decline() {},
+
+    invalidate() {
+      location.reload()
+    },
+
+    // custom events
+    on(event: string, cb: () => void) {
+      const existing = customUpdateMap.get(event) || []
+      existing.push(cb)
+      customUpdateMap.set(event, existing)
+    }
+  }
+
+  return hot
 }
 
 function bustSwCache(path: string) {

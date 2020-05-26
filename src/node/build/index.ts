@@ -232,7 +232,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         (id) => /\.(j|t)sx?$/.test(id),
         {
           ...envReplacements,
-          'process.env.': `({}).`
+          'process.env.': `({}).`,
+          'import.meta.hot': `false`
         },
         sourcemap
       ),
