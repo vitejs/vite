@@ -55,7 +55,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       const publicPath = resolver.fileToRequest(filePath)
 
       /** filter unused files */
-      if (!processedCSS.has(publicPath) && !srcImportMap.has(publicPath)) {
+      if (!processedCSS.has(publicPath) && !srcImportMap.has(filePath)) {
         return debugCSS(
           `${basename(publicPath)} has changed, but it is not currently in use`
         )
