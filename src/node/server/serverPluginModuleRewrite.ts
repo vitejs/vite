@@ -266,9 +266,8 @@ export const resolveImport = (
     }
 
     // 4. mark non-src imports
-    const ext = path.extname(pathname)
-    if (ext && !jsSrcRE.test(pathname)) {
-      query += `${query ? `&` : `?`}import`
+    if (!query && path.extname(pathname) && !jsSrcRE.test(pathname)) {
+      query += `?import`
     }
 
     // 5. force re-fetch dirty imports by appending timestamp
