@@ -223,7 +223,7 @@ export async function optimizeDeps(
       input,
       external: preservedDeps,
       treeshake: { moduleSideEffects: 'no-external' },
-      onwarn: onRollupWarning,
+      onwarn: onRollupWarning(spinner),
       ...config.rollupInputOptions,
       plugins: [
         ...(await createBaseRollupPlugins(root, resolver, config)),

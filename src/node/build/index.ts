@@ -45,9 +45,19 @@ const writeColors = {
 
 const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
 
-export const onRollupWarning: InputOptions['onwarn'] = (warning, warn) => {
+export const onRollupWarning: (
+  spinner: Ora | undefined
+) => InputOptions['onwarn'] = (spinner) => (warning, warn) => {
   if (!warningIgnoreList.includes(warning.code!)) {
+    // ora would swallow the console.warn if we let it keep running
+    // https://github.com/sindresorhus/ora/issues/90
+    if (spinner) {
+      spinner.stop()
+    }
     warn(warning)
+    if (spinner) {
+      spinner.start()
+    }
   }
 }
 
@@ -220,7 +230,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     input: path.resolve(root, 'index.html'),
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
-    onwarn: onRollupWarning,
+    onwarn: onRollupWarning(spinner),
     ...rollupInputOptions,
     plugins: [
       ...basePlugins,
