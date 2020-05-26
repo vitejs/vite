@@ -15,6 +15,7 @@ import chalk from 'chalk'
 const debug = require('debug')('vite:rewrite')
 
 const rewriteHtmlPluginCache = new LRUCache({ max: 20 })
+const usedHtmlSet = new Set<string>()
 
 export const htmlRewritePlugin: ServerPlugin = ({
   root,
@@ -77,30 +78,34 @@ export const htmlRewritePlugin: ServerPlugin = ({
     }
 
     if (ctx.response.is('html') && ctx.body) {
-      const importer = ctx.path
+      const publicPath = ctx.path
+      usedHtmlSet.add(publicPath)
       const html = await readBody(ctx.body)
       if (rewriteHtmlPluginCache.has(html)) {
         debug(`${ctx.path}: serving from cache`)
         ctx.body = rewriteHtmlPluginCache.get(html)
       } else {
         if (!html) return
-        ctx.body = await rewriteHtml(importer, html)
+        ctx.body = await rewriteHtml(publicPath, html)
         rewriteHtmlPluginCache.set(html, ctx.body)
       }
       return
     }
   })
 
-  watcher.on('change', (file) => {
-    const path = resolver.fileToRequest(file)
-    if (path.endsWith('.html')) {
-      debug(`${path}: cache busted`)
+  watcher.on('change', (filePath) => {
+    const publicPath = resolver.fileToRequest(filePath)
+    if (publicPath.endsWith('.html')) {
+      // skip unused
+      if (!usedHtmlSet.has(publicPath)) return
+
+      debug(`${publicPath}: cache busted`)
       watcher.send({
         type: 'full-reload',
-        path,
+        path: publicPath,
         timestamp: Date.now()
       })
-      console.log(chalk.green(`[vite] `) + ` ${path} page reloaded.`)
+      console.log(chalk.green(`[vite] `) + ` ${publicPath} page reloaded.`)
     }
   })
 }
