@@ -106,7 +106,7 @@ type PostCSSConfigResult = ReturnType<typeof postcssrc> extends Promise<infer T>
 
 let cachedPostcssConfig: PostCSSConfigResult | null | undefined
 
-export async function loadPostcssConfig(
+async function loadPostcssConfig(
   root: string
 ): Promise<PostCSSConfigResult | null> {
   if (cachedPostcssConfig !== undefined) {
