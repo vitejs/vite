@@ -4,8 +4,8 @@ import fs from 'fs-extra'
 import { isExternalUrl, cleanUrl, isStaticAsset } from '../utils/pathUtils'
 import { resolveAsset } from './buildPluginAsset'
 import {
-  parse,
-  transform,
+  parse as Parse,
+  transform as Transform,
   NodeTransform,
   NodeTypes,
   TextNode,
@@ -130,9 +130,11 @@ const compileHtml = async (
   inlineLimit: number,
   resolver: InternalResolver
 ) => {
+  const { parse, transform } = require('@vue/compiler-dom')
+
   // @vue/compiler-core doesn't like lowercase doctypes
   html = html.replace(/<!doctype\s/i, '<!DOCTYPE ')
-  const ast = parse(html)
+  const ast = (parse as typeof Parse)(html)
 
   let js = ''
   const s = new MagicString(html)
@@ -188,7 +190,7 @@ const compileHtml = async (
     }
   }
 
-  transform(ast, {
+  ;(transform as typeof Transform)(ast, {
     nodeTransforms: [viteHtmlTransfrom]
   })
 
