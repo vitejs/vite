@@ -85,7 +85,9 @@ export const resolveExt = (id: string) => {
     const queryMatch = id.match(/\?.*$/)
     const query = queryMatch ? queryMatch[0] : ''
     const resolved = cleanId + inferredExt + query
-    debug(`(extension) ${id} -> ${resolved}`)
+    if (resolved !== id) {
+      debug(`(extension) ${id} -> ${resolved}`)
+    }
     return resolved
   }
   return id
