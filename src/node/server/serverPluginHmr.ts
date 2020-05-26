@@ -183,7 +183,6 @@ export const hmrPlugin: ServerPlugin = ({
   watcher.on('change', (file) => {
     if (
       !(
-        file.endsWith('.html') ||
         file.endsWith('.vue') ||
         file.endsWith('.css') ||
         cssPreprocessLangRE.test(file)
