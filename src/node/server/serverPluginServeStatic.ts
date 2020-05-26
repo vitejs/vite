@@ -1,4 +1,7 @@
+import path from 'path'
 import { ServerPlugin } from '.'
+import { isStaticAsset } from '../utils'
+import chalk from 'chalk'
 
 const send = require('koa-send')
 const debug = require('debug')('vite:history')
@@ -41,7 +44,21 @@ export const serveStaticPlugin: ServerPlugin = ({
     return next()
   })
 
+  app.use((ctx, next) => {
+    if (ctx.path.startsWith('/public/') && isStaticAsset(ctx.path)) {
+      console.error(
+        chalk.yellow(
+          `[vite] files in the public directory are served at the root path.\n` +
+            `  ${chalk.blue(ctx.path)} should be changed to ${chalk.blue(
+              ctx.path.replace(/^\/public\//, '/')
+            )}.`
+        )
+      )
+    }
+    return next()
+  })
   app.use(require('koa-static')(root))
+  app.use(require('koa-static')(path.join(root, 'public')))
 
   // history API fallback
   app.use(async (ctx, next) => {

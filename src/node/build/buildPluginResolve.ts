@@ -20,7 +20,7 @@ export const createBuildResolvePlugin = (
           return (vuePaths as any)[id]
         }
       }
-      if (id.startsWith('/')) {
+      if (id.startsWith('/') && !id.startsWith(root)) {
         const resolved = resolver.requestToFile(id)
         if (fs.existsSync(resolved)) {
           debug(id, `-->`, resolved)

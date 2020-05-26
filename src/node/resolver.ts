@@ -45,6 +45,10 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
       return nodeModule
     }
   }
+  const publicDirPath = path.join(root, 'public', publicPath.slice(1))
+  if (fs.existsSync(publicDirPath)) {
+    return publicDirPath
+  }
   return path.join(root, publicPath.slice(1))
 }
 
