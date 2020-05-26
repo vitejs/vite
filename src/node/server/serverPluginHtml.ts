@@ -31,10 +31,10 @@ export const htmlRewritePlugin: ServerPlugin = ({
     `\n<script type="module">\n` +
     `import "${hmrClientPublicPath}"\n` +
     `window.__DEV__ = true\n` +
-    `window.__BASE__ = '/'\n` +
     `window.process = { env: ${JSON.stringify({
       ...env,
-      NODE_ENV: mode
+      NODE_ENV: mode,
+      BASE_URL: '/'
     })}}\n` +
     `</script>\n`
 

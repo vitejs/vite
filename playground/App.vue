@@ -4,7 +4,7 @@
     <code>__DEV__: {{ dev }}</code>
   </p>
   <p class="base">
-    <code>__BASE__: {{ base }}</code>
+    <code>process.env.BASE_URL: {{ base }}</code>
   </p>
   <TestEnv />
   <h2>Async Component</h2>
@@ -46,7 +46,7 @@ import TestRewriteOptimized from "./rewrite-optimized/TestRewriteOptimized.vue";
 export default {
   data: () => ({
     dev: __DEV__,
-    base: __BASE__
+    base: process.env.BASE_URL
   }),
   components: {
     TestEnv,

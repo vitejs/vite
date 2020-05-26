@@ -234,6 +234,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         (id) => /\.(j|t)sx?$/.test(id),
         {
           ...envReplacements,
+          'process.env.BASE_URL': JSON.stringify(publicBasePath),
           'process.env.': `({}).`,
           'import.meta.hot': `false`
         },
@@ -246,8 +247,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           id.startsWith('/vite') ||
           (!id.includes('node_modules') && /\.(j|t)sx?$/.test(id)),
         {
-          __DEV__: `false`,
-          __BASE__: JSON.stringify(publicBasePath)
+          __DEV__: `false`
         },
         sourcemap
       ),
