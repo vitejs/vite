@@ -61,6 +61,8 @@ export const hmrClientPublicPath = `/vite/hmr`
 interface HMRPayload {
   type:
     | 'js-update'
+    | 'vue-reload'
+    | 'vue-rerender'
     | 'style-update'
     | 'style-remove'
     | 'full-reload'
@@ -160,14 +162,14 @@ export const hmrPlugin: ServerPlugin = ({
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
       } else {
-        hmrBoundaries.forEach((jsBoundary) => {
+        hmrBoundaries.forEach((boundary) => {
           console.log(
             chalk.green(`[vite:hmr] `) +
-              `${jsBoundary} updated due to change in ${relativeFile}.`
+              `${boundary} updated due to change in ${relativeFile}.`
           )
           send({
-            type: 'js-update',
-            path: jsBoundary,
+            type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
+            path: boundary,
             changeSrcPath: publicPath,
             timestamp
           })
@@ -214,9 +216,12 @@ function walkImportChain(
 
   let hasDeadEnd = false
   for (const importer of importers) {
-    if (isHmrAccepted(importer, importee)) {
+    if (importer.endsWith('.vue') || isHmrAccepted(importer, importee)) {
+      // vue boundaries are considered dirty for the reload
+      if (importer.endsWith('.vue')) {
+        dirtyFiles.add(importer)
+      }
       hmrBoundaries.add(importer)
-      // js boundaries themselves are not considered dirty
       currentChain.forEach((file) => dirtyFiles.add(file))
     } else {
       const parentImpoters = importerMap.get(importer)

@@ -78,6 +78,22 @@ socket.addEventListener('message', async ({ data }) => {
     case 'connected':
       console.log(`[vite] connected.`)
       break
+    case 'vue-reload':
+      import(`${path}?t=${timestamp}`)
+        .then((m) => {
+          __VUE_HMR_RUNTIME__.reload(path, m.default)
+          console.log(`[vite] ${path} reloaded.`)
+        })
+        .catch((err) => warnFailedFetch(err, path))
+      break
+    case 'vue-rerender':
+      const templatePath = `${path}?type=template`
+      await bustSwCache(templatePath)
+      import(`${templatePath}&t=${timestamp}`).then((m) => {
+        __VUE_HMR_RUNTIME__.rerender(path, m.render)
+        console.log(`[vite] ${path} template updated.`)
+      })
+      break
     case 'style-update':
       const importQuery = path.includes('?') ? '&import' : '?import'
       await bustSwCache(`${path}${importQuery}`)

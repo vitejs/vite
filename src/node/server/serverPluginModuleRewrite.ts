@@ -276,7 +276,10 @@ export const resolveImport = (
       // only force re-fetch if this is a marked dirty file (in the import
       // chain of the changed file) or a vue part request (made by a dirty
       // vue main request)
-      if ((dirtyFiles && dirtyFiles.has(pathname)) || /\.vue\?type/.test(id)) {
+      if (
+        (dirtyFiles && dirtyFiles.has(pathname)) ||
+        /\?type=(template|style)/.test(id)
+      ) {
         query += `${query ? `&` : `?`}t=${timestamp}`
       }
     }

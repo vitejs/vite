@@ -160,9 +160,8 @@ export const vuePlugin: ServerPlugin = ({
 
     const sendReload = () => {
       send({
-        type: 'js-update',
+        type: 'vue-reload',
         path: publicPath,
-        changeSrcPath: publicPath,
         timestamp
       })
       console.log(
@@ -224,9 +223,8 @@ export const vuePlugin: ServerPlugin = ({
 
     if (needRerender) {
       send({
-        type: 'js-update',
+        type: 'vue-rerender',
         path: publicPath,
-        changeSrcPath: `${publicPath}?type=template`,
         timestamp
       })
     }
@@ -363,12 +361,6 @@ async function compileSFCMain(
     code += `const __script = {}`
   }
 
-  code += `\n if (import.meta.hot) {
-  import.meta.hot.accept((m) => {
-    __VUE_HMR_RUNTIME__.reload("${id}", m.default)
-  })
-}`
-
   let hasScoped = false
   let hasCSSModules = false
   if (descriptor.styles) {
@@ -401,13 +393,8 @@ async function compileSFCMain(
       templateRequest
     )}`
     code += `\n__script.render = __render`
-    code += `\n if (import.meta.hot) {
-  import.meta.hot.acceptDeps(${JSON.stringify(templateRequest)}, (m) => {
-    __VUE_HMR_RUNTIME__.rerender("${id}", m.render)
-  })
-}`
   }
-  code += `\n__script.__hmrId = ${JSON.stringify(id)}`
+  code += `\n__script.__hmrId = ${JSON.stringify(publicPath)}`
   code += `\n__script.__file = ${JSON.stringify(filePath)}`
   code += `\nexport default __script`
 
