@@ -64,7 +64,7 @@
     "debug": "^4.1.1",
     "dotenv": "^8.2.0",
     "es-module-lexer": "^0.3.18",
-    "esbuild": "^0.3.2",
+    "esbuild": "^0.4.1",
     "etag": "^1.8.1",
     "execa": "^4.0.1",
     "fs-extra": "^9.0.0",
