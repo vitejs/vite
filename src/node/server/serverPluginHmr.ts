@@ -36,8 +36,12 @@ import { cssPreprocessLangRE } from '../utils/cssUtils'
 export const debugHmr = require('debug')('vite:hmr')
 
 export type HMRWatcher = FSWatcher & {
-  handleVueReload: (file: string, timestamp?: number, content?: string) => void
-  handleJSReload: (file: string, timestamp?: number) => void
+  handleVueReload: (
+    filePath: string,
+    timestamp?: number,
+    content?: string
+  ) => void
+  handleJSReload: (filePath: string, timestamp?: number) => void
   send: (payload: HMRPayload) => void
 }
 
