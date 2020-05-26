@@ -1,3 +1,67 @@
+# [0.17.0](https://github.com/vuejs/vite/compare/v0.16.12...v0.17.0) (2020-05-26)
+
+
+### Bug Fixes
+
+* await rollup resolve result ([#267](https://github.com/vuejs/vite/issues/267)) ([d71a06d](https://github.com/vuejs/vite/commit/d71a06da04954282896e53e16692590101b82c2e))
+* css cache check ([#262](https://github.com/vuejs/vite/issues/262)) ([5435737](https://github.com/vuejs/vite/commit/5435737d126a2d08e7e950dbf4952fc903574d19))
+* default mode for build API usage ([86d2143](https://github.com/vuejs/vite/commit/86d2143e31cba594377da43116c161a87d2d1874))
+* dotenv debug option ([#263](https://github.com/vuejs/vite/issues/263)) ([ca1b551](https://github.com/vuejs/vite/commit/ca1b551c541ed3364374652b9b55e9f0e78b0c3c))
+* fix type dependencies ([e86da9e](https://github.com/vuejs/vite/commit/e86da9e6b56aeaf985ecf590fd775582952279b0))
+* only append import query if has no existing query ([df526b1](https://github.com/vuejs/vite/commit/df526b127e63ff2f52458ea796f9c813880a1a65))
+* ora swallow rollup warning ([#269](https://github.com/vuejs/vite/issues/269)) ([610a004](https://github.com/vuejs/vite/commit/610a00441f8c0faa2e048a0910cf04f9f3810eef))
+* resolve vuePath in all cases ([e67b698](https://github.com/vuejs/vite/commit/e67b698a9ba18a99cb64f52df61fae176382f9ff)), closes [#270](https://github.com/vuejs/vite/issues/270)
+* respect user configured css modules options for rollup-plugin-vue ([0ce1eef](https://github.com/vuejs/vite/commit/0ce1eef7bd77eb8468c8b9e6878c2a78167efc4f))
+* unset service when stopping esbuild service ([dd0205f](https://github.com/vuejs/vite/commit/dd0205f321c57ad0b59813181591dafe1d8d3f90))
+* updateType may contains extra & ([#260](https://github.com/vuejs/vite/issues/260)) ([301d7a3](https://github.com/vuejs/vite/commit/301d7a3b151a8fdefd09db0d742c7b6d0ce206db))
+* use more robust export default replacement for SFC scripts ([2e81e64](https://github.com/vuejs/vite/commit/2e81e64929d9c2909ff5882b26933ea54a353aab)), closes [#271](https://github.com/vuejs/vite/issues/271)
+
+
+### Features
+
+* expose process.env.BASE_URL ([9503762](https://github.com/vuejs/vite/commit/9503762e103f304228ceb7d572b17c24ed008501))
+* support referencing public dir files from root ([319b37b](https://github.com/vuejs/vite/commit/319b37bbf4cef4804b56061ab5354d361c90dacb))
+* **hmr:** re-design HMR API ([a68bfc3](https://github.com/vuejs/vite/commit/a68bfc307dd636d5e1b5d42d6df248da1beea2ff))
+
+
+### Performance Improvements
+
+* revert special handling for vue hmr ([43ccaf7](https://github.com/vuejs/vite/commit/43ccaf77e89ebf219c15aaf12b06a4632beb3968))
+
+
+### BREAKING CHANGES
+
+* `__BASE__` special global has been removed. Use
+`process.env.BASE_URL` instead.
+* **hmr:** HRM API has been re-designed.
+
+  - All HMR APIs are now exposed on `import.meta.hot` and HMR API
+    calls should be nested inside `if (import.meta.hot) {}` conditional
+    checks.
+
+  - `import.meta.hot.accept()` is now only used for self-accepting updates.
+
+  - `import.meta.hot.acceptDeps()` is now used for accepting dependency
+    updates without re-instantiating acceptor.
+
+  - `import.meta.hot.data` is an object that is persisted across hot
+    updates of a module.
+
+  - `import.meta.hot.dispose()` callback now receives the persisted data
+    object.
+
+  - `import.meta.hot.decline()` can be used to decline updates and if
+    the module is affected in an HMR update chain and force full page
+    reload.
+
+  - `import.meta.hot.invalidate()` can be used inside an acceptance
+    callback to conditionally reject the update and force full page
+    reload.
+
+  See `hmr.d.ts` for full API definitions.
+
+
+
 ## [0.16.12](https://github.com/vuejs/vite/compare/v0.16.11...v0.16.12) (2020-05-25)
 
 
