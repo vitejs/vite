@@ -12,7 +12,6 @@ import {
 } from '../utils/cssUtils'
 import qs from 'querystring'
 import chalk from 'chalk'
-import slash from 'slash'
 
 interface ProcessedEntry {
   css: string
@@ -51,25 +50,22 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     }
   })
 
-  watcher.on('change', (file) => {
-    /** filter unused files */
-    if (
-      !Array.from(processedCSS.keys()).some((processed) =>
-        slash(file).includes(processed)
-      ) &&
-      !srcImportMap.has(file)
-    ) {
-      return debugCSS(
-        `${basename(file)} has changed, but it is not currently in use`
-      )
-    }
+  watcher.on('change', (filePath) => {
+    if (filePath.endsWith('.css') || cssPreprocessLangRE.test(filePath)) {
+      const publicPath = resolver.fileToRequest(filePath)
 
-    if (file.endsWith('.css') || cssPreprocessLangRE.test(file)) {
-      if (srcImportMap.has(file)) {
+      /** filter unused files */
+      if (!processedCSS.has(publicPath) && !srcImportMap.has(filePath)) {
+        return debugCSS(
+          `${basename(publicPath)} has changed, but it is not currently in use`
+        )
+      }
+
+      if (srcImportMap.has(filePath)) {
         // handle HMR for <style src="xxx.css">
         // it cannot be handled as simple css import because it may be scoped
-        const styleImport = srcImportMap.get(file)
-        vueCache.del(file)
+        const styleImport = srcImportMap.get(filePath)
+        vueCache.del(filePath)
         const publicPath = cleanUrl(styleImport)
         const index = qs.parse(styleImport.split('?', 2)[1]).index
         console.log(
@@ -84,12 +80,10 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       }
       // handle HMR for module.css
       // it cannot process with normal css, the class which in module.css maybe removed
-      if (file.endsWith('.module.css')) {
-        watcher.handleJSReload(file, Date.now())
+      if (filePath.endsWith('.module.css')) {
+        watcher.handleJSReload(filePath, Date.now())
         return
       }
-
-      const publicPath = resolver.fileToRequest(file)
 
       // bust process cache
       processedCSS.delete(publicPath)
