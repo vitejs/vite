@@ -46,6 +46,7 @@ const ensureService = async () => {
 
 export const stopService = () => {
   _service && _service.stop()
+  _service = undefined
 }
 
 const sourceMapRE = /\/\/# sourceMappingURL.*/
@@ -95,7 +96,11 @@ export const transform = async (
     console.error(
       chalk.red(`[vite] error while transforming ${file} with esbuild:`)
     )
-    e.errors.forEach((m: Message) => printMessage(m, src))
+    if (e.errors) {
+      e.errors.forEach((m: Message) => printMessage(m, src))
+    } else {
+      console.error(e)
+    }
     debug(`options used: `, options)
     return {
       code: '',
