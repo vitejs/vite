@@ -19,7 +19,8 @@ import {
   ensureMapEntry,
   rewriteFileWithHMR,
   hmrClientPublicPath,
-  hmrDirtyFilesMap
+  hmrDirtyFilesMap,
+  latestVersionsMap
 } from './serverPluginHmr'
 import {
   readBody,
@@ -273,14 +274,13 @@ export const resolveImport = (
     // 5. force re-fetch dirty imports by appending timestamp
     if (timestamp) {
       const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
-      // only force re-fetch if this is a marked dirty file (in the import
-      // chain of the changed file) or a vue part request (made by a dirty
-      // vue main request)
-      if (
-        (dirtyFiles && dirtyFiles.has(pathname)) ||
-        /\?type=(template|style)/.test(id)
-      ) {
+      // only rewrite if:
+      if (dirtyFiles && dirtyFiles.has(pathname)) {
+        // 1. this is a marked dirty file (in the import chain of the changed file)
         query += `${query ? `&` : `?`}t=${timestamp}`
+      } else if (latestVersionsMap.has(pathname)) {
+        // 2. this file was previously hot-updated and has an updated version
+        query += `${query ? `&` : `?`}t=${latestVersionsMap.get(pathname)}`
       }
     }
     return pathname + query

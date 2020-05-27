@@ -196,10 +196,6 @@ async function updateModule(
       ? deps.some((dep) => modulesToUpdate.has(dep))
       : modulesToUpdate.has(deps)
   })
-  // reset callbacks on self update since they are going to be registered again
-  if (isSelfUpdate) {
-    mod.callbacks = []
-  }
 
   await Promise.all(
     Array.from(modulesToUpdate).map(async (dep) => {
@@ -245,6 +241,13 @@ const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 export const createHotContext = (id: string) => {
   if (!dataMap.has(id)) {
     dataMap.set(id, {})
+  }
+
+  // when a file is hot updated, a new context is created
+  // clear its stale callbacks
+  const mod = hotModulesMap.get(id)
+  if (mod) {
+    mod.callbacks = []
   }
 
   const hot = {

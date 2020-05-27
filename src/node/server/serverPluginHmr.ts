@@ -27,11 +27,17 @@ import { resolveImport } from './serverPluginModuleRewrite'
 import { FSWatcher } from 'chokidar'
 import MagicString from 'magic-string'
 import { parse } from '../utils/babelParse'
-import { Node, StringLiteral, Statement, Expression } from '@babel/types'
 import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
 import { cssPreprocessLangRE } from '../utils/cssUtils'
+import {
+  Node,
+  StringLiteral,
+  Statement,
+  Expression,
+  IfStatement
+} from '@babel/types'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -57,6 +63,7 @@ export const importeeMap: HMRStateMap = new Map()
 // files that are dirty (i.e. in the import chain between the accept boundrary
 // and the actual changed file) for an hmr update at a given timestamp.
 export const hmrDirtyFilesMap = new LRUCache<string, Set<string>>({ max: 10 })
+export const latestVersionsMap = new Map<string, string>()
 
 // client and node files are placed flat in the dist folder
 export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
@@ -98,6 +105,9 @@ export const hmrPlugin: ServerPlugin = ({
       ctx.status = 200
       ctx.body = hmrClient
     } else {
+      if (ctx.query.t) {
+        latestVersionsMap.set(ctx.path, ctx.query.t)
+      }
       return next()
     }
   })
@@ -267,7 +277,8 @@ export function rewriteFileWithHMR(
   resolver: InternalResolver,
   s: MagicString
 ) {
-  let hasDeclined
+  let hasDeclined = false
+  let importMetaConditional: IfStatement | undefined
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
@@ -291,7 +302,7 @@ export function rewriteFileWithHMR(
       if (isTopLevel) {
         console.warn(
           chalk.yellow(
-            `[vite warn] HMR syntax error in ${importer}: import.meta.hot.accept() ` +
+            `[vite] HMR syntax error in ${importer}: import.meta.hot.accept() ` +
               `should be wrapped in \`if (import.meta.hot) {}\` conditional ` +
               `blocks so that they can be tree-shaken in production.`
           )
@@ -384,18 +395,13 @@ export function rewriteFileWithHMR(
     if (node.type === 'ExpressionStatement') {
       // top level hot.accept() call
       checkHotCall(node.expression, isTopLevel, isDevBlock)
-      // import.meta.hot && import.meta.hot.accept()
-      if (
-        node.expression.type === 'LogicalExpression' &&
-        node.expression.operator === '&&' &&
-        isMetaHot(node.expression.left)
-      ) {
-        checkHotCall(node.expression.right, false, isDevBlock)
-      }
     }
     // if (import.meta.hot) ...
     if (node.type === 'IfStatement') {
       const isDevBlock = isMetaHot(node.test)
+      if (isDevBlock) {
+        importMetaConditional = node
+      }
       if (node.consequent.type === 'BlockStatement') {
         node.consequent.body.forEach((s) =>
           checkStatements(s, false, isDevBlock)
@@ -410,11 +416,14 @@ export function rewriteFileWithHMR(
   const ast = parse(source)
   ast.forEach((s) => checkStatements(s, true, false))
 
-  // inject import.meta.hot
-  s.prepend(`
-import { createHotContext } from "${hmrClientPublicPath}"
-import.meta.hot = createHotContext(${JSON.stringify(importer)})
-  `)
+  if (importMetaConditional) {
+    // inject import.meta.hot
+    s.prependLeft(
+      importMetaConditional.start!,
+      `import { createHotContext } from "${hmrClientPublicPath}"; ` +
+        `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
+    )
+  }
 
   // clear decline state
   if (!hasDeclined) {
