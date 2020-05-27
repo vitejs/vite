@@ -1,8 +1,14 @@
 // https://github.com/webpack/webpack-dev-server/blob/master/lib/utils/createCertificate.js
-export function createCertificate() {
+import path from 'path'
+import fs from 'fs-extra'
+
+const certificateTtl = 30
+const dayMs = 1000 * 60 * 60 * 24
+
+function createCertificate() {
   const pems = require('selfsigned').generate(null, {
     algorithm: 'sha256',
-    days: 30,
+    days: certificateTtl,
     keySize: 2048,
     extensions: [
       // {
@@ -62,4 +68,27 @@ export function createCertificate() {
     ]
   })
   return pems.private + pems.cert
+}
+
+export function getCertificate(root: string) {
+  const certificatePath = path.join(root, 'server.pem')
+
+  if (fs.existsSync(certificatePath)) {
+    const certificateStat = fs.statSync(certificatePath)
+    if (
+      (new Date().getTime() - certificateStat.ctime.getTime()) / dayMs <
+      certificateTtl
+    ) {
+      console.log(`read certificate from ${certificatePath}`)
+      return fs.readFileSync(certificatePath)
+    }
+    console.log(`Certificate is more than ${certificateTtl} days`)
+  }
+
+  const certificate = createCertificate()
+  fs.writeFileSync(certificatePath, certificate, {
+    encoding: 'utf8'
+  })
+  console.log(`create certificate with ${certificatePath}`)
+  return certificate
 }

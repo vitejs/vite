@@ -17,9 +17,9 @@ import { createServerTransformPlugin } from '../transform'
 import { serviceWorkerPlugin } from './serverPluginServiceWorker'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
-import { createCertificate } from '../utils/createCertificate'
 import fs from 'fs-extra'
 import path from 'path'
+import { getCertificate } from '../utils/certificate'
 export { rewriteImports } from './serverPluginModuleRewrite'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
@@ -44,7 +44,7 @@ export function createServer(config: ServerConfig): Server {
   } = config
 
   const app = new Koa()
-  const server = resolveServer(config, app.callback())
+  const server = resolveServer(config, app.callback(), root)
   const watcher = chokidar.watch(root, {
     ignored: [/node_modules/]
   }) as HMRWatcher
@@ -93,11 +93,12 @@ export function createServer(config: ServerConfig): Server {
 
 function resolveServer(
   { https = false, httpsOption = {} }: ServerConfig,
-  requestListener: RequestListener
+  requestListener: RequestListener,
+  root: string
 ) {
   if (https) {
     return require('https').createServer(
-      resolveHttpsConfig(httpsOption),
+      resolveHttpsConfig(httpsOption, root),
       requestListener
     )
   } else {
@@ -105,7 +106,7 @@ function resolveServer(
   }
 }
 
-function resolveHttpsConfig(httpsOption: ServerOptions) {
+function resolveHttpsConfig(httpsOption: ServerOptions, root: string) {
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
     ca: readFileIfExits(ca),
@@ -114,7 +115,7 @@ function resolveHttpsConfig(httpsOption: ServerOptions) {
     pfx: readFileIfExits(pfx)
   })
   if (!httpsOption.key || !httpsOption.cert) {
-    httpsOption.cert = httpsOption.key = createCertificate()
+    httpsOption.cert = httpsOption.key = getCertificate(root)
   }
   return httpsOption
 }
