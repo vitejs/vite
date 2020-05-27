@@ -88,7 +88,7 @@
     "resolve": "^1.17.0",
     "rollup": "^2.7.2",
     "rollup-plugin-terser": "^5.3.0",
-    "rollup-plugin-vue": "^6.0.0-beta.1",
+    "rollup-plugin-vue": "^6.0.0-beta.3",
     "selfsigned": "^1.10.7",
     "slash": "^3.0.0",
     "vue": "^3.0.0-beta.14",
