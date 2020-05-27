@@ -18,12 +18,7 @@ import {
   ensureMapEntry,
   hmrClientPublicPath
 } from './serverPluginHmr'
-import {
-  resolveFrom,
-  cachedRead,
-  genSourceMapString,
-  resolveRelativeRequest
-} from '../utils'
+import { resolveFrom, cachedRead, genSourceMapString } from '../utils'
 import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
@@ -31,6 +26,7 @@ import { seenUrls } from './serverPluginServeStatic'
 import { codegenCss, compileCss, rewriteCssUrls } from '../utils/cssUtils'
 import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
+import { resolveImport } from './serverPluginModuleRewrite'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -86,7 +82,12 @@ export const vuePlugin: ServerPlugin = ({
 
     if (!query.type) {
       if (descriptor.script && descriptor.script.src) {
-        filePath = await resolveSrcImport(descriptor.script, ctx, resolver)
+        filePath = await resolveSrcImport(
+          root,
+          descriptor.script,
+          ctx,
+          resolver
+        )
       }
       ctx.type = 'js'
       ctx.body = await compileSFCMain(descriptor, filePath, publicPath)
@@ -96,7 +97,7 @@ export const vuePlugin: ServerPlugin = ({
     if (query.type === 'template') {
       const templateBlock = descriptor.template!
       if (templateBlock.src) {
-        filePath = await resolveSrcImport(templateBlock, ctx, resolver)
+        filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
       ctx.body = compileSFCTemplate(
@@ -114,7 +115,7 @@ export const vuePlugin: ServerPlugin = ({
       const index = Number(query.index)
       const styleBlock = descriptor.styles[index]
       if (styleBlock.src) {
-        filePath = await resolveSrcImport(styleBlock, ctx, resolver)
+        filePath = await resolveSrcImport(root, styleBlock, ctx, resolver)
       }
       const id = hash_sum(publicPath)
       const result = await compileSFCStyle(
@@ -269,12 +270,13 @@ function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
 }
 
 async function resolveSrcImport(
+  root: string,
   block: SFCBlock,
   ctx: Context,
   resolver: InternalResolver
 ) {
   const importer = ctx.path
-  const importee = resolveRelativeRequest(importer, block.src!).url
+  const importee = resolveImport(root, importer, block.src!, resolver)
   const filePath = resolver.requestToFile(importee)
   await cachedRead(ctx, filePath)
   block.content = ctx.body
