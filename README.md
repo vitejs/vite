@@ -16,7 +16,7 @@ Still experimental, but we intend to make it suitable for production.
 ## Getting Started
 
 ```bash
-$ npx create-vite-app <project-name>
+$ npm init vite-app <project-name>
 $ cd <project-name>
 $ npm install
 $ npm run dev
@@ -31,7 +31,7 @@ $ yarn
 $ yarn dev
 ```
 
-> Although Vite is primarily designed to work with Vue 3, it can actually support other frameworks as well. For example, try `npx create-vite-app` with `--template react` or `--template preact`.
+> Although Vite is primarily designed to work with Vue 3, it can support other frameworks as well. For example, try `npm init vite-app --template react` or `--template preact`.
 
 ## Browser Support
 
