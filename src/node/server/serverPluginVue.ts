@@ -346,7 +346,7 @@ export async function parseSFC(
   return descriptor
 }
 
-const defaultExportRE = /((?:\n|;)\s*)export default/
+const defaultExportRE = /((?:^|\n|;)\s*)export default/
 
 async function compileSFCMain(
   descriptor: SFCDescriptor,
