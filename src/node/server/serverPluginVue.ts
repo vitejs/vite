@@ -18,7 +18,7 @@ import {
   ensureMapEntry,
   hmrClientPublicPath
 } from './serverPluginHmr'
-import { resolveFrom, cachedRead, genSourceMapString } from '../utils'
+import { resolveFrom, cachedRead, genSourceMapString, cleanUrl } from '../utils'
 import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
@@ -276,7 +276,9 @@ async function resolveSrcImport(
   resolver: InternalResolver
 ) {
   const importer = ctx.path
-  const importee = resolveImport(root, importer, block.src!, resolver)
+  const importee = cleanUrl(
+    resolveImport(process.cwd(), importer, block.src!, resolver)
+  )
   const filePath = resolver.requestToFile(importee)
   await cachedRead(ctx, filePath)
   block.content = ctx.body
