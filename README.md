@@ -53,6 +53,7 @@ Vite assumes you are targeting modern browsers and therefore does not perform an
 - [Config File](#config-file)
 - [Dev Server Proxy](#dev-server-proxy)
 - [Production Build](#production-build)
+- [Modes and Environment Variables](#modes-and-environment-variables)
 
 Vite tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org/) as much as possible. If you've used `vue-cli` or other webpack-based boilerplates before, you should feel right at home. That said, do expect things to be different here and there.
 
@@ -275,6 +276,31 @@ Vite does utilize bundling for production builds, because native ES module impor
 You can run `vite build` to bundle the app.
 
 Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flags in the CLI (see [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts) for full details).
+
+### Modes and Environment Variables
+
+> 0.16.7+
+
+The mode option is used to specify the value of `process.env.NODE_ENV` and the corresponding environment variables files that needs to be loaded.
+
+By default, there are two modes:
+  - `development` is used by `vite` and `vite serve`
+  - `production` is used by `vite build`
+
+You can overwrite the default mode used for a command by passing the `--mode` option flag. For example, if you want to use development variables in the build command:
+
+```bash
+vite build --mode development
+```
+
+When running `vite`, environment variables are loaded from the following files in your project root:
+
+```
+.env                # loaded in all cases
+.env.local          # loaded in all cases, ignored by git
+.env.[mode]         # only loaded in specified env mode
+.env.[mode].local   # only loaded in specified env mode, ignored by git
+```
 
 ## API
 
