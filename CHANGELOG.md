@@ -1,3 +1,17 @@
+## [0.17.1](https://github.com/vuejs/vite/compare/v0.17.0...v0.17.1) (2020-05-27)
+
+
+### Bug Fixes
+
+* **hmr:** avoid fetching stale modules on nested hmr updates ([0554f06](https://github.com/vuejs/vite/commit/0554f063f6392fa49da0478fef68c80f10c391fc))
+* fix export default rewrite when at beginning of file ([3045112](https://github.com/vuejs/vite/commit/3045112780a8eeb5b8f455b82939cb00da1eef7d))
+* fix import chain walking ([9a44248](https://github.com/vuejs/vite/commit/9a4424822a8d3b3583504b827e1b7089b4319a30))
+* lazy require @vue/compiler-dom so it respects NODE_ENV ([e2594df](https://github.com/vuejs/vite/commit/e2594dffe42776cf8c53725d79525fb0b8b08d68))
+* remove query from resolved src import ([0330b2a](https://github.com/vuejs/vite/commit/0330b2a1f56ea8fa443207c524d817d7de772b56))
+* resolve full extension for SFC src imports ([ae6b49d](https://github.com/vuejs/vite/commit/ae6b49d5bd71a18f917d3a5e57ec3c4b9351da59))
+
+
+
 # [0.17.0](https://github.com/vuejs/vite/compare/v0.16.12...v0.17.0) (2020-05-26)
 
 
