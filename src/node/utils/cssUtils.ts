@@ -50,6 +50,7 @@ export async function compileCss(
     filename,
     scoped,
     modules,
+    modulesOptions = {},
     preprocessLang
   }: SFCAsyncStyleCompileOptions
 ): Promise<SFCStyleCompileResults | string> {
@@ -69,7 +70,8 @@ export async function compileCss(
     scoped,
     modules,
     modulesOptions: {
-      generateScopedName: `[local]_${id}`
+      generateScopedName: `[local]_${id}`,
+      ...modulesOptions
     },
     preprocessLang: preprocessLang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),

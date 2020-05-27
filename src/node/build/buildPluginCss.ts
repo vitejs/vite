@@ -9,7 +9,10 @@ import {
   cssPreprocessLangRE,
   rewriteCssUrls
 } from '../utils/cssUtils'
-import { SFCStyleCompileResults } from '@vue/compiler-sfc'
+import {
+  SFCAsyncStyleCompileOptions,
+  SFCStyleCompileResults
+} from '@vue/compiler-sfc'
 
 const debug = require('debug')('vite:build:css')
 
@@ -22,7 +25,8 @@ export const createBuildCssPlugin = (
   assetsDir: string,
   minify: BuildConfig['minify'] = false,
   inlineLimit = 0,
-  cssCodeSplit = true
+  cssCodeSplit = true,
+  cssModuleOption: SFCAsyncStyleCompileOptions['modulesOptions'] = {}
 ): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
@@ -37,6 +41,7 @@ export const createBuildCssPlugin = (
           filename: path.basename(id),
           scoped: false,
           modules: id.endsWith('.module.css'),
+          modulesOptions: cssModuleOption,
           preprocessLang: id.replace(cssPreprocessLangRE, '$2') as any
         })
 

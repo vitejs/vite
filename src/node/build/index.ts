@@ -174,6 +174,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     resolvers = [],
     rollupInputOptions = {},
     rollupOutputOptions = {},
+    rollupPluginVueOptions = {},
     emitIndex = true,
     emitAssets = true,
     write = true,
@@ -268,7 +269,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         assetsDir,
         minify,
         assetsInlineLimit,
-        cssCodeSplit
+        cssCodeSplit,
+        rollupPluginVueOptions.cssModulesOptions
       ),
       // vite:asset
       createBuildAssetPlugin(
