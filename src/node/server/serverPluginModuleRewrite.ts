@@ -188,7 +188,7 @@ export function rewriteImports(
               hasReplaced = true
             }
           } else {
-            console.log(`[vite] ignored dynamic import(${id})`)
+            debug(`[vite] ignored dynamic import(${id})`)
           }
         }
       }
