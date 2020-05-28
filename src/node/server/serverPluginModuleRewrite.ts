@@ -29,7 +29,6 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
-import slash from 'slash'
 import { moduleRE } from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:rewrite')
@@ -228,8 +227,6 @@ export function rewriteImports(
 }
 
 const bareImportRE = /^[^\/\.]/
-const indexRE = /\/index\.\w+$/
-const indexRemoveRE = /\/index(\.\w+)?$/
 
 export const resolveImport = (
   root: string,
@@ -255,15 +252,9 @@ export const resolveImport = (
     }
 
     // 3. resolve extensions.
-    const file = slash(resolver.requestToFile(pathname))
-    const resolvedExt = path.extname(file)
-    if (resolvedExt !== path.extname(pathname)) {
-      const indexMatch = file.match(indexRE)
-      if (indexMatch) {
-        pathname = pathname.replace(indexRemoveRE, '') + indexMatch[0]
-      } else {
-        pathname += resolvedExt
-      }
+    const ext = resolver.resolveExt(pathname)
+    if (ext) {
+      pathname += ext
     }
 
     // 4. mark non-src imports

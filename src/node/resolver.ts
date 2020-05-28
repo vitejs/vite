@@ -22,6 +22,7 @@ export interface InternalResolver {
   requestToFile(publicPath: string): string
   fileToRequest(filePath: string): string
   alias(id: string): string | undefined
+  resolveExt(publicPath: string): string | undefined
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -68,7 +69,7 @@ const isFile = (file: string): boolean => {
   }
 }
 
-export const resolveExt = (id: string) => {
+const resolveExt = (id: string): string | undefined => {
   const cleanId = cleanUrl(id)
   if (!isFile(cleanId)) {
     let inferredExt = ''
@@ -87,10 +88,9 @@ export const resolveExt = (id: string) => {
     const resolved = cleanId + inferredExt + query
     if (resolved !== id) {
       debug(`(extension) ${id} -> ${resolved}`)
+      return inferredExt
     }
-    return resolved
   }
-  return id
 }
 
 export function createResolver(
@@ -98,30 +98,48 @@ export function createResolver(
   resolvers: Resolver[] = [],
   alias: Record<string, string> = {}
 ): InternalResolver {
+  function resolveRequest(
+    publicPath: string
+  ): {
+    filePath: string
+    ext: string | undefined
+  } {
+    let resolved: string | undefined
+    for (const r of resolvers) {
+      const filepath = r.requestToFile && r.requestToFile(publicPath, root)
+      if (filepath) {
+        resolved = filepath
+        break
+      }
+    }
+    if (!resolved) {
+      resolved = defaultRequestToFile(publicPath, root)
+    }
+    const ext = resolveExt(resolved)
+    return {
+      filePath: ext ? resolved + ext : resolved,
+      ext
+    }
+  }
+
   return {
-    requestToFile: (publicPath) => {
-      let resolved: string | undefined
-      for (const r of resolvers) {
-        const filepath = r.requestToFile && r.requestToFile(publicPath, root)
-        if (filepath) {
-          resolved = filepath
-          break
-        }
-      }
-      if (!resolved) {
-        resolved = defaultRequestToFile(publicPath, root)
-      }
-      resolved = resolveExt(resolved)
-      return resolved
+    requestToFile(publicPath) {
+      return resolveRequest(publicPath).filePath
     },
-    fileToRequest: (filePath) => {
+
+    resolveExt(publicPath) {
+      return resolveRequest(publicPath).ext
+    },
+
+    fileToRequest(filePath) {
       for (const r of resolvers) {
         const request = r.fileToRequest && r.fileToRequest(filePath, root)
         if (request) return request
       }
       return defaultFileToRequest(filePath, root)
     },
-    alias: (id: string) => {
+
+    alias(id) {
       let aliased: string | undefined = alias[id]
       if (aliased) {
         return aliased
@@ -268,10 +286,12 @@ export function resolveNodeModule(
     let entryFilePath: string | null = null
     if (entryPoint) {
       // #284 some packages specify entry without extension...
-      if (!path.extname(entryPoint)) {
-        entryPoint += '.js'
-      }
       entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
+      const ext = resolveExt(entryFilePath)
+      if (ext) {
+        entryPoint += ext
+        entryFilePath += ext
+      }
       entryPoint = path.posix.join(id, entryPoint!)
       // save the resolved file path now so we don't need to do it again in
       // resolveNodeModuleFile()
