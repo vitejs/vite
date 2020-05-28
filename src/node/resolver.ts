@@ -61,11 +61,7 @@ const defaultFileToRequest = (filePath: string, root: string): string => {
 }
 
 const isFile = (file: string): boolean => {
-  try {
-    return fs.statSync(file).isFile()
-  } catch (e) {
-    return false
-  }
+  return fs.existsSync(file) && fs.statSync(file).isFile()
 }
 
 export const resolveExt = (id: string) => {
@@ -269,7 +265,17 @@ export function resolveNodeModule(
     if (entryPoint) {
       // #284 some packages specify entry without extension...
       if (!path.extname(entryPoint)) {
-        entryPoint += '.js'
+        const packageRoot = path.dirname(pkgPath)
+        // try suffix
+        if (isFile(path.join(packageRoot, `${entryPoint}.js`))) {
+          entryPoint += '.js'
+        }
+        // try index
+        if (isFile(path.join(packageRoot, `${entryPoint}/index.js`))) {
+          entryPoint += '/index.js'
+        }
+
+        debug(`No module entry found(${id})`)
       }
       entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
       entryPoint = path.posix.join(id, entryPoint!)
