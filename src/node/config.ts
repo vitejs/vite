@@ -288,7 +288,10 @@ export async function resolveConfig(
   }
 
   if (!resolvedPath) {
-    return
+    // load environment variables
+    return {
+      env: loadEnv(mode, cwd)
+    }
   }
 
   try {
@@ -342,11 +345,7 @@ export async function resolveConfig(
       }
     }
 
-    // load environment variables
-    const env = loadEnv(mode, config.root || cwd)
-    debug(`env: %O`, env)
-    config.env = env
-
+    config.env = loadEnv(mode, config.root || cwd)
     debug(`config resolved in ${Date.now() - start}ms`)
 
     config.__path = resolvedPath
@@ -436,5 +435,6 @@ function loadEnv(mode: string, root: string): Record<string, string> {
     }
   }
 
+  debug(`env: %O`, env)
   return env
 }
