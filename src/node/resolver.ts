@@ -268,6 +268,9 @@ export function resolveNodeModule(
     let entryFilePath: string | null = null
     if (entryPoint) {
       entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
+      if (!entryFilePath.endsWith('.js')) {
+        entryFilePath = entryFilePath + '.js'
+      }
       entryPoint = path.posix.join(id, entryPoint!)
       // save the resolved file path now so we don't need to do it again in
       // resolveNodeModuleFile()
