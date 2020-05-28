@@ -1,3 +1,29 @@
+# [0.18.0](https://github.com/vuejs/vite/compare/v0.17.2...v0.18.0) (2020-05-28)
+
+
+### Bug Fixes
+
+* should apply full ext resolve on module entries ([63b0e3c](https://github.com/vuejs/vite/commit/63b0e3cca2975a180e8372882c4e8d9b513fc7cf))
+* should resolve env even without config file ([482bd34](https://github.com/vuejs/vite/commit/482bd3482687697d7092c0ae18fb699228a4cc5d)), closes [#290](https://github.com/vuejs/vite/issues/290)
+
+
+### Features
+
+* improve commonjs dependency handling ([2f071b3](https://github.com/vuejs/vite/commit/2f071b386175737f7e1146ba8154944ca2b7390a))
+* support aliasing directories ([801951e](https://github.com/vuejs/vite/commit/801951e28a92aaf7437647094081825ec308e645))
+
+
+### BREAKING CHANGES
+
+* The following config options have been removed:
+
+  - `rollupPluginCommonJSNamedExports`
+  - `optimizeDeps.commonJSWhitelist`
+
+  CommonJS deps are now optimized by default.
+
+
+
 ## [0.17.2](https://github.com/vuejs/vite/compare/v0.17.1...v0.17.2) (2020-05-28)
 
 
