@@ -26,6 +26,7 @@ export interface InternalResolver {
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+export const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
 const defaultRequestToFile = (publicPath: string, root: string): string => {
   if (moduleRE.test(publicPath)) {
@@ -261,7 +262,7 @@ export function resolveNodeModule(
     } catch (e) {
       return
     }
-    let entryPoint: string | undefined
+    let entryPoint: string | null = null
     if (pkg.exports) {
       if (typeof pkg.exports === 'string') {
         entryPoint = pkg.exports
@@ -274,7 +275,12 @@ export function resolveNodeModule(
       }
     }
     if (!entryPoint) {
-      entryPoint = pkg.module || pkg.main || null
+      for (const field of mainFields) {
+        if (pkg[field]) {
+          entryPoint = pkg[field]
+          break
+        }
+      }
     }
 
     debug(`(node_module entry) ${id} -> ${entryPoint}`)

@@ -187,21 +187,13 @@ export interface BuildConfig extends SharedConfig {
    */
   ssr?: boolean
 
-  // The following are API only and not documented in the CLI. -----------------
+  // The following are API / config only and not documented in the CLI. --------
   /**
    * Will be passed to rollup.rollup()
    *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupInputOptions?: RollupInputOptions
-  /**
-   * Will be passed to @rollup/plugin-commonjs
-   * https://github.com/rollup/plugins/tree/commonjs-v11.1.0/packages/commonjs#namedexports
-   * This config can be removed after master branch is released.
-   * But there are some issues blocking it:
-   * https://github.com/rollup/plugins/issues/392
-   */
-  rollupPluginCommonJSNamedExports?: Record<string, string[]>
   /**
    * Will be passed to bundle.generate()
    *
@@ -214,6 +206,11 @@ export interface BuildConfig extends SharedConfig {
    * https://github.com/vuejs/rollup-plugin-vue/blob/next/src/index.ts
    */
   rollupPluginVueOptions?: Partial<RollupPluginVueOptions>
+  /**
+   * Will be passed to @rollup/plugin-node-resolve
+   * https://github.com/rollup/plugins/tree/master/packages/node-resolve#dedupe
+   */
+  rollupDedupe?: string[]
   /**
    * Whether to log asset info to console
    * @default false

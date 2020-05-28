@@ -28,10 +28,6 @@ export interface DepOptimizationOptions {
    */
   exclude?: string[]
   /**
-   * Explicitly allow these CommonJS deps to be bundled.
-   */
-  commonJSWhitelist?: string[]
-  /**
    * Automatically run `vite optimize` on server start?
    * @default true
    */
@@ -90,7 +86,7 @@ export async function optimizeDeps(
   }
 
   const resolver = createResolver(root, config.resolvers, config.alias)
-  const { include, exclude, commonJSWhitelist } = config.optimizeDeps || {}
+  const { include, exclude } = config.optimizeDeps || {}
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
@@ -98,7 +94,6 @@ export async function optimizeDeps(
   // 2. Has imports to bare modules that are not in the project's own deps
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
   await init
-  const cjsDeps: string[] = []
   const qualifiedDeps = deps.filter((id) => {
     if (include && !include.includes(id)) {
       debug(`skipping ${id} (not included)`)
@@ -107,10 +102,6 @@ export async function optimizeDeps(
     if (exclude && exclude.includes(id)) {
       debug(`skipping ${id} (excluded)`)
       return false
-    }
-    if (commonJSWhitelist && commonJSWhitelist.includes(id)) {
-      debug(`optimizing ${id} (commonJSWhitelist)`)
-      return true
     }
     if (KNOWN_IGNORE_LIST.has(id)) {
       debug(`skipping ${id} (internal excluded)`)
@@ -121,7 +112,7 @@ export async function optimizeDeps(
       debug(`skipping ${id} (cannot resolve entry)`)
       return false
     }
-    const { entryFilePath, pkg } = pkgInfo
+    const { entryFilePath } = pkgInfo
     if (!supportedExts.includes(path.extname(entryFilePath))) {
       debug(`skipping ${id} (entry is not js)`)
       return false
@@ -138,11 +129,8 @@ export async function optimizeDeps(
     const content = fs.readFileSync(entryFilePath, 'utf-8')
     const [imports, exports] = parse(content)
     if (!exports.length && !/export\s+\*\s+from/.test(content)) {
-      if (!pkg.module) {
-        cjsDeps.push(id)
-      }
-      debug(`skipping ${id} (no exports, likely commonjs)`)
-      return false
+      debug(`optimizing ${id} (no exports, likely commonjs)`)
+      return true
     }
     for (const { s, e } of imports) {
       let i = content.slice(s, e).trim()
@@ -160,37 +148,16 @@ export async function optimizeDeps(
   })
 
   if (!qualifiedDeps.length) {
-    if (!cjsDeps.length) {
-      await fs.writeFile(hashPath, depHash)
-      log(`No listed dependency requires optimization. Skipping.`)
-    } else {
-      console.error(
-        chalk.yellow(
-          `[vite] The following dependencies seem to be CommonJS modules that\n` +
-            `do not provide ESM-friendly file formats:\n\n  ` +
-            cjsDeps.map((dep) => chalk.magenta(dep)).join(`\n  `) +
-            `\n` +
-            `\n- If you are not using them in browser code, you can move them\n` +
-            `to devDependencies or exclude them from this check by adding\n` +
-            `them to ${chalk.cyan(
-              `optimizeDeps.exclude`
-            )} in vue.config.js.\n` +
-            `\n- If you do intend to use them in the browser, you can try adding\n` +
-            `them to ${chalk.cyan(
-              `optimizeDeps.commonJSWhitelist`
-            )} in vue.config.js but they\n` +
-            `may fail to bundle or work properly. Consider choosing more modern\n` +
-            `alternatives that provide ES module build formts.`
-        )
-      )
-    }
+    await fs.writeFile(hashPath, depHash)
+    log(`No listed dependency requires optimization. Skipping.`)
     return
   }
 
   if (!asCommand) {
     // This is auto run on server start - let the user know that we are
     // pre-optimizing deps
-    console.log(chalk.greenBright(`[vite] Optimizable dependencies detected.`))
+    console.log(chalk.greenBright(`[vite] Optimizable dependencies detected:`))
+    console.log(qualifiedDeps.map((id) => chalk.yellow(id)).join(`, `))
   }
 
   let spinner: Ora | undefined
@@ -241,24 +208,14 @@ export async function optimizeDeps(
 
     spinner && spinner.stop()
 
-    const optimized = []
     for (const chunk of output) {
       if (chunk.type === 'chunk') {
         const fileName = chunk.fileName
         const filePath = path.join(cacheDir, fileName)
         await fs.ensureDir(path.dirname(filePath))
         await fs.writeFile(filePath, chunk.code)
-        if (!fileName.startsWith('common/')) {
-          optimized.push(fileName.replace(/\.js$/, ''))
-        }
       }
     }
-
-    console.log(
-      `Optimized modules:\n${optimized
-        .map((id) => chalk.yellowBright(id))
-        .join(`, `)}`
-    )
 
     await fs.writeFile(hashPath, depHash)
   } catch (e) {

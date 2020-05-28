@@ -10,7 +10,12 @@ import {
   Plugin,
   InputOptions
 } from 'rollup'
-import { createResolver, supportedExts, InternalResolver } from '../resolver'
+import {
+  createResolver,
+  supportedExts,
+  mainFields,
+  InternalResolver
+} from '../resolver'
 import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
@@ -62,33 +67,6 @@ export const onRollupWarning: (
 }
 
 /**
- * Named exports detection logic from Snowpack
- * MIT License
- * https://github.com/pikapkg/snowpack/blob/master/LICENSE
- */
-const PACKAGES_TO_AUTO_DETECT_EXPORTS = [
-  path.join('react', 'index.js'),
-  path.join('react-dom', 'index.js'),
-  'react-is',
-  'prop-types',
-  'scheduler',
-  'rxjs',
-  'exenv',
-  'body-scroll-lock'
-]
-
-function detectExports(root: string, id: string): string[] | undefined {
-  try {
-    const fileLoc = resolveFrom(root, id)
-    if (fs.existsSync(fileLoc)) {
-      return Object.keys(require(fileLoc)).filter((e) => e[0] !== '_')
-    }
-  } catch (err) {
-    // ignore
-  }
-}
-
-/**
  * Creates non-application specific plugins that are shared between the main
  * app and the dependencies. This is used by the `optimize` command to
  * pre-bundle dependencies.
@@ -99,14 +77,7 @@ export async function createBaseRollupPlugins(
   options: BuildConfig
 ): Promise<Plugin[]> {
   const { rollupInputOptions = {}, transforms = [] } = options
-
-  const knownNamedExports: Record<string, string[]> = {
-    ...options.rollupPluginCommonJSNamedExports
-  }
-  for (const id of PACKAGES_TO_AUTO_DETECT_EXPORTS) {
-    knownNamedExports[id] =
-      knownNamedExports[id] || detectExports(root, id) || []
-  }
+  const { nodeResolve } = require('@rollup/plugin-node-resolve')
 
   return [
     // user plugins
@@ -139,14 +110,15 @@ export async function createBaseRollupPlugins(
     }),
     // user transforms
     ...(transforms.length ? [createBuildJsTransformPlugin(transforms)] : []),
-    require('@rollup/plugin-node-resolve')({
+    nodeResolve({
       rootDir: root,
       extensions: supportedExts,
-      preferBuiltins: false
+      preferBuiltins: false,
+      dedupe: options.rollupDedupe || [],
+      mainFields
     }),
     require('@rollup/plugin-commonjs')({
-      extensions: ['.js', '.cjs'],
-      namedExports: knownNamedExports
+      extensions: ['.js', '.cjs']
     })
   ].filter(Boolean)
 }
