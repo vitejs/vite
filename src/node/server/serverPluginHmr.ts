@@ -399,7 +399,8 @@ export function rewriteFileWithHMR(
     // if (import.meta.hot) ...
     if (node.type === 'IfStatement') {
       const isDevBlock = isMetaHot(node.test)
-      if (isDevBlock) {
+      if (isDevBlock && !importMetaConditional) {
+        // remember the first occurence of `if (import.meta.hot)`
         importMetaConditional = node
       }
       if (node.consequent.type === 'BlockStatement') {
