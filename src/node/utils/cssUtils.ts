@@ -10,7 +10,8 @@ import {
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
 import { hmrClientPublicPath } from '../server/serverPluginHmr'
-
+import postcss, { Result, ResultMessage } from 'postcss'
+import cssImport from 'postcss-import'
 export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 export const cssPreprocessLangRE = /(.+).(less|sass|scss|styl|stylus)$/
 
@@ -125,4 +126,45 @@ async function loadPostcssConfig(
     }
     return (cachedPostcssConfig = null)
   }
+}
+
+export const cssImportMap = new Map<
+  string /*filePath*/,
+  Set<string /*filePath*/>
+>()
+
+export async function parseCssImport(
+  css: string,
+  filePath: string
+): Promise<string | Result> {
+  if (!css.includes('@import')) {
+    return css
+  }
+  return await postcss().use(cssImport()).process(css, { from: filePath })
+}
+
+export function recordCssImportPlain(messages: ResultMessage[]) {
+  messages.forEach((msg) => {
+    let { type, file, parent } = msg
+    if (type === 'dependency') {
+      if (cssImportMap.has(file)) {
+        cssImportMap.get(file)!.add(parent)
+      } else {
+        cssImportMap.set(file, new Set([parent]))
+      }
+    }
+  })
+}
+
+export function getCssImportBoundaries(
+  filePath: string,
+  boundaries = new Set<string>()
+) {
+  if (!cssImportMap.has(filePath)) return boundaries
+  const importers = cssImportMap.get(filePath)!
+  for (const importer of importers) {
+    boundaries.add(importer)
+    getCssImportBoundaries(importer, boundaries)
+  }
+  return boundaries
 }

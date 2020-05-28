@@ -1,0 +1,5 @@
+@import "./testCssImportBoundary.scss";
+
+.style-import-module-w-at-import {
+  color: $scssImport;
+}
