@@ -267,6 +267,10 @@ export function resolveNodeModule(
     // be passed to resolveNodeModuleFile().
     let entryFilePath: string | null = null
     if (entryPoint) {
+      // #284 some packages specify entry without extension...
+      if (!path.extname(entryPoint)) {
+        entryPoint += '.js'
+      }
       entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
       entryPoint = path.posix.join(id, entryPoint!)
       // save the resolved file path now so we don't need to do it again in
