@@ -140,13 +140,13 @@ export async function createBaseRollupPlugins(
     // user transforms
     ...(transforms.length ? [createBuildJsTransformPlugin(transforms)] : []),
     require('@rollup/plugin-node-resolve')({
+      browser: true,
       rootDir: root,
       extensions: supportedExts,
       preferBuiltins: false
     }),
     require('@rollup/plugin-commonjs')({
-      extensions: ['.js', '.cjs'],
-      namedExports: knownNamedExports
+      extensions: ['.js', '.cjs']
     })
   ].filter(Boolean)
 }
