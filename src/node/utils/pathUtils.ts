@@ -9,7 +9,7 @@ export const resolveFrom = (root: string, id: string) =>
   resolve.sync(id, { basedir: root, extensions: supportedExts })
 
 export const queryRE = /\?.*$/
-export const hashRE = /\#.*$/
+export const hashRE = /#.*$/
 
 export const cleanUrl = (url: string) =>
   url.replace(hashRE, '').replace(queryRE, '')
