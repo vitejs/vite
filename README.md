@@ -227,17 +227,21 @@ Currently this is auto-importing a `jsx` compatible function that converts esbui
 
 #### JSX with React/Preact
 
-There are two other presets provided: `react` and `preact`. You can specify the preset by running Vite with `--jsx react` or `--jsx preact`. For the Preact preset, `h` is also auto injected so you don't need to manually import it.
+There are two other presets provided: `react` and `preact`. You can specify the preset by running Vite with `--jsx react` or `--jsx preact`.
 
-Because React doesn't ship ES module builds, you either need to use [es-react](https://github.com/lukejacksonn/es-react), or pre-bundle React into a ES module with Snowpack. Easiest way to get it running is:
+If you need a custom JSX pragma, JSX can also be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` from the API. For example, you can run `vite --jsx-factory=h` to use `h` for JSX element creation calls. In the config (see [Config File](#config-file) below), it can be specified as:
 
 ```js
-import { React, ReactDOM } from 'https://unpkg.com/es-react'
-
-ReactDOM.render(<h1>Hello, what!</h1>, document.getElementById('app'))
+// vite.config.js
+module.exports = {
+  jsx: {
+    factory: 'h',
+    fragment: 'Fragment'
+  }
+}
 ```
 
-If you need a custom JSX pragma, JSX can also be customized via `--jsx-factory` and `--jsx-fragment` flags from the CLI or `jsx: { factory, fragment }` from the API. For example, you can run `vite --jsx-factory=h` to use `h` for JSX element creation calls.
+Note that for the Preact preset, `h` is also auto injected so you don't need to manually import it. However, this may cause issues if you are using `.tsx` with Preact since TS expects `h` to be explicitly imported for type inference. In that case, you can use the explicit factory config shown above which disables the auto `h` injection.
 
 ### Config File
 
