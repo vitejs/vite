@@ -148,6 +148,7 @@ describe('vite', () => {
           () => browserLogs[browserLogs.length - 1],
           'js module hot updated:  /testHmrManual.js'
         )
+        console.log(browserLogs)
         expect(
           browserLogs.slice(browserLogs.length - 4, browserLogs.length - 1)
         ).toEqual([
