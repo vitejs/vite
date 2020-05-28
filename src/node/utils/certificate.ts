@@ -89,6 +89,6 @@ export function getCertificate(root: string) {
   fs.writeFileSync(certificatePath, certificate, {
     encoding: 'utf8'
   })
-  console.log(`create certificate with ${certificatePath}`)
+  console.log(`created ssl cert at ${certificatePath}`)
   return certificate
 }
