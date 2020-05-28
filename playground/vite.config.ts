@@ -3,7 +3,8 @@ import { jsPlugin } from './plugins/jsPlugin'
 
 const config: UserConfig = {
   alias: {
-    alias: '/aliased'
+    alias: '/aliased',
+    '/@alias/': require('path').resolve(__dirname, 'aliased-dir')
   },
   jsx: 'preact',
   minify: false,

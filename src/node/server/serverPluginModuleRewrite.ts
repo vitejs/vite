@@ -255,6 +255,10 @@ export const resolveImport = (
     const ext = resolver.resolveExt(pathname)
     if (ext) {
       pathname += ext
+      if (ext[0] === '/') {
+        // in aliased cases the inferred ext can contain multiple slashes
+        pathname = pathname.replace(/\/\/+/g, '/')
+      }
     }
 
     // 4. mark non-src imports

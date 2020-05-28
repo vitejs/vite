@@ -7,8 +7,8 @@ import { resolveOptimizedModule, resolveNodeModuleFile } from '../resolver'
 
 const debug = require('debug')('vite:resolve')
 
-export const idToFileMap = new Map()
-export const fileToRequestMap = new Map()
+export const moduleIdToFileMap = new Map()
+export const moduleFileToIdMap = new Map()
 
 export const moduleRE = /^\/@modules\//
 
@@ -30,8 +30,8 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
     ctx.type = 'js'
 
     const serve = async (id: string, file: string, type: string) => {
-      idToFileMap.set(id, file)
-      fileToRequestMap.set(file, ctx.path)
+      moduleIdToFileMap.set(id, file)
+      moduleFileToIdMap.set(file, ctx.path)
       debug(`(${type}) ${id} -> ${getDebugPath(root, file)}`)
       await cachedRead(ctx, file)
 
@@ -49,7 +49,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
     }
 
     // already resolved and cached
-    const cachedPath = idToFileMap.get(id)
+    const cachedPath = moduleIdToFileMap.get(id)
     if (cachedPath) {
       return serve(id, cachedPath, 'cached')
     }

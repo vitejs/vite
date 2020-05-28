@@ -325,11 +325,29 @@ describe('vite', () => {
 
     test('alias', async () => {
       expect(await getText('.alias')).toMatch('alias works')
+      expect(await getText('.dir-alias')).toMatch('directory alias works')
+      expect(await getText('.dir-alias-index')).toMatch(
+        'directory alias index works'
+      )
       if (!isBuild) {
         await updateFile('aliased/index.js', (c) =>
           c.replace('works', 'hmr works')
         )
         await expectByPolling(() => getText('.alias'), 'alias hmr works')
+        await updateFile('aliased-dir/named.js', (c) =>
+          c.replace('works', 'hmr works')
+        )
+        await expectByPolling(
+          () => getText('.dir-alias'),
+          'directory alias hmr works'
+        )
+        await updateFile('aliased-dir/index.js', (c) =>
+          c.replace('works', 'hmr works')
+        )
+        await expectByPolling(
+          () => getText('.dir-alias-index'),
+          'directory alias index hmr works'
+        )
       }
     })
 

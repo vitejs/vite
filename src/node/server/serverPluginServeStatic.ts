@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import { ServerPlugin } from '.'
 import { isStaticAsset } from '../utils'
@@ -35,16 +36,6 @@ export const serveStaticPlugin: ServerPlugin = ({
   app.use(require('koa-etag')())
 
   app.use((ctx, next) => {
-    const redirect = resolver.requestToFile(ctx.path)
-    if (!redirect.startsWith(root)) {
-      // resolver resolved to a file that is outside of project root,
-      // manually send here
-      return send(ctx, redirect, { root: '/' })
-    }
-    return next()
-  })
-
-  app.use((ctx, next) => {
     if (ctx.path.startsWith('/public/') && isStaticAsset(ctx.path)) {
       console.error(
         chalk.yellow(
@@ -54,6 +45,14 @@ export const serveStaticPlugin: ServerPlugin = ({
             )}.`
         )
       )
+    }
+    const filePath = resolver.requestToFile(ctx.path)
+    if (
+      filePath !== ctx.path &&
+      fs.existsSync(filePath) &&
+      fs.statSync(filePath).isFile()
+    ) {
+      return send(ctx, filePath, { root: '/' })
     }
     return next()
   })
