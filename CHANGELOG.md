@@ -1,3 +1,13 @@
+## [0.17.2](https://github.com/vuejs/vite/compare/v0.17.1...v0.17.2) (2020-05-28)
+
+
+### Bug Fixes
+
+* compat for package entries without extension ([6269b7f](https://github.com/vuejs/vite/commit/6269b7f499c96bbe47fc1d8bce7fa77d115e1da6)), closes [#284](https://github.com/vuejs/vite/issues/284)
+* import.meta.hot should be injected before first `if (import.meta.hot)` ([#285](https://github.com/vuejs/vite/issues/285)) ([9ac63b1](https://github.com/vuejs/vite/commit/9ac63b1320ca929010a9cfd78e3c1a7797bd3a80))
+
+
+
 ## [0.17.1](https://github.com/vuejs/vite/compare/v0.17.0...v0.17.1) (2020-05-27)
 
 
