@@ -401,6 +401,8 @@ export function resolveNodeModuleFile(
   }
 }
 
+const normalize = path.posix.normalize
+
 /**
  * given a relative path in pkg dir,
  * return a relative path in pkg dir,
@@ -410,13 +412,13 @@ function mapWithBrowserField(
   relativePathInPkgDir: string,
   map: Record<string, string>
 ) {
-  const normalized = path.normalize(relativePathInPkgDir)
+  const normalized = normalize(relativePathInPkgDir)
   const foundEntry = Object.entries(map).find(([from]) => {
-    return path.normalize(from) === normalized
+    return normalize(from) === normalized
   })
   if (!foundEntry) {
     return normalized
   }
   const [, to] = foundEntry
-  return path.normalize(to)
+  return normalize(to)
 }
