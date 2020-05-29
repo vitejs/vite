@@ -7,8 +7,7 @@ import {
   urlRE,
   compileCss,
   cssPreprocessLangRE,
-  rewriteCssUrls,
-  parseCssImport
+  rewriteCssUrls
 } from '../utils/cssUtils'
 import { SFCStyleCompileResults } from '@vue/compiler-sfc'
 
@@ -32,16 +31,10 @@ export const createBuildCssPlugin = (
     name: 'vite:css',
     async transform(css: string, id: string) {
       if (id.endsWith('.css') || cssPreprocessLangRE.test(id)) {
-        const res = await parseCssImport(css, id)
-        if (typeof res === 'string') {
-          css = res
-        } else {
-          css = res.css
-        }
         const result = await compileCss(root, id, {
           id: '',
           source: css,
-          filename: path.basename(id),
+          filename: id,
           scoped: false,
           modules: id.endsWith('.module.css'),
           preprocessLang: id.replace(cssPreprocessLangRE, '$2') as any

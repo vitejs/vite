@@ -10,8 +10,6 @@ import {
   cssImportMap,
   cssPreprocessLangRE,
   getCssImportBoundaries,
-  parseCssImport,
-  recordCssImportPlain,
   rewriteCssUrls
 } from '../utils/cssUtils'
 import qs from 'querystring'
@@ -78,7 +76,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
         return
       }
       // handle HMR for module.css
-      // it cannot process with normal css, the class which in module.css maybe removed
+      // it cannot be handled as normal css because the js exports may change
       if (filePath.endsWith('.module.css')) {
         moduleCssUpdate(filePath)
         return
@@ -130,17 +128,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   }
 
   async function processCss(root: string, ctx: Context) {
-    let css = (await readBody(ctx.body))!
-    // should parser import before compile
-    const res = await parseCssImport(css, resolver.requestToFile(ctx.path))
-
-    if (typeof res === 'string') {
-      css = res
-    } else {
-      css = res.css
-      recordCssImportPlain(res.messages)
-    }
-
+    const css = (await readBody(ctx.body))!
     const result = await compileCss(root, ctx.path, {
       id: '',
       source: css,

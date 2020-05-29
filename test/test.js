@@ -184,39 +184,6 @@ describe('vite', () => {
       })
     }
 
-    test('SFC normal css w/ @import', async () => {
-      const el = await page.$('.style-at-import')
-      expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
-      if (!isBuild) {
-        await updateFile('css-@import/testCssImportBoundary.css', (content) =>
-          content.replace('red', 'rgb(0, 0, 0)')
-        )
-        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
-      }
-    })
-
-    test('SFC preprocessor w/ @import', async () => {
-      const el = await page.$('.style-at-import-scss')
-      expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
-      if (!isBuild) {
-        await updateFile('css-@import/testCssImportBoundary.scss', (content) =>
-          content.replace('red', 'rgb(0, 0, 0)')
-        )
-        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
-      }
-    })
-
-    // test('SFC <style module> w/ @import', async () => {
-    //   const el = await page.$('#css-modules-at-import-sfc')
-    //   expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
-    //   if (!isBuild) {
-    //     await updateFile('css-@import/testCssImportBoundary.scss', (content) =>
-    //         content.replace('red', 'rgb(0, 0, 0)')
-    //     )
-    //     await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
-    //   }
-    // })
-
     test('CSS import w/ PostCSS', async () => {
       const el = await page.$('.postcss-from-css')
       expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
@@ -264,6 +231,29 @@ describe('vite', () => {
           () => getComputedColor('.css-modules-sfc'),
           'rgb(0, 0, 0)'
         )
+      }
+    })
+
+    test('CSS @import', async () => {
+      const el = await page.$('.script-at-import')
+      expect(await getComputedColor(el)).toBe('rgb(0, 128, 0)')
+      if (!isBuild) {
+        await updateFile('css-@import/imported.css', (content) =>
+          content.replace('green', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+      }
+    })
+
+    test('SFC <style> w/ @import', async () => {
+      const el = await page.$('.sfc-style-at-import')
+      expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
+      if (!isBuild) {
+        await updateFile(
+          'css-@import/testCssAtImportFromStyle.css',
+          (content) => content.replace('red', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
       }
     })
 

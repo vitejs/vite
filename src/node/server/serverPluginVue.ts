@@ -29,13 +29,7 @@ import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'
-import {
-  codegenCss,
-  compileCss,
-  parseCssImport,
-  recordCssImportPlain,
-  rewriteCssUrls
-} from '../utils/cssUtils'
+import { codegenCss, compileCss, rewriteCssUrls } from '../utils/cssUtils'
 import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
@@ -520,21 +514,9 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
-
-  let css = style.content
-  // should parser css import before compile
-  const res = await parseCssImport(css, `${filePath}?type=style&index=${index}`)
-
-  if (typeof res === 'string') {
-    css = res
-  } else {
-    css = res.css
-    recordCssImportPlain(res.messages)
-  }
-
   const result = (await compileCss(root, publicPath, {
-    source: css,
-    filename: filePath,
+    source: style.content,
+    filename: filePath + `?type=style&index=${index}`,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,
