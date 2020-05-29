@@ -4,6 +4,7 @@ import LRUCache from 'lru-cache'
 import { Context } from 'koa'
 import { Readable } from 'stream'
 import { seenUrls } from '../server/serverPluginServeStatic'
+import mime from 'mime-types'
 
 const getETag = require('etag')
 
@@ -29,7 +30,7 @@ export async function cachedRead(
   const cached = moduleReadCache.get(file)
   if (ctx) {
     ctx.set('Cache-Control', 'no-cache')
-    ctx.type = path.extname(file) || 'js'
+    ctx.type = mime.lookup(path.extname(file)) || 'js'
   }
   if (cached && cached.lastModified === lastModified) {
     if (ctx) {
