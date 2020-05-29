@@ -78,7 +78,10 @@ export async function compileCss(
           postcssOptions: postcssConfig.options,
           postcssPlugins: postcssConfig.plugins
         }
-      : {})
+      : {}),
+    preprocessOptions: {
+      includePaths: ['node_modules']
+    }
   })
 }
 
