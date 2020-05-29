@@ -1,3 +1,21 @@
+## [0.18.1](https://github.com/vuejs/vite/compare/v0.18.0...v0.18.1) (2020-05-29)
+
+
+### Bug Fixes
+
+* add vite to ignore list of optimization ([#297](https://github.com/vuejs/vite/issues/297)) ([cddbebc](https://github.com/vuejs/vite/commit/cddbebcb4da74a41887475913b6cdbfc37cd5f2a))
+* fix browser field resolving on windows ([8144044](https://github.com/vuejs/vite/commit/8144044f95a03f74fee6df38429b7f4d97f3adb1))
+* resolve browser field in package.json ([#301](https://github.com/vuejs/vite/issues/301)) ([28d9714](https://github.com/vuejs/vite/commit/28d9714f035848e61f55ddd9e85b83342094e194)), closes [#294](https://github.com/vuejs/vite/issues/294)
+* support reference a scss files which installed to node_modules ([#302](https://github.com/vuejs/vite/issues/302)) ([d623437](https://github.com/vuejs/vite/commit/d6234371e2a5afd9430797c2f99881064f19e79a)), closes [#291](https://github.com/vuejs/vite/issues/291)
+* use full mime lookup in cached read ([#303](https://github.com/vuejs/vite/issues/303)) ([7a59ec8](https://github.com/vuejs/vite/commit/7a59ec85fca210e686597eb27a037f73815897a6))
+
+
+### Features
+
+* bail early on failed optimization of Node dependencies ([0752910](https://github.com/vuejs/vite/commit/0752910a0e26ffe084c78cbf7ffa4d1462371829))
+
+
+
 # [0.18.0](https://github.com/vuejs/vite/compare/v0.17.2...v0.18.0) (2020-05-28)
 
 
