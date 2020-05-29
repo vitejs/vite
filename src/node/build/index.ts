@@ -115,7 +115,8 @@ export async function createBaseRollupPlugins(
       extensions: supportedExts,
       preferBuiltins: false,
       dedupe: options.rollupDedupe || [],
-      mainFields
+      mainFields,
+      browser: true
     }),
     require('@rollup/plugin-commonjs')({
       extensions: ['.js', '.cjs']
