@@ -34,13 +34,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       moduleFileToIdMap.set(file, ctx.path)
       debug(`(${type}) ${id} -> ${getDebugPath(root, file)}`)
       await cachedRead(ctx, file)
-
-      // resolved module file is outside of root dir, but is not in node_modules.
-      // this is likely a linked monorepo/workspace, watch the file for HMR.
-      if (!file.startsWith(root) && !/node_modules/.test(file)) {
-        watcher.add(file)
-      }
-      await next()
+      return next()
     }
 
     // special handling for vue runtime in case it's not installed

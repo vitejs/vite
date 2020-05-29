@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { ServerPlugin } from '.'
-import { isStaticAsset } from '../utils'
+import { isStaticAsset, cachedRead } from '../utils'
 import chalk from 'chalk'
 
 const send = require('koa-send')
@@ -13,12 +13,35 @@ export const serveStaticPlugin: ServerPlugin = ({
   root,
   app,
   resolver,
-  config
+  config,
+  watcher
 }) => {
-  app.use((ctx, next) => {
+  app.use(async (ctx, next) => {
     // short circuit requests that have already been explicitly handled
     if (ctx.body || ctx.status !== 404) {
       return
+    }
+
+    // warn non-root references to assets under /public/
+    if (ctx.path.startsWith('/public/') && isStaticAsset(ctx.path)) {
+      console.error(
+        chalk.yellow(
+          `[vite] files in the public directory are served at the root path.\n` +
+            `  ${chalk.blue(ctx.path)} should be changed to ${chalk.blue(
+              ctx.path.replace(/^\/public\//, '/')
+            )}.`
+        )
+      )
+    }
+
+    // handle possible user request -> file aliases
+    const filePath = resolver.requestToFile(ctx.path)
+    if (
+      filePath !== ctx.path &&
+      fs.existsSync(filePath) &&
+      fs.statSync(filePath).isFile()
+    ) {
+      await cachedRead(ctx, filePath)
     }
     return next()
   })
@@ -34,28 +57,6 @@ export const serveStaticPlugin: ServerPlugin = ({
     })
   }
   app.use(require('koa-etag')())
-
-  app.use((ctx, next) => {
-    if (ctx.path.startsWith('/public/') && isStaticAsset(ctx.path)) {
-      console.error(
-        chalk.yellow(
-          `[vite] files in the public directory are served at the root path.\n` +
-            `  ${chalk.blue(ctx.path)} should be changed to ${chalk.blue(
-              ctx.path.replace(/^\/public\//, '/')
-            )}.`
-        )
-      )
-    }
-    const filePath = resolver.requestToFile(ctx.path)
-    if (
-      filePath !== ctx.path &&
-      fs.existsSync(filePath) &&
-      fs.statSync(filePath).isFile()
-    ) {
-      return send(ctx, filePath, { root: '/' })
-    }
-    return next()
-  })
   app.use(require('koa-static')(root))
   app.use(require('koa-static')(path.join(root, 'public')))
 

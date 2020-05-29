@@ -5,6 +5,8 @@ import { Context } from 'koa'
 import { Readable } from 'stream'
 import { seenUrls } from '../server/serverPluginServeStatic'
 import mime from 'mime-types'
+import { HMRWatcher } from '../server/serverPluginHmr'
+import { ServerPluginContext } from '../server'
 
 const getETag = require('etag')
 
@@ -14,7 +16,7 @@ interface CacheEntry {
   content: string
 }
 
-const moduleReadCache = new LRUCache<string, CacheEntry>({
+const fsReadCache = new LRUCache<string, CacheEntry>({
   max: 10000
 })
 
@@ -27,7 +29,7 @@ export async function cachedRead(
   file: string
 ): Promise<string> {
   const lastModified = fs.statSync(file).mtimeMs
-  const cached = moduleReadCache.get(file)
+  const cached = fsReadCache.get(file)
   if (ctx) {
     ctx.set('Cache-Control', 'no-cache')
     ctx.type = mime.lookup(path.extname(file)) || 'js'
@@ -50,7 +52,7 @@ export async function cachedRead(
   }
   const content = await fs.readFile(file, 'utf-8')
   const etag = getETag(content)
-  moduleReadCache.set(file, {
+  fsReadCache.set(file, {
     content,
     etag,
     lastModified
@@ -60,6 +62,10 @@ export async function cachedRead(
     ctx.lastModified = new Date(lastModified)
     ctx.body = content
     ctx.status = 200
+
+    // watch the file if it's out of root.
+    const { root, watcher } = ctx._viteContext as ServerPluginContext
+    watchFileIfOutOfRoot(watcher, root, file)
   }
   return content
 }
@@ -100,5 +106,19 @@ export function lookupFile(
   const parentDir = path.dirname(dir)
   if (parentDir !== dir) {
     return lookupFile(parentDir, formats, pathOnly)
+  }
+}
+
+/**
+ * Files under root are watched by default, but with user aliases we can still
+ * serve files out of root. Add such files to the watcher (if not node_modules)
+ */
+export function watchFileIfOutOfRoot(
+  watcher: HMRWatcher,
+  root: string,
+  file: string
+) {
+  if (!file.startsWith(root) && !/node_modules/.test(file)) {
+    watcher.add(file)
   }
 }

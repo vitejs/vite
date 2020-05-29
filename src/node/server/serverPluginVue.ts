@@ -18,7 +18,13 @@ import {
   ensureMapEntry,
   hmrClientPublicPath
 } from './serverPluginHmr'
-import { resolveFrom, cachedRead, genSourceMapString, cleanUrl } from '../utils'
+import {
+  resolveFrom,
+  cachedRead,
+  genSourceMapString,
+  cleanUrl,
+  watchFileIfOutOfRoot
+} from '../utils'
 import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
@@ -81,6 +87,9 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     if (!query.type) {
+      // watch potentially out of root vue file since we do a custom read here
+      watchFileIfOutOfRoot(watcher, root, filePath)
+
       if (descriptor.script && descriptor.script.src) {
         filePath = await resolveSrcImport(
           root,
@@ -259,7 +268,8 @@ export const vuePlugin: ServerPlugin = ({
 function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
   if (!a && !b) return true
   if (!a || !b) return false
-  if (a.content.length !== b.content.length) return false
+  // src imports will trigger their own updates
+  if (a.src && b.src && a.src === b.src) return true
   if (a.content !== b.content) return false
   const keysA = Object.keys(a.attrs)
   const keysB = Object.keys(b.attrs)
@@ -276,9 +286,7 @@ async function resolveSrcImport(
   resolver: InternalResolver
 ) {
   const importer = ctx.path
-  const importee = cleanUrl(
-    resolveImport(process.cwd(), importer, block.src!, resolver)
-  )
+  const importee = cleanUrl(resolveImport(root, importer, block.src!, resolver))
   const filePath = resolver.requestToFile(importee)
   await cachedRead(ctx, filePath)
   block.content = ctx.body
@@ -290,7 +298,7 @@ async function resolveSrcImport(
   return filePath
 }
 
-export async function parseSFC(
+async function parseSFC(
   root: string,
   filePath: string,
   content?: string | Buffer

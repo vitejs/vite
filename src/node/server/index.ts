@@ -59,6 +59,12 @@ export function createServer(config: ServerConfig): Server {
     config
   }
 
+  // attach server context to koa context
+  app.use((ctx, next) => {
+    ctx._viteContext = context
+    return next()
+  })
+
   const resolvedPlugins = [
     // the import rewrite and html rewrite both take highest priority and runs
     // after all other middlewares have finished
