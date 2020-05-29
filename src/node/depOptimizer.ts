@@ -3,6 +3,7 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { ResolvedConfig } from './config'
 import type Rollup from 'rollup'
+import type { Plugin } from 'rollup'
 import { createResolver, supportedExts, resolveNodeModule } from './resolver'
 import { createBaseRollupPlugins, onRollupWarning } from './build'
 import { lookupFile } from './utils'
@@ -10,6 +11,7 @@ import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 import { createBuildCssPlugin } from './build/buildPluginCss'
+import slash from 'slash'
 
 const KNOWN_IGNORE_LIST = new Set([
   'vite',
@@ -187,6 +189,32 @@ export async function optimizeDeps(
     }, {} as Record<string, string>)
 
     const rollup = require('rollup') as typeof Rollup
+
+    // bail early on detection of any usage of node built-ins.
+    const isbuiltin = require('isbuiltin')
+    const builtinBail: Plugin = {
+      name: 'vite:node-built-in-bail',
+      resolveId(id, importer) {
+        if (isbuiltin(id)) {
+          let importingDep
+          if (importer) {
+            const match = slash(importer).match(/\/node_modules\/(\w+)\//)
+            if (match) {
+              importingDep = match[1]
+            }
+          }
+          const dep = importingDep
+            ? `Dependency "${importingDep}"`
+            : `A dependnecy`
+          throw new Error(
+            `${dep} is attempting to import Node built-in module "${id}". ` +
+              `This will not work in a browser environment.`
+          )
+        }
+        return null
+      }
+    }
+
     const bundle = await rollup.rollup({
       input,
       external: preservedDeps,
@@ -194,6 +222,7 @@ export async function optimizeDeps(
       onwarn: onRollupWarning(spinner),
       ...config.rollupInputOptions,
       plugins: [
+        builtinBail,
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createBuildCssPlugin(root, '/', 'assets')
       ]
@@ -224,14 +253,18 @@ export async function optimizeDeps(
     if (asCommand) {
       throw e
     } else {
-      console.error(chalk.red(`[vite] Dep optimization failed with error:`))
-      console.error(e)
+      console.error(chalk.red(`\n[vite] Dep optimization failed with error:`))
+      console.error(chalk.red(e.message))
       console.log()
       console.log(
         chalk.yellow(
-          `Tip: You can configure what deps to include/exclude for optimization\n` +
-            `using the \`optimizeDeps\` option in the Vite config file.`
+          `Tip: Make sure your "dependencies" only include packages that you ` +
+            `intend to use in the browser. If it's a Node.js package, it ` +
+            `should be in "devDependencies". You can also configure what deps ` +
+            `to include/exclude for optimization using the \`optimizeDeps\` ` +
+            `option in the vite config file.`
         )
+        // TODO link to docs once we have it
       )
     }
   }

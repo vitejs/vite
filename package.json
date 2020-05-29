@@ -70,6 +70,7 @@
     "execa": "^4.0.1",
     "fs-extra": "^9.0.0",
     "hash-sum": "^2.0.0",
+    "isbuiltin": "^1.0.0",
     "koa": "^2.11.0",
     "koa-conditional-get": "^2.0.0",
     "koa-etag": "^3.0.0",

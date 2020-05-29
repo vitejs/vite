@@ -1408,6 +1408,11 @@ buffer@^5.2.1, buffer@^5.5.0:
     base64-js "^1.0.2"
     ieee754 "^1.1.4"
 
+builtin-modules@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/builtin-modules/-/builtin-modules-1.1.1.tgz#270f076c5a72c02f5b65a47df94c5fe3a278892f"
+  integrity sha1-Jw8HbFpywC9bZaR9+Uxf46J4iS8=
+
 builtin-modules@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/builtin-modules/-/builtin-modules-3.1.0.tgz#aad97c15131eb76b65b50ef208e7584cd76a7484"
@@ -3697,6 +3702,13 @@ isarray@1.0.0, isarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
   integrity sha1-u5NdSFgsuhaMBoNJV6VKPgcSTxE=
+
+isbuiltin@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/isbuiltin/-/isbuiltin-1.0.0.tgz#4453b2915690cb47c0cb9c9255a0807778315c96"
+  integrity sha1-RFOykVaQy0fAy5ySVaCAd3gxXJY=
+  dependencies:
+    builtin-modules "^1.1.1"
 
 isexe@^2.0.0:
   version "2.0.0"
