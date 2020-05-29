@@ -14,6 +14,10 @@
   version "0.0.0"
   uid ""
 
+"resolve-browser-field-test-package@link:./resolve-browser-field":
+  version "0.0.0"
+  uid ""
+
 "rewrite-optimized-test-package@link:./rewrite-optimized/test-package":
   version "0.0.0"
   uid ""

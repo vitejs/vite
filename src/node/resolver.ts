@@ -26,7 +26,7 @@ export interface InternalResolver {
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
-export const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
+export const mainFields = ['module', 'jsnext', 'jsnext:main', 'main']
 
 const defaultRequestToFile = (publicPath: string, root: string): string => {
   if (moduleRE.test(publicPath)) {
@@ -340,6 +340,19 @@ export function resolveNodeModule(
       }
     }
 
+    // resolve browser field in package.json
+    // https://github.com/defunctzombie/package-browser-field-spec
+    const browserField = pkg.browser
+    if (typeof browserField === 'string') {
+      entryPoint = browserField
+    } else if (
+      entryPoint &&
+      typeof browserField === 'object' &&
+      browserField !== null
+    ) {
+      entryPoint = mapWithBrowserField(entryPoint, browserField)
+    }
+
     debug(`(node_module entry) ${id} -> ${entryPoint}`)
 
     // save resolved entry file path using the deep import path as key
@@ -386,4 +399,24 @@ export function resolveNodeModuleFile(
   } catch (e) {
     // error will be reported downstream
   }
+}
+
+/**
+ * given a relative path in pkg dir,
+ * return a relative path in pkg dir,
+ * mapped with the "map" object
+ */
+function mapWithBrowserField(
+  relativePathInPkgDir: string,
+  map: Record<string, string>
+) {
+  const normalized = path.normalize(relativePathInPkgDir)
+  const foundEntry = Object.entries(map).find(([from]) => {
+    return path.normalize(from) === normalized
+  })
+  if (!foundEntry) {
+    return normalized
+  }
+  const [, to] = foundEntry
+  return path.normalize(to)
 }

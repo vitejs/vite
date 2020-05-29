@@ -16,6 +16,9 @@
   <div class="dot-resolve" :class="dotResolve">
     filename with dot resolve: {{ dotResolve }}
   </div>
+  <div class="browser-field-resolve" :class="browserFieldResolve">
+    resolve browser field in package.json: {{ browserFieldResolve }}
+  </div>
 </template>
 
 <script>
@@ -25,6 +28,7 @@ import { add } from 'lodash-es'
 import { test } from 'conditional-exports'
 import { foo } from './util'
 import { bar } from './util/bar.util'
+import value from 'resolve-browser-field-test-package'
 
 export default {
   setup() {
@@ -34,7 +38,8 @@ export default {
       optResolve: typeof add === 'function' ? 'ok' : 'error',
       conditionalExports: test() ? 'ok' : 'error',
       indexResolve: foo() ? 'ok' : 'error',
-      dotResolve: bar() ? 'ok' : 'error'
+      dotResolve: bar() ? 'ok' : 'error',
+      browserFieldResolve: value === 'success' ? 'ok' : 'error'
     }
   }
 }
