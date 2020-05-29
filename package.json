@@ -105,6 +105,7 @@
     "@types/postcss-load-config": "^2.0.1",
     "@types/serve-handler": "^6.1.0",
     "@types/ws": "^7.2.4",
+    "bootstrap": "^4.5.0",
     "conventional-changelog-cli": "^2.0.31",
     "cross-env": "^7.0.2",
     "jest": "^25.4.0",

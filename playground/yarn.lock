@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"bootstrap@link:../node_modules/bootstrap":
+  version "0.0.0"
+  uid ""
+
 "conditional-exports@link:./conditional-exports":
   version "0.0.0"
   uid ""

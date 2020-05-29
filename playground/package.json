@@ -5,10 +5,11 @@
     "serve": "serve dist"
   },
   "dependencies": {
+    "bootstrap": "link:../node_modules/bootstrap",
+    "conditional-exports": "link:./conditional-exports",
     "lodash-es": "link:../node_modules/lodash-es",
     "moment": "link:../node_modules/moment",
-    "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package",
     "resolve-browser-field-test-package": "link:./resolve-browser-field",
-    "conditional-exports": "link:./conditional-exports"
+    "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package"
   }
 }
