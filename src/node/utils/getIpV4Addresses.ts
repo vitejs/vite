@@ -6,5 +6,3 @@ export function getIpV4Addresses(): NetworkInterfaceInfoIPv4[] {
     .reduce((pre, cur) => (pre = pre!.concat(cur!)), [])!
     .filter((d) => d.family === 'IPv4') as NetworkInterfaceInfoIPv4[]
 }
-
-console.log(getIpV4Addresses())
