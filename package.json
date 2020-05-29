@@ -58,6 +58,7 @@
     "@types/lru-cache": "^5.1.0",
     "@vue/compiler-dom": "^3.0.0-beta.14",
     "@vue/compiler-sfc": "^3.0.0-beta.14",
+    "bootstrap": "^4.5.0",
     "brotli-size": "^4.0.0",
     "chalk": "^4.0.0",
     "chokidar": "^3.3.1",
