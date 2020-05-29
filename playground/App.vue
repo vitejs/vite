@@ -14,6 +14,7 @@
   <TestPostCss />
   <TestScopedCss />
   <TestCssModules />
+  <TestCssAtImport/>
   <TestPreprocessors />
   <TestAssets />
   <TestSrcImport />
@@ -42,6 +43,7 @@ import TestJsx from './TestJsx.vue'
 import TestAlias from './TestAlias.vue'
 import TestTransform from './TestTransform.vue'
 import TestRewriteOptimized from "./rewrite-optimized/TestRewriteOptimized.vue";
+import TestCssAtImport from './css-@import/TestCssAtImport.vue'
 
 export default {
   data: () => ({
@@ -56,6 +58,7 @@ export default {
     TestScopedCss,
     TestCssModules,
     TestPreprocessors,
+    TestCssAtImport,
     TestSrcImport,
     TestAssets,
     TestJsonImport,

@@ -54,15 +54,24 @@ export async function compileCss(
   }: SFCAsyncStyleCompileOptions
 ): Promise<SFCStyleCompileResults | string> {
   const id = hash_sum(publicPath)
-  const postcssConfig = await loadPostcssConfig(root)
+  let postcssConfig = await loadPostcssConfig(root)
   const { compileStyleAsync } = resolveCompiler(root)
 
-  if (publicPath.endsWith('.css') && !modules && !postcssConfig) {
+  if (
+    publicPath.endsWith('.css') &&
+    !modules &&
+    !postcssConfig &&
+    !source.includes('@import')
+  ) {
     // no need to invoke compile for plain css if no postcss config is present
     return source
   }
 
-  return await compileStyleAsync({
+  const postcssOptions = postcssConfig && postcssConfig.options
+  const postcssPlugins = postcssConfig ? postcssConfig.plugins : []
+  postcssPlugins.push(require('postcss-import')())
+
+  const res = await compileStyleAsync({
     source,
     filename,
     id: `data-v-${id}`,
@@ -71,18 +80,32 @@ export async function compileCss(
     modulesOptions: {
       generateScopedName: `[local]_${id}`
     },
+
     preprocessLang: preprocessLang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
-    ...(postcssConfig
-      ? {
-          postcssOptions: postcssConfig.options,
-          postcssPlugins: postcssConfig.plugins
-        }
-      : {}),
     preprocessOptions: {
       includePaths: ['node_modules']
-    }
+    },
+
+    postcssOptions,
+    postcssPlugins
   })
+
+  // record css import dependencies
+  if (res.rawResult) {
+    res.rawResult.messages.forEach((msg) => {
+      let { type, file, parent } = msg
+      if (type === 'dependency') {
+        if (cssImportMap.has(file)) {
+          cssImportMap.get(file)!.add(parent)
+        } else {
+          cssImportMap.set(file, new Set([parent]))
+        }
+      }
+    })
+  }
+
+  return res
 }
 
 export function codegenCss(
@@ -125,4 +148,24 @@ async function loadPostcssConfig(
     }
     return (cachedPostcssConfig = null)
   }
+}
+
+export const cssImportMap = new Map<
+  string /*filePath*/,
+  Set<string /*filePath*/>
+>()
+
+export function getCssImportBoundaries(
+  filePath: string,
+  boundaries = new Set<string>()
+) {
+  if (!cssImportMap.has(filePath)) {
+    return boundaries
+  }
+  const importers = cssImportMap.get(filePath)!
+  for (const importer of importers) {
+    boundaries.add(importer)
+    getCssImportBoundaries(importer, boundaries)
+  }
+  return boundaries
 }

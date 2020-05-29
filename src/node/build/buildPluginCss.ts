@@ -34,7 +34,7 @@ export const createBuildCssPlugin = (
         const result = await compileCss(root, id, {
           id: '',
           source: css,
-          filename: path.basename(id),
+          filename: id,
           scoped: false,
           modules: id.endsWith('.module.css'),
           preprocessLang: id.replace(cssPreprocessLangRE, '$2') as any

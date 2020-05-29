@@ -514,10 +514,9 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
-
   const result = (await compileCss(root, publicPath, {
     source: style.content,
-    filename: filePath,
+    filename: filePath + `?type=style&index=${index}`,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,

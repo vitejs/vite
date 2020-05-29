@@ -7,7 +7,9 @@ import { srcImportMap, vueCache } from './serverPluginVue'
 import {
   codegenCss,
   compileCss,
+  cssImportMap,
   cssPreprocessLangRE,
+  getCssImportBoundaries,
   rewriteCssUrls
 } from '../utils/cssUtils'
 import qs from 'querystring'
@@ -55,7 +57,11 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       const publicPath = resolver.fileToRequest(filePath)
 
       /** filter unused files */
-      if (!processedCSS.has(publicPath) && !srcImportMap.has(filePath)) {
+      if (
+        !cssImportMap.has(filePath) &&
+        !processedCSS.has(publicPath) &&
+        !srcImportMap.has(filePath)
+      ) {
         return debugCSS(
           `${basename(publicPath)} has changed, but it is not currently in use`
         )
@@ -66,45 +72,69 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
         // it cannot be handled as simple css import because it may be scoped
         const styleImport = srcImportMap.get(filePath)
         vueCache.del(filePath)
-        const publicPath = cleanUrl(styleImport)
-        const index = qs.parse(styleImport.split('?', 2)[1]).index
-        console.log(
-          chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`
-        )
-        watcher.send({
-          type: 'style-update',
-          path: `${publicPath}?type=style&index=${index}`,
-          timestamp: Date.now()
-        })
+        vueStyleUpdate(styleImport)
         return
       }
       // handle HMR for module.css
-      // it cannot process with normal css, the class which in module.css maybe removed
+      // it cannot be handled as normal css because the js exports may change
       if (filePath.endsWith('.module.css')) {
-        watcher.handleJSReload(filePath, Date.now())
+        moduleCssUpdate(filePath)
         return
       }
 
-      // bust process cache
-      processedCSS.delete(publicPath)
-
-      watcher.send({
-        type: 'style-update',
-        path: publicPath,
-        timestamp: Date.now()
-      })
+      const boundaries = getCssImportBoundaries(filePath)
+      if (boundaries.size) {
+        for (let boundary of boundaries) {
+          if (boundary.includes('.module')) {
+            moduleCssUpdate(boundary)
+          } else if (boundary.includes('.vue')) {
+            vueCache.del(cleanUrl(boundary))
+            vueStyleUpdate(resolver.fileToRequest(boundary))
+          } else {
+            normalCssUpdate(resolver.fileToRequest(boundary))
+          }
+        }
+        return
+      }
+      // no boundaries
+      normalCssUpdate(publicPath)
     }
   })
 
-  async function processCss(root: string, ctx: Context) {
-    let css = (await readBody(ctx.body))!
+  function vueStyleUpdate(styleImport: string) {
+    const publicPath = cleanUrl(styleImport)
+    const index = qs.parse(styleImport.split('?', 2)[1]).index
+    console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
+    watcher.send({
+      type: 'style-update',
+      path: `${publicPath}?type=style&index=${index}`,
+      timestamp: Date.now()
+    })
+  }
 
+  function moduleCssUpdate(filePath: string) {
+    watcher.handleJSReload(filePath)
+  }
+
+  function normalCssUpdate(publicPath: string) {
+    // bust process cache
+    processedCSS.delete(publicPath)
+
+    watcher.send({
+      type: 'style-update',
+      path: publicPath,
+      timestamp: Date.now()
+    })
+  }
+
+  async function processCss(root: string, ctx: Context) {
+    const css = (await readBody(ctx.body))!
     const result = await compileCss(root, ctx.path, {
       id: '',
       source: css,
       filename: resolver.requestToFile(ctx.path),
       scoped: false,
-      modules: ctx.path.endsWith('.module.css'),
+      modules: ctx.path.includes('.module'),
       preprocessLang: ctx.path.replace(cssPreprocessLangRE, '$2') as any
     })
 
