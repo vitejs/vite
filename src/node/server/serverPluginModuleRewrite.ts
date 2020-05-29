@@ -254,7 +254,6 @@ export const resolveImport = (
     // 3. resolve extensions.
     const ext = resolver.resolveExt(pathname)
     if (ext) {
-      // in aliased cases the inferred ext can contain multiple slashes
       pathname = path.posix.normalize(pathname + ext)
     }
 
