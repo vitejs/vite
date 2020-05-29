@@ -21,7 +21,7 @@ feat(dev): add 'comments' option
 Appears under "Bug Fixes" header, `dev` subheader, with a link to issue #28:
 
 ```
-fix(dev): handle events on blur
+fix(dev): fix dev error
 
 close #28
 ```
