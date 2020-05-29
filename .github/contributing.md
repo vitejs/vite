@@ -1,4 +1,4 @@
-# Vite.js Contributing Guide
+# Vite Contributing Guide
 
 Hi! I'm really excited that you are interested in contributing to Vite.js. Before submitting your contribution, please make sure to take a moment and read through the following guidelines:
 
