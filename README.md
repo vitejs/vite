@@ -417,6 +417,11 @@ Both Snowpack v2 and Vite offer native ES module import based dev servers. Vite'
 
 - Both solutions can also bundle the app for production, but Vite uses Rollup while Snowpack delegates it to Parcel/webpack. This isn't a significant difference, but worth being aware of if you intend to customize the build.
 
+## Contribution
+
+See [Contributing Guide](https://github.com/vitejs/vite/tree/master/.github/contributing.md).
+
+
 ## Trivia
 
 [vite](https://en.wiktionary.org/wiki/vite) is the french word for "fast" and is pronounced `/vit/`.
