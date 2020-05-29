@@ -12,6 +12,7 @@ import { Ora } from 'ora'
 import { createBuildCssPlugin } from './build/buildPluginCss'
 
 const KNOWN_IGNORE_LIST = new Set([
+  'vite',
   'tailwindcss',
   '@tailwindcss/ui',
   '@pika/react',
