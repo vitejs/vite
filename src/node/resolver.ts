@@ -320,26 +320,18 @@ export function resolveNodeModule(
       return
     }
     let entryPoint: string | null = null
-    if (pkg.exports) {
-      if (typeof pkg.exports === 'string') {
-        entryPoint = pkg.exports
-      } else if (pkg.exports['.']) {
-        if (typeof pkg.exports['.'] === 'string') {
-          entryPoint = pkg.exports['.']
-        } else {
-          entryPoint = pkg.exports['.'].import
-        }
+
+    for (const mainField of mainFields) {
+      if (pkg[mainField]) {
+        entryPoint = pkg[mainField]
+        break
       }
     }
 
-    if (!entryPoint) {
-      for (const mainField of mainFields) {
-        if (pkg[mainField]) {
-          entryPoint = pkg[mainField]
-          break
-        }
-      }
-    }
+    // TODO properly support conditinal exports
+    // https://nodejs.org/api/esm.html#esm_conditional_exports
+    // Note: this would require @rollup/plugin-node-resolve to support it too
+    // or we will have to implement that logic in vite's own resolve plugin.
 
     // save resolved entry file path using the deep import path as key
     // e.g. foo/dist/foo.js

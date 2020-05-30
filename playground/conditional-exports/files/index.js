@@ -1,3 +1,0 @@
-exports.test = () => {
-  return true
-}
