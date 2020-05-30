@@ -1,3 +1,29 @@
+# [0.19.0](https://github.com/vuejs/vite/compare/v0.18.1...v0.19.0) (2020-05-30)
+
+
+### Bug Fixes
+
+* remove incorrect conditional exports handling ([3fdfe8a](https://github.com/vuejs/vite/commit/3fdfe8a78c803b712c2064c1defb43845b2a0039))
+* remove support for browser fields. ([ce3ec6c](https://github.com/vuejs/vite/commit/ce3ec6c4dd2f2d637e00d6f7000ed56d54206f57))
+* respect module over browser field during dev ([c790499](https://github.com/vuejs/vite/commit/c790499f0efab491322bca07d6dc69a838083f48)), closes [#307](https://github.com/vuejs/vite/issues/307)
+
+
+### Features
+
+* support css `[@import](https://github.com/import)` hmr ([#281](https://github.com/vuejs/vite/issues/281)) ([9bc3fbd](https://github.com/vuejs/vite/commit/9bc3fbde36d8a526da9a328f603e34d9e1a8081f))
+* watch aliased files that are out of root ([8fe4284](https://github.com/vuejs/vite/commit/8fe4284dc8ac3f15e433222fcf37090791ccf17a))
+
+
+### BREAKING CHANGES
+
+* support for resolving `browser` field has been removed.
+
+  The `browser` field has very inconsitent usage across the ecosystem
+  and is often used in a way that conflicts with ES-module-first tooling
+  (e.g. firebase/app points browser to cjs build).
+
+
+
 ## [0.18.1](https://github.com/vuejs/vite/compare/v0.18.0...v0.18.1) (2020-05-29)
 
 
