@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import path from 'path'
-import { ServerPlugin } from '.'
+import { Context, ServerPlugin } from '.'
 import {
   SFCBlock,
   SFCDescriptor,
@@ -25,7 +25,6 @@ import {
   cleanUrl,
   watchFileIfOutOfRoot
 } from '../utils'
-import { Context } from 'koa'
 import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'

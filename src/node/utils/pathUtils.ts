@@ -1,9 +1,9 @@
-import { Context } from 'koa'
 import path from 'path'
 import slash from 'slash'
 import qs from 'querystring'
 import resolve from 'resolve'
 import { supportedExts } from '../resolver'
+import { Context } from '../server'
 
 export const resolveFrom = (root: string, id: string) =>
   resolve.sync(id, { basedir: root, extensions: supportedExts })
