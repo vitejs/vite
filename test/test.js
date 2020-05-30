@@ -400,7 +400,6 @@ describe('vite', () => {
 
     if (!isBuild) {
       test('SFC custom blocks', async () => {
-        //await expectByPolling(() =>  getText('.custom-block'), 'hello,vite!')
         expect(await getText('.custom-block')).toBe('hello,vite!')
       })
     }

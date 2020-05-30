@@ -1,6 +1,6 @@
 import type { UserConfig } from 'vite'
 import { jsPlugin } from './plugins/jsPlugin'
-import { i18nTransform } from './custom-blocks/i18nTransform'
+import { i18nServerPlugin } from './custom-blocks/i18nServerPlugin'
 
 const config: UserConfig = {
   alias: {
@@ -11,7 +11,7 @@ const config: UserConfig = {
   minify: false,
   serviceWorker: !!process.env.USE_SW,
   plugins: [jsPlugin],
-  transforms: [i18nTransform],
+  configureServer: [i18nServerPlugin],
   optimizeDeps: {
     commonJSWhitelist: ['moment']
   }
