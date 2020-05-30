@@ -1,0 +1,9 @@
+{
+  "name": "resolve-browser-field-test-package",
+  "version": "1.0.0",
+  "//": "real world example: https://github.com/axios/axios/blob/3f2ef030e001547eb06060499f8a2e3f002b5a14/package.json#L71-L73",
+  "main": "out/cjs.node.js",
+  "browser": {
+    "./out/cjs.node.js": "./out/esm.browser.js"
+  }
+}
