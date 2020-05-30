@@ -198,7 +198,9 @@ export async function optimizeDeps(
         if (isbuiltin(id)) {
           let importingDep
           if (importer) {
-            const match = slash(importer).match(/\/node_modules\/(\w+)\//)
+            const match = slash(importer).match(
+              /\/node_modules\/([^@\/][^\/]*|@[^\/]+\/[^\/]+)\//
+            )
             if (match) {
               importingDep = match[1]
             }
