@@ -10,7 +10,7 @@
 
 ### Features
 
-* support css `[@import](https://github.com/import)` hmr ([#281](https://github.com/vuejs/vite/issues/281)) ([9bc3fbd](https://github.com/vuejs/vite/commit/9bc3fbde36d8a526da9a328f603e34d9e1a8081f))
+* support css `@import` hmr ([#281](https://github.com/vuejs/vite/issues/281)) ([9bc3fbd](https://github.com/vuejs/vite/commit/9bc3fbde36d8a526da9a328f603e34d9e1a8081f))
 * watch aliased files that are out of root ([8fe4284](https://github.com/vuejs/vite/commit/8fe4284dc8ac3f15e433222fcf37090791ccf17a))
 
 
