@@ -24,6 +24,7 @@
   <TestAlias />
   <TestTransform />
   <TestRewriteOptimized />
+  <TestCustomBlocks />
 </template>
 
 <script>
