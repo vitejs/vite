@@ -331,10 +331,12 @@ export function resolveNodeModule(
         }
       }
     }
+
+    let mainField
     if (!entryPoint) {
-      for (const field of mainFields) {
-        if (pkg[field]) {
-          entryPoint = pkg[field]
+      for (mainField of mainFields) {
+        if (pkg[mainField]) {
+          entryPoint = pkg[mainField]
           break
         }
       }
@@ -343,7 +345,15 @@ export function resolveNodeModule(
     // resolve browser field in package.json
     // https://github.com/defunctzombie/package-browser-field-spec
     const browserField = pkg.browser
-    if (typeof browserField === 'string') {
+    if (typeof browserField === 'string' && mainField === 'main') {
+      // Only overwrite already resolved if we did not find a ESM compatible
+      // entry. This is because some packages e.g. firebase/app assumes
+      // "module" is resolved with higher priority than "browser" and its
+      // "browser" build actually points to a CommonJS file.
+      // Note this does cause the build to resolve to a different file in this
+      // case because @rollup/plugin-node-resolve treats "browser" with highest
+      // priority; but as long as a lib's esm build can run in the browser, its
+      // behavior should be exactly the same as the "browser" build.
       entryPoint = browserField
     } else if (
       entryPoint &&
