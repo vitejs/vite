@@ -39,7 +39,7 @@ If you can't wait for a new release to test latest features, clone the `vite` to
 
 ```
 yarn
-yarn dev
+yarn build
 yarn link
 ```
 
