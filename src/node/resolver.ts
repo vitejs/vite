@@ -254,10 +254,14 @@ export function resolveBareModuleRequest(
       if (resolveOptimizedModule(root, depId)) {
         console.error(
           chalk.yellow(
-            `\n[vite] Avoid deep import "${id}" since "${depId}" is a ` +
-              `pre-optimized dependency.\n` +
-              `Prefer importing from the module directly.\n` +
-              `Importer: ${importer}\n`
+            `\n[vite] Avoid deep import "${id}" (imported by ${importer})\n` +
+              `because "${depId}" has been pre-optimized by vite into a single file.\n` +
+              `Prefer importing directly from the module entry:\n` +
+              chalk.cyan(`\n  import { ... } from "${depId}" \n\n`) +
+              `If the dependency requires deep import to function properly, \n` +
+              `add it to ${chalk.cyan(
+                `optimizeDeps.exclude`
+              )} in vite.config.js.\n`
           )
         )
       }
