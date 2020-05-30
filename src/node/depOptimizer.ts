@@ -258,14 +258,19 @@ export async function optimizeDeps(
       console.log()
       console.log(
         chalk.yellow(
-          `Tip: Make sure your "dependencies" only include packages that you ` +
-            `intend to use in the browser. If it's a Node.js package, it ` +
-            `should be in "devDependencies". You can also configure what deps ` +
-            `to include/exclude for optimization using the \`optimizeDeps\` ` +
-            `option in the vite config file.`
+          `Tip:\nMake sure your "dependencies" only include packages that you\n` +
+            `intend to use in the browser. If it's a Node.js package, it\n` +
+            `should be in "devDependencies".\n\n` +
+            `You can also configure what deps to include/exclude for\n` +
+            `optimization using the "optimizeDeps" option in vite.config.js.\n\n` +
+            `If you do intend to use this dependency in the browser, then\n` +
+            `unfortunately it is not distributed in a web-friendly way and\n` +
+            `it is recommended to look for a modern alternative that ships\n` +
+            `ES module build.\n`
         )
         // TODO link to docs once we have it
       )
+      process.exit(1)
     }
   }
 }

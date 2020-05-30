@@ -332,38 +332,14 @@ export function resolveNodeModule(
       }
     }
 
-    let mainField
     if (!entryPoint) {
-      for (mainField of mainFields) {
+      for (const mainField of mainFields) {
         if (pkg[mainField]) {
           entryPoint = pkg[mainField]
           break
         }
       }
     }
-
-    // resolve browser field in package.json
-    // https://github.com/defunctzombie/package-browser-field-spec
-    const browserField = pkg.browser
-    if (typeof browserField === 'string' && mainField === 'main') {
-      // Only overwrite already resolved if we did not find a ESM compatible
-      // entry. This is because some packages e.g. firebase/app assumes
-      // "module" is resolved with higher priority than "browser" and its
-      // "browser" build actually points to a CommonJS file.
-      // Note this does cause the build to resolve to a different file in this
-      // case because @rollup/plugin-node-resolve treats "browser" with highest
-      // priority; but as long as a lib's esm build can run in the browser, its
-      // behavior should be exactly the same as the "browser" build.
-      entryPoint = browserField
-    } else if (
-      entryPoint &&
-      typeof browserField === 'object' &&
-      browserField !== null
-    ) {
-      entryPoint = mapWithBrowserField(entryPoint, browserField)
-    }
-
-    debug(`(node_module entry) ${id} -> ${entryPoint}`)
 
     // save resolved entry file path using the deep import path as key
     // e.g. foo/dist/foo.js
@@ -382,6 +358,10 @@ export function resolveNodeModule(
       // save the resolved file path now so we don't need to do it again in
       // resolveNodeModuleFile()
       nodeModulesFileMap.set(entryPoint, entryFilePath)
+    }
+
+    if (entryPoint) {
+      debug(`(node_module entry) ${id} -> ${entryPoint}`)
     }
 
     const result: NodeModuleInfo = {
@@ -409,26 +389,4 @@ export function resolveNodeModuleFile(
   } catch (e) {
     // error will be reported downstream
   }
-}
-
-const normalize = path.posix.normalize
-
-/**
- * given a relative path in pkg dir,
- * return a relative path in pkg dir,
- * mapped with the "map" object
- */
-function mapWithBrowserField(
-  relativePathInPkgDir: string,
-  map: Record<string, string>
-) {
-  const normalized = normalize(relativePathInPkgDir)
-  const foundEntry = Object.entries(map).find(([from]) => {
-    return normalize(from) === normalized
-  })
-  if (!foundEntry) {
-    return normalized
-  }
-  const [, to] = foundEntry
-  return normalize(to)
 }

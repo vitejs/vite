@@ -9,7 +9,6 @@
     "conditional-exports": "link:./conditional-exports",
     "lodash-es": "link:../node_modules/lodash-es",
     "moment": "link:../node_modules/moment",
-    "resolve-browser-field-test-package": "link:./resolve-browser-field",
     "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package"
   }
 }

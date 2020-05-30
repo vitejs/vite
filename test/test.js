@@ -108,7 +108,6 @@ describe('vite', () => {
       expect(await getText('.module-resolve-conditional')).toMatch('ok')
       expect(await getText('.index-resolve')).toMatch('ok')
       expect(await getText('.dot-resolve')).toMatch('ok')
-      expect(await getText('.browser-field-resolve')).toMatch('ok')
     })
 
     if (!isBuild) {
