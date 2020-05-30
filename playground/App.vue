@@ -44,6 +44,7 @@ import TestAlias from './TestAlias.vue'
 import TestTransform from './TestTransform.vue'
 import TestRewriteOptimized from "./rewrite-optimized/TestRewriteOptimized.vue";
 import TestCssAtImport from './css-@import/TestCssAtImport.vue'
+import TestCustomBlocks from './custom-blocks/TestCustomBlocks.vue'
 
 export default {
   data: () => ({
@@ -67,7 +68,8 @@ export default {
     TestAlias,
     TestTransform,
     TestAsync: defineAsyncComponent(() => import('./TestAsync.vue')),
-    TestRewriteOptimized
+    TestRewriteOptimized,
+    TestCustomBlocks
   }
 }
 </script>

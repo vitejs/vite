@@ -397,6 +397,29 @@ describe('vite', () => {
         moment(1590231082886).format('MMMM Do YYYY, h:mm:ss a')
       )
     })
+
+    test('SFC src imports', async () => {
+      expect(await getText('.src-imports-script')).toMatch('src="./script.ts"')
+      const el = await getEl('.src-imports-style')
+      expect(await getComputedColor(el)).toBe('rgb(119, 136, 153)')
+      if (!isBuild) {
+        // test style first, should not reload the component
+        await updateFile('src-import/style.css', (c) =>
+          c.replace('rgb(119, 136, 153)', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+        // script
+        await updateFile('src-import/script.ts', (c) =>
+          c.replace('hello', 'bye')
+        )
+        await expectByPolling(() => getText('.src-imports-script'), 'bye from')
+        // template
+        await updateFile('src-import/template.html', (c) =>
+          c.replace('{{ msg }}', '{{ msg }} changed')
+        )
+        await expectByPolling(() => getText('.src-imports-script'), 'changed')
+      }
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev
