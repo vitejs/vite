@@ -33,6 +33,18 @@ $ yarn dev
 
 > Although Vite is primarily designed to work with Vue 3, it can support other frameworks as well. For example, try `npm init vite-app --template react` or `--template preact`.
 
+### Using master branch
+
+If you can't wait for a new release to test latest features, clone the `vite` to your local machine and execute following commands:
+
+```
+yarn
+yarn build
+yarn link
+```
+
+Then go to your vite based project and run `yarn link vite`. Now restart the development server (`yarn dev`) to ride on the bleeding edge!
+
 ## Browser Support
 
 Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
