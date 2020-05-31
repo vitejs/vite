@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'fs-extra'
 import path from 'path'
 import slash from 'slash'
 import { cleanUrl, resolveFrom, queryRE } from './utils'
@@ -313,13 +313,15 @@ export function resolveNodeModule(
   try {
     // see if the id is a valid package name
     pkgPath = resolveFrom(root, `${id}/package.json`)
-  } catch (e) {}
+  } catch (e) {
+    debug(`failed to resolve package.json for ${id}`)
+  }
 
   if (pkgPath) {
     // if yes, this is a entry import. resolve entry file
     let pkg
     try {
-      pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+      pkg = fs.readJSONSync(pkgPath)
     } catch (e) {
       return
     }
