@@ -1,9 +1,9 @@
 # vite ⚡
 
-[![npm][npm]][npm-url]
-[![node][node]][node-url] 
-[![ci][ci]][ci-url]
-[![Build status][status]][status-url]
+[![npm][npm-img]][npm-url]
+[![node][node-img]][node-url]
+[![unix CI status][unix-ci-img]][unix-ci-url]
+[![windows CI status][windows-ci-img]][windows-ci-url]
 
 Vite is an opinionated web dev build tool that serves your code via native ES Module imports during dev and bundles it with [Rollup](https://rollupjs.org/) for production.
 
@@ -445,11 +445,11 @@ See [Contributing Guide](https://github.com/vitejs/vite/tree/master/.github/cont
 
 MIT
 
-[npm]: https://img.shields.io/npm/v/vite.svg
+[npm-img]: https://img.shields.io/npm/v/vite.svg
 [npm-url]: https://npmjs.com/package/vite
-[node]: https://img.shields.io/node/v/vite.svg
-[node-url]: https://nodejs.org
-[ci]: https://circleci.com/gh/vitejs/vite.svg?style=shield
-[ci-url]: https://app.circleci.com/pipelines/github/vuejs/vite
-[status]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/master?svg=true
-[status-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/master
+[node-img]: https://img.shields.io/node/v/vite.svg
+[node-url]: https://nodejs.org/en/about/releases/
+[unix-ci-img]: https://circleci.com/gh/vitejs/vite.svg?style=shield
+[unix-ci-url]: https://app.circleci.com/pipelines/github/vitejs/vite
+[windows-ci-img]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/master?svg=true
+[windows-ci-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/master
