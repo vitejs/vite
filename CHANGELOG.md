@@ -1,3 +1,12 @@
+## [0.19.3](https://github.com/vuejs/vite/compare/v0.19.2...v0.19.3) (2020-05-31)
+
+
+### Bug Fixes
+
+* perform vue resolution with strict basedir ([e3f0364](https://github.com/vuejs/vite/commit/e3f0364269dea501fbc1c8e26b7d27c5f55ccbfe))
+
+
+
 ## [0.19.2](https://github.com/vuejs/vite/compare/v0.19.1...v0.19.2) (2020-05-31)
 
 
