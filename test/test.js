@@ -402,6 +402,10 @@ describe('vite', () => {
     if (!isBuild) {
       test('SFC custom blocks', async () => {
         expect(await getText('.custom-block')).toBe('hello,vite!')
+        await updateFile('custom-blocks/TestCustomBlocks.vue', (c) =>
+          c.replace('hello,vite!', 'hi,vite!')
+        )
+        await expectByPolling(() => getText('.custom-block'), 'hi,vite!')
       })
     }
   }

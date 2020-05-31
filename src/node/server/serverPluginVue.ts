@@ -249,6 +249,20 @@ export const vuePlugin: ServerPlugin = ({
       })
     })
 
+    const prevCustoms = prevDescriptor.customBlocks || []
+    const nextCustoms = descriptor.customBlocks || []
+
+    // custom blocks update causes a reload
+    // because the custom block contents is changed and it may be used in JS.
+    if (
+      nextCustoms.some(
+        (_, i) =>
+          !prevCustoms[i] || !isEqualBlock(prevCustoms[i], nextCustoms[i])
+      )
+    ) {
+      return sendReload()
+    }
+
     if (needRerender) {
       send({
         type: 'vue-rerender',
