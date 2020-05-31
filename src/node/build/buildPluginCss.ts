@@ -142,7 +142,7 @@ export const createBuildCssPlugin = (
       })
       // minify with cssnano
       if (minify) {
-        css = await minifyCSS(css)
+        css = minifyCSS(css)
       }
 
       const cssFileName = `style.${hash_sum(css)}.css`
