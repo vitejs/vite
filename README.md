@@ -62,6 +62,7 @@ Vite assumes you are targeting modern browsers and therefore does not perform an
 - [CSS Modules](#css-modules)
 - [CSS Pre-processors](#css-pre-processors)
 - [JSX](#jsx)
+- [Custom Blocks](#custom-blocks)
 - [Config File](#config-file)
 - [Dev Server Proxy](#dev-server-proxy)
 - [Production Build](#production-build)
@@ -254,6 +255,43 @@ module.exports = {
 ```
 
 Note that for the Preact preset, `h` is also auto injected so you don't need to manually import it. However, this may cause issues if you are using `.tsx` with Preact since TS expects `h` to be explicitly imported for type inference. In that case, you can use the explicit factory config shown above which disables the auto `h` injection.
+
+### Custom Blocks
+
+You can support the [custom blocks](https://vue-loader.vuejs.org/guide/custom-blocks.html) in your project. To use the custom blocks at Vite, you need to implement the server plugin with using the [API](#API). 
+
+The following example:
+
+```js
+const yaml = require('js-yaml')
+
+export const i18nServerPlugin = ({ root, app, server, watcher }) => {
+  app.use(async (ctx, next) => {
+    await next()
+
+    const { query } = ctx
+    const { type, blockType, lang } = query
+    const source = ctx.body
+    if (type === 'custom' && blockType === 'i18n') {
+      let resource = {}
+      if (/ya?ml/.test(lang)) {
+        resource = yaml.safeLoad(source.trim())
+      } else {
+        resource = JSON.parse(source.trim())
+      }
+      let code = `export default function i18n(Component) {\n`
+      code += `  Component.i18n = ${JSON.stringify(resource)}\n`
+      code += `}`
+      ctx.body = code
+    }
+  })
+}
+```
+
+As above, you need to transform it and inject to your Vue component. And you need to set your plugin to `configureServer` of config file (see [Config File](#config-file) below).
+
+Note that you need to understand about the custom blocks query structure (see [vue-loader docs](https://github.com/vuejs/vue-loader#how-it-works)).
+
 
 ### Config File
 
