@@ -29,7 +29,6 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
-import { moduleRE } from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -245,24 +244,18 @@ export const resolveImport = (
     //    ./foo -> /some/path/foo
     let { pathname, query } = resolveRelativeRequest(importer, id)
 
-    // 2. if this is a relative import between files under /@modules/, preserve
-    // them as-is
-    if (moduleRE.test(pathname)) {
-      return pathname
-    }
-
-    // 3. resolve extensions.
+    // 2. resolve extensions.
     const ext = resolver.resolveExt(pathname)
-    if (ext) {
+    if (ext && ext !== path.extname(pathname)) {
       pathname = path.posix.normalize(pathname + ext)
     }
 
-    // 4. mark non-src imports
+    // 3. mark non-src imports
     if (!query && path.extname(pathname) && !jsSrcRE.test(pathname)) {
       query += `?import`
     }
 
-    // 5. force re-fetch dirty imports by appending timestamp
+    // 4. force re-fetch dirty imports by appending timestamp
     if (timestamp) {
       const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
       // only rewrite if:

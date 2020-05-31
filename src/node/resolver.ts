@@ -168,7 +168,7 @@ export function createResolver(
     const ext = resolveExt(resolved)
     const result = {
       filePath: ext ? resolved + ext : resolved,
-      ext
+      ext: ext || path.extname(resolved)
     }
     requestToFileCache.set(publicPath, result)
     return result
