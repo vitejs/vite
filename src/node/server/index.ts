@@ -1,6 +1,6 @@
 import { RequestListener, Server } from 'http'
 import { ServerOptions } from 'https'
-import Koa from 'koa'
+import Koa, { DefaultState, DefaultContext } from 'koa'
 import chokidar from 'chokidar'
 import { createResolver, InternalResolver } from '../resolver'
 import { moduleRewritePlugin } from './serverPluginModuleRewrite'
@@ -26,12 +26,16 @@ export type ServerPlugin = (ctx: ServerPluginContext) => void
 
 export interface ServerPluginContext {
   root: string
-  app: Koa
+  app: Koa<State, Context>
   server: Server
   watcher: HMRWatcher
   resolver: InternalResolver
   config: ServerConfig & { __path?: string }
 }
+
+export interface State extends DefaultState {}
+
+export type Context = DefaultContext & ServerPluginContext
 
 export function createServer(config: ServerConfig): Server {
   const {
@@ -43,7 +47,7 @@ export function createServer(config: ServerConfig): Server {
     optimizeDeps = {}
   } = config
 
-  const app = new Koa()
+  const app = new Koa<State, Context>()
   const server = resolveServer(config, app.callback())
   const watcher = chokidar.watch(root, {
     ignored: [/node_modules/]
@@ -61,7 +65,7 @@ export function createServer(config: ServerConfig): Server {
 
   // attach server context to koa context
   app.use((ctx, next) => {
-    ctx._viteContext = context
+    Object.assign(ctx, context)
     return next()
   })
 

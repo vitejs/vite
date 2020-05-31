@@ -1,7 +1,6 @@
 import { basename } from 'path'
-import { ServerPlugin } from '.'
+import { Context, ServerPlugin } from '.'
 import hash_sum from 'hash-sum'
-import { Context } from 'koa'
 import { cleanUrl, isImportRequest, readBody } from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {

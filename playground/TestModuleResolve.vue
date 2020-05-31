@@ -13,6 +13,9 @@
   <div class="dot-resolve" :class="dotResolve">
     filename with dot resolve: {{ dotResolve }}
   </div>
+  <div class="browser-field-resolve" :class="browserFieldResolve">
+    resolve browser field in package.json: {{ browserFieldResolve }}
+  </div>
 </template>
 
 <script>
@@ -21,6 +24,7 @@ import { createStore } from 'vuex'
 import { add } from 'lodash-es'
 import { foo } from './util'
 import { bar } from './util/bar.util'
+import value from 'resolve-browser-field-test-package'
 
 export default {
   setup() {
@@ -29,7 +33,8 @@ export default {
       store: typeof createStore === 'function' ? 'ok' : 'error',
       optResolve: typeof add === 'function' ? 'ok' : 'error',
       indexResolve: foo() ? 'ok' : 'error',
-      dotResolve: bar() ? 'ok' : 'error'
+      dotResolve: bar() ? 'ok' : 'error',
+      browserFieldResolve: value === 'success' ? 'ok' : 'error'
     }
   }
 }

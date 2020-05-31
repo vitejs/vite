@@ -6,10 +6,6 @@
   version "0.0.0"
   uid ""
 
-"conditional-exports@link:./conditional-exports":
-  version "0.0.0"
-  uid ""
-
 "lodash-es@link:../node_modules/lodash-es":
   version "0.0.0"
   uid ""

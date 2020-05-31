@@ -1,3 +1,18 @@
+## [0.19.1](https://github.com/vuejs/vite/compare/v0.19.0...v0.19.1) (2020-05-31)
+
+
+### Bug Fixes
+
+* better module id regex for builtin bail message ([#310](https://github.com/vuejs/vite/issues/310)) ([29e36ab](https://github.com/vuejs/vite/commit/29e36ab02fa39d397a2ffb3b6fcccdbcde44ab67))
+* use strict resolving for vue resolution ([ee60f64](https://github.com/vuejs/vite/commit/ee60f64d9011fe54358fc8fa88739f8fff8586ec))
+
+
+### Features
+
+* bring back browser field resolution with consistent behavior ([a0272f0](https://github.com/vuejs/vite/commit/a0272f07701f0b2cbdc2fe9ce936bf025bfd9e5d))
+
+
+
 # [0.19.0](https://github.com/vuejs/vite/compare/v0.18.1...v0.19.0) (2020-05-30)
 
 

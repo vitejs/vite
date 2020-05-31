@@ -1,12 +1,11 @@
 import path from 'path'
 import fs from 'fs-extra'
 import LRUCache from 'lru-cache'
-import { Context } from 'koa'
+import { Context } from '../server'
 import { Readable } from 'stream'
 import { seenUrls } from '../server/serverPluginServeStatic'
 import mime from 'mime-types'
 import { HMRWatcher } from '../server/serverPluginHmr'
-import { ServerPluginContext } from '../server'
 
 const getETag = require('etag')
 
@@ -64,7 +63,7 @@ export async function cachedRead(
     ctx.status = 200
 
     // watch the file if it's out of root.
-    const { root, watcher } = ctx._viteContext as ServerPluginContext
+    const { root, watcher } = ctx
     watchFileIfOutOfRoot(watcher, root, file)
   }
   return content

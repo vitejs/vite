@@ -33,6 +33,18 @@ $ yarn dev
 
 > Although Vite is primarily designed to work with Vue 3, it can support other frameworks as well. For example, try `npm init vite-app --template react` or `--template preact`.
 
+### Using master branch
+
+If you can't wait for a new release to test latest features, clone the `vite` to your local machine and execute following commands:
+
+```
+yarn
+yarn build
+yarn link
+```
+
+Then go to your vite based project and run `yarn link vite`. Now restart the development server (`yarn dev`) to ride on the bleeding edge!
+
 ## Browser Support
 
 Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
@@ -247,7 +259,7 @@ Note that for the Preact preset, `h` is also auto injected so you don't need to 
 
 You can create a `vite.config.js` or `vite.config.ts` file in your project. Vite will automatically use it if one is found in the current working directory. You can also explicitly specify a config file via `vite --config my-config.js`.
 
-In addition to options mapped from CLI flags, it also supports `alias`, `transforms`, and plugins (which is a subset of the config interface). For now, see [config.ts](https://github.com/vuejs/vite/blob/master/src/node/config.ts) for full details before more thorough documentation is available.
+In addition to options mapped from CLI flags, it also supports `alias`, `transforms`, and `plugins` (which is a subset of the config interface). For now, see [config.ts](https://github.com/vuejs/vite/blob/master/src/node/config.ts) for full details before more thorough documentation is available.
 
 ### Dev Server Proxy
 

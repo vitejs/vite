@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'fs-extra'
 import path from 'path'
 import slash from 'slash'
 import { cleanUrl, resolveFrom, queryRE } from './utils'
@@ -26,7 +26,7 @@ export interface InternalResolver {
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
-export const mainFields = ['module', 'jsnext', 'jsnext:main', 'main']
+export const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
 const defaultRequestToFile = (publicPath: string, root: string): string => {
   if (moduleRE.test(publicPath)) {
@@ -254,10 +254,14 @@ export function resolveBareModuleRequest(
       if (resolveOptimizedModule(root, depId)) {
         console.error(
           chalk.yellow(
-            `\n[vite] Avoid deep import "${id}" since "${depId}" is a ` +
-              `pre-optimized dependency.\n` +
-              `Prefer importing from the module directly.\n` +
-              `Importer: ${importer}\n`
+            `\n[vite] Avoid deep import "${id}" (imported by ${importer})\n` +
+              `because "${depId}" has been pre-optimized by vite into a single file.\n` +
+              `Prefer importing directly from the module entry:\n` +
+              chalk.cyan(`\n  import { ... } from "${depId}" \n\n`) +
+              `If the dependency requires deep import to function properly, \n` +
+              `add it to ${chalk.cyan(
+                `optimizeDeps.exclude`
+              )} in vite.config.js.\n`
           )
         )
       }
@@ -309,29 +313,42 @@ export function resolveNodeModule(
   try {
     // see if the id is a valid package name
     pkgPath = resolveFrom(root, `${id}/package.json`)
-  } catch (e) {}
+  } catch (e) {
+    debug(`failed to resolve package.json for ${id}`)
+  }
 
   if (pkgPath) {
     // if yes, this is a entry import. resolve entry file
     let pkg
     try {
-      pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+      pkg = fs.readJSONSync(pkgPath)
     } catch (e) {
       return
     }
     let entryPoint: string | null = null
 
-    for (const mainField of mainFields) {
-      if (pkg[mainField]) {
-        entryPoint = pkg[mainField]
-        break
-      }
-    }
-
     // TODO properly support conditinal exports
     // https://nodejs.org/api/esm.html#esm_conditional_exports
     // Note: this would require @rollup/plugin-node-resolve to support it too
     // or we will have to implement that logic in vite's own resolve plugin.
+
+    if (!entryPoint) {
+      for (const field of mainFields) {
+        if (typeof pkg[field] === 'string') {
+          entryPoint = pkg[field]
+          break
+        }
+      }
+    }
+
+    // resolve object browser field in package.json
+    // https://github.com/defunctzombie/package-browser-field-spec
+    const browserField = pkg.browser
+    if (entryPoint && browserField && typeof browserField === 'object') {
+      entryPoint = mapWithBrowserField(entryPoint, browserField)
+    }
+
+    debug(`(node_module entry) ${id} -> ${entryPoint}`)
 
     // save resolved entry file path using the deep import path as key
     // e.g. foo/dist/foo.js
@@ -350,10 +367,6 @@ export function resolveNodeModule(
       // save the resolved file path now so we don't need to do it again in
       // resolveNodeModuleFile()
       nodeModulesFileMap.set(entryPoint, entryFilePath)
-    }
-
-    if (entryPoint) {
-      debug(`(node_module entry) ${id} -> ${entryPoint}`)
     }
 
     const result: NodeModuleInfo = {
@@ -381,4 +394,26 @@ export function resolveNodeModuleFile(
   } catch (e) {
     // error will be reported downstream
   }
+}
+
+const normalize = path.posix.normalize
+
+/**
+ * given a relative path in pkg dir,
+ * return a relative path in pkg dir,
+ * mapped with the "map" object
+ */
+function mapWithBrowserField(
+  relativePathInPkgDir: string,
+  map: Record<string, string>
+) {
+  const normalized = normalize(relativePathInPkgDir)
+  const foundEntry = Object.entries(map).find(([from]) => {
+    return normalize(from) === normalized
+  })
+  if (!foundEntry) {
+    return normalized
+  }
+  const [, to] = foundEntry
+  return normalize(to)
 }

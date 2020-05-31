@@ -13,7 +13,7 @@ const config: UserConfig = {
   plugins: [jsPlugin],
   configureServer: [i18nServerPlugin],
   optimizeDeps: {
-    commonJSWhitelist: ['moment']
+    exclude: ['bootstrap']
   }
 }
 
