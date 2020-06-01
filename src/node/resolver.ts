@@ -25,7 +25,15 @@ export interface InternalResolver {
   resolveExt(publicPath: string): string | undefined
 }
 
-export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+export const supportedExts = [
+  '.html',
+  '.mjs',
+  '.js',
+  '.ts',
+  '.jsx',
+  '.tsx',
+  '.json'
+]
 export const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
 const defaultRequestToFile = (publicPath: string, root: string): string => {
