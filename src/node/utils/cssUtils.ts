@@ -171,13 +171,15 @@ export function getCssImportBoundaries(
   return boundaries
 }
 
-export function recordCssImportChain(dependencies: string[], filePath: string) {
+export function recordCssImportChain(
+  dependencies: Set<string>,
+  filePath: string
+) {
   const preImportees = cssImporteeMap.get(filePath)
-  const currentImportees = new Set(dependencies)
   // if import code change, should removed unused previous importee
   if (preImportees) {
     for (const preImportee of preImportees) {
-      if (!currentImportees.has(preImportee)) {
+      if (!dependencies.has(preImportee)) {
         const importers = cssImporterMap.get(preImportee)
         if (importers) {
           importers.delete(filePath)
@@ -186,7 +188,7 @@ export function recordCssImportChain(dependencies: string[], filePath: string) {
     }
   }
 
-  currentImportees.forEach((dependency) => {
+  dependencies.forEach((dependency) => {
     if (cssImporterMap.has(dependency)) {
       cssImporterMap.get(dependency)!.add(filePath)
     } else {
@@ -194,5 +196,5 @@ export function recordCssImportChain(dependencies: string[], filePath: string) {
     }
   })
 
-  cssImporteeMap.set(filePath, currentImportees)
+  cssImporteeMap.set(filePath, dependencies)
 }
