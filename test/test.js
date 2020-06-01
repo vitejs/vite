@@ -42,6 +42,7 @@ beforeAll(async () => {
     filter: (file) => !/dist|node_modules/.test(file)
   })
   await execa('yarn', { cwd: tempDir })
+  await execa('yarn', { cwd: path.join(tempDir, 'optimize-linked') })
 })
 
 afterAll(async () => {
@@ -398,6 +399,18 @@ describe('vite', () => {
       expect(await getText('.test-rewrite-in-optimized')).toMatch(
         moment(1590231082886).format('MMMM Do YYYY, h:mm:ss a')
       )
+    })
+
+    test('monorepo support', async () => {
+      // linked dep + optimizing linked dep
+      expect(await getText(`.optimize-linked`)).toMatch(`ok`)
+      if (!isBuild) {
+        // test hmr in linked dep
+        await updateFile(`optimize-linked/index.js`, (c) =>
+          c.replace(`foo()`, `123`)
+        )
+        await expectByPolling(() => getText(`.optimize-linked`), 'error')
+      }
     })
   }
 

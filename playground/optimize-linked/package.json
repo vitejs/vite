@@ -1,0 +1,9 @@
+{
+  "name": "optimize-linked",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "linked-dep": "link:./linked-dep"
+  }
+}

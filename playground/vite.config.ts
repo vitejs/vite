@@ -11,7 +11,8 @@ const config: UserConfig = {
   serviceWorker: !!process.env.USE_SW,
   plugins: [jsPlugin],
   optimizeDeps: {
-    exclude: ['bootstrap']
+    exclude: ['bootstrap'],
+    link: ['optimize-linked']
   }
 }
 

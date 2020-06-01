@@ -4,14 +4,21 @@ import { createHash } from 'crypto'
 import { ResolvedConfig } from './config'
 import type Rollup from 'rollup'
 import type { Plugin } from 'rollup'
-import { createResolver, supportedExts, resolveNodeModule } from './resolver'
+import {
+  createResolver,
+  supportedExts,
+  resolveNodeModule,
+  InternalResolver
+} from './resolver'
 import { createBaseRollupPlugins, onRollupWarning } from './build'
-import { lookupFile } from './utils'
+import { lookupFile, resolveFrom } from './utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 import { createBuildCssPlugin } from './build/buildPluginCss'
 import slash from 'slash'
+
+const debug = require('debug')('vite:optimize')
 
 const KNOWN_IGNORE_LIST = new Set([
   'vite',
@@ -31,6 +38,12 @@ export interface DepOptimizationOptions {
    */
   exclude?: string[]
   /**
+   * A list of linked dependencies that should be treated as source code.
+   * Use this to list linked packages in a monorepo so that their dependencies
+   * are also included for optimization.
+   */
+  link?: string[]
+  /**
    * Automatically run `vite optimize` on server start?
    * @default true
    */
@@ -43,7 +56,6 @@ export async function optimizeDeps(
   config: ResolvedConfig & { force?: boolean },
   asCommand = false
 ) {
-  const debug = require('debug')('vite:optimize')
   const log = asCommand ? console.log : debug
   const root = config.root || process.cwd()
   // warn presence of web_modules
@@ -81,15 +93,8 @@ export async function optimizeDeps(
   await fs.remove(cacheDir)
   await fs.ensureDir(cacheDir)
 
-  const deps = Object.keys(require(pkgPath).dependencies || {})
-  if (!deps.length) {
-    await fs.writeFile(hashPath, depHash)
-    log(`No dependencies listed in package.json. Skipping.`)
-    return
-  }
-
+  const options = config.optimizeDeps || {}
   const resolver = createResolver(root, config.resolvers, config.alias)
-  const { include, exclude } = config.optimizeDeps || {}
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
@@ -97,60 +102,33 @@ export async function optimizeDeps(
   // 2. Has imports to bare modules that are not in the project's own deps
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
   await init
-  const qualifiedDeps = deps.filter((id) => {
-    if (include && !include.includes(id)) {
-      debug(`skipping ${id} (not included)`)
-      return false
-    }
-    if (exclude && exclude.includes(id)) {
-      debug(`skipping ${id} (excluded)`)
-      return false
-    }
-    if (KNOWN_IGNORE_LIST.has(id)) {
-      debug(`skipping ${id} (internal excluded)`)
-      return false
-    }
-    const pkgInfo = resolveNodeModule(root, id)
-    if (!pkgInfo || !pkgInfo.entryFilePath) {
-      debug(`skipping ${id} (cannot resolve entry)`)
-      return false
-    }
-    const { entryFilePath } = pkgInfo
-    if (!supportedExts.includes(path.extname(entryFilePath))) {
-      debug(`skipping ${id} (entry is not js)`)
-      return false
-    }
-    if (!fs.existsSync(entryFilePath)) {
-      debug(`skipping ${id} (entry file does not exist)`)
-      console.error(
-        chalk.yellow(
-          `[vite] dependency ${id} declares non-existent entry file ${entryFilePath}.`
-        )
-      )
-      return false
-    }
-    const content = fs.readFileSync(entryFilePath, 'utf-8')
-    const [imports, exports] = parse(content)
-    if (!exports.length && !/export\s+\*\s+from/.test(content)) {
-      debug(`optimizing ${id} (no exports, likely commonjs)`)
-      return true
-    }
-    for (const { s, e } of imports) {
-      let i = content.slice(s, e).trim()
-      i = resolver.alias(i) || i
-      if (i.startsWith('.')) {
-        debug(`optimizing ${id} (contains relative imports)`)
-        return true
-      }
-      if (!deps.includes(i)) {
-        debug(`optimizing ${id} (imports sub dependencies)`)
-        return true
-      }
-    }
-    debug(`skipping ${id} (single esm file, doesn't need optimization)`)
-  })
+  const { qualified, external } = filterDeps(root, options, resolver)
 
-  if (!qualifiedDeps.length) {
+  // Resolve deps from linked packages in a monorepo
+  if (options.link) {
+    options.link.forEach((linkedDep) => {
+      const depRoot = path.dirname(
+        resolveFrom(root, `${linkedDep}/package.json`)
+      )
+      const { qualified: q, external: e } = filterDeps(
+        depRoot,
+        options,
+        resolver
+      )
+      Object.keys(q).forEach((key) => {
+        if (!qualified[key]) {
+          qualified[key] = q[key]
+        }
+      })
+      e.forEach((id) => {
+        if (!external.includes(id)) {
+          external.push(id)
+        }
+      })
+    })
+  }
+
+  if (!Object.keys(qualified).length) {
     await fs.writeFile(hashPath, depHash)
     log(`No listed dependency requires optimization. Skipping.`)
     return
@@ -160,7 +138,11 @@ export async function optimizeDeps(
     // This is auto run on server start - let the user know that we are
     // pre-optimizing deps
     console.log(chalk.greenBright(`[vite] Optimizable dependencies detected:`))
-    console.log(qualifiedDeps.map((id) => chalk.yellow(id)).join(`, `))
+    console.log(
+      Object.keys(qualified)
+        .map((id) => chalk.yellow(id))
+        .join(`, `)
+    )
   }
 
   let spinner: Ora | undefined
@@ -175,19 +157,6 @@ export async function optimizeDeps(
   }
 
   try {
-    // Non qualified deps are marked as externals, since they will be preserved
-    // and resolved from their original node_modules locations.
-    const preservedDeps = deps
-      .filter((id) => !qualifiedDeps.includes(id))
-      // make sure aliased deps are external
-      // https://github.com/vitejs/vite-plugin-react/issues/4
-      .map((id) => resolver.alias(id) || id)
-
-    const input = qualifiedDeps.reduce((entries, name) => {
-      entries[name] = name
-      return entries
-    }, {} as Record<string, string>)
-
     const rollup = require('rollup') as typeof Rollup
 
     // bail early on detection of any usage of node built-ins.
@@ -218,8 +187,8 @@ export async function optimizeDeps(
     }
 
     const bundle = await rollup.rollup({
-      input,
-      external: preservedDeps,
+      input: qualified,
+      external,
       treeshake: { moduleSideEffects: 'no-external' },
       onwarn: onRollupWarning(spinner),
       ...config.rollupInputOptions,
@@ -274,6 +243,106 @@ export async function optimizeDeps(
       )
       process.exit(1)
     }
+  }
+}
+
+interface FilteredDeps {
+  // id: entryFilePath
+  qualified: Record<string, string>
+  external: string[]
+}
+
+function filterDeps(
+  root: string,
+  options: DepOptimizationOptions,
+  resolver: InternalResolver
+): FilteredDeps {
+  const { include, exclude, link } = options
+  const pkgContent = lookupFile(root, ['package.json'])
+  if (!pkgContent) {
+    return {
+      qualified: {},
+      external: []
+    }
+  }
+
+  const pkg = JSON.parse(pkgContent)
+  const deps = Object.keys(pkg.dependencies || {})
+  const qualifiedDeps = deps.filter((id) => {
+    if (include && !include.includes(id)) {
+      debug(`skipping ${id} (not included)`)
+      return false
+    }
+    if (exclude && exclude.includes(id)) {
+      debug(`skipping ${id} (excluded)`)
+      return false
+    }
+    if (link && link.includes(id)) {
+      debug(`skipping ${id} (link)`)
+      return false
+    }
+    if (KNOWN_IGNORE_LIST.has(id)) {
+      debug(`skipping ${id} (internal excluded)`)
+      return false
+    }
+    const pkgInfo = resolveNodeModule(root, id)
+    if (!pkgInfo || !pkgInfo.entryFilePath) {
+      debug(`skipping ${id} (cannot resolve entry)`)
+      console.log(root, id)
+      console.error(
+        chalk.yellow(
+          `[vite] cannot resolve entry for dependency ${chalk.cyan(id)}.`
+        )
+      )
+      return false
+    }
+    const { entryFilePath } = pkgInfo
+    if (!supportedExts.includes(path.extname(entryFilePath))) {
+      debug(`skipping ${id} (entry is not js)`)
+      return false
+    }
+    if (!fs.existsSync(entryFilePath)) {
+      debug(`skipping ${id} (entry file does not exist)`)
+      console.error(
+        chalk.yellow(
+          `[vite] dependency ${id} declares non-existent entry file ${entryFilePath}.`
+        )
+      )
+      return false
+    }
+    const content = fs.readFileSync(entryFilePath, 'utf-8')
+    const [imports, exports] = parse(content)
+    if (!exports.length && !/export\s+\*\s+from/.test(content)) {
+      debug(`optimizing ${id} (no exports, likely commonjs)`)
+      return true
+    }
+    for (const { s, e } of imports) {
+      let i = content.slice(s, e).trim()
+      i = resolver.alias(i) || i
+      if (i.startsWith('.')) {
+        debug(`optimizing ${id} (contains relative imports)`)
+        return true
+      }
+      if (!deps.includes(i)) {
+        debug(`optimizing ${id} (imports sub dependencies)`)
+        return true
+      }
+    }
+    debug(`skipping ${id} (single esm file, doesn't need optimization)`)
+  })
+
+  const preservedDeps = deps
+    .filter((id) => !qualifiedDeps.includes(id))
+    // make sure aliased deps are external
+    // https://github.com/vitejs/vite-plugin-react/issues/4
+    .map((id) => resolver.alias(id) || id)
+
+  return {
+    qualified: qualifiedDeps.reduce((obj, id) => {
+      obj[id] = resolveNodeModule(root, id)!.entryFilePath!
+      return obj
+    }, {} as Record<string, string>),
+    external: preservedDeps
   }
 }
 

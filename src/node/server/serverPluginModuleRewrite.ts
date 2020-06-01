@@ -235,10 +235,11 @@ export const resolveImport = (
   timestamp?: string
 ): string => {
   id = resolver.alias(id) || id
+
   if (bareImportRE.test(id)) {
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
-    return `/@modules/${resolveBareModuleRequest(root, id, importer, resolver)}`
+    id = `/@modules/${resolveBareModuleRequest(root, id, importer, resolver)}`
   } else {
     // 1. relative to absolute
     //    ./foo -> /some/path/foo
@@ -255,18 +256,22 @@ export const resolveImport = (
       query += `?import`
     }
 
-    // 4. force re-fetch dirty imports by appending timestamp
-    if (timestamp) {
-      const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
-      // only rewrite if:
-      if (dirtyFiles && dirtyFiles.has(pathname)) {
-        // 1. this is a marked dirty file (in the import chain of the changed file)
-        query += `${query ? `&` : `?`}t=${timestamp}`
-      } else if (latestVersionsMap.has(pathname)) {
-        // 2. this file was previously hot-updated and has an updated version
-        query += `${query ? `&` : `?`}t=${latestVersionsMap.get(pathname)}`
-      }
-    }
-    return pathname + query
+    id = pathname + query
   }
+
+  // 4. force re-fetch dirty imports by appending timestamp
+  if (timestamp) {
+    const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
+    const cleanId = cleanUrl(id)
+    // only rewrite if:
+    if (dirtyFiles && dirtyFiles.has(cleanId)) {
+      // 1. this is a marked dirty file (in the import chain of the changed file)
+      id += `${id.includes(`?`) ? `&` : `?`}t=${timestamp}`
+    } else if (latestVersionsMap.has(cleanId)) {
+      // 2. this file was previously hot-updated and has an updated version
+      id += `${id.includes(`?`) ? `&` : `?`}t=${latestVersionsMap.get(cleanId)}`
+    }
+  }
+
+  return id
 }

@@ -18,6 +18,10 @@
   version "0.0.0"
   uid ""
 
+"optimize-linked@link:./optimize-linked":
+  version "0.0.0"
+  uid ""
+
 "resolve-browser-field-test-package@link:./resolve-browser-field":
   version "0.0.0"
   uid ""

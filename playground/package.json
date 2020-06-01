@@ -10,6 +10,7 @@
     "moment": "link:../node_modules/moment",
     "normalize.css": "link:../node_modules/normalize.css",
     "resolve-browser-field-test-package": "link:./resolve-browser-field",
-    "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package"
+    "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package",
+    "optimize-linked": "link:./optimize-linked"
   }
 }
