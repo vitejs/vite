@@ -30,7 +30,7 @@
 import { defineAsyncComponent } from 'vue'
 import TestEnv from './TestEnv.vue'
 import TestModuleResolve from './TestModuleResolve.vue'
-import TestHmr from './TestHmr.vue'
+import TestHmr from './TestHmr/TestHmr.vue'
 import TestPostCss from './TestPostCss.vue'
 import TestScopedCss from './TestScopedCss.vue'
 import TestCssModules from './TestCssModules.vue'
