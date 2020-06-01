@@ -17,6 +17,8 @@ export const serveStaticPlugin: ServerPlugin = ({
   watcher
 }) => {
   app.use(async (ctx, next) => {
+    if (ctx.path === '/') return next()
+
     // short circuit requests that have already been explicitly handled
     if (ctx.body || ctx.status !== 404) {
       return
