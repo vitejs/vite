@@ -238,7 +238,7 @@ export const resolveImport = (
   if (bareImportRE.test(id)) {
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
-    return `/@modules/${resolveBareModuleRequest(root, id, importer)}`
+    return `/@modules/${resolveBareModuleRequest(root, id, importer, resolver)}`
   } else {
     // 1. relative to absolute
     //    ./foo -> /some/path/foo

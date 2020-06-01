@@ -226,13 +226,16 @@ const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 export function resolveBareModuleRequest(
   root: string,
   id: string,
-  importer: string
+  importer: string,
+  resolver: InternalResolver
 ): string {
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
     return id
   }
-  const pkgInfo = resolveNodeModule(root, id)
+
+  const basedir = path.dirname(resolver.requestToFile(importer))
+  const pkgInfo = resolveNodeModule(basedir, id)
   if (pkgInfo) {
     if (!pkgInfo.entry) {
       console.error(
@@ -279,7 +282,8 @@ export function resolveOptimizedModule(
   root: string,
   id: string
 ): string | undefined {
-  const cached = viteOptimizedMap.get(id)
+  const cacheKey = `${root}#${id}`
+  const cached = viteOptimizedMap.get(cacheKey)
   if (cached) {
     return cached
   }
@@ -288,7 +292,7 @@ export function resolveOptimizedModule(
   if (!cacheDir) return
   const file = path.join(cacheDir, id)
   if (fs.existsSync(file)) {
-    viteOptimizedMap.set(id, file)
+    viteOptimizedMap.set(cacheKey, file)
     return file
   }
 }
@@ -305,7 +309,8 @@ export function resolveNodeModule(
   root: string,
   id: string
 ): NodeModuleInfo | undefined {
-  const cached = nodeModulesInfoMap.get(id)
+  const cacheKey = `${root}#${id}`
+  const cached = nodeModulesInfoMap.get(cacheKey)
   if (cached) {
     return cached
   }
@@ -374,7 +379,7 @@ export function resolveNodeModule(
       entryFilePath,
       pkg
     }
-    nodeModulesInfoMap.set(id, result)
+    nodeModulesInfoMap.set(cacheKey, result)
     return result
   }
 }
@@ -383,13 +388,14 @@ export function resolveNodeModuleFile(
   root: string,
   id: string
 ): string | undefined {
-  const cached = nodeModulesFileMap.get(id)
+  const cacheKey = `${root}#${id}`
+  const cached = nodeModulesFileMap.get(cacheKey)
   if (cached) {
     return cached
   }
   try {
     const resolved = resolveFrom(root, id)
-    nodeModulesFileMap.set(id, resolved)
+    nodeModulesFileMap.set(cacheKey, resolved)
     return resolved
   } catch (e) {
     // error will be reported downstream
