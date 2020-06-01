@@ -28,7 +28,11 @@ import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'
 import { codegenCss } from './serverPluginCss'
-import { compileCss, rewriteCssUrls } from '../utils/cssUtils'
+import {
+  compileCss,
+  recordCssImportChain,
+  rewriteCssUrls
+} from '../utils/cssUtils'
 import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
@@ -609,9 +613,10 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
+  const resource = filePath + `?type=style&index=${index}`
   const result = (await compileCss(root, publicPath, {
     source: style.content,
-    filename: filePath + `?type=style&index=${index}`,
+    filename: resource,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     vars: style.vars != null,
@@ -619,6 +624,8 @@ async function compileSFCStyle(
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
     preprocessOptions
   })) as SFCStyleCompileResults
+
+  recordCssImportChain(result.dependencies, resource)
 
   if (result.errors.length) {
     console.error(chalk.red(`\n[vite] SFC style compilation error: `))
