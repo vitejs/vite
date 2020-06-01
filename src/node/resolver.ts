@@ -231,7 +231,11 @@ export function resolveBareModuleRequest(
 ): string {
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
-    return id
+    // ensure optimized module requests always ends with `.js` - this is because
+    // optimized deps may import one another and in the built bundle their
+    // relative import paths ends with `.js`. If we don't append `.js` during
+    // rewrites, it may result in duplicated copies of the same dep.
+    return path.extname(id) === '.js' ? id : id + '.js'
   }
 
   let isEntry = false
@@ -265,8 +269,8 @@ export function resolveBareModuleRequest(
               `Prefer importing directly from the module entry:\n` +
               chalk.cyan(`\n  import { ... } from "${depId}" \n\n`) +
               `If the dependency requires deep import to function properly, \n` +
-              `add it to ${chalk.cyan(
-                `optimizeDeps.exclude`
+              `add the deep path to ${chalk.cyan(
+                `optimizeDeps.include`
               )} in vite.config.js.\n`
           )
         )
@@ -293,8 +297,9 @@ export function resolveOptimizedModule(
 
   const cacheDir = resolveOptimizedCacheDir(root)
   if (!cacheDir) return
-  const file = path.join(cacheDir, id + '.js')
-  if (fs.existsSync(file)) {
+  if (!path.extname(id)) id += '.js'
+  const file = path.join(cacheDir, id)
+  if (fs.existsSync(file) && fs.statSync(file).isFile()) {
     viteOptimizedMap.set(cacheKey, file)
     return file
   }

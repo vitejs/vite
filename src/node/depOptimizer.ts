@@ -8,7 +8,8 @@ import {
   createResolver,
   supportedExts,
   resolveNodeModule,
-  InternalResolver
+  InternalResolver,
+  resolveNodeModuleFile
 } from './resolver'
 import { createBaseRollupPlugins, onRollupWarning } from './build'
 import { lookupFile, resolveFrom } from './utils'
@@ -30,7 +31,7 @@ const KNOWN_IGNORE_LIST = new Set([
 
 export interface DepOptimizationOptions {
   /**
-   * Only optimize explicitly listed dependencies.
+   * Force optimize listed dependencies (supports deep paths).
    */
   include?: string[]
   /**
@@ -102,7 +103,7 @@ export async function optimizeDeps(
   // 2. Has imports to bare modules that are not in the project's own deps
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
   await init
-  const { qualified, external } = filterDeps(root, options, resolver)
+  const { qualified, external } = resolveQualifiedDeps(root, options, resolver)
 
   // Resolve deps from linked packages in a monorepo
   if (options.link) {
@@ -110,14 +111,14 @@ export async function optimizeDeps(
       const depRoot = path.dirname(
         resolveFrom(root, `${linkedDep}/package.json`)
       )
-      const { qualified: q, external: e } = filterDeps(
+      const { qualified: q, external: e } = resolveQualifiedDeps(
         depRoot,
         options,
         resolver
       )
-      Object.keys(q).forEach((key) => {
-        if (!qualified[key]) {
-          qualified[key] = q[key]
+      Object.keys(q).forEach((id) => {
+        if (!qualified[id]) {
+          qualified[id] = q[id]
         }
       })
       e.forEach((id) => {
@@ -125,6 +126,21 @@ export async function optimizeDeps(
           external.push(id)
         }
       })
+    })
+  }
+
+  // Force included deps - these can also be deep paths
+  if (options.include) {
+    options.include.forEach((id) => {
+      const pkg = resolveNodeModule(root, id)
+      if (pkg && pkg.entryFilePath) {
+        qualified[id] = pkg.entryFilePath
+      } else {
+        const filePath = resolveNodeModuleFile(root, id)
+        if (filePath) {
+          qualified[id] = filePath
+        }
+      }
     })
   }
 
@@ -252,7 +268,7 @@ interface FilteredDeps {
   external: string[]
 }
 
-function filterDeps(
+function resolveQualifiedDeps(
   root: string,
   options: DepOptimizationOptions,
   resolver: InternalResolver
@@ -269,8 +285,8 @@ function filterDeps(
   const pkg = JSON.parse(pkgContent)
   const deps = Object.keys(pkg.dependencies || {})
   const qualifiedDeps = deps.filter((id) => {
-    if (include && !include.includes(id)) {
-      debug(`skipping ${id} (not included)`)
+    if (include && include.includes(id)) {
+      // already force included
       return false
     }
     if (exclude && exclude.includes(id)) {
@@ -331,18 +347,21 @@ function filterDeps(
     debug(`skipping ${id} (single esm file, doesn't need optimization)`)
   })
 
-  const preservedDeps = deps
+  const qualified: Record<string, string> = {}
+  qualifiedDeps.forEach((id) => {
+    qualified[id] = resolveNodeModule(root, id)!.entryFilePath!
+  })
+
+  // mark non-optimized deps as external
+  const external = deps
     .filter((id) => !qualifiedDeps.includes(id))
     // make sure aliased deps are external
     // https://github.com/vitejs/vite-plugin-react/issues/4
     .map((id) => resolver.alias(id) || id)
 
   return {
-    qualified: qualifiedDeps.reduce((obj, id) => {
-      obj[id] = resolveNodeModule(root, id)!.entryFilePath!
-      return obj
-    }, {} as Record<string, string>),
-    external: preservedDeps
+    qualified,
+    external
   }
 }
 
