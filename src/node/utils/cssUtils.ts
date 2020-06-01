@@ -107,20 +107,13 @@ export async function compileCss(
     postcssPlugins
   })
 
-  // record css import dependencies
-  if (res.rawResult) {
-    res.rawResult.messages.forEach((msg) => {
-      let { type, file, parent } = msg
-      if (type === 'dependency') {
-        if (cssImportMap.has(file)) {
-          cssImportMap.get(file)!.add(parent)
-        } else {
-          cssImportMap.set(file, new Set([parent]))
-        }
-      }
-    })
-  }
-
+  res.dependencies.forEach((dependency) => {
+    if (cssImportMap.has(dependency)) {
+      cssImportMap.get(dependency)!.add(filename)
+    } else {
+      cssImportMap.set(dependency, new Set([filename]))
+    }
+  })
   return res
 }
 

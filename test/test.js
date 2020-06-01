@@ -418,6 +418,29 @@ describe('vite', () => {
       }
     })
 
+    test('CSS preprocessor @import', async () => {
+      const el = await page.$('.script-scss-at-import')
+      expect(await getComputedColor(el)).toBe('rgb(0, 128, 0)')
+      if (!isBuild) {
+        await updateFile('css-@import/testScss.imported.scss', (content) =>
+          content.replace('green', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+      }
+    })
+
+    test('SFC <style lang="sass"> w/ @import', async () => {
+      const el = await page.$('.sfc-style-scss-at-import')
+      expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
+      if (!isBuild) {
+        await updateFile(
+          'css-@import/testSCssAtImportFromStyle.scss',
+          (content) => content.replace('red', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+      }
+    })
+
     test('import *.module.css', async () => {
       const el = await page.$('.css-modules-import')
       expect(await getComputedColor(el)).toBe('rgb(255, 140, 0)')
