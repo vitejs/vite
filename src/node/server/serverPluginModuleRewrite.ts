@@ -76,7 +76,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
         // (.e.g import(runtimePathString))
         // so we need to normalize importer to ensure it contains extension before we perform hmr analysis.
         // on the other hand, static import is guaranteed to have extension
-        // because they must all have gone through module rewrite)
+        // because they must all have gone through module rewrite.
         const importer = resolver.fileToRequest(
           resolver.requestToFile(ctx.path)
         )
