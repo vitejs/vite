@@ -35,13 +35,16 @@ export const serveStaticPlugin: ServerPlugin = ({
     }
 
     // handle possible user request -> file aliases
-    const filePath = resolver.requestToFile(ctx.path)
-    if (
-      filePath !== ctx.path &&
-      fs.existsSync(filePath) &&
-      fs.statSync(filePath).isFile()
-    ) {
-      await cachedRead(ctx, filePath)
+    const expectsHtml = ctx.headers.accept.includes('text/html')
+    if (!expectsHtml) {
+      const filePath = resolver.requestToFile(ctx.path)
+      if (
+        filePath !== ctx.path &&
+        fs.existsSync(filePath) &&
+        fs.statSync(filePath).isFile()
+      ) {
+        await cachedRead(ctx, filePath)
+      }
     }
     return next()
   })
