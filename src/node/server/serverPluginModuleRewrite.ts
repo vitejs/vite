@@ -72,10 +72,18 @@ export const moduleRewritePlugin: ServerPlugin = ({
         ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
+        // dynamic import may conatin extension-less path,
+        // (.e.g import(runtimePathString))
+        // so we need to normalize importer to ensure it contains extension before we perform hmr analysis.
+        // on the other hand, static import is guaranteed to have extension
+        // because they must all have gone through module rewrite)
+        const importer = resolver.fileToRequest(
+          resolver.requestToFile(ctx.path)
+        )
         ctx.body = rewriteImports(
           root,
           content!,
-          ctx.path,
+          importer,
           resolver,
           ctx.query.t
         )
