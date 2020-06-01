@@ -8,6 +8,7 @@
     "bootstrap": "link:../node_modules/bootstrap",
     "lodash-es": "link:../node_modules/lodash-es",
     "moment": "link:../node_modules/moment",
+    "normalize.css": "link:../node_modules/normalize.css",
     "resolve-browser-field-test-package": "link:./resolve-browser-field",
     "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package"
   }

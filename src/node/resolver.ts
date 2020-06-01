@@ -234,6 +234,7 @@ export function resolveBareModuleRequest(
     return id
   }
 
+  let isEntry = false
   const basedir = path.dirname(resolver.requestToFile(importer))
   const pkgInfo = resolveNodeModule(basedir, id)
   if (pkgInfo) {
@@ -244,14 +245,16 @@ export function resolveBareModuleRequest(
             `package.json.`
         )
       )
+    } else {
+      isEntry = true
+      id = pkgInfo.entry
     }
-    return pkgInfo.entry || id
   }
 
   // check and warn deep imports on optimized modules
   const ext = path.extname(id)
   if (!ext || jsSrcRE.test(ext)) {
-    const deepMatch = id.match(deepImportRE)
+    const deepMatch = !isEntry && id.match(deepImportRE)
     if (deepMatch) {
       const depId = deepMatch[1] || deepMatch[2]
       if (resolveOptimizedModule(root, depId)) {

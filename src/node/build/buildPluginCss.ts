@@ -84,13 +84,13 @@ export const createBuildCssPlugin = (
         return {
           code: modules
             ? `export default ${JSON.stringify(modules)}`
-            : cssCodeSplit
-            ? // If code-splitting CSS, inject a fake marker to avoid the module
-              // from being tree-shaken. This preserves the .css file as a
-              // module in the chunk's metadata so that we can retrive them in
-              // renderChunk.
-              `${cssInjectionMarker}()\n`
-            : ``,
+            : (cssCodeSplit
+                ? // If code-splitting CSS, inject a fake marker to avoid the module
+                  // from being tree-shaken. This preserves the .css file as a
+                  // module in the chunk's metadata so that we can retrive them in
+                  // renderChunk.
+                  `${cssInjectionMarker}()\n`
+                : ``) + `export default ${JSON.stringify(css)}`,
           map: null
         }
       }
