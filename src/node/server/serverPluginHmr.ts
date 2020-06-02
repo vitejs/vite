@@ -191,6 +191,14 @@ export const hmrPlugin: ServerPlugin = ({
       }
     } else {
       debugHmr(`no importers for ${publicPath}.`)
+      // bust sw cache anyway since this may be a full dynamic import.
+      if (config.serviceWorker) {
+        send({
+          type: 'sw-bust-cache',
+          path: publicPath,
+          timestamp
+        })
+      }
     }
   })
 

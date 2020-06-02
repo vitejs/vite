@@ -36,19 +36,23 @@ sw.addEventListener('activate', (e) => {
   )
 })
 
+const extRe = /(\bindex)?\.\w+$/
+
 sw.addEventListener('message', async (e) => {
   if (e.data.type === 'bust-cache') {
     // console.log(`[vite:sw] busted cache for ${e.data.path}`)
+    const path = e.data.path
     const userCache = await caches.open(USER_CACHE_NAME)
     const depsCache = await caches.open(DEPS_CACHE_NAME)
-    userCache.delete(e.data.path)
-    depsCache.delete(e.data.path)
+    userCache.delete(path)
+    depsCache.delete(path)
 
-    // also bust the cache for index.html short paths
-    if (e.data.path.endsWith('/index.html')) {
-      const slashPath = e.data.path.replace(/index\.html$/, '')
-      userCache.delete(slashPath)
-      depsCache.delete(slashPath)
+    // also bust cache for extension-less paths - this happens when the user
+    // has non-statically-analyzable dynamic import paths.
+    if (extRe.test(path)) {
+      const cleanPath = path.replace(extRe, '')
+      userCache.delete(cleanPath)
+      depsCache.delete(cleanPath)
     }
 
     // notify the client that cache has been busted
