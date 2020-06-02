@@ -6,7 +6,12 @@ import { supportedExts } from '../resolver'
 import { Context } from '../server'
 
 export const resolveFrom = (root: string, id: string) =>
-  resolve.sync(id, { basedir: root, extensions: supportedExts })
+  resolve.sync(id, {
+    basedir: root,
+    extensions: supportedExts,
+    // necessary to work with pnpm
+    preserveSymlinks: false
+  })
 
 export const queryRE = /\?.*$/
 export const hashRE = /#.*$/

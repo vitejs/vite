@@ -29,7 +29,6 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
-import { moduleRE } from './serverPluginModuleResolve'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -236,44 +235,43 @@ export const resolveImport = (
   timestamp?: string
 ): string => {
   id = resolver.alias(id) || id
+
   if (bareImportRE.test(id)) {
     // directly resolve bare module names to its entry path so that relative
     // imports from it (including source map urls) can work correctly
-    return `/@modules/${resolveBareModuleRequest(root, id, importer)}`
+    id = `/@modules/${resolveBareModuleRequest(root, id, importer, resolver)}`
   } else {
     // 1. relative to absolute
     //    ./foo -> /some/path/foo
     let { pathname, query } = resolveRelativeRequest(importer, id)
 
-    // 2. if this is a relative import between files under /@modules/, preserve
-    // them as-is
-    if (moduleRE.test(pathname)) {
-      return pathname
-    }
-
-    // 3. resolve extensions.
+    // 2. resolve extensions.
     const ext = resolver.resolveExt(pathname)
-    if (ext) {
+    if (ext && ext !== path.extname(pathname)) {
       pathname = path.posix.normalize(pathname + ext)
     }
 
-    // 4. mark non-src imports
+    // 3. mark non-src imports
     if (!query && path.extname(pathname) && !jsSrcRE.test(pathname)) {
       query += `?import`
     }
 
-    // 5. force re-fetch dirty imports by appending timestamp
-    if (timestamp) {
-      const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
-      // only rewrite if:
-      if (dirtyFiles && dirtyFiles.has(pathname)) {
-        // 1. this is a marked dirty file (in the import chain of the changed file)
-        query += `${query ? `&` : `?`}t=${timestamp}`
-      } else if (latestVersionsMap.has(pathname)) {
-        // 2. this file was previously hot-updated and has an updated version
-        query += `${query ? `&` : `?`}t=${latestVersionsMap.get(pathname)}`
-      }
-    }
-    return pathname + query
+    id = pathname + query
   }
+
+  // 4. force re-fetch dirty imports by appending timestamp
+  if (timestamp) {
+    const dirtyFiles = hmrDirtyFilesMap.get(timestamp)
+    const cleanId = cleanUrl(id)
+    // only rewrite if:
+    if (dirtyFiles && dirtyFiles.has(cleanId)) {
+      // 1. this is a marked dirty file (in the import chain of the changed file)
+      id += `${id.includes(`?`) ? `&` : `?`}t=${timestamp}`
+    } else if (latestVersionsMap.has(cleanId)) {
+      // 2. this file was previously hot-updated and has an updated version
+      id += `${id.includes(`?`) ? `&` : `?`}t=${latestVersionsMap.get(cleanId)}`
+    }
+  }
+
+  return id
 }

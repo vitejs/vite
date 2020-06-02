@@ -1,12 +1,12 @@
 declare interface ImportMeta {
-  hot: {
-    data: any
+  readonly hot?: {
+    readonly data: any
 
     accept(): void
     accept(cb: (mod: any) => void): void
 
     acceptDeps(dep: string, cb: (mod: any) => void): void
-    acceptDeps(deps: string[], cb: (mods: any[]) => void): void
+    acceptDeps(deps: readonly string[], cb: (mods: any[]) => void): void
 
     dispose(cb: (data: any) => void): void
     decline(): void

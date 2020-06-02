@@ -16,6 +16,9 @@
   <div class="browser-field-resolve" :class="browserFieldResolve">
     resolve browser field in package.json: {{ browserFieldResolve }}
   </div>
+  <div class="css-entry-resolve" :class="cssEntry">
+    resolve dep w/ css entry point: {{ cssEntry }}
+  </div>
 </template>
 
 <script>
@@ -25,6 +28,7 @@ import { add } from 'lodash-es'
 import { foo } from './util'
 import { bar } from './util/bar.util'
 import value from 'resolve-browser-field-test-package'
+import css from 'normalize.css'
 
 export default {
   setup() {
@@ -34,7 +38,8 @@ export default {
       optResolve: typeof add === 'function' ? 'ok' : 'error',
       indexResolve: foo() ? 'ok' : 'error',
       dotResolve: bar() ? 'ok' : 'error',
-      browserFieldResolve: value === 'success' ? 'ok' : 'error'
+      browserFieldResolve: value === 'success' ? 'ok' : 'error',
+      cssEntry: typeof css === 'string' ? 'ok' : 'error'
     }
   }
 }

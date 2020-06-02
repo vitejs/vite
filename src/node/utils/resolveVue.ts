@@ -74,16 +74,23 @@ export function resolveVue(root: string): ResolvedVuePaths {
     compilerPath = require.resolve('@vue/compiler-sfc')
   }
 
-  const resolvePath = (name: string) =>
-    resolveFrom(vueBasePath, `@vue/${name}/dist/${name}.esm-bundler.js`)
+  const resolvePath = (name: string, from: string) =>
+    resolveFrom(from, `@vue/${name}/dist/${name}.esm-bundler.js`)
+
+  // resolve nested dependencies with correct base dirs so that this works with
+  // strict package managers - e.g. pnpm / yarn 2
+  const runtimeDomPath = resolvePath('runtime-dom', vueBasePath!)
+  const runtimeCorePath = resolvePath('runtime-core', runtimeDomPath)
+  const reactivityPath = resolvePath('reactivity', runtimeCorePath)
+  const sharedPath = resolvePath('shared', runtimeCorePath)
 
   resolved = {
     version: vueVersion!,
-    vue: resolvePath('runtime-dom'),
-    '@vue/runtime-dom': resolvePath('runtime-dom'),
-    '@vue/runtime-core': resolvePath('runtime-core'),
-    '@vue/reactivity': resolvePath('reactivity'),
-    '@vue/shared': resolvePath('shared'),
+    vue: runtimeDomPath,
+    '@vue/runtime-dom': runtimeDomPath,
+    '@vue/runtime-core': runtimeCorePath,
+    '@vue/reactivity': reactivityPath,
+    '@vue/shared': sharedPath,
     compiler: compilerPath,
     isLocal
   }

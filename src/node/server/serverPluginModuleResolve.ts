@@ -18,7 +18,7 @@ const getDebugPath = (root: string, p: string) => {
 }
 
 // plugin for resolving /@modules/:id requests.
-export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
+export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
   const vueResolved = resolveVue(root)
 
   app.use(async (ctx, next) => {
@@ -54,16 +54,26 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, watcher }) => {
       return serve(id, optimized, 'optimized')
     }
 
-    const nodeModulePath = resolveNodeModuleFile(root, id)
+    const referer = ctx.get('referer')
+    let importer: string | undefined
+    if (referer) {
+      importer = new URL(referer).pathname
+    } else if (ctx.path.endsWith('.map')) {
+      // for some reason Chrome doesn't provide referer for source map requests.
+      // do our best to reverse-infer the importer.
+      importer = ctx.path.replace(/\.map$/, '')
+    }
+
+    const importerFilePath = importer ? resolver.requestToFile(importer) : root
+    const nodeModulePath = resolveNodeModuleFile(importerFilePath, id)
     if (nodeModulePath) {
       return serve(id, nodeModulePath, 'node_modules')
     }
 
-    const importer = new URL(ctx.get('referer')).pathname
     console.error(
       chalk.red(
         `[vite] Failed to resolve module import "${id}". ` +
-          `(imported by ${importer})`
+          `(imported by ${importer || 'unknown'})`
       )
     )
     ctx.status = 404

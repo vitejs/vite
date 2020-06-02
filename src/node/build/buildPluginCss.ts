@@ -10,6 +10,7 @@ import {
   rewriteCssUrls
 } from '../utils/cssUtils'
 import { SFCStyleCompileResults } from '@vue/compiler-sfc'
+import chalk from 'chalk'
 
 const debug = require('debug')('vite:build:css')
 
@@ -83,13 +84,13 @@ export const createBuildCssPlugin = (
         return {
           code: modules
             ? `export default ${JSON.stringify(modules)}`
-            : cssCodeSplit
-            ? // If code-splitting CSS, inject a fake marker to avoid the module
-              // from being tree-shaken. This preserves the .css file as a
-              // module in the chunk's metadata so that we can retrive them in
-              // renderChunk.
-              `${cssInjectionMarker}()\n`
-            : ``,
+            : (cssCodeSplit
+                ? // If code-splitting CSS, inject a fake marker to avoid the module
+                  // from being tree-shaken. This preserves the .css file as a
+                  // module in the chunk's metadata so that we can retrive them in
+                  // renderChunk.
+                  `${cssInjectionMarker}()\n`
+                : ``) + `export default ${JSON.stringify(css)}`,
           map: null
         }
       }
@@ -109,7 +110,7 @@ export const createBuildCssPlugin = (
             styles.delete(id) // remove inlined css
           }
         }
-        chunkCSS = await minifyCSS(chunkCSS)
+        chunkCSS = minifyCSS(chunkCSS)
         let isFirst = true
         code = code.replace(cssInjectionRE, () => {
           if (isFirst) {
@@ -141,7 +142,7 @@ export const createBuildCssPlugin = (
       })
       // minify with cssnano
       if (minify) {
-        css = await minifyCSS(css)
+        css = minifyCSS(css)
       }
 
       const cssFileName = `style.${hash_sum(css)}.css`
@@ -158,11 +159,21 @@ export const createBuildCssPlugin = (
   }
 }
 
-let postcss: any
-let cssnano: any
+let CleanCSS: any
 
-async function minifyCSS(css: string) {
-  postcss = postcss || require('postcss')
-  cssnano = cssnano || require('cssnano')
-  return (await postcss(cssnano).process(css, { from: undefined })).css
+function minifyCSS(css: string) {
+  CleanCSS = CleanCSS || require('clean-css')
+  const res = new CleanCSS({ level: 2, rebase: false }).minify(css)
+
+  if (res.errors && res.errors.length) {
+    console.error(chalk.red(`[vite] error when minifying css:`))
+    console.error(res.errors)
+  }
+
+  if (res.warnings && res.warnings.length) {
+    console.error(chalk.yellow(`[vite] warnings when minifying css:`))
+    console.error(res.warnings)
+  }
+
+  return res.styles
 }

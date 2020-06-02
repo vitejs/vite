@@ -42,6 +42,7 @@ beforeAll(async () => {
     filter: (file) => !/dist|node_modules/.test(file)
   })
   await execa('yarn', { cwd: tempDir })
+  await execa('yarn', { cwd: path.join(tempDir, 'optimize-linked') })
 })
 
 afterAll(async () => {
@@ -108,6 +109,7 @@ describe('vite', () => {
       expect(await getText('.index-resolve')).toMatch('ok')
       expect(await getText('.dot-resolve')).toMatch('ok')
       expect(await getText('.browser-field-resolve')).toMatch('ok')
+      expect(await getText('.css-entry-resolve')).toMatch('ok')
     })
 
     if (!isBuild) {
@@ -399,6 +401,18 @@ describe('vite', () => {
       )
     })
 
+    test('monorepo support', async () => {
+      // linked dep + optimizing linked dep
+      expect(await getText(`.optimize-linked`)).toMatch(`ok`)
+      if (!isBuild) {
+        // test hmr in linked dep
+        await updateFile(`optimize-linked/index.js`, (c) =>
+          c.replace(`foo()`, `123`)
+        )
+        await expectByPolling(() => getText(`.optimize-linked`), 'error')
+      }
+    })
+    
     if (!isBuild) {
       test('SFC custom blocks', async () => {
         expect(await getText('.custom-block')).toBe('hello,vite!')

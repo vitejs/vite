@@ -168,7 +168,7 @@ export function createResolver(
     const ext = resolveExt(resolved)
     const result = {
       filePath: ext ? resolved + ext : resolved,
-      ext
+      ext: ext || path.extname(resolved)
     }
     requestToFileCache.set(publicPath, result)
     return result
@@ -226,13 +226,21 @@ const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 export function resolveBareModuleRequest(
   root: string,
   id: string,
-  importer: string
+  importer: string,
+  resolver: InternalResolver
 ): string {
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
-    return id
+    // ensure optimized module requests always ends with `.js` - this is because
+    // optimized deps may import one another and in the built bundle their
+    // relative import paths ends with `.js`. If we don't append `.js` during
+    // rewrites, it may result in duplicated copies of the same dep.
+    return path.extname(id) === '.js' ? id : id + '.js'
   }
-  const pkgInfo = resolveNodeModule(root, id)
+
+  let isEntry = false
+  const basedir = path.dirname(resolver.requestToFile(importer))
+  const pkgInfo = resolveNodeModule(basedir, id)
   if (pkgInfo) {
     if (!pkgInfo.entry) {
       console.error(
@@ -241,14 +249,16 @@ export function resolveBareModuleRequest(
             `package.json.`
         )
       )
+    } else {
+      isEntry = true
+      id = pkgInfo.entry
     }
-    return pkgInfo.entry || id
   }
 
   // check and warn deep imports on optimized modules
   const ext = path.extname(id)
   if (!ext || jsSrcRE.test(ext)) {
-    const deepMatch = id.match(deepImportRE)
+    const deepMatch = !isEntry && id.match(deepImportRE)
     if (deepMatch) {
       const depId = deepMatch[1] || deepMatch[2]
       if (resolveOptimizedModule(root, depId)) {
@@ -259,8 +269,8 @@ export function resolveBareModuleRequest(
               `Prefer importing directly from the module entry:\n` +
               chalk.cyan(`\n  import { ... } from "${depId}" \n\n`) +
               `If the dependency requires deep import to function properly, \n` +
-              `add it to ${chalk.cyan(
-                `optimizeDeps.exclude`
+              `add the deep path to ${chalk.cyan(
+                `optimizeDeps.include`
               )} in vite.config.js.\n`
           )
         )
@@ -279,16 +289,18 @@ export function resolveOptimizedModule(
   root: string,
   id: string
 ): string | undefined {
-  const cached = viteOptimizedMap.get(id)
+  const cacheKey = `${root}#${id}`
+  const cached = viteOptimizedMap.get(cacheKey)
   if (cached) {
     return cached
   }
 
   const cacheDir = resolveOptimizedCacheDir(root)
   if (!cacheDir) return
+  if (!path.extname(id)) id += '.js'
   const file = path.join(cacheDir, id)
-  if (fs.existsSync(file)) {
-    viteOptimizedMap.set(id, file)
+  if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+    viteOptimizedMap.set(cacheKey, file)
     return file
   }
 }
@@ -305,7 +317,8 @@ export function resolveNodeModule(
   root: string,
   id: string
 ): NodeModuleInfo | undefined {
-  const cached = nodeModulesInfoMap.get(id)
+  const cacheKey = `${root}#${id}`
+  const cached = nodeModulesInfoMap.get(cacheKey)
   if (cached) {
     return cached
   }
@@ -374,7 +387,7 @@ export function resolveNodeModule(
       entryFilePath,
       pkg
     }
-    nodeModulesInfoMap.set(id, result)
+    nodeModulesInfoMap.set(cacheKey, result)
     return result
   }
 }
@@ -383,13 +396,14 @@ export function resolveNodeModuleFile(
   root: string,
   id: string
 ): string | undefined {
-  const cached = nodeModulesFileMap.get(id)
+  const cacheKey = `${root}#${id}`
+  const cached = nodeModulesFileMap.get(cacheKey)
   if (cached) {
     return cached
   }
   try {
     const resolved = resolveFrom(root, id)
-    nodeModulesFileMap.set(id, resolved)
+    nodeModulesFileMap.set(cacheKey, resolved)
     return resolved
   } catch (e) {
     // error will be reported downstream

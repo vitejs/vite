@@ -13,7 +13,8 @@ const config: UserConfig = {
   plugins: [jsPlugin],
   configureServer: [i18nServerPlugin],
   optimizeDeps: {
-    exclude: ['bootstrap']
+    exclude: ['bootstrap'],
+    link: ['optimize-linked']
   }
 }
 

@@ -166,8 +166,10 @@ async function updateModule(
   const mod = hotModulesMap.get(id)
   if (!mod) {
     console.error(
-      `[vite] got js update notification but no client callback was registered. Something is wrong.`
+      `[vite] got js update notification for "${id}" but no client callback ` +
+        `was registered. Something is wrong.`
     )
+    console.error(hotModulesMap)
     return
   }
 

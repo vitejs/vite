@@ -1,3 +1,21 @@
+## [0.19.3](https://github.com/vuejs/vite/compare/v0.19.2...v0.19.3) (2020-05-31)
+
+
+### Bug Fixes
+
+* perform vue resolution with strict basedir ([e3f0364](https://github.com/vuejs/vite/commit/e3f0364269dea501fbc1c8e26b7d27c5f55ccbfe))
+
+
+
+## [0.19.2](https://github.com/vuejs/vite/compare/v0.19.1...v0.19.2) (2020-05-31)
+
+
+### Bug Fixes
+
+* fix rewrite extension resolving for relative imports under [@module](https://github.com/module) ([34c9233](https://github.com/vuejs/vite/commit/34c92338ba3f6631e22a8d4ef34927ad5f1c2f8b))
+
+
+
 ## [0.19.1](https://github.com/vuejs/vite/compare/v0.19.0...v0.19.1) (2020-05-31)
 
 
