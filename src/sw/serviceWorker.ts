@@ -39,8 +39,18 @@ sw.addEventListener('activate', (e) => {
 sw.addEventListener('message', async (e) => {
   if (e.data.type === 'bust-cache') {
     // console.log(`[vite:sw] busted cache for ${e.data.path}`)
-    ;(await caches.open(USER_CACHE_NAME)).delete(e.data.path)
-    ;(await caches.open(DEPS_CACHE_NAME)).delete(e.data.path)
+    const userCache = await caches.open(USER_CACHE_NAME)
+    const depsCache = await caches.open(DEPS_CACHE_NAME)
+    userCache.delete(e.data.path)
+    depsCache.delete(e.data.path)
+
+    // also bust the cache for index.html short paths
+    if (e.data.path.endsWith('/index.html')) {
+      const slashPath = e.data.path.replace(/index\.html$/, '')
+      userCache.delete(slashPath)
+      depsCache.delete(slashPath)
+    }
+
     // notify the client that cache has been busted
     e.ports[0].postMessage({
       busted: true
