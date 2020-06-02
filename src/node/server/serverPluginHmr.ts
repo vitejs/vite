@@ -150,43 +150,47 @@ export const hmrPlugin: ServerPlugin = ({
     }
 
     const publicPath = resolver.fileToRequest(filePath)
-    const importers = ensureMapEntry(importerMap, publicPath)
-    const hmrBoundaries = new Set<string>()
-    const dirtyFiles = new Set<string>()
-    dirtyFiles.add(publicPath)
+    const importers = importerMap.get(publicPath)
+    if (importers || isHmrAccepted(publicPath, publicPath)) {
+      const hmrBoundaries = new Set<string>()
+      const dirtyFiles = new Set<string>()
+      dirtyFiles.add(publicPath)
 
-    const hasDeadEnd = walkImportChain(
-      publicPath,
-      importers,
-      hmrBoundaries,
-      dirtyFiles
-    )
+      const hasDeadEnd = walkImportChain(
+        publicPath,
+        importers || new Set(),
+        hmrBoundaries,
+        dirtyFiles
+      )
 
-    // record dirty files - this is used when HMR requests coming in with
-    // timestamp to determine what files need to be force re-fetched
-    hmrDirtyFilesMap.set(String(timestamp), dirtyFiles)
+      // record dirty files - this is used when HMR requests coming in with
+      // timestamp to determine what files need to be force re-fetched
+      hmrDirtyFilesMap.set(String(timestamp), dirtyFiles)
 
-    const relativeFile = '/' + slash(path.relative(root, filePath))
-    if (hasDeadEnd) {
-      send({
-        type: 'full-reload',
-        path: publicPath,
-        timestamp
-      })
-      console.log(chalk.green(`[vite] `) + `page reloaded.`)
-    } else {
-      hmrBoundaries.forEach((boundary) => {
-        console.log(
-          chalk.green(`[vite:hmr] `) +
-            `${boundary} updated due to change in ${relativeFile}.`
-        )
+      const relativeFile = '/' + slash(path.relative(root, filePath))
+      if (hasDeadEnd) {
         send({
-          type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
-          path: boundary,
-          changeSrcPath: publicPath,
+          type: 'full-reload',
+          path: publicPath,
           timestamp
         })
-      })
+        console.log(chalk.green(`[vite] `) + `page reloaded.`)
+      } else {
+        hmrBoundaries.forEach((boundary) => {
+          console.log(
+            chalk.green(`[vite:hmr] `) +
+              `${boundary} updated due to change in ${relativeFile}.`
+          )
+          send({
+            type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
+            path: boundary,
+            changeSrcPath: publicPath,
+            timestamp
+          })
+        })
+      }
+    } else {
+      debugHmr(`no importers for ${publicPath}.`)
     }
   })
 
@@ -365,6 +369,7 @@ export function rewriteFileWithHMR(
           // self accepting
           // import.meta.hot.accept() OR import.meta.hot.accept(() => {})
           ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
+          debugHmr(`${importer} self accepts`)
         } else {
           console.error(
             chalk.yellow(
