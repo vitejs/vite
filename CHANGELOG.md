@@ -1,3 +1,12 @@
+## [0.20.2](https://github.com/vuejs/vite/compare/v0.20.1...v0.20.2) (2020-06-02)
+
+
+### Bug Fixes
+
+* inject global preambles without breaking doctype ([c400d2a](https://github.com/vuejs/vite/commit/c400d2a7e79eb4c493dc91e67751acca8756459b)), closes [#221](https://github.com/vuejs/vite/issues/221)
+
+
+
 ## [0.20.1](https://github.com/vuejs/vite/compare/v0.20.0...v0.20.1) (2020-06-02)
 
 
