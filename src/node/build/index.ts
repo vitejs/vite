@@ -76,7 +76,11 @@ export async function createBaseRollupPlugins(
   resolver: InternalResolver,
   options: BuildConfig
 ): Promise<Plugin[]> {
-  const { rollupInputOptions = {}, transforms = [] } = options
+  const {
+    rollupInputOptions = {},
+    transforms = [],
+    vueCustomBlockTransforms = {}
+  } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
 
   return [
@@ -100,7 +104,8 @@ export async function createBaseRollupPlugins(
           `${local}_${hash_sum(filename)}`,
         ...(options.rollupPluginVueOptions &&
           options.rollupPluginVueOptions.cssModulesOptions)
-      }
+      },
+      customBlocks: Object.keys(vueCustomBlockTransforms)
     }),
     require('@rollup/plugin-json')({
       preferConst: true,
@@ -109,7 +114,9 @@ export async function createBaseRollupPlugins(
       namedExports: true
     }),
     // user transforms
-    ...(transforms.length ? [createBuildJsTransformPlugin(transforms)] : []),
+    ...(transforms.length || Object.keys(vueCustomBlockTransforms).length
+      ? [createBuildJsTransformPlugin(transforms, vueCustomBlockTransforms)]
+      : []),
     nodeResolve({
       rootDir: root,
       extensions: supportedExts,

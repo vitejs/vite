@@ -1,3 +1,4 @@
+import qs from 'querystring'
 import chalk from 'chalk'
 import path from 'path'
 import { Context, ServerPlugin } from '.'
@@ -43,6 +44,7 @@ interface CacheEntry {
   template?: string
   script?: string
   styles: SFCStyleCompileResults[]
+  customs: string[]
 }
 
 export const vueCache = new LRUCache<string, CacheEntry>({
@@ -138,7 +140,22 @@ export const vuePlugin: ServerPlugin = ({
       return etagCacheCheck(ctx)
     }
 
-    // TODO custom blocks
+    if (query.type === 'custom') {
+      const index = Number(query.index)
+      const customBlock = descriptor.customBlocks[index]
+      if (customBlock.src) {
+        filePath = await resolveSrcImport(root, customBlock, ctx, resolver)
+      }
+      const result = resolveCustomBlock(
+        customBlock,
+        index,
+        filePath,
+        publicPath
+      )
+      ctx.type = 'js'
+      ctx.body = result
+      return etagCacheCheck(ctx)
+    }
   })
 
   const handleVueReload = (watcher.handleVueReload = async (
@@ -231,6 +248,20 @@ export const vuePlugin: ServerPlugin = ({
         timestamp
       })
     })
+
+    const prevCustoms = prevDescriptor.customBlocks || []
+    const nextCustoms = descriptor.customBlocks || []
+
+    // custom blocks update causes a reload
+    // because the custom block contents is changed and it may be used in JS.
+    if (
+      nextCustoms.some(
+        (_, i) =>
+          !prevCustoms[i] || !isEqualBlock(prevCustoms[i], nextCustoms[i])
+      )
+    ) {
+      return sendReload()
+    }
 
     if (needRerender) {
       send({
@@ -346,7 +377,7 @@ async function parseSFC(
     })
   }
 
-  cached = cached || { styles: [] }
+  cached = cached || { styles: [], customs: [] }
   cached.descriptor = descriptor
   vueCache.set(filePath, cached)
   debug(`${filePath} parsed in ${Date.now() - start}ms.`)
@@ -413,6 +444,18 @@ async function compileSFCMain(
     }
   }
 
+  if (descriptor.customBlocks) {
+    descriptor.customBlocks.forEach((c, i) => {
+      const attrsQuery = attrsToQuery(c.attrs, c.lang)
+      const blockTypeQuery = `&blockType=${qs.escape(c.type)}`
+      let customRequest =
+        publicPath + `?type=custom&index=${i}${blockTypeQuery}${attrsQuery}`
+      const customVar = `block${i}`
+      code += `\nimport ${customVar} from ${JSON.stringify(customRequest)}\n`
+      code += `if (typeof ${customVar} === 'function') ${customVar}(__script)\n`
+    })
+  }
+
   if (descriptor.template) {
     const templateRequest = publicPath + `?type=template`
     code += `\nimport { render as __render } from ${JSON.stringify(
@@ -428,7 +471,7 @@ async function compileSFCMain(
     code += genSourceMapString(descriptor.script.map)
   }
 
-  cached = cached || { styles: [] }
+  cached = cached || { styles: [], customs: [] }
   cached.script = code
   vueCache.set(filePath, cached)
   return code
@@ -488,7 +531,7 @@ function compileSFCTemplate(
   }
 
   const finalCode = code + genSourceMapString(map)
-  cached = cached || { styles: [] }
+  cached = cached || { styles: [], customs: [] }
   cached.template = finalCode
   vueCache.set(filePath, cached)
 
@@ -561,12 +604,50 @@ async function compileSFCStyle(
 
   result.code = await rewriteCssUrls(result.code, publicPath)
 
-  cached = cached || { styles: [] }
+  cached = cached || { styles: [], customs: [] }
   cached.styles[index] = result
   vueCache.set(filePath, cached)
 
   debug(`${publicPath} style compiled in ${Date.now() - start}ms`)
   return result
+}
+
+function resolveCustomBlock(
+  custom: SFCBlock,
+  index: number,
+  filePath: string,
+  publicPath: string
+): string {
+  let cached = vueCache.get(filePath)
+  const cachedEntry = cached && cached.customs && cached.customs[index]
+  if (cachedEntry) {
+    debug(`${publicPath} custom block cache hit`)
+    return cachedEntry
+  }
+
+  const result = custom.content
+  cached = cached || { styles: [], customs: [] }
+  cached.customs[index] = result
+  vueCache.set(filePath, cached)
+  return result
+}
+
+// these are built-in query parameters so should be ignored
+// if the user happen to add them as attrs
+const ignoreList = ['id', 'index', 'src', 'type']
+
+function attrsToQuery(attrs: SFCBlock['attrs'], langFallback?: string): string {
+  let query = ``
+  for (const name in attrs) {
+    const value = attrs[name]
+    if (!ignoreList.includes(name)) {
+      query += `&${qs.escape(name)}=${value ? qs.escape(String(value)) : ``}`
+    }
+  }
+  if (langFallback && !(`lang` in attrs)) {
+    query += `&lang=${langFallback}`
+  }
+  return query
 }
 
 function rewriteDefaultExport(code: string): string {

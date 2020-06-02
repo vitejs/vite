@@ -412,6 +412,20 @@ describe('vite', () => {
         await expectByPolling(() => getText(`.optimize-linked`), 'error')
       }
     })
+
+    test('SFC custom blocks', async () => {
+      expect(await getText('.custom-block')).toBe('hello,vite!')
+      if (!isBuild) {
+        await updateFile('custom-blocks/TestCustomBlocks.vue', (c) =>
+          c.replace('hello,vite!', 'hi,vite!')
+        )
+        await expectByPolling(() => getText('.custom-block'), 'hi,vite!')
+        await updateFile('custom-blocks/TestCustomBlocks.vue', (c) =>
+          c.replace(`useI18n('en')`, `useI18n('ja')`)
+        )
+        await expectByPolling(() => getText('.custom-block'), 'こんにちは')
+      }
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev

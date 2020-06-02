@@ -44,6 +44,7 @@ export function createServer(config: ServerConfig): Server {
     resolvers = [],
     alias = {},
     transforms = [],
+    vueCustomBlockTransforms = {},
     optimizeDeps = {}
   } = config
 
@@ -80,9 +81,11 @@ export function createServer(config: ServerConfig): Server {
     proxyPlugin,
     serviceWorkerPlugin,
     hmrPlugin,
+    ...(transforms.length || Object.keys(vueCustomBlockTransforms).length
+      ? [createServerTransformPlugin(transforms, vueCustomBlockTransforms)]
+      : []),
     vuePlugin,
     cssPlugin,
-    ...(transforms.length ? [createServerTransformPlugin(transforms)] : []),
     esbuildPlugin,
     jsonPlugin,
     assetPathPlugin,
