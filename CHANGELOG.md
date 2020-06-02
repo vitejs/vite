@@ -1,3 +1,32 @@
+# [0.20.0](https://github.com/vuejs/vite/compare/v0.19.3...v0.20.0) (2020-06-02)
+
+
+### Bug Fixes
+
+* bust index.html short paths in sw mode ([379eccd](https://github.com/vuejs/vite/commit/379eccd1328d15c250e2ec276d5c1b7f4c769d46))
+* fix resolving deps with css entry (again) ([6e06fcf](https://github.com/vuejs/vite/commit/6e06fcf3415db32057e17b7e4dd577aac2f9ed48))
+* **resolve:** properly resolve un-optimized nested depdendencies + support pnpm ([ad14ef4](https://github.com/vuejs/vite/commit/ad14ef48c895c0db0698e3c4a904472109030e6a)), closes [#324](https://github.com/vuejs/vite/issues/324)
+* dynamic-imported module can HMR if it is self-accepting ([36afeb7](https://github.com/vuejs/vite/commit/36afeb7b810bf131faf3c98e9a8c8d57e7e39ccb))
+* only perform file resolve redirect when not asking for html ([f28b88f](https://github.com/vuejs/vite/commit/f28b88f42dd485718f9ae2bce7de3710e94b7a9e)), closes [#323](https://github.com/vuejs/vite/issues/323)
+
+
+### Features
+
+* optimizeDeps.link ([2615f52](https://github.com/vuejs/vite/commit/2615f521eef83202eb6595d0c8e3e0df653d725b))
+* support custom blocks ([#316](https://github.com/vuejs/vite/issues/316)) ([8d6ca75](https://github.com/vuejs/vite/commit/8d6ca7528b13ae5a0f929c363421696d6070542d))
+* support explicitly adding deep imports to optimized deps ([e2167fe](https://github.com/vuejs/vite/commit/e2167fe4ee35461c22c3335395b157beef711af2))
+
+
+### BREAKING CHANGES
+
+* `optimizeDeps.include` behavior has changed. Instead of
+limiting optimized deps to only those listed in `include`, it now adds
+the list to already qualified deps instead. It now also supports deep
+paths, so can be used to explicitly pre-bundle modules that can only
+be accessed via deep imports (e.g. `lit-html` directives)
+
+
+
 ## [0.19.3](https://github.com/vuejs/vite/compare/v0.19.2...v0.19.3) (2020-05-31)
 
 
