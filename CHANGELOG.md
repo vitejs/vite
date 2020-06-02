@@ -1,3 +1,12 @@
+## [0.20.1](https://github.com/vuejs/vite/compare/v0.20.0...v0.20.1) (2020-06-02)
+
+
+### Bug Fixes
+
+* ensure correct vue reference in compiled templates ([f26b8a7](https://github.com/vuejs/vite/commit/f26b8a7f607fd5402da8ccfa4c41bf747d55a9b3))
+
+
+
 # [0.20.0](https://github.com/vuejs/vite/compare/v0.19.3...v0.20.0) (2020-06-02)
 
 
