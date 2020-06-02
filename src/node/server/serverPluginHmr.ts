@@ -151,14 +151,14 @@ export const hmrPlugin: ServerPlugin = ({
 
     const publicPath = resolver.fileToRequest(filePath)
     const importers = importerMap.get(publicPath)
-    if (importers) {
+    if (importers || isHmrAccepted(publicPath, publicPath)) {
       const hmrBoundaries = new Set<string>()
       const dirtyFiles = new Set<string>()
       dirtyFiles.add(publicPath)
 
       const hasDeadEnd = walkImportChain(
         publicPath,
-        importers,
+        importers || new Set(),
         hmrBoundaries,
         dirtyFiles
       )
@@ -191,6 +191,14 @@ export const hmrPlugin: ServerPlugin = ({
       }
     } else {
       debugHmr(`no importers for ${publicPath}.`)
+      // bust sw cache anyway since this may be a full dynamic import.
+      if (config.serviceWorker) {
+        send({
+          type: 'sw-bust-cache',
+          path: publicPath,
+          timestamp
+        })
+      }
     }
   })
 
@@ -369,6 +377,7 @@ export function rewriteFileWithHMR(
           // self accepting
           // import.meta.hot.accept() OR import.meta.hot.accept(() => {})
           ensureMapEntry(hmrAcceptanceMap, importer).add(importer)
+          debugHmr(`${importer} self accepts`)
         } else {
           console.error(
             chalk.yellow(

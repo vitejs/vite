@@ -118,7 +118,7 @@ describe('vite', () => {
         await button.click()
         expect(await getText(button)).toMatch('>>> 1 <<<')
 
-        await updateFile('TestHmr.vue', (content) =>
+        await updateFile('TestHmr/TestHmr.vue', (content) =>
           content.replace('{{ count }}', 'count is {{ count }}')
         )
         // note: using the same button to ensure the component did only re-render
@@ -127,7 +127,7 @@ describe('vite', () => {
       })
 
       test('hmr (vue reload)', async () => {
-        await updateFile('TestHmr.vue', (content) =>
+        await updateFile('TestHmr/TestHmr.vue', (content) =>
           content.replace('count: 0,', 'count: 1337,')
         )
         await expectByPolling(() => getText('.hmr-increment'), 'count is 1337')
@@ -136,10 +136,100 @@ describe('vite', () => {
       test('hmr (js -> vue propagation)', async () => {
         const span = await page.$('.hmr-propagation')
         expect(await getText(span)).toBe('1')
-        await updateFile('testHmrPropagation.js', (content) =>
+        await updateFile('TestHmr/testHmrPropagation.js', (content) =>
           content.replace('return 1', 'return 666')
         )
         await expectByPolling(() => getText('.hmr-propagation'), '666')
+      })
+
+      test('hmr (js -> vue propagation. dynamic import, static-analyzable)', async () => {
+        let span = await page.$('.hmr-propagation-dynamic')
+        expect(await getText(span)).toBe('bar not loaded')
+        // trigger the dynamic import
+        let button = await page.$('.hmr-propagation-dynamic-load')
+        await button.click()
+        expect(await getText(span)).toBe('bar loading')
+        await expectByPolling(() => getText(span), 'bar loaded')
+        // update souce code
+        await updateFile(
+          'TestHmr/testHmrPropagationDynamicImport.js',
+          (content) => content.replace('bar loaded', 'bar updated')
+        )
+        // the update trigger the reload of TestHmr component
+        // all states in it are lost
+        await expectByPolling(
+          () => getText('.hmr-propagation-dynamic'),
+          'bar not loaded'
+        )
+        span = await page.$('.hmr-propagation-dynamic')
+        button = await page.$('.hmr-propagation-dynamic-load')
+        await button.click()
+        expect(await getText(span)).toBe('bar loading')
+        await expectByPolling(() => getText(span), 'bar updated')
+      })
+
+      test('hmr (js -> vue propagation. full dynamic import, non-static-analyzable)', async () => {
+        let span = await page.$('.hmr-propagation-full-dynamic')
+        expect(await getText(span)).toBe('baz not loaded')
+        // trigger the dynamic import
+        let button = await page.$('.hmr-propagation-full-dynamic-load')
+        await button.click()
+        expect(await getText(span)).toBe('baz loading')
+        await expectByPolling(() => getText(span), 'baz loaded')
+        // update souce code
+        await updateFile(
+          'TestHmr/testHmrPropagationFullDynamicImport.js',
+          (content) => content.replace('baz loaded', 'baz updated')
+        )
+        // the update doesn't trigger hmr
+        // because it is a non-static-analyzable dynamic import
+        // and the imported file is not self-accepting
+        await timeout(200)
+        expect(await getText('.hmr-propagation-full-dynamic')).toBe(
+          'baz loaded'
+        )
+        // only if we reload the whole page, we can see the new content
+        await page.reload({ waitUntil: ['networkidle0', 'domcontentloaded'] })
+        span = await page.$('.hmr-propagation-full-dynamic')
+        expect(await getText(span)).toBe('baz not loaded')
+        // trigger the dynamic import
+        button = await page.$('.hmr-propagation-full-dynamic-load')
+        await button.click()
+        expect(await getText(span)).toBe('baz loading')
+        await expectByPolling(() => getText(span), 'baz updated')
+      })
+
+      test('hmr (js -> vue propagation. full dynamic import, non-static-analyzable, but self-accepting)', async () => {
+        // reset the sate
+        await page.reload({ waitUntil: ['networkidle0', 'domcontentloaded'] })
+        let stateIncrementButton = await page.$('.hmr-increment')
+        await stateIncrementButton.click()
+        expect(await getText(stateIncrementButton)).toMatch(
+          '>>> count is 1338 <<<'
+        )
+
+        let span = await page.$('.hmr-propagation-full-dynamic-self-accepting')
+        expect(await getText(span)).toBe('qux not loaded')
+        // trigger the dynamic import
+        let button = await page.$(
+          '.hmr-propagation-full-dynamic-load-self-accepting'
+        )
+        await button.click()
+        expect(await getText(span)).toBe('qux loading')
+        await expectByPolling(() => getText(span), 'qux loaded')
+        // update souce code
+        await updateFile(
+          'TestHmr/testHmrPropagationFullDynamicImportSelfAccepting.js',
+          (content) => content.replace('qux loaded', 'qux updated')
+        )
+        // the update is accepted by the imported file
+        await expectByPolling(() => getText(span), 'qux updated')
+        // the state should be the same
+        // because the TestHmr component is not reloaded
+        stateIncrementButton = await page.$('.hmr-increment')
+        expect(await getText(stateIncrementButton)).toMatch(
+          '>>> count is 1338 <<<'
+        )
       })
 
       test('hmr (manual API, self accepting)', async () => {
