@@ -1,6 +1,6 @@
 import path from 'path'
 import slash from 'slash'
-import qs from 'querystring'
+import qs, { ParsedUrlQuery } from 'querystring'
 import resolve from 'resolve'
 import { supportedExts } from '../resolver'
 import { Context } from '../server'
@@ -33,7 +33,7 @@ export const parseWithQuery = (
   id: string
 ): {
   path: string
-  query: Record<string, string | string[] | undefined>
+  query: ParsedUrlQuery
 } => {
   const queryMatch = id.match(queryRE)
   if (queryMatch) {

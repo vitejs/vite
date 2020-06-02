@@ -1,4 +1,5 @@
 <template>
+  <h2>Custom Blocks</h2>
   <p class="custom-block">{{ t('hello') }}</p>
 </template>
 

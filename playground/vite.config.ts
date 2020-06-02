@@ -1,6 +1,6 @@
 import type { UserConfig } from 'vite'
 import { jsPlugin } from './plugins/jsPlugin'
-import { i18nServerPlugin } from './custom-blocks/i18nServerPlugin'
+import { i18nTransform } from './custom-blocks/i18nTransform'
 
 const config: UserConfig = {
   alias: {
@@ -11,7 +11,7 @@ const config: UserConfig = {
   minify: false,
   serviceWorker: !!process.env.USE_SW,
   plugins: [jsPlugin],
-  configureServer: [i18nServerPlugin],
+  vueCustomBlockTransforms: { i18n: i18nTransform },
   optimizeDeps: {
     exclude: ['bootstrap'],
     link: ['optimize-linked']
