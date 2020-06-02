@@ -10,7 +10,7 @@ import {
   SFCStyleCompileResults,
   CompilerOptions
 } from '@vue/compiler-sfc'
-import { resolveCompiler } from '../utils/resolveVue'
+import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import {
@@ -503,7 +503,11 @@ function compileSFCTemplate(
     compilerOptions: {
       ...userOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
-      runtimeModuleName: '/@modules/vue'
+      runtimeModuleName: resolveVue(root).isLocal
+        ? // in local mode, vue would have been optimized so must be referenced
+          // with .js postfix
+          '/@modules/vue.js'
+        : '/@modules/vue'
     },
     preprocessLang: template.lang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id))
