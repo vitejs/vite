@@ -163,7 +163,7 @@ async function runServe(options: UserConfig) {
     require('debug')('vite:server')(`server ready in ${Date.now() - start}ms.`)
 
     if (options.open) {
-      require('./utils/openBrowser').openBrowser(`http://localhost:${port}`)
+      require('./utils/openBrowser').openBrowser(`${protocol}://localhost:${port}`)
     }
   })
 }
