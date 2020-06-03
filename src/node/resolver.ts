@@ -200,30 +200,45 @@ export function createResolver(
     },
 
     normalizePublicPath(publicPath) {
-      if (!moduleRE.test(publicPath))
-        return this.fileToRequest(this.requestToFile(publicPath))
-
-      const filePath = this.requestToFile(publicPath)
-      const optimizedPublicPath = recognizeOptimizedFilePath(root, filePath)
-      if (optimizedPublicPath) return optimizedPublicPath
-
-      // fileToRequest doesn't work with files in node_modules
-      // because of edge cases like symlinks or yarn-aliased-install
-      // or even aliased-symlinks
-
-      // /@modules/@scope/test-package -> /@modules/@scope/test-package
-      const id = publicPath.replace(moduleRE, '')
-      const { scope, name, inPkgPath } = parseNodeModuleId(id)
-      if (!inPkgPath) return publicPath
-      // /@modules/test-package/dir -> /@modules/test-package/dir/index.js
-      const pkgPath = lookupFile(filePath, ['package.json'], true)
-      if (!pkgPath)
+      // preserve query
+      const queryMatch = publicPath.match(/\?.*$/)
+      const query = queryMatch ? queryMatch[0] : ''
+      const cleanPublicPath = cleanUrl(publicPath)
+      const result = main(cleanPublicPath, this) + query
+      // double check
+      if (this.requestToFile(result) !== this.requestToFile(publicPath)) {
         throw new Error(
-          `[vite] can't find package.json for a node_module file: ` +
-            `"${publicPath}". something is wrong.`
+          `[vite] normalizePublicPath check fail. please report to vite.`
         )
-      const inLibPath = path.relative(path.dirname(pkgPath), filePath)
-      return ['/@modules', scope, name, inLibPath].filter(Boolean).join('/')
+      }
+      return result
+
+      function main(publicPath: string, resolver: InternalResolver) {
+        if (!moduleRE.test(publicPath))
+          return resolver.fileToRequest(resolver.requestToFile(publicPath))
+
+        const filePath = resolver.requestToFile(publicPath)
+        const optimizedPublicPath = recognizeOptimizedFilePath(root, filePath)
+        if (optimizedPublicPath) return optimizedPublicPath
+
+        // fileToRequest doesn't work with files in node_modules
+        // because of edge cases like symlinks or yarn-aliased-install
+        // or even aliased-symlinks
+
+        // /@modules/@scope/test-package -> /@modules/@scope/test-package
+        const id = publicPath.replace(moduleRE, '')
+        const { scope, name, inPkgPath } = parseNodeModuleId(id)
+        if (!inPkgPath) return publicPath
+        // /@modules/test-package/dir -> /@modules/test-package/dir/index.js
+        const pkgPath = lookupFile(filePath, ['package.json'], true)
+        if (!pkgPath)
+          throw new Error(
+            `[vite] can't find package.json for a node_module file: ` +
+              `"${publicPath}". something is wrong.`
+          )
+        const inLibPath = path.relative(path.dirname(pkgPath), filePath)
+        return ['/@modules', scope, name, inLibPath].filter(Boolean).join('/')
+      }
     },
 
     alias(id) {
