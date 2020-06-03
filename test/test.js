@@ -491,6 +491,10 @@ describe('vite', () => {
       )
     })
 
+    test('rewrite import in unoptimized deps', async () => {
+      expect(await getText('.test-rewrite-in-unoptimized')).toMatch('123')
+    })
+
     test('monorepo support', async () => {
       // linked dep + optimizing linked dep
       expect(await getText(`.optimize-linked`)).toMatch(`ok`)
