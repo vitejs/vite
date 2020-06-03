@@ -1,7 +1,13 @@
 import fs from 'fs-extra'
 import path from 'path'
 import slash from 'slash'
-import { cleanUrl, resolveFrom, queryRE } from './utils'
+import {
+  cleanUrl,
+  resolveFrom,
+  queryRE,
+  lookupFile,
+  parseNodeModuleId
+} from './utils'
 import {
   moduleRE,
   moduleIdToFileMap,
@@ -21,8 +27,8 @@ export interface Resolver {
 export interface InternalResolver {
   requestToFile(publicPath: string): string
   fileToRequest(filePath: string): string
+  normalizePublicPath(publicPath: string): string
   alias(id: string): string | undefined
-  resolveExt(publicPath: string): string | undefined
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -70,26 +76,34 @@ const isFile = (file: string): boolean => {
   }
 }
 
-const resolveExt = (id: string): string | undefined => {
-  const cleanId = cleanUrl(id)
-  if (!isFile(cleanId)) {
-    let inferredExt = ''
+/**
+ * this function resolve fuzzy file path. examples:
+ * /path/file is a fuzzy file path for /path/file.tsx
+ * /path/dir is a fuzzy file path for /path/dir/index.js
+ *
+ * returning undefined indicates the filePath is not fuzzy:
+ * it is already an exact file path, or it can't match any file
+ */
+const resolveFilePathPostfix = (filePath: string): string | undefined => {
+  const cleanPath = cleanUrl(filePath)
+  if (!isFile(cleanPath)) {
+    let postfix = ''
     for (const ext of supportedExts) {
-      if (isFile(cleanId + ext)) {
-        inferredExt = ext
+      if (isFile(cleanPath + ext)) {
+        postfix = ext
         break
       }
-      if (isFile(path.join(cleanId, '/index' + ext))) {
-        inferredExt = '/index' + ext
+      if (isFile(path.join(cleanPath, '/index' + ext))) {
+        postfix = '/index' + ext
         break
       }
     }
-    const queryMatch = id.match(/\?.*$/)
+    const queryMatch = filePath.match(/\?.*$/)
     const query = queryMatch ? queryMatch[0] : ''
-    const resolved = cleanId + inferredExt + query
-    if (resolved !== id) {
-      debug(`(extension) ${id} -> ${resolved}`)
-      return inferredExt
+    const resolved = cleanPath + postfix + query
+    if (resolved !== filePath) {
+      debug(`(postfix) ${filePath} -> ${resolved}`)
+      return postfix
     }
   }
 }
@@ -141,17 +155,12 @@ export function createResolver(
   })
   resolveAlias(userAlias)
 
-  const requestToFileCache = new Map()
-  const fileToRequestCache = new Map()
+  const requestToFileCache = new Map<string, string>()
+  const fileToRequestCache = new Map<string, string>()
 
-  const resolveRequest = (
-    publicPath: string
-  ): {
-    filePath: string
-    ext: string | undefined
-  } => {
+  const resolveRequest = (publicPath: string): string => {
     if (requestToFileCache.has(publicPath)) {
-      return requestToFileCache.get(publicPath)
+      return requestToFileCache.get(publicPath)!
     }
 
     let resolved: string | undefined
@@ -165,27 +174,21 @@ export function createResolver(
     if (!resolved) {
       resolved = defaultRequestToFile(publicPath, root)
     }
-    const ext = resolveExt(resolved)
-    const result = {
-      filePath: ext ? resolved + ext : resolved,
-      ext: ext || path.extname(resolved)
-    }
+    const postfix = resolveFilePathPostfix(resolved)
+    // TODO resolved may contain query
+    const result = postfix ? resolved + postfix : resolved
     requestToFileCache.set(publicPath, result)
     return result
   }
 
   return {
     requestToFile(publicPath) {
-      return resolveRequest(publicPath).filePath
-    },
-
-    resolveExt(publicPath) {
-      return resolveRequest(publicPath).ext
+      return resolveRequest(publicPath)
     },
 
     fileToRequest(filePath) {
       if (fileToRequestCache.has(filePath)) {
-        return fileToRequestCache.get(filePath)
+        return fileToRequestCache.get(filePath)!
       }
       for (const r of resolvers) {
         const request = r.fileToRequest && r.fileToRequest(filePath, root)
@@ -194,6 +197,33 @@ export function createResolver(
       const res = defaultFileToRequest(filePath, root)
       fileToRequestCache.set(filePath, res)
       return res
+    },
+
+    normalizePublicPath(publicPath) {
+      if (!moduleRE.test(publicPath))
+        return this.fileToRequest(this.requestToFile(publicPath))
+
+      const filePath = this.requestToFile(publicPath)
+      const optimizedPublicPath = recognizeOptimizedFilePath(root, filePath)
+      if (optimizedPublicPath) return optimizedPublicPath
+
+      // fileToRequest doesn't work with files in node_modules
+      // because of edge cases like symlinks or yarn-aliased-install
+      // or even aliased-symlinks
+
+      // /@modules/@scope/test-package -> /@modules/@scope/test-package
+      const id = publicPath.replace(moduleRE, '')
+      const { scope, name, inPkgPath } = parseNodeModuleId(id)
+      if (!inPkgPath) return publicPath
+      // /@modules/test-package/dir -> /@modules/test-package/dir/index.js
+      const pkgPath = lookupFile(filePath, ['package.json'], true)
+      if (!pkgPath)
+        throw new Error(
+          `[vite] can't find package.json for a node_module file: ` +
+            `"${publicPath}". something is wrong.`
+        )
+      const inLibPath = path.relative(path.dirname(pkgPath), filePath)
+      return ['/@modules', scope, name, inLibPath].filter(Boolean).join('/')
     },
 
     alias(id) {
@@ -305,6 +335,21 @@ export function resolveOptimizedModule(
   }
 }
 
+/**
+ * if filePath is in the optimized cache dir,
+ * return the public path for it
+ */
+function recognizeOptimizedFilePath(
+  root: string,
+  filePath: string
+): string | undefined {
+  const cacheDir = resolveOptimizedCacheDir(root)
+  if (!cacheDir) return
+  const relative = path.relative(cacheDir, filePath)
+  if (!relative.startsWith('../'))
+    return relative.replace(/^\.\.\//, '/@modules/')
+}
+
 interface NodeModuleInfo {
   entry: string | null
   entryFilePath: string | null
@@ -371,10 +416,10 @@ export function resolveNodeModule(
     if (entryPoint) {
       // #284 some packages specify entry without extension...
       entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
-      const ext = resolveExt(entryFilePath)
-      if (ext) {
-        entryPoint += ext
-        entryFilePath += ext
+      const postfix = resolveFilePathPostfix(entryFilePath)
+      if (postfix) {
+        entryPoint += postfix
+        entryFilePath += postfix
       }
       entryPoint = path.posix.join(id, entryPoint!)
       // save the resolved file path now so we don't need to do it again in

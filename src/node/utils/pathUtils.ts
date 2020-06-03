@@ -74,3 +74,18 @@ export const isStaticAsset = (file: string) => {
 export const isImportRequest = (ctx: Context): boolean => {
   return ctx.query.import != null
 }
+
+export function parseNodeModuleId(id: string) {
+  const parts = id.split('/')
+  let scope = '',
+    name = '',
+    inPkgPath = ''
+  if (id.startsWith('@')) scope = parts.shift()!
+  name = parts.shift()!
+  inPkgPath = parts.join('/')
+  return {
+    scope,
+    name,
+    inPkgPath
+  }
+}

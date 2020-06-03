@@ -254,11 +254,8 @@ export const resolveImport = (
     //    ./foo -> /some/path/foo
     let { pathname, query } = resolveRelativeRequest(importer, id)
 
-    // 2. resolve extensions.
-    const ext = resolver.resolveExt(pathname)
-    if (ext && ext !== path.extname(pathname)) {
-      pathname = path.posix.normalize(pathname + ext)
-    }
+    // 2. resolve dir index and extensions.
+    pathname = resolver.normalizePublicPath(pathname)
 
     // 3. mark non-src imports
     if (!query && path.extname(pathname) && !jsSrcRE.test(pathname)) {
