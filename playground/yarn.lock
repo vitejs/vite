@@ -6,6 +6,10 @@
   version "0.0.0"
   uid ""
 
+"linked-dep@link:./optimize-linked/linked-dep":
+  version "0.0.0"
+  uid ""
+
 "lodash-es@link:../node_modules/lodash-es":
   version "0.0.0"
   uid ""

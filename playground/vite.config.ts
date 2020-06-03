@@ -15,6 +15,11 @@ const config: UserConfig = {
   optimizeDeps: {
     exclude: ['bootstrap'],
     link: ['optimize-linked']
+  },
+  cssPreprocessOptions: {
+    modifyVars: {
+      'preprocess-custom-color': 'green'
+    }
   }
 }
 

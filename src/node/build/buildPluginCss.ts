@@ -9,7 +9,10 @@ import {
   cssPreprocessLangRE,
   rewriteCssUrls
 } from '../utils/cssUtils'
-import { SFCStyleCompileResults } from '@vue/compiler-sfc'
+import {
+  SFCStyleCompileResults,
+  SFCAsyncStyleCompileOptions
+} from '@vue/compiler-sfc'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:build:css')
@@ -17,14 +20,25 @@ const debug = require('debug')('vite:build:css')
 const cssInjectionMarker = `__VITE_CSS__`
 const cssInjectionRE = /__VITE_CSS__\(\)/g
 
-export const createBuildCssPlugin = (
-  root: string,
-  publicBase: string,
-  assetsDir: string,
-  minify: BuildConfig['minify'] = false,
+interface BuildCssOption {
+  root: string
+  publicBase: string
+  assetsDir: string
+  minify?: BuildConfig['minify']
+  inlineLimit?: number
+  cssCodeSplit?: boolean
+  preprocessOptions?: SFCAsyncStyleCompileOptions['preprocessOptions']
+}
+
+export const createBuildCssPlugin = ({
+  root,
+  publicBase,
+  assetsDir,
+  minify = false,
   inlineLimit = 0,
-  cssCodeSplit = true
-): Plugin => {
+  cssCodeSplit = true,
+  preprocessOptions = {}
+}: BuildCssOption): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
 
@@ -38,7 +52,11 @@ export const createBuildCssPlugin = (
           filename: id,
           scoped: false,
           modules: id.endsWith('.module.css'),
-          preprocessLang: id.replace(cssPreprocessLangRE, '$2') as any
+          preprocessLang: id.replace(
+            cssPreprocessLangRE,
+            '$2'
+          ) as SFCAsyncStyleCompileOptions['preprocessLang'],
+          preprocessOptions
         })
 
         let modules: SFCStyleCompileResults['modules']
