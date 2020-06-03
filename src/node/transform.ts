@@ -19,26 +19,48 @@ export interface Transform {
   ) => string | Promise<string>
 }
 
+export type CustomBlockTransform = (
+  src: string,
+  attrs: Record<string, string>
+) => string | Promise<string>
+
 export function createServerTransformPlugin(
-  transforms: Transform[]
+  transforms: Transform[],
+  customBlockTransforms: Record<string, CustomBlockTransform>
 ): ServerPlugin {
   return ({ app }) => {
     app.use(async (ctx, next) => {
       await next()
+
+      const { path, query } = ctx
+      let code: string | null = null
+
       for (const t of transforms) {
-        if (t.test(ctx.path, ctx.query)) {
+        if (t.test(path, query)) {
           ctx.type = 'js'
           if (ctx.body) {
-            const code = await readBody(ctx.body)
+            code = code || (await readBody(ctx.body))
             if (code) {
               ctx.body = await t.transform(
                 code,
                 isImportRequest(ctx),
                 false,
-                ctx.path,
-                ctx.query
+                path,
+                query
               )
-              ctx._transformed = true
+            }
+          }
+        }
+      }
+      // custom blocks
+      if (path.endsWith('vue') && query.type === 'custom') {
+        const t = customBlockTransforms[query.blockType]
+        if (t) {
+          ctx.type = 'js'
+          if (ctx.body) {
+            code = code || (await readBody(ctx.body))
+            if (code) {
+              ctx.body = await t(code, query)
             }
           }
         }
@@ -48,7 +70,8 @@ export function createServerTransformPlugin(
 }
 
 export function createBuildJsTransformPlugin(
-  transforms: Transform[]
+  transforms: Transform[],
+  customBlockTransforms: Record<string, CustomBlockTransform>
 ): RollupPlugin {
   return {
     name: 'vite:transforms',
@@ -58,6 +81,22 @@ export function createBuildJsTransformPlugin(
       for (const t of transforms) {
         if (t.test(path, query)) {
           result = await t.transform(result, true, true, path, query)
+        }
+      }
+      // custom blocks
+      if (query.vue != null && typeof query.type === 'string') {
+        const t = customBlockTransforms[query.type]
+        if (t) {
+          // normalize lang since rollup-plugin-vue appends it as .xxx
+          const normalizedQuery: Record<string, string> = {}
+          for (const key in query) {
+            if (key.startsWith(`lang.`)) {
+              normalizedQuery.lang = key.slice(5)
+            } else {
+              normalizedQuery[key] = query[key] as string
+            }
+          }
+          result = await t(result, normalizedQuery)
         }
       }
       return result

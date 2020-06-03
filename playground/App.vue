@@ -14,7 +14,7 @@
   <TestPostCss />
   <TestScopedCss />
   <TestCssModules />
-  <TestCssAtImport/>
+  <TestCssAtImport />
   <TestPreprocessors />
   <TestAssets />
   <TestSrcImport />
@@ -24,6 +24,7 @@
   <TestAlias />
   <TestTransform />
   <TestRewriteOptimized />
+  <TestCustomBlocks />
   <TestOptimizeLink />
 </template>
 
@@ -31,7 +32,7 @@
 import { defineAsyncComponent } from 'vue'
 import TestEnv from './TestEnv.vue'
 import TestModuleResolve from './TestModuleResolve.vue'
-import TestHmr from './TestHmr.vue'
+import TestHmr from './TestHmr/TestHmr.vue'
 import TestPostCss from './TestPostCss.vue'
 import TestScopedCss from './TestScopedCss.vue'
 import TestCssModules from './TestCssModules.vue'
@@ -43,8 +44,9 @@ import TestTs from './ts/TestTs.vue'
 import TestJsx from './TestJsx.vue'
 import TestAlias from './TestAlias.vue'
 import TestTransform from './TestTransform.vue'
-import TestRewriteOptimized from "./rewrite-optimized/TestRewriteOptimized.vue";
+import TestRewriteOptimized from './rewrite-optimized/TestRewriteOptimized.vue'
 import TestCssAtImport from './css-@import/TestCssAtImport.vue'
+import TestCustomBlocks from './custom-blocks/TestCustomBlocks.vue'
 import TestOptimizeLink from './optimize-linked/TestOptimizeLink.vue'
 
 export default {
@@ -70,6 +72,7 @@ export default {
     TestTransform,
     TestAsync: defineAsyncComponent(() => import('./TestAsync.vue')),
     TestRewriteOptimized,
+    TestCustomBlocks,
     TestOptimizeLink
   }
 }

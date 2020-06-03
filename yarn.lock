@@ -3882,6 +3882,14 @@ js-yaml@^3.13.1:
     argparse "^1.0.7"
     esprima "^4.0.0"
 
+js-yaml@^3.14.0:
+  version "3.14.0"
+  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-3.14.0.tgz#a7a34170f26a21bb162424d8adacb4113a69e482"
+  integrity sha512-/4IbIeHcD9VMHFqDR/gQ7EdZdLimOvW2DdcxFjdyyZ9NsbS+ccrXqVWDtab/lRl5AlUqmpBx8EhPaWR+OtY17A==
+  dependencies:
+    argparse "^1.0.7"
+    esprima "^4.0.0"
+
 jsbn@~0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/jsbn/-/jsbn-0.1.1.tgz#a5e654c2e5a2deb5f201d96cefbca80c0ef2f513"
@@ -5729,10 +5737,10 @@ rollup-plugin-terser@^5.3.0:
     serialize-javascript "^2.1.2"
     terser "^4.6.2"
 
-rollup-plugin-vue@^6.0.0-beta.3:
-  version "6.0.0-beta.3"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-vue/-/rollup-plugin-vue-6.0.0-beta.3.tgz#cbac4e3bff1aa1cd8a57cf7b2cb061c8e7256446"
-  integrity sha512-v/Ezn62J3L5fSRCyu40J7XIXTcW1UJkwz8ND/Bwh4v35lqtReci7lwnksz8dYmaf74eAL6DDrTmNjf8+D0r2YA==
+rollup-plugin-vue@^6.0.0-beta.4:
+  version "6.0.0-beta.4"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-vue/-/rollup-plugin-vue-6.0.0-beta.4.tgz#e6beff35c0bc23c06656058a3375bc54482bb739"
+  integrity sha512-c8LQyDtFx7+79xIysiBWeJcRHq0rKIVbTcNpV2Um9Qhr2orn82EL/SCY7y54rQ+C4fnrJCw9Svcttwm9CmkvOQ==
   dependencies:
     debug "^4.1.1"
     hash-sum "^2.0.0"

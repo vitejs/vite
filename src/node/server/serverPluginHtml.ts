@@ -6,7 +6,7 @@ import {
   importerMap
 } from './serverPluginHmr'
 import { init as initLexer } from 'es-module-lexer'
-import { cleanUrl, readBody } from '../utils'
+import { cleanUrl, readBody, injectScriptToHtml } from '../utils'
 import LRUCache from 'lru-cache'
 import path from 'path'
 import slash from 'slash'
@@ -43,30 +43,28 @@ export const htmlRewritePlugin: ServerPlugin = ({
 
   async function rewriteHtml(importer: string, html: string) {
     await initLexer
-    return (
-      devInjectionCode +
-      html!.replace(scriptRE, (matched, openTag, script) => {
-        if (script) {
-          return `${openTag}${rewriteImports(
-            root,
-            script,
-            importer,
-            resolver
-          )}</script>`
-        } else {
-          const srcAttr = openTag.match(srcRE)
-          if (srcAttr) {
-            // register script as a import dep for hmr
-            const importee = cleanUrl(
-              slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
-            )
-            debugHmr(`        ${importer} imports ${importee}`)
-            ensureMapEntry(importerMap, importee).add(importer)
-          }
-          return matched
+    html = html!.replace(scriptRE, (matched, openTag, script) => {
+      if (script) {
+        return `${openTag}${rewriteImports(
+          root,
+          script,
+          importer,
+          resolver
+        )}</script>`
+      } else {
+        const srcAttr = openTag.match(srcRE)
+        if (srcAttr) {
+          // register script as a import dep for hmr
+          const importee = cleanUrl(
+            slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
+          )
+          debugHmr(`        ${importer} imports ${importee}`)
+          ensureMapEntry(importerMap, importee).add(importer)
         }
-      })
-    )
+        return matched
+      }
+    })
+    return injectScriptToHtml(html, devInjectionCode)
   }
 
   app.use(async (ctx, next) => {

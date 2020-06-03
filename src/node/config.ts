@@ -12,7 +12,7 @@ import Rollup, {
 import { createEsbuildPlugin } from './build/buildPluginEsbuild'
 import { ServerPlugin } from './server'
 import { Resolver } from './resolver'
-import { Transform } from './transform'
+import { Transform, CustomBlockTransform } from './transform'
 import { DepOptimizationOptions } from './depOptimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
@@ -79,6 +79,19 @@ export interface SharedConfig {
    * https://github.com/vuejs/vue-next/blob/master/packages/compiler-core/src/options.ts
    */
   vueCompilerOptions?: CompilerOptions
+  /**
+   * Transform functions for Vue custom blocks.
+   *
+   * Example `vue.config.js`:
+   * ``` js
+   * module.exports = {
+   *   vueCustomBlockTransforms: {
+   *     i18n: src => `export default Comp => { ... }`
+   *   }
+   * }
+   * ```
+   */
+  vueCustomBlockTransforms?: Record<string, CustomBlockTransform>
   /**
    * Configure what to use for jsx factory and fragment.
    * @default 'vue'
@@ -257,6 +270,7 @@ export interface Plugin
     | 'resolvers'
     | 'configureServer'
     | 'vueCompilerOptions'
+    | 'vueCustomBlockTransforms'
     | 'rollupInputOptions'
     | 'rollupOutputOptions'
   > {}
@@ -406,6 +420,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
     vueCompilerOptions: {
       ...config.vueCompilerOptions,
       ...plugin.vueCompilerOptions
+    },
+    vueCustomBlockTransforms: {
+      ...config.vueCustomBlockTransforms,
+      ...plugin.vueCustomBlockTransforms
     },
     rollupInputOptions: {
       ...config.rollupInputOptions,
