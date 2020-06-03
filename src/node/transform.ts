@@ -48,6 +48,7 @@ export function createServerTransformPlugin(
                 path,
                 query
               )
+              code = ctx.body
             }
           }
         }
