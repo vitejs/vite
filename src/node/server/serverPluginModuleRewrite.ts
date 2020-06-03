@@ -78,9 +78,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
         // before we perform hmr analysis.
         // on the other hand, static import is guaranteed to have extension
         // because they must all have gone through module rewrite.
-        const importer = resolver.fileToRequest(
-          resolver.requestToFile(ctx.path)
-        )
+        const importer = resolver.normalizePublicPath(ctx.path)
         ctx.body = rewriteImports(
           root,
           content!,
