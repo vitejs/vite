@@ -223,8 +223,9 @@ export const vuePlugin: ServerPlugin = ({
       return sendReload()
     }
 
+    // force reload if scoped status has changed
     if (prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)) {
-      needRerender = true
+      return sendReload()
     }
 
     // only need to update styles if not reloading, since reload forces
