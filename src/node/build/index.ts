@@ -79,7 +79,8 @@ export async function createBaseRollupPlugins(
   const {
     rollupInputOptions = {},
     transforms = [],
-    vueCustomBlockTransforms = {}
+    vueCustomBlockTransforms = {},
+    cssPreprocessOptions
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
 
@@ -97,6 +98,10 @@ export async function createBaseRollupPlugins(
         includeAbsolute: true
       },
       preprocessStyles: true,
+      preprocessOptions: {
+        includePaths: ['node_modules'],
+        ...cssPreprocessOptions
+      },
       preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
       compilerOptions: options.vueCompilerOptions,
       cssModulesOptions: {
@@ -161,7 +166,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     sourcemap = false,
     shouldPreload = null,
     env = {},
-    mode = 'production'
+    mode = 'production',
+    cssPreprocessOptions = {}
   } = options
 
   const isTest = process.env.NODE_ENV === 'test'
@@ -241,14 +247,15 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         sourcemap
       ),
       // vite:css
-      createBuildCssPlugin(
+      createBuildCssPlugin({
         root,
-        publicBasePath,
+        publicBase: publicBasePath,
         assetsDir,
         minify,
-        assetsInlineLimit,
-        cssCodeSplit
-      ),
+        inlineLimit: assetsInlineLimit,
+        cssCodeSplit,
+        preprocessOptions: cssPreprocessOptions
+      }),
       // vite:asset
       createBuildAssetPlugin(
         root,

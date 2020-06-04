@@ -50,7 +50,8 @@ export async function compileCss(
     filename,
     scoped,
     modules,
-    preprocessLang
+    preprocessLang,
+    preprocessOptions = {}
   }: SFCAsyncStyleCompileOptions
 ): Promise<SFCStyleCompileResults | string> {
   const id = hash_sum(publicPath)
@@ -84,7 +85,8 @@ export async function compileCss(
     preprocessLang: preprocessLang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
     preprocessOptions: {
-      includePaths: ['node_modules']
+      includePaths: ['node_modules'],
+      ...preprocessOptions
     },
 
     postcssOptions,

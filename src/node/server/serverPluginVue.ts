@@ -8,7 +8,8 @@ import {
   SFCTemplateBlock,
   SFCStyleBlock,
   SFCStyleCompileResults,
-  CompilerOptions
+  CompilerOptions,
+  SFCStyleCompileOptions
 } from '@vue/compiler-sfc'
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -133,7 +134,8 @@ export const vuePlugin: ServerPlugin = ({
         styleBlock,
         index,
         filePath,
-        publicPath
+        publicPath,
+        config.cssPreprocessOptions
       )
       ctx.type = 'js'
       ctx.body = codegenCss(`${id}-${index}`, result.code, result.modules)
@@ -550,7 +552,8 @@ async function compileSFCStyle(
   style: SFCStyleBlock,
   index: number,
   filePath: string,
-  publicPath: string
+  publicPath: string,
+  preprocessOptions: SFCStyleCompileOptions['preprocessOptions']
 ): Promise<SFCStyleCompileResults> {
   let cached = vueCache.get(filePath)
   const cachedEntry = cached && cached.styles && cached.styles[index]
@@ -568,7 +571,8 @@ async function compileSFCStyle(
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,
-    preprocessLang: style.lang as any
+    preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
+    preprocessOptions
   })) as SFCStyleCompileResults
 
   if (result.errors.length) {

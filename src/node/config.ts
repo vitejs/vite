@@ -3,7 +3,7 @@ import fs from 'fs-extra'
 import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
-import { CompilerOptions } from '@vue/compiler-sfc'
+import { CompilerOptions, SFCStyleCompileOptions } from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
@@ -112,6 +112,10 @@ export interface SharedConfig {
    * Environment mode
    */
   mode?: string
+  /**
+   * CSS preprocess options
+   */
+  cssPreprocessOptions?: SFCStyleCompileOptions['preprocessOptions']
 }
 
 export interface ServerConfig extends SharedConfig {
