@@ -552,6 +552,11 @@ describe('vite', () => {
         JSON.stringify([2, 4])
       )
     })
+
+    test('dynamic imports with variable interpolation', async () => {
+      expect(await getText(`.dynamic-import-one`)).toMatch(`One`)
+      expect(await getText(`.dynamic-import-two`)).toMatch(`Two`)
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev
@@ -563,7 +568,14 @@ describe('vite', () => {
         cwd: tempDir
       })
       expect(buildOutput.stdout).toMatch('Build completed')
-      expect(buildOutput.stderr).toBe('')
+      if (buildOutput.stderr) {
+        expect(
+          // known warning from rollup-plugin-dynamic-import-variables
+          buildOutput.stderr
+            .split('\n')
+            .every((line) => line.match('Unsupported expression'))
+        ).toBe(true)
+      }
       console.log('build complete. running build tests...')
     })
 

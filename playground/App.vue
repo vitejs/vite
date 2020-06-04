@@ -28,6 +28,7 @@
   <TestOptimizeLink />
   <TestRewriteUnoptimized />
   <TestNormalizePublicPath />
+  <TestDynamicImport />
 </template>
 
 <script>
@@ -52,6 +53,7 @@ import TestCustomBlocks from './custom-blocks/TestCustomBlocks.vue'
 import TestOptimizeLink from './optimize-linked/TestOptimizeLink.vue'
 import TestRewriteUnoptimized from './rewrite-unoptimized/TestRewriteUnoptimized.vue'
 import TestNormalizePublicPath from './TestNormalizePublicPath.vue'
+import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
 
 export default {
   data: () => ({
@@ -79,7 +81,8 @@ export default {
     TestCustomBlocks,
     TestOptimizeLink,
     TestRewriteUnoptimized,
-    TestNormalizePublicPath
+    TestNormalizePublicPath,
+    TestDynamicImport
   }
 }
 </script>

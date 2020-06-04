@@ -83,6 +83,7 @@ export async function createBaseRollupPlugins(
     cssPreprocessOptions
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
+  const dynamicImport = require('rollup-plugin-dynamic-import-variables')
 
   return [
     // user plugins
@@ -131,6 +132,11 @@ export async function createBaseRollupPlugins(
     }),
     require('@rollup/plugin-commonjs')({
       extensions: ['.js', '.cjs']
+    }),
+    dynamicImport({
+      warnOnError: true,
+      include: [/\.js$/],
+      exclude: [/node_modules/]
     })
   ].filter(Boolean)
 }
