@@ -568,14 +568,7 @@ describe('vite', () => {
         cwd: tempDir
       })
       expect(buildOutput.stdout).toMatch('Build completed')
-      if (buildOutput.stderr) {
-        expect(
-          // known warning from rollup-plugin-dynamic-import-variables
-          buildOutput.stderr
-            .split('\n')
-            .every((line) => line.match('Unsupported expression'))
-        ).toBe(true)
-      }
+      expect(buildOutput.stderr).toBe('')
       console.log('build complete. running build tests...')
     })
 

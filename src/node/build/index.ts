@@ -49,10 +49,21 @@ const writeColors = {
 }
 
 const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
+const dynamicImportWarningIgnoreList = [
+  `Unsupported expression`,
+  `statically analyzed`
+]
 
 export const onRollupWarning: (
   spinner: Ora | undefined
 ) => InputOptions['onwarn'] = (spinner) => (warning, warn) => {
+  if (
+    warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+    dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
+  ) {
+    return
+  }
+
   if (!warningIgnoreList.includes(warning.code!)) {
     // ora would swallow the console.warn if we let it keep running
     // https://github.com/sindresorhus/ora/issues/90
