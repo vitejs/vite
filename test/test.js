@@ -520,6 +520,12 @@ describe('vite', () => {
         await expectByPolling(() => getText('.custom-block'), 'こんにちは')
       }
     })
+
+    test('normalize publicPath', async () => {
+      expect(await getText('.normalize-public-path')).toMatch(
+        JSON.stringify([2, 4])
+      )
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev

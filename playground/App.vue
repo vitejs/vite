@@ -27,6 +27,7 @@
   <TestCustomBlocks />
   <TestOptimizeLink />
   <TestRewriteUnoptimized />
+  <TestNormalizePublicPath />
 </template>
 
 <script>
@@ -50,6 +51,7 @@ import TestCssAtImport from './css-@import/TestCssAtImport.vue'
 import TestCustomBlocks from './custom-blocks/TestCustomBlocks.vue'
 import TestOptimizeLink from './optimize-linked/TestOptimizeLink.vue'
 import TestRewriteUnoptimized from './rewrite-unoptimized/TestRewriteUnoptimized.vue'
+import TestNormalizePublicPath from './TestNormalizePublicPath.vue'
 
 export default {
   data: () => ({
@@ -76,7 +78,8 @@ export default {
     TestRewriteOptimized,
     TestCustomBlocks,
     TestOptimizeLink,
-    TestRewriteUnoptimized
+    TestRewriteUnoptimized,
+    TestNormalizePublicPath
   }
 }
 </script>

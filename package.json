@@ -97,6 +97,7 @@
     "ws": "^7.2.3"
   },
   "devDependencies": {
+    "@babel/runtime": "7.10.2",
     "@pika/react": "^16.13.1",
     "@pika/react-dom": "^16.13.1",
     "@types/es-module-lexer": "^0.3.0",
