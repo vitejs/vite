@@ -38,6 +38,7 @@ import {
   Expression,
   IfStatement
 } from '@babel/types'
+import { resolveCompiler } from '../utils'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -308,13 +309,16 @@ export function rewriteFileWithHMR(
       isMetaHot(node.callee.object)
     ) {
       if (isTopLevel) {
+        const { generateCodeFrame } = resolveCompiler(root)
         console.warn(
           chalk.yellow(
             `[vite] HMR syntax error in ${importer}: import.meta.hot.accept() ` +
               `should be wrapped in \`if (import.meta.hot) {}\` conditional ` +
               `blocks so that they can be tree-shaken in production.`
           )
-          // TODO generateCodeFrame
+        )
+        console.warn(
+          chalk.yellow(generateCodeFrame(source, node.start!, node.end!))
         )
       }
 
