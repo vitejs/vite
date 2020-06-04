@@ -78,7 +78,6 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       // it cannot be handled as normal css because the js exports may change
       if (filePath.endsWith('.module.css')) {
         moduleCssUpdate(filePath)
-        return
       }
 
       const boundaries = getCssImportBoundaries(filePath)
