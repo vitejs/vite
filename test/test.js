@@ -349,18 +349,21 @@ describe('vite', () => {
     })
 
     test('CSS module @import', async () => {
-      const el = await page.$('#sfc-script-css-module-at-import')
+      const el = await page.$('.sfc-script-css-module-at-import')
       expect(await getComputedColor(el)).toBe('rgb(0, 128, 0)')
       if (!isBuild) {
         await updateFile('css-@import/imported.module.css', (content) =>
           content.replace('green', 'rgb(0, 0, 0)')
         )
-        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+        await expectByPolling(
+          () => getComputedColor('.sfc-script-css-module-at-import'),
+          'rgb(0, 0, 0)'
+        )
       }
     })
 
     test('SFC <style module> w/ @import', async () => {
-      const el = await page.$('#sfc-style-css-module-at-import')
+      const el = await page.$('.sfc-style-css-module-at-import')
       expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
       if (!isBuild) {
         await updateFile(

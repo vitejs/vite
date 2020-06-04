@@ -7,10 +7,16 @@
     &lt;script @import &gt; this should be green
   </div>
   <h2>CSS Modules @import</h2>
-  <div id="sfc-style-css-module-at-import" :class="$style['sfc-style-css-module-at-import']">
+  <div
+    class="sfc-style-css-module-at-import"
+    :class="$style['sfc-style-css-module-at-import']"
+  >
     &lt;style module @import &gt; this should be red
   </div>
-  <div id="sfc-script-css-module-at-import" :class="imported['sfc-script-css-module-at-import']">
+  <div
+    class="sfc-script-css-module-at-import"
+    :class="imported['sfc-script-css-module-at-import']"
+  >
     &lt;script module.css @import &gt; this should be green
   </div>
 </template>
