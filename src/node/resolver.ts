@@ -1,7 +1,13 @@
 import fs from 'fs-extra'
 import path from 'path'
 import slash from 'slash'
-import { cleanUrl, resolveFrom, queryRE } from './utils'
+import {
+  cleanUrl,
+  resolveFrom,
+  queryRE,
+  lookupFile,
+  parseNodeModuleId
+} from './utils'
 import {
   moduleRE,
   moduleIdToFileMap,
@@ -21,8 +27,8 @@ export interface Resolver {
 export interface InternalResolver {
   requestToFile(publicPath: string): string
   fileToRequest(filePath: string): string
+  normalizePublicPath(publicPath: string): string
   alias(id: string): string | undefined
-  resolveExt(publicPath: string): string | undefined
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -70,26 +76,34 @@ const isFile = (file: string): boolean => {
   }
 }
 
-const resolveExt = (id: string): string | undefined => {
-  const cleanId = cleanUrl(id)
-  if (!isFile(cleanId)) {
-    let inferredExt = ''
+/**
+ * this function resolve fuzzy file path. examples:
+ * /path/file is a fuzzy file path for /path/file.tsx
+ * /path/dir is a fuzzy file path for /path/dir/index.js
+ *
+ * returning undefined indicates the filePath is not fuzzy:
+ * it is already an exact file path, or it can't match any file
+ */
+const resolveFilePathPostfix = (filePath: string): string | undefined => {
+  const cleanPath = cleanUrl(filePath)
+  if (!isFile(cleanPath)) {
+    let postfix = ''
     for (const ext of supportedExts) {
-      if (isFile(cleanId + ext)) {
-        inferredExt = ext
+      if (isFile(cleanPath + ext)) {
+        postfix = ext
         break
       }
-      if (isFile(path.join(cleanId, '/index' + ext))) {
-        inferredExt = '/index' + ext
+      if (isFile(path.join(cleanPath, '/index' + ext))) {
+        postfix = '/index' + ext
         break
       }
     }
-    const queryMatch = id.match(/\?.*$/)
+    const queryMatch = filePath.match(/\?.*$/)
     const query = queryMatch ? queryMatch[0] : ''
-    const resolved = cleanId + inferredExt + query
-    if (resolved !== id) {
-      debug(`(extension) ${id} -> ${resolved}`)
-      return inferredExt
+    const resolved = cleanPath + postfix + query
+    if (resolved !== filePath) {
+      debug(`(postfix) ${filePath} -> ${resolved}`)
+      return postfix
     }
   }
 }
@@ -141,51 +155,41 @@ export function createResolver(
   })
   resolveAlias(userAlias)
 
-  const requestToFileCache = new Map()
-  const fileToRequestCache = new Map()
+  const requestToFileCache = new Map<string, string>()
+  const fileToRequestCache = new Map<string, string>()
 
-  const resolveRequest = (
-    publicPath: string
-  ): {
-    filePath: string
-    ext: string | undefined
-  } => {
-    if (requestToFileCache.has(publicPath)) {
-      return requestToFileCache.get(publicPath)
-    }
-
-    let resolved: string | undefined
-    for (const r of resolvers) {
-      const filepath = r.requestToFile && r.requestToFile(publicPath, root)
-      if (filepath) {
-        resolved = filepath
-        break
-      }
-    }
-    if (!resolved) {
-      resolved = defaultRequestToFile(publicPath, root)
-    }
-    const ext = resolveExt(resolved)
-    const result = {
-      filePath: ext ? resolved + ext : resolved,
-      ext: ext || path.extname(resolved)
-    }
-    requestToFileCache.set(publicPath, result)
-    return result
-  }
-
-  return {
+  const resolver: InternalResolver = {
     requestToFile(publicPath) {
-      return resolveRequest(publicPath).filePath
-    },
+      if (requestToFileCache.has(publicPath)) {
+        return requestToFileCache.get(publicPath)!
+      }
 
-    resolveExt(publicPath) {
-      return resolveRequest(publicPath).ext
+      let resolved: string | undefined
+      for (const r of resolvers) {
+        const filepath = r.requestToFile && r.requestToFile(publicPath, root)
+        if (filepath) {
+          resolved = filepath
+          break
+        }
+      }
+      if (!resolved) {
+        resolved = defaultRequestToFile(publicPath, root)
+      }
+      const postfix = resolveFilePathPostfix(resolved)
+      if (postfix) {
+        if (postfix[0] === '/') {
+          resolved = path.join(resolved, postfix)
+        } else {
+          resolved += postfix
+        }
+      }
+      requestToFileCache.set(publicPath, resolved)
+      return resolved
     },
 
     fileToRequest(filePath) {
       if (fileToRequestCache.has(filePath)) {
-        return fileToRequestCache.get(filePath)
+        return fileToRequestCache.get(filePath)!
       }
       for (const r of resolvers) {
         const request = r.fileToRequest && r.fileToRequest(filePath, root)
@@ -194,6 +198,71 @@ export function createResolver(
       const res = defaultFileToRequest(filePath, root)
       fileToRequestCache.set(filePath, res)
       return res
+    },
+
+    /**
+     * Given a fuzzy public path, resolve missing extensions and /index.xxx
+     */
+    normalizePublicPath(publicPath) {
+      // preserve query
+      const queryMatch = publicPath.match(/\?.*$/)
+      const query = queryMatch ? queryMatch[0] : ''
+      const cleanPublicPath = cleanUrl(publicPath)
+
+      const finalize = (result: string) => {
+        result += query
+        if (
+          resolver.requestToFile(result) !== resolver.requestToFile(publicPath)
+        ) {
+          throw new Error(
+            `[vite] normalizePublicPath check fail. please report to vite.`
+          )
+        }
+        return result
+      }
+
+      if (!moduleRE.test(cleanPublicPath)) {
+        return finalize(
+          resolver.fileToRequest(resolver.requestToFile(cleanPublicPath))
+        )
+      }
+
+      const filePath = resolver.requestToFile(cleanPublicPath)
+      const cacheDir = resolveOptimizedCacheDir(root)
+      if (cacheDir) {
+        const relative = path.relative(cacheDir, filePath)
+        if (!relative.startsWith('..')) {
+          return finalize(path.posix.join('/@modules/', slash(relative)))
+        }
+      }
+
+      // fileToRequest doesn't work with files in node_modules
+      // because of edge cases like symlinks or yarn-aliased-install
+      // or even aliased-symlinks
+
+      // example id: "@babel/runtime/helpers/esm/slicedToArray"
+      // see the test case: /playground/TestNormalizePublicPath.vue
+      const id = publicPath.replace(moduleRE, '')
+      const { scope, name, inPkgPath } = parseNodeModuleId(id)
+      if (!inPkgPath) return publicPath
+      let filePathPostFix = ''
+      let findPkgFrom = filePath
+      while (!filePathPostFix.startsWith(inPkgPath)) {
+        // some package contains multi package.json...
+        // for example: @babel/runtime@7.10.2/helpers/esm/package.json
+        const pkgPath = lookupFile(findPkgFrom, ['package.json'], true)
+        if (!pkgPath) {
+          throw new Error(
+            `[vite] can't find package.json for a node_module file: ` +
+              `"${publicPath}". something is wrong.`
+          )
+        }
+        filePathPostFix = slash(path.relative(path.dirname(pkgPath), filePath))
+        findPkgFrom = path.join(path.dirname(pkgPath), '../')
+      }
+      return finalize(
+        ['/@modules', scope, name, filePathPostFix].filter(Boolean).join('/')
+      )
     },
 
     alias(id) {
@@ -210,6 +279,8 @@ export function createResolver(
       }
     }
   }
+
+  return resolver
 }
 
 export const jsSrcRE = /\.(?:(?:j|t)sx?|vue)$|\.mjs$/
@@ -371,10 +442,10 @@ export function resolveNodeModule(
     if (entryPoint) {
       // #284 some packages specify entry without extension...
       entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
-      const ext = resolveExt(entryFilePath)
-      if (ext) {
-        entryPoint += ext
-        entryFilePath += ext
+      const postfix = resolveFilePathPostfix(entryFilePath)
+      if (postfix) {
+        entryPoint += postfix
+        entryFilePath += postfix
       }
       entryPoint = path.posix.join(id, entryPoint!)
       // save the resolved file path now so we don't need to do it again in

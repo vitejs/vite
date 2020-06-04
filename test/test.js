@@ -517,6 +517,10 @@ describe('vite', () => {
       )
     })
 
+    test('rewrite import in unoptimized deps', async () => {
+      expect(await getText('.test-rewrite-in-unoptimized')).toMatch('123')
+    })
+
     test('monorepo support', async () => {
       // linked dep + optimizing linked dep
       expect(await getText(`.optimize-linked`)).toMatch(`ok`)
@@ -541,6 +545,12 @@ describe('vite', () => {
         )
         await expectByPolling(() => getText('.custom-block'), 'こんにちは')
       }
+    })
+
+    test('normalize publicPath', async () => {
+      expect(await getText('.normalize-public-path')).toMatch(
+        JSON.stringify([2, 4])
+      )
     })
   }
 

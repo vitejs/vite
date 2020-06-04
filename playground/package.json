@@ -8,9 +8,11 @@
     "bootstrap": "link:../node_modules/bootstrap",
     "lodash-es": "link:../node_modules/lodash-es",
     "moment": "link:../node_modules/moment",
+    "@babel/runtime": "link:../node_modules/@babel/runtime",
     "normalize.css": "link:../node_modules/normalize.css",
     "resolve-browser-field-test-package": "link:./resolve-browser-field",
     "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package",
-    "optimize-linked": "link:./optimize-linked"
+    "optimize-linked": "link:./optimize-linked",
+    "rewrite-unoptimized-test-package": "link:./rewrite-unoptimized/test-package"
   }
 }
