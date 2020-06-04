@@ -225,19 +225,29 @@ export function createResolver(
         // because of edge cases like symlinks or yarn-aliased-install
         // or even aliased-symlinks
 
-        // /@modules/@scope/test-package -> /@modules/@scope/test-package
+        // example id: "@babel/runtime/helpers/esm/slicedToArray"
+        // see the test case: /playground/TestNormalizePublicPath.vue
         const id = publicPath.replace(moduleRE, '')
         const { scope, name, inPkgPath } = parseNodeModuleId(id)
         if (!inPkgPath) return publicPath
-        // /@modules/test-package/dir -> /@modules/test-package/dir/index.js
-        const pkgPath = lookupFile(filePath, ['package.json'], true)
-        if (!pkgPath)
-          throw new Error(
-            `[vite] can't find package.json for a node_module file: ` +
-              `"${publicPath}". something is wrong.`
-          )
-        const inLibPath = path.relative(path.dirname(pkgPath), filePath)
-        return ['/@modules', scope, name, inLibPath].filter(Boolean).join('/')
+        let filePathPostFix = ''
+        let findPkgFrom = filePath
+        while (!filePathPostFix.startsWith(inPkgPath)) {
+          // some package contains multi package.json...
+          // for example: @babel/runtime@7.10.2/helpers/esm/package.json
+          const pkgPath = lookupFile(findPkgFrom, ['package.json'], true)
+          if (!pkgPath) {
+            throw new Error(
+              `[vite] can't find package.json for a node_module file: ` +
+                `"${publicPath}". something is wrong.`
+            )
+          }
+          filePathPostFix = path.relative(path.dirname(pkgPath), filePath)
+          findPkgFrom = path.join(path.dirname(pkgPath), '../')
+        }
+        return ['/@modules', scope, name, filePathPostFix]
+          .filter(Boolean)
+          .join('/')
       }
     },
 
@@ -361,8 +371,7 @@ function recognizeOptimizedFilePath(
   const cacheDir = resolveOptimizedCacheDir(root)
   if (!cacheDir) return
   const relative = path.relative(cacheDir, filePath)
-  if (!relative.startsWith('../'))
-    return relative.replace(/^\.\.\//, '/@modules/')
+  if (!relative.startsWith('../')) return path.join('/@modules/', relative)
 }
 
 interface NodeModuleInfo {
