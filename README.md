@@ -57,6 +57,7 @@ Vite assumes you are targeting modern browsers and therefore does not perform an
 ## Features
 
 - [Bare Module Resolving](#bare-module-resolving)
+- [CommonJs Module / UMD Module / AMD Module Resolving](#commonjs-module--umd-module--amd-module-resolving)
 - [Hot Module Replacement](#hot-module-replacement)
 - [TypeScript](#typescript)
 - [CSS / JSON Importing](#css--json-importing)
@@ -84,6 +85,19 @@ import { createApp } from 'vue'
 The above will throw an error by default. Vite detects such bare module imports in all served `.js` files and rewrites them with special paths like `/@modules/vue`. Under these special paths, Vite performs module resolution to locate the correct files from your installed dependencies.
 
 Note that `vue` has special treatment - if it isn't installed in the project locally, Vite will fallback to the version from its own dependencies. If you have Vite installed globally, this makes it possible to quickly prototype with Vue without installing anything locally.
+
+### CommonJs Module / UMD Module / AMD Module Resolving
+
+If you want to add `common js`/`umd`/`amd` modules.You can do this like blew. 
+
+```js
+// vite.config.js
+export default {
+  optimizeDeps: {
+    include: [] // add `common js`/`umd`/`amd` module into this
+  }              
+}
+```
 
 ### Hot Module Replacement
 
