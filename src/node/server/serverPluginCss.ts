@@ -138,7 +138,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     })
 
     if (typeof result === 'string') {
-      processedCSS.set(ctx.path, { css })
+      processedCSS.set(ctx.path, { css: await rewriteCssUrls(css, ctx.path) })
       return
     }
 
