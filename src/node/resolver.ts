@@ -158,32 +158,33 @@ export function createResolver(
   const requestToFileCache = new Map<string, string>()
   const fileToRequestCache = new Map<string, string>()
 
-  const resolveRequest = (publicPath: string): string => {
-    if (requestToFileCache.has(publicPath)) {
-      return requestToFileCache.get(publicPath)!
-    }
-
-    let resolved: string | undefined
-    for (const r of resolvers) {
-      const filepath = r.requestToFile && r.requestToFile(publicPath, root)
-      if (filepath) {
-        resolved = filepath
-        break
-      }
-    }
-    if (!resolved) {
-      resolved = defaultRequestToFile(publicPath, root)
-    }
-    const postfix = resolveFilePathPostfix(resolved)
-    // TODO resolved may contain query
-    const result = postfix ? resolved + postfix : resolved
-    requestToFileCache.set(publicPath, result)
-    return result
-  }
-
   return {
     requestToFile(publicPath) {
-      return resolveRequest(publicPath)
+      if (requestToFileCache.has(publicPath)) {
+        return requestToFileCache.get(publicPath)!
+      }
+
+      let resolved: string | undefined
+      for (const r of resolvers) {
+        const filepath = r.requestToFile && r.requestToFile(publicPath, root)
+        if (filepath) {
+          resolved = filepath
+          break
+        }
+      }
+      if (!resolved) {
+        resolved = defaultRequestToFile(publicPath, root)
+      }
+      const postfix = resolveFilePathPostfix(resolved)
+      if (postfix) {
+        if (postfix[0] === '/') {
+          resolved = path.join(resolved, postfix)
+        } else {
+          resolved += postfix
+        }
+      }
+      requestToFileCache.set(publicPath, resolved)
+      return resolved
     },
 
     fileToRequest(filePath) {
@@ -205,6 +206,7 @@ export function createResolver(
       const query = queryMatch ? queryMatch[0] : ''
       const cleanPublicPath = cleanUrl(publicPath)
       const result = main(cleanPublicPath, this) + query
+
       // double check
       if (this.requestToFile(result) !== this.requestToFile(publicPath)) {
         throw new Error(
@@ -242,7 +244,9 @@ export function createResolver(
                 `"${publicPath}". something is wrong.`
             )
           }
-          filePathPostFix = path.relative(path.dirname(pkgPath), filePath)
+          filePathPostFix = slash(
+            path.relative(path.dirname(pkgPath), filePath)
+          )
           findPkgFrom = path.join(path.dirname(pkgPath), '../')
         }
         return ['/@modules', scope, name, filePathPostFix]
@@ -371,7 +375,8 @@ function recognizeOptimizedFilePath(
   const cacheDir = resolveOptimizedCacheDir(root)
   if (!cacheDir) return
   const relative = path.relative(cacheDir, filePath)
-  if (!relative.startsWith('../')) return path.join('/@modules/', relative)
+  if (!relative.startsWith('..'))
+    return path.posix.join('/@modules/', slash(relative))
 }
 
 interface NodeModuleInfo {
