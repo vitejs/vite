@@ -1,3 +1,26 @@
+## [0.20.3](https://github.com/vuejs/vite/compare/v0.20.2...v0.20.3) (2020-06-04)
+
+
+### Bug Fixes
+
+* check loc presence when reporting sfc parse / compile errors ([9fc8020](https://github.com/vuejs/vite/commit/9fc8020b5c13b9fe830eeda019afc63d92a8025c))
+* consist url to open in browser with https option ([#338](https://github.com/vuejs/vite/issues/338)) ([32669ba](https://github.com/vuejs/vite/commit/32669ba1466d8d17db843080cf665c226dd20354))
+* fix css url rewrite for plain css ([2e44e71](https://github.com/vuejs/vite/commit/2e44e7133066110fda46aa00393e5e17e4f5e289))
+* fix regression when using multiple transforms ([#333](https://github.com/vuejs/vite/issues/333)) ([cd1dae4](https://github.com/vuejs/vite/commit/cd1dae46b6a77608c80e74454f4134a2eaec4148))
+* force reload on SFC scoped status change ([1a7243a](https://github.com/vuejs/vite/commit/1a7243ab3d4d1c41935677f38db1fd71a03f30e9)), closes [#348](https://github.com/vuejs/vite/issues/348)
+* module rewrite in unoptimized dep ([#344](https://github.com/vuejs/vite/issues/344)) ([ec698ff](https://github.com/vuejs/vite/commit/ec698ff67159e096878f02f847a8e2b6e2c8a9ad))
+* support ts import in config file ([3df3ecd](https://github.com/vuejs/vite/commit/3df3ecd8a2814fd01e15d0bb3af7878fd8761cb2)), closes [#340](https://github.com/vuejs/vite/issues/340)
+* **optimize:** properly handle css and assets in optimized deps ([944e163](https://github.com/vuejs/vite/commit/944e16301bba660df7a51a76c9995cba357cf924)), closes [#337](https://github.com/vuejs/vite/issues/337)
+
+
+### Features
+
+* support variable interpolation in dynamic imports ([fc59642](https://github.com/vuejs/vite/commit/fc59642b1322d101879bade11abffc0323808f7e)), closes [#339](https://github.com/vuejs/vite/issues/339)
+* **dev:** gen code frame for top level used hmr api ([#346](https://github.com/vuejs/vite/issues/346)) ([5cdbc46](https://github.com/vuejs/vite/commit/5cdbc46dbdb0791f4968120a5d66c2e5537347ab))
+* support `cssPreprocessOptions` ([#335](https://github.com/vuejs/vite/issues/335)) ([13d4fc2](https://github.com/vuejs/vite/commit/13d4fc279a9eb58f99486375e50817ae1d29e07d)), closes [#332](https://github.com/vuejs/vite/issues/332)
+
+
+
 ## [0.20.2](https://github.com/vuejs/vite/compare/v0.20.1...v0.20.2) (2020-06-02)
 
 
