@@ -361,19 +361,20 @@ async function parseSFC(
   if (errors.length) {
     console.error(chalk.red(`\n[vite] SFC parse error: `))
     errors.forEach((e) => {
-      console.error(
-        chalk.underline(
-          `${filePath}:${e.loc!.start.line}:${e.loc!.start.column}`
-        )
-      )
+      const locString = e.loc
+        ? `:${e.loc.start.line}:${e.loc.start.column}`
+        : ``
+      console.error(chalk.underline(filePath + locString))
       console.error(chalk.yellow(e.message))
-      console.error(
-        generateCodeFrame(
-          content as string,
-          e.loc!.start.offset,
-          e.loc!.end.offset
-        ) + `\n`
-      )
+      if (e.loc) {
+        console.error(
+          generateCodeFrame(
+            content as string,
+            e.loc.start.offset,
+            e.loc.end.offset
+          ) + `\n`
+        )
+      }
     })
   }
 
@@ -519,17 +520,18 @@ function compileSFCTemplate(
       if (typeof e === 'string') {
         console.error(e)
       } else {
-        console.error(
-          chalk.underline(
-            `${filePath}:${e.loc!.start.line}:${e.loc!.start.column}`
-          )
-        )
+        const locString = e.loc
+          ? `:${e.loc.start.line}:${e.loc.start.column}`
+          : ``
+        console.error(chalk.underline(filePath + locString))
         console.error(chalk.yellow(e.message))
-        const original = template.map!.sourcesContent![0]
-        console.error(
-          generateCodeFrame(original, e.loc!.start.offset, e.loc!.end.offset) +
-            `\n`
-        )
+        if (e.loc) {
+          const original = template.map!.sourcesContent![0]
+          console.error(
+            generateCodeFrame(original, e.loc.start.offset, e.loc.end.offset) +
+              `\n`
+          )
+        }
       }
     })
   }
