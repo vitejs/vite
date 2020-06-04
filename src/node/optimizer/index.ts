@@ -1,23 +1,22 @@
 import fs from 'fs-extra'
 import path from 'path'
 import { createHash } from 'crypto'
-import { ResolvedConfig } from './config'
+import { ResolvedConfig } from '../config'
 import type Rollup from 'rollup'
-import type { Plugin } from 'rollup'
 import {
   createResolver,
   supportedExts,
   resolveNodeModule,
   InternalResolver,
   resolveNodeModuleFile
-} from './resolver'
-import { createBaseRollupPlugins, onRollupWarning } from './build'
-import { lookupFile, resolveFrom } from './utils'
+} from '../resolver'
+import { createBaseRollupPlugins, onRollupWarning } from '../build'
+import { lookupFile, resolveFrom } from '../utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { createBuildCssPlugin } from './build/buildPluginCss'
-import slash from 'slash'
+import { createDepAssetPlugin, depAssetExternalPlugin } from './pluginAssets'
+import { createBuiltInBailPlugin } from './pluginBuiltInBail'
 
 const debug = require('debug')('vite:optimize')
 
@@ -175,43 +174,17 @@ export async function optimizeDeps(
   try {
     const rollup = require('rollup') as typeof Rollup
 
-    // bail early on detection of any usage of node built-ins.
-    const isbuiltin = require('isbuiltin')
-    const builtinBail: Plugin = {
-      name: 'vite:node-built-in-bail',
-      resolveId(id, importer) {
-        if (isbuiltin(id)) {
-          let importingDep
-          if (importer) {
-            const match = slash(importer).match(
-              /\/node_modules\/([^@\/][^\/]*|@[^\/]+\/[^\/]+)\//
-            )
-            if (match) {
-              importingDep = match[1]
-            }
-          }
-          const dep = importingDep
-            ? `Dependency "${importingDep}"`
-            : `A dependnecy`
-          throw new Error(
-            `${dep} is attempting to import Node built-in module "${id}". ` +
-              `This will not work in a browser environment.`
-          )
-        }
-        return null
-      }
-    }
-
     const bundle = await rollup.rollup({
       input: qualified,
       external,
-      treeshake: { moduleSideEffects: 'no-external' },
+      // treeshake: { moduleSideEffects: 'no-external' },
       onwarn: onRollupWarning(spinner),
       ...config.rollupInputOptions,
       plugins: [
-        builtinBail,
+        createBuiltInBailPlugin(),
+        depAssetExternalPlugin,
         ...(await createBaseRollupPlugins(root, resolver, config)),
-        createBuildCssPlugin(root, '/', 'assets')
+        createDepAssetPlugin(resolver)
       ]
     })
 
@@ -242,21 +215,28 @@ export async function optimizeDeps(
     } else {
       console.error(chalk.red(`\n[vite] Dep optimization failed with error:`))
       console.error(chalk.red(e.message))
-      console.log()
-      console.log(
-        chalk.yellow(
-          `Tip:\nMake sure your "dependencies" only include packages that you\n` +
-            `intend to use in the browser. If it's a Node.js package, it\n` +
-            `should be in "devDependencies".\n\n` +
-            `You can also configure what deps to include/exclude for\n` +
-            `optimization using the "optimizeDeps" option in vite.config.js.\n\n` +
-            `If you do intend to use this dependency in the browser, then\n` +
-            `unfortunately it is not distributed in a web-friendly way and\n` +
-            `it is recommended to look for a modern alternative that ships\n` +
-            `ES module build.\n`
+      if (e.code === 'PARSE_ERROR') {
+        console.error(chalk.cyan(path.relative(root, e.loc.file)))
+        console.error(chalk.dim(e.frame))
+      } else if (e.message.match('Node built-in')) {
+        console.log()
+        console.log(
+          chalk.yellow(
+            `Tip:\nMake sure your "dependencies" only include packages that you\n` +
+              `intend to use in the browser. If it's a Node.js package, it\n` +
+              `should be in "devDependencies".\n\n` +
+              `You can also configure what deps to include/exclude for\n` +
+              `optimization using the "optimizeDeps" option in vite.config.js.\n\n` +
+              `If you do intend to use this dependency in the browser, then\n` +
+              `unfortunately it is not distributed in a web-friendly way and\n` +
+              `it is recommended to look for a modern alternative that ships\n` +
+              `ES module build.\n`
+          )
+          // TODO link to docs once we have it
         )
-        // TODO link to docs once we have it
-      )
+      } else {
+        console.error(e)
+      }
       process.exit(1)
     }
   }

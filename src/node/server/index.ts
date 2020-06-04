@@ -96,7 +96,7 @@ export function createServer(config: ServerConfig): Server {
   const listen = server.listen.bind(server)
   server.listen = (async (...args: any[]) => {
     if (optimizeDeps.auto !== false) {
-      await require('../depOptimizer').optimizeDeps(config)
+      await require('../optimizer').optimizeDeps(config)
     }
     return listen(...args)
   }) as any

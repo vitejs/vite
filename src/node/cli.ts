@@ -163,7 +163,9 @@ async function runServe(options: UserConfig) {
     require('debug')('vite:server')(`server ready in ${Date.now() - start}ms.`)
 
     if (options.open) {
-      require('./utils/openBrowser').openBrowser(`${protocol}://localhost:${port}`)
+      require('./utils/openBrowser').openBrowser(
+        `${protocol}://localhost:${port}`
+      )
     }
   })
 }
@@ -181,7 +183,7 @@ async function runBuild(options: UserConfig) {
 
 async function runOptimize(options: UserConfig) {
   try {
-    await require('./depOptimizer').optimizeDeps(
+    await require('./optimizer').optimizeDeps(
       options,
       true /* as cli command */
     )

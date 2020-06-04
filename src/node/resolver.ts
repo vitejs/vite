@@ -7,7 +7,7 @@ import {
   moduleIdToFileMap,
   moduleFileToIdMap
 } from './server/serverPluginModuleResolve'
-import { resolveOptimizedCacheDir } from './depOptimizer'
+import { resolveOptimizedCacheDir } from './optimizer'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:resolve')

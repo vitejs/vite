@@ -1,6 +1,6 @@
 export * from './server'
 export * from './build'
-export * from './depOptimizer'
+export * from './optimizer'
 export * from './config'
 export {
   readBody,
