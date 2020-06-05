@@ -1,3 +1,13 @@
+## [0.20.5](https://github.com/vuejs/vite/compare/v0.20.4...v0.20.5) (2020-06-05)
+
+
+### Bug Fixes
+
+* ensure postcss-import is applied first ([a383ec3](https://github.com/vuejs/vite/commit/a383ec347bbba453bfae49f403d9850b31f3122d)), closes [#355](https://github.com/vuejs/vite/issues/355)
+* proper handling of custom postcss config for build ([5b1e25d](https://github.com/vuejs/vite/commit/5b1e25d710a6f7e56d4d364a78c332ce7840cb63)), closes [#354](https://github.com/vuejs/vite/issues/354)
+
+
+
 ## [0.20.4](https://github.com/vuejs/vite/compare/v0.20.3...v0.20.4) (2020-06-05)
 
 
