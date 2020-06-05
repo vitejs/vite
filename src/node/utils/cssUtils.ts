@@ -12,7 +12,7 @@ import {
 import { hmrClientPublicPath } from '../server/serverPluginHmr'
 
 export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
-export const cssPreprocessLangRE = /(.+).(less|sass|scss|styl|stylus)$/
+export const cssPreprocessLangRE = /(.+).(less|sass|scss|styl|stylus|postcss)$/
 
 type Replacer = (url: string) => string | Promise<string>
 
@@ -55,7 +55,7 @@ export async function compileCss(
   }: SFCAsyncStyleCompileOptions
 ): Promise<SFCStyleCompileResults | string> {
   const id = hash_sum(publicPath)
-  let postcssConfig = await loadPostcssConfig(root)
+  const postcssConfig = await loadPostcssConfig(root)
   const { compileStyleAsync } = resolveCompiler(root)
 
   if (
@@ -68,9 +68,10 @@ export async function compileCss(
     return source
   }
 
-  const postcssOptions = postcssConfig && postcssConfig.options
-  const postcssPlugins = postcssConfig ? postcssConfig.plugins : []
-  postcssPlugins.unshift(require('postcss-import')())
+  const {
+    options: postcssOptions,
+    plugins: postcssPlugins
+  } = await resolvePostcssOptions(root)
 
   const res = await compileStyleAsync({
     source,
@@ -149,6 +150,17 @@ async function loadPostcssConfig(
       console.error(e)
     }
     return (cachedPostcssConfig = null)
+  }
+}
+
+export async function resolvePostcssOptions(root: string) {
+  const config = await loadPostcssConfig(root)
+  const options = config && config.options
+  const plugins = config ? config.plugins : []
+  plugins.unshift(require('postcss-import')())
+  return {
+    options,
+    plugins
   }
 }
 

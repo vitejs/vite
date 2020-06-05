@@ -26,6 +26,7 @@ import { stopService } from '../esbuildService'
 import { BuildConfig } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
+import { resolvePostcssOptions } from '../utils/cssUtils'
 
 export interface BuildResult {
   html: string
@@ -95,6 +96,10 @@ export async function createBaseRollupPlugins(
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
+  const {
+    options: postcssOptions,
+    plugins: postcssPlugins
+  } = await resolvePostcssOptions(root)
 
   return [
     // user plugins
@@ -109,6 +114,8 @@ export async function createBaseRollupPlugins(
       transformAssetUrls: {
         includeAbsolute: true
       },
+      postcssOptions,
+      postcssPlugins,
       preprocessStyles: true,
       preprocessOptions: {
         includePaths: ['node_modules'],

@@ -46,18 +46,23 @@ export const createBuildCssPlugin = ({
     name: 'vite:css',
     async transform(css: string, id: string) {
       if (id.endsWith('.css') || cssPreprocessLangRE.test(id)) {
-        const result = await compileCss(root, id, {
-          id: '',
-          source: css,
-          filename: id,
-          scoped: false,
-          modules: id.endsWith('.module.css'),
-          preprocessLang: id.replace(
-            cssPreprocessLangRE,
-            '$2'
-          ) as SFCAsyncStyleCompileOptions['preprocessLang'],
-          preprocessOptions
-        })
+        // if this is a Vue SFC style request, it's already processed by
+        // rollup-plugin-vue and we just need to rewrite URLs + collect it
+        const isVueStyle = /\?vue&type=style/.test(id)
+        const result = isVueStyle
+          ? css
+          : await compileCss(root, id, {
+              id: '',
+              source: css,
+              filename: id,
+              scoped: false,
+              modules: id.endsWith('.module.css'),
+              preprocessLang: id.replace(
+                cssPreprocessLangRE,
+                '$2'
+              ) as SFCAsyncStyleCompileOptions['preprocessLang'],
+              preprocessOptions
+            })
 
         let modules: SFCStyleCompileResults['modules']
         if (typeof result === 'string') {
