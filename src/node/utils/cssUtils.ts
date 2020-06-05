@@ -70,7 +70,7 @@ export async function compileCss(
 
   const postcssOptions = postcssConfig && postcssConfig.options
   const postcssPlugins = postcssConfig ? postcssConfig.plugins : []
-  postcssPlugins.push(require('postcss-import')())
+  postcssPlugins.unshift(require('postcss-import')())
 
   const res = await compileStyleAsync({
     source,
