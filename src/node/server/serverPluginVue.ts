@@ -34,6 +34,8 @@ import { codegenCss, compileCss, rewriteCssUrls } from '../utils/cssUtils'
 import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
+import merge from 'merge-source-map'
+import { RawSourceMap } from 'source-map'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -405,8 +407,14 @@ async function compileSFCMain(
   if (descriptor.script) {
     let content = descriptor.script.content
     if (descriptor.script.lang === 'ts') {
-      // TODO merge lang=ts source map
-      content = (await transform(content, publicPath, { loader: 'ts' })).code
+      const { code, map } = await transform(content, publicPath, {
+        loader: 'ts'
+      })
+      content = code
+      descriptor.script.map = merge(
+        descriptor.script.map!,
+        JSON.parse(map!)
+      ) as RawSourceMap
     }
     // rewrite export default.
     // fast path: simple regex replacement to avoid full-blown babel parse.

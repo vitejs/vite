@@ -79,6 +79,7 @@
     "koa-static": "^5.0.0",
     "lru-cache": "^5.1.1",
     "magic-string": "^0.25.7",
+    "merge-source-map": "^1.1.0",
     "mime-types": "^2.1.27",
     "minimist": "^1.2.5",
     "open": "^7.0.3",
