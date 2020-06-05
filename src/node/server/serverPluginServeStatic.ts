@@ -35,7 +35,8 @@ export const serveStaticPlugin: ServerPlugin = ({
     }
 
     // handle possible user request -> file aliases
-    const expectsHtml = ctx.headers.accept.includes('text/html')
+    const expectsHtml =
+      ctx.headers.accept && ctx.headers.accept.includes('text/html')
     if (!expectsHtml) {
       const filePath = resolver.requestToFile(ctx.path)
       if (
