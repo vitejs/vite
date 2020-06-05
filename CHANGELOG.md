@@ -1,3 +1,18 @@
+## [0.20.4](https://github.com/vuejs/vite/compare/v0.20.3...v0.20.4) (2020-06-05)
+
+
+### Bug Fixes
+
+* fix html accept check ([#353](https://github.com/vuejs/vite/issues/353)) ([ef0b453](https://github.com/vuejs/vite/commit/ef0b453d50709b21ce99695325951d5b3cfb9ecf))
+* ignore certain types of dynamic import plugin warnings ([88b41de](https://github.com/vuejs/vite/commit/88b41de8a193f04a08941dab7f417e6a19ce0a89))
+
+
+### Features
+
+* **dev:** merge source map for vue script block with `lang='ts'` ([#345](https://github.com/vuejs/vite/issues/345)) ([6174e33](https://github.com/vuejs/vite/commit/6174e3328fe70c38a53763bb431a79656535fae1))
+
+
+
 ## [0.20.3](https://github.com/vuejs/vite/compare/v0.20.2...v0.20.3) (2020-06-04)
 
 
