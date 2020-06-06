@@ -557,6 +557,15 @@ describe('vite', () => {
       expect(await getText(`.dynamic-import-one`)).toMatch(`One`)
       expect(await getText(`.dynamic-import-two`)).toMatch(`Two`)
     })
+
+    test('file path case sensitive', async () => {
+      if (!isBuild) {
+        await expectByPolling(
+          () => getText('.file-path-case-sensitive'),
+          'load fail'
+        )
+      }
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev

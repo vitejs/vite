@@ -29,6 +29,7 @@
   <TestRewriteUnoptimized />
   <TestNormalizePublicPath />
   <TestDynamicImport />
+  <TestFilePathCaseSensitive />
 </template>
 
 <script>
@@ -54,6 +55,7 @@ import TestOptimizeLink from './optimize-linked/TestOptimizeLink.vue'
 import TestRewriteUnoptimized from './rewrite-unoptimized/TestRewriteUnoptimized.vue'
 import TestNormalizePublicPath from './TestNormalizePublicPath.vue'
 import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
+import TestFilePathCaseSensitive from './file-path-case-sensitive/TestFilePathCaseSensitive.vue'
 
 export default {
   data: () => ({
@@ -82,7 +84,8 @@ export default {
     TestOptimizeLink,
     TestRewriteUnoptimized,
     TestNormalizePublicPath,
-    TestDynamicImport
+    TestDynamicImport,
+    TestFilePathCaseSensitive
   }
 }
 </script>
