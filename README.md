@@ -21,7 +21,8 @@ Still experimental, but we intend to make it suitable for production.
 ```bash
 $ npm init vite-app <project-name>
 $ cd <project-name>
-$ npm install
+$ npm install 
+$ npm install --only=dev (windows 10) 
 $ npm run dev
 ```
 
