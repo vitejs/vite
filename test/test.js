@@ -74,11 +74,21 @@ describe('vite', () => {
     })
 
     test('should generate correct asset paths', async () => {
-      const has404 = browserLogs.some((msg) => msg.match('404'))
-      if (has404) {
-        console.log(browserLogs)
+      if (isBuild) {
+        const has404 = browserLogs.some((msg) => msg.match('404'))
+        if (has404) {
+          console.log(browserLogs)
+        }
+        expect(has404).toBe(false)
+      } else {
+        // in dev, expect one 404 from "file path case sensitive" test
+        // because we perform file path case sensitive check in dev
+        const count404 = browserLogs.filter((msg) => msg.match('404')).length
+        if (count404 !== 1) {
+          console.log(browserLogs)
+        }
+        expect(count404).toBe(1)
       }
-      expect(has404).toBe(false)
     })
 
     test('asset import from js', async () => {
