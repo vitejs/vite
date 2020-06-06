@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import LRUCache from 'lru-cache'
+import { trueCasePath } from 'true-case-path'
 import { Context } from '../server'
 import { Readable } from 'stream'
 import { seenUrls } from '../server/serverPluginServeStatic'
@@ -119,5 +120,29 @@ export function watchFileIfOutOfRoot(
 ) {
   if (!file.startsWith(root) && !/node_modules/.test(file)) {
     watcher.add(file)
+  }
+}
+
+const trueCasePathCache = new Map<string, string>()
+export async function getTrueCasePath(filePath: string, root: string) {
+  if (trueCasePathCache.has(filePath)) {
+    return trueCasePathCache.get(filePath)!
+  }
+  const relative = path.relative(root, filePath)
+  if (relative.startsWith('../')) {
+    // don't check paths outside the root
+    // because that may result in permissions error
+    trueCasePathCache.set(filePath, filePath)
+    return filePath
+  }
+  try {
+    const actualPath = await trueCasePath(relative, root)
+    trueCasePathCache.set(filePath, actualPath)
+    return actualPath
+  } catch (error) {
+    // file not exist is fine,
+    // as it will be handle by history fallback
+    trueCasePathCache.set(filePath, filePath)
+    return filePath
   }
 }

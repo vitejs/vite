@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { ServerPlugin } from '.'
-import { isStaticAsset, cachedRead } from '../utils'
+import { isStaticAsset, cachedRead, getTrueCasePath } from '../utils'
 import chalk from 'chalk'
 
 const send = require('koa-send')
@@ -60,6 +60,20 @@ export const serveStaticPlugin: ServerPlugin = ({
       seenUrls.add(ctx.url)
     })
   }
+
+  app.use(async (ctx, next) => {
+    // ensure file path case is correct
+    // because some filesystem is case-insensitive (OSX, Windows)
+    // https://stackoverflow.com/a/33139702/8175856
+    const filePath = resolver.requestToFile(ctx.path)
+    const actualPath = await getTrueCasePath(filePath, root)
+    if (actualPath !== filePath) {
+      ctx.status = 404
+      return
+    }
+    await next()
+  })
+
   app.use(require('koa-etag')())
   app.use(require('koa-static')(root))
   app.use(require('koa-static')(path.join(root, 'public')))
