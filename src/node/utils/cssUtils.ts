@@ -18,7 +18,8 @@ type Replacer = (url: string) => string | Promise<string>
 
 export function rewriteCssUrls(
   css: string,
-  replacerOrBase: string | Replacer
+  replacerOrBase: string | Replacer,
+  assetsImportSet?: Set<string>
 ): Promise<string> {
   let replacer: Replacer
   if (typeof replacerOrBase === 'string') {
@@ -38,7 +39,9 @@ export function rewriteCssUrls(
     ) {
       return matched
     }
-    return before + (await replacer(rawUrl)) + after
+    const url = await replacer(rawUrl)
+    assetsImportSet && assetsImportSet.add(url)
+    return before + url + after
   })
 }
 

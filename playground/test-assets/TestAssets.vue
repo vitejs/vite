@@ -23,13 +23,20 @@
   <div class="css-bg-data-uri">
     <span style="background: #fff;">CSS background with Data URI</span>
   </div>
+  <TestAssetsHmrInTemplate/>
+  <TestAssetsHmrInStyle/>
+  <TestAssetsHmrInScript/>
 </template>
 
 <script>
 import './testAssets.css'
 import filepath from '../testAssets.png'
+import TestAssetsHmrInTemplate from './testAssetsHmrInTemplate.vue'
+import TestAssetsHmrInStyle from './testAssetsHmrInStyle.vue'
+import TestAssetsHmrInScript from './testAssetsHmrInScript.vue'
 
 export default {
+  components: {TestAssetsHmrInTemplate, TestAssetsHmrInStyle, TestAssetsHmrInScript},
   data() {
     return {
       filepath

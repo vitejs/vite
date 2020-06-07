@@ -38,7 +38,7 @@ import {
   Expression,
   IfStatement
 } from '@babel/types'
-import { resolveCompiler } from '../utils'
+import { isStaticAsset, resolveCompiler } from '../utils'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -72,6 +72,7 @@ export const hmrClientPublicPath = `/vite/hmr`
 
 interface HMRPayload {
   type:
+    | 'assets-update'
     | 'js-update'
     | 'vue-reload'
     | 'vue-rerender'
@@ -203,17 +204,18 @@ export const hmrPlugin: ServerPlugin = ({
     }
   })
 
-  watcher.on('change', (file) => {
+  watcher.on('change', (filePath) => {
     if (
       !(
-        file.endsWith('.vue') ||
-        file.endsWith('.css') ||
-        cssPreprocessLangRE.test(file)
+        isStaticAsset(filePath) ||
+        filePath.endsWith('.vue') ||
+        filePath.endsWith('.css') ||
+        cssPreprocessLangRE.test(filePath)
       )
     ) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
-      handleJSReload(file)
+      handleJSReload(filePath)
     }
   })
 }

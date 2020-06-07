@@ -109,6 +109,10 @@ socket.addEventListener('message', async ({ data }) => {
     case 'js-update':
       await updateModule(path, changeSrcPath, timestamp)
       break
+    case 'assets-update':
+      await bustSwCache(path)
+      updateAssetsInHtml(path, timestamp)
+      break
     case 'custom':
       const cbs = customUpdateMap.get(id)
       if (cbs) {
@@ -132,6 +136,35 @@ socket.addEventListener('message', async ({ data }) => {
       }
   }
 })
+
+function updateAssetsInHtml(path: string, timestamp: number) {
+  ;['src', 'poster', 'href'].forEach((attr) => {
+    document
+      .querySelectorAll(`[${attr}*="${path}"]`)
+      .forEach((el) => el.setAttribute(attr, path + '?t=' + timestamp))
+  })
+  // xlink:href
+  document
+    .querySelectorAll(`[*|href*="${path}"]:not([href])`)
+    .forEach((el) =>
+      el.setAttributeNS(
+        'http://www.w3.org/1999/xlink',
+        'href',
+        path + '?t=' + timestamp
+      )
+    )
+  // srcset
+  document
+    .querySelectorAll(`[srcset*="${path}"]`)
+    .forEach((el) =>
+      el.setAttribute(
+        'srcset',
+        el
+          .getAttribute('srcset')!
+          .replace(new RegExp(path, 'g'), path + '?t=' + timestamp)
+      )
+    )
+}
 
 // ping server
 socket.addEventListener('close', () => {

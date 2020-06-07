@@ -36,6 +36,7 @@ import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
 import merge from 'merge-source-map'
 import { RawSourceMap } from 'source-map'
+import { recordCssImportAssetsChain } from './serverPluginAssets'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -574,9 +575,10 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
+  const resourcePath = filePath + `?type=style&index=${index}`
   const result = (await compileCss(root, publicPath, {
     source: style.content,
-    filename: filePath + `?type=style&index=${index}`,
+    filename: resourcePath,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,
@@ -621,7 +623,11 @@ async function compileSFCStyle(
     })
   }
 
-  result.code = await rewriteCssUrls(result.code, publicPath)
+  const assetsImportSet = new Set<string>()
+  result.code = await rewriteCssUrls(result.code, publicPath, assetsImportSet)
+  if (assetsImportSet.size) {
+    recordCssImportAssetsChain(resourcePath, assetsImportSet)
+  }
 
   cached = cached || { styles: [], customs: [] }
   cached.styles[index] = result

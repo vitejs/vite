@@ -34,6 +34,12 @@ const getComputedColor = async (selectorOrEl) => {
   )
 }
 
+const getComputedWidth = async (selectorOrEl) => {
+  return (await getEl(selectorOrEl)).evaluate(
+    (el) => getComputedStyle(el).width
+  )
+}
+
 beforeAll(async () => {
   try {
     await fs.remove(tempDir)
@@ -557,6 +563,33 @@ describe('vite', () => {
       expect(await getText(`.dynamic-import-one`)).toMatch(`One`)
       expect(await getText(`.dynamic-import-two`)).toMatch(`Two`)
     })
+
+    test('assets hmr w/ template and script', async () => {
+      const el = await page.$('.asset-hmr-template')
+      const scriptEl = await page.$('.asset-hmr-script')
+      expect(await getComputedWidth(el)).toBe('25px')
+      expect(await getComputedWidth(scriptEl)).toBe('25px')
+
+      if (!isBuild) {
+        await updateFile('public/logo.svg', (content) =>
+          content.replace('width="25px"', 'width="30px"')
+        )
+        await expectByPolling(() => getComputedWidth(el), '30px')
+        // used inside js `xxx?import`, it can update without reload `js` boundary
+        await expectByPolling(() => getComputedWidth(scriptEl), '30px')
+      }
+    })
+
+    // test('assets hmr w/ style', async () => {
+    //   const el = await page.$('.asset-hmr-style')
+    //   expect(await getComputedWidth(el)).toBe('25px')
+    //   if (!isBuild) {
+    //     await updateFile('public/logo.svg', (content) =>
+    //         content.replace('width="25px"', 'width="30px"')
+    //     )
+    //     await expectByPolling(() => getComputedWidth(el), '30px')
+    //   }
+    // })
   }
 
   // test build first since we are going to edit the fixtures when testing dev

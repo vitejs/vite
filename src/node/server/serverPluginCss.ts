@@ -13,6 +13,9 @@ import {
 } from '../utils/cssUtils'
 import qs from 'querystring'
 import chalk from 'chalk'
+import { HMRWatcher } from './serverPluginHmr'
+import { InternalResolver } from '../resolver'
+import { recordCssImportAssetsChain } from './serverPluginAssets'
 
 interface ProcessedEntry {
   css: string
@@ -71,74 +74,43 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
         // it cannot be handled as simple css import because it may be scoped
         const styleImport = srcImportMap.get(filePath)
         vueCache.del(filePath)
-        vueStyleUpdate(styleImport)
+        vueStyleUpdate(styleImport, watcher)
         return
       }
       // handle HMR for module.css
       // it cannot be handled as normal css because the js exports may change
       if (filePath.endsWith('.module.css')) {
-        moduleCssUpdate(filePath)
+        moduleCssUpdate(filePath, watcher)
       }
 
       const boundaries = getCssImportBoundaries(filePath)
       if (boundaries.size) {
-        for (let boundary of boundaries) {
-          if (boundary.includes('.module')) {
-            moduleCssUpdate(boundary)
-          } else if (boundary.includes('.vue')) {
-            vueCache.del(cleanUrl(boundary))
-            vueStyleUpdate(resolver.fileToRequest(boundary))
-          } else {
-            normalCssUpdate(resolver.fileToRequest(boundary))
-          }
-        }
+        updateCss(boundaries, watcher, resolver)
         return
       }
       // no boundaries
-      normalCssUpdate(publicPath)
+      normalCssUpdate(publicPath, watcher)
     }
   })
 
-  function vueStyleUpdate(styleImport: string) {
-    const publicPath = cleanUrl(styleImport)
-    const index = qs.parse(styleImport.split('?', 2)[1]).index
-    console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
-    watcher.send({
-      type: 'style-update',
-      path: `${publicPath}?type=style&index=${index}`,
-      timestamp: Date.now()
-    })
-  }
-
-  function moduleCssUpdate(filePath: string) {
-    watcher.handleJSReload(filePath)
-  }
-
-  function normalCssUpdate(publicPath: string) {
-    // bust process cache
-    processedCSS.delete(publicPath)
-
-    watcher.send({
-      type: 'style-update',
-      path: publicPath,
-      timestamp: Date.now()
-    })
-  }
-
   async function processCss(root: string, ctx: Context) {
     const css = (await readBody(ctx.body))!
+    const filePath = resolver.requestToFile(ctx.path)
     const result = await compileCss(root, ctx.path, {
       id: '',
       source: css,
-      filename: resolver.requestToFile(ctx.path),
+      filename: filePath,
       scoped: false,
       modules: ctx.path.includes('.module'),
       preprocessLang: ctx.path.replace(cssPreprocessLangRE, '$2') as any,
       preprocessOptions: ctx.config.cssPreprocessOptions
     })
+    const assetsImportSet = new Set<string>()
 
     if (typeof result === 'string') {
-      processedCSS.set(ctx.path, { css: await rewriteCssUrls(css, ctx.path) })
+      processedCSS.set(ctx.path, {
+        css: await rewriteCssUrls(css, ctx.path, assetsImportSet)
+      })
       return
     }
 
@@ -147,11 +119,58 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       result.errors.forEach(console.error)
     }
 
-    result.code = await rewriteCssUrls(result.code, ctx.path)
+    result.code = await rewriteCssUrls(result.code, ctx.path, assetsImportSet)
+
+    if (assetsImportSet.size) {
+      recordCssImportAssetsChain(filePath, assetsImportSet)
+    }
 
     processedCSS.set(ctx.path, {
       css: result.code,
       modules: result.modules
     })
+  }
+}
+
+export function vueStyleUpdate(styleImport: string, watcher: HMRWatcher) {
+  const publicPath = cleanUrl(styleImport)
+  const index = qs.parse(styleImport.split('?', 2)[1]).index
+  console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
+  watcher.send({
+    type: 'style-update',
+    path: `${publicPath}?type=style&index=${index}`,
+    timestamp: Date.now()
+  })
+}
+
+export function moduleCssUpdate(filePath: string, watcher: HMRWatcher) {
+  watcher.handleJSReload(filePath)
+}
+
+export function normalCssUpdate(publicPath: string, watcher: HMRWatcher) {
+  // bust process cache
+  processedCSS.delete(publicPath)
+
+  watcher.send({
+    type: 'style-update',
+    path: publicPath,
+    timestamp: Date.now()
+  })
+}
+
+export function updateCss(
+  boundaries: Set<string>,
+  watcher: HMRWatcher,
+  resolver: InternalResolver
+) {
+  for (const boundary of boundaries) {
+    if (boundary.includes('.module')) {
+      moduleCssUpdate(boundary, watcher)
+    } else if (boundary.includes('.vue')) {
+      vueCache.del(cleanUrl(boundary))
+      vueStyleUpdate(resolver.fileToRequest(boundary), watcher)
+    } else {
+      normalCssUpdate(resolver.fileToRequest(boundary), watcher)
+    }
   }
 }
