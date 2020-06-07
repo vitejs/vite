@@ -204,18 +204,18 @@ export const hmrPlugin: ServerPlugin = ({
     }
   })
 
-  watcher.on('change', (filePath) => {
+  watcher.on('change', (file) => {
     if (
       !(
-        isStaticAsset(filePath) ||
-        filePath.endsWith('.vue') ||
-        filePath.endsWith('.css') ||
-        cssPreprocessLangRE.test(filePath)
+        isStaticAsset(file) ||
+        file.endsWith('.vue') ||
+        file.endsWith('.css') ||
+        cssPreprocessLangRE.test(file)
       )
     ) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
-      handleJSReload(filePath)
+      handleJSReload(file)
     }
   })
 }
