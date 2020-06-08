@@ -1,3 +1,16 @@
+## [0.20.6](https://github.com/vuejs/vite/compare/v0.20.5...v0.20.6) (2020-06-08)
+
+
+### Bug Fixes
+
+* exclude hmr from path alias mapping ([4ed19b9](https://github.com/vuejs/vite/commit/4ed19b9b6008f4ba7b498b1b58dd90b4a95d40ae)), closes [#357](https://github.com/vuejs/vite/issues/357)
+* fix isAsset test false positive ([#359](https://github.com/vuejs/vite/issues/359)) ([47923c7](https://github.com/vuejs/vite/commit/47923c74b8ac3c5d5e3c23b3138b91d578093590))
+* normalize public path for index.html src references ([6ed9f0b](https://github.com/vuejs/vite/commit/6ed9f0bbee3b7042158fab777d1e73df32b47e7f))
+* properly handle entry alias for optimized deps ([ed5b668](https://github.com/vuejs/vite/commit/ed5b668f08424e8730c1de15dc4dedfc9fa75474))
+* wrong dep in the error message of node-built-in-bail ([#366](https://github.com/vuejs/vite/issues/366)) ([a8c22de](https://github.com/vuejs/vite/commit/a8c22de895646aba3aa80fe3f0323a1a44a7324a))
+
+
+
 ## [0.20.5](https://github.com/vuejs/vite/compare/v0.20.4...v0.20.5) (2020-06-05)
 
 
