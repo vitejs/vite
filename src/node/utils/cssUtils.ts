@@ -12,7 +12,7 @@ import {
 import { hmrClientPublicPath } from '../server/serverPluginHmr'
 
 export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
-export const cssPreprocessLangRE = /(.+).(less|sass|scss|styl|stylus|postcss)$/
+export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
 
 type Replacer = (url: string) => string | Promise<string>
 
