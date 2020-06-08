@@ -336,11 +336,12 @@ export function resolveBareModuleRequest(
     const deepMatch = !isEntry && id.match(deepImportRE)
     if (deepMatch) {
       const depId = deepMatch[1] || deepMatch[2]
-      if (resolver.alias(depId) === id) {
-        // this is a deep import but aliased from a bare module id.
-        return resolveBareModuleRequest(root, depId, importer, resolver)
-      }
       if (resolveOptimizedModule(root, depId)) {
+        if (resolver.alias(depId) === id) {
+          // this is a deep import but aliased from a bare module id.
+          // redirect it the optimized copy.
+          return resolveBareModuleRequest(root, depId, importer, resolver)
+        }
         console.error(
           chalk.yellow(
             `\n[vite] Avoid deep import "${id}" (imported by ${importer})\n` +
