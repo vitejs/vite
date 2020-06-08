@@ -315,7 +315,7 @@ export function resolveBareModuleRequest(
 
   let isEntry = false
   const basedir = path.dirname(resolver.requestToFile(importer))
-  const pkgInfo = resolveNodeModule(basedir, id)
+  const pkgInfo = resolveNodeModule(basedir, id, resolver)
   if (pkgInfo) {
     if (!pkgInfo.entry) {
       console.error(
@@ -336,6 +336,10 @@ export function resolveBareModuleRequest(
     const deepMatch = !isEntry && id.match(deepImportRE)
     if (deepMatch) {
       const depId = deepMatch[1] || deepMatch[2]
+      if (resolver.alias(depId) === id) {
+        // this is a deep import but aliased from a bare module id.
+        return resolveBareModuleRequest(root, depId, importer, resolver)
+      }
       if (resolveOptimizedModule(root, depId)) {
         console.error(
           chalk.yellow(
@@ -381,8 +385,8 @@ export function resolveOptimizedModule(
 }
 
 interface NodeModuleInfo {
-  entry: string | null
-  entryFilePath: string | null
+  entry: string | undefined
+  entryFilePath: string | undefined
   pkg: any
 }
 const nodeModulesInfoMap = new Map<string, NodeModuleInfo>()
@@ -390,7 +394,8 @@ const nodeModulesFileMap = new Map()
 
 export function resolveNodeModule(
   root: string,
-  id: string
+  id: string,
+  resolver: InternalResolver
 ): NodeModuleInfo | undefined {
   const cacheKey = `${root}#${id}`
   const cached = nodeModulesInfoMap.get(cacheKey)
@@ -413,7 +418,7 @@ export function resolveNodeModule(
     } catch (e) {
       return
     }
-    let entryPoint: string | null = null
+    let entryPoint: string | undefined
 
     // TODO properly support conditinal exports
     // https://nodejs.org/api/esm.html#esm_conditional_exports
@@ -442,8 +447,15 @@ export function resolveNodeModule(
     // e.g. foo/dist/foo.js
     // this is the path raw imports will be rewritten to, and is what will
     // be passed to resolveNodeModuleFile().
-    let entryFilePath: string | null = null
-    if (entryPoint) {
+    let entryFilePath: string | undefined
+
+    // respect user manual alias
+    const aliased = resolver.alias(id)
+    if (aliased && aliased !== id) {
+      entryFilePath = resolveNodeModuleFile(root, aliased)
+    }
+
+    if (!entryFilePath && entryPoint) {
       // #284 some packages specify entry without extension...
       entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
       const postfix = resolveFilePathPostfix(entryFilePath)

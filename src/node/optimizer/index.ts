@@ -131,7 +131,7 @@ export async function optimizeDeps(
   // Force included deps - these can also be deep paths
   if (options.include) {
     options.include.forEach((id) => {
-      const pkg = resolveNodeModule(root, id)
+      const pkg = resolveNodeModule(root, id, resolver)
       if (pkg && pkg.entryFilePath) {
         qualified[id] = pkg.entryFilePath
       } else {
@@ -281,7 +281,7 @@ function resolveQualifiedDeps(
       debug(`skipping ${id} (internal excluded)`)
       return false
     }
-    const pkgInfo = resolveNodeModule(root, id)
+    const pkgInfo = resolveNodeModule(root, id, resolver)
     if (!pkgInfo || !pkgInfo.entryFilePath) {
       debug(`skipping ${id} (cannot resolve entry)`)
       console.log(root, id)
@@ -329,7 +329,7 @@ function resolveQualifiedDeps(
 
   const qualified: Record<string, string> = {}
   qualifiedDeps.forEach((id) => {
-    qualified[id] = resolveNodeModule(root, id)!.entryFilePath!
+    qualified[id] = resolveNodeModule(root, id, resolver)!.entryFilePath!
   })
 
   // mark non-optimized deps as external
