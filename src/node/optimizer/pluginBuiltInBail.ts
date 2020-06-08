@@ -1,5 +1,5 @@
 import { Plugin } from 'rollup'
-import slash from 'slash'
+import { lookupFile } from '../utils'
 
 export const createBuiltInBailPlugin = (): Plugin => {
   const isbuiltin = require('isbuiltin')
@@ -10,11 +10,9 @@ export const createBuiltInBailPlugin = (): Plugin => {
       if (isbuiltin(id)) {
         let importingDep
         if (importer) {
-          const match = slash(importer).match(
-            /\/node_modules\/([^@\/][^\/]*|@[^\/]+\/[^\/]+)\//
-          )
-          if (match) {
-            importingDep = match[1]
+          const pkg = JSON.parse(lookupFile(importer, ['package.json']) || `{}`)
+          if (pkg.name) {
+            importingDep = pkg.name
           }
         }
         const dep = importingDep
