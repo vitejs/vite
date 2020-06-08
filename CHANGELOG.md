@@ -1,3 +1,12 @@
+## [0.20.7](https://github.com/vuejs/vite/compare/v0.20.6...v0.20.7) (2020-06-08)
+
+
+### Bug Fixes
+
+* only redirect aliased entry on optimized ([429416d](https://github.com/vuejs/vite/commit/429416d5f74e1da25906568b3a0037b6cebb81eb)), closes [#369](https://github.com/vuejs/vite/issues/369)
+
+
+
 ## [0.20.6](https://github.com/vuejs/vite/compare/v0.20.5...v0.20.6) (2020-06-08)
 
 
