@@ -125,7 +125,9 @@ async function runServe(options: UserConfig) {
   const server = require('./server').createServer(options)
 
   let port = options.port || 3000
+  let hostname = options.hostname || 'localhost'
   const protocol = options.https ? 'https' : 'http'
+  
   server.on('error', (e: Error & { code?: string }) => {
     if (e.code === 'EADDRINUSE') {
       console.log(`Port ${port} is in use, trying another one...`)
@@ -151,7 +153,7 @@ async function runServe(options: UserConfig) {
             type: detail.address.includes('127.0.0.1')
               ? 'Local:   '
               : 'Network: ',
-            host: detail.address.replace('127.0.0.1', 'localhost')
+            host: detail.address.replace('127.0.0.1', hostname)
           }
         })
         .forEach(({ type, host }) => {
@@ -164,7 +166,7 @@ async function runServe(options: UserConfig) {
 
     if (options.open) {
       require('./utils/openBrowser').openBrowser(
-        `${protocol}://localhost:${port}`
+        `${protocol}://${hostname}:${port}`
       )
     }
   })
