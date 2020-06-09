@@ -432,7 +432,6 @@ async function compileSFCMain(
   let hasScoped = false
   let hasCSSModules = false
   if (descriptor.styles) {
-    code += `\nimport { updateStyle } from "${hmrClientPublicPath}"\n`
     descriptor.styles.forEach((s, i) => {
       const styleRequest = publicPath + `?type=style&index=${i}`
       if (s.scoped) hasScoped = true
