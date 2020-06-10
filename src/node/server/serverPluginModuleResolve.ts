@@ -74,8 +74,8 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
     }
 
     if (isMapFile && importer) {
-      // the `resolveNodeModuleFile` doesn't works with linked pkg
-      // our last try: infer from same dir of the importer
+      // the resolveNodeModuleFile doesn't work with linked pkg
+      // our last try: infer from the dir of importer
       const inferMapPath = path.join(
         path.dirname(importerFilePath),
         path.basename(ctx.path)
