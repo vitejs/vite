@@ -14,12 +14,7 @@ import {
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
-import {
-  debugHmr,
-  importerMap,
-  ensureMapEntry,
-  hmrClientPublicPath
-} from './serverPluginHmr'
+import { debugHmr, importerMap, ensureMapEntry } from './serverPluginHmr'
 import {
   resolveFrom,
   cachedRead,
