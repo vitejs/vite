@@ -29,6 +29,7 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
+import { isCSSRequest } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -60,6 +61,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
     if (
       ctx.body &&
       ctx.response.is('js') &&
+      !isCSSRequest(ctx.path) &&
       !ctx.url.endsWith('.map') &&
       // skip internal client
       !ctx.path.startsWith(hmrClientPublicPath) &&
