@@ -1,13 +1,12 @@
 import { Plugin } from 'rollup'
 import { init, parse } from 'es-module-lexer'
-import { cssPreprocessLangRE } from '../utils/cssUtils'
+import { isCSSRequest } from '../utils/cssUtils'
 import MagicString from 'magic-string'
 import { isStaticAsset } from '../utils'
 import path from 'path'
 import { InternalResolver } from '../resolver'
 
-const isAsset = (id: string) =>
-  id.endsWith('.css') || cssPreprocessLangRE.test(id) || isStaticAsset(id)
+const isAsset = (id: string) => isCSSRequest(id) || isStaticAsset(id)
 
 export const depAssetExternalPlugin: Plugin = {
   name: 'vite:optimize-dep-assets-external',

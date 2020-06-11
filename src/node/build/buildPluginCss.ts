@@ -7,7 +7,8 @@ import {
   urlRE,
   compileCss,
   cssPreprocessLangRE,
-  rewriteCssUrls
+  rewriteCssUrls,
+  isCSSRequest
 } from '../utils/cssUtils'
 import {
   SFCStyleCompileResults,
@@ -45,7 +46,7 @@ export const createBuildCssPlugin = ({
   return {
     name: 'vite:css',
     async transform(css: string, id: string) {
-      if (id.endsWith('.css') || cssPreprocessLangRE.test(id)) {
+      if (isCSSRequest(id)) {
         // if this is a Vue SFC style request, it's already processed by
         // rollup-plugin-vue and we just need to rewrite URLs + collect it
         const isVueStyle = /\?vue&type=style/.test(id)

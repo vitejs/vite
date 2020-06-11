@@ -9,7 +9,8 @@ import {
   cssImportMap,
   cssPreprocessLangRE,
   getCssImportBoundaries,
-  rewriteCssUrls
+  rewriteCssUrls,
+  isCSSRequest
 } from '../utils/cssUtils'
 import qs from 'querystring'
 import chalk from 'chalk'
@@ -28,7 +29,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     await next()
     // handle .css imports
     if (
-      (cssPreprocessLangRE.test(ctx.path) || ctx.response.is('css')) &&
+      isCSSRequest(ctx.path) &&
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
@@ -52,7 +53,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   })
 
   watcher.on('change', (filePath) => {
-    if (filePath.endsWith('.css') || cssPreprocessLangRE.test(filePath)) {
+    if (isCSSRequest(filePath)) {
       const publicPath = resolver.fileToRequest(filePath)
 
       /** filter unused files */

@@ -30,7 +30,7 @@ import { parse } from '../utils/babelParse'
 import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
-import { cssPreprocessLangRE } from '../utils/cssUtils'
+import { isCSSRequest } from '../utils/cssUtils'
 import {
   Node,
   StringLiteral,
@@ -204,13 +204,7 @@ export const hmrPlugin: ServerPlugin = ({
   })
 
   watcher.on('change', (file) => {
-    if (
-      !(
-        file.endsWith('.vue') ||
-        file.endsWith('.css') ||
-        cssPreprocessLangRE.test(file)
-      )
-    ) {
+    if (!(file.endsWith('.vue') || isCSSRequest(file))) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
       handleJSReload(file)

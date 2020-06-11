@@ -14,6 +14,9 @@ import { hmrClientPublicPath } from '../server/serverPluginHmr'
 export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
 
+export const isCSSRequest = (file: string) =>
+  file.endsWith('.css') || cssPreprocessLangRE.test(file)
+
 type Replacer = (url: string) => string | Promise<string>
 
 export function rewriteCssUrls(
