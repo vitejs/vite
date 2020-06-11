@@ -45,7 +45,8 @@ export function createServer(config: ServerConfig): Server {
     alias = {},
     transforms = [],
     vueCustomBlockTransforms = {},
-    optimizeDeps = {}
+    optimizeDeps = {},
+    compress = false
   } = config
 
   const app = new Koa<State, Context>()
@@ -69,6 +70,10 @@ export function createServer(config: ServerConfig): Server {
     Object.assign(ctx, context)
     return next()
   })
+
+  if (compress) {
+    app.use(require('koa-compress')({ threshold: 1024 * 50 /*50KB*/ }))
+  }
 
   const resolvedPlugins = [
     // the import rewrite and html rewrite both take highest priority and runs

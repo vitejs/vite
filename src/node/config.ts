@@ -127,6 +127,10 @@ export interface ServerConfig extends SharedConfig {
   https?: boolean
   httpsOption?: ServerOptions
   /**
+   * Compress source size.Default false and threshold is 50KB.
+   */
+  compress?: boolean
+  /**
    * Configure custom proxy rules for the dev server. Uses
    * [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses
    * [`http-proxy`](https://github.com/http-party/node-http-proxy). Each key can
