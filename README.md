@@ -312,7 +312,20 @@ Vite does utilize bundling for production builds, because native ES module impor
 
 You can run `vite build` to bundle the app.
 
-Internally, we use a highly opinionated Rollup config to generate the build. The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flags in the CLI (see [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts) for full details).
+Internally, we use a highly opinionated Rollup config to generate the build. By default, the build is compressed using rollup-plugin-terser.
+
+The build is configurable by passing on most options to Rollup - and most non-rollup string/boolean options have mapping flags in the CLI (see [build/index.ts](https://github.com/vuejs/vite/blob/master/src/node/build/index.ts) for full details). For example, you can override the Terser options by including the following in your [Config File](#config-file):
+
+```js
+// vite.config.js
+module.exports = {
+  rollupOutputOptions: {
+    plugins: [
+      terser({ compress: false, mangle: false, output: { comments: 'all' } })
+    ]
+  }
+}
+```
 
 ### Modes and Environment Variables
 
