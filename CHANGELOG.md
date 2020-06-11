@@ -1,3 +1,13 @@
+## [0.20.8](https://github.com/vuejs/vite/compare/v0.20.7...v0.20.8) (2020-06-11)
+
+
+### Performance Improvements
+
+* avoid unnecessary css processing when source did not change ([a792610](https://github.com/vuejs/vite/commit/a7926103cbf3854259b23c5906a11c11bd4caa30)), closes [#383](https://github.com/vuejs/vite/issues/383)
+* skip rewrite for css requests ([88f411e](https://github.com/vuejs/vite/commit/88f411ef7fd06e4b02485b05515c60aa31c9ffc2))
+
+
+
 ## [0.20.7](https://github.com/vuejs/vite/compare/v0.20.6...v0.20.7) (2020-06-08)
 
 
