@@ -14,6 +14,7 @@ import {
 } from '../utils/cssUtils'
 import qs from 'querystring'
 import chalk from 'chalk'
+import { InternalResolver } from '../resolver'
 
 interface ProcessedEntry {
   css: string
@@ -78,14 +79,14 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       // handle HMR for module.css
       // it cannot be handled as normal css because the js exports may change
       if (filePath.endsWith('.module.css')) {
-        moduleCssUpdate(filePath)
+        moduleCssUpdate(filePath, resolver)
       }
 
       const boundaries = getCssImportBoundaries(filePath)
       if (boundaries.size) {
         for (let boundary of boundaries) {
           if (boundary.includes('.module')) {
-            moduleCssUpdate(boundary)
+            moduleCssUpdate(boundary, resolver)
           } else if (boundary.includes('.vue')) {
             vueCache.del(cleanUrl(boundary))
             vueStyleUpdate(resolver.fileToRequest(boundary))
@@ -111,7 +112,10 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     })
   }
 
-  function moduleCssUpdate(filePath: string) {
+  function moduleCssUpdate(filePath: string, resolver: InternalResolver) {
+    // bust process cache
+    processedCSS.delete(resolver.fileToRequest(filePath))
+
     watcher.handleJSReload(filePath)
   }
 
@@ -127,6 +131,12 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   }
 
   async function processCss(root: string, ctx: Context) {
+    // source didn't change (marker added by cachedRead)
+    // just use previously cached result
+    if (ctx.__notModified && processedCSS.has(ctx.path)) {
+      return
+    }
+
     const css = (await readBody(ctx.body))!
     const result = await compileCss(root, ctx.path, {
       id: '',

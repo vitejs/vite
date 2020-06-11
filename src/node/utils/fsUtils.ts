@@ -35,6 +35,8 @@ export async function cachedRead(
   }
   if (cached && cached.lastModified === lastModified) {
     if (ctx) {
+      // a private marker in case the user ticks "disable cache" during dev
+      ctx.__notModified = true
       ctx.etag = cached.etag
       ctx.lastModified = new Date(cached.lastModified)
       if (
