@@ -110,9 +110,6 @@ export function rewriteImports(
   resolver: InternalResolver,
   timestamp?: string
 ) {
-  if (typeof source !== 'string') {
-    source = String(source)
-  }
   try {
     let imports: ImportSpecifier[] = []
     try {
