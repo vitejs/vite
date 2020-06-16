@@ -76,7 +76,8 @@ export function createServer(config: ServerConfig): Server {
     moduleRewritePlugin,
     htmlRewritePlugin,
     // user plugins
-    ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
+    // configureServer already normalize by ./config.ts
+    ...(configureServer as ServerPlugin[]),
     moduleResolvePlugin,
     proxyPlugin,
     serviceWorkerPlugin,
