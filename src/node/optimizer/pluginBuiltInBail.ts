@@ -17,7 +17,7 @@ export const createBuiltInBailPlugin = (): Plugin => {
         }
         const dep = importingDep
           ? `Dependency "${importingDep}"`
-          : `A dependnecy`
+          : `A dependency`
         throw new Error(
           `${dep} is attempting to import Node built-in module "${id}". ` +
             `This will not work in a browser environment.`
