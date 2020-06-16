@@ -12,7 +12,7 @@ const getETag = require('etag')
 interface CacheEntry {
   lastModified: number
   etag: string
-  content: string
+  content: Buffer
 }
 
 const fsReadCache = new LRUCache<string, CacheEntry>({
@@ -26,7 +26,7 @@ const fsReadCache = new LRUCache<string, CacheEntry>({
 export async function cachedRead(
   ctx: Context | null,
   file: string
-): Promise<string> {
+): Promise<Buffer> {
   const lastModified = fs.statSync(file).mtimeMs
   const cached = fsReadCache.get(file)
   if (ctx) {
@@ -51,7 +51,8 @@ export async function cachedRead(
     }
     return cached.content
   }
-  const content = await fs.readFile(file, 'utf-8')
+  // #395 some file is an binary file, eg. font
+  const content = await fs.readFile(file)
   const etag = getETag(content)
   fsReadCache.set(file, {
     content,
