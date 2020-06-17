@@ -2,6 +2,7 @@ import path from 'path'
 import chalk from 'chalk'
 import { startService, Service, TransformOptions, Message } from 'esbuild'
 import { SharedConfig } from './config'
+import { parse } from './utils/babelParse'
 
 const debug = require('debug')('vite:esbuild')
 
@@ -79,9 +80,10 @@ export const transform = async (
     // Fragment.
     if (file.endsWith('x')) {
       if (!jsxOption || jsxOption === 'vue') {
-        code +=
-          `\nimport { jsx } from '${vueJsxPublicPath}'` +
-          `\nimport { Fragment } from 'vue'`
+        code += `\nimport { jsx } from '${vueJsxPublicPath}'`
+        if (!(await hasFragmentImport(code))) {
+          code += `\nimport { Fragment } from 'vue'`
+        }
       }
       if (jsxOption === 'preact') {
         code += `\nimport { h, Fragment } from 'preact'`
@@ -124,4 +126,22 @@ function printMessage(m: Message, code: string) {
       require('@vue/compiler-core').generateCodeFrame(code, offset, offset + 1)
     )
   }
+}
+
+async function hasFragmentImport(source: string): Promise<boolean> {
+  if (!source.includes('Fragment')) {
+    return false
+  } else {
+    const ast = parse(source)
+    for (const node of ast) {
+      if (node.type === 'ImportDeclaration') {
+        for (const s of node.specifiers) {
+          if (s.type === 'ImportSpecifier' && s.imported.name === 'Fragment') {
+            return true
+          }
+        }
+      }
+    }
+  }
+  return false
 }
