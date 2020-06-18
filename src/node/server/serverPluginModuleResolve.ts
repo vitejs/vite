@@ -1,5 +1,6 @@
 import path from 'path'
 import chalk from 'chalk'
+import fs from 'fs-extra'
 import { ServerPlugin } from '.'
 import { resolveVue, cachedRead } from '../utils'
 import { URL } from 'url'
@@ -56,9 +57,11 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
 
     const referer = ctx.get('referer')
     let importer: string | undefined
+    // this is a map file request from browser dev tool
+    const isMapFile = ctx.path.endsWith('.map')
     if (referer) {
       importer = new URL(referer).pathname
-    } else if (ctx.path.endsWith('.map')) {
+    } else if (isMapFile) {
       // for some reason Chrome doesn't provide referer for source map requests.
       // do our best to reverse-infer the importer.
       importer = ctx.path.replace(/\.map$/, '')
@@ -68,6 +71,18 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
     const nodeModulePath = resolveNodeModuleFile(importerFilePath, id)
     if (nodeModulePath) {
       return serve(id, nodeModulePath, 'node_modules')
+    }
+
+    if (isMapFile && importer) {
+      // the resolveNodeModuleFile doesn't work with linked pkg
+      // our last try: infer from the dir of importer
+      const inferMapPath = path.join(
+        path.dirname(importerFilePath),
+        path.basename(ctx.path)
+      )
+      if (fs.existsSync(inferMapPath)) {
+        return serve(id, inferMapPath, 'map file in linked pkg')
+      }
     }
 
     console.error(
