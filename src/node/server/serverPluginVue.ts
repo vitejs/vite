@@ -319,7 +319,7 @@ async function resolveSrcImport(
   const importee = cleanUrl(resolveImport(root, importer, block.src!, resolver))
   const filePath = resolver.requestToFile(importee)
   await cachedRead(ctx, filePath)
-  block.content = ctx.body
+  block.content = (ctx.body as Buffer).toString()
 
   // register HMR import relationship
   debugHmr(`        ${importer} imports ${importee}`)
