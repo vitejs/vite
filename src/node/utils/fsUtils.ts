@@ -31,7 +31,7 @@ export async function cachedRead(
   const cached = fsReadCache.get(file)
   if (ctx) {
     ctx.set('Cache-Control', 'no-cache')
-    ctx.type = mime.lookup(path.extname(file)) || 'js'
+    ctx.type = mime.lookup(path.extname(file)) || 'application/octet-stream'
   }
   if (cached && cached.lastModified === lastModified) {
     if (ctx) {
