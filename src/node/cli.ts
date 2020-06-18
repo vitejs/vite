@@ -141,7 +141,7 @@ async function runServe(options: UserConfig) {
     }
   })
 
-  server.listen(port, () => {
+  server.listen(port, hostname, () => {
     console.log()
     console.log(`  Dev server running at:`)
     const interfaces = os.networkInterfaces()
