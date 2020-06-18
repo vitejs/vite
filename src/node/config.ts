@@ -119,6 +119,7 @@ export interface SharedConfig {
 }
 
 export interface ServerConfig extends SharedConfig {
+  hostname?: string
   port?: number
   open?: boolean
   /**
