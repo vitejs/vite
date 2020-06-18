@@ -27,7 +27,8 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
       return next()
     }
 
-    const id = ctx.path.replace(moduleRE, '')
+    // path maybe contain encode chars
+    const id = decodeURIComponent(ctx.path.replace(moduleRE, ''))
     ctx.type = 'js'
 
     const serve = async (id: string, file: string, type: string) => {
