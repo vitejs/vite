@@ -1,4 +1,3 @@
-import path from 'path'
 import slash from 'slash'
 import qs, { ParsedUrlQuery } from 'querystring'
 import resolve from 'resolve'
@@ -18,16 +17,6 @@ export const hashRE = /#.*$/
 
 export const cleanUrl = (url: string) =>
   url.replace(hashRE, '').replace(queryRE, '')
-
-export const resolveRelativeRequest = (importer: string, id: string) => {
-  const resolved = slash(path.posix.resolve(path.dirname(importer), id))
-  const queryMatch = id.match(queryRE)
-  return {
-    // path resovle strips ending / which should be preserved
-    pathname: cleanUrl(resolved) + (id.endsWith('/') ? '/' : ''),
-    query: queryMatch ? queryMatch[0] : ''
-  }
-}
 
 export const parseWithQuery = (
   id: string

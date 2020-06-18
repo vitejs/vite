@@ -22,12 +22,7 @@ import {
   hmrDirtyFilesMap,
   latestVersionsMap
 } from './serverPluginHmr'
-import {
-  readBody,
-  cleanUrl,
-  isExternalUrl,
-  resolveRelativeRequest
-} from '../utils'
+import { readBody, cleanUrl, isExternalUrl } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
 
@@ -252,7 +247,7 @@ export const resolveImport = (
   } else {
     // 1. relative to absolute
     //    ./foo -> /some/path/foo
-    let { pathname, query } = resolveRelativeRequest(importer, id)
+    let { pathname, query } = resolver.resolveRelativeRequest(importer, id)
 
     // 2. resolve dir index and extensions.
     pathname = resolver.normalizePublicPath(pathname)
