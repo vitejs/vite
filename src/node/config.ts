@@ -3,7 +3,7 @@ import fs from 'fs-extra'
 import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
-import { CompilerOptions } from '@vue/compiler-sfc'
+import { CompilerOptions, SFCStyleCompileOptions } from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
@@ -11,9 +11,9 @@ import Rollup, {
 } from 'rollup'
 import { createEsbuildPlugin } from './build/buildPluginEsbuild'
 import { ServerPlugin } from './server'
-import { Resolver } from './resolver'
+import { Resolver, supportedExts } from './resolver'
 import { Transform, CustomBlockTransform } from './transform'
-import { DepOptimizationOptions } from './depOptimizer'
+import { DepOptimizationOptions } from './optimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
@@ -112,6 +112,10 @@ export interface SharedConfig {
    * Environment mode
    */
   mode?: string
+  /**
+   * CSS preprocess options
+   */
+  cssPreprocessOptions?: SFCStyleCompileOptions['preprocessOptions']
 }
 
 export interface ServerConfig extends SharedConfig {
@@ -335,13 +339,17 @@ export async function resolveConfig(
       // transpile es import syntax to require syntax using rollup.
       const rollup = require('rollup') as typeof Rollup
       const esbuildPlugin = await createEsbuildPlugin(false, {})
+      // use node-resolve to support .ts files
+      const nodeResolve = require('@rollup/plugin-node-resolve').nodeResolve({
+        extensions: supportedExts
+      })
       const bundle = await rollup.rollup({
         external: (id: string) =>
           (id[0] !== '.' && !path.isAbsolute(id)) ||
           id.slice(-5, id.length) === '.json',
         input: resolvedPath,
         treeshake: false,
-        plugins: [esbuildPlugin]
+        plugins: [esbuildPlugin, nodeResolve]
       })
 
       const {

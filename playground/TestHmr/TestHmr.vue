@@ -52,8 +52,7 @@
     <span
       class="hmr-propagation-full-dynamic-self-accepting"
       ref="dynamicDataOutlet"
-      >qux not loaded</span
-    >
+      >qux not loaded</span>
     <button
       class="hmr-propagation-full-dynamic-load-self-accepting"
       @click="loadFullDynamicSelfAccepting()"

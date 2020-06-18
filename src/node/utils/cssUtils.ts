@@ -12,7 +12,10 @@ import {
 import { hmrClientPublicPath } from '../server/serverPluginHmr'
 
 export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
-export const cssPreprocessLangRE = /(.+).(less|sass|scss|styl|stylus)$/
+export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
+
+export const isCSSRequest = (file: string) =>
+  file.endsWith('.css') || cssPreprocessLangRE.test(file)
 
 type Replacer = (url: string) => string | Promise<string>
 
@@ -50,11 +53,12 @@ export async function compileCss(
     filename,
     scoped,
     modules,
-    preprocessLang
+    preprocessLang,
+    preprocessOptions = {}
   }: SFCAsyncStyleCompileOptions
 ): Promise<SFCStyleCompileResults | string> {
   const id = hash_sum(publicPath)
-  let postcssConfig = await loadPostcssConfig(root)
+  const postcssConfig = await loadPostcssConfig(root)
   const { compileStyleAsync } = resolveCompiler(root)
 
   if (
@@ -67,9 +71,10 @@ export async function compileCss(
     return source
   }
 
-  const postcssOptions = postcssConfig && postcssConfig.options
-  const postcssPlugins = postcssConfig ? postcssConfig.plugins : []
-  postcssPlugins.push(require('postcss-import')())
+  const {
+    options: postcssOptions,
+    plugins: postcssPlugins
+  } = await resolvePostcssOptions(root)
 
   const res = await compileStyleAsync({
     source,
@@ -84,7 +89,8 @@ export async function compileCss(
     preprocessLang: preprocessLang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
     preprocessOptions: {
-      includePaths: ['node_modules']
+      includePaths: ['node_modules'],
+      ...preprocessOptions
     },
 
     postcssOptions,
@@ -147,6 +153,17 @@ async function loadPostcssConfig(
       console.error(e)
     }
     return (cachedPostcssConfig = null)
+  }
+}
+
+export async function resolvePostcssOptions(root: string) {
+  const config = await loadPostcssConfig(root)
+  const options = config && config.options
+  const plugins = config ? config.plugins : []
+  plugins.unshift(require('postcss-import')())
+  return {
+    options,
+    plugins
   }
 }
 

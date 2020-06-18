@@ -9,10 +9,12 @@ import {
   cssImportMap,
   cssPreprocessLangRE,
   getCssImportBoundaries,
-  rewriteCssUrls
+  rewriteCssUrls,
+  isCSSRequest
 } from '../utils/cssUtils'
 import qs from 'querystring'
 import chalk from 'chalk'
+import { InternalResolver } from '../resolver'
 
 interface ProcessedEntry {
   css: string
@@ -28,7 +30,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     await next()
     // handle .css imports
     if (
-      (cssPreprocessLangRE.test(ctx.path) || ctx.response.is('css')) &&
+      isCSSRequest(ctx.path) &&
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
@@ -52,7 +54,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   })
 
   watcher.on('change', (filePath) => {
-    if (filePath.endsWith('.css') || cssPreprocessLangRE.test(filePath)) {
+    if (isCSSRequest(filePath)) {
       const publicPath = resolver.fileToRequest(filePath)
 
       /** filter unused files */
@@ -77,15 +79,14 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       // handle HMR for module.css
       // it cannot be handled as normal css because the js exports may change
       if (filePath.endsWith('.module.css')) {
-        moduleCssUpdate(filePath)
-        return
+        moduleCssUpdate(filePath, resolver)
       }
 
       const boundaries = getCssImportBoundaries(filePath)
       if (boundaries.size) {
         for (let boundary of boundaries) {
           if (boundary.includes('.module')) {
-            moduleCssUpdate(boundary)
+            moduleCssUpdate(boundary, resolver)
           } else if (boundary.includes('.vue')) {
             vueCache.del(cleanUrl(boundary))
             vueStyleUpdate(resolver.fileToRequest(boundary))
@@ -111,7 +112,10 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     })
   }
 
-  function moduleCssUpdate(filePath: string) {
+  function moduleCssUpdate(filePath: string, resolver: InternalResolver) {
+    // bust process cache
+    processedCSS.delete(resolver.fileToRequest(filePath))
+
     watcher.handleJSReload(filePath)
   }
 
@@ -127,6 +131,12 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   }
 
   async function processCss(root: string, ctx: Context) {
+    // source didn't change (marker added by cachedRead)
+    // just use previously cached result
+    if (ctx.__notModified && processedCSS.has(ctx.path)) {
+      return
+    }
+
     const css = (await readBody(ctx.body))!
     const result = await compileCss(root, ctx.path, {
       id: '',
@@ -134,11 +144,12 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       filename: resolver.requestToFile(ctx.path),
       scoped: false,
       modules: ctx.path.includes('.module'),
-      preprocessLang: ctx.path.replace(cssPreprocessLangRE, '$2') as any
+      preprocessLang: ctx.path.replace(cssPreprocessLangRE, '$2') as any,
+      preprocessOptions: ctx.config.cssPreprocessOptions
     })
 
     if (typeof result === 'string') {
-      processedCSS.set(ctx.path, { css })
+      processedCSS.set(ctx.path, { css: await rewriteCssUrls(css, ctx.path) })
       return
     }
 

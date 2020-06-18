@@ -26,6 +26,9 @@
   <TestRewriteOptimized />
   <TestCustomBlocks />
   <TestOptimizeLink />
+  <TestRewriteUnoptimized />
+  <TestNormalizePublicPath />
+  <TestDynamicImport />
 </template>
 
 <script>
@@ -48,6 +51,9 @@ import TestRewriteOptimized from './rewrite-optimized/TestRewriteOptimized.vue'
 import TestCssAtImport from './css-@import/TestCssAtImport.vue'
 import TestCustomBlocks from './custom-blocks/TestCustomBlocks.vue'
 import TestOptimizeLink from './optimize-linked/TestOptimizeLink.vue'
+import TestRewriteUnoptimized from './rewrite-unoptimized/TestRewriteUnoptimized.vue'
+import TestNormalizePublicPath from './TestNormalizePublicPath.vue'
+import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
 
 export default {
   data: () => ({
@@ -73,7 +79,10 @@ export default {
     TestAsync: defineAsyncComponent(() => import('./TestAsync.vue')),
     TestRewriteOptimized,
     TestCustomBlocks,
-    TestOptimizeLink
+    TestOptimizeLink,
+    TestRewriteUnoptimized,
+    TestNormalizePublicPath,
+    TestDynamicImport
   }
 }
 </script>

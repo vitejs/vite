@@ -348,6 +348,32 @@ describe('vite', () => {
       }
     })
 
+    test('CSS module @import', async () => {
+      const el = await page.$('.sfc-script-css-module-at-import')
+      expect(await getComputedColor(el)).toBe('rgb(0, 128, 0)')
+      if (!isBuild) {
+        await updateFile('css-@import/imported.module.css', (content) =>
+          content.replace('green', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(
+          () => getComputedColor('.sfc-script-css-module-at-import'),
+          'rgb(0, 0, 0)'
+        )
+      }
+    })
+
+    test('SFC <style module> w/ @import', async () => {
+      const el = await page.$('.sfc-style-css-module-at-import')
+      expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
+      if (!isBuild) {
+        await updateFile(
+          'css-@import/testCssModuleAtImportFromStyle.module.css',
+          (content) => content.replace('red', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+      }
+    })
+
     test('import *.module.css', async () => {
       const el = await page.$('.css-modules-import')
       expect(await getComputedColor(el)).toBe('rgb(255, 140, 0)')
@@ -491,6 +517,10 @@ describe('vite', () => {
       )
     })
 
+    test('rewrite import in unoptimized deps', async () => {
+      expect(await getText('.test-rewrite-in-unoptimized')).toMatch('123')
+    })
+
     test('monorepo support', async () => {
       // linked dep + optimizing linked dep
       expect(await getText(`.optimize-linked`)).toMatch(`ok`)
@@ -515,6 +545,17 @@ describe('vite', () => {
         )
         await expectByPolling(() => getText('.custom-block'), 'こんにちは')
       }
+    })
+
+    test('normalize publicPath', async () => {
+      expect(await getText('.normalize-public-path')).toMatch(
+        JSON.stringify([2, 4])
+      )
+    })
+
+    test('dynamic imports with variable interpolation', async () => {
+      expect(await getText(`.dynamic-import-one`)).toMatch(`One`)
+      expect(await getText(`.dynamic-import-two`)).toMatch(`Two`)
     })
   }
 

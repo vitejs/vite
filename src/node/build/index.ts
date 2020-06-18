@@ -26,6 +26,7 @@ import { stopService } from '../esbuildService'
 import { BuildConfig } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
+import { resolvePostcssOptions } from '../utils/cssUtils'
 
 export interface BuildResult {
   html: string
@@ -49,10 +50,21 @@ const writeColors = {
 }
 
 const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
+const dynamicImportWarningIgnoreList = [
+  `Unsupported expression`,
+  `statically analyzed`
+]
 
 export const onRollupWarning: (
   spinner: Ora | undefined
 ) => InputOptions['onwarn'] = (spinner) => (warning, warn) => {
+  if (
+    warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+    dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
+  ) {
+    return
+  }
+
   if (!warningIgnoreList.includes(warning.code!)) {
     // ora would swallow the console.warn if we let it keep running
     // https://github.com/sindresorhus/ora/issues/90
@@ -79,9 +91,15 @@ export async function createBaseRollupPlugins(
   const {
     rollupInputOptions = {},
     transforms = [],
-    vueCustomBlockTransforms = {}
+    vueCustomBlockTransforms = {},
+    cssPreprocessOptions
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
+  const dynamicImport = require('rollup-plugin-dynamic-import-variables')
+  const {
+    options: postcssOptions,
+    plugins: postcssPlugins
+  } = await resolvePostcssOptions(root)
 
   return [
     // user plugins
@@ -96,7 +114,13 @@ export async function createBaseRollupPlugins(
       transformAssetUrls: {
         includeAbsolute: true
       },
+      postcssOptions,
+      postcssPlugins,
       preprocessStyles: true,
+      preprocessOptions: {
+        includePaths: ['node_modules'],
+        ...cssPreprocessOptions
+      },
       preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
       compilerOptions: options.vueCompilerOptions,
       cssModulesOptions: {
@@ -126,6 +150,11 @@ export async function createBaseRollupPlugins(
     }),
     require('@rollup/plugin-commonjs')({
       extensions: ['.js', '.cjs']
+    }),
+    dynamicImport({
+      warnOnError: true,
+      include: [/\.js$/],
+      exclude: [/node_modules/]
     })
   ].filter(Boolean)
 }
@@ -161,7 +190,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     sourcemap = false,
     shouldPreload = null,
     env = {},
-    mode = 'production'
+    mode = 'production',
+    cssPreprocessOptions = {}
   } = options
 
   const isTest = process.env.NODE_ENV === 'test'
@@ -241,14 +271,15 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         sourcemap
       ),
       // vite:css
-      createBuildCssPlugin(
+      createBuildCssPlugin({
         root,
-        publicBasePath,
+        publicBase: publicBasePath,
         assetsDir,
         minify,
-        assetsInlineLimit,
-        cssCodeSplit
-      ),
+        inlineLimit: assetsInlineLimit,
+        cssCodeSplit,
+        preprocessOptions: cssPreprocessOptions
+      }),
       // vite:asset
       createBuildAssetPlugin(
         root,

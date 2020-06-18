@@ -29,6 +29,7 @@ import {
   resolveRelativeRequest
 } from '../utils'
 import chalk from 'chalk'
+import { isCSSRequest } from '../utils/cssUtils'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -60,6 +61,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
     if (
       ctx.body &&
       ctx.response.is('js') &&
+      !isCSSRequest(ctx.path) &&
       !ctx.url.endsWith('.map') &&
       // skip internal client
       !ctx.path.startsWith(hmrClientPublicPath) &&
@@ -78,9 +80,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
         // before we perform hmr analysis.
         // on the other hand, static import is guaranteed to have extension
         // because they must all have gone through module rewrite.
-        const importer = resolver.fileToRequest(
-          resolver.requestToFile(ctx.path)
-        )
+        const importer = resolver.normalizePublicPath(ctx.path)
         ctx.body = rewriteImports(
           root,
           content!,
@@ -254,11 +254,8 @@ export const resolveImport = (
     //    ./foo -> /some/path/foo
     let { pathname, query } = resolveRelativeRequest(importer, id)
 
-    // 2. resolve extensions.
-    const ext = resolver.resolveExt(pathname)
-    if (ext && ext !== path.extname(pathname)) {
-      pathname = path.posix.normalize(pathname + ext)
-    }
+    // 2. resolve dir index and extensions.
+    pathname = resolver.normalizePublicPath(pathname)
 
     // 3. mark non-src imports
     if (!query && path.extname(pathname) && !jsSrcRE.test(pathname)) {

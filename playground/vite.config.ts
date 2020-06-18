@@ -13,8 +13,13 @@ const config: UserConfig = {
   plugins: [jsPlugin],
   vueCustomBlockTransforms: { i18n: i18nTransform },
   optimizeDeps: {
-    exclude: ['bootstrap'],
+    exclude: ['bootstrap', 'rewrite-unoptimized-test-package'],
     link: ['optimize-linked']
+  },
+  cssPreprocessOptions: {
+    modifyVars: {
+      'preprocess-custom-color': 'green'
+    }
   }
 }
 

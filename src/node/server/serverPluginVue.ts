@@ -8,7 +8,8 @@ import {
   SFCTemplateBlock,
   SFCStyleBlock,
   SFCStyleCompileResults,
-  CompilerOptions
+  CompilerOptions,
+  SFCStyleCompileOptions
 } from '@vue/compiler-sfc'
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -33,6 +34,8 @@ import { codegenCss, compileCss, rewriteCssUrls } from '../utils/cssUtils'
 import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
+import merge from 'merge-source-map'
+import { RawSourceMap } from 'source-map'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -133,7 +136,8 @@ export const vuePlugin: ServerPlugin = ({
         styleBlock,
         index,
         filePath,
-        publicPath
+        publicPath,
+        config.cssPreprocessOptions
       )
       ctx.type = 'js'
       ctx.body = codegenCss(`${id}-${index}`, result.code, result.modules)
@@ -221,8 +225,9 @@ export const vuePlugin: ServerPlugin = ({
       return sendReload()
     }
 
+    // force reload if scoped status has changed
     if (prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)) {
-      needRerender = true
+      return sendReload()
     }
 
     // only need to update styles if not reloading, since reload forces
@@ -361,19 +366,20 @@ async function parseSFC(
   if (errors.length) {
     console.error(chalk.red(`\n[vite] SFC parse error: `))
     errors.forEach((e) => {
-      console.error(
-        chalk.underline(
-          `${filePath}:${e.loc!.start.line}:${e.loc!.start.column}`
-        )
-      )
+      const locString = e.loc
+        ? `:${e.loc.start.line}:${e.loc.start.column}`
+        : ``
+      console.error(chalk.underline(filePath + locString))
       console.error(chalk.yellow(e.message))
-      console.error(
-        generateCodeFrame(
-          content as string,
-          e.loc!.start.offset,
-          e.loc!.end.offset
-        ) + `\n`
-      )
+      if (e.loc) {
+        console.error(
+          generateCodeFrame(
+            content as string,
+            e.loc.start.offset,
+            e.loc.end.offset
+          ) + `\n`
+        )
+      }
     })
   }
 
@@ -401,8 +407,14 @@ async function compileSFCMain(
   if (descriptor.script) {
     let content = descriptor.script.content
     if (descriptor.script.lang === 'ts') {
-      // TODO merge lang=ts source map
-      content = (await transform(content, publicPath, { loader: 'ts' })).code
+      const { code, map } = await transform(content, publicPath, {
+        loader: 'ts'
+      })
+      content = code
+      descriptor.script.map = merge(
+        descriptor.script.map!,
+        JSON.parse(map!)
+      ) as RawSourceMap
     }
     // rewrite export default.
     // fast path: simple regex replacement to avoid full-blown babel parse.
@@ -519,17 +531,18 @@ function compileSFCTemplate(
       if (typeof e === 'string') {
         console.error(e)
       } else {
-        console.error(
-          chalk.underline(
-            `${filePath}:${e.loc!.start.line}:${e.loc!.start.column}`
-          )
-        )
+        const locString = e.loc
+          ? `:${e.loc.start.line}:${e.loc.start.column}`
+          : ``
+        console.error(chalk.underline(filePath + locString))
         console.error(chalk.yellow(e.message))
-        const original = template.map!.sourcesContent![0]
-        console.error(
-          generateCodeFrame(original, e.loc!.start.offset, e.loc!.end.offset) +
-            `\n`
-        )
+        if (e.loc) {
+          const original = template.map!.sourcesContent![0]
+          console.error(
+            generateCodeFrame(original, e.loc.start.offset, e.loc.end.offset) +
+              `\n`
+          )
+        }
       }
     })
   }
@@ -548,7 +561,8 @@ async function compileSFCStyle(
   style: SFCStyleBlock,
   index: number,
   filePath: string,
-  publicPath: string
+  publicPath: string,
+  preprocessOptions: SFCStyleCompileOptions['preprocessOptions']
 ): Promise<SFCStyleCompileResults> {
   let cached = vueCache.get(filePath)
   const cachedEntry = cached && cached.styles && cached.styles[index]
@@ -566,7 +580,8 @@ async function compileSFCStyle(
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,
-    preprocessLang: style.lang as any
+    preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
+    preprocessOptions
   })) as SFCStyleCompileResults
 
   if (result.errors.length) {

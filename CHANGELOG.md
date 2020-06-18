@@ -1,3 +1,83 @@
+## [0.20.8](https://github.com/vuejs/vite/compare/v0.20.7...v0.20.8) (2020-06-11)
+
+
+### Performance Improvements
+
+* avoid unnecessary css processing when source did not change ([a792610](https://github.com/vuejs/vite/commit/a7926103cbf3854259b23c5906a11c11bd4caa30)), closes [#383](https://github.com/vuejs/vite/issues/383)
+* skip rewrite for css requests ([88f411e](https://github.com/vuejs/vite/commit/88f411ef7fd06e4b02485b05515c60aa31c9ffc2))
+
+
+
+## [0.20.7](https://github.com/vuejs/vite/compare/v0.20.6...v0.20.7) (2020-06-08)
+
+
+### Bug Fixes
+
+* only redirect aliased entry on optimized ([429416d](https://github.com/vuejs/vite/commit/429416d5f74e1da25906568b3a0037b6cebb81eb)), closes [#369](https://github.com/vuejs/vite/issues/369)
+
+
+
+## [0.20.6](https://github.com/vuejs/vite/compare/v0.20.5...v0.20.6) (2020-06-08)
+
+
+### Bug Fixes
+
+* exclude hmr from path alias mapping ([4ed19b9](https://github.com/vuejs/vite/commit/4ed19b9b6008f4ba7b498b1b58dd90b4a95d40ae)), closes [#357](https://github.com/vuejs/vite/issues/357)
+* fix isAsset test false positive ([#359](https://github.com/vuejs/vite/issues/359)) ([47923c7](https://github.com/vuejs/vite/commit/47923c74b8ac3c5d5e3c23b3138b91d578093590))
+* normalize public path for index.html src references ([6ed9f0b](https://github.com/vuejs/vite/commit/6ed9f0bbee3b7042158fab777d1e73df32b47e7f))
+* properly handle entry alias for optimized deps ([ed5b668](https://github.com/vuejs/vite/commit/ed5b668f08424e8730c1de15dc4dedfc9fa75474))
+* wrong dep in the error message of node-built-in-bail ([#366](https://github.com/vuejs/vite/issues/366)) ([a8c22de](https://github.com/vuejs/vite/commit/a8c22de895646aba3aa80fe3f0323a1a44a7324a))
+
+
+
+## [0.20.5](https://github.com/vuejs/vite/compare/v0.20.4...v0.20.5) (2020-06-05)
+
+
+### Bug Fixes
+
+* ensure postcss-import is applied first ([a383ec3](https://github.com/vuejs/vite/commit/a383ec347bbba453bfae49f403d9850b31f3122d)), closes [#355](https://github.com/vuejs/vite/issues/355)
+* proper handling of custom postcss config for build ([5b1e25d](https://github.com/vuejs/vite/commit/5b1e25d710a6f7e56d4d364a78c332ce7840cb63)), closes [#354](https://github.com/vuejs/vite/issues/354)
+
+
+
+## [0.20.4](https://github.com/vuejs/vite/compare/v0.20.3...v0.20.4) (2020-06-05)
+
+
+### Bug Fixes
+
+* fix html accept check ([#353](https://github.com/vuejs/vite/issues/353)) ([ef0b453](https://github.com/vuejs/vite/commit/ef0b453d50709b21ce99695325951d5b3cfb9ecf))
+* ignore certain types of dynamic import plugin warnings ([88b41de](https://github.com/vuejs/vite/commit/88b41de8a193f04a08941dab7f417e6a19ce0a89))
+
+
+### Features
+
+* **dev:** merge source map for vue script block with `lang='ts'` ([#345](https://github.com/vuejs/vite/issues/345)) ([6174e33](https://github.com/vuejs/vite/commit/6174e3328fe70c38a53763bb431a79656535fae1))
+
+
+
+## [0.20.3](https://github.com/vuejs/vite/compare/v0.20.2...v0.20.3) (2020-06-04)
+
+
+### Bug Fixes
+
+* check loc presence when reporting sfc parse / compile errors ([9fc8020](https://github.com/vuejs/vite/commit/9fc8020b5c13b9fe830eeda019afc63d92a8025c))
+* consist url to open in browser with https option ([#338](https://github.com/vuejs/vite/issues/338)) ([32669ba](https://github.com/vuejs/vite/commit/32669ba1466d8d17db843080cf665c226dd20354))
+* fix css url rewrite for plain css ([2e44e71](https://github.com/vuejs/vite/commit/2e44e7133066110fda46aa00393e5e17e4f5e289))
+* fix regression when using multiple transforms ([#333](https://github.com/vuejs/vite/issues/333)) ([cd1dae4](https://github.com/vuejs/vite/commit/cd1dae46b6a77608c80e74454f4134a2eaec4148))
+* force reload on SFC scoped status change ([1a7243a](https://github.com/vuejs/vite/commit/1a7243ab3d4d1c41935677f38db1fd71a03f30e9)), closes [#348](https://github.com/vuejs/vite/issues/348)
+* module rewrite in unoptimized dep ([#344](https://github.com/vuejs/vite/issues/344)) ([ec698ff](https://github.com/vuejs/vite/commit/ec698ff67159e096878f02f847a8e2b6e2c8a9ad))
+* support ts import in config file ([3df3ecd](https://github.com/vuejs/vite/commit/3df3ecd8a2814fd01e15d0bb3af7878fd8761cb2)), closes [#340](https://github.com/vuejs/vite/issues/340)
+* **optimize:** properly handle css and assets in optimized deps ([944e163](https://github.com/vuejs/vite/commit/944e16301bba660df7a51a76c9995cba357cf924)), closes [#337](https://github.com/vuejs/vite/issues/337)
+
+
+### Features
+
+* support variable interpolation in dynamic imports ([fc59642](https://github.com/vuejs/vite/commit/fc59642b1322d101879bade11abffc0323808f7e)), closes [#339](https://github.com/vuejs/vite/issues/339)
+* **dev:** gen code frame for top level used hmr api ([#346](https://github.com/vuejs/vite/issues/346)) ([5cdbc46](https://github.com/vuejs/vite/commit/5cdbc46dbdb0791f4968120a5d66c2e5537347ab))
+* support `cssPreprocessOptions` ([#335](https://github.com/vuejs/vite/issues/335)) ([13d4fc2](https://github.com/vuejs/vite/commit/13d4fc279a9eb58f99486375e50817ae1d29e07d)), closes [#332](https://github.com/vuejs/vite/issues/332)
+
+
+
 ## [0.20.2](https://github.com/vuejs/vite/compare/v0.20.1...v0.20.2) (2020-06-02)
 
 

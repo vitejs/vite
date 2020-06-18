@@ -30,7 +30,7 @@ import { parse } from '../utils/babelParse'
 import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
-import { cssPreprocessLangRE } from '../utils/cssUtils'
+import { isCSSRequest } from '../utils/cssUtils'
 import {
   Node,
   StringLiteral,
@@ -38,6 +38,7 @@ import {
   Expression,
   IfStatement
 } from '@babel/types'
+import { resolveCompiler } from '../utils'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -203,13 +204,7 @@ export const hmrPlugin: ServerPlugin = ({
   })
 
   watcher.on('change', (file) => {
-    if (
-      !(
-        file.endsWith('.vue') ||
-        file.endsWith('.css') ||
-        cssPreprocessLangRE.test(file)
-      )
-    ) {
+    if (!(file.endsWith('.vue') || isCSSRequest(file))) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
       handleJSReload(file)
@@ -308,13 +303,16 @@ export function rewriteFileWithHMR(
       isMetaHot(node.callee.object)
     ) {
       if (isTopLevel) {
+        const { generateCodeFrame } = resolveCompiler(root)
         console.warn(
           chalk.yellow(
             `[vite] HMR syntax error in ${importer}: import.meta.hot.accept() ` +
               `should be wrapped in \`if (import.meta.hot) {}\` conditional ` +
               `blocks so that they can be tree-shaken in production.`
           )
-          // TODO generateCodeFrame
+        )
+        console.warn(
+          chalk.yellow(generateCodeFrame(source, node.start!, node.end!))
         )
       }
 
