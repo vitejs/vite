@@ -14,12 +14,7 @@ import {
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
-import {
-  debugHmr,
-  importerMap,
-  ensureMapEntry,
-  hmrClientPublicPath
-} from './serverPluginHmr'
+import { debugHmr, importerMap, ensureMapEntry } from './serverPluginHmr'
 import {
   resolveFrom,
   cachedRead,
@@ -432,7 +427,6 @@ async function compileSFCMain(
   let hasScoped = false
   let hasCSSModules = false
   if (descriptor.styles) {
-    code += `\nimport { updateStyle } from "${hmrClientPublicPath}"\n`
     descriptor.styles.forEach((s, i) => {
       const styleRequest = publicPath + `?type=style&index=${i}`
       if (s.scoped) hasScoped = true
