@@ -92,13 +92,22 @@ describe('vite', () => {
     })
 
     test('env variables', async () => {
-      expect(await getText('.base')).toMatch(`process.env.BASE_URL: /`)
-      expect(await getText('.node-env')).toMatch(
-        `process.env.NODE_ENV: ${isBuild ? 'production' : 'development'}`
-      )
+      const mode = isBuild ? 'production' : 'development'
+
+      expect(await getText('.base')).toMatch(`BASE_URL: /`)
+      expect(await getText('.mode')).toMatch(`MODE: ${mode}`)
+      expect(await getText('.dev')).toMatch(`DEV: ${!isBuild}`)
+      expect(await getText('.prod')).toMatch(`PROD: ${isBuild}`)
       expect(await getText('.custom-env-variable')).toMatch(
-        'process.env.CUSTOM_ENV_VARIABLE: 9527'
+        'VITE_CUSTOM_ENV_VARIABLE: 9527'
       )
+      expect(await getText('.effective-mode-file-name')).toMatch(
+        `VITE_EFFECTIVE_MODE_FILE_NAME: ${
+          isBuild ? `.env.production` : `.env.development`
+        }`
+      )
+
+      expect(await getText('.node-env')).toMatch(`NODE_ENV: ${mode}`)
     })
 
     test('module resolving', async () => {

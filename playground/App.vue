@@ -1,8 +1,5 @@
 <template>
   <h1>Vite Playground</h1>
-  <p class="base">
-    <code>process.env.BASE_URL: {{ base }}</code>
-  </p>
   <TestEnv />
   <h2>Async Component</h2>
   <TestAsync />
@@ -53,9 +50,6 @@ import TestNormalizePublicPath from './TestNormalizePublicPath.vue'
 import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
 
 export default {
-  data: () => ({
-    base: process.env.BASE_URL
-  }),
   components: {
     TestEnv,
     TestModuleResolve,

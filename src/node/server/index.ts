@@ -1,3 +1,5 @@
+import path from 'path'
+import fs from 'fs-extra'
 import { RequestListener, Server } from 'http'
 import { ServerOptions } from 'https'
 import Koa, { DefaultState, DefaultContext } from 'koa'
@@ -18,8 +20,7 @@ import { serviceWorkerPlugin } from './serverPluginServiceWorker'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
-import fs from 'fs-extra'
-import path from 'path'
+import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
@@ -77,6 +78,7 @@ export function createServer(config: ServerConfig): Server {
     htmlRewritePlugin,
     // user plugins
     ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
+    envPlugin,
     moduleResolvePlugin,
     proxyPlugin,
     serviceWorkerPlugin,

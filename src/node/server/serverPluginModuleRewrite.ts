@@ -25,6 +25,7 @@ import {
 import { readBody, cleanUrl, isExternalUrl } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
+import { envPublicPath } from './serverPluginEnv'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -124,6 +125,7 @@ export function rewriteImports(
       debug(`${importer}: rewriting`)
       const s = new MagicString(source)
       let hasReplaced = false
+      let hasInjectedEnv = false
       let hasRewrittenForHMR = false
 
       const prevImportees = importeeMap.get(importer)
@@ -178,13 +180,19 @@ export function rewriteImports(
           }
         } else {
           if (id === 'import.meta') {
-            if (
-              !hasRewrittenForHMR &&
-              source.substring(start, end + 4) === 'import.meta.hot'
-            ) {
+            if (!hasRewrittenForHMR && source.slice(end, end + 4) === '.hot') {
               debugHmr(`rewriting ${importer} for HMR.`)
               rewriteFileWithHMR(root, source, importer, resolver, s)
               hasRewrittenForHMR = true
+              hasReplaced = true
+            }
+
+            if (!hasInjectedEnv && source.slice(end, end + 4) === '.env') {
+              s.prepend(
+                `import __VITE_ENV__ from "${envPublicPath}";\n` +
+                  `import.meta.env = __VITE_ENV__;\n`
+              )
+              hasInjectedEnv = true
               hasReplaced = true
             }
           } else {

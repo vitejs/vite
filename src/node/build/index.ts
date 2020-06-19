@@ -226,9 +226,12 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
   const basePlugins = await createBaseRollupPlugins(root, resolver, options)
 
-  env.NODE_ENV = mode!
-  const envReplacements = Object.keys(env).reduce((replacements, key) => {
-    replacements[`process.env.${key}`] = JSON.stringify(env[key])
+  // user env variables loaded from .env files.
+  // only those prefixed with VITE_ are exposed.
+  const userEnvReplacements = Object.keys(env).reduce((replacements, key) => {
+    if (key.startsWith(`VITE_`)) {
+      replacements[`import.meta.env.${key}`] = JSON.stringify(env[key])
+    }
     return replacements
   }, {} as Record<string, string>)
 
@@ -252,8 +255,12 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       createReplacePlugin(
         (id) => /\.(j|t)sx?$/.test(id),
         {
-          ...envReplacements,
-          'process.env.BASE_URL': JSON.stringify(publicBasePath),
+          ...userEnvReplacements,
+          'import.meta.env.BASE_URL': JSON.stringify(publicBasePath),
+          'import.meta.env.MODE': JSON.stringify(mode),
+          'import.meta.env.DEV': String(mode === 'development'),
+          'import.meta.env.PROD': String(mode === 'production'),
+          'process.env.NODE_ENV': JSON.stringify(mode),
           'process.env.': `({}).`,
           'import.meta.hot': `false`
         },

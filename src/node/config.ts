@@ -465,7 +465,12 @@ function loadEnv(mode: string, root: string): Record<string, string> {
       if (result.error) {
         throw result.error
       }
-      Object.assign(env, result.parsed)
+      for (const key in result.parsed) {
+        // only keys that start with VITE_ are exposed.
+        if (key.startsWith(`VITE_`)) {
+          env[key] = result.parsed![key]
+        }
+      }
     }
   }
 
