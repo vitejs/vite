@@ -1,15 +1,28 @@
 import { Plugin } from 'vite'
+import MagicString from 'magic-string'
 
 export const jsPlugin: Plugin = {
   transforms: [
     {
-      test({ id }) {
-        return id.endsWith('testTransform.js')
+      test({ path }) {
+        return path.endsWith('testTransform.js')
       },
-      transform({ code }) {
-        return code.replace(/__TEST_TRANSFORM__ = (\d)/, (_, n) => {
-          return `__TEST_TRANSFORM__ = ${Number(n) + 1}`
-        })
+      transform({ id, code }) {
+        const s = new MagicString(code)
+
+        const i = code.indexOf(`=`)
+        const cur = code.substring(i + 2, i + 3)
+        s.overwrite(i + 2, i + 3, String(Number(cur) + 1))
+        // test source map by appending lines
+        s.prepend(`\n\n\n`)
+
+        return {
+          code: s.toString(),
+          map: s.generateMap({
+            source: id,
+            includeContent: true
+          })
+        }
       }
     }
   ]

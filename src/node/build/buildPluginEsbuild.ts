@@ -31,7 +31,7 @@ export const createEsbuildPlugin = async (
     },
 
     async transform(code, id) {
-      const isVueTs = /\.vue\?/.test(id) && id.endsWith('lang=ts')
+      const isVueTs = /\.vue\?/.test(id) && id.endsWith('lang.ts')
       if (tjsxRE.test(id) || isVueTs) {
         return transform(
           code,

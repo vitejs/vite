@@ -1,11 +1,22 @@
 import { ServerPlugin } from './server'
 import { Plugin as RollupPlugin } from 'rollup'
 import { parseWithQuery, readBody, isImportRequest } from './utils'
+import { SourceMap, mergeSourceMap } from './server/serverPluginSourceMap'
 
 type ParsedQuery = Record<string, string | string[] | undefined>
 
 interface TransformTestContext {
+  /**
+   * Full specifier of the transformed module, including query parameters
+   */
   id: string
+  /**
+   * Path without query (use this to check for file extensions)
+   */
+  path: string
+  /**
+   * Parsed query object
+   */
   query: ParsedQuery
   /**
    * Indicates whether this is a request made by js import(), or natively by
@@ -19,7 +30,14 @@ export interface TransformContext extends TransformTestContext {
   code: string
 }
 
-export type TransformFn = (ctx: TransformContext) => string | Promise<string>
+export interface TransformResult {
+  code: string
+  map?: SourceMap
+}
+
+export type TransformFn = (
+  ctx: TransformContext
+) => string | TransformResult | Promise<string | TransformResult>
 
 export interface Transform {
   test: (ctx: TransformTestContext) => boolean
@@ -44,24 +62,33 @@ export function createServerTransformPlugin(
         return
       }
 
-      const { path, query } = ctx
+      const { url, path, query } = ctx
       const isImport = isImportRequest(ctx)
       const isBuild = false
       let code: string = ''
 
       for (const t of transforms) {
         const transformContext: TransformTestContext = {
-          id: path,
+          id: url,
+          path,
           query,
           isImport,
           isBuild
         }
         if (t.test(transformContext)) {
           code = code || (await readBody(ctx.body))!
-          code = await t.transform({
+          const result = await t.transform({
             ...transformContext,
             code
           })
+          if (typeof result === 'string') {
+            code = result
+          } else {
+            code = result.code
+            if (result.map) {
+              ctx.map = mergeSourceMap(ctx.map, result.map)
+            }
+          }
           ctx.type = 'js'
           ctx.body = code
         }
@@ -75,7 +102,8 @@ export function createServerTransformPlugin(
           code = code || (await readBody(ctx.body))!
           ctx.body = await t({
             code,
-            id: path,
+            id: url,
+            path,
             query,
             isImport,
             isBuild
@@ -94,19 +122,35 @@ export function createBuildJsTransformPlugin(
     name: 'vite:transforms',
     async transform(code, id) {
       const { path, query } = parseWithQuery(id)
-      let result: string | Promise<string> = code
+      let transformed: string = code
+      let map: SourceMap | null = null
+
+      const runTransform = async (t: TransformFn, ctx: TransformContext) => {
+        const result = await t(ctx)
+        if (typeof result === 'string') {
+          transformed = result
+        } else {
+          transformed = result.code
+          if (result.map) {
+            map = mergeSourceMap(map, result.map)
+          }
+        }
+      }
+
       for (const t of transforms) {
         const transformContext: TransformContext = {
-          code: result,
-          id: path,
+          code: transformed,
+          id,
+          path,
           query,
           isImport: true,
           isBuild: true
         }
         if (t.test(transformContext)) {
-          result = await t.transform(transformContext)
+          await runTransform(t.transform, transformContext)
         }
       }
+
       // custom blocks
       if (query.vue != null && typeof query.type === 'string') {
         const t = customBlockTransforms[query.type]
@@ -120,16 +164,21 @@ export function createBuildJsTransformPlugin(
               normalizedQuery[key] = query[key] as string
             }
           }
-          result = await t({
-            code: result,
-            id: path,
+          await runTransform(t, {
+            code: transformed,
+            id,
+            path,
             query: normalizedQuery,
             isImport: true,
             isBuild: true
           })
         }
       }
-      return result
+
+      return {
+        code: transformed,
+        map
+      }
     }
   }
 }

@@ -24,12 +24,14 @@ export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
       const src = await readBody(ctx.body)
       const { code, map } = await transform(
         src!,
-        ctx.path,
+        ctx.url,
         jsxConfig,
         config.jsx
       )
       ctx.body = code
-      ctx.map = map
+      if (map) {
+        ctx.map = JSON.parse(map)
+      }
     }
   })
 }

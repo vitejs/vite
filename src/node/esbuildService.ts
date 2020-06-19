@@ -2,6 +2,7 @@ import path from 'path'
 import chalk from 'chalk'
 import { startService, Service, TransformOptions, Message } from 'esbuild'
 import { SharedConfig } from './config'
+import { cleanUrl } from './utils'
 
 const debug = require('debug')('vite:esbuild')
 
@@ -54,16 +55,17 @@ const sourceMapRE = /\/\/# sourceMappingURL.*/
 // transform used in server plugins with a more friendly API
 export const transform = async (
   src: string,
-  file: string,
+  request: string,
   options: TransformOptions = {},
   jsxOption?: SharedConfig['jsx']
 ) => {
   const service = await ensureService()
+  const file = cleanUrl(request)
   options = {
     ...options,
     loader: options.loader || (path.extname(file).slice(1) as any),
     sourcemap: true,
-    sourcefile: file,
+    sourcefile: request, // ensure source file name contains full query
     target: 'es2019'
   }
   try {

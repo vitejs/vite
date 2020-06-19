@@ -22,8 +22,7 @@ import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
 import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
-import { RawSourceMap } from 'source-map'
-import { sourceMapPlugin } from './serverPluginSourceMap'
+import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
 
@@ -40,7 +39,7 @@ export interface State extends DefaultState {}
 
 export type Context = DefaultContext &
   ServerPluginContext & {
-    map?: RawSourceMap | string | null
+    map?: SourceMap | null
   }
 
 export function createServer(config: ServerConfig): Server {

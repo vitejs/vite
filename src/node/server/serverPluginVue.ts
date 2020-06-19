@@ -28,8 +28,7 @@ import { codegenCss, compileCss, rewriteCssUrls } from '../utils/cssUtils'
 import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
-import merge from 'merge-source-map'
-import { RawSourceMap } from 'source-map'
+import { SourceMap, mergeSourceMap } from './serverPluginSourceMap'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -46,7 +45,7 @@ interface CacheEntry {
 
 interface ResultWithMap {
   code: string
-  map: RawSourceMap | null | undefined
+  map: SourceMap | null | undefined
 }
 
 export const vueCache = new LRUCache<string, CacheEntry>({
@@ -418,10 +417,10 @@ async function compileSFCMain(
         loader: 'ts'
       })
       content = code
-      descriptor.script.map = merge(
-        descriptor.script.map!,
+      descriptor.script.map = mergeSourceMap(
+        descriptor.script.map as SourceMap,
         JSON.parse(map!)
-      ) as RawSourceMap
+      ) as SourceMap & { version: string }
     }
     // rewrite export default.
     // fast path: simple regex replacement to avoid full-blown babel parse.
@@ -487,7 +486,7 @@ async function compileSFCMain(
 
   const result: ResultWithMap = {
     code,
-    map: descriptor.script && descriptor.script.map
+    map: descriptor.script && (descriptor.script.map as SourceMap)
   }
 
   cached = cached || { styles: [], customs: [] }
@@ -556,7 +555,7 @@ function compileSFCTemplate(
 
   const result = {
     code,
-    map
+    map: map as SourceMap
   }
 
   cached = cached || { styles: [], customs: [] }
