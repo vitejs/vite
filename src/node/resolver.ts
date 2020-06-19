@@ -293,7 +293,10 @@ export function createResolver(
       let dirname = path.dirname(publicPath)
       for (const alias in literalDirAlias) {
         if (publicPath.startsWith(alias)) {
-          dirname = path.join('/', path.relative(root, literalDirAlias[alias]))
+          const relativeFilePath = path.relative(root, literalDirAlias[alias])
+          if (!relativeFilePath.startsWith('..')) {
+            dirname = '/' + slash(relativeFilePath)
+          }
           break
         }
       }
