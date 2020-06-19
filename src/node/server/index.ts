@@ -22,6 +22,8 @@ import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
 import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
+import { RawSourceMap } from 'source-map'
+import { sourceMapPlugin } from './serverPluginSourceMap'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
 
@@ -36,7 +38,10 @@ export interface ServerPluginContext {
 
 export interface State extends DefaultState {}
 
-export type Context = DefaultContext & ServerPluginContext
+export type Context = DefaultContext &
+  ServerPluginContext & {
+    map?: RawSourceMap | string | null
+  }
 
 export function createServer(config: ServerConfig): Server {
   const {
@@ -72,8 +77,9 @@ export function createServer(config: ServerConfig): Server {
   })
 
   const resolvedPlugins = [
-    // the import rewrite and html rewrite both take highest priority and runs
+    // rewrite and source map plugins take highest priority and should be run
     // after all other middlewares have finished
+    sourceMapPlugin,
     moduleRewritePlugin,
     htmlRewritePlugin,
     // user plugins

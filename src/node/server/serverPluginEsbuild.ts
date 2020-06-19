@@ -6,7 +6,7 @@ import {
   vueJsxPublicPath,
   vueJsxFilePath
 } from '../esbuildService'
-import { readBody, genSourceMapString, cachedRead } from '../utils'
+import { readBody, cachedRead } from '../utils'
 
 export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
   const jsxConfig = resolveJsxOptions(config.jsx)
@@ -22,11 +22,14 @@ export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
     if (ctx.body && tjsxRE.test(ctx.path)) {
       ctx.type = 'js'
       const src = await readBody(ctx.body)
-      let { code, map } = await transform(src!, ctx.path, jsxConfig, config.jsx)
-      if (map) {
-        code += genSourceMapString(map)
-      }
+      const { code, map } = await transform(
+        src!,
+        ctx.path,
+        jsxConfig,
+        config.jsx
+      )
       ctx.body = code
+      ctx.map = map
     }
   })
 }

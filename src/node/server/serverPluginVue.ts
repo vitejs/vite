@@ -18,7 +18,6 @@ import { debugHmr, importerMap, ensureMapEntry } from './serverPluginHmr'
 import {
   resolveFrom,
   cachedRead,
-  genSourceMapString,
   cleanUrl,
   watchFileIfOutOfRoot
 } from '../utils'
@@ -39,10 +38,15 @@ export const srcImportMap = new Map()
 
 interface CacheEntry {
   descriptor?: SFCDescriptor
-  template?: string
-  script?: string
+  template?: ResultWithMap
+  script?: ResultWithMap
   styles: SFCStyleCompileResults[]
   customs: string[]
+}
+
+interface ResultWithMap {
+  code: string
+  map: RawSourceMap | null | undefined
 }
 
 export const vueCache = new LRUCache<string, CacheEntry>({
@@ -98,7 +102,13 @@ export const vuePlugin: ServerPlugin = ({
         )
       }
       ctx.type = 'js'
-      ctx.body = await compileSFCMain(descriptor, filePath, publicPath)
+      const { code, map } = await compileSFCMain(
+        descriptor,
+        filePath,
+        publicPath
+      )
+      ctx.body = code
+      ctx.map = map
       return etagCacheCheck(ctx)
     }
 
@@ -108,7 +118,7 @@ export const vuePlugin: ServerPlugin = ({
         filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
-      ctx.body = compileSFCTemplate(
+      const { code, map } = compileSFCTemplate(
         root,
         templateBlock,
         filePath,
@@ -116,6 +126,8 @@ export const vuePlugin: ServerPlugin = ({
         descriptor.styles.some((s) => s.scoped),
         config.vueCompilerOptions
       )
+      ctx.body = code
+      ctx.map = map
       return etagCacheCheck(ctx)
     }
 
@@ -391,7 +403,7 @@ async function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
   publicPath: string
-): Promise<string> {
+): Promise<ResultWithMap> {
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
     return cached.script
@@ -473,14 +485,15 @@ async function compileSFCMain(
   code += `\n__script.__file = ${JSON.stringify(filePath)}`
   code += `\nexport default __script`
 
-  if (descriptor.script) {
-    code += genSourceMapString(descriptor.script.map)
+  const result: ResultWithMap = {
+    code,
+    map: descriptor.script && descriptor.script.map
   }
 
   cached = cached || { styles: [], customs: [] }
-  cached.script = code
+  cached.script = result
   vueCache.set(filePath, cached)
-  return code
+  return result
 }
 
 function compileSFCTemplate(
@@ -490,7 +503,7 @@ function compileSFCTemplate(
   publicPath: string,
   scoped: boolean,
   userOptions: CompilerOptions | undefined
-): string {
+): ResultWithMap {
   let cached = vueCache.get(filePath)
   if (cached && cached.template) {
     debug(`${publicPath} template cache hit`)
@@ -541,13 +554,17 @@ function compileSFCTemplate(
     })
   }
 
-  const finalCode = code + genSourceMapString(map)
+  const result = {
+    code,
+    map
+  }
+
   cached = cached || { styles: [], customs: [] }
-  cached.template = finalCode
+  cached.template = result
   vueCache.set(filePath, cached)
 
   debug(`${publicPath} template compiled in ${Date.now() - start}ms.`)
-  return finalCode
+  return result
 }
 
 async function compileSFCStyle(
