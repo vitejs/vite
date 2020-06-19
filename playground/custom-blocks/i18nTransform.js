@@ -1,11 +1,11 @@
 const yaml = require('js-yaml')
 
-export const i18nTransform = (source, query) => {
+export const i18nTransform = ({ code, query }) => {
   let resource
   if (/ya?ml/.test(query.lang)) {
-    resource = yaml.safeLoad(source.trim())
+    resource = yaml.safeLoad(code.trim())
   } else {
-    resource = JSON.parse(source.trim())
+    resource = JSON.parse(code.trim())
   }
   return `
 export default Comp => {

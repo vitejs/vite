@@ -1,11 +1,13 @@
-export const jsPlugin = {
+import { Plugin } from 'vite'
+
+export const jsPlugin: Plugin = {
   transforms: [
     {
-      test(id) {
+      test({ id }) {
         return id.endsWith('testTransform.js')
       },
-      transform(code) {
-        return code.replace(/__TEST_TRANSFORM__ = (\d)/, (matched, n) => {
+      transform({ code }) {
+        return code.replace(/__TEST_TRANSFORM__ = (\d)/, (_, n) => {
           return `__TEST_TRANSFORM__ = ${Number(n) + 1}`
         })
       }

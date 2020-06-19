@@ -4,66 +4,82 @@ import { parseWithQuery, readBody, isImportRequest } from './utils'
 
 type ParsedQuery = Record<string, string | string[] | undefined>
 
-export interface Transform {
-  test: (path: string, query: ParsedQuery) => boolean
-  transform: (
-    code: string,
-    /**
-     * Indicates whether this is a request made by js import(), or natively by
-     * the browser (e.g. `<img src="...">`).
-     */
-    isImport: boolean,
-    isBuild: boolean,
-    path: string,
-    query: ParsedQuery
-  ) => string | Promise<string>
+interface TransformTestContext {
+  id: string
+  query: ParsedQuery
+  /**
+   * Indicates whether this is a request made by js import(), or natively by
+   * the browser (e.g. `<img src="...">`).
+   */
+  isImport: boolean
+  isBuild: boolean
 }
 
-export type CustomBlockTransform = (
-  src: string,
-  attrs: Record<string, string>
-) => string | Promise<string>
+export interface TransformContext extends TransformTestContext {
+  code: string
+}
+
+export type TransformFn = (ctx: TransformContext) => string | Promise<string>
+
+export interface Transform {
+  test: (ctx: TransformTestContext) => boolean
+  transform: TransformFn
+}
+
+export type CustomBlockTransform = TransformFn
 
 export function createServerTransformPlugin(
   transforms: Transform[],
   customBlockTransforms: Record<string, CustomBlockTransform>
 ): ServerPlugin {
   return ({ app }) => {
+    if (!transforms.length && !Object.keys(customBlockTransforms).length) {
+      return
+    }
+
     app.use(async (ctx, next) => {
       await next()
 
+      if (!ctx.body) {
+        return
+      }
+
       const { path, query } = ctx
-      let code: string | null = null
+      const isImport = isImportRequest(ctx)
+      const isBuild = false
+      let code: string = ''
 
       for (const t of transforms) {
-        if (t.test(path, query)) {
+        const transformContext: TransformTestContext = {
+          id: path,
+          query,
+          isImport,
+          isBuild
+        }
+        if (t.test(transformContext)) {
+          code = code || (await readBody(ctx.body))!
+          code = await t.transform({
+            ...transformContext,
+            code
+          })
           ctx.type = 'js'
-          if (ctx.body) {
-            code = code || (await readBody(ctx.body))
-            if (code) {
-              ctx.body = await t.transform(
-                code,
-                isImportRequest(ctx),
-                false,
-                path,
-                query
-              )
-              code = ctx.body
-            }
-          }
+          ctx.body = code
         }
       }
+
       // custom blocks
       if (path.endsWith('vue') && query.type === 'custom') {
         const t = customBlockTransforms[query.blockType]
         if (t) {
           ctx.type = 'js'
-          if (ctx.body) {
-            code = code || (await readBody(ctx.body))
-            if (code) {
-              ctx.body = await t(code, query)
-            }
-          }
+          code = code || (await readBody(ctx.body))!
+          ctx.body = await t({
+            code,
+            id: path,
+            query,
+            isImport,
+            isBuild
+          })
         }
       }
     })
@@ -80,8 +96,15 @@ export function createBuildJsTransformPlugin(
       const { path, query } = parseWithQuery(id)
       let result: string | Promise<string> = code
       for (const t of transforms) {
-        if (t.test(path, query)) {
-          result = await t.transform(result, true, true, path, query)
+        const transformContext: TransformContext = {
+          code: result,
+          id: path,
+          query,
+          isImport: true,
+          isBuild: true
+        }
+        if (t.test(transformContext)) {
+          result = await t.transform(transformContext)
         }
       }
       // custom blocks
@@ -97,7 +120,13 @@ export function createBuildJsTransformPlugin(
               normalizedQuery[key] = query[key] as string
             }
           }
-          result = await t(result, normalizedQuery)
+          result = await t({
+            code: result,
+            id: path,
+            query: normalizedQuery,
+            isImport: true,
+            isBuild: true
+          })
         }
       }
       return result
