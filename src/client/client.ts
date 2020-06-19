@@ -1,3 +1,6 @@
+// replaced by serverPluginHmr when served
+declare const __SW_ENABLED__: boolean
+
 // This file runs in the browser.
 import { HMRRuntime } from 'vue'
 

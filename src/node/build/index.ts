@@ -259,17 +259,6 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         },
         sourcemap
       ),
-      // for vite spcific replacements, make sure to only apply them to
-      // non-dependency code to avoid collision (e.g. #224 antd has __DEV__)
-      createReplacePlugin(
-        (id) =>
-          id.startsWith('/vite') ||
-          (!id.includes('node_modules') && /\.(j|t)sx?$/.test(id)),
-        {
-          __DEV__: `false`
-        },
-        sourcemap
-      ),
       // vite:css
       createBuildCssPlugin({
         root,

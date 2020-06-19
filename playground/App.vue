@@ -1,8 +1,5 @@
 <template>
   <h1>Vite Playground</h1>
-  <p class="dev">
-    <code>__DEV__: {{ dev }}</code>
-  </p>
   <p class="base">
     <code>process.env.BASE_URL: {{ base }}</code>
   </p>
@@ -57,7 +54,6 @@ import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
 
 export default {
   data: () => ({
-    dev: __DEV__,
     base: process.env.BASE_URL
   }),
   components: {
