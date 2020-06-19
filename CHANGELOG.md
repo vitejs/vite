@@ -1,3 +1,53 @@
+# [1.0.0-beta.1](https://github.com/vuejs/vite/compare/v0.20.10...v1.0.0-beta.1) (2020-06-19)
+
+
+### Bug Fixes
+
+* adjust env loading order due to dotenv expand ([74ef32c](https://github.com/vuejs/vite/commit/74ef32c815becb770dcf525acd2f308882924c30))
+
+
+### Code Refactoring
+
+* remove __DEV__ ([e6182c3](https://github.com/vuejs/vite/commit/e6182c37358a055306ccd56e121fab23b6be57aa))
+
+
+### Features
+
+* expose env variables on `import.meta.env` ([51e9c83](https://github.com/vuejs/vite/commit/51e9c83458e30e3ce70abead14e02a7b353322d9))
+* support dotenv expand ([7a4606d](https://github.com/vuejs/vite/commit/7a4606de89826583f8a8b9adb5e996516a8227e7))
+* support returning source map from transforms ([3ca09b0](https://github.com/vuejs/vite/commit/3ca09b05dd78ec8a1524ca859efd98afbc8456a7))
+
+
+### BREAKING CHANGES
+
+* env variables are now exposed on `import.meta.env`
+instead of `process.env`.
+
+  - For example, with a `.env` file containing `VITE_FOO=1`, you can
+    access it as `import.meta.env.VITE_FOO`.
+
+  - Only variables that start with `VITE_` are exposed to the client
+    code. This is because sometimes users may use the same `.env` file
+    for build scripts or other server-side code where it may contain
+    sensitive information that should not be exposed in client-side code.
+
+  - `import.meta.env.MODE` will be the mode the app is running in
+    (default is `development` in dev and `production` in build).
+
+  - `import.meta.env.BASE_URL` will be the base public URL as specified
+    via the `base` config option.
+
+  - `import.meta.env.DEV` will be `true` when mode is `development`.
+
+  - `import.meta.env.PROD` will be `true` when mode is `production`.
+
+  - `process.env` is still shimmed because some dependencies rely on it,
+     but will only expose `process.env.NODE_ENV` and will not contain
+     any user env variables.
+* `__DEV__` magic flag has been removed
+
+
+
 ## [0.20.10](https://github.com/vuejs/vite/compare/v0.20.8...v0.20.10) (2020-06-19)
 
 
