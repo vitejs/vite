@@ -1,3 +1,23 @@
+## [0.20.10](https://github.com/vuejs/vite/compare/v0.20.8...v0.20.10) (2020-06-19)
+
+
+### Bug Fixes
+
+* fix relative resolving for windows ([abf3f7a](https://github.com/vuejs/vite/commit/abf3f7a9ef896b52e20290cd929d10ebfab4a1c5))
+* resolve extension for deep module imports ([a4d84b1](https://github.com/vuejs/vite/commit/a4d84b153e83afa43b56dac88bc22957a418bef8)), closes [#391](https://github.com/vuejs/vite/issues/391)
+* **dev:** read file as buffer ([#398](https://github.com/vuejs/vite/issues/398)) ([5ee1d15](https://github.com/vuejs/vite/commit/5ee1d158a13d71c99cbb1e5a35a612173396a66c)), closes [#395](https://github.com/vuejs/vite/issues/395)
+* **dev:** resolve correct outside relative imports from aliased dir ([#407](https://github.com/vuejs/vite/issues/407)) ([cae1038](https://github.com/vuejs/vite/commit/cae1038108ab2cd48e1dd10335546be5bdda82d6)), closes [#396](https://github.com/vuejs/vite/issues/396)
+* `decodeURIComponent` for module resolve ([#393](https://github.com/vuejs/vite/issues/393)) ([91f696b](https://github.com/vuejs/vite/commit/91f696b2b9120c0559f53e00469a0b79d67fb034)), closes [#392](https://github.com/vuejs/vite/issues/392)
+* serve source map file inside linked pkg ([#379](https://github.com/vuejs/vite/issues/379)) ([f28f5b6](https://github.com/vuejs/vite/commit/f28f5b6f6d740738e6aa5321740912c4a2979a84))
+* use correct fallback for mime-types in cachedRead ([6047305](https://github.com/vuejs/vite/commit/6047305bb80942f153e51ced1af2e411115e2ba3)), closes [#409](https://github.com/vuejs/vite/issues/409)
+
+
+### Features
+
+* **server:** allow specifying custom hostname ([#377](https://github.com/vuejs/vite/issues/377)) ([fe9b04e](https://github.com/vuejs/vite/commit/fe9b04e818066c474c525f18dc7b4a2a05fe8ac1))
+
+
+
 ## [0.20.8](https://github.com/vuejs/vite/compare/v0.20.7...v0.20.8) (2020-06-11)
 
 
