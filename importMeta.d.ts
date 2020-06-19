@@ -14,4 +14,6 @@ declare interface ImportMeta {
 
     on(event: string, cb: (...args: any[]) => void): void
   }
+
+  readonly env: Record<string, string | undefined>
 }
