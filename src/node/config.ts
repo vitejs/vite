@@ -447,6 +447,13 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
 }
 
 function loadEnv(mode: string, root: string): Record<string, string> {
+  if (mode === 'local') {
+    throw new Error(
+      `"local" cannot be used as a mode name becaues it conflicts with ` +
+        `the .local postfix for .env files.`
+    )
+  }
+
   debug(`env mode: ${mode}`)
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
