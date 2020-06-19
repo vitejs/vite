@@ -324,7 +324,7 @@ const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
  * imports from the entry can be correctly resolved.
  * e.g.:
  * - `import 'foo'` -> `import '/@modules/foo/dist/index.js'`
- * - `import 'foo/bar/baz'` -> `import '/@modules/foo/bar/baz'`
+ * - `import 'foo/bar/baz'` -> `import '/@modules/foo/bar/baz.js'`
  */
 export function resolveBareModuleRequest(
   root: string,
@@ -358,18 +358,20 @@ export function resolveBareModuleRequest(
     }
   }
 
-  // check and warn deep imports on optimized modules
-  const ext = path.extname(id)
-  if (!ext || jsSrcRE.test(ext)) {
+  if (!isEntry) {
     const deepMatch = !isEntry && id.match(deepImportRE)
     if (deepMatch) {
+      // deep import
       const depId = deepMatch[1] || deepMatch[2]
+
+      // check if this is a deep import to an optimized dep.
       if (resolveOptimizedModule(root, depId)) {
         if (resolver.alias(depId) === id) {
           // this is a deep import but aliased from a bare module id.
           // redirect it the optimized copy.
           return resolveBareModuleRequest(root, depId, importer, resolver)
         }
+        // warn against deep imports to optimized dep
         console.error(
           chalk.yellow(
             `\n[vite] Avoid deep import "${id}" (imported by ${importer})\n` +
@@ -383,11 +385,27 @@ export function resolveBareModuleRequest(
           )
         )
       }
+
+      // resolve ext for deepImport
+      const filePath = resolveNodeModuleFile(root, id)
+      if (filePath) {
+        const deepPath = id.replace(deepImportRE, '')
+        const normalizedFilePath = slash(filePath)
+        const postfix = normalizedFilePath.slice(
+          normalizedFilePath.lastIndexOf(deepPath) + deepPath.length
+        )
+        id += postfix
+      }
     }
-    return id
-  } else {
+  }
+
+  // check and warn deep imports on optimized modules
+  const ext = path.extname(id)
+  if (!jsSrcRE.test(ext)) {
     // append import query for non-js deep imports
     return id + (queryRE.test(id) ? '&import' : '?import')
+  } else {
+    return id
   }
 }
 
