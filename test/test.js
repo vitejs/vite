@@ -560,61 +560,65 @@ describe('vite', () => {
   }
 
   // test build first since we are going to edit the fixtures when testing dev
-  describe('build', () => {
-    let staticServer
-    beforeAll(async () => {
-      console.log('building...')
-      const buildOutput = await execa(binPath, ['build'], {
-        cwd: tempDir
-      })
-      expect(buildOutput.stdout).toMatch('Build completed')
-      expect(buildOutput.stderr).toBe('')
-      console.log('build complete. running build tests...')
-    })
-
-    afterAll(() => {
-      console.log('build test done.')
-      if (staticServer) staticServer.close()
-    })
-
-    describe('assertions', () => {
+  // no need to run build tests when testing service worker mode since it's
+  // dev only
+  if (!process.env.USE_SW) {
+    describe('build', () => {
+      let staticServer
       beforeAll(async () => {
-        // start a static file server
-        const app = new (require('koa'))()
-        app.use(require('koa-static')(path.join(tempDir, 'dist')))
-        staticServer = require('http').createServer(app.callback())
-        await new Promise((r) => staticServer.listen(3001, r))
-
-        page = await browser.newPage()
-        await page.goto('http://localhost:3001')
+        console.log('building...')
+        const buildOutput = await execa(binPath, ['build'], {
+          cwd: tempDir
+        })
+        expect(buildOutput.stdout).toMatch('Build completed')
+        expect(buildOutput.stderr).toBe('')
+        console.log('build complete. running build tests...')
       })
 
-      declareTests(true)
-    })
+      afterAll(() => {
+        console.log('build test done.')
+        if (staticServer) staticServer.close()
+      })
 
-    test('css codesplit in async chunks', async () => {
-      const colorToMatch = /#8B4513/i // from TestAsync.vue
+      describe('assertions', () => {
+        beforeAll(async () => {
+          // start a static file server
+          const app = new (require('koa'))()
+          app.use(require('koa-static')(path.join(tempDir, 'dist')))
+          staticServer = require('http').createServer(app.callback())
+          await new Promise((r) => staticServer.listen(3001, r))
 
-      const files = await fs.readdir(path.join(tempDir, 'dist/_assets'))
-      const cssFile = files.find((f) => f.endsWith('.css'))
-      const css = await fs.readFile(
-        path.join(tempDir, 'dist/_assets', cssFile),
-        'utf-8'
-      )
-      // should be extracted from the main css file
-      expect(css).not.toMatch(colorToMatch)
-      // should be inside the split chunk file
-      const asyncChunk = files.find(
-        (f) => f.startsWith('TestAsync') && f.endsWith('.js')
-      )
-      const code = await fs.readFile(
-        path.join(tempDir, 'dist/_assets', asyncChunk),
-        'utf-8'
-      )
-      // should be inside the async chunk
-      expect(code).toMatch(colorToMatch)
+          page = await browser.newPage()
+          await page.goto('http://localhost:3001')
+        })
+
+        declareTests(true)
+      })
+
+      test('css codesplit in async chunks', async () => {
+        const colorToMatch = /#8B4513/i // from TestAsync.vue
+
+        const files = await fs.readdir(path.join(tempDir, 'dist/_assets'))
+        const cssFile = files.find((f) => f.endsWith('.css'))
+        const css = await fs.readFile(
+          path.join(tempDir, 'dist/_assets', cssFile),
+          'utf-8'
+        )
+        // should be extracted from the main css file
+        expect(css).not.toMatch(colorToMatch)
+        // should be inside the split chunk file
+        const asyncChunk = files.find(
+          (f) => f.startsWith('TestAsync') && f.endsWith('.js')
+        )
+        const code = await fs.readFile(
+          path.join(tempDir, 'dist/_assets', asyncChunk),
+          'utf-8'
+        )
+        // should be inside the async chunk
+        expect(code).toMatch(colorToMatch)
+      })
     })
-  })
+  }
 
   describe('dev', () => {
     beforeAll(async () => {
