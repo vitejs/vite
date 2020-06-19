@@ -44,7 +44,7 @@ export const serveStaticPlugin: ServerPlugin = ({
         fs.existsSync(filePath) &&
         fs.statSync(filePath).isFile()
       ) {
-        await cachedRead(ctx, filePath)
+        await ctx.read(ctx, filePath)
       }
     }
     return next()

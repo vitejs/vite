@@ -18,6 +18,7 @@ import { serviceWorkerPlugin } from './serverPluginServiceWorker'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
+import { cachedRead } from '../utils'
 import fs from 'fs-extra'
 import path from 'path'
 export { rewriteImports } from './serverPluginModuleRewrite'
@@ -61,7 +62,8 @@ export function createServer(config: ServerConfig): Server {
     server,
     watcher,
     resolver,
-    config
+    config,
+    read: cachedRead
   }
 
   // attach server context to koa context
