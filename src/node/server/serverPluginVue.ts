@@ -191,10 +191,6 @@ export const vuePlugin: ServerPlugin = ({
         path: publicPath,
         timestamp
       })
-      console.log(
-        chalk.green(`[vite:hmr] `) +
-          `${path.relative(root, filePath)} updated. (reload)`
-      )
     }
 
     if (!isEqualBlock(descriptor.script, prevDescriptor.script)) {
@@ -277,14 +273,6 @@ export const vuePlugin: ServerPlugin = ({
     }
     if (didUpdateStyle) {
       updateType.push(`style`)
-    }
-    if (updateType.length) {
-      console.log(
-        chalk.green(`[vite:hmr] `) +
-          `${path.relative(root, filePath)} updated. (${updateType.join(
-            ' & '
-          )})`
-      )
     }
   })
 
