@@ -30,6 +30,10 @@ export interface InternalResolver {
   fileToRequest(filePath: string): string
   normalizePublicPath(publicPath: string): string
   alias(id: string): string | undefined
+  resolveRelativeRequest(
+    publicPath: string,
+    relativePublicPath: string
+  ): { pathname: string; query: string }
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -118,6 +122,7 @@ export function createResolver(
 ): InternalResolver {
   resolvers = [...resolvers]
   const literalAlias: Record<string, string> = {}
+  const literalDirAlias: Record<string, string> = {}
 
   const resolveAlias = (alias: Record<string, string>) => {
     for (const key in alias) {
@@ -143,6 +148,7 @@ export function createResolver(
             }
           }
         })
+        literalDirAlias[key] = target
       } else {
         literalAlias[key] = target
       }
@@ -280,6 +286,25 @@ export function createResolver(
         if (aliased) {
           return aliased
         }
+      }
+    },
+
+    resolveRelativeRequest(publicPath: string, relativePublicPath: string) {
+      let dirname = path.dirname(publicPath)
+      for (const alias in literalDirAlias) {
+        if (publicPath.startsWith(alias)) {
+          dirname = path.join('/', path.relative(root, literalDirAlias[alias]))
+          break
+        }
+      }
+
+      const resolved = slash(path.posix.resolve(dirname, relativePublicPath))
+      const queryMatch = relativePublicPath.match(queryRE)
+      return {
+        // path resovle strips ending / which should be preserved
+        pathname:
+          cleanUrl(resolved) + (relativePublicPath.endsWith('/') ? '/' : ''),
+        query: queryMatch ? queryMatch[0] : ''
       }
     }
   }

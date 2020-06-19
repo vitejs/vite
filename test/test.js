@@ -470,11 +470,15 @@ describe('vite', () => {
       expect(await getText('.dir-alias-index')).toMatch(
         'directory alias index works'
       )
+      expect(await getText('.dir-alias-import-outside')).toMatch(
+        'directory aliased internal import outside works'
+      )
       if (!isBuild) {
         await updateFile('aliased/index.js', (c) =>
           c.replace('works', 'hmr works')
         )
         await expectByPolling(() => getText('.alias'), 'alias hmr works')
+
         await updateFile('aliased-dir/named.js', (c) =>
           c.replace('works', 'hmr works')
         )
@@ -482,12 +486,21 @@ describe('vite', () => {
           () => getText('.dir-alias'),
           'directory alias hmr works'
         )
+
         await updateFile('aliased-dir/index.js', (c) =>
           c.replace('works', 'hmr works')
         )
         await expectByPolling(
           () => getText('.dir-alias-index'),
           'directory alias index hmr works'
+        )
+
+        await updateFile('aliased-dir-import.js', (c) =>
+          c.replace('works', 'hmr works')
+        )
+        await expectByPolling(
+          () => getText('.dir-alias-import-outside'),
+          'directory aliased internal import outside hmr works'
         )
       }
     })
