@@ -189,7 +189,7 @@ For dynamic path references, there are two options:
 
 - You can get the resolved public path of a static asset file by importing it from JavaScript. e.g. `import path from './foo.png'` will give you its resolved public path as a string.
 
-- If you need to concatenate paths on the fly, you can use the globally injected `process.env.BASE_URL` variable with will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `process.env['BASE_URL']` won't work).
+- If you need to concatenate paths on the fly, you can use the globally injected `import.meta.env.BASE_URL` variable with will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `import.meta.env['BASE_URL']` won't work).
 
 ### PostCSS
 
@@ -275,7 +275,7 @@ In addition to options mapped from CLI flags, it also supports `alias`, `transfo
 // vite.config.js
 module.exports = {
   vueCustomBlockTransforms: {
-    i18n: (source, query) => {
+    i18n: ({ code }) => {
       // return transformed code
     }
   }
@@ -316,9 +316,7 @@ Internally, we use a highly opinionated Rollup config to generate the build. The
 
 ### Modes and Environment Variables
 
-> 0.16.7+
-
-The mode option is used to specify the value of `process.env.NODE_ENV` and the corresponding environment variables files that needs to be loaded.
+The mode option is used to specify the value of `import.meta.env.MODE` and the corresponding environment variables files that needs to be loaded.
 
 By default, there are two modes:
   - `development` is used by `vite` and `vite serve`
@@ -338,6 +336,8 @@ When running `vite`, environment variables are loaded from the following files i
 .env.[mode]         # only loaded in specified env mode
 .env.[mode].local   # only loaded in specified env mode, ignored by git
 ```
+
+**Note:** only variables prefixed with `VITE_` are exposed to your code. e.g. `VITE_SOME_KEY=123` will be exposed as `import.meta.env.VITE_SOME_KEY`, but `SOME_KEY=123` will not. This is because the `.env` files may be used by some users for server-side or build scripts and may contain sensitive information that should not be exposed in code shipped to browsers.
 
 ## API
 
