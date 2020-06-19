@@ -64,6 +64,7 @@
     "clean-css": "^4.2.3",
     "debug": "^4.1.1",
     "dotenv": "^8.2.0",
+    "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^0.3.18",
     "esbuild": "^0.4.1",
     "etag": "^1.8.1",

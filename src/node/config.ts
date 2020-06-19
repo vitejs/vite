@@ -2,6 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
+import dotenvExpand from 'dotenv-expand'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
 import { CompilerOptions, SFCStyleCompileOptions } from '@vue/compiler-sfc'
 import Rollup, {
@@ -465,6 +466,7 @@ function loadEnv(mode: string, root: string): Record<string, string> {
       if (result.error) {
         throw result.error
       }
+      dotenvExpand(result)
       for (const key in result.parsed) {
         // only keys that start with VITE_ are exposed.
         if (key.startsWith(`VITE_`)) {
