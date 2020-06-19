@@ -376,7 +376,10 @@ export async function resolveConfig(
       }
     }
 
-    config.env = loadEnv(mode, config.root || cwd)
+    config.env = {
+      ...config.env,
+      ...loadEnv(mode, config.root || cwd)
+    }
     debug(`config resolved in ${Date.now() - start}ms`)
 
     config.__path = resolvedPath
