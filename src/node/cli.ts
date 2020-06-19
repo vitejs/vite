@@ -127,7 +127,7 @@ async function runServe(options: UserConfig) {
   let port = options.port || 3000
   let hostname = options.hostname || 'localhost'
   const protocol = options.https ? 'https' : 'http'
-  
+
   server.on('error', (e: Error & { code?: string }) => {
     if (e.code === 'EADDRINUSE') {
       console.log(`Port ${port} is in use, trying another one...`)
@@ -141,7 +141,7 @@ async function runServe(options: UserConfig) {
     }
   })
 
-  server.listen(port, hostname, () => {
+  server.listen(port, () => {
     console.log()
     console.log(`  Dev server running at:`)
     const interfaces = os.networkInterfaces()
