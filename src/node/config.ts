@@ -449,10 +449,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
 function loadEnv(mode: string, root: string): Record<string, string> {
   debug(`env mode: ${mode}`)
   const envFiles = [
-    /** default file */ `.env`,
-    /** local file */ `.env.local`,
+    /** mode local file */ `.env.${mode}.local`,
     /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`
+    /** local file */ `.env.local`,
+    /** default file */ `.env`
   ]
 
   const env: Record<string, string> = {}
