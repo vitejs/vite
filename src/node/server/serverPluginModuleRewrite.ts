@@ -22,7 +22,7 @@ import {
   hmrDirtyFilesMap,
   latestVersionsMap
 } from './serverPluginHmr'
-import { readBody, cleanUrl, isExternalUrl } from '../utils'
+import { readBody, cleanUrl, isExternalUrl, cjsToEsm } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
 import { envPublicPath } from './serverPluginEnv'
@@ -77,7 +77,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
         // on the other hand, static import is guaranteed to have extension
         // because they must all have gone through module rewrite.
         const importer = resolver.normalizePublicPath(ctx.path)
-        ctx.body = rewriteImports(
+        ctx.body = await rewriteImports(
           root,
           content!,
           importer,
@@ -99,7 +99,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
   })
 }
 
-export function rewriteImports(
+export async function rewriteImports(
   root: string,
   source: string,
   importer: string,
@@ -109,6 +109,7 @@ export function rewriteImports(
   try {
     let imports: ImportSpecifier[] = []
     try {
+      source = await cjsToEsm(source)
       imports = parseImports(source)[0]
     } catch (e) {
       console.error(

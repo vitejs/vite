@@ -27,3 +27,13 @@ export function injectScriptToHtml(html: string, script: string) {
   // if no <head> tag or doctype is present, just prepend
   return script + html
 }
+
+export async function cjsToEsm(source: string): Promise<string> {
+  const plugin = require('babel-plugin-transform-commonjs')
+  const { transformAsync } = require('@babel/core')
+  const { code } = await transformAsync(source, {
+    plugins: [plugin],
+    sourceType: 'module'
+  })
+  return code
+}
