@@ -12,7 +12,7 @@
     "bin",
     "dist/**/*.js",
     "dist/**/*.d.ts",
-    "hmr.d.ts"
+    "importMeta.d.ts"
   ],
   "engines": {
     "node": ">=10.0.0"
