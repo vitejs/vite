@@ -291,9 +291,13 @@ export function createResolver(
 
     resolveRelativeRequest(publicPath: string, relativePublicPath: string) {
       let dirname = path.dirname(publicPath)
+      const filePath = resolver.requestToFile(publicPath)
       for (const alias in literalDirAlias) {
         if (publicPath.startsWith(alias)) {
-          const relativeFilePath = path.relative(root, literalDirAlias[alias])
+          const relativeFilePath = path.relative(
+            filePath,
+            literalDirAlias[alias]
+          )
           if (!relativeFilePath.startsWith('..')) {
             dirname = '/' + slash(relativeFilePath)
           }
