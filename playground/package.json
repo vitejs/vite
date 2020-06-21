@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "bootstrap": "link:../node_modules/bootstrap",
+    "lodash": "link:../node_modules/lodash",
     "lodash-es": "link:../node_modules/lodash-es",
     "moment": "link:../node_modules/moment",
     "@babel/runtime": "link:../node_modules/@babel/runtime",
