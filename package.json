@@ -39,7 +39,8 @@
     "postpublish": "git add CHANGELOG.md && git commit -m 'chore: changelog [ci skip]'"
   },
   "gitHooks": {
-    "pre-commit": "lint-staged"
+    "pre-commit": "lint-staged",
+    "commit-msg": "node scripts/verifyCommit.js"
   },
   "lint-staged": {
     "*.js": [
