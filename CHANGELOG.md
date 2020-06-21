@@ -1,3 +1,14 @@
+# [1.0.0-beta.2](https://github.com/vuejs/vite/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2020-06-21)
+
+
+### Bug Fixes
+
+* **dev:** should use real file path as relative root ([#422](https://github.com/vuejs/vite/issues/422)) ([e6561c0](https://github.com/vuejs/vite/commit/e6561c0f1e3af76ac16f197a3259ee960bfe485d))
+* include importMeta.d.ts in npm package ([#420](https://github.com/vuejs/vite/issues/420)) ([40200f8](https://github.com/vuejs/vite/commit/40200f8dcd09ce1c3a872b455b0ff1b7201e0792))
+* respect env provided via config ([b0b91b1](https://github.com/vuejs/vite/commit/b0b91b16c776a12baa5371744b78c14d6f8880e6)), closes [#417](https://github.com/vuejs/vite/issues/417)
+
+
+
 # [1.0.0-beta.1](https://github.com/vuejs/vite/compare/v0.20.10...v1.0.0-beta.1) (2020-06-19)
 
 
