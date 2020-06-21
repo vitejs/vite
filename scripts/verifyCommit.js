@@ -4,9 +4,10 @@ const chalk = require('chalk')
 const msgPath = process.env.GIT_PARAMS
 const msg = require('fs').readFileSync(msgPath, 'utf-8').trim()
 
+const releaseRE = /^v\d/
 const commitRE = /^(revert: )?(feat|fix|docs|dx|refactor|perf|test|workflow|build|ci|chore|types|wip|release): .{1,50}/
 
-if (!commitRE.test(msg)) {
+if (!releaseRE.test(msg) && !commitRE.test(msg)) {
   console.log()
   console.error(
     `  ${chalk.bgRed.white(' ERROR ')} ${chalk.red(
