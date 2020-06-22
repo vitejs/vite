@@ -14,9 +14,11 @@ Vite is an opinionated web dev build tool that serves your code via native ES Mo
 
 ## Status
 
-Still experimental, but we intend to make it suitable for production.
+In beta and will likely release 1.0 soon.
 
 ## Getting Started
+
+> Note to Vue users: Vite currently only works with Vue 3.x. This also means you can't use libraries that are not yet compatible with Vue 3.
 
 ```bash
 $ npm init vite-app <project-name>
