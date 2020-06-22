@@ -1,3 +1,7 @@
+# [1.0.0-beta.4](https://github.com/vuejs/vite/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2020-06-22)
+
+
+
 # [1.0.0-beta.3](https://github.com/vuejs/vite/compare/v1.0.0-beta.1...v1.0.0-beta.3) (2020-06-22)
 
 
