@@ -585,6 +585,12 @@ describe('vite', () => {
       await button.click()
       await expectByPolling(() => getText('.worker-response'), 'pong')
     })
+
+    test('importing wasm', async () => {
+      const button = await page.$('.wasm-send')
+      await button.click()
+      await expectByPolling(() => getText('.wasm-response'), '42')
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev

@@ -25,6 +25,7 @@ import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
 import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
 import { webWrokerPlugin } from './serverPluginWebWorker'
+import { wasmPlugin } from './serverPluginWasm'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
 
@@ -101,6 +102,7 @@ export function createServer(config: ServerConfig): Server {
     jsonPlugin,
     assetPathPlugin,
     webWrokerPlugin,
+    wasmPlugin,
     serveStaticPlugin
   ]
   resolvedPlugins.forEach((m) => m(context))

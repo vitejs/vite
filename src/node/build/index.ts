@@ -27,6 +27,7 @@ import { BuildConfig } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
 import { resolvePostcssOptions } from '../utils/cssUtils'
+import { createBuildWasmPlugin } from './buildPluginWasm'
 
 export interface BuildResult {
   html: string
@@ -291,6 +292,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         extensions: supportedExts,
         preserveSource: true // somehow results in slightly smaller bundle
       }),
+      createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
       // minify with terser
       // this is the default which has better compression, but slow
       // the user can opt-in to use esbuild which is much faster but results
