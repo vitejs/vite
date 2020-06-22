@@ -127,7 +127,7 @@ export interface ServerConfig extends SharedConfig {
    * Configure https.
    */
   https?: boolean
-  httpsOption?: ServerOptions
+  httpsOptions?: ServerOptions
   /**
    * Configure custom proxy rules for the dev server. Uses
    * [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses

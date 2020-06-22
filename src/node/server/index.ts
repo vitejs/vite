@@ -119,12 +119,12 @@ export function createServer(config: ServerConfig): Server {
 }
 
 function resolveServer(
-  { https = false, httpsOption = {} }: ServerConfig,
+  { https = false, httpsOptions = {} }: ServerConfig,
   requestListener: RequestListener
 ) {
   if (https) {
     return require('http2').createSecureServer(
-      resolveHttpsConfig(httpsOption),
+      resolveHttpsConfig(httpsOptions),
       requestListener
     )
   } else {
