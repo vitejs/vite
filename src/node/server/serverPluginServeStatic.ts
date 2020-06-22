@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { ServerPlugin } from '.'
-import { isStaticAsset, cachedRead } from '../utils'
+import { isStaticAsset } from '../utils'
 import chalk from 'chalk'
 
 const send = require('koa-send')
@@ -13,8 +13,7 @@ export const serveStaticPlugin: ServerPlugin = ({
   root,
   app,
   resolver,
-  config,
-  watcher
+  config
 }) => {
   app.use(async (ctx, next) => {
     // short circuit requests that have already been explicitly handled
@@ -44,7 +43,7 @@ export const serveStaticPlugin: ServerPlugin = ({
         fs.existsSync(filePath) &&
         fs.statSync(filePath).isFile()
       ) {
-        await cachedRead(ctx, filePath)
+        await ctx.read(filePath)
       }
     }
     return next()

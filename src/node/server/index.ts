@@ -20,6 +20,7 @@ import { serviceWorkerPlugin } from './serverPluginServiceWorker'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
+import { cachedRead } from '../utils'
 import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
 import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
@@ -39,6 +40,7 @@ export interface State extends DefaultState {}
 
 export type Context = DefaultContext &
   ServerPluginContext & {
+    read: (filePath: string) => Promise<Buffer | string>
     map?: SourceMap | null
   }
 
@@ -60,7 +62,7 @@ export function createServer(config: ServerConfig): Server {
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers, alias)
 
-  const context = {
+  const context: ServerPluginContext = {
     root,
     app,
     server,
@@ -72,6 +74,7 @@ export function createServer(config: ServerConfig): Server {
   // attach server context to koa context
   app.use((ctx, next) => {
     Object.assign(ctx, context)
+    ctx.read = cachedRead.bind(null, ctx)
     return next()
   })
 

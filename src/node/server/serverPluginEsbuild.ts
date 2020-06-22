@@ -6,7 +6,7 @@ import {
   vueJsxPublicPath,
   vueJsxFilePath
 } from '../esbuildService'
-import { readBody, cachedRead } from '../utils'
+import { readBody } from '../utils'
 
 export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
   const jsxConfig = resolveJsxOptions(config.jsx)
@@ -14,7 +14,7 @@ export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
   app.use(async (ctx, next) => {
     // intercept and return vue jsx helper import
     if (ctx.path === vueJsxPublicPath) {
-      await cachedRead(ctx, vueJsxFilePath)
+      await ctx.read(vueJsxFilePath)
     }
 
     await next()

@@ -2,7 +2,7 @@ import path from 'path'
 import chalk from 'chalk'
 import fs from 'fs-extra'
 import { ServerPlugin } from '.'
-import { resolveVue, cachedRead } from '../utils'
+import { resolveVue } from '../utils'
 import { URL } from 'url'
 import { resolveOptimizedModule, resolveNodeModuleFile } from '../resolver'
 
@@ -35,7 +35,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
       moduleIdToFileMap.set(id, file)
       moduleFileToIdMap.set(file, ctx.path)
       debug(`(${type}) ${id} -> ${getDebugPath(root, file)}`)
-      await cachedRead(ctx, file)
+      await ctx.read(file)
       return next()
     }
 

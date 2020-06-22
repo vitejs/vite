@@ -22,6 +22,8 @@ const fsReadCache = new LRUCache<string, CacheEntry>({
 /**
  * Read a file with in-memory cache.
  * Also sets appropriate headers and body on the Koa context.
+ * This is exposed on middleware context as `ctx.read` with the `ctx` already
+ * bound, so it can be used as `ctx.read(file)`.
  */
 export async function cachedRead(
   ctx: Context | null,
