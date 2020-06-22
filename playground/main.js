@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import './testHmrManual'
+import './hmr/testHmrManual'
 
 createApp(App).mount('#app')

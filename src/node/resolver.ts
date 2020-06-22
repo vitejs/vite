@@ -143,7 +143,7 @@ export function createResolver(
             }
           },
           fileToRequest(filePath) {
-            if (filePath.startsWith(target)) {
+            if (filePath.startsWith(target + path.delimiter)) {
               return slash(key + path.relative(target, filePath))
             }
           }
@@ -289,28 +289,29 @@ export function createResolver(
       }
     },
 
-    resolveRelativeRequest(publicPath: string, relativePublicPath: string) {
-      let dirname = path.dirname(publicPath)
-      const filePath = resolver.requestToFile(publicPath)
+    resolveRelativeRequest(importer: string, importee: string) {
+      let resolved = path.posix.resolve(path.posix.dirname(importer), importee)
+
       for (const alias in literalDirAlias) {
-        if (publicPath.startsWith(alias)) {
-          const relativeFilePath = path.relative(
-            filePath,
-            literalDirAlias[alias]
-          )
-          if (!relativeFilePath.startsWith('..')) {
-            dirname = '/' + slash(relativeFilePath)
+        if (importer.startsWith(alias)) {
+          if (!resolved.startsWith(alias)) {
+            // resolved path is outside of alias directory, we need to use
+            // its full path instead
+            const importerFilePath = resolver.requestToFile(importer)
+            const importeeFilePath = path.resolve(
+              path.dirname(importerFilePath),
+              importee
+            )
+            resolved = resolver.fileToRequest(importeeFilePath)
           }
           break
         }
       }
 
-      const resolved = slash(path.posix.resolve(dirname, relativePublicPath))
-      const queryMatch = relativePublicPath.match(queryRE)
+      const queryMatch = importee.match(queryRE)
       return {
         // path resovle strips ending / which should be preserved
-        pathname:
-          cleanUrl(resolved) + (relativePublicPath.endsWith('/') ? '/' : ''),
+        pathname: cleanUrl(resolved) + (importee.endsWith('/') ? '/' : ''),
         query: queryMatch ? queryMatch[0] : ''
       }
     }

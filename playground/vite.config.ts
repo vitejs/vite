@@ -4,8 +4,8 @@ import { i18nTransform } from './custom-blocks/i18nTransform'
 
 const config: UserConfig = {
   alias: {
-    alias: '/aliased',
-    '/@alias/': require('path').resolve(__dirname, 'aliased-dir')
+    alias: '/alias/aliased',
+    '/@alias/': require('path').resolve(__dirname, 'alias/aliased-dir')
   },
   jsx: 'preact',
   minify: false,

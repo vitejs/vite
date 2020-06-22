@@ -1,4 +1,4 @@
 .css-import-bg {
-  background: url(../testAssets.png);
+  background: url(./nested/testAssets.png);
   background-size: 10px;
 }
