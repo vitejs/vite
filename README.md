@@ -67,8 +67,11 @@ Vite assumes you are targeting modern browsers and therefore does not perform an
 - [CSS Modules](#css-modules)
 - [CSS Pre-processors](#css-pre-processors)
 - [JSX](#jsx)
+- [Web Assembly](#web-assembly)
+- [Inline Web Workers](#web-workers)
 - [Custom Blocks](#custom-blocks)
 - [Config File](#config-file)
+- [HTTPS/2](#https2)
 - [Dev Server Proxy](#dev-server-proxy)
 - [Production Build](#production-build)
 - [Modes and Environment Variables](#modes-and-environment-variables)
@@ -261,6 +264,50 @@ module.exports = {
 
 Note that for the Preact preset, `h` is also auto injected so you don't need to manually import it. However, this may cause issues if you are using `.tsx` with Preact since TS expects `h` to be explicitly imported for type inference. In that case, you can use the explicit factory config shown above which disables the auto `h` injection.
 
+### Web Assembly
+
+> 1.0.0-beta.3+
+
+Pre-compiled `.wasm` files can be directly imported - the default export will be a initialization function that returns a Promise of the exports object of the wasm instance:
+
+``` js
+import init from './example.wasm'
+
+init().then(exports => {
+  exports.test()
+})
+```
+
+The init function can also take the `imports` object which is passed along to `WebAssemly.instantiate` as its second argument:
+
+``` js
+init({
+  imports: {
+    someFunc: () => { /* ... */ }
+  }
+}).then(() => { /* ... */ })
+```
+
+In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise they will be copied to the dist directory as an asset and fetched on demand.
+
+### Inline Web Workers
+
+> 1.0.0-beta.3+
+
+A web worker script can be directly imported by appending `?worker` to the import request. The default export will be a custom worker constructor:
+
+``` js
+import MyWorker from './worker?worker'
+
+const worker = new MyWorker()
+```
+
+In the production build, workers imported this way are inlined into the bundle as base64 strings.
+
+The worker script can also use `import` statements instead of `importScripts()` - note during dev this relies on browser native support and currently only works in Chrome, but for the production build it is compiled away.
+
+If you do not wish to inline the worker, you should place your worker scripts in `public` and initialize the worker via `new Worker('/worker.js')`.
+
 ### Config File
 
 You can create a `vite.config.js` or `vite.config.ts` file in your project. Vite will automatically use it if one is found in the current working directory. You can also explicitly specify a config file via `vite --config my-config.js`.
@@ -268,8 +315,6 @@ You can create a `vite.config.js` or `vite.config.ts` file in your project. Vite
 In addition to options mapped from CLI flags, it also supports `alias`, `transforms`, and `plugins` (which is a subset of the config interface). For now, see [config.ts](https://github.com/vuejs/vite/blob/master/src/node/config.ts) for full details before more thorough documentation is available.
 
 ### Custom Blocks
-
-> 0.20+
 
 [Custom blocks](https://vue-loader.vuejs.org/guide/custom-blocks.html) in Vue SFCs are also supported. To use custom blocks, specify transform functions for custom blocks using the `vueCustomBlockTransforms` option in the [config file](#config-file):
 
@@ -284,9 +329,13 @@ module.exports = {
 }
 ```
 
-### Dev Server Proxy
+### HTTPS/2
 
-> 0.15.6+
+Starting the server with `--https` will automatically generate a self-signed cert and start the server with TLS and HTTP/2 enabled.
+
+Custom certs can also be provided by using the `httpsOptions` option in the config file, which accepts `key`, `cert`, `ca` and `pfx` as in Node `https.ServerOptions`.
+
+### Dev Server Proxy
 
 You can use the `proxy` option in the config file to configure custom proxies for the dev server. Vite uses [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Each key can be a path Full options [here](https://github.com/http-party/node-http-proxy#options).
 
