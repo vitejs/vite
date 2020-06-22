@@ -13,8 +13,7 @@ export const serveStaticPlugin: ServerPlugin = ({
   root,
   app,
   resolver,
-  config,
-  watcher
+  config
 }) => {
   app.use(async (ctx, next) => {
     // short circuit requests that have already been explicitly handled
@@ -44,7 +43,7 @@ export const serveStaticPlugin: ServerPlugin = ({
         fs.existsSync(filePath) &&
         fs.statSync(filePath).isFile()
       ) {
-        await ctx.read(ctx, filePath)
+        await ctx.read(filePath)
       }
     }
     return next()

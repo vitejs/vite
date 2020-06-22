@@ -14,7 +14,7 @@ export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
   app.use(async (ctx, next) => {
     // intercept and return vue jsx helper import
     if (ctx.path === vueJsxPublicPath) {
-      await ctx.read(ctx, vueJsxFilePath)
+      await ctx.read(vueJsxFilePath)
     }
 
     await next()

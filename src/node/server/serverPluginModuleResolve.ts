@@ -35,7 +35,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
       moduleIdToFileMap.set(id, file)
       moduleFileToIdMap.set(file, ctx.path)
       debug(`(${type}) ${id} -> ${getDebugPath(root, file)}`)
-      await ctx.read(ctx, file)
+      await ctx.read(file)
       return next()
     }
 

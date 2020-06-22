@@ -40,6 +40,7 @@ export interface State extends DefaultState {}
 
 export type Context = DefaultContext &
   ServerPluginContext & {
+    read: (filePath: string) => Promise<Buffer>
     map?: SourceMap | null
   }
 
@@ -61,19 +62,19 @@ export function createServer(config: ServerConfig): Server {
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers, alias)
 
-  const context = {
+  const context: ServerPluginContext = {
     root,
     app,
     server,
     watcher,
     resolver,
-    config,
-    read: cachedRead
+    config
   }
 
   // attach server context to koa context
   app.use((ctx, next) => {
     Object.assign(ctx, context)
+    ctx.read = cachedRead.bind(null, ctx)
     return next()
   })
 
