@@ -133,10 +133,10 @@ function resolveServer(
 function resolveHttpsConfig(httpsOption: ServerOptions) {
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
-    ca: readFileIfExits(ca),
-    cert: readFileIfExits(cert),
-    key: readFileIfExits(key),
-    pfx: readFileIfExits(pfx)
+    ca: readFileIfExists(ca),
+    cert: readFileIfExists(cert),
+    key: readFileIfExists(key),
+    pfx: readFileIfExists(pfx)
   })
   if (!httpsOption.key || !httpsOption.cert) {
     httpsOption.cert = httpsOption.key = createCertificate()
@@ -144,7 +144,7 @@ function resolveHttpsConfig(httpsOption: ServerOptions) {
   return httpsOption
 }
 
-function readFileIfExits(value?: string | Buffer | any) {
+function readFileIfExists(value?: string | Buffer | any) {
   if (value && !Buffer.isBuffer(value)) {
     try {
       return fs.readFileSync(path.resolve(value as string))
