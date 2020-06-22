@@ -40,7 +40,7 @@ export interface State extends DefaultState {}
 
 export type Context = DefaultContext &
   ServerPluginContext & {
-    read: (filePath: string) => Promise<Buffer>
+    read: (filePath: string) => Promise<Buffer | string>
     map?: SourceMap | null
   }
 
