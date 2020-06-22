@@ -114,7 +114,7 @@ export const hmrPlugin: ServerPlugin = ({
   })
 
   // start a websocket server to send hmr notifications to the client
-  const wss = new WebSocket.Server({ server })
+  const wss = new WebSocket.Server({ port: 24678 })
 
   wss.on('connection', (socket) => {
     debugHmr('ws client connected')
