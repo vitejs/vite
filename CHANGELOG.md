@@ -1,3 +1,24 @@
+# [1.0.0-beta.3](https://github.com/vuejs/vite/compare/v1.0.0-beta.1...v1.0.0-beta.3) (2020-06-22)
+
+
+### Bug Fixes
+
+* fix ws poll address ([0c1fa7d](https://github.com/vuejs/vite/commit/0c1fa7df767ab483ed2321545cc4ce9f1af83f82))
+* include importMeta.d.ts in npm package ([#420](https://github.com/vuejs/vite/issues/420)) ([40200f8](https://github.com/vuejs/vite/commit/40200f8dcd09ce1c3a872b455b0ff1b7201e0792))
+* respect env provided via config ([b0b91b1](https://github.com/vuejs/vite/commit/b0b91b16c776a12baa5371744b78c14d6f8880e6)), closes [#417](https://github.com/vuejs/vite/issues/417)
+* should not emit assets that are inlined ([77dad04](https://github.com/vuejs/vite/commit/77dad04f9d8ff51da616a5c1487c646ce6749b29))
+* **dev:** should use real file path as relative root ([#422](https://github.com/vuejs/vite/issues/422)) ([e6561c0](https://github.com/vuejs/vite/commit/e6561c0f1e3af76ac16f197a3259ee960bfe485d))
+
+
+### Features
+
+* Allow plugins to overwrite the cachedRead function (close [#402](https://github.com/vuejs/vite/issues/402)) ([49d50ee](https://github.com/vuejs/vite/commit/49d50eebe86e18ea124d6223d258cc1dfe87a268))
+* support directly importing wasm ([40cbbb3](https://github.com/vuejs/vite/commit/40cbbb38557ab4423dcbd8fa6567a5cf56b715b1))
+* support http2 ([f4fd832](https://github.com/vuejs/vite/commit/f4fd8329f130926c4cac3efd2f117df9ca77c174)), closes [#424](https://github.com/vuejs/vite/issues/424)
+* support importing web worksers as `import "./worker?worker"` ([8af15d2](https://github.com/vuejs/vite/commit/8af15d20b8f318987d8c1af04d8196ebd0a44053)), closes [#403](https://github.com/vuejs/vite/issues/403)
+
+
+
 # [1.0.0-beta.2](https://github.com/vuejs/vite/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2020-06-21)
 
 
