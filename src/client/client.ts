@@ -139,9 +139,12 @@ socket.addEventListener('message', async ({ data }) => {
 socket.addEventListener('close', () => {
   console.log(`[vite] server connection lost. polling for restart...`)
   setInterval(() => {
-    new WebSocket(`ws://${location.host}`).addEventListener('open', () => {
-      location.reload()
-    })
+    new WebSocket(`ws://${location.hostname}:24678`).addEventListener(
+      'open',
+      () => {
+        location.reload()
+      }
+    )
   }, 1000)
 })
 
