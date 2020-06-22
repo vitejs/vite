@@ -578,6 +578,12 @@ describe('vite', () => {
       expect(await getText(`.dynamic-import-one`)).toMatch(`One`)
       expect(await getText(`.dynamic-import-two`)).toMatch(`Two`)
     })
+
+    test('importing web worker', async () => {
+      const button = await page.$('.worker-send')
+      await button.click()
+      await expectByPolling(() => getText('.worker-response'), 'pong')
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev

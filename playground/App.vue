@@ -23,6 +23,7 @@
   <TestRewriteUnoptimized />
   <TestNormalizePublicPath />
   <TestDynamicImport />
+  <TestWebWorker />
 </template>
 
 <script>
@@ -48,6 +49,7 @@ import TestOptimizeLink from './optimize-linked/TestOptimizeLink.vue'
 import TestRewriteUnoptimized from './rewrite-unoptimized/TestRewriteUnoptimized.vue'
 import TestNormalizePublicPath from './TestNormalizePublicPath.vue'
 import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
+import TestWebWorker from './worker/TestWorker.vue'
 
 export default {
   components: {
@@ -72,7 +74,8 @@ export default {
     TestOptimizeLink,
     TestRewriteUnoptimized,
     TestNormalizePublicPath,
-    TestDynamicImport
+    TestDynamicImport,
+    TestWebWorker
   }
 }
 </script>

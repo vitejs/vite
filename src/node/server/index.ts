@@ -24,6 +24,7 @@ import { cachedRead } from '../utils'
 import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
 import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
+import { webWrokerPlugin } from './serverPluginWebWorker'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
 
@@ -99,6 +100,7 @@ export function createServer(config: ServerConfig): Server {
     esbuildPlugin,
     jsonPlugin,
     assetPathPlugin,
+    webWrokerPlugin,
     serveStaticPlugin
   ]
   resolvedPlugins.forEach((m) => m(context))

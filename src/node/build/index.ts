@@ -283,6 +283,14 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         assetsDir,
         assetsInlineLimit
       ),
+      // https://github.com/darionco/rollup-plugin-web-worker-loader
+      // configured to support `import Worker from './my-worker?worker'`
+      require('rollup-plugin-web-worker-loader')({
+        targetPlatform: 'browser',
+        pattern: /(.+)\?worker/,
+        extensions: supportedExts,
+        preserveSource: true // somehow results in slightly smaller bundle
+      }),
       // minify with terser
       // this is the default which has better compression, but slow
       // the user can opt-in to use esbuild which is much faster but results
@@ -290,7 +298,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       minify && minify !== 'esbuild'
         ? require('rollup-plugin-terser').terser()
         : undefined
-    ]
+    ].filter(Boolean)
   })
 
   const { output } = await bundle.generate({
