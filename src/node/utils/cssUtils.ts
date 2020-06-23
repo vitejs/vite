@@ -9,7 +9,6 @@ import {
   SFCAsyncStyleCompileOptions,
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
-import { hmrClientPublicPath } from '../server/serverPluginHmr'
 
 export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
 export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
@@ -114,23 +113,6 @@ export async function compileCss(
   }
 
   return res
-}
-
-export function codegenCss(
-  id: string,
-  css: string,
-  modules?: Record<string, string>
-): string {
-  let code =
-    `import { updateStyle } from "${hmrClientPublicPath}"\n` +
-    `const css = ${JSON.stringify(css)}\n` +
-    `updateStyle(${JSON.stringify(id)}, css)\n`
-  if (modules) {
-    code += `export default ${JSON.stringify(modules)}`
-  } else {
-    code += `export default css`
-  }
-  return code
 }
 
 // postcss-load-config doesn't expose Result type

@@ -148,16 +148,38 @@ socket.addEventListener('close', () => {
   }, 1000)
 })
 
+// https://wicg.github.io/construct-stylesheets
+const supportsConstructedSheet = (() => {
+  try {
+    new CSSStyleSheet()
+    return true
+  } catch (e) {}
+  return false
+})()
+
+const sheetsMap = new Map()
+
 export function updateStyle(id: string, content: string) {
-  const linkId = `vite-css-${id}`
-  let link = document.getElementById(linkId)
-  if (!link) {
-    link = document.createElement('style')
-    link.id = linkId
-    link.setAttribute('type', 'text/css')
-    document.head.appendChild(link)
+  let style = sheetsMap.get(id)
+  if (supportsConstructedSheet) {
+    if (!style) {
+      style = new CSSStyleSheet()
+      style.replaceSync(content)
+      // @ts-ignore
+      document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
+    } else {
+      style.replaceSync(content)
+    }
+  } else {
+    if (!style) {
+      style = document.createElement('style')
+      style.setAttribute('type', 'text/css')
+      style.innerHTML = content
+      document.head.appendChild(style)
+    } else {
+      style.innerHTML = content
+    }
   }
-  link.innerHTML = content
 }
 
 async function updateModule(

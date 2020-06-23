@@ -4,7 +4,6 @@ import hash_sum from 'hash-sum'
 import { cleanUrl, isImportRequest, readBody } from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {
-  codegenCss,
   compileCss,
   cssImportMap,
   cssPreprocessLangRE,
@@ -15,6 +14,7 @@ import {
 import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
+import { hmrClientPublicPath } from './serverPluginHmr'
 
 interface ProcessedEntry {
   css: string
@@ -165,4 +165,21 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       modules: result.modules
     })
   }
+}
+
+export function codegenCss(
+  id: string,
+  css: string,
+  modules?: Record<string, string>
+): string {
+  let code =
+    `import { updateStyle } from "${hmrClientPublicPath}"\n` +
+    `const css = ${JSON.stringify(css)}\n` +
+    `updateStyle(${JSON.stringify(id)}, css)\n`
+  if (modules) {
+    code += `export default ${JSON.stringify(modules)}`
+  } else {
+    code += `export default css`
+  }
+  return code
 }
