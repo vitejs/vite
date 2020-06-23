@@ -1,3 +1,19 @@
+# [1.0.0-beta.5](https://github.com/vuejs/vite/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2020-06-23)
+
+
+### Bug Fixes
+
+* **hmr:** bail on circular imports when walking import chain ([b31e56a](https://github.com/vuejs/vite/commit/b31e56a42bc8d230dc5067a956b1bf75183a39e6)), closes [#438](https://github.com/vuejs/vite/issues/438)
+* **resolver:** fix fileToReqest reverse alias check ([1a3730a](https://github.com/vuejs/vite/commit/1a3730a17cf3de48b68de8fe48d171395ea92e22)), closes [#435](https://github.com/vuejs/vite/issues/435)
+* ignore css comment in build ([#432](https://github.com/vuejs/vite/issues/432)) ([98ff7a1](https://github.com/vuejs/vite/commit/98ff7a109c661f586c739517bfadf15a762a52af)), closes [#426](https://github.com/vuejs/vite/issues/426)
+
+
+### Performance Improvements
+
+* improve css insertion performance on large stylesheets ([1c806e6](https://github.com/vuejs/vite/commit/1c806e6390f1cfddb357f9ccdf057f3e9dc30521))
+
+
+
 # [1.0.0-beta.4](https://github.com/vuejs/vite/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2020-06-22)
 
 
