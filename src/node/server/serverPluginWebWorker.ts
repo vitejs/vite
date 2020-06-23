@@ -1,6 +1,6 @@
 import { ServerPlugin } from '.'
 
-export const webWrokerPlugin: ServerPlugin = ({ app }) => {
+export const webWorkerPlugin: ServerPlugin = ({ app }) => {
   app.use((ctx, next) => {
     if (ctx.query.worker != null) {
       ctx.type = 'js'
