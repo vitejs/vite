@@ -310,7 +310,7 @@ export function createResolver(
 
       const queryMatch = importee.match(queryRE)
       return {
-        // path resovle strips ending / which should be preserved
+        // path resolve strips ending / which should be preserved
         pathname: cleanUrl(resolved) + (importee.endsWith('/') ? '/' : ''),
         query: queryMatch ? queryMatch[0] : ''
       }
@@ -472,7 +472,7 @@ export function resolveNodeModule(
     }
     let entryPoint: string | undefined
 
-    // TODO properly support conditinal exports
+    // TODO properly support conditional exports
     // https://nodejs.org/api/esm.html#esm_conditional_exports
     // Note: this would require @rollup/plugin-node-resolve to support it too
     // or we will have to implement that logic in vite's own resolve plugin.

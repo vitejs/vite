@@ -70,7 +70,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
         ctx.body = rewriteCache.get(content)
       } else {
         await initLexer
-        // dynamic import may conatin extension-less path,
+        // dynamic import may contain extension-less path,
         // (.e.g import(runtimePathString))
         // so we need to normalize importer to ensure it contains extension
         // before we perform hmr analysis.

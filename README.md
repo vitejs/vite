@@ -125,7 +125,7 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
 
     // Can also accept an array of dep modules:
     import.meta.hot.acceptDeps(['./foo.js', './bar.js'], ([newFooModule, newBarModule]) => {
-      // the callback receives the updated mdoules in an Array
+      // the callback receives the updated modules in an Array
     })
   }
   ```
@@ -278,7 +278,7 @@ init().then(exports => {
 })
 ```
 
-The init function can also take the `imports` object which is passed along to `WebAssemly.instantiate` as its second argument:
+The init function can also take the `imports` object which is passed along to `WebAssembly.instantiate` as its second argument:
 
 ``` js
 init({
