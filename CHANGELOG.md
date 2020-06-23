@@ -19,7 +19,7 @@
 * Allow plugins to overwrite the cachedRead function (close [#402](https://github.com/vuejs/vite/issues/402)) ([49d50ee](https://github.com/vuejs/vite/commit/49d50eebe86e18ea124d6223d258cc1dfe87a268))
 * support directly importing wasm ([40cbbb3](https://github.com/vuejs/vite/commit/40cbbb38557ab4423dcbd8fa6567a5cf56b715b1))
 * support http2 ([f4fd832](https://github.com/vuejs/vite/commit/f4fd8329f130926c4cac3efd2f117df9ca77c174)), closes [#424](https://github.com/vuejs/vite/issues/424)
-* support importing web worksers as `import "./worker?worker"` ([8af15d2](https://github.com/vuejs/vite/commit/8af15d20b8f318987d8c1af04d8196ebd0a44053)), closes [#403](https://github.com/vuejs/vite/issues/403)
+* support importing web workers as `import "./worker?worker"` ([8af15d2](https://github.com/vuejs/vite/commit/8af15d20b8f318987d8c1af04d8196ebd0a44053)), closes [#403](https://github.com/vuejs/vite/issues/403)
 
 
 
@@ -89,7 +89,7 @@ instead of `process.env`.
       code: string // only available in `transform`
       id: string // full id including query
       path: string // file path without query
-      query: Record<string, string | stirng[]> // parsed query object
+      query: Record<string, string | string[]> // parsed query object
       isImport: boolean
       isBuild: boolean
     }
@@ -223,7 +223,7 @@ instead of `process.env`.
 
 * bust index.html short paths in sw mode ([379eccd](https://github.com/vuejs/vite/commit/379eccd1328d15c250e2ec276d5c1b7f4c769d46))
 * fix resolving deps with css entry (again) ([6e06fcf](https://github.com/vuejs/vite/commit/6e06fcf3415db32057e17b7e4dd577aac2f9ed48))
-* **resolve:** properly resolve un-optimized nested depdendencies + support pnpm ([ad14ef4](https://github.com/vuejs/vite/commit/ad14ef48c895c0db0698e3c4a904472109030e6a)), closes [#324](https://github.com/vuejs/vite/issues/324)
+* **resolve:** properly resolve un-optimized nested dependencies + support pnpm ([ad14ef4](https://github.com/vuejs/vite/commit/ad14ef48c895c0db0698e3c4a904472109030e6a)), closes [#324](https://github.com/vuejs/vite/issues/324)
 * dynamic-imported module can HMR if it is self-accepting ([36afeb7](https://github.com/vuejs/vite/commit/36afeb7b810bf131faf3c98e9a8c8d57e7e39ccb))
 * only perform file resolve redirect when not asking for html ([f28b88f](https://github.com/vuejs/vite/commit/f28b88f42dd485718f9ae2bce7de3710e94b7a9e)), closes [#323](https://github.com/vuejs/vite/issues/323)
 
@@ -298,7 +298,7 @@ be accessed via deep imports (e.g. `lit-html` directives)
 
 * support for resolving `browser` field has been removed.
 
-  The `browser` field has very inconsitent usage across the ecosystem
+  The `browser` field has very inconsistent usage across the ecosystem
   and is often used in a way that conflicts with ES-module-first tooling
   (e.g. firebase/app points browser to cjs build).
 
@@ -508,7 +508,7 @@ be accessed via deep imports (e.g. `lit-html` directives)
 * defaultRequestToFile should handle uncached node_modules request ([#230](https://github.com/vuejs/vite/issues/230)) ([7a3e822](https://github.com/vuejs/vite/commit/7a3e822597b94f8440e7436e3cc54a2764fff4eb)), closes [#228](https://github.com/vuejs/vite/issues/228)
 * disable cssCodeSplit in ssr build ([457f1f2](https://github.com/vuejs/vite/commit/457f1f2aca32f968f4ffe822633a2b4c49456fd4))
 * do not attempt to rewrite css urls that are hash fragments ([029de6b](https://github.com/vuejs/vite/commit/029de6b30bfc307d4b02f28703cd8d73a706b1cd))
-* ensure env vairable replacements are efficient for bundle size ([1be6121](https://github.com/vuejs/vite/commit/1be61219d1e253d6edec812ff7828b69d775c093))
+* ensure env variable replacements are efficient for bundle size ([1be6121](https://github.com/vuejs/vite/commit/1be61219d1e253d6edec812ff7828b69d775c093))
 * ensure rewrite middlewares have highest priority ([e741628](https://github.com/vuejs/vite/commit/e74162857ad33788f6fa02a4dca863aa7354fc76))
 * fix entry resolving for packages with explicit exports ([c493629](https://github.com/vuejs/vite/commit/c4936290380891353de0581e432389310147a8e0)), closes [#227](https://github.com/vuejs/vite/issues/227)
 * only apply vite-specific global replacements to non-dep code ([b96ed68](https://github.com/vuejs/vite/commit/b96ed689970a1c0ab87f21c7cdf7d72a12c493c2))
@@ -1017,7 +1017,7 @@ be accessed via deep imports (e.g. `lit-html` directives)
 
 ### Bug Fixes
 
-* fix isImportRequest check on request with queies ([348a7e8](https://github.com/vuejs/vite/commit/348a7e88e4cd104b110eb6296f5a18fdff351d32))
+* fix isImportRequest check on request with queries ([348a7e8](https://github.com/vuejs/vite/commit/348a7e88e4cd104b110eb6296f5a18fdff351d32))
 * fix vue style hmr ([d0b896f](https://github.com/vuejs/vite/commit/d0b896fde6502298cf8ef6c1a8bb79c8d9b1963d)), closes [#37](https://github.com/vuejs/vite/issues/37)
 
 
@@ -1050,7 +1050,7 @@ be accessed via deep imports (e.g. `lit-html` directives)
 
 ### Bug Fixes
 
-* disable trasnformAssetUrls for now ([2677c93](https://github.com/vuejs/vite/commit/2677c934fdeccf8d4a2b0a6f174ee55ab001b25a))
+* disable transformAssetUrls for now ([2677c93](https://github.com/vuejs/vite/commit/2677c934fdeccf8d4a2b0a6f174ee55ab001b25a))
 * fix resolver ensurejs check ([7b126af](https://github.com/vuejs/vite/commit/7b126af193459da777fa0ca581e8f31d163541fa))
 
 
