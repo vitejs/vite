@@ -158,7 +158,7 @@ describe('vite', () => {
         await button.click()
         expect(await getText(span)).toBe('bar loading')
         await expectByPolling(() => getText(span), 'bar loaded')
-        // update souce code
+        // update source code
         await updateFile('hmr/testHmrPropagationDynamicImport.js', (content) =>
           content.replace('bar loaded', 'bar updated')
         )
@@ -183,7 +183,7 @@ describe('vite', () => {
         await button.click()
         expect(await getText(span)).toBe('baz loading')
         await expectByPolling(() => getText(span), 'baz loaded')
-        // update souce code
+        // update source code
         await updateFile(
           'hmr/testHmrPropagationFullDynamicImport.js',
           (content) => content.replace('baz loaded', 'baz updated')
@@ -224,7 +224,7 @@ describe('vite', () => {
         await button.click()
         expect(await getText(span)).toBe('qux loading')
         await expectByPolling(() => getText(span), 'qux loaded')
-        // update souce code
+        // update source code
         await updateFile(
           'hmr/testHmrPropagationFullDynamicImportSelfAccepting.js',
           (content) => content.replace('qux loaded', 'qux updated')

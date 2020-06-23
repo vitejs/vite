@@ -61,7 +61,7 @@ export const hmrDeclineSet = new Set<string>()
 export const importerMap: HMRStateMap = new Map()
 export const importeeMap: HMRStateMap = new Map()
 
-// files that are dirty (i.e. in the import chain between the accept boundrary
+// files that are dirty (i.e. in the import chain between the accept boundary
 // and the actual changed file) for an hmr update at a given timestamp.
 export const hmrDirtyFilesMap = new LRUCache<string, Set<string>>({ max: 10 })
 export const latestVersionsMap = new Map<string, string>()
@@ -407,7 +407,7 @@ export function rewriteFileWithHMR(
     if (node.type === 'IfStatement') {
       const isDevBlock = isMetaHot(node.test)
       if (isDevBlock && !importMetaConditional) {
-        // remember the first occurence of `if (import.meta.hot)`
+        // remember the first occurrence of `if (import.meta.hot)`
         importMetaConditional = node
       }
       if (node.consequent.type === 'BlockStatement') {
