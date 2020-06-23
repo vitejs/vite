@@ -219,6 +219,7 @@ function walkImportChain(
   dirtyFiles: Set<string>,
   currentChain: string[] = []
 ): boolean {
+  debugger
   if (hmrDeclineSet.has(importee)) {
     // module explicitly declines HMR = dead end
     return true
@@ -243,16 +244,18 @@ function walkImportChain(
       const parentImpoters = importerMap.get(importer)
       if (!parentImpoters) {
         return true
-      } else if (
-        walkImportChain(
-          importer,
-          parentImpoters,
-          hmrBoundaries,
-          dirtyFiles,
-          currentChain.concat(importer)
-        )
-      ) {
-        return true
+      } else if (!currentChain.includes(importer)) {
+        if (
+          walkImportChain(
+            importer,
+            parentImpoters,
+            hmrBoundaries,
+            dirtyFiles,
+            currentChain.concat(importer)
+          )
+        ) {
+          return true
+        }
       }
     }
   }
