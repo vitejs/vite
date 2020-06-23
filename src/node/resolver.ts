@@ -18,6 +18,8 @@ import { hmrClientPublicPath } from './server/serverPluginHmr'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:resolve')
+const isWin = require('os').platform() === 'win32'
+const pathSeparator = isWin ? '\\' : '/'
 
 export interface Resolver {
   requestToFile?(publicPath: string, root: string): string | undefined
@@ -143,7 +145,7 @@ export function createResolver(
             }
           },
           fileToRequest(filePath) {
-            if (filePath.startsWith(target + path.delimiter)) {
+            if (filePath.startsWith(target + pathSeparator)) {
               return slash(key + path.relative(target, filePath))
             }
           }
