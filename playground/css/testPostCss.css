@@ -4,3 +4,7 @@ body {
     color: red;
   }
 }
+/* @font-face {
+    font-family: 'abcde';
+    src: url('./assets/fonts/abc.ttf') format('truetype');
+} */

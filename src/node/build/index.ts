@@ -100,7 +100,7 @@ export async function createBaseRollupPlugins(
   const {
     options: postcssOptions,
     plugins: postcssPlugins
-  } = await resolvePostcssOptions(root)
+  } = await resolvePostcssOptions(root, true)
 
   return [
     // user plugins

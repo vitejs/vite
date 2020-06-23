@@ -55,7 +55,8 @@ export async function compileCss(
     modules,
     preprocessLang,
     preprocessOptions = {}
-  }: SFCAsyncStyleCompileOptions
+  }: SFCAsyncStyleCompileOptions,
+  isBuild: boolean = false
 ): Promise<SFCStyleCompileResults | string> {
   const id = hash_sum(publicPath)
   const postcssConfig = await loadPostcssConfig(root)
@@ -65,6 +66,7 @@ export async function compileCss(
     publicPath.endsWith('.css') &&
     !modules &&
     !postcssConfig &&
+    !isBuild &&
     !source.includes('@import')
   ) {
     // no need to invoke compile for plain css if no postcss config is present
@@ -74,7 +76,7 @@ export async function compileCss(
   const {
     options: postcssOptions,
     plugins: postcssPlugins
-  } = await resolvePostcssOptions(root)
+  } = await resolvePostcssOptions(root, isBuild)
 
   const res = await compileStyleAsync({
     source,
@@ -156,11 +158,14 @@ async function loadPostcssConfig(
   }
 }
 
-export async function resolvePostcssOptions(root: string) {
+export async function resolvePostcssOptions(root: string, isBuild: boolean) {
   const config = await loadPostcssConfig(root)
   const options = config && config.options
   const plugins = config ? config.plugins : []
   plugins.unshift(require('postcss-import')())
+  if (isBuild) {
+    plugins.push(require('postcss-discard-comments')({ removeAll: true }))
+  }
   return {
     options,
     plugins
