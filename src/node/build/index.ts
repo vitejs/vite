@@ -328,12 +328,19 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       await fs.ensureDir(path.dirname(filepath))
       await fs.writeFile(filepath, content)
       if (!silent) {
+        const needCompression =
+          type === WriteType.JS ||
+          type === WriteType.CSS ||
+          type === WriteType.HTML
+        const compressed = needCompression
+          ? `, brotli: ${(require('brotli-size').sync(content) / 1024).toFixed(
+              2
+            )}kb`
+          : ``
         console.log(
           `${chalk.gray(`[write]`)} ${writeColors[type](
             path.relative(cwd, filepath)
-          )} ${(content.length / 1024).toFixed(2)}kb, brotli: ${(
-            require('brotli-size').sync(content) / 1024
-          ).toFixed(2)}kb`
+          )} ${(content.length / 1024).toFixed(2)}kb${compressed}`
         )
       }
     }
