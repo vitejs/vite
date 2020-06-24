@@ -278,6 +278,5 @@ export const resolveImport = (
       id += `${id.includes(`?`) ? `&` : `?`}t=${latestVersionsMap.get(cleanId)}`
     }
   }
-
   return id
 }

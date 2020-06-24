@@ -292,28 +292,33 @@ export function createResolver(
     },
 
     resolveRelativeRequest(importer: string, importee: string) {
-      let resolved = path.posix.resolve(path.posix.dirname(importer), importee)
+      const queryMatch = importee.match(queryRE)
+      let resolved = importee
 
-      for (const alias in literalDirAlias) {
-        if (importer.startsWith(alias)) {
-          if (!resolved.startsWith(alias)) {
-            // resolved path is outside of alias directory, we need to use
-            // its full path instead
-            const importerFilePath = resolver.requestToFile(importer)
-            const importeeFilePath = path.resolve(
-              path.dirname(importerFilePath),
-              importee
-            )
-            resolved = resolver.fileToRequest(importeeFilePath)
+      if (importee.startsWith('.')) {
+        resolved = path.posix.resolve(path.posix.dirname(importer), importee)
+        for (const alias in literalDirAlias) {
+          if (importer.startsWith(alias)) {
+            if (!resolved.startsWith(alias)) {
+              // resolved path is outside of alias directory, we need to use
+              // its full path instead
+              const importerFilePath = resolver.requestToFile(importer)
+              const importeeFilePath = path.resolve(
+                path.dirname(importerFilePath),
+                importee
+              )
+              resolved = resolver.fileToRequest(importeeFilePath)
+            }
+            break
           }
-          break
         }
       }
 
-      const queryMatch = importee.match(queryRE)
       return {
-        // path resolve strips ending / which should be preserved
-        pathname: cleanUrl(resolved) + (importee.endsWith('/') ? '/' : ''),
+        pathname:
+          cleanUrl(resolved) +
+          // path resolve strips ending / which should be preserved
+          (importee.endsWith('/') && !resolved.endsWith('/') ? '/' : ''),
         query: queryMatch ? queryMatch[0] : ''
       }
     }
