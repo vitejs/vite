@@ -1,3 +1,16 @@
+# [1.0.0-beta.6](https://github.com/vuejs/vite/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2020-06-24)
+
+
+### Bug Fixes
+
+* fix connection lost polling ([298c78d](https://github.com/vuejs/vite/commit/298c78df55b300a6969bf66b0b426c841acdbb13))
+* preserve symlinks in resolver for yarn pnp virtual compat ([#442](https://github.com/vuejs/vite/issues/442)) ([ba2f91d](https://github.com/vuejs/vite/commit/ba2f91d5aa93cb2ef4c94900f04b057e87fc3401))
+* skip relative resolving for absolute paths ([e0a0258](https://github.com/vuejs/vite/commit/e0a02581d8a1709c229e345155b5281edb081b08)), closes [#445](https://github.com/vuejs/vite/issues/445)
+* ws over https ([7fe66cc](https://github.com/vuejs/vite/commit/7fe66cceced93b4b1acbc3f1c031e4919f85ba3b)), closes [#440](https://github.com/vuejs/vite/issues/440) [#436](https://github.com/vuejs/vite/issues/436)
+* **dev:** fix css update and remove ([#444](https://github.com/vuejs/vite/issues/444)) ([0ff8ae3](https://github.com/vuejs/vite/commit/0ff8ae3ee68052b676b7619323b22e0d56fbbe2a))
+
+
+
 # [1.0.0-beta.5](https://github.com/vuejs/vite/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2020-06-23)
 
 
