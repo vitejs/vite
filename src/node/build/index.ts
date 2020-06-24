@@ -254,7 +254,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // - which makes it impossible to exclude Vue templates from it since
       // Vue templates are compiled into js and included in chunks.
       createReplacePlugin(
-        (id) => /\.(j|t)sx?$/.test(id),
+        (id) => /\.(j|t)sx?$/.test(id) || id.startsWith(`/vite/`),
         {
           ...userEnvReplacements,
           'import.meta.env.BASE_URL': JSON.stringify(publicBasePath),
