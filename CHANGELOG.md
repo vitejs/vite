@@ -1,3 +1,25 @@
+# [1.0.0-beta.7](https://github.com/vuejs/vite/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2020-06-24)
+
+
+### Bug Fixes
+
+* fallback to <style> insertion when css contains [@import](https://github.com/import) ([422b4aa](https://github.com/vuejs/vite/commit/422b4aad117bc4c021fde775d4ad7919d032bf4a)), closes [#448](https://github.com/vuejs/vite/issues/448)
+* fix css url rewriting for url containing parens ([601a13d](https://github.com/vuejs/vite/commit/601a13dcaf1e97010926408db2819463edd593f0)), closes [#447](https://github.com/vuejs/vite/issues/447)
+* fix env replacement for vite internal modules ([cebe2e9](https://github.com/vuejs/vite/commit/cebe2e976f19c6dc74909624cfe4ec9f7dd634bd)), closes [#451](https://github.com/vuejs/vite/issues/451)
+* improve css url rewriting ([7305c5b](https://github.com/vuejs/vite/commit/7305c5bc5f16fb37b909809f328e4410309f3fb5))
+
+
+### Features
+
+* optimizedeps.allowNodeBuiltins ([07af6f4](https://github.com/vuejs/vite/commit/07af6f4090de7ad106697a007c0ff1af843d2ea3))
+
+
+### Performance Improvements
+
+* **build:** skip brotli check for assets ([63c4a42](https://github.com/vuejs/vite/commit/63c4a42c9864006d5b70514afa7ef7914f4d7e31))
+
+
+
 # [1.0.0-beta.6](https://github.com/vuejs/vite/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2020-06-24)
 
 
