@@ -44,6 +44,11 @@ export interface DepOptimizationOptions {
    */
   link?: string[]
   /**
+   * A list of depdendencies that imports Node built-ins, but do not actually
+   * use them in browsers.
+   */
+  allowNodeBuiltins?: string[]
+  /**
    * Automatically run `vite optimize` on server start?
    * @default true
    */
@@ -181,7 +186,9 @@ export async function optimizeDeps(
       onwarn: onRollupWarning(spinner),
       ...config.rollupInputOptions,
       plugins: [
-        createBuiltInBailPlugin(),
+        createBuiltInBailPlugin(
+          config.optimizeDeps && config.optimizeDeps.allowNodeBuiltins
+        ),
         depAssetExternalPlugin,
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver)
@@ -225,12 +232,13 @@ export async function optimizeDeps(
             `Tip:\nMake sure your "dependencies" only include packages that you\n` +
               `intend to use in the browser. If it's a Node.js package, it\n` +
               `should be in "devDependencies".\n\n` +
-              `You can also configure what deps to include/exclude for\n` +
-              `optimization using the "optimizeDeps" option in vite.config.js.\n\n` +
-              `If you do intend to use this dependency in the browser, then\n` +
-              `unfortunately it is not distributed in a web-friendly way and\n` +
-              `it is recommended to look for a modern alternative that ships\n` +
-              `ES module build.\n`
+              `If you do intend to use this dependency in the browser and the\n` +
+              `dependency does not actually use these Node built-ins in the\n` +
+              `browser, you can add the dependency (not the built-in) to the\n` +
+              `"optimizeDeps.allowNodeBuiltins" option in vite.config.js.\n\n` +
+              `If that results in a runtime error, then unfortunately the\n` +
+              `package is not distributed in a web-friendly format. You should\n` +
+              `open an issue in its repo, or look for a modern alternative.`
           )
           // TODO link to docs once we have it
         )
