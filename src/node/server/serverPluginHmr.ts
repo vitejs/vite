@@ -114,7 +114,14 @@ export const hmrPlugin: ServerPlugin = ({
   })
 
   // start a websocket server to send hmr notifications to the client
-  const wss = new WebSocket.Server({ port: 24678 })
+  const wss = new WebSocket.Server({ noServer: true })
+  server.on('upgrade', (req, socket, head) => {
+    if (req.headers['sec-websocket-protocol'] === 'vite-hmr') {
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req)
+      })
+    }
+  })
 
   wss.on('connection', (socket) => {
     debugHmr('ws client connected')

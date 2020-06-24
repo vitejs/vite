@@ -124,7 +124,10 @@ function resolveServer(
 ) {
   if (https) {
     return require('http2').createSecureServer(
-      resolveHttpsConfig(httpsOptions),
+      {
+        ...resolveHttpsConfig(httpsOptions),
+        allowHTTP1: true
+      },
       requestListener
     )
   } else {
