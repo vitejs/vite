@@ -103,10 +103,7 @@ socket.addEventListener('message', async ({ data }) => {
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
-      const link = document.getElementById(`vite-css-${id}`)
-      if (link) {
-        document.head.removeChild(link)
-      }
+      removeStyle(id)
       break
     case 'js-update':
       await updateModule(path, changeSrcPath, timestamp)
@@ -167,6 +164,7 @@ export function updateStyle(id: string, content: string) {
       style.replaceSync(content)
       // @ts-ignore
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
+      sheetsMap.set(id, style)
     } else {
       style.replaceSync(content)
     }
@@ -176,9 +174,25 @@ export function updateStyle(id: string, content: string) {
       style.setAttribute('type', 'text/css')
       style.innerHTML = content
       document.head.appendChild(style)
+      sheetsMap.set(id, style)
     } else {
       style.innerHTML = content
     }
+  }
+}
+
+function removeStyle(id: string) {
+  let style = sheetsMap.get(id)
+  if (style) {
+    if (supportsConstructedSheet) {
+      // @ts-ignore
+      const index = document.adoptedStyleSheets.indexOf(style)
+      // @ts-ignore
+      document.adoptedStyleSheets.splice(index, 1)
+    } else {
+      document.head.removeChild(style)
+    }
+    sheetsMap.delete(id)
   }
 }
 
