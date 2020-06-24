@@ -183,15 +183,17 @@ export function updateStyle(id: string, content: string) {
 
 function removeStyle(id: string) {
   let style = sheetsMap.get(id)
-  if (supportsConstructedSheet) {
-    // @ts-ignore
-    const index = document.adoptedStyleSheets.indexOf(style)
-    // @ts-ignore
-    document.adoptedStyleSheets.splice(index, 1)
-  } else {
-    document.head.removeChild(style)
+  if (style) {
+    if (supportsConstructedSheet) {
+      // @ts-ignore
+      const index = document.adoptedStyleSheets.indexOf(style)
+      // @ts-ignore
+      document.adoptedStyleSheets.splice(index, 1)
+    } else {
+      document.head.removeChild(style)
+    }
+    sheetsMap.delete(id)
   }
-  sheetsMap.delete(id)
 }
 
 async function updateModule(
