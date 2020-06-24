@@ -10,7 +10,7 @@ import {
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
 
-export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
+export const urlRE = /(url\(\s*['"]?)([^"']+)(["']?\s*\))/
 export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
 
 export const isCSSRequest = (file: string) =>
