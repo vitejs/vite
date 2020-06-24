@@ -10,7 +10,7 @@ import {
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
 
-export const urlRE = /(url\(\s*['"]?)([^"']+)(["']?\s*\))/
+export const urlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
 
 export const isCSSRequest = (file: string) =>
@@ -32,7 +32,13 @@ export function rewriteCssUrls(
   }
 
   return asyncReplace(css, urlRE, async (match) => {
-    const [matched, before, rawUrl, after] = match
+    let [matched, rawUrl] = match
+    let wrap = ''
+    const first = rawUrl[0]
+    if (first === `"` || first === `'`) {
+      wrap = first
+      rawUrl = rawUrl.slice(1, -1)
+    }
     if (
       isExternalUrl(rawUrl) ||
       rawUrl.startsWith('data:') ||
@@ -40,7 +46,7 @@ export function rewriteCssUrls(
     ) {
       return matched
     }
-    return before + (await replacer(rawUrl)) + after
+    return `url(${wrap}${await replacer(rawUrl)}${wrap})`
   })
 }
 
