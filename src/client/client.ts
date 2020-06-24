@@ -161,7 +161,12 @@ const sheetsMap = new Map()
 
 export function updateStyle(id: string, content: string) {
   let style = sheetsMap.get(id)
-  if (supportsConstructedSheet) {
+  if (supportsConstructedSheet && !content.includes('@import')) {
+    if (style && !(style instanceof CSSStyleSheet)) {
+      removeStyle(id)
+      style = undefined
+    }
+
     if (!style) {
       style = new CSSStyleSheet()
       style.replaceSync(content)
@@ -172,6 +177,11 @@ export function updateStyle(id: string, content: string) {
       style.replaceSync(content)
     }
   } else {
+    if (style && !(style instanceof HTMLStyleElement)) {
+      removeStyle(id)
+      style = undefined
+    }
+
     if (!style) {
       style = document.createElement('style')
       style.setAttribute('type', 'text/css')
@@ -187,11 +197,13 @@ export function updateStyle(id: string, content: string) {
 function removeStyle(id: string) {
   let style = sheetsMap.get(id)
   if (style) {
-    if (supportsConstructedSheet) {
+    if (style instanceof CSSStyleSheet) {
       // @ts-ignore
       const index = document.adoptedStyleSheets.indexOf(style)
       // @ts-ignore
-      document.adoptedStyleSheets.splice(index, 1)
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
+        (s: CSSStyleSheet) => s !== style
+      )
     } else {
       document.head.removeChild(style)
     }
