@@ -172,7 +172,6 @@ export function updateStyle(id: string, content: string) {
       style.replaceSync(content)
       // @ts-ignore
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
-      sheetsMap.set(id, style)
     } else {
       style.replaceSync(content)
     }
@@ -187,11 +186,11 @@ export function updateStyle(id: string, content: string) {
       style.setAttribute('type', 'text/css')
       style.innerHTML = content
       document.head.appendChild(style)
-      sheetsMap.set(id, style)
     } else {
       style.innerHTML = content
     }
   }
+  sheetsMap.set(id, style)
 }
 
 function removeStyle(id: string) {

@@ -311,26 +311,26 @@ describe('vite', () => {
         // external imports are preserved, and is not supported with constructed
         // CSSStyleSheet, so we need to remove the constructed sheet and fallback
         // to <style> insertion
-        const externalImport = `@import url('https://fonts.googleapis.com/css2?family=Roboto')`
-        await updateFile('css/TestPostCss.vue', (content) =>
-          content
+        const externalImport = `@import 'http://localhost:3000/css/empty.css';`
+        await updateFile('css/TestPostCss.vue', (content) => {
+          return content
             .replace(`<style>`, `<style>\n${externalImport}\n`)
-            .replace('color: green', 'color: red')
-        )
-        // should work
-        await expectByPolling(
-          () => getComputedColor('.postcss-from-sfc'),
-          'rgb(255, 0, 0)'
-        )
-        await updateFile('css/TestPostCss.vue', (content) =>
-          content
-            .replace(externalImport, '')
-            .replace('color: red', 'color: green')
-        )
+            .replace('color: red;', 'color: green;')
+        })
         // should work
         await expectByPolling(
           () => getComputedColor('.postcss-from-sfc'),
           'rgb(0, 128, 0)'
+        )
+        await updateFile('css/TestPostCss.vue', (content) => {
+          return content
+            .replace(externalImport, '')
+            .replace('color: green;', 'color: red;')
+        })
+        // should work
+        await expectByPolling(
+          () => getComputedColor('.postcss-from-sfc'),
+          'rgb(255, 0, 0)'
         )
       })
 
