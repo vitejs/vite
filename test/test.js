@@ -306,6 +306,45 @@ describe('vite', () => {
       }
     })
 
+    if (!isBuild) {
+      test('hmr (style @import bail to <style>)', async () => {
+        // external imports are preserved, and is not supported with constructed
+        // CSSStyleSheet, so we need to remove the constructed sheet and fallback
+        // to <style> insertion
+        const externalImport = `@import url('https://fonts.googleapis.com/css2?family=Roboto')`
+        await updateFile('css/TestPostCss.vue', (content) =>
+          content
+            .replace(`<style>`, `<style>\n${externalImport}\n`)
+            .replace('color: green', 'color: red')
+        )
+        // should work
+        await expectByPolling(
+          () => getComputedColor('.postcss-from-sfc'),
+          'rgb(255, 0, 0)'
+        )
+        await updateFile('css/TestPostCss.vue', (content) =>
+          content
+            .replace(externalImport, '')
+            .replace('color: red', 'color: green')
+        )
+        // should work
+        await expectByPolling(
+          () => getComputedColor('.postcss-from-sfc'),
+          'rgb(0, 128, 0)'
+        )
+      })
+
+      test('hmr (style removal)', async () => {
+        await updateFile('css/TestPostCss.vue', (content) =>
+          content.replace(/<style>(.|\s)*<\/style>/, ``)
+        )
+        await expectByPolling(
+          () => getComputedColor('.postcss-from-sfc'),
+          'rgb(0, 0, 0)'
+        )
+      })
+    }
+
     test('SFC <style scoped>', async () => {
       const el = await page.$('.style-scoped')
       expect(await getComputedColor(el)).toBe('rgb(138, 43, 226)')
@@ -717,7 +756,7 @@ describe('vite', () => {
       expect(await getText('.hmr-increment')).toMatch('>>> count is 1337 <<<')
       expect(await getText('.hmr-propagation')).toMatch('666')
       expect(await getComputedColor('.postcss-from-css')).toBe('rgb(0, 128, 0)')
-      expect(await getComputedColor('.postcss-from-sfc')).toBe('rgb(255, 0, 0)')
+      expect(await getComputedColor('.postcss-from-sfc')).toBe('rgb(0, 0, 0)')
       expect(await getComputedColor('.style-scoped')).toBe('rgb(0, 0, 0)')
       expect(await getComputedColor('.css-modules-sfc')).toBe('rgb(0, 0, 0)')
       expect(await getComputedColor('.css-modules-import')).toBe('rgb(0, 0, 1)')
