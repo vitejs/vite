@@ -4,12 +4,17 @@ import resolve from 'resolve'
 import { supportedExts } from '../resolver'
 import { Context } from '../server'
 
+let isRunningWithYarnPnp: boolean
+try {
+  isRunningWithYarnPnp = Boolean(require('pnpapi'))
+} catch {}
+
 export const resolveFrom = (root: string, id: string) =>
   resolve.sync(id, {
     basedir: root,
     extensions: supportedExts,
     // necessary to work with pnpm
-    preserveSymlinks: false
+    preserveSymlinks: isRunningWithYarnPnp || false
   })
 
 export const queryRE = /\?.*$/
