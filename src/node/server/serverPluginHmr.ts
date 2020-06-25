@@ -39,7 +39,7 @@ import {
   IfStatement
 } from '@babel/types'
 import { resolveCompiler } from '../utils'
-import { HMRPayload } from '../../hmrPayload'
+import { HMRPayload, PayloadType } from '../../hmrPayload'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -163,7 +163,7 @@ export const hmrPlugin: ServerPlugin = ({
       const relativeFile = '/' + slash(path.relative(root, filePath))
       if (hasDeadEnd) {
         send({
-          type: 'full-reload',
+          type: PayloadType.fullReload,
           path: publicPath
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
@@ -176,10 +176,12 @@ export const hmrPlugin: ServerPlugin = ({
             `${file} hot updated due to change in ${relativeFile}.`
         )
         send({
-          type: 'multi',
+          type: PayloadType.multi,
           updates: boundaries.map((boundary) => {
             return {
-              type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
+              type: boundary.endsWith('vue')
+                ? PayloadType.vueReload
+                : PayloadType.jsUpdate,
               path: boundary,
               changeSrcPath: publicPath,
               timestamp
@@ -192,7 +194,7 @@ export const hmrPlugin: ServerPlugin = ({
       // bust sw cache anyway since this may be a full dynamic import.
       if (config.serviceWorker) {
         send({
-          type: 'sw-bust-cache',
+          type: PayloadType.swBustCache,
           path: publicPath
         })
       }

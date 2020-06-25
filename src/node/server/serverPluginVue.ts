@@ -30,6 +30,7 @@ import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
 import { SourceMap, mergeSourceMap } from './serverPluginSourceMap'
+import { PayloadType } from '../../hmrPayload'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -199,7 +200,7 @@ export const vuePlugin: ServerPlugin = ({
 
     const sendReload = () => {
       send({
-        type: 'vue-reload',
+        type: PayloadType.vueReload,
         path: publicPath,
         changeSrcPath: publicPath,
         timestamp
@@ -245,7 +246,7 @@ export const vuePlugin: ServerPlugin = ({
         didUpdateStyle = true
         const path = `${publicPath}?type=style&index=${i}`
         send({
-          type: 'style-update',
+          type: PayloadType.styleUpdate,
           path,
           changeSrcPath: path,
           timestamp
@@ -257,7 +258,7 @@ export const vuePlugin: ServerPlugin = ({
     prevStyles.slice(nextStyles.length).forEach((_, i) => {
       didUpdateStyle = true
       send({
-        type: 'style-remove',
+        type: PayloadType.styleRemove,
         path: publicPath,
         id: `${styleId}-${i + nextStyles.length}`
       })
@@ -279,7 +280,7 @@ export const vuePlugin: ServerPlugin = ({
 
     if (needRerender) {
       send({
-        type: 'vue-rerender',
+        type: PayloadType.vueRerender,
         path: publicPath,
         changeSrcPath: publicPath,
         timestamp

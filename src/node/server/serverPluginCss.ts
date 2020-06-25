@@ -15,6 +15,7 @@ import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
 import { hmrClientPublicPath } from './serverPluginHmr'
+import { PayloadType } from '../../hmrPayload'
 
 interface ProcessedEntry {
   css: string
@@ -107,7 +108,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     const path = `${publicPath}?type=style&index=${index}`
     console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
     watcher.send({
-      type: 'style-update',
+      type: PayloadType.styleUpdate,
       path,
       changeSrcPath: path,
       timestamp: Date.now()
@@ -126,7 +127,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     processedCSS.delete(publicPath)
 
     watcher.send({
-      type: 'style-update',
+      type: PayloadType.styleUpdate,
       path: publicPath,
       changeSrcPath: publicPath,
       timestamp: Date.now()

@@ -11,6 +11,7 @@ import LRUCache from 'lru-cache'
 import path from 'path'
 import slash from 'slash'
 import chalk from 'chalk'
+import { PayloadType } from '../../hmrPayload'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -90,7 +91,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
     if (path.endsWith('.html')) {
       debug(`${path}: cache busted`)
       watcher.send({
-        type: 'full-reload',
+        type: PayloadType.fullReload,
         path
       })
       console.log(chalk.green(`[vite] `) + ` ${path} page reloaded.`)

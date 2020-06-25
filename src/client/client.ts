@@ -3,7 +3,12 @@ declare const __SW_ENABLED__: boolean
 
 // This file runs in the browser.
 import { HMRRuntime } from 'vue'
-import { HMRPayload, UpdatePayload, MultiUpdatePayload } from '../hmrPayload'
+import {
+  HMRPayload,
+  UpdatePayload,
+  MultiUpdatePayload,
+  PayloadType
+} from '../hmrPayload'
 
 // register service worker
 if ('serviceWorker' in navigator) {
@@ -69,7 +74,7 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 // Listen for messages
 socket.addEventListener('message', async ({ data }) => {
   const payload = JSON.parse(data) as HMRPayload | MultiUpdatePayload
-  if (payload.type === 'multi') {
+  if (payload.type === PayloadType.multi) {
     payload.updates.forEach(handleMessage)
   } else {
     handleMessage(payload)
@@ -85,10 +90,10 @@ async function handleMessage(payload: HMRPayload) {
     bustSwCache(path)
   }
   switch (payload.type) {
-    case 'connected':
+    case PayloadType.connected:
       console.log(`[vite] connected.`)
       break
-    case 'vue-reload':
+    case PayloadType.vueReload:
       queueUpdate(
         import(`${path}?t=${timestamp}`)
           .catch((err) => warnFailedFetch(err, path))
@@ -98,7 +103,7 @@ async function handleMessage(payload: HMRPayload) {
           })
       )
       break
-    case 'vue-rerender':
+    case PayloadType.vueRerender:
       const templatePath = `${path}?type=template`
       bustSwCache(templatePath)
       import(`${templatePath}&t=${timestamp}`).then((m) => {
@@ -106,25 +111,25 @@ async function handleMessage(payload: HMRPayload) {
         console.log(`[vite] ${path} template updated.`)
       })
       break
-    case 'style-update':
+    case PayloadType.styleUpdate:
       const importQuery = path.includes('?') ? '&import' : '?import'
       bustSwCache(`${path}${importQuery}`)
       await import(`${path}${importQuery}&t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
-    case 'style-remove':
+    case PayloadType.styleRemove:
       removeStyle(payload.id)
       break
-    case 'js-update':
+    case PayloadType.jsUpdate:
       queueUpdate(updateModule(path, changeSrcPath, timestamp))
       break
-    case 'custom':
+    case PayloadType.custom:
       const cbs = customUpdateMap.get(payload.id)
       if (cbs) {
         cbs.forEach((cb) => cb(payload.customData))
       }
       break
-    case 'full-reload':
+    case PayloadType.fullReload:
       if (path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.

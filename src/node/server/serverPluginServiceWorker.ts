@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { ServerPlugin } from '.'
 import { getDepHash } from '../optimizer'
+import { PayloadType } from '../../hmrPayload'
 
 export const serviceWorkerPlugin: ServerPlugin = ({
   root,
@@ -43,7 +44,7 @@ export const serviceWorkerPlugin: ServerPlugin = ({
 
   watcher.on('unlink', (file: string) => {
     watcher.send({
-      type: 'sw-bust-cache',
+      type: PayloadType.swBustCache,
       path: resolver.fileToRequest(file)
     })
   })
