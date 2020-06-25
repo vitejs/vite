@@ -108,7 +108,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     const path = `${publicPath}?type=style&index=${index}`
     console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
     watcher.send({
-      type: PayloadType.styleUpdate,
+      type: PayloadType.StyleUpdate,
       path,
       changeSrcPath: path,
       timestamp: Date.now()
@@ -127,7 +127,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     processedCSS.delete(publicPath)
 
     watcher.send({
-      type: PayloadType.styleUpdate,
+      type: PayloadType.StyleUpdate,
       path: publicPath,
       changeSrcPath: publicPath,
       timestamp: Date.now()

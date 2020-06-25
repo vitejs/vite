@@ -200,7 +200,7 @@ export const vuePlugin: ServerPlugin = ({
 
     const sendReload = () => {
       send({
-        type: PayloadType.vueReload,
+        type: PayloadType.VueReload,
         path: publicPath,
         changeSrcPath: publicPath,
         timestamp
@@ -246,7 +246,7 @@ export const vuePlugin: ServerPlugin = ({
         didUpdateStyle = true
         const path = `${publicPath}?type=style&index=${i}`
         send({
-          type: PayloadType.styleUpdate,
+          type: PayloadType.StyleUpdate,
           path,
           changeSrcPath: path,
           timestamp
@@ -258,7 +258,7 @@ export const vuePlugin: ServerPlugin = ({
     prevStyles.slice(nextStyles.length).forEach((_, i) => {
       didUpdateStyle = true
       send({
-        type: PayloadType.styleRemove,
+        type: PayloadType.StyleRemove,
         path: publicPath,
         id: `${styleId}-${i + nextStyles.length}`
       })
@@ -280,7 +280,7 @@ export const vuePlugin: ServerPlugin = ({
 
     if (needRerender) {
       send({
-        type: PayloadType.vueRerender,
+        type: PayloadType.VueRerender,
         path: publicPath,
         changeSrcPath: publicPath,
         timestamp

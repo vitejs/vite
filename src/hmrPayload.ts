@@ -8,56 +8,56 @@ export type HMRPayload =
   | MultiUpdatePayload
 
 export const enum PayloadType {
-  connected = 'connected',
-  jsUpdate = 'js-update',
-  vueReload = 'vue-reload',
-  vueRerender = 'vue-rerender',
-  styleUpdate = 'style-update',
-  styleRemove = 'style-remove',
-  fullReload = 'full-reload',
-  swBustCache = 'sw-bust-cache',
-  custom = 'custom',
-  multi = 'multi'
+  Connected = 'connected',
+  JsUpdate = 'js-update',
+  VueReload = 'vue-reload',
+  VueRerender = 'vue-rerender',
+  StyleUpdate = 'style-update',
+  StyleRemove = 'style-remove',
+  FullReload = 'full-reload',
+  SwBustCache = 'sw-bust-cache',
+  Custom = 'custom',
+  Multi = 'multi'
 }
 
 interface ConnectedPayload {
-  type: PayloadType.connected
+  type: PayloadType.Connected
 }
 
 export interface UpdatePayload {
   type:
-    | PayloadType.jsUpdate
-    | PayloadType.vueReload
-    | PayloadType.vueRerender
-    | PayloadType.styleUpdate
+    | PayloadType.JsUpdate
+    | PayloadType.VueReload
+    | PayloadType.VueRerender
+    | PayloadType.StyleUpdate
   path: string
   changeSrcPath: string
   timestamp: number
 }
 
 interface StyleRemovePayload {
-  type: PayloadType.styleRemove
+  type: PayloadType.StyleRemove
   path: string
   id: string
 }
 
 interface FullReloadPayload {
-  type: PayloadType.fullReload
+  type: PayloadType.FullReload
   path: string
 }
 
 interface SWBustCachePayload {
-  type: PayloadType.swBustCache
+  type: PayloadType.SwBustCache
   path: string
 }
 
 interface CustomPayload {
-  type: PayloadType.custom
+  type: PayloadType.Custom
   id: string
   customData: any
 }
 
 export interface MultiUpdatePayload {
-  type: PayloadType.multi
+  type: PayloadType.Multi
   updates: UpdatePayload[]
 }

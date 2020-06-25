@@ -163,7 +163,7 @@ export const hmrPlugin: ServerPlugin = ({
       const relativeFile = '/' + slash(path.relative(root, filePath))
       if (hasDeadEnd) {
         send({
-          type: PayloadType.fullReload,
+          type: PayloadType.FullReload,
           path: publicPath
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
@@ -176,12 +176,12 @@ export const hmrPlugin: ServerPlugin = ({
             `${file} hot updated due to change in ${relativeFile}.`
         )
         send({
-          type: PayloadType.multi,
+          type: PayloadType.Multi,
           updates: boundaries.map((boundary) => {
             return {
               type: boundary.endsWith('vue')
-                ? PayloadType.vueReload
-                : PayloadType.jsUpdate,
+                ? PayloadType.VueReload
+                : PayloadType.JsUpdate,
               path: boundary,
               changeSrcPath: publicPath,
               timestamp
@@ -194,7 +194,7 @@ export const hmrPlugin: ServerPlugin = ({
       // bust sw cache anyway since this may be a full dynamic import.
       if (config.serviceWorker) {
         send({
-          type: PayloadType.swBustCache,
+          type: PayloadType.SwBustCache,
           path: publicPath
         })
       }
