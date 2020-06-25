@@ -8,6 +8,7 @@ import { CompilerOptions, SFCStyleCompileOptions } from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
+  RollupOutput,
   OutputChunk
 } from 'rollup'
 import { createEsbuildPlugin } from './build/buildPluginEsbuild'
@@ -257,6 +258,10 @@ export interface BuildConfig extends SharedConfig {
    * @default true
    */
   emitAssets?: boolean
+  /**
+   * Callback when build is complete
+   */
+  onBuild?: (assets: RollupOutput['output']) => Promise<void>
   /**
    * Predicate function that determines whether a link rel=modulepreload shall be
    * added to the index.html for the chunk passed in

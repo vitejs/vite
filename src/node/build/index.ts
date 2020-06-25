@@ -192,7 +192,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     shouldPreload = null,
     env = {},
     mode = 'production',
-    cssPreprocessOptions = {}
+    cssPreprocessOptions = {},
+    onBuild = null
   } = options
 
   const isTest = process.env.NODE_ENV === 'test'
@@ -404,6 +405,10 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
   // stop the esbuild service after each build
   stopService()
+
+  if (onBuild) {
+    await onBuild(output)
+  }
 
   return {
     assets: output,
