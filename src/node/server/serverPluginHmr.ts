@@ -215,7 +215,6 @@ function walkImportChain(
   dirtyFiles: Set<string>,
   currentChain: string[] = []
 ): boolean {
-  debugger
   if (hmrDeclineSet.has(importee)) {
     // module explicitly declines HMR = dead end
     return true
