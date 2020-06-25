@@ -44,32 +44,32 @@ export const createReplacePlugin = (
     name: 'vite:replace',
     transform(code, id) {
       if (test(id)) {
-        return replace(code, replacements)
-      }
-    },
-    // This part strips any import.meta.env statements and replace them with an empty string
-    // if it was not found and replace in the transform step. Otherwise it will fail at runtime on production.
-    // It happens if the user is not defining the env variable but uses it in the codebase.
-    renderChunk(code) {
-      const IMPORT_META_REGEXP = /(import\.meta\.env\.\w+)/g
-      function* getStaleImportMetaStatements(str: string) {
-        while (true) {
-          const match = IMPORT_META_REGEXP.exec(str)
-          if (match === null) {
-            break
+        // This part collect any import.meta.env undefined statements and replace them with an empty string
+        // if it was not found and replace in the transform step. Otherwise it will fail at runtime on production.
+        // It happens if the user is not defining the env variable but uses it in the codebase.
+        const IMPORT_META_REGEXP = /(import\.meta\.env\.\w+)/g
+        function* getImportMetaStatements(str: string) {
+          while (true) {
+            const match = IMPORT_META_REGEXP.exec(str)
+            if (match === null) {
+              break
+            }
+            yield match[1]
           }
-          yield match[1]
         }
-      }
-      const metaVarsToReplace = [...getStaleImportMetaStatements(code)]
-      if (metaVarsToReplace.length) {
-        const replacements = metaVarsToReplace.reduce(
-          (obj, k) => ({ ...obj, [k]: "''" }),
-          {}
-        )
+        const importMetaStatementsToReplace = [...getImportMetaStatements(code)]
+        if (importMetaStatementsToReplace.length) {
+          const replacementsWithFallback = importMetaStatementsToReplace.reduce(
+            (obj, k) => ({
+              ...obj,
+              [k]: k in replacements ? replacements[k] : "''"
+            }),
+            {}
+          )
+          return replace(code, replacementsWithFallback)
+        }
         return replace(code, replacements)
       }
-      return null
     }
   }
 }
