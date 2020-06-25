@@ -166,15 +166,16 @@ export const hmrPlugin: ServerPlugin = ({
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
       } else {
-        const count = hmrBoundaries.size
-        const plural = count === 1 ? `` : `s`
+        const boundaries = [...hmrBoundaries]
+        const file =
+          boundaries.length === 1 ? boundaries[0] : `${boundaries.length} files`
         console.log(
           chalk.green(`[vite:hmr] `) +
-            `${hmrBoundaries.size} file${plural} hot updated due to change in ${relativeFile}.`
+            `${file} hot updated due to change in ${relativeFile}.`
         )
         send({
           type: 'multi',
-          updates: [...hmrBoundaries].map((boundary) => {
+          updates: boundaries.map((boundary) => {
             return {
               type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
               path: boundary,

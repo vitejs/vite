@@ -20,6 +20,7 @@ export interface UpdatePayload {
 
 interface StyleRemovePayload {
   type: 'style-remove'
+  path: string
   id: string
 }
 

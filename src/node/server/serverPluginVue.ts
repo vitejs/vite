@@ -258,6 +258,7 @@ export const vuePlugin: ServerPlugin = ({
       didUpdateStyle = true
       send({
         type: 'style-remove',
+        path: publicPath,
         id: `${styleId}-${i + nextStyles.length}`
       })
     })

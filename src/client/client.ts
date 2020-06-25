@@ -69,10 +69,6 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 // Listen for messages
 socket.addEventListener('message', async ({ data }) => {
   const payload = JSON.parse(data) as HMRPayload | MultiUpdatePayload
-  const { changeSrcPath } = payload as UpdatePayload
-  if (changeSrcPath) {
-    await bustSwCache(changeSrcPath)
-  }
   if (payload.type === 'multi') {
     payload.updates.forEach(handleMessage)
   } else {
@@ -82,10 +78,12 @@ socket.addEventListener('message', async ({ data }) => {
 
 async function handleMessage(payload: HMRPayload) {
   const { path, changeSrcPath, timestamp } = payload as UpdatePayload
-  if (path && path !== changeSrcPath) {
-    await bustSwCache(path)
+  if (changeSrcPath) {
+    bustSwCache(changeSrcPath)
   }
-
+  if (path && path !== changeSrcPath) {
+    bustSwCache(path)
+  }
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
@@ -96,13 +94,13 @@ async function handleMessage(payload: HMRPayload) {
           .catch((err) => warnFailedFetch(err, path))
           .then((m) => () => {
             __VUE_HMR_RUNTIME__.reload(path, m.default)
-            console.log(`[vite] ${path} reloaded!`)
+            console.log(`[vite] ${path} reloaded.`)
           })
       )
       break
     case 'vue-rerender':
       const templatePath = `${path}?type=template`
-      await bustSwCache(templatePath)
+      bustSwCache(templatePath)
       import(`${templatePath}&t=${timestamp}`).then((m) => {
         __VUE_HMR_RUNTIME__.rerender(path, m.render)
         console.log(`[vite] ${path} template updated.`)
@@ -110,7 +108,7 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'style-update':
       const importQuery = path.includes('?') ? '&import' : '?import'
-      await bustSwCache(`${path}${importQuery}`)
+      bustSwCache(`${path}${importQuery}`)
       await import(`${path}${importQuery}&t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
