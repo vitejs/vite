@@ -60,10 +60,10 @@ export const createBuildCssPlugin = ({
                 source: css,
                 filename: id,
                 scoped: false,
-                modules: id.endsWith('.module.css'),
+                modules: !!id.replace(cssPreprocessLangRE, '$2'),
                 preprocessLang: id.replace(
                   cssPreprocessLangRE,
-                  '$2'
+                  '$3'
                 ) as SFCAsyncStyleCompileOptions['preprocessLang'],
                 preprocessOptions
               },
