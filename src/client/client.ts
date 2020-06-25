@@ -3,7 +3,7 @@ declare const __SW_ENABLED__: boolean
 
 // This file runs in the browser.
 import { HMRRuntime } from 'vue'
-import { HMRPayload, UpdatePayload, MultiUpdatePayload } from './hmrPayload'
+import { HMRPayload, UpdatePayload, MultiUpdatePayload } from '../hmrPayload'
 
 // register service worker
 if ('serviceWorker' in navigator) {

@@ -13,7 +13,7 @@ export const serviceWorkerPlugin: ServerPlugin = ({
   const enabled = (config.serviceWorker = !!config.serviceWorker)
 
   let swScript = fs
-    .readFileSync(path.resolve(__dirname, '../serviceWorker.js'), 'utf-8')
+    .readFileSync(path.resolve(__dirname, '../../sw/serviceWorker.js'), 'utf-8')
     .replace(/const __ENABLED__ =.*/, `const __ENABLED__ = ${enabled}`)
     // make sure the sw cache is unique per project
     .replace(

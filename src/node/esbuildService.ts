@@ -10,7 +10,10 @@ export const tjsxRE = /\.(tsx?|jsx)$/
 
 export const vueJsxPublicPath = '/vite/jsx'
 
-export const vueJsxFilePath = path.resolve(__dirname, 'vueJsxCompat.js')
+export const vueJsxFilePath = path.resolve(
+  __dirname,
+  '../client/vueJsxCompat.js'
+)
 
 const JsxPresets: Record<
   string,

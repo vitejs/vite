@@ -39,7 +39,7 @@ import {
   IfStatement
 } from '@babel/types'
 import { resolveCompiler } from '../utils'
-import { HMRPayload } from '../hmrPayload'
+import { HMRPayload } from '../../hmrPayload'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -67,8 +67,10 @@ export const importeeMap: HMRStateMap = new Map()
 export const hmrDirtyFilesMap = new LRUCache<string, Set<string>>({ max: 10 })
 export const latestVersionsMap = new Map<string, string>()
 
-// client and node files are placed flat in the dist folder
-export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
+export const hmrClientFilePath = path.resolve(
+  __dirname,
+  '../../client/client.js'
+)
 export const hmrClientPublicPath = `/vite/hmr`
 
 export const hmrPlugin: ServerPlugin = ({

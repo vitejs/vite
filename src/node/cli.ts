@@ -48,7 +48,7 @@ Options:
 `)
 }
 
-console.log(chalk.cyan(`vite v${require('../package.json').version}`))
+console.log(chalk.cyan(`vite v${require('../../package.json').version}`))
 ;(async () => {
   const { help, h, mode, m, version, v } = argv
 
