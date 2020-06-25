@@ -1,3 +1,12 @@
+# [1.0.0-beta.8](https://github.com/vuejs/vite/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2020-06-25)
+
+
+### Bug Fixes
+
+* require generateCodeFrame from listed dep ([8fc68c0](https://github.com/vuejs/vite/commit/8fc68c0cc3c976c863b7a71f625a49e4020a4669))
+
+
+
 # [1.0.0-beta.7](https://github.com/vuejs/vite/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2020-06-24)
 
 
