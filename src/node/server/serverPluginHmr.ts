@@ -39,6 +39,7 @@ import {
   IfStatement
 } from '@babel/types'
 import { resolveCompiler } from '../utils'
+import { HMRPayload } from '../hmrPayload'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -69,24 +70,6 @@ export const latestVersionsMap = new Map<string, string>()
 // client and node files are placed flat in the dist folder
 export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
 export const hmrClientPublicPath = `/vite/hmr`
-
-interface HMRPayload {
-  type:
-    | 'js-update'
-    | 'vue-reload'
-    | 'vue-rerender'
-    | 'style-update'
-    | 'style-remove'
-    | 'full-reload'
-    | 'sw-bust-cache'
-    | 'custom'
-  timestamp: number
-  path?: string
-  changeSrcPath?: string
-  id?: string
-  index?: number
-  customData?: any
-}
 
 export const hmrPlugin: ServerPlugin = ({
   root,
@@ -179,21 +162,25 @@ export const hmrPlugin: ServerPlugin = ({
       if (hasDeadEnd) {
         send({
           type: 'full-reload',
-          path: publicPath,
-          timestamp
+          path: publicPath
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
       } else {
-        hmrBoundaries.forEach((boundary) => {
-          console.log(
-            chalk.green(`[vite:hmr] `) +
-              `${boundary} updated due to change in ${relativeFile}.`
-          )
-          send({
-            type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
-            path: boundary,
-            changeSrcPath: publicPath,
-            timestamp
+        const count = hmrBoundaries.size
+        const plural = count === 1 ? `` : `s`
+        console.log(
+          chalk.green(`[vite:hmr] `) +
+            `${hmrBoundaries.size} file${plural} hot updated due to change in ${relativeFile}.`
+        )
+        send({
+          type: 'multi',
+          updates: [...hmrBoundaries].map((boundary) => {
+            return {
+              type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
+              path: boundary,
+              changeSrcPath: publicPath,
+              timestamp
+            }
           })
         })
       }
@@ -203,8 +190,7 @@ export const hmrPlugin: ServerPlugin = ({
       if (config.serviceWorker) {
         send({
           type: 'sw-bust-cache',
-          path: publicPath,
-          timestamp
+          path: publicPath
         })
       }
     }

@@ -3,6 +3,7 @@ declare const __SW_ENABLED__: boolean
 
 // This file runs in the browser.
 import { HMRRuntime } from 'vue'
+import { HMRPayload, UpdatePayload, MultiUpdatePayload } from './hmrPayload'
 
 // register service worker
 if ('serviceWorker' in navigator) {
@@ -67,28 +68,37 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 
 // Listen for messages
 socket.addEventListener('message', async ({ data }) => {
-  const { type, path, changeSrcPath, id, timestamp, customData } = JSON.parse(
-    data
-  )
-
+  const payload = JSON.parse(data) as HMRPayload | MultiUpdatePayload
+  const { changeSrcPath } = payload as UpdatePayload
   if (changeSrcPath) {
     await bustSwCache(changeSrcPath)
   }
-  if (path !== changeSrcPath) {
+  if (payload.type === 'multi') {
+    payload.updates.forEach(handleMessage)
+  } else {
+    handleMessage(payload)
+  }
+})
+
+async function handleMessage(payload: HMRPayload) {
+  const { path, changeSrcPath, timestamp } = payload as UpdatePayload
+  if (path && path !== changeSrcPath) {
     await bustSwCache(path)
   }
 
-  switch (type) {
+  switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
       break
     case 'vue-reload':
-      import(`${path}?t=${timestamp}`)
-        .then((m) => {
-          __VUE_HMR_RUNTIME__.reload(path, m.default)
-          console.log(`[vite] ${path} reloaded.`)
-        })
-        .catch((err) => warnFailedFetch(err, path))
+      queueUpdate(
+        import(`${path}?t=${timestamp}`)
+          .catch((err) => warnFailedFetch(err, path))
+          .then((m) => () => {
+            __VUE_HMR_RUNTIME__.reload(path, m.default)
+            console.log(`[vite] ${path} reloaded!`)
+          })
+      )
       break
     case 'vue-rerender':
       const templatePath = `${path}?type=template`
@@ -105,15 +115,15 @@ socket.addEventListener('message', async ({ data }) => {
       console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
-      removeStyle(id)
+      removeStyle(payload.id)
       break
     case 'js-update':
-      await updateModule(path, changeSrcPath, timestamp)
+      queueUpdate(updateModule(path, changeSrcPath, timestamp))
       break
     case 'custom':
-      const cbs = customUpdateMap.get(id)
+      const cbs = customUpdateMap.get(payload.id)
       if (cbs) {
-        cbs.forEach((cb) => cb(customData))
+        cbs.forEach((cb) => cb(payload.customData))
       }
       break
     case 'full-reload':
@@ -132,7 +142,27 @@ socket.addEventListener('message', async ({ data }) => {
         location.reload()
       }
   }
-})
+}
+
+let pending = false
+let queued: Promise<(() => void) | undefined>[] = []
+
+/**
+ * buffer multiple hot updates triggered by the same src change
+ * so that they are invoked in the same order they were sent.
+ * (otherwise the order may be inconsistent because of the http request round trip)
+ */
+async function queueUpdate(p: Promise<(() => void) | undefined>) {
+  queued.push(p)
+  if (!pending) {
+    pending = true
+    await Promise.resolve()
+    pending = false
+    const loading = [...queued]
+    queued = []
+    ;(await Promise.all(loading)).forEach((fn) => fn && fn())
+  }
+}
 
 // ping server
 socket.addEventListener('close', () => {
@@ -213,7 +243,7 @@ function removeStyle(id: string) {
 async function updateModule(
   id: string,
   changedPath: string,
-  timestamp: string
+  timestamp: number
 ) {
   const mod = hotModulesMap.get(id)
   if (!mod) {
@@ -266,15 +296,17 @@ async function updateModule(
     })
   )
 
-  for (const { deps, fn } of callbacks) {
-    if (Array.isArray(deps)) {
-      fn(deps.map((dep) => moduleMap.get(dep)))
-    } else {
-      fn(moduleMap.get(deps))
+  return () => {
+    for (const { deps, fn } of callbacks) {
+      if (Array.isArray(deps)) {
+        fn(deps.map((dep) => moduleMap.get(dep)))
+      } else {
+        fn(moduleMap.get(deps))
+      }
     }
-  }
 
-  console.log(`[vite]: js module hot updated: `, id)
+    console.log(`[vite]: js module hot updated: `, id)
+  }
 }
 
 interface HotModule {

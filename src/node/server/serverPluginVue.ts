@@ -201,6 +201,7 @@ export const vuePlugin: ServerPlugin = ({
       send({
         type: 'vue-reload',
         path: publicPath,
+        changeSrcPath: publicPath,
         timestamp
       })
       console.log(
@@ -242,9 +243,11 @@ export const vuePlugin: ServerPlugin = ({
     nextStyles.forEach((_, i) => {
       if (!prevStyles[i] || !isEqualBlock(prevStyles[i], nextStyles[i])) {
         didUpdateStyle = true
+        const path = `${publicPath}?type=style&index=${i}`
         send({
           type: 'style-update',
-          path: `${publicPath}?type=style&index=${i}`,
+          path,
+          changeSrcPath: path,
           timestamp
         })
       }
@@ -255,9 +258,7 @@ export const vuePlugin: ServerPlugin = ({
       didUpdateStyle = true
       send({
         type: 'style-remove',
-        path: publicPath,
-        id: `${styleId}-${i + nextStyles.length}`,
-        timestamp
+        id: `${styleId}-${i + nextStyles.length}`
       })
     })
 
@@ -279,6 +280,7 @@ export const vuePlugin: ServerPlugin = ({
       send({
         type: 'vue-rerender',
         path: publicPath,
+        changeSrcPath: publicPath,
         timestamp
       })
     }

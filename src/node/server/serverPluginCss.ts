@@ -104,10 +104,12 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   function vueStyleUpdate(styleImport: string) {
     const publicPath = cleanUrl(styleImport)
     const index = qs.parse(styleImport.split('?', 2)[1]).index
+    const path = `${publicPath}?type=style&index=${index}`
     console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
     watcher.send({
       type: 'style-update',
-      path: `${publicPath}?type=style&index=${index}`,
+      path,
+      changeSrcPath: path,
       timestamp: Date.now()
     })
   }
@@ -126,6 +128,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     watcher.send({
       type: 'style-update',
       path: publicPath,
+      changeSrcPath: publicPath,
       timestamp: Date.now()
     })
   }

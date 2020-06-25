@@ -44,8 +44,7 @@ export const serviceWorkerPlugin: ServerPlugin = ({
   watcher.on('unlink', (file: string) => {
     watcher.send({
       type: 'sw-bust-cache',
-      path: resolver.fileToRequest(file),
-      timestamp: Date.now()
+      path: resolver.fileToRequest(file)
     })
   })
 

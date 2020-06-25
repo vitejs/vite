@@ -91,8 +91,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
       debug(`${path}: cache busted`)
       watcher.send({
         type: 'full-reload',
-        path,
-        timestamp: Date.now()
+        path
       })
       console.log(chalk.green(`[vite] `) + ` ${path} page reloaded.`)
     }
