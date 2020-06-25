@@ -126,7 +126,7 @@ function printMessage(m: Message, code: string) {
         .map((l) => l.length)
         .reduce((total, l) => total + l + 1, 0) + column
     console.error(
-      require('@vue/compiler-core').generateCodeFrame(code, offset, offset + 1)
+      require('@vue/compiler-dom').generateCodeFrame(code, offset, offset + 1)
     )
   }
 }
