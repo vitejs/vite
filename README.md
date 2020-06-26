@@ -238,7 +238,7 @@ function App() {
 }
 
 function Child(_, { slots }) {
-  return <div onClick={console.log('hello')}>{slots.default()}</div>
+  return <div onClick={() => console.log('hello')}>{slots.default()}</div>
 }
 
 createApp(App).mount('#app')
