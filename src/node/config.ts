@@ -117,6 +117,11 @@ export interface SharedConfig {
    * CSS preprocess options
    */
   cssPreprocessOptions?: SFCStyleCompileOptions['preprocessOptions']
+  /**
+   * Enable esbuild
+   * @default true
+   */
+  enableEsbuild?: boolean
 }
 
 export interface ServerConfig extends SharedConfig {

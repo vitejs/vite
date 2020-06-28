@@ -93,7 +93,8 @@ export async function createBaseRollupPlugins(
     rollupInputOptions = {},
     transforms = [],
     vueCustomBlockTransforms = {},
-    cssPreprocessOptions
+    cssPreprocessOptions,
+    enableEsbuild = true
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
@@ -108,7 +109,9 @@ export async function createBaseRollupPlugins(
     // vite:resolve
     createBuildResolvePlugin(root, resolver),
     // vite:esbuild
-    await createEsbuildPlugin(options.minify === 'esbuild', options.jsx),
+    enableEsbuild
+      ? await createEsbuildPlugin(options.minify === 'esbuild', options.jsx)
+      : null,
     // vue
     require('rollup-plugin-vue')({
       ...options.rollupPluginVueOptions,
