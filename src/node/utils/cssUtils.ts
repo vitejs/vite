@@ -90,7 +90,8 @@ export async function compileCss(
     scoped,
     modules,
     modulesOptions: {
-      generateScopedName: `[local]_${id}`
+      generateScopedName: `[local]_${id}`,
+      localsConvention: 'camelCase'
     },
 
     preprocessLang: preprocessLang,

@@ -125,6 +125,7 @@ export async function createBaseRollupPlugins(
       preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
       compilerOptions: options.vueCompilerOptions,
       cssModulesOptions: {
+        localsConvention: 'camelCase',
         generateScopedName: (local: string, filename: string) =>
           `${local}_${hash_sum(filename)}`,
         ...(options.rollupPluginVueOptions &&
