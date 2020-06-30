@@ -163,10 +163,7 @@ export async function createBaseRollupPlugins(
       postcssOptions,
       postcssPlugins,
       preprocessStyles: true,
-      preprocessOptions: {
-        includePaths: ['node_modules'],
-        ...cssPreprocessOptions
-      },
+      preprocessOptions: cssPreprocessOptions,
       preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
       compilerOptions: options.vueCompilerOptions,
       cssModulesOptions: {
@@ -239,7 +236,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     shouldPreload = null,
     env = {},
     mode = 'production',
-    cssPreprocessOptions = {},
+    cssPreprocessOptions,
     cssModuleOptions = {}
   } = options
 

@@ -156,7 +156,7 @@ export const vuePlugin: ServerPlugin = ({
         index,
         filePath,
         publicPath,
-        config.cssPreprocessOptions
+        config
       )
       ctx.type = 'js'
       ctx.body = codegenCss(`${id}-${index}`, result.code, result.modules)
