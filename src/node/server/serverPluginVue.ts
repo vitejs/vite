@@ -508,7 +508,7 @@ function compileSFCTemplate(
   publicPath: string,
   scoped: boolean,
   {
-    vueCompilerOptions,
+    vueCompilerOptions = {},
     templateCompilers,
     compiler
   }: ServerPluginContext['config']
