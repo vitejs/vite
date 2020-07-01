@@ -519,7 +519,7 @@ function compileSFCTemplate(
     return cached.template
   }
 
-  const compilerKey = (template as any).compiler
+  const compilerKey = template.attrs.compiler as string
   if (compilerKey) {
     if (templateCompilers && templateCompilers[compilerKey]) {
       ;[compiler, vueCompilerOptions] = templateCompilers[compilerKey]
