@@ -507,7 +507,11 @@ function compileSFCTemplate(
   filePath: string,
   publicPath: string,
   scoped: boolean,
-  { vueCompilerOptions, templateCompilers = {} }: ServerPluginContext['config']
+  {
+    vueCompilerOptions,
+    templateCompilers = {},
+    compiler
+  }: ServerPluginContext['config']
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
   if (cached && cached.template) {
@@ -516,7 +520,6 @@ function compileSFCTemplate(
   }
 
   const compilerKey = (template as any).compiler
-  let compiler
   let compilerOptions = {}
   if (compilerKey) {
     if (templateCompilers[compilerKey]) {
@@ -537,7 +540,7 @@ function compileSFCTemplate(
     transformAssetUrls: {
       base: path.posix.dirname(publicPath)
     },
-    compiler: compiler,
+    compiler,
     compilerOptions: {
       ...vueCompilerOptions,
       ...compilerOptions,

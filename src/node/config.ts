@@ -4,7 +4,11 @@ import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
-import { CompilerOptions, SFCStyleCompileOptions } from '@vue/compiler-sfc'
+import {
+  CompilerOptions,
+  SFCStyleCompileOptions,
+  TemplateCompiler
+} from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
@@ -82,7 +86,11 @@ export interface SharedConfig {
    */
   vueCompilerOptions?: CompilerOptions
   /**
-   * Customer template compiler.
+   * Customer template compiler for global sfc template block.
+   */
+  compiler?: TemplateCompiler
+  /**
+   * Customer template compiler for special sfc template block.
    */
   templateCompilers?: Record<string, TemplateCompilerOptions>
   /**
