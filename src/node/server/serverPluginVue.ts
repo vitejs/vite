@@ -509,7 +509,7 @@ function compileSFCTemplate(
   scoped: boolean,
   {
     vueCompilerOptions,
-    templateCompilers = {},
+    templateCompilers,
     compiler
   }: ServerPluginContext['config']
 ): ResultWithMap {
@@ -520,10 +520,9 @@ function compileSFCTemplate(
   }
 
   const compilerKey = (template as any).compiler
-  let compilerOptions = {}
   if (compilerKey) {
-    if (templateCompilers[compilerKey]) {
-      ;[compiler, compilerOptions] = templateCompilers[compilerKey]
+    if (templateCompilers && templateCompilers[compilerKey]) {
+      ;[compiler, vueCompilerOptions] = templateCompilers[compilerKey]
     } else {
       console.error(
         `The "${compilerKey}" compiler not found.Please add "templateCompilers" options.`
@@ -543,7 +542,6 @@ function compileSFCTemplate(
     compiler,
     compilerOptions: {
       ...vueCompilerOptions,
-      ...compilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: resolveVue(root).isLocal
         ? // in local mode, vue would have been optimized so must be referenced
