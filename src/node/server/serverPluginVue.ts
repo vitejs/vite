@@ -1,7 +1,7 @@
 import qs from 'querystring'
 import chalk from 'chalk'
 import path from 'path'
-import { Context, ServerPlugin } from '.'
+import { Context, ServerPlugin, ServerPluginContext } from '.'
 import {
   SFCBlock,
   SFCDescriptor,
@@ -9,7 +9,8 @@ import {
   SFCStyleBlock,
   SFCStyleCompileResults,
   CompilerOptions,
-  SFCStyleCompileOptions
+  SFCStyleCompileOptions,
+  TemplateCompiler
 } from '@vue/compiler-sfc'
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -124,7 +125,7 @@ export const vuePlugin: ServerPlugin = ({
         filePath,
         publicPath,
         descriptor.styles.some((s) => s.scoped),
-        config.vueCompilerOptions
+        config
       )
       ctx.body = code
       ctx.map = map
@@ -498,18 +499,33 @@ async function compileSFCMain(
   return result
 }
 
+export type TemplateCompilerOptions = [TemplateCompiler, CompilerOptions]
+
 function compileSFCTemplate(
   root: string,
   template: SFCTemplateBlock,
   filePath: string,
   publicPath: string,
   scoped: boolean,
-  userOptions: CompilerOptions | undefined
+  { vueCompilerOptions, templateCompilers = {} }: ServerPluginContext['config']
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
   if (cached && cached.template) {
     debug(`${publicPath} template cache hit`)
     return cached.template
+  }
+
+  const compilerKey = (template as any).compiler
+  let compiler
+  let compilerOptions = {}
+  if (compilerKey) {
+    if (templateCompilers[compilerKey]) {
+      ;[compiler, compilerOptions] = templateCompilers[compilerKey]
+    } else {
+      console.error(
+        `The "${compilerKey}" compiler not found.Please add "templateCompilers" options.`
+      )
+    }
   }
 
   const start = Date.now()
@@ -521,8 +537,10 @@ function compileSFCTemplate(
     transformAssetUrls: {
       base: path.posix.dirname(publicPath)
     },
+    compiler: compiler,
     compilerOptions: {
-      ...userOptions,
+      ...vueCompilerOptions,
+      ...compilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: resolveVue(root).isLocal
         ? // in local mode, vue would have been optimized so must be referenced

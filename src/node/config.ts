@@ -18,6 +18,7 @@ import { DepOptimizationOptions } from './optimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
+import { TemplateCompilerOptions } from './server/serverPluginVue'
 
 export { Resolver, Transform }
 
@@ -80,6 +81,10 @@ export interface SharedConfig {
    * https://github.com/vuejs/vue-next/blob/master/packages/compiler-core/src/options.ts
    */
   vueCompilerOptions?: CompilerOptions
+  /**
+   * Customer template compiler.
+   */
+  templateCompilers?: Record<string, TemplateCompilerOptions>
   /**
    * Transform functions for Vue custom blocks.
    *
