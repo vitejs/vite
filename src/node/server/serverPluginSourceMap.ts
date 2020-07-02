@@ -1,14 +1,9 @@
 import { ServerPlugin } from '.'
 import merge from 'merge-source-map'
+import { ExistingRawSourceMap } from 'rollup'
+import { RawSourceMap } from 'source-map'
 
-export interface SourceMap {
-  version: number | string
-  file: string
-  sources: string[]
-  sourcesContent: string[]
-  names: string[]
-  mappings: string
-}
+export type SourceMap = ExistingRawSourceMap | RawSourceMap
 
 export function mergeSourceMap(
   oldMap: SourceMap | null | undefined,

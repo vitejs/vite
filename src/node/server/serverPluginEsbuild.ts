@@ -8,7 +8,7 @@ import {
 } from '../esbuildService'
 import { readBody } from '../utils'
 
-export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
+export const esbuildPlugin: ServerPlugin = ({ app, config, resolver }) => {
   const jsxConfig = resolveJsxOptions(config.jsx)
 
   app.use(async (ctx, next) => {
@@ -24,7 +24,7 @@ export const esbuildPlugin: ServerPlugin = ({ app, config }) => {
       const src = await readBody(ctx.body)
       const { code, map } = await transform(
         src!,
-        ctx.url,
+        resolver.requestToFile(ctx.url),
         jsxConfig,
         config.jsx
       )
