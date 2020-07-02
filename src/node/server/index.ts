@@ -36,6 +36,7 @@ export interface ServerPluginContext {
   watcher: HMRWatcher
   resolver: InternalResolver
   config: ServerConfig & { __path?: string }
+  port: number
 }
 
 export interface State extends DefaultState {}
@@ -71,7 +72,10 @@ export function createServer(config: ServerConfig): Server {
     server,
     watcher,
     resolver,
-    config
+    config,
+    // port is exposed on the context for hmr client connection
+    // in case the files are served under a different port
+    port: config.port || 3000
   }
 
   // attach server context to koa context
@@ -109,11 +113,12 @@ export function createServer(config: ServerConfig): Server {
   resolvedPlugins.forEach((m) => m && m(context))
 
   const listen = server.listen.bind(server)
-  server.listen = (async (...args: any[]) => {
+  server.listen = (async (port: number, ...args: any[]) => {
     if (optimizeDeps.auto !== false) {
       await require('../optimizer').optimizeDeps(config)
     }
-    return listen(...args)
+    context.port = port
+    return listen(port, ...args)
   }) as any
 
   return server

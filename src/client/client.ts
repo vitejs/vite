@@ -1,5 +1,6 @@
 // replaced by serverPluginHmr when served
 declare const __SW_ENABLED__: boolean
+declare const __PORT__: number
 
 // This file runs in the browser.
 import { HMRRuntime } from 'vue'
@@ -52,7 +53,7 @@ console.log('[vite] connecting...')
 declare var __VUE_HMR_RUNTIME__: HMRRuntime
 
 const socketProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
-const socketUrl = `${socketProtocol}://${location.host}`
+const socketUrl = `${socketProtocol}://${location.hostname}:${__PORT__}`
 const socket = new WebSocket(socketUrl, 'vite-hmr')
 
 function warnFailedFetch(err: Error, path: string | string[]) {

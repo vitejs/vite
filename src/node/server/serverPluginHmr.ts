@@ -83,7 +83,7 @@ export const hmrPlugin: ServerPlugin = ({
     if (ctx.path === hmrClientPublicPath) {
       ctx.type = 'js'
       ctx.status = 200
-      ctx.body = hmrClient
+      ctx.body = hmrClient.replace(`__PORT__`, ctx.port.toString())
     } else {
       if (ctx.query.t) {
         latestVersionsMap.set(ctx.path, ctx.query.t)
