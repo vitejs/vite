@@ -2,7 +2,7 @@ import { Plugin, RollupOutput, OutputChunk } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
 import { isExternalUrl, cleanUrl } from '../utils/pathUtils'
-import { resolveAsset } from './buildPluginAsset'
+import { resolveAsset, registerAssets } from './buildPluginAsset'
 import {
   parse as Parse,
   transform as Transform,
@@ -31,13 +31,15 @@ export const createBuildHtmlPlugin = async (
   }
 
   const rawHtml = await fs.readFile(indexPath, 'utf-8')
+  const assets = new Map<string, Buffer>()
   let { html: processedHtml, js } = await compileHtml(
     root,
     rawHtml,
     publicBasePath,
     assetsDir,
     inlineLimit,
-    resolver
+    resolver,
+    assets
   )
 
   const htmlPlugin: Plugin = {
@@ -46,6 +48,10 @@ export const createBuildHtmlPlugin = async (
       if (id === indexPath) {
         return js
       }
+    },
+
+    generateBundle(_options, bundle) {
+      registerAssets(assets, bundle)
     }
   }
 
@@ -85,21 +91,24 @@ export const createBuildHtmlPlugin = async (
     }
   }
 
-  const renderIndex = (
-    bundleOutput: RollupOutput['output'],
-    cssFileName?: string
-  ) => {
-    // inject css link
-    if (cssFileName) {
-      processedHtml = injectCSS(processedHtml, cssFileName)
-    }
-    // inject js entry chunks
+  const renderIndex = (bundleOutput: RollupOutput['output']) => {
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {
+          // js entry chunk
           processedHtml = injectScript(processedHtml, chunk.fileName)
         } else if (shouldPreload && shouldPreload(chunk)) {
+          // async preloaded chunk
           processedHtml = injectPreload(processedHtml, chunk.fileName)
+        }
+      } else {
+        // imported css chunks
+        if (
+          chunk.fileName.endsWith('.css') &&
+          chunk.source &&
+          !assets.has(chunk.fileName)
+        ) {
+          processedHtml = injectCSS(processedHtml, chunk.fileName)
         }
       }
     }
@@ -130,7 +139,8 @@ const compileHtml = async (
   publicBasePath: string,
   assetsDir: string,
   inlineLimit: number,
-  resolver: InternalResolver
+  resolver: InternalResolver,
+  assets: Map<string, Buffer>
 ) => {
   const { parse, transform } = require('@vue/compiler-dom')
 
@@ -181,13 +191,7 @@ const compileHtml = async (
             assetAttrs.includes(p.name) &&
             !isExternalUrl(p.value.content)
           ) {
-            const url = cleanUrl(p.value.content)
-            if (url.endsWith('.css')) {
-              js += `\nimport ${JSON.stringify(url)}`
-              s.remove(node.loc.start.offset, node.loc.end.offset)
-            } else {
-              assetUrls.push(p)
-            }
+            assetUrls.push(p)
           }
         }
       }
@@ -202,14 +206,17 @@ const compileHtml = async (
   // references the post-build location.
   for (const attr of assetUrls) {
     const value = attr.value!
-    const { url } = await resolveAsset(
+    const { fileName, content, url } = await resolveAsset(
       resolver.requestToFile(value.content),
       root,
       publicBasePath,
       assetsDir,
-      inlineLimit
+      cleanUrl(value.content).endsWith('.css') ? 0 : inlineLimit
     )
     s.overwrite(value.loc.start.offset, value.loc.end.offset, `"${url}"`)
+    if (fileName && content) {
+      assets.set(fileName, content)
+    }
   }
 
   return {

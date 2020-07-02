@@ -44,11 +44,11 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
         ctx.body = codegenCss(id, css, modules)
       } else {
         // raw request, return compiled css
-        if (!processedCSS.has(ctx.path)) {
-          await processCss(root, ctx)
-        }
-        ctx.type = 'css'
-        ctx.body = processedCSS.get(ctx.path)!.css
+        // if (!processedCSS.has(ctx.path)) {
+        //   await processCss(root, ctx)
+        // }
+        // ctx.type = 'css'
+        // ctx.body = processedCSS.get(ctx.path)!.css
       }
     }
   })

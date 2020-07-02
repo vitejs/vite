@@ -316,12 +316,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
   spinner && spinner.stop()
 
-  const cssChunk = output.find(
-    (a) => a.type === 'asset' && a.fileName.endsWith('.css') && a.source
-  )
-  const indexHtml = emitIndex
-    ? renderIndex(output, cssChunk && cssChunk.fileName)
-    : ''
+  const indexHtml = emitIndex ? renderIndex(output) : ''
 
   if (write) {
     const cwd = process.cwd()
