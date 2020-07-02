@@ -16,14 +16,7 @@ import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
 import { hmrClientPublicPath } from './serverPluginHmr'
 
-interface ProcessedEntry {
-  css: string
-  modules?: Record<string, string>
-}
-
 export const debugCSS = require('debug')('vite:css')
-
-const processedCSS = new Map<string, ProcessedEntry>()
 
 export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   app.use(async (ctx, next) => {
@@ -36,19 +29,11 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     ) {
       const id = JSON.stringify(hash_sum(ctx.path))
       if (isImportRequest(ctx)) {
-        await processCss(root, ctx)
+        const { css, modules } = await processCss(root, ctx)
+        ctx.type = 'js'
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url
-        ctx.type = 'js'
-        const { css, modules } = processedCSS.get(ctx.path)!
         ctx.body = codegenCss(id, css, modules)
-      } else {
-        // raw request, return compiled css
-        // if (!processedCSS.has(ctx.path)) {
-        //   await processCss(root, ctx)
-        // }
-        // ctx.type = 'css'
-        // ctx.body = processedCSS.get(ctx.path)!.css
       }
     }
   })
@@ -133,11 +118,20 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     })
   }
 
-  async function processCss(root: string, ctx: Context) {
+  interface ProcessedCSS {
+    css: string
+    modules?: Record<string, string>
+  }
+
+  // processed CSS is cached in case the user ticks "disable cache" during dev
+  // which can lead to unnecessary processing on page reload
+  const processedCSS = new Map<string, ProcessedCSS>()
+
+  async function processCss(root: string, ctx: Context): Promise<ProcessedCSS> {
     // source didn't change (marker added by cachedRead)
     // just use previously cached result
     if (ctx.__notModified && processedCSS.has(ctx.path)) {
-      return
+      return processedCSS.get(ctx.path)!
     }
 
     const css = (await readBody(ctx.body))!
@@ -152,8 +146,9 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     })
 
     if (typeof result === 'string') {
-      processedCSS.set(ctx.path, { css: await rewriteCssUrls(css, ctx.path) })
-      return
+      const res = { css: await rewriteCssUrls(css, ctx.path) }
+      processedCSS.set(ctx.path, res)
+      return res
     }
 
     if (result.errors.length) {
@@ -161,12 +156,12 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       result.errors.forEach(console.error)
     }
 
-    result.code = await rewriteCssUrls(result.code, ctx.path)
-
-    processedCSS.set(ctx.path, {
-      css: result.code,
+    const res = {
+      css: await rewriteCssUrls(result.code, ctx.path),
       modules: result.modules
-    })
+    }
+    processedCSS.set(ctx.path, res)
+    return res
   }
 }
 
