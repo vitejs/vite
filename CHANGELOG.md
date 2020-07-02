@@ -1,3 +1,17 @@
+# [1.0.0-beta.10](https://github.com/vuejs/vite/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2020-07-02)
+
+
+### Bug Fixes
+
+* should remove outDir before build ([#487](https://github.com/vuejs/vite/issues/487)) ([783bf9b](https://github.com/vuejs/vite/commit/783bf9b039af1e23402899da8edf458e026ad0c8))
+
+
+### Features
+
+* exit build with error when fail to resolve module ([#466](https://github.com/vuejs/vite/issues/466)) ([ebfeed2](https://github.com/vuejs/vite/commit/ebfeed234a77df0eb6a4ae2f9ba5c03284710137)), closes [#459](https://github.com/vuejs/vite/issues/459)
+
+
+
 # [1.0.0-beta.9](https://github.com/vuejs/vite/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2020-07-02)
 
 
