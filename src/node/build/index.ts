@@ -59,6 +59,13 @@ const dynamicImportWarningIgnoreList = [
 export const onRollupWarning: (
   spinner: Ora | undefined
 ) => InputOptions['onwarn'] = (spinner) => (warning, warn) => {
+  if (warning.code === 'UNRESOLVED_IMPORT') {
+    console.error(
+      chalk.red(`[vite]: Rollup failed to resolve a module, this is most likely unintended because it can break your application at runtime. 
+If you do want to externalize this module explicitly add it to \`rollupInputOptions.external\``)
+    )
+    throw new Error(warning.message)
+  }
   if (
     warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
     dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
@@ -211,6 +218,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       spinner = require('ora')(msg + '\n').start()
     }
   }
+  await fs.remove(outDir)
 
   const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
@@ -346,7 +354,6 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       }
     }
 
-    await fs.remove(outDir)
     await fs.ensureDir(outDir)
 
     // write js chunks and assets
