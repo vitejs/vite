@@ -222,7 +222,13 @@ function walkImportChain(
   }
 
   for (const importer of importers) {
-    if (importer.endsWith('.vue') || isHmrAccepted(importer, importee)) {
+    if (
+      importer.endsWith('.vue') ||
+      // explicitly accepted by this importer
+      isHmrAccepted(importer, importee) ||
+      // importer is a self accepting module
+      isHmrAccepted(importer, importer)
+    ) {
       // vue boundaries are considered dirty for the reload
       if (importer.endsWith('.vue')) {
         dirtyFiles.add(importer)
