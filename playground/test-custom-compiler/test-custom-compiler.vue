@@ -1,9 +1,7 @@
 <template compiler="custom">
-  <div>111</div>
+  <div></div>
 </template>
 
 <script>
-	export default {
-		name: "test-customer-compiler"
-	}
+	export default {}
 </script>
