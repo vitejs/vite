@@ -108,6 +108,17 @@ async function handleMessage(payload: HMRPayload) {
       })
       break
     case 'style-update':
+      // check if this is referenced in html via <link>
+      const el = document.querySelector(`link[href*='${path}']`)
+      if (el) {
+        bustSwCache(path)
+        el.setAttribute(
+          'href',
+          `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
+        )
+        break
+      }
+      // imported CSS
       const importQuery = path.includes('?') ? '&import' : '?import'
       bustSwCache(`${path}${importQuery}`)
       await import(`${path}${importQuery}&t=${timestamp}`)
