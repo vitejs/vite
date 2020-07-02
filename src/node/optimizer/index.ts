@@ -22,6 +22,7 @@ const debug = require('debug')('vite:optimize')
 
 const KNOWN_IGNORE_LIST = new Set([
   'vite',
+  'vitepress',
   'tailwindcss',
   '@tailwindcss/ui',
   '@pika/react',
