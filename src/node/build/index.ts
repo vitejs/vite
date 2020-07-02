@@ -264,6 +264,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           'import.meta.env.MODE': JSON.stringify(mode),
           'import.meta.env.DEV': String(mode === 'development'),
           'import.meta.env.PROD': String(mode === 'production'),
+          'import.meta.env.': `({}).`,
           'process.env.NODE_ENV': JSON.stringify(mode),
           'process.env.': `({}).`,
           'import.meta.hot': `false`
