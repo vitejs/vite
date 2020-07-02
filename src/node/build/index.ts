@@ -313,10 +313,12 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
   spinner && spinner.stop()
 
-  const cssFileName = output.find(
-    (a) => a.type === 'asset' && a.fileName.endsWith('.css')
-  )!.fileName
-  const indexHtml = emitIndex ? renderIndex(output, cssFileName) : ''
+  const cssChunk = output.find(
+    (a) => a.type === 'asset' && a.fileName.endsWith('.css') && a.source
+  )
+  const indexHtml = emitIndex
+    ? renderIndex(output, cssChunk && cssChunk.fileName)
+    : ''
 
   if (write) {
     const cwd = process.cwd()
@@ -366,6 +368,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           )
         }
       } else if (emitAssets) {
+        if (!chunk.source) continue
         // write asset
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)
         await writeFile(
