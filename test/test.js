@@ -435,6 +435,21 @@ describe('vite', () => {
       }
     })
 
+    test('import *.module.scss', async () => {
+      const el = await page.$('.scss-modules-import')
+      expect(await getComputedColor(el)).toBe('rgb(255, 0, 255)')
+      if (!isBuild) {
+        await updateFile('css/testScssModules.module.scss', (content) =>
+          content.replace('rgb(255, 0, 255)', 'rgb(0, 0, 2)')
+        )
+        // css module results in component reload so must use fresh selector
+        await expectByPolling(
+          () => getComputedColor('.scss-modules-import'),
+          'rgb(0, 0, 2)'
+        )
+      }
+    })
+
     test('pre-processors', async () => {
       expect(await getText('.pug')).toMatch('template lang="pug"')
       expect(await getComputedColor('.pug')).toBe('rgb(255, 0, 255)')

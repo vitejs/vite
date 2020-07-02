@@ -6,13 +6,17 @@
   <div class="css-modules-import" :class="imported.turquoise">
     CSS modules import - this should be orange
   </div>
+  <div class="scss-modules-import" :class="importedScss.magenta">
+    SCSS modules import - this should be magenta
+  </div>
 </template>
 
 <script>
 import imported from './testCssModules.module.css'
+import importedScss from './testScssModules.module.scss';
 
 export default {
-  data: () => ({ imported })
+  data: () => ({ imported, importedScss })
 }
 </script>
 

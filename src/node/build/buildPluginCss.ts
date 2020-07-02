@@ -8,7 +8,8 @@ import {
   compileCss,
   cssPreprocessLangRE,
   rewriteCssUrls,
-  isCSSRequest
+  isCSSRequest,
+  cssModuleRE
 } from '../utils/cssUtils'
 import {
   SFCStyleCompileResults,
@@ -60,7 +61,7 @@ export const createBuildCssPlugin = ({
                 source: css,
                 filename: id,
                 scoped: false,
-                modules: id.endsWith('.module.css'),
+                modules: cssModuleRE.test(id),
                 preprocessLang: id.replace(
                   cssPreprocessLangRE,
                   '$2'
