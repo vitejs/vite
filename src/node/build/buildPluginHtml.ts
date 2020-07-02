@@ -1,7 +1,7 @@
 import { Plugin, RollupOutput, OutputChunk } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
-import { isExternalUrl, cleanUrl, isStaticAsset } from '../utils/pathUtils'
+import { isExternalUrl, cleanUrl } from '../utils/pathUtils'
 import { resolveAsset } from './buildPluginAsset'
 import {
   parse as Parse,
@@ -182,8 +182,10 @@ const compileHtml = async (
             !isExternalUrl(p.value.content)
           ) {
             const url = cleanUrl(p.value.content)
-            js += `\nimport ${JSON.stringify(url)}`
-            if (isStaticAsset(url)) {
+            if (url.endsWith('.css')) {
+              js += `\nimport ${JSON.stringify(url)}`
+              s.remove(node.loc.start.offset, node.loc.end.offset)
+            } else {
               assetUrls.push(p)
             }
           }
