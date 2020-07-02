@@ -1,3 +1,25 @@
+# [1.0.0-beta.9](https://github.com/vuejs/vite/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2020-07-02)
+
+
+### Bug Fixes
+
+* import.meta.env fallback for build ([7994d35](https://github.com/vuejs/vite/commit/7994d35168e03217847a903ae19d76f5484f179c))
+* should treat css linked in html as assets ([08856ac](https://github.com/vuejs/vite/commit/08856ac31454b984a44e292c2c91b267d563a53a))
+* **build:** shouldn't generate css file if without css import ([#473](https://github.com/vuejs/vite/issues/473)) ([1b61550](https://github.com/vuejs/vite/commit/1b61550bfbcbb772b3202a2a3d1e19c8ee2f9d9f)), closes [#472](https://github.com/vuejs/vite/issues/472)
+* **build/css:** properly handle css linked in index.html for build ([1fa4d9a](https://github.com/vuejs/vite/commit/1fa4d9a32d987bf3c83fdb3e681b1e748b2375fb))
+* **dev/css:** fix hmr for css referenced in html via `<link>` ([202ee6e](https://github.com/vuejs/vite/commit/202ee6e7376a060796872aff5a0639eada299cc5)), closes [#469](https://github.com/vuejs/vite/issues/469)
+* **hmr:** fix nested import.meta.hot/env detection ([bc4ae27](https://github.com/vuejs/vite/commit/bc4ae27f4e4b37c65db51f9ca90a34f21d91f160))
+* **hmr:** root level self-accepting module ([0179c47](https://github.com/vuejs/vite/commit/0179c471b88b2917dfc0d7f65abfd1cb9a5b81fc))
+* CSS Modules detection for preprocessors ([#463](https://github.com/vuejs/vite/issues/463)) ([a26d61b](https://github.com/vuejs/vite/commit/a26d61b4cad76482d21b0c2ff78ca63d2137a933))
+
+
+### Features
+
+* connect to actual vite server port for websocket ([b6e91e0](https://github.com/vuejs/vite/commit/b6e91e06ed455cd11a7e22927bad348d63556f31)), closes [#452](https://github.com/vuejs/vite/issues/452) [#460](https://github.com/vuejs/vite/issues/460)
+* option for disabling esbuild ([#475](https://github.com/vuejs/vite/issues/475)) ([b42c5ed](https://github.com/vuejs/vite/commit/b42c5ed769103eb2d755c0fa7ca1caa50c0d1318)), closes [#456](https://github.com/vuejs/vite/issues/456)
+
+
+
 # [1.0.0-beta.8](https://github.com/vuejs/vite/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2020-06-25)
 
 
