@@ -27,6 +27,7 @@
   <Suspense>
     <TestWasm />
   </Suspense>
+  <TestCustomCompiler/>
 </template>
 
 <script>
@@ -54,6 +55,7 @@ import TestRewriteOptimized from './resolve/rewrite-optimized/TestRewriteOptimiz
 import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
 import TestWebWorker from './worker/TestWorker.vue'
 import TestWasm from './wasm/TestWasm.vue'
+import TestCustomCompiler from './test-custom-compiler/test-custom-compiler.vue'
 
 export default {
   components: {
@@ -80,7 +82,8 @@ export default {
     TestNormalizePublicPath,
     TestDynamicImport,
     TestWebWorker,
-    TestWasm
+    TestWasm,
+    TestCustomCompiler
   }
 }
 </script>

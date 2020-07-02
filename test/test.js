@@ -630,6 +630,13 @@ describe('vite', () => {
       await button.click()
       await expectByPolling(() => getText('.wasm-response'), '42')
     })
+
+    test('custom compiler', async () => {
+      await expectByPolling(
+        () => getText('.custom-compiler'),
+        'custom compiler works!'
+      )
+    })
   }
 
   // test build first since we are going to edit the fixtures when testing dev

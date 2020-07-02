@@ -22,7 +22,7 @@ import { DepOptimizationOptions } from './optimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
-import { TemplateCompilerOptions } from './server/serverPluginVue'
+import { TemplateCompilers } from './server/serverPluginVue'
 
 export { Resolver, Transform }
 
@@ -88,11 +88,11 @@ export interface SharedConfig {
   /**
    * Customer template compiler for global sfc template block.
    */
-  compiler?: TemplateCompiler
+  vueCompiler?: TemplateCompiler
   /**
    * Customer template compiler for special sfc template block.
    */
-  templateCompilers?: Record<string, TemplateCompilerOptions>
+  vueTemplateCompilers?: Record<string, TemplateCompilers>
   /**
    * Transform functions for Vue custom blocks.
    *
@@ -288,6 +288,7 @@ export interface Plugin
     | 'transforms'
     | 'resolvers'
     | 'configureServer'
+    | 'vueTemplateCompilers'
     | 'vueCompilerOptions'
     | 'vueCustomBlockTransforms'
     | 'rollupInputOptions'
@@ -443,6 +444,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
       config.configureServer || [],
       plugin.configureServer || []
     ),
+    vueTemplateCompilers: {
+      ...config.vueTemplateCompilers,
+      ...plugin.vueTemplateCompilers
+    },
     vueCompilerOptions: {
       ...config.vueCompilerOptions,
       ...plugin.vueCompilerOptions

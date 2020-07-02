@@ -123,7 +123,9 @@ export async function createBaseRollupPlugins(
         ...cssPreprocessOptions
       },
       preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
+      compiler: options.vueCompiler,
       compilerOptions: options.vueCompilerOptions,
+      templateCompilers: options.vueTemplateCompilers,
       cssModulesOptions: {
         generateScopedName: (local: string, filename: string) =>
           `${local}_${hash_sum(filename)}`,

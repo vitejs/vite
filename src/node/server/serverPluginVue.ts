@@ -499,7 +499,9 @@ async function compileSFCMain(
   return result
 }
 
-export type TemplateCompilerOptions = [TemplateCompiler, CompilerOptions]
+export type TemplateCompilers =
+  | TemplateCompiler
+  | [TemplateCompiler, CompilerOptions]
 
 function compileSFCTemplate(
   root: string,
@@ -509,8 +511,8 @@ function compileSFCTemplate(
   scoped: boolean,
   {
     vueCompilerOptions = {},
-    templateCompilers,
-    compiler
+    vueTemplateCompilers,
+    vueCompiler
   }: ServerPluginContext['config']
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
@@ -519,14 +521,23 @@ function compileSFCTemplate(
     return cached.template
   }
 
-  const compilerKey = template.attrs.compiler as string
+  const compilerKey = template.attrs.compiler
   if (compilerKey) {
-    if (templateCompilers && templateCompilers[compilerKey]) {
-      ;[compiler, vueCompilerOptions] = templateCompilers[compilerKey]
+    if (typeof compilerKey === 'string') {
+      if (vueTemplateCompilers && vueTemplateCompilers[compilerKey]) {
+        const compilers = vueTemplateCompilers[compilerKey]
+        if (Array.isArray(compilers)) {
+          ;[vueCompiler, vueCompilerOptions] = compilers
+        } else {
+          vueCompiler = compilers
+        }
+      } else {
+        console.error(
+          `The "${compilerKey}" compiler not found.Please add "vueTemplateCompilers" options.`
+        )
+      }
     } else {
-      console.error(
-        `The "${compilerKey}" compiler not found.Please add "templateCompilers" options.`
-      )
+      console.error(`Please ensure custom template compiler in ${filePath}`)
     }
   }
 
@@ -539,7 +550,7 @@ function compileSFCTemplate(
     transformAssetUrls: {
       base: path.posix.dirname(publicPath)
     },
-    compiler,
+    compiler: vueCompiler,
     compilerOptions: {
       ...vueCompilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
