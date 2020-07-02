@@ -31,13 +31,7 @@ import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
 import { isCSSRequest } from '../utils/cssUtils'
-import {
-  Node,
-  StringLiteral,
-  Statement,
-  Expression,
-  IfStatement
-} from '@babel/types'
+import { Node, StringLiteral, Statement, Expression } from '@babel/types'
 import { resolveCompiler } from '../utils'
 import { HMRPayload } from '../../hmrPayload'
 
@@ -279,7 +273,6 @@ export function rewriteFileWithHMR(
   s: MagicString
 ) {
   let hasDeclined = false
-  let importMetaConditional: IfStatement | undefined
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
@@ -404,10 +397,6 @@ export function rewriteFileWithHMR(
     // if (import.meta.hot) ...
     if (node.type === 'IfStatement') {
       const isDevBlock = isMetaHot(node.test)
-      if (isDevBlock && !importMetaConditional) {
-        // remember the first occurrence of `if (import.meta.hot)`
-        importMetaConditional = node
-      }
       if (node.consequent.type === 'BlockStatement') {
         node.consequent.body.forEach((s) =>
           checkStatements(s, false, isDevBlock)
@@ -422,14 +411,11 @@ export function rewriteFileWithHMR(
   const ast = parse(source)
   ast.forEach((s) => checkStatements(s, true, false))
 
-  if (importMetaConditional) {
-    // inject import.meta.hot
-    s.prependLeft(
-      importMetaConditional.start!,
-      `import { createHotContext } from "${hmrClientPublicPath}"; ` +
-        `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
-    )
-  }
+  // inject import.meta.hot
+  s.prepend(
+    `import { createHotContext } from "${hmrClientPublicPath}"; ` +
+      `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
+  )
 
   // clear decline state
   if (!hasDeclined) {
