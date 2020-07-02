@@ -307,7 +307,7 @@ export function rewriteFileWithHMR(
         )
       }
 
-      const method = node.callee.property.name
+      const method = (node.callee.property as { name: string }).name
       if (method === 'accept' || method === 'acceptDeps') {
         if (!isDevBlock) {
           console.error(

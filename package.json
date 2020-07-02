@@ -56,6 +56,7 @@
     "@rollup/plugin-node-resolve": "^8.0.0",
     "@types/koa": "^2.11.3",
     "@types/lru-cache": "^5.1.0",
+    "@types/mime-types": "^2.1.0",
     "@vue/compiler-dom": "^3.0.0-beta.14",
     "@vue/compiler-sfc": "^3.0.0-beta.14",
     "brotli-size": "^4.0.0",

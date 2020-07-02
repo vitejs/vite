@@ -120,10 +120,16 @@ export function createServer(config: ServerConfig): Server {
 }
 
 function resolveServer(
-  { https = false, httpsOptions = {} }: ServerConfig,
+  { https = false, httpsOptions = {}, proxy }: ServerConfig,
   requestListener: RequestListener
 ) {
   if (https) {
+    if (proxy && Object.keys(proxy).length > 0) {
+      return require('https').createServer(
+        resolveHttpsConfig(httpsOptions),
+        requestListener
+      )
+    }
     return require('http2').createSecureServer(
       {
         ...resolveHttpsConfig(httpsOptions),
