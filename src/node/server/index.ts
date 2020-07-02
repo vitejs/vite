@@ -54,7 +54,8 @@ export function createServer(config: ServerConfig): Server {
     alias = {},
     transforms = [],
     vueCustomBlockTransforms = {},
-    optimizeDeps = {}
+    optimizeDeps = {},
+    enableEsbuild = true
   } = config
 
   const app = new Koa<State, Context>()
@@ -98,14 +99,14 @@ export function createServer(config: ServerConfig): Server {
       : []),
     vuePlugin,
     cssPlugin,
-    esbuildPlugin,
+    enableEsbuild ? esbuildPlugin : null,
     jsonPlugin,
     assetPathPlugin,
     webWorkerPlugin,
     wasmPlugin,
     serveStaticPlugin
   ]
-  resolvedPlugins.forEach((m) => m(context))
+  resolvedPlugins.forEach((m) => m && m(context))
 
   const listen = server.listen.bind(server)
   server.listen = (async (...args: any[]) => {
