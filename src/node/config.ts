@@ -17,6 +17,7 @@ import { Transform, CustomBlockTransform } from './transform'
 import { DepOptimizationOptions } from './optimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
+import { ServerOptions as httpServerOptions } from 'http-proxy'
 import { lookupFile } from './utils'
 
 export { Resolver, Transform }
@@ -158,7 +159,7 @@ export interface ServerConfig extends SharedConfig {
    * }
    * ```
    */
-  proxy?: Record<string, string | IKoaProxiesOptions>
+  proxy?: Record<string, string | (IKoaProxiesOptions & httpServerOptions)>
   /**
    * Whether to use a Service Worker to cache served code. This can greatly
    * improve full page reload performance, but requires a Service Worker
