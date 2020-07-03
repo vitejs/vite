@@ -1,3 +1,12 @@
+# [1.0.0-beta.11](https://github.com/vuejs/vite/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2020-07-03)
+
+
+### Bug Fixes
+
+* **optimizer:** use rollup warning to check for Node built-in bail ([f5d9a8e](https://github.com/vuejs/vite/commit/f5d9a8e6908f3d3a581792cc8ee60752ae66cf2d)), closes [#497](https://github.com/vuejs/vite/issues/497)
+
+
+
 # [1.0.0-beta.10](https://github.com/vuejs/vite/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2020-07-02)
 
 
