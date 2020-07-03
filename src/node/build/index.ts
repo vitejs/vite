@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { resolveFrom } from '../utils'
+import { resolveFrom, lookupFile } from '../utils'
 import {
   rollup as Rollup,
   RollupOutput,
@@ -56,32 +56,66 @@ const dynamicImportWarningIgnoreList = [
   `statically analyzed`
 ]
 
-export const onRollupWarning: (
-  spinner: Ora | undefined
-) => InputOptions['onwarn'] = (spinner) => (warning, warn) => {
-  if (warning.code === 'UNRESOLVED_IMPORT') {
-    console.error(
-      chalk.red(`[vite]: Rollup failed to resolve a module, this is most likely unintended because it can break your application at runtime. 
-If you do want to externalize this module explicitly add it to \`rollupInputOptions.external\``)
-    )
-    throw new Error(warning.message)
-  }
-  if (
-    warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
-    dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
-  ) {
-    return
-  }
+const isBuiltin = require('isbuiltin')
 
-  if (!warningIgnoreList.includes(warning.code!)) {
-    // ora would swallow the console.warn if we let it keep running
-    // https://github.com/sindresorhus/ora/issues/90
-    if (spinner) {
-      spinner.stop()
+export function onRollupWarning(
+  spinner: Ora | undefined,
+  options: BuildConfig['optimizeDeps']
+): InputOptions['onwarn'] {
+  return (warning, warn) => {
+    if (warning.code === 'UNRESOLVED_IMPORT') {
+      let message: string
+      const id = warning.source
+      const importer = warning.importer
+      if (isBuiltin(id)) {
+        let importingDep
+        if (importer) {
+          const pkg = JSON.parse(lookupFile(importer, ['package.json']) || `{}`)
+          if (pkg.name) {
+            importingDep = pkg.name
+          }
+        }
+        const allowList = options && options.allowNodeBuiltins
+        if (importingDep && allowList && allowList.includes(importingDep)) {
+          return
+        }
+        const dep = importingDep
+          ? `Dependency ${chalk.yellow(importingDep)}`
+          : `A dependency`
+        message =
+          `${dep} is attempting to import Node built-in module ${chalk.yellow(
+            id
+          )}.\n` +
+          `This will not work in a browser environment.\n` +
+          `Imported by: ${chalk.gray(importer)}`
+      } else {
+        message =
+          `[vite]: Rollup failed to resolve import "${warning.source}" from "${warning.importer}".\n` +
+          `This is most likely unintended because it can break your application at runtime.\n` +
+          `If you do want to externalize this module explicitly add it to\n` +
+          `\`rollupInputOptions.external\``
+      }
+      throw new Error(message)
     }
-    warn(warning)
-    if (spinner) {
-      spinner.start()
+    if (
+      warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+      dynamicImportWarningIgnoreList.some((msg) =>
+        warning.message.includes(msg)
+      )
+    ) {
+      return
+    }
+
+    if (!warningIgnoreList.includes(warning.code!)) {
+      // ora would swallow the console.warn if we let it keep running
+      // https://github.com/sindresorhus/ora/issues/90
+      if (spinner) {
+        spinner.stop()
+      }
+      warn(warning)
+      if (spinner) {
+        spinner.start()
+      }
     }
   }
 }
@@ -254,7 +288,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     input: path.resolve(root, 'index.html'),
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
-    onwarn: onRollupWarning(spinner),
+    onwarn: onRollupWarning(spinner, options.optimizeDeps),
     ...rollupInputOptions,
     plugins: [
       ...basePlugins,
