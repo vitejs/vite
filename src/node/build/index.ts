@@ -209,13 +209,6 @@ export async function createBaseRollupPlugins(
  * Returns a Promise containing the build result.
  */
 export async function build(options: BuildConfig): Promise<BuildResult> {
-  if (options.ssr) {
-    return ssrBuild({
-      ...options,
-      ssr: false // since ssrBuild calls build, this avoids an infinite loop.
-    })
-  }
-
   const {
     root = process.cwd(),
     base = '/',
