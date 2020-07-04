@@ -24,6 +24,10 @@ interface TransformTestContext {
    */
   isImport: boolean
   isBuild: boolean
+  /**
+   * Indicates that the file for this request was not modified since last call.
+   */
+  notModified?: true
 }
 
 export interface TransformContext extends TransformTestContext {
@@ -62,7 +66,7 @@ export function createServerTransformPlugin(
         return
       }
 
-      const { url, path, query } = ctx
+      const { url, path, query, __notModified } = ctx
       const isImport = isImportRequest(ctx)
       const isBuild = false
       let code: string = ''
@@ -75,6 +79,10 @@ export function createServerTransformPlugin(
           isImport,
           isBuild
         }
+        if (__notModified) {
+          transformContext.notModified = true
+        }
+
         if (t.test(transformContext)) {
           code = code || (await readBody(ctx.body))!
           const result = await t.transform({
