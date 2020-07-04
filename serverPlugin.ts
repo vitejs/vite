@@ -1,37 +1,38 @@
-import { ServerPlugin } from "vite";
-import { parse, compileTemplate } from "@vue/component-compiler-utils";
-import { SFCDescriptor, SFCBlock } from "vue-template-compiler";
-import * as fs from "fs-extra";
-import hash_sum from "hash-sum";
-import LRUCache from "lru-cache";
-import { transform } from "./esbuildService";
-import { normalizeComponentCode } from "./componentNormalizer";
-import { vueHotReloadCode } from "./vueHotReload";
+import { ServerPlugin } from 'vite'
+import { parse, compileTemplate } from '@vue/component-compiler-utils'
+import { SFCDescriptor, SFCBlock } from 'vue-template-compiler'
+import * as fs from 'fs-extra'
+import hash_sum from 'hash-sum'
+import LRUCache from 'lru-cache'
+import { transform } from './esbuildService'
+import { normalizeComponentCode } from './componentNormalizer'
+import { vueHotReloadCode } from './vueHotReload'
+import path from 'path'
 
-const vueTemplateCompiler = require("vue-template-compiler");
+const vueTemplateCompiler = require('vue-template-compiler')
 // const debug = require('debug')('vite:sfc')
 
 interface ResultWithMap {
-  code: string;
+  code: string
   // map: SourceMap | null | undefined
 }
 
 interface CacheEntry {
-  descriptor?: SFCDescriptor;
-  template?: ResultWithMap;
-  script?: ResultWithMap;
+  descriptor?: SFCDescriptor
+  template?: ResultWithMap
+  script?: ResultWithMap
   // styles: SFCStyleCompileResults[]
-  customs: string[];
+  customs: string[]
 }
 
 export const vueCache = new LRUCache<string, CacheEntry>({
   max: 65535,
-});
+})
 
-const defaultExportRE = /((?:^|\n|;)\s*)export default/;
+const defaultExportRE = /((?:^|\n|;)\s*)export default/
 
-export const vueComponentNormalizer = "/vite/vueComponentNormalizer";
-export const vueHotReload = "/vite/vueHotReload";
+export const vueComponentNormalizer = '/vite/vueComponentNormalizer'
+export const vueHotReload = '/vite/vueHotReload'
 
 export const vuePlugin: ServerPlugin = ({
   root,
@@ -41,70 +42,70 @@ export const vuePlugin: ServerPlugin = ({
   config,
 }) => {
   app.use(async (ctx, next) => {
-    if (ctx.path === "/vite/hmr") {
-      await next();
-      ctx.type = "js";
+    if (ctx.path === '/vite/hmr') {
+      await next()
+      ctx.type = 'js'
       ctx.body = ctx.body.replace(
         /__VUE_HMR_RUNTIME__\.rerender\(path, (.+)\)/g,
-        "__VUE_HMR_RUNTIME__.rerender(path, m)"
-      );
-      return;
+        '__VUE_HMR_RUNTIME__.rerender(path, m)'
+      )
+      return
     }
     if (ctx.path === vueHotReload) {
-      ctx.type = "js";
-      ctx.body = vueHotReloadCode;
-      return;
+      ctx.type = 'js'
+      ctx.body = vueHotReloadCode
+      return
     }
 
     if (ctx.path === vueComponentNormalizer) {
-      ctx.type = "js";
-      ctx.body = normalizeComponentCode;
-      return;
+      ctx.type = 'js'
+      ctx.body = normalizeComponentCode
+      return
     }
 
-    if (!ctx.path.endsWith(".vue") && !ctx.vue) {
-      return next();
+    if (!ctx.path.endsWith('.vue') && !ctx.vue) {
+      return next()
     }
 
-    const query = ctx.query;
+    const query = ctx.query
 
-    const publicPath = ctx.path;
-    let filePath = resolver.requestToFile(publicPath);
-    const source = readFile(filePath);
+    const publicPath = ctx.path
+    let filePath = resolver.requestToFile(publicPath)
+    const source = readFile(filePath)
     const descriptor = parse({
       source,
       compiler: vueTemplateCompiler,
       filename: filePath,
       sourceRoot: root,
       needMap: true,
-    }) as SFCDescriptor;
+    }) as SFCDescriptor
     if (!descriptor) {
-      return;
+      return
     }
     if (!query.type) {
       // rely on vite internal sfc parse....
-      await next();
-      ctx.type = "js";
-      ctx.body = await parseSFC(root, filePath, publicPath, descriptor);
-      return;
+      await next()
+      ctx.type = 'js'
+      ctx.body = await parseSFC(root, filePath, publicPath, descriptor)
+      return
     }
 
-    if (query.type === "template") {
-      const templateBlock = descriptor.template!;
+    if (query.type === 'template') {
+      const templateBlock = descriptor.template!
       // todo src
-      ctx.type = "js";
-      ctx.body = compileSFCTemplate(templateBlock, filePath);
-      return;
+      ctx.type = 'js'
+      ctx.body = compileSFCTemplate(templateBlock, filePath, publicPath)
+      return
     }
 
-    if (query.type === "style") {
-      return next();
+    if (query.type === 'style') {
+      return next()
     }
-  });
-};
+  })
+}
 
 function readFile(filePath: string): string {
-  return fs.readFileSync(filePath).toString();
+  return fs.readFileSync(filePath).toString()
 }
 
 async function parseSFC(
@@ -114,57 +115,57 @@ async function parseSFC(
   descriptor: SFCDescriptor
 ): Promise<string> {
   const hasFunctional =
-    descriptor.template && descriptor.template.attrs.functional;
-  const id = hash_sum(publicPath);
+    descriptor.template && descriptor.template.attrs.functional
+  const id = hash_sum(publicPath)
 
   // template
-  let templateImport = `var render, staticRenderFns`;
+  let templateImport = `var render, staticRenderFns`
   if (descriptor.template) {
-    templateImport = `import { render, staticRenderFns } from "${publicPath}?type=template"`;
+    templateImport = `import { render, staticRenderFns } from "${publicPath}?type=template"`
   }
 
   // script
-  let scriptImport = `var script = {}`;
+  let scriptImport = `var script = {}`
   if (descriptor.script) {
     const { code } = await transform(descriptor.script.content, publicPath, {
-      loader: "ts",
-    });
+      loader: 'ts',
+    })
     // rewrite export default.
     // fast path: simple regex replacement to avoid full-blown babel parse.
-    let replaced = code.replace(defaultExportRE, "$1var script =");
+    let replaced = code.replace(defaultExportRE, '$1var script =')
     // if the script somehow still contains `default export`, it probably has
     // multi-line comments or template strings. fallback to a full parse.
     // todo
     // if (defaultExportRE.test(replaced)) {
     // 	replaced = rewriteDefaultExport(code)
     // }
-    scriptImport = replaced;
+    scriptImport = replaced
   }
 
-  let stylesCode = ``;
-  let hasScoped;
-  let hasCSSModules = false;
+  let stylesCode = ``
+  let hasScoped
+  let hasCSSModules = false
   if (descriptor.styles.length) {
     descriptor.styles.forEach((s, i) => {
-      const styleRequest = publicPath + `?type=style&index=${i}`;
-      if (s.scoped) hasScoped = true;
+      const styleRequest = publicPath + `?type=style&index=${i}`
+      if (s.scoped) hasScoped = true
       if (s.module) {
         if (!hasCSSModules) {
-          stylesCode += `\nconst __cssModules = script.__cssModules = {}`;
-          hasCSSModules = true;
+          stylesCode += `\nconst __cssModules = script.__cssModules = {}`
+          hasCSSModules = true
         }
-        const styleVar = `__style${i}`;
-        const moduleName = typeof s.module === "string" ? s.module : "$style";
+        const styleVar = `__style${i}`
+        const moduleName = typeof s.module === 'string' ? s.module : '$style'
         stylesCode += `\nimport ${styleVar} from ${JSON.stringify(
-          styleRequest + "&module"
-        )}`;
+          styleRequest + '&module'
+        )}`
         stylesCode += `\n__cssModules[${JSON.stringify(
           moduleName
-        )}] = ${styleVar}`;
+        )}] = ${styleVar}`
       } else {
-        stylesCode += `\nimport ${JSON.stringify(styleRequest)}`;
+        stylesCode += `\nimport ${JSON.stringify(styleRequest)}`
       }
-    });
+    })
   }
 
   let code =
@@ -184,7 +185,7 @@ var component = normalizer(
   null,
   null
 )
-  `.trim() + `\n`;
+  `.trim() + `\n`
 
   // TODO custom block
   // if (needsHotReload) {
@@ -215,20 +216,24 @@ if (import.meta.hot) {
 		 		// 	 component.options = mod.render
 		 		// 	 component.options = mode.staticRenderFns
 		 		// 	 __VUE_HMR_RUNTIME__.${
-          hasFunctional ? "rerender" : "reload"
+          hasFunctional ? 'rerender' : 'reload'
         }('${publicPath}', component.options)
 		 	 // })
 		 }
 	} else {
 			console.log("The hmr is not compatible.")
 	}
-}`;
+}`
 
-  code += `\nexport default component.exports`;
-  return code;
+  code += `\nexport default component.exports`
+  return code
 }
 
-function compileSFCTemplate(block: SFCBlock, filePath: string): string {
+function compileSFCTemplate(
+  block: SFCBlock,
+  filePath: string,
+  publicPath: string
+): string {
   const { tips, errors, code } = compileTemplate({
     source: block.content,
     filename: filePath,
@@ -236,21 +241,23 @@ function compileSFCTemplate(block: SFCBlock, filePath: string): string {
     // compilerOptions,
     // allow customizing behavior of vue-template-es2015-compiler
     // transpileOptions: options.transpileOptions,
-    // todo asset url add base prefix
-    // transformAssetUrls: options.transformAssetUrls || true,
-    isProduction: process.env.NODE_ENV === "production",
+    transformAssetUrls: true,
+    transformAssetUrlsOptions: {
+      base: path.posix.dirname(publicPath),
+    },
+    isProduction: process.env.NODE_ENV === 'production',
     isFunctional: !!block.attrs.functional,
     optimizeSSR: false,
     prettify: false,
-  });
+  })
 
   if (tips) {
-    tips.forEach(console.warn);
+    tips.forEach(console.warn)
   }
 
   if (errors) {
-    errors.forEach(console.error);
+    errors.forEach(console.error)
   }
 
-  return code + `\nexport { render, staticRenderFns }`;
+  return code + `\nexport { render, staticRenderFns }`
 }
