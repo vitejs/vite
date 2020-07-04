@@ -89,7 +89,7 @@ export function createServerTransformPlugin(
               ctx.map = mergeSourceMap(ctx.map, result.map)
             }
           }
-          ctx.type = 'js'
+          ctx.type = ctx.type || 'js'
           ctx.body = code
         }
       }
