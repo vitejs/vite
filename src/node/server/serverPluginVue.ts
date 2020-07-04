@@ -1,7 +1,7 @@
 import qs from 'querystring'
 import chalk from 'chalk'
 import path from 'path'
-import { Context, ServerPlugin } from '.'
+import { Context, ServerPlugin, ServerPluginContext } from '.'
 import {
   SFCBlock,
   SFCDescriptor,
@@ -575,7 +575,7 @@ async function compileSFCStyle(
   index: number,
   filePath: string,
   publicPath: string,
-  preprocessOptions: SFCStyleCompileOptions['preprocessOptions']
+  { cssPreprocessOptions, cssModuleOptions }: ServerPluginContext['config']
 ): Promise<SFCStyleCompileResults> {
   let cached = vueCache.get(filePath)
   const cachedEntry = cached && cached.styles && cached.styles[index]
@@ -594,7 +594,8 @@ async function compileSFCStyle(
     scoped: style.scoped != null,
     modules: style.module != null,
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
-    preprocessOptions
+    preprocessOptions: cssPreprocessOptions,
+    modulesOptions: cssModuleOptions
   })) as SFCStyleCompileResults
 
   if (result.errors.length) {

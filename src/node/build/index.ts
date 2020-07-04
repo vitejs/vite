@@ -93,7 +93,8 @@ export async function createBaseRollupPlugins(
     rollupInputOptions = {},
     transforms = [],
     vueCustomBlockTransforms = {},
-    cssPreprocessOptions
+    cssPreprocessOptions,
+    cssModuleOptions
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
@@ -128,6 +129,7 @@ export async function createBaseRollupPlugins(
         localsConvention: 'camelCase',
         generateScopedName: (local: string, filename: string) =>
           `${local}_${hash_sum(filename)}`,
+        ...cssModuleOptions,
         ...(options.rollupPluginVueOptions &&
           options.rollupPluginVueOptions.cssModulesOptions)
       },
@@ -193,7 +195,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     shouldPreload = null,
     env = {},
     mode = 'production',
-    cssPreprocessOptions = {}
+    cssPreprocessOptions = {},
+    cssModuleOptions = {}
   } = options
 
   const isTest = process.env.NODE_ENV === 'test'
@@ -276,7 +279,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         minify,
         inlineLimit: assetsInlineLimit,
         cssCodeSplit,
-        preprocessOptions: cssPreprocessOptions
+        preprocessOptions: cssPreprocessOptions,
+        modulesOptions: cssModuleOptions
       }),
       // vite:asset
       createBuildAssetPlugin(

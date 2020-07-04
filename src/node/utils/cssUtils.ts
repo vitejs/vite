@@ -59,7 +59,8 @@ export async function compileCss(
     scoped,
     modules,
     preprocessLang,
-    preprocessOptions = {}
+    preprocessOptions = {},
+    modulesOptions = {}
   }: SFCAsyncStyleCompileOptions,
   isBuild: boolean = false
 ): Promise<SFCStyleCompileResults | string> {
@@ -91,7 +92,8 @@ export async function compileCss(
     modules,
     modulesOptions: {
       generateScopedName: `[local]_${id}`,
-      localsConvention: 'camelCase'
+      localsConvention: 'camelCase',
+      ...modulesOptions
     },
 
     preprocessLang: preprocessLang,
