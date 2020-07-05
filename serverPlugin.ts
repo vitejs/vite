@@ -170,16 +170,11 @@ async function parseSFC(
 
   let stylesCode = ``
   let hasScoped
-  let hasCSSModules = false
   if (descriptor.styles.length) {
     descriptor.styles.forEach((s, i) => {
       const styleRequest = publicPath + `?type=style&index=${i}`
       if (s.scoped) hasScoped = true
       if (s.module) {
-        if (!hasCSSModules) {
-          stylesCode += `\nconst __cssModules = script.__cssModules = {}`
-          hasCSSModules = true
-        }
         const styleVar = `__style${i}`
         const moduleName = typeof s.module === 'string' ? s.module : '$style'
         stylesCode += `\nimport ${styleVar} from ${JSON.stringify(
@@ -198,6 +193,7 @@ async function parseSFC(
     `
 ${templateImport}
 ${scriptImport}
+const __cssModules = {}
 ${stylesCode}
 /* normalize component */
 import normalizer from "${vueComponentNormalizer}"
@@ -206,12 +202,20 @@ var component = normalizer(
   render,
   staticRenderFns,
   ${hasFunctional ? `true` : `false`},
-  null,
+  injectStyles,
   ${hasScoped ? JSON.stringify(id) : `null`},
   null,
   null
 )
   `.trim() + `\n`
+
+  code += `
+function injectStyles (context) {
+  for(let o in __cssModules){
+    this[o] = __cssModules[o]
+  }
+}  
+  `
 
   // TODO custom block
   // if (needsHotReload) {
