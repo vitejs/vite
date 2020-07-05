@@ -265,6 +265,11 @@ export interface BuildConfig extends SharedConfig {
    * added to the index.html for the chunk passed in
    */
   shouldPreload?: (chunk: OutputChunk) => boolean
+  /**
+   * Enable 'rollup-plugin-vue'
+   * @default true
+   */
+  enableRollupPluginVue?: boolean
 }
 
 export interface UserConfig extends BuildConfig, ServerConfig {
@@ -282,6 +287,7 @@ export interface Plugin
     | 'vueCustomBlockTransforms'
     | 'rollupInputOptions'
     | 'rollupOutputOptions'
+    | 'enableRollupPluginVue'
   > {}
 
 export type ResolvedConfig = UserConfig & {
@@ -448,7 +454,9 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
     rollupOutputOptions: {
       ...config.rollupOutputOptions,
       ...plugin.rollupOutputOptions
-    }
+    },
+    enableRollupPluginVue:
+      config.enableRollupPluginVue || plugin.enableRollupPluginVue
   }
 }
 
