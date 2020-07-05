@@ -8,6 +8,8 @@ import { transform } from './esbuildService'
 import { normalizeComponentCode } from './componentNormalizer'
 import { vueHotReloadCode } from './vueHotReload'
 import path from 'path'
+import { resolveImport } from 'vite/dist/server/serverPluginModuleRewrite'
+import { InternalResolver } from 'vite/dist/resolver'
 
 const vueTemplateCompiler = require('vue-template-compiler')
 // const debug = require('debug')('vite:sfc')
@@ -86,7 +88,13 @@ export const vuePlugin: ServerPlugin = ({
       // rely on vite internal sfc parse....
       await next()
       ctx.type = 'js'
-      ctx.body = await parseSFC(root, filePath, publicPath, descriptor)
+      ctx.body = await parseSFC(
+        root,
+        filePath,
+        publicPath,
+        descriptor,
+        resolver
+      )
       return
     }
 
@@ -112,7 +120,8 @@ async function parseSFC(
   root: string,
   filePath: string,
   publicPath: string,
-  descriptor: SFCDescriptor
+  descriptor: SFCDescriptor,
+  resolver: InternalResolver
 ): Promise<string> {
   const hasFunctional =
     descriptor.template && descriptor.template.attrs.functional
@@ -127,10 +136,15 @@ async function parseSFC(
   // script
   let scriptImport = `var script = {}`
   if (descriptor.script) {
-    let code = descriptor.script.content
-    if (descriptor.script.lang === 'ts') {
+    const scriptBlock = descriptor.script
+    let code = scriptBlock.content
+    if (scriptBlock && scriptBlock.src) {
+      const srcPath = resolveImport(root, publicPath, scriptBlock.src, resolver)
+      code = readFile(resolver.requestToFile(srcPath))
+    }
+    if (scriptBlock.lang === 'ts') {
       code = (
-        await transform(descriptor.script.content, publicPath, {
+        await transform(code, publicPath, {
           loader: 'ts',
         })
       ).code
