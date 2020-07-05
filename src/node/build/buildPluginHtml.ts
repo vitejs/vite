@@ -1,7 +1,7 @@
 import { Plugin, RollupOutput, OutputChunk } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
-import { isExternalUrl, cleanUrl } from '../utils/pathUtils'
+import { isExternalUrl, cleanUrl, isDataUrl } from '../utils/pathUtils'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
 import {
   parse as Parse,
@@ -189,7 +189,8 @@ const compileHtml = async (
             p.type === NodeTypes.ATTRIBUTE &&
             p.value &&
             assetAttrs.includes(p.name) &&
-            !isExternalUrl(p.value.content)
+            !isExternalUrl(p.value.content) &&
+            !isDataUrl(p.value.content)
           ) {
             assetUrls.push(p)
           }
