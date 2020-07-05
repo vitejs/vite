@@ -127,9 +127,15 @@ async function parseSFC(
   // script
   let scriptImport = `var script = {}`
   if (descriptor.script) {
-    const { code } = await transform(descriptor.script.content, publicPath, {
-      loader: 'ts',
-    })
+    let code = descriptor.script.content
+    if (descriptor.script.lang === 'ts') {
+      code = (
+        await transform(descriptor.script.content, publicPath, {
+          loader: 'ts',
+        })
+      ).code
+    }
+
     // rewrite export default.
     // fast path: simple regex replacement to avoid full-blown babel parse.
     let replaced = code.replace(defaultExportRE, '$1var script =')
