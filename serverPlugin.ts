@@ -10,6 +10,7 @@ import { vueHotReloadCode } from './vueHotReload'
 import path from 'path'
 import { resolveImport } from 'vite/dist/server/serverPluginModuleRewrite'
 import { InternalResolver } from 'vite/dist/resolver'
+import { cleanUrl } from 'vite/dist/utils'
 
 const vueTemplateCompiler = require('vue-template-compiler')
 // const debug = require('debug')('vite:sfc')
@@ -100,7 +101,12 @@ export const vuePlugin: ServerPlugin = ({
 
     if (query.type === 'template') {
       const templateBlock = descriptor.template!
-      // todo src
+      if (templateBlock && templateBlock.src) {
+        const srcPath = cleanUrl(
+          resolveImport(root, publicPath, templateBlock.src, resolver)
+        )
+        templateBlock.content = readFile(resolver.requestToFile(srcPath))
+      }
       ctx.type = 'js'
       ctx.body = compileSFCTemplate(templateBlock, filePath, publicPath)
       return
