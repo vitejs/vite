@@ -40,7 +40,7 @@ export const resolveAsset = async (
       // file is resolved from public dir, it will be copied verbatim so no
       // need to read content here.
       resolved = {
-        url: slash(path.join(publicBase, relativePath))
+        url: publicBase + slash(relativePath)
       }
     }
   }
@@ -48,7 +48,7 @@ export const resolveAsset = async (
   if (!resolved) {
     if (publicDirRE.test(relativePath)) {
       resolved = {
-        url: slash(path.join(publicBase, relativePath.replace(publicDirRE, '')))
+        url: publicBase + slash(relativePath.replace(publicDirRE, ''))
       }
     }
   }
@@ -58,7 +58,7 @@ export const resolveAsset = async (
     const baseName = path.basename(id, ext)
     const resolvedFileName = `${baseName}.${hash_sum(id)}${ext}`
 
-    let url = slash(path.join(publicBase, assetsDir, resolvedFileName))
+    let url = publicBase + slash(path.join(assetsDir, resolvedFileName))
     let content: Buffer | undefined = await fs.readFile(id)
     if (!id.endsWith(`.svg`) && content.length < Number(inlineLimit)) {
       url = `data:${mime.lookup(id)};base64,${content.toString('base64')}`
