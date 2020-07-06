@@ -134,16 +134,11 @@ export async function createBaseRollupPlugins(
     rollupInputOptions = {},
     transforms = [],
     vueCustomBlockTransforms = {},
-    cssPreprocessOptions,
     enableEsbuild = true,
     enableRollupPluginVue = true
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
-  const {
-    options: postcssOptions,
-    plugins: postcssPlugins
-  } = await resolvePostcssOptions(root, true)
 
   return [
     // user plugins
@@ -155,31 +150,7 @@ export async function createBaseRollupPlugins(
       ? await createEsbuildPlugin(options.minify === 'esbuild', options.jsx)
       : null,
     // vue
-    enableRollupPluginVue
-      ? require('rollup-plugin-vue')({
-          ...options.rollupPluginVueOptions,
-          transformAssetUrls: {
-            includeAbsolute: true
-          },
-          postcssOptions,
-          postcssPlugins,
-          preprocessStyles: true,
-          preprocessOptions: {
-            includePaths: ['node_modules'],
-            ...cssPreprocessOptions
-          },
-          preprocessCustomRequire: (id: string) =>
-            require(resolveFrom(root, id)),
-          compilerOptions: options.vueCompilerOptions,
-          cssModulesOptions: {
-            generateScopedName: (local: string, filename: string) =>
-              `${local}_${hash_sum(filename)}`,
-            ...(options.rollupPluginVueOptions &&
-              options.rollupPluginVueOptions.cssModulesOptions)
-          },
-          customBlocks: Object.keys(vueCustomBlockTransforms)
-        })
-      : null,
+    enableRollupPluginVue ? createVuePlugin(root, options) : null,
     require('@rollup/plugin-json')({
       preferConst: true,
       indent: '  ',
@@ -206,6 +177,43 @@ export async function createBaseRollupPlugins(
       exclude: [/node_modules/]
     })
   ].filter(Boolean)
+}
+
+async function createVuePlugin(
+  root: string,
+  {
+    vueCustomBlockTransforms = {},
+    rollupPluginVueOptions,
+    cssPreprocessOptions,
+    vueCompilerOptions
+  }: BuildConfig
+) {
+  const {
+    options: postcssOptions,
+    plugins: postcssPlugins
+  } = await resolvePostcssOptions(root, true)
+
+  return require('rollup-plugin-vue')({
+    ...rollupPluginVueOptions,
+    transformAssetUrls: {
+      includeAbsolute: true
+    },
+    postcssOptions,
+    postcssPlugins,
+    preprocessStyles: true,
+    preprocessOptions: {
+      includePaths: ['node_modules'],
+      ...cssPreprocessOptions
+    },
+    preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
+    compilerOptions: vueCompilerOptions,
+    cssModulesOptions: {
+      generateScopedName: (local: string, filename: string) =>
+        `${local}_${hash_sum(filename)}`,
+      ...(rollupPluginVueOptions && rollupPluginVueOptions.cssModulesOptions)
+    },
+    customBlocks: Object.keys(vueCustomBlockTransforms)
+  })
 }
 
 /**
