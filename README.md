@@ -497,9 +497,9 @@ Both Snowpack v2 and Vite offer native ES module import based dev servers. Vite'
 
   Snowpack v2 initially did not offer HMR support but added it in a later release, making the scope of two projects much closer. Vite and Snowpack has collaborated on a common API spec for ESM HMR, but due to the constraints of different implementation strategies, the two projects still ship slightly different APIs.
 
-- Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fined tuned to produce the most efficient bundle.
+- Both solutions can also bundle the app for production, but Vite uses Rollup with built-in config while Snowpack delegates it to Parcel/webpack via additional plugins. Vite will in most cases build faster and produce smaller bundles. In addition, a tighter integration with the bundler makes it easier to author Vite transforms and plugins that modify dev/build configs at the same.
 
-- Both solutions can also bundle the app for production, but Vite uses Rollup while Snowpack delegates it to Parcel/webpack. This isn't a significant difference, but worth being aware of if you intend to customize the build.
+- Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fined tuned to produce the most efficient bundle.
 
 ## Contribution
 
