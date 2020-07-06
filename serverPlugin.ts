@@ -3,7 +3,6 @@ import { parse, compileTemplate } from '@vue/component-compiler-utils'
 import { SFCDescriptor, SFCBlock } from 'vue-template-compiler'
 import * as fs from 'fs-extra'
 import hash_sum from 'hash-sum'
-import LRUCache from 'lru-cache'
 import { transform } from './esbuildService'
 import { normalizeComponentCode } from './componentNormalizer'
 import { vueHotReloadCode } from './vueHotReload'
@@ -13,24 +12,6 @@ import { InternalResolver } from 'vite/dist/resolver'
 import { cleanUrl } from 'vite/dist/utils'
 
 const vueTemplateCompiler = require('vue-template-compiler')
-// const debug = require('debug')('vite:sfc')
-
-interface ResultWithMap {
-  code: string
-  // map: SourceMap | null | undefined
-}
-
-interface CacheEntry {
-  descriptor?: SFCDescriptor
-  template?: ResultWithMap
-  script?: ResultWithMap
-  // styles: SFCStyleCompileResults[]
-  customs: string[]
-}
-
-export const vueCache = new LRUCache<string, CacheEntry>({
-  max: 65535,
-})
 
 const defaultExportRE = /((?:^|\n|;)\s*)export default/
 
