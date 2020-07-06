@@ -523,6 +523,8 @@ function compileSFCTemplate(
     },
     compilerOptions: {
       ...userOptions,
+      // #514 hoist node not support hmr.
+      hoistStatic: false,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       runtimeModuleName: resolveVue(root).isLocal
         ? // in local mode, vue would have been optimized so must be referenced
