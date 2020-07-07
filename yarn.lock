@@ -2398,10 +2398,10 @@ es-to-primitive@^1.2.1:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
-esbuild@^0.5.11:
-  version "0.5.11"
-  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.5.11.tgz#9872ad552db1958d37a6ad7160294bf4320c0531"
-  integrity sha512-E/SBK3tHIcj3iCZh0bUf8/pmEAcM10W7SH2feuHZSzTpLZmtxlWl9j5tesY6OLkv2oDgfX0r9mbOeltXUbJe4Q==
+esbuild@^0.5.24:
+  version "0.5.24"
+  resolved "https://registry.npmjs.org/esbuild/-/esbuild-0.5.24.tgz#7f745c34346e842e7a5347dec0b6b65f43cacd1e"
+  integrity sha512-DBbxT8IBzgvhfm6SXopzMZt9xDQGgBBVnLqTYVRgHKPwBIu6Sg/haBbPAVCwBnNHwJtouBrfo8oTMIPoF8p9eg==
 
 escape-html@^1.0.3:
   version "1.0.3"
@@ -5928,10 +5928,10 @@ rollup-pluginutils@^2.8.2:
   dependencies:
     estree-walker "^0.6.1"
 
-rollup@^2.11.2:
-  version "2.11.2"
-  resolved "https://registry.yarnpkg.com/rollup/-/rollup-2.11.2.tgz#b1273ad3e43953d09807672f6b72d08f9f9bc008"
-  integrity sha512-pJT6mfH+/gh1sOWyNMAWxjbYGL5x2AfsaR0SWLRwq2e7vxOKt/0mBjtYDTVYF8JXxVzmnuDzA+EpsPLWt/oyrg==
+rollup@^2.20.0:
+  version "2.20.0"
+  resolved "https://registry.npmjs.org/rollup/-/rollup-2.20.0.tgz#7456fed8424a5247954958751642e9fdd0ad7485"
+  integrity sha512-hkbp//ne1om8+PQRpd81zk0KDvbJxkLZdZJh1ZNxjd1EkI0H1TmYuHqqXx88yciS+5YnMom3geubQjTeeUnNNw==
   optionalDependencies:
     fsevents "~2.1.2"
 
