@@ -141,20 +141,24 @@ export const createBuildCssPlugin = ({
           }
         }
         chunkCSS = minifyCSS(chunkCSS)
+        const injectCss =
+          `let ${cssInjectionMarker} = document.createElement('style');` +
+          `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+          `document.head.appendChild(${cssInjectionMarker});`
         let isFirst = true
         code = code.replace(cssInjectionRE, () => {
           if (isFirst) {
             isFirst = false
             // make sure the code is in one line so that source map is preserved.
-            return (
-              `let ${cssInjectionMarker} = document.createElement('style');` +
-              `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-              `document.head.appendChild(${cssInjectionMarker});`
-            )
+            return injectCss
           } else {
             return ''
           }
         })
+        if (isFirst) {
+          // css first because it maybe be contained in js
+          code = injectCss + '\n' + code
+        }
       } else {
         code = code.replace(cssInjectionRE, '')
       }
