@@ -140,24 +140,26 @@ export const createBuildCssPlugin = ({
             styles.delete(id) // remove inlined css
           }
         }
-        chunkCSS = minifyCSS(chunkCSS)
-        const injectCss =
-          `let ${cssInjectionMarker} = document.createElement('style');` +
-          `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-          `document.head.appendChild(${cssInjectionMarker});`
+        if (chunkCSS) {
+          chunkCSS = minifyCSS(chunkCSS)
+          chunkCSS =
+            `let ${cssInjectionMarker} = document.createElement('style');` +
+            `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `document.head.appendChild(${cssInjectionMarker});`
+        }
         let isFirst = true
         code = code.replace(cssInjectionRE, () => {
           if (isFirst) {
             isFirst = false
             // make sure the code is in one line so that source map is preserved.
-            return injectCss
+            return chunkCSS
           } else {
             return ''
           }
         })
-        if (isFirst) {
+        if (isFirst && chunkCSS) {
           // css first because it maybe be contained in js
-          code = injectCss + '\n' + code
+          code = chunkCSS + '\n' + code
         }
       } else {
         code = code.replace(cssInjectionRE, '')
