@@ -7,9 +7,9 @@ import { transform } from './esbuildService'
 import { normalizeComponentCode } from './componentNormalizer'
 import { vueHotReloadCode } from './vueHotReload'
 import path from 'path'
-import { resolveImport } from 'vite/dist/server/serverPluginModuleRewrite'
-import { InternalResolver } from 'vite/dist/resolver'
-import { cleanUrl } from 'vite/dist/utils'
+import { resolveImport } from 'vite/dist/node/server/serverPluginModuleRewrite'
+import { InternalResolver } from 'vite/dist/node/resolver'
+import { cleanUrl } from 'vite/dist/node/utils'
 
 const vueTemplateCompiler = require('vue-template-compiler')
 
