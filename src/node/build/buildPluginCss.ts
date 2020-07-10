@@ -178,6 +178,7 @@ export const createBuildCssPlugin = ({
       const cssFileName = `style.${hash_sum(css)}.css`
 
       bundle[cssFileName] = {
+        name: cssFileName,
         isAsset: true,
         type: 'asset',
         fileName: cssFileName,

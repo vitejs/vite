@@ -82,6 +82,7 @@ export const registerAssets = (
 ) => {
   for (const [fileName, source] of assets) {
     bundle[fileName] = {
+      name: fileName,
       isAsset: true,
       type: 'asset',
       fileName,
