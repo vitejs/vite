@@ -58,6 +58,7 @@ export async function compileCss(
     source,
     filename,
     scoped,
+    vars,
     modules,
     preprocessLang,
     preprocessOptions = {}
@@ -89,6 +90,7 @@ export async function compileCss(
     filename,
     id: `data-v-${id}`,
     scoped,
+    vars,
     modules,
     modulesOptions: {
       generateScopedName: `[local]_${id}`

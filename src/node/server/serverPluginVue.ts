@@ -9,7 +9,8 @@ import {
   SFCStyleBlock,
   SFCStyleCompileResults,
   CompilerOptions,
-  SFCStyleCompileOptions
+  SFCStyleCompileOptions,
+  BindingMetadata
 } from '@vue/compiler-sfc'
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -118,12 +119,16 @@ export const vuePlugin: ServerPlugin = ({
         filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
+      const bindingMetadata = descriptor.scriptTransformed
+        ? descriptor.scriptTransformed.bindings
+        : undefined
       const { code, map } = compileSFCTemplate(
         root,
         templateBlock,
         filePath,
         publicPath,
         descriptor.styles.some((s) => s.scoped),
+        bindingMetadata,
         config.vueCompilerOptions
       )
       ctx.body = code
@@ -210,7 +215,10 @@ export const vuePlugin: ServerPlugin = ({
       )
     }
 
-    if (!isEqualBlock(descriptor.script, prevDescriptor.script)) {
+    if (
+      !isEqualBlock(descriptor.script, prevDescriptor.script) ||
+      !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup)
+    ) {
       return sendReload()
     }
 
@@ -229,6 +237,18 @@ export const vuePlugin: ServerPlugin = ({
     if (
       prevStyles.some((s) => s.module != null) ||
       nextStyles.some((s) => s.module != null)
+    ) {
+      return sendReload()
+    }
+
+    // force reload if CSS vars injection changed
+    if (
+      prevStyles.some((s, i) => {
+        const next = nextStyles[i]
+        if (s.attrs.vars && (!next || next.attrs.vars !== s.attrs.vars)) {
+          return true
+        }
+      })
     ) {
       return sendReload()
     }
@@ -413,18 +433,23 @@ async function compileSFCMain(
 
   const id = hash_sum(publicPath)
   let code = ``
-  if (descriptor.script) {
-    let content = descriptor.script.content
-    if (descriptor.script.lang === 'ts') {
-      const { code, map } = await transform(content, publicPath, {
+  let content = ``
+  let map: any
+
+  const script = descriptor.scriptTransformed || descriptor.script
+  if (script) {
+    content = script.content
+    map = script.map
+    if (script.lang === 'ts') {
+      const res = await transform(content, publicPath, {
         loader: 'ts'
       })
-      content = code
-      descriptor.script.map = mergeSourceMap(
-        descriptor.script.map as SourceMap,
-        JSON.parse(map!)
-      ) as SourceMap & { version: string }
+      content = res.code
+      map = mergeSourceMap(map, JSON.parse(res.map!))
     }
+  }
+
+  if (content) {
     // rewrite export default.
     // fast path: simple regex replacement to avoid full-blown babel parse.
     let replaced = content.replace(defaultExportRE, '$1const __script =')
@@ -489,7 +514,7 @@ async function compileSFCMain(
 
   const result: ResultWithMap = {
     code,
-    map: descriptor.script && (descriptor.script.map as SourceMap)
+    map
   }
 
   cached = cached || { styles: [], customs: [] }
@@ -504,6 +529,7 @@ function compileSFCTemplate(
   filePath: string,
   publicPath: string,
   scoped: boolean,
+  bindingMetadata: BindingMetadata | undefined,
   userOptions: CompilerOptions | undefined
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
@@ -524,6 +550,7 @@ function compileSFCTemplate(
     compilerOptions: {
       ...userOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
+      bindingMetadata,
       runtimeModuleName: resolveVue(root).isLocal
         ? // in local mode, vue would have been optimized so must be referenced
           // with .js postfix
@@ -592,6 +619,7 @@ async function compileSFCStyle(
     filename: filePath + `?type=style&index=${index}`,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
+    vars: style.vars != null,
     modules: style.module != null,
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
     preprocessOptions
