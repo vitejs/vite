@@ -1,4 +1,4 @@
-import { ServerPlugin } from 'vite'
+import { ServerPlugin, Context } from 'vite'
 import { parse, compileTemplate } from '@vue/component-compiler-utils'
 import { SFCDescriptor, SFCBlock } from 'vue-template-compiler'
 import * as fs from 'fs-extra'
@@ -10,6 +10,11 @@ import path from 'path'
 import { resolveImport } from 'vite/dist/node/server/serverPluginModuleRewrite'
 import { InternalResolver } from 'vite/dist/node/resolver'
 import { cleanUrl } from 'vite/dist/node/utils'
+import {
+  ensureMapEntry,
+  importerMap,
+} from 'vite/dist/node/server/serverPluginHmr'
+import { srcImportMap } from 'vite/dist/node/server/serverPluginVue'
 
 const vueTemplateCompiler = require('vue-template-compiler')
 
@@ -83,10 +88,7 @@ export const vuePlugin: ServerPlugin = ({
     if (query.type === 'template') {
       const templateBlock = descriptor.template!
       if (templateBlock && templateBlock.src) {
-        const srcPath = cleanUrl(
-          resolveImport(root, publicPath, templateBlock.src, resolver)
-        )
-        templateBlock.content = readFile(resolver.requestToFile(srcPath))
+        filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
       ctx.body = compileSFCTemplate(templateBlock, filePath, publicPath)
@@ -271,4 +273,20 @@ function compileSFCTemplate(
   }
 
   return code + `\nexport { render, staticRenderFns }`
+}
+
+async function resolveSrcImport(
+  root: string,
+  block: SFCBlock,
+  ctx: Context,
+  resolver: InternalResolver
+) {
+  const importer = ctx.path
+  const importee = cleanUrl(resolveImport(root, importer, block.src!, resolver))
+  const filePath = resolver.requestToFile(importee)
+  block.content = (await ctx.read(filePath)).toString()
+
+  ensureMapEntry(importerMap, importee).add(ctx.path)
+  srcImportMap.set(filePath, ctx.url)
+  return filePath
 }
