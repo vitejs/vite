@@ -26,9 +26,9 @@
   "homepage": "https://github.com/vuejs/vite/tree/master/#readme",
   "scripts": {
     "dev": "run-p dev-client dev-node dev-sw",
-    "dev-client": "tsc -w --p src/client",
-    "dev-node": "tsc -w --p src/node",
-    "dev-sw": "tsc -w --p src/sw",
+    "dev-client": "tsc -w --incremental --p src/client",
+    "dev-node": "tsc -w --incremental --p src/node",
+    "dev-sw": "tsc -w --incremental --p src/sw",
     "build": "rm -rf dist && tsc -p src/client && tsc -p src/node && tsc -p src/sw && node scripts/patchTypes",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "jest --clearCache && jest --runInBand --forceExit",
