@@ -429,6 +429,12 @@ const myPlugin = ({
       console.log(ctx.body) // can be string or Readable stream
     }
   })
+
+  // You can also force a new refresh using the watcher 
+  //   watcher.send({
+  //     type: 'full-reload',
+  //     path
+  //   })
 }
 
 createServer({
