@@ -15,6 +15,7 @@ import {
   importerMap,
 } from 'vite/dist/node/server/serverPluginHmr'
 import { srcImportMap } from 'vite/dist/node/server/serverPluginVue'
+import { TemplateCompileOptions } from '@vue/component-compiler-utils/lib/compileTemplate'
 
 const vueTemplateCompiler = require('vue-template-compiler')
 
@@ -22,6 +23,12 @@ const defaultExportRE = /((?:^|\n|;)\s*)export default/
 
 export const vueComponentNormalizer = '/vite/vueComponentNormalizer'
 export const vueHotReload = '/vite/vueHotReload'
+
+let vueCompilerOptions: TemplateCompileOptions | null = null
+
+export function setVueCompilerOptions(opts: TemplateCompileOptions) {
+  vueCompilerOptions = opts
+}
 
 export const vuePlugin: ServerPlugin = ({
   root,
@@ -251,9 +258,6 @@ function compileSFCTemplate(
     source: block.content,
     filename: filePath,
     compiler: vueTemplateCompiler,
-    // compilerOptions,
-    // allow customizing behavior of vue-template-es2015-compiler
-    // transpileOptions: options.transpileOptions,
     transformAssetUrls: true,
     transformAssetUrlsOptions: {
       base: path.posix.dirname(publicPath),
@@ -262,6 +266,7 @@ function compileSFCTemplate(
     isFunctional: !!block.attrs.functional,
     optimizeSSR: false,
     prettify: false,
+    ...vueCompilerOptions,
   })
 
   if (tips) {
