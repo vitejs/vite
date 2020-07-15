@@ -125,6 +125,10 @@ export interface SharedConfig {
    * CSS modules options
    */
   cssModuleOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
+   * Enable esbuild
+   * @default true
+   */
+  enableEsbuild?: boolean
 }
 
 export interface ServerConfig extends SharedConfig {
@@ -147,15 +151,13 @@ export interface ServerConfig extends SharedConfig {
    * ``` js
    * module.exports = {
    *   proxy: {
-   *     proxy: {
-   *       // string shorthand
-   *       '/foo': 'http://localhost:4567/foo',
-   *       // with options
-   *       '/api': {
-   *         target: 'http://jsonplaceholder.typicode.com',
-   *         changeOrigin: true,
-   *         rewrite: path => path.replace(/^\/api/, '')
-   *       }
+   *     // string shorthand
+   *     '/foo': 'http://localhost:4567/foo',
+   *     // with options
+   *     '/api': {
+   *       target: 'http://jsonplaceholder.typicode.com',
+   *       changeOrigin: true,
+   *       rewrite: path => path.replace(/^\/api/, '')
    *     }
    *   }
    * }

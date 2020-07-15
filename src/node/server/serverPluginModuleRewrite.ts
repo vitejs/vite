@@ -121,12 +121,13 @@ export function rewriteImports(
       )
     }
 
-    if (imports.length) {
+    const hasHMR = source.includes('import.meta.hot')
+    const hasEnv = source.includes('import.meta.env')
+
+    if (imports.length || hasHMR || hasEnv) {
       debug(`${importer}: rewriting`)
       const s = new MagicString(source)
       let hasReplaced = false
-      let hasInjectedEnv = false
-      let hasRewrittenForHMR = false
 
       const prevImportees = importeeMap.get(importer)
       const currentImportees = new Set<string>()
@@ -178,27 +179,24 @@ export function rewriteImports(
             debugHmr(`        ${importer} imports ${importee}`)
             ensureMapEntry(importerMap, importee).add(importer)
           }
-        } else {
-          if (id === 'import.meta') {
-            if (!hasRewrittenForHMR && source.slice(end, end + 4) === '.hot') {
-              debugHmr(`rewriting ${importer} for HMR.`)
-              rewriteFileWithHMR(root, source, importer, resolver, s)
-              hasRewrittenForHMR = true
-              hasReplaced = true
-            }
-
-            if (!hasInjectedEnv && source.slice(end, end + 4) === '.env') {
-              s.prepend(
-                `import __VITE_ENV__ from "${envPublicPath}";\n` +
-                  `import.meta.env = __VITE_ENV__;\n`
-              )
-              hasInjectedEnv = true
-              hasReplaced = true
-            }
-          } else {
-            debug(`[vite] ignored dynamic import(${id})`)
-          }
+        } else if (id !== 'import.meta') {
+          debug(`[vite] ignored dynamic import(${id})`)
         }
+      }
+
+      if (hasHMR) {
+        debugHmr(`rewriting ${importer} for HMR.`)
+        rewriteFileWithHMR(root, source, importer, resolver, s)
+        hasReplaced = true
+      }
+
+      if (hasEnv) {
+        debug(`    injecting import.meta.env for ${importer}`)
+        s.prepend(
+          `import __VITE_ENV__ from "${envPublicPath}"; ` +
+            `import.meta.env = __VITE_ENV__; `
+        )
+        hasReplaced = true
       }
 
       // since the importees may have changed due to edits,
@@ -215,7 +213,7 @@ export function rewriteImports(
       }
 
       if (!hasReplaced) {
-        debug(`    no imports rewritten.`)
+        debug(`    nothing needs rewriting.`)
       }
 
       return hasReplaced ? s.toString() : source

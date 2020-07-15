@@ -1,5 +1,6 @@
 // replaced by serverPluginHmr when served
 declare const __SW_ENABLED__: boolean
+declare const __PORT__: number
 
 // This file runs in the browser.
 import { HMRRuntime } from 'vue'
@@ -52,7 +53,7 @@ console.log('[vite] connecting...')
 declare var __VUE_HMR_RUNTIME__: HMRRuntime
 
 const socketProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
-const socketUrl = `${socketProtocol}://${location.host}`
+const socketUrl = `${socketProtocol}://${location.hostname}:${__PORT__}`
 const socket = new WebSocket(socketUrl, 'vite-hmr')
 
 function warnFailedFetch(err: Error, path: string | string[]) {
@@ -107,6 +108,17 @@ async function handleMessage(payload: HMRPayload) {
       })
       break
     case 'style-update':
+      // check if this is referenced in html via <link>
+      const el = document.querySelector(`link[href*='${path}']`)
+      if (el) {
+        bustSwCache(path)
+        el.setAttribute(
+          'href',
+          `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
+        )
+        break
+      }
+      // imported CSS
       const importQuery = path.includes('?') ? '&import' : '?import'
       bustSwCache(`${path}${importQuery}`)
       await import(`${path}${importQuery}&t=${timestamp}`)

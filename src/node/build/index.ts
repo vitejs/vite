@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { resolveFrom } from '../utils'
+import { resolveFrom, lookupFile } from '../utils'
 import {
   rollup as Rollup,
   RollupOutput,
@@ -56,25 +56,66 @@ const dynamicImportWarningIgnoreList = [
   `statically analyzed`
 ]
 
-export const onRollupWarning: (
-  spinner: Ora | undefined
-) => InputOptions['onwarn'] = (spinner) => (warning, warn) => {
-  if (
-    warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
-    dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
-  ) {
-    return
-  }
+const isBuiltin = require('isbuiltin')
 
-  if (!warningIgnoreList.includes(warning.code!)) {
-    // ora would swallow the console.warn if we let it keep running
-    // https://github.com/sindresorhus/ora/issues/90
-    if (spinner) {
-      spinner.stop()
+export function onRollupWarning(
+  spinner: Ora | undefined,
+  options: BuildConfig['optimizeDeps']
+): InputOptions['onwarn'] {
+  return (warning, warn) => {
+    if (warning.code === 'UNRESOLVED_IMPORT') {
+      let message: string
+      const id = warning.source
+      const importer = warning.importer
+      if (isBuiltin(id)) {
+        let importingDep
+        if (importer) {
+          const pkg = JSON.parse(lookupFile(importer, ['package.json']) || `{}`)
+          if (pkg.name) {
+            importingDep = pkg.name
+          }
+        }
+        const allowList = options && options.allowNodeBuiltins
+        if (importingDep && allowList && allowList.includes(importingDep)) {
+          return
+        }
+        const dep = importingDep
+          ? `Dependency ${chalk.yellow(importingDep)}`
+          : `A dependency`
+        message =
+          `${dep} is attempting to import Node built-in module ${chalk.yellow(
+            id
+          )}.\n` +
+          `This will not work in a browser environment.\n` +
+          `Imported by: ${chalk.gray(importer)}`
+      } else {
+        message =
+          `[vite]: Rollup failed to resolve import "${warning.source}" from "${warning.importer}".\n` +
+          `This is most likely unintended because it can break your application at runtime.\n` +
+          `If you do want to externalize this module explicitly add it to\n` +
+          `\`rollupInputOptions.external\``
+      }
+      throw new Error(message)
     }
-    warn(warning)
-    if (spinner) {
-      spinner.start()
+    if (
+      warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+      dynamicImportWarningIgnoreList.some((msg) =>
+        warning.message.includes(msg)
+      )
+    ) {
+      return
+    }
+
+    if (!warningIgnoreList.includes(warning.code!)) {
+      // ora would swallow the console.warn if we let it keep running
+      // https://github.com/sindresorhus/ora/issues/90
+      if (spinner) {
+        spinner.stop()
+      }
+      warn(warning)
+      if (spinner) {
+        spinner.start()
+      }
     }
   }
 }
@@ -94,7 +135,8 @@ export async function createBaseRollupPlugins(
     transforms = [],
     vueCustomBlockTransforms = {},
     cssPreprocessOptions,
-    cssModuleOptions
+    cssModuleOptions,
+    enableEsbuild = true
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
@@ -109,7 +151,9 @@ export async function createBaseRollupPlugins(
     // vite:resolve
     createBuildResolvePlugin(root, resolver),
     // vite:esbuild
-    await createEsbuildPlugin(options.minify === 'esbuild', options.jsx),
+    enableEsbuild
+      ? await createEsbuildPlugin(options.minify === 'esbuild', options.jsx)
+      : null,
     // vue
     require('rollup-plugin-vue')({
       ...options.rollupPluginVueOptions,
@@ -212,6 +256,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       spinner = require('ora')(msg + '\n').start()
     }
   }
+  await fs.remove(outDir)
 
   const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
@@ -247,7 +292,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     input: path.resolve(root, 'index.html'),
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
-    onwarn: onRollupWarning(spinner),
+    onwarn: onRollupWarning(spinner, options.optimizeDeps),
     ...rollupInputOptions,
     plugins: [
       ...basePlugins,
@@ -265,6 +310,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           'import.meta.env.MODE': JSON.stringify(mode),
           'import.meta.env.DEV': String(mode === 'development'),
           'import.meta.env.PROD': String(mode === 'production'),
+          'import.meta.env.': `({}).`,
           'process.env.NODE_ENV': JSON.stringify(mode),
           'process.env.': `({}).`,
           'import.meta.hot': `false`
@@ -318,10 +364,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
   spinner && spinner.stop()
 
-  const cssFileName = output.find(
-    (a) => a.type === 'asset' && a.fileName.endsWith('.css')
-  )!.fileName
-  const indexHtml = emitIndex ? renderIndex(output, cssFileName) : ''
+  const indexHtml = emitIndex ? renderIndex(output) : ''
 
   if (write) {
     const cwd = process.cwd()
@@ -350,7 +393,6 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       }
     }
 
-    await fs.remove(outDir)
     await fs.ensureDir(outDir)
 
     // write js chunks and assets
@@ -371,6 +413,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           )
         }
       } else if (emitAssets) {
+        if (!chunk.source) continue
         // write asset
         const filepath = path.join(resolvedAssetsPath, chunk.fileName)
         await writeFile(

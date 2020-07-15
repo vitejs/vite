@@ -36,6 +36,7 @@ export interface ServerPluginContext {
   watcher: HMRWatcher
   resolver: InternalResolver
   config: ServerConfig & { __path?: string }
+  port: number
 }
 
 export interface State extends DefaultState {}
@@ -54,7 +55,8 @@ export function createServer(config: ServerConfig): Server {
     alias = {},
     transforms = [],
     vueCustomBlockTransforms = {},
-    optimizeDeps = {}
+    optimizeDeps = {},
+    enableEsbuild = true
   } = config
 
   const app = new Koa<State, Context>()
@@ -70,7 +72,10 @@ export function createServer(config: ServerConfig): Server {
     server,
     watcher,
     resolver,
-    config
+    config,
+    // port is exposed on the context for hmr client connection
+    // in case the files are served under a different port
+    port: config.port || 3000
   }
 
   // attach server context to koa context
@@ -98,38 +103,47 @@ export function createServer(config: ServerConfig): Server {
       : []),
     vuePlugin,
     cssPlugin,
-    esbuildPlugin,
+    enableEsbuild ? esbuildPlugin : null,
     jsonPlugin,
     assetPathPlugin,
     webWorkerPlugin,
     wasmPlugin,
     serveStaticPlugin
   ]
-  resolvedPlugins.forEach((m) => m(context))
+  resolvedPlugins.forEach((m) => m && m(context))
 
   const listen = server.listen.bind(server)
-  server.listen = (async (...args: any[]) => {
+  server.listen = (async (port: number, ...args: any[]) => {
     if (optimizeDeps.auto !== false) {
       await require('../optimizer').optimizeDeps(config)
     }
-    return listen(...args)
+    context.port = port
+    return listen(port, ...args)
   }) as any
 
   return server
 }
 
 function resolveServer(
-  { https = false, httpsOptions = {} }: ServerConfig,
+  { https = false, httpsOptions = {}, proxy }: ServerConfig,
   requestListener: RequestListener
 ) {
   if (https) {
-    return require('http2').createSecureServer(
-      {
-        ...resolveHttpsConfig(httpsOptions),
-        allowHTTP1: true
-      },
-      requestListener
-    )
+    if (proxy) {
+      // #484 fallback to http1 when proxy is needed.
+      return require('https').createServer(
+        resolveHttpsConfig(httpsOptions),
+        requestListener
+      )
+    } else {
+      return require('http2').createSecureServer(
+        {
+          ...resolveHttpsConfig(httpsOptions),
+          allowHTTP1: true
+        },
+        requestListener
+      )
+    }
   } else {
     return require('http').createServer(requestListener)
   }

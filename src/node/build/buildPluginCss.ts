@@ -8,7 +8,8 @@ import {
   compileCss,
   cssPreprocessLangRE,
   rewriteCssUrls,
-  isCSSRequest
+  isCSSRequest,
+  cssModuleRE
 } from '../utils/cssUtils'
 import {
   SFCStyleCompileResults,
@@ -62,7 +63,7 @@ export const createBuildCssPlugin = ({
                 source: css,
                 filename: id,
                 scoped: false,
-                modules: id.endsWith('.module.css'),
+                modules: cssModuleRE.test(id),
                 preprocessLang: id.replace(
                   cssPreprocessLangRE,
                   '$2'
@@ -132,6 +133,7 @@ export const createBuildCssPlugin = ({
       if (!cssCodeSplit) {
         return null
       }
+      code = code.replace(cssInjectionRE, '')
       // for each dynamic entry chunk, collect its css and inline it as JS
       // strings.
       if (chunk.isDynamicEntry) {
@@ -143,22 +145,11 @@ export const createBuildCssPlugin = ({
           }
         }
         chunkCSS = minifyCSS(chunkCSS)
-        let isFirst = true
-        code = code.replace(cssInjectionRE, () => {
-          if (isFirst) {
-            isFirst = false
-            // make sure the code is in one line so that source map is preserved.
-            return (
-              `let ${cssInjectionMarker} = document.createElement('style');` +
-              `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-              `document.head.appendChild(${cssInjectionMarker});`
-            )
-          } else {
-            return ''
-          }
-        })
-      } else {
-        code = code.replace(cssInjectionRE, '')
+        code =
+          `let ${cssInjectionMarker} = document.createElement('style');` +
+          `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+          `document.head.appendChild(${cssInjectionMarker});` +
+          code
       }
       return {
         code,
@@ -180,6 +171,7 @@ export const createBuildCssPlugin = ({
       const cssFileName = `style.${hash_sum(css)}.css`
 
       bundle[cssFileName] = {
+        name: cssFileName,
         isAsset: true,
         type: 'asset',
         fileName: cssFileName,

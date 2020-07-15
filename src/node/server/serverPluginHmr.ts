@@ -31,13 +31,7 @@ import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
 import { isCSSRequest } from '../utils/cssUtils'
-import {
-  Node,
-  StringLiteral,
-  Statement,
-  Expression,
-  IfStatement
-} from '@babel/types'
+import { Node, StringLiteral, Statement, Expression } from '@babel/types'
 import { resolveCompiler } from '../utils'
 import { HMRPayload } from '../../hmrPayload'
 
@@ -89,7 +83,7 @@ export const hmrPlugin: ServerPlugin = ({
     if (ctx.path === hmrClientPublicPath) {
       ctx.type = 'js'
       ctx.status = 200
-      ctx.body = hmrClient
+      ctx.body = hmrClient.replace(`__PORT__`, ctx.port.toString())
     } else {
       if (ctx.query.t) {
         latestVersionsMap.set(ctx.path, ctx.query.t)
@@ -228,7 +222,13 @@ function walkImportChain(
   }
 
   for (const importer of importers) {
-    if (importer.endsWith('.vue') || isHmrAccepted(importer, importee)) {
+    if (
+      importer.endsWith('.vue') ||
+      // explicitly accepted by this importer
+      isHmrAccepted(importer, importee) ||
+      // importer is a self accepting module
+      isHmrAccepted(importer, importer)
+    ) {
       // vue boundaries are considered dirty for the reload
       if (importer.endsWith('.vue')) {
         dirtyFiles.add(importer)
@@ -279,7 +279,6 @@ export function rewriteFileWithHMR(
   s: MagicString
 ) {
   let hasDeclined = false
-  let importMetaConditional: IfStatement | undefined
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
@@ -404,10 +403,6 @@ export function rewriteFileWithHMR(
     // if (import.meta.hot) ...
     if (node.type === 'IfStatement') {
       const isDevBlock = isMetaHot(node.test)
-      if (isDevBlock && !importMetaConditional) {
-        // remember the first occurrence of `if (import.meta.hot)`
-        importMetaConditional = node
-      }
       if (node.consequent.type === 'BlockStatement') {
         node.consequent.body.forEach((s) =>
           checkStatements(s, false, isDevBlock)
@@ -422,14 +417,11 @@ export function rewriteFileWithHMR(
   const ast = parse(source)
   ast.forEach((s) => checkStatements(s, true, false))
 
-  if (importMetaConditional) {
-    // inject import.meta.hot
-    s.prependLeft(
-      importMetaConditional.start!,
-      `import { createHotContext } from "${hmrClientPublicPath}"; ` +
-        `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
-    )
-  }
+  // inject import.meta.hot
+  s.prepend(
+    `import { createHotContext } from "${hmrClientPublicPath}"; ` +
+      `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
+  )
 
   // clear decline state
   if (!hasDeclined) {

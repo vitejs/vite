@@ -16,12 +16,12 @@ import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 import { createDepAssetPlugin, depAssetExternalPlugin } from './pluginAssets'
-import { createBuiltInBailPlugin } from './pluginBuiltInBail'
 
 const debug = require('debug')('vite:optimize')
 
 const KNOWN_IGNORE_LIST = new Set([
   'vite',
+  'vitepress',
   'tailwindcss',
   '@tailwindcss/ui',
   '@pika/react',
@@ -183,12 +183,9 @@ export async function optimizeDeps(
       input: qualified,
       external,
       // treeshake: { moduleSideEffects: 'no-external' },
-      onwarn: onRollupWarning(spinner),
+      onwarn: onRollupWarning(spinner, options),
       ...config.rollupInputOptions,
       plugins: [
-        createBuiltInBailPlugin(
-          config.optimizeDeps && config.optimizeDeps.allowNodeBuiltins
-        ),
         depAssetExternalPlugin,
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver)

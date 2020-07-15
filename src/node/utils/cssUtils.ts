@@ -12,6 +12,7 @@ import {
 
 export const urlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
+export const cssModuleRE = /(.+)\.module\.(less|sass|scss|styl|stylus|postcss|css)$/
 
 export const isCSSRequest = (file: string) =>
   file.endsWith('.css') || cssPreprocessLangRE.test(file)
@@ -57,6 +58,7 @@ export async function compileCss(
     source,
     filename,
     scoped,
+    vars,
     modules,
     preprocessLang,
     preprocessOptions = {},
@@ -89,6 +91,7 @@ export async function compileCss(
     filename,
     id: `data-v-${id}`,
     scoped,
+    vars,
     modules,
     modulesOptions: {
       generateScopedName: `[local]_${id}`,
