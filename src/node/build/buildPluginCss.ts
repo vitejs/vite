@@ -130,6 +130,7 @@ export const createBuildCssPlugin = ({
       if (!cssCodeSplit) {
         return null
       }
+      code = code.replace(cssInjectionRE, '')
       // for each dynamic entry chunk, collect its css and inline it as JS
       // strings.
       if (chunk.isDynamicEntry) {
@@ -141,22 +142,11 @@ export const createBuildCssPlugin = ({
           }
         }
         chunkCSS = minifyCSS(chunkCSS)
-        let isFirst = true
-        code = code.replace(cssInjectionRE, () => {
-          if (isFirst) {
-            isFirst = false
-            // make sure the code is in one line so that source map is preserved.
-            return (
-              `let ${cssInjectionMarker} = document.createElement('style');` +
-              `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-              `document.head.appendChild(${cssInjectionMarker});`
-            )
-          } else {
-            return ''
-          }
-        })
-      } else {
-        code = code.replace(cssInjectionRE, '')
+        code =
+          `let ${cssInjectionMarker} = document.createElement('style');` +
+          `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+          `document.head.appendChild(${cssInjectionMarker});` +
+          code
       }
       return {
         code,
