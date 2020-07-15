@@ -188,7 +188,7 @@ export async function optimizeDeps(
       plugins: [
         depAssetExternalPlugin,
         ...(await createBaseRollupPlugins(root, resolver, config)),
-        createDepAssetPlugin(resolver)
+        createDepAssetPlugin(resolver, root)
       ]
     })
 
