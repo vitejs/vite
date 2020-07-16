@@ -150,7 +150,7 @@ export async function createBaseRollupPlugins(
       ? await createEsbuildPlugin(options.minify === 'esbuild', options.jsx)
       : null,
     // vue
-    enableRollupPluginVue ? createVuePlugin(root, options) : null,
+    enableRollupPluginVue ? await createVuePlugin(root, options) : null,
     require('@rollup/plugin-json')({
       preferConst: true,
       indent: '  ',
