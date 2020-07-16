@@ -30,6 +30,7 @@ interface BuildCssOption {
   inlineLimit?: number
   cssCodeSplit?: boolean
   preprocessOptions?: SFCAsyncStyleCompileOptions['preprocessOptions']
+  modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
 }
 
 export const createBuildCssPlugin = ({
@@ -39,7 +40,8 @@ export const createBuildCssPlugin = ({
   minify = false,
   inlineLimit = 0,
   cssCodeSplit = true,
-  preprocessOptions = {}
+  preprocessOptions = {},
+  modulesOptions = {}
 }: BuildCssOption): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
@@ -66,7 +68,8 @@ export const createBuildCssPlugin = ({
                   cssPreprocessLangRE,
                   '$2'
                 ) as SFCAsyncStyleCompileOptions['preprocessLang'],
-                preprocessOptions
+                preprocessOptions,
+                modulesOptions
               },
               true
             )

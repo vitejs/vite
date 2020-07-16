@@ -144,7 +144,8 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       scoped: false,
       modules: ctx.path.includes('.module'),
       preprocessLang: ctx.path.replace(cssPreprocessLangRE, '$2') as any,
-      preprocessOptions: ctx.config.cssPreprocessOptions
+      preprocessOptions: ctx.config.cssPreprocessOptions,
+      modulesOptions: ctx.config.cssModuleOptions
     })
 
     if (typeof result === 'string') {

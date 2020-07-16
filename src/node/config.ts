@@ -4,7 +4,11 @@ import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
-import { CompilerOptions, SFCStyleCompileOptions } from '@vue/compiler-sfc'
+import {
+  CompilerOptions,
+  SFCStyleCompileOptions,
+  SFCAsyncStyleCompileOptions
+} from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
@@ -117,6 +121,10 @@ export interface SharedConfig {
    * CSS preprocess options
    */
   cssPreprocessOptions?: SFCStyleCompileOptions['preprocessOptions']
+  /**
+   * CSS modules options
+   */
+  cssModuleOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
   /**
    * Enable esbuild
    * @default true
