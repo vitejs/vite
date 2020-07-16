@@ -427,6 +427,7 @@ export function resolveOptimizedModule(
   root: string,
   id: string
 ): string | undefined {
+  if (path.extname(id) !== '.js') id += '.js'
   const cacheKey = `${root}#${id}`
   const cached = viteOptimizedMap.get(cacheKey)
   if (cached) {
@@ -435,7 +436,6 @@ export function resolveOptimizedModule(
 
   const cacheDir = resolveOptimizedCacheDir(root)
   if (!cacheDir) return
-  if (!path.extname(id)) id += '.js'
   const file = path.join(cacheDir, id)
   if (fs.existsSync(file) && fs.statSync(file).isFile()) {
     viteOptimizedMap.set(cacheKey, file)

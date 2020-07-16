@@ -1,9 +1,9 @@
 <template>
   <h2>CSS Modules</h2>
-  <div class="css-modules-sfc" :class="$style.blue">
+  <div class="css-modules-sfc" :class="$style.blueColor">
     &lt;style module&gt; - this should be blue
   </div>
-  <div class="css-modules-import" :class="imported.turquoise">
+  <div class="css-modules-import" :class="imported.turquoiseColor">
     CSS modules import - this should be orange
   </div>
   <div class="scss-modules-import" :class="importedScss.magenta">
@@ -21,7 +21,7 @@ export default {
 </script>
 
 <style module>
-.blue {
+.blue-color {
   color: blue;
 }
 </style>

@@ -4,7 +4,11 @@ import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
-import { CompilerOptions, SFCStyleCompileOptions } from '@vue/compiler-sfc'
+import {
+  CompilerOptions,
+  SFCStyleCompileOptions,
+  SFCAsyncStyleCompileOptions
+} from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
@@ -18,6 +22,14 @@ import { DepOptimizationOptions } from './optimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
+
+export type PreprocessLang = NonNullable<
+  SFCStyleCompileOptions['preprocessLang']
+>
+
+export type PreprocessOptions = SFCStyleCompileOptions['preprocessOptions']
+
+export type CssPreprocessOptions = Record<PreprocessLang, PreprocessOptions>
 
 export { Resolver, Transform }
 
@@ -116,7 +128,11 @@ export interface SharedConfig {
   /**
    * CSS preprocess options
    */
-  cssPreprocessOptions?: SFCStyleCompileOptions['preprocessOptions']
+  cssPreprocessOptions?: CssPreprocessOptions
+  /**
+   * CSS modules options
+   */
+  cssModuleOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
   /**
    * Enable esbuild
    * @default true
@@ -211,8 +227,9 @@ export interface BuildConfig extends SharedConfig {
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
-   * Build for server-side rendering
-   * @default false
+   * Build for server-side rendering, only as a CLI flag
+   * for programmatic usage, use `ssrBuild` directly.
+   * @internal
    */
   ssr?: boolean
 

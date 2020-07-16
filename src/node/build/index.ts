@@ -185,6 +185,7 @@ async function createVuePlugin(
     vueCustomBlockTransforms = {},
     rollupPluginVueOptions,
     cssPreprocessOptions,
+    cssModuleOptions,
     vueCompilerOptions
   }: BuildConfig
 ) {
@@ -201,15 +202,14 @@ async function createVuePlugin(
     postcssOptions,
     postcssPlugins,
     preprocessStyles: true,
-    preprocessOptions: {
-      includePaths: ['node_modules'],
-      ...cssPreprocessOptions
-    },
+    preprocessOptions: cssPreprocessOptions,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
     compilerOptions: vueCompilerOptions,
     cssModulesOptions: {
+      localsConvention: 'camelCase',
       generateScopedName: (local: string, filename: string) =>
         `${local}_${hash_sum(filename)}`,
+      ...cssModuleOptions,
       ...(rollupPluginVueOptions && rollupPluginVueOptions.cssModulesOptions)
     },
     customBlocks: Object.keys(vueCustomBlockTransforms)
@@ -221,13 +221,6 @@ async function createVuePlugin(
  * Returns a Promise containing the build result.
  */
 export async function build(options: BuildConfig): Promise<BuildResult> {
-  if (options.ssr) {
-    return ssrBuild({
-      ...options,
-      ssr: false // since ssrBuild calls build, this avoids an infinite loop.
-    })
-  }
-
   const {
     root = process.cwd(),
     base = '/',
@@ -248,7 +241,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     shouldPreload = null,
     env = {},
     mode = 'production',
-    cssPreprocessOptions = {}
+    cssPreprocessOptions,
+    cssModuleOptions = {}
   } = options
 
   const isTest = process.env.NODE_ENV === 'test'
@@ -283,6 +277,21 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   )
 
   const basePlugins = await createBaseRollupPlugins(root, resolver, options)
+
+  // https://github.com/darionco/rollup-plugin-web-worker-loader
+  // configured to support `import Worker from './my-worker?worker'`
+  // this plugin relies on resolveId and must be placed before node-resolve
+  // since the latter somehow swallows ids with query strings since 8.x
+  basePlugins.splice(
+    basePlugins.findIndex((p) => p.name.includes('node-resolve')),
+    0,
+    require('rollup-plugin-web-worker-loader')({
+      targetPlatform: 'browser',
+      pattern: /(.+)\?worker$/,
+      extensions: supportedExts,
+      preserveSource: true // somehow results in slightly smaller bundle
+    })
+  )
 
   // user env variables loaded from .env files.
   // only those prefixed with VITE_ are exposed.
@@ -333,7 +342,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         minify,
         inlineLimit: assetsInlineLimit,
         cssCodeSplit,
-        preprocessOptions: cssPreprocessOptions
+        preprocessOptions: cssPreprocessOptions,
+        modulesOptions: cssModuleOptions
       }),
       // vite:asset
       createBuildAssetPlugin(
@@ -342,14 +352,6 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         assetsDir,
         assetsInlineLimit
       ),
-      // https://github.com/darionco/rollup-plugin-web-worker-loader
-      // configured to support `import Worker from './my-worker?worker'`
-      require('rollup-plugin-web-worker-loader')({
-        targetPlatform: 'browser',
-        pattern: /(.+)\?worker/,
-        extensions: supportedExts,
-        preserveSource: true // somehow results in slightly smaller bundle
-      }),
       createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
       // minify with terser
       // this is the default which has better compression, but slow

@@ -174,7 +174,7 @@ async function runServe(options: UserConfig) {
 
 async function runBuild(options: UserConfig) {
   try {
-    await require('./build').build(options)
+    await require('./build')[options.ssr ? 'ssrBuild' : 'build'](options)
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Build errored out.`))
