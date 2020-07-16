@@ -41,6 +41,7 @@ export const parseWithQuery = (
     query: {}
   }
 }
+export const bareImportRE = /^[^\/\.]/
 
 const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string) => externalRE.test(url)

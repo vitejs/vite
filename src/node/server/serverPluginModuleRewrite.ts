@@ -22,7 +22,7 @@ import {
   hmrDirtyFilesMap,
   latestVersionsMap
 } from './serverPluginHmr'
-import { readBody, cleanUrl, isExternalUrl } from '../utils'
+import { readBody, cleanUrl, isExternalUrl, bareImportRE } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
 import { envPublicPath } from './serverPluginEnv'
@@ -231,8 +231,6 @@ export function rewriteImports(
     return source
   }
 }
-
-const bareImportRE = /^[^\/\.]/
 
 export const resolveImport = (
   root: string,
