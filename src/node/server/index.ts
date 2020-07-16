@@ -99,7 +99,13 @@ export function createServer(config: ServerConfig): Server {
     serviceWorkerPlugin,
     hmrPlugin,
     ...(transforms.length || Object.keys(vueCustomBlockTransforms).length
-      ? [createServerTransformPlugin(transforms, vueCustomBlockTransforms)]
+      ? [
+          createServerTransformPlugin(
+            transforms,
+            vueCustomBlockTransforms,
+            resolver
+          )
+        ]
       : []),
     vuePlugin,
     cssPlugin,
