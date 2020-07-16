@@ -108,6 +108,7 @@
     "@types/fs-extra": "^8.1.0",
     "@types/hash-sum": "^1.0.0",
     "@types/jest": "^25.2.1",
+    "@types/mime-types": "^2.1.0",
     "@types/node": "^13.13.1",
     "@types/postcss-import": "^12.0.0",
     "@types/postcss-load-config": "^2.0.1",
