@@ -34,6 +34,11 @@ const getComputedColor = async (selectorOrEl) => {
   )
 }
 
+const click = async (selectorOrEl) => {
+  const el = await getEl(selectorOrEl)
+  await el.click()
+}
+
 beforeAll(async () => {
   try {
     await fs.remove(tempDir)
@@ -154,8 +159,7 @@ describe('vite', () => {
         let span = await page.$('.hmr-propagation-dynamic')
         expect(await getText(span)).toBe('bar not loaded')
         // trigger the dynamic import
-        let button = await page.$('.hmr-propagation-dynamic-load')
-        await button.click()
+        await click('.hmr-propagation-dynamic-load')
         expect(await getText(span)).toBe('bar loading')
         await expectByPolling(() => getText(span), 'bar loaded')
         // update source code
@@ -169,8 +173,7 @@ describe('vite', () => {
           'bar not loaded'
         )
         span = await page.$('.hmr-propagation-dynamic')
-        button = await page.$('.hmr-propagation-dynamic-load')
-        await button.click()
+        await click('.hmr-propagation-dynamic-load')
         expect(await getText(span)).toBe('bar loading')
         await expectByPolling(() => getText(span), 'bar updated')
       })
@@ -179,8 +182,7 @@ describe('vite', () => {
         let span = await page.$('.hmr-propagation-full-dynamic')
         expect(await getText(span)).toBe('baz not loaded')
         // trigger the dynamic import
-        let button = await page.$('.hmr-propagation-full-dynamic-load')
-        await button.click()
+        await click('.hmr-propagation-full-dynamic-load')
         expect(await getText(span)).toBe('baz loading')
         await expectByPolling(() => getText(span), 'baz loaded')
         // update source code
@@ -200,8 +202,7 @@ describe('vite', () => {
         span = await page.$('.hmr-propagation-full-dynamic')
         expect(await getText(span)).toBe('baz not loaded')
         // trigger the dynamic import
-        button = await page.$('.hmr-propagation-full-dynamic-load')
-        await button.click()
+        await click('.hmr-propagation-full-dynamic-load')
         expect(await getText(span)).toBe('baz loading')
         await expectByPolling(() => getText(span), 'baz updated')
       })
@@ -218,10 +219,7 @@ describe('vite', () => {
         let span = await page.$('.hmr-propagation-full-dynamic-self-accepting')
         expect(await getText(span)).toBe('qux not loaded')
         // trigger the dynamic import
-        let button = await page.$(
-          '.hmr-propagation-full-dynamic-load-self-accepting'
-        )
-        await button.click()
+        await click('.hmr-propagation-full-dynamic-load-self-accepting')
         expect(await getText(span)).toBe('qux loading')
         await expectByPolling(() => getText(span), 'qux loaded')
         // update source code
@@ -635,15 +633,33 @@ describe('vite', () => {
     })
 
     test('importing web worker', async () => {
-      const button = await page.$('.worker-send')
-      await button.click()
+      await click('.worker-send')
       await expectByPolling(() => getText('.worker-response'), 'pong')
     })
 
     test('importing wasm', async () => {
-      const button = await page.$('.wasm-send')
-      await button.click()
+      await click('.wasm-send')
       await expectByPolling(() => getText('.wasm-response'), '42')
+    })
+
+    test('<script setup> and <style vars>', async () => {
+      expect(await getText(`.script-setup-props`)).toMatch(`Test message`)
+      expect(await getComputedColor(`.style-vars`)).toBe('rgb(255, 0, 0)')
+      await click('.script-setup-change')
+      await expectByPolling(
+        () => getComputedColor(`.style-vars`),
+        'rgb(0, 128, 0)'
+      )
+      if (!isBuild) {
+        // test <script setup HMR>
+        await updateFile('script-setup/TestScriptSetupStyleVars.vue', (c) =>
+          c.replace(`ref('red')`, `ref('blue')`)
+        )
+        await expectByPolling(
+          () => getComputedColor(`.style-vars`),
+          'rgb(0, 0, 255)'
+        )
+      }
     })
   }
 

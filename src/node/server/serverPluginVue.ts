@@ -10,7 +10,9 @@ import {
   SFCStyleCompileResults,
   CompilerOptions,
   SFCStyleCompileOptions,
-  BindingMetadata
+  BindingMetadata,
+  CompilerError,
+  generateCodeFrame
 } from '@vue/compiler-sfc'
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -106,7 +108,8 @@ export const vuePlugin: ServerPlugin = ({
       const { code, map } = await compileSFCMain(
         descriptor,
         filePath,
-        publicPath
+        publicPath,
+        root
       )
       ctx.body = code
       ctx.map = map
@@ -119,8 +122,8 @@ export const vuePlugin: ServerPlugin = ({
         filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
-      const bindingMetadata = descriptor.scriptTransformed
-        ? descriptor.scriptTransformed.bindings
+      const bindingMetadata = descriptor.script
+        ? descriptor.script.bindings
         : undefined
       const { code, map } = compileSFCTemplate(
         root,
@@ -386,7 +389,7 @@ async function parseSFC(
   }
 
   const start = Date.now()
-  const { parse, generateCodeFrame } = resolveCompiler(root)
+  const { parse } = resolveCompiler(root)
   const { descriptor, errors } = parse(content, {
     filename: filePath,
     sourceMap: true
@@ -395,20 +398,7 @@ async function parseSFC(
   if (errors.length) {
     console.error(chalk.red(`\n[vite] SFC parse error: `))
     errors.forEach((e) => {
-      const locString = e.loc
-        ? `:${e.loc.start.line}:${e.loc.start.column}`
-        : ``
-      console.error(chalk.underline(filePath + locString))
-      console.error(chalk.yellow(e.message))
-      if (e.loc) {
-        console.error(
-          generateCodeFrame(
-            content as string,
-            e.loc.start.offset,
-            e.loc.end.offset
-          ) + `\n`
-        )
-      }
+      logError(e, filePath, content as string)
     })
   }
 
@@ -424,7 +414,8 @@ const defaultExportRE = /((?:^|\n|;)\s*)export default/
 async function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
-  publicPath: string
+  publicPath: string,
+  root: string
 ): Promise<ResultWithMap> {
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
@@ -436,7 +427,22 @@ async function compileSFCMain(
   let content = ``
   let map: any
 
-  const script = descriptor.scriptTransformed || descriptor.script
+  let script = descriptor.script
+  const compiler = resolveCompiler(root)
+  if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
+    try {
+      script = descriptor.script = compiler.compileScript(descriptor)
+    } catch (e) {
+      console.error(
+        chalk.red(
+          `\n[vite] SFC <script setup> compilation error:\n${chalk.dim(
+            chalk.white(filePath)
+          )}`
+        )
+      )
+      console.error(chalk.yellow(e.message))
+    }
+  }
   if (script) {
     content = script.content
     map = script.map
@@ -539,7 +545,7 @@ function compileSFCTemplate(
   }
 
   const start = Date.now()
-  const { compileTemplate, generateCodeFrame } = resolveCompiler(root)
+  const { compileTemplate } = resolveCompiler(root)
   const { code, map, errors } = compileTemplate({
     source: template.content,
     filename: filePath,
@@ -567,18 +573,7 @@ function compileSFCTemplate(
       if (typeof e === 'string') {
         console.error(e)
       } else {
-        const locString = e.loc
-          ? `:${e.loc.start.line}:${e.loc.start.column}`
-          : ``
-        console.error(chalk.underline(filePath + locString))
-        console.error(chalk.yellow(e.message))
-        if (e.loc) {
-          const original = template.map!.sourcesContent![0]
-          console.error(
-            generateCodeFrame(original, e.loc.start.offset, e.loc.end.offset) +
-              `\n`
-          )
-        }
+        logError(e, filePath, template.map!.sourcesContent![0])
       }
     })
   }
@@ -720,4 +715,15 @@ function rewriteDefaultExport(code: string): string {
   })
   const ret = s.toString()
   return ret
+}
+
+function logError(e: CompilerError, file: string, src: string) {
+  const locString = e.loc ? `:${e.loc.start.line}:${e.loc.start.column}` : ``
+  console.error(chalk.underline(file + locString))
+  console.error(chalk.yellow(e.message))
+  if (e.loc) {
+    console.error(
+      generateCodeFrame(src, e.loc.start.offset, e.loc.end.offset) + `\n`
+    )
+  }
 }
