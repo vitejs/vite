@@ -464,17 +464,33 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
       ...config.vueCustomBlockTransforms,
       ...plugin.vueCustomBlockTransforms
     },
-    rollupInputOptions: {
-      ...config.rollupInputOptions,
-      ...plugin.rollupInputOptions
-    },
-    rollupOutputOptions: {
-      ...config.rollupOutputOptions,
-      ...plugin.rollupOutputOptions
-    },
+    rollupInputOptions: mergeRollupOptions(
+      config.rollupInputOptions,
+      plugin.rollupInputOptions
+    ),
+    rollupOutputOptions: mergeRollupOptions(
+      config.rollupOutputOptions,
+      plugin.rollupOutputOptions
+    ),
     enableRollupPluginVue:
       config.enableRollupPluginVue || plugin.enableRollupPluginVue
   }
+}
+
+function mergeRollupOptions(to: any, from: any) {
+  if (!to) return from
+  if (!from) return to
+  const res: any = { ...to }
+  for (const key in from) {
+    const existing = res[key]
+    const toMerge = from[key]
+    if (Array.isArray(existing) || Array.isArray(toMerge)) {
+      res[key] = [].concat(existing, toMerge).filter(Boolean)
+    } else {
+      res[key] = toMerge
+    }
+  }
+  return res
 }
 
 function loadEnv(mode: string, root: string): Record<string, string> {
