@@ -227,8 +227,9 @@ export interface BuildConfig extends SharedConfig {
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
-   * Build for server-side rendering
-   * @default false
+   * Build for server-side rendering, only as a CLI flag
+   * for programmatic usage, use `ssrBuild` directly.
+   * @internal
    */
   ssr?: boolean
 
