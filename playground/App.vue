@@ -10,6 +10,7 @@
   <TestCssModules />
   <TestCssAtImport />
   <TestPreprocessors />
+  <TestScssAtImport/>
   <TestAssets />
   <TestSrcImport />
   <TestJsonImport />
@@ -46,6 +47,7 @@ import TestJsx from './jsx/TestJsx.vue'
 import TestAlias from './alias/TestAlias.vue'
 import TestTransform from './transform/TestTransform.vue'
 import TestCssAtImport from './css-@import/TestCssAtImport.vue'
+import TestScssAtImport from './css-@import/TestSCssAtImport.vue'
 import TestCustomBlocks from './custom-blocks/TestCustomBlocks.vue'
 import TestOptimizeLink from './optimize-linked/TestOptimizeLink.vue'
 import TestModuleResolve from './resolve/TestModuleResolve.vue'
@@ -67,6 +69,7 @@ export default {
     TestCssModules,
     TestPreprocessors,
     TestCssAtImport,
+    TestScssAtImport,
     TestSrcImport,
     TestAssets,
     TestJsonImport,

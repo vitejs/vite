@@ -5,9 +5,10 @@ import { cleanUrl, isImportRequest, readBody } from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {
   compileCss,
-  cssImportMap,
+  cssImporterMap,
   cssPreprocessLangRE,
   getCssImportBoundaries,
+  recordCssImportChain,
   rewriteCssUrls,
   isCSSRequest
 } from '../utils/cssUtils'
@@ -44,7 +45,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 
       /** filter unused files */
       if (
-        !cssImportMap.has(filePath) &&
+        !cssImporterMap.has(filePath) &&
         !processedCSS.has(publicPath) &&
         !srcImportMap.has(filePath)
       ) {
@@ -135,10 +136,11 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     }
 
     const css = (await readBody(ctx.body))!
+    const filePath = resolver.requestToFile(ctx.path)
     const result = await compileCss(root, ctx.path, {
       id: '',
       source: css,
-      filename: resolver.requestToFile(ctx.path),
+      filename: filePath,
       scoped: false,
       modules: ctx.path.includes('.module'),
       preprocessLang: ctx.path.replace(cssPreprocessLangRE, '$2') as any,
@@ -150,6 +152,8 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       processedCSS.set(ctx.path, res)
       return res
     }
+
+    recordCssImportChain(result.dependencies, filePath)
 
     if (result.errors.length) {
       console.error(`[vite] error applying css transforms: `)

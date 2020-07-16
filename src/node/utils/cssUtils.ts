@@ -85,7 +85,7 @@ export async function compileCss(
     plugins: postcssPlugins
   } = await resolvePostcssOptions(root, isBuild)
 
-  const res = await compileStyleAsync({
+  return await compileStyleAsync({
     source,
     filename,
     id: `data-v-${id}`,
@@ -106,22 +106,6 @@ export async function compileCss(
     postcssOptions,
     postcssPlugins
   })
-
-  // record css import dependencies
-  if (res.rawResult) {
-    res.rawResult.messages.forEach((msg) => {
-      let { type, file, parent } = msg
-      if (type === 'dependency') {
-        if (cssImportMap.has(file)) {
-          cssImportMap.get(file)!.add(parent)
-        } else {
-          cssImportMap.set(file, new Set([parent]))
-        }
-      }
-    })
-  }
-
-  return res
 }
 
 // postcss-load-config doesn't expose Result type
@@ -163,7 +147,11 @@ export async function resolvePostcssOptions(root: string, isBuild: boolean) {
   }
 }
 
-export const cssImportMap = new Map<
+export const cssImporterMap = new Map<
+  string /*filePath*/,
+  Set<string /*filePath*/>
+>()
+export const cssImporteeMap = new Map<
   string /*filePath*/,
   Set<string /*filePath*/>
 >()
@@ -172,13 +160,41 @@ export function getCssImportBoundaries(
   filePath: string,
   boundaries = new Set<string>()
 ) {
-  if (!cssImportMap.has(filePath)) {
+  if (!cssImporterMap.has(filePath)) {
     return boundaries
   }
-  const importers = cssImportMap.get(filePath)!
+  const importers = cssImporterMap.get(filePath)!
   for (const importer of importers) {
     boundaries.add(importer)
     getCssImportBoundaries(importer, boundaries)
   }
   return boundaries
+}
+
+export function recordCssImportChain(
+  dependencies: Set<string>,
+  filePath: string
+) {
+  const preImportees = cssImporteeMap.get(filePath)
+  // if import code change, should removed unused previous importee
+  if (preImportees) {
+    for (const preImportee of preImportees) {
+      if (!dependencies.has(preImportee)) {
+        const importers = cssImporterMap.get(preImportee)
+        if (importers) {
+          importers.delete(filePath)
+        }
+      }
+    }
+  }
+
+  dependencies.forEach((dependency) => {
+    if (cssImporterMap.has(dependency)) {
+      cssImporterMap.get(dependency)!.add(filePath)
+    } else {
+      cssImporterMap.set(dependency, new Set([filePath]))
+    }
+  })
+
+  cssImporteeMap.set(filePath, dependencies)
 }
