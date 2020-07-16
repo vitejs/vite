@@ -434,7 +434,7 @@ describe('vite', () => {
       expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
       if (!isBuild) {
         await updateFile(
-          'css-@import/testSCssAtImportFromStyle.scss',
+          'css-@import/testScssAtImportFromStyle.scss',
           (content) => content.replace('red', 'rgb(0, 0, 0)')
         )
         await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
