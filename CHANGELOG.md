@@ -1,3 +1,37 @@
+# [1.0.0-beta.12](https://github.com/vuejs/vite/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2020-07-16)
+
+
+### Bug Fixes
+
+* **build:** external base url ([#515](https://github.com/vuejs/vite/issues/515)) ([b16548f](https://github.com/vuejs/vite/commit/b16548fde61f5192f3a9153d99c3785a623e8a12)), closes [#507](https://github.com/vuejs/vite/issues/507)
+* **build:** link href used data url ([#516](https://github.com/vuejs/vite/issues/516)) ([8ae073e](https://github.com/vuejs/vite/commit/8ae073e59c77a092cbe505415f59a76e1cadffd4)), closes [#508](https://github.com/vuejs/vite/issues/508)
+* **config:** merge array values in rollup config options ([abfe6f8](https://github.com/vuejs/vite/commit/abfe6f8732b057b256f152e71e2e450861636e30)), closes [#526](https://github.com/vuejs/vite/issues/526)
+* **css:** fix lazy loaded css injection (fix [#530](https://github.com/vuejs/vite/issues/530)) ([a502399](https://github.com/vuejs/vite/commit/a50239988e57958c7e56e10bb7f24b4e5c8ed234))
+* **optimize:** resolve bare assets import inside node module ([#552](https://github.com/vuejs/vite/issues/552)) ([5801f66](https://github.com/vuejs/vite/commit/5801f6687d4e546ca70b1afbfe80569d90cca072)), closes [#551](https://github.com/vuejs/vite/issues/551)
+* **resolve:** properly resolve optimized deps with name ending in .js ([c953f0d](https://github.com/vuejs/vite/commit/c953f0dacc97a557ac79ad73a8a69cd0c72c95b0)), closes [#540](https://github.com/vuejs/vite/issues/540)
+* **transform:** keep path/id on transform context consistent between dev/build ([#519](https://github.com/vuejs/vite/issues/519)) ([6388e69](https://github.com/vuejs/vite/commit/6388e699617f7c72e753f9d961278b46a468da60)), closes [#518](https://github.com/vuejs/vite/issues/518)
+* change `esbuild` compiler target to `es2020` + bump esbuild + bu… ([#525](https://github.com/vuejs/vite/issues/525)) ([893eeff](https://github.com/vuejs/vite/commit/893eeff4f6ef2134bd75f4e8623347ceab7ce229)), closes [#503](https://github.com/vuejs/vite/issues/503)
+* fallback to http1 when proxy is required ([02cc24f](https://github.com/vuejs/vite/commit/02cc24f5e7c3219eb0dd77480f9df8208e81c09c)), closes [#484](https://github.com/vuejs/vite/issues/484)
+* fix resolve optimize module + cache hit ([#500](https://github.com/vuejs/vite/issues/500)) ([3766767](https://github.com/vuejs/vite/commit/37667678e462748162d74d0107e619e837bf783c)), closes [#490](https://github.com/vuejs/vite/issues/490)
+* inject web worker rollup plugin before node-resolve ([458a4bb](https://github.com/vuejs/vite/commit/458a4bbcb578d79041a91ea364ca53a6053d3ebf))
+
+
+### Features
+
+* **build:** add option for disable `rollup-plugin-vue` ([#517](https://github.com/vuejs/vite/issues/517)) ([5d06b0c](https://github.com/vuejs/vite/commit/5d06b0c018259a6ee2a2e0ae75f49951934cf8c1))
+* **transform:** expose notModified flag in transform context ([#510](https://github.com/vuejs/vite/issues/510)) ([2da41f1](https://github.com/vuejs/vite/commit/2da41f1011cc6f33fc8ee4dc279dcbb9214f0bca))
+* `<script setup>`, `<style vars>` & binding optimization integration ([4377b9a](https://github.com/vuejs/vite/commit/4377b9a673076aeb44065bd8db674fb4f0c196d0))
+* support configuring CSS modules via cssModuleOptions ([#479](https://github.com/vuejs/vite/issues/479)) ([3314d20](https://github.com/vuejs/vite/commit/3314d209b47aeff29959de6a5f7beace472e4bdb))
+* support css preprocess options for different languages ([#483](https://github.com/vuejs/vite/issues/483)) ([10f93b8](https://github.com/vuejs/vite/commit/10f93b82d7badbb0398b8021383550ad2985c5fc))
+* support HMR for css preprocessor `[@import](https://github.com/import)` ([#313](https://github.com/vuejs/vite/issues/313)) ([cc1e8e8](https://github.com/vuejs/vite/commit/cc1e8e823b8c094b05d3b77c61b9fc082911aafd))
+
+
+### BREAKING CHANGES
+
+* css modules now exported locals that defaults to `camelCase`.
+
+
+
 # [1.0.0-beta.11](https://github.com/vuejs/vite/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2020-07-03)
 
 
