@@ -80,7 +80,7 @@ Vite tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org
 
 ### Bare Module Resolving
 
-Native ES imports doesn't support bare module imports like
+Native ES imports don't support bare module imports like
 
 ```js
 import { createApp } from 'vue'
