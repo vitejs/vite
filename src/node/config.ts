@@ -23,6 +23,14 @@ import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
 
+export type PreprocessLang = NonNullable<
+  SFCStyleCompileOptions['preprocessLang']
+>
+
+export type PreprocessOptions = SFCStyleCompileOptions['preprocessOptions']
+
+export type CssPreprocessOptions = Record<PreprocessLang, PreprocessOptions>
+
 export { Resolver, Transform }
 
 /**
@@ -120,7 +128,7 @@ export interface SharedConfig {
   /**
    * CSS preprocess options
    */
-  cssPreprocessOptions?: SFCStyleCompileOptions['preprocessOptions']
+  cssPreprocessOptions?: CssPreprocessOptions
   /**
    * CSS modules options
    */

@@ -16,6 +16,7 @@ import {
   SFCAsyncStyleCompileOptions
 } from '@vue/compiler-sfc'
 import chalk from 'chalk'
+import { CssPreprocessOptions } from '../config'
 
 const debug = require('debug')('vite:build:css')
 
@@ -29,7 +30,7 @@ interface BuildCssOption {
   minify?: BuildConfig['minify']
   inlineLimit?: number
   cssCodeSplit?: boolean
-  preprocessOptions?: SFCAsyncStyleCompileOptions['preprocessOptions']
+  preprocessOptions?: CssPreprocessOptions
   modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
 }
 
@@ -40,7 +41,7 @@ export const createBuildCssPlugin = ({
   minify = false,
   inlineLimit = 0,
   cssCodeSplit = true,
-  preprocessOptions = {},
+  preprocessOptions,
   modulesOptions = {}
 }: BuildCssOption): Plugin => {
   const styles: Map<string, string> = new Map()
@@ -53,6 +54,11 @@ export const createBuildCssPlugin = ({
         // if this is a Vue SFC style request, it's already processed by
         // rollup-plugin-vue and we just need to rewrite URLs + collect it
         const isVueStyle = /\?vue&type=style/.test(id)
+        const preprocessLang = id.replace(
+          cssPreprocessLangRE,
+          '$2'
+        ) as SFCAsyncStyleCompileOptions['preprocessLang']
+
         const result = isVueStyle
           ? css
           : await compileCss(
@@ -64,10 +70,7 @@ export const createBuildCssPlugin = ({
                 filename: id,
                 scoped: false,
                 modules: cssModuleRE.test(id),
-                preprocessLang: id.replace(
-                  cssPreprocessLangRE,
-                  '$2'
-                ) as SFCAsyncStyleCompileOptions['preprocessLang'],
+                preprocessLang,
                 preprocessOptions,
                 modulesOptions
               },

@@ -224,6 +224,25 @@ Or import them from JavaScript:
 import './style.scss'
 ```
 
+#### Passing Options to Pre-Processor
+
+> 1.0.0-beta.9+
+> And if you want to pass options to the pre-processor, you can do that using the `cssPreprocessOptions` option in the config (see [Config File](#config-file) below).
+> For example, to pass some shared global variables to all your Less styles:
+
+```js
+// vite.config.js
+module.exports = {
+  cssPreprocessOptions: {
+    less: {
+      modifyVars: {
+        'preprocess-custom-color': 'green'
+      }
+    }
+  }
+}
+```
+
 ### JSX
 
 `.jsx` and `.tsx` files are also supported. JSX transpilation is also handled via `esbuild`.

@@ -86,6 +86,26 @@ export async function compileCss(
     plugins: postcssPlugins
   } = await resolvePostcssOptions(root, isBuild)
 
+  if (preprocessLang) {
+    preprocessOptions = preprocessOptions[preprocessLang] || preprocessOptions
+    // include node_modules for imports by default
+    switch (preprocessLang) {
+      case 'scss':
+      case 'sass':
+        preprocessOptions = {
+          includePaths: ['node_modules'],
+          ...preprocessOptions
+        }
+        break
+      case 'less':
+      case 'stylus':
+        preprocessOptions = {
+          paths: ['node_modules'],
+          ...preprocessOptions
+        }
+    }
+  }
+
   return await compileStyleAsync({
     source,
     filename,
@@ -99,12 +119,9 @@ export async function compileCss(
       ...modulesOptions
     },
 
-    preprocessLang: preprocessLang,
+    preprocessLang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
-    preprocessOptions: {
-      includePaths: ['node_modules'],
-      ...preprocessOptions
-    },
+    preprocessOptions,
 
     postcssOptions,
     postcssPlugins
