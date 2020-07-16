@@ -313,7 +313,8 @@ export function rewriteFileWithHMR(
         )
       }
 
-      const method = node.callee.property.name
+      const method =
+        node.callee.property.type === 'Identifier' && node.callee.property.name
       if (method === 'accept' || method === 'acceptDeps') {
         if (!isDevBlock) {
           console.error(

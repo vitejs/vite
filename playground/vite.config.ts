@@ -17,8 +17,10 @@ const config: UserConfig = {
     link: ['optimize-linked']
   },
   cssPreprocessOptions: {
-    modifyVars: {
-      'preprocess-custom-color': 'green'
+    less: {
+      modifyVars: {
+        'preprocess-custom-color': 'green'
+      }
     }
   }
 }

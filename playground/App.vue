@@ -10,6 +10,7 @@
   <TestCssModules />
   <TestCssAtImport />
   <TestPreprocessors />
+  <TestScssAtImport/>
   <TestAssets />
   <TestSrcImport />
   <TestJsonImport />
@@ -27,6 +28,7 @@
   <Suspense>
     <TestWasm />
   </Suspense>
+  <TestScriptSetupStyleVars msg="Test message" />
 </template>
 
 <script>
@@ -45,6 +47,7 @@ import TestJsx from './jsx/TestJsx.vue'
 import TestAlias from './alias/TestAlias.vue'
 import TestTransform from './transform/TestTransform.vue'
 import TestCssAtImport from './css-@import/TestCssAtImport.vue'
+import TestScssAtImport from './css-@import/TestScssAtImport.vue'
 import TestCustomBlocks from './custom-blocks/TestCustomBlocks.vue'
 import TestOptimizeLink from './optimize-linked/TestOptimizeLink.vue'
 import TestModuleResolve from './resolve/TestModuleResolve.vue'
@@ -54,6 +57,7 @@ import TestRewriteOptimized from './resolve/rewrite-optimized/TestRewriteOptimiz
 import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
 import TestWebWorker from './worker/TestWorker.vue'
 import TestWasm from './wasm/TestWasm.vue'
+import TestScriptSetupStyleVars from './script-setup/TestScriptSetupStyleVars.vue'
 
 export default {
   components: {
@@ -65,6 +69,7 @@ export default {
     TestCssModules,
     TestPreprocessors,
     TestCssAtImport,
+    TestScssAtImport,
     TestSrcImport,
     TestAssets,
     TestJsonImport,
@@ -80,7 +85,8 @@ export default {
     TestNormalizePublicPath,
     TestDynamicImport,
     TestWebWorker,
-    TestWasm
+    TestWasm,
+    TestScriptSetupStyleVars
   }
 }
 </script>

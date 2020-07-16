@@ -1,7 +1,7 @@
 import qs from 'querystring'
 import chalk from 'chalk'
 import path from 'path'
-import { Context, ServerPlugin } from '.'
+import { Context, ServerPlugin, ServerPluginContext } from '.'
 import {
   SFCBlock,
   SFCDescriptor,
@@ -9,7 +9,10 @@ import {
   SFCStyleBlock,
   SFCStyleCompileResults,
   CompilerOptions,
-  SFCStyleCompileOptions
+  SFCStyleCompileOptions,
+  BindingMetadata,
+  CompilerError,
+  generateCodeFrame
 } from '@vue/compiler-sfc'
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -25,7 +28,11 @@ import { transform } from '../esbuildService'
 import { InternalResolver } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'
 import { codegenCss } from './serverPluginCss'
-import { compileCss, rewriteCssUrls } from '../utils/cssUtils'
+import {
+  compileCss,
+  recordCssImportChain,
+  rewriteCssUrls
+} from '../utils/cssUtils'
 import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
@@ -105,7 +112,8 @@ export const vuePlugin: ServerPlugin = ({
       const { code, map } = await compileSFCMain(
         descriptor,
         filePath,
-        publicPath
+        publicPath,
+        root
       )
       ctx.body = code
       ctx.map = map
@@ -118,12 +126,16 @@ export const vuePlugin: ServerPlugin = ({
         filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
+      const bindingMetadata = descriptor.script
+        ? descriptor.script.bindings
+        : undefined
       const { code, map } = compileSFCTemplate(
         root,
         templateBlock,
         filePath,
         publicPath,
         descriptor.styles.some((s) => s.scoped),
+        bindingMetadata,
         config.vueCompilerOptions
       )
       ctx.body = code
@@ -144,7 +156,7 @@ export const vuePlugin: ServerPlugin = ({
         index,
         filePath,
         publicPath,
-        config.cssPreprocessOptions
+        config
       )
       ctx.type = 'js'
       ctx.body = codegenCss(`${id}-${index}`, result.code, result.modules)
@@ -210,7 +222,10 @@ export const vuePlugin: ServerPlugin = ({
       )
     }
 
-    if (!isEqualBlock(descriptor.script, prevDescriptor.script)) {
+    if (
+      !isEqualBlock(descriptor.script, prevDescriptor.script) ||
+      !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup)
+    ) {
       return sendReload()
     }
 
@@ -229,6 +244,18 @@ export const vuePlugin: ServerPlugin = ({
     if (
       prevStyles.some((s) => s.module != null) ||
       nextStyles.some((s) => s.module != null)
+    ) {
+      return sendReload()
+    }
+
+    // force reload if CSS vars injection changed
+    if (
+      prevStyles.some((s, i) => {
+        const next = nextStyles[i]
+        if (s.attrs.vars && (!next || next.attrs.vars !== s.attrs.vars)) {
+          return true
+        }
+      })
     ) {
       return sendReload()
     }
@@ -366,7 +393,7 @@ async function parseSFC(
   }
 
   const start = Date.now()
-  const { parse, generateCodeFrame } = resolveCompiler(root)
+  const { parse } = resolveCompiler(root)
   const { descriptor, errors } = parse(content, {
     filename: filePath,
     sourceMap: true
@@ -375,20 +402,7 @@ async function parseSFC(
   if (errors.length) {
     console.error(chalk.red(`\n[vite] SFC parse error: `))
     errors.forEach((e) => {
-      const locString = e.loc
-        ? `:${e.loc.start.line}:${e.loc.start.column}`
-        : ``
-      console.error(chalk.underline(filePath + locString))
-      console.error(chalk.yellow(e.message))
-      if (e.loc) {
-        console.error(
-          generateCodeFrame(
-            content as string,
-            e.loc.start.offset,
-            e.loc.end.offset
-          ) + `\n`
-        )
-      }
+      logError(e as CompilerError, filePath, content as string)
     })
   }
 
@@ -404,7 +418,8 @@ const defaultExportRE = /((?:^|\n|;)\s*)export default/
 async function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
-  publicPath: string
+  publicPath: string,
+  root: string
 ): Promise<ResultWithMap> {
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
@@ -413,18 +428,38 @@ async function compileSFCMain(
 
   const id = hash_sum(publicPath)
   let code = ``
-  if (descriptor.script) {
-    let content = descriptor.script.content
-    if (descriptor.script.lang === 'ts') {
-      const { code, map } = await transform(content, publicPath, {
+  let content = ``
+  let map: any
+
+  let script = descriptor.script
+  const compiler = resolveCompiler(root)
+  if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
+    try {
+      script = descriptor.script = compiler.compileScript(descriptor)
+    } catch (e) {
+      console.error(
+        chalk.red(
+          `\n[vite] SFC <script setup> compilation error:\n${chalk.dim(
+            chalk.white(filePath)
+          )}`
+        )
+      )
+      console.error(chalk.yellow(e.message))
+    }
+  }
+  if (script) {
+    content = script.content
+    map = script.map
+    if (script.lang === 'ts') {
+      const res = await transform(content, publicPath, {
         loader: 'ts'
       })
-      content = code
-      descriptor.script.map = mergeSourceMap(
-        descriptor.script.map as SourceMap,
-        JSON.parse(map!)
-      ) as SourceMap & { version: string }
+      content = res.code
+      map = mergeSourceMap(map, JSON.parse(res.map!))
     }
+  }
+
+  if (content) {
     // rewrite export default.
     // fast path: simple regex replacement to avoid full-blown babel parse.
     let replaced = content.replace(defaultExportRE, '$1const __script =')
@@ -489,7 +524,7 @@ async function compileSFCMain(
 
   const result: ResultWithMap = {
     code,
-    map: descriptor.script && (descriptor.script.map as SourceMap)
+    map
   }
 
   cached = cached || { styles: [], customs: [] }
@@ -504,6 +539,7 @@ function compileSFCTemplate(
   filePath: string,
   publicPath: string,
   scoped: boolean,
+  bindingMetadata: BindingMetadata | undefined,
   userOptions: CompilerOptions | undefined
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
@@ -513,7 +549,7 @@ function compileSFCTemplate(
   }
 
   const start = Date.now()
-  const { compileTemplate, generateCodeFrame } = resolveCompiler(root)
+  const { compileTemplate } = resolveCompiler(root)
   const { code, map, errors } = compileTemplate({
     source: template.content,
     filename: filePath,
@@ -524,6 +560,7 @@ function compileSFCTemplate(
     compilerOptions: {
       ...userOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
+      bindingMetadata,
       runtimeModuleName: resolveVue(root).isLocal
         ? // in local mode, vue would have been optimized so must be referenced
           // with .js postfix
@@ -540,18 +577,7 @@ function compileSFCTemplate(
       if (typeof e === 'string') {
         console.error(e)
       } else {
-        const locString = e.loc
-          ? `:${e.loc.start.line}:${e.loc.start.column}`
-          : ``
-        console.error(chalk.underline(filePath + locString))
-        console.error(chalk.yellow(e.message))
-        if (e.loc) {
-          const original = template.map!.sourcesContent![0]
-          console.error(
-            generateCodeFrame(original, e.loc.start.offset, e.loc.end.offset) +
-              `\n`
-          )
-        }
+        logError(e, filePath, template.map!.sourcesContent![0])
       }
     })
   }
@@ -575,7 +601,7 @@ async function compileSFCStyle(
   index: number,
   filePath: string,
   publicPath: string,
-  preprocessOptions: SFCStyleCompileOptions['preprocessOptions']
+  { cssPreprocessOptions, cssModuleOptions }: ServerPluginContext['config']
 ): Promise<SFCStyleCompileResults> {
   let cached = vueCache.get(filePath)
   const cachedEntry = cached && cached.styles && cached.styles[index]
@@ -587,15 +613,20 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
+  const resource = filePath + `?type=style&index=${index}`
   const result = (await compileCss(root, publicPath, {
     source: style.content,
-    filename: filePath + `?type=style&index=${index}`,
+    filename: resource,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
+    vars: style.vars != null,
     modules: style.module != null,
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
-    preprocessOptions
+    preprocessOptions: cssPreprocessOptions,
+    modulesOptions: cssModuleOptions
   })) as SFCStyleCompileResults
+
+  recordCssImportChain(result.dependencies, resource)
 
   if (result.errors.length) {
     console.error(chalk.red(`\n[vite] SFC style compilation error: `))
@@ -692,4 +723,15 @@ function rewriteDefaultExport(code: string): string {
   })
   const ret = s.toString()
   return ret
+}
+
+function logError(e: CompilerError, file: string, src: string) {
+  const locString = e.loc ? `:${e.loc.start.line}:${e.loc.start.column}` : ``
+  console.error(chalk.underline(file + locString))
+  console.error(chalk.yellow(e.message))
+  if (e.loc) {
+    console.error(
+      generateCodeFrame(src, e.loc.start.offset, e.loc.end.offset) + `\n`
+    )
+  }
 }

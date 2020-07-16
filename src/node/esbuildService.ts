@@ -69,7 +69,7 @@ export const transform = async (
     loader: options.loader || (path.extname(file).slice(1) as any),
     sourcemap: true,
     sourcefile: request, // ensure source file name contains full query
-    target: 'es2019'
+    target: 'es2020'
   }
   try {
     const result = await service.transform(src, options)
