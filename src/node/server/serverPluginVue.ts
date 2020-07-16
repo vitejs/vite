@@ -398,7 +398,7 @@ async function parseSFC(
   if (errors.length) {
     console.error(chalk.red(`\n[vite] SFC parse error: `))
     errors.forEach((e) => {
-      logError(e, filePath, content as string)
+      logError(e as CompilerError, filePath, content as string)
     })
   }
 
