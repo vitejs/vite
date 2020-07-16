@@ -2379,10 +2379,10 @@ es-to-primitive@^1.2.1:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
-esbuild@^0.5.24:
-  version "0.5.24"
-  resolved "https://registry.npmjs.org/esbuild/-/esbuild-0.5.24.tgz#7f745c34346e842e7a5347dec0b6b65f43cacd1e"
-  integrity sha512-DBbxT8IBzgvhfm6SXopzMZt9xDQGgBBVnLqTYVRgHKPwBIu6Sg/haBbPAVCwBnNHwJtouBrfo8oTMIPoF8p9eg==
+esbuild@^0.6.3:
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.6.3.tgz#a957e22f2503c745793514388110f9b55b3a6f83"
+  integrity sha512-4lHgz/EvGLRQnDYzzrvW+eilaPHim5pCLz4mP0k0QIalD/n8Ji2NwQwoIa1uX+yKkbn9R/FAZvaEbodjx55rDg==
 
 escape-html@^1.0.3:
   version "1.0.3"
