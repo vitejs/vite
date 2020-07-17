@@ -61,6 +61,21 @@ export const serveStaticPlugin: ServerPlugin = ({
   }
   app.use(require('koa-etag')())
   app.use(require('koa-static')(root))
+  // #566 if the file is not static asset file, just return it to client
+  app.use(async (ctx, next) => {
+    const filePath = resolver.requestToFile(ctx.path)
+    if (filePath.startsWith(path.join(root, '/public/'))) {
+      if (isStaticAsset(ctx.path)) {
+        next()
+      } else {
+        await next()
+        ctx.res.write(ctx.body.toString())
+        ctx.res.end()
+        return
+      }
+    }
+    next()
+  })
   app.use(require('koa-static')(path.join(root, 'public')))
 
   // history API fallback
