@@ -2,7 +2,6 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
-import dotenvExpand from 'dotenv-expand'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
 import {
   CompilerOptions,
@@ -503,28 +502,23 @@ function loadEnv(mode: string, root: string): Record<string, string> {
 
   debug(`env mode: ${mode}`)
   const envFiles = [
-    /** mode local file */ `.env.${mode}.local`,
-    /** mode file */ `.env.${mode}`,
+    /** default file */ `.env`,
     /** local file */ `.env.local`,
-    /** default file */ `.env`
+    /** mode file */ `.env.${mode}`,
+    /** mode local file */ `.env.${mode}.local`
   ]
 
   const env: Record<string, string> = {}
   for (const file of envFiles) {
     const path = lookupFile(root, [file], true)
     if (path) {
-      const result = dotenv.config({
-        debug: !!process.env.DEBUG || undefined,
-        path
-      })
-      if (result.error) {
-        throw result.error
-      }
-      dotenvExpand(result)
-      for (const key in result.parsed) {
+      const parsed = dotenv.parse(fs.readFileSync(path))
+
+      for (const key in parsed) {
+        process.env[key] = parsed[key]
         // only keys that start with VITE_ are exposed.
         if (key.startsWith(`VITE_`)) {
-          env[key] = result.parsed![key]
+          env[key] = parsed![key]
         }
       }
     }
