@@ -66,7 +66,7 @@ export const serveStaticPlugin: ServerPlugin = ({
     const filePath = resolver.requestToFile(ctx.path)
     if (filePath.startsWith(path.join(root, '/public/'))) {
       if (isStaticAsset(ctx.path)) {
-        next()
+        return next()
       } else {
         await next()
         ctx.res.write(ctx.body.toString())
