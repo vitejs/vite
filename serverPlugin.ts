@@ -249,6 +249,19 @@ if (import.meta.hot) {
   return code
 }
 
+function transformRequireBackToURL(code: string, base: string): string {
+  return code.replace(
+    /require\(("(?:[^"\\]|\\.)+"|'(?:[^'\\]|\\.)+')\)/g,
+    (_, name) => {
+      if (name.charAt(1) == '.' && name.charAt(2) == '/') {
+        // it's relative to source file, make it absolute by prepending base path
+        return name.charAt(0) + base + name.substr(2)
+      }
+      return name
+    }
+  )
+}
+
 function compileSFCTemplate(
   block: SFCBlock,
   filePath: string,
@@ -277,7 +290,10 @@ function compileSFCTemplate(
     errors.forEach(console.error)
   }
 
-  return code + `\nexport { render, staticRenderFns }`
+  return (
+    transformRequireBackToURL(code, path.posix.dirname(publicPath)) +
+    `\nexport { render, staticRenderFns }`
+  )
 }
 
 async function resolveSrcImport(
