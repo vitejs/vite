@@ -61,8 +61,8 @@ export const moduleRewritePlugin: ServerPlugin = ({
       !ctx.url.endsWith('.map') &&
       // skip internal client
       !ctx.path.startsWith(hmrClientPublicPath) &&
-      // only need to rewrite for <script> part in vue files
-      !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
+      // need to rewrite for <script>\<template> part in vue files
+      !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type === 'style')
     ) {
       const content = await readBody(ctx.body)
       if (!ctx.query.t && rewriteCache.has(content)) {

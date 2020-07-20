@@ -22,6 +22,9 @@ const config: UserConfig = {
         'preprocess-custom-color': 'green'
       }
     }
+  },
+  transformAssetUrls: {
+    img: ['src', 'data-src']
   }
 }
 

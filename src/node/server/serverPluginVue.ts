@@ -8,7 +8,6 @@ import {
   SFCTemplateBlock,
   SFCStyleBlock,
   SFCStyleCompileResults,
-  CompilerOptions,
   SFCStyleCompileOptions,
   BindingMetadata,
   CompilerError,
@@ -37,6 +36,7 @@ import { parse } from '../utils/babelParse'
 import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
 import { SourceMap, mergeSourceMap } from './serverPluginSourceMap'
+import { ServerConfig } from '../config'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -136,7 +136,7 @@ export const vuePlugin: ServerPlugin = ({
         publicPath,
         descriptor.styles.some((s) => s.scoped),
         bindingMetadata,
-        config.vueCompilerOptions
+        config
       )
       ctx.body = code
       ctx.map = map
@@ -540,7 +540,7 @@ function compileSFCTemplate(
   publicPath: string,
   scoped: boolean,
   bindingMetadata: BindingMetadata | undefined,
-  userOptions: CompilerOptions | undefined
+  { vueCompilerOptions, transformAssetUrls = {} }: ServerConfig
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
   if (cached && cached.template) {
@@ -550,15 +550,19 @@ function compileSFCTemplate(
 
   const start = Date.now()
   const { compileTemplate } = resolveCompiler(root)
+  if (typeof transformAssetUrls === 'object') {
+    transformAssetUrls = {
+      base: path.posix.dirname(publicPath),
+      ...transformAssetUrls
+    }
+  }
   const { code, map, errors } = compileTemplate({
     source: template.content,
     filename: filePath,
     inMap: template.map,
-    transformAssetUrls: {
-      base: path.posix.dirname(publicPath)
-    },
+    transformAssetUrls,
     compilerOptions: {
-      ...userOptions,
+      ...vueCompilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       bindingMetadata,
       runtimeModuleName: resolveVue(root).isLocal

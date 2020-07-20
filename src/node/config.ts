@@ -7,7 +7,8 @@ import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
 import {
   CompilerOptions,
   SFCStyleCompileOptions,
-  SFCAsyncStyleCompileOptions
+  SFCAsyncStyleCompileOptions,
+  SFCTemplateCompileOptions
 } from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
@@ -92,6 +93,11 @@ export interface SharedConfig {
    * https://github.com/vuejs/vue-next/blob/master/packages/compiler-core/src/options.ts
    */
   vueCompilerOptions?: CompilerOptions
+  /**
+   * Configure what tags/attributes to trasnform into asset url imports,
+   * or disable the transform altogether with `false`.
+   */
+  transformAssetUrls?: SFCTemplateCompileOptions['transformAssetUrls']
   /**
    * Transform functions for Vue custom blocks.
    *
