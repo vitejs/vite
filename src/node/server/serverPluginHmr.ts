@@ -18,7 +18,6 @@
 //    client to update all `hmrBoundaries`.
 
 import { ServerPlugin } from '.'
-import fs from 'fs'
 import WebSocket from 'ws'
 import path from 'path'
 import chalk from 'chalk'
@@ -34,6 +33,7 @@ import { isCSSRequest } from '../utils/cssUtils'
 import { Node, StringLiteral, Statement, Expression } from '@babel/types'
 import { resolveCompiler } from '../utils'
 import { HMRPayload } from '../../hmrPayload'
+import { clientPublicPath } from './serverPluginClient'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -61,12 +61,6 @@ export const importeeMap: HMRStateMap = new Map()
 export const hmrDirtyFilesMap = new LRUCache<string, Set<string>>({ max: 10 })
 export const latestVersionsMap = new Map<string, string>()
 
-export const hmrClientFilePath = path.resolve(
-  __dirname,
-  '../../client/client.js'
-)
-export const hmrClientPublicPath = `/vite/hmr`
-
 export const hmrPlugin: ServerPlugin = ({
   root,
   app,
@@ -75,21 +69,11 @@ export const hmrPlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  const hmrClient = fs
-    .readFileSync(hmrClientFilePath, 'utf-8')
-    .replace(`__SW_ENABLED__`, String(!!config.serviceWorker))
-
-  app.use(async (ctx, next) => {
-    if (ctx.path === hmrClientPublicPath) {
-      ctx.type = 'js'
-      ctx.status = 200
-      ctx.body = hmrClient.replace(`__PORT__`, ctx.port.toString())
-    } else {
-      if (ctx.query.t) {
-        latestVersionsMap.set(ctx.path, ctx.query.t)
-      }
-      return next()
+  app.use((ctx, next) => {
+    if (ctx.query.t) {
+      latestVersionsMap.set(ctx.path, ctx.query.t)
     }
+    return next()
   })
 
   // start a websocket server to send hmr notifications to the client
@@ -420,7 +404,7 @@ export function rewriteFileWithHMR(
 
   // inject import.meta.hot
   s.prepend(
-    `import { createHotContext } from "${hmrClientPublicPath}"; ` +
+    `import { createHotContext } from "${clientPublicPath}"; ` +
       `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
   )
 

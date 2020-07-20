@@ -26,6 +26,7 @@ export { rewriteImports } from './serverPluginModuleRewrite'
 import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
 import { webWorkerPlugin } from './serverPluginWebWorker'
 import { wasmPlugin } from './serverPluginWasm'
+import { clientPlugin } from './serverPluginClient'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
 
@@ -97,6 +98,7 @@ export function createServer(config: ServerConfig): Server {
     moduleResolvePlugin,
     proxyPlugin,
     serviceWorkerPlugin,
+    clientPlugin,
     hmrPlugin,
     ...(transforms.length || Object.keys(vueCustomBlockTransforms).length
       ? [

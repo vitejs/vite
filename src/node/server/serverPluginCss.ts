@@ -15,7 +15,7 @@ import {
 import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
-import { hmrClientPublicPath } from './serverPluginHmr'
+import { clientPublicPath } from './serverPluginClient'
 
 export const debugCSS = require('debug')('vite:css')
 
@@ -178,7 +178,7 @@ export function codegenCss(
   modules?: Record<string, string>
 ): string {
   let code =
-    `import { updateStyle } from "${hmrClientPublicPath}"\n` +
+    `import { updateStyle } from "${clientPublicPath}"\n` +
     `const css = ${JSON.stringify(css)}\n` +
     `updateStyle(${JSON.stringify(id)}, css)\n`
   if (modules) {

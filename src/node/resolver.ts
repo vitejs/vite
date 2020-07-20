@@ -14,7 +14,7 @@ import {
   moduleFileToIdMap
 } from './server/serverPluginModuleResolve'
 import { resolveOptimizedCacheDir } from './optimizer'
-import { hmrClientPublicPath } from './server/serverPluginHmr'
+import { clientPublicPath } from './server/serverPluginClient'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:resolve')
@@ -213,7 +213,7 @@ export function createResolver(
      * Given a fuzzy public path, resolve missing extensions and /index.xxx
      */
     normalizePublicPath(publicPath) {
-      if (publicPath === hmrClientPublicPath) {
+      if (publicPath === clientPublicPath) {
         return publicPath
       }
       // preserve query

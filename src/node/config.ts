@@ -69,6 +69,11 @@ export interface SharedConfig {
    */
   transforms?: Transform[]
   /**
+   * Define global variable replacements.
+   * Entries will be defined on `window` during dev and replaced during build.
+   */
+  define?: Record<string, any>
+  /**
    * Resolvers to map dev server public path requests to/from file system paths,
    * and optionally map module ids to public path requests.
    */
@@ -118,10 +123,6 @@ export interface SharedConfig {
         fragment?: string
       }
   /**
-   * Environment variables
-   */
-  env?: DotenvParseOutput
-  /**
    * Environment mode
    */
   mode?: string
@@ -138,6 +139,12 @@ export interface SharedConfig {
    * @default true
    */
   enableEsbuild?: boolean
+  /**
+   * Environment variables parsed from .env files
+   * only ones starting with VITE_ are exposed on `import.meta.env`
+   * @internal
+   */
+  env?: DotenvParseOutput
 }
 
 export interface ServerConfig extends SharedConfig {
@@ -298,6 +305,7 @@ export interface Plugin
     UserConfig,
     | 'alias'
     | 'transforms'
+    | 'define'
     | 'resolvers'
     | 'configureServer'
     | 'vueCompilerOptions'
@@ -450,6 +458,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
       ...plugin.alias,
       ...config.alias
     },
+    define: {
+      ...plugin.define,
+      ...config.define
+    },
     transforms: [...(config.transforms || []), ...(plugin.transforms || [])],
     resolvers: [...(config.resolvers || []), ...(plugin.resolvers || [])],
     configureServer: ([] as any[]).concat(
@@ -532,4 +544,10 @@ function loadEnv(mode: string, root: string): Record<string, string> {
 
   debug(`env: %O`, env)
   return env
+}
+
+// TODO move this into Vue plugin when we extract it
+export const defaultDefines = {
+  __VUE_OPTIONS_API__: true,
+  __VUE_PROD_DEVTOOLS__: false
 }
