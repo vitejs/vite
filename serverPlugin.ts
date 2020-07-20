@@ -272,9 +272,9 @@ function compileSFCTemplate(
     filename: filePath,
     compiler: vueTemplateCompiler,
     transformAssetUrls: true,
-    transformAssetUrlsOptions: {
-      base: path.posix.dirname(publicPath),
-    },
+    // transformAssetUrlsOptions: {
+    //   base: path.posix.dirname(publicPath),
+    // },
     isProduction: process.env.NODE_ENV === 'production',
     isFunctional: !!block.attrs.functional,
     optimizeSSR: false,
