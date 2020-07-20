@@ -254,7 +254,7 @@ export function createResolver(
 
       // example id: "@babel/runtime/helpers/esm/slicedToArray"
       // see the test case: /playground/TestNormalizePublicPath.vue
-      const id = publicPath.replace(moduleRE, '')
+      const id = cleanPublicPath.replace(moduleRE, '')
       const { scope, name, inPkgPath } = parseNodeModuleId(id)
       if (!inPkgPath) return publicPath
       let filePathPostFix = ''

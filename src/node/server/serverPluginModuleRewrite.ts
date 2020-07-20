@@ -22,7 +22,13 @@ import {
   hmrDirtyFilesMap,
   latestVersionsMap
 } from './serverPluginHmr'
-import { readBody, cleanUrl, isExternalUrl, bareImportRE } from '../utils'
+import {
+  readBody,
+  cleanUrl,
+  isExternalUrl,
+  bareImportRE,
+  removeQueryTimestamp
+} from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
 import { envPublicPath } from './serverPluginEnv'
@@ -76,7 +82,9 @@ export const moduleRewritePlugin: ServerPlugin = ({
         // before we perform hmr analysis.
         // on the other hand, static import is guaranteed to have extension
         // because they must all have gone through module rewrite.
-        const importer = resolver.normalizePublicPath(ctx.path)
+        const importer = removeQueryTimestamp(
+          resolver.normalizePublicPath(ctx.url)
+        )
         ctx.body = rewriteImports(
           root,
           content!,
