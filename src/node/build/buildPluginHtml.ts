@@ -10,7 +10,7 @@ import {
 } from '../utils'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
 import { InternalResolver } from '../resolver'
-import { UserConfig } from '../config'
+import { UserConfig, BuildConfig } from '../config'
 import {
   parse as Parse,
   transform as Transform,
@@ -28,6 +28,7 @@ export const createBuildHtmlPlugin = async (
   inlineLimit: number,
   resolver: InternalResolver,
   shouldPreload: ((chunk: OutputChunk) => boolean) | null,
+  useSystemJs: BuildConfig['useSystemJs'],
   config: UserConfig
 ) => {
   if (!fs.existsSync(indexPath)) {
@@ -80,11 +81,33 @@ export const createBuildHtmlPlugin = async (
     }
   }
 
+  const injectSystemJs = (html: string) => {
+    let tag: string
+    if (typeof useSystemJs === 'string') {
+      tag = `<script src="${useSystemJs}"></script>`
+    } else if (useSystemJs) {
+      const systemJsRuntime = fs.readFileSync(
+        require.resolve('systemjs/dist/s.min.js'),
+        'utf8'
+      )
+      tag = `<script>${systemJsRuntime}</script>`
+    } else {
+      return html
+    }
+    if (/<\/head>/.test(html)) {
+      return html.replace(/<\/head>/, `${tag}\n</head>`)
+    } else {
+      return tag + '\n' + html
+    }
+  }
+
   const injectScript = (html: string, filename: string) => {
     filename = isExternalUrl(filename)
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
-    const tag = `<script type="module" src="${filename}"></script>`
+    const tag = useSystemJs
+      ? `<script>System.import('${filename}');</script>`
+      : `<script type="module" src="${filename}"></script>`
     if (/<\/head>/.test(html)) {
       return html.replace(/<\/head>/, `${tag}\n</head>`)
     } else {
@@ -105,7 +128,7 @@ export const createBuildHtmlPlugin = async (
   }
 
   const renderIndex = async (bundleOutput: RollupOutput['output']) => {
-    let result = processedHtml
+    let result = injectSystemJs(processedHtml)
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {

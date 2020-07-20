@@ -339,6 +339,30 @@ export interface BuildConfig extends Required<SharedConfig> {
    * @internal
    */
   ssr?: boolean
+  /**
+   * Set to `false` will produce modular javascript code,
+   * which requires browser's native ES module support,
+   * other options will use SystemJS to load each module instead.
+   * Set to `true` will insert the SystemJS runtime to a inline script tag,
+   * set to string will load the SystemJS runtime via CDN you specified.
+   *
+   * Example `vite.config.js`:
+   * ```js
+   * module.exports = {
+   *   // by default vite will not use SystemJS
+   *   useSystemJs: false,
+   *
+   *   // will insert a inline script tag contains SystemJS runtime
+   *   useSystemJs: true,
+   *
+   *   // will load SystemJS runtime via CDN
+   *   useSystemJs: '//unpkg.com/systemjs@6/dist/s.min.js',
+   * }
+   * ```
+   *
+   * @default false
+   */
+  useSystemJs: boolean | string
 
   // The following are API / config only and not documented in the CLI. --------
   /**

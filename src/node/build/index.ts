@@ -288,6 +288,7 @@ function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
     rollupPluginVueOptions = {},
     root = process.cwd(),
     shouldPreload = null,
+    useSystemJs = false,
     silent = false,
     sourcemap = false,
     terserOptions = {},
@@ -330,6 +331,7 @@ function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
     rollupPluginVueOptions,
     root,
     shouldPreload,
+    useSystemJs,
     silent,
     sourcemap,
     terserOptions,
@@ -365,6 +367,7 @@ export async function build(
     silent,
     sourcemap,
     shouldPreload,
+    useSystemJs,
     env,
     mode: configMode,
     define: userDefineReplacements,
@@ -405,6 +408,7 @@ export async function build(
     assetsInlineLimit,
     resolver,
     shouldPreload,
+    useSystemJs,
     options
   )
 
@@ -592,7 +596,7 @@ export async function build(
 
       await bundle[write ? 'write' : 'generate']({
         dir: resolvedAssetsPath,
-        format: 'es',
+        format: useSystemJs ? 'system' : 'es',
         sourcemap,
         entryFileNames: `[name].[hash].js`,
         chunkFileNames: `[name].[hash].js`,
