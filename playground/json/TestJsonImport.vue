@@ -1,12 +1,13 @@
 <template>
   <h2>JSON</h2>
   <pre class="json">Imported JSON: {{ json }}</pre>
+  <pre class="json-named-exports">JSON Named Exports: {{ hello }}</pre>
 </template>
 
 <script>
-import json from './testJsonImport.json'
+import json, { hello } from './testJsonImport.json'
 
 export default {
-  data: () => ({ json })
+  data: () => ({ json, hello })
 }
 </script>
