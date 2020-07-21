@@ -62,9 +62,9 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
         vueStyleUpdate(styleImport)
         return
       }
-      // handle HMR for module.css
+      // handle HMR for module css
       // it cannot be handled as normal css because the js exports may change
-      if (filePath.endsWith('.module.css')) {
+      if (filePath.includes('.module')) {
         moduleCssUpdate(filePath, resolver)
       }
 
