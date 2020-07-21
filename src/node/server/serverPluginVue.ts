@@ -459,7 +459,7 @@ async function compileSFCMain(
     }
   }
 
-  if (content) {
+  if (content && defaultExportRE.test(content)) {
     // rewrite export default.
     // fast path: simple regex replacement to avoid full-blown babel parse.
     let replaced = content.replace(defaultExportRE, '$1const __script =')
@@ -470,7 +470,7 @@ async function compileSFCMain(
     }
     code += replaced
   } else {
-    code += `const __script = {}`
+    code += content + `\nconst __script = {}`
   }
 
   let hasScoped = false
