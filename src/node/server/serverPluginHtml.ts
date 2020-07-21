@@ -1,10 +1,6 @@
 import { rewriteImports, ServerPlugin } from './index'
-import {
-  debugHmr,
-  ensureMapEntry,
-  hmrClientPublicPath,
-  importerMap
-} from './serverPluginHmr'
+import { debugHmr, ensureMapEntry, importerMap } from './serverPluginHmr'
+import { clientPublicPath } from './serverPluginClient'
 import { init as initLexer } from 'es-module-lexer'
 import { cleanUrl, readBody, injectScriptToHtml } from '../utils'
 import LRUCache from 'lru-cache'
@@ -23,17 +19,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  const devInjectionCode =
-    `\n<script type="module">\n` +
-    // import hmr client first to establish connection
-    `import "${hmrClientPublicPath}"\n` +
-    // inject process.env.NODE_ENV
-    // since some ESM builds expect these to be replaced by the bundler
-    `window.process = { env: { NODE_ENV: ${JSON.stringify(
-      config.mode || 'development'
-    )} }}\n` +
-    `</script>\n`
-
+  const devInjectionCode = `\n<script type="module">import "${clientPublicPath}"</script>\n`
   const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
 

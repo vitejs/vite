@@ -18,10 +18,10 @@ import {
   importeeMap,
   ensureMapEntry,
   rewriteFileWithHMR,
-  hmrClientPublicPath,
   hmrDirtyFilesMap,
   latestVersionsMap
 } from './serverPluginHmr'
+import { clientPublicPath } from './serverPluginClient'
 import {
   readBody,
   cleanUrl,
@@ -66,7 +66,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
       !isCSSRequest(ctx.path) &&
       !ctx.url.endsWith('.map') &&
       // skip internal client
-      !ctx.path.startsWith(hmrClientPublicPath) &&
+      ctx.path !== clientPublicPath &&
       // need to rewrite for <script>\<template> part in vue files
       !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type === 'style')
     ) {
@@ -181,7 +181,7 @@ export function rewriteImports(
           if (
             importee !== importer &&
             // no need to track hmr client or module dependencies
-            importee !== hmrClientPublicPath
+            importee !== clientPublicPath
           ) {
             currentImportees.add(importee)
             debugHmr(`        ${importer} imports ${importee}`)

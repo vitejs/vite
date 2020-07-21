@@ -3,7 +3,7 @@ import MagicString from 'magic-string'
 
 export const createReplacePlugin = (
   test: (id: string) => boolean,
-  replacements: Record<string, string>,
+  replacements: Record<string, any>,
   sourcemap: boolean
 ): Plugin => {
   const pattern = new RegExp(
@@ -29,7 +29,7 @@ export const createReplacePlugin = (
           hasReplaced = true
           const start = match.index
           const end = start + match[0].length
-          const replacement = replacements[match[1]]
+          const replacement = '' + replacements[match[1]]
           s.overwrite(start, end, replacement)
         }
 

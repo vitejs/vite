@@ -23,7 +23,7 @@ import { createBuildAssetPlugin } from './buildPluginAsset'
 import { createEsbuildPlugin } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
 import { stopService } from '../esbuildService'
-import { BuildConfig } from '../config'
+import { BuildConfig, defaultDefines } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
 import { resolvePostcssOptions } from '../utils/cssUtils'
@@ -247,6 +247,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     shouldPreload = null,
     env = {},
     mode = 'production',
+    define: userDefineReplacements,
     cssPreprocessOptions,
     cssModuleOptions = {}
   } = options
@@ -329,6 +330,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         (id) => /\.(j|t)sx?$/.test(id) || id.startsWith(`/vite/`),
         {
           ...userEnvReplacements,
+          ...defaultDefines,
+          ...userDefineReplacements,
           'import.meta.env.BASE_URL': JSON.stringify(publicBasePath),
           'import.meta.env.MODE': JSON.stringify(mode),
           'import.meta.env.DEV': String(mode === 'development'),

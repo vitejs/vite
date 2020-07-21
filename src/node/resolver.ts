@@ -14,7 +14,7 @@ import {
   moduleFileToIdMap
 } from './server/serverPluginModuleResolve'
 import { resolveOptimizedCacheDir } from './optimizer'
-import { hmrClientPublicPath } from './server/serverPluginHmr'
+import { clientPublicPath } from './server/serverPluginClient'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:resolve')
@@ -36,6 +36,7 @@ export interface InternalResolver {
     publicPath: string,
     relativePublicPath: string
   ): { pathname: string; query: string }
+  isPublicRequest(publicPath: string): boolean
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -213,7 +214,7 @@ export function createResolver(
      * Given a fuzzy public path, resolve missing extensions and /index.xxx
      */
     normalizePublicPath(publicPath) {
-      if (publicPath === hmrClientPublicPath) {
+      if (publicPath === clientPublicPath) {
         return publicPath
       }
       // preserve query
@@ -321,6 +322,12 @@ export function createResolver(
           (importee.endsWith('/') && !resolved.endsWith('/') ? '/' : ''),
         query: queryMatch ? queryMatch[0] : ''
       }
+    },
+
+    isPublicRequest(publicPath: string) {
+      return resolver
+        .requestToFile(publicPath)
+        .startsWith(path.resolve(root, 'public'))
     }
   }
 
