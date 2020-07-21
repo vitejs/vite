@@ -87,3 +87,12 @@ export function parseNodeModuleId(id: string) {
     inPkgPath
   }
 }
+
+export function removeQueryTimestamp(url: string) {
+  if (url.includes('t=')) {
+    const { path, query } = parseWithQuery(url)
+    delete query.t
+    return path + qs.stringify(query)
+  }
+  return url
+}

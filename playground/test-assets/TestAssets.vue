@@ -8,7 +8,7 @@
   </p>
   <p>
     Relative asset reference in template:
-    <img src="./nested/testAssets.png" style="width: 30px;" />
+    <img class="relative-import" src="./nested/testAssets.png" data-src="./nested/testAssets.png" style="width: 30px;" />
   </p>
   <p>
     Absolute asset reference in template:

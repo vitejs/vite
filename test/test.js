@@ -96,6 +96,13 @@ describe('vite', () => {
       )
     })
 
+    test('transform asset urls', async () => {
+      const image = await getEl('.relative-import')
+      expect(await image.evaluate((el) => el.getAttribute('src'))).toMatch(
+        await image.evaluate((el) => el.getAttribute('data-src'))
+      )
+    })
+
     test('env variables', async () => {
       const mode = isBuild ? 'production' : 'development'
 

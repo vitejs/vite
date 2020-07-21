@@ -22,6 +22,9 @@ const config: UserConfig = {
         'preprocess-custom-color': 'green'
       }
     }
+  },
+  vueTransformAssetUrls: {
+    img: ['src', 'data-src']
   }
 }
 
