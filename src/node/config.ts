@@ -374,7 +374,7 @@ export async function resolveConfig(
       // 2. if we reach here, the file is ts or using es import syntax.
       // transpile es import syntax to require syntax using rollup.
       const rollup = require('rollup') as typeof Rollup
-      const esbuildPlugin = await createEsbuildPlugin(false, {})
+      const esbuildPlugin = await createEsbuildPlugin({})
       // use node-resolve to support .ts files
       const nodeResolve = require('@rollup/plugin-node-resolve').nodeResolve({
         extensions: supportedExts

@@ -10,7 +10,6 @@ import {
 import { SharedConfig } from '../config'
 
 export const createEsbuildPlugin = async (
-  minify: boolean,
   jsx: SharedConfig['jsx']
 ): Promise<Plugin> => {
   const jsxConfig = resolveJsxOptions(jsx)
@@ -43,16 +42,15 @@ export const createEsbuildPlugin = async (
           jsx
         )
       }
-    },
-
-    async renderChunk(code, chunk) {
-      if (minify) {
-        return transform(code, chunk.fileName, {
-          minify: true
-        })
-      } else {
-        return null
-      }
     }
+  }
+}
+
+export const esbuildMinifyPlugin: Plugin = {
+  name: 'vite:esbuild-minify',
+  async renderChunk(code, chunk) {
+    return transform(code, chunk.fileName, {
+      minify: true
+    })
   }
 }
