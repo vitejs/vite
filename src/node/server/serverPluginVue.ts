@@ -435,7 +435,7 @@ async function compileSFCMain(
   const compiler = resolveCompiler(root)
   if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
     try {
-      script = descriptor.script = compiler.compileScript(descriptor)
+      script = compiler.compileScript(descriptor)
     } catch (e) {
       console.error(
         chalk.red(
