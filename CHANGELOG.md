@@ -1,3 +1,12 @@
+# [1.0.0-rc.3](https://github.com/vuejs/vite/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2020-07-21)
+
+
+### Bug Fixes
+
+* do not replace descript.script when compiling `<script setup>` ([8c0034d](https://github.com/vuejs/vite/commit/8c0034dad23a8a766a3d87ee3b9d367f312e03d3)), closes [vuejs/vue-next#1620](https://github.com/vuejs/vue-next/issues/1620) [vuejs/vue-next#1664](https://github.com/vuejs/vue-next/issues/1664)
+
+
+
 # [1.0.0-rc.2](https://github.com/vuejs/vite/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2020-07-21)
 
 
