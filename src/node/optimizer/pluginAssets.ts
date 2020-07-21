@@ -6,7 +6,7 @@ import { isStaticAsset, bareImportRE, resolveFrom } from '../utils'
 import path from 'path'
 import { InternalResolver } from '../resolver'
 
-const isAsset = (id: string) => isCSSRequest(id) || isStaticAsset(id)
+export const isAsset = (id: string) => isCSSRequest(id) || isStaticAsset(id)
 
 export const depAssetExternalPlugin: Plugin = {
   name: 'vite:optimize-dep-assets-external',

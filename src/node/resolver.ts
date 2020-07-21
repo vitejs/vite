@@ -16,6 +16,7 @@ import {
 import { resolveOptimizedCacheDir } from './optimizer'
 import { clientPublicPath } from './server/serverPluginClient'
 import chalk from 'chalk'
+import { isAsset } from './optimizer/pluginAssets'
 
 const debug = require('debug')('vite:resolve')
 const isWin = require('os').platform() === 'win32'
@@ -390,19 +391,21 @@ export function resolveBareModuleRequest(
           // redirect it the optimized copy.
           return resolveBareModuleRequest(root, depId, importer, resolver)
         }
-        // warn against deep imports to optimized dep
-        console.error(
-          chalk.yellow(
-            `\n[vite] Avoid deep import "${id}" (imported by ${importer})\n` +
-              `because "${depId}" has been pre-optimized by vite into a single file.\n` +
-              `Prefer importing directly from the module entry:\n` +
-              chalk.cyan(`\n  import { ... } from "${depId}" \n\n`) +
-              `If the dependency requires deep import to function properly, \n` +
-              `add the deep path to ${chalk.cyan(
-                `optimizeDeps.include`
-              )} in vite.config.js.\n`
+        if (!isAsset(id)) {
+          // warn against deep imports to optimized dep
+          console.error(
+            chalk.yellow(
+              `\n[vite] Avoid deep import "${id}" (imported by ${importer})\n` +
+                `because "${depId}" has been pre-optimized by vite into a single file.\n` +
+                `Prefer importing directly from the module entry:\n` +
+                chalk.cyan(`\n  import { ... } from "${depId}" \n\n`) +
+                `If the dependency requires deep import to function properly, \n` +
+                `add the deep path to ${chalk.cyan(
+                  `optimizeDeps.include`
+                )} in vite.config.js.\n`
+            )
           )
-        )
+        }
       }
 
       // resolve ext for deepImport
