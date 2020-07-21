@@ -315,6 +315,7 @@ export interface Plugin
     | 'resolvers'
     | 'configureServer'
     | 'vueCompilerOptions'
+    | 'vueTransformAssetUrls'
     | 'vueCustomBlockTransforms'
     | 'rollupInputOptions'
     | 'rollupOutputOptions'
@@ -460,6 +461,7 @@ async function loadConfigFromBundledFile(
 function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   return {
     ...config,
+    ...plugin,
     alias: {
       ...plugin.alias,
       ...config.alias
@@ -478,15 +480,19 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
       ...config.vueCompilerOptions,
       ...plugin.vueCompilerOptions
     },
+    vueTransformAssetUrls: mergeAssetUrlOptions(
+      config.vueTransformAssetUrls,
+      plugin.vueTransformAssetUrls
+    ),
     vueCustomBlockTransforms: {
       ...config.vueCustomBlockTransforms,
       ...plugin.vueCustomBlockTransforms
     },
-    rollupInputOptions: mergeRollupOptions(
+    rollupInputOptions: mergeObjectOptions(
       config.rollupInputOptions,
       plugin.rollupInputOptions
     ),
-    rollupOutputOptions: mergeRollupOptions(
+    rollupOutputOptions: mergeObjectOptions(
       config.rollupOutputOptions,
       plugin.rollupOutputOptions
     ),
@@ -495,7 +501,36 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   }
 }
 
-function mergeRollupOptions(to: any, from: any) {
+function mergeAssetUrlOptions(
+  to: SFCTemplateCompileOptions['transformAssetUrls'],
+  from: SFCTemplateCompileOptions['transformAssetUrls']
+): SFCTemplateCompileOptions['transformAssetUrls'] {
+  if (from === true) {
+    return to
+  }
+  if (from === false) {
+    return from
+  }
+  if (typeof to === 'boolean') {
+    return from || to
+  }
+  return {
+    ...normalizeAssetUrlOptions(to),
+    ...normalizeAssetUrlOptions(from)
+  }
+}
+
+function normalizeAssetUrlOptions(o: Record<string, any> | undefined) {
+  if (o && Object.keys(o).some((key) => Array.isArray(o[key]))) {
+    return {
+      tags: o
+    }
+  } else {
+    return o
+  }
+}
+
+function mergeObjectOptions(to: any, from: any) {
   if (!to) return from
   if (!from) return to
   const res: any = { ...to }
