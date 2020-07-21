@@ -68,8 +68,12 @@ export const transform = async (
     ...options,
     loader: options.loader || (path.extname(file).slice(1) as any),
     sourcemap: true,
-    sourcefile: request, // ensure source file name contains full query
-    target: 'es2020'
+    // ensure source file name contains full query
+    sourcefile: request,
+    // https://github.com/vitejs/vite/issues/565#issuecomment-661345890
+    // force esbuild to transpile optional chaining but allow import.meta
+    // until terser can support optional chaining in minification
+    target: 'chrome79'
   }
   try {
     const result = await service.transform(src, options)
