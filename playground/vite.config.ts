@@ -23,7 +23,7 @@ const config: UserConfig = {
       }
     }
   },
-  transformAssetUrls: {
+  vueTransformAssetUrls: {
     img: ['src', 'data-src']
   }
 }
