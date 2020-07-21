@@ -19,19 +19,26 @@ export const esbuildPlugin: ServerPlugin = ({ app, config, resolver }) => {
 
     await next()
 
-    if (ctx.body && tjsxRE.test(ctx.path)) {
-      ctx.type = 'js'
-      const src = await readBody(ctx.body)
-      const { code, map } = await transform(
-        src!,
-        resolver.requestToFile(ctx.url),
-        jsxConfig,
-        config.jsx
-      )
-      ctx.body = code
-      if (map) {
-        ctx.map = JSON.parse(map)
-      }
+    if (
+      !tjsxRE.test(ctx.path) ||
+      !ctx.body ||
+      ctx.type === 'text/html' ||
+      resolver.isPublicRequest(ctx.path)
+    ) {
+      return
+    }
+
+    ctx.type = 'js'
+    const src = await readBody(ctx.body)
+    const { code, map } = await transform(
+      src!,
+      resolver.requestToFile(ctx.url),
+      jsxConfig,
+      config.jsx
+    )
+    ctx.body = code
+    if (map) {
+      ctx.map = JSON.parse(map)
     }
   })
 }

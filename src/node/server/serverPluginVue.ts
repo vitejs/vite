@@ -80,6 +80,8 @@ export const vuePlugin: ServerPlugin = ({
   }
 
   app.use(async (ctx, next) => {
+    // ctx.vue is set by other tools like vitepress so that vite knows to treat
+    // non .vue files as vue files.
     if (!ctx.path.endsWith('.vue') && !ctx.vue) {
       return next()
     }
@@ -91,9 +93,7 @@ export const vuePlugin: ServerPlugin = ({
     // upstream plugins could've already read the file
     const descriptor = await parseSFC(root, filePath, ctx.body)
     if (!descriptor) {
-      debug(`${ctx.url} - 404`)
-      ctx.status = 404
-      return
+      return next()
     }
 
     if (!query.type) {

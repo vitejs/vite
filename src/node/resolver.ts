@@ -36,6 +36,7 @@ export interface InternalResolver {
     publicPath: string,
     relativePublicPath: string
   ): { pathname: string; query: string }
+  isPublicRequest(publicPath: string): boolean
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -321,6 +322,12 @@ export function createResolver(
           (importee.endsWith('/') && !resolved.endsWith('/') ? '/' : ''),
         query: queryMatch ? queryMatch[0] : ''
       }
+    },
+
+    isPublicRequest(publicPath: string) {
+      return resolver
+        .requestToFile(publicPath)
+        .startsWith(path.resolve(root, 'public'))
     }
   }
 

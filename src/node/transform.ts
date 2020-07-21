@@ -64,7 +64,11 @@ export function createServerTransformPlugin(
     app.use(async (ctx, next) => {
       await next()
 
-      if (!ctx.body) {
+      if (
+        !ctx.body ||
+        ctx.type === 'text/html' ||
+        resolver.isPublicRequest(ctx.path)
+      ) {
         return
       }
 
