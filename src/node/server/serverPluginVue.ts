@@ -540,7 +540,7 @@ function compileSFCTemplate(
   publicPath: string,
   scoped: boolean,
   bindingMetadata: BindingMetadata | undefined,
-  { vueCompilerOptions, transformAssetUrls = {} }: ServerConfig
+  { vueCompilerOptions, vueTransformAssetUrls = {} }: ServerConfig
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
   if (cached && cached.template) {
@@ -550,17 +550,17 @@ function compileSFCTemplate(
 
   const start = Date.now()
   const { compileTemplate } = resolveCompiler(root)
-  if (typeof transformAssetUrls === 'object') {
-    transformAssetUrls = {
+  if (typeof vueTransformAssetUrls === 'object') {
+    vueTransformAssetUrls = {
       base: path.posix.dirname(publicPath),
-      ...transformAssetUrls
+      ...vueTransformAssetUrls
     }
   }
   const { code, map, errors } = compileTemplate({
     source: template.content,
     filename: filePath,
     inMap: template.map,
-    transformAssetUrls,
+    transformAssetUrls: vueTransformAssetUrls,
     compilerOptions: {
       ...vueCompilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,

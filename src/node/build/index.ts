@@ -187,7 +187,7 @@ async function createVuePlugin(
     cssPreprocessOptions,
     cssModuleOptions,
     vueCompilerOptions,
-    transformAssetUrls = {}
+    vueTransformAssetUrls = {}
   }: BuildConfig
 ) {
   const {
@@ -195,16 +195,16 @@ async function createVuePlugin(
     plugins: postcssPlugins
   } = await resolvePostcssOptions(root, true)
 
-  if (typeof transformAssetUrls === 'object') {
-    transformAssetUrls = {
+  if (typeof vueTransformAssetUrls === 'object') {
+    vueTransformAssetUrls = {
       includeAbsolute: true,
-      ...transformAssetUrls
+      ...vueTransformAssetUrls
     }
   }
 
   return require('rollup-plugin-vue')({
     ...rollupPluginVueOptions,
-    transformAssetUrls,
+    transformAssetUrls: vueTransformAssetUrls,
     postcssOptions,
     postcssPlugins,
     preprocessStyles: true,

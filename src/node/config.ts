@@ -102,7 +102,7 @@ export interface SharedConfig {
    * Configure what tags/attributes to trasnform into asset url imports,
    * or disable the transform altogether with `false`.
    */
-  transformAssetUrls?: SFCTemplateCompileOptions['transformAssetUrls']
+  vueTransformAssetUrls?: SFCTemplateCompileOptions['transformAssetUrls']
   /**
    * Transform functions for Vue custom blocks.
    *
