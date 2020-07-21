@@ -1,3 +1,42 @@
+# [1.0.0-rc.2](https://github.com/vuejs/vite/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2020-07-21)
+
+
+### Bug Fixes
+
+* avoid transforming page requests and public assets ([cdaa2ca](https://github.com/vuejs/vite/commit/cdaa2cab63e28834f4f0550d23e9ae2ac3d0a111)), closes [#560](https://github.com/vuejs/vite/issues/560) [#566](https://github.com/vuejs/vite/issues/566)
+* configure esbuild to transpile optional chaining ([3da2bb4](https://github.com/vuejs/vite/commit/3da2bb4ef326756a0628f211fb2f981b9cbd01bd)), closes [#565](https://github.com/vuejs/vite/issues/565)
+* esbuild minify should run in separate plugin ([cf503db](https://github.com/vuejs/vite/commit/cf503db9a26b03de52d23ae3fc33e67b6d0f3b84)), closes [#589](https://github.com/vuejs/vite/issues/589)
+* fix test ([74819fb](https://github.com/vuejs/vite/commit/74819fbd73bea7a8ba976368c3b504d2d21e24dd))
+* module css preprocessor hmr ([#583](https://github.com/vuejs/vite/issues/583)) ([d50e2e4](https://github.com/vuejs/vite/commit/d50e2e4b04d5aef67f0156c07e353f7128ad2738))
+* remove deep import warning for assets ([#557](https://github.com/vuejs/vite/issues/557)) ([a40ed1a](https://github.com/vuejs/vite/commit/a40ed1aabc5537ff3ae414b70e1d58b06dfec76e))
+* update playground config ([81d7be2](https://github.com/vuejs/vite/commit/81d7be2e58752fba66f8a8f1b697fee3d38fe928))
+
+
+### Features
+
+* **dev:** support json named exports ([353d5a2](https://github.com/vuejs/vite/commit/353d5a2f29b7981948c5bb3a752fc1e8742c6598))
+* custom transform asset urls ([9129145](https://github.com/vuejs/vite/commit/9129145050dc44f87e6405da1bb7f53277a6367b)), closes [#581](https://github.com/vuejs/vite/issues/581)
+* handle vueTransformAssetUrls in plugins ([2ba17d5](https://github.com/vuejs/vite/commit/2ba17d55843a20c059841cdb5c52e6e6d66653b6))
+* support defining global replacements via `config.define` ([63a6735](https://github.com/vuejs/vite/commit/63a6735ad6ec3181caa79c3b2251785a8f443cdb))
+
+
+### BREAKING CHANGES
+
+* Vite client path has changed from `/vite/hmr` to
+`/vite/client`.
+
+  The client serving logic has also been refactored, which
+makes it easiser to use Vite-served assets from a non-Vite-served page
+by simply injecting the following into the page:
+
+  ```html
+  <script type="module">
+  import "<VITE_SERVER_URL>/vite/client"
+  </script>
+  ```
+
+
+
 # [1.0.0-rc.1](https://github.com/vuejs/vite/compare/v1.0.0-beta.12...v1.0.0-rc.1) (2020-07-17)
 
 
