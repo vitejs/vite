@@ -65,6 +65,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
       ctx.response.is('js') &&
       !isCSSRequest(ctx.path) &&
       !ctx.url.endsWith('.map') &&
+      !resolver.isPublicRequest(ctx.path) &&
       // skip internal client
       ctx.path !== clientPublicPath &&
       // need to rewrite for <script>\<template> part in vue files
