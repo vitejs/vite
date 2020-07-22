@@ -163,8 +163,8 @@ export const createBuildCssPlugin = ({
     async generateBundle(_options, bundle) {
       let css = ''
       // finalize extracted css
-      styles.forEach((s) => {
-        css += s
+      ;[...styles.keys()].sort().forEach((key) => {
+        css += styles.get(key)
       })
       // minify with cssnano
       if (minify) {
