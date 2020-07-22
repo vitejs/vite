@@ -16,6 +16,7 @@ import {
 } from 'vite/dist/node/server/serverPluginHmr'
 import { srcImportMap } from 'vite/dist/node/server/serverPluginVue'
 import { TemplateCompileOptions } from '@vue/component-compiler-utils/lib/compileTemplate'
+import { clientPublicPath } from 'vite/dist/node/server/serverPluginClient'
 
 const vueTemplateCompiler = require('vue-template-compiler')
 
@@ -38,7 +39,7 @@ export const vuePlugin: ServerPlugin = ({
   config,
 }) => {
   app.use(async (ctx, next) => {
-    if (ctx.path === '/vite/hmr') {
+    if (ctx.path === clientPublicPath) {
       await next()
       ctx.type = 'js'
       ctx.body = ctx.body.replace(
