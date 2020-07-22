@@ -142,6 +142,7 @@ function runServe(options: UserConfig) {
   })
 
   server.listen(port, () => {
+    console.log()
     console.log(`  Dev server running at:`)
     const interfaces = os.networkInterfaces()
     Object.keys(interfaces).forEach((key) => {
