@@ -59,7 +59,7 @@ import TestWebWorker from './worker/TestWorker.vue'
 import TestWasm from './wasm/TestWasm.vue'
 import TestScriptSetupStyleVars from './script-setup/TestScriptSetupStyleVars.vue'
 
-export default {
+const App = {
   components: {
     TestEnv,
     TestModuleResolve,
@@ -89,4 +89,5 @@ export default {
     TestScriptSetupStyleVars
   }
 }
+export { App as default}
 </script>
