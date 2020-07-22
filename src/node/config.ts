@@ -30,7 +30,7 @@ export type PreprocessLang = NonNullable<
 
 export type PreprocessOptions = SFCStyleCompileOptions['preprocessOptions']
 
-export type CssPreprocessOptions = Record<PreprocessLang, PreprocessOptions>
+export type CssPreprocessOptions = Partial<Record<PreprocessLang, PreprocessOptions>>
 
 export { Resolver, Transform }
 
