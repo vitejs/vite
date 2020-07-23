@@ -4,7 +4,7 @@ import chalk from 'chalk'
 import { ServerPlugin } from '.'
 import { defaultDefines } from '../config'
 
-export const clientFilePath = path.resolve(__dirname, '../../client/client.js')
+export const clientFilePath = path.resolve(__dirname, '../../client/client.ts')
 
 export const clientPublicPath = `/vite/client`
 
