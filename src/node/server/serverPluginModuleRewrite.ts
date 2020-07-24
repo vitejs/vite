@@ -27,7 +27,7 @@ import {
   cleanUrl,
   isExternalUrl,
   bareImportRE,
-  removeQueryTimestamp
+  removeUnRelatedHmrQuery
 } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
@@ -82,7 +82,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
         // before we perform hmr analysis.
         // on the other hand, static import is guaranteed to have extension
         // because they must all have gone through module rewrite.
-        const importer = removeQueryTimestamp(
+        const importer = removeUnRelatedHmrQuery(
           resolver.normalizePublicPath(ctx.url)
         )
         ctx.body = rewriteImports(
