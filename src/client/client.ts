@@ -31,7 +31,9 @@ import { HMRPayload, UpdatePayload, MultiUpdatePayload } from '../hmrPayload'
 // register service worker
 if ('serviceWorker' in navigator) {
   ;(async () => {
-    const hasExistingSw = !!navigator.serviceWorker.controller
+    const registeredViteSw = (
+      await navigator.serviceWorker.getRegistrations()
+    ).find((sw) => sw.active && sw.active.scriptURL.endsWith('sw.js'))
 
     const prompt = (msg: string) => {
       if (confirm(msg)) {
@@ -51,17 +53,15 @@ if ('serviceWorker' in navigator) {
       }
       // Notify the user to reload the page if a new service worker has taken
       // control.
-      if (hasExistingSw) {
-        navigator.serviceWorker.addEventListener('controllerchange', () =>
+      if (registeredViteSw) {
+        registeredViteSw.addEventListener('controllerchange', () =>
           prompt(`[vite] Service worker cache invalidated. Reload is required.`)
         )
       } else {
         console.log(`[vite] service worker registered.`)
       }
-    } else if (hasExistingSw) {
-      for (const reg of await navigator.serviceWorker.getRegistrations()) {
-        await reg.unregister()
-      }
+    } else if (registeredViteSw) {
+      await registeredViteSw.unregister()
       prompt(
         `[vite] Unregistered stale service worker. ` +
           `Reload is required to invalidate cache.`
