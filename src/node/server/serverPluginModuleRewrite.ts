@@ -27,7 +27,8 @@ import {
   cleanUrl,
   isExternalUrl,
   bareImportRE,
-  removeQueryTimestamp
+  removeQueryTimestamp,
+  cachedRead
 } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
@@ -60,20 +61,22 @@ export const moduleRewritePlugin: ServerPlugin = ({
     // we are doing the js rewrite after all other middlewares have finished;
     // this allows us to post-process javascript produced by user middlewares
     // regardless of the extension of the original files.
+    const publicPath = ctx.path
     if (
       ctx.body &&
       ctx.response.is('js') &&
       !isCSSRequest(ctx.path) &&
       !ctx.url.endsWith('.map') &&
       // skip internal client
-      ctx.path !== clientPublicPath &&
+      publicPath !== clientPublicPath &&
       // need to rewrite for <script>\<template> part in vue files
       !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type === 'style')
     ) {
       const content = await readBody(ctx.body)
-      if (!ctx.query.t && rewriteCache.has(content)) {
+      const cacheKey = publicPath + content
+      if (!ctx.query.t && rewriteCache.has(cacheKey)) {
         debug(`(cached) ${ctx.url}`)
-        ctx.body = rewriteCache.get(content)
+        ctx.body = rewriteCache.get(cacheKey)
       } else {
         await initLexer
         // dynamic import may contain extension-less path,
@@ -92,7 +95,7 @@ export const moduleRewritePlugin: ServerPlugin = ({
           resolver,
           ctx.query.t
         )
-        rewriteCache.set(content, ctx.body)
+        rewriteCache.set(cacheKey, ctx.body)
       }
     } else {
       debug(`(skipped) ${ctx.url}`)
@@ -100,10 +103,11 @@ export const moduleRewritePlugin: ServerPlugin = ({
   })
 
   // bust module rewrite cache on file change
-  watcher.on('change', (file) => {
-    const publicPath = resolver.fileToRequest(file)
+  watcher.on('change', async (filePath) => {
+    const publicPath = resolver.fileToRequest(filePath)
+    const cacheKey = publicPath + (await cachedRead(null, filePath)).toString()
     debug(`${publicPath}: cache busted`)
-    rewriteCache.del(publicPath)
+    rewriteCache.del(cacheKey)
   })
 }
 
