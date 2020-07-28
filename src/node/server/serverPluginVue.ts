@@ -54,6 +54,7 @@ interface CacheEntry {
 interface ResultWithMap {
   code: string
   map: SourceMap | null | undefined
+  bindings?: BindingMetadata
 }
 
 export const vueCache = new LRUCache<string, CacheEntry>({
@@ -126,9 +127,8 @@ export const vuePlugin: ServerPlugin = ({
         filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
-      const bindingMetadata = descriptor.script
-        ? descriptor.script.bindings
-        : undefined
+      const cached = vueCache.get(filePath)
+      const bindingMetadata = cached && cached.script && cached.script.bindings
       const { code, map } = compileSFCTemplate(
         root,
         templateBlock,
@@ -524,7 +524,8 @@ async function compileSFCMain(
 
   const result: ResultWithMap = {
     code,
-    map
+    map,
+    bindings: script ? script.bindings : undefined
   }
 
   cached = cached || { styles: [], customs: [] }
