@@ -555,6 +555,9 @@ function loadEnv(mode: string, root: string): Record<string, string> {
   }
 
   debug(`env mode: ${mode}`)
+
+  const nodeEnv = process.env
+  const clientEnv: Record<string, string> = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
     /** mode file */ `.env.${mode}`,
@@ -562,7 +565,6 @@ function loadEnv(mode: string, root: string): Record<string, string> {
     /** default file */ `.env`
   ]
 
-  const env: Record<string, string> = {}
   for (const file of envFiles) {
     const path = lookupFile(root, [file], true)
     if (path) {
@@ -575,16 +577,23 @@ function loadEnv(mode: string, root: string): Record<string, string> {
       }
       dotenvExpand(result)
       for (const key in result.parsed) {
+        const value = (nodeEnv[key] = result.parsed![key])
         // only keys that start with VITE_ are exposed.
         if (key.startsWith(`VITE_`)) {
-          env[key] = result.parsed![key]
+          clientEnv[key] = value
+        }
+        // set NODE_ENV under a different key so that we know this is set from
+        // vite-loaded .env files. Some users may have default NODE_ENV set in
+        // their system.
+        if (key === 'NODE_ENV') {
+          nodeEnv.VITE_ENV = value
         }
       }
     }
   }
 
-  debug(`env: %O`, env)
-  return env
+  debug(`env: %O`, clientEnv)
+  return clientEnv
 }
 
 // TODO move this into Vue plugin when we extract it

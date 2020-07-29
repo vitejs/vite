@@ -244,14 +244,14 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     sourcemap = false,
     shouldPreload = null,
     env = {},
-    mode = 'production',
+    mode: configMode = 'production',
     define: userDefineReplacements,
     cssPreprocessOptions,
     cssModuleOptions = {}
   } = options
 
   const isTest = process.env.NODE_ENV === 'test'
-  process.env.NODE_ENV = mode
+  const resolvedMode = process.env.VITE_ENV || configMode
   const start = Date.now()
 
   let spinner: Ora | undefined
@@ -300,12 +300,27 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
   // user env variables loaded from .env files.
   // only those prefixed with VITE_ are exposed.
-  const userEnvReplacements = Object.keys(env).reduce((replacements, key) => {
+  const userClientEnv: Record<string, string | boolean> = {}
+  const userEnvReplacements: Record<string, string> = {}
+  Object.keys(env).forEach((key) => {
     if (key.startsWith(`VITE_`)) {
-      replacements[`import.meta.env.${key}`] = JSON.stringify(env[key])
+      userEnvReplacements[`import.meta.env.${key}`] = JSON.stringify(env[key])
+      userClientEnv[key] = env[key]
     }
-    return replacements
-  }, {} as Record<string, string>)
+  })
+
+  const builtInClientEnv = {
+    BASE_URL: publicBasePath,
+    MODE: configMode,
+    DEV: resolvedMode !== 'production',
+    PROD: resolvedMode === 'production'
+  }
+  const builtInEnvReplacements: Record<string, string> = {}
+  Object.keys(builtInClientEnv).forEach((key) => {
+    builtInEnvReplacements[`import.meta.env.${key}`] = JSON.stringify(
+      builtInClientEnv[key as keyof typeof builtInClientEnv]
+    )
+  })
 
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
@@ -327,16 +342,18 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       createReplacePlugin(
         (id) => /\.(j|t)sx?$/.test(id) || id.startsWith(`/vite/`),
         {
-          ...userEnvReplacements,
           ...defaultDefines,
           ...userDefineReplacements,
-          'import.meta.env.BASE_URL': JSON.stringify(publicBasePath),
-          'import.meta.env.MODE': JSON.stringify(mode),
-          'import.meta.env.DEV': String(mode === 'development'),
-          'import.meta.env.PROD': String(mode === 'production'),
+          ...userEnvReplacements,
+          ...builtInEnvReplacements,
           'import.meta.env.': `({}).`,
-          'process.env.NODE_ENV': JSON.stringify(mode),
+          'import.meta.env': JSON.stringify({
+            ...userClientEnv,
+            ...builtInClientEnv
+          }),
+          'process.env.NODE_ENV': JSON.stringify(resolvedMode),
           'process.env.': `({}).`,
+          'process.env': JSON.stringify({ NODE_ENV: resolvedMode }),
           'import.meta.hot': `false`
         },
         sourcemap

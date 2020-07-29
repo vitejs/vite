@@ -120,6 +120,20 @@ describe('vite', () => {
       )
 
       expect(await getText('.node-env')).toMatch(`NODE_ENV: ${mode}`)
+      expect(await getText('.import-meta-env')).toMatch(
+        JSON.stringify(
+          {
+            VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
+            VITE_CUSTOM_ENV_VARIABLE: '9527',
+            BASE_URL: '/',
+            MODE: mode,
+            DEV: !isBuild,
+            PROD: isBuild
+          },
+          null,
+          2
+        )
+      )
     })
 
     test('module resolving', async () => {
