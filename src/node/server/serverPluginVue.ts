@@ -14,7 +14,7 @@ import {
   generateCodeFrame,
   rewriteDefault
 } from '@vue/compiler-sfc'
-import { resolveCompiler, resolveVue } from '../utils/resolveVue'
+import { resolveCompiler } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import { debugHmr, importerMap, ensureMapEntry } from './serverPluginHmr'
@@ -25,7 +25,7 @@ import {
   watchFileIfOutOfRoot
 } from '../utils'
 import { transform } from '../esbuildService'
-import { InternalResolver } from '../resolver'
+import { InternalResolver, resolveBareModuleRequest } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'
 import { codegenCss } from './serverPluginCss'
 import {
@@ -128,6 +128,12 @@ export const vuePlugin: ServerPlugin = ({
       ctx.type = 'js'
       const cached = vueCache.get(filePath)
       const bindingMetadata = cached && cached.script && cached.script.bindings
+      const vueSpecifier = resolveBareModuleRequest(
+        root,
+        'vue',
+        publicPath,
+        resolver
+      )
       const { code, map } = compileSFCTemplate(
         root,
         templateBlock,
@@ -135,6 +141,7 @@ export const vuePlugin: ServerPlugin = ({
         publicPath,
         descriptor.styles.some((s) => s.scoped),
         bindingMetadata,
+        vueSpecifier,
         config
       )
       ctx.body = code
@@ -526,6 +533,7 @@ function compileSFCTemplate(
   publicPath: string,
   scoped: boolean,
   bindingMetadata: BindingMetadata | undefined,
+  vueSpecifier: string,
   { vueCompilerOptions, vueTransformAssetUrls = {} }: ServerConfig
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
@@ -542,6 +550,7 @@ function compileSFCTemplate(
       ...vueTransformAssetUrls
     }
   }
+
   const { code, map, errors } = compileTemplate({
     source: template.content,
     filename: filePath,
@@ -551,11 +560,7 @@ function compileSFCTemplate(
       ...vueCompilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       bindingMetadata,
-      runtimeModuleName: resolveVue(root).isLocal
-        ? // in local mode, vue would have been optimized so must be referenced
-          // with .js postfix
-          '/@modules/vue.js'
-        : '/@modules/vue'
+      runtimeModuleName: vueSpecifier
     },
     preprocessLang: template.lang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id))
