@@ -210,16 +210,21 @@ export const vuePlugin: ServerPlugin = ({
     let needRerender = false
 
     const sendReload = () => {
-      send({
-        type: 'vue-reload',
-        path: publicPath,
-        changeSrcPath: publicPath,
-        timestamp
-      })
-      console.log(
-        chalk.green(`[vite:hmr] `) +
-          `${path.relative(root, filePath)} updated. (reload)`
-      )
+      const importers = importerMap.get(publicPath)
+      if (importers && importers.size > 0) {
+        watcher.handleJSReload(filePath)
+      } else {
+        send({
+          type: 'vue-reload',
+          path: publicPath,
+          changeSrcPath: publicPath,
+          timestamp
+        })
+        console.log(
+          chalk.green(`[vite:hmr] `) +
+            `${path.relative(root, filePath)} updated. (reload)`
+        )
+      }
     }
 
     if (
