@@ -11,7 +11,8 @@ import {
   SFCStyleCompileOptions,
   BindingMetadata,
   CompilerError,
-  generateCodeFrame
+  generateCodeFrame,
+  rewriteDefault
 } from '@vue/compiler-sfc'
 import { resolveCompiler, resolveVue } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
@@ -32,8 +33,6 @@ import {
   recordCssImportChain,
   rewriteCssUrls
 } from '../utils/cssUtils'
-import { parse } from '../utils/babelParse'
-import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
 import { SourceMap, mergeSourceMap } from './serverPluginSourceMap'
 import { ServerConfig } from '../config'
@@ -413,8 +412,6 @@ async function parseSFC(
   return descriptor
 }
 
-const defaultExportRE = /((?:^|\n|;)\s*)export default/
-
 async function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
@@ -459,19 +456,7 @@ async function compileSFCMain(
     }
   }
 
-  if (content && defaultExportRE.test(content)) {
-    // rewrite export default.
-    // fast path: simple regex replacement to avoid full-blown babel parse.
-    let replaced = content.replace(defaultExportRE, '$1const __script =')
-    // if the script somehow still contains `default export`, it probably has
-    // multi-line comments or template strings. fallback to a full parse.
-    if (defaultExportRE.test(replaced)) {
-      replaced = rewriteDefaultExport(content)
-    }
-    code += replaced
-  } else {
-    code += content + `\nconst __script = {}`
-  }
+  code += rewriteDefault(content, '__script')
 
   let hasScoped = false
   let hasCSSModules = false
@@ -716,18 +701,6 @@ function attrsToQuery(attrs: SFCBlock['attrs'], langFallback?: string): string {
     query += `&lang=${langFallback}`
   }
   return query
-}
-
-function rewriteDefaultExport(code: string): string {
-  const s = new MagicString(code)
-  const ast = parse(code)
-  ast.forEach((node) => {
-    if (node.type === 'ExportDefaultDeclaration') {
-      s.overwrite(node.start!, node.declaration.start!, `const __script = `)
-    }
-  })
-  const ret = s.toString()
-  return ret
 }
 
 function logError(e: CompilerError, file: string, src: string) {
