@@ -13,7 +13,7 @@ import {
   CompilerError,
   generateCodeFrame
 } from '@vue/compiler-sfc'
-import { resolveCompiler, resolveVue } from '../utils/resolveVue'
+import { resolveCompiler } from '../utils'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import { debugHmr, importerMap, ensureMapEntry } from './serverPluginHmr'
@@ -564,12 +564,7 @@ function compileSFCTemplate(
     compilerOptions: {
       ...vueCompilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
-      bindingMetadata,
-      runtimeModuleName: resolveVue(root).isLocal
-        ? // in local mode, vue would have been optimized so must be referenced
-          // with .js postfix
-          '/@modules/vue.js'
-        : '/@modules/vue'
+      bindingMetadata
     },
     preprocessLang: template.lang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id))
