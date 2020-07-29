@@ -148,7 +148,7 @@ describe('vite', () => {
 
       test('hmr (vue reload)', async () => {
         await updateFile('hmr/TestHmr.vue', (content) =>
-          content.replace('count: 0,', 'count: 1337,')
+          content.replace('count: ref(0),', 'count: ref(1337),')
         )
         await expectByPolling(() => getText('.hmr-increment'), 'count is 1337')
       })
