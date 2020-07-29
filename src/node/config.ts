@@ -240,6 +240,13 @@ export interface BuildConfig extends SharedConfig {
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
+   * Transpile target for esbuild.
+   * Defaults to 'es2019' which transpiles optional chaining so it works with
+   * terser.
+   * @default 'es2019'
+   */
+  esbuildTarget?: string
+  /**
    * Build for server-side rendering, only as a CLI flag
    * for programmatic usage, use `ssrBuild` directly.
    * @internal

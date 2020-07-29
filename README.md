@@ -54,7 +54,7 @@ Then go to your vite based project and run `yarn link vite`. Now restart the dev
 
 Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
 
-Vite assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented code transforms by default. Technically, you _can_ add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not Vite's concern by design.
+Vite assumes you are targeting modern browsers and by default only transpiles your code to `es2019` during build (so that optional chaining can work with terser minification). You can specify the target range via the `esbuildTarget` config option, where the lowest target available is `es2015`.
 
 ## Features
 

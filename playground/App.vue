@@ -29,6 +29,7 @@
     <TestWasm />
   </Suspense>
   <TestScriptSetupStyleVars msg="Test message" />
+  <TestSyntax/>
 </template>
 
 <script>
@@ -58,6 +59,7 @@ import TestDynamicImport from './dynamic-import/TestDynamicImport.vue'
 import TestWebWorker from './worker/TestWorker.vue'
 import TestWasm from './wasm/TestWasm.vue'
 import TestScriptSetupStyleVars from './script-setup/TestScriptSetupStyleVars.vue'
+import TestSyntax from './TestSyntax.vue'
 
 const App = {
   components: {
@@ -86,7 +88,8 @@ const App = {
     TestDynamicImport,
     TestWebWorker,
     TestWasm,
-    TestScriptSetupStyleVars
+    TestScriptSetupStyleVars,
+    TestSyntax
   }
 }
 export { App as default}

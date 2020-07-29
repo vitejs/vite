@@ -3,6 +3,7 @@ const path = require('path')
 const execa = require('execa')
 const puppeteer = require('puppeteer')
 const moment = require('moment')
+const { EPERM } = require('constants')
 
 jest.setTimeout(100000)
 
@@ -706,6 +707,10 @@ describe('vite', () => {
           'rgb(0, 0, 255)'
         )
       }
+    })
+
+    test('optional chaining syntax support', async () => {
+      expect(await getText('.syntax')).toBe('baz')
     })
   }
 

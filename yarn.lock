@@ -2370,10 +2370,10 @@ es-to-primitive@^1.2.1:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
-esbuild@^0.6.3:
-  version "0.6.3"
-  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.6.3.tgz#a957e22f2503c745793514388110f9b55b3a6f83"
-  integrity sha512-4lHgz/EvGLRQnDYzzrvW+eilaPHim5pCLz4mP0k0QIalD/n8Ji2NwQwoIa1uX+yKkbn9R/FAZvaEbodjx55rDg==
+esbuild@^0.6.10:
+  version "0.6.10"
+  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.6.10.tgz#293ec07f10ec49858292d721b26634747df2f2d6"
+  integrity sha512-+adEFaDZZNTHCMuk+L3i6kBz75QSVvlAKYs097VDX3YmPeJ/Lk7G1X0/Txu0XrTnySJSVIdF83qWyBPnHaCZzA==
 
 escape-html@^1.0.3:
   version "1.0.3"

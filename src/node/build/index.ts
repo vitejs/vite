@@ -20,7 +20,10 @@ import { createBuildResolvePlugin } from './buildPluginResolve'
 import { createBuildHtmlPlugin } from './buildPluginHtml'
 import { createBuildCssPlugin } from './buildPluginCss'
 import { createBuildAssetPlugin } from './buildPluginAsset'
-import { createEsbuildPlugin, esbuildMinifyPlugin } from './buildPluginEsbuild'
+import {
+  createEsbuildPlugin,
+  createEsbuildRenderChunkPlugin
+} from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
 import { stopService } from '../esbuildService'
 import { BuildConfig, defaultDefines } from '../config'
@@ -240,6 +243,10 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     emitAssets = true,
     write = true,
     minify = true,
+    // default build transpile target is es2019 so that it transpiles
+    // optional chaining which terser doesn't handle yet
+    esbuildTarget = 'es2019',
+    enableEsbuild = true,
     silent = false,
     sourcemap = false,
     shouldPreload = null,
@@ -294,7 +301,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       targetPlatform: 'browser',
       pattern: /(.+)\?worker$/,
       extensions: supportedExts,
-      preserveSource: true // somehow results in slightly smaller bundle
+      sourcemap: false // it's inlined so it bloats the bundle
     })
   )
 
@@ -377,14 +384,15 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         assetsInlineLimit
       ),
       createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
+      enableEsbuild
+        ? createEsbuildRenderChunkPlugin(esbuildTarget, minify === 'esbuild')
+        : undefined,
       // minify with terser
       // this is the default which has better compression, but slow
       // the user can opt-in to use esbuild which is much faster but results
       // in ~8-10% larger file size.
-      minify
-        ? minify === 'esbuild'
-          ? esbuildMinifyPlugin
-          : require('rollup-plugin-terser').terser()
+      minify && minify !== 'esbuild'
+        ? require('rollup-plugin-terser').terser()
         : undefined
     ].filter(Boolean)
   })
