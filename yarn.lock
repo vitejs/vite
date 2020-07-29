@@ -493,10 +493,10 @@
   resolved "https://registry.yarnpkg.com/@pika/react/-/react-16.13.1.tgz#20e47997d2a2f1e5da39a8e28b75db2ec77d99c6"
   integrity sha512-v33Ub2QxntNpDFRnkj3tCbT6jMb7Etu7LOMQO/YAulLRIDtDvJdMwuOVJDdPYUmDtWjfWOB5xSP7nl7k0BApbQ==
 
-"@rollup/plugin-commonjs@^13.0.0":
-  version "13.0.2"
-  resolved "https://registry.yarnpkg.com/@rollup/plugin-commonjs/-/plugin-commonjs-13.0.2.tgz#b7783f0db049450c72d60bc06cf48d4951515e58"
-  integrity sha512-9JXf2k8xqvMYfqmhgtB6eCgMN9fbxwF1XDF3mGKJc6pkAmt0jnsqurxQ0tC1akQKNSXCm7c3unQxa3zuxtZ7mQ==
+"@rollup/plugin-commonjs@^14.0.0":
+  version "14.0.0"
+  resolved "https://registry.yarnpkg.com/@rollup/plugin-commonjs/-/plugin-commonjs-14.0.0.tgz#4285f9ec2db686a31129e5a2b415c94aa1f836f0"
+  integrity sha512-+PSmD9ePwTAeU106i9FRdc+Zb3XUWyW26mo5Atr2mk82hor8+nPwkztEjFo8/B1fJKfaQDg9aM2bzQkjhi7zOw==
   dependencies:
     "@rollup/pluginutils" "^3.0.8"
     commondir "^1.0.1"
@@ -513,7 +513,7 @@
   dependencies:
     "@rollup/pluginutils" "^3.0.8"
 
-"@rollup/plugin-node-resolve@^8.0.0":
+"@rollup/plugin-node-resolve@^8.4.0":
   version "8.4.0"
   resolved "https://registry.yarnpkg.com/@rollup/plugin-node-resolve/-/plugin-node-resolve-8.4.0.tgz#261d79a680e9dc3d86761c14462f24126ba83575"
   integrity sha512-LFqKdRLn0ShtQyf6SBYO69bGE1upV6wUhBX0vFOUnLAyzx5cwp8svA0eHUnu8+YU57XOkrMtfG63QOpQx25pHQ==
