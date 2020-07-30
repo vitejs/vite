@@ -206,7 +206,13 @@ async function createVuePlugin(
 
   return require('rollup-plugin-vue')({
     ...rollupPluginVueOptions,
-    templatePreprocessOptions: vueTemplatePreprocessOptions,
+    templatePreprocessOptions: {
+      ...vueTemplatePreprocessOptions,
+      pug: {
+        doctype: 'html',
+        ...(vueTemplatePreprocessOptions && vueTemplatePreprocessOptions.pug)
+      }
+    },
     transformAssetUrls: vueTransformAssetUrls,
     postcssOptions,
     postcssPlugins,

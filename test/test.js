@@ -497,7 +497,7 @@ describe('vite', () => {
       expect(await getText('.pug')).toMatch('template lang="pug"')
       // pug compiler with `html` option
       expect(
-        (await getEl('.pug')).evaluate((el) => el.getAttribute('id'))
+        await (await getEl('.pug')).evaluate((el) => el.getAttribute('id'))
       ).toMatch('')
       expect(await getComputedColor('.pug')).toBe('rgb(255, 0, 255)')
       if (!isBuild) {
