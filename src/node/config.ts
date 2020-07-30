@@ -30,7 +30,9 @@ export type PreprocessLang = NonNullable<
 
 export type PreprocessOptions = SFCStyleCompileOptions['preprocessOptions']
 
-export type CssPreprocessOptions = Record<PreprocessLang, PreprocessOptions>
+export type CssPreprocessOptions = Partial<
+  Record<PreprocessLang, PreprocessOptions>
+>
 
 export { Resolver, Transform }
 
@@ -194,13 +196,10 @@ export interface ServerConfig extends SharedConfig {
    */
   proxy?: Record<string, string | IKoaProxiesOptions>
   /**
-   * Whether to use a Service Worker to cache served code. This can greatly
-   * improve full page reload performance, but requires a Service Worker
-   * update + reload on each server restart.
-   *
-   * @default false
+   * A plugin function that configures the dev server. Receives a server plugin
+   * context object just like the internal server plguins. Can also be an array
+   * of multiple server plugin functions.
    */
-  serviceWorker?: boolean
   configureServer?: ServerPlugin | ServerPlugin[]
 }
 

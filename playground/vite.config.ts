@@ -1,4 +1,4 @@
-import type { UserConfig } from 'vite'
+import type { UserConfig } from '../src/node/config'
 import { jsPlugin } from './plugins/jsPlugin'
 import { i18nTransform } from './custom-blocks/i18nTransform'
 
@@ -8,7 +8,6 @@ const config: UserConfig = {
     '/@alias/': require('path').resolve(__dirname, 'alias/aliased-dir')
   },
   jsx: 'preact',
-  serviceWorker: !!process.env.USE_SW,
   plugins: [jsPlugin],
   vueCustomBlockTransforms: { i18n: i18nTransform },
   optimizeDeps: {

@@ -718,66 +718,61 @@ describe('vite', () => {
     })
   }
 
-  // test build first since we are going to edit the fixtures when testing dev
-  // no need to run build tests when testing service worker mode since it's
-  // dev only
-  if (!process.env.USE_SW) {
-    describe('build', () => {
-      let staticServer
-      beforeAll(async () => {
-        console.log('building...')
-        const buildOutput = await execa(binPath, ['build'], {
-          cwd: tempDir
-        })
-        expect(buildOutput.stdout).toMatch('Build completed')
-        expect(buildOutput.stderr).toBe('')
-        console.log('build complete. running build tests...')
+  describe('build', () => {
+    let staticServer
+    beforeAll(async () => {
+      console.log('building...')
+      const buildOutput = await execa(binPath, ['build'], {
+        cwd: tempDir
       })
-
-      afterAll(() => {
-        console.log('build test done.')
-        if (staticServer) staticServer.close()
-      })
-
-      describe('assertions', () => {
-        beforeAll(async () => {
-          // start a static file server
-          const app = new (require('koa'))()
-          app.use(require('koa-static')(path.join(tempDir, 'dist')))
-          staticServer = require('http').createServer(app.callback())
-          await new Promise((r) => staticServer.listen(3001, r))
-
-          page = await browser.newPage()
-          await page.goto('http://localhost:3001')
-        })
-
-        declareTests(true)
-      })
-
-      test('css codesplit in async chunks', async () => {
-        const colorToMatch = /#8B4513/i // from TestAsync.vue
-
-        const files = await fs.readdir(path.join(tempDir, 'dist/_assets'))
-        const cssFile = files.find((f) => f.endsWith('.css'))
-        const css = await fs.readFile(
-          path.join(tempDir, 'dist/_assets', cssFile),
-          'utf-8'
-        )
-        // should be extracted from the main css file
-        expect(css).not.toMatch(colorToMatch)
-        // should be inside the split chunk file
-        const asyncChunk = files.find(
-          (f) => f.startsWith('TestAsync') && f.endsWith('.js')
-        )
-        const code = await fs.readFile(
-          path.join(tempDir, 'dist/_assets', asyncChunk),
-          'utf-8'
-        )
-        // should be inside the async chunk
-        expect(code).toMatch(colorToMatch)
-      })
+      expect(buildOutput.stdout).toMatch('Build completed')
+      expect(buildOutput.stderr).toBe('')
+      console.log('build complete. running build tests...')
     })
-  }
+
+    afterAll(() => {
+      console.log('build test done.')
+      if (staticServer) staticServer.close()
+    })
+
+    describe('assertions', () => {
+      beforeAll(async () => {
+        // start a static file server
+        const app = new (require('koa'))()
+        app.use(require('koa-static')(path.join(tempDir, 'dist')))
+        staticServer = require('http').createServer(app.callback())
+        await new Promise((r) => staticServer.listen(3001, r))
+
+        page = await browser.newPage()
+        await page.goto('http://localhost:3001')
+      })
+
+      declareTests(true)
+    })
+
+    test('css codesplit in async chunks', async () => {
+      const colorToMatch = /#8B4513/i // from TestAsync.vue
+
+      const files = await fs.readdir(path.join(tempDir, 'dist/_assets'))
+      const cssFile = files.find((f) => f.endsWith('.css'))
+      const css = await fs.readFile(
+        path.join(tempDir, 'dist/_assets', cssFile),
+        'utf-8'
+      )
+      // should be extracted from the main css file
+      expect(css).not.toMatch(colorToMatch)
+      // should be inside the split chunk file
+      const asyncChunk = files.find(
+        (f) => f.startsWith('TestAsync') && f.endsWith('.js')
+      )
+      const code = await fs.readFile(
+        path.join(tempDir, 'dist/_assets', asyncChunk),
+        'utf-8'
+      )
+      // should be inside the async chunk
+      expect(code).toMatch(colorToMatch)
+    })
+  })
 
   describe('dev', () => {
     beforeAll(async () => {
@@ -838,42 +833,34 @@ describe('vite', () => {
     })
 
     // Assert that all edited files are reflected on page reload
-    // i.e. service-worker cache is correctly busted
-    if (process.env.USE_SW) {
-      test('sw cache busting', async () => {
-        await page.reload()
+    // i.e. server-side cache is correctly busted
+    test('page reload cache busting', async () => {
+      await page.reload()
 
-        expect(await getText('.hmr-increment')).toMatch('>>> count is 1337 <<<')
-        expect(await getText('.hmr-propagation')).toMatch('666')
-        expect(await getComputedColor('.postcss-from-css')).toBe(
-          'rgb(0, 128, 0)'
-        )
-        expect(await getComputedColor('.postcss-from-sfc')).toBe('rgb(0, 0, 0)')
-        expect(await getComputedColor('.style-scoped')).toBe('rgb(0, 0, 0)')
-        expect(await getComputedColor('.css-modules-sfc')).toBe('rgb(0, 0, 0)')
-        expect(await getComputedColor('.css-modules-import')).toBe(
-          'rgb(0, 0, 1)'
-        )
-        expect(await getComputedColor('.pug')).toBe('rgb(0, 0, 0)')
-        expect(await getText('.pug')).toMatch('pug with hmr')
-        expect(await getComputedColor('.src-imports-style')).toBe(
-          'rgb(0, 0, 0)'
-        )
-        expect(await getText('.src-imports-script')).toMatch('bye from')
-        expect(await getText('.src-imports-script')).toMatch('changed')
-        expect(await getText('.jsx-root')).toMatch('2046')
-        expect(await getText('.alias')).toMatch('alias hmr works')
-        expect(await getComputedColor('.transform-scss')).toBe('rgb(0, 0, 0)')
-        expect(await getText('.transform-js')).toMatch('3')
-        expect(await getText('.json')).toMatch('with hmr')
+      expect(await getText('.hmr-increment')).toMatch('>>> count is 1337 <<<')
+      expect(await getText('.hmr-propagation')).toMatch('666')
+      expect(await getComputedColor('.postcss-from-css')).toBe('rgb(0, 128, 0)')
+      expect(await getComputedColor('.postcss-from-sfc')).toBe('rgb(0, 0, 0)')
+      expect(await getComputedColor('.style-scoped')).toBe('rgb(0, 0, 0)')
+      expect(await getComputedColor('.css-modules-sfc')).toBe('rgb(0, 0, 0)')
+      expect(await getComputedColor('.css-modules-import')).toBe('rgb(0, 0, 1)')
+      expect(await getComputedColor('.pug')).toBe('rgb(0, 0, 0)')
+      expect(await getText('.pug')).toMatch('pug with hmr')
+      expect(await getComputedColor('.src-imports-style')).toBe('rgb(0, 0, 0)')
+      expect(await getText('.src-imports-script')).toMatch('bye from')
+      expect(await getText('.src-imports-script')).toMatch('changed')
+      expect(await getText('.jsx-root')).toMatch('2046')
+      expect(await getText('.alias')).toMatch('alias hmr works')
+      expect(await getComputedColor('.transform-scss')).toBe('rgb(0, 0, 0)')
+      expect(await getText('.transform-js')).toMatch('3')
+      expect(await getText('.json')).toMatch('with hmr')
 
-        // ensure import graph is still working
-        await updateFile('json/testJsonImport.json', (c) =>
-          c.replace('with hmr', 'with sw reload')
-        )
-        await expectByPolling(() => getText('.json'), 'with sw reload')
-      })
-    }
+      // ensure import graph is still working
+      await updateFile('json/testJsonImport.json', (c) =>
+        c.replace('with hmr', 'with page reload')
+      )
+      await expectByPolling(() => getText('.json'), 'with page reload')
+    })
   })
 })
 

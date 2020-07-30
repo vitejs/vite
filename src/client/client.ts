@@ -1,7 +1,6 @@
 // This file runs in the browser.
 
 // injected by serverPluginHmr when served
-declare const __SW_ENABLED__: boolean
 declare const __PORT__: number
 declare const __MODE__: string
 declare const __DEFINES__: Record<string, any>
@@ -27,48 +26,6 @@ Object.keys(defines).forEach((key) => {
 
 import { HMRRuntime } from 'vue'
 import { HMRPayload, UpdatePayload, MultiUpdatePayload } from '../hmrPayload'
-
-// register service worker
-if ('serviceWorker' in navigator) {
-  ;(async () => {
-    const registeredViteSw = (
-      await navigator.serviceWorker.getRegistrations()
-    ).find((sw) => sw.active && sw.active.scriptURL.endsWith('vite_sw.js'))
-
-    const prompt = (msg: string) => {
-      if (confirm(msg)) {
-        location.reload()
-      } else {
-        console.warn(msg)
-      }
-    }
-
-    if (__SW_ENABLED__) {
-      // if not enabled but has existing sw, registering the sw will force the
-      // cache to be busted.
-      try {
-        navigator.serviceWorker.register('/vite_sw.js')
-      } catch (e) {
-        console.log('[vite] failed to register service worker:', e)
-      }
-      // Notify the user to reload the page if a new service worker has taken
-      // control.
-      if (registeredViteSw) {
-        registeredViteSw.addEventListener('controllerchange', () =>
-          prompt(`[vite] Service worker cache invalidated. Reload is required.`)
-        )
-      } else {
-        console.log(`[vite] service worker registered.`)
-      }
-    } else if (registeredViteSw) {
-      await registeredViteSw.unregister()
-      prompt(
-        `[vite] Unregistered stale service worker. ` +
-          `Reload is required to invalidate cache.`
-      )
-    }
-  })()
-}
 
 console.log('[vite] connecting...')
 
@@ -101,12 +58,6 @@ socket.addEventListener('message', async ({ data }) => {
 
 async function handleMessage(payload: HMRPayload) {
   const { path, changeSrcPath, timestamp } = payload as UpdatePayload
-  if (changeSrcPath) {
-    bustSwCache(changeSrcPath)
-  }
-  if (path && path !== changeSrcPath) {
-    bustSwCache(path)
-  }
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
@@ -123,7 +74,6 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'vue-rerender':
       const templatePath = `${path}?type=template`
-      bustSwCache(templatePath)
       import(`${templatePath}&t=${timestamp}`).then((m) => {
         __VUE_HMR_RUNTIME__.rerender(path, m.render)
         console.log(`[vite] ${path} template updated.`)
@@ -133,7 +83,6 @@ async function handleMessage(payload: HMRPayload) {
       // check if this is referenced in html via <link>
       const el = document.querySelector(`link[href*='${path}']`)
       if (el) {
-        bustSwCache(path)
         el.setAttribute(
           'href',
           `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
@@ -142,7 +91,6 @@ async function handleMessage(payload: HMRPayload) {
       }
       // imported CSS
       const importQuery = path.includes('?') ? '&import' : '?import'
-      bustSwCache(`${path}${importQuery}`)
       await import(`${path}${importQuery}&t=${timestamp}`)
       console.log(`[vite] ${path} updated.`)
       break
@@ -412,24 +360,4 @@ export const createHotContext = (id: string) => {
   }
 
   return hot
-}
-
-function bustSwCache(path: string) {
-  const sw = navigator.serviceWorker && navigator.serviceWorker.controller
-  if (sw) {
-    return new Promise((r) => {
-      const channel = new MessageChannel()
-      channel.port1.onmessage = (e) => {
-        if (e.data.busted) r()
-      }
-
-      sw.postMessage(
-        {
-          type: 'bust-cache',
-          path: `${location.protocol}//${location.host}${path}`
-        },
-        [channel.port2]
-      )
-    })
-  }
 }

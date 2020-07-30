@@ -13,7 +13,6 @@ const legacyPublicPath = '/vite/hmr'
 export const clientPlugin: ServerPlugin = ({ app, config }) => {
   const clientCode = fs
     .readFileSync(clientFilePath, 'utf-8')
-    .replace(`__SW_ENABLED__`, String(!!config.serviceWorker))
     .replace(`__MODE__`, JSON.stringify(config.mode || 'development'))
     .replace(
       `__DEFINES__`,

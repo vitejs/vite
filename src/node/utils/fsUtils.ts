@@ -41,11 +41,7 @@ export async function cachedRead(
       ctx.__notModified = true
       ctx.etag = cached.etag
       ctx.lastModified = new Date(cached.lastModified)
-      if (
-        ctx.__serviceWorker !== true &&
-        ctx.get('If-None-Match') === ctx.etag &&
-        seenUrls.has(ctx.url)
-      ) {
+      if (ctx.get('If-None-Match') === ctx.etag && seenUrls.has(ctx.url)) {
         ctx.status = 304
       }
       seenUrls.add(ctx.url)
