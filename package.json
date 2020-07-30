@@ -25,14 +25,12 @@
   },
   "homepage": "https://github.com/vuejs/vite/tree/master/#readme",
   "scripts": {
-    "dev": "run-p dev-client dev-node dev-sw",
+    "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --incremental --p src/client",
     "dev-node": "tsc -w --incremental --p src/node",
-    "dev-sw": "tsc -w --incremental --p src/sw",
-    "build": "rm -rf dist && tsc -p src/client && tsc -p src/node && tsc -p src/sw && node scripts/patchTypes",
+    "build": "rm -rf dist && tsc -p src/client && tsc -p src/node && node scripts/patchTypes",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "jest --clearCache && jest --runInBand --forceExit",
-    "test-sw": "cross-env USE_SW=1 yarn test",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "prepublishOnly": "yarn build && yarn changelog",
     "postpublish": "git add CHANGELOG.md && git commit -m 'chore: changelog [ci skip]'"

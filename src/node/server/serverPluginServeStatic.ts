@@ -46,19 +46,16 @@ export const serveStaticPlugin: ServerPlugin = ({
         await ctx.read(filePath)
       }
     }
-    return next()
+
+    await next()
+
+    // the first request to the server should never 304
+    if (seenUrls.has(ctx.url) && ctx.fresh) {
+      ctx.status = 304
+    }
+    seenUrls.add(ctx.url)
   })
 
-  if (!config.serviceWorker) {
-    app.use(async (ctx, next) => {
-      await next()
-      // the first request to the server should never 304
-      if (seenUrls.has(ctx.url) && ctx.fresh) {
-        ctx.status = 304
-      }
-      seenUrls.add(ctx.url)
-    })
-  }
   app.use(require('koa-etag')())
   app.use(require('koa-static')(root))
   app.use(require('koa-static')(path.join(root, 'public')))

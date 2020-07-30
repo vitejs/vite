@@ -16,7 +16,6 @@ import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
-import { serviceWorkerPlugin } from './serverPluginServiceWorker'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
@@ -97,7 +96,6 @@ export function createServer(config: ServerConfig): Server {
     envPlugin,
     moduleResolvePlugin,
     proxyPlugin,
-    serviceWorkerPlugin,
     clientPlugin,
     hmrPlugin,
     ...(transforms.length || Object.keys(vueCustomBlockTransforms).length
