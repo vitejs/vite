@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { resolveFrom, lookupFile } from '../utils'
+import { resolveFrom, lookupFile, isStaticAsset } from '../utils'
 import {
   rollup as Rollup,
   RollupOutput,
@@ -29,7 +29,7 @@ import { stopService } from '../esbuildService'
 import { BuildConfig, defaultDefines } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
-import { resolvePostcssOptions } from '../utils/cssUtils'
+import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
 import { createBuildWasmPlugin } from './buildPluginWasm'
 
 export interface BuildResult {
@@ -347,7 +347,11 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // - which makes it impossible to exclude Vue templates from it since
       // Vue templates are compiled into js and included in chunks.
       createReplacePlugin(
-        (id) => /\.(j|t)sx?$/.test(id) || id.startsWith(`/vite/`),
+        (id) =>
+          !/\?vue&type=template/.test(id) &&
+          // also exclude css and static assets for performance
+          !isCSSRequest(id) &&
+          !isStaticAsset(id),
         {
           ...defaultDefines,
           ...userDefineReplacements,
