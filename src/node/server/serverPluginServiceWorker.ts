@@ -56,7 +56,7 @@ export const serviceWorkerPlugin: ServerPlugin = ({
     // expose config to cachedRead
     ctx.__serviceWorker = enabled
 
-    if (ctx.path === '/sw.js') {
+    if (ctx.path === '/vite_sw.js') {
       ctx.type = 'js'
       ctx.status = 200
       ctx.body = swScript

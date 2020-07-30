@@ -33,7 +33,7 @@ if ('serviceWorker' in navigator) {
   ;(async () => {
     const registeredViteSw = (
       await navigator.serviceWorker.getRegistrations()
-    ).find((sw) => sw.active && sw.active.scriptURL.endsWith('sw.js'))
+    ).find((sw) => sw.active && sw.active.scriptURL.endsWith('vite_sw.js'))
 
     const prompt = (msg: string) => {
       if (confirm(msg)) {
@@ -47,7 +47,7 @@ if ('serviceWorker' in navigator) {
       // if not enabled but has existing sw, registering the sw will force the
       // cache to be busted.
       try {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('/vite_sw.js')
       } catch (e) {
         console.log('[vite] failed to register service worker:', e)
       }
