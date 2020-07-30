@@ -88,11 +88,12 @@ export function parseNodeModuleId(id: string) {
   }
 }
 
-export function removeQueryTimestamp(url: string) {
-  if (url.includes('t=')) {
-    const { path, query } = parseWithQuery(url)
-    delete query.t
-    return path + qs.stringify(query)
+export function removeUnRelatedHmrQuery(url: string) {
+  const { path, query } = parseWithQuery(url)
+  delete query.t
+  delete query.import
+  if (Object.keys(query).length) {
+    return path + '?' + qs.stringify(query)
   }
-  return url
+  return path
 }
