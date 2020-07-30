@@ -170,8 +170,7 @@ export async function createBaseRollupPlugins(
       mainFields
     }),
     require('@rollup/plugin-commonjs')({
-      extensions: ['.js', '.cjs'],
-      transformMixedEsModules: true
+      extensions: ['.js', '.cjs']
     }),
     dynamicImport({
       warnOnError: true,
