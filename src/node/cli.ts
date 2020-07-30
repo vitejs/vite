@@ -113,6 +113,16 @@ async function resolveOptions(mode: string) {
       ...argv // cli options take higher priority
     }
   }
+
+  // deprecation warning
+  if (argv.sw || argv.serviceWorker) {
+    console.warn(
+      chalk.yellow(
+        `[vite] service worker mode has been removed due to insufficient performance gains.`
+      )
+    )
+  }
+
   return argv
 }
 
