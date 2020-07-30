@@ -46,6 +46,7 @@ export const createBuildCssPlugin = ({
 }: BuildCssOption): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
+  let staticCss = ''
 
   return {
     name: 'vite:css',
@@ -133,52 +134,51 @@ export const createBuildCssPlugin = ({
     },
 
     async renderChunk(code, chunk) {
-      if (!cssCodeSplit) {
-        return null
-      }
-      code = code.replace(cssInjectionRE, '')
-      // for each dynamic entry chunk, collect its css and inline it as JS
-      // strings.
-      if (chunk.isDynamicEntry) {
-        let chunkCSS = ''
-        for (const id in chunk.modules) {
-          if (styles.has(id)) {
-            chunkCSS += styles.get(id)
-            styles.delete(id) // remove inlined css
-          }
+      let chunkCSS = ''
+      for (const id in chunk.modules) {
+        if (styles.has(id)) {
+          chunkCSS += styles.get(id)
         }
-        chunkCSS = minifyCSS(chunkCSS)
-        code =
-          `let ${cssInjectionMarker} = document.createElement('style');` +
-          `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-          `document.head.appendChild(${cssInjectionMarker});` +
-          code
       }
-      return {
-        code,
-        map: null
+
+      if (cssCodeSplit) {
+        code = code.replace(cssInjectionRE, '')
+        // for each dynamic entry chunk, collect its css and inline it as JS
+        // strings.
+        if (chunk.isDynamicEntry) {
+          chunkCSS = minifyCSS(chunkCSS)
+          code =
+            `let ${cssInjectionMarker} = document.createElement('style');` +
+            `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `document.head.appendChild(${cssInjectionMarker});` +
+            code
+        } else {
+          staticCss += chunkCSS
+        }
+        return {
+          code,
+          map: null
+        }
+      } else {
+        staticCss += chunkCSS
+        return null
       }
     },
 
     async generateBundle(_options, bundle) {
-      let css = ''
-      // finalize extracted css
-      styles.forEach((s) => {
-        css += s
-      })
-      // minify with cssnano
+      // minify css
       if (minify) {
-        css = minifyCSS(css)
+        staticCss = minifyCSS(staticCss)
       }
 
-      const cssFileName = `style.${hash_sum(css)}.css`
+      const cssFileName = `style.${hash_sum(staticCss)}.css`
 
       bundle[cssFileName] = {
         name: cssFileName,
         isAsset: true,
         type: 'asset',
         fileName: cssFileName,
-        source: css
+        source: staticCss
       }
 
       registerAssets(assets, bundle)

@@ -3,6 +3,7 @@ const path = require('path')
 const execa = require('execa')
 const puppeteer = require('puppeteer')
 const moment = require('moment')
+const { EPERM } = require('constants')
 
 jest.setTimeout(100000)
 
@@ -120,6 +121,20 @@ describe('vite', () => {
       )
 
       expect(await getText('.node-env')).toMatch(`NODE_ENV: ${mode}`)
+      expect(await getText('.import-meta-env')).toMatch(
+        JSON.stringify(
+          {
+            VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
+            VITE_CUSTOM_ENV_VARIABLE: '9527',
+            BASE_URL: '/',
+            MODE: mode,
+            DEV: !isBuild,
+            PROD: isBuild
+          },
+          null,
+          2
+        )
+      )
     })
 
     test('module resolving', async () => {
@@ -148,7 +163,7 @@ describe('vite', () => {
 
       test('hmr (vue reload)', async () => {
         await updateFile('hmr/TestHmr.vue', (content) =>
-          content.replace('count: 0,', 'count: 1337,')
+          content.replace('count: ref(0),', 'count: ref(1337),')
         )
         await expectByPolling(() => getText('.hmr-increment'), 'count is 1337')
       })
@@ -692,6 +707,10 @@ describe('vite', () => {
           'rgb(0, 0, 255)'
         )
       }
+    })
+
+    test('optional chaining syntax support', async () => {
+      expect(await getText('.syntax')).toBe('baz')
     })
   }
 

@@ -1,5 +1,5 @@
 <template>
-  <h1>Script Setup + CSS Variables Injection</h1>
+  <h2>Script Setup + CSS Variables Injection</h2>
   <p class="script-setup-props">{{ msg }}</p>
   <p>
     <span class="style-vars">This should be red</span>

@@ -46,11 +46,17 @@ export const createEsbuildPlugin = async (
   }
 }
 
-export const esbuildMinifyPlugin: Plugin = {
-  name: 'vite:esbuild-minify',
-  async renderChunk(code, chunk) {
-    return transform(code, chunk.fileName, {
-      minify: true
-    })
+export const createEsbuildRenderChunkPlugin = (
+  target: string,
+  minify: boolean
+): Plugin => {
+  return {
+    name: 'vite:esbuild-transpile',
+    async renderChunk(code, chunk) {
+      return transform(code, chunk.fileName, {
+        target,
+        minify
+      })
+    }
   }
 }
