@@ -495,6 +495,10 @@ describe('vite', () => {
 
     test('pre-processors', async () => {
       expect(await getText('.pug')).toMatch('template lang="pug"')
+      // pug compiler with `html` option
+      expect(
+        await (await getEl('.pug')).evaluate((el) => el.getAttribute('id'))
+      ).toMatch('')
       expect(await getComputedColor('.pug')).toBe('rgb(255, 0, 255)')
       if (!isBuild) {
         await updateFile('TestPreprocessors.vue', (c) =>
