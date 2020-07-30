@@ -104,6 +104,13 @@ export interface SharedConfig {
    */
   vueTransformAssetUrls?: SFCTemplateCompileOptions['transformAssetUrls']
   /**
+   * The options for template block preprocessor render.
+   */
+  vueTemplatePreprocessOptions?: Record<
+    string,
+    SFCTemplateCompileOptions['preprocessOptions']
+  >
+  /**
    * Transform functions for Vue custom blocks.
    *
    * Example `vue.config.js`:
@@ -323,6 +330,7 @@ export interface Plugin
     | 'configureServer'
     | 'vueCompilerOptions'
     | 'vueTransformAssetUrls'
+    | 'vueTemplatePreprocessOptions'
     | 'vueCustomBlockTransforms'
     | 'rollupInputOptions'
     | 'rollupOutputOptions'
@@ -491,6 +499,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
       config.vueTransformAssetUrls,
       plugin.vueTransformAssetUrls
     ),
+    vueTemplatePreprocessOptions: {
+      ...config.vueTemplatePreprocessOptions,
+      ...plugin.vueTemplatePreprocessOptions
+    },
     vueCustomBlockTransforms: {
       ...config.vueCustomBlockTransforms,
       ...plugin.vueCustomBlockTransforms

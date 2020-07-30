@@ -534,7 +534,11 @@ function compileSFCTemplate(
   scoped: boolean,
   bindingMetadata: BindingMetadata | undefined,
   vueSpecifier: string,
-  { vueCompilerOptions, vueTransformAssetUrls = {} }: ServerConfig
+  {
+    vueCompilerOptions,
+    vueTransformAssetUrls = {},
+    vueTemplatePreprocessOptions = {}
+  }: ServerConfig
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
   if (cached && cached.template) {
@@ -551,6 +555,16 @@ function compileSFCTemplate(
     }
   }
 
+  const preprocessLang = template.lang
+  let preprocessOptions =
+    preprocessLang && vueTemplatePreprocessOptions[preprocessLang]
+  if (preprocessLang === 'pug') {
+    preprocessOptions = {
+      doctype: 'html',
+      ...preprocessOptions
+    }
+  }
+
   const { code, map, errors } = compileTemplate({
     source: template.content,
     filename: filePath,
@@ -562,7 +576,8 @@ function compileSFCTemplate(
       bindingMetadata,
       runtimeModuleName: vueSpecifier
     },
-    preprocessLang: template.lang,
+    preprocessLang,
+    preprocessOptions,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id))
   })
 
