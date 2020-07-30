@@ -74,7 +74,8 @@ export const moduleRewritePlugin: ServerPlugin = ({
     ) {
       const content = await readBody(ctx.body)
       const cacheKey = publicPath + content
-      if (!ctx.query.t && rewriteCache.has(cacheKey)) {
+      const isHmrRequest = !!ctx.query.t
+      if (!isHmrRequest && rewriteCache.has(cacheKey)) {
         debug(`(cached) ${ctx.url}`)
         ctx.body = rewriteCache.get(cacheKey)
       } else {
@@ -95,7 +96,9 @@ export const moduleRewritePlugin: ServerPlugin = ({
           resolver,
           ctx.query.t
         )
-        rewriteCache.set(cacheKey, ctx.body)
+        if (!isHmrRequest) {
+          rewriteCache.set(cacheKey, ctx.body)
+        }
       }
     } else {
       debug(`(skipped) ${ctx.url}`)
