@@ -9,6 +9,9 @@ import {
   SFCAsyncStyleCompileOptions,
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
+import { getOriginalSourceMap } from './sourcemap'
+import Concat from 'concat-with-sourcemaps'
+import { SourceMap } from '../server/serverPluginSourceMap'
 
 export const urlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
@@ -51,9 +54,16 @@ export function rewriteCssUrls(
   })
 }
 
+export interface ProcessedCSS {
+  css: string
+  modules?: Record<string, string>
+  map?: SourceMap
+}
+
 export async function compileCss(
   root: string,
   publicPath: string,
+  read: (filePath: string) => Promise<Buffer | string>,
   {
     source,
     filename,
@@ -64,11 +74,16 @@ export async function compileCss(
     preprocessOptions = {},
     modulesOptions = {}
   }: SFCAsyncStyleCompileOptions,
+  sourcemap: boolean = true,
   isBuild: boolean = false
-): Promise<SFCStyleCompileResults | string> {
+): Promise<SFCStyleCompileResults> {
   const id = hash_sum(publicPath)
   const postcssConfig = await loadPostcssConfig(root)
   const { compileStyleAsync } = resolveCompiler(root)
+  const map =
+    sourcemap && !filename.includes('.vue')
+      ? (getOriginalSourceMap(source, filename) as any)
+      : null
 
   if (
     publicPath.endsWith('.css') &&
@@ -78,7 +93,13 @@ export async function compileCss(
     !source.includes('@import')
   ) {
     // no need to invoke compile for plain css if no postcss config is present
-    return source
+    return {
+      code: source,
+      map,
+      dependencies: new Set<string>(),
+      errors: [],
+      rawResult: undefined
+    }
   }
 
   const {
@@ -106,7 +127,7 @@ export async function compileCss(
     }
   }
 
-  return await compileStyleAsync({
+  const result = await compileStyleAsync({
     source,
     filename,
     id: `data-v-${id}`,
@@ -118,14 +139,31 @@ export async function compileCss(
       localsConvention: 'camelCase',
       ...modulesOptions
     },
-
+    map,
     preprocessLang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
     preprocessOptions,
-
     postcssOptions,
     postcssPlugins
   })
+
+  if (result.dependencies.size > 0 && sourcemap) {
+    const concat = new Concat(true, filename, '\n')
+    if (!filename.includes('.vue')) {
+      concat.add(filename, source, result.map)
+    }
+    for (const dependency of result.dependencies) {
+      const content = (await read(dependency)).toString()
+      concat.add(
+        dependency,
+        content,
+        getOriginalSourceMap(content, dependency) as any
+      )
+    }
+    result.map = JSON.parse(concat.sourceMap!)
+  }
+
+  return result
 }
 
 // postcss-load-config doesn't expose Result type

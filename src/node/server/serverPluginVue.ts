@@ -157,10 +157,12 @@ export const vuePlugin: ServerPlugin = ({
         index,
         filePath,
         publicPath,
+        ctx,
         config
       )
       ctx.type = 'js'
       ctx.body = codegenCss(`${id}-${index}`, result.code, result.modules)
+      ctx.map = result.map as any
       return etagCacheCheck(ctx)
     }
 
@@ -589,7 +591,7 @@ function compileSFCTemplate(
 
   const result = {
     code,
-    map: map as SourceMap
+    map: map as any
   }
 
   cached = cached || { styles: [], customs: [] }
@@ -606,6 +608,7 @@ async function compileSFCStyle(
   index: number,
   filePath: string,
   publicPath: string,
+  ctx: Context,
   { cssPreprocessOptions, cssModuleOptions }: ServerPluginContext['config']
 ): Promise<SFCStyleCompileResults> {
   let cached = vueCache.get(filePath)
@@ -619,7 +622,7 @@ async function compileSFCStyle(
 
   const { generateCodeFrame } = resolveCompiler(root)
   const resource = filePath + `?type=style&index=${index}`
-  const result = (await compileCss(root, publicPath, {
+  const result = (await compileCss(root, publicPath, ctx.read, {
     source: style.content,
     filename: resource,
     id: ``, // will be computed in compileCss

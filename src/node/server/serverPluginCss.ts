@@ -10,13 +10,13 @@ import {
   getCssImportBoundaries,
   recordCssImportChain,
   rewriteCssUrls,
-  isCSSRequest
+  isCSSRequest,
+  ProcessedCSS
 } from '../utils/cssUtils'
 import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
 import { clientPublicPath } from './serverPluginClient'
-
 export const debugCSS = require('debug')('vite:css')
 
 export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
@@ -30,11 +30,12 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     ) {
       const id = JSON.stringify(hash_sum(ctx.path))
       if (isImportRequest(ctx)) {
-        const { css, modules } = await processCss(root, ctx)
+        const { css, modules, map } = await processCss(root, ctx)
         ctx.type = 'js'
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url
         ctx.body = codegenCss(id, css, modules)
+        ctx.map = map
       }
     }
   })
@@ -119,11 +120,6 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     })
   }
 
-  interface ProcessedCSS {
-    css: string
-    modules?: Record<string, string>
-  }
-
   // processed CSS is cached in case the user ticks "disable cache" during dev
   // which can lead to unnecessary processing on page reload
   const processedCSS = new Map<string, ProcessedCSS>()
@@ -139,7 +135,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     const filePath = resolver.requestToFile(ctx.path)
     const preprocessLang = ctx.path.replace(cssPreprocessLangRE, '$2')
 
-    const result = await compileCss(root, ctx.path, {
+    const result = await compileCss(root, ctx.path, ctx.read, {
       id: '',
       source: css,
       filename: filePath,
@@ -150,12 +146,6 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       modulesOptions: ctx.config.cssModuleOptions
     })
 
-    if (typeof result === 'string') {
-      const res = { css: await rewriteCssUrls(css, ctx.path) }
-      processedCSS.set(ctx.path, res)
-      return res
-    }
-
     recordCssImportChain(result.dependencies, filePath)
 
     if (result.errors.length) {
@@ -165,7 +155,8 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 
     const res = {
       css: await rewriteCssUrls(result.code, ctx.path),
-      modules: result.modules
+      modules: result.modules,
+      map: result.map as any
     }
     processedCSS.set(ctx.path, res)
     return res
