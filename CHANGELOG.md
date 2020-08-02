@@ -1,3 +1,42 @@
+# [1.0.0-rc.4](https://github.com/vuejs/vite/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2020-07-30)
+
+
+### Bug Fixes
+
+* **hmr:** module rewrite should not cache hmr requests ([e386575](https://github.com/vuejs/vite/commit/e3865756bfb26065b0866be91d03d4b06e4e86dc)), closes [#603](https://github.com/vuejs/vite/issues/603) [#598](https://github.com/vuejs/vite/issues/598)
+* support options for template block preprocessor render ([#641](https://github.com/vuejs/vite/issues/641)) ([540ae24](https://github.com/vuejs/vite/commit/540ae24b0d645a4f20bd71037edd716690452ce0)), closes [#634](https://github.com/vuejs/vite/issues/634)
+* **build/css:** ensure consistent build css hash ([4fba48b](https://github.com/vuejs/vite/commit/4fba48be081e1d336368812ab23c9d5a74b98c06)), closes [#596](https://github.com/vuejs/vite/issues/596)
+* **dev:** don't unregister user service worker ([#622](https://github.com/vuejs/vite/issues/622)) ([ab5d6f6](https://github.com/vuejs/vite/commit/ab5d6f6864f059ea88b5328f97bfdaa4b5146c6a)), closes [#615](https://github.com/vuejs/vite/issues/615)
+* **dev:** fix path with query + ignore `?import` query with hmr ([#619](https://github.com/vuejs/vite/issues/619)) ([dd92f4f](https://github.com/vuejs/vite/commit/dd92f4f910553f8d8aaab0e587cb7788e643a24d)), closes [#617](https://github.com/vuejs/vite/issues/617)
+* **dev:** use `path` + `content` as rewrite cache key ([#631](https://github.com/vuejs/vite/issues/631)) ([60c7424](https://github.com/vuejs/vite/commit/60c7424f101d52b4542f75c0c9fac1f617097dcd)), closes [#627](https://github.com/vuejs/vite/issues/627)
+* handle `<script>` tags with no default export ([59938bc](https://github.com/vuejs/vite/commit/59938bc2765528ea1bfa84742fa5c48943a82cd5)), closes [vuejs/vitepress#53](https://github.com/vuejs/vitepress/issues/53)
+* rewrite named export default ([#599](https://github.com/vuejs/vite/issues/599)) ([2cd2104](https://github.com/vuejs/vite/commit/2cd2104628f2d01d063ab81fcad6b244096231ca)), closes [#595](https://github.com/vuejs/vite/issues/595)
+* use safer exclude for replace plugin ([f225b06](https://github.com/vuejs/vite/commit/f225b068d79eb919c43de7a0d3d9b0007a0d3555)), closes [#633](https://github.com/vuejs/vite/issues/633)
+* **env:** respect NODE_ENV in .env.mode files ([49f8de3](https://github.com/vuejs/vite/commit/49f8de33f8be8656322d957d2e369045cb184dde)), closes [#593](https://github.com/vuejs/vite/issues/593)
+* **transform:** should apply transform to non-page html requests ([1a6447d](https://github.com/vuejs/vite/commit/1a6447de45a325f1d27f80e7b5dfa155498fea14)), closes [#594](https://github.com/vuejs/vite/issues/594)
+* **vue:** fix vue template vue import specifier when vue is excluded from optimization ([8a52d8b](https://github.com/vuejs/vite/commit/8a52d8bbf46810bb233ea4e031a1608f9e3f972c)), closes [#635](https://github.com/vuejs/vite/issues/635)
+* fix bindingMetadata for templates ([54a2083](https://github.com/vuejs/vite/commit/54a2083a515157fb69b5126b6aa988f36f962d6f))
+
+
+### Code Refactoring
+
+* remove service worker option ([a47429d](https://github.com/vuejs/vite/commit/a47429dabea12e8aa5f4a21209846aaf857d5be0))
+
+
+### Features
+
+* apply syntax transpile with esbuild for build ([8a7f705](https://github.com/vuejs/vite/commit/8a7f70598ef3a250c1725cd26b9b4eab9e06cde2)), closes [#604](https://github.com/vuejs/vite/issues/604)
+
+
+### BREAKING CHANGES
+
+* dev server service worker option (`--sw`) has been
+removed. The service worker mode doesn't provide a significant enough
+performance gain to justify the complexity and edge cases it adds to the
+caching strategies in normal mode.
+
+
+
 # [1.0.0-rc.3](https://github.com/vuejs/vite/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2020-07-21)
 
 

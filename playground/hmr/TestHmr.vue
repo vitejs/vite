@@ -76,7 +76,7 @@ export default {
     const bazValue = ref('baz not loaded')
     const dynamicDataOutlet = ref()
     return {
-      count: 0,
+      count: ref(0),
       foo,
       barValue,
       bazValue,

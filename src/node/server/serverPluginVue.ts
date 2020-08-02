@@ -11,9 +11,10 @@ import {
   SFCStyleCompileOptions,
   BindingMetadata,
   CompilerError,
-  generateCodeFrame
+  generateCodeFrame,
+  rewriteDefault
 } from '@vue/compiler-sfc'
-import { resolveCompiler, resolveVue } from '../utils/resolveVue'
+import { resolveCompiler } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
 import { debugHmr, importerMap, ensureMapEntry } from './serverPluginHmr'
@@ -24,7 +25,7 @@ import {
   watchFileIfOutOfRoot
 } from '../utils'
 import { transform } from '../esbuildService'
-import { InternalResolver } from '../resolver'
+import { InternalResolver, resolveBareModuleRequest } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'
 import { codegenCss } from './serverPluginCss'
 import {
@@ -32,8 +33,6 @@ import {
   recordCssImportChain,
   rewriteCssUrls
 } from '../utils/cssUtils'
-import { parse } from '../utils/babelParse'
-import MagicString from 'magic-string'
 import { resolveImport } from './serverPluginModuleRewrite'
 import { SourceMap, mergeSourceMap } from './serverPluginSourceMap'
 import { ServerConfig } from '../config'
@@ -54,6 +53,7 @@ interface CacheEntry {
 interface ResultWithMap {
   code: string
   map: SourceMap | null | undefined
+  bindings?: BindingMetadata
 }
 
 export const vueCache = new LRUCache<string, CacheEntry>({
@@ -69,14 +69,9 @@ export const vuePlugin: ServerPlugin = ({
 }) => {
   const etagCacheCheck = (ctx: Context) => {
     ctx.etag = getEtag(ctx.body)
-    // only add 304 tag check if not using service worker to cache user code
-    if (!config.serviceWorker) {
-      ctx.status =
-        seenUrls.has(ctx.url) && ctx.etag === ctx.get('If-None-Match')
-          ? 304
-          : 200
-      seenUrls.add(ctx.url)
-    }
+    ctx.status =
+      seenUrls.has(ctx.url) && ctx.etag === ctx.get('If-None-Match') ? 304 : 200
+    seenUrls.add(ctx.url)
   }
 
   app.use(async (ctx, next) => {
@@ -126,9 +121,14 @@ export const vuePlugin: ServerPlugin = ({
         filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
-      const bindingMetadata = descriptor.script
-        ? descriptor.script.bindings
-        : undefined
+      const cached = vueCache.get(filePath)
+      const bindingMetadata = cached && cached.script && cached.script.bindings
+      const vueSpecifier = resolveBareModuleRequest(
+        root,
+        'vue',
+        publicPath,
+        resolver
+      )
       const { code, map } = compileSFCTemplate(
         root,
         templateBlock,
@@ -136,6 +136,7 @@ export const vuePlugin: ServerPlugin = ({
         publicPath,
         descriptor.styles.some((s) => s.scoped),
         bindingMetadata,
+        vueSpecifier,
         config
       )
       ctx.body = code
@@ -413,8 +414,6 @@ async function parseSFC(
   return descriptor
 }
 
-const defaultExportRE = /((?:^|\n|;)\s*)export default/
-
 async function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
@@ -459,19 +458,7 @@ async function compileSFCMain(
     }
   }
 
-  if (content && defaultExportRE.test(content)) {
-    // rewrite export default.
-    // fast path: simple regex replacement to avoid full-blown babel parse.
-    let replaced = content.replace(defaultExportRE, '$1const __script =')
-    // if the script somehow still contains `default export`, it probably has
-    // multi-line comments or template strings. fallback to a full parse.
-    if (defaultExportRE.test(replaced)) {
-      replaced = rewriteDefaultExport(content)
-    }
-    code += replaced
-  } else {
-    code += content + `\nconst __script = {}`
-  }
+  code += rewriteDefault(content, '__script')
 
   let hasScoped = false
   let hasCSSModules = false
@@ -524,7 +511,8 @@ async function compileSFCMain(
 
   const result: ResultWithMap = {
     code,
-    map
+    map,
+    bindings: script ? script.bindings : undefined
   }
 
   cached = cached || { styles: [], customs: [] }
@@ -540,7 +528,12 @@ function compileSFCTemplate(
   publicPath: string,
   scoped: boolean,
   bindingMetadata: BindingMetadata | undefined,
-  { vueCompilerOptions, vueTransformAssetUrls = {} }: ServerConfig
+  vueSpecifier: string,
+  {
+    vueCompilerOptions,
+    vueTransformAssetUrls = {},
+    vueTemplatePreprocessOptions = {}
+  }: ServerConfig
 ): ResultWithMap {
   let cached = vueCache.get(filePath)
   if (cached && cached.template) {
@@ -556,6 +549,17 @@ function compileSFCTemplate(
       ...vueTransformAssetUrls
     }
   }
+
+  const preprocessLang = template.lang
+  let preprocessOptions =
+    preprocessLang && vueTemplatePreprocessOptions[preprocessLang]
+  if (preprocessLang === 'pug') {
+    preprocessOptions = {
+      doctype: 'html',
+      ...preprocessOptions
+    }
+  }
+
   const { code, map, errors } = compileTemplate({
     source: template.content,
     filename: filePath,
@@ -565,13 +569,10 @@ function compileSFCTemplate(
       ...vueCompilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       bindingMetadata,
-      runtimeModuleName: resolveVue(root).isLocal
-        ? // in local mode, vue would have been optimized so must be referenced
-          // with .js postfix
-          '/@modules/vue.js'
-        : '/@modules/vue'
+      runtimeModuleName: vueSpecifier
     },
-    preprocessLang: template.lang,
+    preprocessLang,
+    preprocessOptions,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id))
   })
 
@@ -715,18 +716,6 @@ function attrsToQuery(attrs: SFCBlock['attrs'], langFallback?: string): string {
     query += `&lang=${langFallback}`
   }
   return query
-}
-
-function rewriteDefaultExport(code: string): string {
-  const s = new MagicString(code)
-  const ast = parse(code)
-  ast.forEach((node) => {
-    if (node.type === 'ExportDefaultDeclaration') {
-      s.overwrite(node.start!, node.declaration.start!, `const __script = `)
-    }
-  })
-  const ret = s.toString()
-  return ret
 }
 
 function logError(e: CompilerError, file: string, src: string) {

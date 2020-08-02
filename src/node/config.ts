@@ -30,7 +30,9 @@ export type PreprocessLang = NonNullable<
 
 export type PreprocessOptions = SFCStyleCompileOptions['preprocessOptions']
 
-export type CssPreprocessOptions = Record<PreprocessLang, PreprocessOptions>
+export type CssPreprocessOptions = Partial<
+  Record<PreprocessLang, PreprocessOptions>
+>
 
 export { Resolver, Transform }
 
@@ -103,6 +105,13 @@ export interface SharedConfig {
    * or disable the transform altogether with `false`.
    */
   vueTransformAssetUrls?: SFCTemplateCompileOptions['transformAssetUrls']
+  /**
+   * The options for template block preprocessor render.
+   */
+  vueTemplatePreprocessOptions?: Record<
+    string,
+    SFCTemplateCompileOptions['preprocessOptions']
+  >
   /**
    * Transform functions for Vue custom blocks.
    *
@@ -187,13 +196,10 @@ export interface ServerConfig extends SharedConfig {
    */
   proxy?: Record<string, string | IKoaProxiesOptions>
   /**
-   * Whether to use a Service Worker to cache served code. This can greatly
-   * improve full page reload performance, but requires a Service Worker
-   * update + reload on each server restart.
-   *
-   * @default false
+   * A plugin function that configures the dev server. Receives a server plugin
+   * context object just like the internal server plguins. Can also be an array
+   * of multiple server plugin functions.
    */
-  serviceWorker?: boolean
   configureServer?: ServerPlugin | ServerPlugin[]
 }
 
@@ -239,6 +245,13 @@ export interface BuildConfig extends SharedConfig {
    * @default 'terser'
    */
   minify?: boolean | 'terser' | 'esbuild'
+  /**
+   * Transpile target for esbuild.
+   * Defaults to 'es2019' which transpiles optional chaining so it works with
+   * terser.
+   * @default 'es2019'
+   */
+  esbuildTarget?: string
   /**
    * Build for server-side rendering, only as a CLI flag
    * for programmatic usage, use `ssrBuild` directly.
@@ -316,6 +329,7 @@ export interface Plugin
     | 'configureServer'
     | 'vueCompilerOptions'
     | 'vueTransformAssetUrls'
+    | 'vueTemplatePreprocessOptions'
     | 'vueCustomBlockTransforms'
     | 'rollupInputOptions'
     | 'rollupOutputOptions'
@@ -484,6 +498,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
       config.vueTransformAssetUrls,
       plugin.vueTransformAssetUrls
     ),
+    vueTemplatePreprocessOptions: {
+      ...config.vueTemplatePreprocessOptions,
+      ...plugin.vueTemplatePreprocessOptions
+    },
     vueCustomBlockTransforms: {
       ...config.vueCustomBlockTransforms,
       ...plugin.vueCustomBlockTransforms
@@ -555,6 +573,9 @@ function loadEnv(mode: string, root: string): Record<string, string> {
   }
 
   debug(`env mode: ${mode}`)
+
+  const nodeEnv = process.env
+  const clientEnv: Record<string, string> = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
     /** mode file */ `.env.${mode}`,
@@ -562,7 +583,6 @@ function loadEnv(mode: string, root: string): Record<string, string> {
     /** default file */ `.env`
   ]
 
-  const env: Record<string, string> = {}
   for (const file of envFiles) {
     const path = lookupFile(root, [file], true)
     if (path) {
@@ -575,16 +595,23 @@ function loadEnv(mode: string, root: string): Record<string, string> {
       }
       dotenvExpand(result)
       for (const key in result.parsed) {
+        const value = (nodeEnv[key] = result.parsed![key])
         // only keys that start with VITE_ are exposed.
         if (key.startsWith(`VITE_`)) {
-          env[key] = result.parsed![key]
+          clientEnv[key] = value
+        }
+        // set NODE_ENV under a different key so that we know this is set from
+        // vite-loaded .env files. Some users may have default NODE_ENV set in
+        // their system.
+        if (key === 'NODE_ENV') {
+          nodeEnv.VITE_ENV = value
         }
       }
     }
   }
 
-  debug(`env: %O`, env)
-  return env
+  debug(`env: %O`, clientEnv)
+  return clientEnv
 }
 
 // TODO move this into Vue plugin when we extract it

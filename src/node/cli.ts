@@ -30,7 +30,6 @@ Options:
   --help, -h                 [boolean] show help
   --version, -v              [boolean] show version
   --config, -c               [string]  use specified config file
-  --serviceWorker, -sw       [boolean] configure service worker caching (default: false)
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
   --base                     [string]  public base path for build (default: /)
@@ -77,10 +76,6 @@ console.log(chalk.cyan(`vite v${require('../../package.json').version}`))
 async function resolveOptions(mode: string) {
   // specify env mode
   argv.mode = mode
-  // shorthand for serviceWorker option
-  if (argv['sw']) {
-    argv.serviceWorker = argv['sw']
-  }
   // map jsx args
   if (argv['jsx-factory']) {
     ;(argv.jsx || (argv.jsx = {})).factory = argv['jsx-factory']
@@ -118,6 +113,16 @@ async function resolveOptions(mode: string) {
       ...argv // cli options take higher priority
     }
   }
+
+  // deprecation warning
+  if (argv.sw || argv.serviceWorker) {
+    console.warn(
+      chalk.yellow(
+        `[vite] service worker mode has been removed due to insufficient performance gains.`
+      )
+    )
+  }
+
   return argv
 }
 

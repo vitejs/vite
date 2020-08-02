@@ -66,7 +66,7 @@ export function createServerTransformPlugin(
 
       if (
         !ctx.body ||
-        ctx.type === 'text/html' ||
+        (ctx.type === 'text/html' && !isImportRequest(ctx)) ||
         resolver.isPublicRequest(ctx.path)
       ) {
         return

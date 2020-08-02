@@ -53,8 +53,6 @@ export const stopService = () => {
   _service = undefined
 }
 
-const sourceMapRE = /\/\/# sourceMappingURL.*/
-
 // transform used in server plugins with a more friendly API
 export const transform = async (
   src: string,
@@ -65,15 +63,12 @@ export const transform = async (
   const service = await ensureService()
   const file = cleanUrl(request)
   options = {
-    ...options,
     loader: options.loader || (path.extname(file).slice(1) as any),
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: request,
-    // https://github.com/vitejs/vite/issues/565#issuecomment-661345890
-    // force esbuild to transpile optional chaining but allow import.meta
-    // until terser can support optional chaining in minification
-    target: 'chrome79'
+    target: 'es2020',
+    ...options
   }
   try {
     const result = await service.transform(src, options)
@@ -82,8 +77,7 @@ export const transform = async (
       result.warnings.forEach((m) => printMessage(m, src))
     }
 
-    let code = (result.js || '').replace(sourceMapRE, '')
-
+    let code = result.js
     // if transpiling (j|t)sx file, inject the imports for the jsx helper and
     // Fragment.
     if (file.endsWith('x')) {
