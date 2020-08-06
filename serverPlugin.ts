@@ -22,10 +22,9 @@ import { srcImportMap } from 'vite/dist/node/server/serverPluginVue'
 import { TemplateCompileOptions } from '@vue/component-compiler-utils/lib/compileTemplate'
 import { clientPublicPath } from 'vite/dist/node/server/serverPluginClient'
 import { mergeSourceMap } from 'vite/dist/node/server/serverPluginSourceMap'
+import { rewriteDefault } from '@vue/compiler-sfc'
 
 const vueTemplateCompiler = require('vue-template-compiler')
-
-const defaultExportRE = /((?:^|\n|;)\s*)export default/
 
 export const vueComponentNormalizer = '/vite/vueComponentNormalizer'
 export const vueHotReload = '/vite/vueHotReload'
@@ -157,15 +156,7 @@ async function parseSFC(
     }
 
     // rewrite export default.
-    // fast path: simple regex replacement to avoid full-blown babel parse.
-    let replaced = code.replace(defaultExportRE, '$1var script =')
-    // if the script somehow still contains `default export`, it probably has
-    // multi-line comments or template strings. fallback to a full parse.
-    // todo
-    // if (defaultExportRE.test(replaced)) {
-    // 	replaced = rewriteDefaultExport(code)
-    // }
-    scriptImport = replaced
+    scriptImport = rewriteDefault(code, 'script')
   }
 
   let stylesCode = ``
