@@ -4,6 +4,7 @@ import chalk from 'chalk'
 import { ServerPlugin } from '.'
 import { defaultDefines } from '../config'
 
+export const hmrFilePath = path.resolve(__dirname, '../../client/hmr.js')
 export const clientFilePath = path.resolve(__dirname, '../../client/client.js')
 
 export const clientPublicPath = `/vite/client`
@@ -11,6 +12,7 @@ export const clientPublicPath = `/vite/client`
 const legacyPublicPath = '/vite/hmr'
 
 export const clientPlugin: ServerPlugin = ({ app, config }) => {
+  const hmrCode = config.hmr ? fs.readFileSync(hmrFilePath, 'utf-8') : ''
   const clientCode = fs
     .readFileSync(clientFilePath, 'utf-8')
     .replace(`__MODE__`, JSON.stringify(config.mode || 'development'))
@@ -26,7 +28,7 @@ export const clientPlugin: ServerPlugin = ({ app, config }) => {
     if (ctx.path === clientPublicPath) {
       ctx.type = 'js'
       ctx.status = 200
-      ctx.body = clientCode.replace(`__PORT__`, ctx.port.toString())
+      ctx.body = clientCode + hmrCode.replace(`__PORT__`, ctx.port.toString())
     } else {
       if (ctx.path === legacyPublicPath) {
         console.error(

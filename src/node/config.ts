@@ -160,6 +160,11 @@ export interface SharedConfig {
    * @internal
    */
   env?: DotenvParseOutput
+  /**
+   * Enable hot reloading
+   * @default true
+   */
+  hmr?: boolean
 }
 
 export interface ServerConfig extends SharedConfig {

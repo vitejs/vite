@@ -44,6 +44,7 @@ Options:
   --jsx                      ['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')
   --jsx-factory              [string]  (default: React.createElement)
   --jsx-fragment             [string]  (default: React.Fragment)
+  --no-hmr                   [boolean] disable hot reloading
 `)
 }
 
@@ -104,6 +105,10 @@ async function resolveOptions(mode: string) {
 
   if (argv.root) {
     argv.root = path.isAbsolute(argv.root) ? argv.root : path.resolve(argv.root)
+  }
+
+  if (argv.hmr == null) {
+    argv.hmr = true
   }
 
   const userConfig = await resolveConfig(mode, argv.config || argv.c)

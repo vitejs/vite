@@ -49,7 +49,8 @@ export const moduleRewritePlugin: ServerPlugin = ({
   root,
   app,
   watcher,
-  resolver
+  resolver,
+  config
 }) => {
   app.use(async (ctx, next) => {
     await next()
@@ -94,7 +95,8 @@ export const moduleRewritePlugin: ServerPlugin = ({
           content!,
           importer,
           resolver,
-          ctx.query.t
+          ctx.query.t,
+          config.hmr
         )
         if (!isHmrRequest) {
           rewriteCache.set(cacheKey, ctx.body)
@@ -119,7 +121,8 @@ export function rewriteImports(
   source: string,
   importer: string,
   resolver: InternalResolver,
-  timestamp?: string
+  timestamp?: string,
+  enableHMR = true
 ) {
   try {
     let imports: ImportSpecifier[] = []
@@ -199,7 +202,7 @@ export function rewriteImports(
         }
       }
 
-      if (hasHMR) {
+      if (hasHMR && enableHMR) {
         debugHmr(`rewriting ${importer} for HMR.`)
         rewriteFileWithHMR(root, source, importer, resolver, s)
         hasReplaced = true

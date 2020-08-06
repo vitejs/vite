@@ -97,7 +97,7 @@ export function createServer(config: ServerConfig): Server {
     moduleResolvePlugin,
     proxyPlugin,
     clientPlugin,
-    hmrPlugin,
+    config.hmr && hmrPlugin,
     ...(transforms.length || Object.keys(vueCustomBlockTransforms).length
       ? [
           createServerTransformPlugin(
