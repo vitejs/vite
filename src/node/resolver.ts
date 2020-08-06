@@ -69,13 +69,9 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
   return path.join(root, publicPath.slice(1))
 }
 
-const defaultFileToRequest = (filePath: string, root: string): string => {
-  const moduleRequest = moduleFileToIdMap.get(filePath)
-  if (moduleRequest) {
-    return moduleRequest
-  }
-  return `/${slash(path.relative(root, filePath))}`
-}
+const defaultFileToRequest = (filePath: string, root: string): string =>
+  moduleFileToIdMap.get(filePath) ||
+  '/' + slash(path.relative(root, filePath)).replace(/^public\//, '')
 
 const isFile = (file: string): boolean => {
   try {
