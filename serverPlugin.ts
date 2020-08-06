@@ -242,13 +242,6 @@ if (import.meta.hot) {
 	if(__VUE_HMR_RUNTIME__.compatible){
 		 if (!__VUE_HMR_RUNTIME__.isRecorded('${publicPath}')) {
 			 __VUE_HMR_RUNTIME__.createRecord('${publicPath}', component.options)
-		 	 // import.meta.hot.acceptDeps("${publicPath}?type=template", (mod) => {
-		 		// 	 component.options = mod.render
-		 		// 	 component.options = mode.staticRenderFns
-		 		// 	 __VUE_HMR_RUNTIME__.${
-          hasFunctional ? 'rerender' : 'reload'
-        }('${publicPath}', component.options)
-		 	 // })
 		 }
 	} else {
 			console.log("The hmr is not compatible.")
