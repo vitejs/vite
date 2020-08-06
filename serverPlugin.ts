@@ -1,6 +1,10 @@
 import { ServerPlugin, Context } from 'vite'
-import { parse, compileTemplate } from '@vue/component-compiler-utils'
-import { SFCDescriptor, SFCBlock } from 'vue-template-compiler'
+import {
+  parse,
+  compileTemplate,
+  SFCDescriptor,
+  SFCBlock,
+} from '@vue/component-compiler-utils'
 import * as fs from 'fs-extra'
 import hash_sum from 'hash-sum'
 import { transform } from './esbuildService'
@@ -17,6 +21,7 @@ import {
 import { srcImportMap } from 'vite/dist/node/server/serverPluginVue'
 import { TemplateCompileOptions } from '@vue/component-compiler-utils/lib/compileTemplate'
 import { clientPublicPath } from 'vite/dist/node/server/serverPluginClient'
+import { mergeSourceMap } from 'vite/dist/node/server/serverPluginSourceMap'
 
 const vueTemplateCompiler = require('vue-template-compiler')
 
@@ -90,6 +95,7 @@ export const vuePlugin: ServerPlugin = ({
         descriptor,
         resolver
       )
+      ctx.map = descriptor.script!.map
       return
     }
 
@@ -140,11 +146,14 @@ async function parseSFC(
       code = readFile(resolver.requestToFile(srcPath))
     }
     if (scriptBlock.lang === 'ts') {
-      code = (
-        await transform(code, publicPath, {
-          loader: 'ts',
-        })
-      ).code
+      const res = await transform(code, publicPath, {
+        loader: 'ts',
+      })
+      code = res.code
+      scriptBlock.map = mergeSourceMap(
+        scriptBlock.map,
+        JSON.parse(res.map!)
+      ) as any
     }
 
     // rewrite export default.
