@@ -94,7 +94,9 @@ export const vuePlugin: ServerPlugin = ({
         descriptor,
         resolver
       )
-      ctx.map = descriptor.script!.map
+      if (descriptor.script) {
+        ctx.map = descriptor.script.map
+      }
       return
     }
 
