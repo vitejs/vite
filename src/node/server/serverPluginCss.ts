@@ -19,13 +19,7 @@ import { clientPublicPath } from './serverPluginClient'
 
 export const debugCSS = require('debug')('vite:css')
 
-export const cssPlugin: ServerPlugin = ({
-  root,
-  app,
-  watcher,
-  resolver,
-  config
-}) => {
+export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   app.use(async (ctx, next) => {
     await next()
     // handle .css imports
@@ -40,9 +34,7 @@ export const cssPlugin: ServerPlugin = ({
         ctx.type = 'js'
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url
-        ctx.body = config.hmr
-          ? codegenCss(id, css, modules)
-          : `export default ${JSON.stringify(modules || css)}`
+        ctx.body = codegenCss(id, css, modules)
       }
     }
   })
