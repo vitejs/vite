@@ -1,7 +1,7 @@
 <template>
   <h2>Alias</h2>
-  <p class="alias">{{ msg }}</p>
-  <p class="dir-alias">{{ dirMsg }}</p>
+  <p class="alias alias-css">{{ msg }}</p>
+  <p class="dir-alias alias-scss">{{ dirMsg }}</p>
   <p class="dir-alias-index">{{ dirIndexMsg }}</p>
   <p class="dir-alias-import-outside">{{ importOutsideMsg }}</p>
 </template>
@@ -21,3 +21,8 @@ export default {
   })
 }
 </script>
+
+<style lang="scss">
+  @import "/@alias/aliased.css";
+  @import "/@alias/aliasedScss.scss";
+</style>

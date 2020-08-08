@@ -152,6 +152,7 @@ export const vuePlugin: ServerPlugin = ({
       }
       const id = hash_sum(publicPath)
       const result = await compileSFCStyle(
+        resolver,
         root,
         styleBlock,
         index,
@@ -601,6 +602,7 @@ function compileSFCTemplate(
 }
 
 async function compileSFCStyle(
+  resolver: InternalResolver,
   root: string,
   style: SFCStyleBlock,
   index: number,
@@ -619,7 +621,7 @@ async function compileSFCStyle(
 
   const { generateCodeFrame } = resolveCompiler(root)
   const resource = filePath + `?type=style&index=${index}`
-  const result = (await compileCss(root, publicPath, {
+  const result = (await compileCss(resolver, root, publicPath, {
     source: style.content,
     filename: resource,
     id: ``, // will be computed in compileCss

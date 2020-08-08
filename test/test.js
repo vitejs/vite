@@ -613,6 +613,9 @@ describe('vite', () => {
           'directory aliased internal import outside hmr works'
         )
       }
+      // css alias
+      expect(await getComputedColor('.alias-css')).toBe('rgb(255, 0, 0)')
+      expect(await getComputedColor('.alias-scss')).toBe('rgb(255, 0, 0)')
     })
 
     test('transforms', async () => {

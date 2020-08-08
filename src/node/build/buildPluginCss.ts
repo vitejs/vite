@@ -17,6 +17,7 @@ import {
 } from '@vue/compiler-sfc'
 import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
+import { InternalResolver } from '../resolver'
 
 const debug = require('debug')('vite:build:css')
 
@@ -34,16 +35,19 @@ interface BuildCssOption {
   modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
 }
 
-export const createBuildCssPlugin = ({
-  root,
-  publicBase,
-  assetsDir,
-  minify = false,
-  inlineLimit = 0,
-  cssCodeSplit = true,
-  preprocessOptions,
-  modulesOptions = {}
-}: BuildCssOption): Plugin => {
+export const createBuildCssPlugin = (
+  resolver: InternalResolver,
+  {
+    root,
+    publicBase,
+    assetsDir,
+    minify = false,
+    inlineLimit = 0,
+    cssCodeSplit = true,
+    preprocessOptions,
+    modulesOptions = {}
+  }: BuildCssOption
+): Plugin => {
   const styles: Map<string, string> = new Map()
   const assets = new Map<string, Buffer>()
   let staticCss = ''
@@ -63,6 +67,7 @@ export const createBuildCssPlugin = ({
         const result = isVueStyle
           ? css
           : await compileCss(
+              resolver,
               root,
               id,
               {

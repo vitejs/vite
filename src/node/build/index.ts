@@ -151,7 +151,9 @@ export async function createBaseRollupPlugins(
     // vite:esbuild
     enableEsbuild ? await createEsbuildPlugin(options.jsx) : null,
     // vue
-    enableRollupPluginVue ? await createVuePlugin(root, options) : null,
+    enableRollupPluginVue
+      ? await createVuePlugin(resolver, root, options)
+      : null,
     require('@rollup/plugin-json')({
       preferConst: true,
       indent: '  ',
@@ -181,6 +183,7 @@ export async function createBaseRollupPlugins(
 }
 
 async function createVuePlugin(
+  resolver: InternalResolver,
   root: string,
   {
     vueCustomBlockTransforms = {},
@@ -195,7 +198,7 @@ async function createVuePlugin(
   const {
     options: postcssOptions,
     plugins: postcssPlugins
-  } = await resolvePostcssOptions(root, true)
+  } = await resolvePostcssOptions(resolver, root, true)
 
   if (typeof vueTransformAssetUrls === 'object') {
     vueTransformAssetUrls = {
@@ -378,7 +381,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         sourcemap
       ),
       // vite:css
-      createBuildCssPlugin({
+      createBuildCssPlugin(resolver, {
         root,
         publicBase: publicBasePath,
         assetsDir,

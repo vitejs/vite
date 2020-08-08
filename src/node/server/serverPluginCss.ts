@@ -139,7 +139,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     const filePath = resolver.requestToFile(ctx.path)
     const preprocessLang = ctx.path.replace(cssPreprocessLangRE, '$2')
 
-    const result = await compileCss(root, ctx.path, {
+    const result = await compileCss(resolver, root, ctx.path, {
       id: '',
       source: css,
       filename: filePath,
