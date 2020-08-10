@@ -3,6 +3,7 @@
   "version": "1.0.0-rc.4",
   "license": "MIT",
   "author": "Evan You",
+  "description": "Native-ESM powered web dev build tool. It's fast.",
   "bin": {
     "vite": "bin/vite.js"
   },
