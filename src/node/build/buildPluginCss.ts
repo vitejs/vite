@@ -23,6 +23,17 @@ const debug = require('debug')('vite:build:css')
 const cssInjectionMarker = `__VITE_CSS__`
 const cssInjectionRE = /__VITE_CSS__\(\)/g
 
+interface ModulesOptions {
+  scopeBehaviour?: 'global' | 'local'
+  globalModulePaths?: string[]
+  generateScopedName?:
+    | string
+    | ((name: string, filename: string, css: string) => string)
+  hashPrefix?: string
+  localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
+  cssFileName?: string | ((staticCss: string) => string)
+}
+
 interface BuildCssOption {
   root: string
   publicBase: string
@@ -31,7 +42,7 @@ interface BuildCssOption {
   inlineLimit?: number
   cssCodeSplit?: boolean
   preprocessOptions?: CssPreprocessOptions
-  modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
+  modulesOptions?: ModulesOptions
 }
 
 export const createBuildCssPlugin = ({
@@ -171,7 +182,15 @@ export const createBuildCssPlugin = ({
         staticCss = minifyCSS(staticCss)
       }
 
-      const cssFileName = `style.${hash_sum(staticCss)}.css`
+      let cssFileName = `style.${hash_sum(staticCss)}.css`
+
+      if (modulesOptions!.cssFileName) {
+        if (typeof modulesOptions!.cssFileName === 'string') {
+          cssFileName = modulesOptions!.cssFileName
+        } else {
+          cssFileName = modulesOptions!.cssFileName(staticCss)
+        }
+      }
 
       bundle[cssFileName] = {
         name: cssFileName,
