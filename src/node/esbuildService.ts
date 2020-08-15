@@ -103,6 +103,7 @@ export const transform = async (
       e.errors.forEach((m: Message) => printMessage(m, src))
     } else {
       console.error(e)
+      throw e
     }
     debug(`options used: `, options)
     return {
@@ -124,10 +125,10 @@ function printMessage(m: Message, code: string) {
         .map((l) => l.length)
         .reduce((total, l) => total + l + 1, 0) + column
     try {
-      require('@vue/compiler-dom').generateCodeFrame(code, offset, offset + 1);
-    } catch (error) {
-      console.error(error);
-      process.exit(1);
+      require('@vue/compiler-dom').generateCodeFrame(code, offset, offset + 1)
+    } catch (e) {
+      console.error(e)
+      throw e
     }
   }
 }
