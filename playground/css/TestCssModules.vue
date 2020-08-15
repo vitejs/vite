@@ -6,6 +6,11 @@
   <div class="css-modules-import" :class="imported.turquoiseColor">
     CSS modules import - this should be orange
   </div>
+  <div class="css-modules-src-import" :class="srcImported.turquoiseColor">
+    CSS modules import with src - this should be orange,
+    and should have same class: 
+    {{ srcImported.turquoiseColor === imported.turquoiseColor }}
+  </div>
   <div class="scss-modules-import" :class="importedScss.magenta">
     SCSS modules import - this should be magenta
   </div>
@@ -25,3 +30,5 @@ export default {
   color: blue;
 }
 </style>
+
+<style module="srcImported" src="./testCssModules.module.css"></style>

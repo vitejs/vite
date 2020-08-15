@@ -466,6 +466,8 @@ describe('vite', () => {
     test('import *.module.css', async () => {
       const el = await page.$('.css-modules-import')
       expect(await getComputedColor(el)).toBe('rgb(255, 140, 0)')
+      const otherEl = await page.$('.css-modules-src-import')
+      expect(await getText(otherEl)).toContain('have same class: true')
       if (!isBuild) {
         await updateFile('css/testCssModules.module.css', (content) =>
           content.replace('rgb(255, 140, 0)', 'rgb(0, 0, 1)')

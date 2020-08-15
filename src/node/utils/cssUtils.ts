@@ -66,7 +66,11 @@ export async function compileCss(
   }: SFCAsyncStyleCompileOptions,
   isBuild: boolean = false
 ): Promise<SFCStyleCompileResults | string> {
-  const id = hash_sum(publicPath)
+  const filepath = filename.split('?')[0] /* drop query */
+  const id = cssModuleRE.test(filepath)
+    ? // For css modules, to avoid duplicates from importing from both sfc and js, use filename for id
+      hash_sum(filepath)
+    : hash_sum(publicPath)
   const postcssConfig = await loadPostcssConfig(root)
   const { compileStyleAsync } = resolveCompiler(root)
 
