@@ -123,8 +123,11 @@ function printMessage(m: Message, code: string) {
         .slice(0, line - 1)
         .map((l) => l.length)
         .reduce((total, l) => total + l + 1, 0) + column
-    console.error(
-      require('@vue/compiler-dom').generateCodeFrame(code, offset, offset + 1)
-    )
+    try {
+      require('@vue/compiler-dom').generateCodeFrame(code, offset, offset + 1);
+    } catch (error) {
+      console.error(error);
+      process.exit(1);
+    }
   }
 }
