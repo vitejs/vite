@@ -102,7 +102,7 @@ export const transform = async (
     if (e.errors) {
       e.errors.forEach((m: Message) => printMessage(m, src))
     } else {
-      throw e
+      throw new Error(e);
     }
     debug(`options used: `, options)
     return {
@@ -126,7 +126,7 @@ function printMessage(m: Message, code: string) {
     try {
       require('@vue/compiler-dom').generateCodeFrame(code, offset, offset + 1)
     } catch (e) {
-      throw e
+      throw new Error(e);
     }
   }
 }
