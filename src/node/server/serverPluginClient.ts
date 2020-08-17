@@ -6,7 +6,7 @@ import { defaultDefines } from '../config'
 
 export const clientFilePath = path.resolve(__dirname, '../../client/client.js')
 
-export const clientPublicPath = `/vite/client`
+export const clientPublicPath = `/vite/client.js`
 
 const legacyPublicPath = '/vite/hmr'
 
