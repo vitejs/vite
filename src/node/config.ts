@@ -247,9 +247,9 @@ export interface BuildConfig extends SharedConfig {
   minify?: boolean | 'terser' | 'esbuild'
   /**
    * Transpile target for esbuild.
-   * Defaults to 'es2019' which transpiles optional chaining so it works with
+   * Defaults to 'es2020' which transpiles optional chaining so it works with
    * terser.
-   * @default 'es2019'
+   * @default 'es2020'
    */
   esbuildTarget?: string
   /**
