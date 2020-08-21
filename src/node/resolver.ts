@@ -41,7 +41,7 @@ export interface InternalResolver {
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
-export const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
+export const mainFields = ['browser.esm', 'module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
 const defaultRequestToFile = (publicPath: string, root: string): string => {
   if (moduleRE.test(publicPath)) {
