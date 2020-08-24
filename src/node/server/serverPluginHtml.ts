@@ -38,7 +38,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
         if (srcAttr) {
           // register script as a import dep for hmr
           const importee = resolver.normalizePublicPath(
-            cleanUrl(slash(path.resolve('/', srcAttr[1] || srcAttr[2])))
+            cleanUrl(slash(path.posix.resolve('/', srcAttr[1] || srcAttr[2])))
           )
           debugHmr(`        ${importer} imports ${importee}`)
           ensureMapEntry(importerMap, importee).add(importer)
