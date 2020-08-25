@@ -22,8 +22,7 @@ import { Transform, CustomBlockTransform } from './transform'
 import { DepOptimizationOptions } from './optimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
-import { lookupFile } from './utils'
-import { cache } from './utils/cache'
+import { lookupFile, cache } from './utils'
 
 export type PreprocessLang = NonNullable<
   SFCStyleCompileOptions['preprocessLang']
@@ -346,110 +345,110 @@ export type ResolvedConfig = UserConfig & {
 
 const debug = require('debug')('vite:config')
 
-export const resolveConfig = cache<Promise<ResolvedConfig | undefined>>(
-  async (
-    mode: string,
-    configPath?: string
-  ): Promise<ResolvedConfig | undefined> => {
-    const start = Date.now()
-    const cwd = process.cwd()
-    let config: ResolvedConfig | undefined
-    let resolvedPath: string | undefined
-    let isTS = false
-    if (configPath) {
-      resolvedPath = path.resolve(cwd, configPath)
+export const resolveConfig = cache(_resolveConfig)
+
+async function _resolveConfig(
+  mode: string,
+  configPath?: string
+): Promise<ResolvedConfig | undefined> {
+  const start = Date.now()
+  const cwd = process.cwd()
+  let config: ResolvedConfig | undefined
+  let resolvedPath: string | undefined
+  let isTS = false
+  if (configPath) {
+    resolvedPath = path.resolve(cwd, configPath)
+  } else {
+    const jsConfigPath = path.resolve(cwd, 'vite.config.js')
+    if (fs.existsSync(jsConfigPath)) {
+      resolvedPath = jsConfigPath
     } else {
-      const jsConfigPath = path.resolve(cwd, 'vite.config.js')
-      if (fs.existsSync(jsConfigPath)) {
-        resolvedPath = jsConfigPath
-      } else {
-        const tsConfigPath = path.resolve(cwd, 'vite.config.ts')
-        if (fs.existsSync(tsConfigPath)) {
-          isTS = true
-          resolvedPath = tsConfigPath
-        }
+      const tsConfigPath = path.resolve(cwd, 'vite.config.ts')
+      if (fs.existsSync(tsConfigPath)) {
+        isTS = true
+        resolvedPath = tsConfigPath
       }
-    }
-
-    if (!resolvedPath) {
-      // load environment variables
-      return {
-        env: loadEnv(mode, cwd)
-      }
-    }
-
-    try {
-      if (!isTS) {
-        try {
-          config = require(resolvedPath)
-        } catch (e) {
-          if (
-            !/Cannot use import statement|Unexpected token 'export'/.test(
-              e.message
-            )
-          ) {
-            throw e
-          }
-        }
-      }
-
-      if (!config) {
-        // 2. if we reach here, the file is ts or using es import syntax.
-        // transpile es import syntax to require syntax using rollup.
-        const rollup = require('rollup') as typeof Rollup
-        const esbuildPlugin = await createEsbuildPlugin({})
-        // use node-resolve to support .ts files
-        const nodeResolve = require('@rollup/plugin-node-resolve').nodeResolve({
-          extensions: supportedExts
-        })
-        const bundle = await rollup.rollup({
-          external: (id: string) =>
-            (id[0] !== '.' && !path.isAbsolute(id)) ||
-            id.slice(-5, id.length) === '.json',
-          input: resolvedPath,
-          treeshake: false,
-          plugins: [esbuildPlugin, nodeResolve]
-        })
-
-        const {
-          output: [{ code }]
-        } = await bundle.generate({
-          exports: 'named',
-          format: 'cjs'
-        })
-
-        config = await loadConfigFromBundledFile(resolvedPath, code)
-      }
-
-      // normalize config root to absolute
-      if (config.root && !path.isAbsolute(config.root)) {
-        config.root = path.resolve(path.dirname(resolvedPath), config.root)
-      }
-
-      // resolve plugins
-      if (config.plugins) {
-        for (const plugin of config.plugins) {
-          config = resolvePlugin(config, plugin)
-        }
-      }
-
-      config.env = {
-        ...config.env,
-        ...loadEnv(mode, config.root || cwd)
-      }
-      debug(`config resolved in ${Date.now() - start}ms`)
-
-      config.__path = resolvedPath
-      return config
-    } catch (e) {
-      console.error(
-        chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
-      )
-      console.error(e)
-      process.exit(1)
     }
   }
-)
+
+  if (!resolvedPath) {
+    // load environment variables
+    return {
+      env: loadEnv(mode, cwd)
+    }
+  }
+
+  try {
+    if (!isTS) {
+      try {
+        config = require(resolvedPath)
+      } catch (e) {
+        if (
+          !/Cannot use import statement|Unexpected token 'export'/.test(
+            e.message
+          )
+        ) {
+          throw e
+        }
+      }
+    }
+
+    if (!config) {
+      // 2. if we reach here, the file is ts or using es import syntax.
+      // transpile es import syntax to require syntax using rollup.
+      const rollup = require('rollup') as typeof Rollup
+      const esbuildPlugin = await createEsbuildPlugin({})
+      // use node-resolve to support .ts files
+      const nodeResolve = require('@rollup/plugin-node-resolve').nodeResolve({
+        extensions: supportedExts
+      })
+      const bundle = await rollup.rollup({
+        external: (id: string) =>
+          (id[0] !== '.' && !path.isAbsolute(id)) ||
+          id.slice(-5, id.length) === '.json',
+        input: resolvedPath,
+        treeshake: false,
+        plugins: [esbuildPlugin, nodeResolve]
+      })
+
+      const {
+        output: [{ code }]
+      } = await bundle.generate({
+        exports: 'named',
+        format: 'cjs'
+      })
+
+      config = await loadConfigFromBundledFile(resolvedPath, code)
+    }
+
+    // normalize config root to absolute
+    if (config.root && !path.isAbsolute(config.root)) {
+      config.root = path.resolve(path.dirname(resolvedPath), config.root)
+    }
+
+    // resolve plugins
+    if (config.plugins) {
+      for (const plugin of config.plugins) {
+        config = resolvePlugin(config, plugin)
+      }
+    }
+
+    config.env = {
+      ...config.env,
+      ...loadEnv(mode, config.root || cwd)
+    }
+    debug(`config resolved in ${Date.now() - start}ms`)
+
+    config.__path = resolvedPath
+    return config
+  } catch (e) {
+    console.error(
+      chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
+    )
+    console.error(e)
+    process.exit(1)
+  }
+}
 
 interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
