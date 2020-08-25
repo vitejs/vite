@@ -278,7 +278,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       spinner = require('ora')(msg + '\n').start()
     }
   }
-  await fs.remove(outDir)
+  await fs.emptyDir(outDir)
 
   const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
