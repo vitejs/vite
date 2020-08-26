@@ -144,8 +144,10 @@ export async function createBaseRollupPlugins(
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
 
   return [
+    // vue plugin should apply before `@rollup/plugin-commonjs`
+    enableRollupPluginVue ? await createVuePlugin(root, options) : null,
     // https://github.com/vitejs/vite/issues/728#issuecomment-677649726
-    // The '@rollup/plugin-commonjs' should be added first.
+    // The '@rollup/plugin-commonjs' should be added before user plugin.
     require('@rollup/plugin-commonjs')({
       extensions: ['.js', '.cjs'],
       transformMixedEsModules: true
@@ -156,8 +158,6 @@ export async function createBaseRollupPlugins(
     createBuildResolvePlugin(root, resolver),
     // vite:esbuild
     enableEsbuild ? await createEsbuildPlugin(options.jsx) : null,
-    // vue
-    enableRollupPluginVue ? await createVuePlugin(root, options) : null,
     require('@rollup/plugin-json')({
       preferConst: true,
       indent: '  ',
