@@ -144,6 +144,12 @@ export async function createBaseRollupPlugins(
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
 
   return [
+    // https://github.com/vitejs/vite/issues/728#issuecomment-677649726
+    // The '@rollup/plugin-commonjs' should be added first.
+    require('@rollup/plugin-commonjs')({
+      extensions: ['.js', '.cjs'],
+      transformMixedEsModules: true
+    }),
     // user plugins
     ...(rollupInputOptions.plugins || []),
     // vite:resolve
@@ -168,9 +174,6 @@ export async function createBaseRollupPlugins(
       preferBuiltins: false,
       dedupe: options.rollupDedupe || [],
       mainFields
-    }),
-    require('@rollup/plugin-commonjs')({
-      extensions: ['.js', '.cjs']
     }),
     dynamicImport({
       warnOnError: true,
