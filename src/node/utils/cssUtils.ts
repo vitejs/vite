@@ -5,6 +5,8 @@ import { asyncReplace } from './transformUtils'
 import { isExternalUrl, resolveFrom } from './pathUtils'
 import { resolveCompiler } from './resolveVue'
 import hash_sum from 'hash-sum'
+import camelcase from 'camelcase'
+import { identifier as safeId } from 'safe-identifier'
 import {
   SFCAsyncStyleCompileOptions,
   SFCStyleCompileResults
@@ -217,4 +219,22 @@ export function recordCssImportChain(
   })
 
   cssImporteeMap.set(filePath, dependencies)
+}
+
+export function codegenCssModules(
+  modules: Record<string, string>,
+  namedExports = false
+) {
+  if (namedExports) {
+    let code = ''
+
+    for (let k in modules) {
+      let v = modules[k]
+      code += `export let ${safeId(camelcase(k))} = ${JSON.stringify(v)}\n`
+    }
+
+    return code
+  } else {
+    return `export default ${JSON.stringify(modules)}`
+  }
 }

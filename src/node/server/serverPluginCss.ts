@@ -10,7 +10,8 @@ import {
   getCssImportBoundaries,
   recordCssImportChain,
   rewriteCssUrls,
-  isCSSRequest
+  isCSSRequest,
+  codegenCssModules
 } from '../utils/cssUtils'
 import qs from 'querystring'
 import chalk from 'chalk'
@@ -31,10 +32,11 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       const id = JSON.stringify(hash_sum(ctx.path))
       if (isImportRequest(ctx)) {
         const { css, modules } = await processCss(root, ctx)
+        const cssModulesOptions = ctx.config.cssModuleOptions
         ctx.type = 'js'
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url
-        ctx.body = codegenCss(id, css, modules)
+        ctx.body = codegenCss(id, css, modules, cssModulesOptions?.namedExports)
       }
     }
   })
@@ -175,14 +177,15 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 export function codegenCss(
   id: string,
   css: string,
-  modules?: Record<string, string>
+  modules?: Record<string, string>,
+  modulesNamedExports = false
 ): string {
   let code =
     `import { updateStyle } from "${clientPublicPath}"\n` +
     `const css = ${JSON.stringify(css)}\n` +
     `updateStyle(${JSON.stringify(id)}, css)\n`
   if (modules) {
-    code += `export default ${JSON.stringify(modules)}`
+    code += codegenCssModules(modules, modulesNamedExports)
   } else {
     code += `export default css`
   }

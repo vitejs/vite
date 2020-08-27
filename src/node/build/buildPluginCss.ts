@@ -9,7 +9,8 @@ import {
   cssPreprocessLangRE,
   rewriteCssUrls,
   isCSSRequest,
-  cssModuleRE
+  cssModuleRE,
+  codegenCssModules
 } from '../utils/cssUtils'
 import {
   SFCStyleCompileResults,
@@ -31,7 +32,7 @@ interface BuildCssOption {
   inlineLimit?: number
   cssCodeSplit?: boolean
   preprocessOptions?: CssPreprocessOptions
-  modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
+  modulesOptions?: BuildConfig['cssModuleOptions']
 }
 
 export const createBuildCssPlugin = ({
@@ -120,7 +121,7 @@ export const createBuildCssPlugin = ({
         styles.set(id, css)
         return {
           code: modules
-            ? `export default ${JSON.stringify(modules)}`
+            ? codegenCssModules(modules, modulesOptions?.namedExports)
             : (cssCodeSplit
                 ? // If code-splitting CSS, inject a fake marker to avoid the module
                   // from being tree-shaken. This preserves the .css file as a
