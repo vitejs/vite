@@ -148,9 +148,7 @@ export interface SharedConfig {
   /**
    * CSS modules options
    */
-  cssModuleOptions?: SFCAsyncStyleCompileOptions['modulesOptions'] & {
-    namedExports?: boolean
-  }
+  cssModuleOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
   /**
    * Enable esbuild
    * @default true

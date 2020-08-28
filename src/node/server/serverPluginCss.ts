@@ -10,9 +10,9 @@ import {
   getCssImportBoundaries,
   recordCssImportChain,
   rewriteCssUrls,
-  isCSSRequest,
-  codegenCssModules
+  isCSSRequest
 } from '../utils/cssUtils'
+import { dataToEsm } from 'rollup-pluginutils'
 import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
@@ -33,10 +33,13 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       if (isImportRequest(ctx)) {
         const { css, modules } = await processCss(root, ctx)
         const cssModulesOptions = ctx.config.cssModuleOptions
+        let namedExports =
+          cssModulesOptions?.localsConvention === 'camelCase' ||
+          cssModulesOptions?.localsConvention === 'camelCaseOnly'
         ctx.type = 'js'
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url
-        ctx.body = codegenCss(id, css, modules, cssModulesOptions?.namedExports)
+        ctx.body = codegenCss(id, css, modules, namedExports)
       }
     }
   })
@@ -178,14 +181,14 @@ export function codegenCss(
   id: string,
   css: string,
   modules?: Record<string, string>,
-  modulesNamedExports = false
+  namedExports = false
 ): string {
   let code =
     `import { updateStyle } from "${clientPublicPath}"\n` +
     `const css = ${JSON.stringify(css)}\n` +
     `updateStyle(${JSON.stringify(id)}, css)\n`
   if (modules) {
-    code += codegenCssModules(modules, modulesNamedExports)
+    code += dataToEsm(modules, { namedExports })
   } else {
     code += `export default css`
   }

@@ -9,9 +9,9 @@ import {
   cssPreprocessLangRE,
   rewriteCssUrls,
   isCSSRequest,
-  cssModuleRE,
-  codegenCssModules
+  cssModuleRE
 } from '../utils/cssUtils'
+import { dataToEsm } from 'rollup-pluginutils'
 import {
   SFCStyleCompileResults,
   SFCAsyncStyleCompileOptions
@@ -118,10 +118,14 @@ export const createBuildCssPlugin = ({
           })
         }
 
+        let namedExports =
+          modulesOptions?.localsConvention === 'camelCase' ||
+          modulesOptions?.localsConvention === 'camelCaseOnly'
+
         styles.set(id, css)
         return {
           code: modules
-            ? codegenCssModules(modules, modulesOptions?.namedExports)
+            ? dataToEsm(modules, { namedExports })
             : (cssCodeSplit
                 ? // If code-splitting CSS, inject a fake marker to avoid the module
                   // from being tree-shaken. This preserves the .css file as a
