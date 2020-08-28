@@ -714,8 +714,9 @@ describe('vite', () => {
         await updateFile('script-setup/TestScriptSetupStyleVars.vue', (c) =>
           c.replace(`msg="hello"`, `msg="hi"`)
         )
-        expect(await getText('.test-script-setup-child')).toBe(
-          'Child has prop hello'
+        await expectByPolling(
+          () => getText('.test-script-setup-child'),
+          'Child has prop hi'
         )
       }
     })
