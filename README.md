@@ -7,7 +7,7 @@
 
 Vite is an opinionated web dev build tool that serves your code via native ES Module imports during dev and bundles it with [Rollup](https://rollupjs.org/) for production.
 
-- Lightning fast cold server start
+- Lightning-fast cold server start
 - Instant hot module replacement (HMR)
 - True on-demand compilation
 - More details in [How and Why](#how-and-why)
@@ -40,7 +40,7 @@ $ yarn dev
 
 ### Using master branch
 
-If you can't wait for a new release to test latest features, clone the `vite` to your local machine and execute following commands:
+If you can't wait for a new release to test the latest features, clone the `vite` to your local machine and execute the following commands:
 
 ```
 yarn
@@ -130,7 +130,7 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
   }
   ```
 
-  A self-accepting module, or a module that expects to be accepted by others can use `hot.dispose` to cleanup any persistent side effects created by its updated copy:
+  A self-accepting module or a module that expects to be accepted by others can use `hot.dispose` to clean-up any persistent side effects created by its updated copy:
 
   ```js
   function setupSideEffect() {}
@@ -194,7 +194,7 @@ For dynamic path references, there are two options:
 
 - You can get the resolved public path of a static asset file by importing it from JavaScript. e.g. `import path from './foo.png'` will give you its resolved public path as a string.
 
-- If you need to concatenate paths on the fly, you can use the globally injected `import.meta.env.BASE_URL` variable with will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `import.meta.env['BASE_URL']` won't work).
+- If you need to concatenate paths on the fly, you can use the globally injected `import.meta.env.BASE_URL` variable which will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `import.meta.env['BASE_URL']` won't work).
 
 ### PostCSS
 
@@ -263,7 +263,7 @@ function Child(_, { slots }) {
 createApp(App).mount('#app')
 ```
 
-Currently this is auto-importing a `jsx` compatible function that converts esbuild-produced JSX calls into Vue 3 compatible vnode calls, which is sub-optimal. Vue 3 will eventually provide a custom JSX transform that can take advantage of Vue 3's runtime fast paths.
+Currently, this is auto-importing a `jsx` compatible function that converts esbuild-produced JSX calls into Vue 3 compatible vnode calls, which is sub-optimal. Vue 3 will eventually provide a custom JSX transform that can take advantage of Vue 3's runtime fast paths.
 
 #### JSX with React/Preact
 
@@ -287,7 +287,7 @@ Note that for the Preact preset, `h` is also auto injected so you don't need to 
 
 > 1.0.0-beta.3+
 
-Pre-compiled `.wasm` files can be directly imported - the default export will be a initialization function that returns a Promise of the exports object of the wasm instance:
+Pre-compiled `.wasm` files can be directly imported - the default export will be an initialization function that returns a Promise of the exports object of the wasm instance:
 
 ``` js
 import init from './example.wasm'
@@ -307,7 +307,7 @@ init({
 }).then(() => { /* ... */ })
 ```
 
-In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise they will be copied to the dist directory as an asset and fetched on demand.
+In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise, they will be copied to the dist directory as an asset and fetched on-demand.
 
 ### Inline Web Workers
 
@@ -378,7 +378,7 @@ export default {
 
 ### Production Build
 
-Vite does utilize bundling for production builds, because native ES module imports result in waterfall network requests that are simply too punishing for page load time in production.
+Vite does utilize bundling for production builds because native ES module imports result in waterfall network requests that are simply too punishing for page load time in production.
 
 You can run `vite build` to bundle the app.
 
@@ -486,15 +486,15 @@ const { build } = require('vite')
 
 The primary difference is that for Vite there is no bundling during development. The ES Import syntax in your source code is served directly to the browser, and the browser parses them via native `<script module>` support, making HTTP requests for each import. The dev server intercepts the requests and performs code transforms if necessary. For example, an import to a `*.vue` file is compiled on the fly right before it's sent back to the browser.
 
-There are a few advantages of this approach:
+There are a few advantages to this approach:
 
 - Since there is no bundling work to be done, the server cold start is extremely fast.
 
-- Code is compiled on demand, so only code actually imported on the current screen is compiled. You don't have to wait until your entire app to be bundled to start developing. This can be a huge difference in apps with dozens of screens.
+- The code is compiled on-demand, so only code actually imported on the current screen is compiled. You don't have to wait until your entire app to be bundled to start developing. This can be a huge difference in apps with dozens of screens.
 
 - Hot module replacement (HMR) performance is decoupled from the total number of modules. This makes HMR consistently fast no matter how big your app is.
 
-Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However since this is local development, the difference should be trivial compared to actual compilation time. (There is no compile cost on page reload since already compiled files are cached in memory.)
+Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However, since this is local development, the difference should be trivial compared to actual compilation time. (There is no compile cost on page reload since already compiled files are cached in memory.)
 
 Finally, because compilation is still done in Node, it can technically support any code transforms a bundler can, and nothing prevents you from eventually bundling the code for production. In fact, Vite provides a `vite build` command to do exactly that so the app doesn't suffer from network waterfall in production.
 
@@ -514,9 +514,9 @@ Both Snowpack v2 and Vite offer native ES module import based dev servers. Vite'
 
 - Vite was created to tackle native ESM-based HMR. When Vite was first released with working ESM-based HMR, there was no other project actively trying to bring native ESM based HMR to production.
 
-  Snowpack v2 initially did not offer HMR support but added it in a later release, making the scope of two projects much closer. Vite and Snowpack has collaborated on a common API spec for ESM HMR, but due to the constraints of different implementation strategies, the two projects still ship slightly different APIs.
+  Snowpack v2 initially did not offer HMR support but added it in a later release, making the scope of two projects much closer. Vite and Snowpack have collaborated on a common API spec for ESM HMR, but due to the constraints of different implementation strategies, the two projects still ship slightly different APIs.
 
-- Both solutions can also bundle the app for production, but Vite uses Rollup with built-in config while Snowpack delegates it to Parcel/webpack via additional plugins. Vite will in most cases build faster and produce smaller bundles. In addition, a tighter integration with the bundler makes it easier to author Vite transforms and plugins that modify dev/build configs at the same.
+- Both solutions can also bundle the app for production, but Vite uses Rollup with built-in config while Snowpack delegates it to Parcel/webpack via additional plugins. Vite will in most cases build faster and produce smaller bundles. In addition, tighter integration with the bundler makes it easier to author Vite transforms and plugins that modify dev/build configs at the same.
 
 - Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fined tuned to produce the most efficient bundle.
 
