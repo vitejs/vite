@@ -44,6 +44,7 @@ Options:
   --jsx                      ['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')
   --jsx-factory              [string]  (default: React.createElement)
   --jsx-fragment             [string]  (default: React.Fragment)
+  --force                    [boolean] force the optimizer to ignore the cache and re-bundle
 `)
 }
 
