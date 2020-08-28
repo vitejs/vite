@@ -232,7 +232,7 @@ import './style.scss'
 
 ```js
 // vite.config.js
-module.exports = {
+export default {
   cssPreprocessOptions: {
     less: {
       modifyVars: {
@@ -273,7 +273,7 @@ If you need a custom JSX pragma, JSX can also be customized via `--jsx-factory` 
 
 ```js
 // vite.config.js
-module.exports = {
+export default {
   jsx: {
     factory: 'h',
     fragment: 'Fragment'
@@ -339,7 +339,7 @@ In addition to options mapped from CLI flags, it also supports `alias`, `transfo
 
 ``` js
 // vite.config.js
-module.exports = {
+export default {
   vueCustomBlockTransforms: {
     i18n: ({ code }) => {
       // return transformed code
@@ -362,7 +362,7 @@ Example:
 
 ``` js
 // vite.config.js
-module.exports = {
+export default {
   proxy: {
     // string shorthand
     '/foo': 'http://localhost:4567/foo',
