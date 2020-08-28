@@ -68,7 +68,7 @@ Vite assumes you are targeting modern browsers and by default only transpiles yo
 - [CSS Pre-processors](#css-pre-processors)
 - [JSX](#jsx)
 - [Web Assembly](#web-assembly)
-- [Inline Web Workers](#web-workers)
+- [Inline Web Workers](#inline-web-workers)
 - [Custom Blocks](#custom-blocks)
 - [Config File](#config-file)
 - [HTTPS/2](#https2)
