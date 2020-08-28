@@ -710,6 +710,13 @@ describe('vite', () => {
           () => getComputedColor(`.style-vars`),
           'rgb(0, 0, 255)'
         )
+        // #748
+        await updateFile('script-setup/TestScriptSetupStyleVars.vue', (c) =>
+          c.replace(`msg="hello"`, `msg="hi"`)
+        )
+        expect(await getText('.test-script-setup-child')).toBe(
+          'Child has prop hello'
+        )
       }
     })
 

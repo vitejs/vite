@@ -231,6 +231,10 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {
+      // #748 maybe template has child component, it should total compiled instead of only template block hmr
+      if (prevDescriptor.scriptSetup || descriptor.scriptSetup) {
+        return sendReload()
+      }
       needRerender = true
     }
 
