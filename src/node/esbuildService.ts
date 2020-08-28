@@ -39,18 +39,21 @@ export function resolveJsxOptions(options: SharedConfig['jsx'] = 'vue') {
 }
 
 // lazy start the service
-let _service: Service | undefined
+let _servicePromise: Promise<Service> | undefined
 
 const ensureService = async () => {
-  if (!_service) {
-    _service = await startService()
+  if (!_servicePromise) {
+    _servicePromise = startService()
   }
-  return _service
+  return _servicePromise
 }
 
-export const stopService = () => {
-  _service && _service.stop()
-  _service = undefined
+export const stopService = async () => {
+  if (_servicePromise) {
+    const service = await _servicePromise
+    service.stop()
+    _servicePromise = undefined
+  }
 }
 
 // transform used in server plugins with a more friendly API
