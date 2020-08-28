@@ -23,6 +23,7 @@ import { DepOptimizationOptions } from './optimizer'
 import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
+import { Options } from 'rollup-plugin-terser'
 
 export type PreprocessLang = NonNullable<
   SFCStyleCompileOptions['preprocessLang']
@@ -245,6 +246,10 @@ export interface BuildConfig extends SharedConfig {
    * @default 'terser'
    */
   minify?: boolean | 'terser' | 'esbuild'
+  /**
+   * The option for `terser`
+   */
+  terserOption?: Options
   /**
    * Transpile target for esbuild.
    * Defaults to 'es2019' which transpiles optional chaining so it works with
