@@ -251,6 +251,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     emitAssets = true,
     write = true,
     minify = true,
+    terserOption = {},
     // default build transpile target is es2019 so that it transpiles
     // optional chaining which terser doesn't handle yet
     esbuildTarget = 'es2019',
@@ -404,7 +405,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // the user can opt-in to use esbuild which is much faster but results
       // in ~8-10% larger file size.
       minify && minify !== 'esbuild'
-        ? require('rollup-plugin-terser').terser()
+        ? require('rollup-plugin-terser').terser(terserOption)
         : undefined
     ].filter(Boolean)
   })
