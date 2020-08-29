@@ -200,7 +200,6 @@ export const vuePlugin: ServerPlugin = ({
       return
     }
 
-    const newCache = vueCache.get(filePath)!
     const prevDescriptor = cacheEntry && cacheEntry.descriptor
     if (!prevDescriptor) {
       // the file has never been accessed yet
@@ -234,7 +233,7 @@ export const vuePlugin: ServerPlugin = ({
     if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {
       // #748 should re-use previous cached script if only template change
       if (prevDescriptor.scriptSetup && descriptor.scriptSetup) {
-        newCache.script = cacheEntry!.script
+        vueCache.get(filePath)!.script = cacheEntry!.script
       }
       needRerender = true
     }
