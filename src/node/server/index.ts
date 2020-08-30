@@ -123,8 +123,9 @@ export function createServer(config: ServerConfig): Server {
     if (optimizeDeps.auto !== false) {
       await require('../optimizer').optimizeDeps(config)
     }
-    context.port = port
-    return listen(port, ...args)
+    const listener = listen(port, ...args)
+    context.port = server.address().port
+    return listener
   }) as any
 
   return server
