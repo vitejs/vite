@@ -158,15 +158,21 @@ const compileHtml = async (
         const srcAttr = node.props.find(
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
         ) as AttributeNode
+        const typeAttr = node.props.find(
+          (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'type'
+        ) as AttributeNode
+        const isJsModule =
+          !typeAttr ||
+          (typeAttr && typeAttr.value && typeAttr.value.content === 'module')
         if (srcAttr && srcAttr.value) {
-          if (!isExternalUrl(srcAttr.value.content)) {
+          if (!isExternalUrl(srcAttr.value.content) && isJsModule) {
             // <script type="module" src="..."/>
             // add it as an import
             js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
           } else {
             shouldRemove = false
           }
-        } else if (node.children.length) {
+        } else if (node.children.length && isJsModule) {
           // <script type="module">...</script>
           // add its content
           // TODO: if there are multiple inline module scripts on the page,
@@ -174,7 +180,7 @@ const compileHtml = async (
           // it's hard to imagine any reason for anyone to do that.
           js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
         }
-        if (shouldRemove) {
+        if (shouldRemove && isJsModule) {
           // remove the script tag from the html. we are going to inject new
           // ones in the end.
           s.remove(node.loc.start.offset, node.loc.end.offset)
