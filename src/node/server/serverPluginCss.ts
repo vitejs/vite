@@ -32,10 +32,10 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       const id = JSON.stringify(hash_sum(ctx.path))
       if (isImportRequest(ctx)) {
         const { css, modules } = await processCss(root, ctx)
-        const cssModulesOptions = ctx.config.cssModuleOptions
+        const cssModulesOptions = ctx.config.cssModuleOptions || {}
         let namedExports =
-          cssModulesOptions?.localsConvention === 'camelCase' ||
-          cssModulesOptions?.localsConvention === 'camelCaseOnly'
+          cssModulesOptions.localsConvention === 'camelCase' ||
+          cssModulesOptions.localsConvention === 'camelCaseOnly'
         ctx.type = 'js'
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url

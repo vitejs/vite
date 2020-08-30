@@ -119,8 +119,8 @@ export const createBuildCssPlugin = ({
         }
 
         let namedExports =
-          modulesOptions?.localsConvention === 'camelCase' ||
-          modulesOptions?.localsConvention === 'camelCaseOnly'
+          modulesOptions.localsConvention === 'camelCase' ||
+          modulesOptions.localsConvention === 'camelCaseOnly'
 
         styles.set(id, css)
         return {
