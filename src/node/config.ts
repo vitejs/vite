@@ -434,6 +434,12 @@ export async function resolveConfig(
       config.root = path.resolve(path.dirname(resolvedPath), config.root)
     }
 
+    if (typeof config.vueTransformAssetUrls === 'object') {
+      config.vueTransformAssetUrls = normalizeAssetUrlOptions(
+        config.vueTransformAssetUrls
+      )
+    }
+
     // resolve plugins
     if (config.plugins) {
       for (const plugin of config.plugins) {
