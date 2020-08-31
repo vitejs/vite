@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import {turquoiseColor} from './testCssModules.module.css'
+import { turquoiseColor } from './testCssModules.module.css'
 import importedScss from './testScssModules.module.scss';
 
 export default {
