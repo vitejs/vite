@@ -252,8 +252,6 @@ export interface BuildConfig extends SharedConfig {
   terserOption?: RollupTerserOptions
   /**
    * Transpile target for esbuild.
-   * Defaults to 'es2020' which transpiles optional chaining so it works with
-   * terser.
    * @default 'es2020'
    */
   esbuildTarget?: string
