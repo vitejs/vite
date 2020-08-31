@@ -15,6 +15,8 @@ export const jsPlugin: Plugin = {
         s.overwrite(i + 2, i + 3, String(Number(cur) + 1))
         // test source map by appending lines
         s.prepend(`\n\n\n`)
+        // test if es2020 stntax works in vite.config.ts
+        s?.append('') ?? null
 
         return {
           code: s.toString(),
