@@ -15,7 +15,10 @@ import Rollup, {
   OutputOptions as RollupOutputOptions,
   OutputChunk
 } from 'rollup'
-import { createEsbuildPlugin } from './build/buildPluginEsbuild'
+import {
+  createEsbuildPlugin,
+  createEsbuildRenderChunkPlugin
+} from './build/buildPluginEsbuild'
 import { ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
 import { Transform, CustomBlockTransform } from './transform'
@@ -399,6 +402,10 @@ export async function resolveConfig(
       // transpile es import syntax to require syntax using rollup.
       const rollup = require('rollup') as typeof Rollup
       const esbuildPlugin = await createEsbuildPlugin({})
+      const esbuildRenderChunkPlugin = createEsbuildRenderChunkPlugin(
+        'es2019',
+        false
+      )
       // use node-resolve to support .ts files
       const nodeResolve = require('@rollup/plugin-node-resolve').nodeResolve({
         extensions: supportedExts
@@ -409,7 +416,7 @@ export async function resolveConfig(
           id.slice(-5, id.length) === '.json',
         input: resolvedPath,
         treeshake: false,
-        plugins: [esbuildPlugin, nodeResolve]
+        plugins: [esbuildPlugin, nodeResolve, esbuildRenderChunkPlugin]
       })
 
       const {
