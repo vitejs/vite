@@ -252,9 +252,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     write = true,
     minify = true,
     terserOption = {},
-    // default build transpile target is es2019 so that it transpiles
-    // optional chaining which terser doesn't handle yet
-    esbuildTarget = 'es2019',
+    esbuildTarget = 'es2020',
     enableEsbuild = true,
     silent = false,
     sourcemap = false,
