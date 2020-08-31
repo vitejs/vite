@@ -16,6 +16,7 @@ import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
 import { clientPublicPath } from './serverPluginClient'
+import { dataToEsm } from 'rollup-pluginutils'
 
 export const debugCSS = require('debug')('vite:css')
 
@@ -182,7 +183,7 @@ export function codegenCss(
     `const css = ${JSON.stringify(css)}\n` +
     `updateStyle(${JSON.stringify(id)}, css)\n`
   if (modules) {
-    code += `export default ${JSON.stringify(modules)}`
+    code += dataToEsm(modules, { namedExports: true })
   } else {
     code += `export default css`
   }
