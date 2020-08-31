@@ -3,6 +3,7 @@
   "version": "1.0.0-rc.4",
   "license": "MIT",
   "author": "Evan You",
+  "description": "Native-ESM powered web dev build tool. It's fast.",
   "bin": {
     "vite": "bin/vite.js"
   },
@@ -18,12 +19,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vuejs/vite.git"
+    "url": "git+https://github.com/vitejs/vite.git"
   },
   "bugs": {
-    "url": "https://github.com/vuejs/vite/issues"
+    "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://github.com/vuejs/vite/tree/master/#readme",
+  "homepage": "https://github.com/vitejs/vite/tree/master/#readme",
   "scripts": {
     "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --incremental --p src/client",

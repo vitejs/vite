@@ -231,6 +231,10 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {
+      // #748 should re-use previous cached script if only template change
+      if (prevDescriptor.scriptSetup && descriptor.scriptSetup) {
+        vueCache.get(filePath)!.script = cacheEntry!.script
+      }
       needRerender = true
     }
 
