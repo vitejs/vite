@@ -17,6 +17,7 @@ import {
 } from '@vue/compiler-sfc'
 import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
+import { dataToEsm } from 'rollup-pluginutils'
 
 const debug = require('debug')('vite:build:css')
 
@@ -120,7 +121,7 @@ export const createBuildCssPlugin = ({
         styles.set(id, css)
         return {
           code: modules
-            ? `export default ${JSON.stringify(modules)}`
+            ? dataToEsm(modules, { namedExports: true })
             : (cssCodeSplit
                 ? // If code-splitting CSS, inject a fake marker to avoid the module
                   // from being tree-shaken. This preserves the .css file as a
