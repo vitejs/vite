@@ -11,13 +11,13 @@ import {
   isCSSRequest,
   cssModuleRE
 } from '../utils/cssUtils'
-import { dataToEsm } from 'rollup-pluginutils'
 import {
   SFCStyleCompileResults,
   SFCAsyncStyleCompileOptions
 } from '@vue/compiler-sfc'
 import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
+import { dataToEsm } from 'rollup-pluginutils'
 
 const debug = require('debug')('vite:build:css')
 
@@ -32,7 +32,7 @@ interface BuildCssOption {
   inlineLimit?: number
   cssCodeSplit?: boolean
   preprocessOptions?: CssPreprocessOptions
-  modulesOptions?: BuildConfig['cssModuleOptions']
+  modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
 }
 
 export const createBuildCssPlugin = ({
@@ -118,14 +118,10 @@ export const createBuildCssPlugin = ({
           })
         }
 
-        let namedExports =
-          modulesOptions.localsConvention === 'camelCase' ||
-          modulesOptions.localsConvention === 'camelCaseOnly'
-
         styles.set(id, css)
         return {
           code: modules
-            ? dataToEsm(modules, { namedExports })
+            ? dataToEsm(modules, { namedExports: true })
             : (cssCodeSplit
                 ? // If code-splitting CSS, inject a fake marker to avoid the module
                   // from being tree-shaken. This preserves the .css file as a

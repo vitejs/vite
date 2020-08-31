@@ -12,11 +12,11 @@ import {
   rewriteCssUrls,
   isCSSRequest
 } from '../utils/cssUtils'
-import { dataToEsm } from 'rollup-pluginutils'
 import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
 import { clientPublicPath } from './serverPluginClient'
+import { dataToEsm } from 'rollup-pluginutils'
 
 export const debugCSS = require('debug')('vite:css')
 
@@ -32,14 +32,10 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       const id = JSON.stringify(hash_sum(ctx.path))
       if (isImportRequest(ctx)) {
         const { css, modules } = await processCss(root, ctx)
-        const cssModulesOptions = ctx.config.cssModuleOptions || {}
-        let namedExports =
-          cssModulesOptions.localsConvention === 'camelCase' ||
-          cssModulesOptions.localsConvention === 'camelCaseOnly'
         ctx.type = 'js'
         // we rewrite css with `?import` to a js module that inserts a style
         // tag linking to the actual raw url
-        ctx.body = codegenCss(id, css, modules, namedExports)
+        ctx.body = codegenCss(id, css, modules)
       }
     }
   })
@@ -180,15 +176,14 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 export function codegenCss(
   id: string,
   css: string,
-  modules?: Record<string, string>,
-  namedExports = false
+  modules?: Record<string, string>
 ): string {
   let code =
     `import { updateStyle } from "${clientPublicPath}"\n` +
     `const css = ${JSON.stringify(css)}\n` +
     `updateStyle(${JSON.stringify(id)}, css)\n`
   if (modules) {
-    code += dataToEsm(modules, { namedExports })
+    code += dataToEsm(modules, { namedExports: true })
   } else {
     code += `export default css`
   }
