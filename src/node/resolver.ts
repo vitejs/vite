@@ -503,6 +503,10 @@ export function resolveNodeModule(
       }
     }
 
+    if (!entryPoint) {
+      entryPoint = 'index.js'
+    }
+
     // resolve object browser field in package.json
     // https://github.com/defunctzombie/package-browser-field-spec
     const browserField = pkg.browser
