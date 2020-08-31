@@ -62,7 +62,7 @@ export function createServer(config: ServerConfig): Server {
   const app = new Koa<State, Context>()
   const server = resolveServer(config, app.callback())
   const watcher = chokidar.watch(root, {
-    ignored: [/\bnode_modules\b/, /\b\.git\b/]
+    ignored: [/node_modules/, /\.git/]
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers, alias)
 
@@ -123,8 +123,9 @@ export function createServer(config: ServerConfig): Server {
     if (optimizeDeps.auto !== false) {
       await require('../optimizer').optimizeDeps(config)
     }
-    context.port = port
-    return listen(port, ...args)
+    const listener = listen(port, ...args)
+    context.port = server.address().port
+    return listener
   }) as any
 
   return server
