@@ -7,6 +7,9 @@ const config: UserConfig = {
     alias: '/alias/aliased',
     '/@alias/': require('path').resolve(__dirname, 'alias/aliased-dir')
   },
+  define: {
+    __VALUE__: 'value'
+  },
   jsx: 'preact',
   plugins: [jsPlugin],
   vueCustomBlockTransforms: { i18n: i18nTransform },
