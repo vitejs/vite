@@ -137,6 +137,15 @@ describe('vite', () => {
       )
     })
 
+    test('config.define', async () => {
+      expect(await getText('.config-define-value')).toMatch(
+        `config.define.value: value`
+      )
+      expect(await getText('.config-define-value-from-js')).toMatch(
+        `config.define.value from js: value`
+      )
+    })
+
     test('module resolving', async () => {
       expect(await getText('.module-resolve-router')).toMatch('ok')
       expect(await getText('.module-resolve-store')).toMatch('ok')

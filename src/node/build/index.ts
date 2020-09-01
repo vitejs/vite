@@ -259,7 +259,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     shouldPreload = null,
     env = {},
     mode: configMode = 'production',
-    define: userDefineReplacements,
+    define: userDefineReplacements = {},
     cssPreprocessOptions,
     cssModuleOptions = {}
   } = options
@@ -334,6 +334,9 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     builtInEnvReplacements[`import.meta.env.${key}`] = JSON.stringify(
       builtInClientEnv[key as keyof typeof builtInClientEnv]
     )
+  })
+  Object.keys(userDefineReplacements).forEach((key) => {
+    userDefineReplacements[key] = JSON.stringify(userDefineReplacements[key])
   })
 
   // lazy require rollup so that we don't load it when only using the dev server

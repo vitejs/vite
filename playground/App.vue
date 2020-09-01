@@ -1,6 +1,7 @@
 <template>
   <h1>Vite Playground</h1>
   <TestEnv />
+  <TestDefine />
   <h2>Async Component</h2>
   <TestAsync />
   <TestModuleResolve />
@@ -35,6 +36,7 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import TestEnv from './TestEnv.vue'
+import TestDefine from './define/TestDefine.vue'
 import TestHmr from './hmr/TestHmr.vue'
 import TestPostCss from './css/TestPostCss.vue'
 import TestScopedCss from './css/TestScopedCss.vue'
@@ -64,6 +66,7 @@ import TestSyntax from './TestSyntax.vue'
 const App = {
   components: {
     TestEnv,
+    TestDefine,
     TestModuleResolve,
     TestHmr,
     TestPostCss,
