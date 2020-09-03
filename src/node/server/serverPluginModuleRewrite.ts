@@ -199,7 +199,6 @@ export function rewriteImports(
           console.warn(
             chalk.yellow(`[vite] ignored dynamic import(${id}) in ${importer}.`)
           )
-          debug(`[vite] ignored dynamic import(${id}) in ${importer}.`)
         }
       }
 
