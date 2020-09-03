@@ -196,7 +196,9 @@ export function rewriteImports(
             ensureMapEntry(importerMap, importee).add(importer)
           }
         } else if (id !== 'import.meta') {
-          debug(`[vite] ignored dynamic import(${id})`)
+          console.warn(
+            chalk.yellow(`[vite] ignored dynamic import(${id}) in ${importer}.`)
+          )
         }
       }
 
