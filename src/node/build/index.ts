@@ -269,7 +269,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   const start = Date.now()
 
   let spinner: Ora | undefined
-  const msg = 'Building for production...'
+  const msg = `Building ${configMode} bundle...`
   if (!silent) {
     if (process.env.DEBUG || isTest) {
       console.log(msg)
