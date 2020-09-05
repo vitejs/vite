@@ -18,12 +18,12 @@ export function mergeSourceMap(
   return merge(oldMap, newMap) as SourceMap
 }
 
-function genSourceMapString(map: SourceMap | string | undefined) {
-  if (typeof map !== 'string') {
-    map = JSON.stringify(map)
-  }
+function genSourceMapString(map: SourceMap) {
+  // Ensure devtools can fetch the mapped sources.
+  const sources = map.sources.map((path) => 'file://' + path)
+
   return `\n//# sourceMappingURL=data:application/json;base64,${Buffer.from(
-    map
+    JSON.stringify({ ...map, sources })
   ).toString('base64')}`
 }
 
