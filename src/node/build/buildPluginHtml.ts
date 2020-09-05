@@ -72,7 +72,9 @@ export const createBuildHtmlPlugin = async (
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/body>/.test(html)) {
+    if (/<!--entry-->/.test(html)) {
+      return html.replace(/<!--entry-->/, tag)
+    } else if (/<\/body>/.test(html)) {
       return html.replace(/<\/body>/, `${tag}\n</body>`)
     } else {
       return html + '\n' + tag
@@ -154,36 +156,54 @@ const compileHtml = async (
   const viteHtmlTransform: NodeTransform = (node) => {
     if (node.type === NodeTypes.ELEMENT) {
       if (node.tag === 'script') {
-        let shouldRemove = true
+        let shouldRemove = false
         const srcAttr = node.props.find(
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
         ) as AttributeNode
         const typeAttr = node.props.find(
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'type'
         ) as AttributeNode
+        const isEntry = !!node.props.find(
+          (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'entry'
+        )
+        // <script type="module" entry>...</script>
+        const isChunk = !!node.props.find(
+          (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'chunk'
+        )
+        // <script type="module" chunk>...</script>
         const isJsModule =
-          !typeAttr ||
-          (typeAttr && typeAttr.value && typeAttr.value.content === 'module')
-        if (srcAttr && srcAttr.value) {
-          if (!isExternalUrl(srcAttr.value.content) && isJsModule) {
-            // <script type="module" src="..."/>
-            // add it as an import
-            js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
-          } else {
-            shouldRemove = false
+          typeAttr && typeAttr.value && typeAttr.value.content === 'module'
+        if (isEntry || isChunk) {
+          if (srcAttr && srcAttr.value) {
+            if (!isExternalUrl(srcAttr.value.content) && isJsModule) {
+              // <script type="module" src="..."/>
+              // add it as an import
+              js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
+              shouldRemove = true
+            }
+          } else if (node.children.length && isJsModule) {
+            // <script type="module">...</script>
+            // add its content
+            // TODO: if there are multiple inline module scripts on the page,
+            // they should technically be turned into separate modules, but
+            // it's hard to imagine any reason for anyone to do that.
+            js += `\n${(node.children[0] as TextNode).content.trim()}\n`
+            shouldRemove = true
           }
-        } else if (node.children.length && isJsModule) {
-          // <script type="module">...</script>
-          // add its content
-          // TODO: if there are multiple inline module scripts on the page,
-          // they should technically be turned into separate modules, but
-          // it's hard to imagine any reason for anyone to do that.
-          js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
         }
+
         if (shouldRemove && isJsModule) {
-          // remove the script tag from the html. we are going to inject new
-          // ones in the end.
-          s.remove(node.loc.start.offset, node.loc.end.offset)
+          if (isEntry) {
+            s.overwrite(
+              node.loc.start.offset,
+              node.loc.end.offset,
+              '<!--entry-->'
+            )
+          } else {
+            // remove the script tag from the html. we are going to inject new
+            // ones in the end.
+            s.remove(node.loc.start.offset, node.loc.end.offset)
+          }
         }
       }
       // For asset references in index.html, also generate an import
@@ -225,7 +245,6 @@ const compileHtml = async (
       assets.set(fileName, content)
     }
   }
-
   return {
     html: s.toString(),
     js
