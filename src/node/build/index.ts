@@ -175,7 +175,7 @@ export async function createBaseRollupPlugins(
       include: [/\.js$/],
       exclude: [/node_modules/]
     }),
-    // user plugins should apply after `@rollup/plugin-commonjs`
+    // #728 user plugins should apply after `@rollup/plugin-commonjs`
     ...(rollupInputOptions.plugins || [])
   ].filter(Boolean)
 }
