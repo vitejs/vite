@@ -144,8 +144,6 @@ export async function createBaseRollupPlugins(
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
 
   return [
-    // user plugins
-    ...(rollupInputOptions.plugins || []),
     // vite:resolve
     createBuildResolvePlugin(root, resolver),
     // vite:esbuild
@@ -176,7 +174,9 @@ export async function createBaseRollupPlugins(
       warnOnError: true,
       include: [/\.js$/],
       exclude: [/node_modules/]
-    })
+    }),
+    // #728 user plugins should apply after `@rollup/plugin-commonjs`
+    ...(rollupInputOptions.plugins || [])
   ].filter(Boolean)
 }
 
