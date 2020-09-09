@@ -33,8 +33,7 @@
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "test": "jest --clearCache && jest --runInBand --forceExit",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "prepublishOnly": "yarn build && yarn changelog",
-    "postpublish": "git add CHANGELOG.md && git commit -m 'chore: changelog [ci skip]'"
+    "release": "node scripts/release.js"
   },
   "gitHooks": {
     "pre-commit": "lint-staged",
@@ -117,6 +116,7 @@
     "bootstrap": "^4.5.0",
     "conventional-changelog-cli": "^2.0.31",
     "cross-env": "^7.0.2",
+    "enquirer": "^2.3.6",
     "jest": "^25.4.0",
     "js-yaml": "^3.14.0",
     "less": "^3.11.2",
@@ -132,6 +132,7 @@
     "puppeteer": "^3.0.0",
     "rimraf": "^3.0.2",
     "sass": "^1.26.5",
+    "semver": "^7.3.2",
     "source-map-support": "^0.5.19",
     "typescript": "^3.9.6",
     "vue-router": "^4.0.0-beta.2",
