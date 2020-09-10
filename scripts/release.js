@@ -6,8 +6,13 @@ const path = require('path')
 const fs = require('fs')
 const args = require('minimist')(process.argv.slice(2))
 const semver = require('semver')
+const chalk = require('chalk')
 const { prompt } = require('enquirer')
 const currentVersion = require('../package.json').version
+const pkgPath = path.resolve(__dirname, '../package.json')
+
+const isDryRun = args.dry
+const skipBuild = args.skipBuild
 
 const versionIncrements = [
   'patch',
@@ -22,6 +27,10 @@ const versionIncrements = [
 const inc = (i) => semver.inc(currentVersion, i)
 const run = (bin, args, opts = {}) =>
   execa(bin, args, { stdio: 'inherit', ...opts })
+const dryRun = (bin, args, opts = {}) =>
+  console.log(chalk.blue(`[dryrun] ${bin} ${args.join(' ')}`), opts)
+const runIfNotDry = isDryRun ? dryRun : run
+const step = (msg) => console.log(chalk.cyan(msg))
 
 async function main() {
   let targetVersion = args._[0]
@@ -65,29 +74,68 @@ async function main() {
     return
   }
 
-  updatePackage(targetVersion)
+  step('\nUpdating package version...')
+  updateVersion(targetVersion)
 
-  await run('yarn', ['build'])
+  step('\nBuilding package...')
+  if (!skipBuild && !isDryRun) {
+    await run('yarn', ['build'])
+  } else {
+    console.log(`(skipped)`)
+  }
+
+  step('\nGenerating changelog...')
   await run('yarn', ['changelog'])
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' })
   if (stdout) {
-    await run('git', ['add', '-A'])
-    await run('git', ['commit', '-m', `release: v${targetVersion}`])
+    step('\nCommitting changes...')
+    await runIfNotDry('git', ['add', '-A'])
+    await runIfNotDry('git', ['commit', '-m', `release: v${targetVersion}`])
   } else {
     console.log('No changes to commit.')
   }
 
-  await run('git', ['tag', `v${targetVersion}`])
-  await run('git', ['push', 'origin', `refs/tags/v${targetVersion}`])
-  await run('git', ['push'])
+  step('\nPublishing package...')
+  await publishPackage(targetVersion, runIfNotDry)
+
+  step('\nPushing to GitHub...')
+  await runIfNotDry('git', ['tag', `v${targetVersion}`])
+  await runIfNotDry('git', ['push', 'origin', `refs/tags/v${targetVersion}`])
+  await runIfNotDry('git', ['push'])
+
+  if (isDryRun) {
+    console.log(`\nDry run finished - run git diff to see package changes.`)
+  }
+
+  console.log()
 }
 
-function updatePackage(version) {
-  const pkgPath = path.resolve(__dirname, '../package.json')
+function updateVersion(version) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
   pkg.version = version
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+}
+
+async function publishPackage(version, runIfNotDry) {
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+  const pkgName = pkg.name
+  try {
+    await runIfNotDry(
+      'yarn',
+      ['publish', '--new-version', version, '--access', 'public'],
+      {
+        stdio: 'pipe'
+      }
+    )
+    console.log(chalk.green(`Successfully published ${pkgName}@${version}`))
+  } catch (e) {
+    if (e.stderr.match(/previously published/)) {
+      console.log(chalk.red(`Skipping already published: ${pkgName}`))
+    } else {
+      throw e
+    }
+  }
 }
 
 main().catch((err) => {
