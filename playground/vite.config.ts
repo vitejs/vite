@@ -27,6 +27,16 @@ const config: UserConfig = {
   vueTransformAssetUrls: {
     img: ['src', 'data-src']
   },
+  indexHtmlTransforms: [
+    {
+      flush: 'pre',
+      transform: (ctx) =>
+        ctx.code.replace(
+          /<title>.*?<\/title>/,
+          '<title>Vite Playground</title>'
+        )
+    }
+  ],
   emitManifest: true
 }
 

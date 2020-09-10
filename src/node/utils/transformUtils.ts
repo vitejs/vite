@@ -1,3 +1,5 @@
+import { IndexHtmlTransform } from '../transform'
+
 export async function asyncReplace(
   input: string,
   re: RegExp,
@@ -26,4 +28,18 @@ export function injectScriptToHtml(html: string, script: string) {
   }
   // if no <head> tag or doctype is present, just prepend
   return script + html
+}
+
+export async function transformIndexHtml(
+  html: string,
+  transforms: IndexHtmlTransform[] = [],
+  flush: 'pre' | 'post',
+  isBuild = false
+) {
+  const trans = transforms.filter((t) => t.flush === flush)
+  let code = html
+  for (const tranform of trans) {
+    code = await tranform.transform({ isBuild, code })
+  }
+  return code
 }
