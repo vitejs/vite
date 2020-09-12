@@ -129,7 +129,9 @@ export const createBuildCssPlugin = ({
                   // renderChunk.
                   `${cssInjectionMarker}()\n`
                 : ``) + `export default ${JSON.stringify(css)}`,
-          map: null
+          map: null,
+          // #795 css always has side effect
+          moduleSideEffects: true
         }
       }
     },
