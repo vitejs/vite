@@ -17,7 +17,7 @@ import {
 } from '@vue/compiler-sfc'
 import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
-import { dataToEsm } from 'rollup-pluginutils'
+import { dataToEsm } from '@rollup/pluginutils'
 
 const debug = require('debug')('vite:build:css')
 
