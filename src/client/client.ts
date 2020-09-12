@@ -29,8 +29,9 @@ console.log('[vite] connecting...')
 
 declare var __VUE_HMR_RUNTIME__: HMRRuntime
 
+const socketPort = __PORT__ || location.port
 const socketProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
-const socketUrl = `${socketProtocol}://${location.hostname}:${__PORT__}`
+const socketUrl = `${socketProtocol}://${location.hostname}:${socketPort}`
 const socket = new WebSocket(socketUrl, 'vite-hmr')
 
 function warnFailedFetch(err: Error, path: string | string[]) {
