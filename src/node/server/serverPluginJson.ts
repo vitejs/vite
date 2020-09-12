@@ -1,6 +1,6 @@
 import { ServerPlugin } from '.'
 import { readBody, isImportRequest } from '../utils'
-import { dataToEsm } from 'rollup-pluginutils'
+import { dataToEsm } from '@rollup/pluginutils'
 
 export const jsonPlugin: ServerPlugin = ({ app }) => {
   app.use(async (ctx, next) => {
