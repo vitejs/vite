@@ -8,7 +8,7 @@ import { InternalResolver } from '../resolver'
 
 export const isAsset = (id: string) => isCSSRequest(id) || isStaticAsset(id)
 
-export const depAssetExternalPlugin: Plugin = {
+export const createDepAssetExternalPlugin = (): Plugin => ({
   name: 'vite:optimize-dep-assets-external',
   resolveId(id) {
     if (isAsset(id)) {
@@ -18,7 +18,7 @@ export const depAssetExternalPlugin: Plugin = {
       }
     }
   }
-}
+})
 
 interface DepAssetPluginOptions {
   resolver: InternalResolver
