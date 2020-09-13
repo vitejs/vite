@@ -91,18 +91,27 @@ export const registerAssets = (
   }
 }
 
-export const createBuildAssetPlugin = (
-  root: string,
-  publicBase: string,
-  assetsDir: string,
+interface BuildAssetPluginOptions {
+  root: string
+  publicBase: string
+  assetsDir: string
   inlineLimit: number
-): Plugin => {
+  include?: (file: string) => boolean
+}
+
+export const createBuildAssetPlugin = ({
+  root,
+  publicBase,
+  assetsDir,
+  inlineLimit,
+  include = isStaticAsset
+}: BuildAssetPluginOptions): Plugin => {
   const assets = new Map<string, Buffer>()
 
   return {
     name: 'vite:asset',
     async load(id) {
-      if (isStaticAsset(id)) {
+      if (include(id)) {
         const { fileName, content, url } = await resolveAsset(
           id,
           root,
