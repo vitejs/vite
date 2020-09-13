@@ -12,7 +12,7 @@ import { hmrPlugin, HMRWatcher } from './serverPluginHmr'
 import { serveStaticPlugin } from './serverPluginServeStatic'
 import { jsonPlugin } from './serverPluginJson'
 import { cssPlugin } from './serverPluginCss'
-import { assetPathPlugin } from './serverPluginAssets'
+import { createAssetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
@@ -116,7 +116,7 @@ export function createServer(config: ServerConfig): Server {
     cssPlugin,
     enableEsbuild ? esbuildPlugin : null,
     jsonPlugin,
-    assetPathPlugin,
+    createAssetPathPlugin(),
     webWorkerPlugin,
     wasmPlugin,
     serveStaticPlugin
