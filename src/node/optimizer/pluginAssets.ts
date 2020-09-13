@@ -20,10 +20,17 @@ export const depAssetExternalPlugin: Plugin = {
   }
 }
 
-export const createDepAssetPlugin = (
-  resolver: InternalResolver,
+interface DepAssetPluginOptions {
+  resolver: InternalResolver
   root: string
-): Plugin => {
+  include?: (file: string) => boolean
+}
+
+export const createDepAssetPlugin = ({
+  resolver,
+  root,
+  include = isStaticAsset
+}: DepAssetPluginOptions): Plugin => {
   return {
     name: 'vite:optimize-dep-assets',
     async transform(code, id) {
@@ -36,7 +43,7 @@ export const createDepAssetPlugin = (
             const { s: start, e: end, d: dynamicIndex } = imports[i]
             if (dynamicIndex === -1) {
               const importee = code.slice(start, end)
-              if (isAsset(importee)) {
+              if (isCSSRequest(importee) || include(importee)) {
                 // replace css/asset imports to deep imports to their original
                 // location
                 s = s || new MagicString(code)
