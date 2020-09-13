@@ -181,6 +181,7 @@ export async function optimizeDeps(
 
   try {
     const rollup = require('rollup') as typeof Rollup
+    const { assetsInclude } = config
 
     const bundle = await rollup.rollup({
       input: qualified,
@@ -189,9 +190,15 @@ export async function optimizeDeps(
       onwarn: onRollupWarning(spinner, options),
       ...config.rollupInputOptions,
       plugins: [
-        createDepAssetExternalPlugin(),
+        createDepAssetExternalPlugin({
+          include: assetsInclude
+        }),
         ...(await createBaseRollupPlugins(root, resolver, config)),
-        createDepAssetPlugin({ resolver, root })
+        createDepAssetPlugin({
+          resolver,
+          root,
+          include: assetsInclude
+        })
       ]
     })
 

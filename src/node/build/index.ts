@@ -242,6 +242,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     outDir = path.resolve(root, 'dist'),
     assetsDir = '_assets',
     assetsInlineLimit = 4096,
+    assetsInclude = isStaticAsset,
     cssCodeSplit = true,
     alias = {},
     resolvers = [],
@@ -361,7 +362,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           !/\?vue&type=template/.test(id) &&
           // also exclude css and static assets for performance
           !isCSSRequest(id) &&
-          !isStaticAsset(id),
+          !assetsInclude(id),
         {
           ...defaultDefines,
           ...userDefineReplacements,
@@ -395,7 +396,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         root,
         publicBase: publicBasePath,
         assetsDir,
-        inlineLimit: assetsInlineLimit
+        inlineLimit: assetsInlineLimit,
+        include: assetsInclude
       }),
       createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
       enableEsbuild

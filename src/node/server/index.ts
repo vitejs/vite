@@ -56,7 +56,8 @@ export function createServer(config: ServerConfig): Server {
     transforms = [],
     vueCustomBlockTransforms = {},
     optimizeDeps = {},
-    enableEsbuild = true
+    enableEsbuild = true,
+    assetsInclude
   } = config
 
   const app = new Koa<State, Context>()
@@ -116,7 +117,9 @@ export function createServer(config: ServerConfig): Server {
     cssPlugin,
     enableEsbuild ? esbuildPlugin : null,
     jsonPlugin,
-    createAssetPathPlugin(),
+    createAssetPathPlugin({
+      include: assetsInclude
+    }),
     webWorkerPlugin,
     wasmPlugin,
     serveStaticPlugin
