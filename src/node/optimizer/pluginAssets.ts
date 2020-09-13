@@ -8,10 +8,16 @@ import { InternalResolver } from '../resolver'
 
 export const isAsset = (id: string) => isCSSRequest(id) || isStaticAsset(id)
 
-export const createDepAssetExternalPlugin = (): Plugin => ({
+interface DepAssetExternalPluginOptions {
+  include?: (file: string) => boolean
+}
+
+export const createDepAssetExternalPlugin = ({
+  include = isStaticAsset
+}: DepAssetExternalPluginOptions = {}): Plugin => ({
   name: 'vite:optimize-dep-assets-external',
   resolveId(id) {
-    if (isAsset(id)) {
+    if (isCSSRequest(id) || include(id)) {
       return {
         id,
         external: true
