@@ -6,8 +6,6 @@ import { isStaticAsset, bareImportRE, resolveFrom } from '../utils'
 import path from 'path'
 import { InternalResolver } from '../resolver'
 
-export const isAsset = (id: string) => isCSSRequest(id) || isStaticAsset(id)
-
 interface DepAssetExternalPluginOptions {
   include?: (file: string) => boolean
 }
