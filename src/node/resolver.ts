@@ -16,7 +16,6 @@ import {
 import { resolveOptimizedCacheDir } from './optimizer'
 import { clientPublicPath } from './server/serverPluginClient'
 import chalk from 'chalk'
-import { isAsset } from './optimizer/pluginAssets'
 
 const debug = require('debug')('vite:resolve')
 const isWin = require('os').platform() === 'win32'
@@ -387,7 +386,7 @@ export function resolveBareModuleRequest(
           // redirect it the optimized copy.
           return resolveBareModuleRequest(root, depId, importer, resolver)
         }
-        if (!isAsset(id)) {
+        if (jsSrcRE.test(id)) {
           // warn against deep imports to optimized dep
           console.error(
             chalk.yellow(
