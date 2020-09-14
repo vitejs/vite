@@ -148,7 +148,7 @@ export const createBuildCssPlugin = ({
         code = code.replace(cssInjectionRE, '')
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
-        if (chunk.isDynamicEntry) {
+        if (chunk.isDynamicEntry && chunkCSS) {
           chunkCSS = minifyCSS(chunkCSS)
           code =
             `let ${cssInjectionMarker} = document.createElement('style');` +
