@@ -12,7 +12,7 @@ import { hmrPlugin, HMRWatcher } from './serverPluginHmr'
 import { serveStaticPlugin } from './serverPluginServeStatic'
 import { jsonPlugin } from './serverPluginJson'
 import { cssPlugin } from './serverPluginCss'
-import { createAssetPathPlugin } from './serverPluginAssets'
+import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
 import { ServerConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
@@ -56,8 +56,7 @@ export function createServer(config: ServerConfig): Server {
     transforms = [],
     vueCustomBlockTransforms = {},
     optimizeDeps = {},
-    enableEsbuild = true,
-    assetsInclude
+    enableEsbuild = true
   } = config
 
   const app = new Koa<State, Context>()
@@ -117,9 +116,7 @@ export function createServer(config: ServerConfig): Server {
     cssPlugin,
     enableEsbuild ? esbuildPlugin : null,
     jsonPlugin,
-    createAssetPathPlugin({
-      include: assetsInclude
-    }),
+    assetPathPlugin,
     webWorkerPlugin,
     wasmPlugin,
     serveStaticPlugin
