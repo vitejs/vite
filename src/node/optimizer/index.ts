@@ -102,7 +102,12 @@ export async function optimizeDeps(
   await fs.ensureDir(cacheDir)
 
   const options = config.optimizeDeps || {}
-  const resolver = createResolver(root, config.resolvers, config.alias)
+  const resolver = createResolver(
+    root,
+    config.resolvers,
+    config.alias,
+    config.assetsInclude
+  )
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:

@@ -56,7 +56,8 @@ export function createServer(config: ServerConfig): Server {
     transforms = [],
     vueCustomBlockTransforms = {},
     optimizeDeps = {},
-    enableEsbuild = true
+    enableEsbuild = true,
+    assetsInclude
   } = config
 
   const app = new Koa<State, Context>()
@@ -69,7 +70,7 @@ export function createServer(config: ServerConfig): Server {
       pollInterval: 10
     }
   }) as HMRWatcher
-  const resolver = createResolver(root, resolvers, alias)
+  const resolver = createResolver(root, resolvers, alias, assetsInclude)
 
   const context: ServerPluginContext = {
     root,

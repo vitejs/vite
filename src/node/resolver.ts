@@ -15,6 +15,8 @@ import {
 } from './server/serverPluginModuleResolve'
 import { resolveOptimizedCacheDir } from './optimizer'
 import { clientPublicPath } from './server/serverPluginClient'
+import { isCSSRequest } from './utils/cssUtils'
+import { isStaticAsset } from './utils/pathUtils'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:resolve')
@@ -37,6 +39,7 @@ export interface InternalResolver {
     relativePublicPath: string
   ): { pathname: string; query: string }
   isPublicRequest(publicPath: string): boolean
+  isAssetFile(filePath: string): boolean
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -117,7 +120,8 @@ const isDir = (p: string) => fs.existsSync(p) && fs.statSync(p).isDirectory()
 export function createResolver(
   root: string,
   resolvers: Resolver[] = [],
-  userAlias: Record<string, string> = {}
+  userAlias: Record<string, string> = {},
+  assetsInclude: (file: string) => boolean = isStaticAsset
 ): InternalResolver {
   resolvers = [...resolvers]
   const literalAlias: Record<string, string> = {}
@@ -324,6 +328,10 @@ export function createResolver(
       return resolver
         .requestToFile(publicPath)
         .startsWith(path.resolve(root, 'public'))
+    },
+
+    isAssetFile(filePath: string) {
+      return isCSSRequest(filePath) || assetsInclude(filePath)
     }
   }
 
@@ -386,7 +394,7 @@ export function resolveBareModuleRequest(
           // redirect it the optimized copy.
           return resolveBareModuleRequest(root, depId, importer, resolver)
         }
-        if (jsSrcRE.test(id)) {
+        if (!resolver.isAssetFile(id)) {
           // warn against deep imports to optimized dep
           console.error(
             chalk.yellow(

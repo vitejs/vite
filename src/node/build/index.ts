@@ -284,7 +284,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
 
-  const resolver = createResolver(root, resolvers, alias)
+  const resolver = createResolver(root, resolvers, alias, assetsInclude)
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,
