@@ -1,6 +1,12 @@
 import path from 'path'
 import chalk from 'chalk'
-import { startService, Service, TransformOptions, Message } from 'esbuild'
+import {
+  startService,
+  Service,
+  TransformOptions,
+  Message,
+  Loader
+} from 'esbuild'
 import { SharedConfig } from './config'
 import { cleanUrl } from './utils'
 
@@ -66,7 +72,7 @@ export const transform = async (
   const service = await ensureService()
   const file = cleanUrl(request)
   options = {
-    loader: options.loader || (path.extname(file).slice(1) as any),
+    loader: options.loader || (path.extname(file).slice(1) as Loader),
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: request,
