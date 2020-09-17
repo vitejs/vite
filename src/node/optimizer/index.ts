@@ -16,6 +16,7 @@ import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 import { createDepAssetPlugin, depAssetExternalPlugin } from './pluginAssets'
+import { createCjsEntryNamedExportPlugin } from './pluginCjsEntry'
 
 const debug = require('debug')('vite:optimize')
 
@@ -187,6 +188,7 @@ export async function optimizeDeps(
       ...config.rollupInputOptions,
       plugins: [
         depAssetExternalPlugin,
+        createCjsEntryNamedExportPlugin(),
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver, root)
       ]
