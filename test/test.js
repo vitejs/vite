@@ -735,7 +735,9 @@ describe('vite', () => {
     })
 
     test('optimizing commonjs dependencies and do named-import from it', async () => {
-      expect(await getText('.cjs-dep-named-export')).toBe('result: success')
+      expect(await getText('.cjs-dep-named-export').trim()).toBe(
+        'result: success'
+      )
     })
   }
 
