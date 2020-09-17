@@ -15,7 +15,10 @@ const config: UserConfig = {
   vueCustomBlockTransforms: { i18n: i18nTransform },
   optimizeDeps: {
     exclude: ['bootstrap', 'rewrite-unoptimized-test-package'],
-    link: ['optimize-linked']
+    link: ['optimize-linked'],
+    cjsExports: {
+      'prop-types': ['oneOfType']
+    }
   },
   cssPreprocessOptions: {
     less: {

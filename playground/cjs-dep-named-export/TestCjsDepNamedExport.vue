@@ -8,6 +8,7 @@
 <script>
 import React, { useState, createContext } from 'react'
 import ReactDOM, { render } from 'react-dom'
+import PropTypes, { oneOfType } from 'prop-types'
 
 export default {
   data() {
@@ -16,7 +17,9 @@ export default {
       typeof useState === 'function' &&
       typeof createContext === 'function' &&
       typeof render === 'function' &&
-      typeof ReactDOM.render === 'function'
+      typeof ReactDOM.render === 'function' &&
+      typeof oneOfType === 'function' &&
+      typeof PropTypes.oneOfType === 'function'
     ) {
       return {
         result: 'success'

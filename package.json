@@ -129,6 +129,7 @@
     "postcss-nesting": "^7.0.1",
     "preact": "^10.4.1",
     "prettier": "^2.0.4",
+    "prop-types": "^15.7.2",
     "pug": "^2.0.4",
     "puppeteer": "^3.0.0",
     "react": "^16.13.1",

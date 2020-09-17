@@ -56,6 +56,10 @@ prop-types@^15.6.2:
     object-assign "^4.1.1"
     react-is "^16.8.1"
 
+"prop-types@link:../node_modules/prop-types":
+  version "0.0.0"
+  uid ""
+
 "react-dom@link:../node_modules/react-dom":
   version "0.0.0"
   uid ""

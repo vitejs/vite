@@ -54,6 +54,13 @@ export interface DepOptimizationOptions {
    * @default true
    */
   auto?: boolean
+  /**
+   * Manually specify the named exports of commonjs dependencies.
+   * Note that vite already do some static analysis, so most cjs dependencies should work out of box without this config (.e.g react, react-dom).
+   */
+  cjsExports?: {
+    [depName: string]: string[]
+  }
 }
 
 export const OPTIMIZE_CACHE_DIR = `node_modules/.vite_opt_cache`
@@ -188,7 +195,7 @@ export async function optimizeDeps(
       ...config.rollupInputOptions,
       plugins: [
         depAssetExternalPlugin,
-        createCjsEntryNamedExportPlugin(),
+        createCjsEntryNamedExportPlugin(options.cjsExports),
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver, root)
       ]

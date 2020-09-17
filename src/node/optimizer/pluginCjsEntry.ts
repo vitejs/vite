@@ -3,9 +3,14 @@ import * as path from 'path'
 import { Plugin } from 'rollup'
 // @ts-ignore
 import cjsLexer from 'cjs-module-lexer'
+import { resolveFrom } from '../utils'
 const { init: initCjsLexer, parse: parseCjs } = cjsLexer
 
-export function createCjsEntryNamedExportPlugin(): Plugin {
+export function createCjsEntryNamedExportPlugin(
+  manualNamedExports: {
+    [depName: string]: string[]
+  } = {}
+): Plugin {
   const proxyEntries: { [proxyModuleId: string]: string } = {}
   return {
     name: 'vite:cjs-entry-named-export',
@@ -17,7 +22,17 @@ export function createCjsEntryNamedExportPlugin(): Plugin {
         throw new Error('expect rollup input to be object')
       }
       Object.entries(input).map(([id, entryFilePath]) => {
-        const cjsExports = Object.keys(getCjsExports(entryFilePath, {}))
+        const cjsExportsObj: {
+          [exportName: string]: true
+        } = {}
+        if (manualNamedExports[id]) {
+          manualNamedExports[id].forEach((exportName) => {
+            cjsExportsObj[exportName] = true
+          })
+        }
+        getCjsExports(entryFilePath, cjsExportsObj)
+
+        const cjsExports = Object.keys(cjsExportsObj)
         if (cjsExports.length > 0) {
           debugger
           const exportCode: string[] = [
@@ -65,8 +80,8 @@ function getCjsExports(
     result[exportName] = true
   })
   cjsReExports.forEach((cjsReExport: string) => {
-    // Example : /node_modules/react/index.js re-export from "./cjs/react.production.min.js"
-    const reExportsFiles = path.resolve(path.dirname(filePath), cjsReExport)
+    // Example : react/index.js re-export from "./cjs/react.production.min.js"
+    const reExportsFiles = resolveFrom(path.dirname(filePath), cjsReExport)
     getCjsExports(reExportsFiles, result)
   })
   return result
