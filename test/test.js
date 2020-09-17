@@ -733,6 +733,10 @@ describe('vite', () => {
     test('optional chaining syntax support', async () => {
       expect(await getText('.syntax')).toBe('baz')
     })
+
+    test('optimizing commonjs dependencies and do named-import from it', async () => {
+      expect(await getText('.cjs-dep-named-export')).toBe('result: success')
+    })
   }
 
   describe('build', () => {
