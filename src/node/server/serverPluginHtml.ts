@@ -24,7 +24,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
 
   async function rewriteHtml(importer: string, html: string) {
     await initLexer
-    html = html!.replace(scriptRE, (matched, openTag, script) => {
+    html = html.replace(scriptRE, (matched, openTag, script) => {
       if (script) {
         return `${openTag}${rewriteImports(
           root,

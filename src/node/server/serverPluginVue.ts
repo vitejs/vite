@@ -432,7 +432,7 @@ async function compileSFCMain(
   const id = hash_sum(publicPath)
   let code = ``
   let content = ``
-  let map: any
+  let map: ResultWithMap['map']
 
   let script = descriptor.script
   const compiler = resolveCompiler(root)

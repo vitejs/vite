@@ -502,7 +502,7 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
     },
     transforms: [...(config.transforms || []), ...(plugin.transforms || [])],
     resolvers: [...(config.resolvers || []), ...(plugin.resolvers || [])],
-    configureServer: ([] as any[]).concat(
+    configureServer: ([] as ServerPlugin[]).concat(
       config.configureServer || [],
       plugin.configureServer || []
     ),
