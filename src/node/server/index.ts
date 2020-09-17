@@ -62,7 +62,12 @@ export function createServer(config: ServerConfig): Server {
   const app = new Koa<State, Context>()
   const server = resolveServer(config, app.callback())
   const watcher = chokidar.watch(root, {
-    ignored: [/node_modules/, /\.git/]
+    ignored: [/node_modules/, /\.git/],
+    // #610
+    awaitWriteFinish: {
+      stabilityThreshold: 100,
+      pollInterval: 10
+    }
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers, alias)
 
