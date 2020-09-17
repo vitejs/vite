@@ -25,7 +25,7 @@ export const createBuildHtmlPlugin = async (
 ) => {
   if (!indexPath || !fs.existsSync(indexPath)) {
     return {
-      renderIndex: (...args: any[]) => '',
+      renderIndex: () => '',
       htmlPlugin: null
     }
   }
