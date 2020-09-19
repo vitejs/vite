@@ -124,6 +124,10 @@ export function rewriteImports(
   resolver: InternalResolver,
   timestamp?: string
 ) {
+  // #806 strip UTF-8 BOM
+  if (source.charCodeAt(0) === 0xfeff) {
+    source = source.slice(1)
+  }
   try {
     let imports: ImportSpecifier[] = []
     try {
