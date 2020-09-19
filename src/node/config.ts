@@ -357,7 +357,7 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig | undefined> {
   const start = Date.now()
   const cwd = process.cwd()
-  let config: ResolvedConfig | undefined
+  let config: ResolvedConfig | ((mode: string) => ResolvedConfig) | undefined
   let resolvedPath: string | undefined
   let isTS = false
   if (configPath) {
@@ -427,6 +427,10 @@ export async function resolveConfig(
       })
 
       config = await loadConfigFromBundledFile(resolvedPath, code)
+    }
+
+    if (typeof config === 'function') {
+      config = config(mode)
     }
 
     // normalize config root to absolute
