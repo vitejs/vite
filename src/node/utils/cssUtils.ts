@@ -11,8 +11,8 @@ import {
 } from '@vue/compiler-sfc'
 
 export const urlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
-export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
-export const cssModuleRE = /(.+)\.module\.(less|sass|scss|styl|stylus|postcss|css)$/
+export const cssPreprocessLangRE = /\.(less|sass|scss|styl|stylus|postcss)$/
+export const cssModuleRE = /\.module\.(less|sass|scss|styl|stylus|postcss|css)$/
 
 export const isCSSRequest = (file: string) =>
   file.endsWith('.css') || cssPreprocessLangRE.test(file)

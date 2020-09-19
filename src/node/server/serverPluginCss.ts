@@ -138,7 +138,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 
     const css = (await readBody(ctx.body))!
     const filePath = resolver.requestToFile(ctx.path)
-    const preprocessLang = ctx.path.replace(cssPreprocessLangRE, '$2')
+    const preprocessLang = (ctx.path.match(cssPreprocessLangRE) || [])[1]
 
     const result = await compileCss(root, ctx.path, {
       id: '',
