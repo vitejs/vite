@@ -30,11 +30,7 @@ const config: UserConfig = {
   indexHtmlTransforms: [
     {
       flush: 'pre',
-      transform: (ctx) =>
-        ctx.code.replace(
-          /<title>.*?<\/title>/,
-          '<title>Vite Playground</title>'
-        )
+      transform: (ctx) => ctx.code.replace(/Vite App/, 'Vite Playground')
     }
   ],
   emitManifest: true
