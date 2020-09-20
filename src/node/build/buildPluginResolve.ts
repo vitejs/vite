@@ -1,5 +1,6 @@
 import { Plugin } from 'rollup'
 import fs from 'fs-extra'
+import path from 'path'
 import { resolveVue } from '../utils/resolveVue'
 import { InternalResolver } from '../resolver'
 import { isExternalUrl } from '../utils'
@@ -33,7 +34,14 @@ export const createBuildResolvePlugin = (
       }
       // fallback to node-resolve because alias
       if (id !== original) {
-        const resolved = await this.resolve(id, importer, { skipSelf: true })
+        const resolve = (id: string) =>
+          this.resolve(id, importer, { skipSelf: true })
+
+        const resolved =
+          (await resolve(id)) ||
+          // aliased import might be provided by root
+          (await resolve(path.join(root, 'node_modules', id)))
+
         return resolved || { id }
       }
     }
