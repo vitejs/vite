@@ -164,7 +164,6 @@ export function rewriteImports(
           se: expEnd
         } = imports[i]
         let id = source.substring(start, end)
-
         let hasLiteralDynamicId = false
         if (dynamicIndex >= 0) {
           const literalIdMatch = id.match(/^(?:'([^']+)'|"([^"]+)")$/)
@@ -189,7 +188,6 @@ export function rewriteImports(
 
           if (resolved !== id) {
             debug(`    "${id}" --> "${resolved}"`)
-
             if (isOptimizedCjs(root, id)) {
               if (dynamicIndex === -1) {
                 const exp = source.substring(expStart, expEnd)
@@ -198,12 +196,10 @@ export function rewriteImports(
               } else if (hasLiteralDynamicId) {
                 // es-module-lexer give us wrong expEnd for dynamic import:
                 // https://github.com/guybedford/es-module-lexer/issues/53
-                // So we can only use `start` and `end` for now
+                // So we can't use expEnd for now.
                 // For example, for import('path')
-                // replace the 'path' with
-                // '${resolved}').then(m=>m.default
-                // will give us
-                // import('${resolved}').then(m=>m.default)
+                // replace the 'path' with '${resolved}').then(m=>m.default
+                // will give us import('${resolved}').then(m=>m.default)
                 s.overwrite(start, end, `'${resolved}').then(m=>m.default`)
               }
             } else {
@@ -213,7 +209,6 @@ export function rewriteImports(
                 hasLiteralDynamicId ? `'${resolved}'` : resolved
               )
             }
-
             hasReplaced = true
           }
 
@@ -330,6 +325,10 @@ export const resolveImport = (
 
 const analysisCache = new Map<string, { mayBeCjs: { [name: string]: true } }>()
 
+/**
+ * get analysis result from optimize step:
+ * which optimized dependencies may be commonjs
+ */
 function getAnalysis(root: string): { mayBeCjs: { [name: string]: true } } {
   if (analysisCache.has(root)) return analysisCache.get(root)!
   const cacheDir = resolveOptimizedCacheDir(root)
@@ -374,7 +373,6 @@ function generateCjsImport(
   resolvedPath: string,
   importIndex: number
 ) {
-  debugger
   // If there is multiple import for same id in one file,
   // importIndex will prevent the cjsModuleName to be duplicate
   const cjsModuleName = makeLegalIdentifier(
