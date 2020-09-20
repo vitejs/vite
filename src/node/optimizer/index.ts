@@ -16,7 +16,7 @@ import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
 import { createDepAssetPlugin, depAssetExternalPlugin } from './pluginAssets'
-import { createCjsEntryNamedExportPlugin } from './pluginCjsEntry'
+import { entryAnalysisPlugin } from './entryAnalysisPlugin'
 
 const debug = require('debug')('vite:optimize')
 
@@ -195,7 +195,7 @@ export async function optimizeDeps(
       ...config.rollupInputOptions,
       plugins: [
         depAssetExternalPlugin,
-        createCjsEntryNamedExportPlugin(options.cjsExports),
+        entryAnalysisPlugin(),
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver, root)
       ]
@@ -217,6 +217,10 @@ export async function optimizeDeps(
         const filePath = path.join(cacheDir, fileName)
         await fs.ensureDir(path.dirname(filePath))
         await fs.writeFile(filePath, chunk.code)
+      }
+      if (chunk.type === 'asset' && chunk.fileName === '_analysis.json') {
+        const filePath = path.join(cacheDir, chunk.fileName)
+        await fs.writeFile(filePath, chunk.source)
       }
     }
 

@@ -1,33 +1,60 @@
 <template>
   <h2>Optimize cjs dep with named export</h2>
-  <p class="cjs-dep-named-export">
-    result: {{result}}
+  <p class="cjs-dep-named-export-static">
+    static import result: {{ staticImport }}
   </p>
+  <p class="cjs-dep-named-export-dynamic">
+    dynamic import result: {{ dynamicImport }}
+  </p>
+  <button class="cjs-dep-named-export-dynamic-load" @click="loadDynamic()">
+    load dynamic
+  </button>
 </template>
 
 <script>
+import { ref } from 'vue'
+
 import React, { useState, createContext } from 'react'
-import ReactDOM, { render } from 'react-dom'
+import { default as React2, useState as useState2 } from 'react'
+import * as ReactStar from 'react'
+
 import PropTypes, { oneOfType } from 'prop-types'
 
 export default {
-  data() {
+  setup() {
+    let staticImport
     if (
-      typeof React.useState === 'function' &&
-      typeof useState === 'function' &&
-      typeof createContext === 'function' &&
-      typeof render === 'function' &&
-      typeof ReactDOM.render === 'function' &&
-      typeof oneOfType === 'function' &&
-      typeof PropTypes.oneOfType === 'function'
+      isFunction(React.useState) &&
+      isFunction(useState) &&
+      isFunction(createContext) &&
+      isFunction(React2.useState) &&
+      isFunction(useState2) &&
+      isFunction(ReactStar.useState) &&
+      isFunction(PropTypes.oneOfType) &&
+      isFunction(oneOfType)
     ) {
-      return {
-        result: 'success'
-      }
+      staticImport = 'success'
+    } else {
+      staticImport = 'fail'
     }
+
+    const dynamicImport = ref('dynamic not loaded')
+    function loadDynamic() {
+      // dynamic import cjs dep and get named-export
+      import('react-dom').then(({ render }) => {
+        dynamicImport.value = isFunction(render) ? 'success' : 'fail'
+      })
+    }
+
     return {
-      result: 'fail'
+      staticImport,
+      dynamicImport,
+      loadDynamic
     }
   }
+}
+
+function isFunction(v) {
+  return typeof v === 'function'
 }
 </script>

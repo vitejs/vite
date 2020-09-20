@@ -1,5 +1,6 @@
 import { ServerPlugin } from '.'
 import path from 'path'
+import * as fs from 'fs-extra'
 import LRUCache from 'lru-cache'
 import MagicString from 'magic-string'
 import {
@@ -7,6 +8,9 @@ import {
   parse as parseImports,
   ImportSpecifier
 } from 'es-module-lexer'
+import { ImportDeclaration } from '@babel/types'
+import { makeLegalIdentifier } from '@rollup/pluginutils'
+
 import {
   InternalResolver,
   resolveBareModuleRequest,
@@ -33,6 +37,8 @@ import {
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
 import { envPublicPath } from './serverPluginEnv'
+import { resolveOptimizedCacheDir } from '../optimizer'
+import { parse } from '../utils/babelParse'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -150,8 +156,15 @@ export function rewriteImports(
       importeeMap.set(importer, currentImportees)
 
       for (let i = 0; i < imports.length; i++) {
-        const { s: start, e: end, d: dynamicIndex } = imports[i]
+        const {
+          s: start,
+          e: end,
+          d: dynamicIndex,
+          ss: expStart,
+          se: expEnd
+        } = imports[i]
         let id = source.substring(start, end)
+
         let hasLiteralDynamicId = false
         if (dynamicIndex >= 0) {
           const literalIdMatch = id.match(/^(?:'([^']+)'|"([^"]+)")$/)
@@ -176,11 +189,31 @@ export function rewriteImports(
 
           if (resolved !== id) {
             debug(`    "${id}" --> "${resolved}"`)
-            s.overwrite(
-              start,
-              end,
-              hasLiteralDynamicId ? `'${resolved}'` : resolved
-            )
+
+            if (isOptimizedCjs(root, id)) {
+              if (dynamicIndex === -1) {
+                const exp = source.substring(expStart, expEnd)
+                const replacement = transformCjsImport(exp, id, resolved, i)
+                s.overwrite(expStart, expEnd, replacement)
+              } else if (hasLiteralDynamicId) {
+                // es-module-lexer give us wrong expEnd for dynamic import:
+                // https://github.com/guybedford/es-module-lexer/issues/53
+                // So we can only use `start` and `end` for now
+                // For example, for import('path')
+                // replace the 'path' with
+                // '${resolved}').then(m=>m.default
+                // will give us
+                // import('${resolved}').then(m=>m.default)
+                s.overwrite(start, end, `'${resolved}').then(m=>m.default`)
+              }
+            } else {
+              s.overwrite(
+                start,
+                end,
+                hasLiteralDynamicId ? `'${resolved}'` : resolved
+              )
+            }
+
             hasReplaced = true
           }
 
@@ -293,4 +326,70 @@ export const resolveImport = (
     }
   }
   return id
+}
+
+const analysisCache = new Map<string, { mayBeCjs: { [name: string]: true } }>()
+
+function getAnalysis(root: string): { mayBeCjs: { [name: string]: true } } {
+  if (analysisCache.has(root)) return analysisCache.get(root)!
+  const cacheDir = resolveOptimizedCacheDir(root)
+  if (!cacheDir) throw new Error('cacheDir not found')
+  const analysis = fs.readJsonSync(path.join(cacheDir, '_analysis.json'))
+  analysisCache.set(root, analysis)
+  return analysis
+}
+
+function isOptimizedCjs(root: string, id: string) {
+  const analysis = getAnalysis(root)
+  return !!analysis.mayBeCjs[id]
+}
+
+function transformCjsImport(
+  exp: string,
+  id: string,
+  resolvedPath: string,
+  importIndex: number
+) {
+  const ast = parse(exp)[0] as ImportDeclaration
+  const importNames: { importedName: string; localName: string }[] = []
+
+  ast.specifiers.forEach((obj) => {
+    if (obj.type === 'ImportSpecifier') {
+      const importedName = obj.imported.name
+      const localName = obj.local.name
+      importNames.push({ importedName, localName })
+    } else if (obj.type === 'ImportDefaultSpecifier') {
+      importNames.push({ importedName: 'default', localName: obj.local.name })
+    } else if (obj.type === 'ImportNamespaceSpecifier') {
+      importNames.push({ importedName: '*', localName: obj.local.name })
+    }
+  })
+
+  return generateCjsImport(importNames, id, resolvedPath, importIndex)
+}
+
+function generateCjsImport(
+  importNames: { importedName: string; localName: string }[],
+  id: string,
+  resolvedPath: string,
+  importIndex: number
+) {
+  debugger
+  // If there is multiple import for same id in one file,
+  // importIndex will prevent the cjsModuleName to be duplicate
+  const cjsModuleName = makeLegalIdentifier(
+    `$viteCjsImport${importIndex}_${id}`
+  )
+  const lines: string[] = [
+    `import ${cjsModuleName} from "${resolvedPath}";`,
+    `console.log("${cjsModuleName}", ${cjsModuleName});`
+  ]
+  importNames.forEach(({ importedName, localName }) => {
+    if (importedName === '*' || importedName === 'default') {
+      lines.push(`const ${localName} = ${cjsModuleName};`)
+    } else {
+      lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"];`)
+    }
+  })
+  return lines.join('\n')
 }
