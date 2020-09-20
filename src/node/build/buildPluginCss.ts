@@ -56,10 +56,8 @@ export const createBuildCssPlugin = ({
         // if this is a Vue SFC style request, it's already processed by
         // rollup-plugin-vue and we just need to rewrite URLs + collect it
         const isVueStyle = /\?vue&type=style/.test(id)
-        const preprocessLang = id.replace(
-          cssPreprocessLangRE,
-          '$2'
-        ) as SFCAsyncStyleCompileOptions['preprocessLang']
+        const preprocessLang = (id.match(cssPreprocessLangRE) ||
+          [])[1] as SFCAsyncStyleCompileOptions['preprocessLang']
 
         const result = isVueStyle
           ? css

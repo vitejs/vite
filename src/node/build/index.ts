@@ -98,6 +98,9 @@ export function onRollupWarning(
           `If you do want to externalize this module explicitly add it to\n` +
           `\`rollupInputOptions.external\``
       }
+      if (spinner) {
+        spinner.stop()
+      }
       throw new Error(message)
     }
     if (
