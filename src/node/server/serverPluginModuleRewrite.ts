@@ -353,7 +353,7 @@ function transformCjsImport(
   id: string,
   resolvedPath: string,
   importIndex: number
-) {
+): string {
   const ast = parse(exp)[0] as ImportDeclaration
   const importNames: { importedName: string; localName: string }[] = []
 
@@ -377,16 +377,13 @@ function generateCjsImport(
   id: string,
   resolvedPath: string,
   importIndex: number
-) {
+): string {
   // If there is multiple import for same id in one file,
   // importIndex will prevent the cjsModuleName to be duplicate
   const cjsModuleName = makeLegalIdentifier(
     `$viteCjsImport${importIndex}_${id}`
   )
-  const lines: string[] = [
-    `import ${cjsModuleName} from "${resolvedPath}";`,
-    `console.log("${cjsModuleName}", ${cjsModuleName});`
-  ]
+  const lines: string[] = [`import ${cjsModuleName} from "${resolvedPath}";`]
   importNames.forEach(({ importedName, localName }) => {
     if (importedName === '*' || importedName === 'default') {
       lines.push(`const ${localName} = ${cjsModuleName};`)
