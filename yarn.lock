@@ -1627,11 +1627,6 @@ ci-info@^2.0.0:
   resolved "https://registry.yarnpkg.com/ci-info/-/ci-info-2.0.0.tgz#67a9e964be31a51e15e5010d58e6f12834002f46"
   integrity sha512-5tK7EtrZ0N+OLFMthtqOj4fI2Jeb88C4CAZPu25LDVUgXJ0A3Js4PMGqrn0JU1W0Mh1/Z8wZzYPxqUrXeBboCQ==
 
-cjs-module-lexer@^0.2.12:
-  version "0.2.12"
-  resolved "https://registry.yarnpkg.com/cjs-module-lexer/-/cjs-module-lexer-0.2.12.tgz#f7e8fe5ceed35e92d33e8b28bbf2ed390725f3ab"
-  integrity sha512-dCHkd6cc45OFYhZS4Oj598SdIpnLfbyR/wesguT0xzwRPKsW10FScy+f+UW4UEFj0kL8VlWSuQwpXezRqwMOnw==
-
 class-utils@^0.3.5:
   version "0.3.6"
   resolved "https://registry.yarnpkg.com/class-utils/-/class-utils-0.3.6.tgz#f93369ae8b9a7ce02fd41faad0ca83033190c463"

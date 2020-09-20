@@ -61,7 +61,6 @@
     "brotli-size": "^4.0.0",
     "chalk": "^4.1.0",
     "chokidar": "^3.4.2",
-    "cjs-module-lexer": "^0.2.12",
     "clean-css": "^4.2.3",
     "debug": "^4.1.1",
     "dotenv": "^8.2.0",
