@@ -740,7 +740,8 @@ describe('vite', () => {
       )
       await click('.cjs-dep-named-export-dynamic-load')
       await expectByPolling(
-        () => getText('.cjs-dep-named-export-dynamic').trim(),
+        async () =>
+          ((await getText('.cjs-dep-named-export-dynamic')) || '').trim(),
         'dynamic import result: success'
       )
     })
