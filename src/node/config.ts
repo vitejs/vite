@@ -27,6 +27,7 @@ import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
 import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
+import { WatchOptions as chokidarWatchOptions } from 'chokidar'
 
 export type PreprocessLang = NonNullable<
   SFCStyleCompileOptions['preprocessLang']
@@ -205,6 +206,10 @@ export interface ServerConfig extends SharedConfig {
    * of multiple server plugin functions.
    */
   configureServer?: ServerPlugin | ServerPlugin[]
+  /**
+   * The option passed to `chokidar`.
+   */
+  watchOptions?: chokidarWatchOptions
 }
 
 export interface BuildConfig extends SharedConfig {
