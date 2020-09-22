@@ -183,9 +183,8 @@ async function parseSFC(
   }
 
   let code =
-    `
+    `${scriptImport}
 ${templateImport}
-${scriptImport}
 const __cssModules = {}
 ${stylesCode}
 /* normalize component */
