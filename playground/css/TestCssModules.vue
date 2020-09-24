@@ -9,7 +9,7 @@
   <div class="css-modules-src-import" :class="srcImported.turquoiseColor">
     CSS modules import with src - this should be orange,
     and should have same class: 
-    {{ srcImported.turquoiseColor === imported.turquoiseColor }}
+    {{ srcImported.turquoiseColor === turquoiseColor }}
   </div>
   <div class="scss-modules-import" :class="importedScss.magenta">
     SCSS modules import - this should be magenta
