@@ -1,6 +1,12 @@
 import path from 'path'
 import chalk from 'chalk'
-import { startService, Service, TransformOptions, Message } from 'esbuild'
+import {
+  startService,
+  Service,
+  TransformOptions,
+  Message,
+  Loader
+} from 'esbuild'
 import { SharedConfig } from './config'
 import { cleanUrl } from './utils'
 
@@ -39,18 +45,21 @@ export function resolveJsxOptions(options: SharedConfig['jsx'] = 'vue') {
 }
 
 // lazy start the service
-let _service: Service | undefined
+let _servicePromise: Promise<Service> | undefined
 
 const ensureService = async () => {
-  if (!_service) {
-    _service = await startService()
+  if (!_servicePromise) {
+    _servicePromise = startService()
   }
-  return _service
+  return _servicePromise
 }
 
-export const stopService = () => {
-  _service && _service.stop()
-  _service = undefined
+export const stopService = async () => {
+  if (_servicePromise) {
+    const service = await _servicePromise
+    service.stop()
+    _servicePromise = undefined
+  }
 }
 
 // transform used in server plugins with a more friendly API
@@ -63,7 +72,7 @@ export const transform = async (
   const service = await ensureService()
   const file = cleanUrl(request)
   options = {
-    loader: options.loader || (path.extname(file).slice(1) as any),
+    loader: options.loader || (path.extname(file).slice(1) as Loader),
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: request,

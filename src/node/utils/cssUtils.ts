@@ -11,8 +11,8 @@ import {
 } from '@vue/compiler-sfc'
 
 export const urlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
-export const cssPreprocessLangRE = /(.+)\.(less|sass|scss|styl|stylus|postcss)$/
-export const cssModuleRE = /(.+)\.module\.(less|sass|scss|styl|stylus|postcss|css)$/
+export const cssPreprocessLangRE = /\.(less|sass|scss|styl|stylus|postcss)$/
+export const cssModuleRE = /\.module\.(less|sass|scss|styl|stylus|postcss|css)$/
 
 export const isCSSRequest = (file: string) =>
   file.endsWith('.css') || cssPreprocessLangRE.test(file)
@@ -160,7 +160,7 @@ async function loadPostcssConfig(
 export async function resolvePostcssOptions(root: string, isBuild: boolean) {
   const config = await loadPostcssConfig(root)
   const options = config && config.options
-  const plugins = config ? config.plugins : []
+  const plugins = config && config.plugins ? config.plugins.slice() : []
   plugins.unshift(require('postcss-import')())
   if (isBuild) {
     plugins.push(require('postcss-discard-comments')({ removeAll: true }))

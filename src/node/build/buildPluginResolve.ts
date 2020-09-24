@@ -2,6 +2,7 @@ import { Plugin } from 'rollup'
 import fs from 'fs-extra'
 import { resolveVue } from '../utils/resolveVue'
 import { InternalResolver } from '../resolver'
+import { isExternalUrl } from '../utils'
 
 const debug = require('debug')('vite:build:resolve')
 
@@ -19,6 +20,9 @@ export const createBuildResolvePlugin = (
         if (id in vuePaths) {
           return (vuePaths as any)[id]
         }
+      }
+      if (isExternalUrl(id)) {
+        return { id, external: true }
       }
       if (id.startsWith('/') && !id.startsWith(root)) {
         const resolved = resolver.requestToFile(id)

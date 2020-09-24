@@ -5,7 +5,6 @@ import { init as initLexer } from 'es-module-lexer'
 import { cleanUrl, readBody, injectScriptToHtml } from '../utils'
 import LRUCache from 'lru-cache'
 import path from 'path'
-import slash from 'slash'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:rewrite')
@@ -25,7 +24,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
 
   async function rewriteHtml(importer: string, html: string) {
     await initLexer
-    html = html!.replace(scriptRE, (matched, openTag, script) => {
+    html = html.replace(scriptRE, (matched, openTag, script) => {
       if (script) {
         return `${openTag}${rewriteImports(
           root,
@@ -38,7 +37,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
         if (srcAttr) {
           // register script as a import dep for hmr
           const importee = resolver.normalizePublicPath(
-            cleanUrl(slash(path.resolve('/', srcAttr[1] || srcAttr[2])))
+            cleanUrl(path.posix.resolve('/', srcAttr[1] || srcAttr[2]))
           )
           debugHmr(`        ${importer} imports ${importee}`)
           ensureMapEntry(importerMap, importee).add(importer)
