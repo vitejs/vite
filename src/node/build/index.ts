@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { resolveFrom, lookupFile, isStaticAsset } from '../utils'
+import { resolveFrom, lookupFile } from '../utils'
 import {
   rollup as Rollup,
   RollupOutput,
@@ -242,7 +242,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     outDir = path.resolve(root, 'dist'),
     assetsDir = '_assets',
     assetsInlineLimit = 4096,
-    assetsInclude = isStaticAsset,
+    assetsInclude,
     cssCodeSplit = true,
     alias = {},
     resolvers = [],
@@ -362,7 +362,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           !/\?vue&type=template/.test(id) &&
           // also exclude css and static assets for performance
           !isCSSRequest(id) &&
-          !assetsInclude(id),
+          !resolver.isAssetRequest(id),
         {
           ...defaultDefines,
           ...userDefineReplacements,
@@ -397,7 +397,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         publicBase: publicBasePath,
         assetsDir,
         inlineLimit: assetsInlineLimit,
-        include: assetsInclude
+        include: (file) => resolver.isAssetRequest(file)
       }),
       createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
       enableEsbuild

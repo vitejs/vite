@@ -39,7 +39,7 @@ export interface InternalResolver {
     relativePublicPath: string
   ): { pathname: string; query: string }
   isPublicRequest(publicPath: string): boolean
-  isAssetFile(filePath: string): boolean
+  isAssetRequest(filePath: string): boolean
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -121,7 +121,7 @@ export function createResolver(
   root: string,
   resolvers: Resolver[] = [],
   userAlias: Record<string, string> = {},
-  assetsInclude: (file: string) => boolean = isStaticAsset
+  assetsInclude?: (file: string) => boolean
 ): InternalResolver {
   resolvers = [...resolvers]
   const literalAlias: Record<string, string> = {}
@@ -330,8 +330,10 @@ export function createResolver(
         .startsWith(path.resolve(root, 'public'))
     },
 
-    isAssetFile(filePath: string) {
-      return isCSSRequest(filePath) || assetsInclude(filePath)
+    isAssetRequest(filePath: string) {
+      return (
+        (assetsInclude && assetsInclude(filePath)) || isStaticAsset(filePath)
+      )
     }
   }
 
@@ -394,7 +396,7 @@ export function resolveBareModuleRequest(
           // redirect it the optimized copy.
           return resolveBareModuleRequest(root, depId, importer, resolver)
         }
-        if (!resolver.isAssetFile(id)) {
+        if (!isCSSRequest(id) && !resolver.isAssetRequest(id)) {
           // warn against deep imports to optimized dep
           console.error(
             chalk.yellow(

@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import { ServerPlugin } from '.'
-import { isStaticAsset } from '../utils'
 import chalk from 'chalk'
 
 const send = require('koa-send')
@@ -22,7 +21,7 @@ export const serveStaticPlugin: ServerPlugin = ({
     }
 
     // warn non-root references to assets under /public/
-    if (ctx.path.startsWith('/public/') && isStaticAsset(ctx.path)) {
+    if (ctx.path.startsWith('/public/') && resolver.isAssetRequest(ctx.path)) {
       console.error(
         chalk.yellow(
           `[vite] files in the public directory are served at the root path.\n` +

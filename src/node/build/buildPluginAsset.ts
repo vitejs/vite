@@ -1,7 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { Plugin, OutputBundle } from 'rollup'
-import { cleanUrl, isStaticAsset } from '../utils'
+import { cleanUrl } from '../utils'
 import hash_sum from 'hash-sum'
 import slash from 'slash'
 import mime from 'mime-types'
@@ -96,7 +96,7 @@ interface BuildAssetPluginOptions {
   publicBase: string
   assetsDir: string
   inlineLimit: number
-  include?: (file: string) => boolean
+  include: (file: string) => boolean
 }
 
 export const createBuildAssetPlugin = ({
@@ -104,7 +104,7 @@ export const createBuildAssetPlugin = ({
   publicBase,
   assetsDir,
   inlineLimit,
-  include = isStaticAsset
+  include
 }: BuildAssetPluginOptions): Plugin => {
   const assets = new Map<string, Buffer>()
 

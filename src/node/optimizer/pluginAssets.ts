@@ -2,20 +2,20 @@ import { Plugin } from 'rollup'
 import { init, parse } from 'es-module-lexer'
 import { isCSSRequest } from '../utils/cssUtils'
 import MagicString from 'magic-string'
-import { isStaticAsset, bareImportRE, resolveFrom } from '../utils'
+import { bareImportRE, resolveFrom } from '../utils'
 import path from 'path'
 import { InternalResolver } from '../resolver'
 
 interface DepAssetExternalPluginOptions {
-  include?: (file: string) => boolean
+  resolver: InternalResolver
 }
 
 export const createDepAssetExternalPlugin = ({
-  include = isStaticAsset
-}: DepAssetExternalPluginOptions = {}): Plugin => ({
+  resolver
+}: DepAssetExternalPluginOptions): Plugin => ({
   name: 'vite:optimize-dep-assets-external',
   resolveId(id) {
-    if (isCSSRequest(id) || include(id)) {
+    if (isCSSRequest(id) || resolver.isAssetRequest(id)) {
       return {
         id,
         external: true
@@ -27,13 +27,11 @@ export const createDepAssetExternalPlugin = ({
 interface DepAssetPluginOptions {
   resolver: InternalResolver
   root: string
-  include?: (file: string) => boolean
 }
 
 export const createDepAssetPlugin = ({
   resolver,
-  root,
-  include = isStaticAsset
+  root
 }: DepAssetPluginOptions): Plugin => {
   return {
     name: 'vite:optimize-dep-assets',
@@ -47,7 +45,7 @@ export const createDepAssetPlugin = ({
             const { s: start, e: end, d: dynamicIndex } = imports[i]
             if (dynamicIndex === -1) {
               const importee = code.slice(start, end)
-              if (isCSSRequest(importee) || include(importee)) {
+              if (isCSSRequest(importee) || resolver.isAssetRequest(importee)) {
                 // replace css/asset imports to deep imports to their original
                 // location
                 s = s || new MagicString(code)
