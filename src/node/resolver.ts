@@ -201,46 +201,22 @@ export function createResolver(
       return res
     },
 
-    /**
-     * Given a fuzzy public path, resolve missing extensions and /index.xxx
-     */
     normalizePublicPath(publicPath) {
       if (publicPath === clientPublicPath) {
         return publicPath
       }
-      // preserve query
-      const queryMatch = publicPath.match(/\?.*$/)
-      const query = queryMatch ? queryMatch[0] : ''
-      const cleanPublicPath = cleanUrl(publicPath)
 
-      const finalize = (result: string) => {
-        result += query
-        if (
-          resolver.requestToFile(result) !== resolver.requestToFile(publicPath)
-        ) {
-          throw new Error(
-            `[vite] normalizePublicPath check fail. please report to vite.`
-          )
-        }
-        return result
-      }
-
-      if (!moduleRE.test(cleanPublicPath)) {
-        return finalize(
-          resolver.fileToRequest(resolver.requestToFile(cleanPublicPath))
+      if (moduleRE.test(publicPath)) {
+        return publicPath
+      } else {
+        const queryMatch = publicPath.match(/\?.*$/)
+        const query = queryMatch ? queryMatch[0] : ''
+        const cleanPublicPath = cleanUrl(publicPath)
+        return (
+          resolver.fileToRequest(resolver.requestToFile(cleanPublicPath)) +
+          query
         )
       }
-
-      const filePath = resolver.requestToFile(cleanPublicPath)
-      const cacheDir = resolveOptimizedCacheDir(root)
-      if (cacheDir) {
-        const relative = path.relative(cacheDir, filePath)
-        if (!relative.startsWith('..')) {
-          return finalize(path.posix.join('/@modules/', slash(relative)))
-        }
-      }
-
-      return publicPath
     },
 
     alias(id) {
