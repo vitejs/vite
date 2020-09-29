@@ -394,10 +394,10 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // vite:asset
       createBuildAssetPlugin({
         root,
+        resolver,
         publicBase: publicBasePath,
         assetsDir,
-        inlineLimit: assetsInlineLimit,
-        include: (file) => resolver.isAssetRequest(file)
+        inlineLimit: assetsInlineLimit
       }),
       createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
       enableEsbuild
