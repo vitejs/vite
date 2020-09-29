@@ -23,10 +23,10 @@ import { ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
 import { Transform, CustomBlockTransform } from './transform'
 import { DepOptimizationOptions } from './optimizer'
-import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
 import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
+import { ProxiesOptions } from './server/serverPluginProxy'
 
 export type PreprocessLang = NonNullable<
   SFCStyleCompileOptions['preprocessLang']
@@ -198,7 +198,7 @@ export interface ServerConfig extends SharedConfig {
    * }
    * ```
    */
-  proxy?: Record<string, string | IKoaProxiesOptions>
+  proxy?: Record<string, string | ProxiesOptions>
   /**
    * A plugin function that configures the dev server. Receives a server plugin
    * context object just like the internal server plguins. Can also be an array
