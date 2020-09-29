@@ -1,13 +1,7 @@
 import fs from 'fs-extra'
 import path from 'path'
 import slash from 'slash'
-import {
-  cleanUrl,
-  resolveFrom,
-  queryRE,
-  lookupFile,
-  parseNodeModuleId
-} from './utils'
+import { cleanUrl, resolveFrom, queryRE } from './utils'
 import {
   moduleRE,
   moduleIdToFileMap,
@@ -246,33 +240,7 @@ export function createResolver(
         }
       }
 
-      // fileToRequest doesn't work with files in node_modules
-      // because of edge cases like symlinks or yarn-aliased-install
-      // or even aliased-symlinks
-
-      // example id: "@babel/runtime/helpers/esm/slicedToArray"
-      // see the test case: /playground/TestNormalizePublicPath.vue
-      const id = cleanPublicPath.replace(moduleRE, '')
-      const { scope, name, inPkgPath } = parseNodeModuleId(id)
-      if (!inPkgPath) return publicPath
-      let filePathPostFix = ''
-      let findPkgFrom = filePath
-      while (!filePathPostFix.startsWith(inPkgPath)) {
-        // some package contains multi package.json...
-        // for example: @babel/runtime@7.10.2/helpers/esm/package.json
-        const pkgPath = lookupFile(findPkgFrom, ['package.json'], true)
-        if (!pkgPath) {
-          throw new Error(
-            `[vite] can't find package.json for a node_module file: ` +
-              `"${publicPath}". something is wrong.`
-          )
-        }
-        filePathPostFix = slash(path.relative(path.dirname(pkgPath), filePath))
-        findPkgFrom = path.join(path.dirname(pkgPath), '../')
-      }
-      return finalize(
-        ['/@modules', scope, name, filePathPostFix].filter(Boolean).join('/')
-      )
+      return publicPath
     },
 
     alias(id) {
