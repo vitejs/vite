@@ -194,9 +194,9 @@ export async function optimizeDeps(
       onwarn: onRollupWarning(spinner, options),
       ...config.rollupInputOptions,
       plugins: [
-        createDepAssetExternalPlugin({ resolver }),
+        createDepAssetExternalPlugin(resolver),
         ...(await createBaseRollupPlugins(root, resolver, config)),
-        createDepAssetPlugin({ resolver, root })
+        createDepAssetPlugin(resolver, root)
       ]
     })
 

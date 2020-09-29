@@ -392,13 +392,13 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         modulesOptions: cssModuleOptions
       }),
       // vite:asset
-      createBuildAssetPlugin({
+      createBuildAssetPlugin(
         root,
         resolver,
-        publicBase: publicBasePath,
+        publicBasePath,
         assetsDir,
-        inlineLimit: assetsInlineLimit
-      }),
+        assetsInlineLimit
+      ),
       createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
       enableEsbuild
         ? createEsbuildRenderChunkPlugin(esbuildTarget, minify === 'esbuild')

@@ -6,13 +6,9 @@ import { bareImportRE, resolveFrom } from '../utils'
 import path from 'path'
 import { InternalResolver } from '../resolver'
 
-interface DepAssetExternalPluginOptions {
+export const createDepAssetExternalPlugin = (
   resolver: InternalResolver
-}
-
-export const createDepAssetExternalPlugin = ({
-  resolver
-}: DepAssetExternalPluginOptions): Plugin => ({
+): Plugin => ({
   name: 'vite:optimize-dep-assets-external',
   resolveId(id) {
     if (isCSSRequest(id) || resolver.isAssetRequest(id)) {
@@ -24,15 +20,10 @@ export const createDepAssetExternalPlugin = ({
   }
 })
 
-interface DepAssetPluginOptions {
-  resolver: InternalResolver
+export const createDepAssetPlugin = (
+  resolver: InternalResolver,
   root: string
-}
-
-export const createDepAssetPlugin = ({
-  resolver,
-  root
-}: DepAssetPluginOptions): Plugin => {
+): Plugin => {
   return {
     name: 'vite:optimize-dep-assets',
     async transform(code, id) {

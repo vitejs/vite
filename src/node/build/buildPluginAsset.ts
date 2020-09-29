@@ -92,21 +92,13 @@ export const registerAssets = (
   }
 }
 
-interface BuildAssetPluginOptions {
-  root: string
-  resolver: InternalResolver
-  publicBase: string
-  assetsDir: string
+export const createBuildAssetPlugin = (
+  root: string,
+  resolver: InternalResolver,
+  publicBase: string,
+  assetsDir: string,
   inlineLimit: number
-}
-
-export const createBuildAssetPlugin = ({
-  root,
-  resolver,
-  publicBase,
-  assetsDir,
-  inlineLimit
-}: BuildAssetPluginOptions): Plugin => {
+): Plugin => {
   const assets = new Map<string, Buffer>()
 
   return {
