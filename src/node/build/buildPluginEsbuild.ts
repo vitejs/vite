@@ -10,7 +10,7 @@ import {
 import { SharedConfig } from '../config'
 
 export const createEsbuildPlugin = async (
-  jsx: SharedConfig['jsx']
+  jsx: SharedConfig['jsx'] = 'vue'
 ): Promise<Plugin> => {
   const jsxConfig = resolveJsxOptions(jsx)
 
