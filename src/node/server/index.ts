@@ -19,7 +19,7 @@ import { createServerTransformPlugin } from '../transform'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
-import { cachedRead } from '../utils'
+import { cachedRead, toArray } from '../utils'
 import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
 import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
@@ -106,7 +106,7 @@ export function createServer(config: ServerConfig): Server {
     moduleRewritePlugin,
     htmlRewritePlugin,
     // user plugins
-    ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
+    ...toArray(configureServer),
     envPlugin,
     moduleResolvePlugin,
     proxyPlugin,
