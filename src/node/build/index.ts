@@ -8,6 +8,7 @@ import {
   RollupOutput,
   ExternalOption,
   Plugin,
+  PluginHooks,
   InputOptions
 } from 'rollup'
 import {
@@ -31,6 +32,8 @@ import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
 import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
 import { createBuildWasmPlugin } from './buildPluginWasm'
+
+export type BuildPlugin = PluginHooks['options']
 
 export interface BuildResult {
   html: string
@@ -141,12 +144,15 @@ export async function createBaseRollupPlugins(
     transforms = [],
     vueCustomBlockTransforms = {},
     enableEsbuild = true,
-    enableRollupPluginVue = true
+    enableRollupPluginVue = true,
+    configureBuild = []
   } = options
   const { nodeResolve } = require('@rollup/plugin-node-resolve')
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
 
   return [
+    // vite:configureBuild
+    createBuildConfigPlugin(configureBuild),
     // vite:resolve
     createBuildResolvePlugin(root, resolver),
     // vite:esbuild
@@ -181,6 +187,24 @@ export async function createBaseRollupPlugins(
     // #728 user plugins should apply after `@rollup/plugin-commonjs`
     ...(rollupInputOptions.plugins || [])
   ].filter(Boolean)
+}
+
+function createBuildConfigPlugin(
+  configureBuild: BuildPlugin | BuildPlugin[]
+): Plugin {
+  return {
+    name: 'vite:configureBuild',
+    options(inputOptions) {
+      const hooks = Array.isArray(configureBuild)
+        ? configureBuild
+        : [configureBuild]
+
+      return hooks.reduce(
+        (inputOptions, hook) => hook.call(this, inputOptions) || inputOptions,
+        inputOptions
+      )
+    }
+  }
 }
 
 async function createVuePlugin(

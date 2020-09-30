@@ -19,6 +19,7 @@ import {
   createEsbuildPlugin,
   createEsbuildRenderChunkPlugin
 } from './build/buildPluginEsbuild'
+import { BuildPlugin } from './build'
 import { ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
 import { Transform, CustomBlockTransform } from './transform'
@@ -319,6 +320,10 @@ export interface BuildConfig extends SharedConfig {
    * @default true
    */
   enableRollupPluginVue?: boolean
+  /**
+   * A plugin function that configures the Rollup options.
+   */
+  configureBuild?: BuildPlugin | BuildPlugin[]
 }
 
 export interface UserConfig extends BuildConfig, ServerConfig {
@@ -332,6 +337,7 @@ export interface Plugin
     | 'transforms'
     | 'define'
     | 'resolvers'
+    | 'configureBuild'
     | 'configureServer'
     | 'vueCompilerOptions'
     | 'vueTransformAssetUrls'
@@ -505,6 +511,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
     configureServer: ([] as ServerPlugin[]).concat(
       config.configureServer || [],
       plugin.configureServer || []
+    ),
+    configureBuild: ([] as BuildPlugin[]).concat(
+      config.configureBuild || [],
+      plugin.configureBuild || []
     ),
     vueCompilerOptions: {
       ...config.vueCompilerOptions,
