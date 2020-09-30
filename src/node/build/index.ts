@@ -2,7 +2,8 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { resolveFrom, lookupFile, isStaticAsset } from '../utils'
+import { klona } from 'klona/json'
+import { resolveFrom, lookupFile, isStaticAsset, toArray } from '../utils'
 import {
   rollup as Rollup,
   RollupOutput,
@@ -31,6 +32,8 @@ import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
 import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
 import { createBuildWasmPlugin } from './buildPluginWasm'
+
+export type BuildPlugin = (config: BuildConfig) => void
 
 export interface BuildResult {
   html: string
@@ -78,7 +81,7 @@ export function onRollupWarning(
             importingDep = pkg.name
           }
         }
-        const allowList = options && options.allowNodeBuiltins
+        const allowList = options.allowNodeBuiltins
         if (importingDep && allowList && allowList.includes(importingDep)) {
           return
         }
@@ -134,7 +137,7 @@ export function onRollupWarning(
 export async function createBaseRollupPlugins(
   root: string,
   resolver: InternalResolver,
-  options: BuildConfig
+  options: Partial<BuildConfig>
 ): Promise<Plugin[]> {
   const {
     rollupInputOptions = {},
@@ -193,7 +196,7 @@ async function createVuePlugin(
     vueCompilerOptions,
     vueTransformAssetUrls = {},
     vueTemplatePreprocessOptions = {}
-  }: BuildConfig
+  }: Partial<BuildConfig>
 ) {
   const {
     options: postcssOptions,
@@ -235,37 +238,112 @@ async function createVuePlugin(
 }
 
 /**
+ * Clone the given config object and fill it with default values.
+ */
+function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
+  const {
+    alias = {},
+    assetsDir = '_assets',
+    assetsInlineLimit = 4096,
+    base = '/',
+    cssCodeSplit = true,
+    cssModuleOptions = {},
+    cssPreprocessOptions = {},
+    define = {},
+    emitAssets = true,
+    emitIndex = true,
+    enableEsbuild = true,
+    enableRollupPluginVue = true,
+    env = {},
+    esbuildTarget = 'es2020',
+    jsx = 'vue',
+    minify = true,
+    mode = 'production',
+    resolvers = [],
+    rollupDedupe = [],
+    rollupInputOptions = {},
+    rollupOutputOptions = {},
+    rollupPluginVueOptions = {},
+    root = process.cwd(),
+    optimizeDeps = {},
+    outDir = path.resolve(root, 'dist'),
+    shouldPreload = null,
+    silent = false,
+    sourcemap = false,
+    terserOptions = {},
+    transforms = [],
+    vueCompilerOptions = {},
+    vueCustomBlockTransforms = {},
+    vueTransformAssetUrls = {},
+    vueTemplatePreprocessOptions = {},
+    write = true
+  } = klona(config)
+
+  return {
+    ...config,
+    alias,
+    assetsDir,
+    assetsInlineLimit,
+    base,
+    cssCodeSplit,
+    cssModuleOptions,
+    cssPreprocessOptions,
+    define,
+    emitAssets,
+    emitIndex,
+    enableEsbuild,
+    enableRollupPluginVue,
+    env,
+    esbuildTarget,
+    jsx,
+    minify,
+    mode,
+    optimizeDeps,
+    outDir,
+    resolvers,
+    rollupDedupe,
+    rollupInputOptions,
+    rollupOutputOptions,
+    rollupPluginVueOptions,
+    root,
+    shouldPreload,
+    silent,
+    sourcemap,
+    terserOptions,
+    transforms,
+    vueCompilerOptions,
+    vueCustomBlockTransforms,
+    vueTransformAssetUrls,
+    vueTemplatePreprocessOptions,
+    write
+  }
+}
+
+/**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
  */
-export async function build(options: BuildConfig): Promise<BuildResult> {
+export async function build(
+  options: Partial<BuildConfig>
+): Promise<BuildResult> {
+  const config = prepareConfig(options)
+  toArray(config.configureBuild).forEach((configureBuild) =>
+    configureBuild(config)
+  )
   const {
-    root = process.cwd(),
-    base = '/',
-    outDir = path.resolve(root, 'dist'),
-    assetsDir = '_assets',
-    assetsInlineLimit = 4096,
-    cssCodeSplit = true,
-    alias = {},
-    resolvers = [],
-    rollupInputOptions = {},
-    rollupOutputOptions = {},
-    emitIndex = true,
-    emitAssets = true,
-    write = true,
-    minify = true,
-    terserOptions = {},
-    esbuildTarget = 'es2020',
-    enableEsbuild = true,
-    silent = false,
-    sourcemap = false,
-    shouldPreload = null,
-    env = {},
-    mode: configMode = 'production',
-    define: userDefineReplacements = {},
-    cssPreprocessOptions,
-    cssModuleOptions = {}
-  } = options
+    root,
+    outDir,
+    assetsDir,
+    assetsInlineLimit,
+    emitIndex,
+    emitAssets,
+    minify,
+    silent,
+    sourcemap,
+    env,
+    mode: configMode,
+    define: userDefineReplacements
+  } = config
 
   const isTest = process.env.NODE_ENV === 'test'
   const resolvedMode = process.env.VITE_ENV || configMode
@@ -283,10 +361,10 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   await fs.emptyDir(outDir)
 
   const indexPath = path.resolve(root, 'index.html')
-  const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
+  const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
 
-  const resolver = createResolver(root, resolvers, alias)
+  const resolver = createResolver(root, config.resolvers, config.alias)
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,
@@ -295,10 +373,10 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     assetsDir,
     assetsInlineLimit,
     resolver,
-    shouldPreload
+    config.shouldPreload
   )
 
-  const basePlugins = await createBaseRollupPlugins(root, resolver, options)
+  const basePlugins = await createBaseRollupPlugins(root, resolver, config)
 
   // https://github.com/darionco/rollup-plugin-web-worker-loader
   // configured to support `import Worker from './my-worker?worker'`
@@ -349,8 +427,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     input: path.resolve(root, 'index.html'),
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
-    onwarn: onRollupWarning(spinner, options.optimizeDeps),
-    ...rollupInputOptions,
+    onwarn: onRollupWarning(spinner, config.optimizeDeps),
+    ...config.rollupInputOptions,
     plugins: [
       ...basePlugins,
       // vite:html
@@ -389,9 +467,9 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         assetsDir,
         minify,
         inlineLimit: assetsInlineLimit,
-        cssCodeSplit,
-        preprocessOptions: cssPreprocessOptions,
-        modulesOptions: cssModuleOptions
+        cssCodeSplit: config.cssCodeSplit,
+        preprocessOptions: config.cssPreprocessOptions,
+        modulesOptions: config.cssModuleOptions
       }),
       // vite:asset
       createBuildAssetPlugin(
@@ -401,15 +479,17 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         assetsInlineLimit
       ),
       createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
-      enableEsbuild
-        ? createEsbuildRenderChunkPlugin(esbuildTarget, minify === 'esbuild')
-        : undefined,
+      config.enableEsbuild &&
+        createEsbuildRenderChunkPlugin(
+          config.esbuildTarget,
+          minify === 'esbuild'
+        ),
       // minify with terser
       // this is the default which has better compression, but slow
       // the user can opt-in to use esbuild which is much faster but results
       // in ~8-10% larger file size.
       minify && minify !== 'esbuild'
-        ? require('rollup-plugin-terser').terser(terserOptions)
+        ? require('rollup-plugin-terser').terser(config.terserOptions)
         : undefined
     ].filter(Boolean)
   })
@@ -420,14 +500,14 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     sourcemap,
     entryFileNames: `[name].[hash].js`,
     chunkFileNames: `[name].[hash].js`,
-    ...rollupOutputOptions
+    ...config.rollupOutputOptions
   })
 
   spinner && spinner.stop()
 
   const indexHtml = emitIndex ? renderIndex(output) : ''
 
-  if (write) {
+  if (config.write) {
     const cwd = process.cwd()
     const writeFile = async (
       filepath: string,
@@ -526,7 +606,9 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
  * - Imports to dependencies are compiled into require() calls
  * - Templates are compiled with SSR specific optimizations.
  */
-export async function ssrBuild(options: BuildConfig): Promise<BuildResult> {
+export async function ssrBuild(
+  options: Partial<BuildConfig>
+): Promise<BuildResult> {
   const {
     rollupInputOptions,
     rollupOutputOptions,

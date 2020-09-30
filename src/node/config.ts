@@ -19,6 +19,7 @@ import {
   createEsbuildPlugin,
   createEsbuildRenderChunkPlugin
 } from './build/buildPluginEsbuild'
+import { BuildPlugin } from './build'
 import { ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
 import { Transform, CustomBlockTransform } from './transform'
@@ -221,57 +222,57 @@ export interface ServerConfig extends SharedConfig {
   configureServer?: ServerPlugin | ServerPlugin[]
 }
 
-export interface BuildConfig extends SharedConfig {
+export interface BuildConfig extends Required<SharedConfig> {
   /**
    * Base public path when served in production.
    * @default '/'
    */
-  base?: string
+  base: string
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
    * @default 'dist'
    */
-  outDir?: string
+  outDir: string
   /**
    * Directory relative from `outDir` where the built js/css/image assets will
    * be placed.
    * @default '_assets'
    */
-  assetsDir?: string
+  assetsDir: string
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
    * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
    * @default 4096
    */
-  assetsInlineLimit?: number
+  assetsInlineLimit: number
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
    * style tags when the chunk is loaded.
    * @default true
    */
-  cssCodeSplit?: boolean
+  cssCodeSplit: boolean
   /**
    * Whether to generate sourcemap
    * @default false
    */
-  sourcemap?: boolean
+  sourcemap: boolean
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
    * @default 'terser'
    */
-  minify?: boolean | 'terser' | 'esbuild'
+  minify: boolean | 'terser' | 'esbuild'
   /**
    * The option for `terser`
    */
-  terserOptions?: RollupTerserOptions
+  terserOptions: RollupTerserOptions
   /**
    * Transpile target for esbuild.
    * @default 'es2020'
    */
-  esbuildTarget?: string
+  esbuildTarget: string
   /**
    * Build for server-side rendering, only as a CLI flag
    * for programmatic usage, use `ssrBuild` directly.
@@ -285,57 +286,62 @@ export interface BuildConfig extends SharedConfig {
    *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
-  rollupInputOptions?: RollupInputOptions
+  rollupInputOptions: RollupInputOptions
   /**
    * Will be passed to bundle.generate()
    *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
-  rollupOutputOptions?: RollupOutputOptions
+  rollupOutputOptions: RollupOutputOptions
   /**
    * Will be passed to rollup-plugin-vue
    *
    * https://github.com/vuejs/rollup-plugin-vue/blob/next/src/index.ts
    */
-  rollupPluginVueOptions?: Partial<RollupPluginVueOptions>
+  rollupPluginVueOptions: Partial<RollupPluginVueOptions>
   /**
    * Will be passed to @rollup/plugin-node-resolve
    * https://github.com/rollup/plugins/tree/master/packages/node-resolve#dedupe
    */
-  rollupDedupe?: string[]
+  rollupDedupe: string[]
   /**
    * Whether to log asset info to console
    * @default false
    */
-  silent?: boolean
+  silent: boolean
   /**
    * Whether to write bundle to disk
    * @default true
    */
-  write?: boolean
+  write: boolean
   /**
    * Whether to emit index.html
    * @default true
    */
-  emitIndex?: boolean
+  emitIndex: boolean
   /**
    * Whether to emit assets other than JavaScript
    * @default true
    */
-  emitAssets?: boolean
+  emitAssets: boolean
   /**
    * Predicate function that determines whether a link rel=modulepreload shall be
    * added to the index.html for the chunk passed in
    */
-  shouldPreload?: (chunk: OutputChunk) => boolean
+  shouldPreload: ((chunk: OutputChunk) => boolean) | null
   /**
    * Enable 'rollup-plugin-vue'
    * @default true
    */
-  enableRollupPluginVue?: boolean
+  enableRollupPluginVue: boolean
+  /**
+   * Plugin functions that mutate the Vite build config.
+   * @internal
+   */
+  configureBuild?: BuildPlugin | BuildPlugin[]
 }
 
-export interface UserConfig extends BuildConfig, ServerConfig {
+export interface UserConfig extends Partial<BuildConfig>, ServerConfig {
   plugins?: Plugin[]
 }
 
@@ -346,6 +352,7 @@ export interface Plugin
     | 'transforms'
     | 'define'
     | 'resolvers'
+    | 'configureBuild'
     | 'configureServer'
     | 'vueCompilerOptions'
     | 'vueTransformAssetUrls'
@@ -519,6 +526,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
     configureServer: ([] as ServerPlugin[]).concat(
       config.configureServer || [],
       plugin.configureServer || []
+    ),
+    configureBuild: ([] as BuildPlugin[]).concat(
+      config.configureBuild || [],
+      plugin.configureBuild || []
     ),
     vueCompilerOptions: {
       ...config.vueCompilerOptions,
