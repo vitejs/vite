@@ -199,13 +199,12 @@ export function rewriteImports(
                 const replacement = transformCjsImport(exp, id, resolved, i)
                 s.overwrite(expStart, expEnd, replacement)
               } else if (hasLiteralDynamicId) {
-                // es-module-lexer give us wrong expEnd for dynamic import:
-                // https://github.com/guybedford/es-module-lexer/issues/53
-                // So we can't use expEnd for now.
-                // For example, for import('path')
-                // replace the 'path' with '${resolved}').then(m=>m.default
-                // will give us import('${resolved}').then(m=>m.default)
-                s.overwrite(start, end, `'${resolved}').then(m=>m.default`)
+                // rewrite `import('package')`
+                s.overwrite(
+                  dynamicIndex,
+                  end + 1,
+                  `import('${resolved}').then(m=>m.default)`
+                )
               }
             } else {
               s.overwrite(
