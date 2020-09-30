@@ -73,6 +73,7 @@
     "fs-extra": "^9.0.1",
     "hash-sum": "^2.0.0",
     "isbuiltin": "^1.0.0",
+    "klona": "^2.0.4",
     "koa": "^2.13.0",
     "koa-conditional-get": "^3.0.0",
     "koa-etag": "^4.0.0",
