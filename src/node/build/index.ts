@@ -260,14 +260,14 @@ function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
     jsx = 'vue',
     minify = true,
     mode = 'production',
+    optimizeDeps = {},
+    outDir = 'dist',
     resolvers = [],
     rollupDedupe = [],
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
     root = process.cwd(),
-    optimizeDeps = {},
-    outDir = path.resolve(root, 'dist'),
     shouldPreload = null,
     silent = false,
     sourcemap = false,
@@ -336,11 +336,9 @@ export async function build(
   )
   const {
     root,
-    outDir,
     assetsDir,
     assetsInlineLimit,
     entry,
-    emitIndex,
     minify,
     silent,
     sourcemap,
@@ -355,6 +353,7 @@ export async function build(
   const isTest = process.env.NODE_ENV === 'test'
   const resolvedMode = process.env.VITE_ENV || configMode
   const start = Date.now()
+  const emitIndex = !!(config.emitIndex && config.write)
   const emitAssets = !!(config.emitAssets && config.write)
 
   let spinner: Ora | undefined
@@ -366,8 +365,8 @@ export async function build(
       spinner = require('ora')(msg + '\n').start()
     }
   }
-  await fs.emptyDir(outDir)
 
+  const outDir = path.resolve(root, config.outDir)
   const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
@@ -518,7 +517,7 @@ export async function build(
     ].filter(Boolean)
   })
 
-  const { output } = await bundle.write({
+  const { output } = await bundle[config.write ? 'write' : 'generate']({
     dir: resolvedAssetsPath,
     format: 'es',
     sourcemap,
@@ -556,7 +555,7 @@ export async function build(
       }
     }
 
-    // write js chunks and assets
+    // log js chunks and assets
     for (const chunk of output) {
       const filepath = path.join(resolvedAssetsPath, chunk.fileName)
       if (chunk.type === 'chunk') {
@@ -626,7 +625,7 @@ export async function ssrBuild(
   } = options
 
   return build({
-    outDir: path.resolve(options.root || process.cwd(), 'dist-ssr'),
+    outDir: 'dist-ssr',
     assetsDir: '.',
     ...options,
     rollupPluginVueOptions: {
