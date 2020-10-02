@@ -259,14 +259,14 @@ function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
     jsx = 'vue',
     minify = true,
     mode = 'production',
+    optimizeDeps = {},
+    outDir = 'dist',
     resolvers = [],
     rollupDedupe = [],
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
     root = process.cwd(),
-    optimizeDeps = {},
-    outDir = path.resolve(root, 'dist'),
     shouldPreload = null,
     silent = false,
     sourcemap = false,
@@ -332,7 +332,6 @@ export async function build(
   )
   const {
     root,
-    outDir,
     assetsDir,
     assetsInlineLimit,
     emitIndex,
@@ -358,8 +357,8 @@ export async function build(
       spinner = require('ora')(msg + '\n').start()
     }
   }
-  await fs.emptyDir(outDir)
 
+  const outDir = path.resolve(root, config.outDir)
   const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
@@ -534,6 +533,7 @@ export async function build(
       }
     }
 
+    await fs.emptyDir(outDir)
     await fs.ensureDir(outDir)
 
     // write js chunks and assets
@@ -616,7 +616,7 @@ export async function ssrBuild(
   } = options
 
   return build({
-    outDir: path.resolve(options.root || process.cwd(), 'dist-ssr'),
+    outDir: 'dist-ssr',
     assetsDir: '.',
     ...options,
     rollupPluginVueOptions: {
