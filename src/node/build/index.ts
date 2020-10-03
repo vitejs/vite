@@ -9,7 +9,8 @@ import {
   RollupOutput,
   ExternalOption,
   Plugin,
-  InputOptions
+  InputOptions,
+  RollupBuild
 } from 'rollup'
 import {
   createResolver,
@@ -34,9 +35,17 @@ import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
 import { createBuildWasmPlugin } from './buildPluginWasm'
 import { createBuildManifestPlugin } from './buildPluginManifest'
 
-export type BuildPlugin = (config: BuildConfig) => void
+interface Build {
+  id: string
+  bundle: Promise<RollupBuild>
+  html?: string
+  assets?: RollupOutput['output']
+}
+
+export type BuildPlugin = (config: BuildConfig, builds: Build[]) => void
 
 export interface BuildResult {
+  id: string
   html: string
   assets: RollupOutput['output']
 }
@@ -329,11 +338,14 @@ function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
  */
 export async function build(
   options: Partial<BuildConfig>
-): Promise<BuildResult> {
+): Promise<BuildResult[]> {
+  const builds: Build[] = []
+
   const config = prepareConfig(options)
   toArray(config.configureBuild).forEach((configureBuild) =>
-    configureBuild(config)
+    configureBuild(config, builds)
   )
+
   const {
     root,
     assetsDir,
@@ -370,7 +382,12 @@ export async function build(
   const indexPath = path.resolve(root, 'index.html')
   const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
-  const resolver = createResolver(root, config.resolvers, config.alias, config.assetsInclude)
+  const resolver = createResolver(
+    root,
+    config.resolvers,
+    config.alias,
+    config.assetsInclude
+  )
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,
@@ -430,7 +447,7 @@ export async function build(
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
-  const bundle = await rollup({
+  const bundle = rollup({
     input: path.resolve(root, entry),
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
@@ -517,19 +534,29 @@ export async function build(
     ].filter(Boolean)
   })
 
-  const { output } = await bundle[config.write ? 'write' : 'generate']({
-    dir: resolvedAssetsPath,
-    format: 'es',
-    sourcemap,
-    entryFileNames: `[name].[hash].js`,
-    chunkFileNames: `[name].[hash].js`,
-    assetFileNames: `[name].[hash].[ext]`,
-    ...rollupOutputOptions
+  builds.unshift({
+    id: 'index',
+    bundle
   })
 
-  spinner && spinner.stop()
+  for (const build of builds) {
+    const bundle = await build.bundle
+    const { output } = await bundle[config.write ? 'write' : 'generate']({
+      dir: resolvedAssetsPath,
+      format: 'es',
+      sourcemap,
+      entryFileNames: `[name].[hash].js`,
+      chunkFileNames: `[name].[hash].js`,
+      assetFileNames: `[name].[hash].[ext]`,
+      ...rollupOutputOptions
+    })
+    build.assets = output
+    if (emitIndex) {
+      build.html = await renderIndex(output)
+    }
+  }
 
-  const indexHtml = emitIndex ? await renderIndex(output) : ''
+  spinner && spinner.stop()
 
   if (config.write) {
     const printFilesInfo = async (
@@ -556,31 +583,36 @@ export async function build(
     }
 
     // log js chunks and assets
-    for (const chunk of output) {
-      const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-      if (chunk.type === 'chunk') {
-        await printFilesInfo(filepath, chunk.code, WriteType.JS)
-        if (chunk.map) {
+    for (const build of builds) {
+      for (const chunk of build.assets!) {
+        if (chunk.type === 'chunk') {
+          // write chunk
+          const filepath = path.join(resolvedAssetsPath, chunk.fileName)
+          await printFilesInfo(filepath, chunk.code, WriteType.JS)
+          if (chunk.map) {
+            await printFilesInfo(
+              filepath + '.map',
+              chunk.map.toString(),
+              WriteType.SOURCE_MAP
+            )
+          }
+        } else if (emitAssets) {
+          if (!chunk.source) continue
+          // log asset
+          const filepath = path.join(resolvedAssetsPath, chunk.fileName)
           await printFilesInfo(
-            filepath + '.map',
-            chunk.map.toString(),
-            WriteType.SOURCE_MAP
+            filepath,
+            chunk.source,
+            chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
           )
         }
-      } else if (emitAssets) {
-        await printFilesInfo(
-          filepath,
-          chunk.source,
-          chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
-        )
       }
-    }
 
-    // write html
-    if (indexHtml && emitIndex) {
-      const outputHtmlPath = path.join(outDir, 'index.html')
-      await fs.writeFile(outputHtmlPath, indexHtml)
-      await printFilesInfo(outputHtmlPath, indexHtml, WriteType.HTML)
+      if (build.html) {
+        const outputHtmlPath = path.join(outDir, build.id + '.html')
+        await fs.writeFile(outputHtmlPath, build.html)
+        await printFilesInfo(outputHtmlPath, build.html, WriteType.HTML)
+      }
     }
 
     // copy over /public if it exists
@@ -603,10 +635,13 @@ export async function build(
   // stop the esbuild service after each build
   await stopService()
 
-  return {
-    assets: output,
-    html: indexHtml
-  }
+  return builds.map(
+    (build): BuildResult => ({
+      id: build.id,
+      assets: build.assets!,
+      html: build.html || ''
+    })
+  )
 }
 
 /**
@@ -617,7 +652,7 @@ export async function build(
  */
 export async function ssrBuild(
   options: Partial<BuildConfig>
-): Promise<BuildResult> {
+): Promise<BuildResult[]> {
   const {
     rollupInputOptions,
     rollupOutputOptions,
