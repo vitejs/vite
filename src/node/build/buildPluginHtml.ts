@@ -61,7 +61,7 @@ export const createBuildHtmlPlugin = async (
       filename
     )}">`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/<\/head>/, `  ${tag}\n</head>`)
     } else {
       return tag + '\n' + html
     }
@@ -73,7 +73,7 @@ export const createBuildHtmlPlugin = async (
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
     if (/<\/body>/.test(html)) {
-      return html.replace(/<\/body>/, `${tag}\n</body>`)
+      return html.replace(/<\/body>/, `  ${tag}\n</body>`)
     } else {
       return html + '\n' + tag
     }
@@ -85,7 +85,7 @@ export const createBuildHtmlPlugin = async (
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<link rel="modulepreload" href="${filename}" />`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/<\/head>/, `  ${tag}\n</head>`)
     } else {
       return tag + '\n' + html
     }
