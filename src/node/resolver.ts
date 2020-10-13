@@ -18,8 +18,8 @@ import { clientPublicPath } from './server/serverPluginClient'
 import chalk from 'chalk'
 import { isAsset } from './optimizer/pluginAssets'
 
-const debug = require('debug')('vite:resolve')
-const isWin = require('os').platform() === 'win32'
+const debug = (require('debug') as typeof import('debug'))('vite:resolve')
+const isWin = (require('os') as typeof import('os')).platform() === 'win32'
 const pathSeparator = isWin ? '\\' : '/'
 
 export interface Resolver {

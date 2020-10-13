@@ -19,7 +19,7 @@ import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
 import { dataToEsm } from '@rollup/pluginutils'
 
-const debug = require('debug')('vite:build:css')
+const debug = (require('debug') as typeof import('debug'))('vite:build:css')
 
 const cssInjectionMarker = `__VITE_CSS__`
 const cssInjectionRE = /__VITE_CSS__\(\)/g
@@ -187,7 +187,7 @@ export const createBuildCssPlugin = ({
   }
 }
 
-let CleanCSS: any
+let CleanCSS: typeof import('clean-css')
 
 function minifyCSS(css: string) {
   CleanCSS = CleanCSS || require('clean-css')

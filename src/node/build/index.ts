@@ -61,6 +61,8 @@ const dynamicImportWarningIgnoreList = [
 
 const isBuiltin = require('isbuiltin')
 
+const isNotNil = <T>(x: T): x is NonNullable<T> => x != null
+
 export function onRollupWarning(
   spinner: Ora | undefined,
   options: BuildConfig['optimizeDeps']
@@ -143,7 +145,9 @@ export async function createBaseRollupPlugins(
     enableEsbuild = true,
     enableRollupPluginVue = true
   } = options
-  const { nodeResolve } = require('@rollup/plugin-node-resolve')
+  const {
+    nodeResolve
+  } = require('@rollup/plugin-node-resolve') as typeof import('@rollup/plugin-node-resolve')
   const dynamicImport = require('rollup-plugin-dynamic-import-variables')
 
   return [
@@ -153,12 +157,14 @@ export async function createBaseRollupPlugins(
     enableEsbuild ? await createEsbuildPlugin(options.jsx) : null,
     // vue
     enableRollupPluginVue ? await createVuePlugin(root, options) : null,
-    require('@rollup/plugin-json')({
-      preferConst: true,
-      indent: '  ',
-      compact: false,
-      namedExports: true
-    }),
+    (require('@rollup/plugin-json') as typeof import('@rollup/plugin-json').default)(
+      {
+        preferConst: true,
+        indent: '  ',
+        compact: false,
+        namedExports: true
+      }
+    ),
     // user transforms
     ...(transforms.length || Object.keys(vueCustomBlockTransforms).length
       ? [createBuildJsTransformPlugin(transforms, vueCustomBlockTransforms)]
@@ -170,9 +176,11 @@ export async function createBaseRollupPlugins(
       dedupe: options.rollupDedupe || [],
       mainFields
     }),
-    require('@rollup/plugin-commonjs')({
-      extensions: ['.js', '.cjs']
-    }),
+    (require('@rollup/plugin-commonjs') as typeof import('@rollup/plugin-commonjs').default)(
+      {
+        extensions: ['.js', '.cjs']
+      }
+    ),
     dynamicImport({
       warnOnError: true,
       include: [/\.js$/],
@@ -207,31 +215,33 @@ async function createVuePlugin(
     }
   }
 
-  return require('rollup-plugin-vue')({
-    ...rollupPluginVueOptions,
-    templatePreprocessOptions: {
-      ...vueTemplatePreprocessOptions,
-      pug: {
-        doctype: 'html',
-        ...(vueTemplatePreprocessOptions && vueTemplatePreprocessOptions.pug)
-      }
-    },
-    transformAssetUrls: vueTransformAssetUrls,
-    postcssOptions,
-    postcssPlugins,
-    preprocessStyles: true,
-    preprocessOptions: cssPreprocessOptions,
-    preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
-    compilerOptions: vueCompilerOptions,
-    cssModulesOptions: {
-      localsConvention: 'camelCase',
-      generateScopedName: (local: string, filename: string) =>
-        `${local}_${hash_sum(filename)}`,
-      ...cssModuleOptions,
-      ...(rollupPluginVueOptions && rollupPluginVueOptions.cssModulesOptions)
-    },
-    customBlocks: Object.keys(vueCustomBlockTransforms)
-  })
+  return (require('rollup-plugin-vue') as typeof import('rollup-plugin-vue').default)(
+    {
+      ...rollupPluginVueOptions,
+      templatePreprocessOptions: {
+        ...vueTemplatePreprocessOptions,
+        pug: {
+          doctype: 'html',
+          ...(vueTemplatePreprocessOptions && vueTemplatePreprocessOptions.pug)
+        }
+      },
+      transformAssetUrls: vueTransformAssetUrls,
+      postcssOptions,
+      postcssPlugins,
+      preprocessStyles: true,
+      preprocessOptions: cssPreprocessOptions,
+      preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
+      compilerOptions: vueCompilerOptions,
+      cssModulesOptions: {
+        localsConvention: 'camelCase',
+        generateScopedName: (local: string, filename: string) =>
+          `${local}_${hash_sum(filename)}`,
+        ...cssModuleOptions,
+        ...(rollupPluginVueOptions && rollupPluginVueOptions.cssModulesOptions)
+      },
+      customBlocks: Object.keys(vueCustomBlockTransforms)
+    }
+  )
 }
 
 /**
@@ -277,7 +287,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     if (process.env.DEBUG || isTest) {
       console.log(msg)
     } else {
-      spinner = require('ora')(msg + '\n').start()
+      spinner = (require('ora') as typeof import('ora'))(msg + '\n').start()
     }
   }
   await fs.emptyDir(outDir)
@@ -409,9 +419,11 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // the user can opt-in to use esbuild which is much faster but results
       // in ~8-10% larger file size.
       minify && minify !== 'esbuild'
-        ? require('rollup-plugin-terser').terser(terserOption)
+        ? (require('rollup-plugin-terser') as typeof import('rollup-plugin-terser')).terser(
+            terserOption
+          )
         : undefined
-    ].filter(Boolean)
+    ].filter(isNotNil)
   })
 
   const { output } = await bundle.generate({
@@ -441,9 +453,11 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           type === WriteType.CSS ||
           type === WriteType.HTML
         const compressed = needCompression
-          ? `, brotli: ${(require('brotli-size').sync(content) / 1024).toFixed(
-              2
-            )}kb`
+          ? `, brotli: ${(
+              (require('brotli-size') as typeof import('brotli-size')).sync(
+                content as string | Buffer
+              ) / 1024
+            ).toFixed(2)}kb`
           : ``
         console.log(
           `${chalk.gray(`[write]`)} ${writeColors[type](

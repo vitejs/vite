@@ -4,8 +4,8 @@ import { ServerPlugin } from '.'
 import { isStaticAsset } from '../utils'
 import chalk from 'chalk'
 
-const send = require('koa-send')
-const debug = require('debug')('vite:history')
+const send = require('koa-send') as typeof import('koa-send')
+const debug = (require('debug') as typeof import('debug'))('vite:history')
 
 export const seenUrls = new Set()
 
@@ -56,9 +56,13 @@ export const serveStaticPlugin: ServerPlugin = ({
     seenUrls.add(ctx.url)
   })
 
-  app.use(require('koa-etag')())
-  app.use(require('koa-static')(root))
-  app.use(require('koa-static')(path.join(root, 'public')))
+  app.use((require('koa-etag') as typeof import('koa-etag'))())
+  app.use((require('koa-static') as typeof import('koa-static'))(root))
+  app.use(
+    (require('koa-static') as typeof import('koa-static'))(
+      path.join(root, 'public')
+    )
+  )
 
   // history API fallback
   app.use(async (ctx, next) => {

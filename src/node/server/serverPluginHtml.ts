@@ -7,7 +7,7 @@ import LRUCache from 'lru-cache'
 import path from 'path'
 import chalk from 'chalk'
 
-const debug = require('debug')('vite:rewrite')
+const debug = (require('debug') as typeof import('debug'))('vite:rewrite')
 
 const rewriteHtmlPluginCache = new LRUCache({ max: 20 })
 

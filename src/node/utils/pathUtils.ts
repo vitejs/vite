@@ -6,7 +6,7 @@ import { Context } from '../server'
 
 let isRunningWithYarnPnp: boolean
 try {
-  isRunningWithYarnPnp = Boolean(require('pnpapi'))
+  isRunningWithYarnPnp = Boolean(require('pnpapi') as typeof import('pnpapi'))
 } catch {}
 
 export const resolveFrom = (root: string, id: string) =>

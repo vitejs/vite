@@ -349,7 +349,7 @@ export type ResolvedConfig = UserConfig & {
   __path?: string
 }
 
-const debug = require('debug')('vite:config')
+const debug = (require('debug') as typeof import('debug'))('vite:config')
 
 export async function resolveConfig(
   mode: string,
@@ -407,9 +407,11 @@ export async function resolveConfig(
         false
       )
       // use node-resolve to support .ts files
-      const nodeResolve = require('@rollup/plugin-node-resolve').nodeResolve({
-        extensions: supportedExts
-      })
+      const nodeResolve = (require('@rollup/plugin-node-resolve') as typeof import('@rollup/plugin-node-resolve')).nodeResolve(
+        {
+          extensions: supportedExts
+        }
+      )
       const bundle = await rollup.rollup({
         external: (id: string) =>
           (id[0] !== '.' && !path.isAbsolute(id)) ||

@@ -18,7 +18,7 @@ import { InternalResolver } from '../resolver'
 import { clientPublicPath } from './serverPluginClient'
 import { dataToEsm } from 'rollup-pluginutils'
 
-export const debugCSS = require('debug')('vite:css')
+export const debugCSS = (require('debug') as typeof import('debug'))('vite:css')
 
 export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   app.use(async (ctx, next) => {

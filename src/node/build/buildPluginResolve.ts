@@ -4,7 +4,7 @@ import { resolveVue } from '../utils/resolveVue'
 import { InternalResolver } from '../resolver'
 import { isExternalUrl } from '../utils'
 
-const debug = require('debug')('vite:build:resolve')
+const debug = (require('debug') as typeof import('debug'))('vite:build:resolve')
 
 export const createBuildResolvePlugin = (
   root: string,

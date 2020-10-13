@@ -35,7 +35,7 @@ import { resolveCompiler } from '../utils'
 import { HMRPayload } from '../../hmrPayload'
 import { clientPublicPath } from './serverPluginClient'
 
-export const debugHmr = require('debug')('vite:hmr')
+export const debugHmr = (require('debug') as typeof import('debug'))('vite:hmr')
 
 export type HMRWatcher = FSWatcher & {
   handleVueReload: (

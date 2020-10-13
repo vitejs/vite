@@ -142,7 +142,10 @@ const compileHtml = async (
   resolver: InternalResolver,
   assets: Map<string, Buffer>
 ) => {
-  const { parse, transform } = require('@vue/compiler-dom')
+  const {
+    parse,
+    transform
+  } = require('@vue/compiler-dom') as typeof import('@vue/compiler-dom')
 
   // @vue/compiler-core doesn't like lowercase doctypes
   html = html.replace(/<!doctype\s/i, '<!DOCTYPE ')

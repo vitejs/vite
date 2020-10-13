@@ -74,6 +74,7 @@ export function createServer(config: ServerConfig): Server {
   const context: ServerPluginContext = {
     root,
     app,
+    // @ts-expect-error
     server,
     watcher,
     resolver,
@@ -126,13 +127,17 @@ export function createServer(config: ServerConfig): Server {
   const listen = server.listen.bind(server)
   server.listen = (async (port: number, ...args: any[]) => {
     if (optimizeDeps.auto !== false) {
-      await require('../optimizer').optimizeDeps(config)
+      await (require('../optimizer') as typeof import('../optimizer')).optimizeDeps(
+        config
+      )
     }
     const listener = listen(port, ...args)
+    // @ts-expect-error
     context.port = server.address().port
     return listener
   }) as any
 
+  // @ts-expect-error
   return server
 }
 
@@ -143,21 +148,24 @@ function resolveServer(
   if (https) {
     if (proxy) {
       // #484 fallback to http1 when proxy is needed.
-      return require('https').createServer(
+      return (require('https') as typeof import('https')).createServer(
         resolveHttpsConfig(httpsOptions),
         requestListener
       )
     } else {
-      return require('http2').createSecureServer(
+      return (require('http2') as typeof import('http2')).createSecureServer(
         {
           ...resolveHttpsConfig(httpsOptions),
           allowHTTP1: true
         },
+        // @ts-expect-error
         requestListener
       )
     }
   } else {
-    return require('http').createServer(requestListener)
+    return (require('http') as typeof import('http')).createServer(
+      requestListener
+    )
   }
 }
 

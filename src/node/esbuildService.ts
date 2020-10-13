@@ -10,7 +10,7 @@ import {
 import { SharedConfig } from './config'
 import { cleanUrl } from './utils'
 
-const debug = require('debug')('vite:esbuild')
+const debug = (require('debug') as typeof import('debug'))('vite:esbuild')
 
 export const tjsxRE = /\.(tsx?|jsx)$/
 
@@ -133,7 +133,11 @@ function printMessage(m: Message, code: string) {
         .map((l) => l.length)
         .reduce((total, l) => total + l + 1, 0) + column
     console.error(
-      require('@vue/compiler-dom').generateCodeFrame(code, offset, offset + 1)
+      (require('@vue/compiler-dom') as typeof import('@vue/compiler-dom')).generateCodeFrame(
+        code,
+        offset,
+        offset + 1
+      )
     )
   }
 }

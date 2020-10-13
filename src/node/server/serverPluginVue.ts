@@ -37,8 +37,8 @@ import { resolveImport } from './serverPluginModuleRewrite'
 import { SourceMap, mergeSourceMap } from './serverPluginSourceMap'
 import { ServerConfig } from '../config'
 
-const debug = require('debug')('vite:sfc')
-const getEtag = require('etag')
+const debug = (require('debug') as typeof import('debug'))('vite:sfc')
+const getEtag = require('etag') as typeof import('etag')
 
 export const srcImportMap = new Map()
 

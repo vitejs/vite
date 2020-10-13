@@ -9,8 +9,8 @@ export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
     return
   }
 
-  const debug = require('debug')('vite:proxy')
-  const proxy = require('koa-proxies')
+  const debug = (require('debug') as typeof import('debug'))('vite:proxy')
+  const proxy = require('koa-proxies') as typeof import('koa-proxies')
   const options = config.proxy
   Object.keys(options).forEach((path) => {
     let opts = options[path]
@@ -34,6 +34,7 @@ export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
       for (const path in options) {
         let opts = options[path]
         if (typeof opts === 'object' && opts.ws) {
+          // @ts-expect-error
           proxy.proxy.ws(req, socket, head, opts)
         }
       }

@@ -17,7 +17,7 @@ import chalk from 'chalk'
 import { Ora } from 'ora'
 import { createDepAssetPlugin, depAssetExternalPlugin } from './pluginAssets'
 
-const debug = require('debug')('vite:optimize')
+const debug = (require('debug') as typeof import('debug'))('vite:optimize')
 
 const KNOWN_IGNORE_LIST = new Set([
   'vite',
@@ -173,7 +173,7 @@ export async function optimizeDeps(
   if (process.env.DEBUG || process.env.NODE_ENV === 'test') {
     console.log(msg)
   } else {
-    spinner = require('ora')(msg + '\n').start()
+    spinner = (require('ora') as typeof import('ora'))(msg + '\n').start()
   }
 
   try {

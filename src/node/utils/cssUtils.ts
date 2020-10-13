@@ -1,5 +1,5 @@
 import path from 'path'
-import postcssrc from 'postcss-load-config'
+import type postcssrc from 'postcss-load-config'
 import chalk from 'chalk'
 import { asyncReplace } from './transformUtils'
 import { isExternalUrl, resolveFrom } from './pathUtils'
@@ -157,7 +157,9 @@ export async function resolvePostcssOptions(root: string, isBuild: boolean) {
   const config = await loadPostcssConfig(root)
   const options = config && config.options
   const plugins = config && config.plugins ? config.plugins.slice() : []
-  plugins.unshift(require('postcss-import')())
+  plugins.unshift(
+    (require('postcss-import') as typeof import('postcss-import'))()
+  )
   if (isBuild) {
     plugins.push(require('postcss-discard-comments')({ removeAll: true }))
   }

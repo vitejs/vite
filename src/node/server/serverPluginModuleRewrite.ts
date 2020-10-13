@@ -34,7 +34,7 @@ import { isCSSRequest } from '../utils/cssUtils'
 import { envPublicPath } from './serverPluginEnv'
 import fs from 'fs-extra'
 
-const debug = require('debug')('vite:rewrite')
+const debug = (require('debug') as typeof import('debug'))('vite:rewrite')
 
 const rewriteCache = new LRUCache({ max: 1024 })
 

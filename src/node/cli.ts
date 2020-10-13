@@ -1,11 +1,15 @@
+import type { ParsedArgs } from 'minimist'
+
 const start = Date.now()
-const argv = require('minimist')(process.argv.slice(2))
+const argv = (require('minimist') as typeof import('minimist'))(
+  process.argv.slice(2)
+)
 // make sure to set debug flag before requiring anything
 if (argv.debug) {
   process.env.DEBUG = `vite:` + (argv.debug === true ? '*' : argv.debug)
   try {
     // this is only present during local development
-    require('source-map-support').install()
+    ;(require('source-map-support') as typeof import('source-map-support')).install()
   } catch (e) {}
 }
 
@@ -29,7 +33,7 @@ Commands:
 Options:
   --help, -h                 [boolean] show help
   --version, -v              [boolean] show version
-  --config, -c               [string]  use specified config file
+  --config, -c                [string]  use specified config file
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
   --base                     [string]  public base path for build (default: /)
@@ -125,17 +129,19 @@ async function resolveOptions(mode: string) {
     )
   }
 
-  return argv
+  return argv as ParsedArgs & UserConfig
 }
 
 function runServe(options: UserConfig) {
-  const server = require('./server').createServer(options)
+  const server = (require('./server') as typeof import('./server')).createServer(
+    options
+  )
 
   let port = options.port || 3000
   let hostname = options.hostname || 'localhost'
   const protocol = options.https ? 'https' : 'http'
 
-  server.on('error', (e: Error & { code?: string }) => {
+  server.on('error', (e: NodeJS.ErrnoException) => {
     if (e.code === 'EADDRINUSE') {
       console.log(`Port ${port} is in use, trying another one...`)
       setTimeout(() => {
@@ -169,10 +175,12 @@ function runServe(options: UserConfig) {
         })
     })
     console.log()
-    require('debug')('vite:server')(`server ready in ${Date.now() - start}ms.`)
+    ;((require('debug') as typeof import('debug')) as typeof import('debug'))(
+      'vite:server'
+    )(`server ready in ${Date.now() - start}ms.`)
 
     if (options.open) {
-      require('./utils/openBrowser').openBrowser(
+      ;(require('./utils/openBrowser') as typeof import('./utils/openBrowser')).openBrowser(
         `${protocol}://${hostname}:${port}`
       )
     }
@@ -181,7 +189,9 @@ function runServe(options: UserConfig) {
 
 async function runBuild(options: UserConfig) {
   try {
-    await require('./build')[options.ssr ? 'ssrBuild' : 'build'](options)
+    await (require('./build') as typeof import('./build'))[
+      options.ssr ? 'ssrBuild' : 'build'
+    ](options)
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Build errored out.`))
@@ -192,7 +202,7 @@ async function runBuild(options: UserConfig) {
 
 async function runOptimize(options: UserConfig) {
   try {
-    await require('./optimizer').optimizeDeps(
+    await (require('./optimizer') as typeof import('./optimizer')).optimizeDeps(
       options,
       true /* as cli command */
     )
