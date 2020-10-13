@@ -144,7 +144,7 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
   }
   ```
 
-  For the full API, consult [hmr.d.ts](https://github.com/vitejs/vite/blob/master/hmr.d.ts).
+  For the full API, consult [importMeta.d.ts](https://github.com/vitejs/vite/blob/master/importMeta.d.ts).
 
   Note that Vite's HMR does not actually swap the originally imported module: if an accepting module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the accepting module will not be notified of the change.
 
