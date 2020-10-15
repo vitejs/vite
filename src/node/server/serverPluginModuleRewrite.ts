@@ -327,13 +327,16 @@ export const resolveImport = (
   return id
 }
 
-const analysisCache = new Map<string, { mayBeCjs: { [name: string]: true } }>()
+const analysisCache = new Map<
+  string,
+  { isCommonjs: { [name: string]: true } }
+>()
 
 /**
  * get analysis result from optimize step:
  * which optimized dependencies may be commonjs
  */
-function getAnalysis(root: string): { mayBeCjs: { [name: string]: true } } {
+function getAnalysis(root: string): { isCommonjs: { [name: string]: true } } {
   if (analysisCache.has(root)) return analysisCache.get(root)!
   const cacheDir = resolveOptimizedCacheDir(root)
   if (!cacheDir) throw new Error('cacheDir not found')
@@ -344,7 +347,7 @@ function getAnalysis(root: string): { mayBeCjs: { [name: string]: true } } {
 
 function isOptimizedCjs(root: string, id: string) {
   const analysis = getAnalysis(root)
-  return !!analysis.mayBeCjs[id]
+  return !!analysis.isCommonjs[id]
 }
 
 function transformCjsImport(

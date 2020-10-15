@@ -170,7 +170,7 @@ export async function createBaseRollupPlugins(
       dedupe: options.rollupDedupe || [],
       mainFields
     }),
-    require('@rollup/plugin-commonjs')({
+    require('@csr632/rollup-plugin-commonjs')({
       extensions: ['.js', '.cjs']
     }),
     dynamicImport({
