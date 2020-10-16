@@ -1,7 +1,7 @@
 // This file runs in the browser.
 
 // injected by serverPluginHmr when served
-declare const __PORT__: number
+declare const __HOST__: string
 declare const __MODE__: string
 declare const __DEFINES__: Record<string, any>
 ;(window as any).process = (window as any).process || {}
@@ -29,9 +29,7 @@ console.log('[vite] connecting...')
 
 declare var __VUE_HMR_RUNTIME__: HMRRuntime
 
-const socketProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
-const socketUrl = `${socketProtocol}://${location.hostname}:${__PORT__}`
-const socket = new WebSocket(socketUrl, 'vite-hmr')
+const socket = new WebSocket(__HOST__, 'vite-hmr')
 
 function warnFailedFetch(err: Error, path: string | string[]) {
   if (!err.message.match('fetch')) {
