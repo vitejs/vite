@@ -28,13 +28,12 @@ export const clientPlugin: ServerPlugin = ({ app, config }) => {
       let socketUrl = `${socketProtocol}://${ctx.host.toString()}`
       if (config.hmr && typeof config.hmr === 'object') {
         // hmr option has highest priory
-        let { protocol, hostname, port, path } = config.hmr
-        protocol = protocol || socketProtocol
-        hostname = hostname || ctx.hostname
-        port = port || ctx.port
+        const protocol = config.hmr.protocol || socketProtocol
+        const hostname = config.hmr.hostname || ctx.hostname
+        const port = config.hmr.port || ctx.port
         socketUrl = `${protocol}://${hostname}:${port}`
-        if (path) {
-          socketUrl = socketUrl + '/' + path
+        if (config.hmr.path) {
+          socketUrl = socketUrl + '/' + config.hmr.path
         }
       }
       ctx.type = 'js'
