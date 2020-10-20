@@ -92,14 +92,15 @@ export const createBuildHtmlPlugin = async (
   }
 
   const renderIndex = (bundleOutput: RollupOutput['output']) => {
+    let result = processedHtml
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {
           // js entry chunk
-          processedHtml = injectScript(processedHtml, chunk.fileName)
+          result = injectScript(result, chunk.fileName)
         } else if (shouldPreload && shouldPreload(chunk)) {
           // async preloaded chunk
-          processedHtml = injectPreload(processedHtml, chunk.fileName)
+          result = injectPreload(result, chunk.fileName)
         }
       } else {
         // imported css chunks
@@ -108,11 +109,11 @@ export const createBuildHtmlPlugin = async (
           chunk.source &&
           !assets.has(chunk.fileName)
         ) {
-          processedHtml = injectCSS(processedHtml, chunk.fileName)
+          result = injectCSS(result, chunk.fileName)
         }
       }
     }
-    return processedHtml
+    return result
   }
 
   return {
