@@ -25,8 +25,18 @@ export const clientPlugin: ServerPlugin = ({ app, config }) => {
   app.use(async (ctx, next) => {
     if (ctx.path === clientPublicPath) {
       const socketProtocol = ctx.protocol.toString() === 'https' ? 'wss' : 'ws'
-      const socketUrl = `${socketProtocol}://${ctx.host.toString()}`
-
+      let socketUrl = `${socketProtocol}://${ctx.host.toString()}`
+      if (config.hmr && typeof config.hmr === 'object') {
+        // hmr option has highest priory
+        let { protocol, hostname, port, path } = config.hmr
+        protocol = protocol || socketProtocol
+        hostname = hostname || ctx.hostname
+        port = port || ctx.port
+        socketUrl = `${protocol}://${hostname}:${port}`
+        if (path) {
+          socketUrl = socketUrl + '/' + path
+        }
+      }
       ctx.type = 'js'
       ctx.status = 200
       ctx.body = clientCode.replace(`__HOST__`, JSON.stringify(socketUrl))
