@@ -166,7 +166,21 @@ export interface SharedConfig {
   env?: DotenvParseOutput
 }
 
+export interface HmrConfig {
+  protocol?: string
+  hostname?: string
+  port?: number
+  path?: string
+}
+
 export interface ServerConfig extends SharedConfig {
+  /**
+   * Configure hmr websocket connection.
+   */
+  hmr?: HmrConfig | boolean
+  /**
+   * Configure dev server hostname.
+   */
   hostname?: string
   port?: number
   open?: boolean
