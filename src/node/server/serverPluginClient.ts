@@ -24,9 +24,12 @@ export const clientPlugin: ServerPlugin = ({ app, config }) => {
 
   app.use(async (ctx, next) => {
     if (ctx.path === clientPublicPath) {
+      const socketProtocol = ctx.protocol.toString() === 'https' ? 'wss' : 'ws'
+      const socketUrl = `${socketProtocol}://${ctx.host.toString()}`
+
       ctx.type = 'js'
       ctx.status = 200
-      ctx.body = clientCode.replace(`__PORT__`, ctx.port.toString())
+      ctx.body = clientCode.replace(`__HOST__`, JSON.stringify(socketUrl))
     } else {
       if (ctx.path === legacyPublicPath) {
         console.error(
