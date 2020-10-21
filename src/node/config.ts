@@ -411,7 +411,9 @@ export interface BuildConfig extends Required<SharedConfig> {
    */
   enableRollupPluginVue?: boolean,
   /**
-   * Plugin functions that mutate the Vite build config.
+   * Plugin functions that mutate the Vite build config. The `builds` array can
+   * be added to if the plugin wants to add another Rollup build that Vite writes
+   * to disk. Return a function to gain access to each build's output.
    * @internal
    */
   configureBuild?: BuildPlugin | BuildPlugin[]
