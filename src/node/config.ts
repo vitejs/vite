@@ -258,7 +258,7 @@ export interface BuildConfig extends SharedConfig {
    */
   sourcemap?: boolean
   /**
-   * Set to `false` to dsiable minification, or specify the minifier to use.
+   * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
    * @default 'terser'
    */
