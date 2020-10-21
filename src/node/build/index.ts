@@ -42,7 +42,14 @@ interface Build {
   assets?: RollupOutput['output']
 }
 
-export type BuildPlugin = (config: BuildConfig, builds: Build[]) => void
+/** For adding Rollup builds and mutating the Vite config. */
+export type BuildPlugin = (
+  config: BuildConfig,
+  builds: Build[]
+) => PostBuildHook | void
+
+/** Returned by `configureBuild` hook to mutate a build's output. */
+export type PostBuildHook = (build: Required<Build>) => Promise<void> | void
 
 export interface BuildResult {
   id: string
@@ -342,9 +349,9 @@ export async function build(
   const builds: Build[] = []
 
   const config = prepareConfig(options)
-  toArray(config.configureBuild).forEach((configureBuild) =>
-    configureBuild(config, builds)
-  )
+  const postBuildHooks = toArray(config.configureBuild)
+    .map((configureBuild) => configureBuild(config, builds))
+    .filter(Boolean) as PostBuildHook[]
 
   const {
     root,
@@ -550,10 +557,12 @@ export async function build(
       assetFileNames: `[name].[hash].[ext]`,
       ...rollupOutputOptions
     })
+    build.html = emitIndex ? await renderIndex(output) : ''
     build.assets = output
-    if (emitIndex) {
-      build.html = await renderIndex(output)
-    }
+    await postBuildHooks.reduce(
+      (queue, hook) => queue.then(() => hook(build as any)),
+      Promise.resolve()
+    )
   }
 
   spinner && spinner.stop()
@@ -638,8 +647,8 @@ export async function build(
   return builds.map(
     (build): BuildResult => ({
       id: build.id,
-      assets: build.assets!,
-      html: build.html || ''
+      html: build.html!,
+      assets: build.assets!
     })
   )
 }
