@@ -26,6 +26,7 @@ import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
 import { webWorkerPlugin } from './serverPluginWebWorker'
 import { wasmPlugin } from './serverPluginWasm'
 import { clientPlugin } from './serverPluginClient'
+import { AddressInfo } from 'net'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
 
@@ -129,7 +130,10 @@ export function createServer(config: ServerConfig): Server {
       await require('../optimizer').optimizeDeps(config)
     }
     const listener = listen(port, ...args)
-    context.port = server.address().port
+    server.on('listening', () => {
+      const address = server.address() as AddressInfo
+      context.port = address.port
+    })
     return listener
   }) as any
 
@@ -139,7 +143,7 @@ export function createServer(config: ServerConfig): Server {
 function resolveServer(
   { https = false, httpsOptions = {}, proxy }: ServerConfig,
   requestListener: RequestListener
-) {
+): Server {
   if (https) {
     if (proxy) {
       // #484 fallback to http1 when proxy is needed.
