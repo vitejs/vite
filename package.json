@@ -96,7 +96,7 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-vue": "^6.0.0-beta.10",
     "rollup-plugin-web-worker-loader": "^1.3.1",
-    "selfsigned": "^1.10.7",
+    "selfsigned": "^1.10.8",
     "slash": "^3.0.0",
     "vue": "^3.0.0-rc.10",
     "ws": "^7.3.1"
