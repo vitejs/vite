@@ -415,6 +415,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   })
 
   const { output } = await bundle.generate({
+    dir: resolvedAssetsPath,
     format: 'es',
     sourcemap,
     entryFileNames: `[name].[hash].js`,
