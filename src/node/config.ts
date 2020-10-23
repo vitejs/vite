@@ -266,7 +266,7 @@ export interface BuildConfig extends SharedConfig {
   /**
    * The option for `terser`
    */
-  terserOption?: RollupTerserOptions
+  terserOptions?: RollupTerserOptions
   /**
    * Transpile target for esbuild.
    * @default 'es2020'
