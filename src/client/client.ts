@@ -223,11 +223,9 @@ async function updateModule(
 ) {
   const mod = hotModulesMap.get(id)
   if (!mod) {
-    console.error(
-      `[vite] got js update notification for "${id}" but no client callback ` +
-        `was registered. Something is wrong.`
-    )
-    console.error(hotModulesMap)
+    // In a code-spliting project,
+    // it is common that the hot-updating module is not loaded yet.
+    // https://github.com/vitejs/vite/issues/721
     return
   }
 
