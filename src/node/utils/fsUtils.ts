@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import LRUCache from 'lru-cache'
+import { RawSourceMap } from 'source-map'
 import { Context } from '../server'
 import { Readable } from 'stream'
 import { seenUrls } from '../server/serverPluginServeStatic'
@@ -50,7 +51,27 @@ export async function cachedRead(
     return cached.content
   }
   // #395 some file is an binary file, eg. font
-  const content = await fs.readFile(file)
+  let content = await fs.readFile(file)
+  // Populate the "sourcesContent" array and resolve relative paths in the
+  // "sources" array, so the debugger can trace back to the original source.
+  if (file.endsWith('.map')) {
+    const map: RawSourceMap = JSON.parse(content.toString('utf8'))
+    if (!map.sourcesContent || !map.sources.every(path.isAbsolute)) {
+      const sourcesContent = map.sourcesContent || []
+      map.sources = await Promise.all(
+        map.sources.map(async (source, i) => {
+          const originalPath = path.resolve(path.dirname(file), source)
+          if (!sourcesContent[i]) {
+            const originalCode = await cachedRead(null, originalPath)
+            sourcesContent[i] = originalCode.toString('utf8')
+          }
+          return originalPath
+        })
+      )
+      map.sourcesContent = sourcesContent
+      content = Buffer.from(JSON.stringify(map))
+    }
+  }
   const etag = getETag(content)
   fsReadCache.set(file, {
     content,
