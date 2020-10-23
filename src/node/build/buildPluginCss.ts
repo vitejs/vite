@@ -17,7 +17,7 @@ import {
 } from '@vue/compiler-sfc'
 import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
-import { dataToEsm } from 'rollup-pluginutils'
+import { dataToEsm } from '@rollup/pluginutils'
 
 const debug = require('debug')('vite:build:css')
 
@@ -56,10 +56,8 @@ export const createBuildCssPlugin = ({
         // if this is a Vue SFC style request, it's already processed by
         // rollup-plugin-vue and we just need to rewrite URLs + collect it
         const isVueStyle = /\?vue&type=style/.test(id)
-        const preprocessLang = id.replace(
-          cssPreprocessLangRE,
-          '$2'
-        ) as SFCAsyncStyleCompileOptions['preprocessLang']
+        const preprocessLang = (id.match(cssPreprocessLangRE) ||
+          [])[1] as SFCAsyncStyleCompileOptions['preprocessLang']
 
         const result = isVueStyle
           ? css
@@ -129,7 +127,9 @@ export const createBuildCssPlugin = ({
                   // renderChunk.
                   `${cssInjectionMarker}()\n`
                 : ``) + `export default ${JSON.stringify(css)}`,
-          map: null
+          map: null,
+          // #795 css always has side effect
+          moduleSideEffects: true
         }
       }
     },
@@ -146,7 +146,7 @@ export const createBuildCssPlugin = ({
         code = code.replace(cssInjectionRE, '')
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
-        if (chunk.isDynamicEntry) {
+        if (chunk.isDynamicEntry && chunkCSS) {
           chunkCSS = minifyCSS(chunkCSS)
           code =
             `let ${cssInjectionMarker} = document.createElement('style');` +

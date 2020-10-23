@@ -23,10 +23,10 @@ import { ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
 import { Transform, CustomBlockTransform } from './transform'
 import { DepOptimizationOptions } from './optimizer'
-import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
 import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
+import { ProxiesOptions } from './server/serverPluginProxy'
 
 export type PreprocessLang = NonNullable<
   SFCStyleCompileOptions['preprocessLang']
@@ -166,7 +166,21 @@ export interface SharedConfig {
   env?: DotenvParseOutput
 }
 
+export interface HmrConfig {
+  protocol?: string
+  hostname?: string
+  port?: number
+  path?: string
+}
+
 export interface ServerConfig extends SharedConfig {
+  /**
+   * Configure hmr websocket connection.
+   */
+  hmr?: HmrConfig | boolean
+  /**
+   * Configure dev server hostname.
+   */
   hostname?: string
   port?: number
   open?: boolean
@@ -198,7 +212,7 @@ export interface ServerConfig extends SharedConfig {
    * }
    * ```
    */
-  proxy?: Record<string, string | IKoaProxiesOptions>
+  proxy?: Record<string, string | ProxiesOptions>
   /**
    * A plugin function that configures the dev server. Receives a server plugin
    * context object just like the internal server plguins. Can also be an array
@@ -244,7 +258,7 @@ export interface BuildConfig extends SharedConfig {
    */
   sourcemap?: boolean
   /**
-   * Set to `false` to dsiable minification, or specify the minifier to use.
+   * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
    * @default 'terser'
    */
@@ -252,7 +266,7 @@ export interface BuildConfig extends SharedConfig {
   /**
    * The option for `terser`
    */
-  terserOption?: RollupTerserOptions
+  terserOptions?: RollupTerserOptions
   /**
    * Transpile target for esbuild.
    * @default 'es2020'
@@ -502,7 +516,7 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
     },
     transforms: [...(config.transforms || []), ...(plugin.transforms || [])],
     resolvers: [...(config.resolvers || []), ...(plugin.resolvers || [])],
-    configureServer: ([] as any[]).concat(
+    configureServer: ([] as ServerPlugin[]).concat(
       config.configureServer || [],
       plugin.configureServer || []
     ),

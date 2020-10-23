@@ -98,6 +98,9 @@ export function onRollupWarning(
           `If you do want to externalize this module explicitly add it to\n` +
           `\`rollupInputOptions.external\``
       }
+      if (spinner) {
+        spinner.stop()
+      }
       throw new Error(message)
     }
     if (
@@ -251,7 +254,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     emitAssets = true,
     write = true,
     minify = true,
-    terserOption = {},
+    terserOptions = {},
     esbuildTarget = 'es2020',
     enableEsbuild = true,
     silent = false,
@@ -406,7 +409,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // the user can opt-in to use esbuild which is much faster but results
       // in ~8-10% larger file size.
       minify && minify !== 'esbuild'
-        ? require('rollup-plugin-terser').terser(terserOption)
+        ? require('rollup-plugin-terser').terser(terserOptions)
         : undefined
     ].filter(Boolean)
   })

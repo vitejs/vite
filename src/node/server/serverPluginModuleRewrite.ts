@@ -27,12 +27,12 @@ import {
   cleanUrl,
   isExternalUrl,
   bareImportRE,
-  removeUnRelatedHmrQuery,
-  cachedRead
+  removeUnRelatedHmrQuery
 } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
 import { envPublicPath } from './serverPluginEnv'
+import fs from 'fs-extra'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -109,7 +109,9 @@ export const moduleRewritePlugin: ServerPlugin = ({
   // bust module rewrite cache on file change
   watcher.on('change', async (filePath) => {
     const publicPath = resolver.fileToRequest(filePath)
-    const cacheKey = publicPath + (await cachedRead(null, filePath)).toString()
+    // #662 use fs.read instead of cacheRead, avoid cache hit when request file
+    // and caused pass `notModified` into transform is always true
+    const cacheKey = publicPath + (await fs.readFile(filePath)).toString()
     debug(`${publicPath}: cache busted`)
     rewriteCache.del(cacheKey)
   })
@@ -122,6 +124,10 @@ export function rewriteImports(
   resolver: InternalResolver,
   timestamp?: string
 ) {
+  // #806 strip UTF-8 BOM
+  if (source.charCodeAt(0) === 0xfeff) {
+    source = source.slice(1)
+  }
   try {
     let imports: ImportSpecifier[] = []
     try {

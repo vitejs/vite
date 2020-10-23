@@ -144,7 +144,7 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
   }
   ```
 
-  For the full API, consult [hmr.d.ts](https://github.com/vitejs/vite/blob/master/hmr.d.ts).
+  For the full API, consult [importMeta.d.ts](https://github.com/vitejs/vite/blob/master/importMeta.d.ts).
 
   Note that Vite's HMR does not actually swap the originally imported module: if an accepting module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the accepting module will not be notified of the change.
 
@@ -518,7 +518,7 @@ Both Snowpack v2 and Vite offer native ES module import based dev servers. Vite'
 
 - Both solutions can also bundle the app for production, but Vite uses Rollup with built-in config while Snowpack delegates it to Parcel/webpack via additional plugins. Vite will in most cases build faster and produce smaller bundles. In addition, tighter integration with the bundler makes it easier to author Vite transforms and plugins that modify dev/build configs at the same.
 
-- Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fined tuned to produce the most efficient bundle.
+- Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fine tuned to produce the most efficient bundle.
 
 ## Contribution
 
