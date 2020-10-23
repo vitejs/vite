@@ -286,6 +286,11 @@ function resolveQualifiedDeps(
       debug(`skipping ${id} (internal excluded)`)
       return false
     }
+    // #804
+    if (id.startsWith('@types/')) {
+      debug(`skipping ${id} (ts declaration)`)
+      return false
+    }
     const pkgInfo = resolveNodeModule(root, id, resolver)
     if (!pkgInfo || !pkgInfo.entryFilePath) {
       debug(`skipping ${id} (cannot resolve entry)`)
