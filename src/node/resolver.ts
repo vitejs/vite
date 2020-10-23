@@ -98,8 +98,9 @@ const resolveFilePathPostfix = (filePath: string): string | undefined => {
         postfix = ext
         break
       }
-      if (isFile(path.join(cleanPath, '/index' + ext))) {
-        postfix = '/index' + ext
+      const defaultFilePath = `/index${ext}`
+      if (isFile(path.join(cleanPath, defaultFilePath))) {
+        postfix = defaultFilePath
         break
       }
     }
