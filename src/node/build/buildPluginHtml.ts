@@ -72,8 +72,8 @@ export const createBuildHtmlPlugin = async (
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/body>/.test(html)) {
-      return html.replace(/<\/body>/, `${tag}\n</body>`)
+    if (/<\/head>/.test(html)) {
+      return html.replace(/<\/head>/, `${tag}\n</head>`)
     } else {
       return html + '\n' + tag
     }
