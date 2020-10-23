@@ -251,7 +251,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     emitAssets = true,
     write = true,
     minify = true,
-    terserOption = {},
+    terserOptions = {},
     esbuildTarget = 'es2020',
     enableEsbuild = true,
     silent = false,
@@ -406,7 +406,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // the user can opt-in to use esbuild which is much faster but results
       // in ~8-10% larger file size.
       minify && minify !== 'esbuild'
-        ? require('rollup-plugin-terser').terser(terserOption)
+        ? require('rollup-plugin-terser').terser(terserOptions)
         : undefined,
       // #728 user plugins should apply after `@rollup/plugin-commonjs`
       // #471#issuecomment-683318951 user plugin after internal plugin
@@ -415,6 +415,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   })
 
   const { output } = await bundle.generate({
+    dir: resolvedAssetsPath,
     format: 'es',
     sourcemap,
     entryFileNames: `[name].[hash].js`,

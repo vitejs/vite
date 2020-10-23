@@ -72,8 +72,8 @@ export const createBuildHtmlPlugin = async (
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/body>/.test(html)) {
-      return html.replace(/<\/body>/, `${tag}\n</body>`)
+    if (/<\/head>/.test(html)) {
+      return html.replace(/<\/head>/, `${tag}\n</head>`)
     } else {
       return html + '\n' + tag
     }
@@ -154,7 +154,8 @@ const compileHtml = async (
   const viteHtmlTransform: NodeTransform = (node) => {
     if (node.type === NodeTypes.ELEMENT) {
       if (node.tag === 'script') {
-        let shouldRemove = true
+        let shouldRemove = false
+
         const srcAttr = node.props.find(
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
         ) as AttributeNode
@@ -162,25 +163,29 @@ const compileHtml = async (
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'type'
         ) as AttributeNode
         const isJsModule =
-          !typeAttr ||
-          (typeAttr && typeAttr.value && typeAttr.value.content === 'module')
-        if (srcAttr && srcAttr.value) {
-          if (!isExternalUrl(srcAttr.value.content) && isJsModule) {
-            // <script type="module" src="..."/>
-            // add it as an import
-            js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
-          } else {
-            shouldRemove = false
+          typeAttr && typeAttr.value && typeAttr.value.content === 'module'
+
+        if (isJsModule) {
+          if (srcAttr && srcAttr.value) {
+            if (!isExternalUrl(srcAttr.value.content)) {
+              // <script type="module" src="..."/>
+              // add it as an import
+              js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
+              shouldRemove = true
+            }
+          } else if (node.children.length) {
+            // <script type="module">...</script>
+            // add its content
+            // TODO: if there are multiple inline module scripts on the page,
+            // they should technically be turned into separate modules, but
+            // it's hard to imagine any reason for anyone to do that.
+            js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
+            shouldRemove = true
           }
-        } else if (node.children.length && isJsModule) {
-          // <script type="module">...</script>
-          // add its content
-          // TODO: if there are multiple inline module scripts on the page,
-          // they should technically be turned into separate modules, but
-          // it's hard to imagine any reason for anyone to do that.
-          js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
         }
-        if (shouldRemove && isJsModule) {
+
+        if (shouldRemove) {
+          console.log('removing')
           // remove the script tag from the html. we are going to inject new
           // ones in the end.
           s.remove(node.loc.start.offset, node.loc.end.offset)
