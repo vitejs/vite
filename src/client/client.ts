@@ -1,6 +1,6 @@
 // This file runs in the browser.
 
-// injected by serverPluginHmr when served
+// injected by serverPluginClient when served
 declare const __HOST__: string
 declare const __MODE__: string
 declare const __DEFINES__: Record<string, any>
