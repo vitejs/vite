@@ -510,7 +510,7 @@ export function resolveNodeModule(
 
     // resolve object browser field in package.json
     // https://github.com/defunctzombie/package-browser-field-spec
-    const browserField = pkg.browser
+    const { browser: browserField } = pkg
     if (entryPoint && browserField && typeof browserField === 'object') {
       entryPoint = mapWithBrowserField(entryPoint, browserField)
     }
