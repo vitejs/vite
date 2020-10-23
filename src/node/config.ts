@@ -402,7 +402,7 @@ export async function resolveConfig(
         config = require(resolvedPath)
       } catch (e) {
         if (
-          !/Cannot use import statement|Unexpected token 'export'/.test(
+          !/Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/.test(
             e.message
           )
         ) {
@@ -412,7 +412,8 @@ export async function resolveConfig(
     }
 
     if (!config) {
-      // 2. if we reach here, the file is ts or using es import syntax.
+      // 2. if we reach here, the file is ts or using es import syntax, or
+      // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
       const rollup = require('rollup') as typeof Rollup
       const esbuildPlugin = await createEsbuildPlugin({})
