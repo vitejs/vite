@@ -232,6 +232,7 @@ export const vuePlugin: ServerPlugin = ({
 
     if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {
       // #748 should re-use previous cached script if only template change
+      // so that the template is compiled with the correct binding metadata
       if (prevDescriptor.scriptSetup && descriptor.scriptSetup) {
         vueCache.get(filePath)!.script = cacheEntry!.script
       }
