@@ -1,3 +1,29 @@
+# [1.0.0-rc.6](https://github.com/vitejs/vite/compare/v1.0.0-rc.5...v1.0.0-rc.6) (2020-10-23)
+
+
+### Bug Fixes
+
+* apply user rollup plugins last ([#855](https://github.com/vitejs/vite/issues/855)) ([1760658](https://github.com/vitejs/vite/commit/1760658de19e9df6ab67677993fc4defb329354a))
+* ensure source maps can be traced by debugger ([#886](https://github.com/vitejs/vite/issues/886)) ([ba7442f](https://github.com/vitejs/vite/commit/ba7442fffd1f4787bd542f09dae93bc3197e33f9)), closes [#675](https://github.com/vitejs/vite/issues/675)
+* **build:** do not merge non-module inline scripts into bundle ([edf0886](https://github.com/vitejs/vite/commit/edf088686794869d3fa92c9cb4a6a15b04187d06)), closes [#719](https://github.com/vitejs/vite/issues/719)
+* **build:** relative `sources` in production bundle sourcemap ([#934](https://github.com/vitejs/vite/issues/934)) ([8264fa8](https://github.com/vitejs/vite/commit/8264fa85904ef8f89065d76fc10b488a636306bf))
+* **config:** do not throw when user speicifies type: "module" in package.json ([8acd49e](https://github.com/vitejs/vite/commit/8acd49ee931e315b9b506e816972beb7e4786b59)), closes [#917](https://github.com/vitejs/vite/issues/917)
+* **dev:** remove unnecessary warning ([#722](https://github.com/vitejs/vite/issues/722)) ([a2c4b24](https://github.com/vitejs/vite/commit/a2c4b24d4034242e6cf24a84fcc2cad94ae7aff4)), closes [#721](https://github.com/vitejs/vite/issues/721)
+* **optimizer:** ignore `@types/*` packages inside optimizer ([#812](https://github.com/vitejs/vite/issues/812)) ([aa81eb3](https://github.com/vitejs/vite/commit/aa81eb34c19f55d6617de25a5aa9ad7adbe2eb8c)), closes [#804](https://github.com/vitejs/vite/issues/804)
+* **optimizer:** remove `?commonjs-proxy` injected by `rollup-plugin-commonjs` for assets ([#908](https://github.com/vitejs/vite/issues/908)) ([e3e7059](https://github.com/vitejs/vite/commit/e3e7059e9403138c63198f2269056e0db1139d0e)), closes [#903](https://github.com/vitejs/vite/issues/903)
+* **server:** only rewrite module script tags ([c18f387](https://github.com/vitejs/vite/commit/c18f3872a48cbcd493a83ee97c1441a92ac40e77))
+* **server:** read server port only after listening ([#943](https://github.com/vitejs/vite/issues/943)) ([eb039f9](https://github.com/vitejs/vite/commit/eb039f9821d96f7d3ec3ed839ba65a0fdcb8ceeb))
+
+
+### Features
+
+* Configurable asset inclusion ([#811](https://github.com/vitejs/vite/issues/811)) ([8378f1a](https://github.com/vitejs/vite/commit/8378f1a736eafa5d3eda856aaac0406ef430a9ae)), closes [#810](https://github.com/vitejs/vite/issues/810)
+* inject module scripts into head instead of body ([#882](https://github.com/vitejs/vite/issues/882)) ([28678a9](https://github.com/vitejs/vite/commit/28678a96055839a7b3c6320fd486ae04f58d4dc3)), closes [#881](https://github.com/vitejs/vite/issues/881)
+* let user config be a function ([#836](https://github.com/vitejs/vite/issues/836)) ([e06b73e](https://github.com/vitejs/vite/commit/e06b73e98c16decb79801293cb63076dc7bd4eee))
+* **hmr:** handle hmr when editing tailwind config ([#408](https://github.com/vitejs/vite/issues/408)) ([1d33ef3](https://github.com/vitejs/vite/commit/1d33ef38596c46a2e9ac96debb59c665e83614eb))
+
+
+
 # [1.0.0-rc.5](https://github.com/vitejs/vite/compare/v1.0.0-rc.4...v1.0.0-rc.5) (2020-10-23)
 
 
