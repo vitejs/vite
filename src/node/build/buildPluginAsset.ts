@@ -1,10 +1,11 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { Plugin, OutputBundle } from 'rollup'
-import { cleanUrl, isStaticAsset } from '../utils'
+import { cleanUrl } from '../utils'
 import hash_sum from 'hash-sum'
 import slash from 'slash'
 import mime from 'mime-types'
+import { InternalResolver } from '../resolver'
 
 const debug = require('debug')('vite:build:asset')
 
@@ -93,6 +94,7 @@ export const registerAssets = (
 
 export const createBuildAssetPlugin = (
   root: string,
+  resolver: InternalResolver,
   publicBase: string,
   assetsDir: string,
   inlineLimit: number
@@ -102,7 +104,7 @@ export const createBuildAssetPlugin = (
   return {
     name: 'vite:asset',
     async load(id) {
-      if (isStaticAsset(id)) {
+      if (resolver.isAssetRequest(id)) {
         const { fileName, content, url } = await resolveAsset(
           id,
           root,

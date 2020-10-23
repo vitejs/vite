@@ -72,6 +72,10 @@ export interface SharedConfig {
    */
   alias?: Record<string, string>
   /**
+   * Function that tests a file path for inclusion as a static asset.
+   */
+  assetsInclude?: (file: string) => boolean
+  /**
    * Custom file transforms.
    */
   transforms?: Transform[]
