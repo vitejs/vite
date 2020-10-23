@@ -167,6 +167,7 @@ export function createResolver(
 
   const resolver: InternalResolver = {
     requestToFile(publicPath) {
+      publicPath = decodeURIComponent(publicPath)
       if (requestToFileCache.has(publicPath)) {
         return requestToFileCache.get(publicPath)!
       }
