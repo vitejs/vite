@@ -131,6 +131,16 @@ const assetAttrsConfig: Record<string, string[]> = {
   use: ['xlink:href', 'href']
 }
 
+// <script type="*"> values that should be treated as actual JavaScript
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types#JavaScript_types
+const validScriptTypes = {
+  module: true,
+  'application/javascript': true,
+  'application/ecmascript': true,
+  'text/javascript': true,
+  'text/ecmascript': true
+}
+
 // compile index.html to a JS module, importing referenced assets
 // and scripts
 const compileHtml = async (
@@ -163,7 +173,9 @@ const compileHtml = async (
         ) as AttributeNode
         const isJsModule =
           !typeAttr ||
-          (typeAttr && typeAttr.value && typeAttr.value.content === 'module')
+          (typeAttr &&
+            typeAttr.value &&
+            typeAttr.value.content in validScriptTypes)
         if (srcAttr && srcAttr.value) {
           if (!isExternalUrl(srcAttr.value.content) && isJsModule) {
             // <script type="module" src="..."/>
