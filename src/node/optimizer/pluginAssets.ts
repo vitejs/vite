@@ -33,13 +33,24 @@ export const createDepAssetPlugin = (
         if (imports.length) {
           let s: MagicString | undefined
           for (let i = 0; i < imports.length; i++) {
-            const { s: start, e: end, d: dynamicIndex } = imports[i]
+            const {
+              s: start,
+              e: end,
+              d: dynamicIndex,
+              ss: statementStart,
+              se: statementEnd
+            } = imports[i]
             if (dynamicIndex === -1) {
               const importee = code.slice(start, end)
               if (isAsset(importee)) {
                 // replace css/asset imports to deep imports to their original
                 // location
                 s = s || new MagicString(code)
+                // #903 rollup-plugin-commonjs will inject proxy helper, it is unnecessary for assets
+                if (importee.endsWith('?commonjs-proxy')) {
+                  s.remove(statementStart, statementEnd)
+                  continue
+                }
                 const deepPath = resolver.fileToRequest(
                   bareImportRE.test(importee)
                     ? resolveFrom(root, importee)
