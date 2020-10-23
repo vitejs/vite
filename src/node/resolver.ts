@@ -365,8 +365,7 @@ export function resolveBareModuleRequest(
     if (!pkgInfo.entry) {
       console.error(
         chalk.yellow(
-          `[vite] dependency ${id} does not have default entry defined in ` +
-            `package.json.`
+          `[vite] dependency ${id} does not have default entry defined in package.json.`
         )
       )
     } else {
