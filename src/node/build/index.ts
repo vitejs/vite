@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { resolveFrom, lookupFile, isStaticAsset } from '../utils'
+import { resolveFrom, lookupFile } from '../utils'
 import {
   rollup as Rollup,
   RollupOutput,
@@ -242,6 +242,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     outDir = path.resolve(root, 'dist'),
     assetsDir = '_assets',
     assetsInlineLimit = 4096,
+    assetsInclude,
     cssCodeSplit = true,
     alias = {},
     resolvers = [],
@@ -283,7 +284,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
 
-  const resolver = createResolver(root, resolvers, alias)
+  const resolver = createResolver(root, resolvers, alias, assetsInclude)
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,
@@ -361,7 +362,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           !/\?vue&type=template/.test(id) &&
           // also exclude css and static assets for performance
           !isCSSRequest(id) &&
-          !isStaticAsset(id),
+          !resolver.isAssetRequest(id),
         {
           ...defaultDefines,
           ...userDefineReplacements,
@@ -393,6 +394,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // vite:asset
       createBuildAssetPlugin(
         root,
+        resolver,
         publicBasePath,
         assetsDir,
         assetsInlineLimit

@@ -15,7 +15,10 @@ import { lookupFile, resolveFrom } from '../utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { createDepAssetPlugin, depAssetExternalPlugin } from './pluginAssets'
+import {
+  createDepAssetPlugin,
+  createDepAssetExternalPlugin
+} from './pluginAssets'
 
 const debug = require('debug')('vite:optimize')
 
@@ -99,7 +102,12 @@ export async function optimizeDeps(
   await fs.ensureDir(cacheDir)
 
   const options = config.optimizeDeps || {}
-  const resolver = createResolver(root, config.resolvers, config.alias)
+  const resolver = createResolver(
+    root,
+    config.resolvers,
+    config.alias,
+    config.assetsInclude
+  )
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
@@ -186,7 +194,7 @@ export async function optimizeDeps(
       onwarn: onRollupWarning(spinner, options),
       ...config.rollupInputOptions,
       plugins: [
-        depAssetExternalPlugin,
+        createDepAssetExternalPlugin(resolver),
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver, root),
         // #728 user plugins should apply after `@rollup/plugin-commonjs`
