@@ -156,9 +156,9 @@ export function createResolver(
     }
   }
 
-  resolvers.forEach((r) => {
-    if (r.alias && typeof r.alias === 'object') {
-      resolveAlias(r.alias)
+  resolvers.forEach(({ alias }: Resolver) => {
+    if (alias && typeof alias === 'object') {
+      resolveAlias(alias)
     }
   })
   resolveAlias(userAlias)
