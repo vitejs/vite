@@ -76,7 +76,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       }
       // no boundaries
       normalCssUpdate(publicPath)
-    } else if (cssImportMap.has(filePath)) {
+    } else if (cssImporterMap.has(filePath)) {
       const boundaries = getCssImportBoundaries(filePath)
       if (boundaries.size) {
         boundaryCssUpdate(boundaries)
