@@ -188,7 +188,10 @@ export async function optimizeDeps(
       plugins: [
         depAssetExternalPlugin,
         ...(await createBaseRollupPlugins(root, resolver, config)),
-        createDepAssetPlugin(resolver, root)
+        createDepAssetPlugin(resolver, root),
+        // #728 user plugins should apply after `@rollup/plugin-commonjs`
+        ...((config.rollupInputOptions && config.rollupInputOptions.plugins) ||
+          [])
       ]
     })
 

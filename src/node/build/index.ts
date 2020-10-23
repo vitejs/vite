@@ -137,7 +137,6 @@ export async function createBaseRollupPlugins(
   options: BuildConfig
 ): Promise<Plugin[]> {
   const {
-    rollupInputOptions = {},
     transforms = [],
     vueCustomBlockTransforms = {},
     enableEsbuild = true,
@@ -177,9 +176,7 @@ export async function createBaseRollupPlugins(
       warnOnError: true,
       include: [/\.js$/],
       exclude: [/node_modules/]
-    }),
-    // #728 user plugins should apply after `@rollup/plugin-commonjs`
-    ...(rollupInputOptions.plugins || [])
+    })
   ].filter(Boolean)
 }
 
@@ -410,7 +407,10 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // in ~8-10% larger file size.
       minify && minify !== 'esbuild'
         ? require('rollup-plugin-terser').terser(terserOptions)
-        : undefined
+        : undefined,
+      // #728 user plugins should apply after `@rollup/plugin-commonjs`
+      // #471#issuecomment-683318951 user plugin after internal plugin
+      ...(rollupInputOptions.plugins || [])
     ].filter(Boolean)
   })
 
