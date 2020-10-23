@@ -98,8 +98,9 @@ const resolveFilePathPostfix = (filePath: string): string | undefined => {
         postfix = ext
         break
       }
-      if (isFile(path.join(cleanPath, '/index' + ext))) {
-        postfix = '/index' + ext
+      const defaultFilePath = `/index${ext}`
+      if (isFile(path.join(cleanPath, defaultFilePath))) {
+        postfix = defaultFilePath
         break
       }
     }
@@ -155,9 +156,9 @@ export function createResolver(
     }
   }
 
-  resolvers.forEach((r) => {
-    if (r.alias && typeof r.alias === 'object') {
-      resolveAlias(r.alias)
+  resolvers.forEach(({ alias }) => {
+    if (alias && typeof alias === 'object') {
+      resolveAlias(alias)
     }
   })
   resolveAlias(userAlias)
@@ -281,9 +282,8 @@ export function createResolver(
       if (aliased) {
         return aliased
       }
-      for (const r of resolvers) {
-        aliased =
-          r.alias && typeof r.alias === 'function' ? r.alias(id) : undefined
+      for (const { alias } of resolvers) {
+        aliased = alias && typeof alias === 'function' ? alias(id) : undefined
         if (aliased) {
           return aliased
         }
@@ -365,8 +365,7 @@ export function resolveBareModuleRequest(
     if (!pkgInfo.entry) {
       console.error(
         chalk.yellow(
-          `[vite] dependency ${id} does not have default entry defined in ` +
-            `package.json.`
+          `[vite] dependency ${id} does not have default entry defined in package.json.`
         )
       )
     } else {
@@ -510,7 +509,7 @@ export function resolveNodeModule(
 
     // resolve object browser field in package.json
     // https://github.com/defunctzombie/package-browser-field-spec
-    const browserField = pkg.browser
+    const { browser: browserField } = pkg
     if (entryPoint && browserField && typeof browserField === 'object') {
       entryPoint = mapWithBrowserField(entryPoint, browserField)
     }
@@ -583,9 +582,9 @@ function mapWithBrowserField(
   map: Record<string, string>
 ) {
   const normalized = normalize(relativePathInPkgDir)
-  const foundEntry = Object.entries(map).find(([from]) => {
-    return normalize(from) === normalized
-  })
+  const foundEntry = Object.entries(map).find(
+    ([from]) => normalize(from) === normalized
+  )
   if (!foundEntry) {
     return normalized
   }
