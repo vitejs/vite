@@ -26,6 +26,7 @@ import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
 import { webWorkerPlugin } from './serverPluginWebWorker'
 import { wasmPlugin } from './serverPluginWasm'
 import { clientPlugin } from './serverPluginClient'
+import { AddressInfo } from 'net'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
 
@@ -132,7 +133,7 @@ export function createServer(config: ServerConfig): Server {
   }) as any
 
   server.once('listening', () => {
-    context.port = server.address().port
+    context.port = (server.address() as AddressInfo).port
   })
 
   return server
