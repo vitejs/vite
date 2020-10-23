@@ -19,7 +19,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
   config
 }) => {
   const devInjectionCode = `\n<script type="module">import "${clientPublicPath}"</script>\n`
-  const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
+  const scriptRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
 
   async function rewriteHtml(importer: string, html: string) {
