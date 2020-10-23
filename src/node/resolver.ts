@@ -583,9 +583,9 @@ function mapWithBrowserField(
   map: Record<string, string>
 ) {
   const normalized = normalize(relativePathInPkgDir)
-  const foundEntry = Object.entries(map).find(([from]) => {
-    return normalize(from) === normalized
-  })
+  const foundEntry = Object.entries(map).find(
+    ([from]) => normalize(from) === normalized
+  )
   if (!foundEntry) {
     return normalized
   }
