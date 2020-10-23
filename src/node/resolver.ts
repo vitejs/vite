@@ -282,9 +282,8 @@ export function createResolver(
       if (aliased) {
         return aliased
       }
-      for (const r of resolvers) {
-        aliased =
-          r.alias && typeof r.alias === 'function' ? r.alias(id) : undefined
+      for (const { alias } of resolvers) {
+        aliased = alias && typeof alias === 'function' ? alias(id) : undefined
         if (aliased) {
           return aliased
         }
