@@ -350,6 +350,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     onwarn: onRollupWarning(spinner, options.optimizeDeps),
     ...rollupInputOptions,
     plugins: [
+      ...(rollupInputOptions.plugins || []),
+      ...(rollupInputOptions.pluginsPreBuild || []),
       ...basePlugins,
       // vite:html
       htmlPlugin,
@@ -412,7 +414,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         : undefined,
       // #728 user plugins should apply after `@rollup/plugin-commonjs`
       // #471#issuecomment-683318951 user plugin after internal plugin
-      ...(rollupInputOptions.plugins || [])
+      ...(rollupInputOptions.pluginsPostBuild || [])
     ].filter(Boolean)
   })
 
