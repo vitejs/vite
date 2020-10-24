@@ -38,6 +38,7 @@ import { isCSSRequest } from '../utils/cssUtils'
 import { envPublicPath } from './serverPluginEnv'
 import { resolveOptimizedCacheDir } from '../optimizer'
 import { parse } from '../utils/babelParse'
+import { OptimizeAnalysisResult } from '../optimizer/entryAnalysisPlugin'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -327,20 +328,24 @@ export const resolveImport = (
   return id
 }
 
-const analysisCache = new Map<
-  string,
-  { isCommonjs: { [name: string]: true } }
->()
+const analysisCache = new Map<string, OptimizeAnalysisResult>()
 
 /**
- * get analysis result from optimize step:
- * which optimized dependencies may be commonjs
+ * read analysis result from optimize step
  */
-function getAnalysis(root: string): { isCommonjs: { [name: string]: true } } {
+function getAnalysis(root: string): OptimizeAnalysisResult {
   if (analysisCache.has(root)) return analysisCache.get(root)!
   const cacheDir = resolveOptimizedCacheDir(root)
-  if (!cacheDir) throw new Error('cacheDir not found')
-  const analysis = fs.readJsonSync(path.join(cacheDir, '_analysis.json'))
+  if (!cacheDir) throw new Error('[vite] cacheDir not found')
+  let analysis: OptimizeAnalysisResult
+  try {
+    analysis = fs.readJsonSync(path.join(cacheDir, '_analysis.json'))
+  } catch (error) {
+    throw new Error(`[vite] fail to read _analysis.json from ${cacheDir}`)
+  }
+  if (typeof analysis.isCommonjs !== 'object' || analysis.isCommonjs === null) {
+    throw new Error(`[vite] invalid _analysis.json`)
+  }
   analysisCache.set(root, analysis)
   return analysis
 }
