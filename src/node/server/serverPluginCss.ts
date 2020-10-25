@@ -16,7 +16,7 @@ import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
 import { clientPublicPath } from './serverPluginClient'
-import { dataToEsm } from 'rollup-pluginutils'
+import { dataToEsm } from '@rollup/pluginutils'
 
 export const debugCSS = require('debug')('vite:css')
 
