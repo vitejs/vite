@@ -553,7 +553,9 @@ export async function ssrBuild(options: BuildConfig): Promise<BuildResult> {
       ...rollupOutputOptions,
       format: 'cjs',
       exports: 'named',
-      entryFileNames: '[name].js'
+      entryFileNames: '[name].js',
+      // 764 add `Symbol.toStringTag` when build es module into cjs chunk
+      namespaceToStringTag: true
     },
     emitIndex: false,
     emitAssets: false,

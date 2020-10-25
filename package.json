@@ -90,7 +90,7 @@
     "postcss-import": "^12.0.1",
     "postcss-load-config": "^2.1.0",
     "resolve": "^1.17.0",
-    "rollup": "^2.26.11",
+    "rollup": "^2.32.1",
     "rollup-plugin-dynamic-import-variables": "^1.1.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-vue": "^6.0.0-beta.10",
