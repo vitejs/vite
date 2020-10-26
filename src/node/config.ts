@@ -379,6 +379,12 @@ export interface BuildConfig extends SharedConfig {
    * @default true
    */
   enableRollupPluginVue?: boolean
+  /**
+   * Entry. Use this to specify a js entry file in use cases where an
+   * `index.html` does not exist (e.g. serving vite assets from a different host)
+   * @default 'index.html'
+   */
+  entry?: string
 }
 
 export interface ViteRollupInputOptions extends RollupInputOptions {

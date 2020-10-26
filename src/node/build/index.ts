@@ -237,6 +237,7 @@ async function createVuePlugin(
  */
 export async function build(options: BuildConfig): Promise<BuildResult> {
   const {
+    entry = 'index.html',
     root = process.cwd(),
     base = '/',
     outDir = path.resolve(root, 'dist'),
@@ -344,7 +345,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
   const bundle = await rollup({
-    input: path.resolve(root, 'index.html'),
+    input: path.resolve(root, entry),
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
     onwarn: onRollupWarning(spinner, options.optimizeDeps),
