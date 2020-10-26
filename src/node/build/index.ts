@@ -381,7 +381,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           'process.env': JSON.stringify({ NODE_ENV: resolvedMode }),
           'import.meta.hot': `false`
         },
-        sourcemap
+        !!sourcemap
       ),
       // vite:css
       createBuildCssPlugin({
@@ -392,7 +392,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         inlineLimit: assetsInlineLimit,
         cssCodeSplit,
         preprocessOptions: cssPreprocessOptions,
-        modulesOptions: cssModuleOptions
+        modulesOptions: cssModuleOptions,
+        emitAssets: write && emitAssets
       }),
       // vite:asset
       createBuildAssetPlugin(
@@ -400,9 +401,16 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         resolver,
         publicBasePath,
         assetsDir,
-        assetsInlineLimit
+        assetsInlineLimit,
+        write && emitAssets
       ),
-      createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
+      createBuildWasmPlugin(
+        root,
+        publicBasePath,
+        assetsDir,
+        assetsInlineLimit,
+        write && emitAssets
+      ),
       enableEsbuild
         ? createEsbuildRenderChunkPlugin(esbuildTarget, minify === 'esbuild')
         : undefined,
@@ -419,12 +427,13 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     ].filter(Boolean)
   })
 
-  const { output } = await bundle.generate({
+  const { output } = await bundle.write({
     dir: resolvedAssetsPath,
     format: 'es',
     sourcemap,
     entryFileNames: `[name].[hash].js`,
     chunkFileNames: `[name].[hash].js`,
+    assetFileNames: `[name].[hash].[ext]`,
     ...rollupOutputOptions
   })
 
@@ -433,14 +442,11 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   const indexHtml = emitIndex ? renderIndex(output) : ''
 
   if (write) {
-    const cwd = process.cwd()
-    const writeFile = async (
+    const printFilesInfo = async (
       filepath: string,
       content: string | Uint8Array,
       type: WriteType
     ) => {
-      await fs.ensureDir(path.dirname(filepath))
-      await fs.writeFile(filepath, content)
       if (!silent) {
         const needCompression =
           type === WriteType.JS ||
@@ -453,36 +459,26 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           : ``
         console.log(
           `${chalk.gray(`[write]`)} ${writeColors[type](
-            path.relative(cwd, filepath)
+            path.relative(process.cwd(), filepath)
           )} ${(content.length / 1024).toFixed(2)}kb${compressed}`
         )
       }
     }
 
-    await fs.ensureDir(outDir)
-
-    // write js chunks and assets
+    // print chunk and assets info
     for (const chunk of output) {
+      const filepath = path.join(resolvedAssetsPath, chunk.fileName)
       if (chunk.type === 'chunk') {
-        // write chunk
-        const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-        let code = chunk.code
+        await printFilesInfo(filepath, chunk.code, WriteType.JS)
         if (chunk.map) {
-          code += `\n//# sourceMappingURL=${path.basename(filepath)}.map`
-        }
-        await writeFile(filepath, code, WriteType.JS)
-        if (chunk.map) {
-          await writeFile(
+          await printFilesInfo(
             filepath + '.map',
             chunk.map.toString(),
             WriteType.SOURCE_MAP
           )
         }
       } else if (emitAssets) {
-        if (!chunk.source) continue
-        // write asset
-        const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-        await writeFile(
+        await printFilesInfo(
           filepath,
           chunk.source,
           chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
@@ -492,11 +488,9 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
     // write html
     if (indexHtml && emitIndex) {
-      await writeFile(
-        path.join(outDir, 'index.html'),
-        indexHtml,
-        WriteType.HTML
-      )
+      const outputHtmlPath = path.join(outDir, 'index.html')
+      await fs.writeFile(outputHtmlPath, indexHtml)
+      await printFilesInfo(outputHtmlPath, indexHtml, WriteType.HTML)
     }
 
     // copy over /public if it exists
