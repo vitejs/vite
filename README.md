@@ -75,6 +75,7 @@ Vite assumes you are targeting modern browsers and by default only transpiles yo
 - [Dev Server Proxy](#dev-server-proxy)
 - [Production Build](#production-build)
 - [Modes and Environment Variables](#modes-and-environment-variables)
+- [Using Vite with Traditional Backend](#using-vite-with-traditional-backend)
 
 Vite tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org/) as much as possible. If you've used `vue-cli` or other webpack-based boilerplates before, you should feel right at home. That said, do expect things to be different here and there.
 
@@ -410,6 +411,38 @@ When running `vite`, environment variables are loaded from the following files i
 ```
 
 **Note:** only variables prefixed with `VITE_` are exposed to your code. e.g. `VITE_SOME_KEY=123` will be exposed as `import.meta.env.VITE_SOME_KEY`, but `SOME_KEY=123` will not. This is because the `.env` files may be used by some users for server-side or build scripts and may contain sensitive information that should not be exposed in code shipped to browsers.
+
+### Using Vite with Traditional Backend
+
+If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, here's what you can do:
+
+1. In your Vite config, enable `cors` and `emitManifest`:
+
+    ```js
+    // vite.config.js
+    export default {
+      cors: true,
+      emitManifest: true
+    }
+    ```
+
+2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
+
+    ```html
+    <!-- if development -->
+    <script type="module" src="http://localhost:3000/vite/client"></script>
+    <script type="module" src="http://localhost:3000/main.js"></script>
+    ```
+
+    Also make sure the server is configured to serve static assets in the Viter working directory, otherwise assets such as images won't be loaded properly.
+
+3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. You can use this file to render links with hashed filenames (syntax here for explnatation only, substitute with your server templating language):
+
+    ```html
+    <!-- if production -->
+    <link rel="stylesheet" href="/_assets/{{ maniest['style.css'] }}">
+    <script type="module" src="/_assets/{{ maniest['index.js] }}"></script>
+    ```
 
 ## API
 
