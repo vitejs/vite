@@ -13,6 +13,7 @@ import {
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
+  Plugin as RollupPlugin,
   OutputChunk
 } from 'rollup'
 import {
@@ -23,11 +24,11 @@ import { ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
 import { Transform, CustomBlockTransform } from './transform'
 import { DepOptimizationOptions } from './optimizer'
-import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
 import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
 import { WatchOptions as chokidarWatchOptions } from 'chokidar'
+import { ProxiesOptions } from './server/serverPluginProxy'
 
 export type PreprocessLang = NonNullable<
   SFCStyleCompileOptions['preprocessLang']
@@ -72,6 +73,10 @@ export interface SharedConfig {
    * ```
    */
   alias?: Record<string, string>
+  /**
+   * Function that tests a file path for inclusion as a static asset.
+   */
+  assetsInclude?: (file: string) => boolean
   /**
    * Custom file transforms.
    */
@@ -167,7 +172,21 @@ export interface SharedConfig {
   env?: DotenvParseOutput
 }
 
+export interface HmrConfig {
+  protocol?: string
+  hostname?: string
+  port?: number
+  path?: string
+}
+
 export interface ServerConfig extends SharedConfig {
+  /**
+   * Configure hmr websocket connection.
+   */
+  hmr?: HmrConfig | boolean
+  /**
+   * Configure dev server hostname.
+   */
   hostname?: string
   port?: number
   open?: boolean
@@ -199,10 +218,10 @@ export interface ServerConfig extends SharedConfig {
    * }
    * ```
    */
-  proxy?: Record<string, string | IKoaProxiesOptions>
+  proxy?: Record<string, string | ProxiesOptions>
   /**
    * A plugin function that configures the dev server. Receives a server plugin
-   * context object just like the internal server plguins. Can also be an array
+   * context object just like the internal server plugins. Can also be an array
    * of multiple server plugin functions.
    */
   configureServer?: ServerPlugin | ServerPlugin[]
@@ -249,7 +268,7 @@ export interface BuildConfig extends SharedConfig {
    */
   sourcemap?: boolean
   /**
-   * Set to `false` to dsiable minification, or specify the minifier to use.
+   * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
    * @default 'terser'
    */
@@ -257,7 +276,7 @@ export interface BuildConfig extends SharedConfig {
   /**
    * The option for `terser`
    */
-  terserOption?: RollupTerserOptions
+  terserOptions?: RollupTerserOptions
   /**
    * Transpile target for esbuild.
    * @default 'es2020'
@@ -276,7 +295,7 @@ export interface BuildConfig extends SharedConfig {
    *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
-  rollupInputOptions?: RollupInputOptions
+  rollupInputOptions?: ViteRollupInputOptions
   /**
    * Will be passed to bundle.generate()
    *
@@ -326,6 +345,25 @@ export interface BuildConfig extends SharedConfig {
   enableRollupPluginVue?: boolean
 }
 
+export interface ViteRollupInputOptions extends RollupInputOptions {
+  /**
+   * @deprecated use `pluginsPreBuild` or `pluginsPostBuild` instead
+   */
+  plugins?: RollupPlugin[]
+  /**
+   * Rollup plugins that passed before Vite's transform plugins
+   */
+  pluginsPreBuild?: RollupPlugin[]
+  /**
+   * Rollup plugins that passed after Vite's transform plugins
+   */
+  pluginsPostBuild?: RollupPlugin[]
+  /**
+   * Rollup plugins for optimizer
+   */
+  pluginsOptimizer?: RollupPlugin[]
+}
+
 export interface UserConfig extends BuildConfig, ServerConfig {
   plugins?: Plugin[]
 }
@@ -362,7 +400,7 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig | undefined> {
   const start = Date.now()
   const cwd = process.cwd()
-  let config: ResolvedConfig | undefined
+  let config: ResolvedConfig | ((mode: string) => ResolvedConfig) | undefined
   let resolvedPath: string | undefined
   let isTS = false
   if (configPath) {
@@ -393,7 +431,7 @@ export async function resolveConfig(
         config = require(resolvedPath)
       } catch (e) {
         if (
-          !/Cannot use import statement|Unexpected token 'export'/.test(
+          !/Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/.test(
             e.message
           )
         ) {
@@ -403,7 +441,8 @@ export async function resolveConfig(
     }
 
     if (!config) {
-      // 2. if we reach here, the file is ts or using es import syntax.
+      // 2. if we reach here, the file is ts or using es import syntax, or
+      // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
       const rollup = require('rollup') as typeof Rollup
       const esbuildPlugin = await createEsbuildPlugin({})
@@ -432,6 +471,10 @@ export async function resolveConfig(
       })
 
       config = await loadConfigFromBundledFile(resolvedPath, code)
+    }
+
+    if (typeof config === 'function') {
+      config = config(mode)
     }
 
     // normalize config root to absolute

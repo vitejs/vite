@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { resolveFrom, lookupFile, isStaticAsset } from '../utils'
+import { resolveFrom, lookupFile } from '../utils'
 import {
   rollup as Rollup,
   RollupOutput,
@@ -137,7 +137,6 @@ export async function createBaseRollupPlugins(
   options: BuildConfig
 ): Promise<Plugin[]> {
   const {
-    rollupInputOptions = {},
     transforms = [],
     vueCustomBlockTransforms = {},
     enableEsbuild = true,
@@ -177,9 +176,7 @@ export async function createBaseRollupPlugins(
       warnOnError: true,
       include: [/\.js$/],
       exclude: [/node_modules/]
-    }),
-    // #728 user plugins should apply after `@rollup/plugin-commonjs`
-    ...(rollupInputOptions.plugins || [])
+    })
   ].filter(Boolean)
 }
 
@@ -245,6 +242,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     outDir = path.resolve(root, 'dist'),
     assetsDir = '_assets',
     assetsInlineLimit = 4096,
+    assetsInclude,
     cssCodeSplit = true,
     alias = {},
     resolvers = [],
@@ -254,7 +252,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     emitAssets = true,
     write = true,
     minify = true,
-    terserOption = {},
+    terserOptions = {},
     esbuildTarget = 'es2020',
     enableEsbuild = true,
     silent = false,
@@ -286,7 +284,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
   const publicBasePath = base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
 
-  const resolver = createResolver(root, resolvers, alias)
+  const resolver = createResolver(root, resolvers, alias, assetsInclude)
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,
@@ -352,6 +350,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     onwarn: onRollupWarning(spinner, options.optimizeDeps),
     ...rollupInputOptions,
     plugins: [
+      ...(rollupInputOptions.plugins || []),
+      ...(rollupInputOptions.pluginsPreBuild || []),
       ...basePlugins,
       // vite:html
       htmlPlugin,
@@ -364,7 +364,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
           !/\?vue&type=template/.test(id) &&
           // also exclude css and static assets for performance
           !isCSSRequest(id) &&
-          !isStaticAsset(id),
+          !resolver.isAssetRequest(id),
         {
           ...defaultDefines,
           ...userDefineReplacements,
@@ -396,6 +396,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // vite:asset
       createBuildAssetPlugin(
         root,
+        resolver,
         publicBasePath,
         assetsDir,
         assetsInlineLimit
@@ -409,12 +410,16 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       // the user can opt-in to use esbuild which is much faster but results
       // in ~8-10% larger file size.
       minify && minify !== 'esbuild'
-        ? require('rollup-plugin-terser').terser(terserOption)
-        : undefined
+        ? require('rollup-plugin-terser').terser(terserOptions)
+        : undefined,
+      // #728 user plugins should apply after `@rollup/plugin-commonjs`
+      // #471#issuecomment-683318951 user plugin after internal plugin
+      ...(rollupInputOptions.pluginsPostBuild || [])
     ].filter(Boolean)
   })
 
   const { output } = await bundle.generate({
+    dir: resolvedAssetsPath,
     format: 'es',
     sourcemap,
     entryFileNames: `[name].[hash].js`,
@@ -550,7 +555,9 @@ export async function ssrBuild(options: BuildConfig): Promise<BuildResult> {
       ...rollupOutputOptions,
       format: 'cjs',
       exports: 'named',
-      entryFileNames: '[name].js'
+      entryFileNames: '[name].js',
+      // 764 add `Symbol.toStringTag` when build es module into cjs chunk
+      namespaceToStringTag: true
     },
     emitIndex: false,
     emitAssets: false,

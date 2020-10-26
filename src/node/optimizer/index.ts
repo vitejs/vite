@@ -15,7 +15,10 @@ import { lookupFile, resolveFrom } from '../utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { createDepAssetPlugin, depAssetExternalPlugin } from './pluginAssets'
+import {
+  createDepAssetPlugin,
+  createDepAssetExternalPlugin
+} from './pluginAssets'
 
 const debug = require('debug')('vite:optimize')
 
@@ -99,7 +102,12 @@ export async function optimizeDeps(
   await fs.ensureDir(cacheDir)
 
   const options = config.optimizeDeps || {}
-  const resolver = createResolver(root, config.resolvers, config.alias)
+  const resolver = createResolver(
+    root,
+    config.resolvers,
+    config.alias,
+    config.assetsInclude
+  )
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
@@ -186,9 +194,12 @@ export async function optimizeDeps(
       onwarn: onRollupWarning(spinner, options),
       ...config.rollupInputOptions,
       plugins: [
-        depAssetExternalPlugin,
+        createDepAssetExternalPlugin(resolver),
         ...(await createBaseRollupPlugins(root, resolver, config)),
-        createDepAssetPlugin(resolver, root)
+        createDepAssetPlugin(resolver, root),
+        ...((config.rollupInputOptions &&
+          config.rollupInputOptions.pluginsOptimizer) ||
+          [])
       ]
     })
 
@@ -284,6 +295,11 @@ function resolveQualifiedDeps(
     }
     if (KNOWN_IGNORE_LIST.has(id)) {
       debug(`skipping ${id} (internal excluded)`)
+      return false
+    }
+    // #804
+    if (id.startsWith('@types/')) {
+      debug(`skipping ${id} (ts declaration)`)
       return false
     }
     const pkgInfo = resolveNodeModule(root, id, resolver)

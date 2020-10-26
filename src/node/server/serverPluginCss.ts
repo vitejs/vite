@@ -16,7 +16,7 @@ import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
 import { clientPublicPath } from './serverPluginClient'
-import { dataToEsm } from 'rollup-pluginutils'
+import { dataToEsm } from '@rollup/pluginutils'
 
 export const debugCSS = require('debug')('vite:css')
 
@@ -71,22 +71,31 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 
       const boundaries = getCssImportBoundaries(filePath)
       if (boundaries.size) {
-        for (let boundary of boundaries) {
-          if (boundary.includes('.module')) {
-            moduleCssUpdate(boundary, resolver)
-          } else if (boundary.includes('.vue')) {
-            vueCache.del(cleanUrl(boundary))
-            vueStyleUpdate(resolver.fileToRequest(boundary))
-          } else {
-            normalCssUpdate(resolver.fileToRequest(boundary))
-          }
-        }
+        boundaryCssUpdate(boundaries)
         return
       }
       // no boundaries
       normalCssUpdate(publicPath)
+    } else if (cssImporterMap.has(filePath)) {
+      const boundaries = getCssImportBoundaries(filePath)
+      if (boundaries.size) {
+        boundaryCssUpdate(boundaries)
+      }
     }
   })
+
+  function boundaryCssUpdate(boundaries: Set<string>) {
+    for (let boundary of boundaries) {
+      if (boundary.includes('.module')) {
+        moduleCssUpdate(boundary, resolver)
+      } else if (boundary.includes('.vue')) {
+        vueCache.del(cleanUrl(boundary))
+        vueStyleUpdate(resolver.fileToRequest(boundary))
+      } else {
+        normalCssUpdate(resolver.fileToRequest(boundary))
+      }
+    }
+  }
 
   function vueStyleUpdate(styleImport: string) {
     const publicPath = cleanUrl(styleImport)
