@@ -1,8 +1,7 @@
 import path from 'path'
 import { Plugin } from 'rollup'
-import { resolveAsset, registerAssets } from './buildPluginAsset'
+import { resolveAsset, injectAssetRe } from './buildPluginAsset'
 import { BuildConfig } from '../config'
-import hash_sum from 'hash-sum'
 import {
   urlRE,
   compileCss,
@@ -18,6 +17,7 @@ import {
 import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
 import { dataToEsm } from '@rollup/pluginutils'
+import slash from 'slash'
 
 const debug = require('debug')('vite:build:css')
 
@@ -33,6 +33,7 @@ interface BuildCssOption {
   cssCodeSplit?: boolean
   preprocessOptions?: CssPreprocessOptions
   modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
+  emitAssets: boolean
 }
 
 export const createBuildCssPlugin = ({
@@ -43,10 +44,10 @@ export const createBuildCssPlugin = ({
   inlineLimit = 0,
   cssCodeSplit = true,
   preprocessOptions,
-  modulesOptions = {}
+  modulesOptions = {},
+  emitAssets
 }: BuildCssOption): Plugin => {
   const styles: Map<string, string> = new Map()
-  const assets = new Map<string, Buffer>()
   let staticCss = ''
 
   return {
@@ -97,22 +98,28 @@ export const createBuildCssPlugin = ({
             const file = path.posix.isAbsolute(rawUrl)
               ? path.join(root, rawUrl)
               : path.join(fileDir, rawUrl)
-            const { fileName, content, url } = await resolveAsset(
+            let { fileName, content, url } = await resolveAsset(
               file,
               root,
               publicBase,
               assetsDir,
               inlineLimit
             )
-            if (fileName && content) {
-              assets.set(fileName, content)
+            if (!url && emitAssets && fileName && content) {
+              url =
+                'import.meta.ROLLUP_FILE_URL_' +
+                this.emitFile({
+                  name: fileName,
+                  type: 'asset',
+                  source: content
+                })
             }
             debug(
               `url(${rawUrl}) -> ${
-                url.startsWith('data:') ? `base64 inlined` : `url(${url})`
+                url!.startsWith('data:') ? `base64 inlined` : `${file}`
               }`
             )
-            return url
+            return url!
           })
         }
 
@@ -142,6 +149,13 @@ export const createBuildCssPlugin = ({
         }
       }
 
+      let match
+      while ((match = injectAssetRe.exec(chunkCSS))) {
+        const outputFilepath =
+          publicBase + slash(path.join(assetsDir, this.getFileName(match[1])))
+        chunkCSS = chunkCSS.replace(match[0], outputFilepath)
+      }
+
       if (cssCodeSplit) {
         code = code.replace(cssInjectionRE, '')
         // for each dynamic entry chunk, collect its css and inline it as JS
@@ -168,21 +182,19 @@ export const createBuildCssPlugin = ({
 
     async generateBundle(_options, bundle) {
       // minify css
-      if (minify) {
+      if (minify && staticCss) {
         staticCss = minifyCSS(staticCss)
       }
 
-      const cssFileName = `style.${hash_sum(staticCss)}.css`
-
-      bundle[cssFileName] = {
-        name: cssFileName,
-        isAsset: true,
-        type: 'asset',
-        fileName: cssFileName,
-        source: staticCss
+      if (emitAssets) {
+        if (staticCss) {
+          this.emitFile({
+            name: 'style.css',
+            type: 'asset',
+            source: staticCss
+          })
+        }
       }
-
-      registerAssets(assets, bundle)
     }
   }
 }
