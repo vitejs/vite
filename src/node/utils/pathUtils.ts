@@ -73,6 +73,21 @@ export const isImportRequest = (ctx: Context): boolean => {
   return ctx.query.import != null
 }
 
+export function parseNodeModuleId(id: string) {
+  const parts = id.split('/')
+  let scope = '',
+    name = '',
+    inPkgPath = ''
+  if (id.startsWith('@')) scope = parts.shift()!
+  name = parts.shift()!
+  inPkgPath = parts.join('/')
+  return {
+    scope,
+    name,
+    inPkgPath
+  }
+}
+
 export function removeUnRelatedHmrQuery(url: string) {
   const { path, query } = parseWithQuery(url)
   delete query.t

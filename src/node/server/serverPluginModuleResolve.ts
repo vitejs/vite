@@ -84,20 +84,6 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
       return serve(id, nodeModuleFilePath, 'node_modules')
     }
 
-    // resolve relative path request inside unoptimized package while the importer is lack of /index.js
-    // eg.
-    // id: /rewrite-unoptimized-test-package/es/foo
-    // importer: /rewrite-unoptimized-test-package/es/nested
-    // The `id` is not resolved, because it should be /rewrite-unoptimized-test-package/es/nested/foo
-    if (importer) {
-      const relativePath = path.relative(importer.replace(moduleRE, ''), id)
-      const filePath = path.join(importerFilePath, relativePath)
-      const fileRealPath = resolveNodeModuleFile(root, filePath)
-      if (fileRealPath) {
-        return serve(id, fileRealPath, 'node_modules')
-      }
-    }
-
     if (isMapFile && importer) {
       // the resolveNodeModuleFile doesn't work with linked pkg
       // our last try: infer from the dir of importer
