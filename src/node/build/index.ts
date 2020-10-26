@@ -296,7 +296,8 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     assetsDir,
     assetsInlineLimit,
     resolver,
-    shouldPreload
+    shouldPreload,
+    options
   )
 
   const basePlugins = await createBaseRollupPlugins(root, resolver, options)
@@ -443,7 +444,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
 
   spinner && spinner.stop()
 
-  const indexHtml = emitIndex ? renderIndex(output) : ''
+  const indexHtml = emitIndex ? await renderIndex(output) : ''
 
   if (write) {
     const printFilesInfo = async (

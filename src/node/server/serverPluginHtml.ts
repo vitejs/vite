@@ -2,7 +2,12 @@ import { rewriteImports, ServerPlugin } from './index'
 import { debugHmr, ensureMapEntry, importerMap } from './serverPluginHmr'
 import { clientPublicPath } from './serverPluginClient'
 import { init as initLexer } from 'es-module-lexer'
-import { cleanUrl, readBody, injectScriptToHtml } from '../utils'
+import {
+  cleanUrl,
+  readBody,
+  injectScriptToHtml,
+  transformIndexHtml
+} from '../utils'
 import LRUCache from 'lru-cache'
 import path from 'path'
 import chalk from 'chalk'
@@ -24,6 +29,12 @@ export const htmlRewritePlugin: ServerPlugin = ({
 
   async function rewriteHtml(importer: string, html: string) {
     await initLexer
+    html = await transformIndexHtml(
+      html,
+      config.indexHtmlTransforms,
+      'pre',
+      false
+    )
     html = html.replace(scriptRE, (matched, openTag, script) => {
       if (script) {
         return `${openTag}${rewriteImports(
@@ -45,7 +56,13 @@ export const htmlRewritePlugin: ServerPlugin = ({
         return matched
       }
     })
-    return injectScriptToHtml(html, devInjectionCode)
+    const processedHtml = injectScriptToHtml(html, devInjectionCode)
+    return await transformIndexHtml(
+      processedHtml,
+      config.indexHtmlTransforms,
+      'post',
+      false
+    )
   }
 
   app.use(async (ctx, next) => {

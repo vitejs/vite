@@ -49,6 +49,26 @@ export interface Transform {
   transform: TransformFn
 }
 
+export interface IndexHtmlTransformContext {
+  code: string
+  isBuild: boolean
+}
+
+export type IndexHtmlTransformFn = (
+  ctx: IndexHtmlTransformContext
+) => string | Promise<string>
+
+export type IndexHtmlTransform =
+  | IndexHtmlTransformFn
+  | {
+      /**
+       * Timing for applying the transform.
+       * @default: 'post'
+       */
+      apply?: 'pre' | 'post'
+      transform: IndexHtmlTransformFn
+    }
+
 export type CustomBlockTransform = TransformFn
 
 export function createServerTransformPlugin(

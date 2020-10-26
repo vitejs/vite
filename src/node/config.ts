@@ -22,7 +22,11 @@ import {
 } from './build/buildPluginEsbuild'
 import { Context, ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
-import { Transform, CustomBlockTransform } from './transform'
+import {
+  Transform,
+  CustomBlockTransform,
+  IndexHtmlTransform
+} from './transform'
 import { DepOptimizationOptions } from './optimizer'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
@@ -114,6 +118,10 @@ export interface SharedConfig {
    * Custom file transforms.
    */
   transforms?: Transform[]
+  /**
+   * Custom index.html transforms.
+   */
+  indexHtmlTransforms?: IndexHtmlTransform[]
   /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
@@ -431,6 +439,7 @@ export interface Plugin
     UserConfig,
     | 'alias'
     | 'transforms'
+    | 'indexHtmlTransforms'
     | 'define'
     | 'resolvers'
     | 'configureServer'
@@ -607,6 +616,10 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
       ...config.define
     },
     transforms: [...(config.transforms || []), ...(plugin.transforms || [])],
+    indexHtmlTransforms: [
+      ...(config.indexHtmlTransforms || []),
+      ...(plugin.indexHtmlTransforms || [])
+    ],
     resolvers: [...(config.resolvers || []), ...(plugin.resolvers || [])],
     configureServer: ([] as ServerPlugin[]).concat(
       config.configureServer || [],
