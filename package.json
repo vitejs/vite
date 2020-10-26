@@ -103,6 +103,7 @@
   },
   "devDependencies": {
     "@babel/runtime": "7.11.2",
+    "@babel/types": "^7.12.1",
     "@pika/react": "^16.13.1",
     "@pika/react-dom": "^16.13.1",
     "@types/es-module-lexer": "^0.3.0",
