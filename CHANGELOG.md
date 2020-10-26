@@ -1,3 +1,7 @@
+# [1.0.0-rc.8](https://github.com/vitejs/vite/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2020-10-26)
+
+
+
 # [1.0.0-rc.7](https://github.com/vitejs/vite/compare/v1.0.0-rc.6...v1.0.0-rc.7) (2020-10-26)
 
 
