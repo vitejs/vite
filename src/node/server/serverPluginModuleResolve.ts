@@ -4,7 +4,11 @@ import fs from 'fs-extra'
 import { ServerPlugin } from '.'
 import { resolveVue } from '../utils'
 import { URL } from 'url'
-import { resolveOptimizedModule, resolveNodeModuleFile } from '../resolver'
+import {
+  resolveOptimizedModule,
+  resolveNodeModuleFile,
+  resolveNodeModule
+} from '../resolver'
 
 const debug = require('debug')('vite:resolve')
 
@@ -69,9 +73,15 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
     }
 
     const importerFilePath = importer ? resolver.requestToFile(importer) : root
-    const nodeModulePath = resolveNodeModuleFile(importerFilePath, id)
-    if (nodeModulePath) {
-      return serve(id, nodeModulePath, 'node_modules')
+    // #829 node package has sub-package(has package.json), should check it before `resolveNodeModuleFile`
+    const nodeModuleInfo = resolveNodeModule(root, id, resolver)
+    if (nodeModuleInfo) {
+      return serve(id, nodeModuleInfo.entryFilePath!, 'node_modules')
+    }
+
+    const nodeModuleFilePath = resolveNodeModuleFile(importerFilePath, id)
+    if (nodeModuleFilePath) {
+      return serve(id, nodeModuleFilePath, 'node_modules')
     }
 
     // resolve relative path request inside unoptimized package while the importer is lack of /index.js
