@@ -24,21 +24,23 @@ export const clientPlugin: ServerPlugin = ({ app, config }) => {
 
   app.use(async (ctx, next) => {
     if (ctx.path === clientPublicPath) {
-      const socketProtocol = ctx.protocol.toString() === 'https' ? 'wss' : 'ws'
-      let socketUrl = `${socketProtocol}://${ctx.host.toString()}`
+      let socketProtocol = null // infer on client by default
+      let socketHost = ctx.host.toString()
       if (config.hmr && typeof config.hmr === 'object') {
         // hmr option has highest priory
-        const protocol = config.hmr.protocol || socketProtocol
+        socketProtocol = config.hmr.protocol || null
         const hostname = config.hmr.hostname || ctx.hostname
         const port = config.hmr.port || ctx.port
-        socketUrl = `${protocol}://${hostname}:${port}`
+        socketHost = `${hostname}:${port}`
         if (config.hmr.path) {
-          socketUrl = socketUrl + '/' + config.hmr.path
+          socketHost += `/${config.hmr.path}`
         }
       }
       ctx.type = 'js'
       ctx.status = 200
-      ctx.body = clientCode.replace(`__HOST__`, JSON.stringify(socketUrl))
+      ctx.body = clientCode
+        .replace(`__HMR_PROTOCOL__`, JSON.stringify(socketProtocol))
+        .replace(`__HMR_HOST__`, JSON.stringify(socketHost))
     } else {
       if (ctx.path === legacyPublicPath) {
         console.error(
