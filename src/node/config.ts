@@ -13,6 +13,7 @@ import {
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
+  Plugin as RollupPlugin,
   OutputChunk
 } from 'rollup'
 import {
@@ -219,7 +220,7 @@ export interface ServerConfig extends SharedConfig {
   proxy?: Record<string, string | ProxiesOptions>
   /**
    * A plugin function that configures the dev server. Receives a server plugin
-   * context object just like the internal server plguins. Can also be an array
+   * context object just like the internal server plugins. Can also be an array
    * of multiple server plugin functions.
    */
   configureServer?: ServerPlugin | ServerPlugin[]
@@ -289,7 +290,7 @@ export interface BuildConfig extends SharedConfig {
    *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
-  rollupInputOptions?: RollupInputOptions
+  rollupInputOptions?: ViteRollupInputOptions
   /**
    * Will be passed to bundle.generate()
    *
@@ -337,6 +338,25 @@ export interface BuildConfig extends SharedConfig {
    * @default true
    */
   enableRollupPluginVue?: boolean
+}
+
+export interface ViteRollupInputOptions extends RollupInputOptions {
+  /**
+   * @deprecated use `pluginsPreBuild` or `pluginsPostBuild` instead
+   */
+  plugins?: RollupPlugin[]
+  /**
+   * Rollup plugins that passed before Vite's transform plugins
+   */
+  pluginsPreBuild?: RollupPlugin[]
+  /**
+   * Rollup plugins that passed after Vite's transform plugins
+   */
+  pluginsPostBuild?: RollupPlugin[]
+  /**
+   * Rollup plugins for optimizer
+   */
+  pluginsOptimizer?: RollupPlugin[]
 }
 
 export interface UserConfig extends BuildConfig, ServerConfig {
