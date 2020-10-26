@@ -92,6 +92,13 @@ export function createServer(config: ServerConfig): Server {
     return next()
   })
 
+  // cors
+  if (config.cors) {
+    app.use(
+      require('@koa/cors')(typeof config.cors === 'boolean' ? {} : config.cors)
+    )
+  }
+
   const resolvedPlugins = [
     // rewrite and source map plugins take highest priority and should be run
     // after all other middlewares have finished

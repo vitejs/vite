@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@babel/parser": "^7.11.5",
+    "@koa/cors": "^3.1.0",
     "@rollup/plugin-commonjs": "^15.0.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^9.0.0",
