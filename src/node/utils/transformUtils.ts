@@ -33,13 +33,21 @@ export function injectScriptToHtml(html: string, script: string) {
 export async function transformIndexHtml(
   html: string,
   transforms: IndexHtmlTransform[] = [],
-  flush: 'pre' | 'post',
+  apply: 'pre' | 'post',
   isBuild = false
 ) {
-  const trans = transforms.filter((t) => t.flush === flush)
+  const trans = transforms
+    .map((t) => {
+      return typeof t === 'function' && apply === 'post'
+        ? t
+        : t.apply === apply
+        ? t.transform
+        : undefined
+    })
+    .filter(Boolean)
   let code = html
-  for (const tranform of trans) {
-    code = await tranform.transform({ isBuild, code })
+  for (const transform of trans) {
+    code = await transform!({ isBuild, code })
   }
   return code
 }

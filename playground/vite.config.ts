@@ -28,10 +28,7 @@ const config: UserConfig = {
     img: ['src', 'data-src']
   },
   indexHtmlTransforms: [
-    {
-      flush: 'pre',
-      transform: (ctx) => ctx.code.replace(/Vite App/, 'Vite Playground')
-    }
+    ({ code }) => code.replace(/Vite App/, 'Vite Playground')
   ],
   emitManifest: true
 }

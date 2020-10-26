@@ -35,11 +35,6 @@ export interface TransformContext extends TransformTestContext {
   code: string
 }
 
-export interface IndexHtmlTransformContext {
-  code: string
-  isBuild: boolean
-}
-
 export interface TransformResult {
   code: string
   map?: SourceMap
@@ -54,13 +49,25 @@ export interface Transform {
   transform: TransformFn
 }
 
-export interface IndexHtmlTransform {
-  /**
-   * Timing for applying the transform.
-   */
-  flush: 'pre' | 'post'
-  transform: (ctx: IndexHtmlTransformContext) => string | Promise<string>
+export interface IndexHtmlTransformContext {
+  code: string
+  isBuild: boolean
 }
+
+export type IndexHtmlTransformFn = (
+  ctx: IndexHtmlTransformContext
+) => string | Promise<string>
+
+export type IndexHtmlTransform =
+  | IndexHtmlTransformFn
+  | {
+      /**
+       * Timing for applying the transform.
+       * @default: 'post'
+       */
+      apply?: 'pre' | 'post'
+      transform: IndexHtmlTransformFn
+    }
 
 export type CustomBlockTransform = TransformFn
 
