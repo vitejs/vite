@@ -832,7 +832,7 @@ describe('vite', () => {
     declareTests(false)
 
     test('hmr (index.html full-reload)', async () => {
-      expect(await getText('title')).toMatch('Vite App')
+      expect(await getText('title')).toMatch('Vite Playground')
       // hmr
       const reload = page.waitForNavigation({
         waitUntil: 'domcontentloaded'
@@ -841,12 +841,12 @@ describe('vite', () => {
         content.replace('Vite App', 'Vite App Test')
       )
       await reload
-      await expectByPolling(() => getText('title'), 'Vite App Test')
+      await expectByPolling(() => getText('title'), 'Vite Playground Test')
     })
 
     test('hmr (html full-reload)', async () => {
       await page.goto('http://localhost:3000/test.html')
-      expect(await getText('title')).toMatch('Vite App')
+      expect(await getText('title')).toMatch('Vite Playground')
       // hmr
       const reload = page.waitForNavigation({
         waitUntil: 'domcontentloaded'
@@ -855,7 +855,7 @@ describe('vite', () => {
         content.replace('Vite App', 'Vite App Test')
       )
       await reload
-      await expectByPolling(() => getText('title'), 'Vite App Test')
+      await expectByPolling(() => getText('title'), 'Vite Playground Test')
     })
 
     // Assert that all edited files are reflected on page reload

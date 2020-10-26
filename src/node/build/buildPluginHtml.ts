@@ -1,8 +1,16 @@
 import { Plugin, RollupOutput, OutputChunk } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
-import { isExternalUrl, cleanUrl, isDataUrl } from '../utils/pathUtils'
+import MagicString from 'magic-string'
+import {
+  isExternalUrl,
+  cleanUrl,
+  isDataUrl,
+  transformIndexHtml
+} from '../utils'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
+import { InternalResolver } from '../resolver'
+import { UserConfig } from '../config'
 import {
   parse as Parse,
   transform as Transform,
@@ -11,8 +19,6 @@ import {
   TextNode,
   AttributeNode
 } from '@vue/compiler-dom'
-import MagicString from 'magic-string'
-import { InternalResolver } from '../resolver'
 
 export const createBuildHtmlPlugin = async (
   root: string,
@@ -21,7 +27,8 @@ export const createBuildHtmlPlugin = async (
   assetsDir: string,
   inlineLimit: number,
   resolver: InternalResolver,
-  shouldPreload: ((chunk: OutputChunk) => boolean) | null
+  shouldPreload: ((chunk: OutputChunk) => boolean) | null,
+  config: UserConfig
 ) => {
   if (!indexPath || !fs.existsSync(indexPath)) {
     return {
@@ -31,10 +38,16 @@ export const createBuildHtmlPlugin = async (
   }
 
   const rawHtml = await fs.readFile(indexPath, 'utf-8')
+  const preprocessedHtml = await transformIndexHtml(
+    rawHtml,
+    config.indexHtmlTransforms,
+    'pre',
+    true
+  )
   const assets = new Map<string, Buffer>()
   let { html: processedHtml, js } = await compileHtml(
     root,
-    rawHtml,
+    preprocessedHtml,
     publicBasePath,
     assetsDir,
     inlineLimit,
@@ -91,7 +104,7 @@ export const createBuildHtmlPlugin = async (
     }
   }
 
-  const renderIndex = (bundleOutput: RollupOutput['output']) => {
+  const renderIndex = async (bundleOutput: RollupOutput['output']) => {
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {
@@ -112,7 +125,12 @@ export const createBuildHtmlPlugin = async (
         }
       }
     }
-    return processedHtml
+    return await transformIndexHtml(
+      processedHtml,
+      config.indexHtmlTransforms,
+      'post',
+      true
+    )
   }
 
   return {
