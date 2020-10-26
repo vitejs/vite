@@ -26,7 +26,8 @@ const config: UserConfig = {
   },
   vueTransformAssetUrls: {
     img: ['src', 'data-src']
-  }
+  },
+  emitManifest: true
 }
 
 export default config

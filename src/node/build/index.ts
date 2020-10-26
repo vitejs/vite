@@ -31,6 +31,7 @@ import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
 import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
 import { createBuildWasmPlugin } from './buildPluginWasm'
+import { createBuildManifestPlugin } from './buildPluginManifest'
 
 export interface BuildResult {
   html: string
@@ -251,6 +252,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
     rollupOutputOptions = {},
     emitIndex = true,
     emitAssets = true,
+    emitManifest = false,
     write = true,
     minify = true,
     terserOptions = {},
@@ -423,7 +425,9 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
         : undefined,
       // #728 user plugins should apply after `@rollup/plugin-commonjs`
       // #471#issuecomment-683318951 user plugin after internal plugin
-      ...(rollupInputOptions.pluginsPostBuild || [])
+      ...(rollupInputOptions.pluginsPostBuild || []),
+      // vite:manifest
+      emitManifest ? createBuildManifestPlugin() : undefined
     ].filter(Boolean)
   })
 
@@ -465,7 +469,7 @@ export async function build(options: BuildConfig): Promise<BuildResult> {
       }
     }
 
-    // print chunk and assets info
+    // write js chunks and assets
     for (const chunk of output) {
       const filepath = path.join(resolvedAssetsPath, chunk.fileName)
       if (chunk.type === 'chunk') {
