@@ -20,7 +20,7 @@ import {
   createEsbuildPlugin,
   createEsbuildRenderChunkPlugin
 } from './build/buildPluginEsbuild'
-import { ServerPlugin } from './server'
+import { Context, ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
 import { Transform, CustomBlockTransform } from './transform'
 import { DepOptimizationOptions } from './optimizer'
@@ -38,6 +38,40 @@ export type PreprocessOptions = SFCStyleCompileOptions['preprocessOptions']
 export type CssPreprocessOptions = Partial<
   Record<PreprocessLang, PreprocessOptions>
 >
+
+/**
+ * https://github.com/koajs/cors#corsoptions
+ */
+export interface CorsOptions {
+  /**
+   * `Access-Control-Allow-Origin`, default is request Origin header
+   */
+  origin?: string | ((ctx: Context) => string)
+  /**
+   * `Access-Control-Allow-Methods`, default is 'GET,HEAD,PUT,POST,DELETE,PATCH'
+   */
+  allowMethods?: string | string[]
+  /**
+   * `Access-Control-Expose-Headers`
+   */
+  exposeHeaders?: string | string[]
+  /**
+   * `Access-Control-Allow-Headers`
+   */
+  allowHeaders?: string | string[]
+  /**
+   * `Access-Control-Max-Age` in seconds
+   */
+  maxAge?: string | number
+  /**
+   * `Access-Control-Allow-Credentials`, default is false
+   */
+  credentials?: boolean | ((ctx: Context) => boolean)
+  /**
+   * Add set headers to `err.header` if an error is thrown
+   */
+  keepHeadersOnError?: boolean
+}
 
 export { Resolver, Transform }
 
@@ -218,6 +252,13 @@ export interface ServerConfig extends SharedConfig {
    * ```
    */
   proxy?: Record<string, string | ProxiesOptions>
+  /**
+   * Configure CORS for the dev server.
+   * Uses [@koa/cors](https://github.com/koajs/cors).
+   * Set to `true` to allow all methods from any origin, or configure separately
+   * using an object.
+   */
+  cors?: CorsOptions | boolean
   /**
    * A plugin function that configures the dev server. Receives a server plugin
    * context object just like the internal server plugins. Can also be an array
