@@ -302,7 +302,7 @@ export interface BuildConfig extends SharedConfig {
    * Whether to generate sourcemap
    * @default false
    */
-  sourcemap?: boolean
+  sourcemap?: RollupOutputOptions['sourcemap']
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
