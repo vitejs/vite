@@ -3,7 +3,6 @@ const path = require('path')
 const execa = require('execa')
 const puppeteer = require('puppeteer')
 const moment = require('moment')
-const { EPERM } = require('constants')
 
 jest.setTimeout(100000)
 
@@ -788,6 +787,16 @@ describe('vite', () => {
       )
       // should be inside the async chunk
       expect(code).toMatch(colorToMatch)
+    })
+
+    test('build manifest', async () => {
+      const manifest = JSON.parse(
+        await fs.readFile(path.join(tempDir, 'dist/_assets/manifest.json'))
+      )
+      const indexPath = manifest['index.js']
+      expect(
+        await fs.stat(path.join(tempDir, `dist/_assets/${indexPath}`))
+      ).toBeTruthy()
     })
   })
 
