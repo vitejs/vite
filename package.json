@@ -49,16 +49,16 @@
     ]
   },
   "dependencies": {
-    "@babel/parser": "^7.11.5",
+    "@babel/parser": "^7.12.3",
     "@koa/cors": "^3.1.0",
-    "@rollup/plugin-commonjs": "^15.0.0",
+    "@rollup/plugin-commonjs": "^15.1.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^9.0.0",
     "@rollup/pluginutils": "^4.0.0",
     "@types/koa": "^2.11.4",
     "@types/lru-cache": "^5.1.0",
-    "@vue/compiler-dom": "^3.0.0-rc.10",
-    "@vue/compiler-sfc": "^3.0.0-rc.10",
+    "@vue/compiler-dom": "^3.0.2",
+    "@vue/compiler-sfc": "^3.0.2",
     "brotli-size": "^4.0.0",
     "chalk": "^4.1.0",
     "chokidar": "^3.4.2",
@@ -67,7 +67,7 @@
     "dotenv": "^8.2.0",
     "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^0.3.25",
-    "esbuild": "^0.6.33",
+    "esbuild": "^0.7.21",
     "etag": "^1.8.1",
     "execa": "^4.0.3",
     "fs-extra": "^9.0.1",
@@ -98,7 +98,7 @@
     "rollup-plugin-web-worker-loader": "^1.3.1",
     "selfsigned": "^1.10.8",
     "slash": "^3.0.0",
-    "vue": "^3.0.0-rc.10",
+    "vue": "^3.0.2",
     "ws": "^7.3.1"
   },
   "devDependencies": {
@@ -137,7 +137,7 @@
     "semver": "^7.3.2",
     "source-map-support": "^0.5.19",
     "typescript": "^4.0.2",
-    "vue-router": "^4.0.0-beta.2",
+    "vue-router": "^4.0.0-rc.1",
     "vuex": "^4.0.0-beta.4",
     "yorkie": "^2.0.0"
   }
