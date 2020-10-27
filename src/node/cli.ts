@@ -76,8 +76,8 @@ cli
 
 // serve
 cli
-  .command('serve [root]')
-  .alias('') // default command
+  .command('[root]') // default command
+  .alias('serve')
   .option('--port', '[number] port to listen to')
   .option('--open', '[boolean] open browser on server start')
   .action(async (root, argv) => {
