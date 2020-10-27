@@ -1,21 +1,22 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { Plugin, OutputBundle } from 'rollup'
-import { cleanUrl, isStaticAsset } from '../utils'
-import hash_sum from 'hash-sum'
+import { cleanUrl } from '../utils'
 import slash from 'slash'
 import mime from 'mime-types'
+import { InternalResolver } from '../resolver'
 
 const debug = require('debug')('vite:build:asset')
 
 interface AssetCacheEntry {
   content?: Buffer
   fileName?: string
-  url: string
+  url: string | undefined
 }
 
 const assetResolveCache = new Map<string, AssetCacheEntry>()
 const publicDirRE = /^public(\/|\\)/
+export const injectAssetRe = /import.meta.ROLLUP_FILE_URL_(\w+)/
 
 export const resolveAsset = async (
   id: string,
@@ -54,11 +55,7 @@ export const resolveAsset = async (
   }
 
   if (!resolved) {
-    const ext = path.extname(id)
-    const baseName = path.basename(id, ext)
-    const resolvedFileName = `${baseName}.${hash_sum(id)}${ext}`
-
-    let url = publicBase + slash(path.join(assetsDir, resolvedFileName))
+    let url: string | undefined
     let content: Buffer | undefined = await fs.readFile(id)
     if (!id.endsWith(`.svg`) && content.length < Number(inlineLimit)) {
       url = `data:${mime.lookup(id)};base64,${content.toString('base64')}`
@@ -67,7 +64,7 @@ export const resolveAsset = async (
 
     resolved = {
       content,
-      fileName: resolvedFileName,
+      fileName: path.basename(id),
       url
     }
   }
@@ -93,33 +90,45 @@ export const registerAssets = (
 
 export const createBuildAssetPlugin = (
   root: string,
+  resolver: InternalResolver,
   publicBase: string,
   assetsDir: string,
-  inlineLimit: number
+  inlineLimit: number,
+  emitAssets: boolean
 ): Plugin => {
-  const assets = new Map<string, Buffer>()
-
   return {
     name: 'vite:asset',
     async load(id) {
-      if (isStaticAsset(id)) {
-        const { fileName, content, url } = await resolveAsset(
+      if (resolver.isAssetRequest(id)) {
+        let { fileName, content, url } = await resolveAsset(
           id,
           root,
           publicBase,
           assetsDir,
           inlineLimit
         )
-        if (fileName && content) {
-          assets.set(fileName, content)
+        if (!url && emitAssets && fileName && content) {
+          url =
+            'import.meta.ROLLUP_FILE_URL_' +
+            this.emitFile({
+              name: fileName,
+              type: 'asset',
+              source: content
+            })
         }
-        debug(`${id} -> ${url.startsWith('data:') ? `base64 inlined` : url}`)
+        debug(`${id} -> ${url!.startsWith('data:') ? `base64 inlined` : id}`)
         return `export default ${JSON.stringify(url)}`
       }
     },
 
-    generateBundle(_options, bundle) {
-      registerAssets(assets, bundle)
+    async renderChunk(code) {
+      let match
+      while ((match = injectAssetRe.exec(code))) {
+        const outputFilepath =
+          publicBase + slash(path.join(assetsDir, this.getFileName(match[1])))
+        code = code.replace(match[0], outputFilepath)
+      }
+      return { code, map: null }
     }
   }
 }

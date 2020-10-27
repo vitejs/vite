@@ -1,8 +1,16 @@
 import { Plugin, RollupOutput, OutputChunk } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
-import { isExternalUrl, cleanUrl, isDataUrl } from '../utils/pathUtils'
+import MagicString from 'magic-string'
+import {
+  isExternalUrl,
+  cleanUrl,
+  isDataUrl,
+  transformIndexHtml
+} from '../utils'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
+import { InternalResolver } from '../resolver'
+import { UserConfig } from '../config'
 import {
   parse as Parse,
   transform as Transform,
@@ -11,8 +19,6 @@ import {
   TextNode,
   AttributeNode
 } from '@vue/compiler-dom'
-import MagicString from 'magic-string'
-import { InternalResolver } from '../resolver'
 
 export const createBuildHtmlPlugin = async (
   root: string,
@@ -21,7 +27,8 @@ export const createBuildHtmlPlugin = async (
   assetsDir: string,
   inlineLimit: number,
   resolver: InternalResolver,
-  shouldPreload: ((chunk: OutputChunk) => boolean) | null
+  shouldPreload: ((chunk: OutputChunk) => boolean) | null,
+  config: UserConfig
 ) => {
   if (!indexPath || !fs.existsSync(indexPath)) {
     return {
@@ -31,10 +38,16 @@ export const createBuildHtmlPlugin = async (
   }
 
   const rawHtml = await fs.readFile(indexPath, 'utf-8')
+  const preprocessedHtml = await transformIndexHtml(
+    rawHtml,
+    config.indexHtmlTransforms,
+    'pre',
+    true
+  )
   const assets = new Map<string, Buffer>()
   let { html: processedHtml, js } = await compileHtml(
     root,
-    rawHtml,
+    preprocessedHtml,
     publicBasePath,
     assetsDir,
     inlineLimit,
@@ -72,8 +85,8 @@ export const createBuildHtmlPlugin = async (
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/body>/.test(html)) {
-      return html.replace(/<\/body>/, `${tag}\n</body>`)
+    if (/<\/head>/.test(html)) {
+      return html.replace(/<\/head>/, `${tag}\n</head>`)
     } else {
       return html + '\n' + tag
     }
@@ -91,15 +104,16 @@ export const createBuildHtmlPlugin = async (
     }
   }
 
-  const renderIndex = (bundleOutput: RollupOutput['output']) => {
+  const renderIndex = async (bundleOutput: RollupOutput['output']) => {
+    let result = processedHtml
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {
           // js entry chunk
-          processedHtml = injectScript(processedHtml, chunk.fileName)
+          result = injectScript(result, chunk.fileName)
         } else if (shouldPreload && shouldPreload(chunk)) {
           // async preloaded chunk
-          processedHtml = injectPreload(processedHtml, chunk.fileName)
+          result = injectPreload(result, chunk.fileName)
         }
       } else {
         // imported css chunks
@@ -108,11 +122,17 @@ export const createBuildHtmlPlugin = async (
           chunk.source &&
           !assets.has(chunk.fileName)
         ) {
-          processedHtml = injectCSS(processedHtml, chunk.fileName)
+          result = injectCSS(result, chunk.fileName)
         }
       }
     }
-    return processedHtml
+
+    return await transformIndexHtml(
+      result,
+      config.indexHtmlTransforms,
+      'post',
+      true
+    )
   }
 
   return {
@@ -154,7 +174,8 @@ const compileHtml = async (
   const viteHtmlTransform: NodeTransform = (node) => {
     if (node.type === NodeTypes.ELEMENT) {
       if (node.tag === 'script') {
-        let shouldRemove = true
+        let shouldRemove = false
+
         const srcAttr = node.props.find(
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
         ) as AttributeNode
@@ -162,25 +183,29 @@ const compileHtml = async (
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'type'
         ) as AttributeNode
         const isJsModule =
-          !typeAttr ||
-          (typeAttr && typeAttr.value && typeAttr.value.content === 'module')
-        if (srcAttr && srcAttr.value) {
-          if (!isExternalUrl(srcAttr.value.content) && isJsModule) {
-            // <script type="module" src="..."/>
-            // add it as an import
-            js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
-          } else {
-            shouldRemove = false
+          typeAttr && typeAttr.value && typeAttr.value.content === 'module'
+
+        if (isJsModule) {
+          if (srcAttr && srcAttr.value) {
+            if (!isExternalUrl(srcAttr.value.content)) {
+              // <script type="module" src="..."/>
+              // add it as an import
+              js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
+              shouldRemove = true
+            }
+          } else if (node.children.length) {
+            // <script type="module">...</script>
+            // add its content
+            // TODO: if there are multiple inline module scripts on the page,
+            // they should technically be turned into separate modules, but
+            // it's hard to imagine any reason for anyone to do that.
+            js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
+            shouldRemove = true
           }
-        } else if (node.children.length && isJsModule) {
-          // <script type="module">...</script>
-          // add its content
-          // TODO: if there are multiple inline module scripts on the page,
-          // they should technically be turned into separate modules, but
-          // it's hard to imagine any reason for anyone to do that.
-          js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
         }
-        if (shouldRemove && isJsModule) {
+
+        if (shouldRemove) {
+          console.log('removing')
           // remove the script tag from the html. we are going to inject new
           // ones in the end.
           s.remove(node.loc.start.offset, node.loc.end.offset)

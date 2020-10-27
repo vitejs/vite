@@ -32,6 +32,7 @@ Options:
   --config, -c               [string]  use specified config file
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
+  --entry                    [string]  entry file for build (default: index.html)
   --base                     [string]  public base path for build (default: /)
   --outDir                   [string]  output directory for build (default: dist)
   --assetsDir                [string]  directory under outDir to place assets in (default: assets)

@@ -1,5 +1,5 @@
 <template>
-  <h2>Test rewrite in optimized module</h2>
+  <h2>Test rewrite in unoptimized module</h2>
   <p class="test-rewrite-in-unoptimized">{{ msg }}</p>
 </template>
 

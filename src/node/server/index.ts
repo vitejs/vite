@@ -19,13 +19,14 @@ import { createServerTransformPlugin } from '../transform'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
-import { cachedRead } from '../utils'
+import { cachedRead, toArray } from '../utils'
 import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
 import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
 import { webWorkerPlugin } from './serverPluginWebWorker'
 import { wasmPlugin } from './serverPluginWasm'
 import { clientPlugin } from './serverPluginClient'
+import { AddressInfo } from 'net'
 
 export type ServerPlugin = (ctx: ServerPluginContext) => void
 
@@ -56,7 +57,8 @@ export function createServer(config: ServerConfig): Server {
     transforms = [],
     vueCustomBlockTransforms = {},
     optimizeDeps = {},
-    enableEsbuild = true
+    enableEsbuild = true,
+    assetsInclude
   } = config
 
   const app = new Koa<State, Context>()
@@ -69,7 +71,7 @@ export function createServer(config: ServerConfig): Server {
       pollInterval: 10
     }
   }) as HMRWatcher
-  const resolver = createResolver(root, resolvers, alias)
+  const resolver = createResolver(root, resolvers, alias, assetsInclude)
 
   const context: ServerPluginContext = {
     root,
@@ -90,6 +92,13 @@ export function createServer(config: ServerConfig): Server {
     return next()
   })
 
+  // cors
+  if (config.cors) {
+    app.use(
+      require('@koa/cors')(typeof config.cors === 'boolean' ? {} : config.cors)
+    )
+  }
+
   const resolvedPlugins = [
     // rewrite and source map plugins take highest priority and should be run
     // after all other middlewares have finished
@@ -97,7 +106,7 @@ export function createServer(config: ServerConfig): Server {
     moduleRewritePlugin,
     htmlRewritePlugin,
     // user plugins
-    ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
+    ...toArray(configureServer),
     envPlugin,
     moduleResolvePlugin,
     proxyPlugin,
@@ -128,10 +137,12 @@ export function createServer(config: ServerConfig): Server {
     if (optimizeDeps.auto !== false) {
       await require('../optimizer').optimizeDeps(config)
     }
-    const listener = listen(port, ...args)
-    context.port = server.address().port
-    return listener
+    return listen(port, ...args)
   }) as any
+
+  server.once('listening', () => {
+    context.port = (server.address() as AddressInfo).port
+  })
 
   return server
 }
@@ -139,7 +150,7 @@ export function createServer(config: ServerConfig): Server {
 function resolveServer(
   { https = false, httpsOptions = {}, proxy }: ServerConfig,
   requestListener: RequestListener
-) {
+): Server {
   if (https) {
     if (proxy) {
       // #484 fallback to http1 when proxy is needed.

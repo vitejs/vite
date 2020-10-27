@@ -26,7 +26,11 @@ const config: UserConfig = {
   },
   vueTransformAssetUrls: {
     img: ['src', 'data-src']
-  }
+  },
+  indexHtmlTransforms: [
+    ({ code }) => code.replace(/Vite App/, 'Vite Playground')
+  ],
+  emitManifest: true
 }
 
 export default config

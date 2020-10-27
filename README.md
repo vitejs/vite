@@ -75,6 +75,7 @@ Vite assumes you are targeting modern browsers and by default only transpiles yo
 - [Dev Server Proxy](#dev-server-proxy)
 - [Production Build](#production-build)
 - [Modes and Environment Variables](#modes-and-environment-variables)
+- [Using Vite with Traditional Backend](#using-vite-with-traditional-backend)
 
 Vite tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org/) as much as possible. If you've used `vue-cli` or other webpack-based boilerplates before, you should feel right at home. That said, do expect things to be different here and there.
 
@@ -144,7 +145,7 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
   }
   ```
 
-  For the full API, consult [hmr.d.ts](https://github.com/vitejs/vite/blob/master/hmr.d.ts).
+  For the full API, consult [importMeta.d.ts](https://github.com/vitejs/vite/blob/master/importMeta.d.ts).
 
   Note that Vite's HMR does not actually swap the originally imported module: if an accepting module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the accepting module will not be notified of the change.
 
@@ -173,6 +174,8 @@ Both CSS and JSON imports also support Hot Module Replacement.
 ### Asset URL Handling
 
 You can reference static assets in your `*.vue` templates, styles and plain `.css` files either using absolute public paths (based on project root) or relative paths (based on your file system). The latter is similar to the behavior you are used to if you have used `vue-cli` or webpack's `file-loader`.
+
+Common image, media, and font filetypes are detected and included as assets automatically. You can override this using the `assetsInclude` configuration option.
 
 All referenced assets, including those using absolute paths, will be copied to the dist folder with a hashed file name in the production build. Never-referenced assets will not be copied. Similar to `vue-cli`, image assets smaller than 4kb will be base64 inlined.
 
@@ -409,6 +412,38 @@ When running `vite`, environment variables are loaded from the following files i
 
 **Note:** only variables prefixed with `VITE_` are exposed to your code. e.g. `VITE_SOME_KEY=123` will be exposed as `import.meta.env.VITE_SOME_KEY`, but `SOME_KEY=123` will not. This is because the `.env` files may be used by some users for server-side or build scripts and may contain sensitive information that should not be exposed in code shipped to browsers.
 
+### Using Vite with Traditional Backend
+
+If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, here's what you can do:
+
+1. In your Vite config, enable `cors` and `emitManifest`:
+
+    ```js
+    // vite.config.js
+    export default {
+      cors: true,
+      emitManifest: true
+    }
+    ```
+
+2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
+
+    ```html
+    <!-- if development -->
+    <script type="module" src="http://localhost:3000/vite/client"></script>
+    <script type="module" src="http://localhost:3000/main.js"></script>
+    ```
+
+    Also make sure the server is configured to serve static assets in the Viter working directory, otherwise assets such as images won't be loaded properly.
+
+3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. You can use this file to render links with hashed filenames (syntax here for explnatation only, substitute with your server templating language):
+
+    ```html
+    <!-- if production -->
+    <link rel="stylesheet" href="/_assets/{{ maniest['style.css'] }}">
+    <script type="module" src="/_assets/{{ maniest['index.js] }}"></script>
+    ```
+
 ## API
 
 ### Dev Server
@@ -518,7 +553,7 @@ Both Snowpack v2 and Vite offer native ES module import based dev servers. Vite'
 
 - Both solutions can also bundle the app for production, but Vite uses Rollup with built-in config while Snowpack delegates it to Parcel/webpack via additional plugins. Vite will in most cases build faster and produce smaller bundles. In addition, tighter integration with the bundler makes it easier to author Vite transforms and plugins that modify dev/build configs at the same.
 
-- Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fined tuned to produce the most efficient bundle.
+- Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fine tuned to produce the most efficient bundle.
 
 ## Contribution
 

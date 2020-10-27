@@ -1,3 +1,118 @@
+# [1.0.0-rc.8](https://github.com/vitejs/vite/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2020-10-26)
+
+
+
+# [1.0.0-rc.7](https://github.com/vitejs/vite/compare/v1.0.0-rc.6...v1.0.0-rc.7) (2020-10-26)
+
+
+### Bug Fixes
+
+* **build:** add `Symbol.toStringTag` when ssr build es module into cjs chunk ([#951](https://github.com/vitejs/vite/issues/951)) ([344a86a](https://github.com/vitejs/vite/commit/344a86a7f02727eaf34bef2eacef48099ffc686a)), closes [#764](https://github.com/vitejs/vite/issues/764)
+* **dev:** resolve sub-package inside node module, let `module` filed inside `package.json` can be take first. ([76fcfa7](https://github.com/vitejs/vite/commit/76fcfa71e9fe8ee69f0bbb35cdfeeede6fe3bfe0)), closes [#829](https://github.com/vitejs/vite/issues/829)
+* **hmr:** register component on import ([95e3342](https://github.com/vitejs/vite/commit/95e334296b2883b1deae5983042b089efe946f98)), closes [#959](https://github.com/vitejs/vite/issues/959)
+* **hmr:** sniff hmr protocol on client when not specifically configured ([e1c7500](https://github.com/vitejs/vite/commit/e1c75003644868afaaaedd939eae5972f7ef40de)), closes [#956](https://github.com/vitejs/vite/issues/956)
+* **html:** avoid mutating outer scope in `renderIndex` function ([f2da029](https://github.com/vitejs/vite/commit/f2da0293e7738bb6e579c934c3c1c35fcddc5b5d))
+* always resolve `outDir` relative to `root` ([f5dee86](https://github.com/vitejs/vite/commit/f5dee8611194cb81dcdd44787c83777c92fddefc))
+* update rollup-pluginutils import ([#954](https://github.com/vitejs/vite/issues/954)) ([dcf1eaa](https://github.com/vitejs/vite/commit/dcf1eaa74ad53d63af5605f1be1224c019c7533d))
+
+
+### Features
+
+* add `configureBuild` hook ([1c2a9b9](https://github.com/vitejs/vite/commit/1c2a9b981c70ead236b4d91460ed23e3f619f41c))
+* let `configureBuild` hooks inject Rollup bundles ([03ef2ed](https://github.com/vitejs/vite/commit/03ef2ed00e4e1f519ce5aabf36700b2ac404f99d))
+* let build plugins return post-build hook ([ec47ab8](https://github.com/vitejs/vite/commit/ec47ab82f8127bbc174200267a93d1c8918c0ba2))
+* transforms for index.html ([#793](https://github.com/vitejs/vite/issues/793)) ([ebb964e](https://github.com/vitejs/vite/commit/ebb964e58568b818160ae8b2aa3168197d16720d))
+* **build:** emitManifest ([75d7679](https://github.com/vitejs/vite/commit/75d7679a8348f2df2cda21f805dc6df562fdb996))
+* **build:** support alternative entry for build ([6c66e31](https://github.com/vitejs/vite/commit/6c66e316c33105a894eff33343f0527139b06bd9))
+* **config:** add pluginsPreBuild, etc. for rollup ([#953](https://github.com/vitejs/vite/issues/953)) ([cd3666a](https://github.com/vitejs/vite/commit/cd3666ac6175344d7c0d88450ffdb824794e1e58))
+* **dev:** support configuring CORS ([f416f9f](https://github.com/vitejs/vite/commit/f416f9f32e80e7e6be508391053d155a3a5189d4))
+
+
+### Reverts
+
+* Revert "refactor: resolve relative path request inside unoptimized package wh… (#867)" ([ec8f46d](https://github.com/vitejs/vite/commit/ec8f46dd09ac3b2b7e6ffc709227af09addaef59)), closes [#867](https://github.com/vitejs/vite/issues/867)
+
+
+
+# [1.0.0-rc.6](https://github.com/vitejs/vite/compare/v1.0.0-rc.5...v1.0.0-rc.6) (2020-10-23)
+
+
+### Bug Fixes
+
+* apply user rollup plugins last ([#855](https://github.com/vitejs/vite/issues/855)) ([1760658](https://github.com/vitejs/vite/commit/1760658de19e9df6ab67677993fc4defb329354a))
+* ensure source maps can be traced by debugger ([#886](https://github.com/vitejs/vite/issues/886)) ([ba7442f](https://github.com/vitejs/vite/commit/ba7442fffd1f4787bd542f09dae93bc3197e33f9)), closes [#675](https://github.com/vitejs/vite/issues/675)
+* **build:** do not merge non-module inline scripts into bundle ([edf0886](https://github.com/vitejs/vite/commit/edf088686794869d3fa92c9cb4a6a15b04187d06)), closes [#719](https://github.com/vitejs/vite/issues/719)
+* **build:** relative `sources` in production bundle sourcemap ([#934](https://github.com/vitejs/vite/issues/934)) ([8264fa8](https://github.com/vitejs/vite/commit/8264fa85904ef8f89065d76fc10b488a636306bf))
+* **config:** do not throw when user speicifies type: "module" in package.json ([8acd49e](https://github.com/vitejs/vite/commit/8acd49ee931e315b9b506e816972beb7e4786b59)), closes [#917](https://github.com/vitejs/vite/issues/917)
+* **dev:** remove unnecessary warning ([#722](https://github.com/vitejs/vite/issues/722)) ([a2c4b24](https://github.com/vitejs/vite/commit/a2c4b24d4034242e6cf24a84fcc2cad94ae7aff4)), closes [#721](https://github.com/vitejs/vite/issues/721)
+* **optimizer:** ignore `@types/*` packages inside optimizer ([#812](https://github.com/vitejs/vite/issues/812)) ([aa81eb3](https://github.com/vitejs/vite/commit/aa81eb34c19f55d6617de25a5aa9ad7adbe2eb8c)), closes [#804](https://github.com/vitejs/vite/issues/804)
+* **optimizer:** remove `?commonjs-proxy` injected by `rollup-plugin-commonjs` for assets ([#908](https://github.com/vitejs/vite/issues/908)) ([e3e7059](https://github.com/vitejs/vite/commit/e3e7059e9403138c63198f2269056e0db1139d0e)), closes [#903](https://github.com/vitejs/vite/issues/903)
+* **server:** only rewrite module script tags ([c18f387](https://github.com/vitejs/vite/commit/c18f3872a48cbcd493a83ee97c1441a92ac40e77))
+* **server:** read server port only after listening ([#943](https://github.com/vitejs/vite/issues/943)) ([eb039f9](https://github.com/vitejs/vite/commit/eb039f9821d96f7d3ec3ed839ba65a0fdcb8ceeb))
+
+
+### Features
+
+* Configurable asset inclusion ([#811](https://github.com/vitejs/vite/issues/811)) ([8378f1a](https://github.com/vitejs/vite/commit/8378f1a736eafa5d3eda856aaac0406ef430a9ae)), closes [#810](https://github.com/vitejs/vite/issues/810)
+* inject module scripts into head instead of body ([#882](https://github.com/vitejs/vite/issues/882)) ([28678a9](https://github.com/vitejs/vite/commit/28678a96055839a7b3c6320fd486ae04f58d4dc3)), closes [#881](https://github.com/vitejs/vite/issues/881)
+* let user config be a function ([#836](https://github.com/vitejs/vite/issues/836)) ([e06b73e](https://github.com/vitejs/vite/commit/e06b73e98c16decb79801293cb63076dc7bd4eee))
+* **hmr:** handle hmr when editing tailwind config ([#408](https://github.com/vitejs/vite/issues/408)) ([1d33ef3](https://github.com/vitejs/vite/commit/1d33ef38596c46a2e9ac96debb59c665e83614eb))
+
+
+
+# [1.0.0-rc.5](https://github.com/vitejs/vite/compare/v1.0.0-rc.4...v1.0.0-rc.5) (2020-10-23)
+
+
+### Bug Fixes
+
+* **build:** adjust allowed script tag types ([8b8f357](https://github.com/vitejs/vite/commit/8b8f3571558831c24a7b9b671dc8a1de427df51e)), closes [#724](https://github.com/vitejs/vite/issues/724)
+* **build:** correct replace `define` ([e24133e](https://github.com/vitejs/vite/commit/e24133e51cb9d2fc4a338a6efd44a455978e5020))
+* **build:** create at most one `esbuildService` ([#694](https://github.com/vitejs/vite/issues/694)) ([2acae21](https://github.com/vitejs/vite/commit/2acae21b197ccbfc332651247ebe2f9b25fde238)), closes [#693](https://github.com/vitejs/vite/issues/693)
+* **build:** css not be tree shake ([#803](https://github.com/vitejs/vite/issues/803)) ([34649b5](https://github.com/vitejs/vite/commit/34649b5fc3b8bef2e51e4fc0dc173a29df4a3b63)), closes [#795](https://github.com/vitejs/vite/issues/795)
+* **build:** inject css to dynamic chunk only if it is not empty ([#805](https://github.com/vitejs/vite/issues/805)) ([038a053](https://github.com/vitejs/vite/commit/038a053477029d799b57f0d3242005a951486a61))
+* **build:** normalize `vueTransformAssetUrls` if not pass through plugins ([#668](https://github.com/vitejs/vite/issues/668)) ([47eb448](https://github.com/vitejs/vite/commit/47eb448709fa09f8bd02e1d4159d68e467ed68a7)), closes [#661](https://github.com/vitejs/vite/issues/661)
+* **build:** only extract js module script tag in html ([#724](https://github.com/vitejs/vite/issues/724)) ([ef60d55](https://github.com/vitejs/vite/commit/ef60d55b67cf25508fe28a0c6cd2b9745b7f282a)), closes [#670](https://github.com/vitejs/vite/issues/670)
+* **build:** resolve external url ([#807](https://github.com/vitejs/vite/issues/807)) ([df2e388](https://github.com/vitejs/vite/commit/df2e3884ee65dfc717b3c24d06da074c3fa9bca3)), closes [#799](https://github.com/vitejs/vite/issues/799)
+* **build:** stop spinner on rollup error ([#835](https://github.com/vitejs/vite/issues/835)) ([78489b8](https://github.com/vitejs/vite/commit/78489b87c4b95ff8db86679b2f4a379591c0affa))
+* **config:** typo ([#935](https://github.com/vitejs/vite/issues/935)) ([08213b4](https://github.com/vitejs/vite/commit/08213b44ad79b8fc9b754115e416597326af5696))
+* **dev:** correctly normalize entry path on windows ([#736](https://github.com/vitejs/vite/issues/736)) ([49689e5](https://github.com/vitejs/vite/commit/49689e5d9ccb1e119951951e773d8826ec2221be)), closes [#735](https://github.com/vitejs/vite/issues/735)
+* **dev:** decode for `publicPath` ([#924](https://github.com/vitejs/vite/issues/924)) ([0ea245c](https://github.com/vitejs/vite/commit/0ea245c69ec9c7baef7b755e497e15e171695859)), closes [#920](https://github.com/vitejs/vite/issues/920)
+* **dev:** don't rewrite files inside public ([#602](https://github.com/vitejs/vite/issues/602)) ([2b544f3](https://github.com/vitejs/vite/commit/2b544f31bf8526b9f5ddee865c6c086f3edce756))
+* **dev:** hand file write end when change event emit in chokidar ([#824](https://github.com/vitejs/vite/issues/824)) ([a8f9595](https://github.com/vitejs/vite/commit/a8f95952650df7507c959478f2fa7048e6b7657b)), closes [#610](https://github.com/vitejs/vite/issues/610)
+* **dev:** ignore .git file with hmr ([#664](https://github.com/vitejs/vite/issues/664)) ([c9a2764](https://github.com/vitejs/vite/commit/c9a27643f4ca612c8280c4485a6feadbc973c1ca)), closes [#663](https://github.com/vitejs/vite/issues/663)
+* **dev:** strip utf-8 bom ([#814](https://github.com/vitejs/vite/issues/814)) ([ed2afe6](https://github.com/vitejs/vite/commit/ed2afe61c90847fba0191ce8633b41ecde20c73b))
+* **docs:** typo ([#843](https://github.com/vitejs/vite/issues/843)) ([2893a41](https://github.com/vitejs/vite/commit/2893a4149bbf2baf8a895a12ee6548148481a7bf))
+* add `@rollup/plugin-commonjs` before user plugin, let it correct… ([#746](https://github.com/vitejs/vite/issues/746)) ([f005c67](https://github.com/vitejs/vite/commit/f005c67f9865c8ec14a1c752d98962beb9decef5)), closes [#728](https://github.com/vitejs/vite/issues/728)
+* avoid overwriting the prorcess global ([#609](https://github.com/vitejs/vite/issues/609)) ([36422c2](https://github.com/vitejs/vite/commit/36422c2d5e0e0e59ef969d0b5287d98bfe7cc3ee))
+* bump `rollup-plugin-terser` + update `esbuild` target to `es2020… ([#723](https://github.com/vitejs/vite/issues/723)) ([5266b74](https://github.com/vitejs/vite/commit/5266b74218a7a080e5b0eeb63383543a932dd5de)), closes [#718](https://github.com/vitejs/vite/issues/718)
+* don't mutate plugins array in postcss config ([#791](https://github.com/vitejs/vite/issues/791)) ([3328076](https://github.com/vitejs/vite/commit/3328076261a8bdded73a25c73b509f140cc1ab6e))
+* notModified with transform ([#682](https://github.com/vitejs/vite/issues/682)) ([c6426e9](https://github.com/vitejs/vite/commit/c6426e9f5ae33fdde7ef6093a02960ca0374cecd)), closes [#662](https://github.com/vitejs/vite/issues/662)
+* **dev:** omit "?t=" query from esbuild sourcemap source path ([#783](https://github.com/vitejs/vite/issues/783)) ([ec295aa](https://github.com/vitejs/vite/commit/ec295aaf75b48b554cd0aa339b99a8d4b4ec1a47))
+* **dev:** warn unknown dynamic import inside module rewrite ([#776](https://github.com/vitejs/vite/issues/776)) ([304f321](https://github.com/vitejs/vite/commit/304f321c6160ea8c97acb0b6ee1f6022ac873431)), closes [#772](https://github.com/vitejs/vite/issues/772)
+* make vite.config support es2020 syntax ([#658](https://github.com/vitejs/vite/issues/658)) ([760cbac](https://github.com/vitejs/vite/commit/760cbacc963e4df37779ff49c8c14f68487dea81))
+* README.md type/grammar ([#625](https://github.com/vitejs/vite/issues/625)) ([2560a45](https://github.com/vitejs/vite/commit/2560a45897e5c608056743352a9dc90cf5ec0877))
+* strip "public/" prefix in `defaultFileToRequest` ([#681](https://github.com/vitejs/vite/issues/681)) ([5d98994](https://github.com/vitejs/vite/commit/5d98994d2c0fb790458a30d4badb7bf83c48691f))
+* use `index.js` as default entry point ([#665](https://github.com/vitejs/vite/issues/665)) ([5969c97](https://github.com/vitejs/vite/commit/5969c97ab5d0da56be72083d88b583db109fd3d3))
+* **dev:** Support passing "0" as port ([#590](https://github.com/vitejs/vite/issues/590)) ([ba9dda2](https://github.com/vitejs/vite/commit/ba9dda22ca89118f39fbbad7afb79c1898892e63))
+* **hmr:** correct hmr for sfc has setup script when it template change ([#763](https://github.com/vitejs/vite/issues/763)) ([9bea946](https://github.com/vitejs/vite/commit/9bea946397e2f63d1580e3f2c6410495f6e05e19)), closes [#748](https://github.com/vitejs/vite/issues/748)
+
+
+### Features
+
+* **dev:** add hmr config for websocket connection ([#677](https://github.com/vitejs/vite/issues/677)) ([b753478](https://github.com/vitejs/vite/commit/b753478dfe96bd318b39552781e480ea068b6ead))
+* **dev:** proxy ws ([#865](https://github.com/vitejs/vite/issues/865)) ([c3ef4f6](https://github.com/vitejs/vite/commit/c3ef4f64ec09c6916f4e6b9764362a23843b98b6)), closes [#864](https://github.com/vitejs/vite/issues/864)
+* set NODE_ENV if not present ([#732](https://github.com/vitejs/vite/issues/732)) ([0455b91](https://github.com/vitejs/vite/commit/0455b9191b9e497a80de6c11190d863e4e4c636a)), closes [#696](https://github.com/vitejs/vite/issues/696)
+* suppot CSS modules named exports  ([#750](https://github.com/vitejs/vite/issues/750)) ([d2ac431](https://github.com/vitejs/vite/commit/d2ac431e03a9eb91bd819b37100493edd4949530))
+* **build:** add option for `terser` ([#734](https://github.com/vitejs/vite/issues/734)) ([fb85cb2](https://github.com/vitejs/vite/commit/fb85cb2a75dd49bfe6df1a8a1038411b3744a4a2)), closes [#733](https://github.com/vitejs/vite/issues/733)
+* **build:** use `fs.emptyDir` instead of `fs.remove` ([#744](https://github.com/vitejs/vite/issues/744)) ([e52e5ed](https://github.com/vitejs/vite/commit/e52e5ed1c5cf74c34cf6a35b7c1d507a3ce66373)), closes [#709](https://github.com/vitejs/vite/issues/709)
+
+
+### Performance Improvements
+
+* improve regex performance ([#834](https://github.com/vitejs/vite/issues/834)) ([96531fc](https://github.com/vitejs/vite/commit/96531fc859c2f83a5ef66d36fc18f67528e600a6))
+
+
+
 # [1.0.0-rc.4](https://github.com/vuejs/vite/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2020-07-30)
 
 

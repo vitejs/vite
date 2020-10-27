@@ -232,6 +232,7 @@ export const vuePlugin: ServerPlugin = ({
 
     if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {
       // #748 should re-use previous cached script if only template change
+      // so that the template is compiled with the correct binding metadata
       if (prevDescriptor.scriptSetup && descriptor.scriptSetup) {
         vueCache.get(filePath)!.script = cacheEntry!.script
       }
@@ -510,6 +511,7 @@ async function compileSFCMain(
     code += `\n__script.render = __render`
   }
   code += `\n__script.__hmrId = ${JSON.stringify(publicPath)}`
+  code += `\ntypeof __VUE_HMR_RUNTIME__ !== 'undefined' && __VUE_HMR_RUNTIME__.createRecord(__script.__hmrId, __script)`
   code += `\n__script.__file = ${JSON.stringify(filePath)}`
   code += `\nexport default __script`
 
