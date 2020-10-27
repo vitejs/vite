@@ -409,7 +409,7 @@ export interface BuildConfig extends Required<SharedConfig> {
    * Enable 'rollup-plugin-vue'
    * @default true
    */
-  enableRollupPluginVue?: boolean,
+  enableRollupPluginVue?: boolean
   /**
    * Plugin functions that mutate the Vite build config. The `builds` array can
    * be added to if the plugin wants to add another Rollup build that Vite writes
@@ -722,7 +722,6 @@ function loadEnv(mode: string, root: string): Record<string, string> {
 
   debug(`env mode: ${mode}`)
 
-  const nodeEnv = process.env
   const clientEnv: Record<string, string> = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
@@ -734,25 +733,28 @@ function loadEnv(mode: string, root: string): Record<string, string> {
   for (const file of envFiles) {
     const path = lookupFile(root, [file], true)
     if (path) {
-      const result = dotenv.config({
+      // NOTE: this mutates process.env
+      const { parsed, error } = dotenv.config({
         debug: !!process.env.DEBUG || undefined,
         path
       })
-      if (result.error) {
-        throw result.error
+      if (!parsed) {
+        throw error
       }
-      dotenvExpand(result)
-      for (const key in result.parsed) {
-        const value = (nodeEnv[key] = result.parsed![key])
-        // only keys that start with VITE_ are exposed.
+      // NOTE: this mutates process.env
+      dotenvExpand({ parsed })
+
+      // set NODE_ENV under a different key so that we know this is set from
+      // vite-loaded .env files. Some users may have default NODE_ENV set in
+      // their system.
+      if (parsed.NODE_ENV) {
+        process.env.VITE_ENV = parsed.NODE_ENV
+      }
+
+      // only keys that start with VITE_ are exposed.
+      for (const [key, value] of Object.entries(parsed)) {
         if (key.startsWith(`VITE_`)) {
           clientEnv[key] = value
-        }
-        // set NODE_ENV under a different key so that we know this is set from
-        // vite-loaded .env files. Some users may have default NODE_ENV set in
-        // their system.
-        if (key === 'NODE_ENV') {
-          nodeEnv.VITE_ENV = value
         }
       }
     }
