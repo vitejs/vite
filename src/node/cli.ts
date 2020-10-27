@@ -108,7 +108,7 @@ cli
       argv.root = root
     }
     const options = await resolveOptions({ argv, mode: 'development' })
-    return runServe(options)
+    return runBuild(options)
   })
 
 // build
@@ -124,7 +124,7 @@ cli
     }
     console.log(root, argv)
     const options = await resolveOptions({ argv, mode: 'development' })
-    return runServe(options)
+    return runOptimize(options)
   })
 
 cli.help()
