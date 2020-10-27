@@ -70,8 +70,8 @@ cli
     `[boolean | 'terser' | 'esbuild'] enable/disable minification, or specify minifier to use. (default: terser)`
   )
   .option(
-    '--assetDir',
-    '[string]  directory under outDir to place assets in (default: assets)'
+    '--assetsDir',
+    '[string]  directory under outDir to place assets in (default: _assets)'
   )
   .action(async (root, argv) => {
     if (root) {
