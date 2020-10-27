@@ -17,41 +17,6 @@ import { UserConfig, resolveConfig } from './config'
 
 const cli = cac(`vite`)
 
-const command = argv._[0]
-const defaultMode = command === 'build' ? 'production' : 'development'
-
-function logHelp() {
-  console.log(`
-Usage: vite [command] [args] [--options]
-
-Commands:
-  vite                       Start server in current directory.
-  vite serve [root=cwd]      Start server in target directory.
-  vite build [root=cwd]      Build target directory.
-
-Options:
-  --help, -h                 [boolean] show help
-  --version, -v              [boolean] show version
-  --config, -c               [string]  use specified config file
-  --port                     [number]  port to use for serve
-  --open                     [boolean] open browser on server start
-  --entry                    [string]  entry file for build (default: index.html)
-  --base                     [string]  public base path for build (default: /)
-  --outDir                   [string]  output directory for build (default: dist)
-  --assetsDir                [string]  directory under outDir to place assets in (default: assets)
-  --assetsInlineLimit        [number]  static asset base64 inline threshold in bytes (default: 4096)
-  --sourcemap                [boolean] output source maps for build (default: false)
-  --minify                   [boolean | 'terser' | 'esbuild'] enable/disable minification, or specify
-                                       minifier to use. (default: 'terser')
-  --mode, -m                 [string]  specify env mode (default: 'development' for dev, 'production' for build)
-  --ssr                      [boolean] build for server-side rendering
-  --jsx                      ['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')
-  --jsx-factory              [string]  (default: React.createElement)
-  --jsx-fragment             [string]  (default: React.Fragment)
-  --force                    [boolean] force the optimizer to ignore the cache and re-bundle
-`)
-}
-
 // global options
 cli
   .option('--config, -c', `[string]  use specified config file`)
@@ -81,7 +46,7 @@ cli
     if (root) {
       argv.root = root
     }
-    const options = await resolveOptions({ argv, mode: 'development' })
+    const options = await resolveOptions({ argv, defaultMode: 'development' })
     return runServe(options)
   })
 
@@ -107,11 +72,11 @@ cli
     if (root) {
       argv.root = root
     }
-    const options = await resolveOptions({ argv, mode: 'development' })
+    const options = await resolveOptions({ argv, defaultMode: 'production' })
     return runBuild(options)
   })
 
-// build
+// optimize
 cli
   .command('optimize [root]')
   .option(
@@ -123,7 +88,7 @@ cli
       argv.root = root
     }
     console.log(root, argv)
-    const options = await resolveOptions({ argv, mode: 'development' })
+    const options = await resolveOptions({ argv, defaultMode: 'development' })
     return runOptimize(options)
   })
 
@@ -133,10 +98,10 @@ cli.parse()
 
 async function resolveOptions({
   argv,
-  mode
+  defaultMode
 }: {
   argv: Partial<UserConfig> & any
-  mode: string
+  defaultMode: string
 }): Promise<UserConfig> {
   // cast xxx=true | false into actual booleans
   Object.keys(argv).forEach((key) => {
@@ -163,7 +128,10 @@ async function resolveOptions({
 
   argv = makeJsxObject(argv)
 
-  const userConfig = await resolveConfig(mode, argv.config || argv.c)
+  const userConfig = await resolveConfig(
+    argv.mode || defaultMode,
+    argv.config || argv.c
+  )
   if (userConfig) {
     return {
       ...userConfig,
