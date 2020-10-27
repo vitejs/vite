@@ -451,6 +451,14 @@ export async function build(
     userDefineReplacements[key] = JSON.stringify(userDefineReplacements[key])
   })
 
+  const {
+    pluginsPreBuild = [],
+    plugins = [],
+    pluginsPostBuild = [],
+    pluginsOptimizer,
+    ...rollupOptions
+  } = rollupInputOptions
+
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
@@ -459,10 +467,10 @@ export async function build(
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
     onwarn: onRollupWarning(spinner, config.optimizeDeps),
-    ...config.rollupInputOptions,
+    ...rollupOptions,
     plugins: [
-      ...(rollupInputOptions.plugins || []),
-      ...(rollupInputOptions.pluginsPreBuild || []),
+      ...plugins,
+      ...pluginsPreBuild,
       ...basePlugins,
       // vite:html
       htmlPlugin,
@@ -535,7 +543,7 @@ export async function build(
         : undefined,
       // #728 user plugins should apply after `@rollup/plugin-commonjs`
       // #471#issuecomment-683318951 user plugin after internal plugin
-      ...(rollupInputOptions.pluginsPostBuild || []),
+      ...pluginsPostBuild,
       // vite:manifest
       config.emitManifest ? createBuildManifestPlugin() : undefined
     ].filter(Boolean)
