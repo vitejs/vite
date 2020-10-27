@@ -394,6 +394,8 @@ export async function build(
     config.assetsInclude
   )
 
+  await fs.emptyDir(outDir)
+
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,
     indexPath,
