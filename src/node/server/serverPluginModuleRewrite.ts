@@ -365,7 +365,7 @@ function transformCjsImport(
   const importNames: { importedName: string; localName: string }[] = []
 
   ast.specifiers.forEach((obj) => {
-    if (obj.type === 'ImportSpecifier') {
+    if (obj.type === 'ImportSpecifier' && obj.imported.type === 'Identifier') {
       const importedName = obj.imported.name
       const localName = obj.local.name
       importNames.push({ importedName, localName })
