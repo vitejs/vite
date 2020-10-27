@@ -31,10 +31,6 @@ cli
     '--mode, -m',
     `[string]  specify env mode (default: 'development' for dev, 'production' for build)`
   )
-  .option(
-    '--assetsInlineLimit',
-    `[number]  static asset base64 inline threshold in bytes (default: 4096)`
-  )
 
 // serve
 cli
@@ -72,6 +68,10 @@ cli
   .option(
     '--assetsDir',
     '[string]  directory under outDir to place assets in (default: _assets)'
+  )
+  .option(
+    '--assetsInlineLimit',
+    `[number]  static asset base64 inline threshold in bytes (default: 4096)`
   )
   .action(async (root, argv) => {
     if (root) {
