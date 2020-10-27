@@ -31,7 +31,8 @@ import {
   cleanUrl,
   isExternalUrl,
   bareImportRE,
-  removeUnRelatedHmrQuery
+  removeUnRelatedHmrQuery,
+  isPlainObject
 } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
@@ -328,22 +329,23 @@ export const resolveImport = (
   return id
 }
 
-const analysisCache = new Map<string, OptimizeAnalysisResult>()
+const analysisCache = new Map<string, OptimizeAnalysisResult | null>()
 
 /**
  * read analysis result from optimize step
+ * If we can't find analysis result, return null
+ * (maybe because user set optimizeDeps.auto to false)
  */
-function getAnalysis(root: string): OptimizeAnalysisResult {
+function getAnalysis(root: string): OptimizeAnalysisResult | null {
   if (analysisCache.has(root)) return analysisCache.get(root)!
-  const cacheDir = resolveOptimizedCacheDir(root)
-  if (!cacheDir) throw new Error('[vite] cacheDir not found')
-  let analysis: OptimizeAnalysisResult
+  let analysis: OptimizeAnalysisResult | null
   try {
-    analysis = fs.readJsonSync(path.join(cacheDir, '_analysis.json'))
+    const cacheDir = resolveOptimizedCacheDir(root)
+    analysis = fs.readJsonSync(path.join(cacheDir!, '_analysis.json'))
   } catch (error) {
-    throw new Error(`[vite] fail to read _analysis.json from ${cacheDir}`)
+    analysis = null
   }
-  if (typeof analysis.isCommonjs !== 'object' || analysis.isCommonjs === null) {
+  if (analysis && !isPlainObject(analysis.isCommonjs)) {
     throw new Error(`[vite] invalid _analysis.json`)
   }
   analysisCache.set(root, analysis)
@@ -352,6 +354,7 @@ function getAnalysis(root: string): OptimizeAnalysisResult {
 
 function isOptimizedCjs(root: string, id: string) {
   const analysis = getAnalysis(root)
+  if (!analysis) return false
   return !!analysis.isCommonjs[id]
 }
 
