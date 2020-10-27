@@ -55,10 +55,7 @@ Options:
 // global options
 cli
   .option('--config, -c', `[string]  use specified config file`)
-  .option('--base', '[string] public base path for build (default: /)', {
-    // TODO implement base in server
-    type: [String]
-  })
+  .option('--base ', '[string] public base path for build (default: /)')
   .option(
     '--jsx',
     `['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')`
@@ -125,6 +122,7 @@ cli
     if (root) {
       argv.root = root
     }
+    console.log(root, argv)
     const options = await resolveOptions({ argv, mode: 'development' })
     return runServe(options)
   })
@@ -140,8 +138,6 @@ async function resolveOptions({
   argv: Partial<UserConfig> & any
   mode: string
 }): Promise<UserConfig> {
-  argv.mode = mode
-
   // cast xxx=true | false into actual booleans
   Object.keys(argv).forEach((key) => {
     if (argv[key] === 'false') {
@@ -179,10 +175,10 @@ async function resolveOptions({
 }
 
 function makeJsxObject(argv: any) {
-  if (argv['jsx-factory']) {
+  if (argv['jsxFactory']) {
     ;(argv.jsx || (argv.jsx = {})).factory = argv['jsx-factory']
   }
-  if (argv['jsx-fragment']) {
+  if (argv['jsxFragment']) {
     ;(argv.jsx || (argv.jsx = {})).fragment = argv['jsx-fragment']
   }
   return argv
