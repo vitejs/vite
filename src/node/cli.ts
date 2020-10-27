@@ -22,26 +22,26 @@ cli
   .option('--config, -c', `[string]  use specified config file`)
   .option('--debug', '[string | boolean] show debug logs')
   .option(
+    '--mode, -m',
+    `[string]  specify env mode (default: 'development' for dev, 'production' for build)`
+  )
+  .option(
     '--jsx',
     `['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')`
   )
   .option('--jsx-factory', '[string]  (default: React.createElement)')
   .option('--jsx-fragment', '[string]  (default: React.Fragment)')
-  .option(
-    '--mode, -m',
-    `[string]  specify env mode (default: 'development' for dev, 'production' for build)`
-  )
 
 // serve
 cli
   .command('[root]') // default command
   .alias('serve')
   .option('--port', '[number] port to listen to')
-  .option('--open', '[boolean] open browser on server start')
   .option(
     '--force',
     '[boolean] force the optimizer to ignore the cache and re-bundle'
   )
+  .option('--open', '[boolean] open browser on server start')
   .action(async (root, argv) => {
     if (root) {
       argv.root = root
@@ -56,7 +56,10 @@ cli
   .option('--entry', 'entry file for build (default: index.html)')
   .option('--outDir', '[string] output directory (default: dist)')
   .option('--ssr', '[boolean] build for server-side rendering')
-  .option('--base', '[string] public base path (default: /)')
+  .option(
+    '--assetsDir',
+    '[string]  directory under outDir to place assets in (default: _assets)'
+  )
   .option(
     '--sourcemap',
     '[boolean] output source maps for build (default: false)'
@@ -65,10 +68,7 @@ cli
     '--minify',
     `[boolean | 'terser' | 'esbuild'] enable/disable minification, or specify minifier to use. (default: terser)`
   )
-  .option(
-    '--assetsDir',
-    '[string]  directory under outDir to place assets in (default: _assets)'
-  )
+  .option('--base', '[string] public base path (default: /)')
   .option(
     '--assetsInlineLimit',
     `[number]  static asset base64 inline threshold in bytes (default: 4096)`
