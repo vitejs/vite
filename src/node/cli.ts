@@ -21,7 +21,7 @@ const cli = cac(`vite`)
 cli
   .option('--config, -c', `[string]  use specified config file`)
   .option('--base', '[string] public base path for build (default: /)')
-  .option('--debug', '[boolean] show debug logs')
+  .option('--debug', '[string | boolean] show debug logs')
   .option(
     '--jsx',
     `['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')`
