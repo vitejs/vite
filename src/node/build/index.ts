@@ -364,9 +364,7 @@ export async function build(
     shouldPreload,
     env,
     mode: configMode,
-    define: userDefineReplacements,
-    rollupInputOptions,
-    rollupOutputOptions
+    define: userDefineReplacements
   } = config
 
   const isTest = process.env.NODE_ENV === 'test'
@@ -456,8 +454,8 @@ export async function build(
     plugins = [],
     pluginsPostBuild = [],
     pluginsOptimizer,
-    ...rollupOptions
-  } = rollupInputOptions
+    ...rollupInputOptions
+  } = config.rollupInputOptions
 
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
@@ -467,7 +465,7 @@ export async function build(
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
     onwarn: onRollupWarning(spinner, config.optimizeDeps),
-    ...rollupOptions,
+    ...rollupInputOptions,
     plugins: [
       ...plugins,
       ...pluginsPreBuild,
@@ -563,7 +561,7 @@ export async function build(
       entryFileNames: `[name].[hash].js`,
       chunkFileNames: `[name].[hash].js`,
       assetFileNames: `[name].[hash].[ext]`,
-      ...rollupOutputOptions
+      ...config.rollupOutputOptions
     })
     build.html = emitIndex ? await renderIndex(output) : ''
     build.assets = output
