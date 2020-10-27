@@ -43,6 +43,10 @@ cli
   .alias('serve')
   .option('--port', '[number] port to listen to')
   .option('--open', '[boolean] open browser on server start')
+  .option(
+    '--force',
+    '[boolean] force the optimizer to ignore the cache and re-bundle'
+  )
   .action(async (root, argv) => {
     if (root) {
       argv.root = root
