@@ -9,10 +9,13 @@ if (argv.debug) {
   } catch (e) {}
 }
 
+import { cac } from 'cac'
 import os from 'os'
 import path from 'path'
 import chalk from 'chalk'
 import { UserConfig, resolveConfig } from './config'
+
+const cli = cac(`vite`)
 
 const command = argv._[0]
 const defaultMode = command === 'build' ? 'production' : 'development'
@@ -49,43 +52,96 @@ Options:
 `)
 }
 
-console.log(chalk.cyan(`vite v${require('../../package.json').version}`))
-;(async () => {
-  const { help, h, mode, m, version, v } = argv
+// global options
+cli
+  .option('--config, -c', `[string]  use specified config file`)
+  .option('--base', '[string] public base path for build (default: /)', {
+    // TODO implement base in server
+    type: [String]
+  })
+  .option(
+    '--jsx',
+    `['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')`
+  )
+  .option('--jsx-factory', '[string]  (default: React.createElement)')
+  .option('--jsx-fragment', '[string]  (default: React.Fragment)')
+  .option(
+    '--mode, -m',
+    `[string]  specify env mode (default: 'development' for dev, 'production' for build)`
+  )
+  .option(
+    '--assetsInlineLimit',
+    `[number]  static asset base64 inline threshold in bytes (default: 4096)`
+  )
 
-  if (help || h) {
-    logHelp()
-    return
-  } else if (version || v) {
-    // noop, already logged
-    return
-  }
+// serve
+cli
+  .command('serve [root]')
+  .alias('') // default command
+  .option('--port', '[number] port to listen to')
+  .option('--open', '[boolean] open browser on server start')
+  .action(async (root, argv) => {
+    if (root) {
+      argv.root = root
+    }
+    const options = await resolveOptions({ argv, mode: 'development' })
+    return runServe(options)
+  })
 
-  const envMode = mode || m || defaultMode
-  const options = await resolveOptions(envMode)
-  process.env.NODE_ENV = process.env.NODE_ENV || envMode
-  if (!options.command || options.command === 'serve') {
-    runServe(options)
-  } else if (options.command === 'build') {
-    runBuild(options)
-  } else if (options.command === 'optimize') {
-    runOptimize(options)
-  } else {
-    console.error(chalk.red(`unknown command: ${options.command}`))
-    process.exit(1)
-  }
-})()
+// build
+cli
+  .command('build [root]')
+  .option('--entry', 'entry file for build (default: index.html)')
+  .option('--outDir', '[string] output directory (default: dist)')
+  .option('--ssr', '[boolean] build for server-side rendering')
+  .option(
+    '--sourcemap',
+    '[boolean] output source maps for build (default: false)'
+  )
+  .option(
+    '--minify',
+    `[boolean | 'terser' | 'esbuild'] enable/disable minification, or specify minifier to use. (default: terser)`
+  )
+  .option(
+    '--assetDIr',
+    '[string]  directory under outDir to place assets in (default: assets)'
+  )
+  .action(async (root, argv) => {
+    if (root) {
+      argv.root = root
+    }
+    const options = await resolveOptions({ argv, mode: 'development' })
+    return runServe(options)
+  })
 
-async function resolveOptions(mode: string) {
-  // specify env mode
+// build
+cli
+  .command('optimize [root]')
+  .option(
+    '--force',
+    '[boolean] force the optimizer to ignore the cache and re-bundle'
+  )
+  .action(async (root, argv) => {
+    if (root) {
+      argv.root = root
+    }
+    const options = await resolveOptions({ argv, mode: 'development' })
+    return runServe(options)
+  })
+
+cli.help()
+cli.version(require('../../package.json').version)
+cli.parse()
+
+async function resolveOptions({
+  argv,
+  mode
+}: {
+  argv: Partial<UserConfig> & any
+  mode: string
+}): Promise<UserConfig> {
   argv.mode = mode
-  // map jsx args
-  if (argv['jsx-factory']) {
-    ;(argv.jsx || (argv.jsx = {})).factory = argv['jsx-factory']
-  }
-  if (argv['jsx-fragment']) {
-    ;(argv.jsx || (argv.jsx = {})).fragment = argv['jsx-fragment']
-  }
+
   // cast xxx=true | false into actual booleans
   Object.keys(argv).forEach((key) => {
     if (argv[key] === 'false') {
@@ -95,26 +151,9 @@ async function resolveOptions(mode: string) {
       argv[key] = true
     }
   })
-  // command
-  if (argv._[0]) {
-    argv.command = argv._[0]
-  }
-  // normalize root
-  // assumes all commands are in the form of `vite [command] [root]`
-  if (!argv.root && argv._[1]) {
-    argv.root = argv._[1]
-  }
 
   if (argv.root) {
     argv.root = path.isAbsolute(argv.root) ? argv.root : path.resolve(argv.root)
-  }
-
-  const userConfig = await resolveConfig(mode, argv.config || argv.c)
-  if (userConfig) {
-    return {
-      ...userConfig,
-      ...argv // cli options take higher priority
-    }
   }
 
   // deprecation warning
@@ -126,6 +165,26 @@ async function resolveOptions(mode: string) {
     )
   }
 
+  argv = makeJsxObject(argv)
+
+  const userConfig = await resolveConfig(mode, argv.config || argv.c)
+  if (userConfig) {
+    return {
+      ...userConfig,
+      ...argv // cli options take higher priority
+    }
+  }
+
+  return argv
+}
+
+function makeJsxObject(argv: any) {
+  if (argv['jsx-factory']) {
+    ;(argv.jsx || (argv.jsx = {})).factory = argv['jsx-factory']
+  }
+  if (argv['jsx-fragment']) {
+    ;(argv.jsx || (argv.jsx = {})).fragment = argv['jsx-fragment']
+  }
   return argv
 }
 
