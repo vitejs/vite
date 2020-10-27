@@ -20,7 +20,6 @@ const cli = cac(`vite`)
 // global options
 cli
   .option('--config, -c', `[string]  use specified config file`)
-  .option('--base', '[string] public base path for build (default: /)')
   .option('--debug', '[string | boolean] show debug logs')
   .option(
     '--jsx',
@@ -61,6 +60,7 @@ cli
   .option('--entry', 'entry file for build (default: index.html)')
   .option('--outDir', '[string] output directory (default: dist)')
   .option('--ssr', '[boolean] build for server-side rendering')
+  .option('--base', '[string] public base path (default: /)')
   .option(
     '--sourcemap',
     '[boolean] output source maps for build (default: false)'
