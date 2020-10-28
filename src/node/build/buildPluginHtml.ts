@@ -1,4 +1,4 @@
-import { Plugin, RollupOutput, OutputChunk } from 'rollup'
+import { Plugin, OutputChunk, RollupOutput } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
 import MagicString from 'magic-string'

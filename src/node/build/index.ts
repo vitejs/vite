@@ -6,11 +6,12 @@ import { klona } from 'klona/json'
 import { resolveFrom, lookupFile, toArray, isStaticAsset } from '../utils'
 import {
   rollup as Rollup,
-  RollupOutput,
   ExternalOption,
   Plugin,
   InputOptions,
-  RollupBuild
+  OutputPlugin,
+  RollupBuild,
+  RollupOutput
 } from 'rollup'
 import {
   createResolver,
@@ -39,7 +40,7 @@ interface Build {
   id: string
   bundle: Promise<RollupBuild>
   html?: string
-  assets?: RollupOutput['output']
+  assets?: BuildResult['assets']
 }
 
 /** For adding Rollup builds and mutating the Vite config. */
@@ -357,6 +358,7 @@ export async function build(
     root,
     assetsDir,
     assetsInlineLimit,
+    emitAssets,
     entry,
     minify,
     silent,
@@ -371,8 +373,6 @@ export async function build(
   const isTest = process.env.NODE_ENV === 'test'
   const resolvedMode = process.env.VITE_ENV || configMode
   const start = Date.now()
-  const emitIndex = !!(config.emitIndex && write)
-  const emitAssets = !!(config.emitAssets && write)
 
   let spinner: Ora | undefined
   const msg = `Building ${configMode} bundle...`
@@ -385,7 +385,8 @@ export async function build(
   }
 
   const outDir = path.resolve(root, config.outDir)
-  const indexPath = path.resolve(root, 'index.html')
+  const indexPath = path.join(root, 'index.html')
+  const publicDir = path.join(root, 'public')
   const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
   const resolver = createResolver(
@@ -394,10 +395,6 @@ export async function build(
     config.alias,
     config.assetsInclude
   )
-
-  if (write) {
-    await fs.emptyDir(outDir)
-  }
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,
@@ -557,94 +554,68 @@ export async function build(
     bundle
   })
 
+  const {
+    plugins: rollupOutputPlugins = [],
+    ...rollupOutputOptions
+  } = config.rollupOutputOptions
+
+  // multiple builds are processed sequentially, in case a build
+  // depends on the output of a preceding build.
   for (const build of builds) {
     const bundle = await build.bundle
-    const { output } = await bundle[write ? 'write' : 'generate']({
+    await bundle[write ? 'write' : 'generate']({
       dir: resolvedAssetsPath,
       format: 'es',
       sourcemap,
       entryFileNames: `[name].[hash].js`,
       chunkFileNames: `[name].[hash].js`,
       assetFileNames: `[name].[hash].[ext]`,
-      ...config.rollupOutputOptions
+      ...rollupOutputOptions,
+      plugins: [
+        ...rollupOutputPlugins,
+        createEmitPlugin(
+          build as Required<Build>,
+          config,
+          outDir,
+          publicDir,
+          renderIndex,
+          postBuildHooks
+        )
+      ]
     })
-    build.html = await renderIndex(output)
-    build.assets = output
-    await postBuildHooks.reduce(
-      (queue, hook) => queue.then(() => hook(build as any)),
-      Promise.resolve()
-    )
   }
 
   spinner && spinner.stop()
 
-  if (write) {
-    const printFilesInfo = async (
-      filepath: string,
-      content: string | Uint8Array,
-      type: WriteType
-    ) => {
-      if (!silent) {
-        const needCompression =
-          type === WriteType.JS ||
-          type === WriteType.CSS ||
-          type === WriteType.HTML
-        const compressed = needCompression
-          ? `, brotli: ${(require('brotli-size').sync(content) / 1024).toFixed(
-              2
-            )}kb`
-          : ``
-        console.log(
-          `${chalk.gray(`[write]`)} ${writeColors[type](
-            path.relative(process.cwd(), filepath)
-          )} ${(content.length / 1024).toFixed(2)}kb${compressed}`
-        )
-      }
-    }
-
-    // log js chunks and assets
+  // log js chunks and assets
+  if (write && !silent)
     for (const build of builds) {
+      if (config.emitIndex)
+        printFileInfo(
+          path.join(outDir, build.id + '.html'),
+          build.html!,
+          WriteType.HTML
+        )
+
       for (const chunk of build.assets!) {
         if (chunk.type === 'chunk') {
-          // write chunk
-          const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-          await printFilesInfo(filepath, chunk.code, WriteType.JS)
+          const filePath = path.join(resolvedAssetsPath, chunk.fileName)
+          printFileInfo(filePath, chunk.code, WriteType.JS)
           if (chunk.map) {
-            await printFilesInfo(
-              filepath + '.map',
+            printFileInfo(
+              filePath + '.map',
               chunk.map.toString(),
               WriteType.SOURCE_MAP
             )
           }
-        } else if (emitAssets) {
-          if (!chunk.source) continue
-          // log asset
-          const filepath = path.join(resolvedAssetsPath, chunk.fileName)
-          await printFilesInfo(
-            filepath,
+        } else if (emitAssets && chunk.source)
+          printFileInfo(
+            path.join(resolvedAssetsPath, chunk.fileName),
             chunk.source,
             chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
           )
-        }
-      }
-
-      if (emitIndex && build.html) {
-        const outputHtmlPath = path.join(outDir, build.id + '.html')
-        await fs.writeFile(outputHtmlPath, build.html)
-        await printFilesInfo(outputHtmlPath, build.html, WriteType.HTML)
       }
     }
-
-    // copy over /public if it exists
-    if (emitAssets) {
-      const publicDir = path.resolve(root, 'public')
-      if (fs.existsSync(publicDir)) {
-        for (const file of await fs.readdir(publicDir)) {
-          await fs.copy(path.join(publicDir, file), path.resolve(outDir, file))
-        }
-      }
-    }
-  }
 
   if (!silent) {
     console.log(
@@ -708,6 +679,50 @@ export async function ssrBuild(
   })
 }
 
+function createEmitPlugin(
+  build: Required<Build>,
+  { emitIndex, emitAssets }: BuildConfig,
+  outDir: string,
+  publicDir: string,
+  renderIndex: (assets: typeof build.assets) => string | Promise<string>,
+  postBuildHooks: PostBuildHook[]
+): OutputPlugin {
+  return {
+    name: 'vite:emit',
+    async generateBundle(_, output, isWrite) {
+      // assume the first asset added to `output` is the entry chunk
+      build.assets = Object.values(output) as any
+      build.html = emitIndex ? await renderIndex(build.assets) : ''
+
+      // run post-build hooks sequentially
+      await postBuildHooks.reduce(
+        (queue, hook) => queue.then(() => hook(build)),
+        Promise.resolve()
+      )
+
+      // emit any assets injected by post-build hooks
+      for (const asset of build.assets) {
+        output[asset.fileName] = asset
+      }
+
+      if (isWrite) {
+        await fs.emptyDir(outDir)
+      }
+    },
+    async writeBundle() {
+      if (emitIndex) {
+        await fs.writeFile(path.join(outDir, build.id + '.html'), build.html)
+      }
+      // copy over /public if it exists
+      if (emitAssets && fs.existsSync(publicDir)) {
+        for (const file of await fs.readdir(publicDir)) {
+          await fs.copy(path.join(publicDir, file), path.resolve(outDir, file))
+        }
+      }
+    }
+  }
+}
+
 function resolveExternal(
   userExternal: ExternalOption | undefined
 ): ExternalOption {
@@ -727,4 +742,23 @@ function resolveExternal(
   } else {
     return [...required, userExternal]
   }
+}
+
+function printFileInfo(
+  filePath: string,
+  content: string | Uint8Array,
+  type: WriteType
+) {
+  const needCompression =
+    type === WriteType.JS || type === WriteType.CSS || type === WriteType.HTML
+
+  const compressed = needCompression
+    ? `, brotli: ${(require('brotli-size').sync(content) / 1024).toFixed(2)}kb`
+    : ``
+
+  console.log(
+    `${chalk.gray(`[write]`)} ${writeColors[type](
+      path.relative(process.cwd(), filePath)
+    )} ${(content.length / 1024).toFixed(2)}kb${compressed}`
+  )
 }
