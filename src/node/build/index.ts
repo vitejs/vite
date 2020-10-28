@@ -568,7 +568,7 @@ export async function build(
       assetFileNames: `[name].[hash].[ext]`,
       ...config.rollupOutputOptions
     })
-    build.html = emitIndex ? await renderIndex(output) : ''
+    build.html = await renderIndex(output)
     build.assets = output
     await postBuildHooks.reduce(
       (queue, hook) => queue.then(() => hook(build as any)),
@@ -628,7 +628,7 @@ export async function build(
         }
       }
 
-      if (build.html) {
+      if (emitIndex) {
         const outputHtmlPath = path.join(outDir, build.id + '.html')
         await fs.writeFile(outputHtmlPath, build.html)
         await printFilesInfo(outputHtmlPath, build.html, WriteType.HTML)
