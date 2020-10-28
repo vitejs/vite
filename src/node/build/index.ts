@@ -694,6 +694,7 @@ function createEmitPlugin(
     | false,
   postBuildHooks: PostBuildHook[]
 ): OutputPlugin {
+  const isFirstBuild = build.id === 'index'
   return {
     name: 'vite:emit',
     async generateBundle(_, output, isWrite) {
@@ -712,7 +713,7 @@ function createEmitPlugin(
         output[asset.fileName] = asset
       }
 
-      if (isWrite) {
+      if (isFirstBuild && isWrite) {
         await fs.emptyDir(outDir)
       }
     },
@@ -721,7 +722,7 @@ function createEmitPlugin(
         await fs.writeFile(path.join(outDir, build.id + '.html'), build.html)
       }
       // copy over /public if it exists
-      if (publicDir && fs.existsSync(publicDir)) {
+      if (isFirstBuild && publicDir && fs.existsSync(publicDir)) {
         for (const file of await fs.readdir(publicDir)) {
           await fs.copy(path.join(publicDir, file), path.resolve(outDir, file))
         }
