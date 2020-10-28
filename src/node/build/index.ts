@@ -565,7 +565,10 @@ export async function build(
     const bundle = await rollup({
       ...inputOptions,
       plugins: [
-        ...(inputOptions.plugins || []),
+        ...(inputOptions.plugins || []).filter(
+          // remove vite:emit in case this build copied another build's plugins
+          (plugin) => plugin.name !== 'vite:emit'
+        ),
         // vite:emit
         createEmitPlugin(
           build as Required<Build>,
