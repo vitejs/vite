@@ -361,6 +361,7 @@ export async function build(
     assetsDir,
     assetsInlineLimit,
     emitAssets,
+    emitIndex,
     entry,
     minify,
     silent,
@@ -568,10 +569,9 @@ export async function build(
         // vite:emit
         createEmitPlugin(
           build as Required<Build>,
-          config,
           outDir,
-          publicDir,
-          renderIndex,
+          emitAssets && publicDir,
+          emitIndex && renderIndex,
           postBuildHooks
         )
       ]
@@ -593,7 +593,7 @@ export async function build(
   // log js chunks and assets
   if (write && !silent)
     for (const build of builds) {
-      if (config.emitIndex)
+      if (emitIndex)
         printFileInfo(
           path.join(outDir, build.id + '.html'),
           build.html!,
@@ -684,10 +684,11 @@ export async function ssrBuild(
 
 function createEmitPlugin(
   build: Required<Build>,
-  { emitIndex, emitAssets }: BuildConfig,
   outDir: string,
-  publicDir: string,
-  renderIndex: (assets: typeof build.assets) => string | Promise<string>,
+  publicDir: string | false,
+  renderIndex:
+    | ((assets: BuildResult['assets']) => string | Promise<string>)
+    | false,
   postBuildHooks: PostBuildHook[]
 ): OutputPlugin {
   return {
@@ -695,7 +696,7 @@ function createEmitPlugin(
     async generateBundle(_, output, isWrite) {
       // assume the first asset added to `output` is the entry chunk
       build.assets = Object.values(output) as any
-      build.html = emitIndex ? await renderIndex(build.assets) : ''
+      build.html = renderIndex ? await renderIndex(build.assets) : ''
 
       // run post-build hooks sequentially
       await postBuildHooks.reduce(
@@ -713,11 +714,11 @@ function createEmitPlugin(
       }
     },
     async writeBundle() {
-      if (emitIndex) {
+      if (renderIndex) {
         await fs.writeFile(path.join(outDir, build.id + '.html'), build.html)
       }
       // copy over /public if it exists
-      if (emitAssets && fs.existsSync(publicDir)) {
+      if (publicDir && fs.existsSync(publicDir)) {
         for (const file of await fs.readdir(publicDir)) {
           await fs.copy(path.join(publicDir, file), path.resolve(outDir, file))
         }
