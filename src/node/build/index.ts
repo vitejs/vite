@@ -9,8 +9,8 @@ import {
   ExternalOption,
   Plugin,
   InputOptions,
+  OutputOptions,
   OutputPlugin,
-  RollupBuild,
   RollupOutput
 } from 'rollup'
 import {
@@ -38,7 +38,9 @@ import { createBuildManifestPlugin } from './buildPluginManifest'
 
 interface Build {
   id: string
-  bundle: Promise<RollupBuild>
+  options: InputOptions & {
+    output?: OutputOptions
+  }
   html?: string
   assets?: BuildResult['assets']
 }
@@ -459,120 +461,111 @@ export async function build(
     ...rollupInputOptions
   } = config.rollupInputOptions
 
+  builds.unshift({
+    id: 'index',
+    options: {
+      input: path.resolve(root, entry),
+      preserveEntrySignatures: false,
+      treeshake: { moduleSideEffects: 'no-external' },
+      onwarn: onRollupWarning(spinner, config.optimizeDeps),
+      ...rollupInputOptions,
+      output: config.rollupOutputOptions,
+      plugins: [
+        ...plugins,
+        ...pluginsPreBuild,
+        ...basePlugins,
+        // vite:html
+        htmlPlugin,
+        // we use a custom replacement plugin because @rollup/plugin-replace
+        // performs replacements twice, once at transform and once at renderChunk
+        // - which makes it impossible to exclude Vue templates from it since
+        // Vue templates are compiled into js and included in chunks.
+        createReplacePlugin(
+          (id) =>
+            !/\?vue&type=template/.test(id) &&
+            // also exclude css and static assets for performance
+            !isCSSRequest(id) &&
+            !resolver.isAssetRequest(id),
+          {
+            ...defaultDefines,
+            ...userDefineReplacements,
+            ...userEnvReplacements,
+            ...builtInEnvReplacements,
+            'import.meta.env.': `({}).`,
+            'import.meta.env': JSON.stringify({
+              ...userClientEnv,
+              ...builtInClientEnv
+            }),
+            'process.env.NODE_ENV': JSON.stringify(resolvedMode),
+            'process.env.': `({}).`,
+            'process.env': JSON.stringify({ NODE_ENV: resolvedMode }),
+            'import.meta.hot': `false`
+          },
+          !!sourcemap
+        ),
+        // vite:css
+        createBuildCssPlugin({
+          root,
+          publicBase: publicBasePath,
+          assetsDir,
+          minify,
+          inlineLimit: assetsInlineLimit,
+          cssCodeSplit: config.cssCodeSplit,
+          preprocessOptions: config.cssPreprocessOptions,
+          modulesOptions: config.cssModuleOptions,
+          emitAssets
+        }),
+        // vite:asset
+        createBuildAssetPlugin(
+          root,
+          resolver,
+          publicBasePath,
+          assetsDir,
+          assetsInlineLimit,
+          emitAssets
+        ),
+        createBuildWasmPlugin(
+          root,
+          publicBasePath,
+          assetsDir,
+          assetsInlineLimit,
+          emitAssets
+        ),
+        config.enableEsbuild &&
+          createEsbuildRenderChunkPlugin(
+            config.esbuildTarget,
+            minify === 'esbuild'
+          ),
+        // minify with terser
+        // this is the default which has better compression, but slow
+        // the user can opt-in to use esbuild which is much faster but results
+        // in ~8-10% larger file size.
+        minify && minify !== 'esbuild'
+          ? require('rollup-plugin-terser').terser(config.terserOptions)
+          : undefined,
+        // #728 user plugins should apply after `@rollup/plugin-commonjs`
+        // #471#issuecomment-683318951 user plugin after internal plugin
+        ...pluginsPostBuild,
+        // vite:manifest
+        config.emitManifest ? createBuildManifestPlugin() : undefined
+      ].filter(Boolean)
+    }
+  })
+
   // lazy require rollup so that we don't load it when only using the dev server
   // importing it just for the types
   const rollup = require('rollup').rollup as typeof Rollup
-  const bundle = rollup({
-    input: path.resolve(root, entry),
-    preserveEntrySignatures: false,
-    treeshake: { moduleSideEffects: 'no-external' },
-    onwarn: onRollupWarning(spinner, config.optimizeDeps),
-    ...rollupInputOptions,
-    plugins: [
-      ...plugins,
-      ...pluginsPreBuild,
-      ...basePlugins,
-      // vite:html
-      htmlPlugin,
-      // we use a custom replacement plugin because @rollup/plugin-replace
-      // performs replacements twice, once at transform and once at renderChunk
-      // - which makes it impossible to exclude Vue templates from it since
-      // Vue templates are compiled into js and included in chunks.
-      createReplacePlugin(
-        (id) =>
-          !/\?vue&type=template/.test(id) &&
-          // also exclude css and static assets for performance
-          !isCSSRequest(id) &&
-          !resolver.isAssetRequest(id),
-        {
-          ...defaultDefines,
-          ...userDefineReplacements,
-          ...userEnvReplacements,
-          ...builtInEnvReplacements,
-          'import.meta.env.': `({}).`,
-          'import.meta.env': JSON.stringify({
-            ...userClientEnv,
-            ...builtInClientEnv
-          }),
-          'process.env.NODE_ENV': JSON.stringify(resolvedMode),
-          'process.env.': `({}).`,
-          'process.env': JSON.stringify({ NODE_ENV: resolvedMode }),
-          'import.meta.hot': `false`
-        },
-        !!sourcemap
-      ),
-      // vite:css
-      createBuildCssPlugin({
-        root,
-        publicBase: publicBasePath,
-        assetsDir,
-        minify,
-        inlineLimit: assetsInlineLimit,
-        cssCodeSplit: config.cssCodeSplit,
-        preprocessOptions: config.cssPreprocessOptions,
-        modulesOptions: config.cssModuleOptions,
-        emitAssets
-      }),
-      // vite:asset
-      createBuildAssetPlugin(
-        root,
-        resolver,
-        publicBasePath,
-        assetsDir,
-        assetsInlineLimit,
-        emitAssets
-      ),
-      createBuildWasmPlugin(
-        root,
-        publicBasePath,
-        assetsDir,
-        assetsInlineLimit,
-        emitAssets
-      ),
-      config.enableEsbuild &&
-        createEsbuildRenderChunkPlugin(
-          config.esbuildTarget,
-          minify === 'esbuild'
-        ),
-      // minify with terser
-      // this is the default which has better compression, but slow
-      // the user can opt-in to use esbuild which is much faster but results
-      // in ~8-10% larger file size.
-      minify && minify !== 'esbuild'
-        ? require('rollup-plugin-terser').terser(config.terserOptions)
-        : undefined,
-      // #728 user plugins should apply after `@rollup/plugin-commonjs`
-      // #471#issuecomment-683318951 user plugin after internal plugin
-      ...pluginsPostBuild,
-      // vite:manifest
-      config.emitManifest ? createBuildManifestPlugin() : undefined
-    ].filter(Boolean)
-  })
-
-  builds.unshift({
-    id: 'index',
-    bundle
-  })
-
-  const {
-    plugins: rollupOutputPlugins = [],
-    ...rollupOutputOptions
-  } = config.rollupOutputOptions
 
   // multiple builds are processed sequentially, in case a build
   // depends on the output of a preceding build.
   for (const build of builds) {
-    const bundle = await build.bundle
-    await bundle[write ? 'write' : 'generate']({
-      dir: resolvedAssetsPath,
-      format: 'es',
-      sourcemap,
-      entryFileNames: `[name].[hash].js`,
-      chunkFileNames: `[name].[hash].js`,
-      assetFileNames: `[name].[hash].[ext]`,
-      ...rollupOutputOptions,
+    const { output: outputOptions, ...inputOptions } = build.options
+
+    const bundle = await rollup({
+      ...inputOptions,
       plugins: [
-        ...rollupOutputPlugins,
+        ...(inputOptions.plugins || []),
+        // vite:emit
         createEmitPlugin(
           build as Required<Build>,
           config,
@@ -582,6 +575,16 @@ export async function build(
           postBuildHooks
         )
       ]
+    })
+
+    await bundle[write ? 'write' : 'generate']({
+      dir: resolvedAssetsPath,
+      format: 'es',
+      sourcemap,
+      entryFileNames: `[name].[hash].js`,
+      chunkFileNames: `[name].[hash].js`,
+      assetFileNames: `[name].[hash].[ext]`,
+      ...outputOptions
     })
   }
 
