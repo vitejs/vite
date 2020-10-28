@@ -37,7 +37,7 @@ import { createBuildWasmPlugin } from './buildPluginWasm'
 import { createBuildManifestPlugin } from './buildPluginManifest'
 
 interface Build {
-  id: string
+  readonly id: string
   options: InputOptions & {
     output?: OutputOptions
   }
