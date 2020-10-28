@@ -364,14 +364,15 @@ export async function build(
     shouldPreload,
     env,
     mode: configMode,
-    define: userDefineReplacements
+    define: userDefineReplacements,
+    write
   } = config
 
   const isTest = process.env.NODE_ENV === 'test'
   const resolvedMode = process.env.VITE_ENV || configMode
   const start = Date.now()
-  const emitIndex = !!(config.emitIndex && config.write)
-  const emitAssets = !!(config.emitAssets && config.write)
+  const emitIndex = !!(config.emitIndex && write)
+  const emitAssets = !!(config.emitAssets && write)
 
   let spinner: Ora | undefined
   const msg = `Building ${configMode} bundle...`
@@ -394,7 +395,9 @@ export async function build(
     config.assetsInclude
   )
 
-  await fs.emptyDir(outDir)
+  if (write) {
+    await fs.emptyDir(outDir)
+  }
 
   const { htmlPlugin, renderIndex } = await createBuildHtmlPlugin(
     root,
@@ -556,7 +559,7 @@ export async function build(
 
   for (const build of builds) {
     const bundle = await build.bundle
-    const { output } = await bundle[config.write ? 'write' : 'generate']({
+    const { output } = await bundle[write ? 'write' : 'generate']({
       dir: resolvedAssetsPath,
       format: 'es',
       sourcemap,
@@ -575,7 +578,7 @@ export async function build(
 
   spinner && spinner.stop()
 
-  if (config.write) {
+  if (write) {
     const printFilesInfo = async (
       filepath: string,
       content: string | Uint8Array,
