@@ -50,6 +50,10 @@ export async function cachedRead(
     }
     return cached.content
   }
+  // #964 strict check path case
+  if (!fileExistsWithCaseSync(file)) {
+    throw new Error(`The ${file} Not Found. Please check path case.`)
+  }
   // #395 some file is an binary file, eg. font
   let content = await fs.readFile(file)
   // Populate the "sourcesContent" array and resolve relative paths in the
@@ -142,4 +146,14 @@ export function watchFileIfOutOfRoot(
   if (!file.startsWith(root) && !/node_modules/.test(file)) {
     watcher.add(file)
   }
+}
+
+function fileExistsWithCaseSync(filepath: string): boolean {
+  const dir = path.dirname(filepath)
+  if (dir === '/' || dir === '.') return true
+  const filenames = fs.readdirSync(dir)
+  if (filenames.indexOf(path.basename(filepath)) === -1) {
+    return false
+  }
+  return fileExistsWithCaseSync(dir)
 }
