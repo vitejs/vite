@@ -28,7 +28,7 @@ export function createVuePlugin(options: VueViteOptions = {}) {
 
   return {
     resolvers: [resolver],
-    transforms: [jsxTransform],
+    transforms: jsx ? [jsxTransform] : [],
     // if set truly `jsx` option, should disabled esbuild
     enableEsbuild: !jsx,
     configureServer: vuePlugin,

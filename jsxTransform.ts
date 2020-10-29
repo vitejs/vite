@@ -3,7 +3,7 @@ import { transform } from '@babel/core'
 
 export const jsxTransform: Transform = {
   test({ path }) {
-    return /\.(tsx?|jsx?)$/.test(path)
+    return /\.(tsx?|jsx)$/.test(path)
   },
   transform({ id, code }) {
     const result = transform(code, {
