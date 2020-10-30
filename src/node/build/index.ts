@@ -628,7 +628,7 @@ export async function build(
         }
       }
 
-      if (emitIndex) {
+      if (emitIndex && build.html) {
         const outputHtmlPath = path.join(outDir, build.id + '.html')
         await fs.writeFile(outputHtmlPath, build.html)
         await printFilesInfo(outputHtmlPath, build.html, WriteType.HTML)
