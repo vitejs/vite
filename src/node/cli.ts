@@ -150,7 +150,6 @@ function runServe(options: UserConfig) {
   })
 
   server.listen(port, () => {
-    console.log()
     console.log(`  Dev server running at:`)
     const interfaces = os.networkInterfaces()
     Object.keys(interfaces).forEach((key) => {
@@ -169,7 +168,6 @@ function runServe(options: UserConfig) {
           console.log(`  > ${type} ${chalk.cyan(url)}`)
         })
     })
-    console.log()
     require('debug')('vite:server')(`server ready in ${Date.now() - start}ms.`)
 
     if (options.open) {

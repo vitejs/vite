@@ -234,7 +234,6 @@ export async function optimizeDeps(
         console.error(chalk.cyan(path.relative(root, e.loc.file)))
         console.error(chalk.dim(e.frame))
       } else if (e.message.match('Node built-in')) {
-        console.log()
         console.log(
           chalk.yellow(
             `Tip:\nMake sure your "dependencies" only include packages that you\n` +
