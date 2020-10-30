@@ -17,7 +17,6 @@ export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
     if (typeof opts === 'string') {
       opts = { target: opts } as ProxiesOptions
     }
-    if (opts.ws) return
     opts.logs = (ctx, target) => {
       debug(
         `${ctx.req.method} ${(ctx.req as any).oldPath} proxy to -> ${new URL(
