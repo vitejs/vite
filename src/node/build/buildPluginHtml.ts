@@ -205,7 +205,6 @@ const compileHtml = async (
         }
 
         if (shouldRemove) {
-          console.log('removing')
           // remove the script tag from the html. we are going to inject new
           // ones in the end.
           s.remove(node.loc.start.offset, node.loc.end.offset)
