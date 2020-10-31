@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
+import pMapSeries from 'p-map-series'
 import { Ora } from 'ora'
 import { klona } from 'klona/json'
 import { resolveFrom, lookupFile, toArray, isStaticAsset } from '../utils'
@@ -8,6 +9,7 @@ import {
   rollup as Rollup,
   ExternalOption,
   Plugin,
+  InputOption,
   InputOptions,
   OutputOptions,
   OutputPlugin,
@@ -36,13 +38,17 @@ import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
 import { createBuildWasmPlugin } from './buildPluginWasm'
 import { createBuildManifestPlugin } from './buildPluginManifest'
 
-interface Build {
-  readonly id: string
-  options: InputOptions & {
-    output?: OutputOptions
-  }
-  html?: string
-  assets?: BuildResult['assets']
+interface Build extends InputOptions {
+  input: InputOption
+  output: OutputOptions
+  /** Runs before global post-build hooks. */
+  onResult?: PostBuildHook
+}
+
+export interface BuildResult {
+  build: Build
+  html: string
+  assets: RollupOutput['output']
 }
 
 /** For adding Rollup builds and mutating the Vite config. */
@@ -52,13 +58,7 @@ export type BuildPlugin = (
 ) => PostBuildHook | void
 
 /** Returned by `configureBuild` hook to mutate a build's output. */
-export type PostBuildHook = (build: Required<Build>) => Promise<void> | void
-
-export interface BuildResult {
-  id: string
-  html: string
-  assets: RollupOutput['output']
-}
+export type PostBuildHook = (result: BuildResult) => Promise<void> | void
 
 const enum WriteType {
   JS,
@@ -361,8 +361,6 @@ export async function build(
     assetsDir,
     assetsInlineLimit,
     emitAssets,
-    emitIndex,
-    entry,
     minify,
     silent,
     sourcemap,
@@ -388,7 +386,7 @@ export async function build(
   }
 
   const outDir = path.resolve(root, config.outDir)
-  const indexPath = path.join(root, 'index.html')
+  const indexPath = path.resolve(root, config.entry)
   const publicDir = path.join(root, 'public')
   const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
@@ -463,94 +461,90 @@ export async function build(
   } = config.rollupInputOptions
 
   builds.unshift({
-    id: 'index',
-    options: {
-      input: path.resolve(root, entry),
-      preserveEntrySignatures: false,
-      treeshake: { moduleSideEffects: 'no-external' },
-      onwarn: onRollupWarning(spinner, config.optimizeDeps),
-      ...rollupInputOptions,
-      output: config.rollupOutputOptions,
-      plugins: [
-        ...plugins,
-        ...pluginsPreBuild,
-        ...basePlugins,
-        // vite:html
-        htmlPlugin,
-        // we use a custom replacement plugin because @rollup/plugin-replace
-        // performs replacements twice, once at transform and once at renderChunk
-        // - which makes it impossible to exclude Vue templates from it since
-        // Vue templates are compiled into js and included in chunks.
-        createReplacePlugin(
-          (id) =>
-            !/\?vue&type=template/.test(id) &&
-            // also exclude css and static assets for performance
-            !isCSSRequest(id) &&
-            !resolver.isAssetRequest(id),
-          {
-            ...defaultDefines,
-            ...userDefineReplacements,
-            ...userEnvReplacements,
-            ...builtInEnvReplacements,
-            'import.meta.env.': `({}).`,
-            'import.meta.env': JSON.stringify({
-              ...userClientEnv,
-              ...builtInClientEnv
-            }),
-            'process.env.NODE_ENV': JSON.stringify(resolvedMode),
-            'process.env.': `({}).`,
-            'process.env': JSON.stringify({ NODE_ENV: resolvedMode }),
-            'import.meta.hot': `false`
-          },
-          !!sourcemap
+    input: indexPath,
+    preserveEntrySignatures: false,
+    treeshake: { moduleSideEffects: 'no-external' },
+    ...rollupInputOptions,
+    output: config.rollupOutputOptions,
+    plugins: [
+      ...plugins,
+      ...pluginsPreBuild,
+      ...basePlugins,
+      // vite:html
+      htmlPlugin,
+      // we use a custom replacement plugin because @rollup/plugin-replace
+      // performs replacements twice, once at transform and once at renderChunk
+      // - which makes it impossible to exclude Vue templates from it since
+      // Vue templates are compiled into js and included in chunks.
+      createReplacePlugin(
+        (id) =>
+          !/\?vue&type=template/.test(id) &&
+          // also exclude css and static assets for performance
+          !isCSSRequest(id) &&
+          !resolver.isAssetRequest(id),
+        {
+          ...defaultDefines,
+          ...userDefineReplacements,
+          ...userEnvReplacements,
+          ...builtInEnvReplacements,
+          'import.meta.env.': `({}).`,
+          'import.meta.env': JSON.stringify({
+            ...userClientEnv,
+            ...builtInClientEnv
+          }),
+          'process.env.NODE_ENV': JSON.stringify(resolvedMode),
+          'process.env.': `({}).`,
+          'process.env': JSON.stringify({ NODE_ENV: resolvedMode }),
+          'import.meta.hot': `false`
+        },
+        !!sourcemap
+      ),
+      // vite:css
+      createBuildCssPlugin({
+        root,
+        publicBase: publicBasePath,
+        assetsDir,
+        minify,
+        inlineLimit: assetsInlineLimit,
+        cssCodeSplit: config.cssCodeSplit,
+        preprocessOptions: config.cssPreprocessOptions,
+        modulesOptions: config.cssModuleOptions,
+        emitAssets
+      }),
+      // vite:asset
+      createBuildAssetPlugin(
+        root,
+        resolver,
+        publicBasePath,
+        assetsDir,
+        assetsInlineLimit,
+        emitAssets
+      ),
+      createBuildWasmPlugin(
+        root,
+        publicBasePath,
+        assetsDir,
+        assetsInlineLimit,
+        emitAssets
+      ),
+      config.enableEsbuild &&
+        createEsbuildRenderChunkPlugin(
+          config.esbuildTarget,
+          minify === 'esbuild'
         ),
-        // vite:css
-        createBuildCssPlugin({
-          root,
-          publicBase: publicBasePath,
-          assetsDir,
-          minify,
-          inlineLimit: assetsInlineLimit,
-          cssCodeSplit: config.cssCodeSplit,
-          preprocessOptions: config.cssPreprocessOptions,
-          modulesOptions: config.cssModuleOptions,
-          emitAssets
-        }),
-        // vite:asset
-        createBuildAssetPlugin(
-          root,
-          resolver,
-          publicBasePath,
-          assetsDir,
-          assetsInlineLimit,
-          emitAssets
-        ),
-        createBuildWasmPlugin(
-          root,
-          publicBasePath,
-          assetsDir,
-          assetsInlineLimit,
-          emitAssets
-        ),
-        config.enableEsbuild &&
-          createEsbuildRenderChunkPlugin(
-            config.esbuildTarget,
-            minify === 'esbuild'
-          ),
-        // minify with terser
-        // this is the default which has better compression, but slow
-        // the user can opt-in to use esbuild which is much faster but results
-        // in ~8-10% larger file size.
-        minify && minify !== 'esbuild'
-          ? require('rollup-plugin-terser').terser(config.terserOptions)
-          : undefined,
-        // #728 user plugins should apply after `@rollup/plugin-commonjs`
-        // #471#issuecomment-683318951 user plugin after internal plugin
-        ...pluginsPostBuild,
-        // vite:manifest
-        config.emitManifest ? createBuildManifestPlugin() : undefined
-      ].filter(Boolean)
-    }
+      // minify with terser
+      // this is the default which has better compression, but slow
+      // the user can opt-in to use esbuild which is much faster but results
+      // in ~8-10% larger file size.
+      minify && minify !== 'esbuild'
+        ? require('rollup-plugin-terser').terser(config.terserOptions)
+        : undefined,
+      // #728 user plugins should apply after `@rollup/plugin-commonjs`
+      // #471#issuecomment-683318951 user plugin after internal plugin
+      ...pluginsPostBuild,
+      // vite:manifest
+      config.emitManifest ? createBuildManifestPlugin() : undefined
+    ].filter(Boolean)
   })
 
   // lazy require rollup so that we don't load it when only using the dev server
@@ -559,51 +553,76 @@ export async function build(
 
   // multiple builds are processed sequentially, in case a build
   // depends on the output of a preceding build.
-  for (const build of builds) {
-    const { output: outputOptions, ...inputOptions } = build.options
+  const results = await pMapSeries(builds, async (build, i) => {
+    let result!: BuildResult
+    let indexHtml!: string
+    let indexDest!: string
 
-    const bundle = await rollup({
-      ...inputOptions,
-      plugins: [
-        ...(inputOptions.plugins || []).filter(
-          // remove vite:emit in case this build copied another build's plugins
-          (plugin) => plugin.name !== 'vite:emit'
-        ),
-        // vite:emit
-        createEmitPlugin(
-          build as Required<Build>,
-          outDir,
-          emitAssets && publicDir,
-          emitIndex && renderIndex,
-          postBuildHooks
-        )
-      ]
-    })
+    const { output: outputOptions, onResult, ...inputOptions } = build
+    const input = normalizeInput(inputOptions.input, outputOptions)
+    const emitIndex =
+      config.emitIndex && Object.values(input).includes(indexPath)
 
-    await bundle[write ? 'write' : 'generate']({
-      dir: resolvedAssetsPath,
-      format: 'es',
-      sourcemap,
-      entryFileNames: `[name].[hash].js`,
-      chunkFileNames: `[name].[hash].js`,
-      assetFileNames: `[name].[hash].[ext]`,
-      ...outputOptions
-    })
-  }
+    try {
+      const bundle = await rollup({
+        onwarn: onRollupWarning(spinner, config.optimizeDeps),
+        ...inputOptions,
+        input,
+        plugins: [
+          ...(inputOptions.plugins || []).filter(
+            // remove vite:emit in case this build copied another build's plugins
+            (plugin) => plugin.name !== 'vite:emit'
+          ),
+          // vite:emit
+          createEmitPlugin(async (assets) => {
+            indexHtml = emitIndex ? await renderIndex(assets) : ''
+            result = { build, assets, html: indexHtml }
+            if (onResult) {
+              await onResult(result)
+            }
 
-  spinner && spinner.stop()
+            // run post-build hooks sequentially
+            await postBuildHooks.reduce(
+              (queue, hook) => queue.then(() => hook(result)),
+              Promise.resolve()
+            )
 
-  // log js chunks and assets
-  if (write && !silent)
-    for (const build of builds) {
-      if (emitIndex)
-        printFileInfo(
-          path.join(outDir, build.id + '.html'),
-          build.html!,
-          WriteType.HTML
-        )
+            if (write) {
+              if (i === 0) {
+                await fs.emptyDir(outDir)
+              }
+              if (emitIndex) {
+                indexDest = path.join(
+                  outDir,
+                  Object.keys(input).find(
+                    (alias) => input[alias] === indexPath
+                  )!
+                )
+                await fs.writeFile(indexDest, indexHtml)
+              }
+            }
+          })
+        ]
+      })
 
-      for (const chunk of build.assets!) {
+      await bundle[write ? 'write' : 'generate']({
+        dir: resolvedAssetsPath,
+        format: 'es',
+        sourcemap,
+        entryFileNames: `[name].[hash].js`,
+        chunkFileNames: `[name].[hash].js`,
+        assetFileNames: `[name].[hash].[ext]`,
+        ...outputOptions
+      })
+    } finally {
+      spinner && spinner.stop()
+    }
+
+    if (write && !silent) {
+      if (emitIndex) {
+        printFileInfo(indexDest, indexHtml, WriteType.HTML)
+      }
+      for (const chunk of result.assets!) {
         if (chunk.type === 'chunk') {
           const filePath = path.join(resolvedAssetsPath, chunk.fileName)
           printFileInfo(filePath, chunk.code, WriteType.JS)
@@ -623,6 +642,19 @@ export async function build(
       }
     }
 
+    spinner && spinner.start()
+    return result
+  })
+
+  // copy over /public if it exists
+  if (write && emitAssets && fs.existsSync(publicDir)) {
+    for (const file of await fs.readdir(publicDir)) {
+      await fs.copy(path.join(publicDir, file), path.resolve(outDir, file))
+    }
+  }
+
+  spinner && spinner.stop()
+
   if (!silent) {
     console.log(
       `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.\n`
@@ -632,13 +664,7 @@ export async function build(
   // stop the esbuild service after each build
   await stopService()
 
-  return builds.map(
-    (build): BuildResult => ({
-      id: build.id,
-      html: build.html!,
-      assets: build.assets!
-    })
-  )
+  return results
 }
 
 /**
@@ -686,49 +712,41 @@ export async function ssrBuild(
 }
 
 function createEmitPlugin(
-  build: Required<Build>,
-  outDir: string,
-  publicDir: string | false,
-  renderIndex:
-    | ((assets: BuildResult['assets']) => string | Promise<string>)
-    | false,
-  postBuildHooks: PostBuildHook[]
+  emit: (assets: BuildResult['assets']) => Promise<void>
 ): OutputPlugin {
-  const isFirstBuild = build.id === 'index'
   return {
     name: 'vite:emit',
-    async generateBundle(_, output, isWrite) {
-      // assume the first asset added to `output` is the entry chunk
-      build.assets = Object.values(output) as any
-      build.html = renderIndex ? await renderIndex(build.assets) : ''
+    async generateBundle(_, output) {
+      // assume the first asset in `output` is an entry chunk
+      const assets = Object.values(output) as BuildResult['assets']
 
-      // run post-build hooks sequentially
-      await postBuildHooks.reduce(
-        (queue, hook) => queue.then(() => hook(build)),
-        Promise.resolve()
-      )
+      // process the output before writing
+      await emit(assets)
 
-      // emit any assets injected by post-build hooks
-      for (const asset of build.assets) {
+      // write any assets injected by post-build hooks
+      for (const asset of assets) {
         output[asset.fileName] = asset
-      }
-
-      if (isFirstBuild && isWrite) {
-        await fs.emptyDir(outDir)
-      }
-    },
-    async writeBundle() {
-      if (renderIndex) {
-        await fs.writeFile(path.join(outDir, build.id + '.html'), build.html)
-      }
-      // copy over /public if it exists
-      if (isFirstBuild && publicDir && fs.existsSync(publicDir)) {
-        for (const file of await fs.readdir(publicDir)) {
-          await fs.copy(path.join(publicDir, file), path.resolve(outDir, file))
-        }
       }
     }
   }
+}
+
+/**
+ * Convert the `input` option to object form, and ensure all input paths
+ * are absolute.
+ */
+function normalizeInput(input: InputOption, outputOptions: OutputOptions) {
+  const entries =
+    typeof input === 'string'
+      ? [[outputOptions.file || input, path.resolve(input)]]
+      : Array.isArray(input)
+      ? input.map((input) => [input, path.resolve(input)])
+      : Object.entries(input).map(([alias, input]) => [
+          alias,
+          path.resolve(input)
+        ])
+
+  return Object.fromEntries(entries)
 }
 
 function resolveExternal(
