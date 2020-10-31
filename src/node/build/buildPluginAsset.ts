@@ -116,7 +116,7 @@ export const createBuildAssetPlugin = (
               source: content
             })
         }
-        debug(`${id} -> ${url!.startsWith('data:') ? `base64 inlined` : id}`)
+        debug(`${id} -> ${url?.startsWith('data:') ? `base64 inlined` : id}`)
         return `export default ${JSON.stringify(url)}`
       }
     },
