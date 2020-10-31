@@ -1,3 +1,4 @@
+import LRUCache from 'lru-cache'
 import { ServerPlugin } from '.'
 import {
   tjsxRE,
@@ -7,6 +8,9 @@ import {
   vueJsxFilePath
 } from '../esbuildService'
 import { readBody, cleanUrl } from '../utils'
+
+// #985: silence logs when etag hasn't changed in past 30 seconds
+const etagCache = new LRUCache({ maxAge: 3e4 })
 
 export const esbuildPlugin: ServerPlugin = ({ app, config, resolver }) => {
   const jsxConfig = resolveJsxOptions(config.jsx)
@@ -34,8 +38,11 @@ export const esbuildPlugin: ServerPlugin = ({ app, config, resolver }) => {
       src!,
       resolver.requestToFile(cleanUrl(ctx.url)),
       jsxConfig,
-      config.jsx
+      config.jsx,
+      // silent when etag is unchanged
+      ctx.etag === etagCache.get(ctx.path)
     )
+    etagCache.set(ctx.path, ctx.etag)
     ctx.body = code
     if (map) {
       ctx.map = JSON.parse(map)

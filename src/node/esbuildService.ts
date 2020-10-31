@@ -67,7 +67,8 @@ export const transform = async (
   src: string,
   request: string,
   options: TransformOptions = {},
-  jsxOption?: SharedConfig['jsx']
+  jsxOption?: SharedConfig['jsx'],
+  silent?: boolean
 ) => {
   const service = await ensureService()
   const file = cleanUrl(request)
@@ -81,7 +82,7 @@ export const transform = async (
   }
   try {
     const result = await service.transform(src, options)
-    if (result.warnings.length) {
+    if (!silent && result.warnings.length) {
       console.error(`[vite] warnings while transforming ${file} with esbuild:`)
       result.warnings.forEach((m) => printMessage(m, src))
     }
@@ -105,15 +106,17 @@ export const transform = async (
       map: result.jsSourceMap
     }
   } catch (e) {
-    console.error(
-      chalk.red(`[vite] error while transforming ${file} with esbuild:`)
-    )
-    if (e.errors) {
-      e.errors.forEach((m: Message) => printMessage(m, src))
-    } else {
-      console.error(e)
+    if (!silent) {
+      console.error(
+        chalk.red(`[vite] error while transforming ${file} with esbuild:`)
+      )
+      if (e.errors) {
+        e.errors.forEach((m: Message) => printMessage(m, src))
+      } else {
+        console.error(e)
+      }
+      debug(`options used: `, options)
     }
-    debug(`options used: `, options)
     return {
       code: '',
       map: undefined
