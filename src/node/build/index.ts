@@ -554,20 +554,17 @@ export async function build(
   // multiple builds are processed sequentially, in case a build
   // depends on the output of a preceding build.
   const results = await pMapSeries(builds, async (build, i) => {
+    const { output: outputOptions, onResult, ...inputOptions } = build
+
     let result!: BuildResult
     let indexHtml!: string
-    let indexDest!: string
-
-    const { output: outputOptions, onResult, ...inputOptions } = build
-    const input = normalizeInput(inputOptions.input, outputOptions)
-    const emitIndex =
-      config.emitIndex && Object.values(input).includes(indexPath)
+    let indexHtmlPath = getIndexHtmlOutputPath(build)
+    const emitIndex = config.emitIndex && indexHtmlPath !== null
 
     try {
       const bundle = await rollup({
         onwarn: onRollupWarning(spinner, config.optimizeDeps),
         ...inputOptions,
-        input,
         plugins: [
           ...(inputOptions.plugins || []).filter(
             // remove vite:emit in case this build copied another build's plugins
@@ -592,13 +589,8 @@ export async function build(
                 await fs.emptyDir(outDir)
               }
               if (emitIndex) {
-                indexDest = path.join(
-                  outDir,
-                  Object.keys(input).find(
-                    (alias) => input[alias] === indexPath
-                  )!
-                )
-                await fs.writeFile(indexDest, indexHtml)
+                indexHtmlPath = path.join(outDir, indexHtmlPath!)
+                await fs.writeFile(indexHtmlPath, indexHtml)
               }
             }
           })
@@ -620,7 +612,7 @@ export async function build(
 
     if (write && !silent) {
       if (emitIndex) {
-        printFileInfo(indexDest, indexHtml, WriteType.HTML)
+        printFileInfo(indexHtmlPath!, indexHtml, WriteType.HTML)
       }
       for (const chunk of result.assets!) {
         if (chunk.type === 'chunk') {
@@ -732,21 +724,12 @@ function createEmitPlugin(
 }
 
 /**
- * Convert the `input` option to object form, and ensure all input paths
- * are absolute.
+ * Resolve the output path of `index.html` for the given build (relative to
+ * `outDir` in Vite config).
  */
-function normalizeInput(input: InputOption, outputOptions: OutputOptions) {
-  const entries =
-    typeof input === 'string'
-      ? [[outputOptions.file || input, path.resolve(input)]]
-      : Array.isArray(input)
-      ? input.map((input) => [input, path.resolve(input)])
-      : Object.entries(input).map(([alias, input]) => [
-          alias,
-          path.resolve(input)
-        ])
-
-  return Object.fromEntries(entries)
+function getIndexHtmlOutputPath(build: Build) {
+  const { input, output } = build
+  return input === 'index.html' ? output.file || input : null
 }
 
 function resolveExternal(
