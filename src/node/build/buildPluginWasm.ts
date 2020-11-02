@@ -36,8 +36,7 @@ export const createBuildWasmPlugin = (
   root: string,
   publicBase: string,
   assetsDir: string,
-  inlineLimit: number,
-  emitAssets: boolean
+  inlineLimit: number
 ): Plugin => {
   return {
     name: 'vite:wasm',
@@ -61,7 +60,7 @@ export const createBuildWasmPlugin = (
           assetsDir,
           inlineLimit
         )
-        if (!url && emitAssets && fileName && content) {
+        if (!url && fileName && content) {
           url =
             'import.meta.ROLLUP_FILE_URL_' +
             this.emitFile({
