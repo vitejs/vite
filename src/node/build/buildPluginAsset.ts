@@ -93,8 +93,7 @@ export const createBuildAssetPlugin = (
   resolver: InternalResolver,
   publicBase: string,
   assetsDir: string,
-  inlineLimit: number,
-  emitAssets: boolean
+  inlineLimit: number
 ): Plugin => {
   const handleToIdMap = new Map()
 
@@ -137,16 +136,6 @@ export const createBuildAssetPlugin = (
         }
       }
       return { code, map: null }
-    },
-
-    generateBundle(_options, bundle) {
-      if (!emitAssets) {
-        for (const name in bundle) {
-          if (bundle[name].type === 'asset') {
-            delete bundle[name]
-          }
-        }
-      }
     }
   }
 }

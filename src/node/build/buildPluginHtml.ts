@@ -1,4 +1,4 @@
-import { Plugin, RollupOutput, OutputChunk } from 'rollup'
+import { Plugin, OutputChunk, RollupOutput } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
 import MagicString from 'magic-string'
@@ -22,7 +22,7 @@ import {
 
 export const createBuildHtmlPlugin = async (
   root: string,
-  indexPath: string | null,
+  indexPath: string,
   publicBasePath: string,
   assetsDir: string,
   inlineLimit: number,
@@ -30,7 +30,7 @@ export const createBuildHtmlPlugin = async (
   shouldPreload: ((chunk: OutputChunk) => boolean) | null,
   config: UserConfig
 ) => {
-  if (!indexPath || !fs.existsSync(indexPath)) {
+  if (!fs.existsSync(indexPath)) {
     return {
       renderIndex: () => '',
       htmlPlugin: null
