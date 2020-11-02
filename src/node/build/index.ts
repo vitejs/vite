@@ -40,9 +40,11 @@ import { createBuildManifestPlugin } from './buildPluginManifest'
 
 interface Build extends InputOptions {
   input: InputOption
-  output: OutputOptions
+  output?: OutputOptions
   /** Runs before global post-build hooks. */
   onResult?: PostBuildHook
+  /** Builds can opt out of writing by setting this to false. */
+  write?: boolean
 }
 
 export interface BuildResult {
@@ -547,7 +549,13 @@ export async function build(
   // multiple builds are processed sequentially, in case a build
   // depends on the output of a preceding build.
   const results = await pMapSeries(builds, async (build, i) => {
-    const { output: outputOptions, onResult, ...inputOptions } = build
+    const writeBuild = write && build.write !== false
+    const {
+      write: _write,
+      onResult,
+      output: outputOptions = {},
+      ...inputOptions
+    } = build
 
     let result!: BuildResult
     let indexHtml!: string
@@ -581,7 +589,7 @@ export async function build(
               if (i === 0) {
                 await fs.emptyDir(outDir)
               }
-              if (emitIndex) {
+              if (emitIndex && writeBuild) {
                 indexHtmlPath = path.join(outDir, indexHtmlPath!)
                 await fs.writeFile(indexHtmlPath, indexHtml)
               }
@@ -590,7 +598,7 @@ export async function build(
         ]
       })
 
-      await bundle[write ? 'write' : 'generate']({
+      await bundle[writeBuild ? 'write' : 'generate']({
         dir: resolvedAssetsPath,
         format: 'es',
         sourcemap,
@@ -603,7 +611,7 @@ export async function build(
       spinner && spinner.stop()
     }
 
-    if (write && !silent) {
+    if (writeBuild && !silent) {
       if (emitIndex) {
         printFileInfo(indexHtmlPath!, indexHtml, WriteType.HTML)
       }
@@ -729,9 +737,8 @@ function createEmitPlugin(
  * Resolve the output path of `index.html` for the given build (relative to
  * `outDir` in Vite config).
  */
-function getIndexHtmlOutputPath(build: Build) {
-  const { input, output } = build
-  return input === 'index.html' ? output.file || input : null
+function getIndexHtmlOutputPath({ input, output }: Build) {
+  return input === 'index.html' ? (output && output.file) || input : null
 }
 
 function resolveExternal(
