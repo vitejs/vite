@@ -137,16 +137,6 @@ export const createBuildAssetPlugin = (
         }
       }
       return { code, map: null }
-    },
-
-    generateBundle(_options, bundle) {
-      if (!emitAssets) {
-        for (const name in bundle) {
-          if (bundle[name].type === 'asset') {
-            delete bundle[name]
-          }
-        }
-      }
     }
   }
 }

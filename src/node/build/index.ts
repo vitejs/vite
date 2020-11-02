@@ -565,7 +565,7 @@ export async function build(
             (plugin) => plugin.name !== 'vite:emit'
           ),
           // vite:emit
-          createEmitPlugin(async (assets) => {
+          createEmitPlugin(emitAssets, async (assets) => {
             indexHtml = emitIndex ? await renderIndex(assets) : ''
             result = { build, assets, html: indexHtml }
             if (onResult) {
@@ -697,6 +697,7 @@ export async function ssrBuild(
 }
 
 function createEmitPlugin(
+  emitAssets: boolean,
   emit: (assets: BuildResult['assets']) => Promise<void>
 ): OutputPlugin {
   return {
@@ -711,6 +712,15 @@ function createEmitPlugin(
       // write any assets injected by post-build hooks
       for (const asset of assets) {
         output[asset.fileName] = asset
+      }
+
+      // remove assets from bundle if emitAssets is false
+      if (!emitAssets) {
+        for (const name in output) {
+          if (output[name].type === 'asset') {
+            delete output[name]
+          }
+        }
       }
     }
   }
