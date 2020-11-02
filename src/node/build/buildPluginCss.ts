@@ -33,7 +33,6 @@ interface BuildCssOption {
   cssCodeSplit?: boolean
   preprocessOptions?: CssPreprocessOptions
   modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
-  emitAssets: boolean
 }
 
 export const createBuildCssPlugin = ({
@@ -44,8 +43,7 @@ export const createBuildCssPlugin = ({
   inlineLimit = 0,
   cssCodeSplit = true,
   preprocessOptions,
-  modulesOptions = {},
-  emitAssets
+  modulesOptions = {}
 }: BuildCssOption): Plugin => {
   const styles: Map<string, string> = new Map()
   let staticCss = ''
@@ -105,7 +103,7 @@ export const createBuildCssPlugin = ({
               assetsDir,
               inlineLimit
             )
-            if (!url && emitAssets && fileName && content) {
+            if (!url && fileName && content) {
               url =
                 'import.meta.ROLLUP_FILE_URL_' +
                 this.emitFile({
@@ -186,14 +184,12 @@ export const createBuildCssPlugin = ({
         staticCss = minifyCSS(staticCss)
       }
 
-      if (emitAssets) {
-        if (staticCss) {
-          this.emitFile({
-            name: 'style.css',
-            type: 'asset',
-            source: staticCss
-          })
-        }
+      if (staticCss) {
+        this.emitFile({
+          name: 'style.css',
+          type: 'asset',
+          source: staticCss
+        })
       }
     }
   }

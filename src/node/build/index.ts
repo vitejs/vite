@@ -508,20 +508,14 @@ export async function build(
         inlineLimit: assetsInlineLimit,
         cssCodeSplit: config.cssCodeSplit,
         preprocessOptions: config.cssPreprocessOptions,
-        modulesOptions: config.cssModuleOptions,
-        emitAssets
+        modulesOptions: config.cssModuleOptions
       }),
+      // vite:wasm
+      createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
       // vite:asset
       createBuildAssetPlugin(
         root,
         resolver,
-        publicBasePath,
-        assetsDir,
-        assetsInlineLimit,
-        emitAssets
-      ),
-      createBuildWasmPlugin(
-        root,
         publicBasePath,
         assetsDir,
         assetsInlineLimit,
@@ -676,7 +670,6 @@ export async function ssrBuild(
 
   return build({
     outDir: 'dist-ssr',
-    assetsDir: '.',
     ...options,
     rollupPluginVueOptions: {
       ...rollupPluginVueOptions,
