@@ -203,7 +203,10 @@ export function rewriteImports(
             debugHmr(`        ${importer} imports ${importee}`)
             ensureMapEntry(importerMap, importee).add(importer)
           }
-        } else if (id !== 'import.meta') {
+        } else if (
+          id !== 'import.meta' &&
+          !/\/\*\s*@vite-ignore\s*\*\//.test(id)
+        ) {
           console.warn(
             chalk.yellow(`[vite] ignored dynamic import(${id}) in ${importer}.`)
           )
