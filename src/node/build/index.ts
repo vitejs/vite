@@ -386,7 +386,7 @@ export async function build(
   }
 
   const outDir = path.resolve(root, config.outDir)
-  const indexPath = path.resolve(root, config.entry)
+  const indexPath = path.resolve(root, 'index.html')
   const publicDir = path.join(root, 'public')
   const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
@@ -461,7 +461,7 @@ export async function build(
   } = config.rollupInputOptions
 
   builds.unshift({
-    input: indexPath,
+    input: config.entry,
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
     ...rollupInputOptions,
