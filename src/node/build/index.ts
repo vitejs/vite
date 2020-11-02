@@ -518,8 +518,7 @@ export async function build(
         resolver,
         publicBasePath,
         assetsDir,
-        assetsInlineLimit,
-        emitAssets
+        assetsInlineLimit
       ),
       config.enableEsbuild &&
         createEsbuildRenderChunkPlugin(

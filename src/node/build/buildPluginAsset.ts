@@ -93,8 +93,7 @@ export const createBuildAssetPlugin = (
   resolver: InternalResolver,
   publicBase: string,
   assetsDir: string,
-  inlineLimit: number,
-  emitAssets: boolean
+  inlineLimit: number
 ): Plugin => {
   const handleToIdMap = new Map()
 
