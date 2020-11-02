@@ -513,25 +513,10 @@ export async function build(
         inlineLimit: assetsInlineLimit,
         cssCodeSplit: config.cssCodeSplit,
         preprocessOptions: config.cssPreprocessOptions,
-        modulesOptions: config.cssModuleOptions,
-        emitAssets
+        modulesOptions: config.cssModuleOptions
       }),
-      // vite:asset
-      createBuildAssetPlugin(
-        root,
-        resolver,
-        publicBasePath,
-        assetsDir,
-        assetsInlineLimit,
-        emitAssets
-      ),
-      createBuildWasmPlugin(
-        root,
-        publicBasePath,
-        assetsDir,
-        assetsInlineLimit,
-        emitAssets
-      ),
+      // vite:wasm
+      createBuildWasmPlugin(root, publicBasePath, assetsDir, assetsInlineLimit),
       config.enableEsbuild &&
         createEsbuildRenderChunkPlugin(
           config.esbuildTarget,
@@ -544,6 +529,15 @@ export async function build(
       minify && minify !== 'esbuild'
         ? require('rollup-plugin-terser').terser(config.terserOptions)
         : undefined,
+      // vite:asset
+      createBuildAssetPlugin(
+        root,
+        resolver,
+        publicBasePath,
+        assetsDir,
+        assetsInlineLimit,
+        emitAssets
+      ),
       // #728 user plugins should apply after `@rollup/plugin-commonjs`
       // #471#issuecomment-683318951 user plugin after internal plugin
       ...pluginsPostBuild,
@@ -681,7 +675,6 @@ export async function ssrBuild(
 
   return build({
     outDir: 'dist-ssr',
-    assetsDir: '.',
     ...options,
     rollupPluginVueOptions: {
       ...rollupPluginVueOptions,
