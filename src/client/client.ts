@@ -2,7 +2,8 @@
 
 // injected by serverPluginClient when served
 declare const __HMR_PROTOCOL__: string
-declare const __HMR_HOST__: string
+declare const __HMR_HOSTNAME__: string
+declare const __HMR_PORT__: string
 declare const __MODE__: string
 declare const __DEFINES__: Record<string, any>
 ;(window as any).process = (window as any).process || {}
@@ -33,7 +34,8 @@ declare var __VUE_HMR_RUNTIME__: HMRRuntime
 // use server configuration, then fallback to inference
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socket = new WebSocket(`${socketProtocol}://${__HMR_HOST__}`, 'vite-hmr')
+const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
+const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 
 function warnFailedFetch(err: Error, path: string | string[]) {
   if (!err.message.match('fetch')) {
