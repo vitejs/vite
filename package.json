@@ -87,6 +87,7 @@
     "minimist": "^1.2.5",
     "open": "^7.2.1",
     "ora": "^5.1.0",
+    "p-map-series": "^2.1.0",
     "postcss-discard-comments": "^4.0.2",
     "postcss-import": "^12.0.1",
     "postcss-load-config": "^3.0.0",
