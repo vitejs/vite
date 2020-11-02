@@ -554,6 +554,12 @@ export async function build(
     let indexHtmlPath = getIndexHtmlOutputPath(build)
     const emitIndex = config.emitIndex && indexHtmlPath !== null
 
+    // unset the `output.file` option once the `indexHtmlPath` is known,
+    // or else Rollup throws an error since multiple chunks are generated.
+    if (indexHtmlPath && outputOptions.file) {
+      outputOptions.file = undefined
+    }
+
     try {
       const bundle = await rollup({
         onwarn: onRollupWarning(spinner, config.optimizeDeps),
