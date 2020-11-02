@@ -162,9 +162,7 @@ export function rewriteImports(
         if (dynamicIndex >= 0) {
           // #998 remove comment
           id = id.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
-          // remove spaces
-          id = id.replace(/\s/g, '')
-          const literalIdMatch = id.match(/^(?:'([^']+)'|"([^"]+)")$/)
+          const literalIdMatch = id.match(/^\s*(?:'([^']+)'|"([^"]+)")\s*$/)
           if (literalIdMatch) {
             hasLiteralDynamicId = true
             id = literalIdMatch[1] || literalIdMatch[2]
