@@ -160,6 +160,10 @@ export function rewriteImports(
         let id = source.substring(start, end)
         let hasLiteralDynamicId = false
         if (dynamicIndex >= 0) {
+          // #998 remove comment
+          id = id.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
+          // remove spaces
+          id = id.replace(/\s/g, '')
           const literalIdMatch = id.match(/^(?:'([^']+)'|"([^"]+)")$/)
           if (literalIdMatch) {
             hasLiteralDynamicId = true
