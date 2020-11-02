@@ -1,3 +1,26 @@
+# [1.0.0-rc.9](https://github.com/vitejs/vite/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2020-11-02)
+
+
+### Bug Fixes
+
+* **dev:** remove comment for dynamic import inside server rewrite ([#1001](https://github.com/vitejs/vite/issues/1001)) ([4ccff7a](https://github.com/vitejs/vite/commit/4ccff7a109c4c339d3a688bc5d091defe274e927)), closes [#998](https://github.com/vitejs/vite/issues/998)
+* **hmr:** infer hmr hostname on client ([#980](https://github.com/vitejs/vite/issues/980)) ([858b2bf](https://github.com/vitejs/vite/commit/858b2bfe530495afcc0540c710e7edafd0e06d03))
+* always emit assets virtually + ensure correct asset paths in ssrBuild ([b8e80ba](https://github.com/vitejs/vite/commit/b8e80ba7142dbddd7dd7f37ca74037bc9dd193f2))
+* **build:** add `write` condition ([e5fdc7e](https://github.com/vitejs/vite/commit/e5fdc7e35e3b009a1ef45c97ae9744f8669105ad))
+* **build:** always render the index.html ([5e7c309](https://github.com/vitejs/vite/commit/5e7c309baa16b78fbfdfbf3fffff7af775c26047))
+* **build:** remove `outDir` before build ([d1599f9](https://github.com/vitejs/vite/commit/d1599f94fb6c0fc7fdeb67ae54ad18407ce16a10))
+* **build:** resolve rollup warning when using pluginsPreBuild ([40e1d87](https://github.com/vitejs/vite/commit/40e1d8721631031fd1c05a6a793e36dd85506e4f))
+* **dev:** always proxy http request even `ws` option is truly ([32be77b](https://github.com/vitejs/vite/commit/32be77bce0257967c4234b822fecd6dbd8571931)), closes [#978](https://github.com/vitejs/vite/issues/978)
+
+
+### Features
+
+* allow suppressing dynamic import warning with [@vite-ignore](https://github.com/vite-ignore) ([7ac483c](https://github.com/vitejs/vite/commit/7ac483ceacdbedb99cbcffbfc4d70ae7451dc018))
+* **build:** add "vite:emit" output plugin ([#977](https://github.com/vitejs/vite/issues/977)) ([9c2d435](https://github.com/vitejs/vite/commit/9c2d43530406c73d350efba804af8a8ea7718ae7))
+* **types:** add `ImportMetaEnv` global type ([03acecd](https://github.com/vitejs/vite/commit/03acecd797d8393e38c8a78f920c8e0927762018))
+
+
+
 # [1.0.0-rc.8](https://github.com/vitejs/vite/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2020-10-26)
 
 
