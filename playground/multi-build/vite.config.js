@@ -1,16 +1,20 @@
-import path from 'path'
-import fs from 'fs'
+const path = require('path')
+const fs = require('fs')
 
-export default {
+module.exports = {
   configureBuild: buildMobile
 }
 
-function buildMobile(config, builds) {
-  return once(() => {
-    // Reuse the options of main build.
-    const mainBuild = builds[0]
-    builds.push({
-      ...mainBuild,
+/**
+ * With this build hook, Vite will generate a bundle for mobile devices
+ * by swapping out modules that have a `[name].mobile.[ext]` variant.
+ */
+function buildMobile(ctx) {
+  // Reuse the main build's options.
+  ctx.beforeEach((options, i) => {
+    if (i > 0) return
+    ctx.build({
+      ...options,
       input: 'index.html',
       output: {
         file: 'index.mobile.html'
@@ -18,29 +22,25 @@ function buildMobile(config, builds) {
       plugins: [
         {
           name: 'resolveMobile',
-          async resolveId(id, parent) {
-            if (id[0] === '.') {
-              const resolved = await this.resolve(id, parent, {
-                skipSelf: true
-              })
-              const ext = path.extname(resolved.id)
-              const mobileId =
-                resolved.id.slice(0, -ext.length) + '.mobile' + ext
-
-              // Use .mobile version if it exists
-              if (fs.existsSync(mobileId)) {
-                return mobileId
-              }
-            }
-          }
+          resolveId: resolveMobile
         },
-        ...mainBuild.plugins
+        ...options.plugins
       ]
     })
   })
 }
 
-function once(fn) {
-  let called = false
-  return () => (!called && fn(), (called = true))
+async function resolveMobile(id, parent) {
+  if (id[0] === '.') {
+    const resolved = await this.resolve(id, parent, {
+      skipSelf: true
+    })
+    const ext = path.extname(resolved.id)
+    const mobileId = resolved.id.slice(0, -ext.length) + '.mobile' + ext
+
+    // Use .mobile version if it exists
+    if (fs.existsSync(mobileId)) {
+      return mobileId
+    }
+  }
 }
