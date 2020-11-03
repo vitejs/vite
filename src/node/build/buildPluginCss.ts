@@ -1,7 +1,7 @@
 import path from 'path'
 import { Plugin } from 'rollup'
-import { resolveAsset, injectAssetRe } from './buildPluginAsset'
-import { BuildConfig } from '../config'
+import { injectAssetRe } from './buildPluginAsset'
+import { BuildContext } from './context'
 import {
   urlRE,
   compileCss,
@@ -15,36 +15,14 @@ import {
   SFCAsyncStyleCompileOptions
 } from '@vue/compiler-sfc'
 import chalk from 'chalk'
-import { CssPreprocessOptions } from '../config'
 import { dataToEsm } from '@rollup/pluginutils'
-import slash from 'slash'
 
 const debug = require('debug')('vite:build:css')
 
 const cssInjectionMarker = `__VITE_CSS__`
 const cssInjectionRE = /__VITE_CSS__\(\);?/g
 
-interface BuildCssOption {
-  root: string
-  publicBase: string
-  assetsDir: string
-  minify?: BuildConfig['minify']
-  inlineLimit?: number
-  cssCodeSplit?: boolean
-  preprocessOptions?: CssPreprocessOptions
-  modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
-}
-
-export const createBuildCssPlugin = ({
-  root,
-  publicBase,
-  assetsDir,
-  minify = false,
-  inlineLimit = 0,
-  cssCodeSplit = true,
-  preprocessOptions,
-  modulesOptions = {}
-}: BuildCssOption): Plugin => {
+export const createBuildCssPlugin = (ctx: BuildContext): Plugin => {
   const styles = new Map<string, string>()
   let staticCss = ''
 
@@ -63,7 +41,7 @@ export const createBuildCssPlugin = ({
         const result = isVueStyle
           ? css
           : await compileCss(
-              root,
+              ctx.root,
               id,
               {
                 id: '',
@@ -72,8 +50,8 @@ export const createBuildCssPlugin = ({
                 scoped: false,
                 modules: cssModuleRE.test(id),
                 preprocessLang,
-                preprocessOptions,
-                modulesOptions
+                preprocessOptions: ctx.cssPreprocessOptions,
+                modulesOptions: ctx.cssModuleOptions
               },
               true
             )
@@ -97,15 +75,9 @@ export const createBuildCssPlugin = ({
           const fileDir = path.dirname(id)
           css = await rewriteCssUrls(css, async (rawUrl) => {
             const file = path.posix.isAbsolute(rawUrl)
-              ? path.join(root, rawUrl)
+              ? path.join(ctx.root, rawUrl)
               : path.join(fileDir, rawUrl)
-            let { fileName, content, url } = await resolveAsset(
-              file,
-              root,
-              publicBase,
-              assetsDir,
-              inlineLimit
-            )
+            let { fileName, content, url } = await ctx.resolveAsset(file)
             if (!url && fileName && content) {
               url =
                 'import.meta.ROLLUP_FILE_URL_' +
@@ -128,7 +100,7 @@ export const createBuildCssPlugin = ({
         return {
           code: modules
             ? dataToEsm(modules, { namedExports: true })
-            : (cssCodeSplit
+            : (ctx.cssCodeSplit
                 ? // If code-splitting CSS, inject a fake marker to avoid the module
                   // from being tree-shaken. This preserves the .css file as a
                   // module in the chunk's metadata so that we can retrieve them in
@@ -155,12 +127,11 @@ export const createBuildCssPlugin = ({
 
       let match
       while ((match = injectAssetRe.exec(chunkCSS))) {
-        const outputFilepath =
-          publicBase + slash(path.join(assetsDir, this.getFileName(match[1])))
-        chunkCSS = chunkCSS.replace(match[0], outputFilepath)
+        const basedAssetPath = ctx.getBasedAssetPath(this.getFileName(match[1]))
+        chunkCSS = chunkCSS.replace(match[0], basedAssetPath)
       }
 
-      if (cssCodeSplit) {
+      if (ctx.cssCodeSplit) {
         code = code.replace(cssInjectionRE, '')
         if (!code.trim()) {
           // this is a shared CSS-only chunk that is empty.
@@ -190,7 +161,7 @@ export const createBuildCssPlugin = ({
 
     async generateBundle(_options, bundle) {
       // minify css
-      if (minify && staticCss) {
+      if (ctx.minify && staticCss) {
         staticCss = minifyCSS(staticCss)
       }
 

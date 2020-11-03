@@ -1,5 +1,5 @@
 import { Plugin } from 'rollup'
-import { resolveAsset } from './buildPluginAsset'
+import { BuildContext } from './context'
 
 const wasmHelperId = 'vite/wasm-helper'
 
@@ -32,12 +32,7 @@ const wasmHelper = (opts = {}, url: string) => {
 
 const wasmHelperCode = wasmHelper.toString()
 
-export const createBuildWasmPlugin = (
-  root: string,
-  publicBase: string,
-  assetsDir: string,
-  inlineLimit: number
-): Plugin => {
+export const createBuildWasmPlugin = (ctx: BuildContext): Plugin => {
   return {
     name: 'vite:wasm',
 
@@ -53,13 +48,7 @@ export const createBuildWasmPlugin = (
       }
 
       if (id.endsWith('.wasm')) {
-        let { fileName, content, url } = await resolveAsset(
-          id,
-          root,
-          publicBase,
-          assetsDir,
-          inlineLimit
-        )
+        let { fileName, content, url } = await ctx.resolveAsset(id)
         if (!url && fileName && content) {
           url =
             'import.meta.ROLLUP_FILE_URL_' +

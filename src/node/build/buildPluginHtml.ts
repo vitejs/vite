@@ -1,16 +1,10 @@
-import { Plugin, OutputChunk, RollupOutput } from 'rollup'
+import { Plugin, RollupOutput } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
 import MagicString from 'magic-string'
-import {
-  isExternalUrl,
-  cleanUrl,
-  isDataUrl,
-  transformIndexHtml
-} from '../utils'
-import { resolveAsset, registerAssets } from './buildPluginAsset'
-import { InternalResolver } from '../resolver'
-import { UserConfig } from '../config'
+import { isExternalUrl, isDataUrl, transformIndexHtml } from '../utils'
+import { registerAssets } from './buildPluginAsset'
+import { BuildContext } from './context'
 import {
   parse as Parse,
   transform as Transform,
@@ -20,16 +14,8 @@ import {
   AttributeNode
 } from '@vue/compiler-dom'
 
-export const createBuildHtmlPlugin = async (
-  root: string,
-  indexPath: string,
-  publicBasePath: string,
-  assetsDir: string,
-  inlineLimit: number,
-  resolver: InternalResolver,
-  shouldPreload: ((chunk: OutputChunk) => boolean) | null,
-  config: Partial<UserConfig>
-) => {
+export const createBuildHtmlPlugin = async (ctx: BuildContext) => {
+  const indexPath = path.join(ctx.root, 'index.html')
   if (!fs.existsSync(indexPath)) {
     return {
       renderIndex: () => '',
@@ -37,22 +23,20 @@ export const createBuildHtmlPlugin = async (
     }
   }
 
+  const { assetsDir, base: publicBasePath, shouldPreload } = ctx
+
   const rawHtml = await fs.readFile(indexPath, 'utf-8')
   const preprocessedHtml = await transformIndexHtml(
     rawHtml,
-    config.indexHtmlTransforms,
+    ctx.indexHtmlTransforms,
     'pre',
     true
   )
   const assets = new Map<string, Buffer>()
   let { html: processedHtml, js } = await compileHtml(
-    root,
     preprocessedHtml,
-    publicBasePath,
-    assetsDir,
-    inlineLimit,
-    resolver,
-    assets
+    assets,
+    ctx
   )
 
   const htmlPlugin: Plugin = {
@@ -129,7 +113,7 @@ export const createBuildHtmlPlugin = async (
 
     return await transformIndexHtml(
       result,
-      config.indexHtmlTransforms,
+      ctx.indexHtmlTransforms,
       'post',
       true
     )
@@ -154,13 +138,9 @@ const assetAttrsConfig: Record<string, string[]> = {
 // compile index.html to a JS module, importing referenced assets
 // and scripts
 const compileHtml = async (
-  root: string,
   html: string,
-  publicBasePath: string,
-  assetsDir: string,
-  inlineLimit: number,
-  resolver: InternalResolver,
-  assets: Map<string, Buffer>
+  assets: Map<string, Buffer>,
+  ctx: BuildContext
 ) => {
   const { parse, transform } = require('@vue/compiler-dom')
 
@@ -237,12 +217,8 @@ const compileHtml = async (
   // references the post-build location.
   for (const attr of assetUrls) {
     const value = attr.value!
-    const { fileName, content, url } = await resolveAsset(
-      resolver.requestToFile(value.content),
-      root,
-      publicBasePath,
-      assetsDir,
-      cleanUrl(value.content).endsWith('.css') ? 0 : inlineLimit
+    const { fileName, content, url } = await ctx.resolveAsset(
+      ctx.resolver.requestToFile(value.content)
     )
     s.overwrite(value.loc.start.offset, value.loc.end.offset, `"${url}"`)
     if (fileName && content) {

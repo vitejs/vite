@@ -20,7 +20,7 @@ import {
   createEsbuildPlugin,
   createEsbuildRenderChunkPlugin
 } from './build/buildPluginEsbuild'
-import { BuildPlugin } from './build'
+import { BuildContext } from './build/context'
 import { Context, ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
 import {
@@ -288,7 +288,18 @@ export interface ServerConfig extends SharedConfig {
   chokidarWatchOptions?: chokidarWatchOptions
 }
 
+export interface BuildPlugin {
+  (ctx: BuildContext): void
+}
+
 export interface BuildConfig extends Required<SharedConfig> {
+  /**
+   * Plugin functions that mutate the Vite build config. The `builds` array can
+   * be added to if the plugin wants to add another Rollup build that Vite writes
+   * to disk. Return a function to gain access to each build's output.
+   * @internal
+   */
+  configureBuild?: BuildPlugin | BuildPlugin[]
   /**
    * Entry. Use this to specify a js entry file in use cases where an
    * `index.html` does not exist (e.g. serving vite assets from a different host)
@@ -411,7 +422,7 @@ export interface BuildConfig extends Required<SharedConfig> {
    * ```
    * @default false
    */
-  emitManifest?: boolean
+  emitManifest: boolean
   /**
    * Predicate function that determines whether a link rel=modulepreload shall be
    * added to the index.html for the chunk passed in
@@ -421,14 +432,7 @@ export interface BuildConfig extends Required<SharedConfig> {
    * Enable 'rollup-plugin-vue'
    * @default true
    */
-  enableRollupPluginVue?: boolean
-  /**
-   * Plugin functions that mutate the Vite build config. The `builds` array can
-   * be added to if the plugin wants to add another Rollup build that Vite writes
-   * to disk. Return a function to gain access to each build's output.
-   * @internal
-   */
-  configureBuild?: BuildPlugin | BuildPlugin[]
+  enableRollupPluginVue: boolean
 }
 
 export interface ViteRollupInputOptions extends RollupInputOptions {
@@ -530,7 +534,7 @@ export async function resolveConfig(mode: string, configPath?: string) {
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
       const rollup = require('rollup') as typeof Rollup
-      const esbuildPlugin = await createEsbuildPlugin({})
+      const esbuildPlugin = createEsbuildPlugin({})
       const esbuildRenderChunkPlugin = createEsbuildRenderChunkPlugin(
         'es2019',
         false

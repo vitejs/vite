@@ -14,12 +14,12 @@ import { createBaseRollupPlugins, onRollupWarning } from '../build'
 import { lookupFile, resolveFrom } from '../utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
-import { Ora } from 'ora'
 import {
   createDepAssetPlugin,
   createDepAssetExternalPlugin
 } from './pluginAssets'
 import { entryAnalysisPlugin } from './entryAnalysisPlugin'
+import { createLogger } from '../utils/logger'
 
 const debug = require('debug')('vite:optimize')
 
@@ -65,8 +65,11 @@ export async function optimizeDeps(
   config: ResolvedConfig & { force?: boolean },
   asCommand = false
 ) {
-  const log = asCommand ? console.log : debug
   const root = config.root || process.cwd()
+  const log = createLogger({
+    print: asCommand ? console.log : debug
+  })
+
   // warn presence of web_modules
   if (fs.existsSync(path.join(root, 'web_modules'))) {
     console.warn(
@@ -174,16 +177,12 @@ export async function optimizeDeps(
     )
   }
 
-  let spinner: Ora | undefined
-  const msg = asCommand
-    ? `Pre-bundling dependencies to speed up dev server page load...`
-    : `Pre-bundling them to speed up dev server page load...\n` +
-      `(this will be run only when your dependencies have changed)`
-  if (process.env.DEBUG || process.env.NODE_ENV === 'test') {
-    console.log(msg)
-  } else {
-    spinner = require('ora')(msg + '\n').start()
-  }
+  const spinner = log.start(
+    asCommand
+      ? `Pre-bundling dependencies to speed up dev server page load...\n`
+      : `Pre-bundling them to speed up dev server page load...\n` +
+          `(this will be run only when your dependencies have changed)\n`
+  )
 
   const {
     pluginsPreBuild,
@@ -199,7 +198,7 @@ export async function optimizeDeps(
       input: qualified,
       external,
       // treeshake: { moduleSideEffects: 'no-external' },
-      onwarn: onRollupWarning(spinner, options),
+      onwarn: onRollupWarning(log, options),
       ...rollupInputOptions,
       plugins: [
         createDepAssetExternalPlugin(resolver),
@@ -218,7 +217,7 @@ export async function optimizeDeps(
       chunkFileNames: 'common/[name]-[hash].js'
     })
 
-    spinner && spinner.stop()
+    spinner.done()
 
     for (const chunk of output) {
       if (chunk.type === 'chunk') {
@@ -235,7 +234,7 @@ export async function optimizeDeps(
 
     await fs.writeFile(hashPath, depHash)
   } catch (e) {
-    spinner && spinner.stop()
+    spinner.done()
     if (asCommand) {
       throw e
     } else {
