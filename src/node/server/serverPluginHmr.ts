@@ -262,7 +262,7 @@ export function rewriteFileWithHMR(
     const depPublicPath = resolveImport(root, importer, e.value, resolver)
     deps.add(depPublicPath)
     debugHmr(`        ${importer} accepts ${depPublicPath}`)
-    ensureMapEntry(importerMap, depPublicPath).add(importer)
+    ensureMapEntry(importerMap, e.value).add(importer)
     s.overwrite(e.start!, e.end!, JSON.stringify(depPublicPath))
   }
 
