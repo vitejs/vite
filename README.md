@@ -436,12 +436,12 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
 
     Also make sure the server is configured to serve static assets in the Viter working directory, otherwise assets such as images won't be loaded properly.
 
-3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. You can use this file to render links with hashed filenames (syntax here for explnatation only, substitute with your server templating language):
+3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. You can use this file to render links with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
 
     ```html
     <!-- if production -->
-    <link rel="stylesheet" href="/_assets/{{ maniest['style.css'] }}">
-    <script type="module" src="/_assets/{{ maniest['index.js] }}"></script>
+    <link rel="stylesheet" href="/_assets/{{ manifest['style.css'] }}">
+    <script type="module" src="/_assets/{{ manifest['index.js] }}"></script>
     ```
 
 ## API
