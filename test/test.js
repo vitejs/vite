@@ -734,7 +734,7 @@ describe('vite', () => {
     })
   }
 
-  fdescribe('build (multi)', () => {
+  describe.skip('build (multi)', () => {
     beforeAll(async () => {
       const buildOutput = await execa(binPath, ['build'], {
         cwd: path.join(tempDir, 'multi-build')
@@ -919,6 +919,16 @@ async function expectByPolling(poll, expected) {
       break
     } else {
       await timeout(50)
+    }
+  }
+}
+
+function failOnError(func) {
+  return (done) => {
+    try {
+      func().then(done)
+    } catch (e) {
+      done.fail(e)
     }
   }
 }
