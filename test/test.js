@@ -922,13 +922,3 @@ async function expectByPolling(poll, expected) {
     }
   }
 }
-
-function failOnError(func) {
-  return (done) => {
-    try {
-      func().then(done)
-    } catch (e) {
-      done.fail(e)
-    }
-  }
-}
