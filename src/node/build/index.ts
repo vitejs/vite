@@ -582,9 +582,7 @@ export async function build(
                 await fs.emptyDir(outDir)
               }
               if (emitIndex) {
-                indexHtmlPath = path.isAbsolute(indexHtmlPath!)
-                  ? indexHtmlPath!
-                  : path.join(outDir, indexHtmlPath!)
+                indexHtmlPath = path.resolve(outDir, indexHtmlPath!)
                 await fs.writeFile(indexHtmlPath, indexHtml)
               }
             }
