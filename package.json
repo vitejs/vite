@@ -11,6 +11,7 @@
   "types": "dist/node/index.d.ts",
   "files": [
     "bin",
+    "src",
     "dist/**/*.js",
     "dist/**/*.js.map",
     "dist/**/*.d.ts"
