@@ -734,7 +734,7 @@ describe('vite', () => {
     })
   }
 
-  fdescribe('build (multi)', () => {
+  describe('build (multi)', () => {
     beforeAll(async () => {
       const buildOutput = await execa(binPath, ['build'], {
         cwd: path.join(tempDir, 'multi-build')
