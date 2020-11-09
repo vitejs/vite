@@ -184,6 +184,13 @@ export async function optimizeDeps(
     spinner = require('ora')(msg + '\n').start()
   }
 
+  const {
+    pluginsPreBuild,
+    pluginsPostBuild,
+    pluginsOptimizer = [],
+    ...rollupInputOptions
+  } = config.rollupInputOptions || {}
+
   try {
     const rollup = require('rollup') as typeof Rollup
 
@@ -192,14 +199,12 @@ export async function optimizeDeps(
       external,
       // treeshake: { moduleSideEffects: 'no-external' },
       onwarn: onRollupWarning(spinner, options),
-      ...config.rollupInputOptions,
+      ...rollupInputOptions,
       plugins: [
         createDepAssetExternalPlugin(resolver),
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver, root),
-        ...((config.rollupInputOptions &&
-          config.rollupInputOptions.pluginsOptimizer) ||
-          [])
+        ...pluginsOptimizer
       ]
     })
 
