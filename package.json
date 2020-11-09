@@ -111,6 +111,7 @@
     "@types/es-module-lexer": "^0.3.0",
     "@types/fs-extra": "^9.0.1",
     "@types/hash-sum": "^1.0.0",
+    "@types/http-proxy": "^1.17.4",
     "@types/jest": "^26.0.13",
     "@types/mime-types": "^2.1.0",
     "@types/node": "^14.10.0",
