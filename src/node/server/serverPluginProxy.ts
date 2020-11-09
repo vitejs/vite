@@ -2,7 +2,10 @@ import { ServerPlugin } from '.'
 import { URL } from 'url'
 import { IKoaProxiesOptions } from 'koa-proxies'
 
-export type ProxiesOptions = IKoaProxiesOptions & { ws?: boolean }
+export type ProxiesOptions = IKoaProxiesOptions & {
+  ws?: boolean
+  secure?: boolean
+}
 
 export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
   if (!config.proxy) {
