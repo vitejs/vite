@@ -51,9 +51,14 @@ export type HMRWatcher = FSWatcher & {
 // so that we can determine what files to hot reload
 type HMRStateMap = Map<string, Set<string>>
 
+// publicPath to set of its hmr dependencies (importee -> importers, if a file changes its importers must be notified)
 export const hmrAcceptanceMap: HMRStateMap = new Map()
+// set of publicPaths that will cause a reload when changed
 export const hmrDeclineSet = new Set<string>()
+
+// publicPath to set of its importers
 export const importerMap: HMRStateMap = new Map()
+// publicPath to set of its imports (or importee)
 export const importeeMap: HMRStateMap = new Map()
 
 // files that are dirty (i.e. in the import chain between the accept boundary

@@ -87,21 +87,20 @@ export function createServerTransformPlugin(
       if (
         !ctx.body ||
         (ctx.type === 'text/html' && !isImportRequest(ctx)) ||
-        resolver.isPublicRequest(ctx.path)
+        resolver.isPublicRequest(ctx.url)
       ) {
         return
       }
 
-      let { url, path, query, __notModified } = ctx
-      const id = resolver.requestToFile(url)
-      path = resolver.requestToFile(path)
+      let { query, __notModified } = ctx
+      let path = resolver.requestToFile(ctx.url)
       const isImport = isImportRequest(ctx)
       const isBuild = false
       let code: string = ''
 
       for (const t of transforms) {
         const transformContext: TransformTestContext = {
-          id,
+          id: path,
           path,
           query,
           isImport,
@@ -138,7 +137,7 @@ export function createServerTransformPlugin(
           code = code || (await readBody(ctx.body))!
           ctx.body = await t({
             code,
-            id,
+            id: path,
             path,
             query,
             isImport,

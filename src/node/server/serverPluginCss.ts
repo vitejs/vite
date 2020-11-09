@@ -1,7 +1,7 @@
 import { basename } from 'path'
 import { Context, ServerPlugin } from '.'
 import hash_sum from 'hash-sum'
-import { cleanUrl, isImportRequest, readBody } from '../utils'
+import { cleanUrl, isImportRequest, mapQuery, readBody } from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {
   compileCss,
@@ -100,7 +100,14 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   function vueStyleUpdate(styleImport: string) {
     const publicPath = cleanUrl(styleImport)
     const index = qs.parse(styleImport.split('?', 2)[1]).index
-    const path = `${publicPath}?type=style&index=${index}`
+    const path = mapQuery(publicPath, (q) => {
+      // `${publicPath}?type=style&index=${index}`
+      return {
+        ...q,
+        type: 'style',
+        index: String(index)
+      }
+    })
     console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
     watcher.send({
       type: 'style-update',
@@ -146,7 +153,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     }
 
     const css = (await readBody(ctx.body))!
-    const filePath = resolver.requestToFile(ctx.path)
+    const filePath = resolver.requestToFile(ctx.url)
     const preprocessLang = (ctx.path.match(cssPreprocessLangRE) || [])[1]
 
     const result = await compileCss(root, ctx.path, {

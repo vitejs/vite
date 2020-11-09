@@ -7,6 +7,7 @@ import { Readable } from 'stream'
 import { seenUrls } from '../server/serverPluginServeStatic'
 import mime from 'mime-types'
 import { HMRWatcher } from '../server/serverPluginHmr'
+import { cleanUrl } from './pathUtils'
 
 const getETag = require('etag')
 
@@ -30,6 +31,7 @@ export async function cachedRead(
   ctx: Context | null,
   file: string
 ): Promise<Buffer> {
+  file = cleanUrl(file)
   const lastModified = fs.statSync(file).mtimeMs
   const cached = fsReadCache.get(file)
   if (ctx) {

@@ -2,7 +2,7 @@ import { Plugin } from 'rollup'
 import { init, parse } from 'es-module-lexer'
 import { isCSSRequest } from '../utils/cssUtils'
 import MagicString from 'magic-string'
-import { bareImportRE, resolveFrom } from '../utils'
+import { bareImportRE, cleanUrl, resolveFrom } from '../utils'
 import path from 'path'
 import { InternalResolver } from '../resolver'
 
@@ -51,10 +51,12 @@ export const createDepAssetPlugin = (
                   s.remove(statementStart, statementEnd)
                   continue
                 }
-                const deepPath = resolver.fileToRequest(
-                  bareImportRE.test(importee)
-                    ? resolveFrom(root, importee)
-                    : path.resolve(path.dirname(id), importee)
+                const deepPath = cleanUrl(
+                  resolver.fileToRequest(
+                    bareImportRE.test(importee)
+                      ? resolveFrom(root, importee)
+                      : path.resolve(path.dirname(id), importee)
+                  )
                 )
                 s.overwrite(start, end, deepPath)
               }

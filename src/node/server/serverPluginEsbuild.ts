@@ -6,7 +6,7 @@ import {
   vueJsxPublicPath,
   vueJsxFilePath
 } from '../esbuildService'
-import { readBody, cleanUrl } from '../utils'
+import { readBody } from '../utils'
 
 export const esbuildPlugin: ServerPlugin = ({ app, config, resolver }) => {
   const jsxConfig = resolveJsxOptions(config.jsx)
@@ -23,7 +23,7 @@ export const esbuildPlugin: ServerPlugin = ({ app, config, resolver }) => {
       !tjsxRE.test(ctx.path) ||
       !ctx.body ||
       ctx.type === 'text/html' ||
-      resolver.isPublicRequest(ctx.path)
+      resolver.isPublicRequest(ctx.url)
     ) {
       return
     }
@@ -32,7 +32,7 @@ export const esbuildPlugin: ServerPlugin = ({ app, config, resolver }) => {
     const src = await readBody(ctx.body)
     const { code, map } = await transform(
       src!,
-      resolver.requestToFile(cleanUrl(ctx.url)),
+      resolver.requestToFile(ctx.url),
       jsxConfig,
       config.jsx
     )

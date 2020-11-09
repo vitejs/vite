@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import fs from 'fs-extra'
 import { ServerPlugin } from '.'
 import { resolveVue } from '../utils'
-import { URL } from 'url'
+import url from 'url'
 import {
   resolveOptimizedModule,
   resolveNodeModuleFile,
@@ -37,7 +37,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
 
     const serve = async (id: string, file: string, type: string) => {
       moduleIdToFileMap.set(id, file)
-      moduleFileToIdMap.set(file, ctx.path)
+      moduleFileToIdMap.set(file, ctx.url)
       debug(`(${type}) ${id} -> ${getDebugPath(root, file)}`)
       await ctx.read(file)
       return next()
@@ -65,7 +65,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
     // this is a map file request from browser dev tool
     const isMapFile = ctx.path.endsWith('.map')
     if (referer) {
-      importer = new URL(referer).pathname
+      importer = url.parse(referer).path || ''
     } else if (isMapFile) {
       // for some reason Chrome doesn't provide referer for source map requests.
       // do our best to reverse-infer the importer.
@@ -74,7 +74,11 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
 
     const importerFilePath = importer ? resolver.requestToFile(importer) : root
     // #829 node package has sub-package(has package.json), should check it before `resolveNodeModuleFile`
-    const nodeModuleInfo = resolveNodeModule(root, id, resolver)
+    const nodeModuleInfo = resolveNodeModule(
+      path.dirname(importerFilePath),
+      id,
+      resolver
+    )
     if (nodeModuleInfo) {
       return serve(id, nodeModuleInfo.entryFilePath!, 'node_modules')
     }

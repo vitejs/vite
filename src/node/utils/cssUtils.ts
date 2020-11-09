@@ -2,7 +2,7 @@ import path from 'path'
 import postcssrc from 'postcss-load-config'
 import chalk from 'chalk'
 import { asyncReplace } from './transformUtils'
-import { isExternalUrl, resolveFrom } from './pathUtils'
+import { cleanUrl, isExternalUrl, resolveFrom } from './pathUtils'
 import { resolveCompiler } from './resolveVue'
 import hash_sum from 'hash-sum'
 import {
@@ -14,8 +14,10 @@ export const urlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const cssPreprocessLangRE = /\.(less|sass|scss|styl|stylus|postcss)$/
 export const cssModuleRE = /\.module\.(less|sass|scss|styl|stylus|postcss|css)$/
 
-export const isCSSRequest = (file: string) =>
-  file.endsWith('.css') || cssPreprocessLangRE.test(file)
+export const isCSSRequest = (file: string) => {
+  file = cleanUrl(file)
+  return file.endsWith('.css') || cssPreprocessLangRE.test(file)
+}
 
 type Replacer = (url: string) => string | Promise<string>
 

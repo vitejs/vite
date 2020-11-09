@@ -1,21 +1,24 @@
 import slash from 'slash'
+import querystring from 'querystring'
 import qs, { ParsedUrlQuery } from 'querystring'
 import resolve from 'resolve'
 import { supportedExts } from '../resolver'
 import { Context } from '../server'
 
-let isRunningWithYarnPnp: boolean
+let isRunningWithYarnPnp: boolean = false
 try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-export const resolveFrom = (root: string, id: string) =>
-  resolve.sync(id, {
+export const resolveFrom = (root: string, id: string) => {
+  // console.log(`resolveFrom '${path.relative(process.cwd(), root)}' to '${id}'`)
+  return resolve.sync(id, {
     basedir: root,
     extensions: supportedExts,
     // necessary to work with pnpm
     preserveSymlinks: isRunningWithYarnPnp || false
   })
+}
 
 export const queryRE = /\?.*$/
 export const hashRE = /#.*$/
@@ -37,7 +40,7 @@ export const parseWithQuery = (
     }
   }
   return {
-    path: id,
+    path: cleanUrl(id),
     query: {}
   }
 }
@@ -96,4 +99,29 @@ export function removeUnRelatedHmrQuery(url: string) {
     return path + '?' + qs.stringify(query)
   }
   return path
+}
+
+export function mapQuery(
+  url: string,
+  mapper: (query: ParsedUrlQuery) => ParsedUrlQuery
+) {
+  const { path, query } = parseWithQuery(url)
+  const newQuery = mapper(query)
+  if (Object.keys(newQuery).length) {
+    return path + '?' + querystring.encode(newQuery)
+  }
+  return path
+}
+
+export function addStringQuery(url: string, query: string | undefined) {
+  if (!query) {
+    return url
+  }
+  if (query.startsWith('?')) {
+    query = query.slice(1)
+  }
+  if (url.includes('?')) {
+    return url + '&' + query
+  }
+  return url + '?' + query
 }

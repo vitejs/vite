@@ -36,7 +36,7 @@ export const serveStaticPlugin: ServerPlugin = ({
     const expectsHtml =
       ctx.headers.accept && ctx.headers.accept.includes('text/html')
     if (!expectsHtml) {
-      const filePath = resolver.requestToFile(ctx.path)
+      const filePath = resolver.requestToFile(ctx.url)
       if (
         filePath !== ctx.path &&
         fs.existsSync(filePath) &&

@@ -1,5 +1,7 @@
 import fs from 'fs-extra'
 import path from 'path'
+import url from 'url'
+import querystring from 'querystring'
 import slash from 'slash'
 import {
   cleanUrl,
@@ -8,15 +10,16 @@ import {
   lookupFile,
   parseNodeModuleId
 } from './utils'
-import {
-  moduleRE,
-  moduleIdToFileMap,
-  moduleFileToIdMap
-} from './server/serverPluginModuleResolve'
+import { moduleRE, moduleIdToFileMap } from './server/serverPluginModuleResolve'
 import { resolveOptimizedCacheDir } from './optimizer'
 import { clientPublicPath } from './server/serverPluginClient'
 import { isCSSRequest } from './utils/cssUtils'
-import { isStaticAsset } from './utils/pathUtils'
+import {
+  addStringQuery,
+  isStaticAsset,
+  mapQuery,
+  parseWithQuery
+} from './utils/pathUtils'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:resolve')
@@ -34,10 +37,7 @@ export interface InternalResolver {
   fileToRequest(filePath: string): string
   normalizePublicPath(publicPath: string): string
   alias(id: string): string | undefined
-  resolveRelativeRequest(
-    publicPath: string,
-    relativePublicPath: string
-  ): { pathname: string; query: string }
+  resolveRelativeRequest(publicPath: string, relativePublicPath: string): string
   isPublicRequest(publicPath: string): boolean
   isAssetRequest(filePath: string): boolean
 }
@@ -46,21 +46,44 @@ export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
 export const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
 const defaultRequestToFile = (publicPath: string, root: string): string => {
+  const search = publicPath.match(queryRE)?.[0]
+  const query = querystring.parse(search ? search.slice(1) : '')
+  const { realPath = '' } = query
+  if (realPath) {
+    return path.resolve(
+      cleanUrl(Array.isArray(realPath) ? realPath[0] : realPath)
+    )
+  } else {
+    if (moduleRE.test(publicPath)) {
+      console.log(
+        Error(
+          `cannot resolve node module file '${publicPath}' without realPath`
+        )
+      )
+    }
+  }
+
   if (moduleRE.test(publicPath)) {
     const id = publicPath.replace(moduleRE, '')
-    const cachedNodeModule = moduleIdToFileMap.get(id)
-    if (cachedNodeModule) {
-      return cachedNodeModule
-    }
+    // const cachedNodeModule = moduleIdToFileMap.get(id)
+    // if (cachedNodeModule) {
+    //   return cachedNodeModule
+    // }
     // try to resolve from optimized modules
     const optimizedModule = resolveOptimizedModule(root, id)
     if (optimizedModule) {
       return optimizedModule
     }
     // try to resolve from normal node_modules
-    const nodeModule = resolveNodeModuleFile(root, id)
+
+    // console.log(`requestToFile resolving from context ${context}`)
+    const nodeModule = resolveNodeModuleFile(
+      root,
+      cleanUrl(publicPath).replace(moduleRE, '')
+    )
+
     if (nodeModule) {
-      moduleIdToFileMap.set(id, nodeModule)
+      moduleIdToFileMap.set(id, nodeModule) // TODO moduleIdToFileMap should use also root for cache key, module with same ids could be different
       return nodeModule
     }
   }
@@ -68,12 +91,30 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
   if (fs.existsSync(publicDirPath)) {
     return publicDirPath
   }
-  return path.join(root, publicPath.slice(1))
+
+  return path.join(root, cleanUrl(publicPath).slice(1))
 }
 
-const defaultFileToRequest = (filePath: string, root: string): string =>
-  moduleFileToIdMap.get(filePath) ||
-  '/' + slash(path.relative(root, filePath)).replace(/^public\//, '')
+// TODO defaultFileToRequest uses cache to return correct paths for node_modules
+const defaultFileToRequest = (filePath: string, root: string): string => {
+  // const cached = moduleFileToIdMap.get(filePath)
+  // if (cached) {
+  //   console.log(`defaultFileToRequest using cached '${cached}' for ${filePath}`)
+  //   return cached
+  // }
+  const realPath = path.resolve(cleanUrl(filePath))
+  if (!realPath) {
+    console.error(Error(`no realPath for ${filePath}`))
+  }
+  const relative = path.relative(root, filePath)
+  const res = mapQuery('/' + slash(relative).replace(/^public\//, ''), (q) => {
+    return {
+      ...q,
+      realPath
+    }
+  })
+  return res
+}
 
 const isFile = (file: string): boolean => {
   try {
@@ -116,7 +157,13 @@ const resolveFilePathPostfix = (filePath: string): string | undefined => {
   }
 }
 
-const isDir = (p: string) => fs.existsSync(p) && fs.statSync(p).isDirectory()
+const isDir = (p: string) => {
+  try {
+    return fs.existsSync(p) && fs.statSync(p).isDirectory()
+  } catch {
+    return false
+  }
+}
 
 export function createResolver(
   root: string,
@@ -209,7 +256,7 @@ export function createResolver(
       }
       const res = defaultFileToRequest(filePath, root)
       fileToRequestCache.set(filePath, res)
-      return res
+      return res // TODO add the context here, can a node_module be resolved from its own directory?
     },
 
     /**
@@ -220,36 +267,42 @@ export function createResolver(
         return publicPath
       }
       // preserve query
-      const queryMatch = publicPath.match(/\?.*$/)
-      const query = queryMatch ? queryMatch[0] : ''
+      // const queryMatch = publicPath.match(/\?.*$/)
+      // const query = queryMatch ? queryMatch[0] : ''
       const cleanPublicPath = cleanUrl(publicPath)
 
       const finalize = (result: string) => {
-        result += query
+        // result += query
+        if (!result.includes('realPath')) {
+          console.error(new Error(`no realPath in ${result}`))
+        }
         if (
           resolver.requestToFile(result) !== resolver.requestToFile(publicPath)
         ) {
+          // TODO readd the error
           throw new Error(
-            `[vite] normalizePublicPath check fail. please report to vite.`
+            `ERROR [vite] normalizePublicPath check fail. please report to vite.\n${result}\n${publicPath}\n${resolver.requestToFile(
+              result
+            )}\n${resolver.requestToFile(publicPath)}`
           )
         }
         return result
       }
 
       if (!moduleRE.test(cleanPublicPath)) {
-        return finalize(
-          resolver.fileToRequest(resolver.requestToFile(cleanPublicPath))
-        )
+        let res = resolver.fileToRequest(resolver.requestToFile(publicPath))
+        res = addStringQuery(res, publicPath.match(queryRE)?.[0])
+        return finalize(res)
       }
 
-      const filePath = resolver.requestToFile(cleanPublicPath)
-      const cacheDir = resolveOptimizedCacheDir(root)
-      if (cacheDir) {
-        const relative = path.relative(cacheDir, filePath)
-        if (!relative.startsWith('..')) {
-          return finalize(path.posix.join('/@modules/', slash(relative)))
-        }
-      }
+      const filePath = resolver.requestToFile(publicPath)
+      // const cacheDir = resolveOptimizedCacheDir(root)
+      // if (cacheDir) {
+      //   const relative = path.relative(cacheDir, filePath)
+      //   if (!relative.startsWith('..')) {
+      //     return finalize(path.posix.join('/@modules/', slash(relative)))
+      //   }
+      // }
 
       // fileToRequest doesn't work with files in node_modules
       // because of edge cases like symlinks or yarn-aliased-install
@@ -275,54 +328,65 @@ export function createResolver(
         filePathPostFix = slash(path.relative(path.dirname(pkgPath), filePath))
         findPkgFrom = path.join(path.dirname(pkgPath), '../')
       }
+
       return finalize(
-        ['/@modules', scope, name, filePathPostFix].filter(Boolean).join('/')
+        ['/@modules', scope, name, filePathPostFix].filter(Boolean).join('/') +
+          (url.parse(publicPath).search || '')
+        // readd the original query string
       )
     },
 
     alias(id) {
-      let aliased: string | undefined = literalAlias[id]
+      const { path, query } = parseWithQuery(id)
+      let aliased: string | undefined = literalAlias[path]
       if (aliased) {
-        return aliased
+        return mapQuery(aliased, (q) => ({ ...query, ...q }))
       }
       for (const { alias } of resolvers) {
-        aliased = alias && typeof alias === 'function' ? alias(id) : undefined
+        aliased = alias && typeof alias === 'function' ? alias(path) : undefined
         if (aliased) {
-          return aliased
+          return mapQuery(aliased, (q) => ({ ...query, ...q }))
         }
       }
     },
 
     resolveRelativeRequest(importer: string, importee: string) {
       const queryMatch = importee.match(queryRE)
+      importee = cleanUrl(importee)
       let resolved = importee
+      const importerFilePath = resolver.requestToFile(importer)
+      let realPath = ''
 
       if (importee.startsWith('.')) {
         resolved = path.posix.resolve(path.posix.dirname(importer), importee)
+        realPath = path.resolve(path.dirname(importerFilePath), importee)
         for (const alias in literalDirAlias) {
           if (importer.startsWith(alias)) {
             if (!resolved.startsWith(alias)) {
               // resolved path is outside of alias directory, we need to use
               // its full path instead
-              const importerFilePath = resolver.requestToFile(importer)
-              const importeeFilePath = path.resolve(
-                path.dirname(importerFilePath),
-                importee
-              )
-              resolved = resolver.fileToRequest(importeeFilePath)
+              resolved = resolver.fileToRequest(realPath)
             }
             break
           }
         }
       }
-
-      return {
-        pathname:
-          cleanUrl(resolved) +
-          // path resolve strips ending / which should be preserved
-          (importee.endsWith('/') && !resolved.endsWith('/') ? '/' : ''),
-        query: queryMatch ? queryMatch[0] : ''
+      if (!realPath) {
+        console.error(
+          new Error(`no realPath for ${importee} imported from ${importer}`)
+        )
       }
+
+      const query = querystring.encode({
+        ...querystring.parse(queryMatch ? queryMatch[0].slice(1) : ''),
+        ...(realPath && { realPath }) // TODO this path could not exist, maybe remove it if file does not exist?
+      })
+
+      const pathname =
+        cleanUrl(resolved) +
+        // path resolve strips ending / which should be preserved
+        (importee.endsWith('/') && !resolved.endsWith('/') ? '/' : '')
+      return `${pathname}${query ? '?' + query : ''}`
     },
 
     isPublicRequest(publicPath: string) {
@@ -354,10 +418,12 @@ const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
  */
 export function resolveBareModuleRequest(
   root: string,
-  id: string,
+  publicPath: string,
   importer: string,
   resolver: InternalResolver
 ): string {
+  let id = cleanUrl(publicPath).replace(moduleRE, '')
+  let realPath: string | undefined
   const optimized = resolveOptimizedModule(root, id)
   if (optimized) {
     // ensure optimized module requests always ends with `.js` - this is because
@@ -380,6 +446,7 @@ export function resolveBareModuleRequest(
     } else {
       isEntry = true
       id = pkgInfo.entry
+      realPath = pkgInfo.entryFilePath
     }
   }
 
@@ -394,7 +461,12 @@ export function resolveBareModuleRequest(
         if (resolver.alias(depId) === id) {
           // this is a deep import but aliased from a bare module id.
           // redirect it the optimized copy.
-          return resolveBareModuleRequest(root, depId, importer, resolver)
+          return resolveBareModuleRequest(
+            root,
+            addStringQuery(depId, publicPath.match(queryRE)?.[0]),
+            importer,
+            resolver
+          ) // TODO THIS loses query
         }
         if (!isCSSRequest(id) && !resolver.isAssetRequest(id)) {
           // warn against deep imports to optimized dep
@@ -414,10 +486,10 @@ export function resolveBareModuleRequest(
       }
 
       // resolve ext for deepImport
-      const filePath = resolveNodeModuleFile(root, id)
-      if (filePath) {
+      realPath = resolveNodeModuleFile(basedir, id)
+      if (realPath) {
         const deepPath = id.replace(deepImportRE, '')
-        const normalizedFilePath = slash(filePath)
+        const normalizedFilePath = slash(realPath)
         const postfix = normalizedFilePath.slice(
           normalizedFilePath.lastIndexOf(deepPath) + deepPath.length
         )
@@ -427,13 +499,20 @@ export function resolveBareModuleRequest(
   }
 
   // check and warn deep imports on optimized modules
-  const ext = path.extname(id)
-  if (!jsSrcRE.test(ext)) {
-    // append import query for non-js deep imports
-    return id + (queryRE.test(id) ? '&import' : '?import')
-  } else {
-    return id
+
+  if (!realPath) {
+    console.error(new Error(`no realPath for ${id}`))
   }
+
+  return mapQuery(id, () => {
+    const ext = path.extname(cleanUrl(id))
+    const { query } = parseWithQuery(publicPath)
+    return {
+      ...query,
+      ...(!jsSrcRE.test(ext) && { import: '' }),
+      ...(realPath && { realPath })
+    }
+  })
 }
 
 const viteOptimizedMap = new Map()
@@ -481,6 +560,7 @@ export function resolveNodeModule(
     return cached
   }
   let pkgPath
+  id = cleanUrl(id)
   try {
     // see if the id is a valid package name
     pkgPath = resolveFrom(root, `${id}/package.json`)
@@ -571,10 +651,18 @@ export function resolveNodeModuleFile(
     return cached
   }
   try {
-    const resolved = resolveFrom(root, id)
+    const resolved = resolveFrom(root, cleanUrl(id))
     nodeModulesFileMap.set(cacheKey, resolved)
     return resolved
   } catch (e) {
+    // console.error(
+    //   new Error(
+    //     `could not resolve module '${id}' from '${path.relative(
+    //       process.cwd(),
+    //       root
+    //     )}'`
+    //   )
+    // )
     // error will be reported downstream
   }
 }

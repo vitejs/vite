@@ -22,7 +22,8 @@ import {
   resolveFrom,
   cachedRead,
   cleanUrl,
-  watchFileIfOutOfRoot
+  watchFileIfOutOfRoot,
+  addStringQuery
 } from '../utils'
 import { transform } from '../esbuildService'
 import { InternalResolver, resolveBareModuleRequest } from '../resolver'
@@ -83,7 +84,7 @@ export const vuePlugin: ServerPlugin = ({
 
     const query = ctx.query
     const publicPath = ctx.path
-    let filePath = resolver.requestToFile(publicPath)
+    let filePath = resolver.requestToFile(ctx.url)
 
     // upstream plugins could've already read the file
     const descriptor = await parseSFC(root, filePath, ctx.body)
@@ -276,7 +277,7 @@ export const vuePlugin: ServerPlugin = ({
     nextStyles.forEach((_, i) => {
       if (!prevStyles[i] || !isEqualBlock(prevStyles[i], nextStyles[i])) {
         didUpdateStyle = true
-        const path = `${publicPath}?type=style&index=${i}`
+        const path = addStringQuery(publicPath, `type=style&index=${i}`)
         send({
           type: 'style-update',
           path,
@@ -363,13 +364,13 @@ async function resolveSrcImport(
   ctx: Context,
   resolver: InternalResolver
 ) {
-  const importer = ctx.path
-  const importee = cleanUrl(resolveImport(root, importer, block.src!, resolver))
-  const filePath = resolver.requestToFile(importee)
+  const resolvedImport = resolveImport(root, ctx.url, block.src!, resolver)
+  const importee = cleanUrl(resolvedImport)
+  const filePath = resolver.requestToFile(resolvedImport)
   block.content = (await ctx.read(filePath)).toString()
 
   // register HMR import relationship
-  debugHmr(`        ${importer} imports ${importee}`)
+  debugHmr(`        ${ctx.path} imports ${importee}`)
   ensureMapEntry(importerMap, importee).add(ctx.path)
   srcImportMap.set(filePath, ctx.url)
   return filePath
@@ -425,6 +426,7 @@ async function compileSFCMain(
   publicPath: string,
   root: string
 ): Promise<ResultWithMap> {
+  publicPath = cleanUrl(publicPath)
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
     return cached.script
@@ -469,7 +471,7 @@ async function compileSFCMain(
   let hasCSSModules = false
   if (descriptor.styles) {
     descriptor.styles.forEach((s, i) => {
-      const styleRequest = publicPath + `?type=style&index=${i}`
+      const styleRequest = addStringQuery(publicPath, `type=style&index=${i}`)
       if (s.scoped) hasScoped = true
       if (s.module) {
         if (!hasCSSModules) {
@@ -495,8 +497,10 @@ async function compileSFCMain(
     descriptor.customBlocks.forEach((c, i) => {
       const attrsQuery = attrsToQuery(c.attrs, c.lang)
       const blockTypeQuery = `&blockType=${qs.escape(c.type)}`
-      let customRequest =
-        publicPath + `?type=custom&index=${i}${blockTypeQuery}${attrsQuery}`
+      let customRequest = addStringQuery(
+        publicPath,
+        `type=custom&index=${i}${blockTypeQuery}${attrsQuery}`
+      )
       const customVar = `block${i}`
       code += `\nimport ${customVar} from ${JSON.stringify(customRequest)}\n`
       code += `if (typeof ${customVar} === 'function') ${customVar}(__script)\n`
@@ -504,7 +508,7 @@ async function compileSFCMain(
   }
 
   if (descriptor.template) {
-    const templateRequest = publicPath + `?type=template`
+    const templateRequest = addStringQuery(publicPath, `type=template`)
     code += `\nimport { render as __render } from ${JSON.stringify(
       templateRequest
     )}`
@@ -624,7 +628,7 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
-  const resource = filePath + `?type=style&index=${index}`
+  const resource = addStringQuery(publicPath, `type=style&index=${index}`)
   const result = (await compileCss(root, publicPath, {
     source: style.content,
     filename: resource,
