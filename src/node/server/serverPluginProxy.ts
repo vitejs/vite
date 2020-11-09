@@ -1,8 +1,9 @@
 import { ServerPlugin } from '.'
 import { URL } from 'url'
 import { IKoaProxiesOptions } from 'koa-proxies'
+import type { ServerOptions as HttpProxyServerOptions } from 'http-proxy'
 
-export type ProxiesOptions = IKoaProxiesOptions & { ws?: boolean }
+export type ProxiesOptions = IKoaProxiesOptions & HttpProxyServerOptions
 
 export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
   if (!config.proxy) {
