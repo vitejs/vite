@@ -10,7 +10,11 @@ import {
   lookupFile,
   parseNodeModuleId
 } from './utils'
-import { moduleRE, moduleIdToFileMap } from './server/serverPluginModuleResolve'
+import {
+  moduleRE,
+  moduleIdToFileMap,
+  moduleFileToIdMap
+} from './server/serverPluginModuleResolve'
 import { resolveOptimizedCacheDir } from './optimizer'
 import { clientPublicPath } from './server/serverPluginClient'
 import { isCSSRequest } from './utils/cssUtils'
@@ -98,16 +102,23 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
 
 // TODO defaultFileToRequest uses cache to return correct paths for node_modules
 const defaultFileToRequest = (filePath: string, root: string): string => {
-  // const cached = moduleFileToIdMap.get(filePath)
-  // if (cached) {
-  //   console.log(`defaultFileToRequest using cached '${cached}' for ${filePath}`)
-  //   return cached
-  // }
+  // this should prevent workspace dependencies to be resolved as /../../workspace and instead resolve them as /@modules/workspace
+  const cached = moduleFileToIdMap.get(filePath)
+  if (cached) {
+    return cached
+  }
   const realPath = path.resolve(cleanUrl(filePath))
   if (!realPath) {
     console.error(Error(`no realPath for ${filePath}`))
   }
   const relative = path.relative(root, filePath)
+  if (relative.startsWith('..')) {
+    console.log(
+      new Error(
+        `filepath ${relative} is being served as request outside of root folder, report to vite`
+      )
+    )
+  }
   const res = mapQuery('/' + slash(relative).replace(/^public\//, ''), (q) => {
     return {
       ...q,
