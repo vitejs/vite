@@ -85,20 +85,17 @@ export const createBuildHtmlPlugin = async (
     let tag: string
     if (typeof useSystemJs === 'string') {
       tag = `<script src="${useSystemJs}"></script>`
-    } else if (useSystemJs) {
+    } else {
       const systemJsRuntime = fs.readFileSync(
         require.resolve('systemjs/dist/s.min.js'),
         'utf8'
       )
       tag = `<script>${systemJsRuntime}</script>`
-    } else {
-      return html
     }
     if (/<\/head>/.test(html)) {
       return html.replace(/<\/head>/, `${tag}\n</head>`)
-    } else {
-      return tag + '\n' + html
     }
+    return tag + '\n' + html
   }
 
   const injectScript = (html: string, filename: string) => {
@@ -128,7 +125,7 @@ export const createBuildHtmlPlugin = async (
   }
 
   const renderIndex = async (bundleOutput: RollupOutput['output']) => {
-    let result = injectSystemJs(processedHtml)
+    let result = useSystemJs ? injectSystemJs(processedHtml) : processedHtml
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {
