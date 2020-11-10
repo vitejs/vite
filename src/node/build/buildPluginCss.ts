@@ -205,6 +205,7 @@ function minifyCSS(css: string) {
   if (res.errors && res.errors.length) {
     console.error(chalk.red(`[vite] error when minifying css:`))
     console.error(res.errors)
+    process.exit(1)
   }
 
   if (res.warnings && res.warnings.length) {
