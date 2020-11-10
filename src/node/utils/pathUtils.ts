@@ -10,6 +10,12 @@ try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
+export function encodeQuery(query: querystring.ParsedUrlQueryInput): string {
+  return querystring.encode(query, undefined, undefined, {
+    encodeURIComponent: querystring.unescape
+  })
+}
+
 export const resolveFrom = (root: string, id: string) => {
   // console.log(`resolveFrom '${path.relative(process.cwd(), root)}' to '${id}'`)
   return resolve.sync(id, {

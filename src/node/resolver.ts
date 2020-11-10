@@ -16,6 +16,7 @@ import { clientPublicPath } from './server/serverPluginClient'
 import { isCSSRequest } from './utils/cssUtils'
 import {
   addStringQuery,
+  encodeQuery,
   isStaticAsset,
   mapQuery,
   parseWithQuery
@@ -291,7 +292,13 @@ export function createResolver(
 
       if (!moduleRE.test(cleanPublicPath)) {
         let res = resolver.fileToRequest(resolver.requestToFile(publicPath))
-        res = addStringQuery(res, publicPath.match(queryRE)?.[0])
+        res = mapQuery(res, (q) => {
+          const queryMatch = publicPath.match(queryRE)?.[0]
+          return {
+            ...(queryMatch && querystring.parse(queryMatch.slice(1))),
+            ...q
+          }
+        })
         return finalize(res)
       }
 
@@ -377,7 +384,7 @@ export function createResolver(
         )
       }
 
-      const query = querystring.encode({
+      const query = encodeQuery({
         ...querystring.parse(queryMatch ? queryMatch[0].slice(1) : ''),
         ...(realPath && { realPath }) // TODO this path could not exist, maybe remove it if file does not exist?
       })
