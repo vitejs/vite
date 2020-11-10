@@ -368,6 +368,7 @@ export function resolveBareModuleRequest(
   }
 
   let isEntry = false
+  // resolve node module which inside linked/monorepo node_modules
   const basedir = path.dirname(resolver.requestToFile(importer))
   const pkgInfo = resolveNodeModule(basedir, id, resolver)
   if (pkgInfo) {
@@ -414,7 +415,9 @@ export function resolveBareModuleRequest(
       }
 
       // resolve ext for deepImport
-      const filePath = resolveNodeModuleFile(root, id)
+      // #1002 resolve node module file which inside linked/monorepo node_modules
+      const filePath =
+        resolveNodeModuleFile(root, id) || resolveNodeModuleFile(basedir, id)
       if (filePath) {
         const deepPath = id.replace(deepImportRE, '')
         const normalizedFilePath = slash(filePath)
@@ -428,7 +431,7 @@ export function resolveBareModuleRequest(
 
   // check and warn deep imports on optimized modules
   const ext = path.extname(id)
-  if (!jsSrcRE.test(ext)) {
+  if (!jsSrcRE.test(ext) && ext) {
     // append import query for non-js deep imports
     return id + (queryRE.test(id) ? '&import' : '?import')
   } else {
