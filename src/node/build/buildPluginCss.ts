@@ -83,6 +83,7 @@ export const createBuildCssPlugin = ({
           if (result.errors.length) {
             console.error(`[vite] error applying css transforms: `)
             result.errors.forEach(console.error)
+            process.exit(1)
           }
           css = result.code
           modules = result.modules
