@@ -86,10 +86,10 @@ export const createBuildHtmlPlugin = async (
     if (typeof useSystemJs === 'string') {
       tag = `<script src="${useSystemJs}"></script>`
     } else {
-      const systemJsRuntime = fs.readFileSync(
-        require.resolve('systemjs/dist/s.min.js'),
-        'utf8'
-      )
+      const systemJsRuntime = fs
+        .readFileSync(require.resolve('systemjs/dist/s.min.js'), 'utf8')
+        .replace(/\n\/\/# sourceMappingURL=[^\n]+\n$/, '')
+
       tag = `<script>${systemJsRuntime}</script>`
     }
     if (/<\/head>/.test(html)) {
