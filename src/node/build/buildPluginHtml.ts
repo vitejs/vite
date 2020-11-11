@@ -10,7 +10,7 @@ import {
 } from '../utils'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
 import { InternalResolver } from '../resolver'
-import { UserConfig, BuildConfig } from '../config'
+import { UserConfig } from '../config'
 import {
   parse as Parse,
   transform as Transform,
@@ -28,7 +28,7 @@ export const createBuildHtmlPlugin = async (
   inlineLimit: number,
   resolver: InternalResolver,
   shouldPreload: ((chunk: OutputChunk) => boolean) | null,
-  useSystemJs: BuildConfig['useSystemJs'],
+  useSystemJs: boolean | string,
   config: UserConfig
 ) => {
   if (!fs.existsSync(indexPath)) {
