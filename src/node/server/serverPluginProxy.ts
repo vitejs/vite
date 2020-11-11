@@ -32,7 +32,7 @@ export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
   server.on('upgrade', (req, socket, head) => {
     if (req.headers['sec-websocket-protocol'] !== 'vite-hmr') {
       for (const path in options) {
-        let opts = options[path]
+        const opts = options[path]
         if (typeof opts === 'object' && opts.ws) {
           proxy.proxy.ws(req, socket, head, opts)
         }
