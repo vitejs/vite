@@ -74,7 +74,7 @@ export const createBuildHtmlPlugin = async (
       filename
     )}">`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return tag + '\n' + html
     }
@@ -85,8 +85,8 @@ export const createBuildHtmlPlugin = async (
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+    if (/<\/body>/.test(html)) {
+      return html.replace(/(^\s*)?<\/body>/m, `$1$1${tag}\n$&`)
     } else {
       return html + '\n' + tag
     }
@@ -98,7 +98,7 @@ export const createBuildHtmlPlugin = async (
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<link rel="modulepreload" href="${filename}" />`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return tag + '\n' + html
     }
@@ -111,6 +111,7 @@ export const createBuildHtmlPlugin = async (
         if (chunk.isEntry) {
           // js entry chunk
           result = injectScript(result, chunk.fileName)
+          result = injectPreload(result, chunk.fileName)
         } else if (shouldPreload && shouldPreload(chunk)) {
           // async preloaded chunk
           result = injectPreload(result, chunk.fileName)
