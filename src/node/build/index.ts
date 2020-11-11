@@ -597,6 +597,9 @@ export async function build(
         entryFileNames: `[name].[hash].js`,
         chunkFileNames: `[name].[hash].js`,
         assetFileNames: `[name].[hash].[ext]`,
+        // #764 add `Symbol.toStringTag` when build es module into cjs chunk
+        // #1048 add `Symbol.toStringTag` for module default export
+        namespaceToStringTag: true,
         ...outputOptions
       })
     } finally {
@@ -684,9 +687,7 @@ export async function ssrBuild(
       ...rollupOutputOptions,
       format: 'cjs',
       exports: 'named',
-      entryFileNames: '[name].js',
-      // 764 add `Symbol.toStringTag` when build es module into cjs chunk
-      namespaceToStringTag: true
+      entryFileNames: '[name].js'
     },
     emitIndex: false,
     emitAssets: false,
