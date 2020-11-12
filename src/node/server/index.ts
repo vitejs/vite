@@ -14,7 +14,7 @@ import { jsonPlugin } from './serverPluginJson'
 import { cssPlugin } from './serverPluginCss'
 import { assetPathPlugin } from './serverPluginAssets'
 import { esbuildPlugin } from './serverPluginEsbuild'
-import { ServerConfig } from '../config'
+import { ServerConfig, UserConfig } from '../config'
 import { createServerTransformPlugin } from '../transform'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
@@ -48,7 +48,7 @@ export type Context = DefaultContext &
     map?: SourceMap | null
   }
 
-export function createServer(config: ServerConfig): Server {
+export function createServer(config: UserConfig): Server {
   const {
     root = process.cwd(),
     configureServer = [],
