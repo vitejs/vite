@@ -669,30 +669,29 @@ export async function ssrBuild(
 
   return build({
     outDir: 'dist-ssr',
-    emitIndex: false,
-    emitAssets: true, // needed for manifest.json
-    cssCodeSplit: false,
-    preserveEntrySignatures: 'strict', // so generated files can be consumed by server
-    minify: false,
     ...options,
     rollupPluginVueOptions: {
-      target: 'node',
-      ...rollupPluginVueOptions
+      ...rollupPluginVueOptions,
+      target: 'node'
     },
     rollupInputOptions: {
+      ...rollupInputOptions,
       external: resolveExternal(
         rollupInputOptions && rollupInputOptions.external
-      ),
-      ...rollupInputOptions
+      )
     },
     rollupOutputOptions: {
+      ...rollupOutputOptions,
       format: 'cjs',
       exports: 'named',
       entryFileNames: '[name].js',
       // 764 add `Symbol.toStringTag` when build es module into cjs chunk
-      namespaceToStringTag: true,
-      ...rollupOutputOptions
-    }
+      namespaceToStringTag: true
+    },
+    emitIndex: false,
+    emitAssets: false,
+    cssCodeSplit: false,
+    minify: false
   })
 }
 
