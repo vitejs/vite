@@ -417,6 +417,10 @@ export interface BuildConfig extends Required<SharedConfig> {
    * @internal
    */
   configureBuild?: BuildPlugin | BuildPlugin[]
+  /**
+   * Force dependency optimization. Otherwise a hash is used to establish cache validity.
+   */
+  force?: true
 }
 
 export interface ViteRollupInputOptions extends RollupInputOptions {
