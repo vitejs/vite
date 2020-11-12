@@ -268,13 +268,15 @@ interface FilteredDeps {
   qualified: Record<string, string>
   external: string[]
 }
-
+/**
+ * Resolves dependencies that will be parsed for optimization
+ */
 function resolveQualifiedDeps(
   root: string,
   options: DepOptimizationOptions,
   resolver: InternalResolver
 ): FilteredDeps {
-  const { include, exclude, link } = options
+  const { include = [], exclude, link } = options
   const pkgContent = lookupFile(root, ['package.json'])
   if (!pkgContent) {
     return {
@@ -283,8 +285,12 @@ function resolveQualifiedDeps(
     }
   }
 
-  const pkg = JSON.parse(pkgContent)
-  const deps = Object.keys(pkg.dependencies || {})
+  const pkg: Record<string, any> = JSON.parse(pkgContent)
+  const pkgDeps = Object.keys(pkg.dependencies || {})
+
+  // Dependencies listed in include should be added regardless of being in package manifest
+  const deps = [...pkgDeps, ...include]
+
   const qualifiedDeps = deps.filter((id) => {
     if (include && include.includes(id)) {
       // already force included
