@@ -36,7 +36,7 @@ cli
 cli
   .command('[root]') // default command
   .alias('serve')
-  .option('--port', '[number] port to listen to')
+  .option('--port', '[number]  port to listen to')
   .option(
     '--force',
     '[boolean] force the optimizer to ignore the cache and re-bundle'
