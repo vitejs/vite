@@ -41,7 +41,7 @@ cli
     '--force',
     '[boolean]  force the optimizer to ignore the cache and re-bundle'
   )
-  .option('--open', '[boolean] open browser on server start')
+  .option('--open', '[boolean]  open browser on server start')
   .action(async (root, argv) => {
     if (root) {
       argv.root = root
