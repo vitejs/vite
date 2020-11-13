@@ -1,6 +1,5 @@
 import slash from 'slash'
-import querystring from 'querystring'
-import qs, { ParsedUrlQuery } from 'querystring'
+import querystring, { ParsedUrlQuery } from 'querystring'
 import resolve from 'resolve'
 import { supportedExts } from '../resolver'
 import { Context } from '../server'
@@ -42,7 +41,7 @@ export const parseWithQuery = (
   if (queryMatch) {
     return {
       path: slash(cleanUrl(id)),
-      query: qs.parse(queryMatch[0].slice(1))
+      query: querystring.parse(queryMatch[0].slice(1))
     }
   }
   return {
@@ -105,7 +104,7 @@ export function removeUnRelatedHmrQuery(url: string) {
   delete query.t
   delete query.import
   if (Object.keys(query).length) {
-    return path + '?' + qs.stringify(query)
+    return path + '?' + querystring.stringify(query)
   }
   return path
 }
