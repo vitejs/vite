@@ -20,7 +20,6 @@ import { clientPublicPath } from './server/serverPluginClient'
 import { isCSSRequest } from './utils/cssUtils'
 import {
   appendQuery,
-  encodeQuery,
   isStaticAsset,
   mapQuery,
   parseWithQuery
@@ -376,7 +375,7 @@ export function createResolver(
         }
       }
 
-      const query = encodeQuery({
+      const query = querystring.encode({
         ...querystring.parse(queryMatch ? queryMatch[0].slice(1) : ''),
         ...(realPath && { realPath }) // TODO this path could not exist, maybe remove it if file does not exist?
       })
