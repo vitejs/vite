@@ -578,6 +578,12 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
     const indexHtmlPath = getIndexHtmlOutputPath(build, outDir)
     const emitIndex = config.emitIndex && indexHtmlPath !== ''
 
+    // unset the `output.file` option once `indexHtmlPath` is declared,
+    // or else Rollup throws an error since multiple chunks are generated.
+    if (indexHtmlPath && outputOptions.file) {
+      outputOptions.file = undefined
+    }
+
     let result!: BuildResult
 
     try {
