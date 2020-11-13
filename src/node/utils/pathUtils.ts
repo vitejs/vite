@@ -122,7 +122,7 @@ export function mapQuery(
   return path
 }
 
-export function addStringQuery(url: string, query: string | undefined) {
+export function appendQuery(url: string, query: string | undefined) {
   if (!query) {
     return url
   }

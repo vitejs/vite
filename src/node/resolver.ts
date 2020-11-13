@@ -19,7 +19,7 @@ import { resolveOptimizedCacheDir } from './optimizer'
 import { clientPublicPath } from './server/serverPluginClient'
 import { isCSSRequest } from './utils/cssUtils'
 import {
-  addStringQuery,
+  appendQuery,
   encodeQuery,
   isStaticAsset,
   mapQuery,
@@ -70,6 +70,7 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
 
   if (moduleRE.test(publicPath)) {
     const id = publicPath.replace(moduleRE, '')
+    // TODO readd cache but with query in key
     // const cachedNodeModule = moduleIdToFileMap.get(id)
     // if (cachedNodeModule) {
     //   return cachedNodeModule
@@ -80,15 +81,13 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
       return optimizedModule
     }
     // try to resolve from normal node_modules
-
-    // console.log(`requestToFile resolving from context ${context}`)
     const nodeModule = resolveNodeModuleFile(
       root,
       cleanUrl(publicPath).replace(moduleRE, '')
     )
 
     if (nodeModule) {
-      moduleIdToFileMap.set(id, nodeModule) // TODO moduleIdToFileMap should use also root for cache key, module with same ids could be different
+      moduleIdToFileMap.set(id, nodeModule)
       return nodeModule
     }
   }
@@ -108,9 +107,6 @@ const defaultFileToRequest = (filePath: string, root: string): string => {
     return cached
   }
   const realPath = path.resolve(cleanUrl(filePath))
-  if (!realPath) {
-    console.error(Error(`no realPath for ${filePath}`))
-  }
   const relative = path.relative(root, filePath)
   if (relative.startsWith('..')) {
     console.log(
@@ -268,7 +264,7 @@ export function createResolver(
       }
       const res = defaultFileToRequest(filePath, root)
       fileToRequestCache.set(filePath, res)
-      return res // TODO add the context here, can a node_module be resolved from its own directory?
+      return res
     },
 
     /**
@@ -291,7 +287,6 @@ export function createResolver(
         if (
           resolver.requestToFile(result) !== resolver.requestToFile(publicPath)
         ) {
-          // TODO readd the error
           throw new Error(
             `ERROR [vite] normalizePublicPath check fail. please report to vite.\n${result}\n${publicPath}\n${resolver.requestToFile(
               result
@@ -355,15 +350,14 @@ export function createResolver(
     },
 
     alias(id) {
-      const { path, query } = parseWithQuery(id)
-      let aliased: string | undefined = literalAlias[path]
+      let aliased: string | undefined = literalAlias[id]
       if (aliased) {
-        return mapQuery(aliased, (q) => ({ ...query, ...q }))
+        return aliased
       }
       for (const { alias } of resolvers) {
-        aliased = alias && typeof alias === 'function' ? alias(path) : undefined
+        aliased = alias && typeof alias === 'function' ? alias(id) : undefined
         if (aliased) {
-          return mapQuery(aliased, (q) => ({ ...query, ...q }))
+          return aliased
         }
       }
     },
@@ -389,11 +383,6 @@ export function createResolver(
           }
         }
       }
-      if (!realPath) {
-        console.error(
-          new Error(`no realPath for ${importee} imported from ${importer}`)
-        )
-      }
 
       const query = encodeQuery({
         ...querystring.parse(queryMatch ? queryMatch[0].slice(1) : ''),
@@ -404,7 +393,7 @@ export function createResolver(
         cleanUrl(resolved) +
         // path resolve strips ending / which should be preserved
         (importee.endsWith('/') && !resolved.endsWith('/') ? '/' : '')
-      return `${pathname}${query ? '?' + query : ''}`
+      return appendQuery(pathname, query)
     },
 
     isPublicRequest(publicPath: string) {
@@ -481,10 +470,10 @@ export function resolveBareModuleRequest(
           // redirect it the optimized copy.
           return resolveBareModuleRequest(
             root,
-            addStringQuery(depId, publicPath.match(queryRE)?.[0]),
+            appendQuery(depId, publicPath.match(queryRE)?.[0]),
             importer,
             resolver
-          ) // TODO THIS loses query
+          )
         }
         if (!isCSSRequest(id) && !resolver.isAssetRequest(id)) {
           // warn against deep imports to optimized dep

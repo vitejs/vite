@@ -66,7 +66,7 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'vue-reload':
       queueUpdate(
-        import(appendQuery(path, `t=${timestamp}`)) // TODO assumes path has no query
+        import(appendQuery(path, `t=${timestamp}`))
           .catch((err) => warnFailedFetch(err, path))
           .then((m) => () => {
             __VUE_HMR_RUNTIME__.reload(path, m.default)
@@ -227,7 +227,7 @@ async function updateModule(
   changedPath: string,
   timestamp: number
 ) {
-  const mod = hotModulesMap.get(id) // TODO id could have  query, same paths could have different queries
+  const mod = hotModulesMap.get(id)
   if (!mod) {
     // In a code-spliting project,
     // it is common that the hot-updating module is not loaded yet.
@@ -299,7 +299,6 @@ interface HotCallback {
   fn: (modules: object | object[]) => void
 }
 
-// map public urls to its dependencies and callbacks // TODO same paths could have different id because of queries
 const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()

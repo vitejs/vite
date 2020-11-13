@@ -1,10 +1,10 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { Plugin, OutputBundle } from 'rollup'
+import { cleanUrl } from '../utils'
 import slash from 'slash'
 import mime from 'mime-types'
 import { InternalResolver } from '../resolver'
-import { cleanUrl } from '../utils'
 
 const debug = require('debug')('vite:build:asset')
 

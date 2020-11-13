@@ -22,7 +22,7 @@ import {
   resolveFrom,
   cachedRead,
   watchFileIfOutOfRoot,
-  addStringQuery
+  appendQuery
 } from '../utils'
 import { transform } from '../esbuildService'
 import { InternalResolver, resolveBareModuleRequest } from '../resolver'
@@ -276,7 +276,7 @@ export const vuePlugin: ServerPlugin = ({
     nextStyles.forEach((_, i) => {
       if (!prevStyles[i] || !isEqualBlock(prevStyles[i], nextStyles[i])) {
         didUpdateStyle = true
-        const path = addStringQuery(publicPath, `type=style&index=${i}`)
+        const path = appendQuery(publicPath, `type=style&index=${i}`)
         send({
           type: 'style-update',
           path,
@@ -363,9 +363,8 @@ async function resolveSrcImport(
   ctx: Context,
   resolver: InternalResolver
 ) {
-  const resolvedImport = resolveImport(root, ctx.url, block.src!, resolver)
-  const importee = resolvedImport
-  const filePath = resolver.requestToFile(resolvedImport)
+  const importee = resolveImport(root, ctx.url, block.src!, resolver)
+  const filePath = resolver.requestToFile(importee)
   block.content = (await ctx.read(filePath)).toString()
 
   // register HMR import relationship
@@ -425,8 +424,6 @@ async function compileSFCMain(
   publicPath: string,
   root: string
 ): Promise<ResultWithMap> {
-  // console.log({filePath, publicPath, descriptor})
-  // publicPath = cleanUrl(publicPath)
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
     return cached.script
@@ -471,7 +468,7 @@ async function compileSFCMain(
   let hasCSSModules = false
   if (descriptor.styles) {
     descriptor.styles.forEach((s, i) => {
-      const styleRequest = addStringQuery(publicPath, `type=style&index=${i}`)
+      const styleRequest = appendQuery(publicPath, `type=style&index=${i}`)
       if (s.scoped) hasScoped = true
       if (s.module) {
         if (!hasCSSModules) {
@@ -497,7 +494,7 @@ async function compileSFCMain(
     descriptor.customBlocks.forEach((c, i) => {
       const attrsQuery = attrsToQuery(c.attrs, c.lang)
       const blockTypeQuery = `&blockType=${qs.escape(c.type)}`
-      let customRequest = addStringQuery(
+      let customRequest = appendQuery(
         publicPath,
         `type=custom&index=${i}${blockTypeQuery}${attrsQuery}`
       )
@@ -508,7 +505,7 @@ async function compileSFCMain(
   }
 
   if (descriptor.template) {
-    const templateRequest = addStringQuery(publicPath, `type=template`)
+    const templateRequest = appendQuery(publicPath, `type=template`)
     code += `\nimport { render as __render } from ${JSON.stringify(
       templateRequest
     )}`
@@ -628,7 +625,7 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
-  const resource = addStringQuery(publicPath, `type=style&index=${index}`)
+  const resource = appendQuery(publicPath, `type=style&index=${index}`)
   const result = (await compileCss(root, publicPath, {
     source: style.content,
     filename: resource,
@@ -731,7 +728,7 @@ function attrsToQuery(attrs: SFCBlock['attrs'], langFallback?: string): string {
 function logError(e: CompilerError, file: string, src: string) {
   const locString = e.loc ? `:${e.loc.start.line}:${e.loc.start.column}` : ``
   console.error(chalk.underline(file + locString))
-  console.error(chalk.yellow(e))
+  console.error(chalk.yellow(e.message))
   if (e.loc) {
     console.error(
       generateCodeFrame(src, e.loc.start.offset, e.loc.end.offset) + `\n`
