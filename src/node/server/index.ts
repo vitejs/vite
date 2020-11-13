@@ -151,24 +151,24 @@ function resolveServer(
   { https = false, httpsOptions = {}, proxy }: ServerConfig,
   requestListener: RequestListener
 ): Server {
-  if (https) {
-    if (proxy) {
-      // #484 fallback to http1 when proxy is needed.
-      return require('https').createServer(
-        resolveHttpsConfig(httpsOptions),
-        requestListener
-      )
-    } else {
-      return require('http2').createSecureServer(
-        {
-          ...resolveHttpsConfig(httpsOptions),
-          allowHTTP1: true
-        },
-        requestListener
-      )
-    }
-  } else {
+  if (!https) {
     return require('http').createServer(requestListener)
+  }
+
+  if (proxy) {
+    // #484 fallback to http1 when proxy is needed.
+    return require('https').createServer(
+      resolveHttpsConfig(httpsOptions),
+      requestListener
+    )
+  } else {
+    return require('http2').createSecureServer(
+      {
+        ...resolveHttpsConfig(httpsOptions),
+        allowHTTP1: true
+      },
+      requestListener
+    )
   }
 }
 
