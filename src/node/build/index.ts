@@ -575,10 +575,10 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
   const results = await pMapSeries(builds, async (build, i) => {
     const { output: outputOptions, onResult, ...inputOptions } = build
 
+    const indexHtmlPath = getIndexHtmlOutputPath(build, outDir)
+    const emitIndex = config.emitIndex && indexHtmlPath !== ''
+
     let result!: BuildResult
-    let indexHtml!: string
-    let indexHtmlPath = getIndexHtmlOutputPath(build)
-    const emitIndex = config.emitIndex && indexHtmlPath !== null
 
     try {
       const bundle = await rollup({
@@ -590,9 +590,13 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
             (plugin) => plugin.name !== 'vite:emit'
           ),
           // vite:emit
-          createEmitPlugin(emitAssets, async (assets) => {
-            indexHtml = emitIndex ? await renderIndex(assets) : ''
-            result = { build, assets, html: indexHtml }
+          createEmitPlugin(emitAssets, async (assets, name) => {
+            // #1071 ignore bundles from rollup-plugin-worker-loader
+            if (name !== outputOptions.name) return
+
+            const html = emitIndex ? await renderIndex(assets) : ''
+
+            result = { build, assets, html }
             if (onResult) {
               await onResult(result)
             }
@@ -608,8 +612,7 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
                 await fs.emptyDir(outDir)
               }
               if (emitIndex) {
-                indexHtmlPath = path.resolve(outDir, indexHtmlPath!)
-                await fs.writeFile(indexHtmlPath, indexHtml)
+                await fs.writeFile(indexHtmlPath, html)
               }
             }
           })
@@ -634,9 +637,9 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
 
     if (write && !silent) {
       if (emitIndex) {
-        printFileInfo(indexHtmlPath!, indexHtml, WriteType.HTML)
+        printFileInfo(indexHtmlPath, result.html, WriteType.HTML)
       }
-      for (const chunk of result.assets!) {
+      for (const chunk of result.assets) {
         if (chunk.type === 'chunk') {
           const filePath = path.join(resolvedAssetsPath, chunk.fileName)
           printFileInfo(filePath, chunk.code, WriteType.JS)
@@ -721,16 +724,19 @@ export async function ssrBuild(
 
 function createEmitPlugin(
   emitAssets: boolean,
-  emit: (assets: BuildResult['assets']) => Promise<void>
+  emit: (
+    assets: BuildResult['assets'],
+    name: string | undefined
+  ) => Promise<void>
 ): OutputPlugin {
   return {
     name: 'vite:emit',
-    async generateBundle(_, output) {
+    async generateBundle({ name }, output) {
       // assume the first asset in `output` is an entry chunk
       const assets = Object.values(output) as BuildResult['assets']
 
       // process the output before writing
-      await emit(assets)
+      await emit(assets, name)
 
       // write any assets injected by post-build hooks
       for (const asset of assets) {
@@ -753,9 +759,10 @@ function createEmitPlugin(
  * Resolve the output path of `index.html` for the given build (relative to
  * `outDir` in Vite config).
  */
-function getIndexHtmlOutputPath(build: Build) {
-  const { input, output } = build
-  return input === 'index.html' ? output.file || input : null
+function getIndexHtmlOutputPath({ input, output }: Build, outDir: string) {
+  return input === 'index.html'
+    ? path.resolve(outDir, output.file || input)
+    : ''
 }
 
 function resolveExternal(
