@@ -62,7 +62,7 @@ cli
   )
   .option(
     '--sourcemap',
-    '[boolean] output source maps for build (default: false)'
+    '[boolean]  output source maps for build (default: false)'
   )
   .option(
     '--minify',
