@@ -39,7 +39,7 @@ cli
   .option('--port', '[number]  port to listen to')
   .option(
     '--force',
-    '[boolean] force the optimizer to ignore the cache and re-bundle'
+    '[boolean]  force the optimizer to ignore the cache and re-bundle'
   )
   .option('--open', '[boolean] open browser on server start')
   .action(async (root, argv) => {
