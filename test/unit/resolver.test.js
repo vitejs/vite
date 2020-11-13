@@ -1,12 +1,12 @@
 const path = require('path')
 const url = require('url')
 const { createResolver } = require('../../dist/node/resolver')
-const { addStringQuery, mapQuery } = require('../../dist/node/utils')
+const { appendQuery, mapQuery } = require('../../dist/node/utils')
 
 test('addStringQuery', () => {
-  var res = addStringQuery('/path', 'yyy=uao')
+  var res = appendQuery('/path', 'yyy=uao')
   expect(res).toBe('/path?yyy=uao')
-  var res = addStringQuery('/path?xxx=ciao', 'yyy=uao')
+  var res = appendQuery('/path?xxx=ciao', 'yyy=uao')
   expect(res).toBe('/path?xxx=ciao&yyy=uao')
 })
 
