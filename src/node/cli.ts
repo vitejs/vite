@@ -86,7 +86,7 @@ cli
   .command('optimize [root]')
   .option(
     '--force',
-    '[boolean] force the optimizer to ignore the cache and re-bundle'
+    '[boolean]  force the optimizer to ignore the cache and re-bundle'
   )
   .action(async (root, argv) => {
     if (root) {
