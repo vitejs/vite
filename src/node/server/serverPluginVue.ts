@@ -21,7 +21,6 @@ import { debugHmr, importerMap, ensureMapEntry } from './serverPluginHmr'
 import {
   resolveFrom,
   cachedRead,
-  cleanUrl,
   watchFileIfOutOfRoot,
   addStringQuery
 } from '../utils'
@@ -365,7 +364,7 @@ async function resolveSrcImport(
   resolver: InternalResolver
 ) {
   const resolvedImport = resolveImport(root, ctx.url, block.src!, resolver)
-  const importee = cleanUrl(resolvedImport)
+  const importee = resolvedImport
   const filePath = resolver.requestToFile(resolvedImport)
   block.content = (await ctx.read(filePath)).toString()
 
@@ -426,7 +425,8 @@ async function compileSFCMain(
   publicPath: string,
   root: string
 ): Promise<ResultWithMap> {
-  publicPath = cleanUrl(publicPath)
+  // console.log({filePath, publicPath, descriptor})
+  // publicPath = cleanUrl(publicPath)
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
     return cached.script
@@ -731,7 +731,7 @@ function attrsToQuery(attrs: SFCBlock['attrs'], langFallback?: string): string {
 function logError(e: CompilerError, file: string, src: string) {
   const locString = e.loc ? `:${e.loc.start.line}:${e.loc.start.column}` : ``
   console.error(chalk.underline(file + locString))
-  console.error(chalk.yellow(e.message))
+  console.error(chalk.yellow(e))
   if (e.loc) {
     console.error(
       generateCodeFrame(src, e.loc.start.offset, e.loc.end.offset) + `\n`

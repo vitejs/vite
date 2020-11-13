@@ -1,7 +1,7 @@
 import { basename } from 'path'
 import { Context, ServerPlugin } from '.'
 import hash_sum from 'hash-sum'
-import { cleanUrl, isImportRequest, mapQuery, readBody } from '../utils'
+import { addStringQuery, cleanUrl, isImportRequest, readBody } from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {
   compileCss,
@@ -100,14 +100,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
   function vueStyleUpdate(styleImport: string) {
     const publicPath = cleanUrl(styleImport)
     const index = qs.parse(styleImport.split('?', 2)[1]).index
-    const path = mapQuery(publicPath, (q) => {
-      // `${publicPath}?type=style&index=${index}`
-      return {
-        ...q,
-        type: 'style',
-        index: String(index)
-      }
-    })
+    const path = addStringQuery(publicPath, `type=style&index=${index}`)
     console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
     watcher.send({
       type: 'style-update',

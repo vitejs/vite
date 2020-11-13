@@ -10,11 +10,19 @@ test('addStringQuery', () => {
   expect(res).toBe('/path?xxx=ciao&yyy=uao')
 })
 
-test('mapQuery', () => {
-  var res = mapQuery('/path?xxx=ciao', (q) => ({ ...q, type: 'template' }))
-  expect(res).toBe('/path?xxx=ciao&type=template')
-  var res = mapQuery('/path?xxx=ciao', (q) => ({ type: 'template' }))
-  expect(res).toBe('/path?type=template')
+describe('mapQuery', () => {
+  test('maintains query', () => {
+    var res = mapQuery('/path?xxx=ciao', (q) => ({ ...q, type: 'template' }))
+    expect(res).toBe('/path?xxx=ciao&type=template')
+  })
+  test('removes query', () => {
+    var res = mapQuery('/path?xxx=ciao', (q) => ({ type: 'template' }))
+    expect(res).toBe('/path?type=template')
+  })
+  test('does not duplicate query', () => {
+    var res = mapQuery('/path?xxx=ciao', (q) => ({ xxx: 'template' }))
+    expect(res).toBe('/path?xxx=template')
+  })
 })
 
 describe('resolveRelativeRequest', () => {
@@ -51,7 +59,14 @@ describe('normalizePublicPath', () => {
     const name = 'someFile.js'
     const res = resolver.normalizePublicPath(`/${name}?template=string`)
     expect(decodeURIComponent(res)).toBe(
-      `/${name}?realPath=${path.posix.resolve(__dirname, name)}&template=string`
+      `/${name}?template=string&realPath=${path.posix.resolve(__dirname, name)}`
+    )
+  })
+  test('normalizePublicPath does not dupe realPath', () => {
+    const name = 'someFile.js'
+    const res = resolver.normalizePublicPath(`/${name}?realPath=`)
+    expect(decodeURIComponent(res)).toBe(
+      `/${name}?realPath=${path.posix.resolve(__dirname, name)}`
     )
   })
 })

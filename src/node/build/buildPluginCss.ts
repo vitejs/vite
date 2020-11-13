@@ -18,6 +18,7 @@ import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
 import { dataToEsm } from '@rollup/pluginutils'
 import slash from 'slash'
+import { cleanUrl } from '../utils'
 
 const debug = require('debug')('vite:build:css')
 
@@ -68,7 +69,7 @@ export const createBuildCssPlugin = ({
                 source: css,
                 filename: id,
                 scoped: false,
-                modules: cssModuleRE.test(id),
+                modules: cssModuleRE.test(cleanUrl(id)),
                 preprocessLang,
                 preprocessOptions,
                 modulesOptions

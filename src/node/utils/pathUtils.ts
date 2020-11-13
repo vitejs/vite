@@ -66,7 +66,10 @@ const fontsRE = /\.(woff2?|eot|ttf|otf)(\?.*)?$/i
  * Check if a file is a static asset that vite can process.
  */
 export const isStaticAsset = (file: string) => {
-  return imageRE.test(file) || mediaRE.test(file) || fontsRE.test(file)
+  const cleaned = cleanUrl(file)
+  return [imageRE, mediaRE, fontsRE].some((re) => {
+    return re.test(file) || re.test(cleaned)
+  })
 }
 
 /**
