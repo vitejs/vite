@@ -58,14 +58,6 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
     return path.resolve(
       cleanUrl(Array.isArray(realPath) ? realPath[0] : realPath)
     )
-  } else {
-    if (moduleRE.test(publicPath)) {
-      console.log(
-        Error(
-          `cannot resolve node module file '${publicPath}' without realPath`
-        )
-      )
-    }
   }
 
   if (moduleRE.test(publicPath)) {
@@ -80,6 +72,9 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
     if (optimizedModule) {
       return optimizedModule
     }
+
+    debug(`resolving module '${publicPath}' without realPath`)
+
     // try to resolve from normal node_modules
     const nodeModule = resolveNodeModuleFile(
       root,
@@ -281,9 +276,6 @@ export function createResolver(
 
       const finalize = (result: string) => {
         // result += query
-        if (!result.includes('realPath')) {
-          console.error(new Error(`no realPath in ${result}`))
-        }
         if (
           resolver.requestToFile(result) !== resolver.requestToFile(publicPath)
         ) {
@@ -437,7 +429,7 @@ export function resolveBareModuleRequest(
     // optimized deps may import one another and in the built bundle their
     // relative import paths ends with `.js`. If we don't append `.js` during
     // rewrites, it may result in duplicated copies of the same dep.
-    return path.extname(id) === '.js' ? id : id + '.js'
+    return path.extname(cleanUrl(id)) === '.js' ? id : id + '.js'
   }
 
   let isEntry = false
