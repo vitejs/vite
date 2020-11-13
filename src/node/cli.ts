@@ -66,7 +66,7 @@ cli
   )
   .option(
     '--minify',
-    `[boolean | 'terser' | 'esbuild'] enable/disable minification, or specify minifier to use. (default: terser)`
+    `[boolean | 'terser' | 'esbuild']  enable/disable minification, or specify minifier to use (default: terser)`
   )
   .option('--base', '[string] public base path (default: /)')
   .option(
