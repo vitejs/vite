@@ -68,7 +68,7 @@ cli
     '--minify',
     `[boolean | 'terser' | 'esbuild']  enable/disable minification, or specify minifier to use (default: terser)`
   )
-  .option('--base', '[string] public base path (default: /)')
+  .option('--base', '[string]  public base path (default: /)')
   .option(
     '--assetsInlineLimit',
     `[number]  static asset base64 inline threshold in bytes (default: 4096)`
