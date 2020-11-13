@@ -20,7 +20,7 @@ const cli = cac(`vite`)
 // global options
 cli
   .option('--config, -c', `[string]  use specified config file`)
-  .option('--debug', '[string | boolean] show debug logs')
+  .option('--debug', `[string | boolean]  show debug logs`)
   .option(
     '--mode, -m',
     `[string]  specify env mode (default: 'development' for dev, 'production' for build)`
