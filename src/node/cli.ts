@@ -54,7 +54,7 @@ cli
 cli
   .command('build [root]')
   .option('--entry', 'entry file for build (default: index.html)')
-  .option('--outDir', '[string] output directory (default: dist)')
+  .option('--outDir', '[string]  output directory (default: dist)')
   .option('--ssr', '[boolean] build for server-side rendering')
   .option(
     '--assetsDir',
