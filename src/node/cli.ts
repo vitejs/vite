@@ -42,6 +42,7 @@ cli
     `[boolean]  force the optimizer to ignore the cache and re-bundle`
   )
   .option('--open', `[boolean]  open browser on server start`)
+  .option('--esm', `[boolean]  import config file as an ES Module`)
   .action(async (root: string, argv: any) => {
     if (root) {
       argv.root = root
@@ -138,7 +139,8 @@ async function resolveOptions({
 
   const userConfig = await resolveConfig(
     argv.mode || defaultMode,
-    argv.config || argv.c
+    argv.config || argv.c,
+    argv.esm || false
   )
   if (userConfig) {
     return {

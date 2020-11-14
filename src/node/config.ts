@@ -44,6 +44,10 @@ export type CssPreprocessOptions = Partial<
   Record<PreprocessLang, PreprocessOptions>
 >
 
+declare var __DYNAMIC__IMPORT__: (
+  s: string
+) => Promise<ResolvedConfig & { default: ResolvedConfig }>
+
 /**
  * https://github.com/koajs/cors#corsoptions
  */
@@ -472,7 +476,8 @@ const debug = require('debug')('vite:config')
 
 export async function resolveConfig(
   mode: string,
-  configPath?: string
+  configPath?: string,
+  esm?: boolean
 ): Promise<ResolvedConfig | undefined> {
   const start = Date.now()
   const cwd = process.cwd()
@@ -504,7 +509,12 @@ export async function resolveConfig(
   try {
     if (!isTS) {
       try {
-        config = require(resolvedPath)
+        if (esm) {
+          const importedConfig = await __DYNAMIC__IMPORT__(resolvedPath)
+          config = importedConfig.default || importedConfig
+        } else {
+          config = require(resolvedPath)
+        }
       } catch (e) {
         if (
           !/Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/.test(
