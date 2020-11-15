@@ -712,7 +712,7 @@ function mergeObjectOptions(to: any, from: any) {
   return res
 }
 
-function loadEnv(mode: string, root: string): Record<string, string> {
+export function loadEnv(mode: string, root: string, prefix = 'VITE_'): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -751,9 +751,9 @@ function loadEnv(mode: string, root: string): Record<string, string> {
         process.env.VITE_ENV = parsed.NODE_ENV
       }
 
-      // only keys that start with VITE_ are exposed.
+      // only keys that start with prefix are exposed.
       for (const [key, value] of Object.entries(parsed)) {
-        if (key.startsWith(`VITE_`)) {
+        if (key.startsWith(prefix)) {
           clientEnv[key] = value
         }
       }
