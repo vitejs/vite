@@ -18,7 +18,7 @@ export function mergeSourceMap(
   return merge(oldMap, newMap) as SourceMap
 }
 
-function genSourceMapString(map: SourceMap | string | undefined) {
+function getSourceMapString(map: SourceMap | string | undefined) {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
@@ -31,7 +31,7 @@ export const sourceMapPlugin: ServerPlugin = ({ app }) => {
   app.use(async (ctx, next) => {
     await next()
     if (typeof ctx.body === 'string' && ctx.map) {
-      ctx.body += genSourceMapString(ctx.map)
+      ctx.body += getSourceMapString(ctx.map)
     }
   })
 }
