@@ -439,6 +439,7 @@ export interface ViteRollupInputOptions extends RollupInputOptions {
 }
 
 export interface UserConfig extends Partial<BuildConfig>, ServerConfig {
+  env: DotenvParseOutput
   plugins?: Plugin[]
 }
 
@@ -470,10 +471,7 @@ export type ResolvedConfig = UserConfig & {
 
 const debug = require('debug')('vite:config')
 
-export async function resolveConfig(
-  mode: string,
-  configPath?: string
-): Promise<ResolvedConfig | undefined> {
+export async function resolveConfig(mode: string, configPath?: string) {
   const start = Date.now()
   const cwd = process.cwd()
   let config: ResolvedConfig | ((mode: string) => ResolvedConfig) | undefined
@@ -496,9 +494,9 @@ export async function resolveConfig(
 
   if (!resolvedPath) {
     // load environment variables
-    const env = loadEnv(mode, cwd)
-    expandEnv(env)
-    return { env }
+    return {
+      env: loadEnv(mode, cwd)
+    }
   }
 
   try {
@@ -572,8 +570,6 @@ export async function resolveConfig(
     }
 
     const env = loadEnv(mode, config.root || cwd)
-    expandEnv(env)
-
     config.env = {
       ...config.env,
       ...env
@@ -715,11 +711,7 @@ function mergeObjectOptions(to: any, from: any) {
   return res
 }
 
-export function loadEnv(
-  mode: string,
-  root: string,
-  prefix = 'VITE_'
-): Record<string, string> {
+export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -729,7 +721,7 @@ export function loadEnv(
 
   debug(`env mode: ${mode}`)
 
-  const clientEnv: Record<string, string> = {}
+  const env: DotenvParseOutput = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
     /** mode file */ `.env.${mode}`,
@@ -744,29 +736,24 @@ export function loadEnv(
         debug: !!process.env.DEBUG || undefined
       })
 
+      // let environment variables use each other
+      dotenvExpand({
+        parsed,
+        // prevent process.env mutation
+        ignoreProcessEnv: true
+      } as any)
+
       // only keys that start with prefix are exposed.
       for (const [key, value] of Object.entries(parsed)) {
-        if (key.startsWith(prefix) && clientEnv[key] === undefined) {
-          clientEnv[key] = value
+        if (key.startsWith(prefix) && env[key] === undefined) {
+          env[key] = value
         }
       }
     }
   }
 
-  debug(`env: %O`, clientEnv)
-  return clientEnv
-}
-
-function expandEnv(parsed: dotenv.DotenvParseOutput) {
-  // NOTE: this mutates process.env
-  dotenvExpand({ parsed })
-
-  // set NODE_ENV under a different key so that we know this is set from
-  // vite-loaded .env files. Some users may have default NODE_ENV set in
-  // their system.
-  if (parsed.NODE_ENV) {
-    process.env.VITE_ENV = parsed.NODE_ENV
-  }
+  debug(`env: %O`, env)
+  return env
 }
 
 // TODO move this into Vue plugin when we extract it
