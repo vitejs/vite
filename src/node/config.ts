@@ -746,7 +746,7 @@ export function loadEnv(
 
       // only keys that start with prefix are exposed.
       for (const [key, value] of Object.entries(parsed)) {
-        if (key.startsWith(prefix)) {
+        if (key.startsWith(prefix) && clientEnv[key] === undefined) {
           clientEnv[key] = value
         }
       }
