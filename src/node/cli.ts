@@ -140,14 +140,17 @@ async function resolveOptions({
     argv.mode || defaultMode,
     argv.config || argv.c
   )
-  if (userConfig) {
-    return {
-      ...userConfig,
-      ...argv // cli options take higher priority
-    }
+
+  // when NODE_ENV is set in .env file or Vite `env` option, it overrides the
+  // `DEV` and `PROD` values of `import.meta.env` and even `process.env.NODE_ENV`
+  // in the client bundle, which would use `argv.mode` otherwise.
+  if (userConfig.env.NODE_ENV) {
+    process.env.VITE_ENV = userConfig.env.NODE_ENV
+    delete userConfig.env.NODE_ENV
   }
 
-  return argv
+  // cli options take higher priority
+  return { ...userConfig, ...argv }
 }
 
 function runServe(options: UserConfig) {
