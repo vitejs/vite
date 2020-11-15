@@ -496,9 +496,9 @@ export async function resolveConfig(
 
   if (!resolvedPath) {
     // load environment variables
-    return {
-      env: loadEnv(mode, cwd)
-    }
+    const env = loadEnv(mode, cwd)
+    expandEnv(env)
+    return { env }
   }
 
   try {
@@ -571,9 +571,12 @@ export async function resolveConfig(
       }
     }
 
+    const env = loadEnv(mode, config.root || cwd)
+    expandEnv(env)
+
     config.env = {
       ...config.env,
-      ...loadEnv(mode, config.root || cwd)
+      ...env
     }
     debug(`config resolved in ${Date.now() - start}ms`)
 
@@ -712,7 +715,11 @@ function mergeObjectOptions(to: any, from: any) {
   return res
 }
 
-export function loadEnv(mode: string, root: string, prefix = 'VITE_'): Record<string, string> {
+export function loadEnv(
+  mode: string,
+  root: string,
+  prefix = 'VITE_'
+): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -733,23 +740,9 @@ export function loadEnv(mode: string, root: string, prefix = 'VITE_'): Record<st
   for (const file of envFiles) {
     const path = lookupFile(root, [file], true)
     if (path) {
-      // NOTE: this mutates process.env
-      const { parsed, error } = dotenv.config({
-        debug: !!process.env.DEBUG || undefined,
-        path
+      const parsed = dotenv.parse(fs.readFileSync(path), {
+        debug: !!process.env.DEBUG || undefined
       })
-      if (!parsed) {
-        throw error
-      }
-      // NOTE: this mutates process.env
-      dotenvExpand({ parsed })
-
-      // set NODE_ENV under a different key so that we know this is set from
-      // vite-loaded .env files. Some users may have default NODE_ENV set in
-      // their system.
-      if (parsed.NODE_ENV) {
-        process.env.VITE_ENV = parsed.NODE_ENV
-      }
 
       // only keys that start with prefix are exposed.
       for (const [key, value] of Object.entries(parsed)) {
@@ -762,6 +755,18 @@ export function loadEnv(mode: string, root: string, prefix = 'VITE_'): Record<st
 
   debug(`env: %O`, clientEnv)
   return clientEnv
+}
+
+function expandEnv(parsed: dotenv.DotenvParseOutput) {
+  // NOTE: this mutates process.env
+  dotenvExpand({ parsed })
+
+  // set NODE_ENV under a different key so that we know this is set from
+  // vite-loaded .env files. Some users may have default NODE_ENV set in
+  // their system.
+  if (parsed.NODE_ENV) {
+    process.env.VITE_ENV = parsed.NODE_ENV
+  }
 }
 
 // TODO move this into Vue plugin when we extract it
