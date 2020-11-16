@@ -97,7 +97,7 @@ export interface SharedConfig {
    *
    * Example `vite.config.js`:
    * ``` js
-   * module.exports = {
+   * export default {
    *   alias: {
    *     // alias package names
    *     'react': '@pika/react',
@@ -138,7 +138,7 @@ export interface SharedConfig {
    *
    * Example `vite.config.js`:
    * ``` js
-   * module.exports = {
+   * export default {
    *   optimizeDeps: {
    *     exclude: ['dep-a', 'dep-b']
    *   }
@@ -167,9 +167,9 @@ export interface SharedConfig {
   /**
    * Transform functions for Vue custom blocks.
    *
-   * Example `vue.config.js`:
+   * Example `vite.config.js`:
    * ``` js
-   * module.exports = {
+   * export default {
    *   vueCustomBlockTransforms: {
    *     i18n: src => `export default Comp => { ... }`
    *   }
@@ -246,7 +246,7 @@ export interface ServerConfig extends SharedConfig {
    *
    * Example `vite.config.js`:
    * ``` js
-   * module.exports = {
+   * export default {
    *   proxy: {
    *     // string shorthand
    *     '/foo': 'http://localhost:4567/foo',
