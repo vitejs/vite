@@ -439,7 +439,6 @@ export interface ViteRollupInputOptions extends RollupInputOptions {
 }
 
 export interface UserConfig extends Partial<BuildConfig>, ServerConfig {
-  env: DotenvParseOutput
   plugins?: Plugin[]
 }
 
@@ -463,6 +462,7 @@ export interface Plugin
   > {}
 
 export type ResolvedConfig = UserConfig & {
+  env: DotenvParseOutput
   /**
    * Path of config file.
    */
@@ -474,7 +474,7 @@ const debug = require('debug')('vite:config')
 export async function resolveConfig(mode: string, configPath?: string) {
   const start = Date.now()
   const cwd = process.cwd()
-  let config: ResolvedConfig | ((mode: string) => ResolvedConfig) | undefined
+
   let resolvedPath: string | undefined
   let isTS = false
   if (configPath) {
@@ -500,21 +500,20 @@ export async function resolveConfig(mode: string, configPath?: string) {
   }
 
   try {
+    let userConfig: UserConfig | ((mode: string) => UserConfig) | undefined
+
     if (!isTS) {
       try {
-        config = require(resolvedPath)
+        userConfig = require(resolvedPath)
       } catch (e) {
-        if (
-          !/Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/.test(
-            e.message
-          )
-        ) {
+        const ignored = /Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/
+        if (!ignored.test(e.message)) {
           throw e
         }
       }
     }
 
-    if (!config) {
+    if (!userConfig) {
       // 2. if we reach here, the file is ts or using es import syntax, or
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
@@ -544,11 +543,18 @@ export async function resolveConfig(mode: string, configPath?: string) {
         format: 'cjs'
       })
 
-      config = await loadConfigFromBundledFile(resolvedPath, code)
+      userConfig = await loadConfigFromBundledFile(resolvedPath, code)
     }
 
-    if (typeof config === 'function') {
-      config = config(mode)
+    let config = (typeof userConfig === 'function'
+      ? userConfig(mode)
+      : userConfig) as ResolvedConfig
+
+    // resolve plugins
+    if (config.plugins) {
+      for (const plugin of config.plugins) {
+        config = resolvePlugin(config, plugin) as any
+      }
     }
 
     // normalize config root to absolute
@@ -560,13 +566,6 @@ export async function resolveConfig(mode: string, configPath?: string) {
       config.vueTransformAssetUrls = normalizeAssetUrlOptions(
         config.vueTransformAssetUrls
       )
-    }
-
-    // resolve plugins
-    if (config.plugins) {
-      for (const plugin of config.plugins) {
-        config = resolvePlugin(config, plugin)
-      }
     }
 
     const env = loadEnv(mode, config.root || cwd)
