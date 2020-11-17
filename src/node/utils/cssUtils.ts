@@ -14,11 +14,11 @@ export const urlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const cssPreprocessLangRE = /\.(less|sass|scss|styl|stylus|postcss)$/
 export const cssModuleRE = /\.module\.(less|sass|scss|styl|stylus|postcss|css)$/
 
-export const isCSSRequest = (file: string): boolean => {
-  const cleaned = cleanUrl(file)
+export function isCSSRequest(path: string): boolean {
+  const cleaned = cleanUrl(path)
   return (
-    file.endsWith('.css') ||
-    cssPreprocessLangRE.test(file) ||
+    path.endsWith('.css') ||
+    cssPreprocessLangRE.test(path) ||
     cleaned.endsWith('.css') ||
     cssPreprocessLangRE.test(cleaned)
   )
@@ -73,12 +73,12 @@ export async function compileCss(
   }: SFCAsyncStyleCompileOptions,
   isBuild: boolean = false
 ): Promise<SFCStyleCompileResults | string> {
-  const id = hash_sum(publicPath)
+  const id = hash_sum(cleanUrl(publicPath))
   const postcssConfig = await loadPostcssConfig(root)
   const { compileStyleAsync } = resolveCompiler(root)
 
   if (
-    publicPath.endsWith('.css') &&
+    isCSSRequest(publicPath) &&
     !modules &&
     !postcssConfig &&
     !isBuild &&

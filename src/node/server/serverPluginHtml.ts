@@ -88,7 +88,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
   })
 
   watcher.on('change', (file) => {
-    const path = resolver.fileToRequest(file)
+    const path = cleanUrl(resolver.fileToRequest(file))
     if (path.endsWith('.html')) {
       debug(`${path}: cache busted`)
       watcher.send({

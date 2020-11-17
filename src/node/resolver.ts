@@ -93,9 +93,8 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
   return path.join(root, cleanUrl(publicPath).slice(1))
 }
 
-// TODO defaultFileToRequest uses cache to return correct paths for node_modules
 const defaultFileToRequest = (filePath: string, root: string): string => {
-  // this should prevent workspace dependencies to be resolved as /../../workspace and instead resolve them as /@modules/workspace
+  // this cache prevents workspace dependencies to be resolved as /../../workspace and instead resolve them as /@modules/workspace
   const cached = moduleFileToIdMap.get(filePath)
   if (cached) {
     return cached
@@ -191,6 +190,7 @@ export function createResolver(
         }
         resolvers.push({
           requestToFile(publicPath) {
+            publicPath = cleanUrl(publicPath)
             if (publicPath.startsWith(key)) {
               return path.join(target, publicPath.slice(key.length))
             }

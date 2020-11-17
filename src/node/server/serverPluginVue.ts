@@ -22,7 +22,8 @@ import {
   resolveFrom,
   cachedRead,
   watchFileIfOutOfRoot,
-  appendQuery
+  appendQuery,
+  cleanUrl
 } from '../utils'
 import { transform } from '../esbuildService'
 import { InternalResolver, resolveBareModuleRequest } from '../resolver'
@@ -150,7 +151,7 @@ export const vuePlugin: ServerPlugin = ({
       if (styleBlock.src) {
         filePath = await resolveSrcImport(root, styleBlock, ctx, resolver)
       }
-      const id = hash_sum(publicPath)
+      const id = hash_sum(cleanUrl(publicPath))
       const result = await compileSFCStyle(
         root,
         styleBlock,
@@ -187,7 +188,7 @@ export const vuePlugin: ServerPlugin = ({
     timestamp: number = Date.now(),
     content?: string
   ) => {
-    const publicPath = resolver.fileToRequest(filePath)
+    const publicPath = cleanUrl(resolver.fileToRequest(filePath))
     const cacheEntry = vueCache.get(filePath)
     const { send } = watcher
 
@@ -240,7 +241,7 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     let didUpdateStyle = false
-    const styleId = hash_sum(publicPath)
+    const styleId = hash_sum(cleanUrl(publicPath))
     const prevStyles = prevDescriptor.styles || []
     const nextStyles = descriptor.styles || []
 
@@ -369,7 +370,9 @@ async function resolveSrcImport(
 
   // register HMR import relationship
   debugHmr(`        ${ctx.path} imports ${importee}`)
-  ensureMapEntry(importerMap, importee).add(ctx.path)
+  // remove additional query parts but keep realPath
+  const importer = resolver.fileToRequest(resolver.requestToFile(ctx.url)) // TODO make a function to only keep realPath query
+  ensureMapEntry(importerMap, resolver.fileToRequest(filePath)).add(importer)
   srcImportMap.set(filePath, ctx.url)
   return filePath
 }
@@ -429,7 +432,7 @@ async function compileSFCMain(
     return cached.script
   }
 
-  const id = hash_sum(publicPath)
+  const id = hash_sum(cleanUrl(publicPath))
   let code = ``
   let content = ``
   let map: ResultWithMap['map']
@@ -574,7 +577,7 @@ function compileSFCTemplate(
     transformAssetUrls: vueTransformAssetUrls,
     compilerOptions: {
       ...vueCompilerOptions,
-      scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
+      scopeId: scoped ? `data-v-${hash_sum(cleanUrl(publicPath))}` : null,
       bindingMetadata,
       runtimeModuleName: vueSpecifier
     },
@@ -625,7 +628,7 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
-  const resource = appendQuery(publicPath, `type=style&index=${index}`)
+
   const result = (await compileCss(root, publicPath, {
     source: style.content,
     filename: filePath,
@@ -638,7 +641,8 @@ async function compileSFCStyle(
     modulesOptions: cssModuleOptions
   })) as SFCStyleCompileResults
 
-  recordCssImportChain(result.dependencies, resource)
+  const resource = appendQuery(publicPath, `type=style&index=${index}`)
+  recordCssImportChain(result.dependencies, resource) // TODO recordCssImportChain should accept only files not public paths but
 
   if (result.errors.length) {
     console.error(chalk.red(`\n[vite] SFC style compilation error: `))

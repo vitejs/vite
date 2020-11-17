@@ -201,7 +201,7 @@ export function rewriteImports(
           }
 
           // save the import chain for hmr analysis
-          const importee = resolved
+          const importee = removeUnRelatedHmrQuery(resolved)
           if (
             importee !== importer &&
             // no need to track hmr client or module dependencies

@@ -60,6 +60,7 @@ socket.addEventListener('message', async ({ data }) => {
 
 async function handleMessage(payload: HMRPayload) {
   const { path, changeSrcPath, timestamp } = payload as UpdatePayload
+  const cleanPath = path && path.replace(/\?.*$/, '')
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
@@ -67,17 +68,17 @@ async function handleMessage(payload: HMRPayload) {
     case 'vue-reload':
       queueUpdate(
         import(appendQuery(path, `t=${timestamp}`))
-          .catch((err) => warnFailedFetch(err, path))
+          .catch((err) => warnFailedFetch(err, cleanPath))
           .then((m) => () => {
-            __VUE_HMR_RUNTIME__.reload(path, m.default)
-            console.log(`[vite] ${path} reloaded.`)
+            __VUE_HMR_RUNTIME__.reload(cleanPath, m.default)
+            console.log(`[vite] ${cleanPath} reloaded.`)
           })
       )
       break
     case 'vue-rerender':
       const templatePath = appendQuery(path, `type=template`)
       import(`${templatePath}&t=${timestamp}`).then((m) => {
-        __VUE_HMR_RUNTIME__.rerender(path, m.render)
+        __VUE_HMR_RUNTIME__.rerender(cleanPath, m.render)
         console.log(`[vite] ${path} template updated.`)
       })
       break
@@ -109,13 +110,13 @@ async function handleMessage(payload: HMRPayload) {
       }
       break
     case 'full-reload':
-      if (path.endsWith('.html')) {
+      if (cleanPath.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
         const pagePath = location.pathname
         if (
-          pagePath === path ||
-          (pagePath.endsWith('/') && pagePath + 'index.html' === path)
+          pagePath === cleanPath ||
+          (pagePath.endsWith('/') && pagePath + 'index.html' === cleanPath)
         ) {
           location.reload()
         }

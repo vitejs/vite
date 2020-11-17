@@ -31,7 +31,7 @@ import LRUCache from 'lru-cache'
 import slash from 'slash'
 import { isCSSRequest } from '../utils/cssUtils'
 import { Node, StringLiteral, Statement, Expression } from '@babel/types'
-import { resolveCompiler } from '../utils'
+import { cleanUrl, resolveCompiler } from '../utils'
 import { HMRPayload } from '../../hmrPayload'
 import { clientPublicPath } from './serverPluginClient'
 
@@ -130,7 +130,7 @@ export const hmrPlugin: ServerPlugin = ({
     if (importers || isHmrAccepted(publicPath, publicPath)) {
       const hmrBoundaries = new Set<string>()
       const dirtyFiles = new Set<string>()
-      dirtyFiles.add(publicPath)
+      dirtyFiles.add(cleanUrl(publicPath))
 
       const hasDeadEnd = walkImportChain(
         publicPath,
@@ -205,14 +205,14 @@ function walkImportChain(
 
   for (const importer of importers) {
     if (
-      importer.endsWith('.vue') ||
+      cleanUrl(importer).endsWith('.vue') ||
       // explicitly accepted by this importer
       isHmrAccepted(importer, importee) ||
       // importer is a self accepting module
       isHmrAccepted(importer, importer)
     ) {
       // vue boundaries are considered dirty for the reload
-      if (importer.endsWith('.vue')) {
+      if (cleanUrl(importer).endsWith('.vue')) {
         dirtyFiles.add(importer)
       }
       hmrBoundaries.add(importer)

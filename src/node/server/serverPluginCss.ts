@@ -1,7 +1,13 @@
 import { basename } from 'path'
 import { Context, ServerPlugin } from '.'
 import hash_sum from 'hash-sum'
-import { appendQuery, cleanUrl, isImportRequest, readBody } from '../utils'
+import {
+  appendQuery,
+  cleanUrl,
+  isImportRequest,
+  parseWithQuery,
+  readBody
+} from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {
   compileCss,
@@ -12,7 +18,6 @@ import {
   rewriteCssUrls,
   isCSSRequest
 } from '../utils/cssUtils'
-import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
 import { clientPublicPath } from './serverPluginClient'
@@ -29,7 +34,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
       // note ctx.body could be null if upstream set status to 304
       ctx.body
     ) {
-      const id = JSON.stringify(hash_sum(ctx.path))
+      const id = hash_sum(ctx.path)
       if (isImportRequest(ctx)) {
         const { css, modules } = await processCss(root, ctx)
         ctx.type = 'js'
@@ -42,7 +47,7 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 
   watcher.on('change', (filePath) => {
     if (isCSSRequest(filePath)) {
-      const publicPath = resolver.fileToRequest(filePath)
+      const publicPath = cleanUrl(resolver.fileToRequest(filePath))
 
       /** filter unused files */
       if (
@@ -86,20 +91,32 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 
   function boundaryCssUpdate(boundaries: Set<string>) {
     for (let boundary of boundaries) {
+      // TODO boundaries can be files or requests (because of recordCssImportChain(result.dependencies, resource))
+      const request = boundary.includes('?')
+        ? boundary
+        : resolver.fileToRequest(boundary)
+      const filePath = !boundary.includes('?')
+        ? boundary
+        : resolver.requestToFile(boundary)
       if (boundary.includes('.module')) {
         moduleCssUpdate(boundary, resolver)
       } else if (boundary.includes('.vue')) {
-        vueCache.del(cleanUrl(boundary))
-        vueStyleUpdate(resolver.fileToRequest(boundary))
+        vueCache.del(filePath)
+        vueStyleUpdate(request)
       } else {
-        normalCssUpdate(resolver.fileToRequest(boundary))
+        normalCssUpdate(request)
       }
     }
   }
 
   function vueStyleUpdate(styleImport: string) {
     const publicPath = cleanUrl(styleImport)
-    const index = qs.parse(styleImport.split('?', 2)[1]).index
+    const index = parseWithQuery(styleImport).query.index
+    if (!index) {
+      console.error(
+        new Error(`no index found for vue style path ${styleImport}`)
+      )
+    }
     const path = appendQuery(publicPath, `type=style&index=${index}`)
     console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
     watcher.send({
@@ -112,12 +129,13 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 
   function moduleCssUpdate(filePath: string, resolver: InternalResolver) {
     // bust process cache
-    processedCSS.delete(resolver.fileToRequest(filePath))
+    processedCSS.delete(cleanUrl(resolver.fileToRequest(filePath)))
 
     watcher.handleJSReload(filePath)
   }
 
   function normalCssUpdate(publicPath: string) {
+    publicPath = cleanUrl(publicPath)
     // bust process cache
     processedCSS.delete(publicPath)
 

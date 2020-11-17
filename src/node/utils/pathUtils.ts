@@ -9,8 +9,7 @@ try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-export const resolveFrom = (root: string, id: string) => {
-  // console.log(`resolveFrom '${path.relative(process.cwd(), root)}' to '${id}'`)
+export function resolveFrom(root: string, id: string) {
   return resolve.sync(id, {
     basedir: root,
     extensions: supportedExts,
