@@ -156,7 +156,7 @@ export const hmrPlugin: ServerPlugin = ({
           boundaries.length === 1 ? boundaries[0] : `${boundaries.length} files`
         console.log(
           chalk.green(`[vite:hmr] `) +
-            `${file} hot updated due to change in ${relativeFile}.`
+            `${cleanUrl(file)} hot updated due to change in ${relativeFile}.`
         )
         send({
           type: 'multi',
