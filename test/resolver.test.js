@@ -1,7 +1,8 @@
 const path = require('path')
 const url = require('url')
-const { createResolver } = require('../../dist/node/resolver')
-const { appendQuery, mapQuery } = require('../../dist/node/utils')
+const { createResolver } = require('../dist/node/resolver')
+const { appendQuery, mapQuery } = require('../dist/node/utils')
+const { osAgnosticPath } = require('../dist/node/utils')
 
 test('addStringQuery', () => {
   var res = appendQuery('/path', 'yyy=uao')
@@ -44,10 +45,8 @@ describe('resolveRelativeRequest', () => {
       `./${name}?type=template`
     )
     expect(decodeURIComponent(res)).toBe(
-      `/path/${name}?type=template&realPath=${path.posix.resolve(
-        __dirname,
-        'path',
-        name
+      `/path/${name}?type=template&realPath=${osAgnosticPath(
+        path.resolve(__dirname, 'path', name)
       )}`
     )
   })
@@ -59,14 +58,16 @@ describe('normalizePublicPath', () => {
     const name = 'someFile.js'
     const res = resolver.normalizePublicPath(`/${name}?template=string`)
     expect(decodeURIComponent(res)).toBe(
-      `/${name}?template=string&realPath=${path.posix.resolve(__dirname, name)}`
+      `/${name}?template=string&realPath=${osAgnosticPath(
+        path.resolve(__dirname, name)
+      )}`
     )
   })
   test('normalizePublicPath does not dupe realPath', () => {
     const name = 'someFile.js'
     const res = resolver.normalizePublicPath(`/${name}?realPath=`)
     expect(decodeURIComponent(res)).toBe(
-      `/${name}?realPath=${path.posix.resolve(__dirname, name)}`
+      `/${name}?realPath=${osAgnosticPath(path.resolve(__dirname, name))}`
     )
   })
 })
