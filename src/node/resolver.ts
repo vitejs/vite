@@ -22,6 +22,7 @@ import {
   appendQuery,
   isStaticAsset,
   mapQuery,
+  osAgnosticPath,
   parseWithQuery
 } from './utils/pathUtils'
 import chalk from 'chalk'
@@ -99,7 +100,7 @@ const defaultFileToRequest = (filePath: string, root: string): string => {
   if (cached) {
     return cached
   }
-  const realPath = path.resolve(cleanUrl(filePath))
+  const realPath = osAgnosticPath(cleanUrl(filePath))
   const relative = path.relative(root, filePath)
   if (relative.startsWith('..')) {
     console.log(
@@ -362,7 +363,9 @@ export function createResolver(
 
       if (importee.startsWith('.')) {
         resolved = path.posix.resolve(path.posix.dirname(importer), importee)
-        realPath = path.resolve(path.dirname(importerFilePath), importee)
+        realPath = osAgnosticPath(
+          path.resolve(path.dirname(importerFilePath), importee)
+        )
         for (const alias in literalDirAlias) {
           if (importer.startsWith(alias)) {
             if (!resolved.startsWith(alias)) {
@@ -444,7 +447,7 @@ export function resolveBareModuleRequest(
     } else {
       isEntry = true
       id = pkgInfo.entry
-      realPath = pkgInfo.entryFilePath
+      realPath = osAgnosticPath(pkgInfo.entryFilePath!)
     }
   }
 
@@ -484,7 +487,7 @@ export function resolveBareModuleRequest(
       }
 
       // resolve ext for deepImport
-      realPath = resolveNodeModuleFile(basedir, id)
+      realPath = osAgnosticPath(resolveNodeModuleFile(basedir, id)!)
       if (realPath) {
         const deepPath = id.replace(deepImportRE, '')
         const normalizedFilePath = slash(realPath)

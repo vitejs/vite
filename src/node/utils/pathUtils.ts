@@ -1,4 +1,5 @@
 import slash from 'slash'
+import path from 'path'
 import querystring, { ParsedUrlQuery } from 'querystring'
 import resolve from 'resolve'
 import { supportedExts } from '../resolver'
@@ -16,6 +17,13 @@ export function resolveFrom(root: string, id: string) {
     // necessary to work with pnpm
     preserveSymlinks: isRunningWithYarnPnp || false
   })
+}
+
+export function osAgnosticPath(absPath: string) {
+  if (!path.isAbsolute(absPath)) {
+    absPath = path.resolve(absPath)
+  }
+  return slash(path.relative(process.cwd(), absPath))
 }
 
 export const queryRE = /\?.*$/
