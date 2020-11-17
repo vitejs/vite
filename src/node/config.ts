@@ -439,7 +439,7 @@ export interface ViteRollupInputOptions extends RollupInputOptions {
 }
 
 export interface UserConfig extends Partial<BuildConfig>, ServerConfig {
-  env: DotenvParseOutput
+  env?: DotenvParseOutput
   plugins?: Plugin[]
 }
 
