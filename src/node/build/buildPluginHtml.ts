@@ -28,7 +28,7 @@ export const createBuildHtmlPlugin = async (
   inlineLimit: number,
   resolver: InternalResolver,
   shouldPreload: ((chunk: OutputChunk) => boolean) | null,
-  config: Partial<UserConfig>
+  config: UserConfig
 ) => {
   if (!fs.existsSync(indexPath)) {
     return {
