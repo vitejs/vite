@@ -144,7 +144,7 @@ async function resolveOptions({
   // when NODE_ENV is set in .env file or Vite `env` option, it overrides the
   // `DEV` and `PROD` values of `import.meta.env` and even `process.env.NODE_ENV`
   // in the client bundle, which would use `argv.mode` otherwise.
-  if (userConfig?.env?.NODE_ENV) {
+  if (userConfig.env.NODE_ENV) {
     process.env.VITE_ENV = userConfig.env.NODE_ENV
     delete userConfig.env.NODE_ENV
   }
