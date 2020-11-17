@@ -130,10 +130,8 @@ async function resolveOptions({
     )
   }
 
-  const jsxFactory = argv['jsx-factory']
-  const jsxFragment = argv['jsx-fragment']
-  if (jsxFactory || jsxFragment) {
-    argv.jsx = { factory: jsxFactory, fragment: jsxFragment }
+  if (argv.jsxFactory || argv.jsxFragment) {
+    argv.jsx = { factory: argv.jsxFactory, fragment: argv.jsxFragment }
   }
 
   const userConfig = await resolveConfig(
