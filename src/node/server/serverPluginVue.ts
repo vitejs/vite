@@ -23,8 +23,7 @@ import {
   cachedRead,
   watchFileIfOutOfRoot,
   appendQuery,
-  cleanUrl,
-  removeUnRelatedHmrQuery
+  cleanUrl
 } from '../utils'
 import { transform } from '../esbuildService'
 import { InternalResolver, resolveBareModuleRequest } from '../resolver'
