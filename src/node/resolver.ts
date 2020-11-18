@@ -63,10 +63,10 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
   if (moduleRE.test(publicPath)) {
     const id = publicPath.replace(moduleRE, '')
     // TODO readd cache but with query in key
-    // const cachedNodeModule = moduleIdToFileMap.get(id)
-    // if (cachedNodeModule) {
-    //   return cachedNodeModule
-    // }
+    const cachedNodeModule = moduleIdToFileMap.get(publicPath)
+    if (cachedNodeModule) {
+      return cachedNodeModule
+    }
     // try to resolve from optimized modules
     const optimizedModule = resolveOptimizedModule(root, id)
     if (optimizedModule) {
@@ -82,7 +82,7 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
     )
 
     if (nodeModule) {
-      moduleIdToFileMap.set(id, nodeModule)
+      moduleIdToFileMap.set(publicPath, nodeModule)
       return nodeModule
     }
   }

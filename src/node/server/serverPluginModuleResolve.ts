@@ -36,7 +36,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
     ctx.type = 'js'
 
     const serve = async (id: string, file: string, type: string) => {
-      moduleIdToFileMap.set(id, file)
+      moduleIdToFileMap.set(ctx.url, file)
       moduleFileToIdMap.set(file, ctx.url)
       debug(`(${type}) ${id} -> ${getDebugPath(root, file)}`)
       await ctx.read(file)
@@ -49,7 +49,7 @@ export const moduleResolvePlugin: ServerPlugin = ({ root, app, resolver }) => {
     }
 
     // already resolved and cached
-    const cachedPath = moduleIdToFileMap.get(id)
+    const cachedPath = moduleIdToFileMap.get(ctx.url)
     if (cachedPath) {
       return serve(id, cachedPath, 'cached')
     }
