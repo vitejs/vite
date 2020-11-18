@@ -19,24 +19,24 @@ const cli = cac(`vite`)
 
 // global options
 cli
-  .option('--config, -c', `[string]  use specified config file`)
-  .option('--debug', `[string | boolean]  show debug logs`)
+  .option('--config <file>, -c <file>', `[string]  use specified config file`)
+  .option('--debug [feat]', `[string | boolean]  show debug logs`)
   .option(
-    '--mode, -m',
+    '--mode <mode>, -m <mode>',
     `[string]  specify env mode (default: 'development' for dev, 'production' for build)`
   )
   .option(
-    '--jsx',
+    '--jsx <preset>',
     `['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')`
   )
-  .option('--jsx-factory', `[string]  (default: React.createElement)`)
-  .option('--jsx-fragment', `[string]  (default: React.Fragment)`)
+  .option('--jsx-factory <string>', `[string]  (default: React.createElement)`)
+  .option('--jsx-fragment <string>', `[string]  (default: React.Fragment)`)
 
 // serve
 cli
   .command('[root]') // default command
   .alias('serve')
-  .option('--port', `[number]  port to listen to`)
+  .option('--port <port>', `[number]  port to listen to`)
   .option(
     '--force',
     `[boolean]  force the optimizer to ignore the cache and re-bundle`
@@ -53,25 +53,28 @@ cli
 // build
 cli
   .command('build [root]')
-  .option('--entry', `[string]  entry file for build (default: index.html)`)
-  .option('--outDir', `[string]  output directory (default: dist)`)
-  .option('--ssr', `[boolean]  build for server-side rendering`)
   .option(
-    '--assetsDir',
+    '--entry <file>',
+    `[string]  entry file for build (default: index.html)`
+  )
+  .option('--base <path>', `[string]  public base path (default: /)`)
+  .option('--outDir <dir>', `[string]  output directory (default: dist)`)
+  .option(
+    '--assetsDir <dir>',
     `[string]  directory under outDir to place assets in (default: _assets)`
   )
+  .option(
+    '--assetsInlineLimit <number>',
+    `[number]  static asset base64 inline threshold in bytes (default: 4096)`
+  )
+  .option('--ssr', `[boolean]  build for server-side rendering`)
   .option(
     '--sourcemap',
     `[boolean]  output source maps for build (default: false)`
   )
   .option(
-    '--minify',
+    '--minify [minifier]',
     `[boolean | 'terser' | 'esbuild']  enable/disable minification, or specify minifier to use (default: terser)`
-  )
-  .option('--base', `[string]  public base path (default: /)`)
-  .option(
-    '--assetsInlineLimit',
-    `[number]  static asset base64 inline threshold in bytes (default: 4096)`
   )
   .action(async (root: string, argv: any) => {
     if (root) {
