@@ -23,7 +23,8 @@ import {
   cachedRead,
   watchFileIfOutOfRoot,
   appendQuery,
-  cleanUrl
+  cleanUrl,
+  removeUnRelatedHmrQuery
 } from '../utils'
 import { transform } from '../esbuildService'
 import { InternalResolver, resolveBareModuleRequest } from '../resolver'
@@ -371,7 +372,7 @@ async function resolveSrcImport(
   // register HMR import relationship
   debugHmr(`        ${ctx.path} imports ${importee}`)
   // remove additional query parts but keep realPath
-  const importer = resolver.fileToRequest(resolver.requestToFile(ctx.url)) // TODO make a function to only keep realPath query
+  const importer = resolver.fileToRequest(resolver.requestToFile(ctx.url))
   ensureMapEntry(importerMap, resolver.fileToRequest(filePath)).add(importer)
   srcImportMap.set(filePath, ctx.url)
   return filePath
@@ -642,7 +643,7 @@ async function compileSFCStyle(
   })) as SFCStyleCompileResults
 
   const resource = appendQuery(publicPath, `type=style&index=${index}`)
-  recordCssImportChain(result.dependencies, resource) // TODO recordCssImportChain should accept only files not public paths but
+  recordCssImportChain(result.dependencies, resource) // TODO recordCssImportChain should accept only files not public paths
 
   if (result.errors.length) {
     console.error(chalk.red(`\n[vite] SFC style compilation error: `))

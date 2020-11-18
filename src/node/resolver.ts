@@ -62,7 +62,6 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
 
   if (moduleRE.test(publicPath)) {
     const id = publicPath.replace(moduleRE, '')
-    // TODO readd cache but with query in key
     const cachedNodeModule = moduleIdToFileMap.get(publicPath)
     if (cachedNodeModule) {
       return cachedNodeModule
