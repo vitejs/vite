@@ -1,3 +1,4 @@
+import { DotenvParseOutput } from 'dotenv'
 import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
@@ -146,6 +147,58 @@ export function onRollupWarning(
         spinner.start()
       }
     }
+  }
+}
+
+export function getBuiltInClientEnv(MODE: string, BASE_URL: string) {
+  const resolvedMode = process.env.VITE_ENV || MODE
+
+  return {
+    BASE_URL,
+    MODE,
+    DEV: resolvedMode !== 'production',
+    PROD: resolvedMode === 'production'
+  }
+}
+
+export function getReplaceEnvMap(
+  configMode: string,
+  publicBasePath: string,
+  env: DotenvParseOutput,
+  prefix = 'VITE_'
+): Record<string, string | boolean> {
+  const resolvedMode = process.env.VITE_ENV || configMode
+
+  // user env variables loaded from .env files.
+  // only those prefixed with prefix are exposed.
+  const userClientEnv: Record<string, string | boolean> = {}
+  const userEnvReplacements: Record<string, string> = {}
+  Object.keys(env).forEach((key) => {
+    if (key.startsWith(prefix)) {
+      userEnvReplacements[`import.meta.env.${key}`] = JSON.stringify(env[key])
+      userClientEnv[key] = env[key]
+    }
+  })
+
+  const builtInClientEnv = getBuiltInClientEnv(configMode, publicBasePath)
+  const builtInEnvReplacements: Record<string, string> = {}
+  Object.keys(builtInClientEnv).forEach((key) => {
+    builtInEnvReplacements[`import.meta.env.${key}`] = JSON.stringify(
+      builtInClientEnv[key as keyof typeof builtInClientEnv]
+    )
+  })
+
+  return {
+    ...userEnvReplacements,
+    ...builtInEnvReplacements,
+    'import.meta.env.': `({}).`,
+    'import.meta.env': JSON.stringify({
+      ...userClientEnv,
+      ...builtInClientEnv
+    }),
+    'process.env.NODE_ENV': JSON.stringify(resolvedMode),
+    'process.env.': `({}).`,
+    'process.env': JSON.stringify({ NODE_ENV: resolvedMode })
   }
 }
 
@@ -372,7 +425,6 @@ export async function build(
   } = config
 
   const isTest = process.env.NODE_ENV === 'test'
-  const resolvedMode = process.env.VITE_ENV || configMode
   const start = Date.now()
 
   let spinner: Ora | undefined
@@ -425,29 +477,6 @@ export async function build(
     })
   )
 
-  // user env variables loaded from .env files.
-  // only those prefixed with VITE_ are exposed.
-  const userClientEnv: Record<string, string | boolean> = {}
-  const userEnvReplacements: Record<string, string> = {}
-  Object.keys(env).forEach((key) => {
-    if (key.startsWith(`VITE_`)) {
-      userEnvReplacements[`import.meta.env.${key}`] = JSON.stringify(env[key])
-      userClientEnv[key] = env[key]
-    }
-  })
-
-  const builtInClientEnv = {
-    BASE_URL: publicBasePath,
-    MODE: configMode,
-    DEV: resolvedMode !== 'production',
-    PROD: resolvedMode === 'production'
-  }
-  const builtInEnvReplacements: Record<string, string> = {}
-  Object.keys(builtInClientEnv).forEach((key) => {
-    builtInEnvReplacements[`import.meta.env.${key}`] = JSON.stringify(
-      builtInClientEnv[key as keyof typeof builtInClientEnv]
-    )
-  })
   Object.keys(userDefineReplacements).forEach((key) => {
     userDefineReplacements[key] = JSON.stringify(userDefineReplacements[key])
   })
@@ -485,16 +514,7 @@ export async function build(
         {
           ...defaultDefines,
           ...userDefineReplacements,
-          ...userEnvReplacements,
-          ...builtInEnvReplacements,
-          'import.meta.env.': `({}).`,
-          'import.meta.env': JSON.stringify({
-            ...userClientEnv,
-            ...builtInClientEnv
-          }),
-          'process.env.NODE_ENV': JSON.stringify(resolvedMode),
-          'process.env.': `({}).`,
-          'process.env': JSON.stringify({ NODE_ENV: resolvedMode }),
+          ...getReplaceEnvMap(configMode, publicBasePath, env),
           'import.meta.hot': `false`
         },
         !!sourcemap
