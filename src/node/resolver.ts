@@ -267,9 +267,7 @@ export function createResolver(
       if (publicPath === clientPublicPath) {
         return publicPath
       }
-      // preserve query
-      // const queryMatch = publicPath.match(/\?.*$/)
-      // const query = queryMatch ? queryMatch[0] : ''
+
       const cleanPublicPath = cleanUrl(publicPath)
 
       const finalize = (result: string) => {
@@ -299,13 +297,13 @@ export function createResolver(
       }
 
       const filePath = resolver.requestToFile(publicPath)
-      // const cacheDir = resolveOptimizedCacheDir(root)
-      // if (cacheDir) {
-      //   const relative = path.relative(cacheDir, filePath)
-      //   if (!relative.startsWith('..')) {
-      //     return finalize(path.posix.join('/@modules/', slash(relative)))
-      //   }
-      // }
+      const cacheDir = resolveOptimizedCacheDir(root)
+      if (cacheDir) {
+        const relative = path.relative(cacheDir, filePath)
+        if (!relative.startsWith('..')) {
+          return finalize(path.posix.join('/@modules/', slash(relative)))
+        }
+      }
 
       // fileToRequest doesn't work with files in node_modules
       // because of edge cases like symlinks or yarn-aliased-install
@@ -335,7 +333,6 @@ export function createResolver(
       return finalize(
         ['/@modules', scope, name, filePathPostFix].filter(Boolean).join('/') +
           (url.parse(publicPath).search || '')
-        // readd the original query string
       )
     },
 
@@ -378,7 +375,7 @@ export function createResolver(
 
       const query = querystring.encode({
         ...querystring.parse(queryMatch ? queryMatch[0].slice(1) : ''),
-        ...(realPath && { realPath }) // TODO this path could not exist, maybe remove it if file does not exist?
+        ...(realPath && { realPath })
       })
 
       const pathname =
@@ -500,7 +497,7 @@ export function resolveBareModuleRequest(
   // check and warn deep imports on optimized modules
 
   if (!realPath) {
-    console.error(new Error(`no realPath for ${id}`))
+    console.error(new Error(`no realPath found for ${id}`))
   }
 
   return mapQuery(id, () => {
@@ -654,14 +651,6 @@ export function resolveNodeModuleFile(
     nodeModulesFileMap.set(cacheKey, resolved)
     return resolved
   } catch (e) {
-    // console.error(
-    //   new Error(
-    //     `could not resolve module '${id}' from '${path.relative(
-    //       process.cwd(),
-    //       root
-    //     )}'`
-    //   )
-    // )
     // error will be reported downstream
   }
 }

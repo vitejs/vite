@@ -185,8 +185,8 @@ export function rewriteImports(
           )
 
           if (resolved.startsWith('.')) {
-            throw new Error(
-              `import '${id}' has not been resolved in '${importer}'`
+            console.error(
+              Error(`import '${id}' in '${importer}' has not been resolved`)
             )
           }
 
