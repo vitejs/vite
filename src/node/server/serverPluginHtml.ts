@@ -68,6 +68,11 @@ export const htmlRewritePlugin: ServerPlugin = ({
   app.use(async (ctx, next) => {
     await next()
 
+    // Fix the old CSS cache is still used after refreshing the page. #1087
+    if (ctx.response.is('js') && ctx.path.endsWith('.css')) {
+      ctx.set('Cache-Control', 'no-store')
+    }
+
     if (ctx.status === 304) {
       return
     }
