@@ -462,6 +462,7 @@ export interface Plugin
   > {}
 
 export type ResolvedConfig = UserConfig & {
+  env: DotenvParseOutput
   /**
    * Path of config file.
    */
@@ -470,13 +471,10 @@ export type ResolvedConfig = UserConfig & {
 
 const debug = require('debug')('vite:config')
 
-export async function resolveConfig(
-  mode: string,
-  configPath?: string
-): Promise<ResolvedConfig | undefined> {
+export async function resolveConfig(mode: string, configPath?: string) {
   const start = Date.now()
   const cwd = process.cwd()
-  let config: ResolvedConfig | ((mode: string) => ResolvedConfig) | undefined
+
   let resolvedPath: string | undefined
   let isTS = false
   if (configPath) {
@@ -502,21 +500,20 @@ export async function resolveConfig(
   }
 
   try {
+    let userConfig: UserConfig | ((mode: string) => UserConfig) | undefined
+
     if (!isTS) {
       try {
-        config = require(resolvedPath)
+        userConfig = require(resolvedPath)
       } catch (e) {
-        if (
-          !/Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/.test(
-            e.message
-          )
-        ) {
+        const ignored = /Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/
+        if (!ignored.test(e.message)) {
           throw e
         }
       }
     }
 
-    if (!config) {
+    if (!userConfig) {
       // 2. if we reach here, the file is ts or using es import syntax, or
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
@@ -546,11 +543,18 @@ export async function resolveConfig(
         format: 'cjs'
       })
 
-      config = await loadConfigFromBundledFile(resolvedPath, code)
+      userConfig = await loadConfigFromBundledFile(resolvedPath, code)
     }
 
-    if (typeof config === 'function') {
-      config = config(mode)
+    let config = (typeof userConfig === 'function'
+      ? userConfig(mode)
+      : userConfig) as ResolvedConfig
+
+    // resolve plugins
+    if (config.plugins) {
+      for (const plugin of config.plugins) {
+        config = resolvePlugin(config, plugin) as any
+      }
     }
 
     // normalize config root to absolute
@@ -564,16 +568,10 @@ export async function resolveConfig(
       )
     }
 
-    // resolve plugins
-    if (config.plugins) {
-      for (const plugin of config.plugins) {
-        config = resolvePlugin(config, plugin)
-      }
-    }
-
+    const env = loadEnv(mode, config.root || cwd)
     config.env = {
       ...config.env,
-      ...loadEnv(mode, config.root || cwd)
+      ...env
     }
     debug(`config resolved in ${Date.now() - start}ms`)
 
@@ -712,7 +710,7 @@ function mergeObjectOptions(to: any, from: any) {
   return res
 }
 
-function loadEnv(mode: string, root: string): Record<string, string> {
+export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -722,7 +720,7 @@ function loadEnv(mode: string, root: string): Record<string, string> {
 
   debug(`env mode: ${mode}`)
 
-  const clientEnv: Record<string, string> = {}
+  const env: DotenvParseOutput = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
     /** mode file */ `.env.${mode}`,
@@ -733,35 +731,28 @@ function loadEnv(mode: string, root: string): Record<string, string> {
   for (const file of envFiles) {
     const path = lookupFile(root, [file], true)
     if (path) {
-      // NOTE: this mutates process.env
-      const { parsed, error } = dotenv.config({
-        debug: !!process.env.DEBUG || undefined,
-        path
+      const parsed = dotenv.parse(fs.readFileSync(path), {
+        debug: !!process.env.DEBUG || undefined
       })
-      if (!parsed) {
-        throw error
-      }
-      // NOTE: this mutates process.env
-      dotenvExpand({ parsed })
 
-      // set NODE_ENV under a different key so that we know this is set from
-      // vite-loaded .env files. Some users may have default NODE_ENV set in
-      // their system.
-      if (parsed.NODE_ENV) {
-        process.env.VITE_ENV = parsed.NODE_ENV
-      }
+      // let environment variables use each other
+      dotenvExpand({
+        parsed,
+        // prevent process.env mutation
+        ignoreProcessEnv: true
+      } as any)
 
-      // only keys that start with VITE_ are exposed.
+      // only keys that start with prefix are exposed.
       for (const [key, value] of Object.entries(parsed)) {
-        if (key.startsWith(`VITE_`)) {
-          clientEnv[key] = value
+        if (key.startsWith(prefix) && env[key] === undefined) {
+          env[key] = value
         }
       }
     }
   }
 
-  debug(`env: %O`, clientEnv)
-  return clientEnv
+  debug(`env: %O`, env)
+  return env
 }
 
 // TODO move this into Vue plugin when we extract it
