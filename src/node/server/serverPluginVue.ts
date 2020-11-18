@@ -255,14 +255,7 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     // force reload if CSS vars injection changed
-    if (
-      prevStyles.some((s, i) => {
-        const next = nextStyles[i]
-        if (s.attrs.vars && (!next || next.attrs.vars !== s.attrs.vars)) {
-          return true
-        }
-      })
-    ) {
+    if (prevDescriptor.cssVars.join('') !== descriptor.cssVars.join('')) {
       return sendReload()
     }
 
@@ -439,7 +432,10 @@ async function compileSFCMain(
   const compiler = resolveCompiler(root)
   if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
     try {
-      script = compiler.compileScript(descriptor)
+      script = compiler.compileScript(descriptor, {
+        // @ts-ignore TODO remove when @vue/compiler-sfc is updated
+        id
+      })
     } catch (e) {
       console.error(
         chalk.red(
@@ -630,7 +626,6 @@ async function compileSFCStyle(
     filename: resource,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
-    vars: style.vars != null,
     modules: style.module != null,
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
     preprocessOptions: cssPreprocessOptions,
