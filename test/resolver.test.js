@@ -1,7 +1,12 @@
 const path = require('path')
 const url = require('url')
 const { createResolver } = require('../dist/node/resolver')
-const { appendQuery, mapQuery } = require('../dist/node/utils')
+const {
+  appendQuery,
+  mapQuery,
+  cleanUrl,
+  parseWithQuery
+} = require('../dist/node/utils')
 const { osAgnosticPath } = require('../dist/node/utils')
 
 test('addStringQuery', () => {
@@ -23,6 +28,20 @@ describe('mapQuery', () => {
   test('does not duplicate query', () => {
     var res = mapQuery('/path?xxx=ciao', (q) => ({ xxx: 'template' }))
     expect(res).toBe('/path?xxx=template')
+  })
+})
+describe('fileToRequest', () => {
+  const resolver = createResolver(__dirname)
+  test('handles abs paths', () => {
+    var res = resolver.fileToRequest(path.resolve(__dirname, 'path/to/file'))
+    expect(cleanUrl(res)).toBe('/path/to/file')
+  })
+  test('only has `realPath` query', () => {
+    const file = path.resolve(__dirname, 'path/to/file')
+    var res = resolver.fileToRequest(file)
+    expect(parseWithQuery(res).query).toEqual({
+      realPath: osAgnosticPath(file)
+    })
   })
 })
 
