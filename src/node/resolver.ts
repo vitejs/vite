@@ -100,21 +100,19 @@ const defaultFileToRequest = (filePath: string, root: string): string => {
   if (cached) {
     return cached
   }
-  const realPath = osAgnosticPath(cleanUrl(filePath))
+  const realPath = osAgnosticPath(filePath)
   const relative = path.relative(root, filePath)
-  if (relative.startsWith('..')) {
+  if (relative.startsWith('..') || relative.startsWith('/..')) {
     console.log(
       new Error(
-        `filepath ${relative} is being served as request outside of root folder, report to vite`
+        `filepath '${relative}' is being served outside of root with '${relative}', report to vite`
       )
     )
   }
-  const res = mapQuery('/' + slash(relative).replace(/^public\//, ''), (q) => {
-    return {
-      ...q,
-      realPath
-    }
-  })
+  const res = appendQuery(
+    '/' + slash(relative).replace(/^public\//, ''),
+    querystring.encode({ realPath })
+  )
   return res
 }
 
