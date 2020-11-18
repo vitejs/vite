@@ -15,6 +15,7 @@ import {
 import qs from 'querystring'
 import chalk from 'chalk'
 import { InternalResolver } from '../resolver'
+import { seenUrls } from './serverPluginServeStatic'
 import { clientPublicPath } from './serverPluginClient'
 import { dataToEsm } from '@rollup/pluginutils'
 
@@ -86,14 +87,20 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
 
   function boundaryCssUpdate(boundaries: Set<string>) {
     for (let boundary of boundaries) {
+      const resolvedPath = resolver.fileToRequest(boundary)
       if (boundary.includes('.module')) {
         moduleCssUpdate(boundary, resolver)
       } else if (boundary.includes('.vue')) {
         vueCache.del(cleanUrl(boundary))
-        vueStyleUpdate(resolver.fileToRequest(boundary))
+        vueStyleUpdate(resolvedPath)
       } else {
-        normalCssUpdate(resolver.fileToRequest(boundary))
+        normalCssUpdate(resolvedPath)
       }
+      seenUrls.forEach((url) => {
+        if (url.startsWith(resolvedPath)) {
+          seenUrls.delete(url)
+        }
+      })
     }
   }
 

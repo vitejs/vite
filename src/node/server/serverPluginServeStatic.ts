@@ -6,7 +6,7 @@ import chalk from 'chalk'
 const send = require('koa-send')
 const debug = require('debug')('vite:history')
 
-export const seenUrls = new Set()
+export const seenUrls = new Set<string>()
 
 export const serveStaticPlugin: ServerPlugin = ({
   root,
@@ -49,7 +49,7 @@ export const serveStaticPlugin: ServerPlugin = ({
     await next()
 
     // the first request to the server should never 304
-    if (seenUrls.has(ctx.url) && ctx.fresh) {
+    if (expectsHtml && seenUrls.has(ctx.url) && ctx.fresh) {
       ctx.status = 304
     }
     seenUrls.add(ctx.url)
