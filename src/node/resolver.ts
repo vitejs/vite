@@ -270,14 +270,15 @@ export function createResolver(
       const cleanPublicPath = cleanUrl(publicPath)
 
       const finalize = (result: string) => {
-        // result += query
         if (
           resolver.requestToFile(result) !== resolver.requestToFile(publicPath)
         ) {
           throw new Error(
-            `ERROR [vite] normalizePublicPath check fail. please report to vite.\n${result}\n${publicPath}\n${resolver.requestToFile(
+            `[vite] normalizePublicPath check fail for '${publicPath}': '${resolver.requestToFile(
               result
-            )}\n${resolver.requestToFile(publicPath)}`
+            )}' !== '${resolver.requestToFile(
+              publicPath
+            )}'. Please report to vite.`
           )
         }
         return result
