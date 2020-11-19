@@ -72,8 +72,6 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
       return optimizedModule
     }
 
-    debug(`resolving module '${publicPath}' without realPath`)
-
     // try to resolve from normal node_modules
     const nodeModule = resolveNodeModuleFile(
       root,
