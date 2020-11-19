@@ -29,8 +29,11 @@ cli
     '--jsx',
     `['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')`
   )
-  .option('--jsx-factory', `[string]  (default: React.createElement)`)
-  .option('--jsx-fragment', `[string]  (default: React.Fragment)`)
+  .option(
+    '--jsx-factory',
+    `[string]  jsx factory (default: React.createElement)`
+  )
+  .option('--jsx-fragment', `[string]  jsx fragment (default: React.Fragment)`)
 
 // serve
 cli
@@ -41,6 +44,7 @@ cli
     '--force',
     `[boolean]  force the optimizer to ignore the cache and re-bundle`
   )
+  .option('--https', `[boolean]  start the server with TLS and HTTP/2 enabled`)
   .option('--open', `[boolean]  open browser on server start`)
   .action(async (root: string, argv: any) => {
     if (root) {
