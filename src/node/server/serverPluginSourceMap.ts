@@ -3,7 +3,13 @@ import merge from 'merge-source-map'
 import { ExistingRawSourceMap } from 'rollup'
 import { RawSourceMap } from 'source-map'
 
-export type SourceMap = ExistingRawSourceMap | RawSourceMap
+interface IRawSourceMap extends RawSourceMap {
+  version: any
+}
+interface IExistingRawSourceMap extends ExistingRawSourceMap {
+  version: any
+}
+export type SourceMap = IExistingRawSourceMap | IRawSourceMap
 
 export function mergeSourceMap(
   oldMap: SourceMap | null | undefined,
