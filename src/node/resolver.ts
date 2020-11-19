@@ -60,7 +60,12 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
     )
   }
 
+  // the query is no more necessary
+  publicPath = cleanUrl(publicPath)
   if (moduleRE.test(publicPath)) {
+    debug(
+      `resolving node module '${publicPath}' from root because no realPath query is present`
+    )
     const id = publicPath.replace(moduleRE, '')
     const cachedNodeModule = moduleIdToFileMap.get(publicPath)
     if (cachedNodeModule) {
@@ -73,10 +78,7 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
     }
 
     // try to resolve from normal node_modules
-    const nodeModule = resolveNodeModuleFile(
-      root,
-      cleanUrl(publicPath).replace(moduleRE, '')
-    )
+    const nodeModule = resolveNodeModuleFile(root, id)
 
     if (nodeModule) {
       moduleIdToFileMap.set(publicPath, nodeModule)
@@ -88,7 +90,7 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
     return publicDirPath
   }
 
-  return path.join(root, cleanUrl(publicPath).slice(1))
+  return path.join(root, publicPath.slice(1))
 }
 
 const defaultFileToRequest = (filePath: string, root: string): string => {
