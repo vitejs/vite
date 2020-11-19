@@ -426,7 +426,7 @@ export function resolveBareModuleRequest(
     // optimized deps may import one another and in the built bundle their
     // relative import paths ends with `.js`. If we don't append `.js` during
     // rewrites, it may result in duplicated copies of the same dep.
-    return path.extname(cleanUrl(id)) === '.js' ? id : id + '.js'
+    return path.extname(id) === '.js' ? id : id + '.js'
   }
 
   let isEntry = false
