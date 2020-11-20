@@ -255,8 +255,10 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     // force reload if CSS vars injection changed
-    if (prevDescriptor.cssVars.join('') !== descriptor.cssVars.join('')) {
-      return sendReload()
+    if (descriptor.cssVars) {
+      if (prevDescriptor.cssVars.join('') !== descriptor.cssVars.join('')) {
+        return sendReload()
+      }
     }
 
     // force reload if scoped status has changed
