@@ -6,5 +6,5 @@
     "types": [],
     "lib": ["ESNext", "DOM"]
   },
-  "include": ["./"]
+  "include": ["./", "../hmrPayload.ts"]
 }

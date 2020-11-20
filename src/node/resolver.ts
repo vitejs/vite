@@ -14,9 +14,14 @@ import {
   moduleFileToIdMap
 } from './server/serverPluginModuleResolve'
 import { resolveOptimizedCacheDir } from './optimizer'
+import { clientPublicPath } from './server/serverPluginClient'
+import { isCSSRequest } from './utils/cssUtils'
+import { isStaticAsset } from './utils/pathUtils'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:resolve')
+const isWin = require('os').platform() === 'win32'
+const pathSeparator = isWin ? '\\' : '/'
 
 export interface Resolver {
   requestToFile?(publicPath: string, root: string): string | undefined
@@ -29,6 +34,12 @@ export interface InternalResolver {
   fileToRequest(filePath: string): string
   normalizePublicPath(publicPath: string): string
   alias(id: string): string | undefined
+  resolveRelativeRequest(
+    publicPath: string,
+    relativePublicPath: string
+  ): { pathname: string; query: string }
+  isPublicRequest(publicPath: string): boolean
+  isAssetRequest(filePath: string): boolean
 }
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
@@ -60,13 +71,9 @@ const defaultRequestToFile = (publicPath: string, root: string): string => {
   return path.join(root, publicPath.slice(1))
 }
 
-const defaultFileToRequest = (filePath: string, root: string): string => {
-  const moduleRequest = moduleFileToIdMap.get(filePath)
-  if (moduleRequest) {
-    return moduleRequest
-  }
-  return `/${slash(path.relative(root, filePath))}`
-}
+const defaultFileToRequest = (filePath: string, root: string): string =>
+  moduleFileToIdMap.get(filePath) ||
+  '/' + slash(path.relative(root, filePath)).replace(/^public\//, '')
 
 const isFile = (file: string): boolean => {
   try {
@@ -93,8 +100,9 @@ const resolveFilePathPostfix = (filePath: string): string | undefined => {
         postfix = ext
         break
       }
-      if (isFile(path.join(cleanPath, '/index' + ext))) {
-        postfix = '/index' + ext
+      const defaultFilePath = `/index${ext}`
+      if (isFile(path.join(cleanPath, defaultFilePath))) {
+        postfix = defaultFilePath
         break
       }
     }
@@ -113,10 +121,12 @@ const isDir = (p: string) => fs.existsSync(p) && fs.statSync(p).isDirectory()
 export function createResolver(
   root: string,
   resolvers: Resolver[] = [],
-  userAlias: Record<string, string> = {}
+  userAlias: Record<string, string> = {},
+  assetsInclude?: (file: string) => boolean
 ): InternalResolver {
   resolvers = [...resolvers]
   const literalAlias: Record<string, string> = {}
+  const literalDirAlias: Record<string, string> = {}
 
   const resolveAlias = (alias: Record<string, string>) => {
     for (const key in alias) {
@@ -137,20 +147,21 @@ export function createResolver(
             }
           },
           fileToRequest(filePath) {
-            if (filePath.startsWith(target)) {
+            if (filePath.startsWith(target + pathSeparator)) {
               return slash(key + path.relative(target, filePath))
             }
           }
         })
+        literalDirAlias[key] = target
       } else {
         literalAlias[key] = target
       }
     }
   }
 
-  resolvers.forEach((r) => {
-    if (r.alias && typeof r.alias === 'object') {
-      resolveAlias(r.alias)
+  resolvers.forEach(({ alias }) => {
+    if (alias && typeof alias === 'object') {
+      resolveAlias(alias)
     }
   })
   resolveAlias(userAlias)
@@ -160,6 +171,7 @@ export function createResolver(
 
   const resolver: InternalResolver = {
     requestToFile(publicPath) {
+      publicPath = decodeURIComponent(publicPath)
       if (requestToFileCache.has(publicPath)) {
         return requestToFileCache.get(publicPath)!
       }
@@ -204,6 +216,9 @@ export function createResolver(
      * Given a fuzzy public path, resolve missing extensions and /index.xxx
      */
     normalizePublicPath(publicPath) {
+      if (publicPath === clientPublicPath) {
+        return publicPath
+      }
       // preserve query
       const queryMatch = publicPath.match(/\?.*$/)
       const query = queryMatch ? queryMatch[0] : ''
@@ -242,7 +257,7 @@ export function createResolver(
 
       // example id: "@babel/runtime/helpers/esm/slicedToArray"
       // see the test case: /playground/TestNormalizePublicPath.vue
-      const id = publicPath.replace(moduleRE, '')
+      const id = cleanPublicPath.replace(moduleRE, '')
       const { scope, name, inPkgPath } = parseNodeModuleId(id)
       if (!inPkgPath) return publicPath
       let filePathPostFix = ''
@@ -270,13 +285,56 @@ export function createResolver(
       if (aliased) {
         return aliased
       }
-      for (const r of resolvers) {
-        aliased =
-          r.alias && typeof r.alias === 'function' ? r.alias(id) : undefined
+      for (const { alias } of resolvers) {
+        aliased = alias && typeof alias === 'function' ? alias(id) : undefined
         if (aliased) {
           return aliased
         }
       }
+    },
+
+    resolveRelativeRequest(importer: string, importee: string) {
+      const queryMatch = importee.match(queryRE)
+      let resolved = importee
+
+      if (importee.startsWith('.')) {
+        resolved = path.posix.resolve(path.posix.dirname(importer), importee)
+        for (const alias in literalDirAlias) {
+          if (importer.startsWith(alias)) {
+            if (!resolved.startsWith(alias)) {
+              // resolved path is outside of alias directory, we need to use
+              // its full path instead
+              const importerFilePath = resolver.requestToFile(importer)
+              const importeeFilePath = path.resolve(
+                path.dirname(importerFilePath),
+                importee
+              )
+              resolved = resolver.fileToRequest(importeeFilePath)
+            }
+            break
+          }
+        }
+      }
+
+      return {
+        pathname:
+          cleanUrl(resolved) +
+          // path resolve strips ending / which should be preserved
+          (importee.endsWith('/') && !resolved.endsWith('/') ? '/' : ''),
+        query: queryMatch ? queryMatch[0] : ''
+      }
+    },
+
+    isPublicRequest(publicPath: string) {
+      return resolver
+        .requestToFile(publicPath)
+        .startsWith(path.resolve(root, 'public'))
+    },
+
+    isAssetRequest(filePath: string) {
+      return (
+        (assetsInclude && assetsInclude(filePath)) || isStaticAsset(filePath)
+      )
     }
   }
 
@@ -292,7 +350,7 @@ const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
  * imports from the entry can be correctly resolved.
  * e.g.:
  * - `import 'foo'` -> `import '/@modules/foo/dist/index.js'`
- * - `import 'foo/bar/baz'` -> `import '/@modules/foo/bar/baz'`
+ * - `import 'foo/bar/baz'` -> `import '/@modules/foo/bar/baz.js'`
  */
 export function resolveBareModuleRequest(
   root: string,
@@ -311,13 +369,12 @@ export function resolveBareModuleRequest(
 
   let isEntry = false
   const basedir = path.dirname(resolver.requestToFile(importer))
-  const pkgInfo = resolveNodeModule(basedir, id)
+  const pkgInfo = resolveNodeModule(basedir, id, resolver)
   if (pkgInfo) {
     if (!pkgInfo.entry) {
       console.error(
         chalk.yellow(
-          `[vite] dependency ${id} does not have default entry defined in ` +
-            `package.json.`
+          `[vite] dependency ${id} does not have default entry defined in package.json.`
         )
       )
     } else {
@@ -326,31 +383,56 @@ export function resolveBareModuleRequest(
     }
   }
 
-  // check and warn deep imports on optimized modules
-  const ext = path.extname(id)
-  if (!ext || jsSrcRE.test(ext)) {
+  if (!isEntry) {
     const deepMatch = !isEntry && id.match(deepImportRE)
     if (deepMatch) {
+      // deep import
       const depId = deepMatch[1] || deepMatch[2]
+
+      // check if this is a deep import to an optimized dep.
       if (resolveOptimizedModule(root, depId)) {
-        console.error(
-          chalk.yellow(
-            `\n[vite] Avoid deep import "${id}" (imported by ${importer})\n` +
-              `because "${depId}" has been pre-optimized by vite into a single file.\n` +
-              `Prefer importing directly from the module entry:\n` +
-              chalk.cyan(`\n  import { ... } from "${depId}" \n\n`) +
-              `If the dependency requires deep import to function properly, \n` +
-              `add the deep path to ${chalk.cyan(
-                `optimizeDeps.include`
-              )} in vite.config.js.\n`
+        if (resolver.alias(depId) === id) {
+          // this is a deep import but aliased from a bare module id.
+          // redirect it the optimized copy.
+          return resolveBareModuleRequest(root, depId, importer, resolver)
+        }
+        if (!isCSSRequest(id) && !resolver.isAssetRequest(id)) {
+          // warn against deep imports to optimized dep
+          console.error(
+            chalk.yellow(
+              `\n[vite] Avoid deep import "${id}" (imported by ${importer})\n` +
+                `because "${depId}" has been pre-optimized by vite into a single file.\n` +
+                `Prefer importing directly from the module entry:\n` +
+                chalk.cyan(`\n  import { ... } from "${depId}" \n\n`) +
+                `If the dependency requires deep import to function properly, \n` +
+                `add the deep path to ${chalk.cyan(
+                  `optimizeDeps.include`
+                )} in vite.config.js.\n`
+            )
           )
+        }
+      }
+
+      // resolve ext for deepImport
+      const filePath = resolveNodeModuleFile(root, id)
+      if (filePath) {
+        const deepPath = id.replace(deepImportRE, '')
+        const normalizedFilePath = slash(filePath)
+        const postfix = normalizedFilePath.slice(
+          normalizedFilePath.lastIndexOf(deepPath) + deepPath.length
         )
+        id += postfix
       }
     }
-    return id
-  } else {
+  }
+
+  // check and warn deep imports on optimized modules
+  const ext = path.extname(id)
+  if (!jsSrcRE.test(ext)) {
     // append import query for non-js deep imports
     return id + (queryRE.test(id) ? '&import' : '?import')
+  } else {
+    return id
   }
 }
 
@@ -368,17 +450,21 @@ export function resolveOptimizedModule(
 
   const cacheDir = resolveOptimizedCacheDir(root)
   if (!cacheDir) return
-  if (!path.extname(id)) id += '.js'
-  const file = path.join(cacheDir, id)
-  if (fs.existsSync(file) && fs.statSync(file).isFile()) {
-    viteOptimizedMap.set(cacheKey, file)
-    return file
+
+  const tryResolve = (file: string) => {
+    file = path.join(cacheDir, file)
+    if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+      viteOptimizedMap.set(cacheKey, file)
+      return file
+    }
   }
+
+  return tryResolve(id) || tryResolve(id + '.js')
 }
 
 interface NodeModuleInfo {
-  entry: string | null
-  entryFilePath: string | null
+  entry: string | undefined
+  entryFilePath: string | undefined
   pkg: any
 }
 const nodeModulesInfoMap = new Map<string, NodeModuleInfo>()
@@ -386,7 +472,8 @@ const nodeModulesFileMap = new Map()
 
 export function resolveNodeModule(
   root: string,
-  id: string
+  id: string,
+  resolver: InternalResolver
 ): NodeModuleInfo | undefined {
   const cacheKey = `${root}#${id}`
   const cached = nodeModulesInfoMap.get(cacheKey)
@@ -409,9 +496,9 @@ export function resolveNodeModule(
     } catch (e) {
       return
     }
-    let entryPoint: string | null = null
+    let entryPoint: string | undefined
 
-    // TODO properly support conditinal exports
+    // TODO properly support conditional exports
     // https://nodejs.org/api/esm.html#esm_conditional_exports
     // Note: this would require @rollup/plugin-node-resolve to support it too
     // or we will have to implement that logic in vite's own resolve plugin.
@@ -425,9 +512,13 @@ export function resolveNodeModule(
       }
     }
 
+    if (!entryPoint) {
+      entryPoint = 'index.js'
+    }
+
     // resolve object browser field in package.json
     // https://github.com/defunctzombie/package-browser-field-spec
-    const browserField = pkg.browser
+    const { browser: browserField } = pkg
     if (entryPoint && browserField && typeof browserField === 'object') {
       entryPoint = mapWithBrowserField(entryPoint, browserField)
     }
@@ -438,8 +529,15 @@ export function resolveNodeModule(
     // e.g. foo/dist/foo.js
     // this is the path raw imports will be rewritten to, and is what will
     // be passed to resolveNodeModuleFile().
-    let entryFilePath: string | null = null
-    if (entryPoint) {
+    let entryFilePath: string | undefined
+
+    // respect user manual alias
+    const aliased = resolver.alias(id)
+    if (aliased && aliased !== id) {
+      entryFilePath = resolveNodeModuleFile(root, aliased)
+    }
+
+    if (!entryFilePath && entryPoint) {
       // #284 some packages specify entry without extension...
       entryFilePath = path.join(path.dirname(pkgPath), entryPoint!)
       const postfix = resolveFilePathPostfix(entryFilePath)
@@ -493,9 +591,9 @@ function mapWithBrowserField(
   map: Record<string, string>
 ) {
   const normalized = normalize(relativePathInPkgDir)
-  const foundEntry = Object.entries(map).find(([from]) => {
-    return normalize(from) === normalized
-  })
+  const foundEntry = Object.entries(map).find(
+    ([from]) => normalize(from) === normalized
+  )
   if (!foundEntry) {
     return normalized
   }

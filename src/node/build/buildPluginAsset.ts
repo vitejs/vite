@@ -1,21 +1,22 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { Plugin, OutputBundle } from 'rollup'
-import { cleanUrl, isStaticAsset } from '../utils'
-import hash_sum from 'hash-sum'
+import { cleanUrl } from '../utils'
 import slash from 'slash'
 import mime from 'mime-types'
+import { InternalResolver } from '../resolver'
 
 const debug = require('debug')('vite:build:asset')
 
 interface AssetCacheEntry {
   content?: Buffer
   fileName?: string
-  url: string
+  url: string | undefined
 }
 
 const assetResolveCache = new Map<string, AssetCacheEntry>()
 const publicDirRE = /^public(\/|\\)/
+export const injectAssetRe = /import.meta.ROLLUP_FILE_URL_(\w+)/
 
 export const resolveAsset = async (
   id: string,
@@ -40,7 +41,7 @@ export const resolveAsset = async (
       // file is resolved from public dir, it will be copied verbatim so no
       // need to read content here.
       resolved = {
-        url: slash(path.join(publicBase, relativePath))
+        url: publicBase + slash(relativePath)
       }
     }
   }
@@ -48,25 +49,22 @@ export const resolveAsset = async (
   if (!resolved) {
     if (publicDirRE.test(relativePath)) {
       resolved = {
-        url: slash(path.join(publicBase, relativePath.replace(publicDirRE, '')))
+        url: publicBase + slash(relativePath.replace(publicDirRE, ''))
       }
     }
   }
 
   if (!resolved) {
-    const ext = path.extname(id)
-    const baseName = path.basename(id, ext)
-    const resolvedFileName = `${baseName}.${hash_sum(id)}${ext}`
-
-    let url = slash(path.join(publicBase, assetsDir, resolvedFileName))
-    const content = await fs.readFile(id)
+    let url: string | undefined
+    let content: Buffer | undefined = await fs.readFile(id)
     if (!id.endsWith(`.svg`) && content.length < Number(inlineLimit)) {
       url = `data:${mime.lookup(id)};base64,${content.toString('base64')}`
+      content = undefined
     }
 
     resolved = {
       content,
-      fileName: resolvedFileName,
+      fileName: path.basename(id),
       url
     }
   }
@@ -81,6 +79,7 @@ export const registerAssets = (
 ) => {
   for (const [fileName, source] of assets) {
     bundle[fileName] = {
+      name: fileName,
       isAsset: true,
       type: 'asset',
       fileName,
@@ -91,33 +90,52 @@ export const registerAssets = (
 
 export const createBuildAssetPlugin = (
   root: string,
+  resolver: InternalResolver,
   publicBase: string,
   assetsDir: string,
   inlineLimit: number
 ): Plugin => {
-  const assets = new Map<string, Buffer>()
+  const handleToIdMap = new Map()
 
   return {
     name: 'vite:asset',
     async load(id) {
-      if (isStaticAsset(id)) {
-        const { fileName, content, url } = await resolveAsset(
+      if (resolver.isAssetRequest(id)) {
+        let { fileName, content, url } = await resolveAsset(
           id,
           root,
           publicBase,
           assetsDir,
           inlineLimit
         )
-        if (fileName && content) {
-          assets.set(fileName, content)
+        if (!url && fileName && content) {
+          const fileHandle = this.emitFile({
+            name: fileName,
+            type: 'asset',
+            source: content
+          })
+          url = 'import.meta.ROLLUP_FILE_URL_' + fileHandle
+          handleToIdMap.set(fileHandle, id)
+        } else if (url && url.startsWith(`data:`)) {
+          debug(`${id} -> base64 inlined`)
         }
-        debug(`${id} -> ${url.startsWith('data:') ? `base64 inlined` : url}`)
         return `export default ${JSON.stringify(url)}`
       }
     },
 
-    generateBundle(_options, bundle) {
-      registerAssets(assets, bundle)
+    async renderChunk(code) {
+      let match
+      while ((match = injectAssetRe.exec(code))) {
+        const fileHandle = match[1]
+        const outputFilepath =
+          publicBase + slash(path.join(assetsDir, this.getFileName(fileHandle)))
+        code = code.replace(match[0], outputFilepath)
+        const originalId = handleToIdMap.get(fileHandle)
+        if (originalId) {
+          debug(`${originalId} -> ${outputFilepath}`)
+        }
+      }
+      return { code, map: null }
     }
   }
 }

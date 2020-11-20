@@ -1,6 +1,6 @@
 <template lang="pug">
 h2 Pre-Processors
-p.pug
+p(id).pug
   | This is rendered from &lt;template lang="pug"&gt;
   | and styled with &lt;style lang="sass"&gt;. It should be megenta.
 p.pug-less

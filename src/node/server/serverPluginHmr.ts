@@ -18,7 +18,6 @@
 //    client to update all `hmrBoundaries`.
 
 import { ServerPlugin } from '.'
-import fs from 'fs'
 import WebSocket from 'ws'
 import path from 'path'
 import chalk from 'chalk'
@@ -30,15 +29,11 @@ import { parse } from '../utils/babelParse'
 import { InternalResolver } from '../resolver'
 import LRUCache from 'lru-cache'
 import slash from 'slash'
-import { cssPreprocessLangRE } from '../utils/cssUtils'
-import {
-  Node,
-  StringLiteral,
-  Statement,
-  Expression,
-  IfStatement
-} from '@babel/types'
-import { isStaticAsset, resolveCompiler } from '../utils'
+import { isCSSRequest } from '../utils/cssUtils'
+import { Node, StringLiteral, Statement, Expression } from '@babel/types'
+import { resolveCompiler } from '../utils'
+import { HMRPayload } from '../../hmrPayload'
+import { clientPublicPath } from './serverPluginClient'
 
 export const debugHmr = require('debug')('vite:hmr')
 
@@ -61,33 +56,10 @@ export const hmrDeclineSet = new Set<string>()
 export const importerMap: HMRStateMap = new Map()
 export const importeeMap: HMRStateMap = new Map()
 
-// files that are dirty (i.e. in the import chain between the accept boundrary
+// files that are dirty (i.e. in the import chain between the accept boundary
 // and the actual changed file) for an hmr update at a given timestamp.
 export const hmrDirtyFilesMap = new LRUCache<string, Set<string>>({ max: 10 })
 export const latestVersionsMap = new Map<string, string>()
-
-// client and node files are placed flat in the dist folder
-export const hmrClientFilePath = path.resolve(__dirname, '../client.js')
-export const hmrClientPublicPath = `/vite/hmr`
-
-interface HMRPayload {
-  type:
-    | 'assets-update'
-    | 'js-update'
-    | 'vue-reload'
-    | 'vue-rerender'
-    | 'style-update'
-    | 'style-remove'
-    | 'full-reload'
-    | 'sw-bust-cache'
-    | 'custom'
-  timestamp: number
-  path?: string
-  changeSrcPath?: string
-  id?: string
-  index?: number
-  customData?: any
-}
 
 export const hmrPlugin: ServerPlugin = ({
   root,
@@ -97,25 +69,22 @@ export const hmrPlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  const hmrClient = fs
-    .readFileSync(hmrClientFilePath, 'utf-8')
-    .replace(`__SW_ENABLED__`, String(!!config.serviceWorker))
-
-  app.use(async (ctx, next) => {
-    if (ctx.path === hmrClientPublicPath) {
-      ctx.type = 'js'
-      ctx.status = 200
-      ctx.body = hmrClient
-    } else {
-      if (ctx.query.t) {
-        latestVersionsMap.set(ctx.path, ctx.query.t)
-      }
-      return next()
+  app.use((ctx, next) => {
+    if (ctx.query.t) {
+      latestVersionsMap.set(ctx.path, ctx.query.t)
     }
+    return next()
   })
 
   // start a websocket server to send hmr notifications to the client
-  const wss = new WebSocket.Server({ server })
+  const wss = new WebSocket.Server({ noServer: true })
+  server.on('upgrade', (req, socket, head) => {
+    if (req.headers['sec-websocket-protocol'] === 'vite-hmr') {
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req)
+      })
+    }
+  })
 
   wss.on('connection', (socket) => {
     debugHmr('ws client connected')
@@ -173,45 +142,38 @@ export const hmrPlugin: ServerPlugin = ({
       if (hasDeadEnd) {
         send({
           type: 'full-reload',
-          path: publicPath,
-          timestamp
+          path: publicPath
         })
         console.log(chalk.green(`[vite] `) + `page reloaded.`)
       } else {
-        hmrBoundaries.forEach((boundary) => {
-          console.log(
-            chalk.green(`[vite:hmr] `) +
-              `${boundary} updated due to change in ${relativeFile}.`
-          )
-          send({
-            type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
-            path: boundary,
-            changeSrcPath: publicPath,
-            timestamp
+        const boundaries = [...hmrBoundaries]
+        const file =
+          boundaries.length === 1 ? boundaries[0] : `${boundaries.length} files`
+        console.log(
+          chalk.green(`[vite:hmr] `) +
+            `${file} hot updated due to change in ${relativeFile}.`
+        )
+        send({
+          type: 'multi',
+          updates: boundaries.map((boundary) => {
+            return {
+              type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
+              path: boundary,
+              changeSrcPath: publicPath,
+              timestamp
+            }
           })
         })
       }
     } else {
       debugHmr(`no importers for ${publicPath}.`)
-      // bust sw cache anyway since this may be a full dynamic import.
-      if (config.serviceWorker) {
-        send({
-          type: 'sw-bust-cache',
-          path: publicPath,
-          timestamp
-        })
-      }
     }
   })
 
   watcher.on('change', (file) => {
     if (
-      !(
-        isStaticAsset(file) ||
-        file.endsWith('.vue') ||
-        file.endsWith('.css') ||
-        cssPreprocessLangRE.test(file)
-      )
+      !resolver.isAssetRequest(file) ||
+      !(file.endsWith('.vue') || isCSSRequest(file))
     ) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
@@ -240,7 +202,13 @@ function walkImportChain(
   }
 
   for (const importer of importers) {
-    if (importer.endsWith('.vue') || isHmrAccepted(importer, importee)) {
+    if (
+      importer.endsWith('.vue') ||
+      // explicitly accepted by this importer
+      isHmrAccepted(importer, importee) ||
+      // importer is a self accepting module
+      isHmrAccepted(importer, importer)
+    ) {
       // vue boundaries are considered dirty for the reload
       if (importer.endsWith('.vue')) {
         dirtyFiles.add(importer)
@@ -251,16 +219,18 @@ function walkImportChain(
       const parentImpoters = importerMap.get(importer)
       if (!parentImpoters) {
         return true
-      } else if (
-        walkImportChain(
-          importer,
-          parentImpoters,
-          hmrBoundaries,
-          dirtyFiles,
-          currentChain.concat(importer)
-        )
-      ) {
-        return true
+      } else if (!currentChain.includes(importer)) {
+        if (
+          walkImportChain(
+            importer,
+            parentImpoters,
+            hmrBoundaries,
+            dirtyFiles,
+            currentChain.concat(importer)
+          )
+        ) {
+          return true
+        }
       }
     }
   }
@@ -289,7 +259,6 @@ export function rewriteFileWithHMR(
   s: MagicString
 ) {
   let hasDeclined = false
-  let importMetaConditional: IfStatement | undefined
 
   const registerDep = (e: StringLiteral) => {
     const deps = ensureMapEntry(hmrAcceptanceMap, importer)
@@ -324,7 +293,8 @@ export function rewriteFileWithHMR(
         )
       }
 
-      const method = node.callee.property.name
+      const method =
+        node.callee.property.type === 'Identifier' && node.callee.property.name
       if (method === 'accept' || method === 'acceptDeps') {
         if (!isDevBlock) {
           console.error(
@@ -414,10 +384,6 @@ export function rewriteFileWithHMR(
     // if (import.meta.hot) ...
     if (node.type === 'IfStatement') {
       const isDevBlock = isMetaHot(node.test)
-      if (isDevBlock && !importMetaConditional) {
-        // remember the first occurence of `if (import.meta.hot)`
-        importMetaConditional = node
-      }
       if (node.consequent.type === 'BlockStatement') {
         node.consequent.body.forEach((s) =>
           checkStatements(s, false, isDevBlock)
@@ -432,14 +398,11 @@ export function rewriteFileWithHMR(
   const ast = parse(source)
   ast.forEach((s) => checkStatements(s, true, false))
 
-  if (importMetaConditional) {
-    // inject import.meta.hot
-    s.prependLeft(
-      importMetaConditional.start!,
-      `import { createHotContext } from "${hmrClientPublicPath}"; ` +
-        `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
-    )
-  }
+  // inject import.meta.hot
+  s.prepend(
+    `import { createHotContext } from "${clientPublicPath}"; ` +
+      `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
+  )
 
   // clear decline state
   if (!hasDeclined) {

@@ -34,6 +34,11 @@ const getComputedColor = async (selectorOrEl) => {
   )
 }
 
+const click = async (selectorOrEl) => {
+  const el = await getEl(selectorOrEl)
+  await el.click()
+}
+
 const getComputedWidth = async (selectorOrEl) => {
   return (await getEl(selectorOrEl)).evaluate(
     (el) => getComputedStyle(el).width
@@ -97,14 +102,52 @@ describe('vite', () => {
       )
     })
 
-    test('env variables', async () => {
-      expect(await getText('.dev')).toMatch(`__DEV__: ${!isBuild}`)
-      expect(await getText('.base')).toMatch(`process.env.BASE_URL: /`)
-      expect(await getText('.node-env')).toMatch(
-        `process.env.NODE_ENV: ${isBuild ? 'production' : 'development'}`
+    test('transform asset urls', async () => {
+      const image = await getEl('.relative-import')
+      expect(await image.evaluate((el) => el.getAttribute('src'))).toMatch(
+        await image.evaluate((el) => el.getAttribute('data-src'))
       )
+    })
+
+    test('env variables', async () => {
+      const mode = isBuild ? 'production' : 'development'
+
+      expect(await getText('.base')).toMatch(`BASE_URL: /`)
+      expect(await getText('.mode')).toMatch(`MODE: ${mode}`)
+      expect(await getText('.dev')).toMatch(`DEV: ${!isBuild}`)
+      expect(await getText('.prod')).toMatch(`PROD: ${isBuild}`)
       expect(await getText('.custom-env-variable')).toMatch(
-        'process.env.CUSTOM_ENV_VARIABLE: 9527'
+        'VITE_CUSTOM_ENV_VARIABLE: 9527'
+      )
+      expect(await getText('.effective-mode-file-name')).toMatch(
+        `VITE_EFFECTIVE_MODE_FILE_NAME: ${
+          isBuild ? `.env.production` : `.env.development`
+        }`
+      )
+
+      expect(await getText('.node-env')).toMatch(`NODE_ENV: ${mode}`)
+      expect(await getText('.import-meta-env')).toMatch(
+        JSON.stringify(
+          {
+            VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
+            VITE_CUSTOM_ENV_VARIABLE: '9527',
+            BASE_URL: '/',
+            MODE: mode,
+            DEV: !isBuild,
+            PROD: isBuild
+          },
+          null,
+          2
+        )
+      )
+    })
+
+    test('config.define', async () => {
+      expect(await getText('.config-define-value')).toMatch(
+        `config.define.value: value`
+      )
+      expect(await getText('.config-define-value-from-js')).toMatch(
+        `config.define.value from js: value`
       )
     })
 
@@ -124,7 +167,7 @@ describe('vite', () => {
         await button.click()
         expect(await getText(button)).toMatch('>>> 1 <<<')
 
-        await updateFile('TestHmr/TestHmr.vue', (content) =>
+        await updateFile('hmr/TestHmr.vue', (content) =>
           content.replace('{{ count }}', 'count is {{ count }}')
         )
         // note: using the same button to ensure the component did only re-render
@@ -133,8 +176,8 @@ describe('vite', () => {
       })
 
       test('hmr (vue reload)', async () => {
-        await updateFile('TestHmr/TestHmr.vue', (content) =>
-          content.replace('count: 0,', 'count: 1337,')
+        await updateFile('hmr/TestHmr.vue', (content) =>
+          content.replace('count: ref(0),', 'count: ref(1337),')
         )
         await expectByPolling(() => getText('.hmr-increment'), 'count is 1337')
       })
@@ -142,7 +185,7 @@ describe('vite', () => {
       test('hmr (js -> vue propagation)', async () => {
         const span = await page.$('.hmr-propagation')
         expect(await getText(span)).toBe('1')
-        await updateFile('TestHmr/testHmrPropagation.js', (content) =>
+        await updateFile('hmr/testHmrPropagation.js', (content) =>
           content.replace('return 1', 'return 666')
         )
         await expectByPolling(() => getText('.hmr-propagation'), '666')
@@ -152,14 +195,12 @@ describe('vite', () => {
         let span = await page.$('.hmr-propagation-dynamic')
         expect(await getText(span)).toBe('bar not loaded')
         // trigger the dynamic import
-        let button = await page.$('.hmr-propagation-dynamic-load')
-        await button.click()
+        await click('.hmr-propagation-dynamic-load')
         expect(await getText(span)).toBe('bar loading')
         await expectByPolling(() => getText(span), 'bar loaded')
-        // update souce code
-        await updateFile(
-          'TestHmr/testHmrPropagationDynamicImport.js',
-          (content) => content.replace('bar loaded', 'bar updated')
+        // update source code
+        await updateFile('hmr/testHmrPropagationDynamicImport.js', (content) =>
+          content.replace('bar loaded', 'bar updated')
         )
         // the update trigger the reload of TestHmr component
         // all states in it are lost
@@ -168,8 +209,7 @@ describe('vite', () => {
           'bar not loaded'
         )
         span = await page.$('.hmr-propagation-dynamic')
-        button = await page.$('.hmr-propagation-dynamic-load')
-        await button.click()
+        await click('.hmr-propagation-dynamic-load')
         expect(await getText(span)).toBe('bar loading')
         await expectByPolling(() => getText(span), 'bar updated')
       })
@@ -178,13 +218,12 @@ describe('vite', () => {
         let span = await page.$('.hmr-propagation-full-dynamic')
         expect(await getText(span)).toBe('baz not loaded')
         // trigger the dynamic import
-        let button = await page.$('.hmr-propagation-full-dynamic-load')
-        await button.click()
+        await click('.hmr-propagation-full-dynamic-load')
         expect(await getText(span)).toBe('baz loading')
         await expectByPolling(() => getText(span), 'baz loaded')
-        // update souce code
+        // update source code
         await updateFile(
-          'TestHmr/testHmrPropagationFullDynamicImport.js',
+          'hmr/testHmrPropagationFullDynamicImport.js',
           (content) => content.replace('baz loaded', 'baz updated')
         )
         // the update doesn't trigger hmr
@@ -199,8 +238,7 @@ describe('vite', () => {
         span = await page.$('.hmr-propagation-full-dynamic')
         expect(await getText(span)).toBe('baz not loaded')
         // trigger the dynamic import
-        button = await page.$('.hmr-propagation-full-dynamic-load')
-        await button.click()
+        await click('.hmr-propagation-full-dynamic-load')
         expect(await getText(span)).toBe('baz loading')
         await expectByPolling(() => getText(span), 'baz updated')
       })
@@ -217,15 +255,12 @@ describe('vite', () => {
         let span = await page.$('.hmr-propagation-full-dynamic-self-accepting')
         expect(await getText(span)).toBe('qux not loaded')
         // trigger the dynamic import
-        let button = await page.$(
-          '.hmr-propagation-full-dynamic-load-self-accepting'
-        )
-        await button.click()
+        await click('.hmr-propagation-full-dynamic-load-self-accepting')
         expect(await getText(span)).toBe('qux loading')
         await expectByPolling(() => getText(span), 'qux loaded')
-        // update souce code
+        // update source code
         await updateFile(
-          'TestHmr/testHmrPropagationFullDynamicImportSelfAccepting.js',
+          'hmr/testHmrPropagationFullDynamicImportSelfAccepting.js',
           (content) => content.replace('qux loaded', 'qux updated')
         )
         // the update is accepted by the imported file
@@ -239,12 +274,12 @@ describe('vite', () => {
       })
 
       test('hmr (manual API, self accepting)', async () => {
-        await updateFile('testHmrManual.js', (content) =>
+        await updateFile('hmr/testHmrManual.js', (content) =>
           content.replace('foo = 1', 'foo = 2')
         )
         await expectByPolling(
           () => browserLogs[browserLogs.length - 1],
-          'js module hot updated:  /testHmrManual.js'
+          'js module hot updated:  /hmr/testHmrManual.js'
         )
         expect(
           browserLogs.slice(browserLogs.length - 4, browserLogs.length - 1)
@@ -257,12 +292,12 @@ describe('vite', () => {
 
       test('hmr (manual API, accepting deps)', async () => {
         browserLogs.length = 0
-        await updateFile('testHmrManualDep.js', (content) =>
+        await updateFile('hmr/testHmrManualDep.js', (content) =>
           content.replace('foo = 1', 'foo = 2')
         )
         await expectByPolling(
           () => browserLogs[browserLogs.length - 1],
-          'js module hot updated:  /testHmrManual.js'
+          'js module hot updated:  /hmr/testHmrManual.js'
         )
         expect(
           browserLogs.slice(browserLogs.length - 8, browserLogs.length - 1)
@@ -286,7 +321,7 @@ describe('vite', () => {
       expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
       // hmr
       if (!isBuild) {
-        await updateFile('testPostCss.css', (content) =>
+        await updateFile('css/testPostCss.css', (content) =>
           content.replace('red', 'green')
         )
         await expectByPolling(() => getComputedColor(el), 'rgb(0, 128, 0)')
@@ -298,18 +333,57 @@ describe('vite', () => {
       expect(await getComputedColor(el)).toBe('rgb(0, 128, 0)')
       // hmr
       if (!isBuild) {
-        await updateFile('TestPostCss.vue', (content) =>
+        await updateFile('css/TestPostCss.vue', (content) =>
           content.replace('color: green;', 'color: red;')
         )
         await expectByPolling(() => getComputedColor(el), 'rgb(255, 0, 0)')
       }
     })
 
+    if (!isBuild) {
+      test('hmr (style @import bail to <style>)', async () => {
+        // external imports are preserved, and is not supported with constructed
+        // CSSStyleSheet, so we need to remove the constructed sheet and fallback
+        // to <style> insertion
+        const externalImport = `@import 'http://localhost:3000/css/empty.css';`
+        await updateFile('css/TestPostCss.vue', (content) => {
+          return content
+            .replace(`<style>`, `<style>\n${externalImport}\n`)
+            .replace('color: red;', 'color: green;')
+        })
+        // should work
+        await expectByPolling(
+          () => getComputedColor('.postcss-from-sfc'),
+          'rgb(0, 128, 0)'
+        )
+        await updateFile('css/TestPostCss.vue', (content) => {
+          return content
+            .replace(externalImport, '')
+            .replace('color: green;', 'color: red;')
+        })
+        // should work
+        await expectByPolling(
+          () => getComputedColor('.postcss-from-sfc'),
+          'rgb(255, 0, 0)'
+        )
+      })
+
+      test('hmr (style removal)', async () => {
+        await updateFile('css/TestPostCss.vue', (content) =>
+          content.replace(/<style>(.|\s)*<\/style>/, ``)
+        )
+        await expectByPolling(
+          () => getComputedColor('.postcss-from-sfc'),
+          'rgb(0, 0, 0)'
+        )
+      })
+    }
+
     test('SFC <style scoped>', async () => {
       const el = await page.$('.style-scoped')
       expect(await getComputedColor(el)).toBe('rgb(138, 43, 226)')
       if (!isBuild) {
-        await updateFile('TestScopedCss.vue', (content) =>
+        await updateFile('css/TestScopedCss.vue', (content) =>
           content.replace('rgb(138, 43, 226)', 'rgb(0, 0, 0)')
         )
         await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
@@ -320,7 +394,7 @@ describe('vite', () => {
       const el = await page.$('.css-modules-sfc')
       expect(await getComputedColor(el)).toBe('rgb(0, 0, 255)')
       if (!isBuild) {
-        await updateFile('TestCssModules.vue', (content) =>
+        await updateFile('css/TestCssModules.vue', (content) =>
           content.replace('color: blue;', 'color: rgb(0, 0, 0);')
         )
         // css module results in component reload so must use fresh selector
@@ -380,11 +454,34 @@ describe('vite', () => {
       }
     })
 
+    test('CSS preprocessor @import', async () => {
+      const el = await page.$('.script-scss-at-import')
+      expect(await getComputedColor(el)).toBe('rgb(0, 128, 0)')
+      if (!isBuild) {
+        await updateFile('css-@import/testScss.imported.scss', (content) =>
+          content.replace('green', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+      }
+    })
+
+    test('SFC <style lang="sass"> w/ @import', async () => {
+      const el = await page.$('.sfc-style-scss-at-import')
+      expect(await getComputedColor(el)).toBe('rgb(255, 0, 0)')
+      if (!isBuild) {
+        await updateFile(
+          'css-@import/testScssAtImportFromStyle.scss',
+          (content) => content.replace('red', 'rgb(0, 0, 0)')
+        )
+        await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
+      }
+    })
+
     test('import *.module.css', async () => {
       const el = await page.$('.css-modules-import')
       expect(await getComputedColor(el)).toBe('rgb(255, 140, 0)')
       if (!isBuild) {
-        await updateFile('testCssModules.module.css', (content) =>
+        await updateFile('css/testCssModules.module.css', (content) =>
           content.replace('rgb(255, 140, 0)', 'rgb(0, 0, 1)')
         )
         // css module results in component reload so must use fresh selector
@@ -395,8 +492,27 @@ describe('vite', () => {
       }
     })
 
+    test('import *.module.scss', async () => {
+      const el = await page.$('.scss-modules-import')
+      expect(await getComputedColor(el)).toBe('rgb(255, 0, 255)')
+      if (!isBuild) {
+        await updateFile('css/testScssModules.module.scss', (content) =>
+          content.replace('rgb(255, 0, 255)', 'rgb(0, 0, 2)')
+        )
+        // css module results in component reload so must use fresh selector
+        await expectByPolling(
+          () => getComputedColor('.scss-modules-import'),
+          'rgb(0, 0, 2)'
+        )
+      }
+    })
+
     test('pre-processors', async () => {
       expect(await getText('.pug')).toMatch('template lang="pug"')
+      // pug compiler with `html` option
+      expect(
+        await (await getEl('.pug')).evaluate((el) => el.getAttribute('id'))
+      ).toMatch('')
       expect(await getComputedColor('.pug')).toBe('rgb(255, 0, 255)')
       if (!isBuild) {
         await updateFile('TestPreprocessors.vue', (c) =>
@@ -435,11 +551,13 @@ describe('vite', () => {
 
     test('json', async () => {
       expect(await getText('.json')).toMatch('this is json')
+      expect(await getText('.json-named-exports')).toMatch('this is json')
       if (!isBuild) {
-        await updateFile('testJsonImport.json', (c) =>
+        await updateFile('json/testJsonImport.json', (c) =>
           c.replace('this is json', 'with hmr')
         )
         await expectByPolling(() => getText('.json'), 'with hmr')
+        await expectByPolling(() => getText('.json-named-exports'), 'with hmr')
       }
     })
 
@@ -465,7 +583,7 @@ describe('vite', () => {
       expect(text).toMatch('from Preact TSX')
       expect(text).toMatch('count is 1337')
       if (!isBuild) {
-        await updateFile('testJsx.jsx', (c) => c.replace('1337', '2046'))
+        await updateFile('jsx/testJsx.jsx', (c) => c.replace('1337', '2046'))
         await expectByPolling(() => getText('.jsx-root'), '2046')
       }
     })
@@ -476,24 +594,37 @@ describe('vite', () => {
       expect(await getText('.dir-alias-index')).toMatch(
         'directory alias index works'
       )
+      expect(await getText('.dir-alias-import-outside')).toMatch(
+        'directory aliased internal import outside works'
+      )
       if (!isBuild) {
-        await updateFile('aliased/index.js', (c) =>
+        await updateFile('alias/aliased/index.js', (c) =>
           c.replace('works', 'hmr works')
         )
         await expectByPolling(() => getText('.alias'), 'alias hmr works')
-        await updateFile('aliased-dir/named.js', (c) =>
+
+        await updateFile('alias/aliased-dir/named.js', (c) =>
           c.replace('works', 'hmr works')
         )
         await expectByPolling(
           () => getText('.dir-alias'),
           'directory alias hmr works'
         )
-        await updateFile('aliased-dir/index.js', (c) =>
+
+        await updateFile('alias/aliased-dir/index.js', (c) =>
           c.replace('works', 'hmr works')
         )
         await expectByPolling(
           () => getText('.dir-alias-index'),
           'directory alias index hmr works'
+        )
+
+        await updateFile('alias/aliased-dir-import.js', (c) =>
+          c.replace('works', 'hmr works')
+        )
+        await expectByPolling(
+          () => getText('.dir-alias-import-outside'),
+          'directory aliased internal import outside hmr works'
         )
       }
     })
@@ -503,11 +634,13 @@ describe('vite', () => {
       expect(await getComputedColor(el)).toBe('rgb(0, 255, 255)')
       expect(await getText('.transform-js')).toBe('2')
       if (!isBuild) {
-        await updateFile('testTransform.scss', (c) =>
+        await updateFile('transform/testTransform.scss', (c) =>
           c.replace('cyan', 'rgb(0, 0, 0)')
         )
         await expectByPolling(() => getComputedColor(el), 'rgb(0, 0, 0)')
-        await updateFile('testTransform.js', (c) => c.replace('= 1', '= 2'))
+        await updateFile('transform/testTransform.js', (c) =>
+          c.replace('= 1', '= 2')
+        )
         await expectByPolling(() => getText('.transform-js'), '3')
       }
     })
@@ -564,6 +697,48 @@ describe('vite', () => {
       expect(await getText(`.dynamic-import-two`)).toMatch(`Two`)
     })
 
+    test('importing web worker', async () => {
+      await click('.worker-send')
+      await expectByPolling(() => getText('.worker-response'), 'pong')
+    })
+
+    test('importing wasm', async () => {
+      await click('.wasm-send')
+      await expectByPolling(() => getText('.wasm-response'), '42')
+    })
+
+    test('<script setup> and <style vars>', async () => {
+      expect(await getText(`.script-setup-props`)).toMatch(`Test message`)
+      expect(await getComputedColor(`.style-vars`)).toBe('rgb(255, 0, 0)')
+      await click('.script-setup-change')
+      await expectByPolling(
+        () => getComputedColor(`.style-vars`),
+        'rgb(0, 128, 0)'
+      )
+      if (!isBuild) {
+        // test <script setup HMR>
+        await updateFile('script-setup/TestScriptSetupStyleVars.vue', (c) =>
+          c.replace(`ref('red')`, `ref('blue')`)
+        )
+        await expectByPolling(
+          () => getComputedColor(`.style-vars`),
+          'rgb(0, 0, 255)'
+        )
+        // #748
+        await updateFile('script-setup/TestScriptSetupStyleVars.vue', (c) =>
+          c.replace(`msg="hello"`, `msg="hi"`)
+        )
+        await expectByPolling(
+          () => getText('.test-script-setup-child'),
+          'Child has prop hi'
+        )
+      }
+    })
+
+    test('optional chaining syntax support', async () => {
+      expect(await getText('.syntax')).toBe('baz')
+    })
+
     test('assets hmr w/ template and script', async () => {
       const el = await page.$('.asset-hmr-template')
       const scriptEl = await page.$('.asset-hmr-script')
@@ -592,7 +767,19 @@ describe('vite', () => {
     // })
   }
 
-  // test build first since we are going to edit the fixtures when testing dev
+  describe('build (multi)', () => {
+    beforeAll(async () => {
+      const buildOutput = await execa(binPath, ['build'], {
+        cwd: path.join(tempDir, 'multi-build')
+      })
+      expect(buildOutput.stdout).toMatch('Build completed')
+      expect(buildOutput.stderr).toBe('')
+    })
+
+    test.todo('index.html renders "hello world"')
+    test.todo('index.mobile.html renders "hello mobile"')
+  })
+
   describe('build', () => {
     let staticServer
     beforeAll(async () => {
@@ -647,6 +834,16 @@ describe('vite', () => {
       // should be inside the async chunk
       expect(code).toMatch(colorToMatch)
     })
+
+    test('build manifest', async () => {
+      const manifest = JSON.parse(
+        await fs.readFile(path.join(tempDir, 'dist/_assets/manifest.json'))
+      )
+      const indexPath = manifest['index.js']
+      expect(
+        await fs.stat(path.join(tempDir, `dist/_assets/${indexPath}`))
+      ).toBeTruthy()
+    })
   })
 
   describe('dev', () => {
@@ -656,6 +853,9 @@ describe('vite', () => {
       // start dev server
       devServer = execa(binPath, {
         cwd: tempDir
+      })
+      devServer.stderr.on('data', (data) => {
+        serverLogs.push(data.toString())
       })
       await new Promise((resolve) => {
         devServer.stdout.on('data', (data) => {
@@ -678,7 +878,7 @@ describe('vite', () => {
     declareTests(false)
 
     test('hmr (index.html full-reload)', async () => {
-      expect(await getText('title')).toMatch('Vite App')
+      expect(await getText('title')).toMatch('Vite Playground')
       // hmr
       const reload = page.waitForNavigation({
         waitUntil: 'domcontentloaded'
@@ -687,12 +887,12 @@ describe('vite', () => {
         content.replace('Vite App', 'Vite App Test')
       )
       await reload
-      await expectByPolling(() => getText('title'), 'Vite App Test')
+      await expectByPolling(() => getText('title'), 'Vite Playground Test')
     })
 
     test('hmr (html full-reload)', async () => {
       await page.goto('http://localhost:3000/test.html')
-      expect(await getText('title')).toMatch('Vite App')
+      expect(await getText('title')).toMatch('Vite Playground')
       // hmr
       const reload = page.waitForNavigation({
         waitUntil: 'domcontentloaded'
@@ -701,18 +901,18 @@ describe('vite', () => {
         content.replace('Vite App', 'Vite App Test')
       )
       await reload
-      await expectByPolling(() => getText('title'), 'Vite App Test')
+      await expectByPolling(() => getText('title'), 'Vite Playground Test')
     })
 
     // Assert that all edited files are reflected on page reload
-    // i.e. service-worker cache is correctly busted
-    test('sw cache busting', async () => {
+    // i.e. server-side cache is correctly busted
+    test('page reload cache busting', async () => {
       await page.reload()
 
       expect(await getText('.hmr-increment')).toMatch('>>> count is 1337 <<<')
       expect(await getText('.hmr-propagation')).toMatch('666')
       expect(await getComputedColor('.postcss-from-css')).toBe('rgb(0, 128, 0)')
-      expect(await getComputedColor('.postcss-from-sfc')).toBe('rgb(255, 0, 0)')
+      expect(await getComputedColor('.postcss-from-sfc')).toBe('rgb(0, 0, 0)')
       expect(await getComputedColor('.style-scoped')).toBe('rgb(0, 0, 0)')
       expect(await getComputedColor('.css-modules-sfc')).toBe('rgb(0, 0, 0)')
       expect(await getComputedColor('.css-modules-import')).toBe('rgb(0, 0, 1)')
@@ -728,10 +928,10 @@ describe('vite', () => {
       expect(await getText('.json')).toMatch('with hmr')
 
       // ensure import graph is still working
-      await updateFile('testJsonImport.json', (c) =>
-        c.replace('with hmr', 'with sw reload')
+      await updateFile('json/testJsonImport.json', (c) =>
+        c.replace('with hmr', 'with page reload')
       )
-      await expectByPolling(() => getText('.json'), 'with sw reload')
+      await expectByPolling(() => getText('.json'), 'with page reload')
     })
   })
 })

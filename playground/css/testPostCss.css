@@ -1,0 +1,10 @@
+/* postcss-nesting */
+body {
+  & .postcss-from-css {
+    color: red;
+  }
+}
+/* @font-face {
+    font-family: 'abcde';
+    src: url('./assets/fonts/abc.ttf') format('truetype');
+} */

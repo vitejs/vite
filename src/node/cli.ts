@@ -9,85 +9,107 @@ if (argv.debug) {
   } catch (e) {}
 }
 
+import { cac } from 'cac'
 import os from 'os'
 import path from 'path'
 import chalk from 'chalk'
 import { UserConfig, resolveConfig } from './config'
 
-const command = argv._[0]
-const defaultMode = command === 'build' ? 'production' : 'development'
+const cli = cac(`vite`)
 
-function logHelp() {
-  console.log(`
-Usage: vite [command] [args] [--options]
+// global options
+cli
+  .option('--config <file>, -c <file>', `[string]  use specified config file`)
+  .option('--debug [feat]', `[string | boolean]  show debug logs`)
+  .option(
+    '--mode <mode>, -m <mode>',
+    `[string]  specify env mode (default: 'development' for dev, 'production' for build)`
+  )
+  .option(
+    '--jsx <preset>',
+    `['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')`
+  )
+  .option('--jsx-factory <string>', `[string]  (default: React.createElement)`)
+  .option('--jsx-fragment <string>', `[string]  (default: React.Fragment)`)
 
-Commands:
-  vite                       Start server in current directory.
-  vite serve [root=cwd]      Start server in target directory.
-  vite build [root=cwd]      Build target directory.
+// serve
+cli
+  .command('[root]') // default command
+  .alias('serve')
+  .option('--port <port>', `[number]  port to listen to`)
+  .option(
+    '--force',
+    `[boolean]  force the optimizer to ignore the cache and re-bundle`
+  )
+  .option('--open', `[boolean]  open browser on server start`)
+  .action(async (root: string, argv: any) => {
+    if (root) {
+      argv.root = root
+    }
+    const options = await resolveOptions({ argv, defaultMode: 'development' })
+    return runServe(options)
+  })
 
-Options:
-  --help, -h                 [boolean] show help
-  --version, -v              [boolean] show version
-  --config, -c               [string]  use specified config file
-  --serviceWorker, -sw       [boolean] configure service worker caching (default: false)
-  --port                     [number]  port to use for serve
-  --open                     [boolean] open browser on server start
-  --base                     [string]  public base path for build (default: /)
-  --outDir                   [string]  output directory for build (default: dist)
-  --assetsDir                [string]  directory under outDir to place assets in (default: assets)
-  --assetsInlineLimit        [number]  static asset base64 inline threshold in bytes (default: 4096)
-  --sourcemap                [boolean] output source maps for build (default: false)
-  --minify                   [boolean | 'terser' | 'esbuild'] enable/disable minification, or specify
-                                       minifier to use. (default: 'terser')
-  --mode, -m                 [string]  specify env mode (default: 'development' for dev, 'production' for build)
-  --ssr                      [boolean] build for server-side rendering
-  --jsx                      ['vue' | 'preact' | 'react']  choose jsx preset (default: 'vue')
-  --jsx-factory              [string]  (default: React.createElement)
-  --jsx-fragment             [string]  (default: React.Fragment)
-`)
-}
+// build
+cli
+  .command('build [root]')
+  .option(
+    '--entry <file>',
+    `[string]  entry file for build (default: index.html)`
+  )
+  .option('--base <path>', `[string]  public base path (default: /)`)
+  .option('--outDir <dir>', `[string]  output directory (default: dist)`)
+  .option(
+    '--assetsDir <dir>',
+    `[string]  directory under outDir to place assets in (default: _assets)`
+  )
+  .option(
+    '--assetsInlineLimit <number>',
+    `[number]  static asset base64 inline threshold in bytes (default: 4096)`
+  )
+  .option('--ssr', `[boolean]  build for server-side rendering`)
+  .option(
+    '--sourcemap',
+    `[boolean]  output source maps for build (default: false)`
+  )
+  .option(
+    '--minify [minifier]',
+    `[boolean | 'terser' | 'esbuild']  enable/disable minification, or specify minifier to use (default: terser)`
+  )
+  .action(async (root: string, argv: any) => {
+    if (root) {
+      argv.root = root
+    }
+    const options = await resolveOptions({ argv, defaultMode: 'production' })
+    return runBuild(options)
+  })
 
-console.log(chalk.cyan(`vite v${require('../package.json').version}`))
-;(async () => {
-  const { help, h, mode, m, version, v } = argv
+// optimize
+cli
+  .command('optimize [root]')
+  .option(
+    '--force',
+    `[boolean]  force the optimizer to ignore the cache and re-bundle`
+  )
+  .action(async (root: string, argv: any) => {
+    if (root) {
+      argv.root = root
+    }
+    const options = await resolveOptions({ argv, defaultMode: 'development' })
+    return runOptimize(options)
+  })
 
-  if (help || h) {
-    logHelp()
-    return
-  } else if (version || v) {
-    // noop, already logged
-    return
-  }
+cli.help()
+cli.version(require('../../package.json').version)
+cli.parse()
 
-  const envMode = mode || m || defaultMode
-  const options = await resolveOptions(envMode)
-  if (!options.command || options.command === 'serve') {
-    runServe(options)
-  } else if (options.command === 'build') {
-    runBuild(options)
-  } else if (options.command === 'optimize') {
-    runOptimize(options)
-  } else {
-    console.error(chalk.red(`unknown command: ${options.command}`))
-    process.exit(1)
-  }
-})()
-
-async function resolveOptions(mode: string) {
-  // specify env mode
-  argv.mode = mode
-  // shorthand for serviceWorker option
-  if (argv['sw']) {
-    argv.serviceWorker = argv['sw']
-  }
-  // map jsx args
-  if (argv['jsx-factory']) {
-    ;(argv.jsx || (argv.jsx = {})).factory = argv['jsx-factory']
-  }
-  if (argv['jsx-fragment']) {
-    ;(argv.jsx || (argv.jsx = {})).fragment = argv['jsx-fragment']
-  }
+async function resolveOptions({
+  argv,
+  defaultMode
+}: {
+  argv: Partial<UserConfig> & { [key: string]: any }
+  defaultMode: string
+}): Promise<UserConfig> {
   // cast xxx=true | false into actual booleans
   Object.keys(argv).forEach((key) => {
     if (argv[key] === 'false') {
@@ -97,35 +119,48 @@ async function resolveOptions(mode: string) {
       argv[key] = true
     }
   })
-  // command
-  if (argv._[0]) {
-    argv.command = argv._[0]
-  }
-  // normalize root
-  // assumes all commands are in the form of `vite [command] [root]`
-  if (!argv.root && argv._[1]) {
-    argv.root = argv._[1]
-  }
 
   if (argv.root) {
     argv.root = path.isAbsolute(argv.root) ? argv.root : path.resolve(argv.root)
   }
 
-  const userConfig = await resolveConfig(mode, argv.config || argv.c)
-  if (userConfig) {
-    return {
-      ...userConfig,
-      ...argv // cli options take higher priority
-    }
+  // deprecation warning
+  if (argv.sw || argv.serviceWorker) {
+    console.warn(
+      chalk.yellow(
+        `[vite] service worker mode has been removed due to insufficient performance gains.`
+      )
+    )
   }
-  return argv
+
+  if (argv.jsxFactory || argv.jsxFragment) {
+    argv.jsx = { factory: argv.jsxFactory, fragment: argv.jsxFragment }
+  }
+
+  const userConfig = await resolveConfig(
+    argv.mode || defaultMode,
+    argv.config || argv.c
+  )
+
+  // when NODE_ENV is set in .env file or Vite `env` option, it overrides the
+  // `DEV` and `PROD` values of `import.meta.env` and even `process.env.NODE_ENV`
+  // in the client bundle, which would use `argv.mode` otherwise.
+  if (userConfig.env.NODE_ENV) {
+    process.env.VITE_ENV = userConfig.env.NODE_ENV
+    delete userConfig.env.NODE_ENV
+  }
+
+  // cli options take higher priority
+  return { ...userConfig, ...argv }
 }
 
-async function runServe(options: UserConfig) {
+function runServe(options: UserConfig) {
   const server = require('./server').createServer(options)
 
   let port = options.port || 3000
+  let hostname = options.hostname || 'localhost'
   const protocol = options.https ? 'https' : 'http'
+
   server.on('error', (e: Error & { code?: string }) => {
     if (e.code === 'EADDRINUSE') {
       console.log(`Port ${port} is in use, trying another one...`)
@@ -143,28 +178,28 @@ async function runServe(options: UserConfig) {
     console.log()
     console.log(`  Dev server running at:`)
     const interfaces = os.networkInterfaces()
-    Object.keys(interfaces).forEach((key) => {
-      ;(interfaces[key] || [])
+    Object.keys(interfaces).forEach((key) =>
+      (interfaces[key] || [])
         .filter((details) => details.family === 'IPv4')
         .map((detail) => {
           return {
             type: detail.address.includes('127.0.0.1')
               ? 'Local:   '
               : 'Network: ',
-            host: detail.address.replace('127.0.0.1', 'localhost')
+            host: detail.address.replace('127.0.0.1', hostname)
           }
         })
         .forEach(({ type, host }) => {
           const url = `${protocol}://${host}:${chalk.bold(port)}/`
           console.log(`  > ${type} ${chalk.cyan(url)}`)
         })
-    })
+    )
     console.log()
     require('debug')('vite:server')(`server ready in ${Date.now() - start}ms.`)
 
     if (options.open) {
       require('./utils/openBrowser').openBrowser(
-        `${protocol}://localhost:${port}`
+        `${protocol}://${hostname}:${port}`
       )
     }
   })
@@ -172,7 +207,7 @@ async function runServe(options: UserConfig) {
 
 async function runBuild(options: UserConfig) {
   try {
-    await require('./build').build(options)
+    await require('./build')[options.ssr ? 'ssrBuild' : 'build'](options)
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Build errored out.`))

@@ -1,6 +1,6 @@
 import { ServerPlugin } from '.'
-import { isImportRequest, isStaticAsset } from '../utils'
-import { updateCss } from './serverPluginCss'
+import { isImportRequest } from '../utils'
+import { boundaryCssUpdate } from './serverPluginCss'
 const usedAssetsSet = new Set<string>()
 const usedInCssAssetsImporteeMap = new Map<string, Set<string>>()
 const usedInCssAssetsImporterMap = new Map<string, Set<string>>()
@@ -13,7 +13,7 @@ export const assetPathPlugin: ServerPlugin = ({
   resolver
 }) => {
   app.use(async (ctx, next) => {
-    if (isStaticAsset(ctx.path)) {
+    if (resolver.isAssetRequest(ctx.path) && isImportRequest(ctx)) {
       usedAssetsSet.add(ctx.path)
       if (isImportRequest(ctx)) {
         usedAssetsInImportSet.add(ctx.path)
@@ -26,7 +26,7 @@ export const assetPathPlugin: ServerPlugin = ({
   })
 
   watcher.on('change', (filePath) => {
-    if (isStaticAsset(filePath)) {
+    if (resolver.isAssetRequest(filePath)) {
       let publicPath = resolver.fileToRequest(filePath)
       if (publicPath.startsWith('/public')) {
         publicPath = publicPath.replace('/public', '')
@@ -39,7 +39,7 @@ export const assetPathPlugin: ServerPlugin = ({
       if (usedInCssAssetsImporterMap.has(publicPath)) {
         const importers = usedInCssAssetsImporterMap.get(publicPath)
         if (importers) {
-          updateCss(importers, watcher, resolver)
+          boundaryCssUpdate(importers, watcher, resolver)
         }
       }
       // used inside js `xxx?import`, it can update without reload `js` boundary

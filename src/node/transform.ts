@@ -1,69 +1,149 @@
 import { ServerPlugin } from './server'
 import { Plugin as RollupPlugin } from 'rollup'
 import { parseWithQuery, readBody, isImportRequest } from './utils'
+import { SourceMap, mergeSourceMap } from './server/serverPluginSourceMap'
+import { InternalResolver } from './resolver'
 
 type ParsedQuery = Record<string, string | string[] | undefined>
 
-export interface Transform {
-  test: (path: string, query: ParsedQuery) => boolean
-  transform: (
-    code: string,
-    /**
-     * Indicates whether this is a request made by js import(), or natively by
-     * the browser (e.g. `<img src="...">`).
-     */
-    isImport: boolean,
-    isBuild: boolean,
-    path: string,
-    query: ParsedQuery
-  ) => string | Promise<string>
+interface TransformTestContext {
+  /**
+   * Full specifier of the transformed module, including query parameters
+   */
+  id: string
+  /**
+   * Path without query (use this to check for file extensions)
+   */
+  path: string
+  /**
+   * Parsed query object
+   */
+  query: ParsedQuery
+  /**
+   * Indicates whether this is a request made by js import(), or natively by
+   * the browser (e.g. `<img src="...">`).
+   */
+  isImport: boolean
+  isBuild: boolean
+  /**
+   * Indicates that the file for this request was not modified since last call.
+   */
+  notModified?: true
 }
 
-export type CustomBlockTransform = (
-  src: string,
-  attrs: Record<string, string>
+export interface TransformContext extends TransformTestContext {
+  code: string
+}
+
+export interface TransformResult {
+  code: string
+  map?: SourceMap
+}
+
+export type TransformFn = (
+  ctx: TransformContext
+) => string | TransformResult | Promise<string | TransformResult>
+
+export interface Transform {
+  test: (ctx: TransformTestContext) => boolean
+  transform: TransformFn
+}
+
+export interface IndexHtmlTransformContext {
+  code: string
+  isBuild: boolean
+}
+
+export type IndexHtmlTransformFn = (
+  ctx: IndexHtmlTransformContext
 ) => string | Promise<string>
+
+export type IndexHtmlTransform =
+  | IndexHtmlTransformFn
+  | {
+      /**
+       * Timing for applying the transform.
+       * @default: 'post'
+       */
+      apply?: 'pre' | 'post'
+      transform: IndexHtmlTransformFn
+    }
+
+export type CustomBlockTransform = TransformFn
 
 export function createServerTransformPlugin(
   transforms: Transform[],
-  customBlockTransforms: Record<string, CustomBlockTransform>
+  customBlockTransforms: Record<string, CustomBlockTransform>,
+  resolver: InternalResolver
 ): ServerPlugin {
   return ({ app }) => {
+    if (!transforms.length && !Object.keys(customBlockTransforms).length) {
+      return
+    }
+
     app.use(async (ctx, next) => {
       await next()
 
-      const { path, query } = ctx
-      let code: string | null = null
+      if (
+        !ctx.body ||
+        (ctx.type === 'text/html' && !isImportRequest(ctx)) ||
+        resolver.isPublicRequest(ctx.path)
+      ) {
+        return
+      }
+
+      let { url, path, query, __notModified } = ctx
+      const id = resolver.requestToFile(url)
+      path = resolver.requestToFile(path)
+      const isImport = isImportRequest(ctx)
+      const isBuild = false
+      let code: string = ''
 
       for (const t of transforms) {
-        if (t.test(path, query)) {
-          ctx.type = 'js'
-          if (ctx.body) {
-            code = code || (await readBody(ctx.body))
-            if (code) {
-              ctx.body = await t.transform(
-                code,
-                isImportRequest(ctx),
-                false,
-                path,
-                query
-              )
-              code = ctx.body
+        const transformContext: TransformTestContext = {
+          id,
+          path,
+          query,
+          isImport,
+          isBuild
+        }
+        if (__notModified) {
+          transformContext.notModified = true
+        }
+
+        if (t.test(transformContext)) {
+          code = code || (await readBody(ctx.body))!
+          const result = await t.transform({
+            ...transformContext,
+            code
+          })
+          if (typeof result === 'string') {
+            code = result
+          } else {
+            code = result.code
+            if (result.map) {
+              ctx.map = mergeSourceMap(ctx.map, result.map)
             }
           }
+          ctx.type = 'js'
+          ctx.body = code
         }
       }
+
       // custom blocks
       if (path.endsWith('vue') && query.type === 'custom') {
         const t = customBlockTransforms[query.blockType]
         if (t) {
           ctx.type = 'js'
-          if (ctx.body) {
-            code = code || (await readBody(ctx.body))
-            if (code) {
-              ctx.body = await t(code, query)
-            }
-          }
+          code = code || (await readBody(ctx.body))!
+          ctx.body = await t({
+            code,
+            id,
+            path,
+            query,
+            isImport,
+            isBuild
+          })
         }
       }
     })
@@ -78,12 +158,35 @@ export function createBuildJsTransformPlugin(
     name: 'vite:transforms',
     async transform(code, id) {
       const { path, query } = parseWithQuery(id)
-      let result: string | Promise<string> = code
-      for (const t of transforms) {
-        if (t.test(path, query)) {
-          result = await t.transform(result, true, true, path, query)
+      let transformed: string = code
+      let map: SourceMap | null = null
+
+      const runTransform = async (t: TransformFn, ctx: TransformContext) => {
+        const result = await t(ctx)
+        if (typeof result === 'string') {
+          transformed = result
+        } else {
+          transformed = result.code
+          if (result.map) {
+            map = mergeSourceMap(map, result.map)
+          }
         }
       }
+
+      for (const t of transforms) {
+        const transformContext: TransformContext = {
+          code: transformed,
+          id,
+          path,
+          query,
+          isImport: true,
+          isBuild: true
+        }
+        if (t.test(transformContext)) {
+          await runTransform(t.transform, transformContext)
+        }
+      }
+
       // custom blocks
       if (query.vue != null && typeof query.type === 'string') {
         const t = customBlockTransforms[query.type]
@@ -97,10 +200,21 @@ export function createBuildJsTransformPlugin(
               normalizedQuery[key] = query[key] as string
             }
           }
-          result = await t(result, normalizedQuery)
+          await runTransform(t, {
+            code: transformed,
+            id,
+            path,
+            query: normalizedQuery,
+            isImport: true,
+            isBuild: true
+          })
         }
       }
-      return result
+
+      return {
+        code: transformed,
+        map
+      }
     }
   }
 }

@@ -1,42 +1,42 @@
 import qs from 'querystring'
 import chalk from 'chalk'
 import path from 'path'
-import { Context, ServerPlugin } from '.'
+import { Context, ServerPlugin, ServerPluginContext } from '.'
 import {
   SFCBlock,
   SFCDescriptor,
   SFCTemplateBlock,
   SFCStyleBlock,
   SFCStyleCompileResults,
-  CompilerOptions,
-  SFCStyleCompileOptions
+  SFCStyleCompileOptions,
+  BindingMetadata,
+  CompilerError,
+  generateCodeFrame,
+  rewriteDefault
 } from '@vue/compiler-sfc'
-import { resolveCompiler, resolveVue } from '../utils/resolveVue'
+import { resolveCompiler } from '../utils/resolveVue'
 import hash_sum from 'hash-sum'
 import LRUCache from 'lru-cache'
-import {
-  debugHmr,
-  importerMap,
-  ensureMapEntry,
-  hmrClientPublicPath
-} from './serverPluginHmr'
+import { debugHmr, importerMap, ensureMapEntry } from './serverPluginHmr'
 import {
   resolveFrom,
   cachedRead,
-  genSourceMapString,
   cleanUrl,
   watchFileIfOutOfRoot
 } from '../utils'
 import { transform } from '../esbuildService'
-import { InternalResolver } from '../resolver'
+import { InternalResolver, resolveBareModuleRequest } from '../resolver'
 import { seenUrls } from './serverPluginServeStatic'
-import { codegenCss, compileCss, rewriteCssUrls } from '../utils/cssUtils'
-import { parse } from '../utils/babelParse'
-import MagicString from 'magic-string'
+import { codegenCss } from './serverPluginCss'
+import {
+  compileCss,
+  recordCssImportChain,
+  rewriteCssUrls
+} from '../utils/cssUtils'
 import { resolveImport } from './serverPluginModuleRewrite'
-import merge from 'merge-source-map'
-import { RawSourceMap } from 'source-map'
 import { recordCssImportAssetsChain } from './serverPluginAssets'
+import { SourceMap, mergeSourceMap } from './serverPluginSourceMap'
+import { ServerConfig } from '../config'
 
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
@@ -45,10 +45,16 @@ export const srcImportMap = new Map()
 
 interface CacheEntry {
   descriptor?: SFCDescriptor
-  template?: string
-  script?: string
+  template?: ResultWithMap
+  script?: ResultWithMap
   styles: SFCStyleCompileResults[]
   customs: string[]
+}
+
+interface ResultWithMap {
+  code: string
+  map: SourceMap | null | undefined
+  bindings?: BindingMetadata
 }
 
 export const vueCache = new LRUCache<string, CacheEntry>({
@@ -64,17 +70,14 @@ export const vuePlugin: ServerPlugin = ({
 }) => {
   const etagCacheCheck = (ctx: Context) => {
     ctx.etag = getEtag(ctx.body)
-    // only add 304 tag check if not using service worker to cache user code
-    if (!config.serviceWorker) {
-      ctx.status =
-        seenUrls.has(ctx.url) && ctx.etag === ctx.get('If-None-Match')
-          ? 304
-          : 200
-      seenUrls.add(ctx.url)
-    }
+    ctx.status =
+      seenUrls.has(ctx.url) && ctx.etag === ctx.get('If-None-Match') ? 304 : 200
+    seenUrls.add(ctx.url)
   }
 
   app.use(async (ctx, next) => {
+    // ctx.vue is set by other tools like vitepress so that vite knows to treat
+    // non .vue files as vue files.
     if (!ctx.path.endsWith('.vue') && !ctx.vue) {
       return next()
     }
@@ -86,9 +89,7 @@ export const vuePlugin: ServerPlugin = ({
     // upstream plugins could've already read the file
     const descriptor = await parseSFC(root, filePath, ctx.body)
     if (!descriptor) {
-      debug(`${ctx.url} - 404`)
-      ctx.status = 404
-      return
+      return next()
     }
 
     if (!query.type) {
@@ -104,7 +105,14 @@ export const vuePlugin: ServerPlugin = ({
         )
       }
       ctx.type = 'js'
-      ctx.body = await compileSFCMain(descriptor, filePath, publicPath)
+      const { code, map } = await compileSFCMain(
+        descriptor,
+        filePath,
+        publicPath,
+        root
+      )
+      ctx.body = code
+      ctx.map = map
       return etagCacheCheck(ctx)
     }
 
@@ -114,14 +122,26 @@ export const vuePlugin: ServerPlugin = ({
         filePath = await resolveSrcImport(root, templateBlock, ctx, resolver)
       }
       ctx.type = 'js'
-      ctx.body = compileSFCTemplate(
+      const cached = vueCache.get(filePath)
+      const bindingMetadata = cached && cached.script && cached.script.bindings
+      const vueSpecifier = resolveBareModuleRequest(
+        root,
+        'vue',
+        publicPath,
+        resolver
+      )
+      const { code, map } = compileSFCTemplate(
         root,
         templateBlock,
         filePath,
         publicPath,
         descriptor.styles.some((s) => s.scoped),
-        config.vueCompilerOptions
+        bindingMetadata,
+        vueSpecifier,
+        config
       )
+      ctx.body = code
+      ctx.map = map
       return etagCacheCheck(ctx)
     }
 
@@ -138,7 +158,7 @@ export const vuePlugin: ServerPlugin = ({
         index,
         filePath,
         publicPath,
-        config.cssPreprocessOptions
+        config
       )
       ctx.type = 'js'
       ctx.body = codegenCss(`${id}-${index}`, result.code, result.modules)
@@ -195,6 +215,7 @@ export const vuePlugin: ServerPlugin = ({
       send({
         type: 'vue-reload',
         path: publicPath,
+        changeSrcPath: publicPath,
         timestamp
       })
       console.log(
@@ -203,11 +224,19 @@ export const vuePlugin: ServerPlugin = ({
       )
     }
 
-    if (!isEqualBlock(descriptor.script, prevDescriptor.script)) {
+    if (
+      !isEqualBlock(descriptor.script, prevDescriptor.script) ||
+      !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup)
+    ) {
       return sendReload()
     }
 
     if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {
+      // #748 should re-use previous cached script if only template change
+      // so that the template is compiled with the correct binding metadata
+      if (prevDescriptor.scriptSetup && descriptor.scriptSetup) {
+        vueCache.get(filePath)!.script = cacheEntry!.script
+      }
       needRerender = true
     }
 
@@ -226,6 +255,18 @@ export const vuePlugin: ServerPlugin = ({
       return sendReload()
     }
 
+    // force reload if CSS vars injection changed
+    if (
+      prevStyles.some((s, i) => {
+        const next = nextStyles[i]
+        if (s.attrs.vars && (!next || next.attrs.vars !== s.attrs.vars)) {
+          return true
+        }
+      })
+    ) {
+      return sendReload()
+    }
+
     // force reload if scoped status has changed
     if (prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)) {
       return sendReload()
@@ -236,9 +277,11 @@ export const vuePlugin: ServerPlugin = ({
     nextStyles.forEach((_, i) => {
       if (!prevStyles[i] || !isEqualBlock(prevStyles[i], nextStyles[i])) {
         didUpdateStyle = true
+        const path = `${publicPath}?type=style&index=${i}`
         send({
           type: 'style-update',
-          path: `${publicPath}?type=style&index=${i}`,
+          path,
+          changeSrcPath: path,
           timestamp
         })
       }
@@ -250,8 +293,7 @@ export const vuePlugin: ServerPlugin = ({
       send({
         type: 'style-remove',
         path: publicPath,
-        id: `${styleId}-${i + nextStyles.length}`,
-        timestamp
+        id: `${styleId}-${i + nextStyles.length}`
       })
     })
 
@@ -273,6 +315,7 @@ export const vuePlugin: ServerPlugin = ({
       send({
         type: 'vue-rerender',
         path: publicPath,
+        changeSrcPath: publicPath,
         timestamp
       })
     }
@@ -324,8 +367,7 @@ async function resolveSrcImport(
   const importer = ctx.path
   const importee = cleanUrl(resolveImport(root, importer, block.src!, resolver))
   const filePath = resolver.requestToFile(importee)
-  await cachedRead(ctx, filePath)
-  block.content = ctx.body
+  block.content = (await ctx.read(filePath)).toString()
 
   // register HMR import relationship
   debugHmr(`        ${importer} imports ${importee}`)
@@ -358,7 +400,7 @@ async function parseSFC(
   }
 
   const start = Date.now()
-  const { parse, generateCodeFrame } = resolveCompiler(root)
+  const { parse } = resolveCompiler(root)
   const { descriptor, errors } = parse(content, {
     filename: filePath,
     sourceMap: true
@@ -367,20 +409,7 @@ async function parseSFC(
   if (errors.length) {
     console.error(chalk.red(`\n[vite] SFC parse error: `))
     errors.forEach((e) => {
-      const locString = e.loc
-        ? `:${e.loc.start.line}:${e.loc.start.column}`
-        : ``
-      console.error(chalk.underline(filePath + locString))
-      console.error(chalk.yellow(e.message))
-      if (e.loc) {
-        console.error(
-          generateCodeFrame(
-            content as string,
-            e.loc.start.offset,
-            e.loc.end.offset
-          ) + `\n`
-        )
-      }
+      logError(e as CompilerError, filePath, content as string)
     })
   }
 
@@ -391,13 +420,12 @@ async function parseSFC(
   return descriptor
 }
 
-const defaultExportRE = /((?:^|\n|;)\s*)export default/
-
 async function compileSFCMain(
   descriptor: SFCDescriptor,
   filePath: string,
-  publicPath: string
-): Promise<string> {
+  publicPath: string,
+  root: string
+): Promise<ResultWithMap> {
   let cached = vueCache.get(filePath)
   if (cached && cached.script) {
     return cached.script
@@ -405,35 +433,42 @@ async function compileSFCMain(
 
   const id = hash_sum(publicPath)
   let code = ``
-  if (descriptor.script) {
-    let content = descriptor.script.content
-    if (descriptor.script.lang === 'ts') {
-      const { code, map } = await transform(content, publicPath, {
+  let content = ``
+  let map: ResultWithMap['map']
+
+  let script = descriptor.script
+  const compiler = resolveCompiler(root)
+  if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
+    try {
+      script = compiler.compileScript(descriptor)
+    } catch (e) {
+      console.error(
+        chalk.red(
+          `\n[vite] SFC <script setup> compilation error:\n${chalk.dim(
+            chalk.white(filePath)
+          )}`
+        )
+      )
+      console.error(chalk.yellow(e.message))
+    }
+  }
+  if (script) {
+    content = script.content
+    map = script.map
+    if (script.lang === 'ts') {
+      const res = await transform(content, publicPath, {
         loader: 'ts'
       })
-      content = code
-      descriptor.script.map = merge(
-        descriptor.script.map!,
-        JSON.parse(map!)
-      ) as RawSourceMap
+      content = res.code
+      map = mergeSourceMap(map, JSON.parse(res.map!))
     }
-    // rewrite export default.
-    // fast path: simple regex replacement to avoid full-blown babel parse.
-    let replaced = content.replace(defaultExportRE, '$1const __script =')
-    // if the script somehow still contains `default export`, it probably has
-    // multi-line comments or template strings. fallback to a full parse.
-    if (defaultExportRE.test(replaced)) {
-      replaced = rewriteDefaultExport(content)
-    }
-    code += replaced
-  } else {
-    code += `const __script = {}`
   }
+
+  code += rewriteDefault(content, '__script')
 
   let hasScoped = false
   let hasCSSModules = false
   if (descriptor.styles) {
-    code += `\nimport { updateStyle } from "${hmrClientPublicPath}"\n`
     descriptor.styles.forEach((s, i) => {
       const styleRequest = publicPath + `?type=style&index=${i}`
       if (s.scoped) hasScoped = true
@@ -477,17 +512,20 @@ async function compileSFCMain(
     code += `\n__script.render = __render`
   }
   code += `\n__script.__hmrId = ${JSON.stringify(publicPath)}`
+  code += `\ntypeof __VUE_HMR_RUNTIME__ !== 'undefined' && __VUE_HMR_RUNTIME__.createRecord(__script.__hmrId, __script)`
   code += `\n__script.__file = ${JSON.stringify(filePath)}`
   code += `\nexport default __script`
 
-  if (descriptor.script) {
-    code += genSourceMapString(descriptor.script.map)
+  const result: ResultWithMap = {
+    code,
+    map,
+    bindings: script ? script.bindings : undefined
   }
 
   cached = cached || { styles: [], customs: [] }
-  cached.script = code
+  cached.script = result
   vueCache.set(filePath, cached)
-  return code
+  return result
 }
 
 function compileSFCTemplate(
@@ -496,8 +534,14 @@ function compileSFCTemplate(
   filePath: string,
   publicPath: string,
   scoped: boolean,
-  userOptions: CompilerOptions | undefined
-): string {
+  bindingMetadata: BindingMetadata | undefined,
+  vueSpecifier: string,
+  {
+    vueCompilerOptions,
+    vueTransformAssetUrls = {},
+    vueTemplatePreprocessOptions = {}
+  }: ServerConfig
+): ResultWithMap {
   let cached = vueCache.get(filePath)
   if (cached && cached.template) {
     debug(`${publicPath} template cache hit`)
@@ -505,24 +549,37 @@ function compileSFCTemplate(
   }
 
   const start = Date.now()
-  const { compileTemplate, generateCodeFrame } = resolveCompiler(root)
+  const { compileTemplate } = resolveCompiler(root)
+  if (typeof vueTransformAssetUrls === 'object') {
+    vueTransformAssetUrls = {
+      base: path.posix.dirname(publicPath),
+      ...vueTransformAssetUrls
+    }
+  }
+
+  const preprocessLang = template.lang
+  let preprocessOptions =
+    preprocessLang && vueTemplatePreprocessOptions[preprocessLang]
+  if (preprocessLang === 'pug') {
+    preprocessOptions = {
+      doctype: 'html',
+      ...preprocessOptions
+    }
+  }
+
   const { code, map, errors } = compileTemplate({
     source: template.content,
     filename: filePath,
     inMap: template.map,
-    transformAssetUrls: {
-      base: path.posix.dirname(publicPath)
-    },
+    transformAssetUrls: vueTransformAssetUrls,
     compilerOptions: {
-      ...userOptions,
+      ...vueCompilerOptions,
       scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
-      runtimeModuleName: resolveVue(root).isLocal
-        ? // in local mode, vue would have been optimized so must be referenced
-          // with .js postfix
-          '/@modules/vue.js'
-        : '/@modules/vue'
+      bindingMetadata,
+      runtimeModuleName: vueSpecifier
     },
-    preprocessLang: template.lang,
+    preprocessLang,
+    preprocessOptions,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id))
   })
 
@@ -532,29 +589,22 @@ function compileSFCTemplate(
       if (typeof e === 'string') {
         console.error(e)
       } else {
-        const locString = e.loc
-          ? `:${e.loc.start.line}:${e.loc.start.column}`
-          : ``
-        console.error(chalk.underline(filePath + locString))
-        console.error(chalk.yellow(e.message))
-        if (e.loc) {
-          const original = template.map!.sourcesContent![0]
-          console.error(
-            generateCodeFrame(original, e.loc.start.offset, e.loc.end.offset) +
-              `\n`
-          )
-        }
+        logError(e, filePath, template.map!.sourcesContent![0])
       }
     })
   }
 
-  const finalCode = code + genSourceMapString(map)
+  const result = {
+    code,
+    map: map as SourceMap
+  }
+
   cached = cached || { styles: [], customs: [] }
-  cached.template = finalCode
+  cached.template = result
   vueCache.set(filePath, cached)
 
   debug(`${publicPath} template compiled in ${Date.now() - start}ms.`)
-  return finalCode
+  return result
 }
 
 async function compileSFCStyle(
@@ -563,7 +613,7 @@ async function compileSFCStyle(
   index: number,
   filePath: string,
   publicPath: string,
-  preprocessOptions: SFCStyleCompileOptions['preprocessOptions']
+  { cssPreprocessOptions, cssModuleOptions }: ServerPluginContext['config']
 ): Promise<SFCStyleCompileResults> {
   let cached = vueCache.get(filePath)
   const cachedEntry = cached && cached.styles && cached.styles[index]
@@ -575,16 +625,20 @@ async function compileSFCStyle(
   const start = Date.now()
 
   const { generateCodeFrame } = resolveCompiler(root)
-  const resourcePath = filePath + `?type=style&index=${index}`
+  const resource = filePath + `?type=style&index=${index}`
   const result = (await compileCss(root, publicPath, {
     source: style.content,
-    filename: resourcePath,
+    filename: resource,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
+    vars: style.vars != null,
     modules: style.module != null,
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
-    preprocessOptions
+    preprocessOptions: cssPreprocessOptions,
+    modulesOptions: cssModuleOptions
   })) as SFCStyleCompileResults
+
+  recordCssImportChain(result.dependencies, resource)
 
   if (result.errors.length) {
     console.error(chalk.red(`\n[vite] SFC style compilation error: `))
@@ -626,7 +680,7 @@ async function compileSFCStyle(
   const assetsImportSet = new Set<string>()
   result.code = await rewriteCssUrls(result.code, publicPath, assetsImportSet)
   if (assetsImportSet.size) {
-    recordCssImportAssetsChain(resourcePath, assetsImportSet)
+    recordCssImportAssetsChain(resource, assetsImportSet)
   }
 
   cached = cached || { styles: [], customs: [] }
@@ -675,14 +729,13 @@ function attrsToQuery(attrs: SFCBlock['attrs'], langFallback?: string): string {
   return query
 }
 
-function rewriteDefaultExport(code: string): string {
-  const s = new MagicString(code)
-  const ast = parse(code)
-  ast.forEach((node) => {
-    if (node.type === 'ExportDefaultDeclaration') {
-      s.overwrite(node.start!, node.declaration.start!, `const __script = `)
-    }
-  })
-  const ret = s.toString()
-  return ret
+function logError(e: CompilerError, file: string, src: string) {
+  const locString = e.loc ? `:${e.loc.start.line}:${e.loc.start.column}` : ``
+  console.error(chalk.underline(file + locString))
+  console.error(chalk.yellow(e.message))
+  if (e.loc) {
+    console.error(
+      generateCodeFrame(src, e.loc.start.offset, e.loc.end.offset) + `\n`
+    )
+  }
 }

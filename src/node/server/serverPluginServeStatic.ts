@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import { ServerPlugin } from '.'
-import { isStaticAsset, cachedRead } from '../utils'
 import chalk from 'chalk'
 
 const send = require('koa-send')
@@ -13,8 +12,7 @@ export const serveStaticPlugin: ServerPlugin = ({
   root,
   app,
   resolver,
-  config,
-  watcher
+  config
 }) => {
   app.use(async (ctx, next) => {
     // short circuit requests that have already been explicitly handled
@@ -23,7 +21,7 @@ export const serveStaticPlugin: ServerPlugin = ({
     }
 
     // warn non-root references to assets under /public/
-    if (ctx.path.startsWith('/public/') && isStaticAsset(ctx.path)) {
+    if (ctx.path.startsWith('/public/') && resolver.isAssetRequest(ctx.path)) {
       console.error(
         chalk.yellow(
           `[vite] files in the public directory are served at the root path.\n` +
@@ -44,22 +42,19 @@ export const serveStaticPlugin: ServerPlugin = ({
         fs.existsSync(filePath) &&
         fs.statSync(filePath).isFile()
       ) {
-        await cachedRead(ctx, filePath)
+        await ctx.read(filePath)
       }
     }
-    return next()
+
+    await next()
+
+    // the first request to the server should never 304
+    if (seenUrls.has(ctx.url) && ctx.fresh) {
+      ctx.status = 304
+    }
+    seenUrls.add(ctx.url)
   })
 
-  if (!config.serviceWorker) {
-    app.use(async (ctx, next) => {
-      await next()
-      // the first request to the server should never 304
-      if (seenUrls.has(ctx.url) && ctx.fresh) {
-        ctx.status = 304
-      }
-      seenUrls.add(ctx.url)
-    })
-  }
   app.use(require('koa-etag')())
   app.use(require('koa-static')(root))
   app.use(require('koa-static')(path.join(root, 'public')))

@@ -1,16 +1,20 @@
-import path from 'path'
 import slash from 'slash'
 import qs, { ParsedUrlQuery } from 'querystring'
 import resolve from 'resolve'
 import { supportedExts } from '../resolver'
 import { Context } from '../server'
 
+let isRunningWithYarnPnp: boolean
+try {
+  isRunningWithYarnPnp = Boolean(require('pnpapi'))
+} catch {}
+
 export const resolveFrom = (root: string, id: string) =>
   resolve.sync(id, {
     basedir: root,
     extensions: supportedExts,
     // necessary to work with pnpm
-    preserveSymlinks: false
+    preserveSymlinks: isRunningWithYarnPnp || false
   })
 
 export const queryRE = /\?.*$/
@@ -18,16 +22,6 @@ export const hashRE = /#.*$/
 
 export const cleanUrl = (url: string) =>
   url.replace(hashRE, '').replace(queryRE, '')
-
-export const resolveRelativeRequest = (importer: string, id: string) => {
-  const resolved = slash(path.posix.resolve(path.dirname(importer), id))
-  const queryMatch = id.match(queryRE)
-  return {
-    // path resovle strips ending / which should be preserved
-    pathname: cleanUrl(resolved) + (id.endsWith('/') ? '/' : ''),
-    query: queryMatch ? queryMatch[0] : ''
-  }
-}
 
 export const parseWithQuery = (
   id: string
@@ -47,9 +41,13 @@ export const parseWithQuery = (
     query: {}
   }
 }
+export const bareImportRE = /^[^\/\.]/
 
 const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string) => externalRE.test(url)
+
+const dataUrlRE = /^\s*data:/i
+export const isDataUrl = (url: string) => dataUrlRE.test(url)
 
 const imageRE = /\.(png|jpe?g|gif|svg|ico|webp)(\?.*)?$/
 const mediaRE = /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/
@@ -88,4 +86,14 @@ export function parseNodeModuleId(id: string) {
     name,
     inPkgPath
   }
+}
+
+export function removeUnRelatedHmrQuery(url: string) {
+  const { path, query } = parseWithQuery(url)
+  delete query.t
+  delete query.import
+  if (Object.keys(query).length) {
+    return path + '?' + qs.stringify(query)
+  }
+  return path
 }

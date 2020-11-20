@@ -6,5 +6,5 @@
     "lib": ["ESNext"],
     "sourceMap": true
   },
-  "include": ["./"]
+  "include": ["./", "../hmrPayload.ts"]
 }

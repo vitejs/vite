@@ -1,27 +1,29 @@
 import { Plugin } from 'rollup'
 import { init, parse } from 'es-module-lexer'
-import { cssPreprocessLangRE } from '../utils/cssUtils'
+import { isCSSRequest } from '../utils/cssUtils'
 import MagicString from 'magic-string'
-import { isStaticAsset } from '../utils'
+import { bareImportRE, resolveFrom } from '../utils'
 import path from 'path'
 import { InternalResolver } from '../resolver'
 
-const isAsset = (id: string) =>
-  id.endsWith('.css') || cssPreprocessLangRE.test(id) || isStaticAsset(id)
-
-export const depAssetExternalPlugin: Plugin = {
+export const createDepAssetExternalPlugin = (
+  resolver: InternalResolver
+): Plugin => ({
   name: 'vite:optimize-dep-assets-external',
   resolveId(id) {
-    if (isAsset(id)) {
+    if (isCSSRequest(id) || resolver.isAssetRequest(id)) {
       return {
         id,
         external: true
       }
     }
   }
-}
+})
 
-export const createDepAssetPlugin = (resolver: InternalResolver): Plugin => {
+export const createDepAssetPlugin = (
+  resolver: InternalResolver,
+  root: string
+): Plugin => {
   return {
     name: 'vite:optimize-dep-assets',
     async transform(code, id) {
@@ -31,15 +33,28 @@ export const createDepAssetPlugin = (resolver: InternalResolver): Plugin => {
         if (imports.length) {
           let s: MagicString | undefined
           for (let i = 0; i < imports.length; i++) {
-            const { s: start, e: end, d: dynamicIndex } = imports[i]
+            const {
+              s: start,
+              e: end,
+              d: dynamicIndex,
+              ss: statementStart,
+              se: statementEnd
+            } = imports[i]
             if (dynamicIndex === -1) {
               const importee = code.slice(start, end)
-              if (isAsset(importee)) {
+              if (isCSSRequest(importee) || resolver.isAssetRequest(importee)) {
                 // replace css/asset imports to deep imports to their original
                 // location
                 s = s || new MagicString(code)
+                // #903 rollup-plugin-commonjs will inject proxy helper, it is unnecessary for assets
+                if (importee.endsWith('?commonjs-proxy')) {
+                  s.remove(statementStart, statementEnd)
+                  continue
+                }
                 const deepPath = resolver.fileToRequest(
-                  path.resolve(path.dirname(id), importee)
+                  bareImportRE.test(importee)
+                    ? resolveFrom(root, importee)
+                    : path.resolve(path.dirname(id), importee)
                 )
                 s.overwrite(start, end, deepPath)
               }

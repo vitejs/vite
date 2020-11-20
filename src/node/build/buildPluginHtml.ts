@@ -1,8 +1,16 @@
-import { Plugin, RollupOutput, OutputChunk } from 'rollup'
+import { Plugin, OutputChunk, RollupOutput } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
-import { isExternalUrl, cleanUrl, isStaticAsset } from '../utils/pathUtils'
-import { resolveAsset } from './buildPluginAsset'
+import MagicString from 'magic-string'
+import {
+  isExternalUrl,
+  cleanUrl,
+  isDataUrl,
+  transformIndexHtml
+} from '../utils'
+import { resolveAsset, registerAssets } from './buildPluginAsset'
+import { InternalResolver } from '../resolver'
+import { UserConfig } from '../config'
 import {
   parse as Parse,
   transform as Transform,
@@ -11,33 +19,40 @@ import {
   TextNode,
   AttributeNode
 } from '@vue/compiler-dom'
-import MagicString from 'magic-string'
-import { InternalResolver } from '../resolver'
 
 export const createBuildHtmlPlugin = async (
   root: string,
-  indexPath: string | null,
+  indexPath: string,
   publicBasePath: string,
   assetsDir: string,
   inlineLimit: number,
   resolver: InternalResolver,
-  shouldPreload: ((chunk: OutputChunk) => boolean) | null
+  shouldPreload: ((chunk: OutputChunk) => boolean) | null,
+  config: Partial<UserConfig>
 ) => {
-  if (!indexPath || !fs.existsSync(indexPath)) {
+  if (!fs.existsSync(indexPath)) {
     return {
-      renderIndex: (...args: any[]) => '',
+      renderIndex: () => '',
       htmlPlugin: null
     }
   }
 
   const rawHtml = await fs.readFile(indexPath, 'utf-8')
+  const preprocessedHtml = await transformIndexHtml(
+    rawHtml,
+    config.indexHtmlTransforms,
+    'pre',
+    true
+  )
+  const assets = new Map<string, Buffer>()
   let { html: processedHtml, js } = await compileHtml(
     root,
-    rawHtml,
+    preprocessedHtml,
     publicBasePath,
     assetsDir,
     inlineLimit,
-    resolver
+    resolver,
+    assets
   )
 
   const htmlPlugin: Plugin = {
@@ -46,6 +61,10 @@ export const createBuildHtmlPlugin = async (
       if (id === indexPath) {
         return js
       }
+    },
+
+    generateBundle(_options, bundle) {
+      registerAssets(assets, bundle)
     }
   }
 
@@ -55,7 +74,7 @@ export const createBuildHtmlPlugin = async (
       filename
     )}">`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return tag + '\n' + html
     }
@@ -66,8 +85,8 @@ export const createBuildHtmlPlugin = async (
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/body>/.test(html)) {
-      return html.replace(/<\/body>/, `${tag}\n</body>`)
+    if (/<\/head>/.test(html)) {
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return html + '\n' + tag
     }
@@ -79,29 +98,41 @@ export const createBuildHtmlPlugin = async (
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<link rel="modulepreload" href="${filename}" />`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return tag + '\n' + html
     }
   }
 
-  const renderIndex = (
-    bundleOutput: RollupOutput['output'],
-    cssFileName: string
-  ) => {
-    // inject css link
-    processedHtml = injectCSS(processedHtml, cssFileName)
-    // inject js entry chunks
+  const renderIndex = async (bundleOutput: RollupOutput['output']) => {
+    let result = processedHtml
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {
-          processedHtml = injectScript(processedHtml, chunk.fileName)
+          // js entry chunk
+          result = injectScript(result, chunk.fileName)
         } else if (shouldPreload && shouldPreload(chunk)) {
-          processedHtml = injectPreload(processedHtml, chunk.fileName)
+          // async preloaded chunk
+          result = injectPreload(result, chunk.fileName)
+        }
+      } else {
+        // imported css chunks
+        if (
+          chunk.fileName.endsWith('.css') &&
+          chunk.source &&
+          !assets.has(chunk.fileName)
+        ) {
+          result = injectCSS(result, chunk.fileName)
         }
       }
     }
-    return processedHtml
+
+    return await transformIndexHtml(
+      result,
+      config.indexHtmlTransforms,
+      'post',
+      true
+    )
   }
 
   return {
@@ -128,7 +159,8 @@ const compileHtml = async (
   publicBasePath: string,
   assetsDir: string,
   inlineLimit: number,
-  resolver: InternalResolver
+  resolver: InternalResolver,
+  assets: Map<string, Buffer>
 ) => {
   const { parse, transform } = require('@vue/compiler-dom')
 
@@ -139,29 +171,39 @@ const compileHtml = async (
   let js = ''
   const s = new MagicString(html)
   const assetUrls: AttributeNode[] = []
-  const viteHtmlTransfrom: NodeTransform = (node) => {
+  const viteHtmlTransform: NodeTransform = (node) => {
     if (node.type === NodeTypes.ELEMENT) {
       if (node.tag === 'script') {
-        let shouldRemove = true
+        let shouldRemove = false
+
         const srcAttr = node.props.find(
           (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
         ) as AttributeNode
-        if (srcAttr && srcAttr.value) {
-          if (!isExternalUrl(srcAttr.value.content)) {
-            // <script type="module" src="..."/>
-            // add it as an import
-            js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
-          } else {
-            shouldRemove = false
+        const typeAttr = node.props.find(
+          (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'type'
+        ) as AttributeNode
+        const isJsModule =
+          typeAttr && typeAttr.value && typeAttr.value.content === 'module'
+
+        if (isJsModule) {
+          if (srcAttr && srcAttr.value) {
+            if (!isExternalUrl(srcAttr.value.content)) {
+              // <script type="module" src="..."/>
+              // add it as an import
+              js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
+              shouldRemove = true
+            }
+          } else if (node.children.length) {
+            // <script type="module">...</script>
+            // add its content
+            // TODO: if there are multiple inline module scripts on the page,
+            // they should technically be turned into separate modules, but
+            // it's hard to imagine any reason for anyone to do that.
+            js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
+            shouldRemove = true
           }
-        } else if (node.children.length) {
-          // <script type="module">...</script>
-          // add its content
-          // TODO: if there are multiple inline module scripts on the page,
-          // they should technically be turned into separate modules, but
-          // it's hard to imagine any reason for anyone to do that.
-          js += `\n` + (node.children[0] as TextNode).content.trim() + `\n`
         }
+
         if (shouldRemove) {
           // remove the script tag from the html. we are going to inject new
           // ones in the end.
@@ -177,13 +219,10 @@ const compileHtml = async (
             p.type === NodeTypes.ATTRIBUTE &&
             p.value &&
             assetAttrs.includes(p.name) &&
-            !isExternalUrl(p.value.content)
+            !isExternalUrl(p.value.content) &&
+            !isDataUrl(p.value.content)
           ) {
-            const url = cleanUrl(p.value.content)
-            js += `\nimport ${JSON.stringify(url)}`
-            if (isStaticAsset(url)) {
-              assetUrls.push(p)
-            }
+            assetUrls.push(p)
           }
         }
       }
@@ -191,21 +230,24 @@ const compileHtml = async (
   }
 
   ;(transform as typeof Transform)(ast, {
-    nodeTransforms: [viteHtmlTransfrom]
+    nodeTransforms: [viteHtmlTransform]
   })
 
   // for each encountered asset url, rewrite original html so that it
   // references the post-build location.
   for (const attr of assetUrls) {
     const value = attr.value!
-    const { url } = await resolveAsset(
+    const { fileName, content, url } = await resolveAsset(
       resolver.requestToFile(value.content),
       root,
       publicBasePath,
       assetsDir,
-      inlineLimit
+      cleanUrl(value.content).endsWith('.css') ? 0 : inlineLimit
     )
     s.overwrite(value.loc.start.offset, value.loc.end.offset, `"${url}"`)
+    if (fileName && content) {
+      assets.set(fileName, content)
+    }
   }
 
   return {

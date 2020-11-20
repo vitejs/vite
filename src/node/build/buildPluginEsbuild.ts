@@ -10,8 +10,7 @@ import {
 import { SharedConfig } from '../config'
 
 export const createEsbuildPlugin = async (
-  minify: boolean,
-  jsx: SharedConfig['jsx']
+  jsx: SharedConfig['jsx'] = 'vue'
 ): Promise<Plugin> => {
   const jsxConfig = resolveJsxOptions(jsx)
 
@@ -31,7 +30,7 @@ export const createEsbuildPlugin = async (
     },
 
     async transform(code, id) {
-      const isVueTs = /\.vue\?/.test(id) && id.endsWith('lang=ts')
+      const isVueTs = /\.vue\?/.test(id) && id.endsWith('lang.ts')
       if (tjsxRE.test(id) || isVueTs) {
         return transform(
           code,
@@ -43,16 +42,21 @@ export const createEsbuildPlugin = async (
           jsx
         )
       }
-    },
+    }
+  }
+}
 
+export const createEsbuildRenderChunkPlugin = (
+  target: string,
+  minify: boolean
+): Plugin => {
+  return {
+    name: 'vite:esbuild-transpile',
     async renderChunk(code, chunk) {
-      if (minify) {
-        return transform(code, chunk.fileName, {
-          minify: true
-        })
-      } else {
-        return null
-      }
+      return transform(code, chunk.fileName, {
+        target,
+        minify
+      })
     }
   }
 }

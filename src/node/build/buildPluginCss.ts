@@ -1,19 +1,23 @@
 import path from 'path'
 import { Plugin } from 'rollup'
-import { resolveAsset, registerAssets } from './buildPluginAsset'
+import { resolveAsset, injectAssetRe } from './buildPluginAsset'
 import { BuildConfig } from '../config'
-import hash_sum from 'hash-sum'
 import {
   urlRE,
   compileCss,
   cssPreprocessLangRE,
-  rewriteCssUrls
+  rewriteCssUrls,
+  isCSSRequest,
+  cssModuleRE
 } from '../utils/cssUtils'
 import {
   SFCStyleCompileResults,
   SFCAsyncStyleCompileOptions
 } from '@vue/compiler-sfc'
 import chalk from 'chalk'
+import { CssPreprocessOptions } from '../config'
+import { dataToEsm } from '@rollup/pluginutils'
+import slash from 'slash'
 
 const debug = require('debug')('vite:build:css')
 
@@ -27,7 +31,8 @@ interface BuildCssOption {
   minify?: BuildConfig['minify']
   inlineLimit?: number
   cssCodeSplit?: boolean
-  preprocessOptions?: SFCAsyncStyleCompileOptions['preprocessOptions']
+  preprocessOptions?: CssPreprocessOptions
+  modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
 }
 
 export const createBuildCssPlugin = ({
@@ -37,32 +42,39 @@ export const createBuildCssPlugin = ({
   minify = false,
   inlineLimit = 0,
   cssCodeSplit = true,
-  preprocessOptions = {}
+  preprocessOptions,
+  modulesOptions = {}
 }: BuildCssOption): Plugin => {
   const styles: Map<string, string> = new Map()
-  const assets = new Map<string, Buffer>()
+  let staticCss = ''
 
   return {
     name: 'vite:css',
     async transform(css: string, id: string) {
-      if (id.endsWith('.css') || cssPreprocessLangRE.test(id)) {
+      if (isCSSRequest(id)) {
         // if this is a Vue SFC style request, it's already processed by
         // rollup-plugin-vue and we just need to rewrite URLs + collect it
         const isVueStyle = /\?vue&type=style/.test(id)
+        const preprocessLang = (id.match(cssPreprocessLangRE) ||
+          [])[1] as SFCAsyncStyleCompileOptions['preprocessLang']
+
         const result = isVueStyle
           ? css
-          : await compileCss(root, id, {
-              id: '',
-              source: css,
-              filename: id,
-              scoped: false,
-              modules: id.endsWith('.module.css'),
-              preprocessLang: id.replace(
-                cssPreprocessLangRE,
-                '$2'
-              ) as SFCAsyncStyleCompileOptions['preprocessLang'],
-              preprocessOptions
-            })
+          : await compileCss(
+              root,
+              id,
+              {
+                id: '',
+                source: css,
+                filename: id,
+                scoped: false,
+                modules: cssModuleRE.test(id),
+                preprocessLang,
+                preprocessOptions,
+                modulesOptions
+              },
+              true
+            )
 
         let modules: SFCStyleCompileResults['modules']
         if (typeof result === 'string') {
@@ -84,100 +96,101 @@ export const createBuildCssPlugin = ({
             const file = path.posix.isAbsolute(rawUrl)
               ? path.join(root, rawUrl)
               : path.join(fileDir, rawUrl)
-            const { fileName, content, url } = await resolveAsset(
+            let { fileName, content, url } = await resolveAsset(
               file,
               root,
               publicBase,
               assetsDir,
               inlineLimit
             )
-            if (fileName && content) {
-              assets.set(fileName, content)
+            if (!url && fileName && content) {
+              url =
+                'import.meta.ROLLUP_FILE_URL_' +
+                this.emitFile({
+                  name: fileName,
+                  type: 'asset',
+                  source: content
+                })
             }
             debug(
               `url(${rawUrl}) -> ${
-                url.startsWith('data:') ? `base64 inlined` : `url(${url})`
+                url!.startsWith('data:') ? `base64 inlined` : `${file}`
               }`
             )
-            return url
+            return url!
           })
         }
 
         styles.set(id, css)
         return {
           code: modules
-            ? `export default ${JSON.stringify(modules)}`
+            ? dataToEsm(modules, { namedExports: true })
             : (cssCodeSplit
                 ? // If code-splitting CSS, inject a fake marker to avoid the module
                   // from being tree-shaken. This preserves the .css file as a
-                  // module in the chunk's metadata so that we can retrive them in
+                  // module in the chunk's metadata so that we can retrieve them in
                   // renderChunk.
                   `${cssInjectionMarker}()\n`
                 : ``) + `export default ${JSON.stringify(css)}`,
-          map: null
+          map: null,
+          // #795 css always has side effect
+          moduleSideEffects: true
         }
       }
     },
 
     async renderChunk(code, chunk) {
-      if (!cssCodeSplit) {
-        return null
-      }
-      // for each dynamic entry chunk, collect its css and inline it as JS
-      // strings.
-      if (chunk.isDynamicEntry) {
-        let chunkCSS = ''
-        for (const id in chunk.modules) {
-          if (styles.has(id)) {
-            chunkCSS += styles.get(id)
-            styles.delete(id) // remove inlined css
-          }
+      let chunkCSS = ''
+      for (const id in chunk.modules) {
+        if (styles.has(id)) {
+          chunkCSS += styles.get(id)
         }
-        chunkCSS = minifyCSS(chunkCSS)
-        let isFirst = true
-        code = code.replace(cssInjectionRE, () => {
-          if (isFirst) {
-            isFirst = false
-            // make sure the code is in one line so that source map is preserved.
-            return (
-              `let ${cssInjectionMarker} = document.createElement('style');` +
-              `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-              `document.head.appendChild(${cssInjectionMarker});`
-            )
-          } else {
-            return ''
-          }
-        })
-      } else {
-        code = code.replace(cssInjectionRE, '')
       }
-      return {
-        code,
-        map: null
+
+      let match
+      while ((match = injectAssetRe.exec(chunkCSS))) {
+        const outputFilepath =
+          publicBase + slash(path.join(assetsDir, this.getFileName(match[1])))
+        chunkCSS = chunkCSS.replace(match[0], outputFilepath)
+      }
+
+      if (cssCodeSplit) {
+        code = code.replace(cssInjectionRE, '')
+        // for each dynamic entry chunk, collect its css and inline it as JS
+        // strings.
+        if (chunk.isDynamicEntry && chunkCSS) {
+          chunkCSS = minifyCSS(chunkCSS)
+          code =
+            `let ${cssInjectionMarker} = document.createElement('style');` +
+            `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `document.head.appendChild(${cssInjectionMarker});` +
+            code
+        } else {
+          staticCss += chunkCSS
+        }
+        return {
+          code,
+          map: null
+        }
+      } else {
+        staticCss += chunkCSS
+        return null
       }
     },
 
     async generateBundle(_options, bundle) {
-      let css = ''
-      // finalize extracted css
-      styles.forEach((s) => {
-        css += s
-      })
-      // minify with cssnano
-      if (minify) {
-        css = minifyCSS(css)
+      // minify css
+      if (minify && staticCss) {
+        staticCss = minifyCSS(staticCss)
       }
 
-      const cssFileName = `style.${hash_sum(css)}.css`
-
-      bundle[cssFileName] = {
-        isAsset: true,
-        type: 'asset',
-        fileName: cssFileName,
-        source: css
+      if (staticCss) {
+        this.emitFile({
+          name: 'style.css',
+          type: 'asset',
+          source: staticCss
+        })
       }
-
-      registerAssets(assets, bundle)
     }
   }
 }

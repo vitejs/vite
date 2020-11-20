@@ -15,13 +15,16 @@ import { lookupFile, resolveFrom } from '../utils'
 import { init, parse } from 'es-module-lexer'
 import chalk from 'chalk'
 import { Ora } from 'ora'
-import { createDepAssetPlugin, depAssetExternalPlugin } from './pluginAssets'
-import { createBuiltInBailPlugin } from './pluginBuiltInBail'
+import {
+  createDepAssetPlugin,
+  createDepAssetExternalPlugin
+} from './pluginAssets'
 
 const debug = require('debug')('vite:optimize')
 
 const KNOWN_IGNORE_LIST = new Set([
   'vite',
+  'vitepress',
   'tailwindcss',
   '@tailwindcss/ui',
   '@pika/react',
@@ -43,6 +46,11 @@ export interface DepOptimizationOptions {
    * are also included for optimization.
    */
   link?: string[]
+  /**
+   * A list of depdendencies that imports Node built-ins, but do not actually
+   * use them in browsers.
+   */
+  allowNodeBuiltins?: string[]
   /**
    * Automatically run `vite optimize` on server start?
    * @default true
@@ -94,7 +102,12 @@ export async function optimizeDeps(
   await fs.ensureDir(cacheDir)
 
   const options = config.optimizeDeps || {}
-  const resolver = createResolver(root, config.resolvers, config.alias)
+  const resolver = createResolver(
+    root,
+    config.resolvers,
+    config.alias,
+    config.assetsInclude
+  )
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
@@ -131,7 +144,7 @@ export async function optimizeDeps(
   // Force included deps - these can also be deep paths
   if (options.include) {
     options.include.forEach((id) => {
-      const pkg = resolveNodeModule(root, id)
+      const pkg = resolveNodeModule(root, id, resolver)
       if (pkg && pkg.entryFilePath) {
         qualified[id] = pkg.entryFilePath
       } else {
@@ -171,6 +184,13 @@ export async function optimizeDeps(
     spinner = require('ora')(msg + '\n').start()
   }
 
+  const {
+    pluginsPreBuild,
+    pluginsPostBuild,
+    pluginsOptimizer = [],
+    ...rollupInputOptions
+  } = config.rollupInputOptions || {}
+
   try {
     const rollup = require('rollup') as typeof Rollup
 
@@ -178,13 +198,13 @@ export async function optimizeDeps(
       input: qualified,
       external,
       // treeshake: { moduleSideEffects: 'no-external' },
-      onwarn: onRollupWarning(spinner),
-      ...config.rollupInputOptions,
+      onwarn: onRollupWarning(spinner, options),
+      ...rollupInputOptions,
       plugins: [
-        createBuiltInBailPlugin(),
-        depAssetExternalPlugin,
+        createDepAssetExternalPlugin(resolver),
         ...(await createBaseRollupPlugins(root, resolver, config)),
-        createDepAssetPlugin(resolver)
+        createDepAssetPlugin(resolver, root),
+        ...pluginsOptimizer
       ]
     })
 
@@ -225,12 +245,13 @@ export async function optimizeDeps(
             `Tip:\nMake sure your "dependencies" only include packages that you\n` +
               `intend to use in the browser. If it's a Node.js package, it\n` +
               `should be in "devDependencies".\n\n` +
-              `You can also configure what deps to include/exclude for\n` +
-              `optimization using the "optimizeDeps" option in vite.config.js.\n\n` +
-              `If you do intend to use this dependency in the browser, then\n` +
-              `unfortunately it is not distributed in a web-friendly way and\n` +
-              `it is recommended to look for a modern alternative that ships\n` +
-              `ES module build.\n`
+              `If you do intend to use this dependency in the browser and the\n` +
+              `dependency does not actually use these Node built-ins in the\n` +
+              `browser, you can add the dependency (not the built-in) to the\n` +
+              `"optimizeDeps.allowNodeBuiltins" option in vite.config.js.\n\n` +
+              `If that results in a runtime error, then unfortunately the\n` +
+              `package is not distributed in a web-friendly format. You should\n` +
+              `open an issue in its repo, or look for a modern alternative.`
           )
           // TODO link to docs once we have it
         )
@@ -281,7 +302,12 @@ function resolveQualifiedDeps(
       debug(`skipping ${id} (internal excluded)`)
       return false
     }
-    const pkgInfo = resolveNodeModule(root, id)
+    // #804
+    if (id.startsWith('@types/')) {
+      debug(`skipping ${id} (ts declaration)`)
+      return false
+    }
+    const pkgInfo = resolveNodeModule(root, id, resolver)
     if (!pkgInfo || !pkgInfo.entryFilePath) {
       debug(`skipping ${id} (cannot resolve entry)`)
       console.log(root, id)
@@ -329,7 +355,7 @@ function resolveQualifiedDeps(
 
   const qualified: Record<string, string> = {}
   qualifiedDeps.forEach((id) => {
-    qualified[id] = resolveNodeModule(root, id)!.entryFilePath!
+    qualified[id] = resolveNodeModule(root, id, resolver)!.entryFilePath!
   })
 
   // mark non-optimized deps as external

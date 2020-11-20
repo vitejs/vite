@@ -8,7 +8,7 @@
   </p>
   <p>
     Relative asset reference in template:
-    <img src="../testAssets.png" style="width: 30px;" />
+    <img class="relative-import" src="./nested/testAssets.png" data-src="./nested/testAssets.png" style="width: 30px;" />
   </p>
   <p>
     Absolute asset reference in template:
@@ -30,7 +30,7 @@
 
 <script>
 import './testAssets.css'
-import filepath from '../testAssets.png'
+import filepath from './nested/testAssets.png'
 import TestAssetsHmrInTemplate from './testAssetsHmrInTemplate.vue'
 import TestAssetsHmrInStyle from './testAssetsHmrInStyle.vue'
 import TestAssetsHmrInScript from './testAssetsHmrInScript.vue'

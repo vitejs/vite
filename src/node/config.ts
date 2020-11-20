@@ -2,21 +2,81 @@ import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
 import dotenv, { DotenvParseOutput } from 'dotenv'
+import dotenvExpand from 'dotenv-expand'
 import { Options as RollupPluginVueOptions } from 'rollup-plugin-vue'
-import { CompilerOptions, SFCStyleCompileOptions } from '@vue/compiler-sfc'
+import {
+  CompilerOptions,
+  SFCStyleCompileOptions,
+  SFCAsyncStyleCompileOptions,
+  SFCTemplateCompileOptions
+} from '@vue/compiler-sfc'
 import Rollup, {
   InputOptions as RollupInputOptions,
   OutputOptions as RollupOutputOptions,
+  Plugin as RollupPlugin,
   OutputChunk
 } from 'rollup'
-import { createEsbuildPlugin } from './build/buildPluginEsbuild'
-import { ServerPlugin } from './server'
+import {
+  createEsbuildPlugin,
+  createEsbuildRenderChunkPlugin
+} from './build/buildPluginEsbuild'
+import { BuildPlugin } from './build'
+import { Context, ServerPlugin } from './server'
 import { Resolver, supportedExts } from './resolver'
-import { Transform, CustomBlockTransform } from './transform'
+import {
+  Transform,
+  CustomBlockTransform,
+  IndexHtmlTransform
+} from './transform'
 import { DepOptimizationOptions } from './optimizer'
-import { IKoaProxiesOptions } from 'koa-proxies'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
+import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
+import { ProxiesOptions } from './server/serverPluginProxy'
+
+export type PreprocessLang = NonNullable<
+  SFCStyleCompileOptions['preprocessLang']
+>
+
+export type PreprocessOptions = SFCStyleCompileOptions['preprocessOptions']
+
+export type CssPreprocessOptions = Partial<
+  Record<PreprocessLang, PreprocessOptions>
+>
+
+/**
+ * https://github.com/koajs/cors#corsoptions
+ */
+export interface CorsOptions {
+  /**
+   * `Access-Control-Allow-Origin`, default is request Origin header
+   */
+  origin?: string | ((ctx: Context) => string)
+  /**
+   * `Access-Control-Allow-Methods`, default is 'GET,HEAD,PUT,POST,DELETE,PATCH'
+   */
+  allowMethods?: string | string[]
+  /**
+   * `Access-Control-Expose-Headers`
+   */
+  exposeHeaders?: string | string[]
+  /**
+   * `Access-Control-Allow-Headers`
+   */
+  allowHeaders?: string | string[]
+  /**
+   * `Access-Control-Max-Age` in seconds
+   */
+  maxAge?: string | number
+  /**
+   * `Access-Control-Allow-Credentials`, default is false
+   */
+  credentials?: boolean | ((ctx: Context) => boolean)
+  /**
+   * Add set headers to `err.header` if an error is thrown
+   */
+  keepHeadersOnError?: boolean
+}
 
 export { Resolver, Transform }
 
@@ -52,9 +112,22 @@ export interface SharedConfig {
    */
   alias?: Record<string, string>
   /**
+   * Function that tests a file path for inclusion as a static asset.
+   */
+  assetsInclude?: (file: string) => boolean
+  /**
    * Custom file transforms.
    */
   transforms?: Transform[]
+  /**
+   * Custom index.html transforms.
+   */
+  indexHtmlTransforms?: IndexHtmlTransform[]
+  /**
+   * Define global variable replacements.
+   * Entries will be defined on `window` during dev and replaced during build.
+   */
+  define?: Record<string, any>
   /**
    * Resolvers to map dev server public path requests to/from file system paths,
    * and optionally map module ids to public path requests.
@@ -79,6 +152,18 @@ export interface SharedConfig {
    * https://github.com/vuejs/vue-next/blob/master/packages/compiler-core/src/options.ts
    */
   vueCompilerOptions?: CompilerOptions
+  /**
+   * Configure what tags/attributes to trasnform into asset url imports,
+   * or disable the transform altogether with `false`.
+   */
+  vueTransformAssetUrls?: SFCTemplateCompileOptions['transformAssetUrls']
+  /**
+   * The options for template block preprocessor render.
+   */
+  vueTemplatePreprocessOptions?: Record<
+    string,
+    SFCTemplateCompileOptions['preprocessOptions']
+  >
   /**
    * Transform functions for Vue custom blocks.
    *
@@ -105,27 +190,53 @@ export interface SharedConfig {
         fragment?: string
       }
   /**
-   * Environment variables
-   */
-  env?: DotenvParseOutput
-  /**
    * Environment mode
    */
   mode?: string
   /**
    * CSS preprocess options
    */
-  cssPreprocessOptions?: SFCStyleCompileOptions['preprocessOptions']
+  cssPreprocessOptions?: CssPreprocessOptions
+  /**
+   * CSS modules options
+   */
+  cssModuleOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
+  /**
+   * Enable esbuild
+   * @default true
+   */
+  enableEsbuild?: boolean
+  /**
+   * Environment variables parsed from .env files
+   * only ones starting with VITE_ are exposed on `import.meta.env`
+   * @internal
+   */
+  env?: DotenvParseOutput
+}
+
+export interface HmrConfig {
+  protocol?: string
+  hostname?: string
+  port?: number
+  path?: string
 }
 
 export interface ServerConfig extends SharedConfig {
+  /**
+   * Configure hmr websocket connection.
+   */
+  hmr?: HmrConfig | boolean
+  /**
+   * Configure dev server hostname.
+   */
+  hostname?: string
   port?: number
   open?: boolean
   /**
    * Configure https.
    */
   https?: boolean
-  httpsOption?: ServerOptions
+  httpsOptions?: ServerOptions
   /**
    * Configure custom proxy rules for the dev server. Uses
    * [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses
@@ -137,77 +248,95 @@ export interface ServerConfig extends SharedConfig {
    * ``` js
    * module.exports = {
    *   proxy: {
-   *     proxy: {
-   *       // string shorthand
-   *       '/foo': 'http://localhost:4567/foo',
-   *       // with options
-   *       '/api': {
-   *         target: 'http://jsonplaceholder.typicode.com',
-   *         changeOrigin: true,
-   *         rewrite: path => path.replace(/^\/api/, '')
-   *       }
+   *     // string shorthand
+   *     '/foo': 'http://localhost:4567/foo',
+   *     // with options
+   *     '/api': {
+   *       target: 'http://jsonplaceholder.typicode.com',
+   *       changeOrigin: true,
+   *       rewrite: path => path.replace(/^\/api/, '')
    *     }
    *   }
    * }
    * ```
    */
-  proxy?: Record<string, string | IKoaProxiesOptions>
+  proxy?: Record<string, string | ProxiesOptions>
   /**
-   * Whether to use a Service Worker to cache served code. This can greatly
-   * improve full page reload performance, but requires a Service Worker
-   * update + reload on each server restart.
-   *
-   * @default false
+   * Configure CORS for the dev server.
+   * Uses [@koa/cors](https://github.com/koajs/cors).
+   * Set to `true` to allow all methods from any origin, or configure separately
+   * using an object.
    */
-  serviceWorker?: boolean
+  cors?: CorsOptions | boolean
+  /**
+   * A plugin function that configures the dev server. Receives a server plugin
+   * context object just like the internal server plugins. Can also be an array
+   * of multiple server plugin functions.
+   */
   configureServer?: ServerPlugin | ServerPlugin[]
 }
 
-export interface BuildConfig extends SharedConfig {
+export interface BuildConfig extends Required<SharedConfig> {
+  /**
+   * Entry. Use this to specify a js entry file in use cases where an
+   * `index.html` does not exist (e.g. serving vite assets from a different host)
+   * @default 'index.html'
+   */
+  entry: string
   /**
    * Base public path when served in production.
    * @default '/'
    */
-  base?: string
+  base: string
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
    * @default 'dist'
    */
-  outDir?: string
+  outDir: string
   /**
    * Directory relative from `outDir` where the built js/css/image assets will
    * be placed.
    * @default '_assets'
    */
-  assetsDir?: string
+  assetsDir: string
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
    * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
    * @default 4096
    */
-  assetsInlineLimit?: number
+  assetsInlineLimit: number
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
    * style tags when the chunk is loaded.
    * @default true
    */
-  cssCodeSplit?: boolean
+  cssCodeSplit: boolean
   /**
    * Whether to generate sourcemap
    * @default false
    */
-  sourcemap?: boolean
+  sourcemap: boolean | 'inline'
   /**
-   * Set to `false` to dsiable minification, or specify the minifier to use.
+   * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
    * @default 'terser'
    */
-  minify?: boolean | 'terser' | 'esbuild'
+  minify: boolean | 'terser' | 'esbuild'
   /**
-   * Build for server-side rendering
-   * @default false
+   * The option for `terser`
+   */
+  terserOptions: RollupTerserOptions
+  /**
+   * Transpile target for esbuild.
+   * @default 'es2020'
+   */
+  esbuildTarget: string
+  /**
+   * Build for server-side rendering, only as a CLI flag
+   * for programmatic usage, use `ssrBuild` directly.
+   * @internal
    */
   ssr?: boolean
 
@@ -217,52 +346,99 @@ export interface BuildConfig extends SharedConfig {
    *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
-  rollupInputOptions?: RollupInputOptions
+  rollupInputOptions: ViteRollupInputOptions
   /**
    * Will be passed to bundle.generate()
    *
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
-  rollupOutputOptions?: RollupOutputOptions
+  rollupOutputOptions: RollupOutputOptions
   /**
    * Will be passed to rollup-plugin-vue
    *
    * https://github.com/vuejs/rollup-plugin-vue/blob/next/src/index.ts
    */
-  rollupPluginVueOptions?: Partial<RollupPluginVueOptions>
+  rollupPluginVueOptions: Partial<RollupPluginVueOptions>
   /**
    * Will be passed to @rollup/plugin-node-resolve
    * https://github.com/rollup/plugins/tree/master/packages/node-resolve#dedupe
    */
-  rollupDedupe?: string[]
+  rollupDedupe: string[]
   /**
    * Whether to log asset info to console
    * @default false
    */
-  silent?: boolean
+  silent: boolean
   /**
    * Whether to write bundle to disk
    * @default true
    */
-  write?: boolean
+  write: boolean
   /**
    * Whether to emit index.html
    * @default true
    */
-  emitIndex?: boolean
+  emitIndex: boolean
   /**
    * Whether to emit assets other than JavaScript
    * @default true
    */
-  emitAssets?: boolean
+  emitAssets: boolean
+  /**
+   * Whether to emit a manifest.json under assets dir to map hash-less filenames
+   * to their hashed versions. Useful when you want to generate your own HTML
+   * instead of using the one generated by Vite.
+   *
+   * Example:
+   *
+   * ```json
+   * {
+   *   "main.js": "main.68fe3fad.js",
+   *   "style.css": "style.e6b63442.css"
+   * }
+   * ```
+   * @default false
+   */
+  emitManifest?: boolean
   /**
    * Predicate function that determines whether a link rel=modulepreload shall be
    * added to the index.html for the chunk passed in
    */
-  shouldPreload?: (chunk: OutputChunk) => boolean
+  shouldPreload: ((chunk: OutputChunk) => boolean) | null
+  /**
+   * Enable 'rollup-plugin-vue'
+   * @default true
+   */
+  enableRollupPluginVue?: boolean
+  /**
+   * Plugin functions that mutate the Vite build config. The `builds` array can
+   * be added to if the plugin wants to add another Rollup build that Vite writes
+   * to disk. Return a function to gain access to each build's output.
+   * @internal
+   */
+  configureBuild?: BuildPlugin | BuildPlugin[]
 }
 
-export interface UserConfig extends BuildConfig, ServerConfig {
+export interface ViteRollupInputOptions extends RollupInputOptions {
+  /**
+   * @deprecated use `pluginsPreBuild` or `pluginsPostBuild` instead
+   */
+  plugins?: RollupPlugin[]
+  /**
+   * Rollup plugins that passed before Vite's transform plugins
+   */
+  pluginsPreBuild?: RollupPlugin[]
+  /**
+   * Rollup plugins that passed after Vite's transform plugins
+   */
+  pluginsPostBuild?: RollupPlugin[]
+  /**
+   * Rollup plugins for optimizer
+   */
+  pluginsOptimizer?: RollupPlugin[]
+}
+
+export interface UserConfig extends Partial<BuildConfig>, ServerConfig {
   plugins?: Plugin[]
 }
 
@@ -271,15 +447,22 @@ export interface Plugin
     UserConfig,
     | 'alias'
     | 'transforms'
+    | 'indexHtmlTransforms'
+    | 'define'
     | 'resolvers'
+    | 'configureBuild'
     | 'configureServer'
     | 'vueCompilerOptions'
+    | 'vueTransformAssetUrls'
+    | 'vueTemplatePreprocessOptions'
     | 'vueCustomBlockTransforms'
     | 'rollupInputOptions'
     | 'rollupOutputOptions'
+    | 'enableRollupPluginVue'
   > {}
 
 export type ResolvedConfig = UserConfig & {
+  env: DotenvParseOutput
   /**
    * Path of config file.
    */
@@ -288,13 +471,10 @@ export type ResolvedConfig = UserConfig & {
 
 const debug = require('debug')('vite:config')
 
-export async function resolveConfig(
-  mode: string,
-  configPath?: string
-): Promise<ResolvedConfig | undefined> {
+export async function resolveConfig(mode: string, configPath?: string) {
   const start = Date.now()
   const cwd = process.cwd()
-  let config: ResolvedConfig | undefined
+
   let resolvedPath: string | undefined
   let isTS = false
   if (configPath) {
@@ -320,25 +500,29 @@ export async function resolveConfig(
   }
 
   try {
+    let userConfig: UserConfig | ((mode: string) => UserConfig) | undefined
+
     if (!isTS) {
       try {
-        config = require(resolvedPath)
+        userConfig = require(resolvedPath)
       } catch (e) {
-        if (
-          !/Cannot use import statement|Unexpected token 'export'/.test(
-            e.message
-          )
-        ) {
+        const ignored = /Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/
+        if (!ignored.test(e.message)) {
           throw e
         }
       }
     }
 
-    if (!config) {
-      // 2. if we reach here, the file is ts or using es import syntax.
+    if (!userConfig) {
+      // 2. if we reach here, the file is ts or using es import syntax, or
+      // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
       const rollup = require('rollup') as typeof Rollup
-      const esbuildPlugin = await createEsbuildPlugin(false, {})
+      const esbuildPlugin = await createEsbuildPlugin({})
+      const esbuildRenderChunkPlugin = createEsbuildRenderChunkPlugin(
+        'es2019',
+        false
+      )
       // use node-resolve to support .ts files
       const nodeResolve = require('@rollup/plugin-node-resolve').nodeResolve({
         extensions: supportedExts
@@ -349,7 +533,7 @@ export async function resolveConfig(
           id.slice(-5, id.length) === '.json',
         input: resolvedPath,
         treeshake: false,
-        plugins: [esbuildPlugin, nodeResolve]
+        plugins: [esbuildPlugin, nodeResolve, esbuildRenderChunkPlugin]
       })
 
       const {
@@ -359,7 +543,18 @@ export async function resolveConfig(
         format: 'cjs'
       })
 
-      config = await loadConfigFromBundledFile(resolvedPath, code)
+      userConfig = await loadConfigFromBundledFile(resolvedPath, code)
+    }
+
+    let config = (typeof userConfig === 'function'
+      ? userConfig(mode)
+      : userConfig) as ResolvedConfig
+
+    // resolve plugins
+    if (config.plugins) {
+      for (const plugin of config.plugins) {
+        config = resolvePlugin(config, plugin) as any
+      }
     }
 
     // normalize config root to absolute
@@ -367,14 +562,17 @@ export async function resolveConfig(
       config.root = path.resolve(path.dirname(resolvedPath), config.root)
     }
 
-    // resolve plugins
-    if (config.plugins) {
-      for (const plugin of config.plugins) {
-        config = resolvePlugin(config, plugin)
-      }
+    if (typeof config.vueTransformAssetUrls === 'object') {
+      config.vueTransformAssetUrls = normalizeAssetUrlOptions(
+        config.vueTransformAssetUrls
+      )
     }
 
-    config.env = loadEnv(mode, config.root || cwd)
+    const env = loadEnv(mode, config.root || cwd)
+    config.env = {
+      ...config.env,
+      ...env
+    }
     debug(`config resolved in ${Date.now() - start}ms`)
 
     config.__path = resolvedPath
@@ -415,59 +613,150 @@ async function loadConfigFromBundledFile(
 function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   return {
     ...config,
+    ...plugin,
     alias: {
       ...plugin.alias,
       ...config.alias
     },
+    define: {
+      ...plugin.define,
+      ...config.define
+    },
     transforms: [...(config.transforms || []), ...(plugin.transforms || [])],
+    indexHtmlTransforms: [
+      ...(config.indexHtmlTransforms || []),
+      ...(plugin.indexHtmlTransforms || [])
+    ],
     resolvers: [...(config.resolvers || []), ...(plugin.resolvers || [])],
-    configureServer: ([] as any[]).concat(
+    configureServer: ([] as ServerPlugin[]).concat(
       config.configureServer || [],
       plugin.configureServer || []
+    ),
+    configureBuild: ([] as BuildPlugin[]).concat(
+      config.configureBuild || [],
+      plugin.configureBuild || []
     ),
     vueCompilerOptions: {
       ...config.vueCompilerOptions,
       ...plugin.vueCompilerOptions
     },
+    vueTransformAssetUrls: mergeAssetUrlOptions(
+      config.vueTransformAssetUrls,
+      plugin.vueTransformAssetUrls
+    ),
+    vueTemplatePreprocessOptions: {
+      ...config.vueTemplatePreprocessOptions,
+      ...plugin.vueTemplatePreprocessOptions
+    },
     vueCustomBlockTransforms: {
       ...config.vueCustomBlockTransforms,
       ...plugin.vueCustomBlockTransforms
     },
-    rollupInputOptions: {
-      ...config.rollupInputOptions,
-      ...plugin.rollupInputOptions
-    },
-    rollupOutputOptions: {
-      ...config.rollupOutputOptions,
-      ...plugin.rollupOutputOptions
-    }
+    rollupInputOptions: mergeObjectOptions(
+      config.rollupInputOptions,
+      plugin.rollupInputOptions
+    ),
+    rollupOutputOptions: mergeObjectOptions(
+      config.rollupOutputOptions,
+      plugin.rollupOutputOptions
+    ),
+    enableRollupPluginVue:
+      config.enableRollupPluginVue || plugin.enableRollupPluginVue
   }
 }
 
-function loadEnv(mode: string, root: string): Record<string, string> {
+function mergeAssetUrlOptions(
+  to: SFCTemplateCompileOptions['transformAssetUrls'],
+  from: SFCTemplateCompileOptions['transformAssetUrls']
+): SFCTemplateCompileOptions['transformAssetUrls'] {
+  if (from === true) {
+    return to
+  }
+  if (from === false) {
+    return from
+  }
+  if (typeof to === 'boolean') {
+    return from || to
+  }
+  return {
+    ...normalizeAssetUrlOptions(to),
+    ...normalizeAssetUrlOptions(from)
+  }
+}
+
+function normalizeAssetUrlOptions(o: Record<string, any> | undefined) {
+  if (o && Object.keys(o).some((key) => Array.isArray(o[key]))) {
+    return {
+      tags: o
+    }
+  } else {
+    return o
+  }
+}
+
+function mergeObjectOptions(to: any, from: any) {
+  if (!to) return from
+  if (!from) return to
+  const res: any = { ...to }
+  for (const key in from) {
+    const existing = res[key]
+    const toMerge = from[key]
+    if (Array.isArray(existing) || Array.isArray(toMerge)) {
+      res[key] = [].concat(existing, toMerge).filter(Boolean)
+    } else {
+      res[key] = toMerge
+    }
+  }
+  return res
+}
+
+export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
+  if (mode === 'local') {
+    throw new Error(
+      `"local" cannot be used as a mode name because it conflicts with ` +
+        `the .local postfix for .env files.`
+    )
+  }
+
   debug(`env mode: ${mode}`)
+
+  const env: DotenvParseOutput = {}
   const envFiles = [
-    /** default file */ `.env`,
-    /** local file */ `.env.local`,
+    /** mode local file */ `.env.${mode}.local`,
     /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`
+    /** local file */ `.env.local`,
+    /** default file */ `.env`
   ]
 
-  const env: Record<string, string> = {}
   for (const file of envFiles) {
     const path = lookupFile(root, [file], true)
     if (path) {
-      const result = dotenv.config({
-        debug: !!process.env.DEBUG || undefined,
-        path
+      const parsed = dotenv.parse(fs.readFileSync(path), {
+        debug: !!process.env.DEBUG || undefined
       })
-      if (result.error) {
-        throw result.error
+
+      // let environment variables use each other
+      dotenvExpand({
+        parsed,
+        // prevent process.env mutation
+        ignoreProcessEnv: true
+      } as any)
+
+      // only keys that start with prefix are exposed.
+      for (const [key, value] of Object.entries(parsed)) {
+        if (key.startsWith(prefix) && env[key] === undefined) {
+          env[key] = value
+        }
       }
-      Object.assign(env, result.parsed)
     }
   }
 
   debug(`env: %O`, env)
   return env
+}
+
+// TODO move this into Vue plugin when we extract it
+export const defaultDefines = {
+  __VUE_OPTIONS_API__: true,
+  __VUE_PROD_DEVTOOLS__: false
 }

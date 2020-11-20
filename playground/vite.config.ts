@@ -1,15 +1,16 @@
-import type { UserConfig } from 'vite'
+import type { UserConfig } from '../src/node/config'
 import { jsPlugin } from './plugins/jsPlugin'
 import { i18nTransform } from './custom-blocks/i18nTransform'
 
 const config: UserConfig = {
   alias: {
-    alias: '/aliased',
-    '/@alias/': require('path').resolve(__dirname, 'aliased-dir')
+    alias: '/alias/aliased',
+    '/@alias/': require('path').resolve(__dirname, 'alias/aliased-dir')
+  },
+  define: {
+    __VALUE__: 'value'
   },
   jsx: 'preact',
-  minify: false,
-  serviceWorker: !!process.env.USE_SW,
   plugins: [jsPlugin],
   vueCustomBlockTransforms: { i18n: i18nTransform },
   optimizeDeps: {
@@ -17,10 +18,19 @@ const config: UserConfig = {
     link: ['optimize-linked']
   },
   cssPreprocessOptions: {
-    modifyVars: {
-      'preprocess-custom-color': 'green'
+    less: {
+      modifyVars: {
+        'preprocess-custom-color': 'green'
+      }
     }
-  }
+  },
+  vueTransformAssetUrls: {
+    img: ['src', 'data-src']
+  },
+  indexHtmlTransforms: [
+    ({ code }) => code.replace(/Vite App/, 'Vite Playground')
+  ],
+  emitManifest: true
 }
 
 export default config

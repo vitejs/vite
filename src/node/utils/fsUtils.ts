@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import LRUCache from 'lru-cache'
+import { RawSourceMap } from 'source-map'
 import { Context } from '../server'
 import { Readable } from 'stream'
 import { seenUrls } from '../server/serverPluginServeStatic'
@@ -12,7 +13,7 @@ const getETag = require('etag')
 interface CacheEntry {
   lastModified: number
   etag: string
-  content: string
+  content: Buffer
 }
 
 const fsReadCache = new LRUCache<string, CacheEntry>({
@@ -22,26 +23,26 @@ const fsReadCache = new LRUCache<string, CacheEntry>({
 /**
  * Read a file with in-memory cache.
  * Also sets appropriate headers and body on the Koa context.
+ * This is exposed on middleware context as `ctx.read` with the `ctx` already
+ * bound, so it can be used as `ctx.read(file)`.
  */
 export async function cachedRead(
   ctx: Context | null,
   file: string
-): Promise<string> {
+): Promise<Buffer> {
   const lastModified = fs.statSync(file).mtimeMs
   const cached = fsReadCache.get(file)
   if (ctx) {
     ctx.set('Cache-Control', 'no-cache')
-    ctx.type = mime.lookup(path.extname(file)) || 'js'
+    ctx.type = mime.lookup(path.extname(file)) || 'application/octet-stream'
   }
   if (cached && cached.lastModified === lastModified) {
     if (ctx) {
+      // a private marker in case the user ticks "disable cache" during dev
+      ctx.__notModified = true
       ctx.etag = cached.etag
       ctx.lastModified = new Date(cached.lastModified)
-      if (
-        ctx.__serviceWorker !== true &&
-        ctx.get('If-None-Match') === ctx.etag &&
-        seenUrls.has(ctx.url)
-      ) {
+      if (ctx.get('If-None-Match') === ctx.etag && seenUrls.has(ctx.url)) {
         ctx.status = 304
       }
       seenUrls.add(ctx.url)
@@ -49,7 +50,29 @@ export async function cachedRead(
     }
     return cached.content
   }
-  const content = await fs.readFile(file, 'utf-8')
+  // #395 some file is an binary file, eg. font
+  let content = await fs.readFile(file)
+  // Populate the "sourcesContent" array and resolve relative paths in the
+  // "sources" array, so the debugger can trace back to the original source.
+  if (file.endsWith('.map')) {
+    const map: RawSourceMap = JSON.parse(content.toString('utf8'))
+    if (!map.sourcesContent || !map.sources.every(path.isAbsolute)) {
+      const sourcesContent = map.sourcesContent || []
+      const sourceRoot = path.resolve(path.dirname(file), map.sourceRoot || '')
+      map.sources = await Promise.all(
+        map.sources.map(async (source, i) => {
+          const originalPath = path.resolve(sourceRoot, source)
+          if (!sourcesContent[i]) {
+            const originalCode = await cachedRead(null, originalPath)
+            sourcesContent[i] = originalCode.toString('utf8')
+          }
+          return originalPath
+        })
+      )
+      map.sourcesContent = sourcesContent
+      content = Buffer.from(JSON.stringify(map))
+    }
+  }
   const etag = getETag(content)
   fsReadCache.set(file, {
     content,

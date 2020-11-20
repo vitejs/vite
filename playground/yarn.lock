@@ -35,14 +35,14 @@ regenerator-runtime@^0.13.4:
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.5.tgz#d878a1d094b4306d10b9096484b33ebd55e26697"
   integrity sha512-ZS5w8CpKFinUzOwW3c83oPeVXoNsrLsaCoLtJvAClH135j/R77RuymhiSErhm2lKcwSCIpmvIWSbDkIfAqKQlA==
 
-"resolve-browser-field-test-package@link:./resolve-browser-field":
+"resolve-browser-field-test-package@link:./resolve/browser-field":
   version "0.0.0"
   uid ""
 
-"rewrite-optimized-test-package@link:./rewrite-optimized/test-package":
+"rewrite-optimized-test-package@link:./resolve/rewrite-optimized/test-package":
   version "0.0.0"
   uid ""
 
-"rewrite-unoptimized-test-package@link:./rewrite-unoptimized/test-package":
+"rewrite-unoptimized-test-package@link:./resolve/rewrite-unoptimized/test-package":
   version "0.0.0"
   uid ""

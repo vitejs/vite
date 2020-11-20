@@ -10,9 +10,9 @@
     "moment": "link:../node_modules/moment",
     "@babel/runtime": "link:../node_modules/@babel/runtime",
     "normalize.css": "link:../node_modules/normalize.css",
-    "resolve-browser-field-test-package": "link:./resolve-browser-field",
-    "rewrite-optimized-test-package": "link:./rewrite-optimized/test-package",
     "optimize-linked": "link:./optimize-linked",
-    "rewrite-unoptimized-test-package": "link:./rewrite-unoptimized/test-package"
+    "resolve-browser-field-test-package": "link:./resolve/browser-field",
+    "rewrite-optimized-test-package": "link:./resolve/rewrite-optimized/test-package",
+    "rewrite-unoptimized-test-package": "link:./resolve/rewrite-unoptimized/test-package"
   }
 }

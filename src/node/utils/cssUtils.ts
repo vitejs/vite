@@ -9,10 +9,13 @@ import {
   SFCAsyncStyleCompileOptions,
   SFCStyleCompileResults
 } from '@vue/compiler-sfc'
-import { hmrClientPublicPath } from '../server/serverPluginHmr'
 
-export const urlRE = /(url\(\s*['"]?)([^"')]+)(["']?\s*\))/
-export const cssPreprocessLangRE = /(.+).(less|sass|scss|styl|stylus|postcss)$/
+export const urlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+export const cssPreprocessLangRE = /\.(less|sass|scss|styl|stylus|postcss)$/
+export const cssModuleRE = /\.module\.(less|sass|scss|styl|stylus|postcss|css)$/
+
+export const isCSSRequest = (file: string) =>
+  file.endsWith('.css') || cssPreprocessLangRE.test(file)
 
 type Replacer = (url: string) => string | Promise<string>
 
@@ -31,7 +34,13 @@ export function rewriteCssUrls(
   }
 
   return asyncReplace(css, urlRE, async (match) => {
-    const [matched, before, rawUrl, after] = match
+    let [matched, rawUrl] = match
+    let wrap = ''
+    const first = rawUrl[0]
+    if (first === `"` || first === `'`) {
+      wrap = first
+      rawUrl = rawUrl.slice(1, -1)
+    }
     if (
       isExternalUrl(rawUrl) ||
       rawUrl.startsWith('data:') ||
@@ -41,7 +50,7 @@ export function rewriteCssUrls(
     }
     const url = await replacer(rawUrl)
     assetsImportSet && assetsImportSet.add(url)
-    return before + url + after
+    return `url(${wrap}${url}${wrap})`
   })
 }
 
@@ -52,10 +61,13 @@ export async function compileCss(
     source,
     filename,
     scoped,
+    vars,
     modules,
     preprocessLang,
-    preprocessOptions = {}
-  }: SFCAsyncStyleCompileOptions
+    preprocessOptions = {},
+    modulesOptions = {}
+  }: SFCAsyncStyleCompileOptions,
+  isBuild: boolean = false
 ): Promise<SFCStyleCompileResults | string> {
   const id = hash_sum(publicPath)
   const postcssConfig = await loadPostcssConfig(root)
@@ -65,6 +77,7 @@ export async function compileCss(
     publicPath.endsWith('.css') &&
     !modules &&
     !postcssConfig &&
+    !isBuild &&
     !source.includes('@import')
   ) {
     // no need to invoke compile for plain css if no postcss config is present
@@ -74,61 +87,48 @@ export async function compileCss(
   const {
     options: postcssOptions,
     plugins: postcssPlugins
-  } = await resolvePostcssOptions(root)
+  } = await resolvePostcssOptions(root, isBuild)
 
-  const res = await compileStyleAsync({
+  if (preprocessLang) {
+    preprocessOptions = preprocessOptions[preprocessLang] || preprocessOptions
+    // include node_modules for imports by default
+    switch (preprocessLang) {
+      case 'scss':
+      case 'sass':
+        preprocessOptions = {
+          includePaths: ['node_modules'],
+          ...preprocessOptions
+        }
+        break
+      case 'less':
+      case 'stylus':
+        preprocessOptions = {
+          paths: ['node_modules'],
+          ...preprocessOptions
+        }
+    }
+  }
+
+  return await compileStyleAsync({
     source,
     filename,
     id: `data-v-${id}`,
     scoped,
+    vars,
     modules,
     modulesOptions: {
-      generateScopedName: `[local]_${id}`
+      generateScopedName: `[local]_${id}`,
+      localsConvention: 'camelCase',
+      ...modulesOptions
     },
 
-    preprocessLang: preprocessLang,
+    preprocessLang,
     preprocessCustomRequire: (id: string) => require(resolveFrom(root, id)),
-    preprocessOptions: {
-      includePaths: ['node_modules'],
-      ...preprocessOptions
-    },
+    preprocessOptions,
 
     postcssOptions,
     postcssPlugins
   })
-
-  // record css import dependencies
-  if (res.rawResult) {
-    res.rawResult.messages.forEach((msg) => {
-      let { type, file, parent } = msg
-      if (type === 'dependency') {
-        if (cssImportMap.has(file)) {
-          cssImportMap.get(file)!.add(parent)
-        } else {
-          cssImportMap.set(file, new Set([parent]))
-        }
-      }
-    })
-  }
-
-  return res
-}
-
-export function codegenCss(
-  id: string,
-  css: string,
-  modules?: Record<string, string>
-): string {
-  let code =
-    `import { updateStyle } from "${hmrClientPublicPath}"\n` +
-    `const css = ${JSON.stringify(css)}\n` +
-    `updateStyle(${JSON.stringify(id)}, css)\n`
-  if (modules) {
-    code += `export default ${JSON.stringify(modules)}`
-  } else {
-    code += `export default css`
-  }
-  return code
 }
 
 // postcss-load-config doesn't expose Result type
@@ -156,18 +156,25 @@ async function loadPostcssConfig(
   }
 }
 
-export async function resolvePostcssOptions(root: string) {
+export async function resolvePostcssOptions(root: string, isBuild: boolean) {
   const config = await loadPostcssConfig(root)
   const options = config && config.options
-  const plugins = config ? config.plugins : []
+  const plugins = config && config.plugins ? config.plugins.slice() : []
   plugins.unshift(require('postcss-import')())
+  if (isBuild) {
+    plugins.push(require('postcss-discard-comments')({ removeAll: true }))
+  }
   return {
     options,
     plugins
   }
 }
 
-export const cssImportMap = new Map<
+export const cssImporterMap = new Map<
+  string /*filePath*/,
+  Set<string /*filePath*/>
+>()
+export const cssImporteeMap = new Map<
   string /*filePath*/,
   Set<string /*filePath*/>
 >()
@@ -176,13 +183,41 @@ export function getCssImportBoundaries(
   filePath: string,
   boundaries = new Set<string>()
 ) {
-  if (!cssImportMap.has(filePath)) {
+  if (!cssImporterMap.has(filePath)) {
     return boundaries
   }
-  const importers = cssImportMap.get(filePath)!
+  const importers = cssImporterMap.get(filePath)!
   for (const importer of importers) {
     boundaries.add(importer)
     getCssImportBoundaries(importer, boundaries)
   }
   return boundaries
+}
+
+export function recordCssImportChain(
+  dependencies: Set<string>,
+  filePath: string
+) {
+  const preImportees = cssImporteeMap.get(filePath)
+  // if import code change, should removed unused previous importee
+  if (preImportees) {
+    for (const preImportee of preImportees) {
+      if (!dependencies.has(preImportee)) {
+        const importers = cssImporterMap.get(preImportee)
+        if (importers) {
+          importers.delete(filePath)
+        }
+      }
+    }
+  }
+
+  dependencies.forEach((dependency) => {
+    if (cssImporterMap.has(dependency)) {
+      cssImporterMap.get(dependency)!.add(filePath)
+    } else {
+      cssImporterMap.set(dependency, new Set([filePath]))
+    }
+  })
+
+  cssImporteeMap.set(filePath, dependencies)
 }

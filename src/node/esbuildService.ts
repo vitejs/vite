@@ -1,7 +1,14 @@
 import path from 'path'
 import chalk from 'chalk'
-import { startService, Service, TransformOptions, Message } from 'esbuild'
+import {
+  startService,
+  Service,
+  TransformOptions,
+  Message,
+  Loader
+} from 'esbuild'
 import { SharedConfig } from './config'
+import { cleanUrl } from './utils'
 
 const debug = require('debug')('vite:esbuild')
 
@@ -9,7 +16,10 @@ export const tjsxRE = /\.(tsx?|jsx)$/
 
 export const vueJsxPublicPath = '/vite/jsx'
 
-export const vueJsxFilePath = path.resolve(__dirname, 'vueJsxCompat.js')
+export const vueJsxFilePath = path.resolve(
+  __dirname,
+  '../client/vueJsxCompat.js'
+)
 
 const JsxPresets: Record<
   string,
@@ -35,36 +45,39 @@ export function resolveJsxOptions(options: SharedConfig['jsx'] = 'vue') {
 }
 
 // lazy start the service
-let _service: Service | undefined
+let _servicePromise: Promise<Service> | undefined
 
 const ensureService = async () => {
-  if (!_service) {
-    _service = await startService()
+  if (!_servicePromise) {
+    _servicePromise = startService()
   }
-  return _service
+  return _servicePromise
 }
 
-export const stopService = () => {
-  _service && _service.stop()
-  _service = undefined
+export const stopService = async () => {
+  if (_servicePromise) {
+    const service = await _servicePromise
+    service.stop()
+    _servicePromise = undefined
+  }
 }
-
-const sourceMapRE = /\/\/# sourceMappingURL.*/
 
 // transform used in server plugins with a more friendly API
 export const transform = async (
   src: string,
-  file: string,
+  request: string,
   options: TransformOptions = {},
   jsxOption?: SharedConfig['jsx']
 ) => {
   const service = await ensureService()
+  const file = cleanUrl(request)
   options = {
-    ...options,
-    loader: options.loader || (path.extname(file).slice(1) as any),
+    loader: options.loader || (path.extname(file).slice(1) as Loader),
     sourcemap: true,
-    sourcefile: file,
-    target: 'es2019'
+    // ensure source file name contains full query
+    sourcefile: request,
+    target: 'es2020',
+    ...options
   }
   try {
     const result = await service.transform(src, options)
@@ -73,8 +86,7 @@ export const transform = async (
       result.warnings.forEach((m) => printMessage(m, src))
     }
 
-    let code = (result.js || '').replace(sourceMapRE, '')
-
+    let code = result.js
     // if transpiling (j|t)sx file, inject the imports for the jsx helper and
     // Fragment.
     if (file.endsWith('x')) {
@@ -121,7 +133,7 @@ function printMessage(m: Message, code: string) {
         .map((l) => l.length)
         .reduce((total, l) => total + l + 1, 0) + column
     console.error(
-      require('@vue/compiler-core').generateCodeFrame(code, offset, offset + 1)
+      require('@vue/compiler-dom').generateCodeFrame(code, offset, offset + 1)
     )
   }
 }

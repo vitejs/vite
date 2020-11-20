@@ -7,16 +7,18 @@
 
 Vite is an opinionated web dev build tool that serves your code via native ES Module imports during dev and bundles it with [Rollup](https://rollupjs.org/) for production.
 
-- Lightning fast cold server start
+- Lightning-fast cold server start
 - Instant hot module replacement (HMR)
 - True on-demand compilation
 - More details in [How and Why](#how-and-why)
 
 ## Status
 
-Still experimental, but we intend to make it suitable for production.
+In beta and will likely release 1.0 soon.
 
 ## Getting Started
+
+> Note to Vue users: Vite currently only works with Vue 3.x. This also means you can't use libraries that are not yet compatible with Vue 3.
 
 ```bash
 $ npm init vite-app <project-name>
@@ -38,7 +40,7 @@ $ yarn dev
 
 ### Using master branch
 
-If you can't wait for a new release to test latest features, clone the `vite` to your local machine and execute following commands:
+If you can't wait for a new release to test the latest features, clone the `vite` to your local machine and execute the following commands:
 
 ```
 yarn
@@ -52,7 +54,7 @@ Then go to your vite based project and run `yarn link vite`. Now restart the dev
 
 Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
 
-Vite assumes you are targeting modern browsers and therefore does not perform any compatibility-oriented code transforms by default. Technically, you _can_ add `autoprefixer` yourself using a PostCSS config file, or add necessary polyfills and post-processing steps to make your code work in legacy browsers - however that is not Vite's concern by design.
+Vite assumes you are targeting modern browsers and by default only transpiles your code to `es2020` during build (so that optional chaining can work with terser minification). You can specify the target range via the `esbuildTarget` config option, where the lowest target available is `es2015`.
 
 ## Features
 
@@ -65,17 +67,21 @@ Vite assumes you are targeting modern browsers and therefore does not perform an
 - [CSS Modules](#css-modules)
 - [CSS Pre-processors](#css-pre-processors)
 - [JSX](#jsx)
+- [Web Assembly](#web-assembly)
+- [Inline Web Workers](#inline-web-workers)
 - [Custom Blocks](#custom-blocks)
 - [Config File](#config-file)
+- [HTTPS/2](#https2)
 - [Dev Server Proxy](#dev-server-proxy)
 - [Production Build](#production-build)
 - [Modes and Environment Variables](#modes-and-environment-variables)
+- [Using Vite with Traditional Backend](#using-vite-with-traditional-backend)
 
 Vite tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org/) as much as possible. If you've used `vue-cli` or other webpack-based boilerplates before, you should feel right at home. That said, do expect things to be different here and there.
 
 ### Bare Module Resolving
 
-Native ES imports doesn't support bare module imports like
+Native ES imports don't support bare module imports like
 
 ```js
 import { createApp } from 'vue'
@@ -120,12 +126,12 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
 
     // Can also accept an array of dep modules:
     import.meta.hot.acceptDeps(['./foo.js', './bar.js'], ([newFooModule, newBarModule]) => {
-      // the callback receives the updated mdoules in an Array
+      // the callback receives the updated modules in an Array
     })
   }
   ```
 
-  A self-accepting module, or a module that expects to be accepted by others can use `hot.dispose` to cleanup any persistent side effects created by its updated copy:
+  A self-accepting module or a module that expects to be accepted by others can use `hot.dispose` to clean-up any persistent side effects created by its updated copy:
 
   ```js
   function setupSideEffect() {}
@@ -139,7 +145,7 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
   }
   ```
 
-  For the full API, consult [hmr.d.ts](https://github.com/vitejs/vite/blob/master/hmr.d.ts).
+  For the full API, consult [importMeta.d.ts](https://github.com/vitejs/vite/blob/master/importMeta.d.ts).
 
   Note that Vite's HMR does not actually swap the originally imported module: if an accepting module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the accepting module will not be notified of the change.
 
@@ -169,6 +175,8 @@ Both CSS and JSON imports also support Hot Module Replacement.
 
 You can reference static assets in your `*.vue` templates, styles and plain `.css` files either using absolute public paths (based on project root) or relative paths (based on your file system). The latter is similar to the behavior you are used to if you have used `vue-cli` or webpack's `file-loader`.
 
+Common image, media, and font filetypes are detected and included as assets automatically. You can override this using the `assetsInclude` configuration option.
+
 All referenced assets, including those using absolute paths, will be copied to the dist folder with a hashed file name in the production build. Never-referenced assets will not be copied. Similar to `vue-cli`, image assets smaller than 4kb will be base64 inlined.
 
 All **static** path references, including absolute paths, should be based on your working directory structure.
@@ -189,7 +197,7 @@ For dynamic path references, there are two options:
 
 - You can get the resolved public path of a static asset file by importing it from JavaScript. e.g. `import path from './foo.png'` will give you its resolved public path as a string.
 
-- If you need to concatenate paths on the fly, you can use the globally injected `process.env.BASE_URL` variable with will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `process.env['BASE_URL']` won't work).
+- If you need to concatenate paths on the fly, you can use the globally injected `import.meta.env.BASE_URL` variable which will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `import.meta.env['BASE_URL']` won't work).
 
 ### PostCSS
 
@@ -219,6 +227,25 @@ Or import them from JavaScript:
 import './style.scss'
 ```
 
+#### Passing Options to Pre-Processor
+
+> 1.0.0-beta.9+
+> And if you want to pass options to the pre-processor, you can do that using the `cssPreprocessOptions` option in the config (see [Config File](#config-file) below).
+> For example, to pass some shared global variables to all your Less styles:
+
+```js
+// vite.config.js
+export default {
+  cssPreprocessOptions: {
+    less: {
+      modifyVars: {
+        'preprocess-custom-color': 'green'
+      }
+    }
+  }
+}
+```
+
 ### JSX
 
 `.jsx` and `.tsx` files are also supported. JSX transpilation is also handled via `esbuild`.
@@ -233,13 +260,13 @@ function App() {
 }
 
 function Child(_, { slots }) {
-  return <div onClick={console.log('hello')}>{slots.default()}</div>
+  return <div onClick={() => console.log('hello')}>{slots.default()}</div>
 }
 
 createApp(App).mount('#app')
 ```
 
-Currently this is auto-importing a `jsx` compatible function that converts esbuild-produced JSX calls into Vue 3 compatible vnode calls, which is sub-optimal. Vue 3 will eventually provide a custom JSX transform that can take advantage of Vue 3's runtime fast paths.
+Currently, this is auto-importing a `jsx` compatible function that converts esbuild-produced JSX calls into Vue 3 compatible vnode calls, which is sub-optimal. Vue 3 will eventually provide a custom JSX transform that can take advantage of Vue 3's runtime fast paths.
 
 #### JSX with React/Preact
 
@@ -249,7 +276,7 @@ If you need a custom JSX pragma, JSX can also be customized via `--jsx-factory` 
 
 ```js
 // vite.config.js
-module.exports = {
+export default {
   jsx: {
     factory: 'h',
     fragment: 'Fragment'
@@ -259,6 +286,50 @@ module.exports = {
 
 Note that for the Preact preset, `h` is also auto injected so you don't need to manually import it. However, this may cause issues if you are using `.tsx` with Preact since TS expects `h` to be explicitly imported for type inference. In that case, you can use the explicit factory config shown above which disables the auto `h` injection.
 
+### Web Assembly
+
+> 1.0.0-beta.3+
+
+Pre-compiled `.wasm` files can be directly imported - the default export will be an initialization function that returns a Promise of the exports object of the wasm instance:
+
+``` js
+import init from './example.wasm'
+
+init().then(exports => {
+  exports.test()
+})
+```
+
+The init function can also take the `imports` object which is passed along to `WebAssembly.instantiate` as its second argument:
+
+``` js
+init({
+  imports: {
+    someFunc: () => { /* ... */ }
+  }
+}).then(() => { /* ... */ })
+```
+
+In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise, they will be copied to the dist directory as an asset and fetched on-demand.
+
+### Inline Web Workers
+
+> 1.0.0-beta.3+
+
+A web worker script can be directly imported by appending `?worker` to the import request. The default export will be a custom worker constructor:
+
+``` js
+import MyWorker from './worker?worker'
+
+const worker = new MyWorker()
+```
+
+In the production build, workers imported this way are inlined into the bundle as base64 strings.
+
+The worker script can also use `import` statements instead of `importScripts()` - note during dev this relies on browser native support and currently only works in Chrome, but for the production build it is compiled away.
+
+If you do not wish to inline the worker, you should place your worker scripts in `public` and initialize the worker via `new Worker('/worker.js')`.
+
 ### Config File
 
 You can create a `vite.config.js` or `vite.config.ts` file in your project. Vite will automatically use it if one is found in the current working directory. You can also explicitly specify a config file via `vite --config my-config.js`.
@@ -267,24 +338,26 @@ In addition to options mapped from CLI flags, it also supports `alias`, `transfo
 
 ### Custom Blocks
 
-> 0.20+
-
 [Custom blocks](https://vue-loader.vuejs.org/guide/custom-blocks.html) in Vue SFCs are also supported. To use custom blocks, specify transform functions for custom blocks using the `vueCustomBlockTransforms` option in the [config file](#config-file):
 
 ``` js
 // vite.config.js
-module.exports = {
+export default {
   vueCustomBlockTransforms: {
-    i18n: (source, query) => {
+    i18n: ({ code }) => {
       // return transformed code
     }
   }
 }
 ```
 
-### Dev Server Proxy
+### HTTPS/2
 
-> 0.15.6+
+Starting the server with `--https` will automatically generate a self-signed cert and start the server with TLS and HTTP/2 enabled.
+
+Custom certs can also be provided by using the `httpsOptions` option in the config file, which accepts `key`, `cert`, `ca` and `pfx` as in Node `https.ServerOptions`.
+
+### Dev Server Proxy
 
 You can use the `proxy` option in the config file to configure custom proxies for the dev server. Vite uses [`koa-proxies`](https://github.com/vagusX/koa-proxies) which in turn uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Each key can be a path Full options [here](https://github.com/http-party/node-http-proxy#options).
 
@@ -292,7 +365,7 @@ Example:
 
 ``` js
 // vite.config.js
-module.exports = {
+export default {
   proxy: {
     // string shorthand
     '/foo': 'http://localhost:4567/foo',
@@ -308,7 +381,7 @@ module.exports = {
 
 ### Production Build
 
-Vite does utilize bundling for production builds, because native ES module imports result in waterfall network requests that are simply too punishing for page load time in production.
+Vite does utilize bundling for production builds because native ES module imports result in waterfall network requests that are simply too punishing for page load time in production.
 
 You can run `vite build` to bundle the app.
 
@@ -316,9 +389,7 @@ Internally, we use a highly opinionated Rollup config to generate the build. The
 
 ### Modes and Environment Variables
 
-> 0.16.7+
-
-The mode option is used to specify the value of `process.env.NODE_ENV` and the corresponding environment variables files that needs to be loaded.
+The mode option is used to specify the value of `import.meta.env.MODE` and the corresponding environment variables files that needs to be loaded.
 
 By default, there are two modes:
   - `development` is used by `vite` and `vite serve`
@@ -338,6 +409,40 @@ When running `vite`, environment variables are loaded from the following files i
 .env.[mode]         # only loaded in specified env mode
 .env.[mode].local   # only loaded in specified env mode, ignored by git
 ```
+
+**Note:** only variables prefixed with `VITE_` are exposed to your code. e.g. `VITE_SOME_KEY=123` will be exposed as `import.meta.env.VITE_SOME_KEY`, but `SOME_KEY=123` will not. This is because the `.env` files may be used by some users for server-side or build scripts and may contain sensitive information that should not be exposed in code shipped to browsers.
+
+### Using Vite with Traditional Backend
+
+If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, here's what you can do:
+
+1. In your Vite config, enable `cors` and `emitManifest`:
+
+    ```js
+    // vite.config.js
+    export default {
+      cors: true,
+      emitManifest: true
+    }
+    ```
+
+2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
+
+    ```html
+    <!-- if development -->
+    <script type="module" src="http://localhost:3000/vite/client"></script>
+    <script type="module" src="http://localhost:3000/main.js"></script>
+    ```
+
+    Also make sure the server is configured to serve static assets in the Viter working directory, otherwise assets such as images won't be loaded properly.
+
+3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. You can use this file to render links with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
+
+    ```html
+    <!-- if production -->
+    <link rel="stylesheet" href="/_assets/{{ manifest['style.css'] }}">
+    <script type="module" src="/_assets/{{ manifest['index.js] }}"></script>
+    ```
 
 ## API
 
@@ -394,7 +499,7 @@ const { build } = require('vite')
 
 ;(async () => {
   // All options are optional.
-  // check out `src/node/build.ts` for full options interface.
+  // check out `src/node/build/index.ts` for full options interface.
   const result = await build({
     rollupInputOptions: {
       // https://rollupjs.org/guide/en/#big-list-of-options
@@ -416,15 +521,15 @@ const { build } = require('vite')
 
 The primary difference is that for Vite there is no bundling during development. The ES Import syntax in your source code is served directly to the browser, and the browser parses them via native `<script module>` support, making HTTP requests for each import. The dev server intercepts the requests and performs code transforms if necessary. For example, an import to a `*.vue` file is compiled on the fly right before it's sent back to the browser.
 
-There are a few advantages of this approach:
+There are a few advantages to this approach:
 
 - Since there is no bundling work to be done, the server cold start is extremely fast.
 
-- Code is compiled on demand, so only code actually imported on the current screen is compiled. You don't have to wait until your entire app to be bundled to start developing. This can be a huge difference in apps with dozens of screens.
+- The code is compiled on-demand, so only code actually imported on the current screen is compiled. You don't have to wait until your entire app to be bundled to start developing. This can be a huge difference in apps with dozens of screens.
 
 - Hot module replacement (HMR) performance is decoupled from the total number of modules. This makes HMR consistently fast no matter how big your app is.
 
-Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However since this is local development, the difference should be trivial compared to actual compilation time. (There is no compile cost on page reload since already compiled files are cached in memory.)
+Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However, since this is local development, the difference should be trivial compared to actual compilation time. (There is no compile cost on page reload since already compiled files are cached in memory.)
 
 Finally, because compilation is still done in Node, it can technically support any code transforms a bundler can, and nothing prevents you from eventually bundling the code for production. In fact, Vite provides a `vite build` command to do exactly that so the app doesn't suffer from network waterfall in production.
 
@@ -444,11 +549,11 @@ Both Snowpack v2 and Vite offer native ES module import based dev servers. Vite'
 
 - Vite was created to tackle native ESM-based HMR. When Vite was first released with working ESM-based HMR, there was no other project actively trying to bring native ESM based HMR to production.
 
-  Snowpack v2 initially did not offer HMR support but added it in a later release, making the scope of two projects much closer. Vite and Snowpack has collaborated on a common API spec for ESM HMR, but due to the constraints of different implementation strategies, the two projects still ship slightly different APIs.
+  Snowpack v2 initially did not offer HMR support but added it in a later release, making the scope of two projects much closer. Vite and Snowpack have collaborated on a common API spec for ESM HMR, but due to the constraints of different implementation strategies, the two projects still ship slightly different APIs.
 
-- Vite is more opinionated and supports more opt-in features by default - for example, features listed above like TypeScript transpilation, CSS import, CSS modules and PostCSS support all work out of the box without the need for configuration.
+- Both solutions can also bundle the app for production, but Vite uses Rollup with built-in config while Snowpack delegates it to Parcel/webpack via additional plugins. Vite will in most cases build faster and produce smaller bundles. In addition, tighter integration with the bundler makes it easier to author Vite transforms and plugins that modify dev/build configs at the same.
 
-- Both solutions can also bundle the app for production, but Vite uses Rollup while Snowpack delegates it to Parcel/webpack. This isn't a significant difference, but worth being aware of if you intend to customize the build.
+- Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fine tuned to produce the most efficient bundle.
 
 ## Contribution
 

@@ -1,15 +1,15 @@
 import { rewriteImports, ServerPlugin } from './index'
-import {
-  debugHmr,
-  ensureMapEntry,
-  hmrClientPublicPath,
-  importerMap
-} from './serverPluginHmr'
+import { debugHmr, ensureMapEntry, importerMap } from './serverPluginHmr'
+import { clientPublicPath } from './serverPluginClient'
 import { init as initLexer } from 'es-module-lexer'
-import { cleanUrl, readBody, injectScriptToHtml } from '../utils'
+import {
+  cleanUrl,
+  readBody,
+  injectScriptToHtml,
+  transformIndexHtml
+} from '../utils'
 import LRUCache from 'lru-cache'
 import path from 'path'
-import slash from 'slash'
 import chalk from 'chalk'
 
 const debug = require('debug')('vite:rewrite')
@@ -23,27 +23,19 @@ export const htmlRewritePlugin: ServerPlugin = ({
   resolver,
   config
 }) => {
-  // inject __DEV__ and process.env.NODE_ENV flags
-  // since some ESM builds expect these to be replaced by the bundler
-  const { env = {}, mode } = config
-
-  const devInjectionCode =
-    `\n<script type="module">\n` +
-    `import "${hmrClientPublicPath}"\n` +
-    `window.__DEV__ = true\n` +
-    `window.process = { env: ${JSON.stringify({
-      ...env,
-      NODE_ENV: mode,
-      BASE_URL: '/'
-    })}}\n` +
-    `</script>\n`
-
-  const scriptRE = /(<script\b[^>]*>)([\s\S]*?)<\/script>/gm
+  const devInjectionCode = `\n<script type="module">import "${clientPublicPath}"</script>\n`
+  const scriptRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
   const srcRE = /\bsrc=(?:"([^"]+)"|'([^']+)'|([^'"\s]+)\b)/
 
   async function rewriteHtml(importer: string, html: string) {
     await initLexer
-    html = html!.replace(scriptRE, (matched, openTag, script) => {
+    html = await transformIndexHtml(
+      html,
+      config.indexHtmlTransforms,
+      'pre',
+      false
+    )
+    html = html.replace(scriptRE, (matched, openTag, script) => {
       if (script) {
         return `${openTag}${rewriteImports(
           root,
@@ -55,8 +47,8 @@ export const htmlRewritePlugin: ServerPlugin = ({
         const srcAttr = openTag.match(srcRE)
         if (srcAttr) {
           // register script as a import dep for hmr
-          const importee = cleanUrl(
-            slash(path.resolve('/', srcAttr[1] || srcAttr[2]))
+          const importee = resolver.normalizePublicPath(
+            cleanUrl(path.posix.resolve('/', srcAttr[1] || srcAttr[2]))
           )
           debugHmr(`        ${importer} imports ${importee}`)
           ensureMapEntry(importerMap, importee).add(importer)
@@ -64,7 +56,13 @@ export const htmlRewritePlugin: ServerPlugin = ({
         return matched
       }
     })
-    return injectScriptToHtml(html, devInjectionCode)
+    const processedHtml = injectScriptToHtml(html, devInjectionCode)
+    return await transformIndexHtml(
+      processedHtml,
+      config.indexHtmlTransforms,
+      'post',
+      false
+    )
   }
 
   app.use(async (ctx, next) => {
@@ -95,8 +93,7 @@ export const htmlRewritePlugin: ServerPlugin = ({
       debug(`${path}: cache busted`)
       watcher.send({
         type: 'full-reload',
-        path,
-        timestamp: Date.now()
+        path
       })
       console.log(chalk.green(`[vite] `) + ` ${path} page reloaded.`)
     }

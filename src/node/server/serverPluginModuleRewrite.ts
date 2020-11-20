@@ -18,17 +18,21 @@ import {
   importeeMap,
   ensureMapEntry,
   rewriteFileWithHMR,
-  hmrClientPublicPath,
   hmrDirtyFilesMap,
   latestVersionsMap
 } from './serverPluginHmr'
+import { clientPublicPath } from './serverPluginClient'
 import {
   readBody,
   cleanUrl,
   isExternalUrl,
-  resolveRelativeRequest
+  bareImportRE,
+  removeUnRelatedHmrQuery
 } from '../utils'
 import chalk from 'chalk'
+import { isCSSRequest } from '../utils/cssUtils'
+import { envPublicPath } from './serverPluginEnv'
+import fs from 'fs-extra'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -57,28 +61,35 @@ export const moduleRewritePlugin: ServerPlugin = ({
     // we are doing the js rewrite after all other middlewares have finished;
     // this allows us to post-process javascript produced by user middlewares
     // regardless of the extension of the original files.
+    const publicPath = ctx.path
     if (
       ctx.body &&
       ctx.response.is('js') &&
+      !isCSSRequest(ctx.path) &&
       !ctx.url.endsWith('.map') &&
+      !resolver.isPublicRequest(ctx.path) &&
       // skip internal client
-      !ctx.path.startsWith(hmrClientPublicPath) &&
-      // only need to rewrite for <script> part in vue files
-      !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type != null)
+      publicPath !== clientPublicPath &&
+      // need to rewrite for <script>\<template> part in vue files
+      !((ctx.path.endsWith('.vue') || ctx.vue) && ctx.query.type === 'style')
     ) {
       const content = await readBody(ctx.body)
-      if (!ctx.query.t && rewriteCache.has(content)) {
+      const cacheKey = publicPath + content
+      const isHmrRequest = !!ctx.query.t
+      if (!isHmrRequest && rewriteCache.has(cacheKey)) {
         debug(`(cached) ${ctx.url}`)
-        ctx.body = rewriteCache.get(content)
+        ctx.body = rewriteCache.get(cacheKey)
       } else {
         await initLexer
-        // dynamic import may conatin extension-less path,
+        // dynamic import may contain extension-less path,
         // (.e.g import(runtimePathString))
         // so we need to normalize importer to ensure it contains extension
         // before we perform hmr analysis.
         // on the other hand, static import is guaranteed to have extension
         // because they must all have gone through module rewrite.
-        const importer = resolver.normalizePublicPath(ctx.path)
+        const importer = removeUnRelatedHmrQuery(
+          resolver.normalizePublicPath(ctx.url)
+        )
         ctx.body = rewriteImports(
           root,
           content!,
@@ -86,7 +97,9 @@ export const moduleRewritePlugin: ServerPlugin = ({
           resolver,
           ctx.query.t
         )
-        rewriteCache.set(content, ctx.body)
+        if (!isHmrRequest) {
+          rewriteCache.set(cacheKey, ctx.body)
+        }
       }
     } else {
       debug(`(skipped) ${ctx.url}`)
@@ -94,10 +107,13 @@ export const moduleRewritePlugin: ServerPlugin = ({
   })
 
   // bust module rewrite cache on file change
-  watcher.on('change', (file) => {
-    const publicPath = resolver.fileToRequest(file)
+  watcher.on('change', async (filePath) => {
+    const publicPath = resolver.fileToRequest(filePath)
+    // #662 use fs.read instead of cacheRead, avoid cache hit when request file
+    // and caused pass `notModified` into transform is always true
+    const cacheKey = publicPath + (await fs.readFile(filePath)).toString()
     debug(`${publicPath}: cache busted`)
-    rewriteCache.del(publicPath)
+    rewriteCache.del(cacheKey)
   })
 }
 
@@ -108,8 +124,9 @@ export function rewriteImports(
   resolver: InternalResolver,
   timestamp?: string
 ) {
-  if (typeof source !== 'string') {
-    source = String(source)
+  // #806 strip UTF-8 BOM
+  if (source.charCodeAt(0) === 0xfeff) {
+    source = source.slice(1)
   }
   try {
     let imports: ImportSpecifier[] = []
@@ -126,11 +143,13 @@ export function rewriteImports(
       )
     }
 
-    if (imports.length) {
+    const hasHMR = source.includes('import.meta.hot')
+    const hasEnv = source.includes('import.meta.env')
+
+    if (imports.length || hasHMR || hasEnv) {
       debug(`${importer}: rewriting`)
       const s = new MagicString(source)
       let hasReplaced = false
-      let hasRewrittenForHMR = false
 
       const prevImportees = importeeMap.get(importer)
       const currentImportees = new Set<string>()
@@ -139,9 +158,12 @@ export function rewriteImports(
       for (let i = 0; i < imports.length; i++) {
         const { s: start, e: end, d: dynamicIndex } = imports[i]
         let id = source.substring(start, end)
+        const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(id)
         let hasLiteralDynamicId = false
         if (dynamicIndex >= 0) {
-          const literalIdMatch = id.match(/^(?:'([^']+)'|"([^"]+)")$/)
+          // #998 remove comment
+          id = id.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
+          const literalIdMatch = id.match(/^\s*(?:'([^']+)'|"([^"]+)")\s*$/)
           if (literalIdMatch) {
             hasLiteralDynamicId = true
             id = literalIdMatch[1] || literalIdMatch[2]
@@ -176,27 +198,32 @@ export function rewriteImports(
           if (
             importee !== importer &&
             // no need to track hmr client or module dependencies
-            importee !== hmrClientPublicPath
+            importee !== clientPublicPath
           ) {
             currentImportees.add(importee)
             debugHmr(`        ${importer} imports ${importee}`)
             ensureMapEntry(importerMap, importee).add(importer)
           }
-        } else {
-          if (id === 'import.meta') {
-            if (
-              !hasRewrittenForHMR &&
-              source.substring(start, end + 4) === 'import.meta.hot'
-            ) {
-              debugHmr(`rewriting ${importer} for HMR.`)
-              rewriteFileWithHMR(root, source, importer, resolver, s)
-              hasRewrittenForHMR = true
-              hasReplaced = true
-            }
-          } else {
-            debug(`[vite] ignored dynamic import(${id})`)
-          }
+        } else if (id !== 'import.meta' && !hasViteIgnore) {
+          console.warn(
+            chalk.yellow(`[vite] ignored dynamic import(${id}) in ${importer}.`)
+          )
         }
+      }
+
+      if (hasHMR) {
+        debugHmr(`rewriting ${importer} for HMR.`)
+        rewriteFileWithHMR(root, source, importer, resolver, s)
+        hasReplaced = true
+      }
+
+      if (hasEnv) {
+        debug(`    injecting import.meta.env for ${importer}`)
+        s.prepend(
+          `import __VITE_ENV__ from "${envPublicPath}"; ` +
+            `import.meta.env = __VITE_ENV__; `
+        )
+        hasReplaced = true
       }
 
       // since the importees may have changed due to edits,
@@ -213,7 +240,7 @@ export function rewriteImports(
       }
 
       if (!hasReplaced) {
-        debug(`    no imports rewritten.`)
+        debug(`    nothing needs rewriting.`)
       }
 
       return hasReplaced ? s.toString() : source
@@ -232,8 +259,6 @@ export function rewriteImports(
   }
 }
 
-const bareImportRE = /^[^\/\.]/
-
 export const resolveImport = (
   root: string,
   importer: string,
@@ -250,7 +275,7 @@ export const resolveImport = (
   } else {
     // 1. relative to absolute
     //    ./foo -> /some/path/foo
-    let { pathname, query } = resolveRelativeRequest(importer, id)
+    let { pathname, query } = resolver.resolveRelativeRequest(importer, id)
 
     // 2. resolve dir index and extensions.
     pathname = resolver.normalizePublicPath(pathname)
@@ -276,6 +301,5 @@ export const resolveImport = (
       id += `${id.includes(`?`) ? `&` : `?`}t=${latestVersionsMap.get(cleanId)}`
     }
   }
-
   return id
 }
