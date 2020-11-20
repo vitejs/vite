@@ -434,10 +434,7 @@ async function compileSFCMain(
   const compiler = resolveCompiler(root)
   if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
     try {
-      script = compiler.compileScript(descriptor, {
-        // @ts-ignore TODO remove when @vue/compiler-sfc is updated
-        scopeId: id
-      })
+      script = compiler.compileScript(descriptor, { id })
     } catch (e) {
       console.error(
         chalk.red(
@@ -564,16 +561,20 @@ function compileSFCTemplate(
     }
   }
 
+  const id = hash_sum(publicPath)
   const { code, map, errors } = compileTemplate({
     source: template.content,
+    id,
+    scoped,
     filename: filePath,
     inMap: template.map,
     transformAssetUrls: vueTransformAssetUrls,
     compilerOptions: {
       ...vueCompilerOptions,
-      scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       bindingMetadata,
-      runtimeModuleName: vueSpecifier
+      runtimeModuleName: vueSpecifier,
+      // for backwards compat only
+      scopeId: scoped ? `data-v-${id}` : null
     },
     preprocessLang,
     preprocessOptions,
