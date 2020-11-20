@@ -436,7 +436,7 @@ async function compileSFCMain(
     try {
       script = compiler.compileScript(descriptor, {
         // @ts-ignore TODO remove when @vue/compiler-sfc is updated
-        id
+        scopeId: id
       })
     } catch (e) {
       console.error(
