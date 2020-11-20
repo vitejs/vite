@@ -9,25 +9,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-export { default as TestScriptSetupChild } from './TestScriptSetupChild.vue'
+import { ref, defineOptions } from 'vue'
+import TestScriptSetupChild from './TestScriptSetupChild.vue'
 
-export default {
+defineOptions({
   props: {
     msg: String
   }
-}
+})
 
-export const color = ref('red')
+const color = ref('red')
 
-export function change() {
+function change() {
   color.value = color.value === 'red' ? 'green' : 'red'
 }
-
 </script>
 
-<style scoped vars="{ color }">
+<style>
 span {
-  color: var(--color);
+  color: v-bind(color);
 }
 </style>
