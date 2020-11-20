@@ -683,10 +683,10 @@ export async function ssrBuild(
       ...rollupPluginVueOptions
     },
     rollupInputOptions: {
+      ...rollupInputOptions,
       external: resolveExternal(
         rollupInputOptions && rollupInputOptions.external
-      ),
-      ...rollupInputOptions
+      )
     },
     rollupOutputOptions: {
       format: 'cjs',
