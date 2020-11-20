@@ -172,8 +172,11 @@ export const hmrPlugin: ServerPlugin = ({
 
   watcher.on('change', (file) => {
     if (
-      !resolver.isAssetRequest(file) ||
-      !(file.endsWith('.vue') || isCSSRequest(file))
+      !(
+        file.endsWith('.vue') ||
+        isCSSRequest(file) ||
+        resolver.isAssetRequest(file)
+      )
     ) {
       // everything except plain .css are considered HMR dependencies.
       // plain css has its own HMR logic in ./serverPluginCss.ts.
