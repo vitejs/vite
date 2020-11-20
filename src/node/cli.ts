@@ -41,6 +41,7 @@ cli
     '--force',
     `[boolean]  force the optimizer to ignore the cache and re-bundle`
   )
+  .option('--https', `[boolean]  start the server with TLS and HTTP/2 enabled`)
   .option('--open', `[boolean]  open browser on server start`)
   .action(async (root: string, argv: any) => {
     if (root) {
