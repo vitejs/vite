@@ -33,6 +33,7 @@ interface TransformTestContext {
 
 export interface TransformContext extends TransformTestContext {
   code: string
+  map?: SourceMap
 }
 
 export interface TransformResult {
@@ -115,7 +116,8 @@ export function createServerTransformPlugin(
           code = code || (await readBody(ctx.body))!
           const result = await t.transform({
             ...transformContext,
-            code
+            code,
+            map: ctx.map
           })
           if (typeof result === 'string') {
             code = result
