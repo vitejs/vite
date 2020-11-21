@@ -25,5 +25,5 @@ function initWasm(opts = {}, url: string) {
   return instance.then((i: any) => i.instance.exports)
 }
 
-export const id = 'vite/wasm-helper'
+export const id = '/vite/wasm-helper'
 export const code = initWasm.toString()
