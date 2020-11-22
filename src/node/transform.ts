@@ -33,7 +33,7 @@ interface TransformTestContext {
 
 export interface TransformContext extends TransformTestContext {
   code: string
-  map?: SourceMap
+  map?: SourceMap | null
 }
 
 export interface TransformResult {
