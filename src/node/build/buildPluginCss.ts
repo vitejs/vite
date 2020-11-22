@@ -22,7 +22,7 @@ import slash from 'slash'
 const debug = require('debug')('vite:build:css')
 
 const cssInjectionMarker = `__VITE_CSS__`
-const cssInjectionRE = /__VITE_CSS__\(\)/g
+const cssInjectionRE = /__VITE_CSS__\(\);?/g
 
 interface BuildCssOption {
   root: string
@@ -45,8 +45,10 @@ export const createBuildCssPlugin = ({
   preprocessOptions,
   modulesOptions = {}
 }: BuildCssOption): Plugin => {
-  const styles: Map<string, string> = new Map()
+  const styles = new Map<string, string>()
   let staticCss = ''
+
+  const emptyChunks = new Set<string>()
 
   return {
     name: 'vite:css',
@@ -156,6 +158,10 @@ export const createBuildCssPlugin = ({
 
       if (cssCodeSplit) {
         code = code.replace(cssInjectionRE, '')
+        if (!code.trim()) {
+          // this is a shared CSS-only chunk that is empty.
+          emptyChunks.add(chunk.fileName)
+        }
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
         if (chunk.isDynamicEntry && chunkCSS) {
@@ -182,6 +188,24 @@ export const createBuildCssPlugin = ({
       // minify css
       if (minify && staticCss) {
         staticCss = minifyCSS(staticCss)
+      }
+
+      // remove empty css chunks and their imports
+      if (emptyChunks.size) {
+        emptyChunks.forEach((fileName) => {
+          delete bundle[fileName]
+        })
+        const emptyChunkFiles = [...emptyChunks].join('|').replace(/\./g, '\\.')
+        const emptyChunkRE = new RegExp(
+          `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`,
+          'g'
+        )
+        for (const file in bundle) {
+          const chunk = bundle[file]
+          if (chunk.type === 'chunk') {
+            chunk.code = chunk.code.replace(emptyChunkRE, '')
+          }
+        }
       }
 
       if (staticCss) {
