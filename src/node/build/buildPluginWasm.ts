@@ -1,6 +1,6 @@
 import { Plugin } from 'rollup'
 import { resolveAsset } from './buildPluginAsset'
-import * as wasmHelper from '../utils/wasmHelper'
+import * as wasmHelper from '../../client/wasmHelper'
 
 export const createBuildWasmPlugin = (
   root: string,

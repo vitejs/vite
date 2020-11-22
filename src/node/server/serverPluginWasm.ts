@@ -1,6 +1,6 @@
 import { ServerPlugin } from '.'
 import { isImportRequest } from '../utils'
-import * as wasmHelper from '../utils/wasmHelper'
+import * as wasmHelper from '../../client/wasmHelper'
 
 export const wasmPlugin: ServerPlugin = ({ app }) => {
   app.use((ctx, next) => {
