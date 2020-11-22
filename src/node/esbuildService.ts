@@ -47,7 +47,11 @@ export function resolveJsxOptions(options: SharedConfig['jsx'] = 'vue') {
 // lazy start the service
 let _servicePromise: Promise<Service> | undefined
 
+// track transform calls in multiple builds to stop service properly
+let _transformCount = 0
+
 const ensureService = async () => {
+  _transformCount++;
   if (!_servicePromise) {
     _servicePromise = startService()
   }
@@ -55,7 +59,7 @@ const ensureService = async () => {
 }
 
 export const stopService = async () => {
-  if (_servicePromise) {
+  if (_servicePromise && --_transformCount === 0) {
     const service = await _servicePromise
     service.stop()
     _servicePromise = undefined
