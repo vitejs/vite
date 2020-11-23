@@ -105,6 +105,7 @@
     "ws": "^7.3.1"
   },
   "devDependencies": {
+    "ts-jest": "^26.4.4",
     "@babel/runtime": "7.11.2",
     "@babel/types": "^7.12.1",
     "@pika/react": "^16.13.1",

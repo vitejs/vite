@@ -1,0 +1,106 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`playground hmr css @import 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/css-@import/testCssAtImportFromScript.css",
+    "path": "/css-@import/testCssAtImportFromScript.css",
+    "type": "style-update",
+  },
+]
+`;
+
+exports[`playground hmr simple vue file 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/hmr/TestHmr.vue",
+    "path": "/hmr/TestHmr.vue",
+    "type": "vue-reload",
+  },
+]
+`;
+
+exports[`playground hmr vue alias hmr 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/alias/aliased/index.js",
+    "path": "/alias/TestAlias.vue",
+    "type": "vue-reload",
+  },
+]
+`;
+
+exports[`playground hmr vue css import 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/css-@import/testCssAtImportFromScript.css",
+    "path": "/css-@import/testCssAtImportFromScript.css",
+    "type": "style-update",
+  },
+]
+`;
+
+exports[`playground hmr vue css modules import 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/css-@import/testCssModuleAtImportFromScript.module.css",
+    "path": "/css-@import/TestCssAtImport.vue",
+    "type": "vue-reload",
+  },
+  Object {
+    "changeSrcPath": "/css-@import/testCssModuleAtImportFromScript.module.css",
+    "path": "/css-@import/testCssModuleAtImportFromScript.module.css",
+    "type": "style-update",
+  },
+]
+`;
+
+exports[`playground hmr vue css style @import hmr 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/css-@import/TestCssAtImport.vue?type=style&index=0",
+    "path": "/css-@import/TestCssAtImport.vue?type=style&index=0",
+    "type": "style-update",
+  },
+]
+`;
+
+exports[`playground hmr vue css style @import modules hmr 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/css-@import/TestCssAtImport.vue?type=style&index=1",
+    "path": "/css-@import/TestCssAtImport.vue?type=style&index=1",
+    "type": "style-update",
+  },
+]
+`;
+
+exports[`playground hmr vue dynamic import propagation 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/hmr/testHmrPropagationDynamicImport.js",
+    "path": "/hmr/TestHmr.vue",
+    "type": "vue-reload",
+  },
+]
+`;
+
+exports[`playground hmr vue js propagation 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/hmr/testHmrPropagation.js",
+    "path": "/hmr/TestHmr.vue",
+    "type": "vue-reload",
+  },
+]
+`;
+
+exports[`playground hmr vue manual hmr 1`] = `
+Array [
+  Object {
+    "changeSrcPath": "/hmr/testHmrManual.js",
+    "path": "/hmr/testHmrManual.js",
+    "type": "js-update",
+  },
+]
+`;

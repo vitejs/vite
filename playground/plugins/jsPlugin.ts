@@ -1,4 +1,4 @@
-import { Plugin } from 'vite'
+import { Plugin } from '../../'
 import MagicString from 'magic-string'
 
 export const jsPlugin: Plugin = {
