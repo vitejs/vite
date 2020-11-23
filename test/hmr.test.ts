@@ -18,14 +18,7 @@ jest.setTimeout(100000)
 const config: UserConfig = {
   ...playgroundConfig,
   port: PORT,
-  root: tempDir,
-  alias: {
-    alias: '/alias/aliased',
-    '/@alias/': require('path').resolve(tempDir, 'alias/aliased-dir')
-  }
-  // optimizeDeps: {
-  //   auto: false
-  // }
+  root: tempDir
 }
 
 type TestCase = {
@@ -60,22 +53,6 @@ const testCases: TestCase[] = [
       return content + '\n\n'
     }
   },
-  // {
-  //   // TODO this import is not enabled in playground
-  //   name: 'vue full dynamic import propagation',
-  //   path: 'hmr/testHmrPropagationFullDynamicImport.js',
-  //   replacer: (content) => {
-  //     return content + '\n\n'
-  //   }
-  // },
-  // {
-  //   // TODO this import is not enabled in playground
-  //   name: 'vue full dynamic import self accepting',
-  //   path: 'hmr/testHmrPropagationFullDynamicImportSelfAccepting.js',
-  //   replacer: (content) => {
-  //     return content + '\n\n'
-  //   }
-  // },
   {
     name: 'vue manual hmr',
     path: 'hmr/testHmrManual.js',
