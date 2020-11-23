@@ -255,10 +255,27 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     // force reload if CSS vars injection changed
+    // @ts-ignore
     if (descriptor.cssVars) {
+      // @ts-ignore
       if (prevDescriptor.cssVars.join('') !== descriptor.cssVars.join('')) {
         return sendReload()
       }
+    } else if (
+      prevStyles.some((s, i) => {
+        const next = nextStyles[i]
+        if (s.attrs.vars && (!next || next.attrs.vars !== s.attrs.vars)) {
+          return true
+        }
+      })
+    ) {
+      console.warn(
+        chalk.yellow(
+          `[vite] <style vars> has been replaced by a new proposal:\n` +
+            `https://github.com/vuejs/rfcs/pull/231`
+        )
+      )
+      return sendReload()
     }
 
     // force reload if scoped status has changed
@@ -434,7 +451,10 @@ async function compileSFCMain(
   const compiler = resolveCompiler(root)
   if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
     try {
-      script = compiler.compileScript(descriptor, { id })
+      script = compiler.compileScript(descriptor, {
+        // @ts-ignore
+        id
+      })
     } catch (e) {
       console.error(
         chalk.red(
@@ -564,6 +584,7 @@ function compileSFCTemplate(
   const id = hash_sum(publicPath)
   const { code, map, errors } = compileTemplate({
     source: template.content,
+    // @ts-ignore
     id,
     scoped,
     filename: filePath,
@@ -630,6 +651,10 @@ async function compileSFCStyle(
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,
+    /**
+     * TODO @deprecated
+     */
+    vars: style.vars != null,
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
     preprocessOptions: cssPreprocessOptions,
     modulesOptions: cssModuleOptions
