@@ -17,6 +17,10 @@ jest.setTimeout(100000)
 
 const config: UserConfig = {
   ...playgroundConfig,
+  alias: {
+    alias: '/alias/aliased',
+    '/@alias/': path.resolve(tempDir, 'alias/aliased-dir')
+  },
   port: PORT,
   root: tempDir
 }
