@@ -2444,16 +2444,17 @@ es-module-lexer@^0.3.25:
   resolved "https://registry.yarnpkg.com/es-module-lexer/-/es-module-lexer-0.3.25.tgz#24a1abcb9c5dc96923a8e42be033b801f788de06"
   integrity sha512-H9VoFD5H9zEfiOX2LeTWDwMvAbLqcAyA2PIb40TOAvGpScOjit02oTGWgIh+M0rx2eJOKyJVM9wtpKFVgnyC3A==
 
-es-module-traversal@0.0.43:
-  version "0.0.43"
-  resolved "https://registry.yarnpkg.com/es-module-traversal/-/es-module-traversal-0.0.43.tgz#9a392cadf26eebbe8e11467befecfda684016a96"
-  integrity sha512-njaxo8xc2YHNoDmQ3ClXo9d8aYeDDwemZqSDvbJTj256UWxgeaue3gddPdAskKlfKXZgv+reOTBMrpiupOPH8w==
+es-module-traversal@0.0.44:
+  version "0.0.44"
+  resolved "https://registry.yarnpkg.com/es-module-traversal/-/es-module-traversal-0.0.44.tgz#63c2c4339bc7e61695436da63895acb1ad39ef68"
+  integrity sha512-fgSTuwLWB5hD7hyyc0c8cWOKlMUiPcKvAROrogfb+eIF9eeyUCeK2j2axvuWlriCXt4JjUiDLaSRluTvVgVFLg==
   dependencies:
     batched-promise-all "^0.9.2"
     debug "^4.2.0"
     deepmerge "^4.2.2"
     es-module-lexer "^0.3.25"
     is-builtin-module "^3.0.0"
+    node-fetch "^2.6.1"
     resolve "^1.18.1"
     slash "^3.0.0"
     tslib "^2.0.3"
@@ -4848,6 +4849,11 @@ nice-try@^1.0.4:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
+
+node-fetch@^2.6.1:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
+  integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
 node-forge@^0.10.0:
   version "0.10.0"
