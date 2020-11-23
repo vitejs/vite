@@ -124,7 +124,7 @@
     "conventional-changelog-cli": "^2.0.31",
     "cross-env": "^7.0.2",
     "enquirer": "^2.3.6",
-    "es-module-traversal": "0.0.43",
+    "es-module-traversal": "0.0.44",
     "jest": "^26.4.2",
     "js-yaml": "^3.14.0",
     "less": "^3.11.2",
