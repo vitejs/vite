@@ -1,8 +1,7 @@
 import path from 'path'
 import { Plugin } from 'rollup'
-import { resolveAsset, registerAssets } from './buildPluginAsset'
+import { resolveAsset, injectAssetRe } from './buildPluginAsset'
 import { BuildConfig } from '../config'
-import hash_sum from 'hash-sum'
 import {
   urlRE,
   compileCss,
@@ -18,11 +17,12 @@ import {
 import chalk from 'chalk'
 import { CssPreprocessOptions } from '../config'
 import { dataToEsm } from '@rollup/pluginutils'
+import slash from 'slash'
 
 const debug = require('debug')('vite:build:css')
 
 const cssInjectionMarker = `__VITE_CSS__`
-const cssInjectionRE = /__VITE_CSS__\(\)/g
+const cssInjectionRE = /__VITE_CSS__\(\);?/g
 
 interface BuildCssOption {
   root: string
@@ -45,9 +45,10 @@ export const createBuildCssPlugin = ({
   preprocessOptions,
   modulesOptions = {}
 }: BuildCssOption): Plugin => {
-  const styles: Map<string, string> = new Map()
-  const assets = new Map<string, Buffer>()
+  const styles = new Map<string, string>()
   let staticCss = ''
+
+  const emptyChunks = new Set<string>()
 
   return {
     name: 'vite:css',
@@ -97,22 +98,28 @@ export const createBuildCssPlugin = ({
             const file = path.posix.isAbsolute(rawUrl)
               ? path.join(root, rawUrl)
               : path.join(fileDir, rawUrl)
-            const { fileName, content, url } = await resolveAsset(
+            let { fileName, content, url } = await resolveAsset(
               file,
               root,
               publicBase,
               assetsDir,
               inlineLimit
             )
-            if (fileName && content) {
-              assets.set(fileName, content)
+            if (!url && fileName && content) {
+              url =
+                'import.meta.ROLLUP_FILE_URL_' +
+                this.emitFile({
+                  name: fileName,
+                  type: 'asset',
+                  source: content
+                })
             }
             debug(
               `url(${rawUrl}) -> ${
-                url.startsWith('data:') ? `base64 inlined` : `url(${url})`
+                url!.startsWith('data:') ? `base64 inlined` : `${file}`
               }`
             )
-            return url
+            return url!
           })
         }
 
@@ -142,8 +149,19 @@ export const createBuildCssPlugin = ({
         }
       }
 
+      let match
+      while ((match = injectAssetRe.exec(chunkCSS))) {
+        const outputFilepath =
+          publicBase + slash(path.join(assetsDir, this.getFileName(match[1])))
+        chunkCSS = chunkCSS.replace(match[0], outputFilepath)
+      }
+
       if (cssCodeSplit) {
         code = code.replace(cssInjectionRE, '')
+        if (!code.trim()) {
+          // this is a shared CSS-only chunk that is empty.
+          emptyChunks.add(chunk.fileName)
+        }
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
         if (chunk.isDynamicEntry && chunkCSS) {
@@ -168,21 +186,35 @@ export const createBuildCssPlugin = ({
 
     async generateBundle(_options, bundle) {
       // minify css
-      if (minify) {
+      if (minify && staticCss) {
         staticCss = minifyCSS(staticCss)
       }
 
-      const cssFileName = `style.${hash_sum(staticCss)}.css`
-
-      bundle[cssFileName] = {
-        name: cssFileName,
-        isAsset: true,
-        type: 'asset',
-        fileName: cssFileName,
-        source: staticCss
+      // remove empty css chunks and their imports
+      if (emptyChunks.size) {
+        emptyChunks.forEach((fileName) => {
+          delete bundle[fileName]
+        })
+        const emptyChunkFiles = [...emptyChunks].join('|').replace(/\./g, '\\.')
+        const emptyChunkRE = new RegExp(
+          `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`,
+          'g'
+        )
+        for (const file in bundle) {
+          const chunk = bundle[file]
+          if (chunk.type === 'chunk') {
+            chunk.code = chunk.code.replace(emptyChunkRE, '')
+          }
+        }
       }
 
-      registerAssets(assets, bundle)
+      if (staticCss) {
+        this.emitFile({
+          name: 'style.css',
+          type: 'asset',
+          source: staticCss
+        })
+      }
     }
   }
 }

@@ -58,9 +58,10 @@ export async function cachedRead(
     const map: RawSourceMap = JSON.parse(content.toString('utf8'))
     if (!map.sourcesContent || !map.sources.every(path.isAbsolute)) {
       const sourcesContent = map.sourcesContent || []
+      const sourceRoot = path.resolve(path.dirname(file), map.sourceRoot || '')
       map.sources = await Promise.all(
         map.sources.map(async (source, i) => {
-          const originalPath = path.resolve(path.dirname(file), source)
+          const originalPath = path.resolve(sourceRoot, source)
           if (!sourcesContent[i]) {
             const originalCode = await cachedRead(null, originalPath)
             sourcesContent[i] = originalCode.toString('utf8')

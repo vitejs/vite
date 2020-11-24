@@ -1,8 +1,16 @@
-import { Plugin, RollupOutput, OutputChunk } from 'rollup'
+import { Plugin, OutputChunk, RollupOutput } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
-import { isExternalUrl, cleanUrl, isDataUrl } from '../utils/pathUtils'
+import MagicString from 'magic-string'
+import {
+  isExternalUrl,
+  cleanUrl,
+  isDataUrl,
+  transformIndexHtml
+} from '../utils'
 import { resolveAsset, registerAssets } from './buildPluginAsset'
+import { InternalResolver } from '../resolver'
+import { UserConfig } from '../config'
 import {
   parse as Parse,
   transform as Transform,
@@ -11,19 +19,18 @@ import {
   TextNode,
   AttributeNode
 } from '@vue/compiler-dom'
-import MagicString from 'magic-string'
-import { InternalResolver } from '../resolver'
 
 export const createBuildHtmlPlugin = async (
   root: string,
-  indexPath: string | null,
+  indexPath: string,
   publicBasePath: string,
   assetsDir: string,
   inlineLimit: number,
   resolver: InternalResolver,
-  shouldPreload: ((chunk: OutputChunk) => boolean) | null
+  shouldPreload: ((chunk: OutputChunk) => boolean) | null,
+  config: Partial<UserConfig>
 ) => {
-  if (!indexPath || !fs.existsSync(indexPath)) {
+  if (!fs.existsSync(indexPath)) {
     return {
       renderIndex: () => '',
       htmlPlugin: null
@@ -31,10 +38,16 @@ export const createBuildHtmlPlugin = async (
   }
 
   const rawHtml = await fs.readFile(indexPath, 'utf-8')
+  const preprocessedHtml = await transformIndexHtml(
+    rawHtml,
+    config.indexHtmlTransforms,
+    'pre',
+    true
+  )
   const assets = new Map<string, Buffer>()
   let { html: processedHtml, js } = await compileHtml(
     root,
-    rawHtml,
+    preprocessedHtml,
     publicBasePath,
     assetsDir,
     inlineLimit,
@@ -61,7 +74,7 @@ export const createBuildHtmlPlugin = async (
       filename
     )}">`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return tag + '\n' + html
     }
@@ -73,7 +86,7 @@ export const createBuildHtmlPlugin = async (
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return html + '\n' + tag
     }
@@ -85,21 +98,22 @@ export const createBuildHtmlPlugin = async (
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<link rel="modulepreload" href="${filename}" />`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return tag + '\n' + html
     }
   }
 
-  const renderIndex = (bundleOutput: RollupOutput['output']) => {
+  const renderIndex = async (bundleOutput: RollupOutput['output']) => {
+    let result = processedHtml
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {
           // js entry chunk
-          processedHtml = injectScript(processedHtml, chunk.fileName)
+          result = injectScript(result, chunk.fileName)
         } else if (shouldPreload && shouldPreload(chunk)) {
           // async preloaded chunk
-          processedHtml = injectPreload(processedHtml, chunk.fileName)
+          result = injectPreload(result, chunk.fileName)
         }
       } else {
         // imported css chunks
@@ -108,11 +122,17 @@ export const createBuildHtmlPlugin = async (
           chunk.source &&
           !assets.has(chunk.fileName)
         ) {
-          processedHtml = injectCSS(processedHtml, chunk.fileName)
+          result = injectCSS(result, chunk.fileName)
         }
       }
     }
-    return processedHtml
+
+    return await transformIndexHtml(
+      result,
+      config.indexHtmlTransforms,
+      'post',
+      true
+    )
   }
 
   return {
@@ -185,7 +205,6 @@ const compileHtml = async (
         }
 
         if (shouldRemove) {
-          console.log('removing')
           // remove the script tag from the html. we are going to inject new
           // ones in the end.
           s.remove(node.loc.start.offset, node.loc.end.offset)

@@ -19,6 +19,7 @@ import {
   createDepAssetPlugin,
   createDepAssetExternalPlugin
 } from './pluginAssets'
+import { entryAnalysisPlugin } from './entryAnalysisPlugin'
 
 const debug = require('debug')('vite:optimize')
 
@@ -184,6 +185,13 @@ export async function optimizeDeps(
     spinner = require('ora')(msg + '\n').start()
   }
 
+  const {
+    pluginsPreBuild,
+    pluginsPostBuild,
+    pluginsOptimizer = [],
+    ...rollupInputOptions
+  } = config.rollupInputOptions || {}
+
   try {
     const rollup = require('rollup') as typeof Rollup
 
@@ -192,14 +200,13 @@ export async function optimizeDeps(
       external,
       // treeshake: { moduleSideEffects: 'no-external' },
       onwarn: onRollupWarning(spinner, options),
-      ...config.rollupInputOptions,
+      ...rollupInputOptions,
       plugins: [
         createDepAssetExternalPlugin(resolver),
+        entryAnalysisPlugin(),
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver, root),
-        ...((config.rollupInputOptions &&
-          config.rollupInputOptions.pluginsOptimizer) ||
-          [])
+        ...pluginsOptimizer
       ]
     })
 
@@ -219,6 +226,10 @@ export async function optimizeDeps(
         const filePath = path.join(cacheDir, fileName)
         await fs.ensureDir(path.dirname(filePath))
         await fs.writeFile(filePath, chunk.code)
+      }
+      if (chunk.type === 'asset' && chunk.fileName === '_analysis.json') {
+        const filePath = path.join(cacheDir, chunk.fileName)
+        await fs.writeFile(filePath, chunk.source)
       }
     }
 

@@ -19,7 +19,7 @@ import { createServerTransformPlugin } from '../transform'
 import { htmlRewritePlugin } from './serverPluginHtml'
 import { proxyPlugin } from './serverPluginProxy'
 import { createCertificate } from '../utils/createCertificate'
-import { cachedRead } from '../utils'
+import { cachedRead, toArray } from '../utils'
 import { envPlugin } from './serverPluginEnv'
 export { rewriteImports } from './serverPluginModuleRewrite'
 import { sourceMapPlugin, SourceMap } from './serverPluginSourceMap'
@@ -64,7 +64,7 @@ export function createServer(config: ServerConfig): Server {
   const app = new Koa<State, Context>()
   const server = resolveServer(config, app.callback())
   const watcher = chokidar.watch(root, {
-    ignored: [/node_modules/, /\.git/],
+    ignored: ['**/node_modules/**', '**/.git/**'],
     // #610
     awaitWriteFinish: {
       stabilityThreshold: 100,
@@ -92,6 +92,13 @@ export function createServer(config: ServerConfig): Server {
     return next()
   })
 
+  // cors
+  if (config.cors) {
+    app.use(
+      require('@koa/cors')(typeof config.cors === 'boolean' ? {} : config.cors)
+    )
+  }
+
   const resolvedPlugins = [
     // rewrite and source map plugins take highest priority and should be run
     // after all other middlewares have finished
@@ -99,7 +106,7 @@ export function createServer(config: ServerConfig): Server {
     moduleRewritePlugin,
     htmlRewritePlugin,
     // user plugins
-    ...(Array.isArray(configureServer) ? configureServer : [configureServer]),
+    ...toArray(configureServer),
     envPlugin,
     moduleResolvePlugin,
     proxyPlugin,
@@ -144,24 +151,24 @@ function resolveServer(
   { https = false, httpsOptions = {}, proxy }: ServerConfig,
   requestListener: RequestListener
 ): Server {
-  if (https) {
-    if (proxy) {
-      // #484 fallback to http1 when proxy is needed.
-      return require('https').createServer(
-        resolveHttpsConfig(httpsOptions),
-        requestListener
-      )
-    } else {
-      return require('http2').createSecureServer(
-        {
-          ...resolveHttpsConfig(httpsOptions),
-          allowHTTP1: true
-        },
-        requestListener
-      )
-    }
-  } else {
+  if (!https) {
     return require('http').createServer(requestListener)
+  }
+
+  if (proxy) {
+    // #484 fallback to http1 when proxy is needed.
+    return require('https').createServer(
+      resolveHttpsConfig(httpsOptions),
+      requestListener
+    )
+  } else {
+    return require('http2').createSecureServer(
+      {
+        ...resolveHttpsConfig(httpsOptions),
+        allowHTTP1: true
+      },
+      requestListener
+    )
   }
 }
 

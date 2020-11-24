@@ -1,7 +1,13 @@
 import fs from 'fs-extra'
 import path from 'path'
 import slash from 'slash'
-import { cleanUrl, resolveFrom, queryRE } from './utils'
+import {
+  cleanUrl,
+  resolveFrom,
+  queryRE,
+  lookupFile,
+  parseNodeModuleId
+} from './utils'
 import {
   moduleRE,
   moduleIdToFileMap,
@@ -206,22 +212,72 @@ export function createResolver(
       return res
     },
 
+    /**
+     * Given a fuzzy public path, resolve missing extensions and /index.xxx
+     */
     normalizePublicPath(publicPath) {
       if (publicPath === clientPublicPath) {
         return publicPath
       }
+      // preserve query
+      const queryMatch = publicPath.match(/\?.*$/)
+      const query = queryMatch ? queryMatch[0] : ''
+      const cleanPublicPath = cleanUrl(publicPath)
 
-      if (moduleRE.test(publicPath)) {
-        return publicPath
-      } else {
-        const queryMatch = publicPath.match(/\?.*$/)
-        const query = queryMatch ? queryMatch[0] : ''
-        const cleanPublicPath = cleanUrl(publicPath)
-        return (
-          resolver.fileToRequest(resolver.requestToFile(cleanPublicPath)) +
-          query
+      const finalize = (result: string) => {
+        result += query
+        if (
+          resolver.requestToFile(result) !== resolver.requestToFile(publicPath)
+        ) {
+          throw new Error(
+            `[vite] normalizePublicPath check fail. please report to vite.`
+          )
+        }
+        return result
+      }
+
+      if (!moduleRE.test(cleanPublicPath)) {
+        return finalize(
+          resolver.fileToRequest(resolver.requestToFile(cleanPublicPath))
         )
       }
+
+      const filePath = resolver.requestToFile(cleanPublicPath)
+      const cacheDir = resolveOptimizedCacheDir(root)
+      if (cacheDir) {
+        const relative = path.relative(cacheDir, filePath)
+        if (!relative.startsWith('..')) {
+          return finalize(path.posix.join('/@modules/', slash(relative)))
+        }
+      }
+
+      // fileToRequest doesn't work with files in node_modules
+      // because of edge cases like symlinks or yarn-aliased-install
+      // or even aliased-symlinks
+
+      // example id: "@babel/runtime/helpers/esm/slicedToArray"
+      // see the test case: /playground/TestNormalizePublicPath.vue
+      const id = cleanPublicPath.replace(moduleRE, '')
+      const { scope, name, inPkgPath } = parseNodeModuleId(id)
+      if (!inPkgPath) return publicPath
+      let filePathPostFix = ''
+      let findPkgFrom = filePath
+      while (!filePathPostFix.startsWith(inPkgPath)) {
+        // some package contains multi package.json...
+        // for example: @babel/runtime@7.10.2/helpers/esm/package.json
+        const pkgPath = lookupFile(findPkgFrom, ['package.json'], true)
+        if (!pkgPath) {
+          throw new Error(
+            `[vite] can't find package.json for a node_module file: ` +
+              `"${publicPath}". something is wrong.`
+          )
+        }
+        filePathPostFix = slash(path.relative(path.dirname(pkgPath), filePath))
+        findPkgFrom = path.join(path.dirname(pkgPath), '../')
+      }
+      return finalize(
+        ['/@modules', scope, name, filePathPostFix].filter(Boolean).join('/')
+      )
     },
 
     alias(id) {
