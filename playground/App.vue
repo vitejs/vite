@@ -30,7 +30,8 @@
     <TestWasm />
   </Suspense>
   <TestScriptSetupStyleVars msg="Test message" />
-  <TestSyntax/>
+  <TestSyntax />
+  <TestCjsDepNamedExport />
 </template>
 
 <script>
@@ -62,6 +63,7 @@ import TestWebWorker from './worker/TestWorker.vue'
 import TestWasm from './wasm/TestWasm.vue'
 import TestScriptSetupStyleVars from './script-setup/TestScriptSetupStyleVars.vue'
 import TestSyntax from './TestSyntax.vue'
+import TestCjsDepNamedExport from './cjs-dep-named-export/TestCjsDepNamedExport.vue'
 
 const App = {
   components: {
@@ -92,7 +94,8 @@ const App = {
     TestWebWorker,
     TestWasm,
     TestScriptSetupStyleVars,
-    TestSyntax
+    TestSyntax,
+    TestCjsDepNamedExport
   }
 }
 export { App as default}
