@@ -746,6 +746,19 @@ describe('vite', () => {
     })
   }
 
+  describe('build (multi)', () => {
+    beforeAll(async () => {
+      const buildOutput = await execa(binPath, ['build'], {
+        cwd: path.join(tempDir, 'multi-build')
+      })
+      expect(buildOutput.stdout).toMatch('Build completed')
+      expect(buildOutput.stderr).toBe('')
+    })
+
+    test.todo('index.html renders "hello world"')
+    test.todo('index.mobile.html renders "hello mobile"')
+  })
+
   describe('build', () => {
     let staticServer
     beforeAll(async () => {

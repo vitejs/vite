@@ -1,4 +1,4 @@
-import { Plugin, RollupOutput, OutputChunk } from 'rollup'
+import { Plugin, OutputChunk, RollupOutput } from 'rollup'
 import path from 'path'
 import fs from 'fs-extra'
 import MagicString from 'magic-string'
@@ -22,15 +22,15 @@ import {
 
 export const createBuildHtmlPlugin = async (
   root: string,
-  indexPath: string | null,
+  indexPath: string,
   publicBasePath: string,
   assetsDir: string,
   inlineLimit: number,
   resolver: InternalResolver,
   shouldPreload: ((chunk: OutputChunk) => boolean) | null,
-  config: UserConfig
+  config: Partial<UserConfig>
 ) => {
-  if (!indexPath || !fs.existsSync(indexPath)) {
+  if (!fs.existsSync(indexPath)) {
     return {
       renderIndex: () => '',
       htmlPlugin: null
@@ -74,7 +74,7 @@ export const createBuildHtmlPlugin = async (
       filename
     )}">`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return tag + '\n' + html
     }
@@ -86,7 +86,7 @@ export const createBuildHtmlPlugin = async (
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return html + '\n' + tag
     }
@@ -98,7 +98,7 @@ export const createBuildHtmlPlugin = async (
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<link rel="modulepreload" href="${filename}" />`
     if (/<\/head>/.test(html)) {
-      return html.replace(/<\/head>/, `${tag}\n</head>`)
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
     } else {
       return tag + '\n' + html
     }
@@ -205,7 +205,6 @@ const compileHtml = async (
         }
 
         if (shouldRemove) {
-          console.log('removing')
           // remove the script tag from the html. we are going to inject new
           // ones in the end.
           s.remove(node.loc.start.offset, node.loc.end.offset)

@@ -171,9 +171,12 @@ export function rewriteImports(
           se: expEnd
         } = imports[i]
         let id = source.substring(start, end)
+        const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(id)
         let hasLiteralDynamicId = false
         if (dynamicIndex >= 0) {
-          const literalIdMatch = id.match(/^(?:'([^']+)'|"([^"]+)")$/)
+          // #998 remove comment
+          id = id.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
+          const literalIdMatch = id.match(/^\s*(?:'([^']+)'|"([^"]+)")\s*$/)
           if (literalIdMatch) {
             hasLiteralDynamicId = true
             id = literalIdMatch[1] || literalIdMatch[2]
@@ -229,7 +232,7 @@ export function rewriteImports(
             debugHmr(`        ${importer} imports ${importee}`)
             ensureMapEntry(importerMap, importee).add(importer)
           }
-        } else if (id !== 'import.meta') {
+        } else if (id !== 'import.meta' && !hasViteIgnore) {
           console.warn(
             chalk.yellow(`[vite] ignored dynamic import(${id}) in ${importer}.`)
           )

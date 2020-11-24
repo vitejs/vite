@@ -93,9 +93,10 @@ export const createBuildAssetPlugin = (
   resolver: InternalResolver,
   publicBase: string,
   assetsDir: string,
-  inlineLimit: number,
-  emitAssets: boolean
+  inlineLimit: number
 ): Plugin => {
+  const handleToIdMap = new Map()
+
   return {
     name: 'vite:asset',
     async load(id) {
@@ -107,16 +108,17 @@ export const createBuildAssetPlugin = (
           assetsDir,
           inlineLimit
         )
-        if (!url && emitAssets && fileName && content) {
-          url =
-            'import.meta.ROLLUP_FILE_URL_' +
-            this.emitFile({
-              name: fileName,
-              type: 'asset',
-              source: content
-            })
+        if (!url && fileName && content) {
+          const fileHandle = this.emitFile({
+            name: fileName,
+            type: 'asset',
+            source: content
+          })
+          url = 'import.meta.ROLLUP_FILE_URL_' + fileHandle
+          handleToIdMap.set(fileHandle, id)
+        } else if (url && url.startsWith(`data:`)) {
+          debug(`${id} -> base64 inlined`)
         }
-        debug(`${id} -> ${url!.startsWith('data:') ? `base64 inlined` : id}`)
         return `export default ${JSON.stringify(url)}`
       }
     },
@@ -124,9 +126,14 @@ export const createBuildAssetPlugin = (
     async renderChunk(code) {
       let match
       while ((match = injectAssetRe.exec(code))) {
+        const fileHandle = match[1]
         const outputFilepath =
-          publicBase + slash(path.join(assetsDir, this.getFileName(match[1])))
+          publicBase + slash(path.join(assetsDir, this.getFileName(fileHandle)))
         code = code.replace(match[0], outputFilepath)
+        const originalId = handleToIdMap.get(fileHandle)
+        if (originalId) {
+          debug(`${originalId} -> ${outputFilepath}`)
+        }
       }
       return { code, map: null }
     }

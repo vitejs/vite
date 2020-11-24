@@ -22,7 +22,7 @@ import slash from 'slash'
 const debug = require('debug')('vite:build:css')
 
 const cssInjectionMarker = `__VITE_CSS__`
-const cssInjectionRE = /__VITE_CSS__\(\)/g
+const cssInjectionRE = /__VITE_CSS__\(\);?/g
 
 interface BuildCssOption {
   root: string
@@ -33,7 +33,6 @@ interface BuildCssOption {
   cssCodeSplit?: boolean
   preprocessOptions?: CssPreprocessOptions
   modulesOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
-  emitAssets: boolean
 }
 
 export const createBuildCssPlugin = ({
@@ -44,11 +43,12 @@ export const createBuildCssPlugin = ({
   inlineLimit = 0,
   cssCodeSplit = true,
   preprocessOptions,
-  modulesOptions = {},
-  emitAssets
+  modulesOptions = {}
 }: BuildCssOption): Plugin => {
-  const styles: Map<string, string> = new Map()
+  const styles = new Map<string, string>()
   let staticCss = ''
+
+  const emptyChunks = new Set<string>()
 
   return {
     name: 'vite:css',
@@ -105,7 +105,7 @@ export const createBuildCssPlugin = ({
               assetsDir,
               inlineLimit
             )
-            if (!url && emitAssets && fileName && content) {
+            if (!url && fileName && content) {
               url =
                 'import.meta.ROLLUP_FILE_URL_' +
                 this.emitFile({
@@ -158,6 +158,10 @@ export const createBuildCssPlugin = ({
 
       if (cssCodeSplit) {
         code = code.replace(cssInjectionRE, '')
+        if (!code.trim()) {
+          // this is a shared CSS-only chunk that is empty.
+          emptyChunks.add(chunk.fileName)
+        }
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
         if (chunk.isDynamicEntry && chunkCSS) {
@@ -186,14 +190,30 @@ export const createBuildCssPlugin = ({
         staticCss = minifyCSS(staticCss)
       }
 
-      if (emitAssets) {
-        if (staticCss) {
-          this.emitFile({
-            name: 'style.css',
-            type: 'asset',
-            source: staticCss
-          })
+      // remove empty css chunks and their imports
+      if (emptyChunks.size) {
+        emptyChunks.forEach((fileName) => {
+          delete bundle[fileName]
+        })
+        const emptyChunkFiles = [...emptyChunks].join('|').replace(/\./g, '\\.')
+        const emptyChunkRE = new RegExp(
+          `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`,
+          'g'
+        )
+        for (const file in bundle) {
+          const chunk = bundle[file]
+          if (chunk.type === 'chunk') {
+            chunk.code = chunk.code.replace(emptyChunkRE, '')
+          }
         }
+      }
+
+      if (staticCss) {
+        this.emitFile({
+          name: 'style.css',
+          type: 'asset',
+          source: staticCss
+        })
       }
     }
   }

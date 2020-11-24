@@ -1,8 +1,9 @@
 import { ServerPlugin } from '.'
 import { URL } from 'url'
 import { IKoaProxiesOptions } from 'koa-proxies'
+import type { ServerOptions as HttpProxyServerOptions } from 'http-proxy'
 
-export type ProxiesOptions = IKoaProxiesOptions & { ws: boolean }
+export type ProxiesOptions = IKoaProxiesOptions & HttpProxyServerOptions
 
 export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
   if (!config.proxy) {
@@ -17,7 +18,6 @@ export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
     if (typeof opts === 'string') {
       opts = { target: opts } as ProxiesOptions
     }
-    if (opts.ws) return
     opts.logs = (ctx, target) => {
       debug(
         `${ctx.req.method} ${(ctx.req as any).oldPath} proxy to -> ${new URL(
@@ -32,7 +32,7 @@ export const proxyPlugin: ServerPlugin = ({ app, config, server }) => {
   server.on('upgrade', (req, socket, head) => {
     if (req.headers['sec-websocket-protocol'] !== 'vite-hmr') {
       for (const path in options) {
-        let opts = options[path]
+        const opts = options[path]
         if (typeof opts === 'object' && opts.ws) {
           proxy.proxy.ws(req, socket, head, opts)
         }

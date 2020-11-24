@@ -64,7 +64,7 @@ export function createServer(config: ServerConfig): Server {
   const app = new Koa<State, Context>()
   const server = resolveServer(config, app.callback())
   const watcher = chokidar.watch(root, {
-    ignored: [/node_modules/, /\.git/],
+    ignored: ['**/node_modules/**', '**/.git/**'],
     // #610
     awaitWriteFinish: {
       stabilityThreshold: 100,
@@ -151,24 +151,24 @@ function resolveServer(
   { https = false, httpsOptions = {}, proxy }: ServerConfig,
   requestListener: RequestListener
 ): Server {
-  if (https) {
-    if (proxy) {
-      // #484 fallback to http1 when proxy is needed.
-      return require('https').createServer(
-        resolveHttpsConfig(httpsOptions),
-        requestListener
-      )
-    } else {
-      return require('http2').createSecureServer(
-        {
-          ...resolveHttpsConfig(httpsOptions),
-          allowHTTP1: true
-        },
-        requestListener
-      )
-    }
-  } else {
+  if (!https) {
     return require('http').createServer(requestListener)
+  }
+
+  if (proxy) {
+    // #484 fallback to http1 when proxy is needed.
+    return require('https').createServer(
+      resolveHttpsConfig(httpsOptions),
+      requestListener
+    )
+  } else {
+    return require('http2').createSecureServer(
+      {
+        ...resolveHttpsConfig(httpsOptions),
+        allowHTTP1: true
+      },
+      requestListener
+    )
   }
 }
 
