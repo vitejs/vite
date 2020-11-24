@@ -696,9 +696,14 @@ describe('vite', () => {
       await expectByPolling(() => getText('.worker-response'), 'pong')
     })
 
-    test('importing wasm', async () => {
-      await click('.wasm-send')
-      await expectByPolling(() => getText('.wasm-response'), '42')
+    test('importing inline wasm', async () => {
+      await click('.run-inline-wasm')
+      await expectByPolling(() => getText('.inline-wasm-response'), '42')
+    })
+
+    test('importing file wasm', async () => {
+      await click('.run-file-wasm')
+      await expectByPolling(() => getText('.file-wasm-response'), '*')
     })
 
     test('<script setup> and <style vars>', async () => {
