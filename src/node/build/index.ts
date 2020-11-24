@@ -679,8 +679,8 @@ export async function ssrBuild(
     outDir: 'dist-ssr',
     ...options,
     rollupPluginVueOptions: {
-      ...rollupPluginVueOptions,
-      target: 'node'
+      target: 'node',
+      ...rollupPluginVueOptions
     },
     rollupInputOptions: {
       ...rollupInputOptions,
@@ -689,12 +689,12 @@ export async function ssrBuild(
       )
     },
     rollupOutputOptions: {
-      ...rollupOutputOptions,
       format: 'cjs',
       exports: 'named',
       entryFileNames: '[name].js',
       // 764 add `Symbol.toStringTag` when build es module into cjs chunk
-      namespaceToStringTag: true
+      namespaceToStringTag: true,
+      ...rollupOutputOptions
     },
     emitIndex: false,
     emitAssets: false,
