@@ -354,7 +354,7 @@ export function createResolver(
       importee = cleanUrl(importee)
       let resolved = importee
       const importerFilePath = resolver.requestToFile(importer)
-      let realPath = ''
+      let realPath
 
       if (importee.startsWith('.')) {
         resolved = path.posix.resolve(path.posix.dirname(importer), importee)
@@ -366,7 +366,7 @@ export function createResolver(
             if (!resolved.startsWith(alias)) {
               // resolved path is outside of alias directory, we need to use
               // its full path instead
-              resolved = resolver.fileToRequest(realPath)
+              resolved = resolver.fileToRequest(realPath!)
             }
             break
           }

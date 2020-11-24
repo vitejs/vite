@@ -19,7 +19,10 @@ export function resolveFrom(root: string, id: string) {
   })
 }
 
-export function osAgnosticPath(absPath: string) {
+export function osAgnosticPath(absPath: string | undefined) {
+  if (!absPath) {
+    return absPath
+  }
   if (!path.isAbsolute(absPath)) {
     absPath = path.resolve(absPath)
   }
