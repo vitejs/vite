@@ -533,7 +533,7 @@ Full page reload could be slightly slower than a bundler-based setup, since nati
 
 Finally, because compilation is still done in Node, it can technically support any code transforms a bundler can, and nothing prevents you from eventually bundling the code for production. In fact, Vite provides a `vite build` command to do exactly that so the app doesn't suffer from network waterfall in production.
 
-### How is This Different from [es-dev-server](https://open-wc.org/developing/es-dev-server.html)?
+### How is This Different from [es-dev-server](https://github.com/open-wc/es-dev-server/)?
 
 `es-dev-server` is a great project and we did take some inspiration from it when refactoring Vite in the early stages. That said, here is why Vite is different from `es-dev-server` and why we didn't just implement Vite as a middleware for `es-dev-server`:
 
