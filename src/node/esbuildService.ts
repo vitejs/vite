@@ -86,7 +86,7 @@ export const transform = async (
       result.warnings.forEach((m) => printMessage(m, src))
     }
 
-    let code = result.js
+    let code = result.code
     // if transpiling (j|t)sx file, inject the imports for the jsx helper and
     // Fragment.
     if (file.endsWith('x')) {
@@ -102,7 +102,7 @@ export const transform = async (
 
     return {
       code,
-      map: result.jsSourceMap
+      map: result.map
     }
   } catch (e) {
     console.error(
