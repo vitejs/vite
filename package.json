@@ -143,7 +143,7 @@
     "semver": "^7.3.2",
     "source-map-support": "^0.5.19",
     "typescript": "^4.1.2",
-    "vue-router": "^3.4.9",
+    "vue-router": "^4.0.0-rc.1",
     "vuex": "^4.0.0-beta.4",
     "yorkie": "^2.0.0"
   }
