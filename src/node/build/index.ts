@@ -373,6 +373,14 @@ export async function build(
 
   const isTest = process.env.NODE_ENV === 'test'
   const resolvedMode = process.env.VITE_ENV || configMode
+
+  // certain plugins like rollup-plugin-vue relies on NODE_ENV for behavior
+  // so we should always set it
+  process.env.NODE_ENV =
+    resolvedMode === 'test' || resolvedMode === 'development'
+      ? resolvedMode
+      : 'production'
+
   const start = Date.now()
 
   let spinner: Ora | undefined
@@ -671,8 +679,8 @@ export async function ssrBuild(
     outDir: 'dist-ssr',
     ...options,
     rollupPluginVueOptions: {
-      ...rollupPluginVueOptions,
-      target: 'node'
+      target: 'node',
+      ...rollupPluginVueOptions
     },
     rollupInputOptions: {
       ...rollupInputOptions,
@@ -681,12 +689,12 @@ export async function ssrBuild(
       )
     },
     rollupOutputOptions: {
-      ...rollupOutputOptions,
       format: 'cjs',
       exports: 'named',
       entryFileNames: '[name].js',
       // 764 add `Symbol.toStringTag` when build es module into cjs chunk
-      namespaceToStringTag: true
+      namespaceToStringTag: true,
+      ...rollupOutputOptions
     },
     emitIndex: false,
     emitAssets: false,
