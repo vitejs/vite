@@ -5,7 +5,7 @@
 
 <style lang="scss" scoped>
 .asset-hmr-style {
-  background: url("/logo.svg") no-repeat;
+  background: url("/hmr-logo-in-style.svg") no-repeat;
   background-size: 100%;
   width: 50px;
   height: 50px;

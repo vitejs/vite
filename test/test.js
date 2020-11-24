@@ -16,6 +16,7 @@ let browser
 let page
 const browserLogs = []
 const serverLogs = []
+const requestLogs = []
 
 const getEl = async (selectorOrEl) => {
   return typeof selectorOrEl === 'string'
@@ -755,16 +756,25 @@ describe('vite', () => {
       }
     })
 
-    // test('assets hmr w/ style', async () => {
-    //   const el = await page.$('.asset-hmr-style')
-    //   expect(await getComputedWidth(el)).toBe('25px')
-    //   if (!isBuild) {
-    //     await updateFile('public/logo.svg', (content) =>
-    //         content.replace('width="25px"', 'width="30px"')
-    //     )
-    //     await expectByPolling(() => getComputedWidth(el), '30px')
-    //   }
-    // })
+    test('assets hmr w/ style', async () => {
+      await expectByPolling(
+        () =>
+          requestLogs.filter((i) => i.contains('/hmr-logo-in-style.svg'))
+            .length,
+        1
+      )
+      if (!isBuild) {
+        await updateFile('public/hmr-logo-in-style.svg', (content) =>
+          content.replace('width="25px"', 'width="30px"')
+        )
+        await expectByPolling(
+          () =>
+            requestLogs.filter((i) => i.contains('/hmr-logo-in-style.svg'))
+              .length,
+          2
+        )
+      }
+    })
   }
 
   describe('build (multi)', () => {
@@ -869,8 +879,13 @@ describe('vite', () => {
 
       console.log('launching browser')
       page = await browser.newPage()
+      await page.setRequestInterception(true)
       page.on('console', (msg) => {
         browserLogs.push(msg.text())
+      })
+      page.on('request', (request) => {
+        requestLogs.push(request.url())
+        request.contine()
       })
       await page.goto('http://localhost:3000')
     })
