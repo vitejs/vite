@@ -567,7 +567,7 @@ export async function build(
         onwarn: onRollupWarning(spinner, config.optimizeDeps),
         ...inputOptions,
         plugins: [
-          ...(inputOptions.plugins || []).filter(
+          ...((inputOptions && inputOptions.plugins) || []).filter(
             // remove vite:emit in case this build copied another build's plugins
             (plugin) => plugin.name !== 'vite:emit'
           ),

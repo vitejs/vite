@@ -10,7 +10,7 @@ function buildMobile(config, builds) {
     id: 'index.mobile',
     get options() {
       // Reuse the options of main build.
-      const { options } = builds[0]
+      const { options = {} } = builds[0]
       return {
         ...options,
         plugins: [
@@ -32,7 +32,7 @@ function buildMobile(config, builds) {
               }
             }
           },
-          ...options.plugins
+          ...(options.plugins || [])
         ]
       }
     }
