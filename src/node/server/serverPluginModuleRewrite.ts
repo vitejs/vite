@@ -1,5 +1,6 @@
 import { ServerPlugin } from '.'
 import path from 'path'
+import * as fs from 'fs-extra'
 import LRUCache from 'lru-cache'
 import MagicString from 'magic-string'
 import {
@@ -7,6 +8,9 @@ import {
   parse as parseImports,
   ImportSpecifier
 } from 'es-module-lexer'
+import { ImportDeclaration } from '@babel/types'
+import { makeLegalIdentifier } from '@rollup/pluginutils'
+
 import {
   InternalResolver,
   resolveBareModuleRequest,
@@ -27,12 +31,15 @@ import {
   cleanUrl,
   isExternalUrl,
   bareImportRE,
-  removeUnRelatedHmrQuery
+  removeUnRelatedHmrQuery,
+  isPlainObject
 } from '../utils'
 import chalk from 'chalk'
 import { isCSSRequest } from '../utils/cssUtils'
 import { envPublicPath } from './serverPluginEnv'
-import fs from 'fs-extra'
+import { resolveOptimizedCacheDir } from '../optimizer'
+import { parse } from '../utils/babelParse'
+import { OptimizeAnalysisResult } from '../optimizer/entryAnalysisPlugin'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -156,7 +163,13 @@ export function rewriteImports(
       importeeMap.set(importer, currentImportees)
 
       for (let i = 0; i < imports.length; i++) {
-        const { s: start, e: end, d: dynamicIndex } = imports[i]
+        const {
+          s: start,
+          e: end,
+          d: dynamicIndex,
+          ss: expStart,
+          se: expEnd
+        } = imports[i]
         let id = source.substring(start, end)
         const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(id)
         let hasLiteralDynamicId = false
@@ -185,11 +198,26 @@ export function rewriteImports(
 
           if (resolved !== id) {
             debug(`    "${id}" --> "${resolved}"`)
-            s.overwrite(
-              start,
-              end,
-              hasLiteralDynamicId ? `'${resolved}'` : resolved
-            )
+            if (isOptimizedCjs(root, id)) {
+              if (dynamicIndex === -1) {
+                const exp = source.substring(expStart, expEnd)
+                const replacement = transformCjsImport(exp, id, resolved, i)
+                s.overwrite(expStart, expEnd, replacement)
+              } else if (hasLiteralDynamicId) {
+                // rewrite `import('package')`
+                s.overwrite(
+                  dynamicIndex,
+                  end + 1,
+                  `import('${resolved}').then(m=>m.default)`
+                )
+              }
+            } else {
+              s.overwrite(
+                start,
+                end,
+                hasLiteralDynamicId ? `'${resolved}'` : resolved
+              )
+            }
             hasReplaced = true
           }
 
@@ -302,4 +330,79 @@ export const resolveImport = (
     }
   }
   return id
+}
+
+const analysisCache = new Map<string, OptimizeAnalysisResult | null>()
+
+/**
+ * read analysis result from optimize step
+ * If we can't find analysis result, return null
+ * (maybe because user set optimizeDeps.auto to false)
+ */
+function getAnalysis(root: string): OptimizeAnalysisResult | null {
+  if (analysisCache.has(root)) return analysisCache.get(root)!
+  let analysis: OptimizeAnalysisResult | null
+  try {
+    const cacheDir = resolveOptimizedCacheDir(root)
+    analysis = fs.readJsonSync(path.join(cacheDir!, '_analysis.json'))
+  } catch (error) {
+    analysis = null
+  }
+  if (analysis && !isPlainObject(analysis.isCommonjs)) {
+    throw new Error(`[vite] invalid _analysis.json`)
+  }
+  analysisCache.set(root, analysis)
+  return analysis
+}
+
+function isOptimizedCjs(root: string, id: string) {
+  const analysis = getAnalysis(root)
+  if (!analysis) return false
+  return !!analysis.isCommonjs[id]
+}
+
+function transformCjsImport(
+  exp: string,
+  id: string,
+  resolvedPath: string,
+  importIndex: number
+): string {
+  const ast = parse(exp)[0] as ImportDeclaration
+  const importNames: { importedName: string; localName: string }[] = []
+
+  ast.specifiers.forEach((obj) => {
+    if (obj.type === 'ImportSpecifier' && obj.imported.type === 'Identifier') {
+      const importedName = obj.imported.name
+      const localName = obj.local.name
+      importNames.push({ importedName, localName })
+    } else if (obj.type === 'ImportDefaultSpecifier') {
+      importNames.push({ importedName: 'default', localName: obj.local.name })
+    } else if (obj.type === 'ImportNamespaceSpecifier') {
+      importNames.push({ importedName: '*', localName: obj.local.name })
+    }
+  })
+
+  return generateCjsImport(importNames, id, resolvedPath, importIndex)
+}
+
+function generateCjsImport(
+  importNames: { importedName: string; localName: string }[],
+  id: string,
+  resolvedPath: string,
+  importIndex: number
+): string {
+  // If there is multiple import for same id in one file,
+  // importIndex will prevent the cjsModuleName to be duplicate
+  const cjsModuleName = makeLegalIdentifier(
+    `$viteCjsImport${importIndex}_${id}`
+  )
+  const lines: string[] = [`import ${cjsModuleName} from "${resolvedPath}";`]
+  importNames.forEach(({ importedName, localName }) => {
+    if (importedName === '*' || importedName === 'default') {
+      lines.push(`const ${localName} = ${cjsModuleName};`)
+    } else {
+      lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"];`)
+    }
+  })
+  return lines.join('\n')
 }
