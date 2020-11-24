@@ -14,6 +14,9 @@
   <div class="scss-modules-import" :class="importedScss.magenta">
     SCSS modules import - this should be magenta
   </div>
+  <div class="css-modules-no-conflict" :class="[Foo.a, Bar.a]">
+    CSS modules in sfc should not have conflicting class: {{ Foo.a !== Bar.a }}
+  </div>
 </template>
 
 <script>
@@ -32,3 +35,9 @@ export default {
 </style>
 
 <style module="srcImported" src="./testCssModules.module.css"></style>
+<style module="Foo">
+.a { color: red }
+</style>
+<style module="Bar">
+.a { color: blue }
+</style>

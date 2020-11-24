@@ -396,6 +396,11 @@ describe('vite', () => {
           () => getComputedColor('.css-modules-sfc'),
           'rgb(0, 0, 0)'
         )
+        // todo: only fixed for dev. for build it needs to be fixed in rollup-plugin-vue
+        const testConflictEl = await page.$('.css-modules-no-conflict')
+        expect(await getText(testConflictEl)).toContain(
+          'should not have conflicting class: true'
+        )
       }
     })
 
