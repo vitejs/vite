@@ -46,7 +46,7 @@ const testCases: TestCase[] = [
     path: 'hmr/testHmrPropagation.js',
     expectedMessagesCount: 1,
     replacer: (content) => {
-      return content.replace('</script>', '\n</script>')
+      return content + '\n\n'
     }
   },
   {
