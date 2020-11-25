@@ -627,7 +627,7 @@ async function compileSFCStyle(
   const resource = filePath + `?type=style&index=${index}`
   const result = (await compileCss(root, publicPath, {
     source: style.content,
-    filename: resource,
+    filename: filePath,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     vars: style.vars != null,
