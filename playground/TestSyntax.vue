@@ -4,10 +4,11 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 const foo = {
   bar: 'baz'
 }
-export const a = {
+const a = ref({
   b: foo?.bar
-}
+})
 </script>
