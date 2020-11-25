@@ -732,6 +732,18 @@ describe('vite', () => {
     test('optional chaining syntax support', async () => {
       expect(await getText('.syntax')).toBe('baz')
     })
+
+    test('optimizing commonjs dependencies and do named-import from it', async () => {
+      expect((await getText('.cjs-dep-named-export-static')).trim()).toBe(
+        'static import result: success'
+      )
+      await click('.cjs-dep-named-export-dynamic-load')
+      await expectByPolling(
+        async () =>
+          ((await getText('.cjs-dep-named-export-dynamic')) || '').trim(),
+        'dynamic import result: success'
+      )
+    })
   }
 
   describe('build (multi)', () => {

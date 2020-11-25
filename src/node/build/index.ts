@@ -30,7 +30,6 @@ import {
   createEsbuildRenderChunkPlugin
 } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
-import { stopService } from '../esbuildService'
 import { BuildConfig, defaultDefines } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
@@ -605,6 +604,9 @@ export async function build(
         entryFileNames: `[name].[hash].js`,
         chunkFileNames: `[name].[hash].js`,
         assetFileNames: `[name].[hash].[ext]`,
+        // #764 add `Symbol.toStringTag` when build es module into cjs chunk
+        // #1048 add `Symbol.toStringTag` for module default export
+        namespaceToStringTag: true,
         ...outputOptions
       })
     } finally {
@@ -654,9 +656,6 @@ export async function build(
     )
   }
 
-  // stop the esbuild service after each build
-  await stopService()
-
   return results
 }
 
@@ -679,8 +678,8 @@ export async function ssrBuild(
     outDir: 'dist-ssr',
     ...options,
     rollupPluginVueOptions: {
-      ...rollupPluginVueOptions,
-      target: 'node'
+      target: 'node',
+      ...rollupPluginVueOptions
     },
     rollupInputOptions: {
       ...rollupInputOptions,
@@ -689,12 +688,10 @@ export async function ssrBuild(
       )
     },
     rollupOutputOptions: {
-      ...rollupOutputOptions,
       format: 'cjs',
       exports: 'named',
       entryFileNames: '[name].js',
-      // 764 add `Symbol.toStringTag` when build es module into cjs chunk
-      namespaceToStringTag: true
+      ...rollupOutputOptions
     },
     emitIndex: false,
     emitAssets: false,
