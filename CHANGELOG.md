@@ -1,3 +1,12 @@
+# [1.0.0-rc.11](https://github.com/vitejs/vite/compare/v1.0.0-rc.10...v1.0.0-rc.11) (2020-11-25)
+
+
+### Bug Fixes
+
+* move https-proxy types to dependencies ([2753658](https://github.com/vitejs/vite/commit/275365862a1a94976686d5d5f8f1775f8a724b6d))
+
+
+
 # [1.0.0-rc.10](https://github.com/vitejs/vite/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2020-11-25)
 
 
