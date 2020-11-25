@@ -65,7 +65,7 @@ async function handleMessage(payload: HMRPayload) {
     case 'connected':
       console.log(`[vite] connected.`)
       // proxy(nginx, docker) hmr ws maybe caused timeout, so send ping package let ws keep alive.
-      setInterval(() => socket.send('ping'), __HMR_TIMEOUT__ * 1000)
+      setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
     case 'vue-reload':
       queueUpdate(
