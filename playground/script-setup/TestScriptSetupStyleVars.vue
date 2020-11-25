@@ -5,17 +5,15 @@
     <span class="style-vars">This should be red</span>
     <button class="script-setup-change" @click="change">click to change</button>
   </p>
-  <TestScriptSetupChild msg="hello"/>
+  <TestScriptSetupChild msg="hello" />
 </template>
 
 <script setup>
-import { ref, defineOptions } from 'vue'
+import { ref, defineProps } from 'vue'
 import TestScriptSetupChild from './TestScriptSetupChild.vue'
 
-defineOptions({
-  props: {
-    msg: String
-  }
+defineProps({
+  msg: String
 })
 
 const color = ref('red')

@@ -255,9 +255,7 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     // force reload if CSS vars injection changed
-    // @ts-ignore
     if (descriptor.cssVars) {
-      // @ts-ignore
       if (prevDescriptor.cssVars.join('') !== descriptor.cssVars.join('')) {
         return sendReload()
       }
@@ -452,7 +450,6 @@ async function compileSFCMain(
   if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
     try {
       script = compiler.compileScript(descriptor, {
-        // @ts-ignore
         id
       })
     } catch (e) {
@@ -584,7 +581,6 @@ function compileSFCTemplate(
   const id = hash_sum(publicPath)
   const { code, map, errors } = compileTemplate({
     source: template.content,
-    // @ts-ignore
     id,
     scoped,
     filename: filePath,
@@ -651,9 +647,7 @@ async function compileSFCStyle(
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
     modules: style.module != null,
-    /**
-     * TODO @deprecated
-     */
+    // @ts-ignore TODO @deprecated
     vars: style.vars != null,
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
     preprocessOptions: cssPreprocessOptions,

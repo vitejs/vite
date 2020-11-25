@@ -59,9 +59,7 @@ export async function compileCss(
     filename,
     scoped,
     modules,
-    /**
-     * TODO @deprecated
-     */
+    // @ts-ignore TODO @deprecated
     vars,
     preprocessLang,
     preprocessOptions = {},
@@ -115,9 +113,7 @@ export async function compileCss(
     id: `data-v-${id}`,
     scoped,
     modules,
-    /**
-     * TODO @deprecated
-     */
+    // @ts-ignore TODO @deprecated
     vars,
     modulesOptions: {
       generateScopedName: `[local]_${id}`,
