@@ -28,7 +28,7 @@ export const clientPlugin: ServerPlugin = ({ app, config }) => {
       // infer on client by default
       let socketProtocol = null
       let socketHostname = null
-      let socketTimeout = 30
+      let socketTimeout = 30000
       if (config.hmr && typeof config.hmr === 'object') {
         // hmr option has highest priory
         socketProtocol = config.hmr.protocol || null
