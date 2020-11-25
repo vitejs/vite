@@ -36,6 +36,7 @@ import hash_sum from 'hash-sum'
 import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
 import { createBuildWasmPlugin } from './buildPluginWasm'
 import { createBuildManifestPlugin } from './buildPluginManifest'
+import { stopService } from '../esbuildService'
 
 interface Build extends InputOptions {
   input: InputOption
@@ -342,12 +343,30 @@ function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
 }
 
 /**
+ * Track parallel build calls and only stop the esbuild service when all
+ * builds are done. (#1098)
+ */
+let parallelCallCounts = 0
+
+/**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
  */
 export async function build(
   options: Partial<BuildConfig>
 ): Promise<BuildResult[]> {
+  parallelCallCounts++
+  try {
+    return await doBuild(options)
+  } finally {
+    parallelCallCounts--
+    if (parallelCallCounts <= 0) {
+      await stopService()
+    }
+  }
+}
+
+async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
   const builds: Build[] = []
 
   const config = prepareConfig(options)
