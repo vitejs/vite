@@ -255,7 +255,11 @@ export const vuePlugin: ServerPlugin = ({
     }
 
     // force reload if CSS vars injection changed
-    if (
+    if (descriptor.cssVars) {
+      if (prevDescriptor.cssVars.join('') !== descriptor.cssVars.join('')) {
+        return sendReload()
+      }
+    } else if (
       prevStyles.some((s, i) => {
         const next = nextStyles[i]
         if (s.attrs.vars && (!next || next.attrs.vars !== s.attrs.vars)) {
@@ -263,6 +267,12 @@ export const vuePlugin: ServerPlugin = ({
         }
       })
     ) {
+      console.warn(
+        chalk.yellow(
+          `[vite] <style vars> has been replaced by a new proposal:\n` +
+            `https://github.com/vuejs/rfcs/pull/231`
+        )
+      )
       return sendReload()
     }
 
@@ -439,7 +449,9 @@ async function compileSFCMain(
   const compiler = resolveCompiler(root)
   if ((descriptor.script || descriptor.scriptSetup) && compiler.compileScript) {
     try {
-      script = compiler.compileScript(descriptor)
+      script = compiler.compileScript(descriptor, {
+        id
+      })
     } catch (e) {
       console.error(
         chalk.red(
@@ -566,16 +578,20 @@ function compileSFCTemplate(
     }
   }
 
+  const id = hash_sum(publicPath)
   const { code, map, errors } = compileTemplate({
     source: template.content,
+    id,
+    scoped,
     filename: filePath,
     inMap: template.map,
     transformAssetUrls: vueTransformAssetUrls,
     compilerOptions: {
       ...vueCompilerOptions,
-      scopeId: scoped ? `data-v-${hash_sum(publicPath)}` : null,
       bindingMetadata,
-      runtimeModuleName: vueSpecifier
+      runtimeModuleName: vueSpecifier,
+      // for backwards compat only
+      scopeId: scoped ? `data-v-${id}` : null
     },
     preprocessLang,
     preprocessOptions,
@@ -630,8 +646,9 @@ async function compileSFCStyle(
     filename: resource,
     id: ``, // will be computed in compileCss
     scoped: style.scoped != null,
-    vars: style.vars != null,
     modules: style.module != null,
+    // @ts-ignore TODO @deprecated
+    vars: style.vars != null,
     preprocessLang: style.lang as SFCStyleCompileOptions['preprocessLang'],
     preprocessOptions: cssPreprocessOptions,
     modulesOptions: cssModuleOptions
