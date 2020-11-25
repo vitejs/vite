@@ -30,7 +30,6 @@ import {
   createEsbuildRenderChunkPlugin
 } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
-import { stopService } from '../esbuildService'
 import { BuildConfig, defaultDefines } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
@@ -656,9 +655,6 @@ export async function build(
       `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.\n`
     )
   }
-
-  // stop the esbuild service after each build
-  await stopService()
 
   return results
 }
