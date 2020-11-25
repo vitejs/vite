@@ -1,3 +1,44 @@
+# [1.0.0-rc.10](https://github.com/vitejs/vite/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2020-11-25)
+
+
+### Bug Fixes
+
+* multiple builds share esbuild process ([#1125](https://github.com/vitejs/vite/issues/1125)) ([f270440](https://github.com/vitejs/vite/commit/f27044054e7a7a28239a7fcdb601913f0aacd5ac)), closes [#1098](https://github.com/vitejs/vite/issues/1098)
+* **build:** always pass `namespaceToStringTag`, let output module has… ([#1057](https://github.com/vitejs/vite/issues/1057)) ([8cd3e85](https://github.com/vitejs/vite/commit/8cd3e85871bd25992c6c8113a61b3df3a6a98f52)), closes [#1048](https://github.com/vitejs/vite/issues/1048)
+* **cli:** specify correct arguments to options ([6b98b73](https://github.com/vitejs/vite/commit/6b98b7392af7761def2011aff83116efb5ab8a82))
+* **config:** avoid overwriting defined .env values ([f0e50bd](https://github.com/vitejs/vite/commit/f0e50bd7ff708f56669a9b46aaff913b3526f58c))
+* **config:** move `dotenvExpand` back into `resolveConfig` ([dd03c62](https://github.com/vitejs/vite/commit/dd03c6255f0ac62b72daa523ed8ba6a4f09a4be2))
+* **dev:** chokidar `ignored` ([ce332d1](https://github.com/vitejs/vite/commit/ce332d1415ce50760ed993c7a65042888c25c5cd)), closes [#1132](https://github.com/vitejs/vite/issues/1132)
+* **dev:** respect `[@vite-ignore](https://github.com/vite-ignore)` inside module rewrite ([#1011](https://github.com/vitejs/vite/issues/1011)) ([6fbae67](https://github.com/vitejs/vite/commit/6fbae678683d3be358b7270497fd9cbd03c39e9a)), closes [#1007](https://github.com/vitejs/vite/issues/1007)
+* **dev:** respect sourceRoot when rewriting source map ([#1073](https://github.com/vitejs/vite/issues/1073)) ([b4afcf1](https://github.com/vitejs/vite/commit/b4afcf1507cf313beb9ecca245be9e6ceb2b126c))
+* **dev:** transform import for commonjs dependencies ([#837](https://github.com/vitejs/vite/issues/837)) ([51aead4](https://github.com/vitejs/vite/commit/51aead44ffb22c7d0c29a489f67b7eb7b9bba4f1))
+* **docs:** README es-dev-server broken link ([#1081](https://github.com/vitejs/vite/issues/1081)) ([0d2768d](https://github.com/vitejs/vite/commit/0d2768d9e53be8c685fb69416ab9dd7df63207cc))
+* `env` key in `UserConfig` should not be required ([#1097](https://github.com/vitejs/vite/issues/1097)) ([f33e89d](https://github.com/vitejs/vite/commit/f33e89db2c944933b52524eff0263cc9546aa0dd))
+* always set NODE_ENV for build ([effc159](https://github.com/vitejs/vite/commit/effc159822c08178825fcdfa99f9c8e672ba653c))
+* cac argv keys are in camel case ([#1092](https://github.com/vitejs/vite/issues/1092)) ([8520e76](https://github.com/vitejs/vite/commit/8520e76cdc15654f0c197cf63539428875aff2c7))
+* indexHtmlPath can be an absolute path ([#1032](https://github.com/vitejs/vite/issues/1032)) ([bc1a8ee](https://github.com/vitejs/vite/commit/bc1a8eeef725de57d0e74d7eb43803f3ea929ac8))
+* target ES2018 instead of ESNEXT ([#1110](https://github.com/vitejs/vite/issues/1110)) ([ce633f4](https://github.com/vitejs/vite/commit/ce633f48602f0e1c6c0d922d03477bdc4143aef0))
+* **types:** buildPluginHtml does not need `config.env` to exist ([#1091](https://github.com/vitejs/vite/issues/1091)) ([29f20e5](https://github.com/vitejs/vite/commit/29f20e50d10c8d1f8be59d249f6cb3538c24a5b5))
+* indentation for injected html tags ([#1068](https://github.com/vitejs/vite/issues/1068)) ([ac5ee6f](https://github.com/vitejs/vite/commit/ac5ee6f5e7024aa69c6e07149885f0b6e00a4f38))
+* only pass valid rollup options to avoid warning ([#1034](https://github.com/vitejs/vite/issues/1034)) ([128d5ff](https://github.com/vitejs/vite/commit/128d5ff7bbb113bcf05bf595201e7dfdec1a147a))
+* **types:** ws should be optional ([#1010](https://github.com/vitejs/vite/issues/1010)) ([5b16cf9](https://github.com/vitejs/vite/commit/5b16cf9f5c627327e53e89c49defe853d358b383))
+
+
+### Features
+
+* support new versions of experimental features in `@vue/compiler-sfc` ([#1121](https://github.com/vitejs/vite/issues/1121)) ([a928d74](https://github.com/vitejs/vite/commit/a928d74ae4be9e054bfdab35f2a85a774e81ecb0))
+* **build:** make `rollupOutputOptions` and `rollupPluginVueOptions` overridable ([#1117](https://github.com/vitejs/vite/issues/1117)) ([39bdd45](https://github.com/vitejs/vite/commit/39bdd45290a6fdab31aa8b02caa7d8465d12633c))
+* expose `loadEnv` in public api ([f3e4017](https://github.com/vitejs/vite/commit/f3e4017b96b2839d349e34b249966a3f6be11315))
+* use cac for argv parsing and cli help ([#971](https://github.com/vitejs/vite/issues/971)) ([88bb4ff](https://github.com/vitejs/vite/commit/88bb4ff7d7b70d5668c889188cd95a61d2dc3c1e))
+* **types:** include http-proxy options in ProxiesOptions type ([#1037](https://github.com/vitejs/vite/issues/1037)) ([261c8c8](https://github.com/vitejs/vite/commit/261c8c82f689a7a004670bca06097263e6983a1d))
+
+
+### Performance Improvements
+
+* remove empty chunk from css extraction ([963614b](https://github.com/vitejs/vite/commit/963614bff7039207c0b2d9e8c2c5780b74ee176a))
+
+
+
 # [1.0.0-rc.9](https://github.com/vitejs/vite/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2020-11-02)
 
 
