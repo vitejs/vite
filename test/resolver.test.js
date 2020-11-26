@@ -26,11 +26,11 @@ describe('fileToRequest', () => {
 
 describe('resolveRelativeRequest', () => {
   const resolver = createResolver(__dirname)
-  test('resolveRelativeRequest wroks with absolute paths', () => {
+  test('resolveRelativeRequest works with absolute paths', () => {
     const res = resolver.resolveRelativeRequest('/path/another', '/path/file')
     expect(res).toBe('/path/file')
   })
-  test('resolveRelativeRequest wroks with relative paths', () => {
+  test('resolveRelativeRequest works with relative paths', () => {
     const res = resolver.resolveRelativeRequest(`/path/another`, './file')
     expect(url.parse(res).pathname).toBe('/path/file')
     const res2 = resolver.resolveRelativeRequest(
