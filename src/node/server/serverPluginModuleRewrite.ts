@@ -40,6 +40,7 @@ import { envPublicPath } from './serverPluginEnv'
 import { resolveOptimizedCacheDir } from '../optimizer'
 import { parse } from '../utils/babelParse'
 import { OptimizeAnalysisResult } from '../optimizer/entryAnalysisPlugin'
+import slash from 'slash'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -198,7 +199,12 @@ export function rewriteImports(
 
           if (resolved !== id) {
             debug(`    "${id}" --> "${resolved}"`)
-            if (isOptimizedCjs(root, id)) {
+            if (
+              isOptimizedCjs(
+                root,
+                slash(path.relative(root, resolver.requestToFile(resolved)))
+              )
+            ) {
               if (dynamicIndex === -1) {
                 const exp = source.substring(expStart, expEnd)
                 const replacement = transformCjsImport(exp, id, resolved, i)
@@ -355,10 +361,10 @@ function getAnalysis(root: string): OptimizeAnalysisResult | null {
   return analysis
 }
 
-function isOptimizedCjs(root: string, id: string) {
+function isOptimizedCjs(root: string, filePath: string) {
   const analysis = getAnalysis(root)
   if (!analysis) return false
-  return !!analysis.isCommonjs[id]
+  return !!analysis.isCommonjs[filePath]
 }
 
 export function transformCjsImport(
