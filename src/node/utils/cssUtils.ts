@@ -65,8 +65,9 @@ export async function compileCss(
     source,
     filename,
     scoped,
-    vars,
     modules,
+    // @ts-ignore TODO @deprecated
+    vars,
     preprocessLang,
     preprocessOptions = {},
     modulesOptions = {}
@@ -118,8 +119,9 @@ export async function compileCss(
     filename,
     id: `data-v-${id}`,
     scoped,
-    vars,
     modules,
+    // @ts-ignore TODO @deprecated
+    vars,
     modulesOptions: {
       generateScopedName: `[local]_${id}`,
       localsConvention: 'camelCase',

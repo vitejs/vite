@@ -365,7 +365,7 @@ function isOptimizedCjs(root: string, id: string) {
   return !!analysis.isCommonjs[id]
 }
 
-function transformCjsImport(
+export function transformCjsImport(
   exp: string,
   id: string,
   resolvedPath: string,

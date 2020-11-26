@@ -5,29 +5,26 @@
     <span class="style-vars">This should be red</span>
     <button class="script-setup-change" @click="change">click to change</button>
   </p>
-  <TestScriptSetupChild msg="hello"/>
+  <TestScriptSetupChild msg="hello" />
 </template>
 
 <script setup>
-import { ref } from 'vue'
-export { default as TestScriptSetupChild } from './TestScriptSetupChild.vue'
+import { ref, defineProps } from 'vue'
+import TestScriptSetupChild from './TestScriptSetupChild.vue'
 
-export default {
-  props: {
-    msg: String
-  }
-}
+defineProps({
+  msg: String
+})
 
-export const color = ref('red')
+const color = ref('red')
 
-export function change() {
+function change() {
   color.value = color.value === 'red' ? 'green' : 'red'
 }
-
 </script>
 
-<style scoped vars="{ color }">
+<style>
 span {
-  color: var(--color);
+  color: v-bind(color);
 }
 </style>
