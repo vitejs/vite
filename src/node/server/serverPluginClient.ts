@@ -28,11 +28,15 @@ export const clientPlugin: ServerPlugin = ({ app, config }) => {
       // infer on client by default
       let socketProtocol = null
       let socketHostname = null
+      let socketTimeout = 30000
       if (config.hmr && typeof config.hmr === 'object') {
         // hmr option has highest priory
         socketProtocol = config.hmr.protocol || null
         socketHostname = config.hmr.hostname || null
         socketPort = config.hmr.port || ctx.port
+        if (config.hmr.timeout) {
+          socketTimeout = config.hmr.timeout
+        }
         if (config.hmr.path) {
           socketPort = `${socketPort}/${config.hmr.path}`
         }
@@ -43,6 +47,7 @@ export const clientPlugin: ServerPlugin = ({ app, config }) => {
         .replace(`__HMR_PROTOCOL__`, JSON.stringify(socketProtocol))
         .replace(`__HMR_HOSTNAME__`, JSON.stringify(socketHostname))
         .replace(`__HMR_PORT__`, JSON.stringify(socketPort))
+        .replace(`__HMR_TIMEOUT__`, JSON.stringify(socketTimeout))
     } else {
       if (ctx.path === legacyPublicPath) {
         console.error(

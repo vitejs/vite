@@ -219,6 +219,13 @@ export interface HmrConfig {
   hostname?: string
   port?: number
   path?: string
+  /**
+   * If you are using hmr ws proxy, it maybe timeout with your proxy program.
+   * You can set this option to let client send ping socket to keep connection alive.
+   * The option use `millisecond` as unit.
+   * @default 30000ms
+   */
+  timeout?: number
 }
 
 export interface ServerConfig extends SharedConfig {
