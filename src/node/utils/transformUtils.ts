@@ -36,18 +36,11 @@ export async function transformIndexHtml(
   apply: 'pre' | 'post',
   isBuild = false
 ) {
-  const trans = transforms
-    .map((t) => {
-      return typeof t === 'function' && apply === 'post'
-        ? t
-        : t.apply === apply
-        ? t.transform
-        : undefined
-    })
-    .filter(Boolean)
-  let code = html
-  for (const transform of trans) {
-    code = await transform!({ isBuild, code })
+  const currentStepTransforms = transforms.filter((t) => t.apply === apply);
+  let code = html;
+  for (const t of currentStepTransforms) {
+    if(typeof t.transform === 'function')
+      code = await t.transform({ isBuild, code });
   }
-  return code
+  return code;
 }
