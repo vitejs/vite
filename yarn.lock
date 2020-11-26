@@ -5856,10 +5856,10 @@ rollup-plugin-vue@^6.0.0:
     hash-sum "^2.0.0"
     rollup-pluginutils "^2.8.2"
 
-rollup-plugin-web-worker-loader@^1.3.1:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-web-worker-loader/-/rollup-plugin-web-worker-loader-1.4.0.tgz#b4fd711118758c2111c30e794e2f2757b75a27b8"
-  integrity sha512-jhlOwSkrXkAVFY2Fded0M1AS9iqZDNjUJxNz4BFjBlaKuUzTx8Ikey+b3LSegUJE4mzAAw2DqJD8pX12R0ZdDw==
+rollup-plugin-web-worker-loader@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.npm.taobao.org/rollup-plugin-web-worker-loader/download/rollup-plugin-web-worker-loader-1.4.1.tgz#12cd3c829a7d6c7d0f57ab16860c297e3e707616"
+  integrity sha1-Es08gpp9bH0PV6sWhgwpfj5wdhY=
 
 rollup-pluginutils@^2.8.2:
   version "2.8.2"
