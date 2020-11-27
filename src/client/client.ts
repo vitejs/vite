@@ -4,6 +4,7 @@
 declare const __HMR_PROTOCOL__: string
 declare const __HMR_HOSTNAME__: string
 declare const __HMR_PORT__: string
+declare const __HMR_TIMEOUT__: number
 declare const __MODE__: string
 declare const __DEFINES__: Record<string, any>
 ;(window as any).process = (window as any).process || {}
@@ -63,6 +64,8 @@ async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
+      // proxy(nginx, docker) hmr ws maybe caused timeout, so send ping package let ws keep alive.
+      setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
     case 'vue-reload':
       queueUpdate(

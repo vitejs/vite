@@ -30,13 +30,13 @@ import {
   createEsbuildRenderChunkPlugin
 } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
-import { stopService } from '../esbuildService'
 import { BuildConfig, defaultDefines } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
 import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
 import { createBuildWasmPlugin } from './buildPluginWasm'
 import { createBuildManifestPlugin } from './buildPluginManifest'
+import { stopService } from '../esbuildService'
 
 interface Build extends InputOptions {
   input: InputOption
@@ -343,12 +343,30 @@ function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
 }
 
 /**
+ * Track parallel build calls and only stop the esbuild service when all
+ * builds are done. (#1098)
+ */
+let parallelCallCounts = 0
+
+/**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
  */
 export async function build(
   options: Partial<BuildConfig>
 ): Promise<BuildResult[]> {
+  parallelCallCounts++
+  try {
+    return await doBuild(options)
+  } finally {
+    parallelCallCounts--
+    if (parallelCallCounts <= 0) {
+      await stopService()
+    }
+  }
+}
+
+async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
   const builds: Build[] = []
 
   const config = prepareConfig(options)
@@ -557,10 +575,16 @@ export async function build(
   const results = await pMapSeries(builds, async (build, i) => {
     const { output: outputOptions, onResult, ...inputOptions } = build
 
+    const indexHtmlPath = getIndexHtmlOutputPath(build, outDir)
+    const emitIndex = config.emitIndex && indexHtmlPath !== ''
+
+    // unset the `output.file` option once `indexHtmlPath` is declared,
+    // or else Rollup throws an error since multiple chunks are generated.
+    if (indexHtmlPath && outputOptions.file) {
+      outputOptions.file = undefined
+    }
+
     let result!: BuildResult
-    let indexHtml!: string
-    let indexHtmlPath = getIndexHtmlOutputPath(build)
-    const emitIndex = config.emitIndex && indexHtmlPath !== null
 
     try {
       const bundle = await rollup({
@@ -572,9 +596,13 @@ export async function build(
             (plugin) => plugin.name !== 'vite:emit'
           ),
           // vite:emit
-          createEmitPlugin(emitAssets, async (assets) => {
-            indexHtml = emitIndex ? await renderIndex(assets) : ''
-            result = { build, assets, html: indexHtml }
+          createEmitPlugin(emitAssets, async (assets, name) => {
+            // #1071 ignore bundles from rollup-plugin-worker-loader
+            if (name !== outputOptions.name) return
+
+            const html = emitIndex ? await renderIndex(assets) : ''
+
+            result = { build, assets, html }
             if (onResult) {
               await onResult(result)
             }
@@ -590,8 +618,7 @@ export async function build(
                 await fs.emptyDir(outDir)
               }
               if (emitIndex) {
-                indexHtmlPath = path.resolve(outDir, indexHtmlPath!)
-                await fs.writeFile(indexHtmlPath, indexHtml)
+                await fs.writeFile(indexHtmlPath, html)
               }
             }
           })
@@ -616,9 +643,9 @@ export async function build(
 
     if (write && !silent) {
       if (emitIndex) {
-        printFileInfo(indexHtmlPath!, indexHtml, WriteType.HTML)
+        printFileInfo(indexHtmlPath, result.html, WriteType.HTML)
       }
-      for (const chunk of result.assets!) {
+      for (const chunk of result.assets) {
         if (chunk.type === 'chunk') {
           const filePath = path.join(resolvedAssetsPath, chunk.fileName)
           printFileInfo(filePath, chunk.code, WriteType.JS)
@@ -656,9 +683,6 @@ export async function build(
       `Build completed in ${((Date.now() - start) / 1000).toFixed(2)}s.\n`
     )
   }
-
-  // stop the esbuild service after each build
-  await stopService()
 
   return results
 }
@@ -706,16 +730,19 @@ export async function ssrBuild(
 
 function createEmitPlugin(
   emitAssets: boolean,
-  emit: (assets: BuildResult['assets']) => Promise<void>
+  emit: (
+    assets: BuildResult['assets'],
+    name: string | undefined
+  ) => Promise<void>
 ): OutputPlugin {
   return {
     name: 'vite:emit',
-    async generateBundle(_, output) {
+    async generateBundle({ name }, output) {
       // assume the first asset in `output` is an entry chunk
       const assets = Object.values(output) as BuildResult['assets']
 
       // process the output before writing
-      await emit(assets)
+      await emit(assets, name)
 
       // write any assets injected by post-build hooks
       for (const asset of assets) {
@@ -738,9 +765,10 @@ function createEmitPlugin(
  * Resolve the output path of `index.html` for the given build (relative to
  * `outDir` in Vite config).
  */
-function getIndexHtmlOutputPath(build: Build) {
-  const { input, output } = build
-  return input === 'index.html' ? output.file || input : null
+function getIndexHtmlOutputPath({ input, output }: Build, outDir: string) {
+  return input === 'index.html'
+    ? path.resolve(outDir, output.file || input)
+    : ''
 }
 
 function resolveExternal(
