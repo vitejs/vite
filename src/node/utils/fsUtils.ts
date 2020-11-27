@@ -61,12 +61,19 @@ export async function cachedRead(
       const sourceRoot = path.resolve(path.dirname(file), map.sourceRoot || '')
       map.sources = await Promise.all(
         map.sources.map(async (source, i) => {
-          const originalPath = path.resolve(sourceRoot, source)
-          if (!sourcesContent[i]) {
-            const originalCode = await cachedRead(null, originalPath)
-            sourcesContent[i] = originalCode.toString('utf8')
+          try {
+            const originalPath = path.resolve(sourceRoot, source)
+            if (!sourcesContent[i]) {
+              const originalCode = await cachedRead(null, originalPath)
+              sourcesContent[i] = originalCode.toString('utf8')
+            }
+            return originalPath
+          } catch (e) {
+            console.error(
+              `Cannot read sourcemap's source '${source}' for '${file}'`
+            )
+            return source
           }
-          return originalPath
         })
       )
       map.sourcesContent = sourcesContent
