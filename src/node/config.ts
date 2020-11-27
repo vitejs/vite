@@ -226,7 +226,7 @@ export interface ServerConfig extends SharedConfig {
    */
   configureServer?: ServerPlugin | ServerPlugin[]
   /**
-   * The option passed to `chokidar`.
+   * The watch option passed to `chokidar`.
    */
   chokidarWatchOptions?: chokidarWatchOptions
 }
