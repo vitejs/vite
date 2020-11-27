@@ -1,7 +1,6 @@
 import path from 'path'
 import slash from 'slash'
 import { Plugin } from 'rollup'
-import { resolveOptimizedCacheDir } from './index'
 
 export interface OptimizeAnalysisResult {
   isCommonjs: { [name: string]: true }
@@ -9,7 +8,6 @@ export interface OptimizeAnalysisResult {
 
 export function entryAnalysisPlugin({ root }: { root: string }): Plugin {
   const analysis: OptimizeAnalysisResult = { isCommonjs: {} }
-  const cacheDir = resolveOptimizedCacheDir(root)!
   return {
     name: 'vite:cjs-entry-named-export',
     async generateBundle(options, bundles) {
@@ -19,8 +17,9 @@ export function entryAnalysisPlugin({ root }: { root: string }): Plugin {
             const facadeInfo = this.getModuleInfo(bundle.facadeModuleId)
             // this info is exposed by rollup commonjs plugin
             if (facadeInfo?.meta?.commonjs?.isCommonJS) {
-              const outputPath = path.join(cacheDir, bundle.fileName)
-              const relativePath = slash(path.relative(root, outputPath))
+              const relativePath = slash(
+                path.relative(root, bundle.facadeModuleId)
+              )
               analysis.isCommonjs[relativePath] = true
             }
           }

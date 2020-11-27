@@ -14,7 +14,8 @@ import { makeLegalIdentifier } from '@rollup/pluginutils'
 import {
   InternalResolver,
   resolveBareModuleRequest,
-  jsSrcRE
+  jsSrcRE,
+  resolveNodeModuleFile
 } from '../resolver'
 import {
   debugHmr,
@@ -199,12 +200,7 @@ export function rewriteImports(
 
           if (resolved !== id) {
             debug(`    "${id}" --> "${resolved}"`)
-            if (
-              isOptimizedCjs(
-                root,
-                slash(path.relative(root, resolver.requestToFile(resolved)))
-              )
-            ) {
+            if (isOptimizedCjs(root, resolver.requestToFile(importer), id)) {
               if (dynamicIndex === -1) {
                 const exp = source.substring(expStart, expEnd)
                 const replacement = transformCjsImport(exp, id, resolved, i)
@@ -361,10 +357,14 @@ function getAnalysis(root: string): OptimizeAnalysisResult | null {
   return analysis
 }
 
-function isOptimizedCjs(root: string, filePath: string) {
+function isOptimizedCjs(root: string, importer: string, id: string) {
   const analysis = getAnalysis(root)
   if (!analysis) return false
-  return !!analysis.isCommonjs[filePath]
+  const modulePath = resolveNodeModuleFile(importer, id)
+  if (!modulePath) {
+    return false
+  }
+  return !!analysis.isCommonjs[slash(path.relative(root, modulePath))]
 }
 
 export function transformCjsImport(
