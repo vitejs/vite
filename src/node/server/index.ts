@@ -58,7 +58,8 @@ export function createServer(config: ServerConfig): Server {
     vueCustomBlockTransforms = {},
     optimizeDeps = {},
     enableEsbuild = true,
-    assetsInclude
+    assetsInclude,
+    chokidarWatchOptions = {}
   } = config
 
   const app = new Koa<State, Context>()
@@ -69,7 +70,8 @@ export function createServer(config: ServerConfig): Server {
     awaitWriteFinish: {
       stabilityThreshold: 100,
       pollInterval: 10
-    }
+    },
+    ...chokidarWatchOptions
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers, alias, assetsInclude)
 

@@ -32,6 +32,7 @@ import { DepOptimizationOptions } from './optimizer'
 import { ServerOptions } from 'https'
 import { lookupFile } from './utils'
 import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
+import { WatchOptions as chokidarWatchOptions } from 'chokidar'
 import { ProxiesOptions } from './server/serverPluginProxy'
 
 export type PreprocessLang = NonNullable<
@@ -281,6 +282,10 @@ export interface ServerConfig extends SharedConfig {
    * of multiple server plugin functions.
    */
   configureServer?: ServerPlugin | ServerPlugin[]
+  /**
+   * The watch option passed to `chokidar`.
+   */
+  chokidarWatchOptions?: chokidarWatchOptions
 }
 
 export interface BuildConfig extends Required<SharedConfig> {
