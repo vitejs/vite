@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs-extra'
+import chalk from 'chalk'
 import LRUCache from 'lru-cache'
 import { RawSourceMap } from 'source-map'
 import { Context } from '../server'
@@ -61,19 +62,25 @@ export async function cachedRead(
       const sourceRoot = path.resolve(path.dirname(file), map.sourceRoot || '')
       map.sources = await Promise.all(
         map.sources.map(async (source, i) => {
-          try {
-            const originalPath = path.resolve(sourceRoot, source)
-            if (!sourcesContent[i]) {
-              const originalCode = await cachedRead(null, originalPath)
-              sourcesContent[i] = originalCode.toString('utf8')
+          const originalPath = path.resolve(sourceRoot, source)
+          if (!sourcesContent[i]) {
+            try {
+              sourcesContent[i] = (
+                await cachedRead(null, originalPath)
+              ).toString('utf8')
+            } catch (err) {
+              if (err.code === 'ENOENT') {
+                console.error(
+                  chalk.red(
+                    `[vite] Sourcemap "${file}" points to non-existent source: "${originalPath}"`
+                  )
+                )
+                return source
+              }
+              throw err
             }
-            return originalPath
-          } catch (e) {
-            console.error(
-              `Cannot read sourcemap's source '${source}' for '${file}'`
-            )
-            return source
           }
+          return originalPath
         })
       )
       map.sourcesContent = sourcesContent
