@@ -3,7 +3,7 @@ import fs from 'fs-extra'
 import { RequestListener, Server } from 'http'
 import { ServerOptions } from 'https'
 import Koa, { DefaultState, DefaultContext } from 'koa'
-import chokidar from 'chokidar'
+import chokidar, { WatchOptions as chokidarWatchOptions } from 'chokidar'
 import { createResolver, InternalResolver } from '../resolver'
 import { moduleRewritePlugin } from './serverPluginModuleRewrite'
 import { moduleResolvePlugin } from './serverPluginModuleResolve'
@@ -58,8 +58,8 @@ export function createServer(config: ServerConfig): Server {
     vueCustomBlockTransforms = {},
     optimizeDeps = {},
     enableEsbuild = true,
-    watchOptions = {}
-    assetsInclude
+    assetsInclude,
+    chokidarWatchOptions = {}
   } = config
 
   const app = new Koa<State, Context>()
@@ -71,7 +71,7 @@ export function createServer(config: ServerConfig): Server {
       stabilityThreshold: 100,
       pollInterval: 10
     },
-    ...watchOptions
+    ...chokidarWatchOptions
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers, alias, assetsInclude)
 

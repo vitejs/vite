@@ -228,7 +228,7 @@ export interface ServerConfig extends SharedConfig {
   /**
    * The option passed to `chokidar`.
    */
-  watchOptions?: chokidarWatchOptions
+  chokidarWatchOptions?: chokidarWatchOptions
 }
 
 export interface BuildConfig extends SharedConfig {
