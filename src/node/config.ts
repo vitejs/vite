@@ -488,7 +488,6 @@ export async function resolveConfig(mode: string, configPath?: string) {
   const cwd = process.cwd()
 
   let resolvedPath: string | undefined
-  let isTS = false
   if (configPath) {
     resolvedPath = path.resolve(cwd, configPath)
   } else {
@@ -498,7 +497,6 @@ export async function resolveConfig(mode: string, configPath?: string) {
     } else {
       const tsConfigPath = path.resolve(cwd, 'vite.config.ts')
       if (fs.existsSync(tsConfigPath)) {
-        isTS = true
         resolvedPath = tsConfigPath
       }
     }
@@ -510,6 +508,8 @@ export async function resolveConfig(mode: string, configPath?: string) {
       env: loadEnv(mode, cwd)
     }
   }
+
+  const isTS = resolvedPath.endsWith('.ts')
 
   try {
     let userConfig: UserConfig | ((mode: string) => UserConfig) | undefined
