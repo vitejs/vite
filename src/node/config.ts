@@ -509,7 +509,8 @@ export async function resolveConfig(mode: string, configPath?: string) {
   try {
     let userConfig: UserConfig | ((mode: string) => UserConfig) | undefined
 
-    if (!isTS) {
+    // @ts-ignore
+    if (!isTS || process[Symbol.for('ts-node.register.instance')]) {
       try {
         userConfig = require(resolvedPath)
       } catch (e) {
