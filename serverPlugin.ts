@@ -168,22 +168,24 @@ async function parseSFC(
   let stylesCode = ``
   let hasScoped
   if (descriptor.styles.length) {
-    descriptor.styles.forEach((s, i) => {
-      const styleRequest = publicPath + `?type=style&index=${i}`
-      if (s.scoped) hasScoped = true
-      if (s.module) {
-        const styleVar = `__style${i}`
-        const moduleName = typeof s.module === 'string' ? s.module : '$style'
-        stylesCode += `\nimport ${styleVar} from ${JSON.stringify(
-          styleRequest + '&module'
-        )}`
-        stylesCode += `\n__cssModules[${JSON.stringify(
-          moduleName
-        )}] = ${styleVar}`
-      } else {
-        stylesCode += `\nimport ${JSON.stringify(styleRequest)}`
-      }
-    })
+    descriptor.styles
+      .filter((s) => !!s.content.trim())
+      .forEach((s, i) => {
+        const styleRequest = publicPath + `?type=style&index=${i}`
+        if (s.scoped) hasScoped = true
+        if (s.module) {
+          const styleVar = `__style${i}`
+          const moduleName = typeof s.module === 'string' ? s.module : '$style'
+          stylesCode += `\nimport ${styleVar} from ${JSON.stringify(
+            styleRequest + '&module'
+          )}`
+          stylesCode += `\n__cssModules[${JSON.stringify(
+            moduleName
+          )}] = ${styleVar}`
+        } else {
+          stylesCode += `\nimport ${JSON.stringify(styleRequest)}`
+        }
+      })
   }
 
   let code =
