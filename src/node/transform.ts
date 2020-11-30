@@ -37,6 +37,7 @@ export interface TransformContext extends TransformTestContext {
 
 export interface TransformResult {
   code: string
+  type: string
   map?: SourceMap
 }
 
@@ -98,6 +99,7 @@ export function createServerTransformPlugin(
       const isImport = isImportRequest(ctx)
       const isBuild = false
       let code: string = ''
+      let type: string = ''
 
       for (const t of transforms) {
         const transformContext: TransformTestContext = {
@@ -119,13 +121,15 @@ export function createServerTransformPlugin(
           })
           if (typeof result === 'string') {
             code = result
+            type = 'js'
           } else {
             code = result.code
+            type = result.type || 'js'
             if (result.map) {
               ctx.map = mergeSourceMap(ctx.map, result.map)
             }
           }
-          ctx.type = 'js'
+          ctx.type = type
           ctx.body = code
         }
       }
