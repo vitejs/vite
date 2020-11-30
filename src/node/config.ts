@@ -471,7 +471,12 @@ export interface Plugin
     | 'rollupInputOptions'
     | 'rollupOutputOptions'
     | 'enableRollupPluginVue'
-  > {}
+  > {
+  /**
+   * plugins can change vite config
+   */
+  changeConfig?: (prevConfig: ResolvedConfig) => ResolvedConfig
+}
 
 export type ResolvedConfig = UserConfig & {
   env: DotenvParseOutput

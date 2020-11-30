@@ -1,5 +1,6 @@
 import type { UserConfig } from '../src/node/config'
 import { jsPlugin } from './plugins/jsPlugin'
+import { changeConfigPlugin1 } from './plugins/changeConfig'
 import { i18nTransform } from './custom-blocks/i18nTransform'
 
 const config: UserConfig = {
@@ -11,7 +12,7 @@ const config: UserConfig = {
     __VALUE__: 'value'
   },
   jsx: 'preact',
-  plugins: [jsPlugin],
+  plugins: [jsPlugin, changeConfigPlugin1],
   vueCustomBlockTransforms: { i18n: i18nTransform },
   optimizeDeps: {
     exclude: ['bootstrap', 'rewrite-unoptimized-test-package'],

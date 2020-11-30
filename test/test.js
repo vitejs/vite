@@ -744,6 +744,15 @@ describe('vite', () => {
         'dynamic import result: success'
       )
     })
+
+    test('changeConfig plugin hook', async () => {
+      expect((await getText('.plugin-change-config-1')).trim()).toBe(
+        'changeConfigPlugin1: success'
+      )
+      expect((await getText('.plugin-change-config-2')).trim()).toBe(
+        'changeConfigPlugin2: success'
+      )
+    })
   }
 
   describe('build (multi)', () => {

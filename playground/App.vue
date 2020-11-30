@@ -11,7 +11,7 @@
   <TestCssModules />
   <TestCssAtImport />
   <TestPreprocessors />
-  <TestScssAtImport/>
+  <TestScssAtImport />
   <TestAssets />
   <TestSrcImport />
   <TestJsonImport />
@@ -32,6 +32,7 @@
   <TestScriptSetupStyleVars msg="Test message" />
   <TestSyntax />
   <TestCjsDepNamedExport />
+  <TestPluginChangeConfig />
 </template>
 
 <script>
@@ -64,6 +65,7 @@ import TestWasm from './wasm/TestWasm.vue'
 import TestScriptSetupStyleVars from './script-setup/TestScriptSetupStyleVars.vue'
 import TestSyntax from './TestSyntax.vue'
 import TestCjsDepNamedExport from './cjs-dep-named-export/TestCjsDepNamedExport.vue'
+import TestPluginChangeConfig from './TestPluginChangeConfig.vue'
 
 const App = {
   components: {
@@ -95,8 +97,9 @@ const App = {
     TestWasm,
     TestScriptSetupStyleVars,
     TestSyntax,
-    TestCjsDepNamedExport
+    TestCjsDepNamedExport,
+    TestPluginChangeConfig
   }
 }
-export { App as default}
+export { App as default }
 </script>
