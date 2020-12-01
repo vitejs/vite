@@ -151,6 +151,13 @@ async function resolveOptions({
     delete userConfig.env.NODE_ENV
   }
 
+  // process.env overrides .env files
+  for (const key in process.env) {
+    if (key.startsWith('VITE_')) {
+      userConfig.env[key] = process.env[key]!
+    }
+  }
+
   // cli options take higher priority
   return { ...userConfig, ...argv }
 }
