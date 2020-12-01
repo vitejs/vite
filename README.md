@@ -20,6 +20,8 @@ In beta and will likely release 1.0 soon.
 
 > Note to Vue users: Vite currently only works with Vue 3.x. This also means you can't use libraries that are not yet compatible with Vue 3.
 
+Make sure you have [node.js](https://nodejs.org/en/) installed on your machine before proceeding.
+
 ```bash
 $ npm init vite-app <project-name>
 $ cd <project-name>
