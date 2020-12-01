@@ -1,10 +1,12 @@
+import path from 'path'
+import slash from 'slash'
 import { Plugin } from 'rollup'
 
 export interface OptimizeAnalysisResult {
   isCommonjs: { [name: string]: true }
 }
 
-export function entryAnalysisPlugin(): Plugin {
+export function entryAnalysisPlugin({ root }: { root: string }): Plugin {
   const analysis: OptimizeAnalysisResult = { isCommonjs: {} }
   return {
     name: 'vite:cjs-entry-named-export',
@@ -15,7 +17,10 @@ export function entryAnalysisPlugin(): Plugin {
             const facadeInfo = this.getModuleInfo(bundle.facadeModuleId)
             // this info is exposed by rollup commonjs plugin
             if (facadeInfo?.meta?.commonjs?.isCommonJS) {
-              analysis.isCommonjs[bundle.name] = true
+              const relativePath = slash(
+                path.relative(root, bundle.facadeModuleId)
+              )
+              analysis.isCommonjs[relativePath] = true
             }
           }
         }
