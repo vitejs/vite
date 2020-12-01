@@ -14,7 +14,8 @@ import { makeLegalIdentifier } from '@rollup/pluginutils'
 import {
   InternalResolver,
   resolveBareModuleRequest,
-  jsSrcRE
+  jsSrcRE,
+  resolveNodeModuleFile
 } from '../resolver'
 import {
   debugHmr,
@@ -40,6 +41,7 @@ import { envPublicPath } from './serverPluginEnv'
 import { resolveOptimizedCacheDir } from '../optimizer'
 import { parse } from '../utils/babelParse'
 import { OptimizeAnalysisResult } from '../optimizer/entryAnalysisPlugin'
+import slash from 'slash'
 
 const debug = require('debug')('vite:rewrite')
 
@@ -198,7 +200,7 @@ export function rewriteImports(
 
           if (resolved !== id) {
             debug(`    "${id}" --> "${resolved}"`)
-            if (isOptimizedCjs(root, id)) {
+            if (isOptimizedCjs(root, resolver.requestToFile(importer), id)) {
               if (dynamicIndex === -1) {
                 const exp = source.substring(expStart, expEnd)
                 const replacement = transformCjsImport(exp, id, resolved, i)
@@ -355,10 +357,14 @@ function getAnalysis(root: string): OptimizeAnalysisResult | null {
   return analysis
 }
 
-function isOptimizedCjs(root: string, id: string) {
+function isOptimizedCjs(root: string, importer: string, id: string) {
   const analysis = getAnalysis(root)
   if (!analysis) return false
-  return !!analysis.isCommonjs[id]
+  const modulePath = resolveNodeModuleFile(importer, id)
+  if (!modulePath) {
+    return false
+  }
+  return !!analysis.isCommonjs[slash(path.relative(root, modulePath))]
 }
 
 export function transformCjsImport(

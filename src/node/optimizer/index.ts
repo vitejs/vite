@@ -203,7 +203,7 @@ export async function optimizeDeps(
       ...rollupInputOptions,
       plugins: [
         createDepAssetExternalPlugin(resolver),
-        entryAnalysisPlugin(),
+        entryAnalysisPlugin({ root }),
         ...(await createBaseRollupPlugins(root, resolver, config)),
         createDepAssetPlugin(resolver, root),
         ...pluginsOptimizer
