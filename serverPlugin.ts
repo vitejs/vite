@@ -155,6 +155,9 @@ async function parseSFC(
         loader: 'ts',
       })
       code = res.code
+      if (scriptBlock.map && scriptBlock.map.sourceRoot) {
+        scriptBlock.map.sourceRoot = ''
+      }
       scriptBlock.map = mergeSourceMap(
         scriptBlock.map,
         JSON.parse(res.map!)
