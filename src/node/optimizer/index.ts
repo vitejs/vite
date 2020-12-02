@@ -145,13 +145,19 @@ export async function optimizeDeps(
   // Force included deps - these can also be deep paths
   if (options.include) {
     options.include.forEach((id) => {
-      const pkg = resolveNodeModule(root, id, resolver)
-      if (pkg && pkg.entryFilePath) {
-        qualified[id] = pkg.entryFilePath
+      const nodeModule = resolveNodeModule(root, id, resolver)
+      if (nodeModule && nodeModule.entryFilePath) {
+        qualified[id] = {
+          main: nodeModule.entryFilePath,
+          peerDependencies: nodeModule.pkg.peerDependencies || {}
+        }
       } else {
         const filePath = resolveNodeModuleFile(root, id)
         if (filePath) {
-          qualified[id] = filePath
+          qualified[id] = {
+            main: filePath,
+            peerDependencies: {}
+          }
         }
       }
     })
@@ -195,9 +201,29 @@ export async function optimizeDeps(
   try {
     const rollup = require('rollup') as typeof Rollup
 
+    const input: Record<string, string> = {}
+    for (const pkgName in qualified) {
+      input[pkgName] = qualified[pkgName].main
+    }
+
+    const externalFunction = (
+      id: string,
+      importer: string | undefined,
+      isResolved: boolean
+    ) => {
+      if (importer) {
+        for (const pkgName in qualified) {
+          if (qualified[pkgName].main === importer) {
+            return Reflect.has(qualified[pkgName].peerDependencies, id)
+          }
+        }
+      }
+      return external.includes(id)
+    }
+
     const bundle = await rollup.rollup({
-      input: qualified,
-      external,
+      input,
+      external: externalFunction,
       // treeshake: { moduleSideEffects: 'no-external' },
       onwarn: onRollupWarning(spinner, options),
       ...rollupInputOptions,
@@ -271,8 +297,13 @@ export async function optimizeDeps(
 
 interface FilteredDeps {
   // id: entryFilePath
-  qualified: Record<string, string>
+  qualified: Record<string, PackageInfo>
   external: string[]
+}
+
+interface PackageInfo {
+  main: string
+  peerDependencies: Record<string, string>
 }
 
 function resolveQualifiedDeps(
@@ -359,9 +390,13 @@ function resolveQualifiedDeps(
     debug(`skipping ${id} (single esm file, doesn't need optimization)`)
   })
 
-  const qualified: Record<string, string> = {}
+  const qualified: Record<string, PackageInfo> = {}
   qualifiedDeps.forEach((id) => {
-    qualified[id] = resolveNodeModule(root, id, resolver)!.entryFilePath!
+    const nodeModule = resolveNodeModule(root, id, resolver)!
+    qualified[id] = {
+      main: nodeModule.entryFilePath!,
+      peerDependencies: nodeModule.pkg.peerDependencies || {}
+    }
   })
 
   // mark non-optimized deps as external
