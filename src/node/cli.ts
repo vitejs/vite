@@ -36,6 +36,7 @@ cli
 cli
   .command('[root]') // default command
   .alias('serve')
+  .allowUnknownOptions()
   .option('--port <port>', `[number]  port to listen to`)
   .option(
     '--force',
@@ -54,6 +55,7 @@ cli
 // build
 cli
   .command('build [root]')
+  .allowUnknownOptions()
   .option(
     '--entry <file>',
     `[string]  entry file for build (default: index.html)`
@@ -88,6 +90,7 @@ cli
 // optimize
 cli
   .command('optimize [root]')
+  .allowUnknownOptions()
   .option(
     '--force',
     `[boolean]  force the optimizer to ignore the cache and re-bundle`
