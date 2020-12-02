@@ -47,6 +47,9 @@ cli
     if (root) {
       argv.root = root
     }
+    if (typeof argv.open === 'undefined') {
+      argv.open = true;
+    }
     const options = await resolveOptions({ argv, defaultMode: 'development' })
     return runServe(options)
   })
