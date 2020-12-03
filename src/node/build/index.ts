@@ -1,7 +1,6 @@
 import path from 'path'
 import fs from 'fs-extra'
 import chalk from 'chalk'
-import pMapSeries from 'p-map-series'
 import { Ora } from 'ora'
 import { klona } from 'klona/json'
 import { resolveFrom, lookupFile, toArray, isStaticAsset } from '../utils'
@@ -572,7 +571,9 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
 
   // multiple builds are processed sequentially, in case a build
   // depends on the output of a preceding build.
-  const results = await pMapSeries(builds, async (build, i) => {
+  const results = []
+  for (let i = 0; i < builds.length; i++) {
+    const build = builds[i]
     const { output: outputOptions, onResult, ...inputOptions } = build
 
     const indexHtmlPath = getIndexHtmlOutputPath(build, outDir)
@@ -666,8 +667,8 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
     }
 
     spinner && spinner.start()
-    return result
-  })
+    results.push(result)
+  }
 
   // copy over /public if it exists
   if (write && emitAssets && fs.existsSync(publicDir)) {
