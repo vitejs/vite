@@ -40,7 +40,7 @@ import { ServerConfig } from '../config'
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
 
-const defaultCacheEntry = { styles: [], customs: [] }
+let defaultCacheEntry = { styles: [], customs: [] }
 
 export const srcImportMap = new Map()
 
