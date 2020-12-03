@@ -40,6 +40,8 @@ import { ServerConfig } from '../config'
 const debug = require('debug')('vite:sfc')
 const getEtag = require('etag')
 
+const defaultCacheEntry = { styles: [], customs: [] }
+
 export const srcImportMap = new Map()
 
 interface CacheEntry {
@@ -422,7 +424,7 @@ async function parseSFC(
     })
   }
 
-  cached = cached || { styles: [], customs: [] }
+  cached = cached || defaultCacheEntry
   cached.descriptor = descriptor
   vueCache.set(filePath, cached)
   debug(`${filePath} parsed in ${Date.now() - start}ms.`)
@@ -533,7 +535,7 @@ async function compileSFCMain(
     bindings: script ? script.bindings : undefined
   }
 
-  cached = cached || { styles: [], customs: [] }
+  cached = cached || defaultCacheEntry
   cached.script = result
   vueCache.set(filePath, cached)
   return result
@@ -614,7 +616,7 @@ function compileSFCTemplate(
     map: map as SourceMap
   }
 
-  cached = cached || { styles: [], customs: [] }
+  cached = cached || defaultCacheEntry
   cached.template = result
   vueCache.set(filePath, cached)
 
@@ -695,7 +697,7 @@ async function compileSFCStyle(
 
   result.code = await rewriteCssUrls(result.code, publicPath)
 
-  cached = cached || { styles: [], customs: [] }
+  cached = cached || defaultCacheEntry
   cached.styles[index] = result
   vueCache.set(filePath, cached)
 
@@ -717,7 +719,7 @@ function resolveCustomBlock(
   }
 
   const result = custom.content
-  cached = cached || { styles: [], customs: [] }
+  cached = cached || defaultCacheEntry
   cached.customs[index] = result
   vueCache.set(filePath, cached)
   return result
