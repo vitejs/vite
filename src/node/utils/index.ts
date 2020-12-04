@@ -9,3 +9,8 @@ export function toArray<T>(arg: T | T[] | undefined) {
 
 export const isPlainObject = (val: unknown): val is object =>
   Object.prototype.toString.call(val) === '[object Object]'
+
+export const getLocalTime = (): string => {
+  const date = new Date()
+  return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+}
