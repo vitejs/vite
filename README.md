@@ -436,7 +436,7 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
     <script type="module" src="http://localhost:3000/main.js"></script>
     ```
 
-    Also make sure the server is configured to serve static assets in the Viter working directory, otherwise assets such as images won't be loaded properly.
+    Also make sure the server is configured to serve static assets in the Vite working directory, otherwise assets such as images won't be loaded properly.
 
 3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. You can use this file to render links with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
 
@@ -539,7 +539,7 @@ Finally, because compilation is still done in Node, it can technically support a
 
 `es-dev-server` is a great project and we did take some inspiration from it when refactoring Vite in the early stages. That said, here is why Vite is different from `es-dev-server` and why we didn't just implement Vite as a middleware for `es-dev-server`:
 
-- One of Vite's primary goal was to support Hot Module Replacement, but `es-dev-server` internals is a bit too opaque to get this working nicely via a middleware.
+- One of Vite's primary goals was to support Hot Module Replacement, but `es-dev-server` internals are a bit too opaque to get this working nicely via a middleware.
 
 - Vite aims to be a single tool that integrates both the dev and the build process. You can use Vite to both serve and bundle the same source code, with zero configuration.
 
