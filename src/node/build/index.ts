@@ -411,7 +411,10 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
   }
 
   const outDir = path.resolve(root, config.outDir)
-  const indexPath = path.resolve(root, 'index.html')
+  const indexPath = path.resolve(
+    root,
+    config.entry.endsWith('.html') ? config.entry : 'index.html'
+  )
   const publicDir = path.join(root, 'public')
   const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
@@ -767,8 +770,8 @@ function createEmitPlugin(
  * `outDir` in Vite config).
  */
 function getIndexHtmlOutputPath({ input, output }: Build, outDir: string) {
-  return input === 'index.html'
-    ? path.resolve(outDir, output.file || input)
+  return typeof input === 'string' && input.endsWith('.html')
+    ? path.resolve(outDir, output.file || 'index.html')
     : ''
 }
 
