@@ -564,9 +564,12 @@ export async function resolveConfig(
       userConfig = await loadConfigFromBundledFile(resolvedPath, code)
     }
 
-    let config = (typeof userConfig === 'function'
-      ? userConfig(mode)
-      : userConfig) as ResolvedConfig
+    if (typeof userConfig === 'function') {
+      userConfig = userConfig(mode)
+    }
+
+    const config = {} as ResolvedConfig
+    mergePlugin(config, userConfig)
 
     // resolve plugins
     if (config.plugins) {
@@ -583,12 +586,6 @@ export async function resolveConfig(
     // normalize config root to absolute
     if (config.root && !path.isAbsolute(config.root)) {
       config.root = path.resolve(path.dirname(resolvedPath), config.root)
-    }
-
-    if (typeof config.vueTransformAssetUrls === 'object') {
-      config.vueTransformAssetUrls = normalizeAssetUrlOptions(
-        config.vueTransformAssetUrls
-      )
     }
 
     const env = loadEnv(mode, config.root || cwd)
