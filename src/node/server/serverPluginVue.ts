@@ -22,7 +22,8 @@ import {
   resolveFrom,
   cachedRead,
   cleanUrl,
-  watchFileIfOutOfRoot
+  watchFileIfOutOfRoot,
+  getLocalTime
 } from '../utils'
 import { transform } from '../esbuildService'
 import { InternalResolver, resolveBareModuleRequest } from '../resolver'
@@ -219,7 +220,7 @@ export const vuePlugin: ServerPlugin = ({
       })
       console.log(
         chalk.green(`[vite:hmr] `) +
-          `${path.relative(root, filePath)} updated. (reload)`
+          `${path.relative(root, filePath)} updated. (reload) ${getLocalTime()}`
       )
     }
 
@@ -341,7 +342,7 @@ export const vuePlugin: ServerPlugin = ({
         chalk.green(`[vite:hmr] `) +
           `${path.relative(root, filePath)} updated. (${updateType.join(
             ' & '
-          )})`
+          )}) ${getLocalTime()}`
       )
     }
   })

@@ -31,7 +31,7 @@ import LRUCache from 'lru-cache'
 import slash from 'slash'
 import { isCSSRequest } from '../utils/cssUtils'
 import { Node, StringLiteral, Statement, Expression } from '@babel/types'
-import { resolveCompiler } from '../utils'
+import { resolveCompiler, getLocalTime } from '../utils'
 import { HMRPayload } from '../../hmrPayload'
 import { clientPublicPath } from './serverPluginClient'
 
@@ -151,7 +151,7 @@ export const hmrPlugin: ServerPlugin = ({
           boundaries.length === 1 ? boundaries[0] : `${boundaries.length} files`
         console.log(
           chalk.green(`[vite:hmr] `) +
-            `${file} hot updated due to change in ${relativeFile}.`
+            `${file} hot updated due to change in ${relativeFile}. ${getLocalTime()}`
         )
         send({
           type: 'multi',

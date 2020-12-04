@@ -1,7 +1,7 @@
 import { basename } from 'path'
 import { Context, ServerPlugin } from '.'
 import hash_sum from 'hash-sum'
-import { cleanUrl, isImportRequest, readBody } from '../utils'
+import { cleanUrl, isImportRequest, readBody, getLocalTime } from '../utils'
 import { srcImportMap, vueCache } from './serverPluginVue'
 import {
   compileCss,
@@ -101,7 +101,10 @@ export const cssPlugin: ServerPlugin = ({ root, app, watcher, resolver }) => {
     const publicPath = cleanUrl(styleImport)
     const index = qs.parse(styleImport.split('?', 2)[1]).index
     const path = `${publicPath}?type=style&index=${index}`
-    console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
+    console.log(
+      chalk.green(`[vite:hmr] `) +
+        `${publicPath} updated. (style) ${getLocalTime()}`
+    )
     watcher.send({
       type: 'style-update',
       path,
