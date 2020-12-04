@@ -90,7 +90,7 @@ export interface SharedConfig {
    * the location of the config file itself.
    * @default process.cwd()
    */
-  root?: string
+  root: string
   /**
    * Import alias. The entries can either be exact request -> request mappings
    * (exact, no wildcard syntax), or request path -> fs directory mappings.
@@ -111,7 +111,7 @@ export interface SharedConfig {
    * }
    * ```
    */
-  alias?: Record<string, string>
+  alias: Record<string, string>
   /**
    * Function that tests a file path for inclusion as a static asset.
    */
@@ -119,21 +119,21 @@ export interface SharedConfig {
   /**
    * Custom file transforms.
    */
-  transforms?: Transform[]
+  transforms: Transform[]
   /**
    * Custom index.html transforms.
    */
-  indexHtmlTransforms?: IndexHtmlTransform[]
+  indexHtmlTransforms: IndexHtmlTransform[]
   /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
    */
-  define?: Record<string, any>
+  define: Record<string, any>
   /**
    * Resolvers to map dev server public path requests to/from file system paths,
    * and optionally map module ids to public path requests.
    */
-  resolvers?: Resolver[]
+  resolvers: Resolver[]
   /**
    * Configure dep optimization behavior.
    *
@@ -146,22 +146,22 @@ export interface SharedConfig {
    * }
    * ```
    */
-  optimizeDeps?: DepOptimizationOptions
+  optimizeDeps: DepOptimizationOptions
   /**
    * Options to pass to `@vue/compiler-dom`
    *
    * https://github.com/vuejs/vue-next/blob/master/packages/compiler-core/src/options.ts
    */
-  vueCompilerOptions?: CompilerOptions
+  vueCompilerOptions: CompilerOptions
   /**
    * Configure what tags/attributes to trasnform into asset url imports,
    * or disable the transform altogether with `false`.
    */
-  vueTransformAssetUrls?: SFCTemplateCompileOptions['transformAssetUrls']
+  vueTransformAssetUrls: SFCTemplateCompileOptions['transformAssetUrls']
   /**
    * The options for template block preprocessor render.
    */
-  vueTemplatePreprocessOptions?: Record<
+  vueTemplatePreprocessOptions: Record<
     string,
     SFCTemplateCompileOptions['preprocessOptions']
   >
@@ -177,12 +177,12 @@ export interface SharedConfig {
    * }
    * ```
    */
-  vueCustomBlockTransforms?: Record<string, CustomBlockTransform>
+  vueCustomBlockTransforms: Record<string, CustomBlockTransform>
   /**
    * Configure what to use for jsx factory and fragment.
    * @default 'vue'
    */
-  jsx?:
+  jsx:
     | 'vue'
     | 'preact'
     | 'react'
@@ -193,26 +193,25 @@ export interface SharedConfig {
   /**
    * Environment mode
    */
-  mode?: string
+  mode: string
   /**
    * CSS preprocess options
    */
-  cssPreprocessOptions?: CssPreprocessOptions
+  cssPreprocessOptions: CssPreprocessOptions
   /**
    * CSS modules options
    */
-  cssModuleOptions?: SFCAsyncStyleCompileOptions['modulesOptions']
+  cssModuleOptions: SFCAsyncStyleCompileOptions['modulesOptions']
   /**
    * Enable esbuild
    * @default true
    */
-  enableEsbuild?: boolean
+  enableEsbuild: boolean
   /**
    * Environment variables parsed from .env files
    * only ones starting with VITE_ are exposed on `import.meta.env`
-   * @internal
    */
-  env?: DotenvParseOutput
+  env: DotenvParseOutput
 }
 
 export interface HmrConfig {
@@ -288,7 +287,7 @@ export interface ServerConfig extends SharedConfig {
   chokidarWatchOptions?: chokidarWatchOptions
 }
 
-export interface BuildConfig extends Required<SharedConfig> {
+export interface BuildConfig extends SharedConfig {
   /**
    * Entry. Use this to specify a js entry file in use cases where an
    * `index.html` does not exist (e.g. serving vite assets from a different host)
@@ -426,7 +425,6 @@ export interface BuildConfig extends Required<SharedConfig> {
    * Plugin functions that mutate the Vite build config. The `builds` array can
    * be added to if the plugin wants to add another Rollup build that Vite writes
    * to disk. Return a function to gain access to each build's output.
-   * @internal
    */
   configureBuild?: BuildPlugin | BuildPlugin[]
 }
@@ -450,7 +448,9 @@ export interface ViteRollupInputOptions extends RollupInputOptions {
   pluginsOptimizer?: RollupPlugin[]
 }
 
-export interface UserConfig extends Partial<BuildConfig>, ServerConfig {
+export interface UserConfig
+  extends Partial<BuildConfig>,
+    Partial<ServerConfig> {
   plugins?: Plugin[]
 }
 
@@ -477,11 +477,10 @@ export interface PluginConfig
     | 'enableRollupPluginVue'
   > {}
 
-export type ResolvedConfig = UserConfig & {
-  env: DotenvParseOutput
-  /**
-   * Path of config file.
-   */
+export interface ResolvedConfig
+  extends Omit<UserConfig, keyof SharedConfig>,
+    SharedConfig {
+  /** Path of config file */
   __path?: string
 }
 
@@ -510,21 +509,68 @@ export async function resolveConfig(
     }
   }
 
-  if (!resolvedPath) {
-    // load environment variables
-    return {
-      env: loadEnv(mode, cwd)
+  const config = { mode } as ResolvedConfig
+
+  if (resolvedPath) {
+    mergePlugin(config, await loadUserConfig(resolvedPath, mode))
+  }
+
+  // ensure plugin functions have access to the resolved root
+  config.root =
+    argv && argv.root
+      ? path.resolve(argv.root)
+      : config.root
+      ? path.resolve(path.dirname(resolvedPath!), config.root)
+      : process.cwd()
+
+  // set default values before plugin functions are called
+  config.alias ??= {}
+  config.cssModuleOptions ??= {}
+  config.cssPreprocessOptions ??= {}
+  config.define ??= {}
+  config.enableEsbuild ??= true
+  config.env ??= {}
+  config.indexHtmlTransforms ??= []
+  config.jsx ??= 'vue'
+  config.optimizeDeps ??= {}
+  config.resolvers ??= []
+  config.transforms ??= []
+  config.vueCompilerOptions ??= {}
+  config.vueCustomBlockTransforms ??= {}
+  config.vueTransformAssetUrls ??= {}
+  config.vueTemplatePreprocessOptions ??= {}
+
+  if (config.plugins) {
+    for (const plugin of config.plugins) {
+      mergePlugin(config, plugin)
     }
   }
 
-  const isTS = resolvedPath.endsWith('.ts')
+  // cli options take highest priority
+  if (argv) {
+    mergePlugin(config, argv)
+  }
 
+  const env = loadEnv(mode, config.root || cwd)
+  Object.assign(config.env, env)
+
+  debug(`config resolved in ${Date.now() - start}ms`)
+
+  config.__path = resolvedPath
+  return config
+}
+
+interface NodeModuleWithCompile extends NodeModule {
+  _compile(code: string, filename: string): any
+}
+
+async function loadUserConfig(configPath: string, mode: string) {
   try {
-    let userConfig: UserConfig | ((mode: string) => UserConfig) | undefined
+    let config: UserConfig | ((mode: string) => UserConfig) | undefined
 
-    if (!isTS) {
+    if (!configPath.endsWith('.ts')) {
       try {
-        userConfig = require(resolvedPath)
+        config = require(configPath)
       } catch (e) {
         const ignored = /Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/
         if (!ignored.test(e.message)) {
@@ -533,7 +579,7 @@ export async function resolveConfig(
       }
     }
 
-    if (!userConfig) {
+    if (!config) {
       // 2. if we reach here, the file is ts or using es import syntax, or
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
@@ -551,7 +597,7 @@ export async function resolveConfig(
         external: (id: string) =>
           (id[0] !== '.' && !path.isAbsolute(id)) ||
           id.slice(-5, id.length) === '.json',
-        input: resolvedPath,
+        input: configPath,
         treeshake: false,
         plugins: [esbuildPlugin, nodeResolve, esbuildRenderChunkPlugin]
       })
@@ -563,53 +609,15 @@ export async function resolveConfig(
         format: 'cjs'
       })
 
-      userConfig = await loadConfigFromBundledFile(resolvedPath, code)
+      config = await loadConfigFromBundledFile(configPath, code)
     }
 
-    if (typeof userConfig === 'function') {
-      userConfig = userConfig(mode)
-    }
-
-    const config = {} as ResolvedConfig
-    mergePlugin(config, userConfig)
-
-    // ensure plugin functions have access to the resolved root
-    config.root =
-      argv && argv.root
-        ? path.resolve(argv.root)
-        : config.root
-        ? path.resolve(path.dirname(resolvedPath), config.root)
-        : process.cwd()
-
-    if (config.plugins) {
-      for (const plugin of config.plugins) {
-        mergePlugin(config, plugin)
-      }
-    }
-
-    // cli options take highest priority
-    if (argv) {
-      mergePlugin(config, argv)
-    }
-
-    const env = loadEnv(mode, config.root || cwd)
-    Object.assign(config.env, env)
-
-    debug(`config resolved in ${Date.now() - start}ms`)
-
-    config.__path = resolvedPath
-    return config
+    return typeof config === 'function' ? config(mode) : config
   } catch (e) {
-    console.error(
-      chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
-    )
+    console.error(chalk.red(`[vite] failed to load config from ${configPath}:`))
     console.error(e)
     process.exit(1)
   }
-}
-
-interface NodeModuleWithCompile extends NodeModule {
-  _compile(code: string, filename: string): any
 }
 
 async function loadConfigFromBundledFile(
@@ -634,10 +642,7 @@ async function loadConfigFromBundledFile(
 
 function mergePlugin(config: ResolvedConfig, plugin: Plugin) {
   if (typeof plugin === 'function') {
-    plugin = plugin(config)
-    if (!plugin) {
-      return
-    }
+    plugin = plugin(config) || {}
   }
   for (const key in plugin) {
     let value = (plugin as any)[key]

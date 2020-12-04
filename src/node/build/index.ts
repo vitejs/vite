@@ -4,7 +4,7 @@ import chalk from 'chalk'
 import pMapSeries from 'p-map-series'
 import { Ora } from 'ora'
 import { klona } from 'klona/json'
-import { resolveFrom, lookupFile, toArray, isStaticAsset } from '../utils'
+import { resolveFrom, lookupFile, toArray } from '../utils'
 import {
   rollup as Rollup,
   ExternalOption,
@@ -30,7 +30,7 @@ import {
   createEsbuildRenderChunkPlugin
 } from './buildPluginEsbuild'
 import { createReplacePlugin } from './buildPluginReplace'
-import { BuildConfig, defaultDefines } from '../config'
+import { BuildConfig, defaultDefines, ResolvedConfig } from '../config'
 import { createBuildJsTransformPlugin } from '../transform'
 import hash_sum from 'hash-sum'
 import { resolvePostcssOptions, isCSSRequest } from '../utils/cssUtils'
@@ -257,87 +257,57 @@ async function createVuePlugin(
 /**
  * Clone the given config object and fill it with default values.
  */
-function prepareConfig(config: Partial<BuildConfig>): BuildConfig {
+function prepareConfig(config: ResolvedConfig): BuildConfig {
   const {
-    alias = {},
     assetsDir = '_assets',
-    assetsInclude = isStaticAsset,
     assetsInlineLimit = 4096,
     base = '/',
     cssCodeSplit = true,
-    cssModuleOptions = {},
-    cssPreprocessOptions = {},
-    define = {},
     emitAssets = true,
     emitIndex = true,
-    enableEsbuild = true,
     enableRollupPluginVue = true,
     entry = 'index.html',
     env = {},
     esbuildTarget = 'es2020',
-    indexHtmlTransforms = [],
-    jsx = 'vue',
     minify = true,
     mode = 'production',
-    optimizeDeps = {},
     outDir = 'dist',
-    resolvers = [],
     rollupDedupe = [],
     rollupInputOptions = {},
     rollupOutputOptions = {},
     rollupPluginVueOptions = {},
-    root = process.cwd(),
     shouldPreload = null,
     silent = false,
     sourcemap = false,
     terserOptions = {},
     transforms = [],
-    vueCompilerOptions = {},
-    vueCustomBlockTransforms = {},
-    vueTransformAssetUrls = {},
-    vueTemplatePreprocessOptions = {},
     write = true
   } = klona(config)
 
   return {
     ...config,
-    alias,
     assetsDir,
-    assetsInclude,
     assetsInlineLimit,
     base,
     cssCodeSplit,
-    cssModuleOptions,
-    cssPreprocessOptions,
-    define,
     emitAssets,
     emitIndex,
-    enableEsbuild,
     enableRollupPluginVue,
     entry,
     env,
     esbuildTarget,
-    indexHtmlTransforms,
-    jsx,
     minify,
     mode,
-    optimizeDeps,
     outDir,
-    resolvers,
     rollupDedupe,
     rollupInputOptions,
     rollupOutputOptions,
     rollupPluginVueOptions,
-    root,
     shouldPreload,
     silent,
     sourcemap,
     terserOptions,
     transforms,
-    vueCompilerOptions,
-    vueCustomBlockTransforms,
-    vueTransformAssetUrls,
-    vueTemplatePreprocessOptions,
     write
   }
 }
@@ -353,11 +323,11 @@ let parallelCallCounts = 0
  * Returns a Promise containing the build result.
  */
 export async function build(
-  options: Partial<BuildConfig>
+  resolvedConfig: ResolvedConfig
 ): Promise<BuildResult[]> {
   parallelCallCounts++
   try {
-    return await doBuild(options)
+    return await doBuild(resolvedConfig)
   } finally {
     parallelCallCounts--
     if (parallelCallCounts <= 0) {
@@ -366,10 +336,10 @@ export async function build(
   }
 }
 
-async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
+async function doBuild(resolvedConfig: ResolvedConfig): Promise<BuildResult[]> {
   const builds: Build[] = []
 
-  const config = prepareConfig(options)
+  const config = prepareConfig(resolvedConfig)
   const postBuildHooks = toArray(config.configureBuild)
     .map((configureBuild) => configureBuild(config, builds))
     .filter(Boolean) as PostBuildHook[]
@@ -431,7 +401,7 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
     assetsInlineLimit,
     resolver,
     shouldPreload,
-    options
+    config
   )
 
   const basePlugins = await createBaseRollupPlugins(root, resolver, config)
@@ -694,17 +664,17 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
  * - Templates are compiled with SSR specific optimizations.
  */
 export async function ssrBuild(
-  options: Partial<BuildConfig>
+  resolvedConfig: ResolvedConfig
 ): Promise<BuildResult[]> {
   const {
     rollupInputOptions,
     rollupOutputOptions,
     rollupPluginVueOptions
-  } = options
+  } = resolvedConfig
 
   return build({
     outDir: 'dist-ssr',
-    ...options,
+    ...resolvedConfig,
     rollupPluginVueOptions: {
       target: 'node',
       ...rollupPluginVueOptions

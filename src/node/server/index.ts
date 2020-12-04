@@ -50,14 +50,14 @@ export type Context = DefaultContext &
 
 export function createServer(config: ServerConfig): Server {
   const {
-    root = process.cwd(),
+    root,
     configureServer = [],
-    resolvers = [],
-    alias = {},
-    transforms = [],
-    vueCustomBlockTransforms = {},
-    optimizeDeps = {},
-    enableEsbuild = true,
+    resolvers,
+    alias,
+    transforms,
+    vueCustomBlockTransforms,
+    optimizeDeps,
+    enableEsbuild,
     assetsInclude,
     chokidarWatchOptions = {}
   } = config

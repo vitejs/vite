@@ -11,9 +11,8 @@ if (argv.debug) {
 
 import { cac } from 'cac'
 import os from 'os'
-import path from 'path'
 import chalk from 'chalk'
-import { UserConfig, resolveConfig } from './config'
+import { UserConfig, resolveConfig, ResolvedConfig } from './config'
 
 const cli = cac(`vite`)
 
@@ -110,7 +109,7 @@ async function resolveOptions({
 }: {
   argv: Partial<UserConfig> & { [key: string]: any }
   defaultMode: string
-}): Promise<UserConfig> {
+}) {
   // cast xxx=true | false into actual booleans
   Object.keys(argv).forEach((key) => {
     if (argv[key] === 'false') {
@@ -151,12 +150,12 @@ async function resolveOptions({
   return config
 }
 
-function runServe(options: UserConfig) {
-  const server = require('./server').createServer(options)
+function runServe(config: ResolvedConfig) {
+  const server = require('./server').createServer(config)
 
-  let port = options.port || 3000
-  let hostname = options.hostname || 'localhost'
-  const protocol = options.https ? 'https' : 'http'
+  let port = config.port || 3000
+  let hostname = config.hostname || 'localhost'
+  const protocol = config.https ? 'https' : 'http'
 
   server.on('error', (e: Error & { code?: string }) => {
     if (e.code === 'EADDRINUSE') {
@@ -194,7 +193,7 @@ function runServe(options: UserConfig) {
     console.log()
     require('debug')('vite:server')(`server ready in ${Date.now() - start}ms.`)
 
-    if (options.open) {
+    if (config.open) {
       require('./utils/openBrowser').openBrowser(
         `${protocol}://${hostname}:${port}`
       )
@@ -202,9 +201,9 @@ function runServe(options: UserConfig) {
   })
 }
 
-async function runBuild(options: UserConfig) {
+async function runBuild(config: ResolvedConfig) {
   try {
-    await require('./build')[options.ssr ? 'ssrBuild' : 'build'](options)
+    await require('./build')[config.ssr ? 'ssrBuild' : 'build'](config)
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Build errored out.`))
@@ -213,12 +212,9 @@ async function runBuild(options: UserConfig) {
   }
 }
 
-async function runOptimize(options: UserConfig) {
+async function runOptimize(config: ResolvedConfig) {
   try {
-    await require('./optimizer').optimizeDeps(
-      options,
-      true /* as cli command */
-    )
+    await require('./optimizer').optimizeDeps(config, true /* as cli command */)
     process.exit(0)
   } catch (err) {
     console.error(chalk.red(`[vite] Dep optimization errored out.`))
