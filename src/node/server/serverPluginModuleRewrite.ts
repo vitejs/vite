@@ -367,7 +367,7 @@ function isOptimizedCjs(root: string, importer: string, id: string) {
   return !!analysis.isCommonjs[slash(path.relative(root, modulePath))]
 }
 
-type ImportName = { importedName: string; localName: string }
+type ImportSpecifier = { importedName: string; localName: string }
 
 export function transformCjsImport(
   exp: string,
@@ -376,7 +376,7 @@ export function transformCjsImport(
   importIndex: number
 ): string {
   const ast = parse(exp)[0] as ImportDeclaration
-  const importNames: ImportName[] = []
+  const importNames: ImportSpecifier[] = []
 
   ast.specifiers.forEach((obj) => {
     if (obj.type === 'ImportSpecifier' && obj.imported.type === 'Identifier') {
@@ -394,7 +394,7 @@ export function transformCjsImport(
 }
 
 function generateCjsImport(
-  importNames: ImportName[],
+  importNames: ImportSpecifier[],
   id: string,
   resolvedPath: string,
   importIndex: number
