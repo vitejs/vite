@@ -257,59 +257,30 @@ async function createVuePlugin(
 /**
  * Clone the given config object and fill it with default values.
  */
-function prepareConfig(config: ResolvedConfig): BuildConfig {
-  const {
-    assetsDir = '_assets',
-    assetsInlineLimit = 4096,
-    base = '/',
-    cssCodeSplit = true,
-    emitAssets = true,
-    emitIndex = true,
-    enableRollupPluginVue = true,
-    entry = 'index.html',
-    env = {},
-    esbuildTarget = 'es2020',
-    minify = true,
-    mode = 'production',
-    outDir = 'dist',
-    rollupDedupe = [],
-    rollupInputOptions = {},
-    rollupOutputOptions = {},
-    rollupPluginVueOptions = {},
-    shouldPreload = null,
-    silent = false,
-    sourcemap = false,
-    terserOptions = {},
-    transforms = [],
-    write = true
-  } = klona(config)
+function prepareConfig(config: Partial<BuildConfig>) {
+  config.assetsDir ??= '_assets'
+  config.assetsInlineLimit ??= 4096
+  config.base ??= '/'
+  config.cssCodeSplit ??= true
+  config.emitAssets ??= true
+  config.emitIndex ??= true
+  config.enableRollupPluginVue ??= true
+  config.entry ??= 'index.html'
+  config.esbuildTarget ??= 'es2020'
+  config.minify ??= true
+  config.mode ??= 'production'
+  config.outDir ??= 'dist'
+  config.rollupDedupe ??= []
+  config.rollupInputOptions ??= {}
+  config.rollupOutputOptions ??= {}
+  config.rollupPluginVueOptions ??= {}
+  config.shouldPreload ??= null
+  config.silent ??= false
+  config.sourcemap ??= false
+  config.terserOptions ??= {}
+  config.write ??= true
 
-  return {
-    ...config,
-    assetsDir,
-    assetsInlineLimit,
-    base,
-    cssCodeSplit,
-    emitAssets,
-    emitIndex,
-    enableRollupPluginVue,
-    entry,
-    env,
-    esbuildTarget,
-    minify,
-    mode,
-    outDir,
-    rollupDedupe,
-    rollupInputOptions,
-    rollupOutputOptions,
-    rollupPluginVueOptions,
-    shouldPreload,
-    silent,
-    sourcemap,
-    terserOptions,
-    transforms,
-    write
-  }
+  return config as BuildConfig
 }
 
 /**
@@ -336,10 +307,12 @@ export async function build(
   }
 }
 
-async function doBuild(resolvedConfig: ResolvedConfig): Promise<BuildResult[]> {
-  const builds: Build[] = []
+async function doBuild(
+  partialConfig: Partial<BuildConfig>
+): Promise<BuildResult[]> {
+  const config = prepareConfig(partialConfig)
 
-  const config = prepareConfig(resolvedConfig)
+  const builds: Build[] = []
   const postBuildHooks = toArray(config.configureBuild)
     .map((configureBuild) => configureBuild(config, builds))
     .filter(Boolean) as PostBuildHook[]
