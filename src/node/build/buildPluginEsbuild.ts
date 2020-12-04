@@ -39,7 +39,8 @@ export const createEsbuildPlugin = async (
             ...jsxConfig,
             ...(isVueTs ? { loader: 'ts' } : null)
           },
-          jsx
+          jsx,
+          true // exitOnFailure
         )
       }
     }
