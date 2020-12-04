@@ -3,7 +3,6 @@ import fs from 'fs-extra'
 import chalk from 'chalk'
 import pMapSeries from 'p-map-series'
 import { Ora } from 'ora'
-import { klona } from 'klona/json'
 import { resolveFrom, lookupFile, toArray } from '../utils'
 import {
   rollup as Rollup,
