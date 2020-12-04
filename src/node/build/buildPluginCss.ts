@@ -85,6 +85,7 @@ export const createBuildCssPlugin = ({
           if (result.errors.length) {
             console.error(`[vite] error applying css transforms: `)
             result.errors.forEach(console.error)
+            process.exit(1)
           }
           css = result.code
           modules = result.modules
@@ -228,6 +229,7 @@ function minifyCSS(css: string) {
   if (res.errors && res.errors.length) {
     console.error(chalk.red(`[vite] error when minifying css:`))
     console.error(res.errors)
+    process.exit(1)
   }
 
   if (res.warnings && res.warnings.length) {

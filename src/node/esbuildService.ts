@@ -67,7 +67,8 @@ export const transform = async (
   src: string,
   request: string,
   options: TransformOptions = {},
-  jsxOption?: SharedConfig['jsx']
+  jsxOption?: SharedConfig['jsx'],
+  exitOnFailure?: boolean
 ) => {
   const service = await ensureService()
   const file = cleanUrl(request)
@@ -114,6 +115,9 @@ export const transform = async (
       console.error(e)
     }
     debug(`options used: `, options)
+    if (exitOnFailure) {
+      process.exit(1)
+    }
     return {
       code: '',
       map: undefined

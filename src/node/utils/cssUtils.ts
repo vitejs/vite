@@ -68,7 +68,7 @@ export async function compileCss(
   isBuild: boolean = false
 ): Promise<SFCStyleCompileResults | string> {
   const id = hash_sum(publicPath)
-  const postcssConfig = await loadPostcssConfig(root)
+  const postcssConfig = await loadPostcssConfig(root, isBuild)
   const { compileStyleAsync } = resolveCompiler(root)
 
   if (
@@ -138,7 +138,8 @@ type PostCSSConfigResult = ReturnType<typeof postcssrc> extends Promise<infer T>
 let cachedPostcssConfig: PostCSSConfigResult | null | undefined
 
 async function loadPostcssConfig(
-  root: string
+  root: string,
+  exitOnFailure?: boolean
 ): Promise<PostCSSConfigResult | null> {
   if (cachedPostcssConfig !== undefined) {
     return cachedPostcssConfig
@@ -150,13 +151,16 @@ async function loadPostcssConfig(
     if (!/No PostCSS Config found/.test(e.message)) {
       console.error(chalk.red(`[vite] Error loading postcss config:`))
       console.error(e)
+      if (exitOnFailure) {
+        process.exit(1)
+      }
     }
     return (cachedPostcssConfig = null)
   }
 }
 
 export async function resolvePostcssOptions(root: string, isBuild: boolean) {
-  const config = await loadPostcssConfig(root)
+  const config = await loadPostcssConfig(root, isBuild)
   const options = config && config.options
   const plugins = config && config.plugins ? config.plugins.slice() : []
   plugins.unshift(require('postcss-import')())
