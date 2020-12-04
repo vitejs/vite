@@ -151,21 +151,8 @@ async function resolveOptions({
     delete userConfig.env.NODE_ENV
   }
 
-  let updatedConfig = userConfig
-  // use for loop instead of forEach
-  // because changeConfig may add plugins into updatedConfig
-  // and we should call the changeConfig of new-added plugins
-  for (
-    let i = 0;
-    updatedConfig.plugins && i < updatedConfig.plugins.length;
-    i++
-  ) {
-    const plugin = updatedConfig.plugins[i]
-    updatedConfig = plugin.changeConfig?.(updatedConfig) ?? updatedConfig
-  }
-
   // cli options take higher priority
-  return { ...updatedConfig, ...argv }
+  return { ...userConfig, ...argv }
 }
 
 function runServe(options: UserConfig) {

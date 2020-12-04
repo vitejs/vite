@@ -30,7 +30,7 @@ import {
 } from './transform'
 import { DepOptimizationOptions } from './optimizer'
 import { ServerOptions } from 'https'
-import { lookupFile } from './utils'
+import { isPlainObject, lookupFile } from './utils'
 import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
 import { WatchOptions as chokidarWatchOptions } from 'chokidar'
 import { ProxiesOptions } from './server/serverPluginProxy'
@@ -454,7 +454,9 @@ export interface UserConfig extends Partial<BuildConfig>, ServerConfig {
   plugins?: Plugin[]
 }
 
-export interface Plugin
+export type Plugin = PluginConfig | ((config: ResolvedConfig) => PluginConfig)
+
+export interface PluginConfig
   extends Pick<
     UserConfig,
     | 'alias'
@@ -471,12 +473,7 @@ export interface Plugin
     | 'rollupInputOptions'
     | 'rollupOutputOptions'
     | 'enableRollupPluginVue'
-  > {
-  /**
-   * plugins can change vite config
-   */
-  changeConfig?: (prevConfig: ResolvedConfig) => ResolvedConfig
-}
+  > {}
 
 export type ResolvedConfig = UserConfig & {
   env: DotenvParseOutput
@@ -570,7 +567,7 @@ export async function resolveConfig(mode: string, configPath?: string) {
     // resolve plugins
     if (config.plugins) {
       for (const plugin of config.plugins) {
-        config = resolvePlugin(config, plugin) as any
+        mergePlugin(config, plugin)
       }
     }
 
@@ -627,104 +624,73 @@ async function loadConfigFromBundledFile(
   return config
 }
 
-function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
-  return {
-    ...config,
-    ...plugin,
-    alias: {
-      ...plugin.alias,
-      ...config.alias
-    },
-    define: {
-      ...plugin.define,
-      ...config.define
-    },
-    transforms: [...(config.transforms || []), ...(plugin.transforms || [])],
-    indexHtmlTransforms: [
-      ...(config.indexHtmlTransforms || []),
-      ...(plugin.indexHtmlTransforms || [])
-    ],
-    resolvers: [...(config.resolvers || []), ...(plugin.resolvers || [])],
-    configureServer: ([] as ServerPlugin[]).concat(
-      config.configureServer || [],
-      plugin.configureServer || []
-    ),
-    configureBuild: ([] as BuildPlugin[]).concat(
-      config.configureBuild || [],
-      plugin.configureBuild || []
-    ),
-    vueCompilerOptions: {
-      ...config.vueCompilerOptions,
-      ...plugin.vueCompilerOptions
-    },
-    vueTransformAssetUrls: mergeAssetUrlOptions(
-      config.vueTransformAssetUrls,
-      plugin.vueTransformAssetUrls
-    ),
-    vueTemplatePreprocessOptions: {
-      ...config.vueTemplatePreprocessOptions,
-      ...plugin.vueTemplatePreprocessOptions
-    },
-    vueCustomBlockTransforms: {
-      ...config.vueCustomBlockTransforms,
-      ...plugin.vueCustomBlockTransforms
-    },
-    rollupInputOptions: mergeObjectOptions(
-      config.rollupInputOptions,
-      plugin.rollupInputOptions
-    ),
-    rollupOutputOptions: mergeObjectOptions(
-      config.rollupOutputOptions,
-      plugin.rollupOutputOptions
-    ),
-    enableRollupPluginVue:
-      config.enableRollupPluginVue || plugin.enableRollupPluginVue
+function mergePlugin(config: ResolvedConfig, plugin: Plugin) {
+  if (typeof plugin === 'function') {
+    plugin = plugin(config)
+  }
+  for (const key in plugin) {
+    let value = (plugin as any)[key]
+    if (value == null) {
+      continue
+    }
+    const oldValue = (config as any)[key]
+    // normalize the asset url options before merging
+    if (key === 'vueTransformAssetUrls') {
+      if (isPlainObject(oldValue)) {
+        if (isPlainObject(value))
+          Object.assign(oldValue, normalizeAssetUrlOptions(value))
+        continue // ignore boolean when object exists
+      }
+    }
+    // let `true` take precedence
+    else if (key === 'enableRollupPluginVue' && !value) {
+      continue
+    }
+    // prefer merging into an existing array
+    else if (Array.isArray(value)) {
+      if (Array.isArray(oldValue)) {
+        value.forEach((value) => oldValue.push(value))
+        continue
+      }
+      // shallow clone to assume ownership
+      value = [...value]
+    }
+    // prefer merging into an existing object (shallowly)
+    else if (isPlainObject(value)) {
+      if (isPlainObject(oldValue)) {
+        const overrides: any = {}
+        if (/^rollup(In|Out)putOptions$/.test(key)) {
+          overrides.plugins = mergeArrays(
+            (oldValue as any).plugins,
+            (value as any).plugins
+          )
+          if (key === 'rollupInputOptions')
+            overrides.acornInjectPlugins = mergeArrays(
+              (oldValue as any).acornInjectPlugins,
+              (value as any).acornInjectPlugins
+            )
+        }
+        Object.assign(oldValue, value, overrides)
+        continue
+      }
+      // shallow clone to assume ownership
+      value = { ...value }
+    }
+    // overwrite when merging is unnecessary
+    ;(config as any)[key] = value
   }
 }
 
-function mergeAssetUrlOptions(
-  to: SFCTemplateCompileOptions['transformAssetUrls'],
-  from: SFCTemplateCompileOptions['transformAssetUrls']
-): SFCTemplateCompileOptions['transformAssetUrls'] {
-  if (from === true) {
-    return to
-  }
-  if (from === false) {
-    return from
-  }
-  if (typeof to === 'boolean') {
-    return from || to
-  }
-  return {
-    ...normalizeAssetUrlOptions(to),
-    ...normalizeAssetUrlOptions(from)
-  }
+function mergeArrays(to: any, from: any) {
+  return to ? (from ? [].concat(to, from) : to) : from
 }
 
 function normalizeAssetUrlOptions(o: Record<string, any> | undefined) {
-  if (o && Object.keys(o).some((key) => Array.isArray(o[key]))) {
-    return {
-      tags: o
-    }
+  if (o && Object.values(o).some(Array.isArray)) {
+    return { tags: o }
   } else {
     return o
   }
-}
-
-function mergeObjectOptions(to: any, from: any) {
-  if (!to) return from
-  if (!from) return to
-  const res: any = { ...to }
-  for (const key in from) {
-    const existing = res[key]
-    const toMerge = from[key]
-    if (Array.isArray(existing) || Array.isArray(toMerge)) {
-      res[key] = [].concat(existing, toMerge).filter(Boolean)
-    } else {
-      res[key] = toMerge
-    }
-  }
-  return res
 }
 
 export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
