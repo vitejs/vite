@@ -114,10 +114,10 @@ export const transform = async (
     } else {
       console.error(e)
     }
+    debug(`options used: `, options)
     if (exitOnFailure) {
       process.exit(1)
     }
-    debug(`options used: `, options)
     return {
       code: '',
       map: undefined
