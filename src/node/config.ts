@@ -571,21 +571,23 @@ export async function resolveConfig(
     const config = {} as ResolvedConfig
     mergePlugin(config, userConfig)
 
-    // resolve plugins
+    // ensure plugin functions have access to the resolved root
+    config.root =
+      argv && argv.root
+        ? path.resolve(argv.root)
+        : config.root
+        ? path.resolve(path.dirname(resolvedPath), config.root)
+        : process.cwd()
+
     if (config.plugins) {
       for (const plugin of config.plugins) {
         mergePlugin(config, plugin)
       }
     }
 
-    // cli options take higher priority
+    // cli options take highest priority
     if (argv) {
       mergePlugin(config, argv)
-    }
-
-    // normalize config root to absolute
-    if (config.root && !path.isAbsolute(config.root)) {
-      config.root = path.resolve(path.dirname(resolvedPath), config.root)
     }
 
     const env = loadEnv(mode, config.root || cwd)

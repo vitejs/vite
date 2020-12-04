@@ -121,10 +121,6 @@ async function resolveOptions({
     }
   })
 
-  if (argv.root) {
-    argv.root = path.isAbsolute(argv.root) ? argv.root : path.resolve(argv.root)
-  }
-
   // deprecation warning
   if (argv.sw || argv.serviceWorker) {
     console.warn(
