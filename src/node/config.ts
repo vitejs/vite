@@ -454,7 +454,9 @@ export interface UserConfig extends Partial<BuildConfig>, ServerConfig {
   plugins?: Plugin[]
 }
 
-export type Plugin = PluginConfig | ((config: ResolvedConfig) => PluginConfig)
+export type Plugin =
+  | PluginConfig
+  | ((config: ResolvedConfig) => PluginConfig | void)
 
 export interface PluginConfig
   extends Pick<
@@ -633,6 +635,9 @@ async function loadConfigFromBundledFile(
 function mergePlugin(config: ResolvedConfig, plugin: Plugin) {
   if (typeof plugin === 'function') {
     plugin = plugin(config)
+    if (!plugin) {
+      return
+    }
   }
   for (const key in plugin) {
     let value = (plugin as any)[key]
