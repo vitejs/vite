@@ -589,10 +589,8 @@ export async function resolveConfig(
     }
 
     const env = loadEnv(mode, config.root || cwd)
-    config.env = {
-      ...config.env,
-      ...env
-    }
+    Object.assign(config.env, env)
+
     debug(`config resolved in ${Date.now() - start}ms`)
 
     config.__path = resolvedPath
