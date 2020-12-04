@@ -485,7 +485,11 @@ export type ResolvedConfig = UserConfig & {
 
 const debug = require('debug')('vite:config')
 
-export async function resolveConfig(mode: string, configPath?: string) {
+export async function resolveConfig(
+  mode: string,
+  configPath?: string,
+  argv?: any
+) {
   const start = Date.now()
   const cwd = process.cwd()
 
@@ -569,6 +573,11 @@ export async function resolveConfig(mode: string, configPath?: string) {
       for (const plugin of config.plugins) {
         mergePlugin(config, plugin)
       }
+    }
+
+    // cli options take higher priority
+    if (argv) {
+      mergePlugin(config, argv)
     }
 
     // normalize config root to absolute
