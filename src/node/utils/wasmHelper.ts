@@ -1,6 +1,4 @@
-declare const atob: any
-declare const fetch: any
-declare const WebAssembly: any
+/// <reference lib="dom" />
 
 async function initWasm(opts = {}, url: string) {
   let result
