@@ -18,7 +18,7 @@ async function initWasm(opts = {}, url: string) {
     // a lot of static file servers, so we just work around it by getting the
     // raw buffer.
     const response = await fetch(url)
-    const contentType = response.headers.get('Content-Type')
+    const contentType = response.headers.get('Content-Type') || ''
     if (
       'instantiateStreaming' in WebAssembly &&
       contentType.startsWith('application/wasm')
