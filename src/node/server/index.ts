@@ -66,11 +66,7 @@ export function createServer(config: ServerConfig): Server {
   const server = resolveServer(config, app.callback())
   const watcher = chokidar.watch(root, {
     ignored: ['**/node_modules/**', '**/.git/**'],
-    // #610
-    awaitWriteFinish: {
-      stabilityThreshold: 100,
-      pollInterval: 10
-    },
+    ignoreInitial: true,
     ...chokidarWatchOptions
   }) as HMRWatcher
   const resolver = createResolver(root, resolvers, alias, assetsInclude)

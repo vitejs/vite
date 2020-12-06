@@ -29,7 +29,8 @@ const fsReadCache = new LRUCache<string, CacheEntry>({
  */
 export async function cachedRead(
   ctx: Context | null,
-  file: string
+  file: string,
+  poll = false
 ): Promise<Buffer> {
   const lastModified = fs.statSync(file).mtimeMs
   const cached = fsReadCache.get(file)
@@ -53,6 +54,10 @@ export async function cachedRead(
   }
   // #395 some file is an binary file, eg. font
   let content = await fs.readFile(file)
+  if (poll && !content.length) {
+    await untilModified(file)
+    content = await fs.readFile(file)
+  }
   // Populate the "sourcesContent" array and resolve relative paths in the
   // "sources" array, so the debugger can trace back to the original source.
   if (file.endsWith('.map')) {
@@ -104,6 +109,26 @@ export async function cachedRead(
     watchFileIfOutOfRoot(watcher, root, file)
   }
   return content
+}
+
+// #610 when hot-reloading Vue files, we read immediately on file change event
+// and sometimes this can be too early and get an empty buffer. Poll until the
+// file's modified time has changed before reading again.
+async function untilModified(file: string) {
+  const mtime = (await fs.stat(file)).mtimeMs
+  return new Promise((r) => {
+    let n = 0
+    const poll = async () => {
+      n++
+      const newMtime = (await fs.stat(file)).mtimeMs
+      if (newMtime !== mtime || n > 10) {
+        r(0)
+      } else {
+        setTimeout(poll, 10)
+      }
+    }
+    setTimeout(poll, 10)
+  })
 }
 
 /**

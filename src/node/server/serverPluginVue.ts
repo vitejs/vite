@@ -399,7 +399,7 @@ async function parseSFC(
 
   if (!content) {
     try {
-      content = await cachedRead(null, filePath)
+      content = await cachedRead(null, filePath, true /* poll */)
     } catch (e) {
       return
     }
