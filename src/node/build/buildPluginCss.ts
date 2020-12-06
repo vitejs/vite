@@ -144,7 +144,10 @@ export const createBuildCssPlugin = ({
 
     async renderChunk(code, chunk) {
       let chunkCSS = ''
-      for (const id in chunk.modules) {
+      // the order of module import is reversive
+      // see https://github.com/rollup/rollup/issues/435#issue-125406562
+      const ids = Object.keys(chunk.modules).reverse()
+      for (const id of ids) {
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
         }
