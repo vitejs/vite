@@ -1,0 +1,13 @@
+{
+  "name": "vite-playground",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --debug",
+    "build": "vite build --debug",
+    "serve": "serve dist"
+  },
+  "devDependencies": {
+    "serve": "^11.3.2"
+  }
+}
