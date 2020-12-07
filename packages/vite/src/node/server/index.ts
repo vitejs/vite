@@ -7,7 +7,7 @@ import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import sirv, { Options as SirvOptions } from 'sirv'
 import chokidar, { FSWatcher, WatchOptions } from 'chokidar'
-import { resolveConfig, Config, ResolvedConfig } from '../config'
+import { resolveConfig, UserConfig, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
   RollupPluginContainer
@@ -82,11 +82,12 @@ export interface ViteDevServer extends http.Server {
 }
 
 export async function createServer(
-  inlineConfig: Config = {},
+  inlineConfig: UserConfig = {},
   configPath?: string
 ): Promise<ViteDevServer> {
   const resolvedConfig = await resolveConfig(
     inlineConfig,
+    'serve',
     'development',
     configPath
   )
@@ -202,7 +203,7 @@ function resolveServer(
 }
 
 export async function startServer(
-  inlineConfig: Config = {},
+  inlineConfig: UserConfig = {},
   configPath?: string
 ): Promise<ViteDevServer> {
   const server = await createServer(inlineConfig, configPath)

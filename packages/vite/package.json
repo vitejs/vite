@@ -50,6 +50,7 @@
     ]
   },
   "dependencies": {
+    "@rollup/plugin-node-resolve": "^11.0.0",
     "@types/connect": "^3.4.33",
     "@types/http-proxy": "^1.17.4",
     "@types/node": "^14.14.10",
@@ -62,6 +63,7 @@
     "connect": "^3.7.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
+    "dotenv-expand": "^5.1.0",
     "esbuild": "^0.8.20",
     "http-proxy": "^1.18.1",
     "rollup": "^2.34.2",
@@ -69,6 +71,7 @@
     "ws": "^7.4.1"
   },
   "devDependencies": {
+    "@types/dotenv": "^8.2.0",
     "@types/ws": "^7.4.0",
     "source-map-support": "^0.5.19"
   }

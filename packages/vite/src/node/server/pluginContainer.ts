@@ -8,7 +8,7 @@
 import { resolve, relative, dirname, sep, posix } from 'path'
 import { createHash } from 'crypto'
 import { promises as fs } from 'fs'
-import { Plugin } from '../config'
+import { UniversalPlugin } from '../config'
 import {
   RollupOptions,
   InputOptions,
@@ -42,7 +42,7 @@ export interface RollupPluginContainer {
   resolveId(
     id: string,
     importer?: string,
-    skip?: Plugin[]
+    skip?: UniversalPlugin[]
   ): Promise<ResolveIdResult>
   transform(code: string, id: string): Promise<string>
   load(id: string): Promise<LoadResult>
@@ -62,7 +62,7 @@ function identifierPair(id: string, importer?: string) {
 }
 
 export async function createPluginContainer(
-  plugins: Plugin[],
+  plugins: UniversalPlugin[],
   opts: RollupOptions & PluginContainerOptions = {}
 ): Promise<RollupPluginContainer> {
   const MODULES = opts.modules || new Map()
@@ -111,7 +111,7 @@ export async function createPluginContainer(
 
   let watchFiles = new Set()
 
-  let plugin: Plugin | undefined
+  let plugin: UniversalPlugin | undefined
   let parser = Parser
 
   const minimalContext: MinimalPluginContext = {
@@ -365,20 +365,20 @@ export async function createPluginContainer(
 
   // Tracks recursive resolveId calls
   const resolveSkips = {
-    skip: new Map<Plugin, string[]>(),
+    skip: new Map<UniversalPlugin, string[]>(),
 
-    has(plugin: Plugin, key: string) {
+    has(plugin: UniversalPlugin, key: string) {
       const skips = this.skip.get(plugin)
       return skips ? skips.includes(key) : false
     },
 
-    add(plugin: Plugin, key: string) {
+    add(plugin: UniversalPlugin, key: string) {
       const skips = this.skip.get(plugin)
       if (skips) skips.push(key)
       else this.skip.set(plugin, [key])
     },
 
-    delete(plugin: Plugin, key: string) {
+    delete(plugin: UniversalPlugin, key: string) {
       const skips = this.skip.get(plugin)
       if (!skips) return
       const i = skips.indexOf(key)
