@@ -1,3 +1,3 @@
 export interface BuildOptions {}
 
-export type BuildPlugin = () => void
+export type BuildHook = () => void
