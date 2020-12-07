@@ -50,17 +50,22 @@
     ]
   },
   "dependencies": {
+    "acorn": "^8.0.4",
+    "acorn-class-fields": "^0.3.7",
     "cac": "^6.6.1",
     "chalk": "^4.1.0",
     "cheap-watch": "^1.0.3",
     "chokidar": "^3.4.3",
+    "connect": "^3.7.0",
+    "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "esbuild": "^0.8.20",
-    "koa": "^2.13.0",
-    "rollup": "^2.34.2"
+    "http-proxy-middleware": "^1.0.6",
+    "rollup": "^2.34.2",
+    "sirv": "^1.0.9"
   },
   "devDependencies": {
-    "@types/koa": "^2.11.6",
+    "@types/connect": "^3.4.33",
     "source-map-support": "^0.5.19"
   }
 }

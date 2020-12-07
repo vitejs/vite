@@ -1,10 +1,10 @@
 import path from 'path'
 import { TransformOptions } from 'esbuild'
 import { Plugin as RollupPlugin } from 'rollup'
-import { BuildOptions, BuildPlugin } from './commands/build'
-import { ServerOptions, ServerPlugin } from './commands/serve'
+import { BuildOptions, BuildHook } from './commands/build'
+import { ServerOptions, ServerHook } from './commands/serve'
 import { CSSOptions } from './plugins/css'
-import { deepMerge } from './lib/utils'
+import { deepMerge } from './utils'
 import { internalPlugins } from './plugins'
 
 export interface Config {
@@ -52,8 +52,8 @@ export type ESBuildOptions = Pick<
 
 export interface Plugin extends RollupPlugin {
   enforce?: 'pre' | 'post'
-  configureServer?: ServerPlugin | ServerPlugin[]
-  configureBuild?: BuildPlugin | BuildPlugin[]
+  configureServer?: ServerHook | ServerHook[]
+  configureBuild?: BuildHook | BuildHook[]
 }
 
 export interface ResolvedConfig extends Config {
@@ -61,6 +61,8 @@ export interface ResolvedConfig extends Config {
   mode: string
   env: Record<string, string>
   plugins: Plugin[]
+  server: ServerOptions
+  build: BuildOptions
 }
 
 export async function resolveConfig(
@@ -102,6 +104,8 @@ export async function resolveConfig(
       : process.cwd(),
     mode: mode || defaultMode,
     plugins: resolvedPlugins,
+    server: config.server || {},
+    build: config.build || {},
     // TODO
     env: {}
   }

@@ -1,12 +1,18 @@
 import os from 'os'
+import connect from 'connect'
 import chalk from 'chalk'
-import Koa from 'koa'
+import { AddressInfo } from 'net'
 import chokidar, { FSWatcher, WatchOptions } from 'chokidar'
 import { RequestListener, Server } from 'http'
 import { ServerOptions as HttpsServerOptions } from 'https'
 import { resolveConfig, Config, ResolvedConfig } from '../config'
+import {
+  createPluginContainer,
+  RollupPluginContainer
+} from '../lib/pluginContainer'
 import { resolveHttpsConfig } from '../lib/https'
-import { AddressInfo } from 'net'
+import { setupServer } from '../lib/setupServer'
+import { ServerOptions as ProxyOptions } from 'http-proxy'
 
 export interface ServerOptions {
   host?: string
@@ -17,28 +23,45 @@ export interface ServerOptions {
    */
   https?: boolean | HttpsServerOptions
   force?: boolean
-  hmr?: HmrConfig | boolean
+  hmr?: HmrOptions | boolean
   watch?: WatchOptions
-  // TODO
-  cors?: {} | boolean
-  // TODO
-  proxy?: Record<string, string | {}>
+  proxy?: Record<string, string | ProxyOptions>
+  cors?: CorsOptions | boolean
 }
 
-export interface HmrConfig {
+export interface HmrOptions {
   protocol?: string
   hostname?: string
   port?: number
   path?: string
 }
 
-export type ServerPlugin = (ctx: ServerPluginContext) => void
+/**
+ * https://github.com/expressjs/cors#configuration-options
+ */
+export interface CorsOptions {
+  origin?:
+    | CorsOrigin
+    | ((origin: string, cb: (err: Error, origins: CorsOrigin) => void) => void)
+  methods?: string | string[]
+  allowedHeaders?: string | string[]
+  exposedHeaders?: string | string[]
+  credentials?: boolean
+  maxAge?: number
+  preflightContinue?: boolean
+  optionsSuccessStatus?: number
+}
+
+export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
+
+export type ServerHook = (ctx: ServerPluginContext) => void
 
 export interface ServerPluginContext {
   root: string
-  app: Koa
+  app: connect.Server
   server: Server
   watcher: FSWatcher
+  container: RollupPluginContainer
   config: ResolvedConfig
 }
 
@@ -58,8 +81,8 @@ export async function createServer(
 
   const serverConfig = resolvedConfig.server || {}
   const root = resolvedConfig.root
-  const app = new Koa()
-  const server = resolveServer(serverConfig, app.callback()) as ViteDevServer
+  const app = connect()
+  const server = resolveServer(serverConfig, app) as ViteDevServer
 
   const userWatchOptions = serverConfig.watch || {}
   const watcher = chokidar.watch(root, {
@@ -73,21 +96,26 @@ export async function createServer(
     ...userWatchOptions
   })
 
+  const container = await createPluginContainer(resolvedConfig.plugins)
+
   const context: ServerPluginContext = (server.context = {
     root,
     app,
     server,
     watcher,
+    container,
     config: resolvedConfig
   })
 
-  // apply server configuration from plugins
+  setupServer(context)
+
+  // apply server configuration hooks from plugins
   for (const plugin of resolvedConfig.plugins) {
-    const fn = plugin.configureServer
-    if (Array.isArray(fn)) {
-      fn.forEach((fn) => fn(context))
-    } else if (fn) {
-      fn(context)
+    const hook = plugin.configureServer
+    if (Array.isArray(hook)) {
+      hook.forEach((fn) => fn(context))
+    } else if (hook) {
+      hook(context)
     }
   }
 

@@ -1,11 +1,7 @@
-import { cac } from 'cac'
-import chalk from 'chalk'
-import { ServerOptions, startServer } from './commands/serve'
-
-// check debug mode first before running any commands.
+// check debug mode first before requiring any commands.
 const {
   options: { debug }
-} = cac().parse()
+} = require('cac')().parse()
 if (debug) {
   process.env.DEBUG = `vite:` + (debug === true ? '*' : debug)
   try {
@@ -13,6 +9,10 @@ if (debug) {
     require('source-map-support').install()
   } catch (e) {}
 }
+
+import { cac } from 'cac'
+import chalk from 'chalk'
+import { ServerOptions, startServer } from './commands/serve'
 
 const cli = cac('vite')
 
@@ -28,7 +28,7 @@ cli
   .option('--config <file>', `[string]  use specified config file`)
   .option('--root <path>', `[string]  use specified config file`)
 
-// serve
+// dev
 cli
   .command('[root]') // default command
   .alias('serve')
