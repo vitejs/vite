@@ -1,4 +1,3 @@
-export * from './commands/serve'
-export * from './commands/build'
-export * from './commands/optimize'
+export * from './server'
+export * from './build'
 export * from './config'

@@ -1,18 +1,29 @@
 import os from 'os'
+import path from 'path'
+import * as http from 'http'
+import * as https from 'https'
 import connect from 'connect'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
+import sirv, { Options as SirvOptions } from 'sirv'
 import chokidar, { FSWatcher, WatchOptions } from 'chokidar'
-import { RequestListener, Server } from 'http'
-import { ServerOptions as HttpsServerOptions } from 'https'
 import { resolveConfig, Config, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
   RollupPluginContainer
-} from '../lib/pluginContainer'
-import { resolveHttpsConfig } from '../lib/https'
-import { setupServer } from '../lib/setupServer'
-import { ServerOptions as ProxyOptions } from 'http-proxy'
+} from '../server/pluginContainer'
+import { resolveHttpsConfig } from '../server/https'
+import { setupWebSocketServer, WebSocketConnection } from '../server/ws'
+import { setupProxy, ProxyOptions } from './proxy'
+import { createTransformMiddleware } from './transform'
+
+// shim connect app.sue for inference
+// https://github.com/DefinitelyTyped/DefinitelyTyped/pull/49994
+declare module 'connect' {
+  interface Server {
+    use(fn: connect.NextHandleFunction): connect.Server
+  }
+}
 
 export interface ServerOptions {
   host?: string
@@ -21,7 +32,7 @@ export interface ServerOptions {
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
-  https?: boolean | HttpsServerOptions
+  https?: boolean | https.ServerOptions
   force?: boolean
   hmr?: HmrOptions | boolean
   watch?: WatchOptions
@@ -54,19 +65,20 @@ export interface CorsOptions {
 
 export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
-export type ServerHook = (ctx: ServerPluginContext) => void
+export type ServerHook = (ctx: ServerContext) => (() => void) | void
 
-export interface ServerPluginContext {
+export interface ServerContext {
   root: string
   app: connect.Server
-  server: Server
+  server: http.Server
   watcher: FSWatcher
+  ws: WebSocketConnection
   container: RollupPluginContainer
   config: ResolvedConfig
 }
 
-export interface ViteDevServer extends Server {
-  context: ServerPluginContext
+export interface ViteDevServer extends http.Server {
+  context: ServerContext
 }
 
 export async function createServer(
@@ -80,44 +92,76 @@ export async function createServer(
   )
 
   const serverConfig = resolvedConfig.server || {}
-  const root = resolvedConfig.root
-  const app = connect()
+
+  const app = connect() as connect.Server
   const server = resolveServer(serverConfig, app) as ViteDevServer
 
-  const userWatchOptions = serverConfig.watch || {}
+  const root = resolvedConfig.root
+  const { watch = {}, cors, proxy } = serverConfig
+
   const watcher = chokidar.watch(root, {
-    ignored: [
-      '**/node_modules/**',
-      '**/.git/**',
-      ...(userWatchOptions.ignored || [])
-    ],
+    ignored: ['**/node_modules/**', '**/.git/**', ...(watch.ignored || [])],
     ignoreInitial: true,
     ignorePermissionErrors: true,
-    ...userWatchOptions
+    ...watch
   })
 
   const container = await createPluginContainer(resolvedConfig.plugins)
+  const ws = setupWebSocketServer(server)
 
-  const context: ServerPluginContext = (server.context = {
+  const context: ServerContext = (server.context = {
     root,
     app,
     server,
     watcher,
     container,
+    ws,
     config: resolvedConfig
   })
 
-  setupServer(context)
-
   // apply server configuration hooks from plugins
+  const postHooks: ((() => void) | void)[] = []
   for (const plugin of resolvedConfig.plugins) {
     const hook = plugin.configureServer
     if (Array.isArray(hook)) {
-      hook.forEach((fn) => fn(context))
+      hook.forEach((fn) => postHooks.push(fn(context)))
     } else if (hook) {
-      hook(context)
+      postHooks.push(hook(context))
     }
   }
+
+  // cors
+  if (cors) {
+    app.use(require('cors')(typeof cors === 'boolean' ? {} : cors))
+  }
+
+  // proxy
+  if (proxy) {
+    setupProxy(context)
+  }
+
+  // main transform middleware
+  app.use(createTransformMiddleware(context))
+
+  // serve static files
+  const sirvOptions: SirvOptions = {
+    dev: true,
+    etag: true,
+    setHeaders(res) {
+      // sirv by default uses no-store which makes the etag useless
+      res.setHeader('Cache-Control', 'no-cache')
+    }
+  }
+  app.use(sirv(root, sirvOptions))
+  app.use(sirv(path.join(root, 'public'), sirvOptions))
+
+  // run post config hooks
+  postHooks.forEach((fn) => fn && fn())
+
+  app.use((req, res) => {
+    console.log(req.url)
+    res.end('catch all')
+  })
 
   // overwrite listen to run optimizer before server start
   const listen = server.listen.bind(server)
@@ -136,26 +180,23 @@ export async function createServer(
 
 function resolveServer(
   { https = false, proxy }: ServerOptions,
-  requestListener: RequestListener
-): Server {
+  app: connect.Server
+): http.Server {
   if (!https) {
-    return require('http').createServer(requestListener)
+    return require('http').createServer(app)
   }
 
   const httpsOptions = typeof https === 'boolean' ? {} : https
   if (proxy) {
     // #484 fallback to http1 when proxy is needed.
-    return require('https').createServer(
-      resolveHttpsConfig(httpsOptions),
-      requestListener
-    )
+    return require('https').createServer(resolveHttpsConfig(httpsOptions), app)
   } else {
     return require('http2').createSecureServer(
       {
         ...resolveHttpsConfig(httpsOptions),
         allowHTTP1: true
       },
-      requestListener
+      app
     )
   }
 }
@@ -164,7 +205,6 @@ export async function startServer(
   inlineConfig: Config = {},
   configPath?: string
 ): Promise<ViteDevServer> {
-  const start = Date.now()
   const server = await createServer(inlineConfig, configPath)
 
   const resolvedOptions = server.context.config.server || {}
@@ -188,6 +228,7 @@ export async function startServer(
   server.listen(port, () => {
     console.log()
     console.log(`  Dev server running at:`)
+    console.log()
     const interfaces = os.networkInterfaces()
     Object.keys(interfaces).forEach((key) =>
       (interfaces[key] || [])
@@ -206,7 +247,11 @@ export async function startServer(
         })
     )
     console.log()
-    console.log(chalk.cyan(`[vite] server ready in ${Date.now() - start}ms.`))
+    console.log(
+      // @ts-ignore
+      chalk.cyan(`  ready in ${Date.now() - global.__vite_start_time}ms.`)
+    )
+    console.log()
   })
 
   return server

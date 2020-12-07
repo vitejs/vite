@@ -1,4 +1,7 @@
 // check debug mode first before requiring any commands.
+// @ts-ignore
+global.__vite_start_time = Date.now()
+
 const {
   options: { debug }
 } = require('cac')().parse()
@@ -12,7 +15,7 @@ if (debug) {
 
 import { cac } from 'cac'
 import chalk from 'chalk'
-import { ServerOptions, startServer } from './commands/serve'
+import { ServerOptions } from './server'
 
 const cli = cac('vite')
 
@@ -41,7 +44,7 @@ cli
   })
   .action((root: string, options: ServerOptions & GlobalCLIOptions) => {
     if (root) options.root = root
-    startServer(options, options.config)
+    require('./server/index').startServer(options, options.config)
   })
 
 cli.help()
