@@ -690,10 +690,10 @@ function mergeAssetUrlOptions(
   if (typeof to === 'boolean') {
     return from || to
   }
-  return {
-    ...normalizeAssetUrlOptions(to),
-    ...normalizeAssetUrlOptions(from)
-  }
+  return normalizeAssetUrlOptions({
+    ...normalizeAssetUrlOptions(to)?.tags,
+    ...normalizeAssetUrlOptions(from)?.tags
+  })
 }
 
 function normalizeAssetUrlOptions(o: Record<string, any> | undefined) {
