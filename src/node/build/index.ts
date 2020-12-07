@@ -619,7 +619,7 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
                 await fs.emptyDir(outDir)
               }
               if (emitIndex) {
-                await fs.writeFile(indexHtmlPath, html)
+                await fs.writeFile(indexHtmlPath, result.html)
               }
             }
           })
