@@ -50,6 +50,9 @@
     ]
   },
   "dependencies": {
+    "@types/connect": "^3.4.33",
+    "@types/http-proxy": "^1.17.4",
+    "@types/node": "^14.14.10",
     "acorn": "^8.0.4",
     "acorn-class-fields": "^0.3.7",
     "cac": "^6.6.1",
@@ -60,12 +63,13 @@
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "esbuild": "^0.8.20",
-    "http-proxy-middleware": "^1.0.6",
+    "http-proxy": "^1.18.1",
     "rollup": "^2.34.2",
-    "sirv": "^1.0.9"
+    "sirv": "^1.0.9",
+    "ws": "^7.4.1"
   },
   "devDependencies": {
-    "@types/connect": "^3.4.33",
+    "@types/ws": "^7.4.0",
     "source-map-support": "^0.5.19"
   }
 }
