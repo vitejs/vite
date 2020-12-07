@@ -68,7 +68,7 @@ export function setupProxy({
           }
         }
 
-        debug(`proxying: ${req.url} -> ${opts.target || opts.forward}`)
+        debug(`${req.url} -> ${opts.target || opts.forward}`)
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }
