@@ -15,15 +15,30 @@ if (debug) {
 
 import { cac } from 'cac'
 import chalk from 'chalk'
-import { ServerOptions } from './server'
+import { startServer, ServerOptions } from './server'
 
 const cli = cac('vite')
 
 // global options
 interface GlobalCLIOptions {
+  '--'?: string[]
   debug?: boolean | string
   config?: string
   root?: string
+  mode?: string
+}
+
+/**
+ * removing global flags before passing as command specific sub-configs
+ */
+function cleanOptions(options: GlobalCLIOptions) {
+  const ret = { ...options }
+  delete ret['--']
+  delete ret.debug
+  delete ret.config
+  delete ret.root
+  delete ret.mode
+  return ret
 }
 
 cli
@@ -43,8 +58,15 @@ cli
     default: 'development'
   })
   .action((root: string, options: ServerOptions & GlobalCLIOptions) => {
-    if (root) options.root = root
-    require('./server/index').startServer(options, options.config)
+    const start = require('./server/index').startServer as typeof startServer
+    start(
+      {
+        root,
+        server: cleanOptions(options) as ServerOptions
+      },
+      options.mode,
+      options.config
+    )
   })
 
 cli.help()

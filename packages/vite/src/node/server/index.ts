@@ -83,12 +83,13 @@ export interface ViteDevServer extends http.Server {
 
 export async function createServer(
   inlineConfig: UserConfig = {},
+  mode = 'development',
   configPath?: string
 ): Promise<ViteDevServer> {
   const resolvedConfig = await resolveConfig(
     inlineConfig,
     'serve',
-    'development',
+    mode,
     configPath
   )
 
@@ -145,14 +146,7 @@ export async function createServer(
   app.use(createTransformMiddleware(context))
 
   // serve static files
-  const sirvOptions: SirvOptions = {
-    dev: true,
-    etag: true,
-    setHeaders(res) {
-      // sirv by default uses no-store which makes the etag useless
-      res.setHeader('Cache-Control', 'no-cache')
-    }
-  }
+  const sirvOptions: SirvOptions = { dev: true, etag: true }
   app.use(sirv(root, sirvOptions))
   app.use(sirv(path.join(root, 'public'), sirvOptions))
 
@@ -161,6 +155,7 @@ export async function createServer(
 
   app.use((req, res) => {
     console.log(req.url)
+    // @TODO index.html fallback + code injection
     res.end('catch all')
   })
 
@@ -204,9 +199,10 @@ function resolveServer(
 
 export async function startServer(
   inlineConfig: UserConfig = {},
+  mode = 'development',
   configPath?: string
 ): Promise<ViteDevServer> {
-  const server = await createServer(inlineConfig, configPath)
+  const server = await createServer(inlineConfig, mode, configPath)
 
   const resolvedOptions = server.context.config.server || {}
   let port = resolvedOptions.port || 3000

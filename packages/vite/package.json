@@ -67,7 +67,8 @@
     "esbuild": "^0.8.20",
     "http-proxy": "^1.18.1",
     "rollup": "^2.34.2",
-    "sirv": "^1.0.9",
+    "selfsigned": "^1.10.8",
+    "sirv": "^1.0.10",
     "ws": "^7.4.1"
   },
   "devDependencies": {

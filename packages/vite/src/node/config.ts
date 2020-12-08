@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { TransformOptions } from 'esbuild'
-import Rollup, { Plugin as RollupPlugin } from 'rollup'
+import Rollup, { Plugin as RollupPlugin, RollupOptions } from 'rollup'
 import { BuildOptions, BuildHook } from './build'
 import { ServerOptions, ServerHook } from './server'
 import { CSSOptions } from './plugins/css'
@@ -73,6 +73,11 @@ export interface UserConfig {
    * @TODO validate and warn plugins that will not work during serve
    */
   plugins?: UniversalPlugin[]
+  /**
+   * Universal rollup options (used in both serve and build)
+   * Use function config to use conditional options for serve/build
+   */
+  rollupOptions?: RollupOptions
   build?: BuildOptions
   server?: ServerOptions
 }
@@ -84,12 +89,34 @@ export type ESBuildOptions = Pick<
   'target' | 'jsxFactory' | 'jsxFragment'
 >
 
+export type ConfigHook = (config: UserConfig) => UserConfig | void
+
 export interface UniversalPlugin extends RollupPlugin {
+  /**
+   * Enforce plugin invocation tier similar to webpack loaders
+   */
   enforce?: 'pre' | 'post'
-  configureServer?: ServerHook | ServerHook[]
+  /**
+   * Mutate or return new vite config before it's resolved.
+   * Note: plugins are resolved before running this hook so additional plugins
+   * injected in this hook will be ignored.
+   */
+  modifyConfig?: ConfigHook
+  /**
+   * Configure the vite server. The hook receives the server context.
+   */
+  configureServer?: ServerHook
+  /**
+   * Configure production build. The hook receives the rollup config which
+   * it can mutate or return. Passing multiple build hooks will produce multiple
+   * builds similar to a multi-config rollup build.
+   */
   configureBuild?: BuildHook | BuildHook[]
 }
 
+/**
+ * @internal
+ */
 export interface ResolvedConfig extends UserConfig {
   root: string
   mode: string
@@ -97,6 +124,7 @@ export interface ResolvedConfig extends UserConfig {
   plugins: UniversalPlugin[]
   server: ServerOptions
   build: BuildOptions
+  debug?: boolean
 }
 
 export async function resolveConfig(
@@ -117,14 +145,6 @@ export async function resolveConfig(
     config = deepMerge(fileConfig, config)
   }
 
-  // resolve root
-  const { root } = config
-  const resolvedRoot = root
-    ? path.isAbsolute(root)
-      ? root
-      : path.resolve(root)
-    : process.cwd()
-
   // resolve plugins
   const { plugins } = config
   const prePlugins: UniversalPlugin[] = []
@@ -144,7 +164,22 @@ export async function resolveConfig(
     ...postPlugins
   ]
 
-  return {
+  // run modifyConfig hooks
+  resolvedPlugins.forEach((p) => {
+    if (p.modifyConfig) {
+      config = p.modifyConfig(config) || config
+    }
+  })
+
+  // resolve root
+  const { root } = config
+  const resolvedRoot = root
+    ? path.isAbsolute(root)
+      ? root
+      : path.resolve(root)
+    : process.cwd()
+
+  const resolved = {
     ...config,
     root: resolvedRoot,
     mode,
@@ -153,6 +188,9 @@ export async function resolveConfig(
     build: config.build || {},
     env: loadEnv(mode, resolvedRoot)
   }
+  debug(`using resolved config:`)
+  debug(resolved)
+  return resolved
 }
 
 export async function loadConfigFromFile(
@@ -190,11 +228,7 @@ export async function loadConfigFromFile(
       // 1. try to directly require the module (assuming commonjs)
       try {
         userConfig = require(resolvedPath)
-        debug(
-          `using cjs config from ${resolvedPath} (loaded in ${
-            Date.now() - start
-          }ms)`
-        )
+        debug(`config file loaded in ${Date.now() - start}ms`)
       } catch (e) {
         const ignored = /Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/
         if (!ignored.test(e.message)) {
@@ -231,11 +265,7 @@ export async function loadConfigFromFile(
       })
 
       userConfig = await loadConfigFromBundledFile(resolvedPath, code)
-      debug(
-        `using ${isTS ? `ts` : `es`} config from ${resolvedPath} (loaded in ${
-          Date.now() - start
-        }ms)`
-      )
+      debug(`config file loaded in ${Date.now() - start}ms`)
     }
 
     const config =
@@ -285,8 +315,6 @@ function loadEnv(mode: string, root: string, prefix = 'VITE_') {
     )
   }
 
-  debug(`env mode: ${mode}`)
-
   const env: Record<string, string> = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
@@ -318,6 +346,5 @@ function loadEnv(mode: string, root: string, prefix = 'VITE_') {
     }
   }
 
-  debug(`env: %O`, env)
   return env
 }

@@ -47,7 +47,8 @@ export function setupProxy({
     if (opts.configure) {
       opts.configure(proxy, opts)
     }
-    proxies[context] = [proxy, opts]
+    // clone before saving becaues http-proxy mutates the options
+    proxies[context] = [proxy, { ...opts }]
   })
 
   app.use((req, res, next) => {
