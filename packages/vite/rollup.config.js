@@ -9,7 +9,23 @@ import MagicString from 'magic-string'
 /**
  * @type { import('rollup').RollupOptions }
  */
-const config = {
+const clientConfig = {
+  input: path.resolve(__dirname, 'src/client/client.ts'),
+  plugins: [
+    typescript({
+      target: 'es2018',
+      include: ['src/client/**/*.ts']
+    })
+  ],
+  output: {
+    dir: path.resolve(__dirname, 'dist/client')
+  }
+}
+
+/**
+ * @type { import('rollup').RollupOptions }
+ */
+const nodeConfig = {
   input: {
     index: path.resolve(__dirname, 'src/node/index.ts'),
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
@@ -26,7 +42,7 @@ const config = {
     shimCac(),
     typescript({
       target: 'es2019',
-      module: 'esnext',
+      include: ['src/**/*.ts'],
       esModuleInterop: true
     }),
     commonjs(),
@@ -173,4 +189,4 @@ function shimCac() {
   }
 }
 
-export default config
+export default [clientConfig, nodeConfig]

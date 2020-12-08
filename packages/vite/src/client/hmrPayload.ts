@@ -3,7 +3,6 @@ export type HMRPayload =
   | UpdatePayload
   | FullReloadPayload
   | StyleRemovePayload
-  | SWBustCachePayload
   | CustomPayload
   | MultiUpdatePayload
 
@@ -12,7 +11,7 @@ export interface ConnectedPayload {
 }
 
 export interface UpdatePayload {
-  type: 'js-update' | 'vue-reload' | 'vue-rerender' | 'style-update'
+  type: 'js-update' | 'style-update'
   path: string
   changeSrcPath: string
   timestamp: number
@@ -26,11 +25,6 @@ export interface StyleRemovePayload {
 
 export interface FullReloadPayload {
   type: 'full-reload'
-  path: string
-}
-
-export interface SWBustCachePayload {
-  type: 'sw-bust-cache'
   path: string
 }
 
