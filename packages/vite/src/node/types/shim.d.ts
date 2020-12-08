@@ -11,3 +11,8 @@ declare module 'acorn-class-fields' {
   const plugin: any
   export = plugin
 }
+
+declare module 'connect-history-api-fallback' {
+  const plugin: any
+  export = plugin
+}

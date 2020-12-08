@@ -1,5 +1,6 @@
 import { cac } from 'cac'
 import chalk from 'chalk'
+import { BuildOptions } from './build'
 import { startServer, ServerOptions } from './server'
 
 const cli = cac('vite')
@@ -8,7 +9,9 @@ const cli = cac('vite')
 interface GlobalCLIOptions {
   '--'?: string[]
   debug?: boolean | string
+  d?: boolean | string
   config?: string
+  c?: boolean | string
   root?: string
   mode?: string
 }
@@ -20,15 +23,17 @@ function cleanOptions(options: GlobalCLIOptions) {
   const ret = { ...options }
   delete ret['--']
   delete ret.debug
+  delete ret.d
   delete ret.config
+  delete ret.c
   delete ret.root
   delete ret.mode
   return ret
 }
 
 cli
-  .option('--debug [feat]', `[string | boolean]  show debug logs`)
-  .option('--config <file>', `[string]  use specified config file`)
+  .option('-c, --config <file>', `[string]  use specified config file`)
+  .option('-d, --debug [feat]', `[string | boolean]  show debug logs`)
   .option('--root <path>', `[string]  use specified config file`)
 
 // dev
@@ -57,6 +62,16 @@ cli
       console.error(chalk.red(e.toString()))
       process.exit(1)
     })
+  })
+
+// build
+cli
+  .command('build [root]')
+  .option('--mode <mode>', `[string]  set env mode`, {
+    default: 'production'
+  })
+  .action((root: string, options: BuildOptions & GlobalCLIOptions) => {
+    console.log('build!', cleanOptions(options))
   })
 
 cli.help()

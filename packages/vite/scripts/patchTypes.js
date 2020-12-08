@@ -11,6 +11,6 @@ const importMetaDts = fs.readFileSync(
   'utf-8'
 )
 
-const indexPath = path.resolve(__dirname, '../dist/vite.d.ts')
+const indexPath = path.resolve(__dirname, '../dist/node/index.d.ts')
 const content = fs.readFileSync(indexPath, 'utf-8')
 fs.writeFileSync(indexPath, content + `\n` + importMetaDts)

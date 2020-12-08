@@ -8,7 +8,7 @@
     "vite": "bin/vite.js"
   },
   "main": "dist/node/index.js",
-  "types": "dist/vite.d.ts",
+  "types": "dist/node/index.d.ts",
   "files": [
     "bin",
     "dist"
