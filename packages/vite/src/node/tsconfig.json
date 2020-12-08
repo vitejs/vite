@@ -9,5 +9,5 @@
     "lib": ["ESNext"],
     "sourceMap": true
   },
-  "include": ["./", "../hmrPayload.ts"]
+  "include": ["./", "../client/hmrPayload.ts"]
 }
