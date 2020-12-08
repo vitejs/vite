@@ -2,10 +2,10 @@
 node_modules
 dist
 dist-ssr
-dist-types
 TODOs.md
 *.log
 temp
 explorations
 .idea
 *.local
+/packages/vite/LICENSE

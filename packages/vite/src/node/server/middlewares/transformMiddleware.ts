@@ -1,5 +1,5 @@
 import { SourceMap } from 'rollup'
-import { ServerContext } from './'
+import { ServerContext } from '..'
 import { NextHandleFunction } from 'connect'
 
 export interface TransformResult {
@@ -22,7 +22,7 @@ export async function transformFile(
   return null
 }
 
-export function createTransformMiddleware(
+export function transformMiddleware(
   context: ServerContext
 ): NextHandleFunction {
   return async (req, res, next) => {

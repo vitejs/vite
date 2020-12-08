@@ -2,7 +2,7 @@ import path from 'path'
 import chalk from 'chalk'
 import _debug from 'debug'
 import { Service, Message, Loader, TransformOptions } from 'esbuild'
-import { UniversalPlugin } from '../config'
+import { Plugin } from '../config'
 import { cleanUrl, generateCodeFrame } from '../utils'
 
 const debug = _debug('vite:esbuild')
@@ -25,7 +25,7 @@ export async function stopService() {
   }
 }
 
-export function esbuildPlugin(options?: TransformOptions): UniversalPlugin {
+export function esbuildPlugin(options?: TransformOptions): Plugin {
   return {
     name: 'vite:esbuild',
     async transform(code, id) {
