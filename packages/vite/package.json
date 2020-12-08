@@ -31,7 +31,7 @@
     "prebuild": "rimraf dist",
     "build": "run-s build-bundle build-types",
     "build-bundle": "rollup -c",
-    "build-types": "tsc --emitDeclarationOnly --outDir dist-types -p src/node && api-extractor run && rimraf dist-types && node scripts/patchTypes",
+    "build-types": "tsc --emitDeclarationOnly --outDir dist-types -p src/node && api-extractor run && node scripts/patchTypes",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
     "pretest": "yarn build-src",
     "test": "jest --clearCache && jest --runInBand --forceExit",
