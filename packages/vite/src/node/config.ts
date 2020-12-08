@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import _debug from 'debug'
-import { TransformOptions } from 'esbuild'
 import Rollup, { Plugin as RollupPlugin, RollupOptions } from 'rollup'
 import { BuildOptions, BuildHook } from './build'
 import { ServerOptions, ServerHook } from './server'
@@ -10,9 +9,11 @@ import { deepMerge, isObject, lookupFile } from './utils'
 import { internalPlugins } from './plugins'
 import chalk from 'chalk'
 import { esbuildPlugin } from './plugins/esbuild'
+import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
+import { IndexHtmlTransform } from './plugins/html'
 
 const debug = _debug('vite:config')
 
@@ -50,33 +51,14 @@ export interface UserConfig {
    */
   css?: CSSOptions
   /**
-   * Esbuild options: only support `target`, `jsxFactory` & `jsxFragment`.
+   * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
    */
-  esbuild?: ESBuildOptions | false
+  esbuild?: ESbuildTransformOptions | false
   /**
-   * Vite plugins support a subset of Rollup plugin API with a few extra
-   * vite-specific options. A valid vite plugin is also a valid Rollup plugin.
-   * On the contrary, a Rollup plugin may or may NOT be a valid vite universal
-   * plugin, since some Rollup features do not make sense in an unbundled
-   * dev server context.
-   *
-   * By default, the plugins are run during both serve and build. If a plugin
-   * should be only applied for server or build, use a function format config
-   * file to conditionally include it:
-   *
-   * ```js
-   * // vite.config.js
-   * export default (env) => ({
-   *   plugins: env.isBuild
-   *    ? [...universalPlugins, ...buildOnlyPlugins]
-   *    : [...universalPlugins, ...serveOnlyPlugins]
-   * })
-   * ```
-   *
-   * @TODO validate and warn plugins that will not work during serve
+   * List of vite plugins to use.
    */
-  plugins?: UniversalPlugin[]
+  plugins?: Plugin[]
   /**
    * Universal rollup options (used in both serve and build)
    * Use function config to use conditional options for serve/build
@@ -94,26 +76,51 @@ export interface UserConfig {
 
 export { ServerOptions, BuildOptions, CSSOptions }
 
-export type ESBuildOptions = Pick<
-  TransformOptions,
-  'target' | 'jsxFactory' | 'jsxFragment'
->
-
 export type ConfigHook = (config: UserConfig) => UserConfig | void
 
-export interface UniversalPlugin extends RollupPlugin {
+/**
+ * Vite plugins support a subset of Rollup plugin API with a few extra
+ * vite-specific options. A valid vite plugin is also a valid Rollup plugin.
+ * On the contrary, a Rollup plugin may or may NOT be a valid vite universal
+ * plugin, since some Rollup features do not make sense in an unbundled
+ * dev server context.
+ *
+ * By default, the plugins are run during both serve and build. When a plugin
+ * is applied during serve, it will only run **non output plugin hooks** (see
+ * rollup type definition PluginHooks). You can think of the dev server as
+ * only running `const bundle = rollup.rollup()` but never calling
+ * `bundle.generate()`.
+ *
+ * A plugin that expects to have different behavior depending on serve/build can
+ * export a factory function that receives the command being run via options.
+ *
+ * If a plugin should be applied only for server or build, a function format
+ * config file can be used to conditional determine the plugins to use.
+ */
+export interface Plugin extends RollupPlugin {
   /**
    * Enforce plugin invocation tier similar to webpack loaders
    */
   enforce?: 'pre' | 'post'
   /**
    * Mutate or return new vite config before it's resolved.
-   * Note: plugins are resolved before running this hook so additional plugins
-   * injected in this hook will be ignored.
+   * Note: plugins are resolved before running this hook and cannot be
+   * mutated. i.e. a plugin cannot inject another plugin in this hook.
    */
   modifyConfig?: ConfigHook
   /**
-   * Configure the vite server. The hook receives the server context.
+   * Configure the vite server. The hook receives the server context object
+   * which exposes the following
+   * - `config`: resolved project config
+   * - `server`: native http server
+   * - `app`: the connect middleware app
+   * - `watcher`: the chokidar file watcher
+   * - `ws`: a websocket server that can send messages to the client
+   * - `container`: the plugin container
+   *
+   * The hooks will be called before internal middlewares are applied. A hook
+   * can return a post hook that will be called after internal middlewares
+   * are applied. Hook can be async functions and will be called in series.
    */
   configureServer?: ServerHook
   /**
@@ -122,17 +129,36 @@ export interface UniversalPlugin extends RollupPlugin {
    * builds similar to a multi-config rollup build.
    */
   configureBuild?: BuildHook | BuildHook[]
+  /**
+   * Transform index.html.
+   * The hook receives the following arguments:
+   *
+   * - html: string
+   * - ctx?: vite.ServerContext (only present during serve)
+   * - bundle?: rollup.OutputBundle (only present during build)
+   *
+   * It can either return a transformed string, or a list of html tag
+   * descriptors that will be injected into the <head> or <body>.
+   *
+   * By default the transform is applied **after** vite's internal html
+   * transform. If you need to apply the transform before vite, use an object:
+   * `{ enforce: 'pre', transform: hook }`
+   */
+  transformIndexHtml?: IndexHtmlTransform
 }
 
-export interface ResolvedConfig extends UserConfig {
-  root: string
-  mode: string
-  env: Record<string, string>
-  plugins: UniversalPlugin[]
-  server: ServerOptions
-  build: BuildOptions
-  debug?: boolean
-}
+export * from './server/middlewares/indexHtmlMiddleware'
+
+export type ResolvedConfig = Readonly<
+  Omit<UserConfig, 'plugins'> & {
+    root: string
+    mode: string
+    env: Record<string, string>
+    plugins: readonly Plugin[]
+    server: ServerOptions
+    build: BuildOptions
+  }
+>
 
 export async function resolveConfig(
   config: UserConfig,
@@ -154,9 +180,10 @@ export async function resolveConfig(
 
   // resolve plugins
   const { plugins } = config
-  const prePlugins: UniversalPlugin[] = []
-  const postPlugins: UniversalPlugin[] = []
-  const normalPlugins: UniversalPlugin[] = []
+  const prePlugins: Plugin[] = []
+  const postPlugins: Plugin[] = []
+  const normalPlugins: Plugin[] = []
+
   if (plugins) {
     plugins.forEach((p) => {
       if (p.enforce === 'pre') prePlugins.push(p)
@@ -164,12 +191,13 @@ export async function resolveConfig(
       else normalPlugins.push(p)
     })
   }
-  const resolvedPlugins = [
+
+  const resolvedPlugins = Object.freeze([
     ...prePlugins,
     ...internalPlugins,
     ...normalPlugins,
     ...postPlugins
-  ]
+  ])
 
   // run modifyConfig hooks
   resolvedPlugins.forEach((p) => {
@@ -186,7 +214,7 @@ export async function resolveConfig(
       : path.resolve(root)
     : process.cwd()
 
-  const resolved = {
+  const resolved: ResolvedConfig = Object.freeze({
     ...config,
     root: resolvedRoot,
     mode,
@@ -194,7 +222,8 @@ export async function resolveConfig(
     server: config.server || {},
     build: config.build || {},
     env: loadEnv(mode, resolvedRoot)
-  }
+  })
+
   debug(`using resolved config:`)
   debug(resolved)
   return resolved

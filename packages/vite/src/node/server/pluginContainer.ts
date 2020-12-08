@@ -8,7 +8,7 @@
 import { resolve, relative, dirname, sep, posix } from 'path'
 import { createHash } from 'crypto'
 import { promises as fs } from 'fs'
-import { UniversalPlugin } from '../config'
+import { Plugin } from '../config'
 import {
   RollupOptions,
   InputOptions,
@@ -33,7 +33,7 @@ export interface PluginContainerOptions {
   writeFile?: (name: string, source: string | Uint8Array) => void
 }
 
-export interface RollupPluginContainer {
+export interface PluginContainer {
   ctx: PluginContext
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
@@ -42,7 +42,7 @@ export interface RollupPluginContainer {
   resolveId(
     id: string,
     importer?: string,
-    skip?: UniversalPlugin[]
+    skip?: Plugin[]
   ): Promise<ResolveIdResult>
   transform(code: string, id: string): Promise<string>
   load(id: string): Promise<LoadResult>
@@ -62,9 +62,9 @@ function identifierPair(id: string, importer?: string) {
 }
 
 export async function createPluginContainer(
-  plugins: UniversalPlugin[],
+  plugins: readonly Plugin[],
   opts: RollupOptions & PluginContainerOptions = {}
-): Promise<RollupPluginContainer> {
+): Promise<PluginContainer> {
   const MODULES = opts.modules || new Map()
 
   const outputOptions = {
@@ -111,7 +111,7 @@ export async function createPluginContainer(
 
   let watchFiles = new Set()
 
-  let plugin: UniversalPlugin | undefined
+  let plugin: Plugin | undefined
   let parser = acorn.Parser
 
   const minimalContext: MinimalPluginContext = {
@@ -209,7 +209,7 @@ export async function createPluginContainer(
     }
   } as PluginContext
 
-  const container: RollupPluginContainer = {
+  const container: PluginContainer = {
     ctx,
 
     options: await (async () => {
@@ -364,20 +364,20 @@ export async function createPluginContainer(
 
   // Tracks recursive resolveId calls
   const resolveSkips = {
-    skip: new Map<UniversalPlugin, string[]>(),
+    skip: new Map<Plugin, string[]>(),
 
-    has(plugin: UniversalPlugin, key: string) {
+    has(plugin: Plugin, key: string) {
       const skips = this.skip.get(plugin)
       return skips ? skips.includes(key) : false
     },
 
-    add(plugin: UniversalPlugin, key: string) {
+    add(plugin: Plugin, key: string) {
       const skips = this.skip.get(plugin)
       if (skips) skips.push(key)
       else this.skip.set(plugin, [key])
     },
 
-    delete(plugin: UniversalPlugin, key: string) {
+    delete(plugin: Plugin, key: string) {
       const skips = this.skip.get(plugin)
       if (!skips) return
       const i = skips.indexOf(key)

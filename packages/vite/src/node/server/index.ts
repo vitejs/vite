@@ -1,5 +1,4 @@
 import os from 'os'
-import fs from 'fs'
 import path from 'path'
 import _debug from 'debug'
 import * as http from 'http'
@@ -8,20 +7,21 @@ import connect from 'connect'
 import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
-import sirv, { Options as SirvOptions } from 'sirv'
 import chokidar from 'chokidar'
 import { resolveConfig, UserConfig, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
-  RollupPluginContainer
+  PluginContainer
 } from '../server/pluginContainer'
 import { loadFsEvents } from './fsEventsImporter'
 import { FSWatcher, WatchOptions } from '../types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { setupWebSocketServer, WebSocketServer } from '../server/ws'
 import { setupProxy, ProxyOptions } from './proxy'
-import { createTransformMiddleware } from './transform'
+import { transformMiddleware } from './middlewares/transformMiddleware'
+import { indexHtmlMiddleware } from './middlewares/indexHtmlMiddleware'
 import history from 'connect-history-api-fallback'
+import { serveStaticMiddleware } from './middlewares/serveStaticMiddleware'
 
 // shim connect app.sue for inference
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/49994
@@ -109,13 +109,15 @@ export interface CorsOptions {
 
 export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
-export type ServerHook = (ctx: ServerContext) => (() => void) | void
+export type ServerHook = (
+  ctx: ServerContext
+) => (() => void) | void | Promise<(() => void) | void>
 
 export interface ServerContext {
   /**
-   * Project root (where index.html is located)
+   * The resolved vite config object
    */
-  root: string
+  config: ResolvedConfig
   /**
    * connect app instance
    * https://github.com/senchalabs/connect#use-middleware
@@ -137,11 +139,7 @@ export interface ServerContext {
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
-  container: RollupPluginContainer
-  /**
-   * The resolved vite config object
-   */
-  config: ResolvedConfig
+  container: PluginContainer
 }
 
 export interface ViteDevServer extends http.Server {
@@ -160,87 +158,89 @@ export async function createServer(
     configPath
   )
 
+  const root = resolvedConfig.root
   const serverConfig = resolvedConfig.server || {}
 
   const app = connect() as connect.Server
   const server = (await resolveServer(serverConfig, app)) as ViteDevServer
-
-  const root = resolvedConfig.root
-  const { watch = {}, cors, proxy } = serverConfig
+  const ws = setupWebSocketServer(server)
 
   // try to load fsevents before starting chokidar
   await loadFsEvents()
+  const watchOptions = serverConfig.watch || {}
   const watcher = chokidar.watch(root, {
-    ignored: ['**/node_modules/**', '**/.git/**', ...(watch.ignored || [])],
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      ...(watchOptions.ignored || [])
+    ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
-    ...watch
+    ...watchOptions
   }) as FSWatcher
 
-  const container = await createPluginContainer(resolvedConfig.plugins)
-  const ws = setupWebSocketServer(server)
+  const plugins = resolvedConfig.plugins
+  const container = await createPluginContainer(plugins)
 
   const context: ServerContext = (server.context = {
-    root,
+    config: resolvedConfig,
     app,
     server,
     watcher,
     container,
-    ws,
-    config: resolvedConfig
+    ws
   })
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of resolvedConfig.plugins) {
+  for (const plugin of plugins) {
     const hook = plugin.configureServer
-    if (Array.isArray(hook)) {
-      hook.forEach((fn) => postHooks.push(fn(context)))
-    } else if (hook) {
-      postHooks.push(hook(context))
-    }
+    hook && postHooks.push(await hook(context))
   }
 
   // cors
+  const { cors } = serverConfig
   if (cors) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
+  const { proxy } = serverConfig
   if (proxy) {
     setupProxy(context)
   }
 
   // main transform middleware
-  app.use(createTransformMiddleware(context))
+  app.use(transformMiddleware(context))
 
   // serve static files
-  const sirvOptions: SirvOptions = { dev: true, etag: true }
-  app.use(sirv(root, sirvOptions))
-  app.use(sirv(path.join(root, 'public'), sirvOptions))
+  app.use(serveStaticMiddleware(root))
+  app.use(serveStaticMiddleware(path.join(root, 'public')))
 
   // spa fallback
   app.use(history({ logger: _debug('vite:spa-fallback') }))
 
   // run post config hooks
+  // This is applied before the html middleware so that user middleware can
+  // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
+  // transform index.html
+  app.use(indexHtmlMiddleware(context, plugins))
+
   // final catch all
-  app.use((req, res) => {
-    if (req.url === '/index.html') {
-      let index
-      try {
-        index = fs.readFileSync(path.join(root, 'index.html'), 'utf-8')
-      } catch (e) {}
-      if (index) {
-        // TODO parse/rewrite index
-        res.statusCode = 200
-        return res.end(index.replace('hello', 'world'))
-      }
+  // note the 4 args must be kept for connect to treat this as error middleware
+  app.use(((err, _req, res, _next) => {
+    if (err) {
+      console.error(chalk.red(`[vite] Internal server error:`))
+      console.error(err.stack)
+      res.statusCode = 500
+      return res.end()
     }
+
     res.statusCode = 404
     res.end()
-  })
+  }) as connect.ErrorHandleFunction)
 
   // overwrite listen to run optimizer before server start
   const listen = server.listen.bind(server)
