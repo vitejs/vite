@@ -6,7 +6,7 @@ import connect from 'connect'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import sirv, { Options as SirvOptions } from 'sirv'
-import chokidar, { FSWatcher, WatchOptions } from 'chokidar'
+import chokidar from 'chokidar'
 import { resolveConfig, UserConfig, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
@@ -16,6 +16,8 @@ import { resolveHttpsConfig } from '../server/https'
 import { setupWebSocketServer, WebSocketConnection } from '../server/ws'
 import { setupProxy, ProxyOptions } from './proxy'
 import { createTransformMiddleware } from './transform'
+import { loadFsEvents } from './fsEventsImporter'
+import { FSWatcher, WatchOptions } from '../types/chokidar'
 
 // shim connect app.sue for inference
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/49994
@@ -101,12 +103,14 @@ export async function createServer(
   const root = resolvedConfig.root
   const { watch = {}, cors, proxy } = serverConfig
 
+  // try to load fsevents before starting chokidar
+  await loadFsEvents()
   const watcher = chokidar.watch(root, {
     ignored: ['**/node_modules/**', '**/.git/**', ...(watch.ignored || [])],
     ignoreInitial: true,
     ignorePermissionErrors: true,
     ...watch
-  })
+  }) as FSWatcher
 
   const container = await createPluginContainer(resolvedConfig.plugins)
   const ws = setupWebSocketServer(server)

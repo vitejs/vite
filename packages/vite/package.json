@@ -8,13 +8,10 @@
     "vite": "bin/vite.js"
   },
   "main": "dist/node/index.js",
-  "types": "dist/node/index.d.ts",
+  "types": "dist/vite.d.ts",
   "files": [
     "bin",
-    "src",
-    "dist/**/*.js",
-    "dist/**/*.js.map",
-    "dist/**/*.d.ts"
+    "dist"
   ],
   "engines": {
     "node": ">=12.0.0"
@@ -31,49 +28,46 @@
     "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --incremental --p src/client",
     "dev-node": "tsc -w --incremental --p src/node",
-    "build": "rimraf dist && tsc -p src/client && tsc -p src/node && node scripts/patchTypes",
+    "build": "run-s build-src build-types",
+    "build-src": "rimraf dist && rollup -c",
+    "build-types": "tsc --emitDeclarationOnly --outDir dist-types -p src/node && api-extractor run && rimraf dist-types",
     "lint": "prettier --write --parser typescript \"src/**/*.ts\"",
+    "pretest": "yarn build-src",
     "test": "jest --clearCache && jest --runInBand --forceExit",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "release": "node scripts/release.js"
   },
-  "gitHooks": {
-    "pre-commit": "lint-staged",
-    "commit-msg": "node scripts/verifyCommit.js"
-  },
-  "lint-staged": {
-    "*.js": [
-      "prettier --write"
-    ],
-    "*.ts": [
-      "prettier --parser=typescript --write"
-    ]
-  },
   "dependencies": {
-    "@rollup/plugin-node-resolve": "^11.0.0",
     "@types/connect": "^3.4.33",
     "@types/http-proxy": "^1.17.4",
     "@types/node": "^14.14.10",
+    "esbuild": "^0.8.20",
+    "rollup": "^2.34.2",
+    "fsevents": "~2.1.2"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "^7.12.0",
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^11.0.0",
+    "@rollup/plugin-typescript": "^8.0.0",
+    "@types/dotenv": "^8.2.0",
+    "@types/ws": "^7.4.0",
     "acorn": "^8.0.4",
     "acorn-class-fields": "^0.3.7",
     "cac": "^6.6.1",
     "chalk": "^4.1.0",
-    "cheap-watch": "^1.0.3",
     "chokidar": "^3.4.3",
     "connect": "^3.7.0",
+    "connect-history-api-fallback": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "dotenv-expand": "^5.1.0",
-    "esbuild": "^0.8.20",
     "http-proxy": "^1.18.1",
-    "rollup": "^2.34.2",
+    "magic-string": "^0.25.7",
     "selfsigned": "^1.10.8",
     "sirv": "^1.0.10",
+    "source-map-support": "^0.5.19",
     "ws": "^7.4.1"
-  },
-  "devDependencies": {
-    "@types/dotenv": "^8.2.0",
-    "@types/ws": "^7.4.0",
-    "source-map-support": "^0.5.19"
   }
 }

@@ -114,9 +114,6 @@ export interface UniversalPlugin extends RollupPlugin {
   configureBuild?: BuildHook | BuildHook[]
 }
 
-/**
- * @internal
- */
 export interface ResolvedConfig extends UserConfig {
   root: string
   mode: string
@@ -193,7 +190,7 @@ export async function resolveConfig(
   return resolved
 }
 
-export async function loadConfigFromFile(
+async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configPath?: string
 ): Promise<UserConfig> {

@@ -66,7 +66,10 @@ cli
       },
       options.mode,
       options.config
-    )
+    ).catch((e) => {
+      console.error(chalk.red(e.toString()))
+      process.exit(1)
+    })
   })
 
 cli.help()

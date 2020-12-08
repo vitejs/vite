@@ -1,9 +1,9 @@
 import * as http from 'http'
-import HttpProxy, { ServerOptions as _ProxyOptions } from 'http-proxy'
+import HttpProxy from 'http-proxy'
 import { HMR_HEADER } from './ws'
 import { ServerContext } from './'
 
-export interface ProxyOptions extends _ProxyOptions {
+export interface ProxyOptions extends HttpProxy.ServerOptions {
   /**
    * rewrite path
    */
