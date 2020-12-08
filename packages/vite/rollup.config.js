@@ -33,8 +33,7 @@ const nodeConfig = {
   },
   external: [
     'fsevents',
-    ...Object.keys(require('./package.json').dependencies),
-    path.resolve(__dirname, 'package.json')
+    ...Object.keys(require('./package.json').dependencies)
   ],
   plugins: [
     nodeResolve(),
@@ -56,7 +55,7 @@ const nodeConfig = {
     })
   ],
   treeshake: {
-    moduleSideEffects: false,
+    moduleSideEffects: 'no-external',
     propertyReadSideEffects: false,
     tryCatchDeoptimization: false
   },
@@ -73,7 +72,6 @@ const nodeConfig = {
     format: 'cjs',
     externalLiveBindings: false,
     freeze: false,
-    sourcemap: true,
     manualChunks(id) {
       if (id.includes('node_modules')) {
         return 'deps'

@@ -1,7 +1,10 @@
 import * as http from 'http'
+import _debug from 'debug'
 import HttpProxy from 'http-proxy'
 import { HMR_HEADER } from './ws'
 import { ServerContext } from './'
+
+const debug = _debug('vite:proxy')
 
 export interface ProxyOptions extends HttpProxy.ServerOptions {
   /**
@@ -22,8 +25,6 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   ) => void | null | undefined | false | string
 }
 
-const debug = require('debug')('vite:proxy')
-
 export function setupProxy({
   app,
   server,
@@ -34,8 +35,6 @@ export function setupProxy({
   if (!options) return
 
   // lazy require only when proxy is used
-  const { createProxyServer } = require('http-proxy') as typeof HttpProxy
-
   const proxies: Record<string, [HttpProxy, ProxyOptions]> = {}
 
   Object.keys(options).forEach((context) => {
@@ -43,7 +42,7 @@ export function setupProxy({
     if (typeof opts === 'string') {
       opts = { target: opts } as ProxyOptions
     }
-    const proxy = createProxyServer(opts)
+    const proxy = HttpProxy.createProxyServer(opts)
     if (opts.configure) {
       opts.configure(proxy, opts)
     }

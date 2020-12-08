@@ -1,12 +1,18 @@
 # Vite Maintenance Principles
 
-## Think before adding a dependency
-
 Vite aims to be lightweight, and this includes being aware of the number of npm dependencies and their size.
 
-We use rollup to pre-bundle most dependencies before publishing! Therefore most dependencies, even used in src code, should be added under `devDependencies` by default.
+We use rollup to pre-bundle most dependencies before publishing! Therefore most dependencies, even used in src code, should be added under `devDependencies` by default. This also creates a number of constraints that we need to be aware of in the codebase:
 
-Some exceptions are:
+## Usage of `require()`
+
+In some cases we intentionally lazy-require some dependencies to improve startup performance. However, note that we cannot use simple `require('somedep')` calls since these are ignored in ESM files so the dependency won't be included in the bundle, and the actual dependency won't even be there when published since they are in `devDependencies`.
+
+Instead, use `(await import('somedep')).default`.
+
+## Think before adding a dependency
+
+Most deps should be added to `devDependencies` even if they are needed at runtime. Some exceptions are:
 
 - Type packages. Example: `@types/*`.
 - Deps that cannot be properly bundled due to binary files. Example: `esbuild`.
