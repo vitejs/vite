@@ -2,6 +2,7 @@
 node_modules
 dist
 dist-ssr
+dist-types
 TODOs.md
 *.log
 temp

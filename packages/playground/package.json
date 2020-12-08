@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "vite --debug",
     "build": "vite build --debug",
-    "serve": "serve dist"
+    "serve": "sirv dist"
   },
   "devDependencies": {
-    "serve": "^11.3.2"
+    "sirv-cli": "^1.0.9"
   }
 }

@@ -23,8 +23,7 @@ import {
   ResolvedId,
   PluginContext
 } from 'rollup'
-import acorn, { Parser } from 'acorn'
-import acornClassFields from 'acorn-class-fields'
+import { Parser } from 'acorn'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -220,12 +219,11 @@ export async function createPluginContainer(
       }
       if (options.acornInjectPlugins) {
         parser = Parser.extend(
-          // @ts-ignore
-          ...[acornClassFields].concat(options.acornInjectPlugins)
+          ...[require('acorn-class-fields')].concat(options.acornInjectPlugins)
         )
       }
       return {
-        acorn,
+        acorn: require('acorn'),
         acornInjectPlugins: [],
         ...options
       }

@@ -7,7 +7,7 @@ export type HMRPayload =
   | CustomPayload
   | MultiUpdatePayload
 
-interface ConnectedPayload {
+export interface ConnectedPayload {
   type: 'connected'
 }
 
@@ -18,23 +18,23 @@ export interface UpdatePayload {
   timestamp: number
 }
 
-interface StyleRemovePayload {
+export interface StyleRemovePayload {
   type: 'style-remove'
   path: string
   id: string
 }
 
-interface FullReloadPayload {
+export interface FullReloadPayload {
   type: 'full-reload'
   path: string
 }
 
-interface SWBustCachePayload {
+export interface SWBustCachePayload {
   type: 'sw-bust-cache'
   path: string
 }
 
-interface CustomPayload {
+export interface CustomPayload {
   type: 'custom'
   id: string
   customData: any
