@@ -21,10 +21,11 @@ export interface ConfigEnv {
   mode: string
 }
 
-export type UserConfigExport = UserConfig | ((env: ConfigEnv) => UserConfig)
+export type UserConfigFn = (env: ConfigEnv) => UserConfig
+export type UserConfigExport = UserConfig | UserConfigFn
 
 // type helper to make it easier to use vite.config.ts
-export function defineConfig(config: UserConfigExport) {
+export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
@@ -49,7 +50,8 @@ export interface UserConfig {
    */
   css?: CSSOptions
   /**
-   * esbuild options (disable, jsx, minify)
+   * Esbuild options: only support `target`, `jsxFactory` & `jsxFragment`.
+   * Or set to `false` to disable esbuild.
    */
   esbuild?: ESBuildOptions | false
   /**
@@ -80,8 +82,14 @@ export interface UserConfig {
    * Use function config to use conditional options for serve/build
    */
   rollupOptions?: RollupOptions
-  build?: BuildOptions
+  /**
+   * Server specific options, e.g. host, port, https...
+   */
   server?: ServerOptions
+  /**
+   * Build specific options
+   */
+  build?: BuildOptions
 }
 
 export { ServerOptions, BuildOptions, CSSOptions }
@@ -279,7 +287,7 @@ async function loadConfigFromFile(
     console.error(
       chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
     )
-    console.error(e)
+    console.error(e.toString())
     process.exit(1)
   }
 }

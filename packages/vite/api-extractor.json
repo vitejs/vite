@@ -7,7 +7,7 @@
 
   "dtsRollup": {
     "enabled": true,
-    "publicTrimmedFilePath": "./dist/<unscopedPackageName>.d.ts"
+    "publicTrimmedFilePath": "./dist/node/index.d.ts"
   },
 
   "apiReport": {

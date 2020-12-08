@@ -1,5 +1,7 @@
 import os from 'os'
+import fs from 'fs'
 import path from 'path'
+import _debug from 'debug'
 import * as http from 'http'
 import * as https from 'https'
 import connect from 'connect'
@@ -13,12 +15,13 @@ import {
   createPluginContainer,
   RollupPluginContainer
 } from '../server/pluginContainer'
-import { resolveHttpsConfig } from '../server/https'
-import { setupWebSocketServer, WebSocketConnection } from '../server/ws'
-import { setupProxy, ProxyOptions } from './proxy'
-import { createTransformMiddleware } from './transform'
 import { loadFsEvents } from './fsEventsImporter'
 import { FSWatcher, WatchOptions } from '../types/chokidar'
+import { resolveHttpsConfig } from '../server/https'
+import { setupWebSocketServer, WebSocketServer } from '../server/ws'
+import { setupProxy, ProxyOptions } from './proxy'
+import { createTransformMiddleware } from './transform'
+import history from 'connect-history-api-fallback'
 
 // shim connect app.sue for inference
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/49994
@@ -36,16 +39,54 @@ export interface ServerOptions {
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
   https?: boolean | https.ServerOptions
+  /**
+   * Force dep pre-optimization regardless of whether deps have changed.
+   */
   force?: boolean
+  /**
+   * Configure HMR-specific options (port, host, path & protocol)
+   */
   hmr?: HmrOptions | boolean
+  /**
+   * chokidar watch options
+   * https://github.com/paulmillr/chokidar#api
+   */
   watch?: WatchOptions
+  /**
+   * Configure custom proxy rules for the dev server. Expects an object
+   * of `{ key: options }` pairs.
+   * Uses [`http-proxy`](https://github.com/http-party/node-http-proxy).
+   * Full options [here](https://github.com/http-party/node-http-proxy#options).
+   *
+   * Example `vite.config.js`:
+   * ``` js
+   * module.exports = {
+   *   proxy: {
+   *     // string shorthand
+   *     '/foo': 'http://localhost:4567/foo',
+   *     // with options
+   *     '/api': {
+   *       target: 'http://jsonplaceholder.typicode.com',
+   *       changeOrigin: true,
+   *       rewrite: path => path.replace(/^\/api/, '')
+   *     }
+   *   }
+   * }
+   * ```
+   */
   proxy?: Record<string, string | ProxyOptions>
+  /**
+   * Configure CORS for the dev server.
+   * Uses https://github.com/expressjs/cors.
+   * Set to `true` to allow all methods from any origin, or configure separately
+   * using an object.
+   */
   cors?: CorsOptions | boolean
 }
 
 export interface HmrOptions {
   protocol?: string
-  hostname?: string
+  host?: string
   port?: number
   path?: string
 }
@@ -71,12 +112,35 @@ export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 export type ServerHook = (ctx: ServerContext) => (() => void) | void
 
 export interface ServerContext {
+  /**
+   * Project root (where index.html is located)
+   */
   root: string
+  /**
+   * connect app instance
+   * https://github.com/senchalabs/connect#use-middleware
+   */
   app: connect.Server
+  /**
+   * native Node http server instance
+   */
   server: http.Server
+  /**
+   * chokidar watcher instance
+   * https://github.com/paulmillr/chokidar#api
+   */
   watcher: FSWatcher
-  ws: WebSocketConnection
+  /**
+   * web socket server with `send(payload)` method
+   */
+  ws: WebSocketServer
+  /**
+   * Rollup plugin container that can run plugin hooks on a given file
+   */
   container: RollupPluginContainer
+  /**
+   * The resolved vite config object
+   */
   config: ResolvedConfig
 }
 
@@ -155,13 +219,27 @@ export async function createServer(
   app.use(sirv(root, sirvOptions))
   app.use(sirv(path.join(root, 'public'), sirvOptions))
 
+  // spa fallback
+  app.use(history({ logger: _debug('vite:spa-fallback') }))
+
   // run post config hooks
   postHooks.forEach((fn) => fn && fn())
 
+  // final catch all
   app.use((req, res) => {
-    console.log(req.url)
-    // @TODO index.html fallback + code injection
-    res.end('catch all')
+    if (req.url === '/index.html') {
+      let index
+      try {
+        index = fs.readFileSync(path.join(root, 'index.html'), 'utf-8')
+      } catch (e) {}
+      if (index) {
+        // TODO parse/rewrite index
+        res.statusCode = 200
+        return res.end(index.replace('hello', 'world'))
+      }
+    }
+    res.statusCode = 404
+    res.end()
   })
 
   // overwrite listen to run optimizer before server start

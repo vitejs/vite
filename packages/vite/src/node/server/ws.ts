@@ -5,11 +5,11 @@ import { HMRPayload } from '../../client/hmrPayload'
 
 export const HMR_HEADER = 'vite-hmr'
 
-export interface WebSocketConnection {
+export interface WebSocketServer {
   send(payload: HMRPayload): void
 }
 
-export function setupWebSocketServer(server: Server): WebSocketConnection {
+export function setupWebSocketServer(server: Server): WebSocketServer {
   const wss = new WebSocket.Server({ noServer: true })
 
   server.on('upgrade', (req, socket, head) => {
