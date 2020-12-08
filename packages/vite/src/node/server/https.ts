@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { ServerOptions as HttpsServerOptions } from 'https'
 
-export function resolveHttpsConfig(httpsOption: HttpsServerOptions) {
+export async function resolveHttpsConfig(httpsOption: HttpsServerOptions) {
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
     ca: readFileIfExists(ca),
@@ -11,7 +11,7 @@ export function resolveHttpsConfig(httpsOption: HttpsServerOptions) {
     pfx: readFileIfExists(pfx)
   })
   if (!httpsOption.key || !httpsOption.cert) {
-    httpsOption.cert = httpsOption.key = createCertificate()
+    httpsOption.cert = httpsOption.key = await createCertificate()
   }
   return httpsOption
 }
@@ -35,8 +35,9 @@ function readFileIfExists(value?: string | Buffer | any[]) {
  * LICENSE file at
  * https://github.com/webpack/webpack-dev-server/blob/master/LICENSE
  */
-function createCertificate() {
-  const pems = require('selfsigned').generate(null, {
+async function createCertificate() {
+  const { generate } = await import('selfsigned')
+  const pems = generate(null, {
     algorithm: 'sha256',
     days: 30,
     keySize: 2048,

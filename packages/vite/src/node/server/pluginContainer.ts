@@ -23,7 +23,8 @@ import {
   ResolvedId,
   PluginContext
 } from 'rollup'
-import { Parser } from 'acorn'
+import * as acorn from 'acorn'
+import acornClassFields from 'acorn-class-fields'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -111,7 +112,7 @@ export async function createPluginContainer(
   let watchFiles = new Set()
 
   let plugin: UniversalPlugin | undefined
-  let parser = Parser
+  let parser = acorn.Parser
 
   const minimalContext: MinimalPluginContext = {
     meta: {
@@ -218,12 +219,12 @@ export async function createPluginContainer(
         options = (await plugin.options.call(ctx, options)) || options
       }
       if (options.acornInjectPlugins) {
-        parser = Parser.extend(
-          ...[require('acorn-class-fields')].concat(options.acornInjectPlugins)
+        parser = acorn.Parser.extend(
+          ...[acornClassFields].concat(options.acornInjectPlugins)
         )
       }
       return {
-        acorn: require('acorn'),
+        acorn,
         acornInjectPlugins: [],
         ...options
       }

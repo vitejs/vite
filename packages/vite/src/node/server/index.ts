@@ -3,6 +3,7 @@ import path from 'path'
 import * as http from 'http'
 import * as https from 'https'
 import connect from 'connect'
+import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import sirv, { Options as SirvOptions } from 'sirv'
@@ -98,7 +99,7 @@ export async function createServer(
   const serverConfig = resolvedConfig.server || {}
 
   const app = connect() as connect.Server
-  const server = resolveServer(serverConfig, app) as ViteDevServer
+  const server = (await resolveServer(serverConfig, app)) as ViteDevServer
 
   const root = resolvedConfig.root
   const { watch = {}, cors, proxy } = serverConfig
@@ -138,7 +139,7 @@ export async function createServer(
 
   // cors
   if (cors) {
-    app.use(require('cors')(typeof cors === 'boolean' ? {} : cors))
+    app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
@@ -178,22 +179,24 @@ export async function createServer(
   return server
 }
 
-function resolveServer(
+async function resolveServer(
   { https = false, proxy }: ServerOptions,
   app: connect.Server
-): http.Server {
+): Promise<http.Server> {
   if (!https) {
     return require('http').createServer(app)
   }
 
-  const httpsOptions = typeof https === 'boolean' ? {} : https
+  const httpsOptions = await resolveHttpsConfig(
+    typeof https === 'boolean' ? {} : https
+  )
   if (proxy) {
     // #484 fallback to http1 when proxy is needed.
-    return require('https').createServer(resolveHttpsConfig(httpsOptions), app)
+    return require('https').createServer(httpsOptions, app)
   } else {
     return require('http2').createSecureServer(
       {
-        ...resolveHttpsConfig(httpsOptions),
+        ...httpsOptions,
         allowHTTP1: true
       },
       app

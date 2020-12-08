@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import _debug from 'debug'
 import { TransformOptions } from 'esbuild'
 import Rollup, { Plugin as RollupPlugin, RollupOptions } from 'rollup'
 import { BuildOptions, BuildHook } from './build'
@@ -11,8 +12,9 @@ import chalk from 'chalk'
 import { esbuildPlugin } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
+import { nodeResolve } from '@rollup/plugin-node-resolve'
 
-const debug = require('debug')('vite:config')
+const debug = _debug('vite:config')
 
 export interface ConfigEnv {
   command: 'build' | 'serve'
@@ -238,7 +240,9 @@ async function loadConfigFromFile(
       // 2. if we reach here, the file is ts or using es import syntax, or
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
+      // lazy require rollup (it's actually in dependencies)
       const rollup = require('rollup') as typeof Rollup
+      // node-resolve must be imported since it's bundled
       const bundle = await rollup.rollup({
         external: (id: string) =>
           (id[0] !== '.' && !path.isAbsolute(id)) ||
@@ -248,7 +252,7 @@ async function loadConfigFromFile(
         plugins: [
           // use esbuild + node-resolve to support .ts files
           esbuildPlugin({ target: 'es2019' }),
-          require('@rollup/plugin-node-resolve').nodeResolve({
+          nodeResolve({
             extensions: ['.mjs', '.js', '.ts', '.json']
           })
         ]

@@ -1,18 +1,3 @@
-// check debug mode first before requiring any commands.
-// @ts-ignore
-global.__vite_start_time = Date.now()
-
-const {
-  options: { debug }
-} = require('cac')().parse()
-if (debug) {
-  process.env.DEBUG = `vite:` + (debug === true ? '*' : debug)
-  try {
-    // only available as dev dependency
-    require('source-map-support').install()
-  } catch (e) {}
-}
-
 import { cac } from 'cac'
 import chalk from 'chalk'
 import { startServer, ServerOptions } from './server'
@@ -58,6 +43,8 @@ cli
     default: 'development'
   })
   .action((root: string, options: ServerOptions & GlobalCLIOptions) => {
+    // output structure is preserved even after bundling so require()
+    // is ok here
     const start = require('./server/index').startServer as typeof startServer
     start(
       {
