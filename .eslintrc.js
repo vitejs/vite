@@ -37,6 +37,12 @@ module.exports = {
         allowModules: ['vite']
       }
     ],
+    'node/no-extraneous-require': [
+      'error',
+      {
+        allowModules: ['vite']
+      }
+    ],
     'node/no-deprecated-api': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
     'no-process-exit': 'off'

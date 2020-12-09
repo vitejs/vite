@@ -149,12 +149,7 @@ export function transformMiddleware(
       const originalUrl = req.url!.replace(/\.map$/, '')
       const transformed = transformCache.get(originalUrl)
       if (transformed && transformed.map) {
-        return send(
-          req,
-          res,
-          JSON.stringify(transformed.map),
-          'applcation/json'
-        )
+        return send(req, res, JSON.stringify(transformed.map), 'json')
       }
     }
 
@@ -173,7 +168,7 @@ export function transformMiddleware(
       try {
         const result = await transformFile(req.url!, context)
         if (result) {
-          const type = isCSS ? 'text/css' : 'application/javascript'
+          const type = isCSS ? 'css' : 'js'
           const hasMap = !!(result.map && result.map.mappings)
           return send(req, res, result.code, type, result.etag, hasMap)
         }

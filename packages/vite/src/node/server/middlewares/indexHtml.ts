@@ -10,10 +10,10 @@ import {
 } from '../../plugins/html'
 import { ServerContext } from '../..'
 import { send } from '../send'
+import { HMR_CLIENT_PATH } from './hmr'
 
-const devHtmlHook: IndexHtmlTransformHook = (html) => {
-  return html
-  // return [{ tag: 'script', attrs: { type: 'module', src: '/vite/client' } }]
+const devHtmlHook: IndexHtmlTransformHook = () => {
+  return [{ tag: 'script', attrs: { type: 'module', src: HMR_CLIENT_PATH } }]
 }
 
 export function indexHtmlMiddleware(
@@ -52,7 +52,7 @@ export function indexHtmlMiddleware(
         }
       }
 
-      return send(req, res, html, 'text/html', etag)
+      return send(req, res, html, 'html', etag)
     }
 
     next()

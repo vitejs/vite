@@ -22,6 +22,7 @@ import { transformMiddleware, TransformResult } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import { serveStaticMiddleware } from './middlewares/static'
+import { hmrMiddleware, HmrOptions } from './middlewares/hmr'
 
 export interface ServerOptions {
   host?: string
@@ -74,13 +75,6 @@ export interface ServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
-}
-
-export interface HmrOptions {
-  protocol?: string
-  host?: string
-  port?: number
-  path?: string
 }
 
 /**
@@ -207,6 +201,9 @@ export async function createServer(
   if (proxy) {
     setupProxy(context)
   }
+
+  // hmr
+  app.use(hmrMiddleware(context))
 
   // main transform middleware
   app.use(transformMiddleware(context))
