@@ -60,7 +60,8 @@ async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
-      // proxy(nginx, docker) hmr ws maybe caused timeout, so send ping package let ws keep alive.
+      // proxy(nginx, docker) hmr ws maybe caused timeout,
+      // so send ping package let ws keep alive.
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
     case 'style-update':

@@ -1,7 +1,7 @@
 import { h, render } from 'preact'
-import './imported.css'
 import { log } from './foo'
 import json from './example.json'
+import { createApp } from 'vue'
 
 function App({ data }) {
   return <div>

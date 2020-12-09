@@ -3,11 +3,11 @@
 <img src="/logo.png" alt="">
 <div id="app"></div>
 <script>
-window.process = { env: { NODE_ENV: 'development' }}
+// window.process = { env: { NODE_ENV: 'development' }}
 </script>
 <script id="main" type="module" src="/main.js"></script>
 <script>
-document.getElementById('main').onerror = () => {
-  console.log('error')
+document.getElementById('main').onerror = (e) => {
+  console.log(e)
 }
 </script>
