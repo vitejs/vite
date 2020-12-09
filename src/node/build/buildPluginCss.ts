@@ -144,14 +144,18 @@ export const createBuildCssPlugin = ({
 
     async renderChunk(code, chunk) {
       let chunkCSS = ''
-      // the order of module import is reversive
-      // see https://github.com/rollup/rollup/issues/435#issue-125406562
-      const ids = Object.keys(chunk.modules).reverse()
-      for (const id of ids) {
-        if (styles.has(id)) {
-          chunkCSS += styles.get(id)
+      const collectCss = (facadeModuleId: string | null) => {
+        if (!facadeModuleId) return
+        const ids = this.getModuleInfo(facadeModuleId)!.importedIds
+        for (const id of ids) {
+          if (styles.has(id)) {
+            chunkCSS += styles.get(id)
+          } else {
+            collectCss(id)
+          }
         }
       }
+      collectCss(chunk.facadeModuleId)
 
       let match
       while ((match = injectAssetRe.exec(chunkCSS))) {
