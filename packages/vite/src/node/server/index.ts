@@ -18,7 +18,7 @@ import { FSWatcher, WatchOptions } from '../types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { setupWebSocketServer, WebSocketServer } from '../server/ws'
 import { setupProxy, ProxyOptions } from './proxy'
-import { transformMiddleware } from './middlewares/transform'
+import { transformMiddleware, TransformResult } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import { serveStaticMiddleware } from './middlewares/static'
@@ -132,6 +132,10 @@ export interface ServerContext {
    * Rollup plugin container that can run plugin hooks on a given file
    */
   container: PluginContainer
+  /**
+   * @internal
+   */
+  transformCache: Map<string, TransformResult>
 }
 
 export interface ViteDevServer extends http.Server {
@@ -181,7 +185,8 @@ export async function createServer(
     server,
     watcher,
     container,
-    ws
+    ws,
+    transformCache: new Map()
   })
 
   // apply server configuration hooks from plugins

@@ -5,4 +5,9 @@
 <script>
 window.process = { env: { NODE_ENV: 'development' }}
 </script>
-<script type="module" src="/main.js"></script>
+<script id="main" type="module" src="/main.js"></script>
+<script>
+document.getElementById('main').onerror = () => {
+  console.log('error')
+}
+</script>
