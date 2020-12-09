@@ -64,8 +64,6 @@ export function indexHtmlMiddleware(
       res.end(html)
     }
 
-    // this is the last middleware in the chain.
-    res.statusCode = 404
-    res.end()
+    next()
   }
 }
