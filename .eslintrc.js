@@ -31,7 +31,7 @@ module.exports = {
         })
       )
     ],
-    'node/no-unpublished-import': [
+    'node/no-extraneous-import': [
       'error',
       {
         allowModules: ['vite']

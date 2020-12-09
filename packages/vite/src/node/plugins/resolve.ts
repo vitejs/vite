@@ -1,8 +1,7 @@
 import path from 'path'
 import { Plugin, ResolvedConfig } from '..'
 
-export const MODULE_PREFIX = `/@modules/`
-export const FILE_PREFIX = `/@file/`
+export const FILE_PREFIX = `/@fs/`
 
 export function resolvePlugin({ root }: ResolvedConfig): Plugin {
   return {
@@ -13,11 +12,7 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
       if (id.startsWith('/')) {
         // check for special paths. Since the browser doesn't allow bare imports,
         // we transform them into special prefixed paths.
-        if (id.startsWith(MODULE_PREFIX)) {
-          // unwrap bare module requests
-          // /@modules/vue -> vue
-          id = id.slice(MODULE_PREFIX.length)
-        } else if (id.startsWith(FILE_PREFIX)) {
+        if (id.startsWith(FILE_PREFIX)) {
           id = id.slice(FILE_PREFIX.length - 1)
         } else {
           // url -> file

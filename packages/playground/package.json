@@ -8,10 +8,10 @@
     "serve": "sirv dist"
   },
   "devDependencies": {
-    "vite": "*",
     "sirv-cli": "^1.0.9"
   },
   "dependencies": {
-    "preact": "^10.5.7"
+    "preact": "^10.5.7",
+    "vue": "^3.0.4"
   }
 }
