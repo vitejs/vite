@@ -1,5 +1,5 @@
 import fs from 'fs'
-import etag from 'etag'
+import getEtag from 'etag'
 import path from 'path'
 import { NextHandleFunction } from 'connect'
 import { Plugin } from '../../config'
@@ -9,6 +9,7 @@ import {
   resolveHtmlTransforms
 } from '../../plugins/html'
 import { ServerContext } from '../..'
+import { send } from '../send'
 
 const devHtmlHook: IndexHtmlTransformHook = (html) => {
   return html
@@ -22,7 +23,9 @@ export function indexHtmlMiddleware(
   const [preHooks, postHooks] = resolveHtmlTransforms(plugins)
   const filename = path.join(ctx.config.root, 'index.html')
 
+  // cache the transform in the closure
   let html = ''
+  let etag = ''
   let lastModified = 0
 
   return async (req, res, next) => {
@@ -33,10 +36,6 @@ export function indexHtmlMiddleware(
       fs.existsSync(filename)
     ) {
       const stats = fs.statSync(filename)
-      res.setHeader('Content-Type', 'text/html')
-      res.setHeader('Cache-Control', 'no-cache')
-      res.setHeader('Last-Midified', stats.mtime.toUTCString())
-
       if (stats.mtimeMs !== lastModified) {
         lastModified = stats.mtimeMs
         html = fs.readFileSync(filename, 'utf-8')
@@ -47,21 +46,13 @@ export function indexHtmlMiddleware(
             [...preHooks, devHtmlHook, ...postHooks],
             ctx
           )
+          etag = getEtag(html, { weak: true })
         } catch (e) {
           return next(e)
         }
       }
 
-      const Etag = etag(html, { weak: true })
-      res.setHeader('ETag', Etag)
-
-      if (req.headers['if-none-match'] === Etag) {
-        res.statusCode = 304
-        return res.end()
-      }
-
-      res.statusCode = 200
-      res.end(html)
+      return send(req, res, html, 'text/html', etag)
     }
 
     next()

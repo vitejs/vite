@@ -16,3 +16,7 @@ declare module 'connect-history-api-fallback' {
   const plugin: any
   export = plugin
 }
+
+declare module 'merge-source-map' {
+  export default function merge(oldMap: object, newMap: object): object
+}

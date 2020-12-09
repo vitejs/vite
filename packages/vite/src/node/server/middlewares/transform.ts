@@ -1,12 +1,13 @@
 import _debug from 'debug'
-import etag from 'etag'
+import getEtag from 'etag'
 import fs, { promises as fsp } from 'fs'
-import { SourceMap } from 'rollup'
+import { SourceDescription, SourceMap } from 'rollup'
 import { ServerContext } from '..'
 import { NextHandleFunction } from 'connect'
 import { isCSSRequest } from '../../plugins/css'
 import chalk from 'chalk'
 import { cleanUrl } from '../../utils'
+import { send } from '../send'
 
 const debugResolve = _debug('vite:resolve')
 const debugLoad = _debug('vite:load')
@@ -17,17 +18,8 @@ const isDebug = !!process.env.DEBUG
 export interface TransformResult {
   code: string
   map: SourceMap | null
+  etag: string
 }
-
-/**
- * Cache transform result in memory. Must be invalidated on file change.
- */
-const transformCache = new Map<string, TransformResult>()
-
-/**
- * Cache etag. Must be invalidated on file change.
- */
-const etagCache = new Map<string, string>()
 
 /**
  * Store file -> url mapping information
@@ -38,7 +30,7 @@ const fileToUrlMap = new Map<string, Set<string>>()
 
 export async function transformFile(
   url: string,
-  { container }: ServerContext
+  { container, transformCache }: ServerContext
 ): Promise<TransformResult | null> {
   const cached = transformCache.get(url)
   if (cached) {
@@ -64,38 +56,53 @@ export async function transformFile(
   }
   urls.add(url)
 
+  let code = ''
+  let map: SourceDescription['map'] = null
+
   // load
-  let loadResult = await container.load(id)
+  const loadResult = await container.load(id)
   if (loadResult == null) {
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
     if (fs.existsSync(cleanId) && fs.statSync(cleanId).isFile()) {
-      loadResult = await fsp.readFile(cleanId, 'utf-8')
+      code = await fsp.readFile(cleanId, 'utf-8')
     }
+  } else if (typeof loadResult === 'object') {
+    code = loadResult.code
+    map = loadResult.map
+  } else {
+    code = loadResult
   }
-  if (loadResult == null) {
-    isDebug && debugLoad(`no load result: ${chalk.cyan(url)}`)
+  if (code == null) {
+    isDebug && debugLoad(`${chalk.cyan(url)} not loaded`)
     return null
-  }
-  if (typeof loadResult !== 'string') {
-    loadResult = loadResult.code
   }
   isDebug && debugLoad(`loaded: ${chalk.yellow(url)}`)
 
   // transform
-  let transformResult = await container.transform(loadResult, id)
-  if (transformResult == null) {
-    return null
+  const transformResult = await container.transform(code, id)
+  if (
+    transformResult == null ||
+    (typeof transformResult === 'object' && !transformResult.code)
+  ) {
+    // no transform applied, keep code as-is
+    isDebug && debugTransform(`${chalk.cyan(url)} no transform applied`)
   } else {
     isDebug && debugTransform(`transformed: ${chalk.yellow(url)}`)
+    if (typeof transformResult === 'object') {
+      code = transformResult.code!
+      map = transformResult.map
+    } else {
+      code = transformResult
+    }
   }
 
-  const result =
-    typeof transformResult === 'string'
-      ? { code: transformResult, map: null }
-      : (transformResult as TransformResult)
-
+  const result = {
+    code,
+    map,
+    etag: getEtag(code, { weak: true })
+  } as TransformResult
   transformCache.set(url, result)
   return result
 }
@@ -103,13 +110,14 @@ export async function transformFile(
 export function transformMiddleware(
   context: ServerContext
 ): NextHandleFunction {
-  context.watcher.on('change', (file) => {
+  const { watcher, transformCache } = context
+
+  watcher.on('change', (file) => {
     const urls = fileToUrlMap.get(file)
     if (urls) {
       urls.forEach((url) => {
-        debugCache(`busting cache for ${url}`)
+        debugCache(`busting transform cache for ${url}`)
         transformCache.delete(url)
-        etagCache.delete(url)
       })
     }
   })
@@ -119,12 +127,35 @@ export function transformMiddleware(
       return next()
     }
 
+    // check if we can return 304 early
+    const ifNoneMatch = req.headers['if-none-match']
+    if (ifNoneMatch && transformCache.get(req.url!)?.etag === ifNoneMatch) {
+      debugCache(`etag cache hit for ${req.url}`)
+      res.statusCode = 304
+      return res.end()
+    }
+
+    const isSourceMap = req.url!.endsWith('.map')
+    const isCSS = isCSSRequest(req.url!)
+
+    // since we generate source map references, handle those requests here
+    if (isSourceMap) {
+      const originalUrl = req.url!.replace(/\.map$/, '')
+      const transformed = transformCache.get(originalUrl)
+      if (transformed && transformed.map) {
+        return send(
+          req,
+          res,
+          JSON.stringify(transformed.map),
+          'applcation/json'
+        )
+      }
+    }
+
     // we only apply the transform pipeline to:
     // - requests that initiate from ESM imports (any extension)
     // - CSS (even not from ESM)
     // - Source maps (only for resolving)
-    const isSourceMap = req.url!.endsWith('.map')
-    const isCSS = isCSSRequest(req.url!)
     if (
       // esm imports accept */* in most browsers
       req.headers['accept'] === '*/*' ||
@@ -132,33 +163,13 @@ export function transformMiddleware(
       isSourceMap ||
       isCSS
     ) {
-      // check if we can return 304 early
-      const ifNoneMatch = req.headers['if-none-match']
-      if (ifNoneMatch && ifNoneMatch === etagCache.get(req.url!)) {
-        debugCache(`etag cache hit for ${req.url}`)
-        res.statusCode = 304
-        return res.end()
-      }
-
       // resolve, load and transform using the plugin container
       try {
         const result = await transformFile(req.url!, context)
         if (result) {
-          const Etag = etag(result.code, { weak: true })
-          etagCache.set(req.url!, Etag)
-          if (req.headers['if-none-match'] === Etag) {
-            res.statusCode = 304
-            return res.end()
-          }
-
-          res.setHeader(
-            'Content-Type',
-            isCSS ? 'text/css' : 'application/javascript'
-          )
-          res.setHeader('Cache-Control', 'no-cache')
-          res.setHeader('Etag', Etag)
-          // TODO handle source map
-          return res.end(result.code)
+          const type = isCSS ? 'text/css' : 'application/javascript'
+          const hasMap = !!(result.map && result.map.mappings)
+          return send(req, res, result.code, type, result.etag, hasMap)
         }
       } catch (e) {
         return next(e)
