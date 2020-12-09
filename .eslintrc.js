@@ -31,6 +31,12 @@ module.exports = {
         })
       )
     ],
+    'node/no-unpublished-import': [
+      'error',
+      {
+        allowModules: ['vite']
+      }
+    ],
     'node/no-deprecated-api': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
     'no-process-exit': 'off'

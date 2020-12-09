@@ -5,7 +5,8 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "eslint --ext .ts packages/*/src/**"
+    "lint": "eslint --ext .ts packages/*/src/**",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@types/node": "^14.14.10",
@@ -17,6 +18,7 @@
     "lint-staged": "^10.5.3",
     "minimist": "^1.2.5",
     "npm-run-all": "^4.1.5",
+    "patch-package": "^6.2.2",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "semver": "^7.3.4",

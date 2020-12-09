@@ -33,7 +33,7 @@ export function esbuildPlugin(options?: TransformOptions): Plugin {
         const service = await ensureService()
         const file = cleanUrl(id)
 
-        options = {
+        const resolvedOptions = {
           loader: path.extname(file).slice(1) as Loader,
           sourcemap: true,
           // ensure source file name contains full query
@@ -43,7 +43,7 @@ export function esbuildPlugin(options?: TransformOptions): Plugin {
         }
 
         try {
-          const result = await service.transform(code, options)
+          const result = await service.transform(code, resolvedOptions)
           if (result.warnings.length) {
             result.warnings.forEach((m) => {
               this.warn(prettifyMessage(m, code))
@@ -54,7 +54,7 @@ export function esbuildPlugin(options?: TransformOptions): Plugin {
             map: result.map
           }
         } catch (e) {
-          debug(`esbuild error with options used: `, options)
+          debug(`esbuild error with options used: `, resolvedOptions)
           if (e.errors) {
             e.errors.forEach((m: Message) => {
               e.message += `\n` + prettifyMessage(m, code)

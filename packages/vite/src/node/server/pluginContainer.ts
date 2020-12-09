@@ -21,7 +21,8 @@ import {
   ChangeEvent,
   PartialResolvedId,
   ResolvedId,
-  PluginContext
+  PluginContext,
+  TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
@@ -44,7 +45,7 @@ export interface PluginContainer {
     importer?: string,
     skip?: Plugin[]
   ): Promise<ResolveIdResult>
-  transform(code: string, id: string): Promise<string>
+  transform(code: string, id: string): Promise<TransformResult>
   load(id: string): Promise<LoadResult>
   resolveFileUrl(referenceId: string): string | null
 }
@@ -243,35 +244,6 @@ export async function createPluginContainer(
       )
     },
 
-    watchChange(id, event = 'update') {
-      if (watchFiles.has(id)) {
-        for (plugin of plugins) {
-          if (!plugin.watchChange) continue
-          plugin.watchChange.call(ctx, id, { event })
-        }
-      }
-    },
-
-    resolveImportMeta(id, property) {
-      for (plugin of plugins) {
-        if (!plugin.resolveImportMeta) continue
-        const result = plugin.resolveImportMeta.call(ctx, property, {
-          chunkId: '',
-          moduleId: id,
-          format: 'es'
-        })
-        if (result) return result
-      }
-
-      // handle file URLs by default
-      const matches = property.match(/^ROLLUP_FILE_URL_(\d+)$/)
-      if (matches) {
-        const referenceId = matches[1]
-        const result = container.resolveFileUrl(referenceId)
-        if (result) return result
-      }
-    },
-
     async resolveId(id, importer, _skip) {
       const key = identifierPair(id, importer)
 
@@ -312,6 +284,17 @@ export async function createPluginContainer(
         : id
     },
 
+    async load(id) {
+      for (plugin of plugins) {
+        if (!plugin.load) continue
+        const result = await plugin.load.call(ctx, id)
+        if (result) {
+          return result
+        }
+      }
+      return null
+    },
+
     async transform(code, id) {
       for (plugin of plugins) {
         if (!plugin.transform) continue
@@ -327,15 +310,33 @@ export async function createPluginContainer(
       return code
     },
 
-    async load(id) {
-      for (plugin of plugins) {
-        if (!plugin.load) continue
-        const result = await plugin.load.call(ctx, id)
-        if (result) {
-          return result
+    watchChange(id, event = 'update') {
+      if (watchFiles.has(id)) {
+        for (plugin of plugins) {
+          if (!plugin.watchChange) continue
+          plugin.watchChange.call(ctx, id, { event })
         }
       }
-      return null
+    },
+
+    resolveImportMeta(id, property) {
+      for (plugin of plugins) {
+        if (!plugin.resolveImportMeta) continue
+        const result = plugin.resolveImportMeta.call(ctx, property, {
+          chunkId: '',
+          moduleId: id,
+          format: 'es'
+        })
+        if (result) return result
+      }
+
+      // handle file URLs by default
+      const matches = property.match(/^ROLLUP_FILE_URL_(\d+)$/)
+      if (matches) {
+        const referenceId = matches[1]
+        const result = container.resolveFileUrl(referenceId)
+        if (result) return result
+      }
     },
 
     resolveFileUrl(referenceId) {

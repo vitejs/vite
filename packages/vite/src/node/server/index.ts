@@ -18,18 +18,10 @@ import { FSWatcher, WatchOptions } from '../types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { setupWebSocketServer, WebSocketServer } from '../server/ws'
 import { setupProxy, ProxyOptions } from './proxy'
-import { transformMiddleware } from './middlewares/transformMiddleware'
-import { indexHtmlMiddleware } from './middlewares/indexHtmlMiddleware'
+import { transformMiddleware } from './middlewares/transform'
+import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
-import { serveStaticMiddleware } from './middlewares/serveStaticMiddleware'
-
-// shim connect app.sue for inference
-// https://github.com/DefinitelyTyped/DefinitelyTyped/pull/49994
-declare module 'connect' {
-  interface Server {
-    use(fn: connect.NextHandleFunction): connect.Server
-  }
-}
+import { serveStaticMiddleware } from './middlewares/static'
 
 export interface ServerOptions {
   host?: string
@@ -149,7 +141,7 @@ export interface ViteDevServer extends http.Server {
 export async function createServer(
   inlineConfig: UserConfig = {},
   mode = 'development',
-  configPath?: string
+  configPath?: string | false
 ): Promise<ViteDevServer> {
   const resolvedConfig = await resolveConfig(
     inlineConfig,
@@ -181,6 +173,7 @@ export async function createServer(
 
   const plugins = resolvedConfig.plugins
   const container = await createPluginContainer(plugins)
+  await container.buildStart({})
 
   const context: ServerContext = (server.context = {
     config: resolvedConfig,
@@ -228,17 +221,12 @@ export async function createServer(
   // transform index.html
   app.use(indexHtmlMiddleware(context, plugins))
 
-  // final catch all
+  // error handler
   // note the 4 args must be kept for connect to treat this as error middleware
   app.use(((err, _req, res, _next) => {
-    if (err) {
-      console.error(chalk.red(`[vite] Internal server error:`))
-      console.error(err.stack)
-      res.statusCode = 500
-      return res.end()
-    }
-
-    res.statusCode = 404
+    console.error(chalk.red(`[vite] Internal server error:`))
+    console.error(err.stack)
+    res.statusCode = 500
     res.end()
   }) as connect.ErrorHandleFunction)
 
@@ -285,7 +273,7 @@ async function resolveServer(
 export async function startServer(
   inlineConfig: UserConfig = {},
   mode = 'development',
-  configPath?: string
+  configPath?: string | false
 ): Promise<ViteDevServer> {
   const server = await createServer(inlineConfig, mode, configPath)
 
