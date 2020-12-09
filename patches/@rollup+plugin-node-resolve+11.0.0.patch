@@ -1,0 +1,10 @@
+diff --git a/node_modules/@rollup/plugin-node-resolve/types/index.d.ts b/node_modules/@rollup/plugin-node-resolve/types/index.d.ts
+index dd25c63..7fc7313 100755
+--- a/node_modules/@rollup/plugin-node-resolve/types/index.d.ts
++++ b/node_modules/@rollup/plugin-node-resolve/types/index.d.ts
+@@ -1,3 +1,5 @@
++import { Plugin } from 'rollup'
++
+ export const DEFAULTS: {
+   customResolveOptions: {};
+   dedupe: [];
