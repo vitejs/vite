@@ -15,7 +15,6 @@ import {
   MinimalPluginContext,
   OutputOptions,
   ModuleInfo,
-  ResolveIdResult,
   LoadResult,
   NormalizedInputOptions,
   ChangeEvent,
@@ -44,7 +43,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     skip?: Plugin[]
-  ): Promise<ResolveIdResult>
+  ): Promise<PartialResolvedId | null>
   transform(code: string, id: string): Promise<TransformResult>
   load(id: string): Promise<LoadResult>
   resolveFileUrl(referenceId: string): string | null
@@ -279,9 +278,7 @@ export async function createPluginContainer(
       }
 
       partial.id = id
-      return Object.keys(partial).length > 1
-        ? (partial as PartialResolvedId)
-        : id
+      return id ? (partial as PartialResolvedId) : null
     },
 
     async load(id) {

@@ -2,4 +2,7 @@
 <link rel="stylesheet" href="/test.css">
 <img src="/logo.png" alt="">
 <div id="app"></div>
-<script type="module" src="/test.jsx"></script>
+<script>
+window.process = { env: { NODE_ENV: 'development' }}
+</script>
+<script type="module" src="/main.js"></script>

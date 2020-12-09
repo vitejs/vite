@@ -7,17 +7,25 @@ import { NextHandleFunction } from 'connect'
 import { isCSSRequest } from '../../plugins/css'
 import chalk from 'chalk'
 import { cleanUrl } from '../../utils'
-import { init, parse, ImportSpecifier } from 'es-module-lexer'
-import MagicString from 'magic-string'
-import { MODULE_PREFIX } from '../../plugins/resolve'
 
 const debug = _debug('vite:transform')
+const debugEtag = _debug('vite:etag')
 const isDebug = !!process.env.DEBUG
 
 export interface TransformResult {
   code: string
   map: SourceMap | null
 }
+
+/**
+ * Cache transform result in memory. Must be invalidated on file change.
+ */
+const transformCache = new Map<string, TransformResult>()
+
+/**
+ * Cache etag. Must be invalidated on file change.
+ */
+const etagCache = new Map<string, string>()
 
 /**
  * Store file -> url mapping information
@@ -30,19 +38,31 @@ export async function transformFile(
   url: string,
   { container }: ServerContext
 ): Promise<TransformResult | null> {
+  const cached = transformCache.get(url)
+  if (cached) {
+    isDebug && debug(`transform cache hit for ${url}`)
+    return cached
+  }
+
   // resolve
-  let id = await container.resolveId(url)
-  if (!id) {
+  const resolved = await container.resolveId(url)
+  if (!resolved) {
     isDebug && debug(`no resolveId result: ${chalk.cyan(url)}`)
     return null
   }
-  if (typeof id !== 'string') {
-    id = id.id
-  }
+  const id = resolved.id
   isDebug && debug(`resolve: ${chalk.yellow(url)} -> ${chalk.cyan(id)}`)
 
-  // load
+  // record file -> url relationships after successful resolve
   const cleanId = cleanUrl(id)
+  let urls = fileToUrlMap.get(cleanId)
+  if (!urls) {
+    urls = new Set<string>()
+    fileToUrlMap.set(cleanId, urls)
+  }
+  urls.add(url)
+
+  // load
   let loadResult = await container.load(id)
   if (loadResult == null) {
     // try fallback loading it from fs
@@ -59,14 +79,6 @@ export async function transformFile(
   }
   isDebug && debug(`loaded: ${chalk.yellow(url)}`)
 
-  // record file -> url relationships after successful load
-  let urls = fileToUrlMap.get(cleanId)
-  if (!urls) {
-    urls = new Set<string>()
-    fileToUrlMap.set(cleanId, urls)
-  }
-  urls.add(url)
-
   // transform
   let transformResult = await container.transform(loadResult, id)
   if (transformResult == null) {
@@ -75,21 +87,24 @@ export async function transformFile(
     isDebug && debug(`transformed: ${chalk.yellow(url)}`)
   }
 
-  return typeof transformResult === 'string'
-    ? { code: transformResult, map: null }
-    : (transformResult as TransformResult)
+  const result =
+    typeof transformResult === 'string'
+      ? { code: transformResult, map: null }
+      : (transformResult as TransformResult)
+
+  transformCache.set(url, result)
+  return result
 }
 
 export function transformMiddleware(
   context: ServerContext
 ): NextHandleFunction {
-  const etagCache = new Map<string, string>()
-
   context.watcher.on('change', (file) => {
     const urls = fileToUrlMap.get(file)
     if (urls) {
       urls.forEach((url) => {
-        debug(`busting etag cache for ${url}`)
+        debugEtag(`busting cache for ${url}`)
+        transformCache.delete(url)
         etagCache.delete(url)
       })
     }
@@ -98,31 +113,21 @@ export function transformMiddleware(
   return async (req, res, next) => {
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch && ifNoneMatch === etagCache.get(req.url!)) {
-      debug(`etag cache hit for ${req.url}`)
+      debugEtag(`etag cache hit for ${req.url}`)
       res.statusCode = 304
       return res.end()
     }
 
-    const fetchDest = req.headers['sec-fetch-dest']
-    const accept = req.headers['accept']
     let isCSS = false
-
     if (
-      accept === '*/*' || // <-- esm imports accept */* in most browsers
-      fetchDest === 'script' ||
-      (isCSS =
-        fetchDest === 'style' ||
-        accept?.includes('text/css') ||
-        isCSSRequest(req.url!))
+      req.headers['accept'] === '*/*' || // <-- esm imports accept */* in most browsers
+      req.headers['sec-fetch-dest'] === 'script' ||
+      req.url!.endsWith('.map') ||
+      (isCSS = isCSSRequest(req.url!))
     ) {
       try {
         const result = await transformFile(req.url!, context)
         if (result) {
-          if (!isCSS) {
-            // TODO merge source map?
-            result.code = await rewriteImports(result.code, req.url!)
-          }
-
           const Etag = etag(result.code, { weak: true })
           etagCache.set(req.url!, Etag)
           if (req.headers['if-none-match'] === Etag) {
@@ -146,77 +151,4 @@ export function transformMiddleware(
 
     next()
   }
-}
-
-async function rewriteImports(source: string, importer: string) {
-  await init
-  let imports: ImportSpecifier[] = []
-  try {
-    imports = parse(source)[0]
-  } catch (e) {
-    console.warn(
-      chalk.yellow(
-        `[vite] failed to parse ${chalk.cyan(
-          importer
-        )} for import rewrite.\nIf you are using ` +
-          `JSX, make sure to named the file with the .jsx extension.`
-      )
-    )
-    return source
-  }
-
-  if (!imports.length) {
-    debug(`${importer}: no imports found.`)
-    return source
-  }
-
-  const s = new MagicString(source)
-  let hasReplaced = false
-
-  for (let i = 0; i < imports.length; i++) {
-    const { s: start, e: end, d: dynamicIndex } = imports[i]
-    let id = source.substring(start, end)
-    const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(id)
-    let hasLiteralDynamicId = false
-    if (dynamicIndex >= 0) {
-      // #998 remove comment
-      id = id.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
-      const literalIdMatch = id.match(/^\s*(?:'([^']+)'|"([^"]+)")\s*$/)
-      if (literalIdMatch) {
-        hasLiteralDynamicId = true
-        id = literalIdMatch[1] || literalIdMatch[2]
-      }
-    }
-    if (dynamicIndex === -1 || hasLiteralDynamicId) {
-      if (id[0] !== '/' && id[0] !== '.') {
-        const prefixed = MODULE_PREFIX + id
-        s.overwrite(
-          start,
-          end,
-          hasLiteralDynamicId ? `'${prefixed}'` : prefixed
-        )
-        hasReplaced = true
-      }
-    } else if (id !== 'import.meta' && !hasViteIgnore) {
-      console.warn(
-        chalk.yellow(`[vite] ignored dynamic import(${id}) in ${importer}.`)
-      )
-    }
-  }
-
-  // TODO env?
-  // if (hasEnv) {
-  //   debug(`    injecting import.meta.env for ${importer}`)
-  //   s.prepend(
-  //     `import __VITE_ENV__ from "${envPublicPath}"; ` +
-  //       `import.meta.env = __VITE_ENV__; `
-  //   )
-  //   hasReplaced = true
-  // }
-
-  if (!hasReplaced) {
-    debug(`nothing needs rewriting.`)
-  }
-
-  return hasReplaced ? s.toString() : source
 }
