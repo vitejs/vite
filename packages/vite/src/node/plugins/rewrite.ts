@@ -1,29 +1,21 @@
-import path from 'path'
 import _debug from 'debug'
 import { Plugin } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from './resolve'
 import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
+import { isCSSRequest } from './css'
+import slash from 'slash'
 
 const debugRewrite = _debug('vite:rewrite')
 
-const canSkip = new Set([
-  '.map',
-  '.json',
-  '.css',
-  '.less',
-  '.sass',
-  '.scss',
-  '.styl',
-  '.stylus'
-])
+const canSkip = (id: string) => id.endsWith('.map') || isCSSRequest(id)
 
 export function rewritePlugin(): Plugin {
   return {
     name: 'vite:rewrite',
     async transform(source, importer) {
-      if (canSkip.has(path.extname(importer))) {
+      if (canSkip(importer)) {
         return null
       }
 
@@ -64,10 +56,14 @@ export function rewritePlugin(): Plugin {
           }
         }
         if (dynamicIndex === -1 || hasLiteralDynamicId) {
+          // resolve bare imports:
+          // e.g. `import 'foo'` -> `import '@fs/.../node_modules/foo/index.js`
           if (id[0] !== '/' && id[0] !== '.') {
             const resolved = await this.resolve(id)
             if (resolved) {
-              const prefixed = FILE_PREFIX + resolved.id
+              // resolved.id is now a file system path - convert it to url-like
+              // this will be unwrapped in the reoslve plugin
+              const prefixed = FILE_PREFIX + slash(resolved.id)
               ;(s || (s = new MagicString(source))).overwrite(
                 start,
                 end,
@@ -78,6 +74,12 @@ export function rewritePlugin(): Plugin {
                 chalk.yellow(`[vite] cannot resolve bare import "${id}".`)
               )
             }
+          }
+
+          // resolve CSS imports into js (so it differentiates from actual
+          // CSS references from <link>)
+          if (isCSSRequest(id)) {
+            ;(s || (s = new MagicString(source))).appendLeft(end, `.js`)
           }
         } else if (id !== 'import.meta' && !hasViteIgnore) {
           console.warn(

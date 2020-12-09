@@ -221,6 +221,12 @@ export async function createServer(
   // transform index.html
   app.use(indexHtmlMiddleware(context, plugins))
 
+  // handle 404s
+  app.use((_, res) => {
+    res.statusCode = 404
+    res.end()
+  })
+
   // error handler
   // note the 4 args must be kept for connect to treat this as error middleware
   app.use(((err, _req, res, _next) => {

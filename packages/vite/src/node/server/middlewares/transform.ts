@@ -8,8 +8,10 @@ import { isCSSRequest } from '../../plugins/css'
 import chalk from 'chalk'
 import { cleanUrl } from '../../utils'
 
-const debug = _debug('vite:transform')
-const debugEtag = _debug('vite:etag')
+const debugResolve = _debug('vite:resolve')
+const debugLoad = _debug('vite:load')
+const debugTransform = _debug('vite:transform')
+const debugCache = _debug('vite:cache')
 const isDebug = !!process.env.DEBUG
 
 export interface TransformResult {
@@ -40,18 +42,18 @@ export async function transformFile(
 ): Promise<TransformResult | null> {
   const cached = transformCache.get(url)
   if (cached) {
-    isDebug && debug(`transform cache hit for ${url}`)
+    isDebug && debugCache(`transform cache hit for ${url}`)
     return cached
   }
 
   // resolve
   const resolved = await container.resolveId(url)
   if (!resolved) {
-    isDebug && debug(`no resolveId result: ${chalk.cyan(url)}`)
+    isDebug && debugResolve(`no resolveId result: ${chalk.cyan(url)}`)
     return null
   }
   const id = resolved.id
-  isDebug && debug(`resolve: ${chalk.yellow(url)} -> ${chalk.cyan(id)}`)
+  isDebug && debugResolve(`resolve: ${chalk.yellow(url)} -> ${chalk.cyan(id)}`)
 
   // record file -> url relationships after successful resolve
   const cleanId = cleanUrl(id)
@@ -65,26 +67,28 @@ export async function transformFile(
   // load
   let loadResult = await container.load(id)
   if (loadResult == null) {
-    // try fallback loading it from fs
+    // try fallback loading it from fs as string
+    // if the file is a binary, there should be a plugin that already loaded it
+    // as string
     if (fs.existsSync(cleanId) && fs.statSync(cleanId).isFile()) {
       loadResult = await fsp.readFile(cleanId, 'utf-8')
     }
   }
   if (loadResult == null) {
-    isDebug && debug(`no load result: ${chalk.cyan(url)}`)
+    isDebug && debugLoad(`no load result: ${chalk.cyan(url)}`)
     return null
   }
   if (typeof loadResult !== 'string') {
     loadResult = loadResult.code
   }
-  isDebug && debug(`loaded: ${chalk.yellow(url)}`)
+  isDebug && debugLoad(`loaded: ${chalk.yellow(url)}`)
 
   // transform
   let transformResult = await container.transform(loadResult, id)
   if (transformResult == null) {
     return null
   } else {
-    isDebug && debug(`transformed: ${chalk.yellow(url)}`)
+    isDebug && debugTransform(`transformed: ${chalk.yellow(url)}`)
   }
 
   const result =
@@ -103,7 +107,7 @@ export function transformMiddleware(
     const urls = fileToUrlMap.get(file)
     if (urls) {
       urls.forEach((url) => {
-        debugEtag(`busting cache for ${url}`)
+        debugCache(`busting cache for ${url}`)
         transformCache.delete(url)
         etagCache.delete(url)
       })
@@ -111,20 +115,32 @@ export function transformMiddleware(
   })
 
   return async (req, res, next) => {
-    const ifNoneMatch = req.headers['if-none-match']
-    if (ifNoneMatch && ifNoneMatch === etagCache.get(req.url!)) {
-      debugEtag(`etag cache hit for ${req.url}`)
-      res.statusCode = 304
-      return res.end()
+    if (req.method !== 'GET') {
+      return next()
     }
 
-    let isCSS = false
+    // we only apply the transform pipeline to:
+    // - requests that initiate from ESM imports (any extension)
+    // - CSS (even not from ESM)
+    // - Source maps (only for resolving)
+    const isSourceMap = req.url!.endsWith('.map')
+    const isCSS = isCSSRequest(req.url!)
     if (
-      req.headers['accept'] === '*/*' || // <-- esm imports accept */* in most browsers
+      // esm imports accept */* in most browsers
+      req.headers['accept'] === '*/*' ||
       req.headers['sec-fetch-dest'] === 'script' ||
-      req.url!.endsWith('.map') ||
-      (isCSS = isCSSRequest(req.url!))
+      isSourceMap ||
+      isCSS
     ) {
+      // check if we can return 304 early
+      const ifNoneMatch = req.headers['if-none-match']
+      if (ifNoneMatch && ifNoneMatch === etagCache.get(req.url!)) {
+        debugCache(`etag cache hit for ${req.url}`)
+        res.statusCode = 304
+        return res.end()
+      }
+
+      // resolve, load and transform using the plugin container
       try {
         const result = await transformFile(req.url!, context)
         if (result) {

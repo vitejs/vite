@@ -1,5 +1,5 @@
 import { h, render } from 'preact'
-// import './imported.css'
+import './imported.css'
 import { log } from './foo'
 import json from './example.json'
 
