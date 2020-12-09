@@ -41,7 +41,7 @@
   },
   "//": "READ .github/maintenance.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@types/connect": "^3.4.33",
+    "@types/connect": "^3.4.34",
     "@types/http-proxy": "^1.17.4",
     "@types/node": "^14.14.10",
     "esbuild": "^0.8.20",
@@ -56,6 +56,8 @@
     "@rollup/plugin-typescript": "^8.0.0",
     "@types/debug": "^4.1.5",
     "@types/dotenv": "^8.2.0",
+    "@types/es-module-lexer": "^0.3.0",
+    "@types/etag": "^1.8.0",
     "@types/ws": "^7.4.0",
     "acorn": "^8.0.4",
     "acorn-class-fields": "^0.3.7",
@@ -68,12 +70,15 @@
     "debug": "^4.3.1",
     "dotenv": "^8.2.0",
     "dotenv-expand": "^5.1.0",
+    "es-module-lexer": "^0.3.26",
+    "etag": "^1.8.1",
     "http-proxy": "^1.18.1",
     "magic-string": "^0.25.7",
     "rollup-plugin-terser": "^7.0.2",
     "selfsigned": "^1.10.8",
     "sirv": "^1.0.10",
     "source-map-support": "^0.5.19",
+    "tslib": "^2.0.3",
     "ws": "^7.4.1"
   }
 }

@@ -7,6 +7,9 @@ export const hashRE = /#.*$/
 export const cleanUrl = (url: string) =>
   url.replace(hashRE, '').replace(queryRE, '')
 
+const externalRE = /^(https?:)?\/\//
+export const isExternalUrl = (url: string) => externalRE.test(url)
+
 export function deepMerge(
   a: Record<string, any>,
   b: Record<string, any>

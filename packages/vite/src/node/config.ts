@@ -6,7 +6,7 @@ import { BuildOptions, BuildHook } from './build'
 import { ServerOptions, ServerHook } from './server'
 import { CSSOptions } from './plugins/css'
 import { deepMerge, isObject, lookupFile } from './utils'
-import { internalPlugins } from './plugins'
+import { getInternalPlugins } from './plugins'
 import chalk from 'chalk'
 import { esbuildPlugin } from './plugins/esbuild'
 import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
@@ -104,8 +104,8 @@ export interface Plugin extends RollupPlugin {
   enforce?: 'pre' | 'post'
   /**
    * Mutate or return new vite config before it's resolved.
-   * Note: plugins are resolved before running this hook and cannot be
-   * mutated. i.e. a plugin cannot inject another plugin in this hook.
+   * Note user plugins are resolved before this hook so adding plugins inside
+   * a plugin's modifyConfig hook will have no effect.
    */
   modifyConfig?: ConfigHook
   /**
@@ -147,8 +147,6 @@ export interface Plugin extends RollupPlugin {
   transformIndexHtml?: IndexHtmlTransform
 }
 
-export * from './server/middlewares/indexHtmlMiddleware'
-
 export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins'> & {
     root: string
@@ -164,17 +162,16 @@ export async function resolveConfig(
   config: UserConfig,
   command: 'build' | 'serve',
   mode: string,
-  configPath?: string
+  configPath?: string | false
 ): Promise<ResolvedConfig> {
-  const fileConfig = await loadConfigFromFile(
-    {
-      mode,
-      command
-    },
-    configPath
-  )
-
-  if (fileConfig) {
+  if (configPath !== false) {
+    const fileConfig = await loadConfigFromFile(
+      {
+        mode,
+        command
+      },
+      configPath
+    )
     config = deepMerge(fileConfig, config)
   }
 
@@ -192,15 +189,9 @@ export async function resolveConfig(
     })
   }
 
-  const resolvedPlugins = Object.freeze([
-    ...prePlugins,
-    ...internalPlugins,
-    ...normalPlugins,
-    ...postPlugins
-  ])
-
   // run modifyConfig hooks
-  resolvedPlugins.forEach((p) => {
+  const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
+  userPlugins.forEach((p) => {
     if (p.modifyConfig) {
       config = p.modifyConfig(config) || config
     }
@@ -214,18 +205,30 @@ export async function resolveConfig(
       : path.resolve(root)
     : process.cwd()
 
-  const resolved: ResolvedConfig = Object.freeze({
+  const resolved = {
     ...config,
     root: resolvedRoot,
     mode,
-    plugins: resolvedPlugins,
+    plugins: userPlugins,
     server: config.server || {},
     build: config.build || {},
     env: loadEnv(mode, resolvedRoot)
-  })
+  }
 
-  debug(`using resolved config:`)
-  debug(resolved)
+  resolved.plugins = [
+    ...prePlugins,
+    ...(await getInternalPlugins(command, resolved)),
+    ...normalPlugins,
+    ...postPlugins
+  ]
+
+  if (process.env.DEBUG) {
+    debug(`using resolved config:`)
+    debug({
+      ...resolved,
+      plugins: resolved.plugins.map((p) => p.name)
+    })
+  }
   return resolved
 }
 
