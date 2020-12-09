@@ -1,4 +1,5 @@
 import _debug from 'debug'
+import path from 'path'
 import getEtag from 'etag'
 import fs, { promises as fsp } from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
@@ -9,7 +10,7 @@ import chalk from 'chalk'
 import { cleanUrl } from '../../utils'
 import { send } from '../send'
 
-const debugResolve = _debug('vite:resolve')
+const debugResolve = _debug('vite:resolve-url')
 const debugLoad = _debug('vite:load')
 const debugTransform = _debug('vite:transform')
 const debugCache = _debug('vite:cache')
@@ -30,25 +31,27 @@ const fileToUrlMap = new Map<string, Set<string>>()
 
 export async function transformFile(
   url: string,
-  { container, transformCache }: ServerContext
+  { config: { root }, container, transformCache }: ServerContext
 ): Promise<TransformResult | null> {
   const cached = transformCache.get(url)
   if (cached) {
-    isDebug && debugCache(`transform cache hit for ${url}`)
+    isDebug && debugCache(`[memory] ${chalk.gray(url)}`)
     return cached
   }
 
   // resolve
   const resolved = await container.resolveId(url)
   if (!resolved) {
-    isDebug && debugResolve(`no resolveId result: ${chalk.cyan(url)}`)
+    isDebug && debugResolve(`not resolved: ${chalk.cyan(url)}`)
     return null
   }
   const id = resolved.id
-  isDebug && debugResolve(`resolve: ${chalk.yellow(url)} -> ${chalk.cyan(id)}`)
+  const cleanId = cleanUrl(id)
+  const prettyId = isDebug && chalk.gray(path.relative(root, cleanId))
+  isDebug && debugResolve(`${chalk.green(url)} -> ${chalk.gray(id)}`)
 
   // record file -> url relationships after successful resolve
-  const cleanId = cleanUrl(id)
+
   let urls = fileToUrlMap.get(cleanId)
   if (!urls) {
     urls = new Set<string>()
@@ -56,7 +59,7 @@ export async function transformFile(
   }
   urls.add(url)
 
-  let code = ''
+  let code = null
   let map: SourceDescription['map'] = null
 
   // load
@@ -67,18 +70,21 @@ export async function transformFile(
     // as string
     if (fs.existsSync(cleanId) && fs.statSync(cleanId).isFile()) {
       code = await fsp.readFile(cleanId, 'utf-8')
+      isDebug && debugLoad(`[fs] ${prettyId}`)
     }
-  } else if (typeof loadResult === 'object') {
-    code = loadResult.code
-    map = loadResult.map
   } else {
-    code = loadResult
+    isDebug && debugLoad(`[plugin] ${prettyId}`)
+    if (typeof loadResult === 'object') {
+      code = loadResult.code
+      map = loadResult.map
+    } else {
+      code = loadResult
+    }
   }
   if (code == null) {
-    isDebug && debugLoad(`${chalk.cyan(url)} not loaded`)
+    isDebug && debugLoad(`${chalk.red(`[FAIL]`)} ${prettyId}`)
     return null
   }
-  isDebug && debugLoad(`loaded: ${chalk.yellow(url)}`)
 
   // transform
   const transformResult = await container.transform(code, id)
@@ -87,9 +93,9 @@ export async function transformFile(
     (typeof transformResult === 'object' && !transformResult.code)
   ) {
     // no transform applied, keep code as-is
-    isDebug && debugTransform(`${chalk.cyan(url)} no transform applied`)
+    isDebug && debugTransform(chalk.gray(`[skipped] ${prettyId}`))
   } else {
-    isDebug && debugTransform(`transformed: ${chalk.yellow(url)}`)
+    isDebug && debugTransform(chalk.green(`[ok] ${prettyId}`))
     if (typeof transformResult === 'object') {
       code = transformResult.code!
       map = transformResult.map
@@ -130,7 +136,7 @@ export function transformMiddleware(
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch && transformCache.get(req.url!)?.etag === ifNoneMatch) {
-      debugCache(`etag cache hit for ${req.url}`)
+      isDebug && debugCache(`[304] ${chalk.gray(req.url)}`)
       res.statusCode = 304
       return res.end()
     }
