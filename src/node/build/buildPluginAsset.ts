@@ -1,6 +1,6 @@
 import path from 'path'
 import fs from 'fs-extra'
-import { Plugin, OutputBundle } from 'rollup'
+import { Plugin } from 'rollup'
 import { cleanUrl } from '../utils'
 import slash from 'slash'
 import mime from 'mime-types'
@@ -71,21 +71,6 @@ export const resolveAsset = async (
 
   assetResolveCache.set(id, resolved)
   return resolved
-}
-
-export const registerAssets = (
-  assets: Map<string, Buffer>,
-  bundle: OutputBundle
-) => {
-  for (const [fileName, source] of assets) {
-    bundle[fileName] = {
-      name: fileName,
-      isAsset: true,
-      type: 'asset',
-      fileName,
-      source
-    }
-  }
 }
 
 export const createBuildAssetPlugin = (

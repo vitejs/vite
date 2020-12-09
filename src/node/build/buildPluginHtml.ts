@@ -8,7 +8,7 @@ import {
   isDataUrl,
   transformIndexHtml
 } from '../utils'
-import { resolveAsset, registerAssets } from './buildPluginAsset'
+import { resolveAsset } from './buildPluginAsset'
 import { InternalResolver } from '../resolver'
 import { UserConfig } from '../config'
 import {
@@ -19,6 +19,7 @@ import {
   TextNode,
   AttributeNode
 } from '@vue/compiler-dom'
+import slash from 'slash'
 
 export const createBuildHtmlPlugin = async (
   root: string,
@@ -45,14 +46,9 @@ export const createBuildHtmlPlugin = async (
     true
   )
   const assets = new Map<string, Buffer>()
-  let { html: processedHtml, js } = await compileHtml(
+  let { magicStringHtml, js, assetUrls } = await compileHtml(
     root,
-    preprocessedHtml,
-    publicBasePath,
-    assetsDir,
-    inlineLimit,
-    resolver,
-    assets
+    preprocessedHtml
   )
 
   const htmlPlugin: Plugin = {
@@ -63,8 +59,37 @@ export const createBuildHtmlPlugin = async (
       }
     },
 
-    generateBundle(_options, bundle) {
-      registerAssets(assets, bundle)
+    async generateBundle(_options, bundle) {
+      // for each encountered asset url, rewrite original html so that it
+      // references the post-build location.
+      for (const attr of assetUrls) {
+        const value = attr.value!
+        let { fileName, content, url } = await resolveAsset(
+          resolver.requestToFile(value.content),
+          root,
+          publicBasePath,
+          assetsDir,
+          cleanUrl(value.content).endsWith('.css') ? 0 : inlineLimit
+        )
+        if (!url && fileName && content) {
+          const fileId = this.emitFile({
+            name: fileName,
+            type: 'asset',
+            source: content
+          })
+          url =
+            publicBasePath +
+            slash(path.join(assetsDir, this.getFileName(fileId)))
+        }
+        magicStringHtml.overwrite(
+          value.loc.start.offset,
+          value.loc.end.offset,
+          `"${url}"`
+        )
+        if (fileName && content) {
+          assets.set(fileName, content)
+        }
+      }
     }
   }
 
@@ -105,7 +130,7 @@ export const createBuildHtmlPlugin = async (
   }
 
   const renderIndex = async (bundleOutput: RollupOutput['output']) => {
-    let result = processedHtml
+    let result = magicStringHtml.toString()
     for (const chunk of bundleOutput) {
       if (chunk.type === 'chunk') {
         if (chunk.isEntry) {
@@ -153,15 +178,7 @@ const assetAttrsConfig: Record<string, string[]> = {
 
 // compile index.html to a JS module, importing referenced assets
 // and scripts
-const compileHtml = async (
-  root: string,
-  html: string,
-  publicBasePath: string,
-  assetsDir: string,
-  inlineLimit: number,
-  resolver: InternalResolver,
-  assets: Map<string, Buffer>
-) => {
+const compileHtml = async (root: string, html: string) => {
   const { parse, transform } = require('@vue/compiler-dom')
 
   // @vue/compiler-core doesn't like lowercase doctypes
@@ -233,25 +250,9 @@ const compileHtml = async (
     nodeTransforms: [viteHtmlTransform]
   })
 
-  // for each encountered asset url, rewrite original html so that it
-  // references the post-build location.
-  for (const attr of assetUrls) {
-    const value = attr.value!
-    const { fileName, content, url } = await resolveAsset(
-      resolver.requestToFile(value.content),
-      root,
-      publicBasePath,
-      assetsDir,
-      cleanUrl(value.content).endsWith('.css') ? 0 : inlineLimit
-    )
-    s.overwrite(value.loc.start.offset, value.loc.end.offset, `"${url}"`)
-    if (fileName && content) {
-      assets.set(fileName, content)
-    }
-  }
-
   return {
-    html: s.toString(),
-    js
+    magicStringHtml: s,
+    js,
+    assetUrls
   }
 }
