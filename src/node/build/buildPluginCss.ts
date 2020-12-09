@@ -22,7 +22,6 @@ import slash from 'slash'
 const debug = require('debug')('vite:build:css')
 
 const cssInjectionMarker = `__VITE_CSS__`
-const cssInjectionRE = /__VITE_CSS__\(\);?/g
 
 interface BuildCssOption {
   root: string
@@ -128,16 +127,10 @@ export const createBuildCssPlugin = ({
         return {
           code: modules
             ? dataToEsm(modules, { namedExports: true })
-            : (cssCodeSplit
-                ? // If code-splitting CSS, inject a fake marker to avoid the module
-                  // from being tree-shaken. This preserves the .css file as a
-                  // module in the chunk's metadata so that we can retrieve them in
-                  // renderChunk.
-                  `${cssInjectionMarker}()\n`
-                : ``) + `export default ${JSON.stringify(css)}`,
+            : `export default ${JSON.stringify(css)}`,
           map: null,
-          // #795 css always has side effect
-          moduleSideEffects: true
+          // css always not be treeshake
+          moduleSideEffects: 'no-treeshake'
         }
       }
     },
@@ -161,7 +154,6 @@ export const createBuildCssPlugin = ({
       }
 
       if (cssCodeSplit) {
-        code = code.replace(cssInjectionRE, '')
         if (!code.trim()) {
           // this is a shared CSS-only chunk that is empty.
           emptyChunks.add(chunk.fileName)
