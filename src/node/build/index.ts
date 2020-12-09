@@ -411,10 +411,10 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
   }
 
   const outDir = path.resolve(root, config.outDir)
-  const indexPath = path.resolve(
-    root,
-    /\.(html|php)$/.test(config.entry) ? config.entry : 'index.html'
-  )
+  const entryPath = path.resolve(root, config.entry)
+  const indexPath = /\.(html|php)$/.test(entryPath)
+    ? entryPath
+    : path.join(root, 'index.html')
   const publicDir = path.join(root, 'public')
   const publicBasePath = config.base.replace(/([^/])$/, '$1/') // ensure ending slash
   const resolvedAssetsPath = path.join(outDir, assetsDir)
@@ -489,7 +489,7 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
   } = config.rollupInputOptions
 
   builds.unshift({
-    input: config.entry,
+    input: entryPath,
     preserveEntrySignatures: false,
     treeshake: { moduleSideEffects: 'no-external' },
     ...rollupInputOptions,
