@@ -578,13 +578,12 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
   for (let i = 0; i < builds.length; i++) {
     const build = builds[i]
     const { output: outputOptions, onResult, ...inputOptions } = build
-
-    const indexHtmlPath = getIndexHtmlOutputPath(build, outDir)
-    const emitIndex = config.emitIndex && indexHtmlPath !== ''
+    const emitIndexPath = getEmitIndexPath(indexPath, outDir, build)
+    const emitIndex = config.emitIndex && emitIndexPath !== ''
 
     // unset the `output.file` option once `indexHtmlPath` is declared,
     // or else Rollup throws an error since multiple chunks are generated.
-    if (indexHtmlPath && outputOptions.file) {
+    if (emitIndexPath && outputOptions.file) {
       outputOptions.file = undefined
     }
 
@@ -622,7 +621,7 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
                 await fs.emptyDir(outDir)
               }
               if (emitIndex) {
-                await fs.writeFile(indexHtmlPath, result.html)
+                await fs.writeFile(emitIndexPath, result.html)
               }
             }
           })
@@ -647,7 +646,7 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
 
     if (write && !silent) {
       if (emitIndex) {
-        printFileInfo(indexHtmlPath, result.html, WriteType.HTML)
+        printFileInfo(emitIndexPath, result.html, WriteType.HTML)
       }
       for (const chunk of result.assets) {
         if (chunk.type === 'chunk') {
@@ -766,12 +765,17 @@ function createEmitPlugin(
 }
 
 /**
- * Resolve the output path of `index.html` for the given build (relative to
- * `outDir` in Vite config).
+ * Return the output path for the compiled `indexPath` contents, relative to
+ * the `outDir` option. An empty string is returned if the given Rollup build
+ * doesn't have `indexPath` as its only input.
  */
-function getIndexHtmlOutputPath({ input, output }: Build, outDir: string) {
-  return typeof input === 'string' && /\.(html|php)$/.test(input)
-    ? path.resolve(outDir, output.file || 'index.html')
+function getEmitIndexPath(
+  indexPath: string,
+  outDir: string,
+  { input, output }: Build
+) {
+  return typeof input === 'string' && path.resolve(input) === indexPath
+    ? path.resolve(outDir, output.file || input)
     : ''
 }
 
