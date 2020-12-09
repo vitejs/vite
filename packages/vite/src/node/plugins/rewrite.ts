@@ -9,13 +9,15 @@ import slash from 'slash'
 
 const debugRewrite = _debug('vite:rewrite')
 
-const canSkip = (id: string) => id.endsWith('.map') || isCSSRequest(id)
+const skipRE = /\.(map|json)$/
+const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
 
 export function rewritePlugin(): Plugin {
   return {
     name: 'vite:rewrite',
     async transform(source, importer) {
       if (canSkip(importer)) {
+        debugRewrite(chalk.gray(`[skipped] ${importer}`))
         return null
       }
 
@@ -36,13 +38,12 @@ export function rewritePlugin(): Plugin {
       }
 
       if (!imports.length) {
-        debugRewrite(`${importer}: no imports found.`)
+        debugRewrite(chalk.gray(`[no imports] ${importer}`))
         return source
       }
 
       let s: MagicString | undefined
-      for (let i = 0; i < imports.length; i++) {
-        const { s: start, e: end, d: dynamicIndex } = imports[i]
+      for (const { s: start, e: end, d: dynamicIndex } of imports) {
         let id = source.substring(start, end)
         const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(id)
         let hasLiteralDynamicId = false
@@ -59,11 +60,12 @@ export function rewritePlugin(): Plugin {
           // resolve bare imports:
           // e.g. `import 'foo'` -> `import '@fs/.../node_modules/foo/index.js`
           if (id[0] !== '/' && id[0] !== '.') {
-            const resolved = await this.resolve(id)
+            const resolved = await this.resolve(id, importer)
             if (resolved) {
               // resolved.id is now a file system path - convert it to url-like
               // this will be unwrapped in the reoslve plugin
               const prefixed = FILE_PREFIX + slash(resolved.id)
+              debugRewrite(`${chalk.cyan(id)} -> ${chalk.gray(prefixed)}`)
               ;(s || (s = new MagicString(source))).overwrite(
                 start,
                 end,
@@ -99,7 +101,7 @@ export function rewritePlugin(): Plugin {
       // }
 
       if (!s) {
-        debugRewrite(`nothing needs rewriting.`)
+        debugRewrite(chalk.gray(`[skipped] ${importer}`))
       }
 
       // TODO source map

@@ -76,22 +76,18 @@ function popIndex(array: any[], index: number) {
   if (index !== array.length) array[index] = tail
 }
 
-function identifierPair(id: string, importer?: string) {
-  if (importer) return id + '\n' + importer
-  return id
-}
-
 export async function createPluginContainer(
   plugins: readonly Plugin[],
   opts: RollupOptions & PluginContainerOptions = {}
 ): Promise<PluginContainer> {
-  const MODULES = opts.modules || new Map()
-
   // counter for generating unique emitted asset IDs
   let ids = 0
-  let files = new Map<string, EmittedFile>()
-  let watchFiles = new Set<string>()
   let parser = acorn.Parser
+
+  const MODULES = opts.modules || new Map()
+  const files = new Map<string, EmittedFile>()
+  const watchFiles = new Set<string>()
+  const resolveCache = new Map<string, PartialResolvedId>()
 
   const minimalContext: MinimalPluginContext = {
     meta: {
@@ -297,26 +293,33 @@ export async function createPluginContainer(
     },
 
     async resolveId(id, importer, _skip) {
+      if (id === '@vue/runtime-dom') debugger
       const ctx = new Context()
-      const key = identifierPair(id, importer)
+      const key =
+        (importer ? `${id}\n${importer}` : id) +
+        (_skip ? _skip.map((p) => p.name).join('\n') : ``)
+
+      if (resolveCache.has(key)) {
+        return resolveCache.get(key)!
+      }
 
       const partial: Partial<PartialResolvedId> = {}
-      for (const p of plugins) {
-        if (!p.resolveId) continue
+      for (const plugin of plugins) {
+        if (!plugin.resolveId) continue
 
         if (_skip) {
-          if (_skip.includes(p)) continue
-          if (resolveSkips.has(p, key)) continue
-          resolveSkips.add(p, key)
+          if (_skip.includes(plugin)) continue
+          if (resolveSkips.has(plugin, key)) continue
+          resolveSkips.add(plugin, key)
         }
 
-        ctx.activePlugin = p
+        ctx.activePlugin = plugin
 
         let result
         try {
-          result = await p.resolveId.call(ctx as any, id, importer, {})
+          result = await plugin.resolveId.call(ctx as any, id, importer, {})
         } finally {
-          if (_skip) resolveSkips.delete(p, key)
+          if (_skip) resolveSkips.delete(plugin, key)
         }
 
         if (!result) continue
@@ -332,6 +335,9 @@ export async function createPluginContainer(
       }
 
       partial.id = id
+      if (id) {
+        resolveCache.set(key, partial as PartialResolvedId)
+      }
       return id ? (partial as PartialResolvedId) : null
     },
 
