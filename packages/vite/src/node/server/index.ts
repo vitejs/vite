@@ -17,7 +17,7 @@ import { loadFsEvents } from './fsEventsImporter'
 import { FSWatcher, WatchOptions } from '../types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { setupWebSocketServer, WebSocketServer } from '../server/ws'
-import { setupProxy, ProxyOptions } from './proxy'
+import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware, TransformResult } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
@@ -199,7 +199,7 @@ export async function createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    setupProxy(context)
+    app.use(proxyMiddleware(context))
   }
 
   // hmr

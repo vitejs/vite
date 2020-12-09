@@ -24,6 +24,7 @@ export function hmrMiddleware({
   })
 
   const clientCode = fs
+    // eslint-disable-next-line
     .readFileSync(require.resolve('vite/dist/client/client.js'), 'utf-8')
     .replace(`__MODE__`, JSON.stringify(config.mode || 'development'))
     .replace(

@@ -1,8 +1,9 @@
 import * as http from 'http'
 import _debug from 'debug'
 import HttpProxy from 'http-proxy'
-import { HMR_HEADER } from './ws'
-import { ServerContext } from './'
+import { HMR_HEADER } from '../ws'
+import { ServerContext } from '..'
+import { NextHandleFunction } from 'connect'
 
 const debug = _debug('vite:proxy')
 
@@ -25,14 +26,12 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   ) => void | null | undefined | false | string
 }
 
-export function setupProxy({
+export function proxyMiddleware({
   app,
   server,
-  config: {
-    server: { proxy: options }
-  }
-}: ServerContext) {
-  if (!options) return
+  config
+}: ServerContext): NextHandleFunction {
+  const options = config.server.proxy!
 
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy, ProxyOptions]> = {}
@@ -50,7 +49,22 @@ export function setupProxy({
     proxies[context] = [proxy, { ...opts }]
   })
 
-  app.use((req, res, next) => {
+  server.on('upgrade', (req, socket, head) => {
+    const url = req.url!
+    for (const context in proxies) {
+      if (url.startsWith(context)) {
+        const [proxy, opts] = proxies[context]
+        if (
+          (opts.ws || opts.target?.toString().startsWith('ws:')) &&
+          req.headers['sec-websocket-protocol'] !== HMR_HEADER
+        ) {
+          proxy.ws(req, socket, head)
+        }
+      }
+    }
+  })
+
+  return (req, res, next) => {
     const url = req.url!
     for (const context in proxies) {
       if (url.startsWith(context)) {
@@ -77,20 +91,5 @@ export function setupProxy({
       }
     }
     next()
-  })
-
-  server.on('upgrade', (req, socket, head) => {
-    const url = req.url!
-    for (const context in proxies) {
-      if (url.startsWith(context)) {
-        const [proxy, opts] = proxies[context]
-        if (
-          (opts.ws || opts.target?.toString().startsWith('ws:')) &&
-          req.headers['sec-websocket-protocol'] !== HMR_HEADER
-        ) {
-          proxy.ws(req, socket, head)
-        }
-      }
-    }
-  })
+  }
 }
