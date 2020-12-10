@@ -6,7 +6,7 @@ import { BuildOptions, BuildHook } from './build'
 import { ServerOptions, ServerHook } from './server'
 import { CSSOptions } from './plugins/css'
 import { deepMerge, isObject, lookupFile } from './utils'
-import { getInternalPlugins } from './plugins'
+import { resolveInternalPlugins } from './plugins'
 import chalk from 'chalk'
 import { esbuildPlugin } from './plugins/esbuild'
 import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
@@ -50,6 +50,10 @@ export interface UserConfig {
    * CSS related options (preprocessors and CSS modules)
    */
   css?: CSSOptions
+  /**
+   * Function that tests a file path for inclusion as a static asset.
+   */
+  assetsInclude?: (file: string) => boolean
   /**
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
@@ -217,8 +221,8 @@ export async function resolveConfig(
 
   resolved.plugins = [
     ...prePlugins,
-    ...(await getInternalPlugins(command, resolved)),
     ...normalPlugins,
+    ...resolveInternalPlugins(command, resolved),
     ...postPlugins
   ]
 

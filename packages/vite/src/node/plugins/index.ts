@@ -5,11 +5,12 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import json from '@rollup/plugin-json'
 import { rewritePlugin } from './rewrite'
 import { cssPlugin } from './css'
+import { assetPlugin } from './asset'
 
-export async function getInternalPlugins(
+export function resolveInternalPlugins(
   command: 'build' | 'serve',
   config: ResolvedConfig
-): Promise<Plugin[]> {
+): Plugin[] {
   const isBuild = command === 'build'
 
   return [
@@ -21,6 +22,7 @@ export async function getInternalPlugins(
     esbuildPlugin(config.esbuild || {}),
     cssPlugin(config, isBuild),
     json(),
+    assetPlugin(config, isBuild),
     isBuild ? null : rewritePlugin(config)
   ].filter(Boolean) as Plugin[]
 }
