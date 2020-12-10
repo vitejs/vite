@@ -99,7 +99,7 @@ export async function transformFile(
     // no transform applied, keep code as-is
     isDebug && debugTransform(chalk.gray(`[skipped] ${prettyId}`))
   } else {
-    isDebug && debugTransform(chalk.green(`[ok] ${prettyId}`))
+    isDebug && debugTransform(`[ok] ${prettyId}`)
     if (typeof transformResult === 'object') {
       code = transformResult.code!
       map = transformResult.map
