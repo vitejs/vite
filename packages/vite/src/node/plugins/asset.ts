@@ -40,13 +40,13 @@ export function assetPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
       if (!isBuild) {
         if (fs.existsSync(file)) {
           if (isRawRequest) {
-            debug(`[raw] ${chalk.gray(file)}`)
+            debug(`[raw] ${chalk.dim(file)}`)
             // raw query, read file and return as string
             return `export default ${JSON.stringify(
               await fsp.readFile(file, 'utf-8')
             )}`
           } else {
-            debug(`[import] ${chalk.gray(file)}`)
+            debug(`[import] ${chalk.dim(file)}`)
             // return the location of the file. during dev, this will be
             // the /@fs/ prefixed path as a string.
             return `export default ${JSON.stringify(FILE_PREFIX + id)}`

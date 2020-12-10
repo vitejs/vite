@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import _debug from 'debug'
 import { Service, Message, Loader, TransformOptions } from 'esbuild'
 import { Plugin } from '../config'
-import { cleanUrl, generateCodeFrame } from '../utils'
+import { generateCodeFrame } from '../utils'
 
 const debug = _debug('vite:esbuild')
 
@@ -31,10 +31,8 @@ export function esbuildPlugin(options?: TransformOptions): Plugin {
     async transform(code, id) {
       if (/\.(tsx?|jsx)$/.test(id)) {
         const service = await ensureService()
-        const file = cleanUrl(id)
-
         const resolvedOptions = {
-          loader: path.extname(file).slice(1) as Loader,
+          loader: path.extname(id).slice(1) as Loader,
           sourcemap: true,
           // ensure source file name contains full query
           sourcefile: id,

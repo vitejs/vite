@@ -1,5 +1,4 @@
 import _debug from 'debug'
-import path from 'path'
 import getEtag from 'etag'
 import fs, { promises as fsp } from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
@@ -7,10 +6,10 @@ import { ServerContext } from '..'
 import { NextHandleFunction } from 'connect'
 import { cssPreprocessLangRE, isCSSRequest } from '../../plugins/css'
 import chalk from 'chalk'
-import { cleanUrl } from '../../utils'
+import { cleanUrl, prettifyUrl, timeFrom } from '../../utils'
 import { send } from '../send'
 
-const debugResolve = _debug('vite:resolve-url')
+const debugUrl = _debug('vite:url')
 const debugLoad = _debug('vite:load')
 const debugTransform = _debug('vite:transform')
 const debugCache = _debug('vite:cache')
@@ -26,16 +25,17 @@ export async function transformFile(
   url: string,
   { config: { root }, container, transformCache, fileToUrlMap }: ServerContext
 ): Promise<TransformResult | null> {
+  const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const cached = transformCache.get(url)
   if (cached) {
-    isDebug && debugCache(`[memory] ${chalk.gray(url)}`)
+    isDebug && debugCache(`[memory] ${prettyUrl}`)
     return cached
   }
 
   // resolve
   const resolved = await container.resolveId(url)
   if (!resolved) {
-    isDebug && debugResolve(`not resolved: ${chalk.cyan(url)}`)
+    isDebug && debugUrl(`not resolved: ${prettyUrl}`)
     return null
   }
   const id = resolved.id
@@ -45,8 +45,11 @@ export async function transformFile(
   if (cssPreprocessLangRE.test(file.slice(0, -3))) {
     file = file.slice(0, -3)
   }
-  const prettyId = isDebug && chalk.gray(path.relative(root, id))
-  isDebug && debugResolve(`${chalk.green(url)} -> ${chalk.gray(id)}`)
+  if (isDebug) {
+    // this is only useful when showing the full paths but it can get very
+    // spammy so it's disabled by default
+    // debugUrl(`${chalk.green(url)} -> ${chalk.dim(id)}`)
+  }
 
   // record file -> url relationships after successful resolve
   let urls = fileToUrlMap.get(file)
@@ -60,6 +63,7 @@ export async function transformFile(
   let map: SourceDescription['map'] = null
 
   // load
+  const loadStart = Date.now()
   const loadResult = await container.load(id)
   if (loadResult == null) {
     // try fallback loading it from fs as string
@@ -67,10 +71,10 @@ export async function transformFile(
     // as string
     if (fs.existsSync(file) && fs.statSync(file).isFile()) {
       code = await fsp.readFile(file, 'utf-8')
-      isDebug && debugLoad(`[fs] ${prettyId}`)
+      isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
     }
   } else {
-    isDebug && debugLoad(`[plugin] ${prettyId}`)
+    isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
     if (typeof loadResult === 'object') {
       code = loadResult.code
       map = loadResult.map
@@ -79,20 +83,24 @@ export async function transformFile(
     }
   }
   if (code == null) {
-    isDebug && debugLoad(`${chalk.red(`[FAIL]`)} ${prettyId}`)
+    isDebug && debugLoad(`${chalk.red(`[FAIL]`)} ${prettyUrl}`)
     return null
   }
 
   // transform
+  const ttransformStart = Date.now()
   const transformResult = await container.transform(code, id)
   if (
     transformResult == null ||
     (typeof transformResult === 'object' && !transformResult.code)
   ) {
     // no transform applied, keep code as-is
-    isDebug && debugTransform(chalk.gray(`[skipped] ${prettyId}`))
+    isDebug &&
+      debugTransform(
+        timeFrom(ttransformStart) + chalk.dim(` [skipped] ${prettyUrl}`)
+      )
   } else {
-    isDebug && debugTransform(`[ok] ${prettyId}`)
+    isDebug && debugTransform(`${timeFrom(ttransformStart)} ${prettyUrl}`)
     if (typeof transformResult === 'object') {
       code = transformResult.code!
       map = transformResult.map
@@ -113,13 +121,19 @@ export async function transformFile(
 export function transformMiddleware(
   context: ServerContext
 ): NextHandleFunction {
-  const { watcher, transformCache, fileToUrlMap } = context
+  const {
+    config: { root },
+    watcher,
+    transformCache,
+    fileToUrlMap
+  } = context
 
   watcher.on('change', (file) => {
     const urls = fileToUrlMap.get(file)
     if (urls) {
       urls.forEach((url) => {
-        debugCache(`busting transform cache for ${url}`)
+        isDebug &&
+          debugCache(`busting transform cache for ${prettifyUrl(url, root)}`)
         transformCache.delete(url)
       })
     }
@@ -133,7 +147,7 @@ export function transformMiddleware(
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch && transformCache.get(req.url!)?.etag === ifNoneMatch) {
-      isDebug && debugCache(`[304] ${chalk.gray(req.url)}`)
+      isDebug && debugCache(`[304] ${prettifyUrl(req.url!, root)}`)
       res.statusCode = 304
       return res.end()
     }

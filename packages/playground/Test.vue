@@ -2,7 +2,9 @@
   <h1>{{ msg }}</h1>
 </template>
 
-<script setup>
+<script setup lang="ts">
+// import { debounce } from 'lodash-es'
+
 const msg = 'Hello Vue'
 </script>
 

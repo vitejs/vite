@@ -5,8 +5,17 @@ global.__vite_start_time = Date.now()
 const debugIndex = process.argv.indexOf('--debug')
 
 if (debugIndex > 0) {
-  const value = process.argv[debugIndex + 1]
-  process.env.DEBUG = `vite:` + (!value || value.startsWith('-') ? '*' : value)
+  let value = process.argv[debugIndex + 1]
+  if (!value || value.startsWith('-')) {
+    value = 'vite:*'
+  } else {
+    // support debugging multiple flags with comma-separated list
+    value = value
+      .split(',')
+      .map((v) => `vite:${v}`)
+      .join(',')
+  }
+  process.env.DEBUG = value
   try {
     // only available as dev dependency
     require('source-map-support').install()

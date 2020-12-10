@@ -1,5 +1,8 @@
+import chalk from 'chalk'
 import fs from 'fs'
 import path from 'path'
+import slash from 'slash'
+import { FILE_PREFIX } from './plugins/resolve'
 
 export const queryRE = /\?.*$/
 export const hashRE = /#.*$/
@@ -9,6 +12,43 @@ export const cleanUrl = (url: string) =>
 
 const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string) => externalRE.test(url)
+
+export function timeFrom(start: number, subtract = 0) {
+  const time: number | string = Date.now() - start - subtract
+  const timeString = time + `ms`
+  if (time < 10) {
+    return chalk.green(timeString)
+  } else if (time < 50) {
+    return chalk.yellow(timeString)
+  } else {
+    return chalk.red(timeString)
+  }
+}
+
+/**
+ * pretty url for logging.
+ */
+export function prettifyUrl(url: string, root: string) {
+  const isAbsoluteFile = url.startsWith(slash(root))
+  if (isAbsoluteFile || url.startsWith(FILE_PREFIX)) {
+    let file = path.relative(
+      root,
+      isAbsoluteFile ? url : url.slice(FILE_PREFIX.length)
+    )
+    const seg = file.split('/')
+    const npmIndex = seg.indexOf(`node_modules`)
+    if (npmIndex > 0) {
+      file = seg[npmIndex + 1]
+      if (file.startsWith('@')) {
+        file = `${file}/${seg[npmIndex + 2]}`
+      }
+      file = `npm: ${chalk.dim(file)}`
+    }
+    return chalk.dim(file)
+  } else {
+    return chalk.dim(url)
+  }
+}
 
 export function deepMerge(
   a: Record<string, any>,
