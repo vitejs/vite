@@ -1,5 +1,6 @@
 import _debug from 'debug'
-import { Plugin } from '..'
+import path from 'path'
+import { Plugin, ResolvedConfig } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from './resolve'
 import MagicString from 'magic-string'
@@ -38,12 +39,13 @@ const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
  *     import './style.css.js'
  *     ```
  */
-export function rewritePlugin(): Plugin {
+export function rewritePlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:rewrite',
     async transform(source, importer) {
+      const prettyImporter = path.relative(config.root, importer)
       if (canSkip(importer)) {
-        debugRewrite(chalk.gray(`[skipped] ${importer}`))
+        debugRewrite(chalk.gray(`[skipped] ${prettyImporter}`))
         return null
       }
 
@@ -64,7 +66,7 @@ export function rewritePlugin(): Plugin {
       }
 
       if (!imports.length) {
-        debugRewrite(chalk.gray(`[no imports] ${importer}`))
+        debugRewrite(chalk.gray(`[no imports] ${prettyImporter}`))
         return source
       }
 
@@ -127,7 +129,9 @@ export function rewritePlugin(): Plugin {
       // }
 
       if (!s) {
-        debugRewrite(chalk.gray(`[skipped] ${importer}`))
+        debugRewrite(chalk.gray(`[not import rewritten] ${prettyImporter}`))
+      } else {
+        debugRewrite(`[ok] ${chalk.gray(prettyImporter)}`)
       }
 
       // TODO source map

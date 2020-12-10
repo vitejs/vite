@@ -1,4 +1,5 @@
 import _debug from 'debug'
+import path from 'path'
 import fs, { promises as fsp } from 'fs'
 import { Plugin, ResolvedConfig } from '..'
 import { HMR_CLIENT_PATH } from '../server/middlewares/hmr'
@@ -52,7 +53,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
           })
         }
 
-        debug(`[import] ${chalk.gray(id)}`)
+        debug(`[import] ${chalk.gray(path.relative(config.root, id))}`)
         return [
           `import { updateStyle } from ${JSON.stringify(HMR_CLIENT_PATH)}`,
           `const css = ${JSON.stringify(code)}`,
@@ -81,8 +82,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
             this.addWatchFile(file)
           })
         }
-        debug(`[rel] ${chalk.gray(id)}`)
-        console.log(raw, css)
+        debug(`[link] ${chalk.gray(path.relative(config.root, id))}`)
         return modules ? dataToEsm(modules, { namedExports: true }) : css
       }
 

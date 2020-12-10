@@ -21,6 +21,6 @@ export async function getInternalPlugins(
     esbuildPlugin(config.esbuild || {}),
     cssPlugin(config, isBuild),
     json(),
-    isBuild ? null : rewritePlugin()
+    isBuild ? null : rewritePlugin(config)
   ].filter(Boolean) as Plugin[]
 }
