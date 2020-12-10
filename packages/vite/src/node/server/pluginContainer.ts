@@ -7,7 +7,6 @@
 
 import { resolve, relative, dirname, sep, posix } from 'path'
 import { createHash } from 'crypto'
-import { promises as fs } from 'fs'
 import { Plugin } from '../config'
 import {
   RollupOptions,
@@ -29,6 +28,7 @@ import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
 import merge from 'merge-source-map'
 import MagicString from 'magic-string'
+import { FSWatcher } from 'chokidar'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -70,22 +70,17 @@ type PluginContext = Omit<
   | 'resolveId'
 >
 
-const toPosixPath = (path: string) => path.split(sep).join(posix.sep)
-
-function popIndex(array: any[], index: number) {
-  const tail = array.pop()
-  if (index !== array.length) array[index] = tail
-}
-
 export async function createPluginContainer(
   plugins: readonly Plugin[],
-  opts: RollupOptions & PluginContainerOptions = {}
+  rollupOptions: RollupOptions,
+  root: string,
+  watcher: FSWatcher
 ): Promise<PluginContainer> {
   // counter for generating unique emitted asset IDs
   let ids = 0
   let parser = acorn.Parser
 
-  const MODULES = opts.modules || new Map()
+  const MODULES = new Map()
   const files = new Map<string, EmittedFile>()
   const watchFiles = new Set<string>()
   const resolveCache = new Map<string, PartialResolvedId>()
@@ -130,7 +125,7 @@ export async function createPluginContainer(
       if (!out || !out.id) out = { id }
       if (out.id.match(/^\.\.?[/\\]/)) {
         out.id = resolve(
-          opts.cwd || '.',
+          root || '.',
           importer ? dirname(importer) : '.',
           out.id
         )
@@ -156,6 +151,7 @@ export async function createPluginContainer(
 
     addWatchFile(id: string) {
       watchFiles.add(id)
+      watcher.add(id)
     }
 
     getWatchFiles() {
@@ -173,8 +169,9 @@ export async function createPluginContainer(
         if (type === 'chunk') {
           throw Error(`emitFile({ type:"chunk" }) cannot include a source`)
         }
-        if (opts.writeFile) opts.writeFile(filename, source)
-        else fs.writeFile(filename, source)
+        // TODO
+        // if (opts.writeFile) opts.writeFile(filename, source)
+        // else fs.writeFile(filename, source)
       }
       return id
     }
@@ -190,8 +187,9 @@ export async function createPluginContainer(
         throw Error(`setAssetSource() called on a chunk`)
       }
       asset.source = source
-      if (opts.writeFile) opts.writeFile(asset.fileName!, source)
-      else fs.writeFile(asset.fileName!, source)
+      // TODO
+      // if (opts.writeFile) opts.writeFile(asset.fileName!, source)
+      // else fs.writeFile(asset.fileName!, source)
     }
 
     getFileName(referenceId: string) {
@@ -262,7 +260,7 @@ export async function createPluginContainer(
 
   const container: PluginContainer = {
     options: await (async () => {
-      let options = opts
+      let options = rollupOptions
       for (const plugin of plugins) {
         if (!plugin.options) continue
         options =
@@ -412,7 +410,7 @@ export async function createPluginContainer(
       referenceId = String(referenceId)
       const file = files.get(referenceId)
       if (file == null) return null
-      const out = resolve(opts.cwd || '.', outputOptions.dir || '.')
+      const out = resolve(root || '.', outputOptions.dir || '.')
       const fileName = relative(out, file.fileName!)
       const assetInfo = {
         referenceId,
@@ -432,6 +430,13 @@ export async function createPluginContainer(
       }
       return JSON.stringify('/' + fileName.split(sep).join(posix.sep))
     }
+  }
+
+  const toPosixPath = (path: string) => path.split(sep).join(posix.sep)
+
+  function popIndex(array: any[], index: number) {
+    const tail = array.pop()
+    if (index !== array.length) array[index] = tail
   }
 
   // Tracks recursive resolveId calls
@@ -457,13 +462,9 @@ export async function createPluginContainer(
     }
   }
 
-  const outputOptions = {
-    dir: opts.output && opts.output.dir,
-    file: opts.output && opts.output.file,
-    entryFileNames: opts.output && opts.output.entryFileNames,
-    chunkFileNames: opts.output && opts.output.chunkFileNames,
-    assetFileNames: opts.output && opts.output.assetFileNames
-  }
+  const outputOptions = Array.isArray(rollupOptions.output)
+    ? rollupOptions.output[0]
+    : rollupOptions.output || {}
 
   function generateFilename(
     type: 'entry' | 'asset' | 'chunk',
@@ -490,8 +491,7 @@ export async function createPluginContainer(
         posix.basename(posixName).replace(/\.[a-z0-9]+$/g, '')
       )
     }
-    const result = resolve(opts.cwd || '.', outputOptions.dir || '.', fileName)
-    // console.log('filename for ' + name + ': ', result);
+    const result = resolve(root || '.', outputOptions.dir || '.', fileName)
     return result
   }
 

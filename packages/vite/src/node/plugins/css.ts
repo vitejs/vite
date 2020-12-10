@@ -36,54 +36,45 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
   return {
     name: 'vite:css',
 
-    // server only - this only handles *.css.js requests which are a result
+    // server only - this loads *.css.js requests which are a result
     // of import rewriting in ./rewrite.ts
     async load(id) {
-      if (
-        !isBuild &&
-        isCSSRequest((id = id.slice(0, -3))) &&
-        fs.existsSync(id)
-      ) {
-        const raw = await fsp.readFile(id, 'utf-8')
-        const { code, modules, deps } = await compileCSS(id, raw, config)
-
-        if (deps) {
-          deps.forEach((file) => {
-            this.addWatchFile(file)
-          })
-        }
-
-        debug(`[import] ${chalk.gray(path.relative(config.root, id))}`)
-        return [
-          `import { updateStyle } from ${JSON.stringify(HMR_CLIENT_PATH)}`,
-          `const css = ${JSON.stringify(code)}`,
-          `updateStyle(${JSON.stringify(id)}, css)`,
-          `${
-            modules
-              ? dataToEsm(modules, { namedExports: true })
-              : `export default css`
-          }`
-        ].join('\n')
+      if (isCSSRequest((id = id.slice(0, -3))) && fs.existsSync(id)) {
+        return fsp.readFile(id, 'utf-8')
       }
     },
 
-    // during serve this is applied only to <link rel="*.css"> references
-    // during build this is applied to all CSS
     async transform(raw, id) {
-      if (!isCSSRequest(id)) {
-        return null
+      const isRawRequest = isCSSRequest(id)
+      const isProxyRequest =
+        !isRawRequest && isCSSRequest((id = id.slice(0, -3)))
+
+      if (!isProxyRequest && !isRawRequest) {
+        return
       }
 
       const { code: css, modules, deps } = await compileCSS(id, raw, config)
+      const modulesCode = dataToEsm(modules, { namedExports: true })
+      if (deps) {
+        deps.forEach((file) => {
+          this.addWatchFile(file)
+        })
+      }
 
+      // server-only *.css.js proxy module
       if (!isBuild) {
-        if (deps) {
-          deps.forEach((file) => {
-            this.addWatchFile(file)
-          })
+        if (isProxyRequest) {
+          debug(`[import] ${chalk.gray(path.relative(config.root, id))}`)
+          return [
+            `import { updateStyle } from ${JSON.stringify(HMR_CLIENT_PATH)}`,
+            `const css = ${JSON.stringify(css)}`,
+            `updateStyle(${JSON.stringify(id)}, css)`,
+            `${modulesCode || `export default css`}`
+          ].join('\n')
+        } else {
+          debug(`[link] ${chalk.gray(path.relative(config.root, id))}`)
+          return modulesCode || css
         }
-        debug(`[link] ${chalk.gray(path.relative(config.root, id))}`)
-        return modules ? dataToEsm(modules, { namedExports: true }) : css
       }
 
       // TODO at build time, analyze url() asset reference
@@ -110,7 +101,7 @@ async function compileCSS(
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const postcssConfig = await loadPostcssConfig(config.root)
-  const lang = (id.match(cssPreprocessLangRE) || [])[1]
+  const lang = id.match(cssPreprocessLangRE)?.[1]
 
   // 1. plain css that needs no processing
   if (lang === 'css' && !postcssConfig && !isModule && !needInlineImport) {
@@ -122,7 +113,7 @@ async function compileCSS(
   const deps = new Set<string>()
 
   // 2. pre-processors: sass etc.
-  if (lang in preProcessors) {
+  if (lang && lang in preProcessors) {
     const preProcessor = preProcessors[lang as PreprocessLang]
     let opts = preprocessorOptions && preprocessorOptions[lang]
     // support @import from node dependencies by default

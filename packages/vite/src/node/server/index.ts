@@ -127,6 +127,10 @@ export interface ServerContext {
    */
   container: PluginContainer
   /**
+   * Maps file paths back to served URLs
+   */
+  fileToUrlMap: Map<string, Set<string>>
+  /**
    * @internal
    */
   transformCache: Map<string, TransformResult>
@@ -170,7 +174,7 @@ export async function createServer(
   }) as FSWatcher
 
   const plugins = resolvedConfig.plugins
-  const container = await createPluginContainer(plugins)
+  const container = await createPluginContainer(plugins, {}, root, watcher)
   await container.buildStart({})
 
   const context: ServerContext = (server.context = {
@@ -180,7 +184,8 @@ export async function createServer(
     watcher,
     container,
     ws,
-    transformCache: new Map()
+    transformCache: new Map(),
+    fileToUrlMap: new Map()
   })
 
   // apply server configuration hooks from plugins
@@ -190,20 +195,23 @@ export async function createServer(
     hook && postHooks.push(await hook(context))
   }
 
+  // Internal middlewares
+  const { cors, proxy, hmr } = serverConfig
+
   // cors (enabled by default)
-  const { cors } = serverConfig
   if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
-  const { proxy } = serverConfig
   if (proxy) {
     app.use(proxyMiddleware(context))
   }
 
-  // hmr
-  app.use(hmrMiddleware(context))
+  // hmr (enabled by default)
+  if (hmr !== false) {
+    app.use(hmrMiddleware(context))
+  }
 
   // main transform middleware
   app.use(transformMiddleware(context))

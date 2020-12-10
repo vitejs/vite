@@ -44,6 +44,7 @@ module.exports = {
       }
     ],
     'node/no-deprecated-api': 'off',
+    'node/no-unpublished-import': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
     'no-process-exit': 'off'
   }

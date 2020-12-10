@@ -22,16 +22,9 @@ export interface TransformResult {
   etag: string
 }
 
-/**
- * Store file -> url mapping information
- * One file may map to multiple urls, e.g. different parts of the Vue SFC
- * maps to the same file after stripping the query params.
- */
-const fileToUrlMap = new Map<string, Set<string>>()
-
 export async function transformFile(
   url: string,
-  { config: { root }, container, transformCache }: ServerContext
+  { config: { root }, container, transformCache, fileToUrlMap }: ServerContext
 ): Promise<TransformResult | null> {
   const cached = transformCache.get(url)
   if (cached) {
@@ -52,7 +45,7 @@ export async function transformFile(
   if (cssPreprocessLangRE.test(file.slice(0, -3))) {
     file = file.slice(0, -3)
   }
-  const prettyId = isDebug && chalk.gray(path.relative(root, file))
+  const prettyId = isDebug && chalk.gray(path.relative(root, id))
   isDebug && debugResolve(`${chalk.green(url)} -> ${chalk.gray(id)}`)
 
   // record file -> url relationships after successful resolve
@@ -120,7 +113,7 @@ export async function transformFile(
 export function transformMiddleware(
   context: ServerContext
 ): NextHandleFunction {
-  const { watcher, transformCache } = context
+  const { watcher, transformCache, fileToUrlMap } = context
 
   watcher.on('change', (file) => {
     const urls = fileToUrlMap.get(file)

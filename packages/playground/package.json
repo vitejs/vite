@@ -8,11 +8,12 @@
     "serve": "sirv dist"
   },
   "devDependencies": {
-    "sirv-cli": "^1.0.9"
+    "sirv-cli": "^1.0.9",
+    "sass": "^1.30.0",
+    "rollup-plugin-vue": "^6.0.0"
   },
   "dependencies": {
     "preact": "^10.5.7",
-    "sass": "^1.30.0",
     "vue": "^3.0.4"
   }
 }

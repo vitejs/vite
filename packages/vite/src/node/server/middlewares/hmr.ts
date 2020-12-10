@@ -4,6 +4,7 @@ import { NextHandleFunction } from 'connect'
 import { send } from '../send'
 import { ServerContext } from '../..'
 import { isObject } from '../../utils'
+import { HMRPayload } from '../../../client/hmrPayload'
 
 export const HMR_CLIENT_PATH = `/vite/client`
 
@@ -18,14 +19,14 @@ export interface HmrOptions {
 export function hmrMiddleware({
   watcher,
   ws,
-  config
+  config,
+  fileToUrlMap
 }: ServerContext): NextHandleFunction {
-  watcher.on('change', () => {
-    // handle change
-    ws.send({
-      type: 'full-reload',
-      path: '/'
-    })
+  watcher.on('change', (file) => {
+    const urls = fileToUrlMap.get(file)
+    if (urls) {
+      ws.send(getHMRPayload(urls))
+    }
   })
 
   const clientCode = fs
@@ -64,5 +65,12 @@ export function hmrMiddleware({
       return send(req, res, resolvedClientCode, 'js', etag)
     }
     next()
+  }
+}
+
+function getHMRPayload(urls: Set<string>): HMRPayload {
+  return {
+    type: 'full-reload',
+    path: '/'
   }
 }
