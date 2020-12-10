@@ -23,6 +23,7 @@ import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import { serveStaticMiddleware } from './middlewares/static'
 import { hmrMiddleware, HmrOptions } from './middlewares/hmr'
+import { timeMiddleware } from './middlewares/time'
 
 export interface ServerOptions {
   host?: string
@@ -197,6 +198,10 @@ export async function createServer(
 
   // Internal middlewares
   const { cors, proxy, hmr } = serverConfig
+
+  if (process.env.DEBUG) {
+    app.use(timeMiddleware(root))
+  }
 
   // cors (enabled by default)
   if (cors !== false) {

@@ -64,7 +64,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
       // server-only *.css.js proxy module
       if (!isBuild) {
         if (isProxyRequest) {
-          debug(`[import] ${chalk.gray(path.relative(config.root, id))}`)
+          debug(`[import] ${chalk.dim(path.relative(config.root, id))}`)
           return [
             `import { updateStyle } from ${JSON.stringify(HMR_CLIENT_PATH)}`,
             `const css = ${JSON.stringify(css)}`,
@@ -72,7 +72,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
             `${modulesCode || `export default css`}`
           ].join('\n')
         } else {
-          debug(`[link] ${chalk.gray(path.relative(config.root, id))}`)
+          debug(`[link] ${chalk.dim(path.relative(config.root, id))}`)
           return modulesCode || css
         }
       }

@@ -1,5 +1,4 @@
 import _debug from 'debug'
-import path from 'path'
 import { Plugin, ResolvedConfig } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from './resolve'
@@ -7,11 +6,15 @@ import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest } from './css'
 import slash from 'slash'
+import { prettifyUrl, timeFrom } from '../utils'
 
+const isDebug = !!process.env.DEBUG
 const debugRewrite = _debug('vite:rewrite')
+const debugNodeResolve = _debug('vite:resolve')
 
 const skipRE = /\.(map|json)$/
-const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
+const canSkip = (id: string) =>
+  skipRE.test(id) || isCSSRequest(id) || isCSSRequest(id.slice(0, -3))
 
 /**
  * Server-only plugin that rewrites url imports (bare modules, css/asset imports)
@@ -43,12 +46,14 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:rewrite',
     async transform(source, importer) {
-      const prettyImporter = path.relative(config.root, importer)
+      const prettyImporter = prettifyUrl(slash(importer), config.root)
       if (canSkip(importer)) {
-        debugRewrite(chalk.gray(`[skipped] ${prettyImporter}`))
+        isDebug && debugRewrite(chalk.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
+      const rewriteStart = Date.now()
+      let timeSpentResolving = 0
       await init
       let imports: ImportSpecifier[] = []
       try {
@@ -66,7 +71,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (!imports.length) {
-        debugRewrite(chalk.gray(`[no imports] ${prettyImporter}`))
+        isDebug && debugRewrite(chalk.dim(`[no imports] ${prettyImporter}`))
         return source
       }
 
@@ -88,12 +93,19 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           // resolve bare imports:
           // e.g. `import 'foo'` -> `import '@fs/.../node_modules/foo/index.js`
           if (id[0] !== '/' && id[0] !== '.') {
+            const resolveStart = Date.now()
             const resolved = await this.resolve(id, importer)
+            timeSpentResolving += Date.now() - resolveStart
             if (resolved) {
               // resolved.id is now a file system path - convert it to url-like
               // this will be unwrapped in the reoslve plugin
               const prefixed = FILE_PREFIX + slash(resolved.id)
-              debugRewrite(`${chalk.cyan(id)} -> ${chalk.gray(prefixed)}`)
+              isDebug &&
+                debugNodeResolve(
+                  `${timeFrom(resolveStart)} ${chalk.cyan(id)} -> ${chalk.dim(
+                    prefixed
+                  )}`
+                )
               ;(s || (s = new MagicString(source))).overwrite(
                 start,
                 end,
@@ -128,14 +140,14 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       //   hasReplaced = true
       // }
 
-      if (!s) {
-        debugRewrite(chalk.gray(`[not import rewritten] ${prettyImporter}`))
-      } else {
-        debugRewrite(`[ok] ${chalk.gray(prettyImporter)}`)
-      }
-
-      // TODO source map
-      return s ? s.toString() : source
+      const result = s ? s.toString() : source
+      isDebug &&
+        debugRewrite(
+          `${timeFrom(rewriteStart, timeSpentResolving)} ${chalk.dim(
+            prettyImporter
+          )}`
+        )
+      return result
     }
   }
 }
