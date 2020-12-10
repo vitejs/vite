@@ -12,6 +12,32 @@ const debugRewrite = _debug('vite:rewrite')
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
 
+/**
+ * Server-only plugin that rewrites url imports (bare modules, css/asset imports)
+ * so that they can be properly handled by the server.
+ *
+ * - Bare module imports are resolved (by @rollup-plugin/node-resolve) to
+ * absolute file paths, e.g.
+ *
+ *     ```js
+ *     import 'foo'
+ *     ```
+ *     is rewritten to
+ *     ```js
+ *     import '/@fs//project/node_modules/foo/dist/foo.js'
+ *     ```
+ *
+ * - CSS imports are appended with `.js` since both the js module and the actual
+ * css (referenced via <link>) may go through the trasnform pipeline:
+ *
+ *     ```js
+ *     import './style.css'
+ *     ```
+ *     is rewritten to
+ *     ```js
+ *     import './style.css.js'
+ *     ```
+ */
 export function rewritePlugin(): Plugin {
   return {
     name: 'vite:rewrite',
@@ -81,7 +107,7 @@ export function rewritePlugin(): Plugin {
           // resolve CSS imports into js (so it differentiates from actual
           // CSS references from <link>)
           if (isCSSRequest(id)) {
-            ;(s || (s = new MagicString(source))).appendLeft(end, `.js`)
+            ;(s || (s = new MagicString(source))).appendLeft(end, '.js')
           }
         } else if (id !== 'import.meta' && !hasViteIgnore) {
           console.warn(

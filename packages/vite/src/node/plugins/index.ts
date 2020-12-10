@@ -4,12 +4,13 @@ import { esbuildPlugin } from './esbuild'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import json from '@rollup/plugin-json'
 import { rewritePlugin } from './rewrite'
+import { cssPlugin } from './css'
 
 export async function getInternalPlugins(
   command: 'build' | 'serve',
   config: ResolvedConfig
 ): Promise<Plugin[]> {
-  const isServe = command === 'serve'
+  const isBuild = command === 'build'
 
   return [
     resolvePlugin(config),
@@ -18,7 +19,8 @@ export async function getInternalPlugins(
       mainFields: ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
     }),
     esbuildPlugin(config.esbuild || {}),
+    cssPlugin(config, isBuild),
     json(),
-    isServe ? rewritePlugin() : null
+    isBuild ? null : rewritePlugin()
   ].filter(Boolean) as Plugin[]
 }
