@@ -17,10 +17,15 @@ export interface HmrOptions {
 
 export function hmrMiddleware({
   watcher,
+  ws,
   config
 }: ServerContext): NextHandleFunction {
   watcher.on('change', () => {
     // handle change
+    ws.send({
+      type: 'full-reload',
+      path: '/'
+    })
   })
 
   const clientCode = fs

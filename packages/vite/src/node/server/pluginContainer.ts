@@ -22,12 +22,13 @@ import {
   PluginContext as RollupPluginContext,
   LoadResult,
   SourceDescription,
-  EmittedFile
+  EmittedFile,
+  SourceMap
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
 import merge from 'merge-source-map'
-import MagicString, { SourceMap } from 'magic-string'
+import MagicString from 'magic-string'
 
 export interface PluginContainerOptions {
   cwd?: string

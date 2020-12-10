@@ -5,7 +5,7 @@ import fs, { promises as fsp } from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
 import { ServerContext } from '..'
 import { NextHandleFunction } from 'connect'
-import { isCSSRequest } from '../../plugins/css'
+import { cssPreprocessLangRE, isCSSRequest } from '../../plugins/css'
 import chalk from 'chalk'
 import { cleanUrl } from '../../utils'
 import { send } from '../send'
@@ -46,16 +46,20 @@ export async function transformFile(
     return null
   }
   const id = resolved.id
-  const cleanId = cleanUrl(id)
-  const prettyId = isDebug && chalk.gray(path.relative(root, cleanId))
+  let file = cleanUrl(id)
+  // if this is a css proxy module, strip css.js postfix so it points to the
+  // original css file
+  if (cssPreprocessLangRE.test(file.slice(0, -3))) {
+    file = file.slice(0, -3)
+  }
+  const prettyId = isDebug && chalk.gray(path.relative(root, file))
   isDebug && debugResolve(`${chalk.green(url)} -> ${chalk.gray(id)}`)
 
   // record file -> url relationships after successful resolve
-
-  let urls = fileToUrlMap.get(cleanId)
+  let urls = fileToUrlMap.get(file)
   if (!urls) {
     urls = new Set<string>()
-    fileToUrlMap.set(cleanId, urls)
+    fileToUrlMap.set(file, urls)
   }
   urls.add(url)
 
@@ -68,8 +72,8 @@ export async function transformFile(
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
-    if (fs.existsSync(cleanId) && fs.statSync(cleanId).isFile()) {
-      code = await fsp.readFile(cleanId, 'utf-8')
+    if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+      code = await fsp.readFile(file, 'utf-8')
       isDebug && debugLoad(`[fs] ${prettyId}`)
     }
   } else {
@@ -129,7 +133,7 @@ export function transformMiddleware(
   })
 
   return async (req, res, next) => {
-    if (req.method !== 'GET') {
+    if (req.method !== 'GET' || req.url === '/') {
       return next()
     }
 
@@ -142,8 +146,6 @@ export function transformMiddleware(
     }
 
     const isSourceMap = req.url!.endsWith('.map')
-    const isCSS = isCSSRequest(req.url!)
-
     // since we generate source map references, handle those requests here
     if (isSourceMap) {
       const originalUrl = req.url!.replace(/\.map$/, '')
@@ -157,6 +159,7 @@ export function transformMiddleware(
     // - requests that initiate from ESM imports (any extension)
     // - CSS (even not from ESM)
     // - Source maps (only for resolving)
+    const isCSS = isCSSRequest(req.url!)
     if (
       // esm imports accept */* in most browsers
       req.headers['accept'] === '*/*' ||

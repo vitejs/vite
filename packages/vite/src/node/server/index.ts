@@ -190,9 +190,9 @@ export async function createServer(
     hook && postHooks.push(await hook(context))
   }
 
-  // cors
+  // cors (enabled by default)
   const { cors } = serverConfig
-  if (cors) {
+  if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
