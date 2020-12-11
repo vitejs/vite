@@ -7,11 +7,7 @@ import { init, parse, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest } from './css'
 import slash from 'slash'
 import { prettifyUrl, timeFrom } from '../utils'
-import {
-  debugHmr,
-  updateModuleGraph,
-  HMR_CLIENT_PATH
-} from '../server/middlewares/hmr'
+import { debugHmr, HMR_CLIENT_PATH } from '../server/middlewares/hmr'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = _debug('vite:rewrite')
@@ -167,21 +163,19 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       }
 
       // vite-only server context
-      const serverContext = (this as any).serverContext as ServerContext
+      const { moduleGraph } = (this as any).serverContext as ServerContext
       // since we are already in the transform phase of the importer, it must
-      // have been resolved so its entry is guaranteed in the fileToUrlMap.
-      const importerUrl = serverContext.fileToUrlMap.get(importer)!
+      // have been loaded so its entry is guaranteed in the module graph.
+      const mod = moduleGraph.getModuleById(importer)!
       // update the module graph for HMR analysis
-      updateModuleGraph(importerUrl, importedUrls, hasHMR)
+      moduleGraph.updateModuleInfo(mod, importedUrls, hasHMR)
 
       if (hasHMR) {
         debugHmr(`${chalk.green(`[enabled]`)} ${prettyImporter}`)
         // inject hot context
         str().prepend(
           `import { createHotContext } from "${HMR_CLIENT_PATH}";` +
-            `import.meta.hot = createHotContext(${JSON.stringify(
-              importerUrl
-            )});`
+            `import.meta.hot = createHotContext(${JSON.stringify(mod.url)});`
         )
       }
 

@@ -23,10 +23,10 @@ export interface TransformResult {
 
 export async function transformFile(
   url: string,
-  { config: { root }, container, transformCache, fileToUrlMap }: ServerContext
+  { config: { root }, container, moduleGraph }: ServerContext
 ): Promise<TransformResult | null> {
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
-  const cached = transformCache.get(url)
+  const cached = moduleGraph.getModuleByUrl(url)?.transformResult
   if (cached) {
     isDebug && debugCache(`[memory] ${prettyUrl}`)
     return cached
@@ -50,9 +50,6 @@ export async function transformFile(
     // spammy so it's disabled by default
     // debugUrl(`${chalk.green(url)} -> ${chalk.dim(id)}`)
   }
-
-  // record file -> url relationships after successful resolve
-  fileToUrlMap.set(file, url)
 
   let code = null
   let map: SourceDescription['map'] = null
@@ -78,9 +75,13 @@ export async function transformFile(
     }
   }
   if (code == null) {
-    isDebug && debugLoad(`${chalk.red(`[FAIL]`)} ${prettyUrl}`)
+    isDebug && debugLoad(`${chalk.red.bold(`[fail]`)} ${prettyUrl}`)
     return null
   }
+
+  // create module in graph after successful load
+  // it may already exist - in this case we update it with the resolved id.
+  const mod = moduleGraph.ensureEntry(url, id)
 
   // transform
   const ttransformStart = Date.now()
@@ -104,13 +105,11 @@ export async function transformFile(
     }
   }
 
-  const result = {
+  return (mod.transformResult = {
     code,
     map,
     etag: getEtag(code, { weak: true })
-  } as TransformResult
-  transformCache.set(url, result)
-  return result
+  } as TransformResult)
 }
 
 export function transformMiddleware(
@@ -118,19 +117,8 @@ export function transformMiddleware(
 ): NextHandleFunction {
   const {
     config: { root },
-    watcher,
-    transformCache,
-    fileToUrlMap
+    moduleGraph
   } = context
-
-  watcher.on('change', (file) => {
-    const url = fileToUrlMap.get(file)
-    if (url) {
-      isDebug &&
-        debugCache(`busting transform cache for ${prettifyUrl(url, root)}`)
-      transformCache.delete(url)
-    }
-  })
 
   return async (req, res, next) => {
     if (req.method !== 'GET' || req.url === '/') {
@@ -139,7 +127,11 @@ export function transformMiddleware(
 
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
-    if (ifNoneMatch && transformCache.get(req.url!)?.etag === ifNoneMatch) {
+    if (
+      ifNoneMatch &&
+      moduleGraph.getModuleByUrl(req.url!)?.transformResult?.etag ===
+        ifNoneMatch
+    ) {
       isDebug && debugCache(`[304] ${prettifyUrl(req.url!, root)}`)
       res.statusCode = 304
       return res.end()
@@ -149,9 +141,9 @@ export function transformMiddleware(
     // since we generate source map references, handle those requests here
     if (isSourceMap) {
       const originalUrl = req.url!.replace(/\.map$/, '')
-      const transformed = transformCache.get(originalUrl)
-      if (transformed && transformed.map) {
-        return send(req, res, JSON.stringify(transformed.map), 'json')
+      const map = moduleGraph.getModuleByUrl(originalUrl)?.transformResult?.map
+      if (map) {
+        return send(req, res, JSON.stringify(map), 'json')
       }
     }
 

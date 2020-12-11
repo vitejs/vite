@@ -18,12 +18,13 @@ import { FSWatcher, WatchOptions } from '../types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { setupWebSocketServer, WebSocketServer } from '../server/ws'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
-import { transformMiddleware, TransformResult } from './middlewares/transform'
+import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import { serveStaticMiddleware } from './middlewares/static'
 import { hmrMiddleware, HmrOptions } from './middlewares/hmr'
 import { timeMiddleware } from './middlewares/time'
+import { ModuleGraph } from './moduleGraph'
 
 export interface ServerOptions {
   host?: string
@@ -128,13 +129,10 @@ export interface ServerContext {
    */
   container: PluginContainer
   /**
-   * Maps file paths back to served URLs
+   * Module graph that tracks the import relationships, url -> file mapping
+   * and hmr state.
    */
-  fileToUrlMap: Map<string, string>
-  /**
-   * @internal
-   */
-  transformCache: Map<string, TransformResult>
+  moduleGraph: ModuleGraph
 }
 
 export interface ViteDevServer extends http.Server {
@@ -183,8 +181,7 @@ export async function createServer(
     watcher,
     container,
     ws,
-    transformCache: new Map(),
-    fileToUrlMap: new Map()
+    moduleGraph: new ModuleGraph()
   })
   container.serverContext = context
   await container.buildStart({})
