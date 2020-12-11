@@ -29,6 +29,7 @@ import acornClassFields from 'acorn-class-fields'
 import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
+import { ServerContext } from '..'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -38,6 +39,7 @@ export interface PluginContainerOptions {
 }
 
 export interface PluginContainer {
+  serverContext: ServerContext | null
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
   watchChange(id: string, event?: ChangeEvent): void
@@ -101,6 +103,13 @@ export async function createPluginContainer(
 
     constructor(initialPlugin?: Plugin) {
       this.activePlugin = initialPlugin || null
+    }
+
+    /**
+     * @internal vite-specific
+     */
+    get serverContext() {
+      return container.serverContext
     }
 
     parse(code: string, opts: any = {}) {
@@ -259,6 +268,8 @@ export async function createPluginContainer(
   }
 
   const container: PluginContainer = {
+    serverContext: null, // will be set after creation
+
     options: await (async () => {
       let options = rollupOptions
       for (const plugin of plugins) {

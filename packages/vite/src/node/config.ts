@@ -270,7 +270,7 @@ async function loadConfigFromFile(
       // 1. try to directly require the module (assuming commonjs)
       try {
         userConfig = require(resolvedPath)
-        debug(`config file loaded in ${Date.now() - start}ms`)
+        debug(`cjs config loaded in ${Date.now() - start}ms`)
       } catch (e) {
         const ignored = /Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/
         if (!ignored.test(e.message)) {
@@ -294,11 +294,11 @@ async function loadConfigFromFile(
         treeshake: false,
         plugins: [
           // use esbuild + node-resolve to support .ts files
-          esbuildPlugin({ target: 'es2019' }),
+          isTS ? esbuildPlugin({ target: 'es2019' }) : null,
           nodeResolve({
             extensions: ['.mjs', '.js', '.ts', '.json']
           })
-        ]
+        ].filter(Boolean)
       })
 
       const {
@@ -309,7 +309,9 @@ async function loadConfigFromFile(
       })
 
       userConfig = await loadConfigFromBundledFile(resolvedPath, code)
-      debug(`config file loaded in ${Date.now() - start}ms`)
+      debug(
+        `${isTS ? 'ts' : 'es'} config file loaded in ${Date.now() - start}ms`
+      )
     }
 
     const config =
@@ -322,7 +324,7 @@ async function loadConfigFromFile(
     console.error(
       chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
     )
-    console.error(e.toString())
+    console.error(e.stack)
     process.exit(1)
   }
 }

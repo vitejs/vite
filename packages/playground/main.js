@@ -11,6 +11,7 @@
 // console.log(url)
 // console.log(css)
 // console.log(pkg)
+import './hmr'
 
 import { createApp } from 'vue'
 import Test from './Test.vue'

@@ -1,5 +1,5 @@
 // This file runs in the browser.
-import { HMRPayload, UpdatePayload, MultiUpdatePayload } from './hmrPayload'
+import { HMRPayload, UpdatePayload, MultiUpdatePayload } from '../hmrPayload'
 
 // injected by serverPluginClient when served
 declare const __HMR_PROTOCOL__: string
@@ -56,7 +56,7 @@ socket.addEventListener('message', async ({ data }) => {
 })
 
 async function handleMessage(payload: HMRPayload) {
-  const { path, changeSrcPath, timestamp } = payload as UpdatePayload
+  const { path, changedPath, timestamp } = payload as UpdatePayload
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
@@ -66,33 +66,32 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'style-update':
       // check if this is referenced in html via <link>
-      const el = document.querySelector(`link[href*='${path}']`)
-      if (el) {
-        el.setAttribute(
-          'href',
-          `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
-        )
-        break
-      }
-      // imported CSS
-      const importQuery = path.includes('?') ? '&import' : '?import'
-      await import(`${path}${importQuery}&t=${timestamp}`)
-      console.log(`[vite] ${path} updated.`)
+      // const el = document.querySelector(`link[href*='${path}']`)
+      // if (el) {
+      //   el.setAttribute(
+      //     'href',
+      //     `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
+      //   )
+      //   break
+      // }
+      // // imported CSS proxy module again
+      // await import(`${path}.js&t=${timestamp}`)
+      // console.log(`[vite] ${path} updated.`)
       break
     case 'style-remove':
-      removeStyle(payload.id)
+      removeStyle(path)
       break
     case 'js-update':
-      queueUpdate(updateModule(path, changeSrcPath, timestamp))
+      queueUpdate(updateModule(path, changedPath, timestamp))
       break
     case 'custom':
-      const cbs = customUpdateMap.get(payload.id)
+      const cbs = customUpdateMap.get(payload.path)
       if (cbs) {
         cbs.forEach((cb) => cb(payload.customData))
       }
       break
     case 'full-reload':
-      if (path.endsWith('.html')) {
+      if (path && path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
         const pagePath = location.pathname
@@ -206,11 +205,11 @@ function removeStyle(id: string) {
 }
 
 async function updateModule(
-  id: string,
+  path: string,
   changedPath: string,
   timestamp: number
 ) {
-  const mod = hotModulesMap.get(id)
+  const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-spliting project,
     // it is common that the hot-updating module is not loaded yet.
@@ -219,29 +218,23 @@ async function updateModule(
   }
 
   const moduleMap = new Map()
-  const isSelfUpdate = id === changedPath
+  const isSelfUpdate = path === changedPath
 
   // make sure we only import each dep once
   const modulesToUpdate = new Set<string>()
   if (isSelfUpdate) {
     // self update - only update self
-    modulesToUpdate.add(id)
+    modulesToUpdate.add(path)
   } else {
     // dep update
     for (const { deps } of mod.callbacks) {
-      if (Array.isArray(deps)) {
-        deps.forEach((dep) => modulesToUpdate.add(dep))
-      } else {
-        modulesToUpdate.add(deps)
-      }
+      deps.forEach((dep) => modulesToUpdate.add(dep))
     }
   }
 
   // determine the qualified callbacks before we re-import the modules
-  const callbacks = mod.callbacks.filter(({ deps }) => {
-    return Array.isArray(deps)
-      ? deps.some((dep) => modulesToUpdate.has(dep))
-      : modulesToUpdate.has(deps)
+  const qualifiedCallbacks = mod.callbacks.filter(({ deps }) => {
+    return deps.some((dep) => modulesToUpdate.has(dep))
   })
 
   await Promise.all(
@@ -260,15 +253,11 @@ async function updateModule(
   )
 
   return () => {
-    for (const { deps, fn } of callbacks) {
-      if (Array.isArray(deps)) {
-        fn(deps.map((dep) => moduleMap.get(dep)))
-      } else {
-        fn(moduleMap.get(deps))
-      }
+    for (const { deps, fn } of qualifiedCallbacks) {
+      fn(deps.map((dep) => moduleMap.get(dep)))
     }
 
-    console.log(`[vite]: js module hot updated: `, id)
+    console.log(`[vite]: js module hot updated: `, path)
   }
 }
 
@@ -278,7 +267,8 @@ interface HotModule {
 }
 
 interface HotCallback {
-  deps: string | string[]
+  // the deps must be fetchable paths
+  deps: string[]
   fn: (modules: object | object[]) => void
 }
 
@@ -287,44 +277,58 @@ const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
 const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 
-export const createHotContext = (id: string) => {
-  if (!dataMap.has(id)) {
-    dataMap.set(id, {})
+export const createHotContext = (ownerPath: string) => {
+  if (!dataMap.has(ownerPath)) {
+    dataMap.set(ownerPath, {})
   }
 
   // when a file is hot updated, a new context is created
   // clear its stale callbacks
-  const mod = hotModulesMap.get(id)
+  const mod = hotModulesMap.get(ownerPath)
   if (mod) {
     mod.callbacks = []
   }
 
+  function acceptDeps(deps: string[], callback: HotCallback['fn'] = () => {}) {
+    const mod: HotModule = hotModulesMap.get(ownerPath) || {
+      id: ownerPath,
+      callbacks: []
+    }
+    mod.callbacks.push({
+      deps,
+      fn: callback
+    })
+    hotModulesMap.set(ownerPath, mod)
+  }
+
   const hot = {
     get data() {
-      return dataMap.get(id)
+      return dataMap.get(ownerPath)
     },
 
-    accept(callback: HotCallback['fn'] = () => {}) {
-      hot.acceptDeps(id, callback)
-    },
-
-    acceptDeps(
-      deps: HotCallback['deps'],
-      callback: HotCallback['fn'] = () => {}
-    ) {
-      const mod: HotModule = hotModulesMap.get(id) || {
-        id,
-        callbacks: []
+    accept(deps: any, callback: any) {
+      if (typeof deps === 'function' || !deps) {
+        // self-accept: hot.accept(() => {})
+        acceptDeps([ownerPath], deps)
+      } else if (typeof deps === 'string') {
+        // explicit deps
+        acceptDeps([deps], callback)
+      } else if (Array.isArray(deps)) {
+        acceptDeps(deps, callback)
+      } else {
+        throw new Error(`invalid hot.accept() usage.`)
       }
-      mod.callbacks.push({
-        deps: deps as HotCallback['deps'],
-        fn: callback
-      })
-      hotModulesMap.set(id, mod)
+    },
+
+    acceptDeps() {
+      throw new Error(
+        `hot.acceptDeps() is deprecated. ` +
+          `Use hot.accept() with the same signature instead.`
+      )
     },
 
     dispose(cb: (data: any) => void) {
-      disposeMap.set(id, cb)
+      disposeMap.set(ownerPath, cb)
     },
 
     // noop, used for static analysis only

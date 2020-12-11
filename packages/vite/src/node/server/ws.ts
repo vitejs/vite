@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { Server } from 'http'
 import WebSocket from 'ws'
-import { HMRPayload } from '../../client/hmrPayload'
+import { HMRPayload } from '../../hmrPayload'
 
 export const HMR_HEADER = 'vite-hmr'
 
