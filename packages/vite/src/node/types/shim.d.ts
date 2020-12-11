@@ -1,3 +1,8 @@
+declare module 'connect' {
+  const connect: () => any
+  export = connect
+}
+
 declare module 'cors' {
   function cors(options: any): any
   export = cors
@@ -5,6 +10,11 @@ declare module 'cors' {
 
 declare module 'selfsigned' {
   export function generate(attrs: any, options: any, done?: any): any
+}
+
+declare module 'http-proxy' {
+  const proxy: any
+  export = proxy
 }
 
 declare module 'acorn-class-fields' {

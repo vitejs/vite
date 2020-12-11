@@ -4,7 +4,7 @@ import getEtag from 'etag'
 import fs, { promises as fsp } from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
 import { ServerContext } from '..'
-import { NextHandleFunction } from 'connect'
+import { Connect } from '../../types/connect'
 import { isCSSRequest, unwrapCSSProxy } from '../../plugins/css'
 import chalk from 'chalk'
 import {
@@ -125,7 +125,7 @@ export async function transformFile(
 
 export function transformMiddleware(
   context: ServerContext
-): NextHandleFunction {
+): Connect.NextHandleFunction {
   const {
     config: { root },
     moduleGraph

@@ -3,6 +3,7 @@
 // import pkg from '/@fs/Users/evan/Vue/vite/package.json'
 // // import '/non-existent'
 import css from './imported.css'
+// import './test.scss'
 // import { redText } from './foo.module.css'
 // import url from './public/logo.png'
 // import html from './index.html?raw'

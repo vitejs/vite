@@ -1,9 +1,10 @@
 import * as http from 'http'
 import _debug from 'debug'
-import HttpProxy from 'http-proxy'
+import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
 import { ServerContext } from '..'
-import { NextHandleFunction } from 'connect'
+import { Connect } from '../../types/connect'
+import { HttpProxy } from '../../types/http-proxy'
 
 const debug = _debug('vite:proxy')
 
@@ -15,7 +16,7 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   /**
    * configure the proxy server (e.g. listen to events)
    */
-  configure?: (proxy: HttpProxy, options: ProxyOptions) => void
+  configure?: (proxy: HttpProxy.Server, options: ProxyOptions) => void
   /**
    * webpack-dev-server style bypass function
    */
@@ -30,18 +31,18 @@ export function proxyMiddleware({
   app,
   server,
   config
-}: ServerContext): NextHandleFunction {
+}: ServerContext): Connect.NextHandleFunction {
   const options = config.server.proxy!
 
   // lazy require only when proxy is used
-  const proxies: Record<string, [HttpProxy, ProxyOptions]> = {}
+  const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
   Object.keys(options).forEach((context) => {
     let opts = options[context]
     if (typeof opts === 'string') {
       opts = { target: opts } as ProxyOptions
     }
-    const proxy = HttpProxy.createProxyServer(opts)
+    const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
     if (opts.configure) {
       opts.configure(proxy, opts)
     }

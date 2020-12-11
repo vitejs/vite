@@ -8,7 +8,6 @@ import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
-import { cleanUrl } from '../utils'
 
 const debug = _debug('vite:css')
 
@@ -62,14 +61,16 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
 
       const { code: css, modules, deps } = await compileCSS(id, raw, config)
       const modulesCode = dataToEsm(modules, { namedExports: true })
-      if (deps) {
-        deps.forEach((file) => {
-          this.addWatchFile(file)
-        })
-      }
 
       // server-only *.css.js proxy module
       if (!isBuild) {
+        if (deps) {
+          deps.forEach((file) => {
+            // TODO record css @import virtual modules for HMR
+            this.addWatchFile(file)
+          })
+        }
+
         if (isProxyRequest) {
           debug(`[import] ${chalk.dim(path.relative(config.root, id))}`)
           return [
@@ -176,6 +177,7 @@ async function compileCSS(
     }
   }
 
+  // postcss is an unbundled dep and should be lazy imported
   const postcssResult = await (await import('postcss'))
     .default(postcssPlugins)
     .process(code, {
@@ -218,8 +220,7 @@ async function loadPostcssConfig(
     return cachedPostcssConfig
   }
   try {
-    const load = (await import('postcss-load-config')).default
-    return (cachedPostcssConfig = await load({}, root))
+    return (cachedPostcssConfig = await postcssrc({}, root))
   } catch (e) {
     if (!/No PostCSS Config found/.test(e.message)) {
       throw e

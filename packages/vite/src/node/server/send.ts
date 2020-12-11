@@ -1,5 +1,4 @@
-import { IncomingMessage } from 'connect'
-import { ServerResponse } from 'http'
+import { IncomingMessage, ServerResponse } from 'http'
 import getEtag from 'etag'
 
 const alias: Record<string, string | undefined> = {

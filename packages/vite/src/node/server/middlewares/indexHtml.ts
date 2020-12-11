@@ -1,7 +1,7 @@
 import fs from 'fs'
 import getEtag from 'etag'
 import path from 'path'
-import { NextHandleFunction } from 'connect'
+import { Connect } from '../../types/connect'
 import { Plugin } from '../../config'
 import {
   applyHtmlTransforms,
@@ -19,7 +19,7 @@ const devHtmlHook: IndexHtmlTransformHook = () => {
 export function indexHtmlMiddleware(
   ctx: ServerContext,
   plugins: readonly Plugin[]
-): NextHandleFunction {
+): Connect.NextHandleFunction {
   const [preHooks, postHooks] = resolveHtmlTransforms(plugins)
   const filename = path.join(ctx.config.root, 'index.html')
 
