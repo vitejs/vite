@@ -8,6 +8,7 @@ import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
+import { cleanUrl } from '../utils'
 
 const debug = _debug('vite:css')
 
@@ -32,6 +33,13 @@ export const cssPreprocessLangRE = /\.(css|less|sass|scss|styl|stylus|postcss)($
 export const isCSSRequest = (request: string) =>
   cssPreprocessLangRE.test(request)
 
+export const isCSSProxy = (id: string) => isCSSRequest(id.slice(0, -3))
+
+export const unwrapCSSProxy = (id: string) => {
+  const unwrapped = id.slice(0, -3)
+  return isCSSRequest(unwrapped) ? unwrapped : id
+}
+
 export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
   return {
     name: 'vite:css',
@@ -46,8 +54,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
 
     async transform(raw, id) {
       const isRawRequest = isCSSRequest(id)
-      const isProxyRequest =
-        !isRawRequest && isCSSRequest((id = id.slice(0, -3)))
+      const isProxyRequest = isCSSProxy(id)
 
       if (!isProxyRequest && !isRawRequest) {
         return
@@ -69,7 +76,8 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
             `import { updateStyle } from ${JSON.stringify(HMR_CLIENT_PATH)}`,
             `const css = ${JSON.stringify(css)}`,
             `updateStyle(${JSON.stringify(id)}, css)`,
-            `${modulesCode || `export default css`}`
+            `${modulesCode || `export default css`}`,
+            `import.meta.hot.accept()`
           ].join('\n')
         } else {
           debug(`[link] ${chalk.dim(path.relative(config.root, id))}`)

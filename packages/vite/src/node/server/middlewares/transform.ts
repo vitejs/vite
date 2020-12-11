@@ -1,12 +1,18 @@
 import _debug from 'debug'
+import path from 'path'
 import getEtag from 'etag'
 import fs, { promises as fsp } from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
 import { ServerContext } from '..'
 import { NextHandleFunction } from 'connect'
-import { cssPreprocessLangRE, isCSSRequest } from '../../plugins/css'
+import { isCSSRequest, unwrapCSSProxy } from '../../plugins/css'
 import chalk from 'chalk'
-import { cleanUrl, prettifyUrl, timeFrom } from '../../utils'
+import {
+  cleanUrl,
+  prettifyUrl,
+  removeTimestampQuery,
+  timeFrom
+} from '../../utils'
 import { send } from '../send'
 
 const debugUrl = _debug('vite:url')
@@ -25,6 +31,8 @@ export async function transformFile(
   url: string,
   { config: { root }, container, moduleGraph }: ServerContext
 ): Promise<TransformResult | null> {
+  url = removeTimestampQuery(url)
+
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const cached = moduleGraph.getModuleByUrl(url)?.transformResult
   if (cached) {
@@ -39,12 +47,7 @@ export async function transformFile(
     return null
   }
   const id = resolved.id
-  let file = cleanUrl(id)
-  // if this is a css proxy module, strip css.js postfix so it points to the
-  // original css file
-  if (cssPreprocessLangRE.test(file.slice(0, -3))) {
-    file = file.slice(0, -3)
-  }
+  const file = unwrapCSSProxy(cleanUrl(id))
   if (isDebug) {
     // this is only useful when showing the full paths but it can get very
     // spammy so it's disabled by default
@@ -81,6 +84,14 @@ export async function transformFile(
 
   // create module in graph after successful load
   // it may already exist - in this case we update it with the resolved id.
+  // append resolved ext to ensure url to module mapping uniqueness
+  // otherwise we may end up creating multiple modules for urls that resolves
+  // to the same file.
+  const ext = path.extname(cleanUrl(id))
+  const [pathname, query] = url.split('?')
+  if (ext && !pathname.endsWith(ext)) {
+    url = pathname + ext + (query ? `?${query}` : ``)
+  }
   const mod = moduleGraph.ensureEntry(url, id)
 
   // transform

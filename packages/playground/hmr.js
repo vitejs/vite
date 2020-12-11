@@ -1,6 +1,6 @@
 import './hmrDep'
 
-export const foo = 12332332423423
+export const foo = 1002
 
 console.log(import.meta.url)
 
@@ -22,6 +22,6 @@ if (import.meta.hot) {
   })
 
   import.meta.hot.dispose(() => {
-    console.log(`foo was: ${foo}`)
+    console.log(`foo was:`, foo)
   })
 }

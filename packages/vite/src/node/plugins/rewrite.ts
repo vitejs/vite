@@ -15,8 +15,7 @@ const debugRewrite = _debug('vite:rewrite')
 const debugResolve = _debug('vite:resolve')
 
 const skipRE = /\.(map|json)$/
-const canSkip = (id: string) =>
-  skipRE.test(id) || isCSSRequest(id) || isCSSRequest(id.slice(0, -3))
+const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
 
 /**
  * Server-only plugin that rewrites url imports (bare modules, css/asset imports)
@@ -153,11 +152,19 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
             // prefix with /@fs/
             url = FILE_PREFIX + slash(resolved.id)
             str().overwrite(start, end, isLiteralDynamicId ? `'${url}'` : url)
+          } else {
+            const resolvedExt = path.extname(resolved.id)
+            if (resolvedExt && !url.endsWith(resolvedExt)) {
+              // append resolved extension so that url -> module mapping can be
+              // 1 to 1
+              url += resolvedExt
+              str().appendLeft(end, resolvedExt)
+            }
           }
 
           // resolve CSS imports into js (so it differentiates from actual
           // CSS references from <link>)
-          if (isCSSRequest(url)) {
+          if (isCSSRequest(resolved.id)) {
             str().appendLeft(end, '.js')
           }
 

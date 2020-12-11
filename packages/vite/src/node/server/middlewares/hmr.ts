@@ -8,7 +8,6 @@ import { isObject } from '../../utils'
 import { ModuleNode } from '../moduleGraph'
 import chalk from 'chalk'
 import { UpdatePayload } from '../../../hmrPayload'
-import { notDeepStrictEqual } from 'assert'
 
 export const debugHmr = _debug('vite:hmr')
 
