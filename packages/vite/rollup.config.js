@@ -37,22 +37,39 @@ const nodeConfig = {
   ],
   plugins: [
     nodeResolve(),
-    shimFsevents(),
-    shimCac(),
     typescript({
       target: 'es2019',
       include: ['src/**/*.ts'],
       esModuleInterop: true
     }),
-    commonjs(),
-    json(),
-    // Optional peer deps of ws
-    // they do not exist in the tree but will be force required by rollup due
-    // to potential side effects. Treat them as virtual empty files.
+    // Some deps have try...catch require of optional deps, but rollup will
+    // generate code that force require them upfront for side effects.
+    // Shim them with eval() so rollup can skip these calls.
+    shimDepsPlugin({
+      // chokidar -> fs-events
+      'fsevents-handler.js': {
+        src: `require('fsevents')`,
+        replacement: `eval('require')('fsevents')`
+      },
+      // cac re-assigns module.exports even in its mjs dist
+      [`cac${path.sep}mod.mjs`]: {
+        src: `if (typeof module !== "undefined") {`,
+        replacement: `if (false) {`
+      },
+      // postcss-import -> sugarss
+      'process-content.js': {
+        src: 'require("sugarss")',
+        replacement: `eval('require')('sugarss')`
+      }
+    }),
+    // Optional peer deps of ws. Native deps that are mostly for performance.
+    // Since ws is not that perf critical for us, just ignore these deps.
     ignoreDepPlugin({
       bufferutil: 1,
       'utf-8-validate': 1
-    })
+    }),
+    commonjs(),
+    json()
   ],
   treeshake: {
     moduleSideEffects: 'no-external',
@@ -77,6 +94,56 @@ const nodeConfig = {
         return 'deps'
       }
     }
+  },
+  onwarn(warning, warn) {
+    // node-resolve complains a lot about this but seems to still work?
+    if (warning.message.includes('Package subpath')) {
+      return
+    }
+    // we use the eval('require') trick to deal with optional deps
+    if (warning.message.includes('Use of eval')) {
+      return
+    }
+    warn(warning)
+  }
+}
+
+/**
+ * @type { (deps: Record<string, { src: string, replacement: string }>) => import('rollup').Plugin }
+ */
+function shimDepsPlugin(deps) {
+  const transformed = {}
+
+  return {
+    name: 'shim-deps',
+    transform(code, id) {
+      for (const file in deps) {
+        if (id.endsWith(file)) {
+          const { src, replacement } = deps[file]
+          const pos = code.indexOf(src)
+          if (pos < 0) {
+            this.error(`Could not find expected src "${src}" in file "${file}"`)
+          }
+          const magicString = new MagicString(code)
+          magicString.overwrite(pos, pos + src.length, replacement)
+          transformed[file] = true
+          console.log(`shimmed: ${file}`)
+          return {
+            code: magicString.toString(),
+            map: magicString.generateMap({ hires: true })
+          }
+        }
+      }
+    },
+    buildEnd() {
+      for (const file in deps) {
+        if (!transformed[file]) {
+          this.error(
+            `Did not find "${file}" which is supposed to be shimmed, was the file renamed?`
+          )
+        }
+      }
+    }
   }
 }
 
@@ -85,7 +152,7 @@ const nodeConfig = {
  */
 function ignoreDepPlugin(ignoredDeps) {
   return {
-    name: 'empty-cjs',
+    name: 'ignore-deps',
     resolveId(id) {
       if (id in ignoredDeps) {
         return id
@@ -94,94 +161,6 @@ function ignoreDepPlugin(ignoredDeps) {
     load(id) {
       if (id in ignoredDeps) {
         return ''
-      }
-    }
-  }
-}
-
-// https://github.com/rollup/rollup/blob/master/build-plugins/conditional-fsevents-import.js
-// MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE.md
-// Conditionally load fs-events so that we can bundle chokidar.
-const FSEVENTS_REQUIRE = "require('fsevents')"
-const REPLACEMENT = `require('${path.resolve(
-  __dirname,
-  'src/node/server/fsEventsImporter'
-)}').getFsEvents()`
-
-/**
- * @type { () => import('rollup').Plugin }
- */
-function shimFsevents() {
-  let transformed = false
-  return {
-    name: 'conditional-fs-events-import',
-    transform(code, id) {
-      if (id.endsWith('fsevents-handler.js')) {
-        transformed = true
-        const requireStatementPos = code.indexOf(FSEVENTS_REQUIRE)
-        if (requireStatementPos < 0) {
-          throw new Error(
-            `Could not find expected fsevents import "${FSEVENTS_REQUIRE}"`
-          )
-        }
-        const magicString = new MagicString(code)
-        magicString.overwrite(
-          requireStatementPos,
-          requireStatementPos + FSEVENTS_REQUIRE.length,
-          REPLACEMENT
-        )
-        return {
-          code: magicString.toString(),
-          map: magicString.generateMap({ hires: true })
-        }
-      }
-    },
-    buildEnd() {
-      if (!transformed) {
-        this.error(
-          'Could not find "fsevents-handler.js", was the file renamed?'
-        )
-      }
-    }
-  }
-}
-
-/**
- * Cac includes module.exports code even in its mjs files... overwrites the
- * exports of the deps chunk.
- */
-const CAC_MODULE_GUARD = `if (typeof module !== "undefined") {`
-/**
- * @type { () => import('rollup').Plugin }
- */
-function shimCac() {
-  let transformed = false
-  return {
-    name: 'shim-cac',
-    transform(code, id) {
-      if (id.endsWith('cac/mod.mjs')) {
-        transformed = true
-        const requireStatementPos = code.indexOf(CAC_MODULE_GUARD)
-        if (requireStatementPos < 0) {
-          throw new Error(
-            `Could not find expected cac module guard "${CAC_MODULE_GUARD}"`
-          )
-        }
-        const magicString = new MagicString(code)
-        magicString.overwrite(
-          requireStatementPos,
-          requireStatementPos + CAC_MODULE_GUARD.length,
-          `if (false) {`
-        )
-        return {
-          code: magicString.toString(),
-          map: magicString.generateMap({ hires: true })
-        }
-      }
-    },
-    buildEnd() {
-      if (!transformed) {
-        // throw new Error('Could not find "cac/mod.mjs", was the file renamed?')
       }
     }
   }
