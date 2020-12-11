@@ -13,7 +13,6 @@ import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
-import { loadFsEvents } from './fsEventsImporter'
 import { FSWatcher, WatchOptions } from '../types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { setupWebSocketServer, WebSocketServer } from '../server/ws'
@@ -25,6 +24,7 @@ import { serveStaticMiddleware } from './middlewares/static'
 import { hmrMiddleware, HmrOptions } from './middlewares/hmr'
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
+import { Connect } from '../types/connect'
 
 export interface ServerOptions {
   host?: string
@@ -110,7 +110,7 @@ export interface ServerContext {
    * connect app instance
    * https://github.com/senchalabs/connect#use-middleware
    */
-  app: connect.Server
+  app: Connect.Server
   /**
    * native Node http server instance
    */
@@ -129,7 +129,7 @@ export interface ServerContext {
    */
   container: PluginContainer
   /**
-   * Module graph that tracks the import relationships, url -> file mapping
+   * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
    */
   moduleGraph: ModuleGraph
@@ -154,12 +154,10 @@ export async function createServer(
   const root = resolvedConfig.root
   const serverConfig = resolvedConfig.server || {}
 
-  const app = connect() as connect.Server
+  const app = connect() as Connect.Server
   const server = (await resolveServer(serverConfig, app)) as ViteDevServer
   const ws = setupWebSocketServer(server)
 
-  // try to load fsevents before starting chokidar
-  await loadFsEvents()
   const watchOptions = serverConfig.watch || {}
   const watcher = chokidar.watch(root, {
     ignored: [
@@ -247,7 +245,7 @@ export async function createServer(
     // TODO notify client
     res.statusCode = 500
     res.end()
-  }) as connect.ErrorHandleFunction)
+  }) as Connect.ErrorHandleFunction)
 
   // overwrite listen to run optimizer before server start
   const listen = server.listen.bind(server)
@@ -266,7 +264,7 @@ export async function createServer(
 
 async function resolveServer(
   { https = false, proxy }: ServerOptions,
-  app: connect.Server
+  app: Connect.Server
 ): Promise<http.Server> {
   if (!https) {
     return require('http').createServer(app)

@@ -1,8 +1,8 @@
 import path from 'path'
-import { NextHandleFunction } from 'connect'
+import { Connect } from '../../types/connect'
 import sirv from 'sirv'
 
-export function serveStaticMiddleware(dir: string): NextHandleFunction {
+export function serveStaticMiddleware(dir: string): Connect.NextHandleFunction {
   const serve = sirv(dir, { dev: true, etag: true })
   return (req, res, next) => {
     const ext = path.extname(req.url!)

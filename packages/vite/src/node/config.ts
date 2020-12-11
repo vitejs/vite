@@ -78,8 +78,6 @@ export interface UserConfig {
   build?: BuildOptions
 }
 
-export { ServerOptions, BuildOptions, CSSOptions }
-
 export type ConfigHook = (config: UserConfig) => UserConfig | void
 
 /**
@@ -294,11 +292,11 @@ async function loadConfigFromFile(
         treeshake: false,
         plugins: [
           // use esbuild + node-resolve to support .ts files
-          isTS ? esbuildPlugin({ target: 'es2019' }) : null,
+          esbuildPlugin({ target: 'es2019' }),
           nodeResolve({
             extensions: ['.mjs', '.js', '.ts', '.json']
           })
-        ].filter(Boolean)
+        ]
       })
 
       const {

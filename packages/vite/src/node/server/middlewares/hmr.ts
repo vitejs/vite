@@ -1,7 +1,7 @@
 import fs from 'fs'
 import _debug from 'debug'
 import getEtag from 'etag'
-import { NextHandleFunction } from 'connect'
+import { Connect } from '../../types/connect'
 import { send } from '../send'
 import { ServerContext } from '../..'
 import { isObject } from '../../utils'
@@ -21,7 +21,9 @@ export interface HmrOptions {
   timeout?: number
 }
 
-export function hmrMiddleware(context: ServerContext): NextHandleFunction {
+export function hmrMiddleware(
+  context: ServerContext
+): Connect.NextHandleFunction {
   const { watcher, config, moduleGraph } = context
 
   watcher.on('change', (file) => {

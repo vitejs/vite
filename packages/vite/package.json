@@ -41,11 +41,9 @@
   },
   "//": "READ .github/maintenance.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@types/connect": "^3.4.34",
-    "@types/http-proxy": "^1.17.4",
-    "@types/node": "^14.14.10",
     "esbuild": "^0.8.20",
     "fsevents": "~2.1.2",
+    "postcss": "^8.2.1",
     "rollup": "^2.34.2"
   },
   "devDependencies": {
@@ -58,6 +56,7 @@
     "@types/debug": "^4.1.5",
     "@types/es-module-lexer": "^0.3.0",
     "@types/etag": "^1.8.0",
+    "@types/node": "^14.14.10",
     "@types/ws": "^7.4.0",
     "acorn": "^8.0.4",
     "acorn-class-fields": "^0.3.7",
@@ -75,7 +74,6 @@
     "http-proxy": "^1.18.1",
     "magic-string": "^0.25.7",
     "merge-source-map": "^1.1.0",
-    "postcss": "^8.2.1",
     "postcss-import": "^13.0.0",
     "postcss-load-config": "^3.0.0",
     "postcss-modules": "^4.0.0",
