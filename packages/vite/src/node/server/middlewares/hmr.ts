@@ -4,9 +4,10 @@ import getEtag from 'etag'
 import { NextHandleFunction } from 'connect'
 import { send } from '../send'
 import { ServerContext } from '../..'
-import { isObject, prettifyUrl } from '../../utils'
-import { isCSSRequest } from '../../plugins/css'
+import { isObject } from '../../utils'
+import { ModuleNode } from '../moduleGraph'
 import chalk from 'chalk'
+import { UpdatePayload } from '../../../hmrPayload'
 
 export const debugHmr = _debug('vite:hmr')
 
@@ -21,9 +22,11 @@ export interface HmrOptions {
 }
 
 export function hmrMiddleware(context: ServerContext): NextHandleFunction {
-  const { watcher, config } = context
+  const { watcher, config, moduleGraph } = context
 
   watcher.on('change', (file) => {
+    // update module graph before performing update
+    moduleGraph.onFileChange(file)
     handleHMRUpdate(file, context)
   })
 
@@ -69,105 +72,55 @@ export function hmrMiddleware(context: ServerContext): NextHandleFunction {
 function handleHMRUpdate(file: string, context: ServerContext): any {
   debugHmr(`[file change] ${chalk.dim(file)}`)
 
-  const url = context.fileToUrlMap.get(file)
-  if (!url) {
-    // file probably never been loaded
-    debugHmr(`[no matching url] ${chalk.dim(file)}`)
-    return
-  }
-
-  const prettyUrl = prettifyUrl(url, context.config.root)
-  const mod = moduleGraph.get(url)
-  if (!mod) {
+  const mods = context.moduleGraph.getModulesByFile(file)
+  if (!mods) {
     // loaded but not in the module graph, probably not js
-    debugHmr(`[no module entry] ${prettyUrl}`)
+    debugHmr(`[no module entry] ${chalk.dim(file)}`)
     return
   }
 
-  const boundaries = traceModuleGraph(mod)
-  if (boundaries) {
-    context.ws.send({
-      type: 'multi',
-      updates: [...boundaries].map((boundary) => {
-        const updateUrl = boundary.url
-        // TODO differentiate css js
-        const type = isCSSRequest(updateUrl) ? 'style-update' : 'js-update'
-        debugHmr(`[${type}] ${boundary.url}`)
+  const updates: UpdatePayload[] = []
+  for (const mod of mods) {
+    const boundaries = propagateUpdate(mod)
+    if (!boundaries) {
+      debugHmr(`[full reload] ${chalk.dim(file)}`)
+      context.ws.send({
+        type: 'full-reload'
+      })
+      return
+    }
+
+    updates.push(
+      ...[...boundaries].map((boundary) => {
+        debugHmr(`[${boundary.type}] ${boundary.url}`)
         return {
-          type,
+          type: `${boundary.type}-update` as UpdatePayload['type'],
           path: boundary.url,
-          changedPath: url,
+          changedPath: mod.url,
           timestamp: Date.now()
         }
       })
-    })
-    return
+    )
   }
 
-  // fallback to full page reload
-  debugHmr(`[full reload] ${prettyUrl}`)
   context.ws.send({
-    type: 'full-reload'
+    type: 'multi',
+    updates
   })
 }
 
-class ModuleNode {
-  url: string
-  isBoundary = false
-  isDirty = false
-  deps = new Set<ModuleNode>()
-  importers = new Set<ModuleNode>()
-  constructor(url: string) {
-    this.url = url
-  }
-}
-
-// URL -> module map
-const moduleGraph = new Map<string, ModuleNode>()
-
-export function updateModuleGraph(
-  importerUrl: string,
-  deps: Set<string>,
-  isBoundary: boolean
-) {
-  // debug(
-  //   `${chalk.green(importerId)} imports ${JSON.stringify([...deps], null, 2)}`
-  // )
-  const importer = ensureEntry(importerUrl)
-  importer.isBoundary = isBoundary
-  const prevDeps = importer.deps
-  const newDeps = (importer.deps = new Set())
-  deps.forEach((url) => {
-    const dep = ensureEntry(url)
-    dep.importers.add(importer)
-    newDeps.add(dep)
-  })
-  // remove the importer from deps that were imported but no longer are.
-  prevDeps.forEach((dep) => {
-    if (!newDeps.has(dep)) {
-      dep.importers.delete(importer)
-    }
-  })
-}
-
-function ensureEntry(id: string): ModuleNode {
-  const entry = moduleGraph.get(id) || new ModuleNode(id)
-  moduleGraph.set(id, entry)
-  return entry
-}
-
-function traceModuleGraph(
+function propagateUpdate(
   node: ModuleNode,
   boundaries: Set<ModuleNode> = new Set()
 ) {
-  if (node.isBoundary) {
+  if (node.isHmrBoundary) {
     boundaries.add(node)
     return boundaries
   }
   if (
     node.importers.size &&
     [...node.importers].every((importer) =>
-      traceModuleGraph(importer, boundaries)
+      propagateUpdate(importer, boundaries)
     )
   ) {
     return boundaries

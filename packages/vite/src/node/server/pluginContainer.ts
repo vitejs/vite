@@ -303,7 +303,6 @@ export async function createPluginContainer(
     },
 
     async resolveId(id, importer, _skip) {
-      if (id === '@vue/runtime-dom') debugger
       const ctx = new Context()
       const key =
         (importer ? `${id}\n${importer}` : id) +

@@ -11,14 +11,14 @@ export interface ConnectedPayload {
 }
 
 export interface UpdatePayload {
-  type: 'js-update' | 'style-update'
+  type: 'js-update' | 'css-update'
   path: string
   changedPath: string
   timestamp: number
 }
 
 export interface StyleRemovePayload {
-  type: 'style-remove'
+  type: 'css-remove'
   path: string
 }
 

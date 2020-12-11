@@ -64,7 +64,7 @@ async function handleMessage(payload: HMRPayload) {
       // so send ping package let ws keep alive.
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
-    case 'style-update':
+    case 'css-update':
       // check if this is referenced in html via <link>
       // const el = document.querySelector(`link[href*='${path}']`)
       // if (el) {
@@ -78,7 +78,7 @@ async function handleMessage(payload: HMRPayload) {
       // await import(`${path}.js&t=${timestamp}`)
       // console.log(`[vite] ${path} updated.`)
       break
-    case 'style-remove':
+    case 'css-remove':
       removeStyle(path)
       break
     case 'js-update':
