@@ -777,7 +777,7 @@ function getEmitIndexPath(
 ) {
   if (typeof input === 'string' && path.resolve(root, input) === indexPath) {
     const ext = path.extname(indexPath)
-    return path.resolve(outDir, output.file || `index.${ext}`)
+    return path.resolve(outDir, output.file || `index${ext}`)
   }
 }
 
