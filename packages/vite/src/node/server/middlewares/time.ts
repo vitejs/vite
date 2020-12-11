@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import { NextHandleFunction } from 'connect'
 import _debug from 'debug'
 import { prettifyUrl, timeFrom } from '../../utils'

@@ -52,12 +52,7 @@ export async function transformFile(
   }
 
   // record file -> url relationships after successful resolve
-  let urls = fileToUrlMap.get(file)
-  if (!urls) {
-    urls = new Set<string>()
-    fileToUrlMap.set(file, urls)
-  }
-  urls.add(url)
+  fileToUrlMap.set(file, url)
 
   let code = null
   let map: SourceDescription['map'] = null
@@ -129,13 +124,11 @@ export function transformMiddleware(
   } = context
 
   watcher.on('change', (file) => {
-    const urls = fileToUrlMap.get(file)
-    if (urls) {
-      urls.forEach((url) => {
-        isDebug &&
-          debugCache(`busting transform cache for ${prettifyUrl(url, root)}`)
-        transformCache.delete(url)
-      })
+    const url = fileToUrlMap.get(file)
+    if (url) {
+      isDebug &&
+        debugCache(`busting transform cache for ${prettifyUrl(url, root)}`)
+      transformCache.delete(url)
     }
   })
 

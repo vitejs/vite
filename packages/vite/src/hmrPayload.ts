@@ -13,24 +13,23 @@ export interface ConnectedPayload {
 export interface UpdatePayload {
   type: 'js-update' | 'style-update'
   path: string
-  changeSrcPath: string
+  changedPath: string
   timestamp: number
 }
 
 export interface StyleRemovePayload {
   type: 'style-remove'
   path: string
-  id: string
 }
 
 export interface FullReloadPayload {
   type: 'full-reload'
-  path: string
+  id?: string
 }
 
 export interface CustomPayload {
   type: 'custom'
-  id: string
+  path: string
   customData: any
 }
 

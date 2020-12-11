@@ -1,5 +1,5 @@
 import _debug from 'debug'
-import { Plugin, ResolvedConfig } from '..'
+import { Plugin, ResolvedConfig, ServerContext } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from './resolve'
 import MagicString from 'magic-string'
@@ -7,10 +7,15 @@ import { init, parse, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest } from './css'
 import slash from 'slash'
 import { prettifyUrl, timeFrom } from '../utils'
+import {
+  debugHmr,
+  updateModuleGraph,
+  HMR_CLIENT_PATH
+} from '../server/middlewares/hmr'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = _debug('vite:rewrite')
-const debugNodeResolve = _debug('vite:resolve')
+const debugResolve = _debug('vite:resolve')
 
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) =>
@@ -47,6 +52,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
     name: 'vite:rewrite',
     async transform(source, importer) {
       const prettyImporter = prettifyUrl(slash(importer), config.root)
+
       if (canSkip(importer)) {
         isDebug && debugRewrite(chalk.dim(`[skipped] ${prettyImporter}`))
         return null
@@ -75,70 +81,114 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
         return source
       }
 
+      let hasHMR = false
+      let hasEnv = false
       let s: MagicString | undefined
+      const str = () => s || (s = new MagicString(source))
+      const importedUrls = new Set<string>()
+
       for (const { s: start, e: end, d: dynamicIndex } of imports) {
-        let id = source.substring(start, end)
-        const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(id)
-        let hasLiteralDynamicId = false
-        if (dynamicIndex >= 0) {
-          // #998 remove comment
-          id = id.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
-          const literalIdMatch = id.match(/^\s*(?:'([^']+)'|"([^"]+)")\s*$/)
-          if (literalIdMatch) {
-            hasLiteralDynamicId = true
-            id = literalIdMatch[1] || literalIdMatch[2]
+        let url = source.slice(start, end)
+
+        // check import.meta usage
+        if (url === 'import.meta') {
+          const prop = source.slice(end, end + 4)
+          if (prop === '.hot') {
+            hasHMR = true
+          } else if (prop === '.env') {
+            hasEnv = true
           }
         }
-        if (dynamicIndex === -1 || hasLiteralDynamicId) {
-          // resolve bare imports:
-          // e.g. `import 'foo'` -> `import '@fs/.../node_modules/foo/index.js`
-          if (id[0] !== '/' && id[0] !== '.') {
-            const resolveStart = Date.now()
-            const resolved = await this.resolve(id, importer)
-            timeSpentResolving += Date.now() - resolveStart
-            if (resolved) {
-              // resolved.id is now a file system path - convert it to url-like
-              // this will be unwrapped in the reoslve plugin
-              const prefixed = FILE_PREFIX + slash(resolved.id)
-              isDebug &&
-                debugNodeResolve(
-                  `${timeFrom(resolveStart)} ${chalk.cyan(id)} -> ${chalk.dim(
-                    prefixed
-                  )}`
-                )
-              ;(s || (s = new MagicString(source))).overwrite(
-                start,
-                end,
-                hasLiteralDynamicId ? `'${prefixed}'` : prefixed
+
+        // For dynamic id, check if it's a literal that we can resolve
+        let hasViteIgnore = false
+        let isLiteralDynamicId = false
+        if (dynamicIndex >= 0) {
+          // check @vite-ignore which suppresses dynamic import warning
+          hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(url)
+          // #998 remove comment
+          url = url.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
+          const literalIdMatch = url.match(/^\s*(?:'([^']+)'|"([^"]+)")\s*$/)
+          if (literalIdMatch) {
+            isLiteralDynamicId = true
+            url = literalIdMatch[1] || literalIdMatch[2]
+          }
+        }
+
+        // If resolvable, let's resolve it
+        if (dynamicIndex === -1 || isLiteralDynamicId) {
+          const resolveStart = Date.now()
+          const resolved = await this.resolve(url, importer)
+          timeSpentResolving += Date.now() - resolveStart
+
+          if (!resolved || !resolved.id) {
+            console.warn(
+              chalk.yellow(
+                `[vite] failed to resolve import ${chalk.cyan(
+                  url
+                )} from ${chalk.yellow(importer)}.`
               )
-            } else {
-              console.warn(
-                chalk.yellow(`[vite] cannot resolve bare import "${id}".`)
-              )
-            }
+            )
+            continue
+          }
+
+          if (isDebug && url !== resolved.id) {
+            debugResolve(
+              `${timeFrom(resolveStart)} ${chalk.cyan(url)} -> ${chalk.dim(
+                resolved.id
+              )}`
+            )
+          }
+
+          // bare imports must be rewritten into valid URLs to make them
+          // compliant with native browser ESM.
+          // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
+          if (!url.startsWith('/') && !url.startsWith('./')) {
+            // prefix with /@fs/
+            url = FILE_PREFIX + slash(resolved.id)
+            str().overwrite(start, end, isLiteralDynamicId ? `'${url}'` : url)
           }
 
           // resolve CSS imports into js (so it differentiates from actual
           // CSS references from <link>)
-          if (isCSSRequest(id)) {
-            ;(s || (s = new MagicString(source))).appendLeft(end, '.js')
+          if (isCSSRequest(url)) {
+            str().appendLeft(end, '.js')
           }
-        } else if (id !== 'import.meta' && !hasViteIgnore) {
+
+          // record for module graph analysis.
+          importedUrls.add(url)
+        } else if (url !== 'import.meta' && !hasViteIgnore) {
           console.warn(
-            chalk.yellow(`[vite] ignored dynamic import(${id}) in ${importer}.`)
+            chalk.yellow(
+              `[vite] ignored dynamic import(${url}) in ${importer}.`
+            )
           )
         }
       }
 
-      // TODO env?
-      // if (hasEnv) {
-      //   debug(`    injecting import.meta.env for ${importer}`)
-      //   s.prepend(
-      //     `import __VITE_ENV__ from "${envPublicPath}"; ` +
-      //       `import.meta.env = __VITE_ENV__; `
-      //   )
-      //   hasReplaced = true
-      // }
+      // vite-only server context
+      const serverContext = (this as any).serverContext as ServerContext
+      // since we are already in the transform phase of the importer, it must
+      // have been resolved so its entry is guaranteed in the fileToUrlMap.
+      const importerUrl = serverContext.fileToUrlMap.get(importer)!
+      // update the module graph for HMR analysis
+      updateModuleGraph(importerUrl, importedUrls, hasHMR)
+
+      if (hasHMR) {
+        debugHmr(`${chalk.green(`[enabled]`)} ${prettyImporter}`)
+        // inject hot context
+        str().prepend(
+          `import { createHotContext } from "${HMR_CLIENT_PATH}";` +
+            `import.meta.hot = createHotContext(${JSON.stringify(
+              importerUrl
+            )});`
+        )
+      }
+
+      if (hasEnv) {
+        // inject import.meta.env
+        str().prepend(`import.meta.env = ${JSON.stringify(config.env)};`)
+      }
 
       const result = s ? s.toString() : source
       isDebug &&

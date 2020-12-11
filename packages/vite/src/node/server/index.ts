@@ -130,7 +130,7 @@ export interface ServerContext {
   /**
    * Maps file paths back to served URLs
    */
-  fileToUrlMap: Map<string, Set<string>>
+  fileToUrlMap: Map<string, string>
   /**
    * @internal
    */
@@ -176,8 +176,6 @@ export async function createServer(
 
   const plugins = resolvedConfig.plugins
   const container = await createPluginContainer(plugins, {}, root, watcher)
-  await container.buildStart({})
-
   const context: ServerContext = (server.context = {
     config: resolvedConfig,
     app,
@@ -188,6 +186,8 @@ export async function createServer(
     transformCache: new Map(),
     fileToUrlMap: new Map()
   })
+  container.serverContext = context
+  await container.buildStart({})
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
@@ -247,6 +247,7 @@ export async function createServer(
   app.use(((err, _req, res, _next) => {
     console.error(chalk.red(`[vite] Internal server error:`))
     console.error(err.stack)
+    // TODO notify client
     res.statusCode = 500
     res.end()
   }) as connect.ErrorHandleFunction)

@@ -1,10 +1,14 @@
 import fs from 'fs'
+import _debug from 'debug'
 import getEtag from 'etag'
 import { NextHandleFunction } from 'connect'
 import { send } from '../send'
 import { ServerContext } from '../..'
-import { isObject } from '../../utils'
-import { HMRPayload } from '../../../client/hmrPayload'
+import { isObject, prettifyUrl } from '../../utils'
+import { isCSSRequest } from '../../plugins/css'
+import chalk from 'chalk'
+
+export const debugHmr = _debug('vite:hmr')
 
 export const HMR_CLIENT_PATH = `/vite/client`
 
@@ -16,17 +20,11 @@ export interface HmrOptions {
   timeout?: number
 }
 
-export function hmrMiddleware({
-  watcher,
-  ws,
-  config,
-  fileToUrlMap
-}: ServerContext): NextHandleFunction {
+export function hmrMiddleware(context: ServerContext): NextHandleFunction {
+  const { watcher, config } = context
+
   watcher.on('change', (file) => {
-    const urls = fileToUrlMap.get(file)
-    if (urls) {
-      ws.send(getHMRPayload(urls))
-    }
+    handleHMRUpdate(file, context)
   })
 
   const clientCode = fs
@@ -68,9 +66,110 @@ export function hmrMiddleware({
   }
 }
 
-function getHMRPayload(urls: Set<string>): HMRPayload {
-  return {
-    type: 'full-reload',
-    path: '/'
+function handleHMRUpdate(file: string, context: ServerContext): any {
+  debugHmr(`[file change] ${chalk.dim(file)}`)
+
+  const url = context.fileToUrlMap.get(file)
+  if (!url) {
+    // file probably never been loaded
+    debugHmr(`[no matching url] ${chalk.dim(file)}`)
+    return
+  }
+
+  const prettyUrl = prettifyUrl(url, context.config.root)
+  const mod = moduleGraph.get(url)
+  if (!mod) {
+    // loaded but not in the module graph, probably not js
+    debugHmr(`[no module entry] ${prettyUrl}`)
+    return
+  }
+
+  const boundaries = traceModuleGraph(mod)
+  if (boundaries) {
+    context.ws.send({
+      type: 'multi',
+      updates: [...boundaries].map((boundary) => {
+        const updateUrl = boundary.url
+        // TODO differentiate css js
+        const type = isCSSRequest(updateUrl) ? 'style-update' : 'js-update'
+        debugHmr(`[${type}] ${boundary.url}`)
+        return {
+          type,
+          path: boundary.url,
+          changedPath: url,
+          timestamp: Date.now()
+        }
+      })
+    })
+    return
+  }
+
+  // fallback to full page reload
+  debugHmr(`[full reload] ${prettyUrl}`)
+  context.ws.send({
+    type: 'full-reload'
+  })
+}
+
+class ModuleNode {
+  url: string
+  isBoundary = false
+  isDirty = false
+  deps = new Set<ModuleNode>()
+  importers = new Set<ModuleNode>()
+  constructor(url: string) {
+    this.url = url
+  }
+}
+
+// URL -> module map
+const moduleGraph = new Map<string, ModuleNode>()
+
+export function updateModuleGraph(
+  importerUrl: string,
+  deps: Set<string>,
+  isBoundary: boolean
+) {
+  // debug(
+  //   `${chalk.green(importerId)} imports ${JSON.stringify([...deps], null, 2)}`
+  // )
+  const importer = ensureEntry(importerUrl)
+  importer.isBoundary = isBoundary
+  const prevDeps = importer.deps
+  const newDeps = (importer.deps = new Set())
+  deps.forEach((url) => {
+    const dep = ensureEntry(url)
+    dep.importers.add(importer)
+    newDeps.add(dep)
+  })
+  // remove the importer from deps that were imported but no longer are.
+  prevDeps.forEach((dep) => {
+    if (!newDeps.has(dep)) {
+      dep.importers.delete(importer)
+    }
+  })
+}
+
+function ensureEntry(id: string): ModuleNode {
+  const entry = moduleGraph.get(id) || new ModuleNode(id)
+  moduleGraph.set(id, entry)
+  return entry
+}
+
+function traceModuleGraph(
+  node: ModuleNode,
+  boundaries: Set<ModuleNode> = new Set()
+) {
+  if (node.isBoundary) {
+    boundaries.add(node)
+    return boundaries
+  }
+  if (
+    node.importers.size &&
+    [...node.importers].every((importer) =>
+      traceModuleGraph(importer, boundaries)
+    )
+  ) {
+    return boundaries
   }
 }
