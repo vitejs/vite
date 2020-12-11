@@ -150,6 +150,7 @@ export interface Plugin extends RollupPlugin {
 
 export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins'> & {
+    configPath: string | null
     root: string
     mode: string
     env: Record<string, string>
@@ -208,6 +209,7 @@ export async function resolveConfig(
 
   const resolved = {
     ...config,
+    configPath: configPath || null,
     root: resolvedRoot,
     mode,
     plugins: userPlugins,

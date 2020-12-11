@@ -28,7 +28,6 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 }
 
 export function proxyMiddleware({
-  app,
   server,
   config
 }: ServerContext): Connect.NextHandleFunction {
