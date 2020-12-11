@@ -26,6 +26,11 @@ export class ModuleNode {
   }
 }
 
+const REQUIRE_EXT_MSG =
+  `ModuleGraph url keys must be resolved with extensions to ensure mapping ` +
+  `consistency. Call container.resolveId() first and append the necessary ` +
+  `extension before passing the url to ModuleGraph methods.`
+
 export class ModuleGraph {
   private urlToModuleMap = new Map<string, ModuleNode>()
   private idToModuleMap = new Map<string, ModuleNode>()
@@ -33,6 +38,9 @@ export class ModuleGraph {
   private fileToModulesMap = new Map<string, Set<ModuleNode>>()
 
   getModuleByUrl(url: string) {
+    if (!url.includes('.')) {
+      throw new Error(REQUIRE_EXT_MSG)
+    }
     return this.urlToModuleMap.get(removeTimestampQuery(url))
   }
 
@@ -75,6 +83,9 @@ export class ModuleGraph {
   }
 
   ensureEntry(url: string, resolvedId?: string) {
+    if (!url.includes('.')) {
+      throw new Error(REQUIRE_EXT_MSG)
+    }
     url = removeTimestampQuery(url)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {

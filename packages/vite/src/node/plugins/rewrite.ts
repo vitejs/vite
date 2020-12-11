@@ -193,8 +193,10 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      // update the module graph for HMR analysis
-      moduleGraph.updateModuleInfo(importerModule, importedUrls, isHMRBoundary)
+      if (hasEnv) {
+        // inject import.meta.env
+        str().prepend(`import.meta.env = ${JSON.stringify(config.env)};\n`)
+      }
 
       if (hasHMR) {
         debugHmr(
@@ -206,26 +208,31 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
         )
         // inject hot context
         str().prepend(
-          `import { createHotContext } from "${HMR_CLIENT_PATH}";` +
+          `import { createHotContext } from "${HMR_CLIENT_PATH}";\n` +
             `import.meta.hot = createHotContext(${JSON.stringify(
               importerModule.url
-            )});`
+            )});\n`
         )
       }
 
-      if (hasEnv) {
-        // inject import.meta.env
-        str().prepend(`import.meta.env = ${JSON.stringify(config.env)};`)
-      }
+      // update the module graph for HMR analysis
+      moduleGraph.updateModuleInfo(importerModule, importedUrls, isHMRBoundary)
 
-      const result = s ? s.toString() : source
       isDebug &&
         debugRewrite(
           `${timeFrom(rewriteStart, timeSpentResolving)} ${chalk.dim(
             prettyImporter
           )}`
         )
-      return result
+
+      if (s) {
+        return {
+          code: s.toString(),
+          map: s.generateMap({ hires: true })
+        }
+      } else {
+        return source
+      }
     }
   }
 }

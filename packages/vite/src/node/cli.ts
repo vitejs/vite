@@ -59,7 +59,8 @@ cli
       options.mode,
       options.config
     ).catch((e) => {
-      console.error(chalk.red(e.toString()))
+      console.log(chalk.red('[vite] failed to start dev server'))
+      console.error(e.stack)
       process.exit(1)
     })
   })

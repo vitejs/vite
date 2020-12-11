@@ -11,12 +11,14 @@ export function resolvePlugins(
   command: 'build' | 'serve',
   config: ResolvedConfig,
   prePlugins: Plugin[],
+  normalPlugins: Plugin[],
   postPlugins: Plugin[]
 ): Plugin[] {
   const isBuild = command === 'build'
 
   return [
     ...prePlugins,
+    ...normalPlugins,
     resolvePlugin(config),
     nodeResolve({
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
