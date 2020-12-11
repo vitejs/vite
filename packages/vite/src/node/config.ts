@@ -62,7 +62,7 @@ export interface UserConfig {
   /**
    * List of vite plugins to use.
    */
-  plugins?: Plugin[]
+  plugins?: (Plugin | Plugin[])[]
   /**
    * Universal rollup options (used in both serve and build)
    * Use function config to use conditional options for serve/build
@@ -184,7 +184,7 @@ export async function resolveConfig(
   const normalPlugins: Plugin[] = []
 
   if (plugins) {
-    plugins.forEach((p) => {
+    plugins.flat().forEach((p) => {
       if (p.enforce === 'pre') prePlugins.push(p)
       else if (p.enforce === 'post') postPlugins.push(p)
       else normalPlugins.push(p)
@@ -220,7 +220,8 @@ export async function resolveConfig(
   resolved.plugins = resolvePlugins(
     command,
     resolved,
-    [...prePlugins, ...normalPlugins],
+    prePlugins,
+    normalPlugins,
     postPlugins
   )
 
