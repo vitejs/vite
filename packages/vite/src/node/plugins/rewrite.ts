@@ -12,7 +12,6 @@ import { debugHmr, HMR_CLIENT_PATH } from '../server/middlewares/hmr'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = _debug('vite:rewrite')
-const debugResolve = _debug('vite:resolve')
 
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
@@ -137,14 +136,6 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
             continue
           }
 
-          if (isDebug && url !== resolved.id) {
-            debugResolve(
-              `${timeFrom(resolveStart)} ${chalk.cyan(url)} -> ${chalk.dim(
-                resolved.id
-              )}`
-            )
-          }
-
           // bare imports must be rewritten into valid URLs to make them
           // compliant with native browser ESM.
           // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
@@ -152,14 +143,6 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
             // prefix with /@fs/
             url = FILE_PREFIX + slash(resolved.id)
             str().overwrite(start, end, isLiteralDynamicId ? `'${url}'` : url)
-          } else {
-            const resolvedExt = path.extname(resolved.id)
-            if (resolvedExt && !url.endsWith(resolvedExt)) {
-              // append resolved extension so that url -> module mapping can be
-              // 1 to 1
-              url += resolvedExt
-              str().appendLeft(end, resolvedExt)
-            }
           }
 
           // resolve CSS imports into js (so it differentiates from actual
@@ -175,7 +158,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           // check if the dep has been hmr updated. If yes, we need to attach
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
-          const depModule = moduleGraph.ensureEntry(absoluteUrl)
+          const depModule = await moduleGraph.ensureEntry(absoluteUrl)
           if (depModule.lastHMRTimestamp > 0) {
             str().appendLeft(
               end,
@@ -216,7 +199,11 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       }
 
       // update the module graph for HMR analysis
-      moduleGraph.updateModuleInfo(importerModule, importedUrls, isHMRBoundary)
+      await moduleGraph.updateModuleInfo(
+        importerModule,
+        importedUrls,
+        isHMRBoundary
+      )
 
       isDebug &&
         debugRewrite(

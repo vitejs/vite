@@ -1,7 +1,9 @@
 import _debug from 'debug'
+import { extname } from 'path'
 import { isCSSRequest, unwrapCSSProxy } from '../plugins/css'
 import { cleanUrl, removeTimestampQuery } from '../utils'
 import { TransformResult } from './middlewares/transform'
+import { PluginContainer } from './pluginContainer'
 
 export class ModuleNode {
   /**
@@ -26,22 +28,38 @@ export class ModuleNode {
   }
 }
 
-const REQUIRE_EXT_MSG =
-  `ModuleGraph url keys must be resolved with extensions to ensure mapping ` +
-  `consistency. Call container.resolveId() first and append the necessary ` +
-  `extension before passing the url to ModuleGraph methods.`
-
 export class ModuleGraph {
   private urlToModuleMap = new Map<string, ModuleNode>()
   private idToModuleMap = new Map<string, ModuleNode>()
   // a single file may corresponds to multiple modules with different queries
   private fileToModulesMap = new Map<string, Set<ModuleNode>>()
 
-  getModuleByUrl(url: string) {
-    if (!url.includes('.')) {
-      throw new Error(REQUIRE_EXT_MSG)
+  normalizeUrl: (url: string, resolveId?: string) => Promise<string>
+
+  constructor(container: PluginContainer) {
+    // for incoming urls, it is important to:
+    // 1. remove the HMR timestamp query (?t=xxxx)
+    // 2. resolve its extension so that urls with or without extension all map to
+    // the same module
+    this.normalizeUrl = async (url, resolveId) => {
+      url = removeTimestampQuery(url)
+      if (!resolveId) {
+        resolveId = (await container.resolveId(url))?.id
+        if (!resolveId) {
+          throw Error(`failed to resolve url to id: ${url}`)
+        }
+      }
+      const ext = extname(cleanUrl(resolveId))
+      const [pathname, query] = url.split('?')
+      if (ext && !pathname.endsWith(ext)) {
+        return pathname + ext + (query ? `?${query}` : ``)
+      }
+      return url
     }
-    return this.urlToModuleMap.get(removeTimestampQuery(url))
+  }
+
+  async getModuleByUrl(url: string) {
+    return this.urlToModuleMap.get(await this.normalizeUrl(url))
   }
 
   getModuleById(id: string) {
@@ -61,7 +79,7 @@ export class ModuleGraph {
     }
   }
 
-  updateModuleInfo(
+  async updateModuleInfo(
     mod: ModuleNode,
     depUrls: Set<string>,
     isHmrBoundary: boolean
@@ -69,11 +87,11 @@ export class ModuleGraph {
     mod.isHmrBoundary = isHmrBoundary
     const prevDeps = mod.deps
     const newDeps = (mod.deps = new Set())
-    depUrls.forEach((depUrl) => {
-      const dep = this.ensureEntry(depUrl)
+    for (const depUrl of depUrls) {
+      const dep = await this.ensureEntry(depUrl)
       dep.importers.add(mod)
       newDeps.add(dep)
-    })
+    }
     // remove the importer from deps that were imported but no longer are.
     prevDeps.forEach((dep) => {
       if (!newDeps.has(dep)) {
@@ -82,11 +100,8 @@ export class ModuleGraph {
     })
   }
 
-  ensureEntry(url: string, resolvedId?: string) {
-    if (!url.includes('.')) {
-      throw new Error(REQUIRE_EXT_MSG)
-    }
-    url = removeTimestampQuery(url)
+  async ensureEntry(url: string, resolvedId?: string) {
+    url = await this.normalizeUrl(url, resolvedId)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)

@@ -1,5 +1,5 @@
 // This file runs in the browser.
-import { HMRPayload, UpdatePayload, MultiUpdatePayload } from '../hmrPayload'
+import { HMRPayload, UpdatePayload } from '../hmrPayload'
 
 // injected by serverPluginClient when served
 declare const __HMR_PROTOCOL__: string
@@ -47,12 +47,7 @@ function warnFailedFetch(err: Error, path: string | string[]) {
 
 // Listen for messages
 socket.addEventListener('message', async ({ data }) => {
-  const payload = JSON.parse(data) as HMRPayload | MultiUpdatePayload
-  if (payload.type === 'multi') {
-    payload.updates.forEach(handleMessage)
-  } else {
-    handleMessage(payload)
-  }
+  handleMessage(JSON.parse(data))
 })
 
 async function handleMessage(payload: HMRPayload) {
@@ -64,25 +59,25 @@ async function handleMessage(payload: HMRPayload) {
       // so send ping package let ws keep alive.
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
-    case 'css-update':
-      // check if this is referenced in html via <link>
-      // const el = document.querySelector(`link[href*='${path}']`)
-      // if (el) {
-      //   el.setAttribute(
-      //     'href',
-      //     `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
-      //   )
-      //   break
-      // }
-      // // imported CSS proxy module again
-      // await import(`${path}.js&t=${timestamp}`)
-      // console.log(`[vite] ${path} updated.`)
-      break
-    case 'css-remove':
-      removeStyle(path)
+    case 'multi':
+      payload.updates.forEach(handleMessage)
       break
     case 'js-update':
       queueUpdate(updateModule(path, changedPath, timestamp))
+      break
+    case 'css-update':
+      // this is only sent when a css file referened with <link> is updated
+      const el = document.querySelector(`link[href*='${path}']`)
+      if (el) {
+        el.setAttribute(
+          'href',
+          `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
+        )
+        break
+      }
+      break
+    case 'css-remove':
+      removeStyle(path)
       break
     case 'custom':
       const cbs = customUpdateMap.get(payload.path)
@@ -105,6 +100,13 @@ async function handleMessage(payload: HMRPayload) {
       } else {
         location.reload()
       }
+      break
+    case 'error':
+      console.error(payload.stack)
+      break
+    default:
+      const check: never = payload
+      return check
   }
 }
 

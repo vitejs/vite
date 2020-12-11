@@ -14,6 +14,7 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
         // we transform them into special prefixed paths.
         if (id.startsWith(FILE_PREFIX)) {
           id = id.slice(FILE_PREFIX.length - 1)
+          if (id.startsWith('//')) id = id.slice(1)
         } else {
           // url -> file
           id = path.resolve(root, id.slice(1))

@@ -1,7 +1,7 @@
 // @ts-check
 const fs = require('fs')
 
-const runtimePublicPath = '/@react-refresh.js'
+const runtimePublicPath = '/@react-refresh'
 const runtimeFilePath = require.resolve(
   'react-refresh/cjs/react-refresh-runtime.development.js'
 )
@@ -28,6 +28,7 @@ export default exports
 const resolve = {
   name: 'react-refresh-resolve',
   resolveId(id) {
+    // TODO we don't need this when optimizer is in place
     if (id === 'react') {
       return this.resolve('@pika/react/source.development.js')
     }
