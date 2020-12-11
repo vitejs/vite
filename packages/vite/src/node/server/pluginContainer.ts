@@ -47,7 +47,8 @@ import {
   LoadResult,
   SourceDescription,
   EmittedFile,
-  SourceMap
+  SourceMap,
+  RollupError
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
@@ -55,7 +56,13 @@ import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import { ServerContext } from '..'
-import { createDebugger, prettifyUrl, timeFrom } from '../utils'
+import {
+  createDebugger,
+  generateCodeFrame,
+  posToNumber,
+  prettifyUrl,
+  timeFrom
+} from '../utils'
 import chalk from 'chalk'
 
 export interface PluginContainerOptions {
@@ -149,10 +156,12 @@ export async function createPluginContainer(
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
     meta = minimalContext.meta
-    activePlugin: Plugin | null
+    _activePlugin: Plugin | null
+    _activeId: string | null = null
+    _activeCode: string | null = null
 
     constructor(initialPlugin?: Plugin) {
-      this.activePlugin = initialPlugin || null
+      this._activePlugin = initialPlugin || null
     }
 
     /**
@@ -178,7 +187,7 @@ export async function createPluginContainer(
       options?: { skipSelf?: boolean }
     ) {
       const skip = []
-      if (options?.skipSelf && this.activePlugin) skip.push(this.activePlugin)
+      if (options?.skipSelf && this._activePlugin) skip.push(this._activePlugin)
       let out = await container.resolveId(id, importer, skip)
       if (typeof out === 'string') out = { id: out }
       if (!out || !out.id) out = { id }
@@ -257,12 +266,26 @@ export async function createPluginContainer(
 
     // TODO
     warn(...args: any[]) {
-      console.warn(`[${this.activePlugin!.name}]`, ...args)
+      console.warn(`[${this._activePlugin!.name}]`, ...args)
     }
 
-    // TODO
-    error(e: any): never {
-      throw e
+    error(
+      e: string | RollupError,
+      position?: number | { column: number; line: number }
+    ): never {
+      const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
+      if (this._activePlugin) err.plugin = this._activePlugin.name
+      if (this._activeId && !err.id) err.id = this._activeId
+      if (this._activeCode) {
+        err.pluginCode = this._activeCode
+        if (position) {
+          err.pos = posToNumber(this._activeCode, position)
+          err.frame = generateCodeFrame(this._activeCode, err.pos)
+        }
+      }
+      // error thrown here is caught by the transform middleware and passed on
+      // the the error middleware.
+      throw err
     }
   }
 
@@ -378,7 +401,7 @@ export async function createPluginContainer(
           resolveSkips.add(plugin, key)
         }
 
-        ctx.activePlugin = plugin
+        ctx._activePlugin = plugin
 
         let result
         try {
@@ -421,7 +444,7 @@ export async function createPluginContainer(
       const ctx = new Context()
       for (const plugin of plugins) {
         if (!plugin.load) continue
-        ctx.activePlugin = plugin
+        ctx._activePlugin = plugin
         const result = await plugin.load.call(ctx as any, id)
         if (result) {
           return result
@@ -434,7 +457,9 @@ export async function createPluginContainer(
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       for (const plugin of plugins) {
         if (!plugin.transform) continue
-        ctx.activePlugin = plugin
+        ctx._activePlugin = plugin
+        ctx._activeId = id
+        ctx._activeCode = code
         const start = Date.now()
         const result = await plugin.transform.call(ctx as any, code, id)
         debugPluginTransform(timeFrom(start), plugin.name, id)
@@ -457,7 +482,7 @@ export async function createPluginContainer(
       if (watchFiles.has(id)) {
         for (const plugin of plugins) {
           if (!plugin.watchChange) continue
-          ctx.activePlugin = plugin
+          ctx._activePlugin = plugin
           plugin.watchChange.call(ctx as any, id, { event })
         }
       }
@@ -467,7 +492,7 @@ export async function createPluginContainer(
       const ctx = new Context()
       for (const plugin of plugins) {
         if (!plugin.resolveImportMeta) continue
-        ctx.activePlugin = plugin
+        ctx._activePlugin = plugin
         const result = plugin.resolveImportMeta.call(ctx as any, property, {
           chunkId: '',
           moduleId: id,
@@ -500,7 +525,7 @@ export async function createPluginContainer(
       const ctx = new Context()
       for (const plugin of plugins) {
         if (!plugin.resolveFileUrl) continue
-        ctx.activePlugin = plugin
+        ctx._activePlugin = plugin
         // @ts-ignore
         const result = plugin.resolveFileUrl.call(ctx, assetInfo)
         if (result != null) {

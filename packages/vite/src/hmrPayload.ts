@@ -41,6 +41,14 @@ export interface CustomPayload {
 
 export interface ErrorPayload {
   type: 'error'
-  message: string
-  stack: string
+  err: {
+    [name: string]: any
+    message: string
+    stack: string
+    id?: string
+    frame?: string
+    plugin?: string
+    pluginCode?: string
+    pos?: number
+  }
 }

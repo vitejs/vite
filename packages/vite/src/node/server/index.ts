@@ -25,6 +25,7 @@ import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
 import { Connect } from '../types/connect'
 import { createDebugger } from '../utils'
+import { errorMiddleware } from './middlewares/error'
 
 export interface ServerOptions {
   host?: string
@@ -238,18 +239,7 @@ export async function createServer(
   })
 
   // error handler
-  // note the 4 args must be kept for connect to treat this as error middleware
-  app.use(((err, _req, res, _next) => {
-    console.error(chalk.red(`[vite] Internal server error:`))
-    console.error(err.stack)
-    ws.send({
-      type: 'error',
-      message: err.message,
-      stack: err.stack
-    })
-    res.statusCode = 500
-    res.end()
-  }) as Connect.ErrorHandleFunction)
+  app.use(errorMiddleware(context))
 
   // overwrite listen to run optimizer before server start
   const listen = server.listen.bind(server)

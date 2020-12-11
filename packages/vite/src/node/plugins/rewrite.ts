@@ -59,13 +59,11 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       try {
         imports = parse(source)[0]
       } catch (e) {
-        this.warn(
-          `failed to parse ${chalk.cyan(
-            importer
-          )} for import rewrite.\nIf you are using ` +
-            `JSX, make sure to named the file with the .jsx extension.`
+        this.error(
+          `Failed to parse source for import rewrite.\n` +
+            `It seems the file has not been properly transformed to JS.\n` +
+            `If you are using JSX, make sure to named the file with the .jsx extension.`
         )
-        return source
       }
 
       if (!imports.length) {

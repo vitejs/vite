@@ -113,11 +113,31 @@ export function lookupFile(
 
 const range: number = 2
 
+export function pad(source: string, n = 2) {
+  const lines = source.split(/\r?\n/)
+  return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
+}
+
+export function posToNumber(
+  source: string,
+  pos: number | { line: number; column: number }
+): number {
+  if (typeof pos === 'number') return pos
+  const lines = source.split(/\r?\n/)
+  const { line, column } = pos
+  let start = 0
+  for (let i = 0; i < line; i++) {
+    start += lines[i].length
+  }
+  return start + column - 1
+}
+
 export function generateCodeFrame(
   source: string,
-  start = 0,
+  start: number | { line: number; column: number } = 0,
   end = source.length
 ): string {
+  start = posToNumber(source, start)
   const lines = source.split(/\r?\n/)
   let count = 0
   const res: string[] = []
