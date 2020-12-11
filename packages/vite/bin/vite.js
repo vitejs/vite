@@ -18,7 +18,7 @@ if (debugIndex > 0) {
   }
   process.env.DEBUG = value
 
-  if (filterIndex) {
+  if (filterIndex > 0) {
     const filter = process.argv[filterIndex + 1]
     if (filter && !filter.startsWith('-')) {
       process.env.VITE_DEBUG_FILTER = filter

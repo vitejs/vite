@@ -1,5 +1,5 @@
 import { Plugin, ResolvedConfig } from '..'
-import { resolvePlugin } from './resolve'
+import { resolvePlugin, supportedExts } from './resolve'
 import { esbuildPlugin } from './esbuild'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import json from '@rollup/plugin-json'
@@ -21,7 +21,7 @@ export function resolvePlugins(
     ...normalPlugins,
     resolvePlugin(config),
     nodeResolve({
-      extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
+      extensions: supportedExts,
       mainFields: ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
     }),
     esbuildPlugin(config.esbuild || {}),
