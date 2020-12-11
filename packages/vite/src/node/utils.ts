@@ -15,7 +15,7 @@ export const isExternalUrl = (url: string) => externalRE.test(url)
 
 export function timeFrom(start: number, subtract = 0) {
   const time: number | string = Date.now() - start - subtract
-  const timeString = time + `ms`
+  const timeString = (time + `ms`).padEnd(5, ' ')
   if (time < 10) {
     return chalk.green(timeString)
   } else if (time < 50) {

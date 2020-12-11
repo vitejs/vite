@@ -29,6 +29,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+import fs from 'fs'
+import _debug from 'debug'
 import { resolve, relative, dirname, sep, posix } from 'path'
 import { createHash } from 'crypto'
 import { Plugin } from '../config'
@@ -54,6 +56,21 @@ import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import { ServerContext } from '..'
+import { prettifyUrl, timeFrom } from '../utils'
+import chalk from 'chalk'
+
+const isDebug = process.env.DEBUG
+const debugResolve = _debug('vite:resolve')
+
+// plugin debug logs are disabled by default unless explicitly enabled with
+// vite --debug plugin-*
+const createPluginDebug = (ns: string) =>
+  isDebug && isDebug.includes('vite:plugin')
+    ? _debug(`vite:plugin-${ns}`)
+    : () => {}
+
+const debugPluginResolve = createPluginDebug('resolve')
+const debugPluginTransform = createPluginDebug('transform')
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -111,9 +128,12 @@ export async function createPluginContainer(
   const watchFiles = new Set<string>()
   const resolveCache = new Map<string, PartialResolvedId>()
 
+  // get rollup version
+  const rollupPkgPath = resolve(require.resolve('rollup'), '../../package.json')
   const minimalContext: MinimalPluginContext = {
     meta: {
-      rollupVersion: '2.8.0',
+      rollupVersion: JSON.parse(fs.readFileSync(rollupPkgPath, 'utf-8'))
+        .version,
       watchMode: true
     }
   }
@@ -291,6 +311,8 @@ export async function createPluginContainer(
     }
   }
 
+  let nestedResolveCall = 0
+
   const container: PluginContainer = {
     serverContext: null, // will be set after creation
 
@@ -326,7 +348,8 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(id, importer, _skip) {
+    async resolveId(rawId, importer, _skip) {
+      let id = rawId
       const ctx = new Context()
       const key =
         (importer ? `${id}\n${importer}` : id) +
@@ -335,6 +358,9 @@ export async function createPluginContainer(
       if (resolveCache.has(key)) {
         return resolveCache.get(key)!
       }
+
+      nestedResolveCall++
+      const resolveStart = Date.now()
 
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of plugins) {
@@ -350,7 +376,14 @@ export async function createPluginContainer(
 
         let result
         try {
+          const pluginResolveStart = Date.now()
           result = await plugin.resolveId.call(ctx as any, id, importer, {})
+          isDebug &&
+            debugPluginResolve(
+              `${timeFrom(pluginResolveStart)} [${plugin.name}] ${chalk.dim(
+                rawId
+              )}`
+            )
         } finally {
           if (_skip) resolveSkips.delete(plugin, key)
         }
@@ -371,6 +404,14 @@ export async function createPluginContainer(
       if (id) {
         resolveCache.set(key, partial as PartialResolvedId)
       }
+
+      nestedResolveCall--
+      isDebug &&
+        !nestedResolveCall &&
+        debugResolve(
+          `${timeFrom(resolveStart)} ${chalk.cyan(rawId)} -> ${chalk.dim(id)}`
+        )
+
       return id ? (partial as PartialResolvedId) : null
     },
 
@@ -392,7 +433,11 @@ export async function createPluginContainer(
       for (const plugin of plugins) {
         if (!plugin.transform) continue
         ctx.activePlugin = plugin
+        const start = Date.now()
         const result = await plugin.transform.call(ctx as any, code, id)
+        debugPluginTransform(
+          `${timeFrom(start)} [${plugin.name}] ${prettifyUrl(id, root)}`
+        )
         if (!result) continue
         if (typeof result === 'object') {
           code = result.code || ''

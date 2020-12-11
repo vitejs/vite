@@ -1,5 +1,4 @@
 import _debug from 'debug'
-import path from 'path'
 import getEtag from 'etag'
 import fs, { promises as fsp } from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
@@ -32,9 +31,10 @@ export async function transformFile(
   { config: { root }, container, moduleGraph }: ServerContext
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
-
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
-  const cached = moduleGraph.getModuleByUrl(url)?.transformResult
+
+  // check if we have a fresh cache
+  const cached = (await moduleGraph.getModuleByUrl(url))?.transformResult
   if (cached) {
     isDebug && debugCache(`[memory] ${prettyUrl}`)
     return cached
@@ -43,7 +43,7 @@ export async function transformFile(
   // resolve
   const resolved = await container.resolveId(url)
   if (!resolved) {
-    isDebug && debugUrl(`not resolved: ${prettyUrl}`)
+    isDebug && debugUrl(`not resolved: ${url}`)
     return null
   }
   const id = resolved.id
@@ -84,15 +84,7 @@ export async function transformFile(
 
   // create module in graph after successful load
   // it may already exist - in this case we update it with the resolved id.
-  // append resolved ext to ensure url to module mapping uniqueness
-  // otherwise we may end up creating multiple modules for urls that resolves
-  // to the same file.
-  const ext = path.extname(cleanUrl(id))
-  const [pathname, query] = url.split('?')
-  if (ext && !pathname.endsWith(ext)) {
-    url = pathname + ext + (query ? `?${query}` : ``)
-  }
-  const mod = moduleGraph.ensureEntry(url, id)
+  const mod = await moduleGraph.ensureEntry(url, id)
 
   // transform
   const ttransformStart = Date.now()
@@ -107,7 +99,8 @@ export async function transformFile(
         timeFrom(ttransformStart) + chalk.dim(` [skipped] ${prettyUrl}`)
       )
   } else {
-    isDebug && debugTransform(`${timeFrom(ttransformStart)} ${prettyUrl}`)
+    isDebug &&
+      debugTransform(`${timeFrom(ttransformStart)} [total]  ${prettyUrl}`)
     if (typeof transformResult === 'object') {
       code = transformResult.code!
       map = transformResult.map
@@ -136,51 +129,52 @@ export function transformMiddleware(
       return next()
     }
 
-    // check if we can return 304 early
-    const ifNoneMatch = req.headers['if-none-match']
-    if (
-      ifNoneMatch &&
-      moduleGraph.getModuleByUrl(req.url!)?.transformResult?.etag ===
-        ifNoneMatch
-    ) {
-      isDebug && debugCache(`[304] ${prettifyUrl(req.url!, root)}`)
-      res.statusCode = 304
-      return res.end()
-    }
-
-    const isSourceMap = req.url!.endsWith('.map')
-    // since we generate source map references, handle those requests here
-    if (isSourceMap) {
-      const originalUrl = req.url!.replace(/\.map$/, '')
-      const map = moduleGraph.getModuleByUrl(originalUrl)?.transformResult?.map
-      if (map) {
-        return send(req, res, JSON.stringify(map), 'json')
+    try {
+      // check if we can return 304 early
+      const ifNoneMatch = req.headers['if-none-match']
+      if (
+        ifNoneMatch &&
+        (await moduleGraph.getModuleByUrl(req.url!))?.transformResult?.etag ===
+          ifNoneMatch
+      ) {
+        isDebug && debugCache(`[304] ${prettifyUrl(req.url!, root)}`)
+        res.statusCode = 304
+        return res.end()
       }
-    }
 
-    // we only apply the transform pipeline to:
-    // - requests that initiate from ESM imports (any extension)
-    // - CSS (even not from ESM)
-    // - Source maps (only for resolving)
-    const isCSS = isCSSRequest(req.url!)
-    if (
-      // esm imports accept */* in most browsers
-      req.headers['accept'] === '*/*' ||
-      req.headers['sec-fetch-dest'] === 'script' ||
-      isSourceMap ||
-      isCSS
-    ) {
-      // resolve, load and transform using the plugin container
-      try {
+      const isSourceMap = req.url!.endsWith('.map')
+      // since we generate source map references, handle those requests here
+      if (isSourceMap) {
+        const originalUrl = req.url!.replace(/\.map$/, '')
+        const map = (await moduleGraph.getModuleByUrl(originalUrl))
+          ?.transformResult?.map
+        if (map) {
+          return send(req, res, JSON.stringify(map), 'json')
+        }
+      }
+
+      // we only apply the transform pipeline to:
+      // - requests that initiate from ESM imports (any extension)
+      // - CSS (even not from ESM)
+      // - Source maps (only for resolving)
+      const isCSS = isCSSRequest(req.url!)
+      if (
+        // esm imports accept */* in most browsers
+        req.headers['accept'] === '*/*' ||
+        req.headers['sec-fetch-dest'] === 'script' ||
+        isSourceMap ||
+        isCSS
+      ) {
+        // resolve, load and transform using the plugin container
         const result = await transformFile(req.url!, context)
         if (result) {
           const type = isCSS ? 'css' : 'js'
           const hasMap = !!(result.map && result.map.mappings)
           return send(req, res, result.code, type, result.etag, hasMap)
         }
-      } catch (e) {
-        return next(e)
       }
+    } catch (e) {
+      return next(e)
     }
 
     next()

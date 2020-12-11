@@ -179,7 +179,7 @@ export async function createServer(
     watcher,
     container,
     ws,
-    moduleGraph: new ModuleGraph()
+    moduleGraph: new ModuleGraph(container)
   })
   container.serverContext = context
   await container.buildStart({})
@@ -242,7 +242,11 @@ export async function createServer(
   app.use(((err, _req, res, _next) => {
     console.error(chalk.red(`[vite] Internal server error:`))
     console.error(err.stack)
-    // TODO notify client
+    ws.send({
+      type: 'error',
+      message: err.message,
+      stack: err.stack
+    })
     res.statusCode = 500
     res.end()
   }) as Connect.ErrorHandleFunction)

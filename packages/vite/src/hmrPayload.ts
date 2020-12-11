@@ -5,9 +5,15 @@ export type HMRPayload =
   | StyleRemovePayload
   | CustomPayload
   | MultiUpdatePayload
+  | ErrorPayload
 
 export interface ConnectedPayload {
   type: 'connected'
+}
+
+export interface MultiUpdatePayload {
+  type: 'multi'
+  updates: UpdatePayload[]
 }
 
 export interface UpdatePayload {
@@ -24,7 +30,7 @@ export interface StyleRemovePayload {
 
 export interface FullReloadPayload {
   type: 'full-reload'
-  id?: string
+  path?: string
 }
 
 export interface CustomPayload {
@@ -33,7 +39,8 @@ export interface CustomPayload {
   customData: any
 }
 
-export interface MultiUpdatePayload {
-  type: 'multi'
-  updates: UpdatePayload[]
+export interface ErrorPayload {
+  type: 'error'
+  message: string
+  stack: string
 }
