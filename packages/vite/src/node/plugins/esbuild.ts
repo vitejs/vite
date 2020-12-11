@@ -1,11 +1,10 @@
 import path from 'path'
 import chalk from 'chalk'
-import _debug from 'debug'
 import { Service, Message, Loader, TransformOptions } from 'esbuild'
 import { Plugin } from '../config'
-import { generateCodeFrame } from '../utils'
+import { createDebugger, generateCodeFrame } from '../utils'
 
-const debug = _debug('vite:esbuild')
+const debug = createDebugger('vite:esbuild')
 
 // lazy start the service
 let _servicePromise: Promise<Service> | undefined

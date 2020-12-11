@@ -1,11 +1,10 @@
 import fs from 'fs'
 import path from 'path'
-import _debug from 'debug'
 import Rollup, { Plugin as RollupPlugin, RollupOptions } from 'rollup'
 import { BuildOptions, BuildHook } from './build'
 import { ServerOptions, ServerHook } from './server'
 import { CSSOptions } from './plugins/css'
-import { deepMerge, isObject, lookupFile } from './utils'
+import { createDebugger, deepMerge, isObject, lookupFile } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
 import { esbuildPlugin } from './plugins/esbuild'
@@ -15,7 +14,7 @@ import dotenvExpand from 'dotenv-expand'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { IndexHtmlTransform } from './plugins/html'
 
-const debug = _debug('vite:config')
+const debug = createDebugger('vite:config')
 
 export interface ConfigEnv {
   command: 'build' | 'serve'

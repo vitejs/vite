@@ -1,6 +1,5 @@
 import os from 'os'
 import path from 'path'
-import _debug from 'debug'
 import * as http from 'http'
 import * as https from 'https'
 import connect from 'connect'
@@ -25,6 +24,7 @@ import { hmrMiddleware, HmrOptions } from './middlewares/hmr'
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
 import { Connect } from '../types/connect'
+import { createDebugger } from '../utils'
 
 export interface ServerOptions {
   host?: string
@@ -221,7 +221,7 @@ export async function createServer(
   app.use(serveStaticMiddleware(path.join(root, 'public')))
 
   // spa fallback
-  app.use(history({ logger: _debug('vite:spa-fallback') }))
+  app.use(history({ logger: createDebugger('vite:spa-fallback') }))
 
   // run post config hooks
   // This is applied before the html middleware so that user middleware can

@@ -1,4 +1,4 @@
-import _debug from 'debug'
+import { createDebugger } from '../utils'
 import path from 'path'
 import fs, { promises as fsp } from 'fs'
 import { Plugin, ResolvedConfig } from '..'
@@ -9,7 +9,7 @@ import { SourceMap } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
 
-const debug = _debug('vite:css')
+const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
   // https://github.com/css-modules/postcss-modules
