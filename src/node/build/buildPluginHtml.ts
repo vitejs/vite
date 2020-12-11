@@ -68,16 +68,24 @@ export const createBuildHtmlPlugin = async (
     }
   }
 
+  const generateTagHtml = (html: string, tag: string) => {
+    if (/<\/head>/.test(html)) {
+      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
+    }
+
+    if (tag.startsWith('<link')) {
+      return tag + '\n' + html
+    } else if (tag.startsWith('<script')) {
+      return html + '\n' + tag
+    }
+  }
+
   const injectCSS = (html: string, filename: string) => {
     const tag = `<link rel="stylesheet" href="${publicBasePath}${path.posix.join(
       assetsDir,
       filename
     )}">`
-    if (/<\/head>/.test(html)) {
-      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
-    } else {
-      return tag + '\n' + html
-    }
+    return generateTagHtml(html, tag)
   }
 
   const injectScript = (html: string, filename: string) => {
@@ -85,11 +93,7 @@ export const createBuildHtmlPlugin = async (
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<script type="module" src="${filename}"></script>`
-    if (/<\/head>/.test(html)) {
-      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
-    } else {
-      return html + '\n' + tag
-    }
+    return generateTagHtml(html, tag)
   }
 
   const injectPreload = (html: string, filename: string) => {
@@ -97,11 +101,7 @@ export const createBuildHtmlPlugin = async (
       ? filename
       : `${publicBasePath}${path.posix.join(assetsDir, filename)}`
     const tag = `<link rel="modulepreload" href="${filename}" />`
-    if (/<\/head>/.test(html)) {
-      return html.replace(/(^\s*)?<\/head>/m, `$1$1${tag}\n$&`)
-    } else {
-      return tag + '\n' + html
-    }
+    return generateTagHtml(html, tag)
   }
 
   const renderIndex = async (bundleOutput: RollupOutput['output']) => {
