@@ -1,6 +1,6 @@
 import './hmrDep'
 
-export const foo = 234
+export const foo = 123
 
 console.log(import.meta.url)
 

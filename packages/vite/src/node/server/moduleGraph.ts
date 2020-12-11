@@ -1,4 +1,5 @@
 import _debug from 'debug'
+import path from 'path'
 import { isCSSRequest } from '../plugins/css'
 import { cleanUrl } from '../utils'
 import { TransformResult } from './middlewares/transform'
@@ -27,6 +28,10 @@ export class ModuleNode {
   }
 }
 
+function removeTimestampQuery(url: string) {
+  return url.replace(/\bt=\d{13}&?\b/, '').replace(/\?$/, '')
+}
+
 export class ModuleGraph {
   private urlToModuleMap = new Map<string, ModuleNode>()
   private idToModuleMap = new Map<string, ModuleNode>()
@@ -34,12 +39,11 @@ export class ModuleGraph {
   private fileToModulesMap = new Map<string, Set<ModuleNode>>()
 
   getModuleByUrl(url: string) {
-    // TODO remove ?t
-    return this.urlToModuleMap.get(url)
+    return this.urlToModuleMap.get(removeTimestampQuery(url))
   }
 
   getModuleById(id: string) {
-    return this.idToModuleMap.get(id)
+    return this.idToModuleMap.get(removeTimestampQuery(id))
   }
 
   getModulesByFile(file: string) {
@@ -56,13 +60,18 @@ export class ModuleGraph {
     }
   }
 
-  updateModuleInfo(mod: ModuleNode, deps: Set<string>, isHmrBoundary: boolean) {
-    // TODO remove ?t
+  updateModuleInfo(
+    mod: ModuleNode,
+    depUrls: Set<string>,
+    isHmrBoundary: boolean
+  ) {
     mod.isHmrBoundary = isHmrBoundary
     const prevDeps = mod.deps
     const newDeps = (mod.deps = new Set())
-    deps.forEach((depUrl) => {
-      const dep = this.ensureEntry(depUrl)
+    depUrls.forEach((depUrl) => {
+      const dep = this.ensureEntry(
+        path.posix.resolve(path.posix.dirname(mod.url), depUrl)
+      )
       dep.importers.add(mod)
       newDeps.add(dep)
     })
@@ -75,13 +84,14 @@ export class ModuleGraph {
   }
 
   ensureEntry(url: string, resolvedId?: string) {
-    // TODO remove ?t
+    url = removeTimestampQuery(url)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)
       this.urlToModuleMap.set(url, mod)
     }
     if (resolvedId) {
+      resolvedId = removeTimestampQuery(resolvedId)
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
       const file = (mod.file = cleanUrl(resolvedId))

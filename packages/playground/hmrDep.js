@@ -1,4 +1,4 @@
-export const foo = 1
+export const foo = 12
 
 if (import.meta.hot) {
   const data = import.meta.hot.data
