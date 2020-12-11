@@ -8,6 +8,7 @@ import { isObject } from '../../utils'
 import { ModuleNode } from '../moduleGraph'
 import chalk from 'chalk'
 import { UpdatePayload } from '../../../hmrPayload'
+import { notDeepStrictEqual } from 'assert'
 
 export const debugHmr = _debug('vite:hmr')
 
@@ -79,11 +80,13 @@ function handleHMRUpdate(file: string, context: ServerContext): any {
     return
   }
 
+  const timestamp = Date.now()
   const updates: UpdatePayload[] = []
+
   for (const mod of mods) {
-    debugger
-    const boundaries = propagateUpdate(mod)
-    if (!boundaries) {
+    const boundaries = new Set<ModuleNode>()
+    const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
+    if (hasDeadEnd) {
       debugHmr(`[full reload] ${chalk.dim(file)}`)
       context.ws.send({
         type: 'full-reload'
@@ -97,9 +100,9 @@ function handleHMRUpdate(file: string, context: ServerContext): any {
         debugHmr(`[${type}] ${chalk.dim(boundary.url)}`)
         return {
           type,
+          timestamp,
           path: boundary.url,
-          changedPath: mod.url,
-          timestamp: Date.now()
+          changedPath: mod.url
         }
       })
     )
@@ -113,19 +116,40 @@ function handleHMRUpdate(file: string, context: ServerContext): any {
 
 function propagateUpdate(
   node: ModuleNode,
-  boundaries: Set<ModuleNode> = new Set()
-) {
-  // TODO need dep acceptance check
+  timestamp: number,
+  boundaries: Set<ModuleNode>,
+  currentChain: ModuleNode[] = [node]
+): boolean /* hasDeadEnd */ {
   if (node.isHmrBoundary) {
     boundaries.add(node)
-    return boundaries
+    // mark current propagation chain dirty.
+    // timestamp is used for injecting timestamp query during rewrite
+    // also invalidate cache
+    currentChain.forEach((node) => {
+      node.lastHMRTimestamp = timestamp
+      node.transformResult = null
+    })
+    return false
   }
-  if (
-    node.importers.size &&
-    [...node.importers].every((importer) =>
-      propagateUpdate(importer, boundaries)
-    )
-  ) {
-    return boundaries
+
+  if (!node.importers.size) {
+    return true
   }
+
+  for (const importer of node.importers) {
+    // TODO need dep acceptance check
+    if (!currentChain.includes(importer)) {
+      if (
+        propagateUpdate(
+          importer,
+          timestamp,
+          boundaries,
+          currentChain.concat(importer)
+        )
+      ) {
+        return true
+      }
+    }
+  }
+  return false
 }
