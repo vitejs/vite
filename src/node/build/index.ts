@@ -578,8 +578,8 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
   for (let i = 0; i < builds.length; i++) {
     const build = builds[i]
     const { output: outputOptions, onResult, ...inputOptions } = build
-    const emitIndexPath = getEmitIndexPath(indexPath, outDir, build)
-    const emitIndex = config.emitIndex && emitIndexPath !== ''
+    const emitIndexPath = getEmitIndexPath(indexPath, root, outDir, build)
+    const emitIndex = config.emitIndex && !!emitIndexPath
 
     // unset the `output.file` option once `indexHtmlPath` is declared,
     // or else Rollup throws an error since multiple chunks are generated.
@@ -621,7 +621,7 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
                 await fs.emptyDir(outDir)
               }
               if (emitIndex) {
-                await fs.writeFile(emitIndexPath, result.html)
+                await fs.writeFile(emitIndexPath!, result.html)
               }
             }
           })
@@ -646,7 +646,7 @@ async function doBuild(options: Partial<BuildConfig>): Promise<BuildResult[]> {
 
     if (write && !silent) {
       if (emitIndex) {
-        printFileInfo(emitIndexPath, result.html, WriteType.HTML)
+        printFileInfo(emitIndexPath!, result.html, WriteType.HTML)
       }
       for (const chunk of result.assets) {
         if (chunk.type === 'chunk') {
@@ -771,12 +771,14 @@ function createEmitPlugin(
  */
 function getEmitIndexPath(
   indexPath: string,
+  root: string,
   outDir: string,
   { input, output }: Build
 ) {
-  return typeof input === 'string' && path.resolve(input) === indexPath
-    ? path.resolve(outDir, output.file || input)
-    : ''
+  if (typeof input === 'string' && path.resolve(root, input) === indexPath) {
+    const ext = path.extname(indexPath)
+    return path.resolve(outDir, output.file || `index.${ext}`)
+  }
 }
 
 function resolveExternal(
