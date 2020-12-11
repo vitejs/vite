@@ -1,4 +1,5 @@
 import _debug from 'debug'
+import path from 'path'
 import { Plugin, ResolvedConfig, ServerContext } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from './resolve'
@@ -82,6 +83,11 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       let hasEnv = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
+      // vite-only server context
+      const { moduleGraph } = (this as any).serverContext as ServerContext
+      // since we are already in the transform phase of the importer, it must
+      // have been loaded so its entry is guaranteed in the module graph.
+      const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
 
       for (const { s: start, e: end, d: dynamicIndex } of imports) {
@@ -155,8 +161,22 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
             str().appendLeft(end, '.js')
           }
 
+          const absoluteUrl = path.posix.resolve(
+            path.posix.dirname(importerModule.url),
+            url
+          )
+          // check if the dep has been hmr updated. If yes, we need to attach
+          // its last updated timestamp to force the browser to fetch the most
+          // up-to-date version of this module.
+          const depModule = moduleGraph.ensureEntry(absoluteUrl)
+          if (depModule.lastHMRTimestamp > 0) {
+            str().appendLeft(
+              end,
+              `${url.includes(`?`) ? `&` : `?`}t=${depModule.lastHMRTimestamp}`
+            )
+          }
           // record for module graph analysis.
-          importedUrls.add(url)
+          importedUrls.add(absoluteUrl)
         } else if (url !== 'import.meta' && !hasViteIgnore) {
           console.warn(
             chalk.yellow(
@@ -166,13 +186,8 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      // vite-only server context
-      const { moduleGraph } = (this as any).serverContext as ServerContext
-      // since we are already in the transform phase of the importer, it must
-      // have been loaded so its entry is guaranteed in the module graph.
-      const mod = moduleGraph.getModuleById(importer)!
       // update the module graph for HMR analysis
-      moduleGraph.updateModuleInfo(mod, importedUrls, isHMRBoundary)
+      moduleGraph.updateModuleInfo(importerModule, importedUrls, isHMRBoundary)
 
       if (hasHMR) {
         debugHmr(
@@ -185,7 +200,9 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
         // inject hot context
         str().prepend(
           `import { createHotContext } from "${HMR_CLIENT_PATH}";` +
-            `import.meta.hot = createHotContext(${JSON.stringify(mod.url)});`
+            `import.meta.hot = createHotContext(${JSON.stringify(
+              importerModule.url
+            )});`
         )
       }
 

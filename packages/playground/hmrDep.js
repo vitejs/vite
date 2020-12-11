@@ -1,13 +1,15 @@
-export const foo = 12
+import './hmrNestedDep'
 
-if (import.meta.hot) {
-  const data = import.meta.hot.data
-  if ('fromDispose' in data) {
-    console.log(`(dep) foo from dispose: ${data.fromDispose}`)
-  }
+export const foo = 1234243
 
-  import.meta.hot.dispose((data) => {
-    console.log(`(dep) foo was: ${foo}`)
-    data.fromDispose = foo * 10
-  })
-}
+// if (import.meta.hot) {
+//   const data = import.meta.hot.data
+//   if ('fromDispose' in data) {
+//     console.log(`(dep) foo from dispose: ${data.fromDispose}`)
+//   }
+
+//   import.meta.hot.dispose((data) => {
+//     console.log(`(dep) foo was: ${foo}`)
+//     data.fromDispose = foo * 10
+//   })
+// }

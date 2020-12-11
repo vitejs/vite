@@ -1,5 +1,4 @@
 import _debug from 'debug'
-import path from 'path'
 import { isCSSRequest } from '../plugins/css'
 import { cleanUrl } from '../utils'
 import { TransformResult } from './middlewares/transform'
@@ -17,10 +16,9 @@ export class ModuleNode {
   type: 'js' | 'css'
   deps = new Set<ModuleNode>()
   importers = new Set<ModuleNode>()
-  transformResult: TransformResult | null = null
-
   isHmrBoundary = false
-  lastUpdated = Date.now()
+  transformResult: TransformResult | null = null
+  lastHMRTimestamp = 0
 
   constructor(url: string) {
     this.url = url
@@ -55,7 +53,6 @@ export class ModuleGraph {
     if (mods) {
       mods.forEach((mod) => {
         mod.transformResult = null
-        mod.lastUpdated = Date.now()
       })
     }
   }
@@ -69,9 +66,7 @@ export class ModuleGraph {
     const prevDeps = mod.deps
     const newDeps = (mod.deps = new Set())
     depUrls.forEach((depUrl) => {
-      const dep = this.ensureEntry(
-        path.posix.resolve(path.posix.dirname(mod.url), depUrl)
-      )
+      const dep = this.ensureEntry(depUrl)
       dep.importers.add(mod)
       newDeps.add(dep)
     })
