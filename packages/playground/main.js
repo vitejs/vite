@@ -2,7 +2,7 @@
 // import './test.jsx'
 // import pkg from '/@fs/Users/evan/Vue/vite/package.json'
 // // import '/non-existent'
-// import css from './imported.css'
+import css from './imported.css'
 // import { redText } from './foo.module.css'
 // import url from './public/logo.png'
 // import html from './index.html?raw'
@@ -11,7 +11,8 @@
 // console.log(url)
 // console.log(css)
 // console.log(pkg)
-import './hmr'
+
+// import './hmr'
 
 import { createApp } from 'vue'
 import Test from './Test.vue'

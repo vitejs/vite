@@ -10,6 +10,6 @@ const msg = 'Hello? what'
 
 <style scoped>
 h1 {
-  color: red
+  color: red;
 }
 </style>

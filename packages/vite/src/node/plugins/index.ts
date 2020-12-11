@@ -7,13 +7,16 @@ import { rewritePlugin } from './rewrite'
 import { cssPlugin } from './css'
 import { assetPlugin } from './asset'
 
-export function resolveInternalPlugins(
+export function resolvePlugins(
   command: 'build' | 'serve',
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  prePlugins: Plugin[],
+  postPlugins: Plugin[]
 ): Plugin[] {
   const isBuild = command === 'build'
 
   return [
+    ...prePlugins,
     resolvePlugin(config),
     nodeResolve({
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
@@ -23,6 +26,8 @@ export function resolveInternalPlugins(
     cssPlugin(config, isBuild),
     json(),
     assetPlugin(config, isBuild),
+    ...postPlugins,
+    // rewrite is always applied last, even after post plugins
     isBuild ? null : rewritePlugin(config)
   ].filter(Boolean) as Plugin[]
 }

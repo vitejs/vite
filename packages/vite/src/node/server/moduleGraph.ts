@@ -1,6 +1,6 @@
 import _debug from 'debug'
-import { isCSSRequest } from '../plugins/css'
-import { cleanUrl } from '../utils'
+import { isCSSRequest, unwrapCSSProxy } from '../plugins/css'
+import { cleanUrl, removeTimestampQuery } from '../utils'
 import { TransformResult } from './middlewares/transform'
 
 export class ModuleNode {
@@ -24,10 +24,6 @@ export class ModuleNode {
     this.url = url
     this.type = isCSSRequest(url) ? 'css' : 'js'
   }
-}
-
-function removeTimestampQuery(url: string) {
-  return url.replace(/\bt=\d{13}&?\b/, '').replace(/\?$/, '')
 }
 
 export class ModuleGraph {
@@ -89,7 +85,7 @@ export class ModuleGraph {
       resolvedId = removeTimestampQuery(resolvedId)
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
-      const file = (mod.file = cleanUrl(resolvedId))
+      const file = (mod.file = unwrapCSSProxy(cleanUrl(resolvedId)))
       let fileMappedMdoules = this.fileToModulesMap.get(file)
       if (!fileMappedMdoules) {
         fileMappedMdoules = new Set()

@@ -6,7 +6,7 @@ import { BuildOptions, BuildHook } from './build'
 import { ServerOptions, ServerHook } from './server'
 import { CSSOptions } from './plugins/css'
 import { deepMerge, isObject, lookupFile } from './utils'
-import { resolveInternalPlugins } from './plugins'
+import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
 import { esbuildPlugin } from './plugins/esbuild'
 import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
@@ -219,12 +219,12 @@ export async function resolveConfig(
     env: loadEnv(mode, resolvedRoot)
   }
 
-  resolved.plugins = [
-    ...prePlugins,
-    ...normalPlugins,
-    ...resolveInternalPlugins(command, resolved),
-    ...postPlugins
-  ]
+  resolved.plugins = resolvePlugins(
+    command,
+    resolved,
+    [...prePlugins, ...normalPlugins],
+    postPlugins
+  )
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {

@@ -25,10 +25,15 @@ export function timeFrom(start: number, subtract = 0) {
   }
 }
 
+export function removeTimestampQuery(url: string) {
+  return url.replace(/\bt=\d{13}&?\b/, '').replace(/\?$/, '')
+}
+
 /**
  * pretty url for logging.
  */
 export function prettifyUrl(url: string, root: string) {
+  url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(slash(root))
   if (isAbsoluteFile || url.startsWith(FILE_PREFIX)) {
     let file = path.relative(

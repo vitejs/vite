@@ -1,6 +1,6 @@
 import './hmrNestedDep'
 
-export const foo = 1234243
+export const foo = 'efs'
 
 // if (import.meta.hot) {
 //   const data = import.meta.hot.data
