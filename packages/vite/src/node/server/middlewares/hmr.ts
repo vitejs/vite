@@ -81,6 +81,7 @@ function handleHMRUpdate(file: string, context: ServerContext): any {
 
   const updates: UpdatePayload[] = []
   for (const mod of mods) {
+    debugger
     const boundaries = propagateUpdate(mod)
     if (!boundaries) {
       debugHmr(`[full reload] ${chalk.dim(file)}`)
@@ -92,9 +93,10 @@ function handleHMRUpdate(file: string, context: ServerContext): any {
 
     updates.push(
       ...[...boundaries].map((boundary) => {
-        debugHmr(`[${boundary.type}] ${boundary.url}`)
+        const type = `${boundary.type}-update` as UpdatePayload['type']
+        debugHmr(`[${type}] ${chalk.dim(boundary.url)}`)
         return {
-          type: `${boundary.type}-update` as UpdatePayload['type'],
+          type,
           path: boundary.url,
           changedPath: mod.url,
           timestamp: Date.now()
@@ -113,6 +115,7 @@ function propagateUpdate(
   node: ModuleNode,
   boundaries: Set<ModuleNode> = new Set()
 ) {
+  // TODO need dep acceptance check
   if (node.isHmrBoundary) {
     boundaries.add(node)
     return boundaries

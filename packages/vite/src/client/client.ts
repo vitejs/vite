@@ -269,7 +269,7 @@ interface HotModule {
 interface HotCallback {
   // the deps must be fetchable paths
   deps: string[]
-  fn: (modules: object | object[]) => void
+  fn: (modules: object[]) => void
 }
 
 const hotModulesMap = new Map<string, HotModule>()
@@ -295,7 +295,9 @@ export const createHotContext = (ownerPath: string) => {
       callbacks: []
     }
     mod.callbacks.push({
-      deps,
+      deps: deps.map(
+        (dep) => new URL(dep, location.origin + ownerPath).pathname
+      ),
       fn: callback
     })
     hotModulesMap.set(ownerPath, mod)
@@ -306,13 +308,13 @@ export const createHotContext = (ownerPath: string) => {
       return dataMap.get(ownerPath)
     },
 
-    accept(deps: any, callback: any) {
+    accept(deps: any, callback?: any) {
       if (typeof deps === 'function' || !deps) {
         // self-accept: hot.accept(() => {})
-        acceptDeps([ownerPath], deps)
+        acceptDeps([ownerPath], ([mod]) => deps && deps(mod))
       } else if (typeof deps === 'string') {
         // explicit deps
-        acceptDeps([deps], callback)
+        acceptDeps([deps], ([mod]) => callback && callback(mod))
       } else if (Array.isArray(deps)) {
         acceptDeps(deps, callback)
       } else {

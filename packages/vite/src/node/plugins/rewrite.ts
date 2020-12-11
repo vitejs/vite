@@ -78,6 +78,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       }
 
       let hasHMR = false
+      let isHMRBoundary = false
       let hasEnv = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
@@ -91,6 +92,9 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           const prop = source.slice(end, end + 4)
           if (prop === '.hot') {
             hasHMR = true
+            if (source.slice(end + 4, end + 11) === '.accept') {
+              isHMRBoundary = true
+            }
           } else if (prop === '.env') {
             hasEnv = true
           }
@@ -168,10 +172,16 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       // have been loaded so its entry is guaranteed in the module graph.
       const mod = moduleGraph.getModuleById(importer)!
       // update the module graph for HMR analysis
-      moduleGraph.updateModuleInfo(mod, importedUrls, hasHMR)
+      moduleGraph.updateModuleInfo(mod, importedUrls, isHMRBoundary)
 
       if (hasHMR) {
-        debugHmr(`${chalk.green(`[enabled]`)} ${prettyImporter}`)
+        debugHmr(
+          `${
+            isHMRBoundary
+              ? chalk.green.bold(`[boundary]`)
+              : `[detected api usage]`
+          } ${prettyImporter}`
+        )
         // inject hot context
         str().prepend(
           `import { createHotContext } from "${HMR_CLIENT_PATH}";` +
