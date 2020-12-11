@@ -102,12 +102,23 @@ async function handleMessage(payload: HMRPayload) {
       }
       break
     case 'error':
-      console.error(payload.stack)
+      const err = payload.err
+      console.error(
+        `[vite] Servere Internal Error:\n` +
+          (err.plugin ? `  plugin: ${err.plugin}\n` : ``) +
+          (err.id ? `  file: ${err.id}\n` : ``) +
+          pad(err.stack)
+      )
       break
     default:
       const check: never = payload
       return check
   }
+}
+
+function pad(source: string, n = 2) {
+  const lines = source.split(/\r?\n/)
+  return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
 
 let pending = false
