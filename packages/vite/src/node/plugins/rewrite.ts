@@ -1,4 +1,3 @@
-import _debug from 'debug'
 import path from 'path'
 import { Plugin, ResolvedConfig, ServerContext } from '..'
 import chalk from 'chalk'
@@ -7,11 +6,11 @@ import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest } from './css'
 import slash from 'slash'
-import { prettifyUrl, timeFrom } from '../utils'
+import { createDebugger, prettifyUrl, timeFrom } from '../utils'
 import { debugHmr, HMR_CLIENT_PATH } from '../server/middlewares/hmr'
 
 const isDebug = !!process.env.DEBUG
-const debugRewrite = _debug('vite:rewrite')
+const debugRewrite = createDebugger('vite:rewrite')
 
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
@@ -60,19 +59,22 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       try {
         imports = parse(source)[0]
       } catch (e) {
-        console.warn(
-          chalk.yellow(
-            `[vite] failed to parse ${chalk.cyan(
-              importer
-            )} for import rewrite.\nIf you are using ` +
-              `JSX, make sure to named the file with the .jsx extension.`
-          )
+        this.warn(
+          `failed to parse ${chalk.cyan(
+            importer
+          )} for import rewrite.\nIf you are using ` +
+            `JSX, make sure to named the file with the .jsx extension.`
         )
         return source
       }
 
       if (!imports.length) {
-        isDebug && debugRewrite(chalk.dim(`[no imports] ${prettyImporter}`))
+        isDebug &&
+          debugRewrite(
+            `${timeFrom(rewriteStart)} ${chalk.dim(
+              `[no imports] ${prettyImporter}`
+            )}`
+          )
         return source
       }
 
@@ -126,12 +128,10 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           timeSpentResolving += Date.now() - resolveStart
 
           if (!resolved || !resolved.id) {
-            console.warn(
-              chalk.yellow(
-                `[vite] failed to resolve import ${chalk.cyan(
-                  url
-                )} from ${chalk.yellow(importer)}.`
-              )
+            this.warn(
+              `failed to resolve import ${chalk.cyan(url)} from ${chalk.yellow(
+                importer
+              )}.`
             )
             continue
           }
@@ -168,17 +168,13 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           // record for module graph analysis.
           importedUrls.add(absoluteUrl)
         } else if (url !== 'import.meta' && !hasViteIgnore) {
-          console.warn(
-            chalk.yellow(
-              `[vite] ignored dynamic import(${url}) in ${importer}.`
-            )
-          )
+          this.warn(`ignored dynamic import(${url}) in ${importer}.`)
         }
       }
 
       if (hasEnv) {
         // inject import.meta.env
-        str().prepend(`import.meta.env = ${JSON.stringify(config.env)};\n`)
+        str().prepend(`import.meta.env = ${JSON.stringify(config.env)};`)
       }
 
       if (hasHMR) {
@@ -191,10 +187,10 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
         )
         // inject hot context
         str().prepend(
-          `import { createHotContext } from "${HMR_CLIENT_PATH}";\n` +
+          `import { createHotContext } from "${HMR_CLIENT_PATH}";` +
             `import.meta.hot = createHotContext(${JSON.stringify(
               importerModule.url
-            )});\n`
+            )});`
         )
       }
 
@@ -207,16 +203,17 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
 
       isDebug &&
         debugRewrite(
-          `${timeFrom(rewriteStart, timeSpentResolving)} ${chalk.dim(
-            prettyImporter
+          `${timeFrom(rewriteStart, timeSpentResolving)} [${
+            importedUrls.size
+          } import${
+            importedUrls.size > 1 ? `s` : ``
+          } resolved in ${timeSpentResolving}ms] ${chalk.dim(
+            `${prettyImporter}`
           )}`
         )
 
       if (s) {
-        return {
-          code: s.toString(),
-          map: s.generateMap({ hires: true })
-        }
+        return s.toString()
       } else {
         return source
       }

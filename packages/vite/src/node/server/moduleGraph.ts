@@ -1,4 +1,3 @@
-import _debug from 'debug'
 import { extname } from 'path'
 import { isCSSRequest, unwrapCSSProxy } from '../plugins/css'
 import { cleanUrl, removeTimestampQuery } from '../utils'

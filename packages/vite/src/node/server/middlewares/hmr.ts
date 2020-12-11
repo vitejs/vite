@@ -1,15 +1,14 @@
 import fs from 'fs'
-import _debug from 'debug'
 import getEtag from 'etag'
 import { Connect } from '../../types/connect'
 import { send } from '../send'
 import { ServerContext } from '../..'
-import { isObject } from '../../utils'
+import { createDebugger, isObject } from '../../utils'
 import { ModuleNode } from '../moduleGraph'
 import chalk from 'chalk'
 import { UpdatePayload } from '../../../hmrPayload'
 
-export const debugHmr = _debug('vite:hmr')
+export const debugHmr = createDebugger('vite:hmr')
 
 export const HMR_CLIENT_PATH = `/vite/client`
 

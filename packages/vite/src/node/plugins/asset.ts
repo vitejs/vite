@@ -1,12 +1,11 @@
 import chalk from 'chalk'
-import _debug from 'debug'
 import fs, { promises as fsp } from 'fs'
 import qs from 'querystring'
 import { Plugin, ResolvedConfig } from '..'
-import { cleanUrl } from '../utils'
+import { createDebugger, cleanUrl } from '../utils'
 import { FILE_PREFIX } from './resolve'
 
-const debug = _debug('vite:asset')
+const debug = createDebugger('vite:asset')
 
 const assetsRE = new RegExp(
   `\\.(` +

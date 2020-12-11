@@ -1,8 +1,21 @@
+import debug from 'debug'
 import chalk from 'chalk'
 import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
 import { FILE_PREFIX } from './plugins/resolve'
+
+// set in bin/vite.js
+const filter = process.env.VITE_DEBUG_FILTER
+
+export function createDebugger(ns: string) {
+  const log = debug(ns)
+  return (msg: string, ...args: any[]) => {
+    if (!filter || msg.includes(filter)) {
+      log(msg, ...args)
+    }
+  }
+}
 
 export const queryRE = /\?.*$/
 export const hashRE = /#.*$/
@@ -42,12 +55,13 @@ export function prettifyUrl(url: string, root: string) {
     )
     const seg = file.split('/')
     const npmIndex = seg.indexOf(`node_modules`)
+    const isSourceMap = file.endsWith('.map')
     if (npmIndex > 0) {
       file = seg[npmIndex + 1]
       if (file.startsWith('@')) {
         file = `${file}/${seg[npmIndex + 2]}`
       }
-      file = `npm: ${chalk.dim(file)}`
+      file = `npm: ${chalk.dim(file)}${isSourceMap ? ` (source map)` : ``}`
     }
     return chalk.dim(file)
   } else {

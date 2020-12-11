@@ -30,7 +30,6 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import _debug from 'debug'
 import { resolve, relative, dirname, sep, posix } from 'path'
 import { createHash } from 'crypto'
 import { Plugin } from '../config'
@@ -56,21 +55,8 @@ import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import { ServerContext } from '..'
-import { prettifyUrl, timeFrom } from '../utils'
+import { createDebugger, prettifyUrl, timeFrom } from '../utils'
 import chalk from 'chalk'
-
-const isDebug = process.env.DEBUG
-const debugResolve = _debug('vite:resolve')
-
-// plugin debug logs are disabled by default unless explicitly enabled with
-// vite --debug plugin-*
-const createPluginDebug = (ns: string) =>
-  isDebug && isDebug.includes('vite:plugin')
-    ? _debug(`vite:plugin-${ns}`)
-    : () => {}
-
-const debugPluginResolve = createPluginDebug('resolve')
-const debugPluginTransform = createPluginDebug('transform')
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -119,6 +105,35 @@ export async function createPluginContainer(
   root: string,
   watcher: FSWatcher
 ): Promise<PluginContainer> {
+  const isDebug = process.env.DEBUG
+  const debugResolve = createDebugger('vite:resolve')
+
+  const pluginFilter = process.env.VITE_PLUGIN_FILTER || ''
+  const fileFilter = process.env.VITE_FILE_FILTER || ''
+  // plugin debug logs are disabled by default unless explicitly enabled with
+  // vite --debug plugin-*
+  function createPluginDebug(ns: string) {
+    if (isDebug && isDebug.includes('vite:plugin')) {
+      const debug = createDebugger(`vite:plugin-${ns}`)
+      return (msg: string, pluginName: string, fileId: string) => {
+        if (pluginFilter && !pluginName.includes(pluginFilter)) {
+          return
+        }
+        if (fileFilter && !fileId.includes(fileFilter)) {
+          return
+        }
+        debug(`${msg} [${pluginName}] ${prettifyUrl(fileId, root)}`)
+      }
+    } else {
+      return () => {}
+    }
+  }
+
+  const debugPluginResolve = createPluginDebug('resolve')
+  const debugPluginTransform = createPluginDebug('transform')
+
+  // ---------------------------------------------------------------------------
+
   // counter for generating unique emitted asset IDs
   let ids = 0
   let parser = acorn.Parser
@@ -379,11 +394,7 @@ export async function createPluginContainer(
           const pluginResolveStart = Date.now()
           result = await plugin.resolveId.call(ctx as any, id, importer, {})
           isDebug &&
-            debugPluginResolve(
-              `${timeFrom(pluginResolveStart)} [${plugin.name}] ${chalk.dim(
-                rawId
-              )}`
-            )
+            debugPluginResolve(timeFrom(pluginResolveStart), plugin.name, id)
         } finally {
           if (_skip) resolveSkips.delete(plugin, key)
         }
@@ -435,9 +446,7 @@ export async function createPluginContainer(
         ctx.activePlugin = plugin
         const start = Date.now()
         const result = await plugin.transform.call(ctx as any, code, id)
-        debugPluginTransform(
-          `${timeFrom(start)} [${plugin.name}] ${prettifyUrl(id, root)}`
-        )
+        debugPluginTransform(timeFrom(start), plugin.name, id)
         if (!result) continue
         if (typeof result === 'object') {
           code = result.code || ''

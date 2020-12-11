@@ -1,12 +1,12 @@
 import * as http from 'http'
-import _debug from 'debug'
+import { createDebugger } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
 import { ServerContext } from '..'
 import { Connect } from '../../types/connect'
 import { HttpProxy } from '../../types/http-proxy'
 
-const debug = _debug('vite:proxy')
+const debug = createDebugger('vite:proxy')
 
 export interface ProxyOptions extends HttpProxy.ServerOptions {
   /**

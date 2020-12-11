@@ -1,4 +1,3 @@
-import _debug from 'debug'
 import getEtag from 'etag'
 import fs, { promises as fsp } from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
@@ -7,6 +6,7 @@ import { Connect } from '../../types/connect'
 import { isCSSRequest, unwrapCSSProxy } from '../../plugins/css'
 import chalk from 'chalk'
 import {
+  createDebugger,
   cleanUrl,
   prettifyUrl,
   removeTimestampQuery,
@@ -14,10 +14,10 @@ import {
 } from '../../utils'
 import { send } from '../send'
 
-const debugUrl = _debug('vite:url')
-const debugLoad = _debug('vite:load')
-const debugTransform = _debug('vite:transform')
-const debugCache = _debug('vite:cache')
+const debugUrl = createDebugger('vite:url')
+const debugLoad = createDebugger('vite:load')
+const debugTransform = createDebugger('vite:transform')
+const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
 
 export interface TransformResult {
@@ -78,7 +78,7 @@ export async function transformFile(
     }
   }
   if (code == null) {
-    isDebug && debugLoad(`${chalk.red.bold(`[fail]`)} ${prettyUrl}`)
+    isDebug && debugLoad(`${chalk.red.bold(`[fail]`)} ${chalk.yellow(id)}`)
     return null
   }
 
@@ -99,8 +99,7 @@ export async function transformFile(
         timeFrom(ttransformStart) + chalk.dim(` [skipped] ${prettyUrl}`)
       )
   } else {
-    isDebug &&
-      debugTransform(`${timeFrom(ttransformStart)} [total]  ${prettyUrl}`)
+    isDebug && debugTransform(`${timeFrom(ttransformStart)} ${prettyUrl}`)
     if (typeof transformResult === 'object') {
       code = transformResult.code!
       map = transformResult.map
@@ -148,6 +147,7 @@ export function transformMiddleware(
         const originalUrl = req.url!.replace(/\.map$/, '')
         const map = (await moduleGraph.getModuleByUrl(originalUrl))
           ?.transformResult?.map
+        if (originalUrl.startsWith('/@fs')) debugger
         if (map) {
           return send(req, res, JSON.stringify(map), 'json')
         }

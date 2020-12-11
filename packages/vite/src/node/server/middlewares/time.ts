@@ -1,10 +1,9 @@
 import { Connect } from '../../types/connect'
-import _debug from 'debug'
-import { prettifyUrl, timeFrom } from '../../utils'
+import { createDebugger, prettifyUrl, timeFrom } from '../../utils'
+
+const logTime = createDebugger('vite:time')
 
 export function timeMiddleware(root: string): Connect.NextHandleFunction {
-  const logTime = _debug('vite:time')
-
   return (req, res, next) => {
     const start = Date.now()
     const end = res.end
