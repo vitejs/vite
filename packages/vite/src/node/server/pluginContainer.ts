@@ -107,30 +107,21 @@ export async function createPluginContainer(
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
   const debugResolve = createDebugger('vite:resolve')
+  const debugPluginResolve = createPluginDebugger('resolve')
+  const debugPluginTransform = createPluginDebugger('transform')
 
-  const pluginFilter = process.env.VITE_PLUGIN_FILTER || ''
-  const fileFilter = process.env.VITE_FILE_FILTER || ''
   // plugin debug logs are disabled by default unless explicitly enabled with
   // vite --debug plugin-*
-  function createPluginDebug(ns: string) {
+  function createPluginDebugger(ns: string) {
     if (isDebug && isDebug.includes('vite:plugin')) {
       const debug = createDebugger(`vite:plugin-${ns}`)
       return (msg: string, pluginName: string, fileId: string) => {
-        if (pluginFilter && !pluginName.includes(pluginFilter)) {
-          return
-        }
-        if (fileFilter && !fileId.includes(fileFilter)) {
-          return
-        }
         debug(`${msg} [${pluginName}] ${prettifyUrl(fileId, root)}`)
       }
     } else {
       return () => {}
     }
   }
-
-  const debugPluginResolve = createPluginDebug('resolve')
-  const debugPluginTransform = createPluginDebug('transform')
 
   // ---------------------------------------------------------------------------
 
