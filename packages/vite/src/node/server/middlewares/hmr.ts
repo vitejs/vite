@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 import getEtag from 'etag'
 import { Connect } from '../../types/connect'
 import { send } from '../send'
@@ -7,6 +8,7 @@ import { createDebugger, isObject } from '../../utils'
 import { ModuleNode } from '../moduleGraph'
 import chalk from 'chalk'
 import { UpdatePayload } from '../../../hmrPayload'
+import slash from 'slash'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -72,6 +74,24 @@ export function hmrMiddleware(
 
 function handleHMRUpdate(file: string, context: ServerContext): any {
   debugHmr(`[file change] ${chalk.dim(file)}`)
+
+  if (file === context.config.configPath) {
+    // TODO auto restart server
+    return
+  }
+
+  if (file.endsWith('.env')) {
+    // TODO notification for manual server restart
+    return
+  }
+
+  if (file.endsWith('.html')) {
+    context.ws.send({
+      type: 'full-reload',
+      path: '/' + slash(path.relative(context.config.root, file))
+    })
+    return
+  }
 
   const mods = context.moduleGraph.getModulesByFile(file)
   if (!mods) {
