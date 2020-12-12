@@ -2,7 +2,7 @@ import { createDebugger } from '../utils'
 import path from 'path'
 import fs, { promises as fsp } from 'fs'
 import { Plugin, ResolvedConfig } from '..'
-import { HMR_CLIENT_PATH } from '../server/middlewares/hmr'
+import { CLIENT_PUBLIC_PATH } from '../server/middlewares/client'
 import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
@@ -74,7 +74,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
         if (isProxyRequest) {
           debug(`[import] ${chalk.dim(path.relative(config.root, id))}`)
           return [
-            `import { updateStyle } from ${JSON.stringify(HMR_CLIENT_PATH)}`,
+            `import { updateStyle } from ${JSON.stringify(CLIENT_PUBLIC_PATH)}`,
             `const css = ${JSON.stringify(css)}`,
             `updateStyle(${JSON.stringify(id)}, css)`,
             `${modulesCode || `export default css`}`,

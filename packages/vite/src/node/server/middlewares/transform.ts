@@ -88,6 +88,7 @@ export async function transformFile(
 
   // transform
   const ttransformStart = Date.now()
+  if (id.includes('vite/dist')) debugger
   const transformResult = await container.transform(code, id)
   if (
     transformResult == null ||

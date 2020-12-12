@@ -10,10 +10,10 @@ import {
 } from '../../plugins/html'
 import { ServerContext } from '../..'
 import { send } from '../send'
-import { HMR_CLIENT_PATH } from './hmr'
+import { CLIENT_PUBLIC_PATH } from './client'
 
 const devHtmlHook: IndexHtmlTransformHook = () => {
-  return [{ tag: 'script', attrs: { type: 'module', src: HMR_CLIENT_PATH } }]
+  return [{ tag: 'script', attrs: { type: 'module', src: CLIENT_PUBLIC_PATH } }]
 }
 
 export function indexHtmlMiddleware(

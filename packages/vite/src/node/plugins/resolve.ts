@@ -10,31 +10,41 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
   return {
     name: 'vite:resolve',
     resolveId(id, importer) {
-      // since this is the first plugin, the id always come from user source
-      // code. If it starts with /, then it's a url.
+      if (id.startsWith(FILE_PREFIX)) {
+        // explicit fs paths that starts with /@fs/*
+        let fsPath = id.slice(FILE_PREFIX.length - 1)
+        if (fsPath.startsWith('//')) fsPath = fsPath.slice(1)
+        return tryFsResolve(fsPath)
+      }
+
+      let res
+      // 1. try resolving as raw url
+      // /foo -> /fs-root/foo
       if (id.startsWith('/')) {
-        // check for special paths. Since the browser doesn't allow bare imports,
-        // we transform them into special prefixed paths.
-        if (id.startsWith(FILE_PREFIX)) {
-          // explicit fs paths that starts with /@fs/*
-          return tryFsResolve(id.slice(FILE_PREFIX.length - 1))
-        } else {
-          // url -> file
-          return tryFsResolve(path.resolve(root, id.slice(1)))
+        const fsPath = path.resolve(root, id.slice(1))
+        if ((res = tryFsResolve(fsPath))) {
+          return res
         }
       }
 
+      // relative
       if (id.startsWith('.') && importer && path.isAbsolute(importer)) {
         const fsPath = path.resolve(path.dirname(importer), id)
         return tryFsResolve(fsPath)
       }
 
-      return null
+      // absolute fs paths
+      if (path.isAbsolute(id) && (res = tryFsResolve(id))) {
+        return res
+      }
+
+      // if we didn't manage to resolve it here, it will go on to be resolved by
+      // plugin/node-resolve
     }
   }
 }
 
-function tryFsResolve(fsPath: string) {
+export function tryFsResolve(fsPath: string) {
   const [file, query = ''] = fsPath.split(`?`)
   if (fs.existsSync(file)) {
     return file + query

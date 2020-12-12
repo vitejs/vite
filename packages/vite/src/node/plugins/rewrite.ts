@@ -7,7 +7,8 @@ import { init, parse, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest } from './css'
 import slash from 'slash'
 import { createDebugger, prettifyUrl, timeFrom } from '../utils'
-import { debugHmr, HMR_CLIENT_PATH } from '../server/middlewares/hmr'
+import { debugHmr } from '../server/hmr'
+import { CLIENT_PUBLIC_PATH } from '../server/middlewares/client'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -185,7 +186,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
         )
         // inject hot context
         str().prepend(
-          `import { createHotContext } from "${HMR_CLIENT_PATH}";` +
+          `import { createHotContext } from "${CLIENT_PUBLIC_PATH}";` +
             `import.meta.hot = createHotContext(${JSON.stringify(
               importerModule.url
             )});`

@@ -404,16 +404,15 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
 
         let result
+        const pluginResolveStart = Date.now()
         try {
-          const pluginResolveStart = Date.now()
           result = await plugin.resolveId.call(ctx as any, id, importer, {})
-          isDebug &&
-            debugPluginResolve(timeFrom(pluginResolveStart), plugin.name, id)
         } finally {
           if (_skip) resolveSkips.delete(plugin, key)
         }
-
         if (!result) continue
+        isDebug &&
+          debugPluginResolve(timeFrom(pluginResolveStart), plugin.name, id)
         if (typeof result === 'string') {
           id = result
         } else {
@@ -462,8 +461,8 @@ export async function createPluginContainer(
         ctx._activeCode = code
         const start = Date.now()
         const result = await plugin.transform.call(ctx as any, code, id)
-        debugPluginTransform(timeFrom(start), plugin.name, id)
         if (!result) continue
+        debugPluginTransform(timeFrom(start), plugin.name, id)
         if (typeof result === 'object') {
           code = result.code || ''
           if (result.map) ctx.sourcemapChain.push(result.map)

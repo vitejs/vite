@@ -4,19 +4,18 @@ export type HMRPayload =
   | FullReloadPayload
   | StyleRemovePayload
   | CustomPayload
-  | MultiUpdatePayload
   | ErrorPayload
 
 export interface ConnectedPayload {
   type: 'connected'
 }
 
-export interface MultiUpdatePayload {
-  type: 'multi'
-  updates: UpdatePayload[]
+export interface UpdatePayload {
+  type: 'update'
+  updates: Update[]
 }
 
-export interface UpdatePayload {
+export interface Update {
   type: 'js-update' | 'css-update'
   path: string
   changedPath: string
