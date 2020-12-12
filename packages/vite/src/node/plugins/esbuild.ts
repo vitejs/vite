@@ -53,8 +53,9 @@ export function esbuildPlugin(options?: TransformOptions): Plugin {
         } catch (e) {
           debug(`esbuild error with options used: `, resolvedOptions)
           if (e.errors) {
+            e.frame = ''
             e.errors.forEach((m: Message) => {
-              e.message += `\n` + prettifyMessage(m, code)
+              e.frame += `\n` + prettifyMessage(m, code)
             })
           }
           this.error(e)

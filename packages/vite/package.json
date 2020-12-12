@@ -83,7 +83,6 @@
     "sirv": "^1.0.10",
     "slash": "^3.0.0",
     "source-map-support": "^0.5.19",
-    "strip-ansi": "^6.0.0",
     "tslib": "^2.0.3",
     "ws": "^7.4.1"
   }

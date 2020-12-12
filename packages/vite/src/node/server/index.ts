@@ -20,12 +20,13 @@ import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import { serveStaticMiddleware } from './middlewares/static'
-import { hmrMiddleware, HmrOptions } from './middlewares/hmr'
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
 import { Connect } from '../types/connect'
 import { createDebugger } from '../utils'
 import { errorMiddleware } from './middlewares/error'
+import { handleHMRUpdate, HmrOptions } from './hmr'
+import { clientMiddleware } from './middlewares/client'
 
 export interface ServerOptions {
   host?: string
@@ -173,6 +174,8 @@ export async function createServer(
 
   const plugins = resolvedConfig.plugins
   const container = await createPluginContainer(plugins, {}, root, watcher)
+  const moduleGraph = new ModuleGraph(container)
+
   const context: ServerContext = (server.context = {
     config: resolvedConfig,
     app,
@@ -180,10 +183,19 @@ export async function createServer(
     watcher,
     container,
     ws,
-    moduleGraph: new ModuleGraph(container)
+    moduleGraph
   })
+
+  if (serverConfig.hmr !== false) {
+    watcher.on('change', (file) => {
+      // invalidate module graph cache on file change
+      moduleGraph.onFileChange(file)
+      handleHMRUpdate(file, context)
+    })
+  }
+
+  // attach server context to container so it's available to plugin context
   container.serverContext = context
-  await container.buildStart({})
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
@@ -193,7 +205,7 @@ export async function createServer(
   }
 
   // Internal middlewares
-  const { cors, proxy, hmr } = serverConfig
+  const { cors, proxy } = serverConfig
 
   if (process.env.DEBUG) {
     app.use(timeMiddleware(root))
@@ -209,10 +221,8 @@ export async function createServer(
     app.use(proxyMiddleware(context))
   }
 
-  // hmr (enabled by default)
-  if (hmr !== false) {
-    app.use(hmrMiddleware(context))
-  }
+  // client
+  app.use(clientMiddleware(context))
 
   // main transform middleware
   app.use(transformMiddleware(context))
@@ -244,6 +254,7 @@ export async function createServer(
   // overwrite listen to run optimizer before server start
   const listen = server.listen.bind(server)
   server.listen = (async (port: number, ...args: any[]) => {
+    await container.buildStart({})
     // TODO run optimizer
     return listen(port, ...args)
   }) as any

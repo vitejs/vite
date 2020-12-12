@@ -1,17 +1,22 @@
-// This file runs in the browser.
-import { HMRPayload, UpdatePayload } from '../hmrPayload'
+import { ErrorPayload, HMRPayload, Update } from '../hmrPayload'
+import { ErrorOverlay, overlayId } from './overlay'
 
-// injected by serverPluginClient when served
+// injected by the hmr plugin when served
+declare const __ROOT__: string
+declare const __MODE__: string
+declare const __DEFINES__: Record<string, any>
 declare const __HMR_PROTOCOL__: string
 declare const __HMR_HOSTNAME__: string
 declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
-declare const __MODE__: string
-declare const __DEFINES__: Record<string, any>
+declare const __HMR_ENABLE_OVERLAY__: boolean
+
+  // shim process
 ;(window as any).process = (window as any).process || {}
 ;(window as any).process.env = (window as any).process.env || {}
 ;(window as any).process.env.NODE_ENV = __MODE__
 
+// assign defines
 const defines = __DEFINES__
 Object.keys(defines).forEach((key) => {
   const segs = key.split('.')
@@ -25,6 +30,18 @@ Object.keys(defines).forEach((key) => {
     }
   }
 })
+
+// window.onerror = (msg, src, line, col, err) => {
+//   const re = new RegExp(location.origin + '(/@fs/)?', 'g')
+//   const cb = (match: string) => {
+//     if (match.includes('/@fs/')) return ''
+//     return __ROOT__
+//   }
+//   if (src) {
+//     src = src.replace(re, cb)
+//   }
+//   createErrorOverlay({})
+// }
 
 console.log('[vite] connecting...')
 
@@ -51,7 +68,6 @@ socket.addEventListener('message', async ({ data }) => {
 })
 
 async function handleMessage(payload: HMRPayload) {
-  const { path, changedPath, timestamp } = payload as UpdatePayload
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
@@ -59,25 +75,27 @@ async function handleMessage(payload: HMRPayload) {
       // so send ping package let ws keep alive.
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
-    case 'multi':
-      payload.updates.forEach(handleMessage)
-      break
-    case 'js-update':
-      queueUpdate(updateModule(path, changedPath, timestamp))
-      break
-    case 'css-update':
-      // this is only sent when a css file referened with <link> is updated
-      const el = document.querySelector(`link[href*='${path}']`)
-      if (el) {
-        el.setAttribute(
-          'href',
-          `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
-        )
-        break
-      }
+    case 'update':
+      clearErrorOverlay()
+      payload.updates.forEach((update) => {
+        if (update.type === 'js-update') {
+          queueUpdate(fetchUpdate(update))
+        } else {
+          // css-update
+          // this is only sent when a css file referened with <link> is updated
+          const { path, timestamp } = update
+          const el = document.querySelector(`link[href*='${path}']`)
+          if (el) {
+            el.setAttribute(
+              'href',
+              `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
+            )
+          }
+        }
+      })
       break
     case 'css-remove':
-      removeStyle(path)
+      removeStyle(payload.path)
       break
     case 'custom':
       const cbs = customUpdateMap.get(payload.path)
@@ -86,13 +104,13 @@ async function handleMessage(payload: HMRPayload) {
       }
       break
     case 'full-reload':
-      if (path && path.endsWith('.html')) {
+      if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
         const pagePath = location.pathname
         if (
-          pagePath === path ||
-          (pagePath.endsWith('/') && pagePath + 'index.html' === path)
+          pagePath === payload.path ||
+          (pagePath.endsWith('/') && pagePath + 'index.html' === payload.path)
         ) {
           location.reload()
         }
@@ -103,12 +121,8 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'error':
       const err = payload.err
-      console.error(
-        `[vite] Servere Internal Error:\n` +
-          (err.plugin ? `  plugin: ${err.plugin}\n` : ``) +
-          (err.id ? `  file: ${err.id}\n` : ``) +
-          pad(err.stack)
-      )
+      console.error(`[vite] Internal Server Error\n${err.stack}`)
+      createErrorOverlay(err)
       break
     default:
       const check: never = payload
@@ -116,9 +130,16 @@ async function handleMessage(payload: HMRPayload) {
   }
 }
 
-function pad(source: string, n = 2) {
-  const lines = source.split(/\r?\n/)
-  return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
+function createErrorOverlay(err: ErrorPayload['err']) {
+  if (!__HMR_ENABLE_OVERLAY__) return
+  clearErrorOverlay()
+  document.body.appendChild(new ErrorOverlay(err))
+}
+
+function clearErrorOverlay() {
+  document
+    .querySelectorAll(overlayId)
+    .forEach((n) => (n as ErrorOverlay).close())
 }
 
 let pending = false
@@ -217,11 +238,7 @@ function removeStyle(id: string) {
   }
 }
 
-async function updateModule(
-  path: string,
-  changedPath: string,
-  timestamp: number
-) {
+async function fetchUpdate({ path, changedPath, timestamp }: Update) {
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-spliting project,
@@ -269,7 +286,6 @@ async function updateModule(
     for (const { deps, fn } of qualifiedCallbacks) {
       fn(deps.map((dep) => moduleMap.get(dep)))
     }
-
     console.log(`[vite]: js module hot updated: `, path)
   }
 }
