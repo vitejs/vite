@@ -13,9 +13,18 @@ import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { IndexHtmlTransform } from './plugins/html'
-import { AliasOptions } from 'types/alias'
+import { Alias, AliasOptions } from 'types/alias'
 
 const debug = createDebugger('vite:config')
+
+/**
+ * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
+ */
+export const FILE_PREFIX = `/@fs/`
+export const CLIENT_PUBLIC_PATH = '/@vite/client'
+// eslint-disable-next-line
+export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
+export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
 export interface ConfigEnv {
   command: 'build' | 'serve'
@@ -168,14 +177,17 @@ export async function resolveConfig(
   configPath?: string | false
 ): Promise<ResolvedConfig> {
   if (configPath !== false) {
-    const fileConfig = await loadConfigFromFile(
+    const loadResult = await loadConfigFromFile(
       {
         mode,
         command
       },
       configPath
     )
-    config = deepMerge(fileConfig, config)
+    if (loadResult) {
+      config = deepMerge(loadResult.config, config)
+      configPath = loadResult.path
+    }
   }
 
   // resolve plugins
@@ -208,11 +220,25 @@ export async function resolveConfig(
       : path.resolve(root)
     : process.cwd()
 
+  // resolve alias - inject internal alias for /@vite/ client files
+  const userAlias = config.alias || []
+  const normalizedAlias: Alias[] = isObject(userAlias)
+    ? Object.keys(userAlias).map((find) => ({
+        find,
+        replacement: (userAlias as any)[find]
+      }))
+    : userAlias
+  const resolvedAlias = [
+    { find: /^\/@vite\//, replacement: CLIENT_DIR + '/' },
+    ...normalizedAlias
+  ]
+
   const resolved = {
     ...config,
     configPath: configPath || null,
     root: resolvedRoot,
     mode,
+    alias: resolvedAlias,
     plugins: userPlugins,
     server: config.server || {},
     build: config.build || {},
@@ -239,7 +265,7 @@ export async function resolveConfig(
 async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configPath?: string
-): Promise<UserConfig> {
+): Promise<{ path: string; config: UserConfig } | null> {
   const start = Date.now()
   const cwd = process.cwd()
 
@@ -260,7 +286,7 @@ async function loadConfigFromFile(
 
   if (!resolvedPath) {
     debug('no config file found.')
-    return {}
+    return null
   }
 
   const isTS = resolvedPath.endsWith('.ts')
@@ -320,7 +346,10 @@ async function loadConfigFromFile(
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
     }
-    return config
+    return {
+      path: resolvedPath,
+      config
+    }
   } catch (e) {
     console.error(
       chalk.red(`[vite] failed to load config from ${resolvedPath}:`)

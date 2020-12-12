@@ -1,5 +1,5 @@
 import getEtag from 'etag'
-import fs, { promises as fsp } from 'fs'
+import fs from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
 import { ServerContext } from '..'
 import { Connect } from 'types/connect'
@@ -64,9 +64,13 @@ export async function transformFile(
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
-    if (fs.existsSync(file) && fs.statSync(file).isFile()) {
-      code = await fsp.readFile(file, 'utf-8')
+    try {
+      code = fs.readFileSync(file, 'utf-8')
       isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
+    } catch (e) {
+      if (e.code !== 'ENOENT') {
+        throw e
+      }
     }
   } else {
     isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
@@ -87,8 +91,7 @@ export async function transformFile(
   const mod = await moduleGraph.ensureEntry(url, id)
 
   // transform
-  const ttransformStart = Date.now()
-  if (id.includes('vite/dist')) debugger
+  const transformStart = Date.now()
   const transformResult = await container.transform(code, id)
   if (
     transformResult == null ||
@@ -97,10 +100,10 @@ export async function transformFile(
     // no transform applied, keep code as-is
     isDebug &&
       debugTransform(
-        timeFrom(ttransformStart) + chalk.dim(` [skipped] ${prettyUrl}`)
+        timeFrom(transformStart) + chalk.dim(` [skipped] ${prettyUrl}`)
       )
   } else {
-    isDebug && debugTransform(`${timeFrom(ttransformStart)} ${prettyUrl}`)
+    isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
     if (typeof transformResult === 'object') {
       code = transformResult.code!
       map = transformResult.map

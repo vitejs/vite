@@ -33,5 +33,5 @@ export {
   ErrorPayload
 } from 'types/hmrPayload'
 export type { Connect } from 'types/connect'
-export * from 'types/http-proxy'
+export type { HttpProxy } from 'types/http-proxy'
 export type { FSWatcher, WatchOptions } from 'types/chokidar'
