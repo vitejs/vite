@@ -1,20 +1,20 @@
 import path from 'path'
-import { Plugin, ResolvedConfig, ServerContext } from '..'
+import { CLIENT_DIR, Plugin, ResolvedConfig, ServerContext } from '..'
 import chalk from 'chalk'
-import { FILE_PREFIX } from './resolve'
 import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest } from './css'
 import slash from 'slash'
 import { createDebugger, prettifyUrl, timeFrom } from '../utils'
 import { debugHmr } from '../server/hmr'
-import { CLIENT_PUBLIC_PATH } from '../server/middlewares/client'
+import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../config'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
 
 const skipRE = /\.(map|json)$/
-const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
+const canSkip = (id: string) =>
+  id.startsWith(CLIENT_DIR) || skipRE.test(id) || isCSSRequest(id)
 
 /**
  * Server-only plugin that rewrites url imports (bare modules, css/asset imports)

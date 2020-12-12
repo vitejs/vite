@@ -7,6 +7,7 @@ import { esbuildPlugin } from './esbuild'
 import { rewritePlugin } from './rewrite'
 import { cssPlugin } from './css'
 import { assetPlugin } from './asset'
+import { clientInjectionsPlugin } from './clientInjections'
 
 export function resolvePlugins(
   command: 'build' | 'serve',
@@ -19,7 +20,7 @@ export function resolvePlugins(
 
   return [
     ...prePlugins,
-    aliasPlugin(config.alias),
+    aliasPlugin({ entries: config.alias }),
     ...normalPlugins,
     resolvePlugin(config),
     nodeResolve({
@@ -31,7 +32,7 @@ export function resolvePlugins(
     jsonPlugin(),
     assetPlugin(config, isBuild),
     ...postPlugins,
-    // rewrite is always applied last, even after post plugins
-    isBuild ? null : rewritePlugin(config)
+    // internal server-only plugins are always applied after everything else
+    ...(isBuild ? [] : [clientInjectionsPlugin(config), rewritePlugin(config)])
   ].filter(Boolean) as Plugin[]
 }

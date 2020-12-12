@@ -30,7 +30,7 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import { resolve, relative, dirname, sep, posix } from 'path'
+import { resolve, relative, dirname, sep, posix, join } from 'path'
 import { createHash } from 'crypto'
 import { Plugin } from '../config'
 import {
@@ -114,21 +114,12 @@ export async function createPluginContainer(
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
   const debugResolve = createDebugger('vite:resolve')
-  const debugPluginResolve = createPluginDebugger('resolve')
-  const debugPluginTransform = createPluginDebugger('transform')
-
-  // plugin debug logs are disabled by default unless explicitly enabled with
-  // vite --debug plugin-*
-  function createPluginDebugger(ns: string) {
-    if (isDebug && isDebug.includes('vite:plugin')) {
-      const debug = createDebugger(`vite:plugin-${ns}`)
-      return (msg: string, pluginName: string, fileId: string) => {
-        debug(`${msg} [${pluginName}] ${prettifyUrl(fileId, root)}`)
-      }
-    } else {
-      return () => {}
-    }
-  }
+  const debugPluginResolve = createDebugger('vite:plugin-resolve', {
+    onlyWhenFocused: 'vite:plugin'
+  })
+  const debugPluginTransform = createDebugger('vite:plugin-transform', {
+    onlyWhenFocused: 'vite:plugin'
+  })
 
   // ---------------------------------------------------------------------------
 
@@ -377,11 +368,11 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(rawId, importer, _skip) {
+    async resolveId(rawId, importer = join(root, 'index.html'), _skip) {
       let id = rawId
       const ctx = new Context()
       const key =
-        (importer ? `${id}\n${importer}` : id) +
+        `${id}\n${importer}` +
         (_skip ? _skip.map((p) => p.name).join('\n') : ``)
 
       if (resolveCache.has(key)) {
@@ -392,6 +383,7 @@ export async function createPluginContainer(
       const resolveStart = Date.now()
 
       const partial: Partial<PartialResolvedId> = {}
+      if (rawId.includes('/@vite/client')) debugger
       for (const plugin of plugins) {
         if (!plugin.resolveId) continue
 
@@ -412,7 +404,11 @@ export async function createPluginContainer(
         }
         if (!result) continue
         isDebug &&
-          debugPluginResolve(timeFrom(pluginResolveStart), plugin.name, id)
+          debugPluginResolve(
+            timeFrom(pluginResolveStart),
+            plugin.name,
+            prettifyUrl(id, root)
+          )
         if (typeof result === 'string') {
           id = result
         } else {
@@ -462,7 +458,12 @@ export async function createPluginContainer(
         const start = Date.now()
         const result = await plugin.transform.call(ctx as any, code, id)
         if (!result) continue
-        debugPluginTransform(timeFrom(start), plugin.name, id)
+        isDebug &&
+          debugPluginTransform(
+            timeFrom(start),
+            plugin.name,
+            prettifyUrl(id, root)
+          )
         if (typeof result === 'object') {
           code = result.code || ''
           if (result.map) ctx.sourcemapChain.push(result.map)

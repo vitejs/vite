@@ -81,9 +81,4 @@ cli
 cli.help()
 cli.version(require('../../package.json').version)
 
-try {
-  cli.parse()
-} catch (e) {
-  console.error(chalk.red(e.message))
-  process.exit(1)
-}
+cli.parse()

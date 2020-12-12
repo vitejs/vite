@@ -26,7 +26,6 @@ import { Connect } from 'types/connect'
 import { createDebugger } from '../utils'
 import { errorMiddleware } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions } from './hmr'
-import { clientMiddleware } from './middlewares/client'
 
 export interface ServerOptions {
   host?: string
@@ -222,7 +221,7 @@ export async function createServer(
   }
 
   // client
-  app.use(clientMiddleware(context))
+  // app.use(clientMiddleware(context))
 
   // main transform middleware
   app.use(transformMiddleware(context))

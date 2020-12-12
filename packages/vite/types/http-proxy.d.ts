@@ -46,7 +46,7 @@ export namespace HttpProxy {
     target?: ProxyTargetUrl
   ) => void
 
-  export declare class Server extends events.EventEmitter {
+  export class Server extends events.EventEmitter {
     /**
      * Creates the proxy server with specified options.
      * @param options - Config object passed to the proxy

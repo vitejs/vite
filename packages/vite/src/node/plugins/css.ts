@@ -2,12 +2,12 @@ import { createDebugger } from '../utils'
 import path from 'path'
 import fs, { promises as fsp } from 'fs'
 import { Plugin, ResolvedConfig } from '..'
-import { CLIENT_PUBLIC_PATH } from '../server/middlewares/client'
 import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
+import { CLIENT_PUBLIC_PATH } from '../config'
 
 const debug = createDebugger('vite:css')
 
