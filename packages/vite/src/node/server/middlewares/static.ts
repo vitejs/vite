@@ -1,5 +1,5 @@
 import path from 'path'
-import { Connect } from '../../types/connect'
+import { Connect } from 'types/connect'
 import sirv from 'sirv'
 
 export function serveStaticMiddleware(dir: string): Connect.NextHandleFunction {

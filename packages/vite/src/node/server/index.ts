@@ -12,7 +12,7 @@ import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
-import { FSWatcher, WatchOptions } from '../types/chokidar'
+import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { setupWebSocketServer, WebSocketServer } from '../server/ws'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
@@ -22,7 +22,7 @@ import history from 'connect-history-api-fallback'
 import { serveStaticMiddleware } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
-import { Connect } from '../types/connect'
+import { Connect } from 'types/connect'
 import { createDebugger } from '../utils'
 import { errorMiddleware } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions } from './hmr'

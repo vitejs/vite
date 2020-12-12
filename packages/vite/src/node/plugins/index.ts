@@ -1,8 +1,9 @@
 import { Plugin, ResolvedConfig } from '..'
+import aliasPlugin from '@rollup/plugin-alias'
+import jsonPlugin from '@rollup/plugin-json'
+import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { resolvePlugin, supportedExts } from './resolve'
 import { esbuildPlugin } from './esbuild'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
-import json from '@rollup/plugin-json'
 import { rewritePlugin } from './rewrite'
 import { cssPlugin } from './css'
 import { assetPlugin } from './asset'
@@ -18,6 +19,7 @@ export function resolvePlugins(
 
   return [
     ...prePlugins,
+    aliasPlugin(config.alias),
     ...normalPlugins,
     resolvePlugin(config),
     nodeResolve({
@@ -26,7 +28,7 @@ export function resolvePlugins(
     }),
     esbuildPlugin(config.esbuild || {}),
     cssPlugin(config, isBuild),
-    json(),
+    jsonPlugin(),
     assetPlugin(config, isBuild),
     ...postPlugins,
     // rewrite is always applied last, even after post plugins

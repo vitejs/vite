@@ -1,3 +1,6 @@
+// Inlined to avoid extra dependency
+// MIT Licensed https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/LICENSE
+
 // Type definitions for node-http-proxy 1.17
 // Project: https://github.com/nodejitsu/node-http-proxy
 // Definitions by: Maxime LUCE <https://github.com/SomaticIT>
@@ -8,8 +11,7 @@
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.1
 
-// Inlined to avoid extra dependency
-// MIT Licensed https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/LICENSE
+/// <reference types="node" />
 
 import * as net from 'net'
 import * as http from 'http'

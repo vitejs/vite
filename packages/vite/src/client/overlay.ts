@@ -1,4 +1,4 @@
-import { ErrorPayload } from '../hmrPayload'
+import { ErrorPayload } from 'types/hmrPayload'
 import AnsiUp from './ansiup'
 
 const ansi = new AnsiUp()

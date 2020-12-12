@@ -1,4 +1,4 @@
-// Inlined to avoid extra dependency
+// Inlined to avoid extra dependency (chokidar is bundled in the published build)
 
 // https://github.com/paulmillr/chokidar/blob/master/types/index.d.ts
 // MIT Licensed https://github.com/paulmillr/chokidar/blob/master/LICENSE
@@ -26,6 +26,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+/// <reference types="node" />
 
 import * as fs from 'fs'
 
@@ -200,17 +201,17 @@ export interface WatchOptions {
   /**
    * can be set to an object in order to adjust timing params:
    */
-  awaitWriteFinish?: AwaitWriteFinishOptions | boolean
-}
+  awaitWriteFinish?:
+    | {
+        /**
+         * Amount of time in milliseconds for a file size to remain constant before emitting its event.
+         */
+        stabilityThreshold?: number
 
-export interface AwaitWriteFinishOptions {
-  /**
-   * Amount of time in milliseconds for a file size to remain constant before emitting its event.
-   */
-  stabilityThreshold?: number
-
-  /**
-   * File size polling interval.
-   */
-  pollInterval?: number
+        /**
+         * File size polling interval.
+         */
+        pollInterval?: number
+      }
+    | boolean
 }

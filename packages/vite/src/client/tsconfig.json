@@ -1,11 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist",
+    "outDir": "../../dist/client",
     "module": "esnext",
     "types": [],
     "lib": ["ESNext", "DOM"],
-    "declaration": false
+    "declaration": false,
+    "baseUrl": ".",
+    "paths": {
+      "types/*": ["../../types/*"]
+    }
   },
-  "include": ["./", "../hmrPayload.ts"]
+  "include": ["./", "../../types"]
 }

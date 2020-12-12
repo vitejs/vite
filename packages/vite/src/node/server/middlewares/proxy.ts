@@ -3,8 +3,8 @@ import { createDebugger } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
 import { ServerContext } from '..'
-import { Connect } from '../../types/connect'
-import { HttpProxy } from '../../types/http-proxy'
+import { Connect } from 'types/connect'
+import { HttpProxy } from 'types/http-proxy'
 
 const debug = createDebugger('vite:proxy')
 
