@@ -1,4 +1,4 @@
-import { Connect } from '../../types/connect'
+import { Connect } from 'types/connect'
 import { createDebugger, prettifyUrl, timeFrom } from '../../utils'
 
 const logTime = createDebugger('vite:time')

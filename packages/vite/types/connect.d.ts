@@ -1,12 +1,13 @@
+// Inlined to avoid extra dependency
+// MIT Licensed https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/LICENSE
+
 // Type definitions for connect v3.4.0
 // Project: https://github.com/senchalabs/connect
 // Definitions by: Maxime LUCE <https://github.com/SomaticIT>
 //                 Evan Hahn <https://github.com/EvanHahn>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-// Inlined to avoid extra dependency
-// MIT Licensed https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/LICENSE
-
+/// <reference types="node" />
 import * as http from 'http'
 
 export namespace Connect {

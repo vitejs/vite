@@ -1,4 +1,4 @@
-import { ErrorPayload, HMRPayload, Update } from '../hmrPayload'
+import { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import { ErrorOverlay, overlayId } from './overlay'
 
 // injected by the hmr plugin when served

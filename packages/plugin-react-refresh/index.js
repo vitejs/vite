@@ -58,11 +58,21 @@ const transform = {
   enforce: 'post',
 
   transform(code, id) {
-    // @ts-ignore
-    if (!this.serverContext) {
+    if (
+      // @ts-ignore
+      !this.serverContext ||
+      // @ts-ignore
+      this.serverContext.config.mode === 'production'
+    ) {
       return
     }
+
     if (!/\.(t|j)sx?$/.test(id) || id.includes('node_modules')) {
+      return
+    }
+
+    // plain js files can't use React without importing it
+    if (id.endsWith('.js') && !code.includes('react')) {
       return
     }
 

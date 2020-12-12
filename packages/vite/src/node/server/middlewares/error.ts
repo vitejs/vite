@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { RollupError } from 'rollup'
 import { ServerContext } from '../..'
-import { Connect } from '../../types/connect'
+import { Connect } from 'types/connect'
 import { pad } from '../../utils'
 
 export function errorMiddleware(

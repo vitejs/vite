@@ -2,7 +2,7 @@ import getEtag from 'etag'
 import fs, { promises as fsp } from 'fs'
 import { SourceDescription, SourceMap } from 'rollup'
 import { ServerContext } from '..'
-import { Connect } from '../../types/connect'
+import { Connect } from 'types/connect'
 import { isCSSRequest, unwrapCSSProxy } from '../../plugins/css'
 import chalk from 'chalk'
 import {

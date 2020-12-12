@@ -13,6 +13,7 @@ import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { IndexHtmlTransform } from './plugins/html'
+import { AliasOptions } from 'types/alias'
 
 const debug = createDebugger('vite:config')
 
@@ -39,7 +40,7 @@ export interface UserConfig {
   /**
    * Import aliases
    */
-  alias?: Record<string, string>
+  alias?: AliasOptions
   /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.

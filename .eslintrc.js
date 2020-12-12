@@ -10,6 +10,7 @@ module.exports = {
     'node/no-missing-import': [
       'error',
       {
+        allowModules: ['types'],
         tryExtensions: ['.ts', '.js']
       }
     ],

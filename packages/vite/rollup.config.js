@@ -14,7 +14,11 @@ const clientConfig = {
   plugins: [
     typescript({
       target: 'es2018',
-      include: ['src/client/**/*.ts']
+      include: ['src/client/**/*.ts'],
+      baseUrl: path.resolve(__dirname, 'src/client'),
+      paths: {
+        'types/*': ['../../types/*']
+      }
     })
   ],
   output: {
@@ -40,7 +44,11 @@ const nodeConfig = {
     typescript({
       target: 'es2019',
       include: ['src/**/*.ts'],
-      esModuleInterop: true
+      esModuleInterop: true,
+      baseUrl: path.resolve(__dirname, 'src/node'),
+      paths: {
+        'types/*': ['../../types/*']
+      }
     }),
     // Some deps have try...catch require of optional deps, but rollup will
     // generate code that force require them upfront for side effects.
@@ -135,12 +143,14 @@ function shimDepsPlugin(deps) {
         }
       }
     },
-    buildEnd() {
-      for (const file in deps) {
-        if (!transformed[file]) {
-          this.error(
-            `Did not find "${file}" which is supposed to be shimmed, was the file renamed?`
-          )
+    buildEnd(err) {
+      if (!err) {
+        for (const file in deps) {
+          if (!transformed[file]) {
+            this.error(
+              `Did not find "${file}" which is supposed to be shimmed, was the file renamed?`
+            )
+          }
         }
       }
     }
@@ -160,6 +170,7 @@ function ignoreDepPlugin(ignoredDeps) {
     },
     load(id) {
       if (id in ignoredDeps) {
+        console.log(`ignored: ${id}`)
         return ''
       }
     }

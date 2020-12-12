@@ -3,8 +3,8 @@ import { ServerContext } from '..'
 import { createDebugger } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
-import { Update } from '../../hmrPayload'
 import slash from 'slash'
+import { Update } from 'types/hmrPayload'
 
 export const debugHmr = createDebugger('vite:hmr')
 

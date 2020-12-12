@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { ServerContext } from '../..'
 import { tryFsResolve } from '../../plugins/resolve'
-import { Connect } from '../../types/connect'
+import { Connect } from 'types/connect'
 import { send } from '../send'
 
 export const CLIENT_PREFIX = `/@vite/`

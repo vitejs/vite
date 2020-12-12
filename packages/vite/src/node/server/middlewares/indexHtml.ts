@@ -1,7 +1,7 @@
 import fs from 'fs'
 import getEtag from 'etag'
 import path from 'path'
-import { Connect } from '../../types/connect'
+import { Connect } from 'types/connect'
 import { Plugin } from '../../config'
 import {
   applyHtmlTransforms,
