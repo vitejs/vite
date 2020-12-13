@@ -48,6 +48,10 @@ export interface ErrorPayload {
     frame?: string
     plugin?: string
     pluginCode?: string
-    pos?: number
+    loc?: {
+      file: string
+      line: number
+      column: number
+    }
   }
 }

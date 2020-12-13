@@ -55,6 +55,8 @@ socket.addEventListener('message', async ({ data }) => {
   handleMessage(JSON.parse(data))
 })
 
+let isFirstUpdate = true
+
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
@@ -64,7 +66,17 @@ async function handleMessage(payload: HMRPayload) {
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
     case 'update':
-      clearErrorOverlay()
+      // if this is the first update and there's already an error overlay, it
+      // means the page opened with existing server compile error and the whole
+      // module script failed to load (since one of the nested imports is 500).
+      // in this case a normal update won't work and a full reload is needed.
+      if (isFirstUpdate && hasErrorOverlay()) {
+        window.location.reload()
+        return
+      } else {
+        clearErrorOverlay()
+        isFirstUpdate = false
+      }
       payload.updates.forEach((update) => {
         if (update.type === 'js-update') {
           queueUpdate(fetchUpdate(update))
@@ -133,6 +145,10 @@ function clearErrorOverlay() {
   document
     .querySelectorAll(overlayId)
     .forEach((n) => (n as ErrorOverlay).close())
+}
+
+function hasErrorOverlay() {
+  return document.querySelectorAll(overlayId).length
 }
 
 let pending = false

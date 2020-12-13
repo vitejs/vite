@@ -57,6 +57,7 @@ export function esbuildPlugin(options?: TransformOptions): Plugin {
             e.errors.forEach((m: Message) => {
               e.frame += `\n` + prettifyMessage(m, code)
             })
+            e.loc = e.errors[0].location
           }
           this.error(e)
         }

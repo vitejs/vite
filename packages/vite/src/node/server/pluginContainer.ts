@@ -59,6 +59,7 @@ import { ServerContext } from '..'
 import {
   createDebugger,
   generateCodeFrame,
+  numberToPos,
   posToNumber,
   prettifyUrl,
   timeFrom
@@ -270,7 +271,10 @@ export async function createPluginContainer(
       if (this._activeCode) {
         err.pluginCode = this._activeCode
         if (position) {
-          err.pos = posToNumber(this._activeCode, position)
+          err.loc = {
+            file: err.id,
+            ...numberToPos(this._activeCode, position)
+          }
           err.frame = generateCodeFrame(this._activeCode, err.pos)
         }
       }

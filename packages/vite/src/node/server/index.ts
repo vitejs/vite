@@ -27,6 +27,7 @@ import { createDebugger } from '../utils'
 import { errorMiddleware } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions } from './hmr'
 import { openBrowser } from './openBrowser'
+import launchEditorMiddleware from 'launch-editor-middleware'
 
 export interface ServerOptions {
   host?: string
@@ -225,8 +226,8 @@ export async function createServer(
     app.use(proxyMiddleware(context))
   }
 
-  // client
-  // app.use(clientMiddleware(context))
+  // open in editor support
+  app.use('/__open-in-editor', launchEditorMiddleware())
 
   // main transform middleware
   app.use(transformMiddleware(context))

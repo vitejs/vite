@@ -8,6 +8,7 @@ const template = /*html*/ `
   left: 0;
   width: 100%;
   height: 100%;
+  overflow-y: scroll;
   margin: 0;
   background: rgba(0, 0, 0, 0.66);
   --monospace: 'SFMono-Regular', Consolas,
@@ -74,6 +75,11 @@ code {
   font-family: var(--monospace);
   color: var(--yellow);
 }
+
+.file-link {
+  text-decoration: underline;
+  cursor: pointer;
+}
 </style>
 <div class="window">
   <pre class="message"></pre>
@@ -88,6 +94,8 @@ code {
 </div>
 `
 
+const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
+
 export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot
 
@@ -99,9 +107,17 @@ export class ErrorOverlay extends HTMLElement {
       '.message',
       (err.plugin ? `[plugin:${err.plugin}] ` : ``) + err.message.trim()
     )
-    err.id && this.text('.file', err.id)
-    this.text('.stack', err.stack.trim())
+    if (err.loc) {
+      this.text(
+        '.file',
+        `${err.loc.file}:${err.loc.line}:${err.loc.column}`,
+        true
+      )
+    } else if (err.id) {
+      this.text('.file', err.id)
+    }
     err.frame && this.text('.frame', err.frame.trim())
+    this.text('.stack', err.stack.trim(), true)
 
     this.root.querySelector('.window')!.addEventListener('click', (e) => {
       e.stopPropagation()
@@ -111,8 +127,28 @@ export class ErrorOverlay extends HTMLElement {
     })
   }
 
-  text(selector: string, text: string) {
-    this.root.querySelector(selector)!.textContent = text
+  text(selector: string, text: string, linkFiles = false) {
+    const el = this.root.querySelector(selector)!
+    if (!linkFiles) {
+      el.textContent = text
+    } else {
+      let curIndex = 0
+      console.log(selector)
+      for (const { 0: file, index } of text.matchAll(fileRE)) {
+        if (index != null) {
+          const frag = text.slice(curIndex, index)
+          el.appendChild(document.createTextNode(frag))
+          const link = document.createElement('a')
+          link.textContent = file
+          link.className = 'file-link'
+          link.onclick = () => {
+            fetch('/__open-in-editor?file=' + encodeURIComponent(file))
+          }
+          el.appendChild(link)
+          curIndex += frag.length + file.length
+        }
+      }
+    }
   }
 
   close() {
