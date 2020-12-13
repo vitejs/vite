@@ -1,5 +1,5 @@
 import path from 'path'
-import { CLIENT_DIR, Plugin, ResolvedConfig, ServerContext } from '..'
+import { Plugin, ResolvedConfig, ServerContext } from '..'
 import chalk from 'chalk'
 import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
@@ -13,8 +13,7 @@ const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
 
 const skipRE = /\.(map|json)$/
-const canSkip = (id: string) =>
-  id.startsWith(CLIENT_DIR) || skipRE.test(id) || isCSSRequest(id)
+const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
 
 /**
  * Server-only plugin that rewrites url imports (bare modules, css/asset imports)
@@ -147,7 +146,10 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           // resolve CSS imports into js (so it differentiates from actual
           // CSS references from <link>)
           if (isCSSRequest(resolved.id)) {
-            str().appendLeft(end, '.js')
+            const [, query] = url.split('?')
+            if (query !== 'raw') {
+              str().appendLeft(end, '.js')
+            }
           }
 
           const absoluteUrl = path.posix.resolve(

@@ -28,7 +28,7 @@ export interface TransformResult {
 
 export async function transformFile(
   url: string,
-  { config: { root }, container, moduleGraph }: ServerContext
+  { config: { root }, container, moduleGraph, watcher }: ServerContext
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
@@ -48,11 +48,6 @@ export async function transformFile(
   }
   const id = resolved.id
   const file = unwrapCSSProxy(cleanUrl(id))
-  if (isDebug) {
-    // this is only useful when showing the full paths but it can get very
-    // spammy so it's disabled by default
-    // debugUrl(`${chalk.green(url)} -> ${chalk.dim(id)}`)
-  }
 
   let code = null
   let map: SourceDescription['map'] = null
@@ -89,6 +84,10 @@ export async function transformFile(
   // create module in graph after successful load
   // it may already exist - in this case we update it with the resolved id.
   const mod = await moduleGraph.ensureEntry(url, id)
+  // file is out of root, add it to the watch list
+  if (mod.file && !mod.file.startsWith(root)) {
+    watcher.add(mod.file)
+  }
 
   // transform
   const transformStart = Date.now()
@@ -133,18 +132,6 @@ export function transformMiddleware(
     }
 
     try {
-      // check if we can return 304 early
-      const ifNoneMatch = req.headers['if-none-match']
-      if (
-        ifNoneMatch &&
-        (await moduleGraph.getModuleByUrl(req.url!))?.transformResult?.etag ===
-          ifNoneMatch
-      ) {
-        isDebug && debugCache(`[304] ${prettifyUrl(req.url!, root)}`)
-        res.statusCode = 304
-        return res.end()
-      }
-
       const isSourceMap = req.url!.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
@@ -169,6 +156,18 @@ export function transformMiddleware(
         isSourceMap ||
         isCSS
       ) {
+        // check if we can return 304 early
+        const ifNoneMatch = req.headers['if-none-match']
+        if (
+          ifNoneMatch &&
+          (await moduleGraph.getModuleByUrl(req.url!))?.transformResult
+            ?.etag === ifNoneMatch
+        ) {
+          isDebug && debugCache(`[304] ${prettifyUrl(req.url!, root)}`)
+          res.statusCode = 304
+          return res.end()
+        }
+
         // resolve, load and transform using the plugin container
         const result = await transformFile(req.url!, context)
         if (result) {
