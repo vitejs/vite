@@ -26,6 +26,7 @@ import { Connect } from 'types/connect'
 import { createDebugger } from '../utils'
 import { errorMiddleware } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions } from './hmr'
+import { openBrowser } from './openBrowser'
 
 export interface ServerOptions {
   host?: string
@@ -35,6 +36,10 @@ export interface ServerOptions {
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
   https?: boolean | https.ServerOptions
+  /**
+   * Open browser window on startup
+   */
+  open?: boolean
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    */
@@ -298,10 +303,10 @@ export async function startServer(
 ): Promise<ViteDevServer> {
   const server = await createServer(inlineConfig, mode, configPath)
 
-  const resolvedOptions = server.context.config.server || {}
-  let port = resolvedOptions.port || 3000
-  let hostname = resolvedOptions.host || 'localhost'
-  const protocol = resolvedOptions.https ? 'https' : 'http'
+  const options = server.context.config.server || {}
+  let port = options.port || 3000
+  let hostname = options.host || 'localhost'
+  const protocol = options.https ? 'https' : 'http'
 
   server.on('error', (e: Error & { code?: string }) => {
     if (e.code === 'EADDRINUSE') {
@@ -344,6 +349,10 @@ export async function startServer(
     )
     console.log()
   })
+
+  if (options.open) {
+    openBrowser(`${protocol}://${hostname}:${port}`, options.open)
+  }
 
   return server
 }
