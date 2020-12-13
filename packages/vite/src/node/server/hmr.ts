@@ -1,5 +1,5 @@
 import path from 'path'
-import { ServerContext } from '..'
+import { CLIENT_DIR, ServerContext } from '..'
 import { createDebugger } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
@@ -30,7 +30,8 @@ export function handleHMRUpdate(file: string, context: ServerContext): any {
     return
   }
 
-  if (file.endsWith('.html')) {
+  // html files and the client itself cannot be hot updated.
+  if (file.endsWith('.html') || file.startsWith(CLIENT_DIR)) {
     context.ws.send({
       type: 'full-reload',
       path: '/' + slash(path.relative(context.config.root, file))

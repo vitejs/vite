@@ -383,7 +383,6 @@ export async function createPluginContainer(
       const resolveStart = Date.now()
 
       const partial: Partial<PartialResolvedId> = {}
-      if (rawId.includes('/@vite/client')) debugger
       for (const plugin of plugins) {
         if (!plugin.resolveId) continue
 

@@ -65,6 +65,8 @@ pre {
 .tip {
   font-size: 13px;
   color: #999;
+  border-top: 1px dotted #999;
+  padding-top: 13px;
 }
 
 code {
@@ -79,7 +81,6 @@ code {
   <pre class="frame"></pre>
   <pre class="stack"></pre>
   <div class="tip">
-    ---<br>
     Click outside or fix the code to dismiss.<br>
     You can also disable this overlay with
     <code>hmr: { overlay: false }</code> in <code>vite.config.js.</code>
