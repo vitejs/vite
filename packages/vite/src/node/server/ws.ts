@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { Server } from 'http'
 import WebSocket from 'ws'
-import { HMRPayload } from 'types/hmrPayload'
+import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
 
 export const HMR_HEADER = 'vite-hmr'
 
@@ -22,6 +22,10 @@ export function setupWebSocketServer(server: Server): WebSocketServer {
 
   wss.on('connection', (socket) => {
     socket.send(JSON.stringify({ type: 'connected' }))
+    if (bufferedError) {
+      socket.send(JSON.stringify(bufferedError))
+      bufferedError = null
+    }
   })
 
   wss.on('error', (e: Error & { code: string }) => {
@@ -31,15 +35,27 @@ export function setupWebSocketServer(server: Server): WebSocketServer {
     }
   })
 
-  return {
-    send(payload: HMRPayload) {
-      const stringified = JSON.stringify(payload, null, 2)
+  // On page reloads, if a file fails to compile and returns 500, the server
+  // sends the error payload before the client connection is established.
+  // If we have no open clients, buffer the error and send it to the next
+  // connected client.
+  let bufferedError: ErrorPayload | null = null
 
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(stringified)
-        }
-      })
+  function send(payload: HMRPayload) {
+    if (payload.type === 'error' && !wss.clients.size) {
+      bufferedError = payload
+      return
     }
+
+    const stringified = JSON.stringify(payload)
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(stringified)
+      }
+    })
+  }
+
+  return {
+    send
   }
 }

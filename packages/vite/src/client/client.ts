@@ -31,18 +31,6 @@ Object.keys(defines).forEach((key) => {
   }
 })
 
-// window.onerror = (msg, src, line, col, err) => {
-//   const re = new RegExp(location.origin + '(/@fs/)?', 'g')
-//   const cb = (match: string) => {
-//     if (match.includes('/@fs/')) return ''
-//     return __ROOT__
-//   }
-//   if (src) {
-//     src = src.replace(re, cb)
-//   }
-//   createErrorOverlay({})
-// }
-
 console.log('[vite] connecting...')
 
 // use server configuration, then fallback to inference
@@ -121,8 +109,11 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'error':
       const err = payload.err
-      console.error(`[vite] Internal Server Error\n${err.stack}`)
-      createErrorOverlay(err)
+      if (enableOverlay) {
+        createErrorOverlay(err)
+      } else {
+        console.error(`[vite] Internal Server Error\n${err.stack}`)
+      }
       break
     default:
       const check: never = payload
@@ -130,8 +121,10 @@ async function handleMessage(payload: HMRPayload) {
   }
 }
 
+const enableOverlay = __HMR_ENABLE_OVERLAY__
+
 function createErrorOverlay(err: ErrorPayload['err']) {
-  if (!__HMR_ENABLE_OVERLAY__) return
+  if (!enableOverlay) return
   clearErrorOverlay()
   document.body.appendChild(new ErrorOverlay(err))
 }
@@ -273,6 +266,7 @@ async function fetchUpdate({ path, changedPath, timestamp }: Update) {
       if (disposer) await disposer(dataMap.get(dep))
       try {
         const newMod = await import(
+          /* @vite-ignore */
           dep + (dep.includes('?') ? '&' : '?') + `t=${timestamp}`
         )
         moduleMap.set(dep, newMod)

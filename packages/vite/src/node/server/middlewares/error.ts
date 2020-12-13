@@ -3,6 +3,7 @@ import { RollupError } from 'rollup'
 import { ServerContext } from '../..'
 import { Connect } from 'types/connect'
 import { pad } from '../../utils'
+import strip from 'strip-ansi'
 
 export function errorMiddleware(
   context: ServerContext
@@ -14,15 +15,18 @@ export function errorMiddleware(
     if (err.id) console.error(`  File: ${chalk.cyan(err.id)}`)
     if (err.frame) console.error(chalk.yellow(pad(err.frame)))
     if (err.stack) console.error(pad(err.stack))
-    context.ws.send({
-      type: 'error',
-      err: {
-        ...err,
-        message: err.message,
-        stack: err.stack || ''
-      }
-    })
+
     res.statusCode = 500
-    res.end()
+    res.end(() => {
+      context.ws.send({
+        type: 'error',
+        err: {
+          ...err,
+          message: strip(err.message),
+          stack: strip(err.stack || ''),
+          frame: strip(err.frame || '')
+        }
+      })
+    })
   }
 }
