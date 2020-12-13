@@ -79,6 +79,7 @@
     "etag": "^1.8.1",
     "execa": "^5.0.0",
     "http-proxy": "^1.18.1",
+    "launch-editor-middleware": "^2.2.1",
     "magic-string": "^0.25.7",
     "merge-source-map": "^1.1.0",
     "open": "^7.3.0",

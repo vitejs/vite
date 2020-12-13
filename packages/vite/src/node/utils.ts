@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
 import { FILE_PREFIX } from './config'
+import { off } from 'process'
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -125,10 +126,12 @@ export function lookupFile(
   }
 }
 
+const splitRE = /\r?\n/
+
 const range: number = 2
 
 export function pad(source: string, n = 2) {
-  const lines = source.split(/\r?\n/)
+  const lines = source.split(splitRE)
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
 
@@ -137,7 +140,7 @@ export function posToNumber(
   pos: number | { line: number; column: number }
 ): number {
   if (typeof pos === 'number') return pos
-  const lines = source.split(/\r?\n/)
+  const lines = source.split(splitRE)
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line; i++) {
@@ -146,13 +149,36 @@ export function posToNumber(
   return start + column - 1
 }
 
+export function numberToPos(
+  source: string,
+  offset: number | { line: number; column: number }
+) {
+  if (typeof offset !== 'number') return offset
+  if (offset > source.length) {
+    throw new Error('offset is longer than source length!')
+  }
+  const lines = source.split(splitRE)
+  let counted = 0
+  let line = 0
+  let column = 0
+  for (let line = 0, col = 0; line < lines.length; line++) {
+    const lineLength = lines[line].length + 1
+    if (counted + lineLength >= offset) {
+      col = offset - counted + 1
+      break
+    }
+    counted += lineLength
+  }
+  return { line, column }
+}
+
 export function generateCodeFrame(
   source: string,
   start: number | { line: number; column: number } = 0,
   end = source.length
 ): string {
   start = posToNumber(source, start)
-  const lines = source.split(/\r?\n/)
+  const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
   for (let i = 0; i < lines.length; i++) {
