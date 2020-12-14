@@ -20,7 +20,7 @@ export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode } from './server/moduleGraph'
 export type { ProxyOptions } from './server/middlewares/proxy'
-export type { TransformResult } from './server/middlewares/transform'
+export type { TransformResult } from './server/transformRequest'
 export type { HmrOptions } from './server/hmr'
 export {
   HMRPayload,

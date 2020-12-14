@@ -2,7 +2,7 @@ import * as http from 'http'
 import { createDebugger } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
-import { ServerContext } from '..'
+import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import { HttpProxy } from 'types/http-proxy'
 
@@ -28,9 +28,9 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 }
 
 export function proxyMiddleware({
-  server,
+  httpServer,
   config
-}: ServerContext): Connect.NextHandleFunction {
+}: ViteDevServer): Connect.NextHandleFunction {
   const options = config.server.proxy!
 
   // lazy require only when proxy is used
@@ -49,7 +49,7 @@ export function proxyMiddleware({
     proxies[context] = [proxy, { ...opts }]
   })
 
-  server.on('upgrade', (req, socket, head) => {
+  httpServer.on('upgrade', (req, socket, head) => {
     const url = req.url!
     for (const context in proxies) {
       if (url.startsWith(context)) {
