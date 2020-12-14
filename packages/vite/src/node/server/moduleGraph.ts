@@ -69,8 +69,8 @@ export class ModuleGraph {
    */
   async updateModuleInfo(
     mod: ModuleNode,
-    importedUrls: Set<string>,
-    acceptedUrls: Set<string>,
+    importedModules: Set<string | ModuleNode>,
+    acceptedModules: Set<string | ModuleNode>,
     isSelfAccepting: boolean
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
@@ -78,8 +78,11 @@ export class ModuleGraph {
     const nextImports = (mod.importedModules = new Set())
     let noLongerImported: Set<ModuleNode> | undefined
     // update import graph
-    for (const depUrl of importedUrls) {
-      const dep = await this.ensureEntry(depUrl)
+    for (const imported of importedModules) {
+      const dep =
+        typeof imported === 'string'
+          ? await this.ensureEntryFromUrl(imported)
+          : imported
       dep.importers.add(mod)
       nextImports.add(dep)
     }
@@ -94,14 +97,18 @@ export class ModuleGraph {
       }
     })
     // update accepted hmr deps
-    const newDeps = (mod.acceptedHmrDeps = new Set())
-    for (const depUrl of acceptedUrls) {
-      newDeps.add(await this.ensureEntry(depUrl))
+    const deps = (mod.acceptedHmrDeps = new Set())
+    for (const accepted of acceptedModules) {
+      const dep =
+        typeof accepted === 'string'
+          ? await this.ensureEntryFromUrl(accepted)
+          : accepted
+      deps.add(dep)
     }
     return noLongerImported
   }
 
-  async ensureEntry(rawUrl: string) {
+  async ensureEntryFromUrl(rawUrl: string) {
     const [url, resolvedId] = await this.resolveUrl(rawUrl)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
@@ -120,6 +127,28 @@ export class ModuleGraph {
     return mod
   }
 
+  // some deps, like a css file referenced via @import, don't have its own
+  // url because they are inlined into the main css import. But they still
+  // need to be represented in the module graph so that they can trigger
+  // hmr in the importing css file.
+  createFileOnlyEntry(file: string) {
+    const url = `/@fs/${file}`
+    let fileMappedMdoules = this.fileToModulesMap.get(file)
+    if (!fileMappedMdoules) {
+      fileMappedMdoules = new Set()
+      this.fileToModulesMap.set(file, fileMappedMdoules)
+    }
+    for (const m of fileMappedMdoules) {
+      if (m.url === url) {
+        return m
+      }
+    }
+    const mod = new ModuleNode(url)
+    mod.file = file
+    fileMappedMdoules.add(mod)
+    return mod
+  }
+
   // for incoming urls, it is important to:
   // 1. remove the HMR timestamp query (?t=xxxx)
   // 2. resolve its extension so that urls with or without extension all map to
@@ -128,7 +157,9 @@ export class ModuleGraph {
     url = removeTimestampQuery(url)
     const resolvedId = (await this.container.resolveId(url)).id
     if (resolvedId === FAILED_RESOLVE) {
-      throw Error(`Failed to resolve url: ${url}\nDoes the file exist?`)
+      throw Error(
+        `Failed to resolve url: ${unwrapCSSProxy(url)}\nDoes the file exist?`
+      )
     }
     const ext = extname(cleanUrl(resolvedId))
     const [pathname, query] = url.split('?')

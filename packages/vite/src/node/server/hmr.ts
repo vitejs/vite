@@ -84,7 +84,7 @@ export function handleHMRUpdate(
   })
 }
 
-export function handleDisposedModules(
+export function handlePrunedModules(
   mods: Set<ModuleNode>,
   { ws }: ViteDevServer
 ) {
@@ -94,9 +94,10 @@ export function handleDisposedModules(
   const t = Date.now()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
+    debugHmr(`[dispose] ${chalk.dim(mod.file)}`)
   })
   ws.send({
-    type: 'dispose',
+    type: 'prune',
     paths: [...mods].map((m) => m.url)
   })
 }

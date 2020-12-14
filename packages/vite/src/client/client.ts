@@ -119,13 +119,13 @@ async function handleMessage(payload: HMRPayload) {
         location.reload()
       }
       break
-    case 'dispose':
+    case 'prune':
       // After an HMR update, some modules are no longer imported on the page
       // but they may have left behind side effects that need to be cleaned up
       // (.e.g style injections)
       // TODO Trigger their dispose callbacks.
       payload.paths.forEach((path) => {
-        const fn = disposeMap.get(path)
+        const fn = pruneMap.get(path)
         if (fn) {
           fn(dataMap.get(path))
         }
@@ -308,7 +308,12 @@ async function fetchUpdate({ path, changedPath, timestamp }: Update) {
     for (const { deps, fn } of qualifiedCallbacks) {
       fn(deps.map((dep) => moduleMap.get(dep)))
     }
-    console.log(`[vite]: js module hot updated: `, path)
+    const updateType = /\.(css|less|sass|scss|styl|stylus|postcss)($|\?)/.test(
+      path.slice(0, -3)
+    )
+      ? 'css'
+      : 'js'
+    console.log(`[vite]: ${updateType} module hot updated: `, path)
   }
 }
 
@@ -325,6 +330,7 @@ interface HotCallback {
 
 const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
+const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
 const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
 
@@ -384,7 +390,11 @@ export const createHotContext = (ownerPath: string) => {
       disposeMap.set(ownerPath, cb)
     },
 
-    // noop, used for static analysis only
+    prune(cb: (data: any) => void) {
+      pruneMap.set(ownerPath, cb)
+    },
+
+    // TODO
     decline() {},
 
     invalidate() {
