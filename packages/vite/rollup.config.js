@@ -33,7 +33,8 @@ const nodeConfig = {
   input: {
     index: path.resolve(__dirname, 'src/node/index.ts'),
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
-    server: path.resolve(__dirname, 'src/node/server/index.ts')
+    server: path.resolve(__dirname, 'src/node/server/index.ts'),
+    build: path.resolve(__dirname, 'src/node/build/index.ts')
   },
   external: [
     'fsevents',
