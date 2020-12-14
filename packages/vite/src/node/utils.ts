@@ -4,7 +4,6 @@ import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
 import { FILE_PREFIX } from './config'
-import { off } from 'process'
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -161,10 +160,10 @@ export function numberToPos(
   let counted = 0
   let line = 0
   let column = 0
-  for (let line = 0, col = 0; line < lines.length; line++) {
+  for (; line < lines.length; line++) {
     const lineLength = lines[line].length + 1
     if (counted + lineLength >= offset) {
-      col = offset - counted + 1
+      column = offset - counted + 1
       break
     }
     counted += lineLength
@@ -175,9 +174,10 @@ export function numberToPos(
 export function generateCodeFrame(
   source: string,
   start: number | { line: number; column: number } = 0,
-  end = source.length
+  end?: number
 ): string {
   start = posToNumber(source, start)
+  end = end || start
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []

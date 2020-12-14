@@ -86,15 +86,12 @@ function propagateUpdate(
   boundaries: Set<ModuleNode>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
-  if (node.isHmrBoundary) {
+  if (node.isSelfAccepting) {
     boundaries.add(node)
     // mark current propagation chain dirty.
     // timestamp is used for injecting timestamp query during rewrite
     // also invalidate cache
-    currentChain.forEach((node) => {
-      node.lastHMRTimestamp = timestamp
-      node.transformResult = null
-    })
+    invalidateChain(currentChain, timestamp)
     return false
   }
 
@@ -103,19 +100,25 @@ function propagateUpdate(
   }
 
   for (const importer of node.importers) {
-    // TODO need dep acceptance check
+    const subChain = currentChain.concat(importer)
+    if (importer.acceptedHmrDeps.has(node)) {
+      boundaries.add(importer)
+      invalidateChain(subChain, timestamp)
+      continue
+    }
+
     if (!currentChain.includes(importer)) {
-      if (
-        propagateUpdate(
-          importer,
-          timestamp,
-          boundaries,
-          currentChain.concat(importer)
-        )
-      ) {
+      if (propagateUpdate(importer, timestamp, boundaries, subChain)) {
         return true
       }
     }
   }
   return false
+}
+
+function invalidateChain(chain: ModuleNode[], timestamp: number) {
+  chain.forEach((node) => {
+    node.lastHMRTimestamp = timestamp
+    node.transformResult = null
+  })
 }

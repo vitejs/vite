@@ -60,7 +60,6 @@ import {
   createDebugger,
   generateCodeFrame,
   numberToPos,
-  posToNumber,
   prettifyUrl,
   timeFrom
 } from '../utils'
@@ -270,12 +269,13 @@ export async function createPluginContainer(
       if (this._activeId && !err.id) err.id = this._activeId
       if (this._activeCode) {
         err.pluginCode = this._activeCode
-        if (position) {
-          err.loc = {
+        const pos = position || err.pos
+        if (pos) {
+          err.loc = err.loc || {
             file: err.id,
-            ...numberToPos(this._activeCode, position)
+            ...numberToPos(this._activeCode, pos)
           }
-          err.frame = generateCodeFrame(this._activeCode, err.pos)
+          err.frame = err.frame || generateCodeFrame(this._activeCode, pos)
         }
       }
       // error thrown here is caught by the transform middleware and passed on
@@ -459,7 +459,12 @@ export async function createPluginContainer(
         ctx._activeId = id
         ctx._activeCode = code
         const start = Date.now()
-        const result = await plugin.transform.call(ctx as any, code, id)
+        let result
+        try {
+          result = await plugin.transform.call(ctx as any, code, id)
+        } catch (e) {
+          ctx.error(e)
+        }
         if (!result) continue
         isDebug &&
           debugPluginTransform(
