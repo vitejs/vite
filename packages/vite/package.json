@@ -46,9 +46,11 @@
   "//": "READ .github/maintenance.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.8.20",
-    "fsevents": "~2.1.2",
     "postcss": "^8.2.1",
     "rollup": "^2.34.2"
+  },
+  "optionalDependencies": {
+    "fsevents": "~2.1.2"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.12.0",
