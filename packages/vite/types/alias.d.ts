@@ -53,7 +53,7 @@ export interface ResolverObject {
  * With either format, the order of the entries is important,
  * in that the first defined rules are applied first.
  *
- * This is passed to @rollup/plugin-alias as the "entries" field
+ * This is passed to \@rollup/plugin-alias as the "entries" field
  * https://github.com/rollup/plugins/tree/master/packages/alias#entries
  */
 export type AliasOptions = readonly Alias[] | { [find: string]: string }

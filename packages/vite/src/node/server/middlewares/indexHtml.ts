@@ -8,8 +8,9 @@ import {
   IndexHtmlTransformHook,
   resolveHtmlTransforms
 } from '../../plugins/html'
-import { CLIENT_PUBLIC_PATH, ServerContext } from '../..'
+import { ServerContext } from '../..'
 import { send } from '../send'
+import { CLIENT_PUBLIC_PATH } from '../../constants'
 
 const devHtmlHook: IndexHtmlTransformHook = () => {
   return [{ tag: 'script', attrs: { type: 'module', src: CLIENT_PUBLIC_PATH } }]

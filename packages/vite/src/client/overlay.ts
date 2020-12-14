@@ -142,7 +142,9 @@ export class ErrorOverlay extends HTMLElement {
       el.textContent = text
     } else {
       let curIndex = 0
-      for (const { 0: file, index } of text.matchAll(fileRE)) {
+      let match
+      while ((match = fileRE.exec(text))) {
+        const { 0: file, index } = match
         if (index != null) {
           const frag = text.slice(curIndex, index)
           el.appendChild(document.createTextNode(frag))

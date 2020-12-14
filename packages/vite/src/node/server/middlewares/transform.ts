@@ -14,7 +14,6 @@ import {
 } from '../../utils'
 import { send } from '../send'
 
-const debugUrl = createDebugger('vite:url')
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
 const debugCache = createDebugger('vite:cache')
@@ -41,12 +40,7 @@ export async function transformFile(
   }
 
   // resolve
-  const resolved = await container.resolveId(url)
-  if (!resolved) {
-    isDebug && debugUrl(`not resolved: ${url}`)
-    return null
-  }
-  const id = resolved.id
+  const id = (await container.resolveId(url)).id
   const file = unwrapCSSProxy(cleanUrl(id))
 
   let code = null

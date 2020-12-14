@@ -3,7 +3,7 @@ import fs, { promises as fsp } from 'fs'
 import qs from 'querystring'
 import { Plugin, ResolvedConfig } from '..'
 import { createDebugger, cleanUrl } from '../utils'
-import { FILE_PREFIX } from '../config'
+import { FILE_PREFIX } from '../constants'
 
 const debug = createDebugger('vite:asset')
 

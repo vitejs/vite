@@ -1,5 +1,5 @@
 import { Plugin, ResolvedConfig } from '..'
-import { CLIENT_ENTRY } from '../config'
+import { CLIENT_ENTRY } from '../constants'
 
 /**
  * some values used by the client needs to be dynamically injected by the server

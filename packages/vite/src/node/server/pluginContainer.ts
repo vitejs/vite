@@ -82,7 +82,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     skip?: Plugin[]
-  ): Promise<PartialResolvedId | null>
+  ): Promise<PartialResolvedId>
   transform(
     code: string,
     id: string,
@@ -435,7 +435,7 @@ export async function createPluginContainer(
           `${timeFrom(resolveStart)} ${chalk.cyan(rawId)} -> ${chalk.dim(id)}`
         )
 
-      return id ? (partial as PartialResolvedId) : null
+      return id ? (partial as PartialResolvedId) : { id: rawId }
     },
 
     async load(id) {
