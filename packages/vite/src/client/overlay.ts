@@ -15,6 +15,7 @@ const template = /*html*/ `
               'Liberation Mono', Menlo, Courier, monospace;
   --red: #ff5555;
   --yellow: #e2aa53;
+  --purple: #cfa4ff;
   --cyan: #2dd9da;
   --dim: #c9c9c9;
 }
@@ -44,14 +45,23 @@ pre {
 
 .message {
   line-height: 1.3;
-  color: var(--red);
   font-weight: 600;
   white-space: pre-wrap;
+}
+
+.message-body {
+  color: var(--red);
+}
+
+.plugin {
+  color: var(--purple);
 }
 
 .file {
   color: var(--cyan);
   margin-bottom: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .frame {
@@ -82,7 +92,7 @@ code {
 }
 </style>
 <div class="window">
-  <pre class="message"></pre>
+  <pre class="message"><span class="plugin"></span><span class="message-body"></span></pre>
   <pre class="file"></pre>
   <pre class="frame"></pre>
   <pre class="stack"></pre>
@@ -109,10 +119,10 @@ export class ErrorOverlay extends HTMLElement {
     const message = hasFrame
       ? err.message.replace(codeframeRE, '')
       : err.message
-    this.text(
-      '.message',
-      (err.plugin ? `[plugin:${err.plugin}] ` : ``) + message.trim()
-    )
+    if (err.plugin) {
+      this.text('.plugin', `[plugin:${err.plugin}] `)
+    }
+    this.text('.message-body', message.trim())
     if (err.loc) {
       this.text(
         '.file',
@@ -138,6 +148,7 @@ export class ErrorOverlay extends HTMLElement {
 
   text(selector: string, text: string, linkFiles = false) {
     const el = this.root.querySelector(selector)!
+    if (!el) debugger
     if (!linkFiles) {
       el.textContent = text
     } else {

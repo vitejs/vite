@@ -83,6 +83,9 @@ export class ModuleGraph {
     prevDeps.forEach((dep) => {
       if (!newDeps.has(dep)) {
         dep.importers.delete(mod)
+        if (!dep.importers.size) {
+          console.log(`module no longer has importers: ${mod.url}`)
+        }
       }
     })
   }

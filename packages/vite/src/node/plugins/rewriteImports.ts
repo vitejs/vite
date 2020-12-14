@@ -89,6 +89,11 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
+
+      if (!importerModule) {
+        debugger
+      }
+
       const importedUrls = new Set<string>()
       const acceptedUrls = new Set<string>()
       const toAbsoluteUrl = (url: string) =>
@@ -163,6 +168,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           if (isCSSRequest(resolved.id)) {
             const [, query] = url.split('?')
             if (query !== 'raw') {
+              url += '.js'
               str().appendLeft(end, '.js')
             }
           }
