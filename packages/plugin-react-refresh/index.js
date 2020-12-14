@@ -1,5 +1,6 @@
 // @ts-check
 const fs = require('fs')
+const { transformSync } = require('@babel/core')
 
 const runtimePublicPath = '/@react-refresh'
 const runtimeFilePath = require.resolve(
@@ -77,7 +78,7 @@ const transform = {
     }
 
     const isReasonReact = id.endsWith('.bs.js')
-    const result = require('@babel/core').transformSync(code, {
+    const result = transformSync(code, {
       plugins: [
         require('@babel/plugin-syntax-import-meta'),
         require('react-refresh/babel')

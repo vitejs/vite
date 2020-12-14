@@ -1,4 +1,5 @@
 import os from 'os'
+import fs from 'fs'
 import path from 'path'
 import * as http from 'http'
 import * as https from 'https'
@@ -343,12 +344,31 @@ export async function startServer(
           console.log(`  > ${type} ${chalk.cyan(url)}`)
         })
     )
+
     console.log()
     console.log(
       // @ts-ignore
       chalk.cyan(`  ready in ${Date.now() - global.__vite_start_time}ms.`)
     )
     console.log()
+
+    // @ts-ignore
+    const profileSession = global.__vite_profile_session
+    if (profileSession) {
+      profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
+        // Write profile to disk, upload, etc.
+        if (!err) {
+          const outPath = path.resolve('./vite-profile.cpuprofile')
+          fs.writeFileSync(outPath, JSON.stringify(profile))
+          console.log(
+            chalk.yellow(`  CPU profile written to ${chalk.white.dim(outPath)}`)
+          )
+          console.log()
+        } else {
+          throw err
+        }
+      })
+    }
   })
 
   if (options.open) {

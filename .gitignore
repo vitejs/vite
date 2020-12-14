@@ -9,3 +9,4 @@ explorations
 .idea
 *.local
 /packages/vite/LICENSE
+*.cpuprofile

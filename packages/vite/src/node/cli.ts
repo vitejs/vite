@@ -35,9 +35,9 @@ function cleanOptions(options: GlobalCLIOptions) {
 
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
-  .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
-  .option('--filter [filter]', `[string] filter debug logs`)
   .option('--root <path>', `[string] use specified config file`)
+  .option('--debug [feat]', `[string | boolean] show debug logs`)
+  .option('--filter [filter]', `[string] filter debug logs`)
 
 // dev
 cli
