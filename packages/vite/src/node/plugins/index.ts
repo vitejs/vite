@@ -8,6 +8,7 @@ import { importAnalysisPlugin } from './imports'
 import { cssPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
+import { htmlPlugin } from './html'
 
 export function resolvePlugins(
   command: 'build' | 'serve',
@@ -27,8 +28,9 @@ export function resolvePlugins(
       extensions: supportedExts,
       mainFields: ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
     }),
-    esbuildPlugin(config.esbuild || {}),
+    htmlPlugin(),
     cssPlugin(config, isBuild),
+    esbuildPlugin(config.esbuild || {}),
     jsonPlugin(),
     assetPlugin(config, isBuild),
     ...postPlugins,

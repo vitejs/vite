@@ -1,9 +1,9 @@
 import fs from 'fs'
-import getEtag from 'etag'
 import path from 'path'
 import { Connect } from 'types/connect'
 import { Plugin } from '../../config'
 import {
+  scriptRE,
   applyHtmlTransforms,
   IndexHtmlTransformHook,
   resolveHtmlTransforms
@@ -12,8 +12,23 @@ import { ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH } from '../../constants'
 
-const devHtmlHook: IndexHtmlTransformHook = () => {
-  return [{ tag: 'script', attrs: { type: 'module', src: CLIENT_PUBLIC_PATH } }]
+const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
+  let index = -1
+  html = html.replace(scriptRE, (_match, _openTag, script) => {
+    index++
+    if (script) {
+      // convert inline <script type="module"> into imported modules
+      return `<script type="module" src="${path}?html-proxy&index=${index}.js"></script>`
+    }
+    return _match
+  })
+
+  return {
+    html,
+    tags: [
+      { tag: 'script', attrs: { type: 'module', src: CLIENT_PUBLIC_PATH } }
+    ]
+  }
 }
 
 export function indexHtmlMiddleware(
@@ -21,40 +36,29 @@ export function indexHtmlMiddleware(
   plugins: readonly Plugin[]
 ): Connect.NextHandleFunction {
   const [preHooks, postHooks] = resolveHtmlTransforms(plugins)
-  const filename = path.join(server.config.root, 'index.html')
-
-  // cache the transform in the closure
-  let html = ''
-  let etag = ''
-  let lastModified = 0
 
   return async (req, res, next) => {
     // spa-fallback always redirects to /index.html
     if (
-      req.url === '/index.html' &&
-      req.headers['sec-fetch-dest'] !== 'script' &&
-      fs.existsSync(filename)
+      req.url?.endsWith('.html') &&
+      req.headers['sec-fetch-dest'] !== 'script'
     ) {
-      const stats = fs.statSync(filename)
-      if (stats.mtimeMs !== lastModified) {
-        lastModified = stats.mtimeMs
-        html = fs.readFileSync(filename, 'utf-8')
-        try {
-          // apply transforms
-          html = await applyHtmlTransforms(
-            html,
-            [...preHooks, devHtmlHook, ...postHooks],
-            server
-          )
-          etag = getEtag(html, { weak: true })
-        } catch (e) {
-          return next(e)
-        }
+      const filename = path.join(server.config.root, req.url!.slice(1))
+      try {
+        let html = fs.readFileSync(filename, 'utf-8')
+        // apply transforms
+        html = await applyHtmlTransforms(
+          html,
+          req.url!,
+          filename,
+          [...preHooks, devHtmlHook, ...postHooks],
+          server
+        )
+        return send(req, res, html, 'html')
+      } catch (e) {
+        return next(e)
       }
-
-      return send(req, res, html, 'html', etag)
     }
-
     next()
   }
 }

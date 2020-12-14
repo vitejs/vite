@@ -1,6 +1,41 @@
+import fs from 'fs'
 import { Plugin } from '../config'
 import { ViteDevServer } from '..'
 import { OutputBundle } from 'rollup'
+import { cleanUrl } from '../utils'
+
+const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
+export const isHTMLProxy = (id: string) => htmlProxyRE
+export const scriptRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
+
+export function htmlPlugin(): Plugin {
+  return {
+    name: 'vite:html',
+    resolveId(id) {
+      if (htmlProxyRE.test(id)) {
+        return id
+      }
+    },
+    load(id) {
+      const proxyMatch = id.match(htmlProxyRE)
+      if (proxyMatch) {
+        const index = Number(proxyMatch[1])
+        const file = cleanUrl(id)
+        const html = fs.readFileSync(file, 'utf-8')
+        let match
+        scriptRE.lastIndex = 0
+        for (let i = 0; i <= index; i++) {
+          match = scriptRE.exec(html)
+        }
+        if (match) {
+          return match[2]
+        } else {
+          throw new Error(`No matching html proxy module found from ${id}`)
+        }
+      }
+    }
+  }
+}
 
 export interface HtmlTagDescriptor {
   tag: string
@@ -9,12 +44,30 @@ export interface HtmlTagDescriptor {
   injectTo?: 'head' | 'body'
 }
 
-export type IndexHtmlTransformResult = string | HtmlTagDescriptor[]
+export type IndexHtmlTransformResult =
+  | string
+  | HtmlTagDescriptor[]
+  | {
+      html: string
+      tags: HtmlTagDescriptor[]
+    }
+
+export interface IndexHtmlTransformContext {
+  /**
+   * public path when served
+   */
+  path: string
+  /**
+   * filename on disk
+   */
+  filename: string
+  server?: ViteDevServer
+  bundle?: OutputBundle
+}
 
 export type IndexHtmlTransformHook = (
   html: string,
-  server?: ViteDevServer,
-  bundle?: OutputBundle
+  ctx: IndexHtmlTransformContext
 ) => IndexHtmlTransformResult | Promise<IndexHtmlTransformResult>
 
 export type IndexHtmlTransform =
@@ -46,30 +99,50 @@ export function resolveHtmlTransforms(plugins: readonly Plugin[]) {
 
 export async function applyHtmlTransforms(
   html: string,
+  path: string,
+  filename: string,
   hooks: IndexHtmlTransformHook[],
-  ctx: ViteDevServer
+  server: ViteDevServer
 ): Promise<string>
 export async function applyHtmlTransforms(
   html: string,
+  path: string,
+  filename: string,
   hooks: IndexHtmlTransformHook[],
-  ctx: undefined,
+  server: undefined,
   bundle: OutputBundle
 ): Promise<string>
 export async function applyHtmlTransforms(
   html: string,
+  path: string,
+  filename: string,
   hooks: IndexHtmlTransformHook[],
-  ctx?: ViteDevServer,
+  server?: ViteDevServer,
   bundle?: OutputBundle
 ): Promise<string> {
   const headTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
 
+  const ctx = {
+    path,
+    filename,
+    server,
+    bundle
+  }
+
   for (const hook of hooks) {
-    const res = await hook(html, ctx, bundle)
+    const res = await hook(html, ctx)
     if (typeof res === 'string') {
       html = res
     } else {
-      for (const tag of res) {
+      let tags
+      if (Array.isArray(res)) {
+        tags = res
+      } else {
+        html = res.html
+        tags = res.tags
+      }
+      for (const tag of tags) {
         if (tag.injectTo === 'body') {
           bodyTags.push(tag)
         } else {

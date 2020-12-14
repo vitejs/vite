@@ -77,7 +77,8 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
 }
 
 export function tryFsResolve(fsPath: string) {
-  const [file, query = ''] = fsPath.split(`?`)
+  const [file, q] = fsPath.split(`?`)
+  const query = q ? `?${q}` : ``
   if (fs.existsSync(file)) {
     return file + query
   }

@@ -4,6 +4,7 @@ import { isCSSRequest } from '../../plugins/css'
 import { createDebugger, prettifyUrl } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
+import { isHTMLProxy } from '../../plugins/html'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -17,15 +18,16 @@ export function transformMiddleware(
   } = server
 
   return async (req, res, next) => {
+    const url = req.url!
     if (req.method !== 'GET' || req.url === '/') {
       return next()
     }
 
     try {
-      const isSourceMap = req.url!.endsWith('.map')
+      const isSourceMap = url.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        const originalUrl = req.url!.replace(/\.map$/, '')
+        const originalUrl = url!.replace(/\.map$/, '')
         const map = (await moduleGraph.getModuleByUrl(originalUrl))
           ?.transformResult?.map
         if (map) {
@@ -37,28 +39,30 @@ export function transformMiddleware(
       // - requests that initiate from ESM imports (any extension)
       // - CSS (even not from ESM)
       // - Source maps (only for resolving)
-      const isCSS = isCSSRequest(req.url!)
+      const isCSS = isCSSRequest(url)
+      const isHTMLInlineModule = isHTMLProxy(url)
       if (
         // esm imports accept */* in most browsers
         req.headers['accept'] === '*/*' ||
         req.headers['sec-fetch-dest'] === 'script' ||
         isSourceMap ||
-        isCSS
+        isCSS ||
+        isHTMLInlineModule
       ) {
         // check if we can return 304 early
         const ifNoneMatch = req.headers['if-none-match']
         if (
           ifNoneMatch &&
-          (await moduleGraph.getModuleByUrl(req.url!))?.transformResult
-            ?.etag === ifNoneMatch
+          (await moduleGraph.getModuleByUrl(url))?.transformResult?.etag ===
+            ifNoneMatch
         ) {
-          isDebug && debugCache(`[304] ${prettifyUrl(req.url!, root)}`)
+          isDebug && debugCache(`[304] ${prettifyUrl(url, root)}`)
           res.statusCode = 304
           return res.end()
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(req.url!, server)
+        const result = await transformRequest(url, server)
         if (result) {
           const type = isCSS ? 'css' : 'js'
           const hasMap = !!(result.map && result.map.mappings)

@@ -46,7 +46,7 @@ export interface UserConfig {
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
    */
-  define?: Record<string, string>
+  define?: Record<string, any>
   /**
    * CSS related options (preprocessors and CSS modules)
    */
