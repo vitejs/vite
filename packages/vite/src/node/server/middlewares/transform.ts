@@ -137,7 +137,6 @@ export function transformMiddleware(
         const originalUrl = req.url!.replace(/\.map$/, '')
         const map = (await moduleGraph.getModuleByUrl(originalUrl))
           ?.transformResult?.map
-        if (originalUrl.startsWith('/@fs')) debugger
         if (map) {
           return send(req, res, JSON.stringify(map), 'json')
         }

@@ -113,7 +113,7 @@ export class ModuleGraph {
     url = removeTimestampQuery(url)
     const resolvedId = (await this.container.resolveId(url))?.id
     if (!resolvedId) {
-      throw Error(`failed to resolve url to id: ${url}`)
+      throw Error(`Failed to resolve url: ${url}\nDoes the file exist?`)
     }
     const ext = extname(cleanUrl(resolvedId))
     const [pathname, query] = url.split('?')

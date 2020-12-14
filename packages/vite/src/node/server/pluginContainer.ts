@@ -376,7 +376,7 @@ export async function createPluginContainer(
       let id = rawId
       const ctx = new Context()
       const key =
-        `${id}\n${importer}` +
+        `${rawId}\n${importer}` +
         (_skip ? _skip.map((p) => p.name).join('\n') : ``)
 
       if (resolveCache.has(key)) {
@@ -423,8 +423,8 @@ export async function createPluginContainer(
         break
       }
 
-      partial.id = id
       if (id) {
+        partial.id = id
         resolveCache.set(key, partial as PartialResolvedId)
       }
 

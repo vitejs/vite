@@ -20,7 +20,6 @@ const template = /*html*/ `
 }
 
 .window {
-  word-break: break-word;
   font-family: var(--monospace);
   line-height: 1.5;
   width: 800px;
@@ -37,16 +36,17 @@ const template = /*html*/ `
 
 pre {
   font-family: var(--monospace);
-  overflow-x: scroll;
   font-size: 16px;
   margin-top: 0;
   margin-bottom: 1em;
+  overflow-x: scroll;
 }
 
 .message {
   line-height: 1.3;
   color: var(--red);
   font-weight: 600;
+  white-space: pre-wrap;
 }
 
 .file {
@@ -95,6 +95,7 @@ code {
 `
 
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
+const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot
@@ -103,21 +104,29 @@ export class ErrorOverlay extends HTMLElement {
     super()
     this.root = this.attachShadow({ mode: 'open' })
     this.root.innerHTML = template
+
+    const hasFrame = err.frame && codeframeRE.test(err.frame)
+    const message = hasFrame
+      ? err.message.replace(codeframeRE, '')
+      : err.message
     this.text(
       '.message',
-      (err.plugin ? `[plugin:${err.plugin}] ` : ``) + err.message.trim()
+      (err.plugin ? `[plugin:${err.plugin}] ` : ``) + message.trim()
     )
     if (err.loc) {
       this.text(
         '.file',
-        `${err.loc.file}:${err.loc.line}:${err.loc.column}`,
+        `${err.loc.file || err.id}:${err.loc.line}:${err.loc.column}`,
         true
       )
     } else if (err.id) {
       this.text('.file', err.id)
     }
-    err.frame && this.text('.frame', err.frame.trim())
-    this.text('.stack', err.stack.trim(), true)
+
+    if (hasFrame) {
+      this.text('.frame', err.frame!.trim())
+    }
+    this.text('.stack', err.stack.replace(codeframeRE, '').trim(), true)
 
     this.root.querySelector('.window')!.addEventListener('click', (e) => {
       e.stopPropagation()
@@ -133,7 +142,6 @@ export class ErrorOverlay extends HTMLElement {
       el.textContent = text
     } else {
       let curIndex = 0
-      console.log(selector)
       for (const { 0: file, index } of text.matchAll(fileRE)) {
         if (index != null) {
           const frag = text.slice(curIndex, index)
