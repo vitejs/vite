@@ -3,9 +3,10 @@ import path from 'path'
 import { createDebugger } from '../utils'
 import { Plugin, ResolvedConfig } from '..'
 import chalk from 'chalk'
-import { FILE_PREFIX } from '../config'
+import { FILE_PREFIX } from '../constants'
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+export const FAILED_RESOLVE = `__vite_failed_resolve__`
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -58,9 +59,7 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
       // if this is not a bare import (package), it's a failed resolve and
       // should propagate into an error sent to the client.
       if (!/^[@\w]/.test(id)) {
-        return {
-          id: null
-        }
+        return FAILED_RESOLVE
       }
 
       // fallthrough to node-resolve

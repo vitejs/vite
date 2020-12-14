@@ -7,8 +7,9 @@ import { isCSSRequest } from './css'
 import slash from 'slash'
 import { createDebugger, prettifyUrl, timeFrom } from '../utils'
 import { debugHmr } from '../server/hmr'
-import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../config'
+import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
 import { RollupError } from 'rollup'
+import { FAILED_RESOLVE } from './resolve'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -139,7 +140,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           const resolved = await this.resolve(url, importer)
           timeSpentResolving += Date.now() - resolveStart
 
-          if (!resolved || !resolved.id) {
+          if (!resolved || resolved.id === FAILED_RESOLVE) {
             this.warn(
               `Failed to resolve import ${chalk.cyan(url)} from ${chalk.yellow(
                 importer

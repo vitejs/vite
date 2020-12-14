@@ -7,7 +7,7 @@ import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
-import { CLIENT_PUBLIC_PATH } from '../config'
+import { CLIENT_PUBLIC_PATH } from '../constants'
 
 const debug = createDebugger('vite:css')
 

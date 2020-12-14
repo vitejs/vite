@@ -48,10 +48,16 @@ function walkDir(dir) {
 function rewriteFile(file) {
   const content = fs.readFileSync(file, 'utf-8')
   const str = new MagicString(content)
-  const ast = parse(content, {
-    sourceType: 'module',
-    plugins: ['typescript', 'classProperties']
-  })
+  let ast
+  try {
+    ast = parse(content, {
+      sourceType: 'module',
+      plugins: ['typescript', 'classProperties']
+    })
+  } catch (e) {
+    console.log(chalk.red(`failed to parse ${file}`))
+    throw e
+  }
   for (const statement of ast.program.body) {
     if (
       (statement.type === 'ImportDeclaration' ||

@@ -3,22 +3,20 @@ import chalk from 'chalk'
 import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
-import { FILE_PREFIX } from './config'
+import { FILE_PREFIX } from './constants'
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
 
 const DEBUG = process.env.DEBUG
 
-export function createDebugger(
-  ns: string,
-  {
-    onlyWhenFocused
-  }: {
-    onlyWhenFocused?: boolean | string
-  } = {}
-) {
+interface DebuggerOptions {
+  onlyWhenFocused?: boolean | string
+}
+
+export function createDebugger(ns: string, options: DebuggerOptions = {}) {
   const log = debug(ns)
+  const { onlyWhenFocused } = options
   const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns
   return (msg: string, ...args: any[]) => {
     if (filter && !msg.includes(filter)) {

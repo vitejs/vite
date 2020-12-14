@@ -1,4 +1,5 @@
 import { extname } from 'path'
+import { FAILED_RESOLVE } from '../plugins/resolve'
 import { isCSSRequest, unwrapCSSProxy } from '../plugins/css'
 import { cleanUrl, removeTimestampQuery } from '../utils'
 import { TransformResult } from './middlewares/transform'
@@ -111,8 +112,8 @@ export class ModuleGraph {
   // the same module
   async resolveUrl(url: string): Promise<[string, string]> {
     url = removeTimestampQuery(url)
-    const resolvedId = (await this.container.resolveId(url))?.id
-    if (!resolvedId) {
+    const resolvedId = (await this.container.resolveId(url)).id
+    if (resolvedId === FAILED_RESOLVE) {
       throw Error(`Failed to resolve url: ${url}\nDoes the file exist?`)
     }
     const ext = extname(cleanUrl(resolvedId))

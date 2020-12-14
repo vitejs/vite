@@ -28,11 +28,10 @@ jobs:
     steps:
       - checkout
       - *restore_cache
-      - run: rm -rf ~/project/node_modules/esbuild/.install
       - *install_deps
       - *save_cache
+      - run: cd packages/vite
       - run: yarn build
-      - run: yarn test
 
 workflows:
   version: 2

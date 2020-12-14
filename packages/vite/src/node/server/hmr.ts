@@ -1,10 +1,11 @@
 import path from 'path'
-import { CLIENT_DIR, ServerContext } from '..'
+import { ServerContext } from '..'
 import { createDebugger } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
 import slash from 'slash'
 import { Update } from 'types/hmrPayload'
+import { CLIENT_DIR } from '../constants'
 
 export const debugHmr = createDebugger('vite:hmr')
 
