@@ -168,7 +168,7 @@ export function numberToPos(
     }
     counted += lineLength
   }
-  return { line, column }
+  return { line: line + 1, column }
 }
 
 export function generateCodeFrame(

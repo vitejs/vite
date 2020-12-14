@@ -44,7 +44,7 @@ const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
  */
 export function rewritePlugin(config: ResolvedConfig): Plugin {
   return {
-    name: 'vite:rewrite',
+    name: 'vite:imports',
     async transform(source, importer) {
       const prettyImporter = prettifyUrl(slash(importer), config.root)
 
@@ -141,7 +141,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
 
           if (!resolved || !resolved.id) {
             this.warn(
-              `failed to resolve import ${chalk.cyan(url)} from ${chalk.yellow(
+              `Failed to resolve import ${chalk.cyan(url)} from ${chalk.yellow(
                 importer
               )}.`
             )
@@ -171,12 +171,21 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           // check if the dep has been hmr updated. If yes, we need to attach
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
-          const depModule = await moduleGraph.ensureEntry(absoluteUrl)
-          if (depModule.lastHMRTimestamp > 0) {
-            str().appendLeft(
-              end,
-              `${url.includes(`?`) ? `&` : `?`}t=${depModule.lastHMRTimestamp}`
-            )
+          try {
+            const depModule = await moduleGraph.ensureEntry(absoluteUrl)
+            if (depModule.lastHMRTimestamp > 0) {
+              str().appendLeft(
+                end,
+                `${url.includes(`?`) ? `&` : `?`}t=${
+                  depModule.lastHMRTimestamp
+                }`
+              )
+            }
+          } catch (e) {
+            // it's possible that the dep fails to resolve (non-existent import)
+            // attach location to the missing import
+            e.pos = start
+            throw e
           }
 
           // record for HMR import chain analysis

@@ -55,9 +55,15 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
         return res
       }
 
-      // If we didn't manage to resolve it here, it will go on to be resolved by
-      // plugin/node-resolve which is quite slow, so we want to make sure only
-      // actual node dependencies reach here.
+      // if this is not a bare import (package), it's a failed resolve and
+      // should propagate into an error sent to the client.
+      if (!/^[@\w]/.test(id)) {
+        return {
+          id: null
+        }
+      }
+
+      // fallthrough to node-resolve
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
     }
   }
