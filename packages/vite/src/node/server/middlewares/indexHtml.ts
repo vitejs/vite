@@ -8,7 +8,7 @@ import {
   IndexHtmlTransformHook,
   resolveHtmlTransforms
 } from '../../plugins/html'
-import { ServerContext } from '../..'
+import { ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH } from '../../constants'
 
@@ -17,11 +17,11 @@ const devHtmlHook: IndexHtmlTransformHook = () => {
 }
 
 export function indexHtmlMiddleware(
-  ctx: ServerContext,
+  server: ViteDevServer,
   plugins: readonly Plugin[]
 ): Connect.NextHandleFunction {
   const [preHooks, postHooks] = resolveHtmlTransforms(plugins)
-  const filename = path.join(ctx.config.root, 'index.html')
+  const filename = path.join(server.config.root, 'index.html')
 
   // cache the transform in the closure
   let html = ''
@@ -44,7 +44,7 @@ export function indexHtmlMiddleware(
           html = await applyHtmlTransforms(
             html,
             [...preHooks, devHtmlHook, ...postHooks],
-            ctx
+            server
           )
           etag = getEtag(html, { weak: true })
         } catch (e) {

@@ -1,5 +1,5 @@
 import { Plugin } from '../config'
-import { ServerContext } from '..'
+import { ViteDevServer } from '..'
 import { OutputBundle } from 'rollup'
 
 export interface HtmlTagDescriptor {
@@ -13,7 +13,7 @@ export type IndexHtmlTransformResult = string | HtmlTagDescriptor[]
 
 export type IndexHtmlTransformHook = (
   html: string,
-  serverCtx?: ServerContext,
+  server?: ViteDevServer,
   bundle?: OutputBundle
 ) => IndexHtmlTransformResult | Promise<IndexHtmlTransformResult>
 
@@ -47,7 +47,7 @@ export function resolveHtmlTransforms(plugins: readonly Plugin[]) {
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
-  ctx: ServerContext
+  ctx: ViteDevServer
 ): Promise<string>
 export async function applyHtmlTransforms(
   html: string,
@@ -58,7 +58,7 @@ export async function applyHtmlTransforms(
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
-  ctx?: ServerContext,
+  ctx?: ViteDevServer,
   bundle?: OutputBundle
 ): Promise<string> {
   const headTags: HtmlTagDescriptor[] = []

@@ -1,12 +1,12 @@
 import chalk from 'chalk'
 import { RollupError } from 'rollup'
-import { ServerContext } from '../..'
+import { ViteDevServer } from '../..'
 import { Connect } from 'types/connect'
 import { pad } from '../../utils'
 import strip from 'strip-ansi'
 
 export function errorMiddleware(
-  context: ServerContext
+  server: ViteDevServer
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
   return (err: RollupError, _req, res, _next) => {
@@ -18,7 +18,7 @@ export function errorMiddleware(
 
     res.statusCode = 500
     res.end(() => {
-      context.ws.send({
+      server.ws.send({
         type: 'error',
         err: {
           ...err,

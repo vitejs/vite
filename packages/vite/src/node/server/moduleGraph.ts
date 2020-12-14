@@ -2,7 +2,7 @@ import { extname } from 'path'
 import { FAILED_RESOLVE } from '../plugins/resolve'
 import { isCSSRequest, unwrapCSSProxy } from '../plugins/css'
 import { cleanUrl, removeTimestampQuery } from '../utils'
-import { TransformResult } from './middlewares/transform'
+import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
 
 export class ModuleNode {

@@ -1,5 +1,5 @@
 import path from 'path'
-import { ServerContext } from '..'
+import { ViteDevServer } from '..'
 import { createDebugger } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
@@ -18,7 +18,7 @@ export interface HmrOptions {
   overlay?: boolean
 }
 
-export function handleHMRUpdate(file: string, context: ServerContext): any {
+export function handleHMRUpdate(file: string, context: ViteDevServer): any {
   debugHmr(`[file change] ${chalk.dim(file)}`)
 
   if (file === context.config.configPath) {

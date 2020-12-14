@@ -29,6 +29,8 @@ import { errorMiddleware } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
+import { TransformResult } from 'rollup'
+import { transformRequest } from './transformRequest'
 
 export interface ServerOptions {
   host?: string
@@ -106,10 +108,10 @@ export interface CorsOptions {
 export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
 export type ServerHook = (
-  ctx: ServerContext
+  server: ViteDevServer
 ) => (() => void) | void | Promise<(() => void) | void>
 
-export interface ServerContext {
+export interface ViteDevServer {
   /**
    * The resolved vite config object
    */
@@ -122,7 +124,7 @@ export interface ServerContext {
   /**
    * native Node http server instance
    */
-  server: http.Server
+  httpServer: http.Server
   /**
    * chokidar watcher instance
    * https://github.com/paulmillr/chokidar#api
@@ -141,10 +143,11 @@ export interface ServerContext {
    * and hmr state.
    */
   moduleGraph: ModuleGraph
-}
-
-export interface ViteDevServer extends http.Server {
-  context: ServerContext
+  /**
+   * Programatically resolve, load and transform a URL and get the result
+   * without going through the http request pipeline.
+   */
+  transformRequest(url: string): Promise<TransformResult | null>
 }
 
 export async function createServer(
@@ -163,8 +166,8 @@ export async function createServer(
   const serverConfig = resolvedConfig.server || {}
 
   const app = connect() as Connect.Server
-  const server = (await resolveServer(serverConfig, app)) as ViteDevServer
-  const ws = setupWebSocketServer(server)
+  const httpServer = await resolveHttpServer(serverConfig, app)
+  const ws = setupWebSocketServer(httpServer)
 
   const watchOptions = serverConfig.watch || {}
   const watcher = chokidar.watch(root, {
@@ -182,32 +185,35 @@ export async function createServer(
   const container = await createPluginContainer(plugins, {}, root, watcher)
   const moduleGraph = new ModuleGraph(container)
 
-  const context: ServerContext = (server.context = {
+  const server: ViteDevServer = {
     config: resolvedConfig,
     app,
-    server,
+    httpServer,
     watcher,
     container,
     ws,
-    moduleGraph
-  })
+    moduleGraph,
+    transformRequest(url) {
+      return transformRequest(url, server)
+    }
+  }
 
   if (serverConfig.hmr !== false) {
     watcher.on('change', (file) => {
       // invalidate module graph cache on file change
       moduleGraph.onFileChange(file)
-      handleHMRUpdate(file, context)
+      handleHMRUpdate(file, server)
     })
   }
 
   // attach server context to container so it's available to plugin context
-  container.serverContext = context
+  container.server = server
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const plugin of plugins) {
     const hook = plugin.configureServer
-    hook && postHooks.push(await hook(context))
+    hook && postHooks.push(await hook(server))
   }
 
   // Internal middlewares
@@ -224,14 +230,14 @@ export async function createServer(
 
   // proxy
   if (proxy) {
-    app.use(proxyMiddleware(context))
+    app.use(proxyMiddleware(server))
   }
 
   // open in editor support
   app.use('/__open-in-editor', launchEditorMiddleware())
 
   // main transform middleware
-  app.use(transformMiddleware(context))
+  app.use(transformMiddleware(server))
 
   // serve static files
   app.use(serveStaticMiddleware(root))
@@ -246,7 +252,7 @@ export async function createServer(
   postHooks.forEach((fn) => fn && fn())
 
   // transform index.html
-  app.use(indexHtmlMiddleware(context, plugins))
+  app.use(indexHtmlMiddleware(server, plugins))
 
   // handle 404s
   app.use((_, res) => {
@@ -255,25 +261,25 @@ export async function createServer(
   })
 
   // error handler
-  app.use(errorMiddleware(context))
+  app.use(errorMiddleware(server))
 
   // overwrite listen to run optimizer before server start
-  const listen = server.listen.bind(server)
-  server.listen = (async (port: number, ...args: any[]) => {
+  const listen = httpServer.listen.bind(httpServer)
+  httpServer.listen = (async (port: number, ...args: any[]) => {
     await container.buildStart({})
     // TODO run optimizer
     return listen(port, ...args)
   }) as any
 
-  server.once('listening', () => {
+  httpServer.once('listening', () => {
     // update actual port since this may be different from initial value
-    serverConfig.port = (server.address() as AddressInfo).port
+    serverConfig.port = (httpServer.address() as AddressInfo).port
   })
 
   return server
 }
 
-async function resolveServer(
+async function resolveHttpServer(
   { https = false, proxy }: ServerOptions,
   app: Connect.Server
 ): Promise<http.Server> {
@@ -305,75 +311,79 @@ export async function startServer(
 ): Promise<ViteDevServer> {
   const server = await createServer(inlineConfig, mode, configPath)
 
-  const options = server.context.config.server || {}
+  const options = server.config.server || {}
   let port = options.port || 3000
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
+  const httpServer = server.httpServer
 
-  server.on('error', (e: Error & { code?: string }) => {
-    if (e.code === 'EADDRINUSE') {
-      console.log(`Port ${port} is in use, trying another one...`)
-      setTimeout(() => {
-        server.close()
-        server.listen(++port)
-      }, 100)
-    } else {
-      console.error(chalk.red(`[vite] server error:`))
-      console.error(e)
-    }
-  })
+  return new Promise((resolve, reject) => {
+    httpServer.on('error', (e: Error & { code?: string }) => {
+      if (e.code === 'EADDRINUSE') {
+        console.log(`Port ${port} is in use, trying another one...`)
+        setTimeout(() => {
+          httpServer.close()
+          httpServer.listen(++port)
+        }, 100)
+      } else {
+        reject(e)
+      }
+    })
 
-  server.listen(port, () => {
-    console.log()
-    console.log(`  Dev server running at:`)
-    console.log()
-    const interfaces = os.networkInterfaces()
-    Object.keys(interfaces).forEach((key) =>
-      (interfaces[key] || [])
-        .filter((details) => details.family === 'IPv4')
-        .map((detail) => {
-          return {
-            type: detail.address.includes('127.0.0.1')
-              ? 'Local:   '
-              : 'Network: ',
-            host: detail.address.replace('127.0.0.1', hostname)
+    httpServer.listen(port, () => {
+      console.log()
+      console.log(`  Dev server running at:`)
+      console.log()
+      const interfaces = os.networkInterfaces()
+      Object.keys(interfaces).forEach((key) =>
+        (interfaces[key] || [])
+          .filter((details) => details.family === 'IPv4')
+          .map((detail) => {
+            return {
+              type: detail.address.includes('127.0.0.1')
+                ? 'Local:   '
+                : 'Network: ',
+              host: detail.address.replace('127.0.0.1', hostname)
+            }
+          })
+          .forEach(({ type, host }) => {
+            const url = `${protocol}://${host}:${chalk.bold(port)}/`
+            console.log(`  > ${type} ${chalk.cyan(url)}`)
+          })
+      )
+
+      console.log()
+      console.log(
+        // @ts-ignore
+        chalk.cyan(`  ready in ${Date.now() - global.__vite_start_time}ms.`)
+      )
+      console.log()
+
+      // @ts-ignore
+      const profileSession = global.__vite_profile_session
+      if (profileSession) {
+        profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
+          // Write profile to disk, upload, etc.
+          if (!err) {
+            const outPath = path.resolve('./vite-profile.cpuprofile')
+            fs.writeFileSync(outPath, JSON.stringify(profile))
+            console.log(
+              chalk.yellow(
+                `  CPU profile written to ${chalk.white.dim(outPath)}`
+              )
+            )
+            console.log()
+          } else {
+            throw err
           }
         })
-        .forEach(({ type, host }) => {
-          const url = `${protocol}://${host}:${chalk.bold(port)}/`
-          console.log(`  > ${type} ${chalk.cyan(url)}`)
-        })
-    )
+      }
 
-    console.log()
-    console.log(
-      // @ts-ignore
-      chalk.cyan(`  ready in ${Date.now() - global.__vite_start_time}ms.`)
-    )
-    console.log()
+      if (options.open) {
+        openBrowser(`${protocol}://${hostname}:${port}`, options.open)
+      }
 
-    // @ts-ignore
-    const profileSession = global.__vite_profile_session
-    if (profileSession) {
-      profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
-        // Write profile to disk, upload, etc.
-        if (!err) {
-          const outPath = path.resolve('./vite-profile.cpuprofile')
-          fs.writeFileSync(outPath, JSON.stringify(profile))
-          console.log(
-            chalk.yellow(`  CPU profile written to ${chalk.white.dim(outPath)}`)
-          )
-          console.log()
-        } else {
-          throw err
-        }
-      })
-    }
+      resolve(server)
+    })
   })
-
-  if (options.open) {
-    openBrowser(`${protocol}://${hostname}:${port}`, options.open)
-  }
-
-  return server
 }
