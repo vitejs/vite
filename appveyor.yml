@@ -9,8 +9,7 @@ test_script:
   - git --version
   - node --version
   - yarn --version
-  - yarn build
-  - yarn test
+  - cd packages\vite && yarn build
 
 cache:
   - node_modules -> yarn.lock
