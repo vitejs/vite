@@ -1,7 +1,7 @@
 import { createDebugger } from '../utils'
 import path from 'path'
 import fs, { promises as fsp } from 'fs'
-import { Plugin, ResolvedConfig } from '..'
+import { Plugin, ResolvedConfig, ViteDevServer } from '..'
 import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
@@ -65,10 +65,17 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
       // server-only *.css.js proxy module
       if (!isBuild) {
         if (deps) {
-          deps.forEach((file) => {
-            // TODO record css @import virtual modules for HMR
+          // record deps in the module graph so edits to @import css can trigger
+          // main import to hot update
+          const { moduleGraph } = (this as any).server as ViteDevServer
+          const thisModule = moduleGraph.getModuleById(id)!
+          const depModules = new Set(
+            [...deps].map((file) => moduleGraph.createFileOnlyEntry(file))
+          )
+          moduleGraph.updateModuleInfo(thisModule, depModules, depModules, true)
+          for (const file of deps) {
             this.addWatchFile(file)
-          })
+          }
         }
 
         if (isProxyRequest) {
@@ -82,7 +89,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
             `updateStyle(id, css)`,
             `${modulesCode || `export default css`}`,
             `import.meta.hot.accept()`,
-            `import.meta.hot.dispose(() => removeStyle(id))`
+            `import.meta.hot.prune(() => removeStyle(id))`
           ].join('\n')
         } else {
           debug(`[link] ${chalk.dim(path.relative(config.root, id))}`)

@@ -3,16 +3,16 @@ import { Plugin, ResolvedConfig, ViteDevServer } from '..'
 import chalk from 'chalk'
 import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
-import { isCSSRequest } from './css'
+import { isCSSProxy, isCSSRequest } from './css'
 import slash from 'slash'
 import { createDebugger, prettifyUrl, timeFrom } from '../utils'
-import { debugHmr, handleDisposedModules } from '../server/hmr'
+import { debugHmr, handlePrunedModules } from '../server/hmr'
 import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
 import { RollupError } from 'rollup'
 import { FAILED_RESOLVE } from './resolve'
 
 const isDebug = !!process.env.DEBUG
-const debugRewrite = createDebugger('vite:imports')
+const debugRewrite = createDebugger('vite:rewrite')
 
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
@@ -177,7 +177,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
           try {
-            const depModule = await moduleGraph.ensureEntry(absoluteUrl)
+            const depModule = await moduleGraph.ensureEntryFromUrl(absoluteUrl)
             if (depModule.lastHMRTimestamp > 0) {
               str().appendLeft(
                 end,
@@ -224,16 +224,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
-      // update the module graph for HMR analysis
-      const noLongerImportedDeps = await moduleGraph.updateModuleInfo(
-        importerModule,
-        importedUrls,
-        new Set([...acceptedUrls].map(toAbsoluteUrl)),
-        isSelfAccepting
-      )
-
-      if (hasHMR && noLongerImportedDeps) {
-        handleDisposedModules(noLongerImportedDeps, (this as any).server)
+      // update the module graph for HMR analysis.
+      // node CSS imports does its own graph update in the css plugin so we
+      // only handle js graph updates here.
+      if (!isCSSProxy(importer)) {
+        const prunedImports = await moduleGraph.updateModuleInfo(
+          importerModule,
+          importedUrls,
+          new Set([...acceptedUrls].map(toAbsoluteUrl)),
+          isSelfAccepting
+        )
+        if (hasHMR && prunedImports) {
+          handlePrunedModules(prunedImports, (this as any).server)
+        }
       }
 
       isDebug &&

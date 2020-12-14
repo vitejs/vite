@@ -130,7 +130,6 @@ export async function createPluginContainer(
   const MODULES = new Map()
   const files = new Map<string, EmittedFile>()
   const watchFiles = new Set<string>()
-  const resolveCache = new Map<string, PartialResolvedId>()
 
   // get rollup version
   const rollupPkgPath = resolve(require.resolve('rollup'), '../../package.json')
@@ -210,7 +209,10 @@ export async function createPluginContainer(
 
     addWatchFile(id: string) {
       watchFiles.add(id)
-      watcher.add(id)
+      // only need to add it if file is out of root.
+      if (!id.startsWith(root)) {
+        watcher.add(id)
+      }
     }
 
     getWatchFiles() {
@@ -379,10 +381,6 @@ export async function createPluginContainer(
         `${rawId}\n${importer}` +
         (_skip ? _skip.map((p) => p.name).join('\n') : ``)
 
-      if (resolveCache.has(key)) {
-        return resolveCache.get(key)!
-      }
-
       nestedResolveCall++
       const resolveStart = Date.now()
 
@@ -425,10 +423,10 @@ export async function createPluginContainer(
 
       if (id) {
         partial.id = id
-        resolveCache.set(key, partial as PartialResolvedId)
       }
 
       nestedResolveCall--
+
       isDebug &&
         !nestedResolveCall &&
         debugResolve(
