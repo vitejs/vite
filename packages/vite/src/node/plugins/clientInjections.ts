@@ -24,10 +24,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         return code
           .replace(`__MODE__`, JSON.stringify(config.mode || 'development'))
           .replace(`__ROOT__`, JSON.stringify(config.root))
-          .replace(
-            `__DEFINES__`,
-            JSON.stringify({}) // TODO
-          )
+          .replace(`__DEFINES__`, JSON.stringify(config.define || {}))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
           .replace(`__HMR_PORT__`, JSON.stringify(port))

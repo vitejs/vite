@@ -22,17 +22,19 @@ export function handleHMRUpdate(
   file: string,
   { ws, config, moduleGraph }: ViteDevServer
 ): any {
-  debugHmr(`[file change] ${chalk.dim(file)}`)
-
   if (file === config.configPath) {
     // TODO auto restart server
+    debugHmr(`[config change] ${chalk.dim(file)}`)
     return
   }
 
   if (file.endsWith('.env')) {
     // TODO notification for manual server restart
+    debugHmr(`[.env change] ${chalk.dim(file)}`)
     return
   }
+
+  debugHmr(`[file change] ${chalk.dim(file)}`)
 
   // html files and the client itself cannot be hot updated.
   if (file.endsWith('.html') || file.startsWith(CLIENT_DIR)) {
@@ -108,6 +110,7 @@ function propagateUpdate(
   boundaries: Set<ModuleNode>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
+  debugger
   if (node.isSelfAccepting) {
     boundaries.add(node)
     // mark current propagation chain dirty.
