@@ -8,6 +8,7 @@ import slash from 'slash'
 import { createDebugger, prettifyUrl, timeFrom } from '../utils'
 import { debugHmr } from '../server/hmr'
 import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../config'
+import { RollupError } from 'rollup'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -61,8 +62,9 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       } catch (e) {
         this.error(
           `Failed to parse source for import rewrite.\n` +
-            `It seems the file has not been properly transformed to JS.\n` +
-            `If you are using JSX, make sure to named the file with the .jsx extension.`
+            `The file either contains syntax error or it has not been properly transformed to JS.\n` +
+            `If you are using JSX, make sure to named the file with the .jsx extension.`,
+          e.idx
         )
       }
 
@@ -77,7 +79,7 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       }
 
       let hasHMR = false
-      let isHMRBoundary = false
+      let isSelfAccepting = false
       let hasEnv = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
@@ -87,6 +89,9 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
+      const acceptedUrls = new Set<string>()
+      const toAbsoluteUrl = (url: string) =>
+        path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
       for (const { s: start, e: end, d: dynamicIndex } of imports) {
         let url = source.slice(start, end)
@@ -97,7 +102,16 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
           if (prop === '.hot') {
             hasHMR = true
             if (source.slice(end + 4, end + 11) === '.accept') {
-              isHMRBoundary = true
+              // further analyze accepted modules
+              if (
+                lexAccepted(
+                  source,
+                  source.indexOf('(', end + 11) + 1,
+                  acceptedUrls
+                )
+              ) {
+                isSelfAccepting = true
+              }
             }
           } else if (prop === '.env') {
             hasEnv = true
@@ -152,10 +166,8 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
             }
           }
 
-          const absoluteUrl = path.posix.resolve(
-            path.posix.dirname(importerModule.url),
-            url
-          )
+          const absoluteUrl = toAbsoluteUrl(url)
+
           // check if the dep has been hmr updated. If yes, we need to attach
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
@@ -166,7 +178,8 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
               `${url.includes(`?`) ? `&` : `?`}t=${depModule.lastHMRTimestamp}`
             )
           }
-          // record for module graph analysis.
+
+          // record for HMR import chain analysis
           importedUrls.add(absoluteUrl)
         } else if (url !== 'import.meta' && !hasViteIgnore) {
           this.warn(`ignored dynamic import(${url}) in ${importer}.`)
@@ -181,8 +194,10 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       if (hasHMR) {
         debugHmr(
           `${
-            isHMRBoundary
-              ? chalk.green.bold(`[boundary]`)
+            isSelfAccepting
+              ? `[self-accepts]`
+              : acceptedUrls.size
+              ? `[accepts-deps]`
               : `[detected api usage]`
           } ${prettyImporter}`
         )
@@ -199,18 +214,13 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       await moduleGraph.updateModuleInfo(
         importerModule,
         importedUrls,
-        isHMRBoundary
+        new Set([...acceptedUrls].map(toAbsoluteUrl)),
+        isSelfAccepting
       )
 
       isDebug &&
         debugRewrite(
-          `${timeFrom(rewriteStart, timeSpentResolving)} [${
-            importedUrls.size
-          } import${
-            importedUrls.size > 1 ? `s` : ``
-          } resolved in ${timeSpentResolving}ms] ${chalk.dim(
-            `${prettyImporter}`
-          )}`
+          `${timeFrom(rewriteStart, timeSpentResolving)} ${prettyImporter}`
         )
 
       if (s) {
@@ -220,4 +230,106 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
+}
+
+const enum LexerState {
+  inCall,
+  inSingleQuoteString,
+  inDoubleQuoteString,
+  inTemplateString,
+  inArray
+}
+
+/**
+ * Lex the accepted HMR deps.
+ * Since hot.accept() can only accept string literals or array of string
+ * literals, we don't really need a heavy @babel/parse call on the entire source.
+ *
+ * @returns selfAccepts
+ */
+function lexAccepted(code: string, start: number, urls: Set<string>): boolean {
+  let state: LexerState = LexerState.inCall
+  // the state can only be 2 levels deep so no need for a stack
+  let prevState: LexerState = LexerState.inCall
+  let currentDep: string = ''
+
+  for (let i = start; i < code.length; i++) {
+    const char = code.charAt(i)
+    switch (state) {
+      case LexerState.inCall:
+      case LexerState.inArray:
+        if (char === `'`) {
+          prevState = state
+          state = LexerState.inSingleQuoteString
+        } else if (char === `"`) {
+          prevState = state
+          state = LexerState.inDoubleQuoteString
+        } else if (char === '`') {
+          prevState = state
+          state = LexerState.inTemplateString
+        } else if (/\s/.test(char)) {
+          continue
+        } else {
+          if (state === LexerState.inCall) {
+            if (char === `[`) {
+              state = LexerState.inArray
+            } else {
+              // reaching here means the first arg is neither a string literal
+              // nor an Array literal (direct callback) or there is no arg
+              // in both case this indicates a self-accepting module
+              return true // done
+            }
+          } else if (state === LexerState.inArray) {
+            if (char === `]`) {
+              return false // done
+            } else if (char === ',') {
+              continue
+            } else {
+              error(i)
+            }
+          }
+        }
+        break
+      case LexerState.inSingleQuoteString:
+        if (char === `'`) {
+          urls.add(currentDep)
+          currentDep = ''
+          state = prevState
+        } else {
+          currentDep += char
+        }
+        break
+      case LexerState.inDoubleQuoteString:
+        if (char === `"`) {
+          urls.add(currentDep)
+          state = prevState
+        } else {
+          currentDep += char
+        }
+        break
+      case LexerState.inTemplateString:
+        if (char === '`') {
+          urls.add(currentDep)
+          currentDep = ''
+          state = prevState
+        } else if (char === '$' && code.charAt(i + 1) === '{') {
+          error(i)
+        } else {
+          currentDep += char
+        }
+        break
+      default:
+        throw new Error('unknown lexer state')
+    }
+  }
+  return false
+}
+
+function error(pos: number) {
+  const err = new Error(
+    `import.meta.accept() can only accept string literals or an ` +
+      `Array of string literals.`
+  ) as RollupError
+  err.pos = pos
+  throw err
 }

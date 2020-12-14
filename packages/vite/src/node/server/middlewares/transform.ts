@@ -81,9 +81,8 @@ export async function transformFile(
     return null
   }
 
-  // create module in graph after successful load
-  // it may already exist - in this case we update it with the resolved id.
-  const mod = await moduleGraph.ensureEntry(url, id)
+  // ensure module in graph after successful load
+  const mod = await moduleGraph.ensureEntry(url)
   // file is out of root, add it to the watch list
   if (mod.file && !mod.file.startsWith(root)) {
     watcher.add(mod.file)

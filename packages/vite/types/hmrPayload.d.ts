@@ -49,7 +49,7 @@ export interface ErrorPayload {
     plugin?: string
     pluginCode?: string
     loc?: {
-      file: string
+      file?: string
       line: number
       column: number
     }

@@ -15,9 +15,9 @@ export class ModuleNode {
   id: string | null = null
   file: string | null = null
   type: 'js' | 'css'
-  deps = new Set<ModuleNode>()
   importers = new Set<ModuleNode>()
-  isHmrBoundary = false
+  acceptedHmrDeps = new Set<ModuleNode>()
+  isSelfAccepting = false
   transformResult: TransformResult | null = null
   lastHMRTimestamp = 0
 
@@ -32,33 +32,15 @@ export class ModuleGraph {
   private idToModuleMap = new Map<string, ModuleNode>()
   // a single file may corresponds to multiple modules with different queries
   private fileToModulesMap = new Map<string, Set<ModuleNode>>()
-
-  normalizeUrl: (url: string, resolveId?: string) => Promise<string>
+  container: PluginContainer
 
   constructor(container: PluginContainer) {
-    // for incoming urls, it is important to:
-    // 1. remove the HMR timestamp query (?t=xxxx)
-    // 2. resolve its extension so that urls with or without extension all map to
-    // the same module
-    this.normalizeUrl = async (url, resolveId) => {
-      url = removeTimestampQuery(url)
-      if (!resolveId) {
-        resolveId = (await container.resolveId(url))?.id
-        if (!resolveId) {
-          throw Error(`failed to resolve url to id: ${url}`)
-        }
-      }
-      const ext = extname(cleanUrl(resolveId))
-      const [pathname, query] = url.split('?')
-      if (ext && !pathname.endsWith(ext)) {
-        return pathname + ext + (query ? `?${query}` : ``)
-      }
-      return url
-    }
+    this.container = container
   }
 
-  async getModuleByUrl(url: string) {
-    return this.urlToModuleMap.get(await this.normalizeUrl(url))
+  async getModuleByUrl(rawUrl: string) {
+    const [url] = await this.resolveUrl(rawUrl)
+    return this.urlToModuleMap.get(url)
   }
 
   getModuleById(id: string) {
@@ -80,13 +62,18 @@ export class ModuleGraph {
 
   async updateModuleInfo(
     mod: ModuleNode,
-    depUrls: Set<string>,
-    isHmrBoundary: boolean
+    importedUrls: Set<string>,
+    acceptedUrls: Set<string>,
+    isSelfAccepting: boolean
   ) {
-    mod.isHmrBoundary = isHmrBoundary
-    const prevDeps = mod.deps
-    const newDeps = (mod.deps = new Set())
-    for (const depUrl of depUrls) {
+    mod.isSelfAccepting = isSelfAccepting
+    const prevDeps = mod.acceptedHmrDeps
+    const newDeps = (mod.acceptedHmrDeps = new Set())
+    for (const depUrl of importedUrls) {
+      const dep = await this.ensureEntry(depUrl)
+      dep.importers.add(mod)
+    }
+    for (const depUrl of acceptedUrls) {
       const dep = await this.ensureEntry(depUrl)
       dep.importers.add(mod)
       newDeps.add(dep)
@@ -99,15 +86,12 @@ export class ModuleGraph {
     })
   }
 
-  async ensureEntry(url: string, resolvedId?: string) {
-    url = await this.normalizeUrl(url, resolvedId)
+  async ensureEntry(rawUrl: string) {
+    const [url, resolvedId] = await this.resolveUrl(rawUrl)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)
       this.urlToModuleMap.set(url, mod)
-    }
-    if (resolvedId) {
-      resolvedId = removeTimestampQuery(resolvedId)
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
       const file = (mod.file = unwrapCSSProxy(cleanUrl(resolvedId)))
@@ -119,5 +103,23 @@ export class ModuleGraph {
       fileMappedMdoules.add(mod)
     }
     return mod
+  }
+
+  // for incoming urls, it is important to:
+  // 1. remove the HMR timestamp query (?t=xxxx)
+  // 2. resolve its extension so that urls with or without extension all map to
+  // the same module
+  async resolveUrl(url: string): Promise<[string, string]> {
+    url = removeTimestampQuery(url)
+    const resolvedId = (await this.container.resolveId(url))?.id
+    if (!resolvedId) {
+      throw Error(`failed to resolve url to id: ${url}`)
+    }
+    const ext = extname(cleanUrl(resolvedId))
+    const [pathname, query] = url.split('?')
+    if (ext && !pathname.endsWith(ext)) {
+      url = pathname + ext + (query ? `?${query}` : ``)
+    }
+    return [url, resolvedId]
   }
 }
