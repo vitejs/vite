@@ -4,6 +4,7 @@ import { createDebugger } from '../utils'
 import { Plugin, ResolvedConfig } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from '../constants'
+import { isCSSProxy } from './css'
 
 export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
 export const FAILED_RESOLVE = `__vite_failed_resolve__`
@@ -17,6 +18,13 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
   return {
     name: 'vite:resolve',
     resolveId(id, importer) {
+      const isCSSProxyId = isCSSProxy(id)
+      if (isCSSProxyId) {
+        id = id.slice(0, -3)
+      }
+      const restoreCSSProxy = (res: string) =>
+        isCSSProxyId ? res + '.js' : res
+
       let res
       if (id.startsWith(FILE_PREFIX)) {
         // explicit fs paths that starts with /@fs/*
@@ -28,7 +36,7 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
         isDebug && debug(`[@fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
-        return res || fsPath
+        return restoreCSSProxy(res || fsPath)
       }
 
       // URL
@@ -37,7 +45,7 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath))) {
           isDebug && debug(`[url] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-          return res
+          return restoreCSSProxy(res)
         }
       }
 
@@ -46,14 +54,14 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
         const fsPath = path.resolve(path.dirname(importer), id)
         if ((res = tryFsResolve(fsPath))) {
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-          return res
+          return restoreCSSProxy(res)
         }
       }
 
       // absolute fs paths
       if (path.isAbsolute(id) && (res = tryFsResolve(id))) {
         isDebug && debug(`[fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-        return res
+        return restoreCSSProxy(res)
       }
 
       // if this is not a bare import (package), it's a failed resolve and
