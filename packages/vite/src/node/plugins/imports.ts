@@ -6,20 +6,23 @@ import { init, parse, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest } from './css'
 import slash from 'slash'
 import { createDebugger, prettifyUrl, timeFrom } from '../utils'
-import { debugHmr } from '../server/hmr'
+import { debugHmr, handleDisposedModules } from '../server/hmr'
 import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
 import { RollupError } from 'rollup'
 import { FAILED_RESOLVE } from './resolve'
 
 const isDebug = !!process.env.DEBUG
-const debugRewrite = createDebugger('vite:rewrite')
+const debugRewrite = createDebugger('vite:imports')
 
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
 
 /**
- * Server-only plugin that rewrites url imports (bare modules, css/asset imports)
- * so that they can be properly handled by the server.
+ * Server-only plugin that lexes, resolves, rewrites and analyzes url imports.
+ *
+ * - Imports are resolved to ensure they exist on disk
+ *
+ * - Lexes HMR accept calls and updates import relationships in the module graph
  *
  * - Bare module imports are resolved (by @rollup-plugin/node-resolve) to
  * absolute file paths, e.g.
@@ -43,7 +46,7 @@ const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
  *     import './style.css.js'
  *     ```
  */
-export function rewritePlugin(config: ResolvedConfig): Plugin {
+export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:imports',
     async transform(source, importer) {
@@ -89,11 +92,6 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
-
-      if (!importerModule) {
-        debugger
-      }
-
       const importedUrls = new Set<string>()
       const acceptedUrls = new Set<string>()
       const toAbsoluteUrl = (url: string) =>
@@ -227,12 +225,16 @@ export function rewritePlugin(config: ResolvedConfig): Plugin {
       }
 
       // update the module graph for HMR analysis
-      await moduleGraph.updateModuleInfo(
+      const noLongerImportedDeps = await moduleGraph.updateModuleInfo(
         importerModule,
         importedUrls,
         new Set([...acceptedUrls].map(toAbsoluteUrl)),
         isSelfAccepting
       )
+
+      if (hasHMR && noLongerImportedDeps) {
+        handleDisposedModules(noLongerImportedDeps, (this as any).server)
+      }
 
       isDebug &&
         debugRewrite(

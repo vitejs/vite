@@ -5,6 +5,7 @@ export type HMRPayload =
   | StyleRemovePayload
   | CustomPayload
   | ErrorPayload
+  | DisposePayload
 
 export interface ConnectedPayload {
   type: 'connected'
@@ -20,6 +21,11 @@ export interface Update {
   path: string
   changedPath: string
   timestamp: number
+}
+
+export interface DisposePayload {
+  type: 'dispose'
+  paths: string[]
 }
 
 export interface StyleRemovePayload {

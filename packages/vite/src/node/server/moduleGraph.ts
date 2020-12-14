@@ -17,6 +17,7 @@ export class ModuleNode {
   file: string | null = null
   type: 'js' | 'css'
   importers = new Set<ModuleNode>()
+  importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
   isSelfAccepting = false
   transformResult: TransformResult | null = null
@@ -61,33 +62,43 @@ export class ModuleGraph {
     }
   }
 
+  /**
+   * Update the module graph based on a module's updated imports information
+   * If there are dependencies that no longer have any importers, they are
+   * returned as a Set.
+   */
   async updateModuleInfo(
     mod: ModuleNode,
     importedUrls: Set<string>,
     acceptedUrls: Set<string>,
     isSelfAccepting: boolean
-  ) {
+  ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
-    const prevDeps = mod.acceptedHmrDeps
-    const newDeps = (mod.acceptedHmrDeps = new Set())
+    const prevImports = mod.importedModules
+    const nextImports = (mod.importedModules = new Set())
+    let noLongerImported: Set<ModuleNode> | undefined
+    // update import graph
     for (const depUrl of importedUrls) {
       const dep = await this.ensureEntry(depUrl)
       dep.importers.add(mod)
-    }
-    for (const depUrl of acceptedUrls) {
-      const dep = await this.ensureEntry(depUrl)
-      dep.importers.add(mod)
-      newDeps.add(dep)
+      nextImports.add(dep)
     }
     // remove the importer from deps that were imported but no longer are.
-    prevDeps.forEach((dep) => {
-      if (!newDeps.has(dep)) {
+    prevImports.forEach((dep) => {
+      if (!nextImports.has(dep)) {
         dep.importers.delete(mod)
         if (!dep.importers.size) {
-          console.log(`module no longer has importers: ${mod.url}`)
+          // dependency no longer imported
+          ;(noLongerImported || (noLongerImported = new Set())).add(dep)
         }
       }
     })
+    // update accepted hmr deps
+    const newDeps = (mod.acceptedHmrDeps = new Set())
+    for (const depUrl of acceptedUrls) {
+      newDeps.add(await this.ensureEntry(depUrl))
+    }
+    return noLongerImported
   }
 
   async ensureEntry(rawUrl: string) {

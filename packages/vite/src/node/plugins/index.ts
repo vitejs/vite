@@ -4,7 +4,7 @@ import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { resolvePlugin, supportedExts } from './resolve'
 import { esbuildPlugin } from './esbuild'
-import { rewritePlugin } from './rewriteImports'
+import { importAnalysisPlugin } from './imports'
 import { cssPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
@@ -33,6 +33,8 @@ export function resolvePlugins(
     assetPlugin(config, isBuild),
     ...postPlugins,
     // internal server-only plugins are always applied after everything else
-    ...(isBuild ? [] : [clientInjectionsPlugin(config), rewritePlugin(config)])
+    ...(isBuild
+      ? []
+      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
   ].filter(Boolean) as Plugin[]
 }
