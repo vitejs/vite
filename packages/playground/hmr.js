@@ -1,8 +1,6 @@
-import './hmrDep'
+import './hmrDep.js'
 
-export const foo = 1002
-
-console.log(import.meta.url)
+export const foo = 3223233232
 
 if (import.meta.hot) {
   import.meta.hot.accept(({ foo }) => {
