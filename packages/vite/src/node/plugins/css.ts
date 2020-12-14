@@ -74,11 +74,15 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
         if (isProxyRequest) {
           debug(`[import] ${chalk.dim(path.relative(config.root, id))}`)
           return [
-            `import { updateStyle } from ${JSON.stringify(CLIENT_PUBLIC_PATH)}`,
+            `import { updateStyle, removeStyle } from ${JSON.stringify(
+              CLIENT_PUBLIC_PATH
+            )}`,
+            `const id = ${JSON.stringify(id)}`,
             `const css = ${JSON.stringify(css)}`,
-            `updateStyle(${JSON.stringify(id)}, css)`,
+            `updateStyle(id, css)`,
             `${modulesCode || `export default css`}`,
-            `import.meta.hot.accept()`
+            `import.meta.hot.accept()`,
+            `import.meta.hot.dispose(() => removeStyle(id))`
           ].join('\n')
         } else {
           debug(`[link] ${chalk.dim(path.relative(config.root, id))}`)

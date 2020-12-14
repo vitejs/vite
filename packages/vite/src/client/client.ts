@@ -119,6 +119,18 @@ async function handleMessage(payload: HMRPayload) {
         location.reload()
       }
       break
+    case 'dispose':
+      // After an HMR update, some modules are no longer imported on the page
+      // but they may have left behind side effects that need to be cleaned up
+      // (.e.g style injections)
+      // TODO Trigger their dispose callbacks.
+      payload.paths.forEach((path) => {
+        const fn = disposeMap.get(path)
+        if (fn) {
+          fn(dataMap.get(path))
+        }
+      })
+      break
     case 'error':
       const err = payload.err
       if (enableOverlay) {
@@ -230,7 +242,7 @@ export function updateStyle(id: string, content: string) {
   sheetsMap.set(id, style)
 }
 
-function removeStyle(id: string) {
+export function removeStyle(id: string) {
   let style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {

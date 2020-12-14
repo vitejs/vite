@@ -18,10 +18,13 @@ export interface HmrOptions {
   overlay?: boolean
 }
 
-export function handleHMRUpdate(file: string, context: ViteDevServer): any {
+export function handleHMRUpdate(
+  file: string,
+  { ws, config, moduleGraph }: ViteDevServer
+): any {
   debugHmr(`[file change] ${chalk.dim(file)}`)
 
-  if (file === context.config.configPath) {
+  if (file === config.configPath) {
     // TODO auto restart server
     return
   }
@@ -33,14 +36,14 @@ export function handleHMRUpdate(file: string, context: ViteDevServer): any {
 
   // html files and the client itself cannot be hot updated.
   if (file.endsWith('.html') || file.startsWith(CLIENT_DIR)) {
-    context.ws.send({
+    ws.send({
       type: 'full-reload',
-      path: '/' + slash(path.relative(context.config.root, file))
+      path: '/' + slash(path.relative(config.root, file))
     })
     return
   }
 
-  const mods = context.moduleGraph.getModulesByFile(file)
+  const mods = moduleGraph.getModulesByFile(file)
   if (!mods) {
     // loaded but not in the module graph, probably not js
     debugHmr(`[no module entry] ${chalk.dim(file)}`)
@@ -55,7 +58,7 @@ export function handleHMRUpdate(file: string, context: ViteDevServer): any {
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
       debugHmr(`[full reload] ${chalk.dim(file)}`)
-      context.ws.send({
+      ws.send({
         type: 'full-reload'
       })
       return
@@ -75,9 +78,26 @@ export function handleHMRUpdate(file: string, context: ViteDevServer): any {
     )
   }
 
-  context.ws.send({
+  ws.send({
     type: 'update',
     updates
+  })
+}
+
+export function handleDisposedModules(
+  mods: Set<ModuleNode>,
+  { ws }: ViteDevServer
+) {
+  // update the disposed modules' hmr timestamp
+  // since if it's re-imported, it should re-apply side effects
+  // and without the timestamp the browser will not re-import it!
+  const t = Date.now()
+  mods.forEach((mod) => {
+    mod.lastHMRTimestamp = t
+  })
+  ws.send({
+    type: 'dispose',
+    paths: [...mods].map((m) => m.url)
   })
 }
 
@@ -87,7 +107,6 @@ function propagateUpdate(
   boundaries: Set<ModuleNode>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
-  debugger
   if (node.isSelfAccepting) {
     boundaries.add(node)
     // mark current propagation chain dirty.
