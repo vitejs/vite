@@ -6,7 +6,7 @@
     "dev": "vite --debug",
     "build": "vite build --debug",
     "serve": "sirv dist",
-    "debug": "node --inspect-brk ../vite/bin/vite.js"
+    "debug": "node --inspect-brk ../vite/bin/vite.js --debug"
   },
   "devDependencies": {
     "@vitejs/plugin-react-refresh": "^1.0.0",

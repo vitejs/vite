@@ -5,7 +5,7 @@ import reactRefresh from '@vitejs/plugin-react-refresh'
 export default defineConfig({
   // @ts-ignore (when linked locally the types of different rollup installations
   // conflicts, but for end user this will work properly)
-  plugins: [reactRefresh],
+  plugins: [reactRefresh, vue()],
   esbuild: {
     // jsxFactory: 'h',
     // jsxFragment: 'Fragment'
