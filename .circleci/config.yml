@@ -30,8 +30,7 @@ jobs:
       - *restore_cache
       - *install_deps
       - *save_cache
-      - run: cd packages/vite
-      - run: yarn build
+      - run: cd packages/vite && yarn build
 
 workflows:
   version: 2
