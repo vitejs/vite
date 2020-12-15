@@ -100,7 +100,7 @@ async function handleMessage(payload: HMRPayload) {
     case 'custom':
       const cbs = customUpdateMap.get(payload.path)
       if (cbs) {
-        cbs.forEach((cb) => cb(payload.customData))
+        cbs.forEach((cb) => cb(payload.data))
       }
       break
     case 'full-reload':

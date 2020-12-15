@@ -1,7 +1,7 @@
 import path from 'path'
 import chalk from 'chalk'
+import { Plugin } from '../plugin'
 import { Service, Message, Loader, TransformOptions } from 'esbuild'
-import { Plugin } from '../config'
 import { createDebugger, generateCodeFrame } from '../utils'
 
 const debug = createDebugger('vite:esbuild')

@@ -1,4 +1,5 @@
-import { Plugin, ResolvedConfig } from '..'
+import { Plugin } from '../plugin'
+import { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 
 /**

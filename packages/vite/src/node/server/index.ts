@@ -118,6 +118,7 @@ export interface ViteDevServer {
   config: ResolvedConfig
   /**
    * connect app instance
+   * This can also be used as the handler function of a custom http server
    * https://github.com/senchalabs/connect#use-middleware
    */
   app: Connect.Server

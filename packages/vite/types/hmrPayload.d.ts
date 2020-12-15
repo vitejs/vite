@@ -41,7 +41,7 @@ export interface FullReloadPayload {
 export interface CustomPayload {
   type: 'custom'
   path: string
-  customData: any
+  data: any
 }
 
 export interface ErrorPayload {

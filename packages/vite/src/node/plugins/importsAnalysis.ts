@@ -1,5 +1,7 @@
 import path from 'path'
-import { Plugin, ResolvedConfig, ViteDevServer } from '..'
+import { Plugin } from '../plugin'
+import { ResolvedConfig } from '../config'
+import { ViteDevServer } from '../server'
 import chalk from 'chalk'
 import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
