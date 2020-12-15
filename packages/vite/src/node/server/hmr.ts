@@ -18,10 +18,12 @@ export interface HmrOptions {
   overlay?: boolean
 }
 
-export function handleHMRUpdate(
+export async function handleHMRUpdate(
   file: string,
-  { ws, config, moduleGraph }: ViteDevServer
-): any {
+  server: ViteDevServer
+): Promise<any> {
+  const { ws, config, moduleGraph } = server
+
   if (file === config.configPath) {
     // TODO auto restart server
     debugHmr(`[config change] ${chalk.dim(file)}`)
@@ -45,17 +47,27 @@ export function handleHMRUpdate(
     return
   }
 
-  const mods = moduleGraph.getModulesByFile(file)
+  let mods = moduleGraph.getModulesByFile(file)
   if (!mods) {
     // loaded but not in the module graph, probably not js
     debugHmr(`[no module entry] ${chalk.dim(file)}`)
     return
   }
 
+  // check if any plugin wants to perform custom HMR handling
+  let filteredMods = [...mods]
+  for (const plugin of config.plugins) {
+    if (plugin.handleHotUpdate) {
+      filteredMods =
+        (await plugin.handleHotUpdate(file, filteredMods, server)) ||
+        filteredMods
+    }
+  }
+
   const timestamp = Date.now()
   const updates: Update[] = []
 
-  for (const mod of mods) {
+  for (const mod of filteredMods) {
     const boundaries = new Set<ModuleNode>()
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
@@ -110,7 +122,6 @@ function propagateUpdate(
   boundaries: Set<ModuleNode>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
-  debugger
   if (node.isSelfAccepting) {
     boundaries.add(node)
     // mark current propagation chain dirty.

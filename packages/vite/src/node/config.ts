@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import Rollup, { Plugin as RollupPlugin, RollupOptions } from 'rollup'
 import { BuildOptions, BuildHook } from './build'
-import { ServerOptions, ServerHook } from './server'
+import { ServerOptions, ServerHook, ViteDevServer } from './server'
 import { CSSOptions } from './plugins/css'
 import { createDebugger, deepMerge, isObject, lookupFile } from './utils'
 import { resolvePlugins } from './plugins'
@@ -15,6 +15,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { IndexHtmlTransform } from './plugins/html'
 import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR } from './constants'
+import { ModuleNode } from './server/moduleGraph'
 
 const debug = createDebugger('vite:config')
 
@@ -148,6 +149,14 @@ export interface Plugin extends RollupPlugin {
    * `{ enforce: 'pre', transform: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
+  /**
+   * Perform custom handling of HMR updates.
+   */
+  handleHotUpdate?: (
+    file: string,
+    mods: Array<ModuleNode>,
+    server: ViteDevServer
+  ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
 }
 
 export type ResolvedConfig = Readonly<

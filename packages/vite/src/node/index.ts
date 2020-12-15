@@ -31,6 +31,7 @@ export {
   FullReloadPayload,
   StyleRemovePayload,
   CustomPayload,
+  PrunePayload,
   ErrorPayload
 } from 'types/hmrPayload'
 export type { Connect } from 'types/connect'

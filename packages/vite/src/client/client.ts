@@ -292,10 +292,11 @@ async function fetchUpdate({ path, changedPath, timestamp }: Update) {
     Array.from(modulesToUpdate).map(async (dep) => {
       const disposer = disposeMap.get(dep)
       if (disposer) await disposer(dataMap.get(dep))
+      const [path, query] = dep.split(`?`)
       try {
         const newMod = await import(
           /* @vite-ignore */
-          dep + (dep.includes('?') ? '&' : '?') + `t=${timestamp}`
+          path + `?t=${timestamp}${query ? `&${query}` : ''}`
         )
         moduleMap.set(dep, newMod)
       } catch (e) {
@@ -352,9 +353,11 @@ export const createHotContext = (ownerPath: string) => {
       callbacks: []
     }
     mod.callbacks.push({
-      deps: deps.map(
-        (dep) => new URL(dep, location.origin + ownerPath).pathname
-      ),
+      deps: deps.map((dep) => {
+        if (dep == ownerPath) return ownerPath
+        const url = new URL(dep, location.origin + ownerPath)
+        return url.pathname + url.search + url.hash
+      }),
       fn: callback
     })
     hotModulesMap.set(ownerPath, mod)
