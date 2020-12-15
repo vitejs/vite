@@ -98,7 +98,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
       for (const { s: start, e: end, d: dynamicIndex } of imports) {
-        let url = source.slice(start, end)
+        const rawUrl = source.slice(start, end)
+        let url = rawUrl
 
         // check import.meta usage
         if (url === 'import.meta') {
@@ -179,12 +180,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           try {
             const depModule = await moduleGraph.ensureEntryFromUrl(absoluteUrl)
             if (depModule.lastHMRTimestamp > 0) {
-              str().appendLeft(
-                end,
-                `${url.includes(`?`) ? `&` : `?`}t=${
-                  depModule.lastHMRTimestamp
-                }`
-              )
+              const timestamp = `t=${depModule.lastHMRTimestamp}`
+              const queryIndex = rawUrl.indexOf(`?`)
+              if (queryIndex > -1) {
+                // if has existing query, inject timestamp before other params
+                // to avoid messing up the .endsWith checks
+                str().appendLeft(start + queryIndex + 1, `${timestamp}&`)
+              } else {
+                str().appendLeft(end, `?${timestamp}`)
+              }
             }
           } catch (e) {
             // it's possible that the dep fails to resolve (non-existent import)

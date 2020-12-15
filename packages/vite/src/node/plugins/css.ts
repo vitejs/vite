@@ -64,11 +64,11 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
 
       // server-only *.css.js proxy module
       if (!isBuild) {
+        const { moduleGraph } = (this as any).server as ViteDevServer
+        const thisModule = moduleGraph.getModuleById(id)!
         if (deps) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
-          const { moduleGraph } = (this as any).server as ViteDevServer
-          const thisModule = moduleGraph.getModuleById(id)!
           const depModules = new Set(
             [...deps].map((file) => moduleGraph.createFileOnlyEntry(file))
           )
@@ -76,6 +76,8 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
           for (const file of deps) {
             this.addWatchFile(file)
           }
+        } else {
+          thisModule.isSelfAccepting = true
         }
 
         if (isProxyRequest) {
