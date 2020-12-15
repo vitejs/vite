@@ -31,6 +31,7 @@ import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { TransformResult } from 'rollup'
 import { transformRequest } from './transformRequest'
+import { transformWithEsbuild } from '../plugins/esbuild'
 
 export interface ServerOptions {
   host?: string
@@ -149,6 +150,11 @@ export interface ViteDevServer {
    * without going through the http request pipeline.
    */
   transformRequest(url: string): Promise<TransformResult | null>
+  /**
+   * Util for transfoming a file with esbuild.
+   * Can be useful for certain plugins.
+   */
+  transformWithEsbuild: typeof transformWithEsbuild
 }
 
 export async function createServer(
@@ -196,7 +202,8 @@ export async function createServer(
     moduleGraph,
     transformRequest(url) {
       return transformRequest(url, server)
-    }
+    },
+    transformWithEsbuild
   }
 
   if (serverConfig.hmr !== false) {

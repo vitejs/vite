@@ -122,6 +122,7 @@ function propagateUpdate(
   boundaries: Set<ModuleNode>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
+  debugger
   if (node.isSelfAccepting) {
     boundaries.add(node)
     // mark current propagation chain dirty.

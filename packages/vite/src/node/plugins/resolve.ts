@@ -64,14 +64,12 @@ export function resolvePlugin({ root }: ResolvedConfig): Plugin {
         return restoreCSSProxy(res)
       }
 
-      // if this is not a bare import (package), it's a failed resolve and
-      // should propagate into an error sent to the client.
-      if (!/^[@\w]/.test(id)) {
-        return FAILED_RESOLVE
-      }
-
-      // fallthrough to node-resolve
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
+      return this.resolve(id, importer, {
+        skipSelf: true
+      }).then((result) => {
+        return result || FAILED_RESOLVE
+      })
     }
   }
 }

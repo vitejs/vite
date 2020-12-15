@@ -200,8 +200,8 @@ socket.addEventListener('close', () => {
 // https://wicg.github.io/construct-stylesheets
 const supportsConstructedSheet = (() => {
   try {
-    new CSSStyleSheet()
-    return true
+    // new CSSStyleSheet()
+    // return true
   } catch (e) {}
   return false
 })()
@@ -401,6 +401,8 @@ export const createHotContext = (ownerPath: string) => {
     decline() {},
 
     invalidate() {
+      // TODO should tell the server to re-perform hmr propagation
+      // from this module as root
       location.reload()
     },
 

@@ -38,12 +38,9 @@ export interface Plugin extends RollupPlugin {
    * Plugin invocation order:
    * - alias resolution
    * - `enforce: 'pre'` plugins
-   * - normal plugins
    * - vite internal plugins
+   * - normal plugins
    * - `enforce: 'post'` plugins
-   *
-   * If a plugin needs to perform transform *after* all other transforms have
-   * been done, use `enforce: 'post'`.
    */
   enforce?: 'pre' | 'post'
   /**
