@@ -259,7 +259,7 @@ export function removeStyle(id: string) {
   }
 }
 
-async function fetchUpdate({ path, changedPath, timestamp }: Update) {
+async function fetchUpdate({ path, accpetedPath, timestamp }: Update) {
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-spliting project,
@@ -269,7 +269,7 @@ async function fetchUpdate({ path, changedPath, timestamp }: Update) {
   }
 
   const moduleMap = new Map()
-  const isSelfUpdate = path === changedPath
+  const isSelfUpdate = path === accpetedPath
 
   // make sure we only import each dep once
   const modulesToUpdate = new Set<string>()
@@ -279,7 +279,11 @@ async function fetchUpdate({ path, changedPath, timestamp }: Update) {
   } else {
     // dep update
     for (const { deps } of mod.callbacks) {
-      deps.forEach((dep) => modulesToUpdate.add(dep))
+      deps.forEach((dep) => {
+        if (accpetedPath.startsWith(dep)) {
+          modulesToUpdate.add(dep)
+        }
+      })
     }
   }
 
