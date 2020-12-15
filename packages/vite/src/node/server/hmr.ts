@@ -68,7 +68,10 @@ export async function handleHMRUpdate(
   const updates: Update[] = []
 
   for (const mod of filteredMods) {
-    const boundaries = new Set<ModuleNode>()
+    const boundaries = new Set<{
+      boundary: ModuleNode
+      acceptedVia: ModuleNode
+    }>()
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
       debugHmr(`[full reload] ${chalk.dim(file)}`)
@@ -79,14 +82,14 @@ export async function handleHMRUpdate(
     }
 
     updates.push(
-      ...[...boundaries].map((boundary) => {
+      ...[...boundaries].map(({ boundary, acceptedVia }) => {
         const type = `${boundary.type}-update` as Update['type']
         debugHmr(`[${type}] ${chalk.dim(boundary.url)}`)
         return {
           type,
           timestamp,
           path: boundary.url,
-          changedPath: mod.url
+          accpetedPath: acceptedVia.url
         }
       })
     )
@@ -119,11 +122,17 @@ export function handlePrunedModules(
 function propagateUpdate(
   node: ModuleNode,
   timestamp: number,
-  boundaries: Set<ModuleNode>,
+  boundaries: Set<{
+    boundary: ModuleNode
+    acceptedVia: ModuleNode
+  }>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
   if (node.isSelfAccepting) {
-    boundaries.add(node)
+    boundaries.add({
+      boundary: node,
+      acceptedVia: node
+    })
     // mark current propagation chain dirty.
     // timestamp is used for injecting timestamp query during rewrite
     // also invalidate cache
@@ -138,7 +147,10 @@ function propagateUpdate(
   for (const importer of node.importers) {
     const subChain = currentChain.concat(importer)
     if (importer.acceptedHmrDeps.has(node)) {
-      boundaries.add(importer)
+      boundaries.add({
+        boundary: importer,
+        acceptedVia: node
+      })
       invalidateChain(subChain, timestamp)
       continue
     }

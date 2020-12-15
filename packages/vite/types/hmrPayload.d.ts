@@ -19,7 +19,7 @@ export interface UpdatePayload {
 export interface Update {
   type: 'js-update' | 'css-update'
   path: string
-  changedPath: string
+  accpetedPath: string
   timestamp: number
 }
 
