@@ -20,8 +20,8 @@ export function resolvePlugins(
   const isBuild = command === 'build'
 
   return [
-    ...prePlugins,
     aliasPlugin({ entries: config.alias }),
+    ...prePlugins,
     ...normalPlugins,
     resolvePlugin(config),
     nodeResolve({

@@ -12,13 +12,18 @@ export type ConfigHook = (config: UserConfig) => UserConfig | void
  * vite-specific options. A valid vite plugin is also a valid Rollup plugin.
  * On the contrary, a Rollup plugin may or may NOT be a valid vite universal
  * plugin, since some Rollup features do not make sense in an unbundled
- * dev server context.
+ * dev server context. That said, as long as a rollup plugin doesn't have strong
+ * coupling between its bundle phase and output phase hooks then it should
+ * just work (that means, most of them).
  *
  * By default, the plugins are run during both serve and build. When a plugin
  * is applied during serve, it will only run **non output plugin hooks** (see
- * rollup type definition PluginHooks). You can think of the dev server as
- * only running `const bundle = rollup.rollup()` but never calling
+ * rollup type definition of {@link rollup#PluginHooks}). You can think of the
+ * dev server as only running `const bundle = rollup.rollup()` but never calling
  * `bundle.generate()`.
+ *
+ * When running on the dev server, the plugin also has access to `this.server`
+ * via the plugin context, which is the {@link ViteDevServer} instance.
  *
  * A plugin that expects to have different behavior depending on serve/build can
  * export a factory function that receives the command being run via options.
@@ -28,7 +33,17 @@ export type ConfigHook = (config: UserConfig) => UserConfig | void
  */
 export interface Plugin extends RollupPlugin {
   /**
-   * Enforce plugin invocation tier similar to webpack loaders
+   * Enforce plugin invocation tier similar to webpack loaders.
+   *
+   * Plugin invocation order:
+   * - alias resolution
+   * - `enforce: 'pre'` plugins
+   * - normal plugins
+   * - vite internal plugins
+   * - `enforce: 'post'` plugins
+   *
+   * If a plugin needs to perform transform *after* all other transforms have
+   * been done, use `enforce: 'post'`.
    */
   enforce?: 'pre' | 'post'
   /**
@@ -38,10 +53,11 @@ export interface Plugin extends RollupPlugin {
    */
   modifyConfig?: ConfigHook
   /**
-   * Configure the vite server. The hook receives the server context object
-   * which exposes the following
+   * Configure the vite server. The hook receives the {@link ViteDevServer}
+   * instance which exposes the following:
+   *
    * - `config`: resolved project config
-   * - `server`: native http server
+   * - `httpServer`: native http server
    * - `app`: the connect middleware app
    * - `watcher`: the chokidar file watcher
    * - `ws`: a websocket server that can send messages to the client
