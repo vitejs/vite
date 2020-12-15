@@ -89,7 +89,7 @@ export type ResolvedConfig = Readonly<
     configPath: string | null
     root: string
     mode: string
-    env: Record<string, string>
+    env: Record<string, any>
     plugins: readonly Plugin[]
     server: ServerOptions
     build: BuildOptions
@@ -168,7 +168,13 @@ export async function resolveConfig(
     plugins: userPlugins,
     server: config.server || {},
     build: config.build || {},
-    env: loadEnv(mode, resolvedRoot)
+    env: {
+      ...loadEnv(mode, resolvedRoot),
+      BASE_URL: '/', // TODO
+      MODE: mode,
+      DEV: mode !== 'production',
+      PROD: mode === 'production'
+    }
   }
 
   resolved.plugins = resolvePlugins(

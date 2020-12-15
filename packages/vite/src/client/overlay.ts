@@ -123,14 +123,12 @@ export class ErrorOverlay extends HTMLElement {
       this.text('.plugin', `[plugin:${err.plugin}] `)
     }
     this.text('.message-body', message.trim())
+
+    const [file] = (err.loc?.file || err.id || 'unknown file').split(`?`)
     if (err.loc) {
-      this.text(
-        '.file',
-        `${err.loc.file || err.id}:${err.loc.line}:${err.loc.column}`,
-        true
-      )
+      this.text('.file', `${file}:${err.loc.line}:${err.loc.column}`, true)
     } else if (err.id) {
-      this.text('.file', err.id)
+      this.text('.file', file)
     }
 
     if (hasFrame) {

@@ -1,7 +1,13 @@
 import path from 'path'
 import chalk from 'chalk'
 import { Plugin } from '../plugin'
-import { Service, Message, Loader, TransformOptions } from 'esbuild'
+import {
+  Service,
+  Message,
+  Loader,
+  TransformOptions,
+  TransformResult
+} from 'esbuild'
 import { createDebugger, generateCodeFrame } from '../utils'
 
 const debug = createDebugger('vite:esbuild')
@@ -24,42 +30,51 @@ export async function stopService() {
   }
 }
 
+export async function transformWithEsbuild(
+  code: string,
+  filename: string,
+  options?: TransformOptions
+): Promise<TransformResult> {
+  const service = await ensureService()
+  const resolvedOptions = {
+    loader: path.extname(filename).slice(1) as Loader,
+    sourcemap: true,
+    // ensure source file name contains full query
+    sourcefile: filename,
+    target: 'es2020',
+    ...options
+  }
+
+  try {
+    return await service.transform(code, resolvedOptions)
+  } catch (e) {
+    debug(`esbuild error with options used: `, resolvedOptions)
+    // patch error information
+    if (e.errors) {
+      e.frame = ''
+      e.errors.forEach((m: Message) => {
+        e.frame += `\n` + prettifyMessage(m, code)
+      })
+      e.loc = e.errors[0].location
+    }
+    throw e
+  }
+}
+
 export function esbuildPlugin(options?: TransformOptions): Plugin {
   return {
     name: 'vite:esbuild',
     async transform(code, id) {
       if (/\.(tsx?|jsx)$/.test(id)) {
-        const service = await ensureService()
-        const resolvedOptions = {
-          loader: path.extname(id).slice(1) as Loader,
-          sourcemap: true,
-          // ensure source file name contains full query
-          sourcefile: id,
-          target: 'es2020',
-          ...options
+        const result = await transformWithEsbuild(code, id, options)
+        if (result.warnings.length) {
+          result.warnings.forEach((m) => {
+            this.warn(prettifyMessage(m, code))
+          })
         }
-
-        try {
-          const result = await service.transform(code, resolvedOptions)
-          if (result.warnings.length) {
-            result.warnings.forEach((m) => {
-              this.warn(prettifyMessage(m, code))
-            })
-          }
-          return {
-            code: result.code,
-            map: result.map
-          }
-        } catch (e) {
-          debug(`esbuild error with options used: `, resolvedOptions)
-          if (e.errors) {
-            e.frame = ''
-            e.errors.forEach((m: Message) => {
-              e.frame += `\n` + prettifyMessage(m, code)
-            })
-            e.loc = e.errors[0].location
-          }
-          this.error(e)
+        return {
+          code: result.code,
+          map: result.map
         }
       }
     }

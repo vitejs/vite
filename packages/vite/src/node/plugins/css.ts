@@ -6,10 +6,11 @@ import { ResolvedConfig } from '../config'
 import { ViteDevServer } from '../server'
 import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
-import { SourceMap } from 'rollup'
+import { RollupError, SourceMap } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
+import { Result } from 'postcss'
 
 const debug = createDebugger('vite:css')
 
@@ -41,6 +42,8 @@ export const unwrapCSSProxy = (id: string) => {
   return isCSSRequest(unwrapped) ? unwrapped : id
 }
 
+const cssModulesCache = new Map<string, Record<string, string>>()
+
 export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
   return {
     name: 'vite:css',
@@ -62,47 +65,94 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
       }
 
       const { code: css, modules, deps } = await compileCSS(id, raw, config)
-      const modulesCode = dataToEsm(modules, { namedExports: true })
+      if (modules) {
+        cssModulesCache.set(id, modules)
+      }
 
-      // server-only *.css.js proxy module
       if (!isBuild) {
+        // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = (this as any).server as ViteDevServer
         const thisModule = moduleGraph.getModuleById(id)!
+        // CSS modules cannot self-accept since it exports values
+        const isSelfAccepting = !modules
         if (deps) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
           const depModules = new Set(
             [...deps].map((file) => moduleGraph.createFileOnlyEntry(file))
           )
-          moduleGraph.updateModuleInfo(thisModule, depModules, depModules, true)
+          moduleGraph.updateModuleInfo(
+            thisModule,
+            depModules,
+            depModules,
+            isSelfAccepting
+          )
           for (const file of deps) {
             this.addWatchFile(file)
           }
         } else {
-          thisModule.isSelfAccepting = true
-        }
-
-        if (isProxyRequest) {
-          debug(`[import] ${chalk.dim(path.relative(config.root, id))}`)
-          return [
-            `import { updateStyle, removeStyle } from ${JSON.stringify(
-              CLIENT_PUBLIC_PATH
-            )}`,
-            `const id = ${JSON.stringify(id)}`,
-            `const css = ${JSON.stringify(css)}`,
-            `updateStyle(id, css)`,
-            `${modulesCode || `export default css`}`,
-            `import.meta.hot.accept()`,
-            `import.meta.hot.prune(() => removeStyle(id))`
-          ].join('\n')
-        } else {
-          debug(`[link] ${chalk.dim(path.relative(config.root, id))}`)
-          return modulesCode || css
+          thisModule.isSelfAccepting = isSelfAccepting
         }
       }
 
-      // TODO at build time, analyze url() asset reference
+      // TODO if dev, rewrite urls based on BASE_URL
+      // TODO if build, analyze url() asset reference
       // TODO account for comments https://github.com/vitejs/vite/issues/426
+
+      if (process.env.DEBUG) {
+        const file = chalk.dim(path.relative(config.root, id))
+        if (isProxyRequest) {
+          debug(`[import] ${file}`)
+        } else {
+          debug(`[link] ${file}`)
+        }
+      }
+
+      return css
+    }
+  }
+}
+
+/**
+ * Plugin for converting css.js proxy modules into actual javascript.
+ */
+export function cssPostPlugin(
+  config: ResolvedConfig,
+  isBuild: boolean
+): Plugin {
+  return {
+    name: 'vite:css-post',
+    transform(css, id) {
+      const isRawRequest = isCSSRequest(id)
+      const isProxyRequest = isCSSProxy(id)
+
+      if (!isProxyRequest && !isRawRequest) {
+        return
+      }
+
+      const modules = cssModulesCache.get(id)
+      const modulesCode = modules && dataToEsm(modules, { namedExports: true })
+
+      if (isProxyRequest) {
+        // server only
+        return [
+          `import { updateStyle, removeStyle } from ${JSON.stringify(
+            CLIENT_PUBLIC_PATH
+          )}`,
+          `const id = ${JSON.stringify(id)}`,
+          `const css = ${JSON.stringify(css)}`,
+          `updateStyle(id, css)`,
+          // css modules exports change on edit so it can't self accept
+          `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
+          `import.meta.hot.prune(() => removeStyle(id))`
+        ].join('\n')
+      }
+
+      if (isBuild) {
+        // TODO collect css for extraction
+      }
+
+      return modulesCode || css
     }
   }
 }
@@ -114,9 +164,11 @@ async function compileCSS(
 ): Promise<{
   code: string
   map?: SourceMap
+  ast?: Result
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
+  id = unwrapCSSProxy(id)
   const { modules: modulesOptions, preprocessorOptions } = config.css || {}
   const isModule =
     modulesOptions !== false &&
@@ -157,6 +209,10 @@ async function compileCSS(
         }
     }
     const preprocessResult = await preProcessor(code, undefined, opts)
+    if (preprocessResult.errors.length) {
+      throw preprocessResult.errors[0]
+    }
+
     code = preprocessResult.code
     map = preprocessResult.map as SourceMap
     if (preprocessResult.deps) {
@@ -214,6 +270,7 @@ async function compileCSS(
   }
 
   return {
+    ast: postcssResult,
     code: postcssResult.css,
     map: postcssResult.map as any,
     modules,
@@ -261,7 +318,7 @@ type StylePreprocessor = (
 export interface StylePreprocessorResults {
   code: string
   map?: object
-  errors: Error[]
+  errors: RollupError[]
   deps: string[]
 }
 
@@ -270,7 +327,7 @@ function loadPreprocessor(lang: PreprocessLang) {
     return require(lang)
   } catch (e) {
     throw new Error(
-      `Preprocessor dependency ${lang} not found. Did you install it?`
+      `Preprocessor dependency "${lang}" not found. Did you install it?`
     )
   }
 }
@@ -319,21 +376,37 @@ const sass: StylePreprocessor = (source, map, options) =>
   })
 
 // .less
+interface LessError {
+  message: string
+  line: number
+  column: number
+}
+
 const less: StylePreprocessor = (source, map, options) => {
   const nodeLess = loadPreprocessor('less')
 
   let result: any
-  let error: Error | null = null
+  let error: LessError | null = null
   nodeLess.render(
     getSource(source, options.filename, options.additionalData),
     { ...options, syncImport: true },
-    (err: Error | null, output: any) => {
+    (err: LessError | null, output: any) => {
       error = err
       result = output
     }
   )
 
-  if (error) return { code: '', errors: [error], deps: [] }
+  if (error) {
+    // normalize error info
+    const normalizedError: RollupError = new Error(error!.message)
+    normalizedError.loc = {
+      file: options.filename,
+      line: error!.line,
+      column: error!.column
+    }
+    return { code: '', errors: [normalizedError], deps: [] }
+  }
+
   const deps = result.imports
   if (map) {
     return {
