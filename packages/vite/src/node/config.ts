@@ -26,7 +26,12 @@ export interface ConfigEnv {
 export type UserConfigFn = (env: ConfigEnv) => UserConfig
 export type UserConfigExport = UserConfig | UserConfigFn
 
-// type helper to make it easier to use vite.config.ts
+/**
+ * Type helper to make it easier to use vite.config.ts
+ * accepts a direct {@link UserConfig} object, or a function that returns it.
+ * The function receives a {@link ConfigEnv} object that exposes two properties:
+ * `command` (either `'build'` or `'serve'`), and `mode`.
+ */
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }

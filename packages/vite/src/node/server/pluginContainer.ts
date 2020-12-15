@@ -113,6 +113,8 @@ export async function createPluginContainer(
   watcher: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
+
+  const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
   const debugPluginResolve = createDebugger('vite:plugin-resolve', {
     onlyWhenFocused: 'vite:plugin'
@@ -426,12 +428,21 @@ export async function createPluginContainer(
       }
 
       nestedResolveCall--
-
-      isDebug &&
+      if (
+        isDebug &&
         !nestedResolveCall &&
-        debugResolve(
-          `${timeFrom(resolveStart)} ${chalk.cyan(rawId)} -> ${chalk.dim(id)}`
-        )
+        rawId !== id &&
+        !rawId.startsWith('/@fs/')
+      ) {
+        const key = rawId + id
+        // avoid spamming
+        if (!seenResolves[key]) {
+          seenResolves[key] = true
+          debugResolve(
+            `${timeFrom(resolveStart)} ${chalk.cyan(rawId)} -> ${chalk.dim(id)}`
+          )
+        }
+      }
 
       return id ? (partial as PartialResolvedId) : { id: rawId }
     },
