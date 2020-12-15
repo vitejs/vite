@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { Connect } from 'types/connect'
-import { Plugin } from '../../config'
+import { Plugin } from '../../plugin'
 import {
   scriptRE,
   applyHtmlTransforms,

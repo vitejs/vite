@@ -32,7 +32,7 @@ SOFTWARE.
 import fs from 'fs'
 import { resolve, relative, dirname, sep, posix, join } from 'path'
 import { createHash } from 'crypto'
-import { Plugin } from '../config'
+import { Plugin } from '../plugin'
 import {
   RollupOptions,
   InputOptions,

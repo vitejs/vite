@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
-import Rollup, { Plugin as RollupPlugin, RollupOptions } from 'rollup'
-import { BuildOptions, BuildHook } from './build'
-import { ServerOptions, ServerHook, ViteDevServer } from './server'
+import { Plugin } from './plugin'
+import Rollup, { RollupOptions } from 'rollup'
+import { BuildOptions } from './build'
+import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
 import { createDebugger, deepMerge, isObject, lookupFile } from './utils'
 import { resolvePlugins } from './plugins'
@@ -12,10 +13,8 @@ import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import { IndexHtmlTransform } from './plugins/html'
 import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR } from './constants'
-import { ModuleNode } from './server/moduleGraph'
 
 const debug = createDebugger('vite:config')
 
@@ -78,85 +77,6 @@ export interface UserConfig {
    * Build specific options
    */
   build?: BuildOptions
-}
-
-export type ConfigHook = (config: UserConfig) => UserConfig | void
-
-/**
- * Vite plugins support a subset of Rollup plugin API with a few extra
- * vite-specific options. A valid vite plugin is also a valid Rollup plugin.
- * On the contrary, a Rollup plugin may or may NOT be a valid vite universal
- * plugin, since some Rollup features do not make sense in an unbundled
- * dev server context.
- *
- * By default, the plugins are run during both serve and build. When a plugin
- * is applied during serve, it will only run **non output plugin hooks** (see
- * rollup type definition PluginHooks). You can think of the dev server as
- * only running `const bundle = rollup.rollup()` but never calling
- * `bundle.generate()`.
- *
- * A plugin that expects to have different behavior depending on serve/build can
- * export a factory function that receives the command being run via options.
- *
- * If a plugin should be applied only for server or build, a function format
- * config file can be used to conditional determine the plugins to use.
- */
-export interface Plugin extends RollupPlugin {
-  /**
-   * Enforce plugin invocation tier similar to webpack loaders
-   */
-  enforce?: 'pre' | 'post'
-  /**
-   * Mutate or return new vite config before it's resolved.
-   * Note user plugins are resolved before this hook so adding plugins inside
-   * a plugin's modifyConfig hook will have no effect.
-   */
-  modifyConfig?: ConfigHook
-  /**
-   * Configure the vite server. The hook receives the server context object
-   * which exposes the following
-   * - `config`: resolved project config
-   * - `server`: native http server
-   * - `app`: the connect middleware app
-   * - `watcher`: the chokidar file watcher
-   * - `ws`: a websocket server that can send messages to the client
-   * - `container`: the plugin container
-   *
-   * The hooks will be called before internal middlewares are applied. A hook
-   * can return a post hook that will be called after internal middlewares
-   * are applied. Hook can be async functions and will be called in series.
-   */
-  configureServer?: ServerHook
-  /**
-   * Configure production build. The hook receives the rollup config which
-   * it can mutate or return. Passing multiple build hooks will produce multiple
-   * builds similar to a multi-config rollup build.
-   */
-  configureBuild?: BuildHook | BuildHook[]
-  /**
-   * Transform index.html.
-   * The hook receives the following arguments:
-   *
-   * - html: string
-   * - ctx?: vite.ServerContext (only present during serve)
-   * - bundle?: rollup.OutputBundle (only present during build)
-   *
-   * It can either return a transformed string, or a list of html tag
-   * descriptors that will be injected into the <head> or <body>.
-   *
-   * By default the transform is applied **after** vite's internal html
-   * transform. If you need to apply the transform before vite, use an object:
-   * `{ enforce: 'pre', transform: hook }`
-   */
-  transformIndexHtml?: IndexHtmlTransform
-  /**
-   * Perform custom handling of HMR updates.
-   */
-  handleHotUpdate?: (
-    file: string,
-    mods: Array<ModuleNode>,
-    server: ViteDevServer
-  ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
 }
 
 export type ResolvedConfig = Readonly<

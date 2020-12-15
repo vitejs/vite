@@ -1,7 +1,8 @@
 import chalk from 'chalk'
 import fs, { promises as fsp } from 'fs'
 import qs from 'querystring'
-import { Plugin, ResolvedConfig } from '..'
+import { Plugin } from '../plugin'
+import { ResolvedConfig } from '../config'
 import { createDebugger, cleanUrl } from '../utils'
 import { FILE_PREFIX } from '../constants'
 
