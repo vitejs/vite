@@ -3,7 +3,7 @@ export * from './build'
 export * from './config'
 
 // additional types
-export { Plugin } from './plugin'
+export { Plugin, ConfigHook } from './plugin'
 export type {
   AliasOptions,
   ResolverFunction,

@@ -1,7 +1,9 @@
 # vite ⚡
 
-[![npm][npm-img]][npm-url]
-[![node][node-img]][node-url]
+> This is the WIP 2.0 branch.
+
+<!-- [![npm][npm-img]][npm-url]
+[![node][node-img]][node-url] -->
 [![unix CI status][unix-ci-img]][unix-ci-url]
 [![windows CI status][windows-ci-img]][windows-ci-url]
 
@@ -574,7 +576,7 @@ MIT
 [npm-url]: https://npmjs.com/package/vite
 [node-img]: https://img.shields.io/node/v/vite.svg
 [node-url]: https://nodejs.org/en/about/releases/
-[unix-ci-img]: https://circleci.com/gh/vitejs/vite.svg?style=shield
-[unix-ci-url]: https://app.circleci.com/pipelines/github/vitejs/vite
-[windows-ci-img]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/master?svg=true
-[windows-ci-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/master
+[unix-ci-img]: https://circleci.com/gh/vitejs/vite/tree/2.0.svg?style=shield
+[unix-ci-url]: https://app.circleci.com/pipelines/github/vitejs/vite?branch=2.0
+[windows-ci-img]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/2.0?svg=true
+[windows-ci-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/2.0
