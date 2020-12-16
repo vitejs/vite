@@ -1,7 +1,7 @@
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
-import { ViteDevServer } from '../server'
+import { useServer } from '../server'
 import chalk from 'chalk'
 import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
@@ -90,7 +90,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       // vite-only server context
-      const { moduleGraph } = (this as any).server as ViteDevServer
+      const { moduleGraph } = useServer(this)!
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
@@ -251,7 +251,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           isSelfAccepting
         )
         if (hasHMR && prunedImports) {
-          handlePrunedModules(prunedImports, (this as any).server)
+          handlePrunedModules(prunedImports, useServer(this)!)
         }
       }
 
