@@ -94,11 +94,8 @@ async function handleMessage(payload: HMRPayload) {
         }
       })
       break
-    case 'css-remove':
-      removeStyle(payload.path)
-      break
     case 'custom':
-      const cbs = customUpdateMap.get(payload.path)
+      const cbs = customUpdateMap.get(payload.path)?.get(payload.event)
       if (cbs) {
         cbs.forEach((cb) => cb(payload.data))
       }
@@ -337,7 +334,10 @@ const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
-const customUpdateMap = new Map<string, ((customData: any) => void)[]>()
+const customUpdateMap = new Map<
+  string,
+  Map<string, ((customData: any) => void)[]>
+>()
 
 export const createHotContext = (ownerPath: string) => {
   if (!dataMap.has(ownerPath)) {
@@ -350,6 +350,9 @@ export const createHotContext = (ownerPath: string) => {
   if (mod) {
     mod.callbacks = []
   }
+  // clear stale custom event listeners
+  const customListeners = new Map()
+  customUpdateMap.set(ownerPath, customListeners)
 
   function acceptDeps(deps: string[], callback: HotCallback['fn'] = () => {}) {
     const mod: HotModule = hotModulesMap.get(ownerPath) || {
@@ -412,9 +415,9 @@ export const createHotContext = (ownerPath: string) => {
 
     // custom events
     on(event: string, cb: () => void) {
-      const existing = customUpdateMap.get(event) || []
+      const existing = customListeners.get(event) || []
       existing.push(cb)
-      customUpdateMap.set(event, existing)
+      customListeners.set(event, existing)
     }
   }
 

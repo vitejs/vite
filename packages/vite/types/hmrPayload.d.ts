@@ -2,7 +2,6 @@ export type HMRPayload =
   | ConnectedPayload
   | UpdatePayload
   | FullReloadPayload
-  | StyleRemovePayload
   | CustomPayload
   | ErrorPayload
   | PrunePayload
@@ -28,11 +27,6 @@ export interface PrunePayload {
   paths: string[]
 }
 
-export interface StyleRemovePayload {
-  type: 'css-remove'
-  path: string
-}
-
 export interface FullReloadPayload {
   type: 'full-reload'
   path?: string
@@ -41,7 +35,8 @@ export interface FullReloadPayload {
 export interface CustomPayload {
   type: 'custom'
   path: string
-  data: any
+  event: string
+  data?: any
 }
 
 export interface ErrorPayload {
