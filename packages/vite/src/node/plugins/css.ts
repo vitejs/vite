@@ -3,7 +3,7 @@ import path from 'path'
 import fs, { promises as fsp } from 'fs'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
-import { ViteDevServer } from '../server'
+import { useServer } from '../server'
 import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
 import { RollupError, SourceMap } from 'rollup'
@@ -71,7 +71,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
 
       if (!isBuild) {
         // server only logic for handling CSS @import dependency hmr
-        const { moduleGraph } = (this as any).server as ViteDevServer
+        const { moduleGraph } = useServer(this)!
         const thisModule = moduleGraph.getModuleById(id)!
         // CSS modules cannot self-accept since it exports values
         const isSelfAccepting = !modules
