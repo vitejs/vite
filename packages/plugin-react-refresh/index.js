@@ -7,6 +7,9 @@ const runtimeFilePath = require.resolve(
   'react-refresh/cjs/react-refresh-runtime.development.js'
 )
 
+const runtimeCode = `
+const exports = {}
+${fs.readFileSync(runtimeFilePath, 'utf-8')}
 function debounce(fn, delay) {
   let handle
   return () => {
@@ -14,28 +17,21 @@ function debounce(fn, delay) {
     handle = setTimeout(fn, delay)
   }
 }
-
-const runtimeCode = `
-const exports = {}
-${fs.readFileSync(runtimeFilePath, 'utf-8')}
-${debounce.toString()}
 exports.performReactRefresh = debounce(exports.performReactRefresh, 16)
 export default exports
 `
 
 /**
+ * Transform plugin for transforming and injecting per-file refresh code.
+ * Note this uses `enforce: 'post'` so that it is applied after the esbuild
+ * JSX transform.
+ *
  * @type { import('vite').Plugin }
  */
-const resolve = {
-  name: 'react-refresh-resolve',
+module.exports = {
+  name: 'react-refresh',
+
   resolveId(id) {
-    // TODO we don't need this when optimizer is in place
-    if (id === 'react') {
-      return this.resolve('@pika/react/source.development.js')
-    }
-    if (id === 'react-dom') {
-      return this.resolve('@pika/react-dom/source.development.js')
-    }
     if (id === runtimePublicPath) {
       return runtimeFilePath
     }
@@ -45,25 +41,14 @@ const resolve = {
     if (id === runtimeFilePath) {
       return runtimeCode
     }
-  }
-}
-
-/**
- * @type { import('vite').Plugin }
- */
-const transform = {
-  name: 'react-refresh-transform',
-
-  // make sure this is applied after vite's internal esbuild transform
-  // which handles (j|t)sx
-  enforce: 'post',
+  },
 
   transform(code, id) {
     if (
       // @ts-ignore
-      !this.serverContext ||
+      !this.server ||
       // @ts-ignore
-      this.serverContext.config.mode === 'production'
+      this.server.config.mode === 'production'
     ) {
       return
     }
@@ -184,5 +169,3 @@ function isRefreshBoundary(ast) {
 function isComponentishName(name) {
   return typeof name === 'string' && name[0] >= 'A' && name[0] <= 'Z'
 }
-
-module.exports = [resolve, transform]

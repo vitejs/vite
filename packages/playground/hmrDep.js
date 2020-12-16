@@ -1,6 +1,6 @@
 import './hmrNestedDep'
 
-export const foo = 'from dep'
+export const foo = 'from depppp'
 
 if (import.meta.hot) {
   const data = import.meta.hot.data

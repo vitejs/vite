@@ -1,6 +1,7 @@
 import './hmrDep.js'
+import './style.css'
 
-export const foo = 3223233232
+export const foo = 222233
 
 if (import.meta.hot) {
   import.meta.hot.accept(({ foo }) => {
