@@ -30,7 +30,6 @@ export {
   UpdatePayload,
   Update,
   FullReloadPayload,
-  StyleRemovePayload,
   CustomPayload,
   PrunePayload,
   ErrorPayload

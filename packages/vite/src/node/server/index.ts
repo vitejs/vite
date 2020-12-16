@@ -32,6 +32,10 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import { TransformResult } from 'rollup'
 import { transformRequest } from './transformRequest'
 import { transformWithEsbuild } from '../plugins/esbuild'
+import {
+  TransformOptions as EsbuildTransformOptions,
+  TransformResult as EsbuildTransformResult
+} from 'esbuild'
 
 export interface ServerOptions {
   host?: string
@@ -154,7 +158,11 @@ export interface ViteDevServer {
    * Util for transfoming a file with esbuild.
    * Can be useful for certain plugins.
    */
-  transformWithEsbuild: typeof transformWithEsbuild
+  transformWithEsbuild(
+    code: string,
+    filename: string,
+    options?: EsbuildTransformOptions
+  ): Promise<EsbuildTransformResult>
 }
 
 export async function createServer(
