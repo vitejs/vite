@@ -9,6 +9,8 @@ import {
   TransformResult
 } from 'esbuild'
 import { createDebugger, generateCodeFrame } from '../utils'
+import merge from 'merge-source-map'
+import { SourceMap } from 'rollup'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -30,11 +32,16 @@ export async function stopService() {
   }
 }
 
+export type EsbuildTransformResult = Omit<TransformResult, 'map'> & {
+  map: SourceMap
+}
+
 export async function transformWithEsbuild(
   code: string,
   filename: string,
-  options?: TransformOptions
-): Promise<TransformResult> {
+  options?: TransformOptions,
+  inMap?: object
+): Promise<EsbuildTransformResult> {
   const service = await ensureService()
   const resolvedOptions = {
     loader: path.extname(filename).slice(1) as Loader,
@@ -46,7 +53,22 @@ export async function transformWithEsbuild(
   }
 
   try {
-    return await service.transform(code, resolvedOptions)
+    const result = await service.transform(code, resolvedOptions)
+    if (inMap) {
+      const nextMap = JSON.parse(result.map)
+      // merge-source-map will overwrite original sources if newMap also has
+      // sourcesContent
+      nextMap.sourcesContent = []
+      return {
+        ...result,
+        map: merge(inMap, nextMap) as SourceMap
+      }
+    } else {
+      return {
+        ...result,
+        map: JSON.parse(result.map)
+      }
+    }
   } catch (e) {
     debug(`esbuild error with options used: `, resolvedOptions)
     // patch error information

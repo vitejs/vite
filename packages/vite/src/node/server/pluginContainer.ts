@@ -313,9 +313,11 @@ export async function createPluginContainer(
         } else {
           // merge-source-map will overwrite original sources if newMap also has
           // sourcesContent
-          ;(m as SourceMap).sourcesContent = []
           // @ts-ignore
-          combinedMap = merge(combinedMap, m)
+          combinedMap = merge(combinedMap, {
+            ...(m as SourceMap),
+            sourcesContent: combinedMap.sourcesContent
+          })
         }
       }
       if (!combinedMap) {
