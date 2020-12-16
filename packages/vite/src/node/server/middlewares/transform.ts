@@ -14,6 +14,8 @@ import { isHTMLProxy } from '../../plugins/html'
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
 
+const knownIgnoreList = new Set(['/', '/favicon.ico'])
+
 export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
@@ -24,7 +26,7 @@ export function transformMiddleware(
 
   return async (req, res, next) => {
     const url = removeTimestampQuery(req.url!)
-    if (req.method !== 'GET' || req.url === '/') {
+    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }
 
@@ -53,7 +55,6 @@ export function transformMiddleware(
         // esm imports accept */* in most browsers
         req.headers['accept'] === '*/*' ||
         req.headers['sec-fetch-dest'] === 'script' ||
-        isSourceMap ||
         isCSS ||
         isHTMLInlineModule
       ) {
