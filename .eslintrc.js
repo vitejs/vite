@@ -17,6 +17,8 @@ module.exports = {
     'node/no-missing-require': [
       'error',
       {
+        // for try-catching yarn pnp
+        allowModules: ['pnpapi'],
         tryExtensions: ['.ts', '.js']
       }
     ],

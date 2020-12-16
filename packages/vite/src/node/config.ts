@@ -12,9 +12,9 @@ import { esbuildPlugin } from './plugins/esbuild'
 import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR } from './constants'
+import { resolvePlugin } from './plugins/resolve'
 
 const debug = createDebugger('vite:config')
 
@@ -254,9 +254,10 @@ async function loadConfigFromFile(
         plugins: [
           // use esbuild + node-resolve to support .ts files
           esbuildPlugin({ target: 'es2019' }),
-          nodeResolve({
-            extensions: ['.mjs', '.js', '.ts', '.json']
-          })
+          resolvePlugin(
+            path.dirname(resolvedPath),
+            false /* disallow url resolves */
+          )
         ]
       })
 
