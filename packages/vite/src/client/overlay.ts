@@ -41,6 +41,11 @@ pre {
   margin-top: 0;
   margin-bottom: 1em;
   overflow-x: scroll;
+  scrollbar-width: none;
+}
+
+pre::-webkit-scrollbar {
+  display: none;
 }
 
 .message {
