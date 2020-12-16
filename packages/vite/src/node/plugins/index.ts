@@ -1,8 +1,7 @@
 import { Plugin, ResolvedConfig } from '..'
 import aliasPlugin from '@rollup/plugin-alias'
 import jsonPlugin from '@rollup/plugin-json'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
-import { resolvePlugin, supportedExts } from './resolve'
+import { resolvePlugin } from './resolve'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importsAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
@@ -22,7 +21,7 @@ export function resolvePlugins(
   return [
     aliasPlugin({ entries: config.alias }),
     ...prePlugins,
-    resolvePlugin(config),
+    resolvePlugin(config.root),
     htmlPlugin(),
     cssPlugin(config, isBuild),
     esbuildPlugin(config.esbuild || {}),
@@ -31,12 +30,6 @@ export function resolvePlugins(
     ...normalPlugins,
     ...postPlugins,
     cssPostPlugin(config, isBuild),
-    // node-resolve is slow, so we want to only fallback to it after all other
-    // resolvers have run.
-    nodeResolve({
-      extensions: supportedExts,
-      mainFields: ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
-    }),
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
