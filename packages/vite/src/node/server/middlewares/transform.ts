@@ -1,7 +1,12 @@
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import { isCSSRequest } from '../../plugins/css'
-import { createDebugger, prettifyUrl } from '../../utils'
+import {
+  cleanUrl,
+  createDebugger,
+  prettifyUrl,
+  removeTimestampQuery
+} from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
@@ -18,20 +23,23 @@ export function transformMiddleware(
   } = server
 
   return async (req, res, next) => {
-    const url = req.url!
+    const url = removeTimestampQuery(req.url!)
     if (req.method !== 'GET' || req.url === '/') {
       return next()
     }
 
     try {
-      const isSourceMap = url.endsWith('.map')
+      const isSourceMap = cleanUrl(url).endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        const originalUrl = url!.replace(/\.map$/, '')
+        const originalUrl = url.replace(/\.map($|\?)/, '$1')
         const map = (await moduleGraph.getModuleByUrl(originalUrl))
           ?.transformResult?.map
         if (map) {
           return send(req, res, JSON.stringify(map), 'json')
+        } else {
+          res.statusCode = 404
+          return res.end()
         }
       }
 
@@ -65,8 +73,7 @@ export function transformMiddleware(
         const result = await transformRequest(url, server)
         if (result) {
           const type = isCSS ? 'css' : 'js'
-          const hasMap = !!(result.map && result.map.mappings)
-          return send(req, res, result.code, type, result.etag, hasMap)
+          return send(req, res, result.code, type, result.etag, result.map)
         }
       }
     } catch (e) {

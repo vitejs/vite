@@ -31,11 +31,11 @@ import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { TransformResult } from 'rollup'
 import { transformRequest } from './transformRequest'
-import { transformWithEsbuild } from '../plugins/esbuild'
 import {
-  TransformOptions as EsbuildTransformOptions,
-  TransformResult as EsbuildTransformResult
-} from 'esbuild'
+  transformWithEsbuild,
+  EsbuildTransformResult
+} from '../plugins/esbuild'
+import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 
 export interface ServerOptions {
   host?: string
@@ -161,7 +161,8 @@ export interface ViteDevServer {
   transformWithEsbuild(
     code: string,
     filename: string,
-    options?: EsbuildTransformOptions
+    options?: EsbuildTransformOptions,
+    inMap?: object
   ): Promise<EsbuildTransformResult>
 }
 
