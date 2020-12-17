@@ -20,7 +20,10 @@ import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
-import { serveStaticMiddleware } from './middlewares/static'
+import {
+  outOfRootStaticMiddleware,
+  serveStaticMiddleware
+} from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
 import { Connect } from 'types/connect'
@@ -254,6 +257,7 @@ export async function createServer(
   app.use(transformMiddleware(server))
 
   // serve static files
+  app.use(outOfRootStaticMiddleware())
   app.use(serveStaticMiddleware(root))
   app.use(serveStaticMiddleware(path.join(root, 'public')))
 
