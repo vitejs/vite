@@ -4,8 +4,7 @@ import { ServerHook, ViteDevServer } from './server'
 import { BuildHook } from './build'
 import { IndexHtmlTransform } from './plugins/html'
 import { ModuleNode } from './server/moduleGraph'
-
-export type ConfigHook = (config: UserConfig) => UserConfig | void
+import { ResolvedConfig } from './'
 
 /**
  * Vite plugins support a subset of Rollup plugin API with a few extra
@@ -48,17 +47,15 @@ export interface Plugin extends RollupPlugin {
    * Note user plugins are resolved before this hook so adding plugins inside
    * a plugin's modifyConfig hook will have no effect.
    */
-  modifyConfig?: ConfigHook
+  config?: (config: UserConfig) => UserConfig | null | void
+  /**
+   * Use this hook to read and store the final resolved vite config.
+   */
+  configResolved?: (config: ResolvedConfig) => void
   /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
-   * instance which exposes the following:
-   *
-   * - `config`: resolved project config
-   * - `httpServer`: native http server
-   * - `app`: the connect middleware app
-   * - `watcher`: the chokidar file watcher
-   * - `ws`: a websocket server that can send messages to the client
-   * - `container`: the plugin container
+   * instance. This can also be used to store a reference to the server
+   * for use in other hooks.
    *
    * The hooks will be called before internal middlewares are applied. A hook
    * can return a post hook that will be called after internal middlewares

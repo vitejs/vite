@@ -3,7 +3,6 @@ import path from 'path'
 import fs, { promises as fsp } from 'fs'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
-import { useServer } from '../server'
 import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
 import { RollupError, SourceMap } from 'rollup'
@@ -11,6 +10,7 @@ import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
 import { Result } from 'postcss'
+import { ViteDevServer } from '../'
 
 const debug = createDebugger('vite:css')
 
@@ -44,9 +44,15 @@ export const unwrapCSSProxy = (id: string) => {
 
 const cssModulesCache = new Map<string, Record<string, string>>()
 
-export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
+export function cssPlugin(config: ResolvedConfig): Plugin {
+  let server: ViteDevServer
+
   return {
     name: 'vite:css',
+
+    configureServer(_server) {
+      server = _server
+    },
 
     // server only - this loads *.css.js requests which are a result
     // of import rewriting in ./rewrite.ts
@@ -69,9 +75,9 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
         cssModulesCache.set(id, modules)
       }
 
-      if (!isBuild) {
+      if (config.command === 'serve') {
         // server only logic for handling CSS @import dependency hmr
-        const { moduleGraph } = useServer(this)!
+        const { moduleGraph } = server
         const thisModule = moduleGraph.getModuleById(id)!
         // CSS modules cannot self-accept since it exports values
         const isSelfAccepting = !modules
@@ -116,10 +122,7 @@ export function cssPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
 /**
  * Plugin for converting css.js proxy modules into actual javascript.
  */
-export function cssPostPlugin(
-  config: ResolvedConfig,
-  isBuild: boolean
-): Plugin {
+export function cssPostPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-post',
     transform(css, id) {
@@ -148,7 +151,7 @@ export function cssPostPlugin(
         ].join('\n')
       }
 
-      if (isBuild) {
+      if (config.command === 'build') {
         // TODO collect css for extraction
       }
 

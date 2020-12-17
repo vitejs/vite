@@ -3,7 +3,7 @@ export * from './build'
 export * from './config'
 
 // additional types
-export { Plugin, ConfigHook } from './plugin'
+export { Plugin } from './plugin'
 export type {
   AliasOptions,
   ResolverFunction,
@@ -25,7 +25,7 @@ export type { ModuleGraph, ModuleNode } from './server/moduleGraph'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type { TransformResult } from './server/transformRequest'
 export type { HmrOptions } from './server/hmr'
-export {
+export type {
   HMRPayload,
   ConnectedPayload,
   UpdatePayload,

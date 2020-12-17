@@ -1,7 +1,6 @@
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
-import { useServer } from '../server'
 import chalk from 'chalk'
 import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
@@ -12,6 +11,7 @@ import { debugHmr, handlePrunedModules } from '../server/hmr'
 import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
 import { RollupError } from 'rollup'
 import { FAILED_RESOLVE } from './resolve'
+import { ViteDevServer } from '../'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -49,8 +49,15 @@ const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
  *     ```
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
+  let server: ViteDevServer
+
   return {
     name: 'vite:imports',
+
+    configureServer(_server) {
+      server = _server
+    },
+
     async transform(source, importer) {
       const prettyImporter = prettifyUrl(slash(importer), config.root)
 
@@ -90,7 +97,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       // vite-only server context
-      const { moduleGraph } = useServer(this)!
+      const { moduleGraph } = server
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
@@ -251,7 +258,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           isSelfAccepting
         )
         if (hasHMR && prunedImports) {
-          handlePrunedModules(prunedImports, useServer(this)!)
+          handlePrunedModules(prunedImports, server)
         }
       }
 

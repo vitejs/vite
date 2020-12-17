@@ -1,10 +1,11 @@
 import chalk from 'chalk'
+import path from 'path'
 import fs, { promises as fsp } from 'fs'
 import qs from 'querystring'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { createDebugger, cleanUrl } from '../utils'
-import { FILE_PREFIX } from '../constants'
+import slash from 'slash'
 
 const debug = createDebugger('vite:asset')
 
@@ -22,7 +23,7 @@ const assetsRE = new RegExp(
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
-export function assetPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
+export function assetPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset',
     async load(id) {
@@ -37,7 +38,7 @@ export function assetPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
         return
       }
 
-      if (!isBuild) {
+      if (config.command === 'serve') {
         if (fs.existsSync(file)) {
           if (isRawRequest) {
             debug(`[raw] ${chalk.dim(file)}`)
@@ -47,9 +48,10 @@ export function assetPlugin(config: ResolvedConfig, isBuild: boolean): Plugin {
             )}`
           } else {
             debug(`[import] ${chalk.dim(file)}`)
-            // return the location of the file. during dev, this will be
-            // the /@fs/ prefixed path as a string.
-            return `export default ${JSON.stringify(FILE_PREFIX + id)}`
+            // return the url of the file relative to served root.
+            return `export default ${JSON.stringify(
+              `/` + slash(path.relative(config.root, id))
+            )}`
           }
         }
       }
