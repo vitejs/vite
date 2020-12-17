@@ -9,6 +9,7 @@
     "bundle": "esbuild packages/vite/src/node/index.ts packages/vite/src/node/cli.ts --bundle --platform=node --target=node12 --external:fsevents --external:sugarss --external:bufferutil --external:utf-8-validate --outdir=esbuild"
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.12.1",
     "@types/node": "^14.14.10",
     "@typescript-eslint/parser": "^4.9.1",
     "enquirer": "^2.3.6",

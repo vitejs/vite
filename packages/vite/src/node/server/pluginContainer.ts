@@ -55,7 +55,6 @@ import acornClassFields from 'acorn-class-fields'
 import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
-import { ViteDevServer } from '..'
 import {
   createDebugger,
   generateCodeFrame,
@@ -73,7 +72,6 @@ export interface PluginContainerOptions {
 }
 
 export interface PluginContainer {
-  server: ViteDevServer | null
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
   watchChange(id: string, event?: ChangeEvent): void
@@ -154,13 +152,6 @@ export async function createPluginContainer(
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
-    }
-
-    /**
-     * @internal vite-specific
-     */
-    get server() {
-      return container.server
     }
 
     parse(code: string, opts: any = {}) {
@@ -344,8 +335,6 @@ export async function createPluginContainer(
   let nestedResolveCall = 0
 
   const container: PluginContainer = {
-    server: null, // will be set after creation
-
     options: await (async () => {
       let options = rollupOptions
       for (const plugin of plugins) {
