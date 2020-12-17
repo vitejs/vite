@@ -5,6 +5,7 @@ import qs from 'querystring'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { createDebugger, cleanUrl } from '../utils'
+import { FILE_PREFIX } from '../constants'
 import slash from 'slash'
 
 const debug = createDebugger('vite:asset')
@@ -49,9 +50,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           } else {
             debug(`[import] ${chalk.dim(file)}`)
             // return the url of the file relative to served root.
-            return `export default ${JSON.stringify(
-              `/` + slash(path.relative(config.root, id))
-            )}`
+            const publicPath = id.startsWith(config.root)
+              ? // in project root, infer short public path
+                `/${slash(path.relative(config.root, id))}`
+              : // outside of project root, use absolute fs path
+                // (this is speical handled by the serve static middleware
+                `${FILE_PREFIX}${slash(id)}`
+            return `export default ${JSON.stringify(publicPath)}`
           }
         }
       }

@@ -1,3 +1,5 @@
+import path from 'path'
+import slash from 'slash'
 import {
   compileTemplate,
   SFCDescriptor,
@@ -92,19 +94,44 @@ export function getTemplateCompilerOptions(
   }
   const resolvedScript = getResolvedScript(descriptor, options.ssr)
   const hasScoped = descriptor.styles.some((s) => s.scoped)
+  const { id, filename, cssVars } = descriptor
+
+  let transformAssetUrls = options.template?.transformAssetUrls
+  // inject vite base so that @vue/compiler-sfc can transform relative paths
+  // directly to absolute paths without incurring an extra import request
+  if (filename.startsWith(options.root)) {
+    // TODO account for vite base config
+    const base =
+      '/' + slash(path.relative(options.root, path.dirname(filename)))
+    if (transformAssetUrls && typeof transformAssetUrls === 'object') {
+      // presence of array fields means this is raw tags config
+      if (
+        Object.keys(transformAssetUrls).some((key) =>
+          Array.isArray((transformAssetUrls as any)[key])
+        )
+      ) {
+        transformAssetUrls = { base, tags: transformAssetUrls } as any
+      } else {
+        transformAssetUrls = { ...transformAssetUrls, base }
+      }
+    } else {
+      transformAssetUrls = { base }
+    }
+  }
+
   return {
     ...options.template,
-    id: descriptor.id,
+    id,
+    filename,
     scoped: hasScoped,
     isProd: options.isProduction,
-    filename: descriptor.filename,
     inMap: block.src ? undefined : block.map,
     ssr: options.ssr,
-    ssrCssVars: descriptor.cssVars,
-    transformAssetUrls: options.template?.transformAssetUrls,
+    ssrCssVars: cssVars,
+    transformAssetUrls,
     compilerOptions: {
       ...options.template?.compilerOptions,
-      scopeId: hasScoped ? `data-v-${descriptor.id}` : undefined,
+      scopeId: hasScoped ? `data-v-${id}` : undefined,
       bindingMetadata: resolvedScript ? resolvedScript.bindings : undefined
     }
   }
