@@ -5,10 +5,11 @@
   </p>
   <p class="asset-import">
     Path for assets import from js: <code>{{ filepath }}</code>
+    <img class="relative-import" :src="filepath" style="width: 30px;" /> 
   </p>
   <p>
     Relative asset reference in template:
-    <img class="relative-import" src="./nested/asset.png" data-src="./nested/asset.png" style="width: 30px;" />
+    <img class="relative-import" src="./nested/asset.png" style="width: 30px;" />
   </p>
   <p>
     Absolute asset reference in template:
@@ -44,7 +45,7 @@ export default {
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('../fonts/Inter-Italic.woff2?#iefix') format('woff2'),
+  src: url('../../fonts/Inter-Italic.woff2?#iefix') format('woff2'),
     url('/fonts/Inter-Italic.woff') format('woff');
 }
 

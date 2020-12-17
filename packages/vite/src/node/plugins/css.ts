@@ -1,4 +1,4 @@
-import { createDebugger } from '../utils'
+import { createDebugger, isExternalUrl, asyncReplace } from '../utils'
 import path from 'path'
 import fs, { promises as fsp } from 'fs'
 import { Plugin } from '../plugin'
@@ -9,7 +9,7 @@ import { RollupError, SourceMap } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
-import { Result } from 'postcss'
+import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
 
 const debug = createDebugger('vite:css')
@@ -70,12 +70,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const { code: css, modules, deps } = await compileCSS(id, raw, config)
+      let { code: css, modules, deps } = await compileCSS(id, raw, config)
       if (modules) {
         cssModulesCache.set(id, modules)
       }
 
-      if (config.command === 'serve') {
+      if (server) {
         // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = server
         const thisModule = moduleGraph.getModuleById(id)!
@@ -99,11 +99,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         } else {
           thisModule.isSelfAccepting = isSelfAccepting
         }
+        // rewrite urls based on BASE_URL
+        css = await rewriteCssUrls(css, thisModule.url)
+      } else {
+        // TODO if build, analyze url() asset reference
+        // TODO account for comments https://github.com/vitejs/vite/issues/426
       }
-
-      // TODO if dev, rewrite urls based on BASE_URL
-      // TODO if build, analyze url() asset reference
-      // TODO account for comments https://github.com/vitejs/vite/issues/426
 
       if (process.env.DEBUG) {
         const file = chalk.dim(path.relative(config.root, id))
@@ -281,10 +282,10 @@ async function compileCSS(
   }
 }
 
-// postcss-load-config doesn't expose Result type
-type PostCSSConfigResult = ReturnType<typeof postcssrc> extends Promise<infer T>
-  ? T
-  : never
+interface PostCSSConfigResult {
+  options: ProcessOptions
+  plugins: PostcssPlugin[]
+}
 
 let cachedPostcssConfig: PostCSSConfigResult | null | undefined
 
@@ -470,4 +471,39 @@ const preProcessors = {
   scss,
   styl,
   stylus: styl
+}
+
+type Replacer = (url: string) => string | Promise<string>
+const cssUrlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+
+function rewriteCssUrls(
+  css: string,
+  replacerOrBase: string | Replacer
+): Promise<string> {
+  let replacer: Replacer
+  if (typeof replacerOrBase === 'string') {
+    replacer = (rawUrl) => {
+      return path.posix.resolve(path.posix.dirname(replacerOrBase), rawUrl)
+    }
+  } else {
+    replacer = replacerOrBase
+  }
+
+  return asyncReplace(css, cssUrlRE, async (match) => {
+    let [matched, rawUrl] = match
+    let wrap = ''
+    const first = rawUrl[0]
+    if (first === `"` || first === `'`) {
+      wrap = first
+      rawUrl = rawUrl.slice(1, -1)
+    }
+    if (
+      isExternalUrl(rawUrl) ||
+      rawUrl.startsWith('data:') ||
+      rawUrl.startsWith('#')
+    ) {
+      return matched
+    }
+    return `url(${wrap}${await replacer(rawUrl)}${wrap})`
+  })
 }
