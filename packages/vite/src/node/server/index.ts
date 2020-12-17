@@ -29,7 +29,7 @@ import { errorMiddleware } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
-import { PluginContext, TransformResult } from 'rollup'
+import { TransformResult } from 'rollup'
 import { transformRequest } from './transformRequest'
 import {
   transformWithEsbuild,
@@ -164,12 +164,6 @@ export interface ViteDevServer {
     options?: EsbuildTransformOptions,
     inMap?: object
   ): Promise<EsbuildTransformResult>
-}
-
-// a type hack to allow using the server inside plugins (which has rollup's
-// PluginContext `this` type)
-export function useServer(ctx: PluginContext): ViteDevServer | undefined {
-  return (ctx as any).server
 }
 
 export async function createServer(

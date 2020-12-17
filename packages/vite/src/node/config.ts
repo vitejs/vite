@@ -88,6 +88,7 @@ export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins'> & {
     configPath: string | null
     root: string
+    command: 'build' | 'serve'
     mode: string
     env: Record<string, any>
     plugins: readonly Plugin[]
@@ -130,11 +131,11 @@ export async function resolveConfig(
     })
   }
 
-  // run modifyConfig hooks
+  // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   userPlugins.forEach((p) => {
-    if (p.modifyConfig) {
-      config = p.modifyConfig(config) || config
+    if (p.config) {
+      config = p.config(config) || config
     }
   })
 
@@ -163,6 +164,7 @@ export async function resolveConfig(
     ...config,
     configPath: configPath || null,
     root: resolvedRoot,
+    command,
     mode,
     alias: resolvedAlias,
     plugins: userPlugins,
@@ -178,12 +180,18 @@ export async function resolveConfig(
   }
 
   resolved.plugins = resolvePlugins(
-    command,
     resolved,
     prePlugins,
     normalPlugins,
     postPlugins
   )
+
+  // call configResolved hooks
+  userPlugins.forEach((p) => {
+    if (p.configResolved) {
+      p.configResolved(resolved)
+    }
+  })
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {

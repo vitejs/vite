@@ -5,7 +5,7 @@ import { OutputBundle } from 'rollup'
 import { cleanUrl } from '../utils'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
-export const isHTMLProxy = (id: string) => htmlProxyRE
+export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
 export const scriptRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
 
 export function htmlPlugin(): Plugin {

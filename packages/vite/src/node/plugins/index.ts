@@ -10,28 +10,25 @@ import { clientInjectionsPlugin } from './clientInjections'
 import { htmlPlugin } from './html'
 
 export function resolvePlugins(
-  command: 'build' | 'serve',
   config: ResolvedConfig,
   prePlugins: Plugin[],
   normalPlugins: Plugin[],
   postPlugins: Plugin[]
 ): Plugin[] {
-  const isBuild = command === 'build'
-
   return [
     aliasPlugin({ entries: config.alias }),
     ...prePlugins,
     resolvePlugin(config.root),
     htmlPlugin(),
-    cssPlugin(config, isBuild),
+    cssPlugin(config),
     esbuildPlugin(config.esbuild || {}),
     jsonPlugin(),
-    assetPlugin(config, isBuild),
+    assetPlugin(config),
     ...normalPlugins,
     ...postPlugins,
-    cssPostPlugin(config, isBuild),
+    cssPostPlugin(config),
     // internal server-only plugins are always applied after everything else
-    ...(isBuild
+    ...(config.command === 'build'
       ? []
       : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
   ].filter(Boolean) as Plugin[]
