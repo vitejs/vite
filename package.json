@@ -5,7 +5,8 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "eslint --ext .ts packages/*/src/**"
+    "lint": "eslint --ext .ts packages/*/src/**",
+    "bundle": "esbuild packages/vite/src/node/index.ts packages/vite/src/node/cli.ts --bundle --platform=node --target=node12 --external:fsevents --external:sugarss --external:bufferutil --external:utf-8-validate --outdir=esbuild"
   },
   "devDependencies": {
     "@types/node": "^14.14.10",

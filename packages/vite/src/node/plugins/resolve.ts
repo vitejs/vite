@@ -117,9 +117,7 @@ function tryNodeResolve(id: string, basedir: string): string | undefined {
       // necessary to work with pnpm
       preserveSymlinks: isRunningWithYarnPnp || false
     })
-  } catch (e) {
-    isDebug && debug(`${chalk.red(`[failed node resolve]`)} ${id}`)
-  }
+  } catch (e) {}
 
   if (result) {
     if (isDeep) {
@@ -131,6 +129,8 @@ function tryNodeResolve(id: string, basedir: string): string | undefined {
       // resolve package entry
       return resolvePackageEntry(id, result)
     }
+  } else {
+    isDebug && debug(`${chalk.red(`[failed node resolve]`)} ${id}`)
   }
 }
 

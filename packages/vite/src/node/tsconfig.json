@@ -1,5 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
+  "include": ["./", "../../types"],
   "compilerOptions": {
     // compile away optional-chaining-operator
     // node support table: https://node.green/#ES2020-features-optional-chaining-operator-----
@@ -12,6 +13,5 @@
     "paths": {
       "types/*": ["../../types/*"]
     }
-  },
-  "include": ["./", "../../types"]
+  }
 }

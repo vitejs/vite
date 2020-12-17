@@ -1,4 +1,36 @@
 {
   "name": "@vitejs/plugin-vue",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsc -w --incremental -p ."
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
+  "homepage": "https://github.com/vitejs/vite/tree/master/#readme",
+  "peerDependencies": {
+    "@vue/compiler-sfc": "^3.0.4"
+  },
+  "devDependencies": {
+    "@rollup/pluginutils": "^4.1.0",
+    "@types/hash-sum": "^1.0.0",
+    "@vue/compiler-sfc": "^3.0.4",
+    "debug": "^4.3.1",
+    "hash-sum": "^2.0.0",
+    "rollup": "^2.35.1",
+    "source-map": "^0.6.1"
+  }
 }

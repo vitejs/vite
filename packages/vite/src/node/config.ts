@@ -90,6 +90,7 @@ export type ResolvedConfig = Readonly<
     root: string
     command: 'build' | 'serve'
     mode: string
+    isProduction: boolean
     env: Record<string, any>
     plugins: readonly Plugin[]
     server: ServerOptions
@@ -160,22 +161,31 @@ export async function resolveConfig(
     ...normalizedAlias
   ]
 
+  const userEnv = loadEnv(mode, resolvedRoot)
+
+  // Note it is possible for user to have a custom mode, e.g. `staging` where
+  // production-like behavior is expected. This is indicated by NODE_ENV=production
+  // loaded from `.staging.env`.
+  const isProduction =
+    process.env.NODE_ENV === 'production' || mode === 'production'
+
   const resolved = {
     ...config,
     configPath: configPath || null,
     root: resolvedRoot,
     command,
     mode,
+    isProduction,
     alias: resolvedAlias,
     plugins: userPlugins,
     server: config.server || {},
     build: config.build || {},
     env: {
-      ...loadEnv(mode, resolvedRoot),
+      ...userEnv,
       BASE_URL: '/', // TODO
       MODE: mode,
-      DEV: mode !== 'production',
-      PROD: mode === 'production'
+      DEV: !isProduction,
+      PROD: isProduction
     }
   }
 
@@ -354,7 +364,7 @@ function loadEnv(mode: string, root: string, prefix = 'VITE_') {
         ignoreProcessEnv: true
       } as any)
 
-      // only keys that start with prefix are exposed.
+      // only keys that start with prefix are exposed to client
       for (const [key, value] of Object.entries(parsed)) {
         if (key.startsWith(prefix) && env[key] === undefined) {
           env[key] = value
