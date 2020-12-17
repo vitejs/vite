@@ -38,6 +38,23 @@ export const cleanUrl = (url: string) =>
 const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string) => externalRE.test(url)
 
+export async function asyncReplace(
+  input: string,
+  re: RegExp,
+  replacer: (match: RegExpExecArray) => string | Promise<string>
+) {
+  let match: RegExpExecArray | null
+  let remaining = input
+  let rewritten = ''
+  while ((match = re.exec(remaining))) {
+    rewritten += remaining.slice(0, match.index)
+    rewritten += await replacer(match)
+    remaining = remaining.slice(match.index + match[0].length)
+  }
+  rewritten += remaining
+  return rewritten
+}
+
 export function timeFrom(start: number, subtract = 0) {
   const time: number | string = Date.now() - start - subtract
   const timeString = (time + `ms`).padEnd(5, ' ')
