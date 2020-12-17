@@ -20,7 +20,7 @@ export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   const {
-    config: { root },
+    config: { root, assetsInclude },
     moduleGraph
   } = server
 
@@ -45,18 +45,25 @@ export function transformMiddleware(
         }
       }
 
-      // we only apply the transform pipeline to:
+      // Skip assets unless it's marked with ?asset query
+      // this is auto-injected by the import analysis plugin to
+      // differentiate js imports (to get the URL) from actual
+      // asset references
+      if (assetsInclude(url) && !url.includes('?asset')) {
+        return next()
+      }
+
+      // Only apply the transform pipeline to:
       // - requests that initiate from ESM imports (any extension)
       // - CSS (even not from ESM)
       // - Source maps (only for resolving)
       const isCSS = isCSSRequest(url)
-      const isHTMLInlineModule = isHTMLProxy(url)
       if (
         // esm imports accept */* in most browsers
         req.headers['accept'] === '*/*' ||
         req.headers['sec-fetch-dest'] === 'script' ||
         isCSS ||
-        isHTMLInlineModule
+        isHTMLProxy(url)
       ) {
         // check if we can return 304 early
         const ifNoneMatch = req.headers['if-none-match']
