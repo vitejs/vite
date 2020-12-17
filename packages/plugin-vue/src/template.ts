@@ -129,6 +129,8 @@ export function getTemplateCompilerOptions(
     ssr: options.ssr,
     ssrCssVars: cssVars,
     transformAssetUrls,
+    preprocessLang: block.lang,
+    preprocessOptions: block.lang && options.template?.preprocessOptions,
     compilerOptions: {
       ...options.template?.compilerOptions,
       scopeId: hasScoped ? `data-v-${id}` : undefined,
