@@ -8,7 +8,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "tsc -w --incremental -p ."
+    "dev": "tsc -p . -w --incremental",
+    "build": "rimraf dist && run-s build-bundle build-types",
+    "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@vue/compiler-sfc --outfile=dist/index.js",
+    "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp"
   },
   "engines": {
     "node": ">=12.0.0"

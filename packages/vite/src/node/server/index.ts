@@ -223,9 +223,6 @@ export async function createServer(
     })
   }
 
-  // attach server context to container so it's available to plugin context
-  container.server = server
-
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const plugin of plugins) {
