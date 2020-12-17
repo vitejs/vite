@@ -38,6 +38,11 @@ export const cleanUrl = (url: string) =>
 const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string) => externalRE.test(url)
 
+export function injectQuery(url: string, queryToInject: string) {
+  const [pathname, query] = url.split(`?`, 2)
+  return `${pathname}?${queryToInject}${query ? `&${query}` : ``}`
+}
+
 export async function asyncReplace(
   input: string,
   re: RegExp,

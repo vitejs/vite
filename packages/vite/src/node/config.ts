@@ -13,7 +13,7 @@ import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
-import { CLIENT_DIR } from './constants'
+import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
 import { resolvePlugin } from './plugins/resolve'
 
 const debug = createDebugger('vite:config')
@@ -95,6 +95,7 @@ export type ResolvedConfig = Readonly<
     plugins: readonly Plugin[]
     server: ServerOptions
     build: BuildOptions
+    assetsInclude: (file: string) => boolean
   }
 >
 
@@ -180,6 +181,11 @@ export async function resolveConfig(
     plugins: userPlugins,
     server: config.server || {},
     build: config.build || {},
+    assetsInclude: (file: string) => {
+      return (
+        DEFAULT_ASSETS_RE.test(file) || config.assetsInclude?.(file) || false
+      )
+    },
     env: {
       ...userEnv,
       BASE_URL: '/', // TODO

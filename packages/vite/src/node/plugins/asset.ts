@@ -10,17 +10,6 @@ import slash from 'slash'
 
 const debug = createDebugger('vite:asset')
 
-const assetsRE = new RegExp(
-  `\\.(` +
-    // images
-    `png|jpe?g|gif|svg|ico|webp|` +
-    // media
-    `mp4|webm|ogg|mp3|wav|flac|aac|` +
-    // fonts
-    `woff2?|eot|ttf|otf` +
-    `)(\\?.*)?$`
-)
-
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
@@ -28,16 +17,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset',
     async load(id) {
-      const query = id.match(/\?(.*)$/)?.[1]
-      const isRawRequest = query && qs.parse(query).raw != null
-      const file = cleanUrl(id)
-      if (
-        !isRawRequest &&
-        !assetsRE.test(file) &&
-        !config.assetsInclude?.(file)
-      ) {
+      const query = qs.parse(id.split('?', 2)[1] || '')
+      const isRawRequest = query.raw != null
+      const isAssetRequest = query.asset != null
+      if (!isRawRequest && !isAssetRequest) {
         return
       }
+
+      const file = cleanUrl(id)
 
       if (config.command === 'serve') {
         if (fs.existsSync(file)) {

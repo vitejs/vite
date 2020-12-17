@@ -6,7 +6,13 @@ import MagicString from 'magic-string'
 import { init, parse, ImportSpecifier } from 'es-module-lexer'
 import { isCSSProxy, isCSSRequest } from './css'
 import slash from 'slash'
-import { createDebugger, prettifyUrl, timeFrom } from '../utils'
+import {
+  cleanUrl,
+  createDebugger,
+  injectQuery,
+  prettifyUrl,
+  timeFrom
+} from '../utils'
 import { debugHmr, handlePrunedModules } from '../server/hmr'
 import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
 import { RollupError } from 'rollup'
@@ -186,6 +192,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           }
 
+          if (config.assetsInclude(cleanUrl(resolved.id))) {
+            url = injectQuery(url, `asset`)
+          }
+
           const absoluteUrl = toAbsoluteUrl(url)
 
           // check if the dep has been hmr updated. If yes, we need to attach
@@ -194,15 +204,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           try {
             const depModule = await moduleGraph.ensureEntryFromUrl(absoluteUrl)
             if (depModule.lastHMRTimestamp > 0) {
-              const timestamp = `t=${depModule.lastHMRTimestamp}`
-              const [pathname, query] = url.split('?', 2)
-              if (query) {
-                // if has existing query, inject timestamp before other params
-                // to avoid messing up the .endsWith checks
-                url = `${pathname}?${timestamp}&${query}`
-              } else {
-                url = `${pathname}?${timestamp}`
-              }
+              url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
           } catch (e) {
             // it's possible that the dep fails to resolve (non-existent import)
