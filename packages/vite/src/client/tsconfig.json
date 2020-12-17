@@ -1,5 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
+  "include": ["./", "../../types"],
   "compilerOptions": {
     "outDir": "../../dist/client",
     "module": "esnext",
@@ -10,6 +11,5 @@
     "paths": {
       "types/*": ["../../types/*"]
     }
-  },
-  "include": ["./", "../../types"]
+  }
 }

@@ -8,19 +8,20 @@
     "serve": "sirv dist",
     "debug": "node --inspect-brk ../vite/bin/vite.js --debug"
   },
-  "devDependencies": {
-    "@vitejs/plugin-react-refresh": "^1.0.0",
-    "less": "^3.13.0",
-    "pug": "^3.0.0",
-    "rollup-plugin-vue": "^6.0.0",
-    "sass": "^1.30.0",
-    "sirv-cli": "^1.0.9"
-  },
   "dependencies": {
     "@pika/react": "^16.13.1",
     "@pika/react-dom": "^16.13.1",
     "lodash-es": "^4.17.15",
     "preact": "^10.5.7",
     "vue": "^3.0.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^1.0.0",
+    "@vitejs/plugin-react-refresh": "^1.0.0",
+    "less": "^3.13.0",
+    "pug": "^3.0.0",
+    "rollup-plugin-vue": "^6.0.0",
+    "sass": "^1.30.0",
+    "sirv-cli": "^1.0.9"
   }
 }
