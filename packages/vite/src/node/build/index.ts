@@ -6,6 +6,7 @@ import { sizeReporPlugin } from '../plugins/size'
 import { buildDefinePlugin } from '../plugins/define'
 import chalk from 'chalk'
 import { buildHtmlPlugin } from '../plugins/html'
+import { createLogger } from '../logger'
 
 export interface BuildOptions {
   /**
@@ -171,6 +172,7 @@ async function doBuild(
 ) {
   const config = await resolveConfig(inlineConfig, 'build', mode, configPath)
   const options = config.build
+  const logger = createLogger(config.logLevel)
 
   const resolve = (p: string) => path.resolve(config.root, p)
 
@@ -187,7 +189,7 @@ async function doBuild(
         ? [] // TODO
         : [(await import('rollup-plugin-terser')).terser(options.terserOptions)]
       : []),
-    sizeReporPlugin(options)
+    sizeReporPlugin(config)
   ]
 
   const rollup = require('rollup') as typeof Rollup
@@ -216,9 +218,9 @@ async function doBuild(
       ...options.rollupOptions.output
     })
   } catch (e) {
-    console.log(chalk.red(`[${e.code}] ${e.message}`))
-    console.log(chalk.cyan(`${e.id}:${e.loc.line}:${e.loc.column}`))
-    console.log(chalk.yellow(e.frame))
+    logger.error(chalk.red(`[${e.code}] ${e.message}`))
+    logger.error(chalk.cyan(`${e.id}:${e.loc.line}:${e.loc.column}`))
+    logger.error(chalk.yellow(e.frame))
     throw e
   }
 }

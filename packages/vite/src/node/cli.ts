@@ -2,6 +2,7 @@ import { cac } from 'cac'
 import chalk from 'chalk'
 import { build, BuildOptions } from './build'
 import { createServer, ServerOptions } from './server'
+import { createLogger, LogLevel } from './logger'
 
 const cli = cac('vite')
 
@@ -15,6 +16,7 @@ interface GlobalCLIOptions {
   c?: boolean | string
   root?: string
   mode?: string
+  logLevel?: LogLevel
 }
 
 /**
@@ -30,12 +32,14 @@ function cleanOptions(options: GlobalCLIOptions) {
   delete ret.c
   delete ret.root
   delete ret.mode
+  delete ret.logLevel
   return ret
 }
 
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
   .option('--root <path>', `[string] use specified config file`)
+  .option('--logLevel <level>', `[string] silent | error | warn | all`)
   .option('--debug [feat]', `[string | boolean] show debug logs`)
   .option('--filter [filter]', `[string] filter debug logs`)
 
@@ -58,6 +62,7 @@ cli
     create(
       {
         root,
+        logLevel: options.logLevel,
         server: cleanOptions(options) as ServerOptions
       },
       options.mode,
@@ -65,8 +70,9 @@ cli
     )
       .then((server) => server.listen())
       .catch((e) => {
-        console.log(chalk.red('[vite] failed to start dev server'))
-        console.error(e.stack)
+        const logError = createLogger(options.logLevel).error
+        logError(chalk.red('[vite] failed to start dev server'))
+        logError(e.stack)
         process.exit(1)
       })
   })
@@ -95,7 +101,8 @@ cli
   )
   .option(
     '--minify [minifier]',
-    `[boolean | 'terser' | 'esbuild']  enable/disable minification, or specify minifier to use (default: terser)`
+    `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
+      `or specify minifier to use (default: terser)`
   )
   .option('--mode <mode>', `[string]  set env mode`, {
     default: 'production'
@@ -105,13 +112,15 @@ cli
     runBuild(
       {
         root,
+        logLevel: options.logLevel,
         build: cleanOptions(options) as BuildOptions
       },
       options.mode,
       options.config
     ).catch((e) => {
-      console.log(chalk.red('[vite] build failed.'))
-      console.error(e.stack)
+      const logError = createLogger(options.logLevel).error
+      logError(chalk.red('[vite] build failed.'))
+      logError(e.stack)
       process.exit(1)
     })
   })

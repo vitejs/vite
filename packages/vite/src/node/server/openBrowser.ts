@@ -13,6 +13,7 @@ import open from 'open'
 import execa from 'execa'
 import chalk from 'chalk'
 import { execSync } from 'child_process'
+import { Logger } from '../logger'
 
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome'
@@ -21,31 +22,35 @@ const OSX_CHROME = 'google chrome'
  * Reads the BROWSER environment variable and decides what to do with it.
  * Returns true if it opened a browser or ran a node.js script, otherwise false.
  */
-export function openBrowser(url: string, opt: string | true): boolean {
+export function openBrowser(
+  url: string,
+  opt: string | true,
+  logger: Logger
+): boolean {
   // The browser executable to open.
   // See https://github.com/sindresorhus/open#app for documentation.
   const browser = typeof opt === 'string' ? opt : process.env.BROWSER || ''
   if (browser.toLowerCase().endsWith('.js')) {
-    return executeNodeScript(browser, url)
+    return executeNodeScript(browser, url, logger)
   } else if (browser.toLowerCase() !== 'none') {
     return startBrowserProcess(browser, url)
   }
   return false
 }
 
-function executeNodeScript(scriptPath: string, url: string) {
+function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   const extraArgs = process.argv.slice(2)
   const child = execa('node', [scriptPath, ...extraArgs, url], {
     stdio: 'inherit'
   })
   child.on('close', (code) => {
     if (code !== 0) {
-      console.error(
+      logger.error(
         chalk.red(
           '\nThe script specified as BROWSER environment variable failed.\n'
         )
       )
-      console.error(chalk.cyan(scriptPath) + ' exited with code ' + code + '.')
+      logger.error(chalk.cyan(scriptPath) + ' exited with code ' + code + '.')
       return
     }
   })
@@ -71,7 +76,6 @@ function startBrowserProcess(browser: string | undefined, url: string) {
       })
       return true
     } catch (err) {
-      console.log(err)
       // Ignore errors
     }
   }

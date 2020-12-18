@@ -63,6 +63,7 @@ import {
   timeFrom
 } from '../utils'
 import chalk from 'chalk'
+import { Logger } from '../logger'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -109,7 +110,8 @@ export async function createPluginContainer(
   plugins: readonly Plugin[],
   rollupOptions: RollupOptions,
   root: string,
-  watcher: FSWatcher
+  watcher: FSWatcher,
+  logger: Logger
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
 
@@ -251,9 +253,8 @@ export async function createPluginContainer(
       return container.resolveFileUrl(referenceId)!
     }
 
-    // TODO
     warn(...args: any[]) {
-      console.warn(`[${this._activePlugin!.name}]`, ...args)
+      logger.warn(`[${this._activePlugin!.name}]`, ...args)
     }
 
     error(

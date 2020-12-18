@@ -1,8 +1,9 @@
 import path from 'path'
 import chalk from 'chalk'
 import { Plugin } from 'rollup'
-import { BuildOptions } from '..'
+import { ResolvedConfig } from '../config'
 import { sync as brotliSizeSync } from 'brotli-size'
+import { createLogger } from '../logger'
 
 const enum WriteType {
   JS,
@@ -20,7 +21,33 @@ const writeColors = {
   [WriteType.SOURCE_MAP]: chalk.gray
 }
 
-export function sizeReporPlugin(options: Required<BuildOptions>): Plugin {
+export function sizeReporPlugin(config: ResolvedConfig): Plugin {
+  const logger = createLogger(config.logLevel)
+  const options = config.build
+
+  function printFileInfo(
+    filePath: string,
+    content: string | Uint8Array,
+    type: WriteType
+  ) {
+    const needCompression =
+      type === WriteType.JS || type === WriteType.CSS || type === WriteType.HTML
+
+    const compressed = needCompression
+      ? `, brotli: ${(
+          brotliSizeSync(
+            typeof content === 'string' ? content : Buffer.from(content)
+          ) / 1024
+        ).toFixed(2)}kb`
+      : ``
+
+    logger.info(
+      `${chalk.gray(`[write]`)} ${writeColors[type](
+        path.relative(process.cwd(), filePath)
+      )} ${(content.length / 1024).toFixed(2)}kb${compressed}`
+    )
+  }
+
   return {
     name: 'vite:size',
     generateBundle(_, output) {
@@ -46,27 +73,4 @@ export function sizeReporPlugin(options: Required<BuildOptions>): Plugin {
       }
     }
   }
-}
-
-function printFileInfo(
-  filePath: string,
-  content: string | Uint8Array,
-  type: WriteType
-) {
-  const needCompression =
-    type === WriteType.JS || type === WriteType.CSS || type === WriteType.HTML
-
-  const compressed = needCompression
-    ? `, brotli: ${(
-        brotliSizeSync(
-          typeof content === 'string' ? content : Buffer.from(content)
-        ) / 1024
-      ).toFixed(2)}kb`
-    : ``
-
-  console.log(
-    `${chalk.gray(`[write]`)} ${writeColors[type](
-      path.relative(process.cwd(), filePath)
-    )} ${(content.length / 1024).toFixed(2)}kb${compressed}`
-  )
 }
