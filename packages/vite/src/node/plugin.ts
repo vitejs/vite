@@ -63,7 +63,7 @@ export interface Plugin extends RollupPlugin {
    */
   configureServer?: ServerHook
   /**
-   * Configure production build. The hook receives the rollup config which
+   * Configure production build. The hook receives the build options which
    * it can mutate or return. Passing multiple build hooks will produce multiple
    * builds similar to a multi-config rollup build.
    */

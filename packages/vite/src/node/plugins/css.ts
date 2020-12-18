@@ -15,6 +15,8 @@ import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
 import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
+import { injectAssetRE } from './asset'
+import slash from 'slash'
 
 const debug = createDebugger('vite:css')
 
@@ -44,6 +46,9 @@ export const isCSSProxy = (request: string) =>
 
 const cssModulesCache = new Map<string, Record<string, string>>()
 
+/**
+ * Plugin applied before user plugins
+ */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
 
@@ -109,40 +114,151 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
+const cssInjectionMarker = `__VITE_CSS__`
+const cssInjectionRE = /__VITE_CSS__\(\);?/g
+
 /**
- * Plugin for converting css.js proxy modules into actual javascript.
+ * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
+  let staticCss = ''
+  const styles = new Map<string, string>()
+  const emptyChunks = new Set<string>()
+
   return {
     name: 'vite:css-post',
+
     transform(css, id) {
       if (!cssLangRE.test(id)) {
         return
       }
 
       const modules = cssModulesCache.get(id)
-      const modulesCode = modules && dataToEsm(modules, { namedExports: true })
+      const modulesCode =
+        modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
-      if (isCSSProxy(id)) {
-        // server only
-        return [
-          `import { updateStyle, removeStyle } from ${JSON.stringify(
-            CLIENT_PUBLIC_PATH
-          )}`,
-          `const id = ${JSON.stringify(id)}`,
-          `const css = ${JSON.stringify(css)}`,
-          `updateStyle(id, css)`,
-          // css modules exports change on edit so it can't self accept
-          `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
-          `import.meta.hot.prune(() => removeStyle(id))`
-        ].join('\n')
+      if (config.command === 'serve') {
+        if (isCSSProxy(id)) {
+          // server only
+          return [
+            `import { updateStyle, removeStyle } from ${JSON.stringify(
+              CLIENT_PUBLIC_PATH
+            )}`,
+            `const id = ${JSON.stringify(id)}`,
+            `const css = ${JSON.stringify(css)}`,
+            `updateStyle(id, css)`,
+            // css modules exports change on edit so it can't self accept
+            `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
+            `import.meta.hot.prune(() => removeStyle(id))`
+          ].join('\n')
+        }
+        return modulesCode || css
       }
 
-      if (config.command === 'build') {
-        // TODO collect css for extraction
+      // build CSS handling ----------------------------------------------------
+
+      // TODO process url() asset references
+
+      // record css
+      styles.set(id, css)
+
+      let code = modulesCode || ''
+      if (!code) {
+        if (config.build.cssCodeSplit) {
+          // If code-splitting CSS, inject a fake marker to avoid the module
+          // from being tree-shaken. This preserves the .css file as a
+          // module in the chunk's metadata so that we can retrieve them in
+          // renderChunk.
+          code += `${cssInjectionMarker}()\n`
+        }
+        code += `export default ${JSON.stringify(css)}`
+      }
+      return {
+        code,
+        map: null,
+        // #795 css always has side effect
+        moduleSideEffects: true
+      }
+    },
+
+    async renderChunk(code, chunk) {
+      let chunkCSS = ''
+      // the order of module import is reversive
+      // see https://github.com/rollup/rollup/issues/435#issue-125406562
+      const ids = Object.keys(chunk.modules).reverse()
+      for (const id of ids) {
+        if (styles.has(id)) {
+          chunkCSS += styles.get(id)
+        }
       }
 
-      return modulesCode || css
+      let match
+      while ((match = injectAssetRE.exec(chunkCSS))) {
+        const outputFilepath =
+          config.build.base +
+          slash(path.join(config.build.assetsDir, this.getFileName(match[1])))
+        chunkCSS = chunkCSS.replace(match[0], outputFilepath)
+      }
+
+      if (config.build.cssCodeSplit) {
+        code = code.replace(cssInjectionRE, '')
+        if (!code.trim()) {
+          // this is a shared CSS-only chunk that is empty.
+          emptyChunks.add(chunk.fileName)
+        }
+        // for each dynamic entry chunk, collect its css and inline it as JS
+        // strings.
+        if (chunk.isDynamicEntry && chunkCSS) {
+          chunkCSS = await minifyCSS(chunkCSS)
+          code =
+            `let ${cssInjectionMarker} = document.createElement('style');` +
+            `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `document.head.appendChild(${cssInjectionMarker});` +
+            code
+        } else {
+          staticCss += chunkCSS
+        }
+        return {
+          code,
+          map: null
+        }
+      } else {
+        staticCss += chunkCSS
+        return null
+      }
+    },
+
+    async generateBundle(_options, bundle) {
+      // minify css
+      if (config.build.minify && staticCss) {
+        staticCss = await minifyCSS(staticCss)
+      }
+
+      // remove empty css chunks and their imports
+      if (emptyChunks.size) {
+        emptyChunks.forEach((fileName) => {
+          delete bundle[fileName]
+        })
+        const emptyChunkFiles = [...emptyChunks].join('|').replace(/\./g, '\\.')
+        const emptyChunkRE = new RegExp(
+          `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`,
+          'g'
+        )
+        for (const file in bundle) {
+          const chunk = bundle[file]
+          if (chunk.type === 'chunk') {
+            chunk.code = chunk.code.replace(emptyChunkRE, '')
+          }
+        }
+      }
+
+      if (staticCss) {
+        this.emitFile({
+          name: 'style.css',
+          type: 'asset',
+          source: staticCss
+        })
+      }
     }
   }
 }
@@ -490,4 +606,24 @@ function rewriteCssUrls(
     }
     return `url(${wrap}${await replacer(rawUrl)}${wrap})`
   })
+}
+
+let CleanCSS: any
+
+async function minifyCSS(css: string) {
+  CleanCSS = CleanCSS || (await import('clean-css')).default
+  const res = new CleanCSS({ level: 2, rebase: false }).minify(css)
+
+  if (res.errors && res.errors.length) {
+    console.error(chalk.red(`[vite] error when minifying css:`))
+    console.error(res.errors)
+    process.exit(1)
+  }
+
+  if (res.warnings && res.warnings.length) {
+    console.error(chalk.yellow(`[vite] warnings when minifying css:`))
+    console.error(res.warnings)
+  }
+
+  return res.styles
 }

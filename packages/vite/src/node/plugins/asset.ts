@@ -9,6 +9,8 @@ import slash from 'slash'
 
 const debug = createDebugger('vite:asset')
 
+export const injectAssetRE = /import.meta.ROLLUP_FILE_URL_(\w+)/
+
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */

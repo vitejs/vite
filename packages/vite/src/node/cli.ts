@@ -1,6 +1,6 @@
 import { cac } from 'cac'
 import chalk from 'chalk'
-import { BuildOptions } from './build'
+import { build, BuildOptions } from './build'
 import { startServer, ServerOptions } from './server'
 
 const cli = cac('vite')
@@ -54,7 +54,7 @@ cli
   .action((root: string, options: ServerOptions & GlobalCLIOptions) => {
     // output structure is preserved even after bundling so require()
     // is ok here
-    const start = require('./server/index').startServer as typeof startServer
+    const start = require('./server').startServer as typeof startServer
     start(
       {
         root,
@@ -72,11 +72,46 @@ cli
 // build
 cli
   .command('build [root]')
+  .option(
+    '--entry <file>',
+    `[string]  entry file for build (default: index.html)`
+  )
+  .option('--base <path>', `[string]  public base path (default: /)`)
+  .option('--outDir <dir>', `[string]  output directory (default: dist)`)
+  .option(
+    '--assetsDir <dir>',
+    `[string]  directory under outDir to place assets in (default: _assets)`
+  )
+  .option(
+    '--assetsInlineLimit <number>',
+    `[number]  static asset base64 inline threshold in bytes (default: 4096)`
+  )
+  .option('--ssr', `[boolean]  build for server-side rendering`)
+  .option(
+    '--sourcemap',
+    `[boolean]  output source maps for build (default: false)`
+  )
+  .option(
+    '--minify [minifier]',
+    `[boolean | 'terser' | 'esbuild']  enable/disable minification, or specify minifier to use (default: terser)`
+  )
   .option('--mode <mode>', `[string]  set env mode`, {
     default: 'production'
   })
   .action((root: string, options: BuildOptions & GlobalCLIOptions) => {
-    console.log('build!', cleanOptions(options))
+    const runBuild = require('./build').build as typeof build
+    runBuild(
+      {
+        root,
+        build: cleanOptions(options) as BuildOptions
+      },
+      options.mode,
+      options.config
+    ).catch((e) => {
+      console.log(chalk.red('[vite] build failed.'))
+      console.error(e.stack)
+      process.exit(1)
+    })
   })
 
 cli.help()

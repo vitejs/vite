@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from './plugin'
 import Rollup, { RollupOptions } from 'rollup'
-import { BuildOptions } from './build'
+import { BuildOptions, resolveBuildOptions } from './build'
 import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
 import { createDebugger, deepMerge, isObject, lookupFile } from './utils'
@@ -94,7 +94,7 @@ export type ResolvedConfig = Readonly<
     env: Record<string, any>
     plugins: readonly Plugin[]
     server: ServerOptions
-    build: BuildOptions
+    build: Required<BuildOptions>
     assetsInclude: (file: string) => boolean
   }
 >
@@ -166,9 +166,9 @@ export async function resolveConfig(
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
-  // loaded from `.staging.env`.
-  const isProduction =
-    process.env.NODE_ENV === 'production' || mode === 'production'
+  // loaded from `.staging.env` and set by us as VITE_USER_NODE_ENV
+  const resolvedMode = process.env.VITE_USER_NODE_ENV || mode
+  const isProduction = resolvedMode === 'production'
 
   const resolved = {
     ...config,
@@ -180,7 +180,7 @@ export async function resolveConfig(
     alias: resolvedAlias,
     plugins: userPlugins,
     server: config.server || {},
-    build: config.build || {},
+    build: resolveBuildOptions(config.build),
     assetsInclude: (file: string) => {
       return (
         DEFAULT_ASSETS_RE.test(file) || config.assetsInclude?.(file) || false
@@ -374,6 +374,9 @@ function loadEnv(mode: string, root: string, prefix = 'VITE_') {
       for (const [key, value] of Object.entries(parsed)) {
         if (key.startsWith(prefix) && env[key] === undefined) {
           env[key] = value
+        } else if (key === 'NODE_ENV') {
+          // NODE_ENV override in .env file
+          process.env.VITE_USER_NODE_ENV = value
         }
       }
     }
