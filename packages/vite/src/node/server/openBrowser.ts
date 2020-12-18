@@ -40,14 +40,12 @@ function executeNodeScript(scriptPath: string, url: string) {
   })
   child.on('close', (code) => {
     if (code !== 0) {
-      console.log()
-      console.log(
+      console.error(
         chalk.red(
-          'The script specified as BROWSER environment variable failed.'
+          '\nThe script specified as BROWSER environment variable failed.\n'
         )
       )
-      console.log(chalk.cyan(scriptPath) + ' exited with code ' + code + '.')
-      console.log()
+      console.error(chalk.cyan(scriptPath) + ' exited with code ' + code + '.')
       return
     }
   })

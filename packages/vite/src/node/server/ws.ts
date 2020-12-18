@@ -7,6 +7,7 @@ export const HMR_HEADER = 'vite-hmr'
 
 export interface WebSocketServer {
   send(payload: HMRPayload): void
+  close(): Promise<void>
 }
 
 export function setupWebSocketServer(server: Server): WebSocketServer {
@@ -41,21 +42,31 @@ export function setupWebSocketServer(server: Server): WebSocketServer {
   // connected client.
   let bufferedError: ErrorPayload | null = null
 
-  function send(payload: HMRPayload) {
-    if (payload.type === 'error' && !wss.clients.size) {
-      bufferedError = payload
-      return
-    }
-
-    const stringified = JSON.stringify(payload)
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(stringified)
-      }
-    })
-  }
-
   return {
-    send
+    send(payload: HMRPayload) {
+      if (payload.type === 'error' && !wss.clients.size) {
+        bufferedError = payload
+        return
+      }
+
+      const stringified = JSON.stringify(payload)
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(stringified)
+        }
+      })
+    },
+
+    close() {
+      return new Promise((resolve, reject) => {
+        wss.close((err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+      })
+    }
   }
 }
