@@ -1,6 +1,6 @@
 import path from 'path'
 import { ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
 import slash from 'slash'
