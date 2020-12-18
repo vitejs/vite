@@ -13,7 +13,6 @@ import {
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
-import { CLIENT_PUBLIC_PREFIX } from '../../constants'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -54,7 +53,6 @@ export function transformMiddleware(
       // - CSS (even not from ESM)
       // - Source maps (only for resolving)
       if (
-        url.startsWith(CLIENT_PUBLIC_PREFIX) ||
         isJSRequest(url) ||
         isImportRequest(url) ||
         isCSSRequest(url) ||
