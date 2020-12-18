@@ -31,6 +31,8 @@ jobs:
       - *install_deps
       - *save_cache
       - run: cd packages/vite && yarn build
+      - run: cd packages/plugin-vue && yarn build
+      - run: yarn test
 
 workflows:
   version: 2
