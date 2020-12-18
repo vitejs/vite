@@ -1,10 +1,29 @@
-import { SFCDescriptor } from '@vue/compiler-sfc'
+import path from 'path'
+import slash from 'slash'
+import hash from 'hash-sum'
+import { parse, SFCDescriptor } from '@vue/compiler-sfc'
 
 const cache = new Map<string, SFCDescriptor>()
 const prevCache = new Map<string, SFCDescriptor | undefined>()
 
-export function setDescriptor(filename: string, entry: SFCDescriptor) {
-  cache.set(filename, entry)
+export function createDescriptor(
+  filename: string,
+  source: string,
+  root: string,
+  isProduction: boolean | undefined
+) {
+  const { descriptor, errors } = parse(source, {
+    filename,
+    sourceMap: true
+  })
+
+  // ensure the path is normalized in a way that is consistent inside
+  // project (relative to root) and on different systems.
+  const normalizedPath = slash(path.normalize(path.relative(root, filename)))
+  descriptor.id = hash(normalizedPath + (isProduction ? source : ''))
+
+  cache.set(filename, descriptor)
+  return { descriptor, errors }
 }
 
 export function getPrevDescriptor(filename: string) {

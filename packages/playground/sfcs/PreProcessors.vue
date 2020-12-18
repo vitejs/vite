@@ -9,7 +9,7 @@ p.pug-less
 </template>
 
 <style lang="scss">
-$color: red;
+$color: magenta;
 
 .pug {
   color: $color;
@@ -17,7 +17,7 @@ $color: red;
 </style>
 
 <style lang="less" scoped>
-@preprocess-custom-color: blue;
+@preprocess-custom-color: green;
 
 .pug-less {
   color: @preprocess-custom-color;
