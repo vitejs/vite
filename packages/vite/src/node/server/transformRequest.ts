@@ -24,7 +24,7 @@ export interface TransformResult {
 
 export async function transformRequest(
   url: string,
-  { config: { root }, container, moduleGraph, watcher }: ViteDevServer
+  { config: { root }, pluginContainer, moduleGraph, watcher }: ViteDevServer
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
@@ -37,7 +37,7 @@ export async function transformRequest(
   }
 
   // resolve
-  const id = (await container.resolveId(url)).id
+  const id = (await pluginContainer.resolveId(url)).id
   const file = cleanUrl(id)
 
   let code = null
@@ -45,7 +45,7 @@ export async function transformRequest(
 
   // load
   const loadStart = Date.now()
-  const loadResult = await container.load(id)
+  const loadResult = await pluginContainer.load(id)
   if (loadResult == null) {
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
@@ -81,7 +81,7 @@ export async function transformRequest(
 
   // transform
   const transformStart = Date.now()
-  const transformResult = await container.transform(code, id)
+  const transformResult = await pluginContainer.transform(code, id)
   if (
     transformResult == null ||
     (typeof transformResult === 'object' && !transformResult.code)

@@ -147,7 +147,7 @@ export interface ViteDevServer {
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
-  container: PluginContainer
+  pluginContainer: PluginContainer
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -219,7 +219,7 @@ export async function createServer(
     app,
     httpServer,
     watcher,
-    container,
+    pluginContainer: container,
     ws,
     moduleGraph,
     transformWithEsbuild,
@@ -437,11 +437,11 @@ function createSeverCloseFn(server: http.Server) {
 
   return () =>
     new Promise<void>((resolve, reject) => {
+      openSockets.forEach((s) => s.destroy())
       server.close((err) => {
         if (err) {
           reject(err)
         } else {
-          openSockets.forEach((s) => s.destroy())
           resolve()
         }
       })

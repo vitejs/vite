@@ -29,7 +29,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import fs, { close } from 'fs'
+import fs from 'fs'
 import { resolve, relative, dirname, sep, posix, join } from 'path'
 import { createHash } from 'crypto'
 import { Plugin } from '../plugin'

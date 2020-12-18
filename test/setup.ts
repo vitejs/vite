@@ -1,45 +1,24 @@
 import { resolve } from 'path'
 import { createServer, ViteDevServer } from 'vite'
-import { chromium, ChromiumBrowser, Page } from 'playwright-chromium'
+import { Page } from 'playwright-chromium'
 
 declare global {
-  namespace NodeJS {
-    interface Global {
-      browser: ChromiumBrowser
-      server: ViteDevServer
-      page: Page
-    }
-  }
+  const page: Page
 }
 
-export function setupPlaygroundTest(testDir: string) {
-  const playgroundRoot = resolve(__dirname, '../packages/playground')
-  const serverRoot = resolve(playgroundRoot, testDir)
+export function setupPlaygroundTest(dir = '.') {
+  let server: ViteDevServer
 
   beforeAll(async () => {
-    console.log(`starting server in ${serverRoot}`)
-
-    const [server, browser] = await Promise.all([
-      (
-        await createServer({
-          root: serverRoot
-        })
-      ).listen(),
-      chromium.launch({
-        args: process.env.CI
-          ? ['--no-sandbox', '--disable-setuid-sandbox']
-          : undefined
-      })
-    ])
-
-    global.server = server
-    global.browser = browser
-    global.page = await browser.newPage()
-    await global.page.goto(`http://localhost:${server.config.server.port}`)
+    const root = resolve(__dirname, '../packages/playground', dir)
+    server = await (await createServer({ root })).listen()
+    await page.goto(
+      // use resolved port from server
+      `http://localhost:${server.config.server.port}`
+    )
   })
 
   afterAll(async () => {
-    await global.browser.close()
-    await global.server.close()
+    await server.close()
   })
 }
