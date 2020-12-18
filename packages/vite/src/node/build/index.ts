@@ -4,6 +4,8 @@ import Rollup, { Plugin, RollupBuild, RollupOptions } from 'rollup'
 import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
 import { sizeReporPlugin } from '../plugins/size'
 import { buildDefinePlugin } from '../plugins/define'
+import chalk from 'chalk'
+import { buildHtmlPlugin } from '../plugins/html'
 
 export interface BuildOptions {
   /**
@@ -26,7 +28,7 @@ export interface BuildOptions {
   /**
    * Directory relative from `outDir` where the built js/css/image assets will
    * be placed.
-   * @default '_assets'
+   * @default 'assets'
    */
   assetsDir?: string
   /**
@@ -111,7 +113,7 @@ export function resolveBuildOptions(
     entry: 'index.html',
     base: '/',
     outDir: 'dist',
-    assetsDir: '_assets',
+    assetsDir: 'assets',
     assetsInlineLimit: 4096,
     cssCodeSplit: true,
     sourcemap: false,
@@ -174,11 +176,11 @@ async function doBuild(
 
   const input = resolve(options.entry)
   const outDir = resolve(options.outDir)
-  const assetsDir = path.resolve(outDir, options.assetsDir)
 
   const plugins = [
     ...(config.plugins as Plugin[]),
     ...(options.rollupOptions.plugins || []),
+    buildHtmlPlugin(config),
     buildDefinePlugin(config),
     ...(options.minify
       ? options.minify === 'esbuild'
@@ -189,26 +191,37 @@ async function doBuild(
   ]
 
   const rollup = require('rollup') as typeof Rollup
-  const bundle = await rollup.rollup({
-    input,
-    preserveEntrySignatures: false,
-    treeshake: { moduleSideEffects: 'no-external' },
-    ...options.rollupOptions,
-    plugins
-  })
 
-  paralellBuilds.push(bundle)
+  try {
+    const bundle = await rollup.rollup({
+      input,
+      preserveEntrySignatures: false,
+      treeshake: { moduleSideEffects: 'no-external' },
+      ...options.rollupOptions,
+      plugins
+    })
 
-  await bundle[options.write ? 'write' : 'generate']({
-    dir: assetsDir,
-    format: 'es',
-    sourcemap: options.sourcemap,
-    entryFileNames: `[name].[hash].js`,
-    chunkFileNames: `[name].[hash].js`,
-    assetFileNames: `[name].[hash].[ext]`,
-    // #764 add `Symbol.toStringTag` when build es module into cjs chunk
-    // #1048 add `Symbol.toStringTag` for module default export
-    namespaceToStringTag: true,
-    ...options.rollupOptions.output
-  })
+    paralellBuilds.push(bundle)
+
+    await bundle[options.write ? 'write' : 'generate']({
+      dir: outDir,
+      format: 'es',
+      sourcemap: options.sourcemap,
+      entryFileNames: path.posix.join(options.assetsDir, `[name].[hash].js`),
+      chunkFileNames: path.posix.join(options.assetsDir, `[name].[hash].js`),
+      assetFileNames: path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
+      // #764 add `Symbol.toStringTag` when build es module into cjs chunk
+      // #1048 add `Symbol.toStringTag` for module default export
+      namespaceToStringTag: true,
+      ...options.rollupOptions.output
+    })
+  } catch (e) {
+    console.log()
+    console.log(chalk.red(`[${e.code}] ${e.message}`))
+    console.log(chalk.cyan(`${e.id}:${e.loc.line}:${e.loc.column}`))
+    console.log(chalk.yellow(e.frame))
+    console.log(e.stack)
+    console.log()
+    process.exit(1)
+  }
 }

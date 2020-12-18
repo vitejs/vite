@@ -12,7 +12,9 @@ import { isCSSRequest } from './css'
 export function buildDefinePlugin(config: ResolvedConfig): Plugin {
   const individualEnvKeys: Record<string, string> = {}
   for (const key in config.env) {
-    individualEnvKeys[key] = JSON.stringify(config.env[key])
+    individualEnvKeys[`import.meta.env.${key}`] = JSON.stringify(
+      config.env[key]
+    )
   }
 
   const replacements: Record<string, string | undefined> = {
@@ -41,8 +43,7 @@ export function buildDefinePlugin(config: ResolvedConfig): Plugin {
     name: 'vite:define',
     transform(code, id) {
       if (
-        /vue&type=template/.test(id) ||
-        // also exclude css and static assets for performance
+        // exclude css and static assets for performance
         isCSSRequest(id) ||
         config.assetsInclude(id)
       ) {

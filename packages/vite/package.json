@@ -65,6 +65,7 @@
     "@types/node": "^14.14.10",
     "@types/resolve": "^1.17.1",
     "@types/ws": "^7.4.0",
+    "@vue/compiler-dom": "^3.0.4",
     "acorn": "^8.0.4",
     "acorn-class-fields": "^0.3.7",
     "brotli-size": "^4.0.0",
