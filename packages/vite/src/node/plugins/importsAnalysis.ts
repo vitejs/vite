@@ -10,6 +10,7 @@ import {
   cleanUrl,
   createDebugger,
   injectQuery,
+  isJSRequest,
   prettifyUrl,
   timeFrom
 } from '../utils'
@@ -183,14 +184,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             url = FILE_PREFIX + slash(resolved.id)
           }
 
-          // mark CSS imports with ?import query
-          if (isCSSRequest(resolved.id)) {
-            url = injectQuery(url, 'import')
+          // ensure extension so we can rely on extension checks in the transform middleware
+          const cleanId = cleanUrl(resolved.id)
+          const resolvedExt = path.extname(cleanId)
+          if (path.extname(cleanUrl(url)) !== resolvedExt) {
+            const [pathname, query] = url.split('?')
+            url = `${pathname}${resolvedExt}${query ? `?${query}` : ``}`
           }
 
-          // mark asset imports with ?asset query
-          if (config.assetsInclude(cleanUrl(resolved.id))) {
-            url = injectQuery(url, `asset`)
+          // mark non-js imports with `?import`
+          if (!isJSRequest(cleanId) || isCSSRequest(url)) {
+            url = injectQuery(url, 'import')
           }
 
           const absoluteUrl = toAbsoluteUrl(url)

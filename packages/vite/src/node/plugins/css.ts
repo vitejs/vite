@@ -1,4 +1,9 @@
-import { createDebugger, isExternalUrl, asyncReplace } from '../utils'
+import {
+  createDebugger,
+  isExternalUrl,
+  asyncReplace,
+  isImportRequest
+} from '../utils'
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
@@ -30,13 +35,12 @@ export interface CSSModulesOptions {
 }
 
 const cssLangRE = /\.(css|less|sass|scss|styl|stylus|postcss)($|\?)/
-const cssImportRE = /[\?&]import($|&)/
 
 export const isCSSRequest = (request: string) =>
-  cssLangRE.test(request) && !cssImportRE.test(request)
+  cssLangRE.test(request) && !isImportRequest(request)
 
 export const isCSSProxy = (request: string) =>
-  cssLangRE.test(request) && cssImportRE.test(request)
+  cssLangRE.test(request) && isImportRequest(request)
 
 const cssModulesCache = new Map<string, Record<string, string>>()
 
@@ -54,7 +58,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       if (!cssLangRE.test(id)) {
         return
       }
-      const isProxyRequest = cssImportRE.test(id)
 
       let { code: css, modules, deps } = await compileCSS(id, raw, config)
       if (modules) {
@@ -94,7 +97,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       if (process.env.DEBUG) {
         const file = chalk.dim(path.relative(config.root, id))
-        if (isProxyRequest) {
+        if (isCSSProxy(id)) {
           debug(`[import] ${file}`)
         } else {
           debug(`[link] ${file}`)
@@ -116,11 +119,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (!cssLangRE.test(id)) {
         return
       }
-      const isProxyRequest = cssImportRE.test(id)
+
       const modules = cssModulesCache.get(id)
       const modulesCode = modules && dataToEsm(modules, { namedExports: true })
 
-      if (isProxyRequest) {
+      if (isCSSProxy(id)) {
         // server only
         return [
           `import { updateStyle, removeStyle } from ${JSON.stringify(
