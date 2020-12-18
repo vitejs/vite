@@ -28,7 +28,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger } from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import { errorMiddleware } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -254,6 +254,7 @@ export async function createServer(
 
   if (serverConfig.hmr !== false) {
     watcher.on('change', (file) => {
+      file = normalizePath(file)
       // invalidate module graph cache on file change
       moduleGraph.onFileChange(file)
       handleHMRUpdate(file, server)

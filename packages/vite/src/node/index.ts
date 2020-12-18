@@ -1,10 +1,11 @@
 export * from './server'
 export * from './build'
 export * from './config'
+export { createLogger } from './logger'
 
 // additional types
 export { Plugin } from './plugin'
-export { LogLevel } from './logger'
+export { Logger, LogLevel } from './logger'
 export type {
   AliasOptions,
   ResolverFunction,

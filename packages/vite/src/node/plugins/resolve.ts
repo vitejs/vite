@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import resolve from 'resolve'
-import { createDebugger } from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import { Plugin } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from '../constants'
@@ -81,11 +81,11 @@ function tryFsResolve(fsPath: string) {
   const [file, q] = fsPath.split(`?`)
   const query = q ? `?${q}` : ``
   if (fs.existsSync(file)) {
-    return file + query
+    return normalizePath(file) + query
   }
   for (const ext of supportedExts) {
     if (fs.existsSync(file + ext)) {
-      return file + ext + query
+      return normalizePath(file) + ext + query
     }
   }
 }
@@ -116,7 +116,7 @@ function tryNodeResolve(id: string, basedir: string): string | undefined {
       // deep import, return as-is
       isDebug &&
         debug(`[node/deep-import] ${chalk.cyan(id)} -> ${chalk.dim(result)}`)
-      return result
+      return normalizePath(result)
     } else {
       // resolve package entry
       return resolvePackageEntry(id, result)
