@@ -26,7 +26,11 @@ const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
   return {
     html,
     tags: [
-      { tag: 'script', attrs: { type: 'module', src: CLIENT_PUBLIC_PATH } }
+      {
+        tag: 'script',
+        attrs: { type: 'module', src: CLIENT_PUBLIC_PATH },
+        injectTo: 'head-prepend'
+      }
     ]
   }
 }

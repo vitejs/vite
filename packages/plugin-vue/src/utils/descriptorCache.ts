@@ -43,3 +43,7 @@ export function getDescriptor(filename: string) {
       `This is a @vitejs/plugin-vue internal error, please open an issue.`
   )
 }
+
+export function setDescriptor(filename: string, entry: SFCDescriptor) {
+  cache.set(filename, entry)
+}

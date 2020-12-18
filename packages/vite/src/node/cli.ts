@@ -1,7 +1,7 @@
 import { cac } from 'cac'
 import chalk from 'chalk'
 import { build, BuildOptions } from './build'
-import { startServer, ServerOptions } from './server'
+import { createServer, ServerOptions } from './server'
 
 const cli = cac('vite')
 
@@ -54,19 +54,21 @@ cli
   .action((root: string, options: ServerOptions & GlobalCLIOptions) => {
     // output structure is preserved even after bundling so require()
     // is ok here
-    const start = require('./server').startServer as typeof startServer
-    start(
+    const create = require('./server').createServer as typeof createServer
+    create(
       {
         root,
         server: cleanOptions(options) as ServerOptions
       },
       options.mode,
       options.config
-    ).catch((e) => {
-      console.log(chalk.red('[vite] failed to start dev server'))
-      console.error(e.stack)
-      process.exit(1)
-    })
+    )
+      .then((server) => server.listen())
+      .catch((e) => {
+        console.log(chalk.red('[vite] failed to start dev server'))
+        console.error(e.stack)
+        process.exit(1)
+      })
   })
 
 // build

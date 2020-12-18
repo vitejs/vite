@@ -6,22 +6,26 @@
   ],
   "scripts": {
     "lint": "eslint --ext .ts packages/*/src/**",
-    "bundle": "esbuild packages/vite/src/node/index.ts packages/vite/src/node/cli.ts --bundle --platform=node --target=node12 --external:fsevents --external:sugarss --external:bufferutil --external:utf-8-validate --outdir=esbuild"
+    "test": "jest"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.12.1",
+    "@types/jest": "^26.0.19",
     "@types/node": "^14.14.10",
     "@typescript-eslint/parser": "^4.9.1",
     "enquirer": "^2.3.6",
     "eslint": "^7.15.0",
     "eslint-plugin-node": "^11.1.0",
     "execa": "^5.0.0",
+    "jest": "^26.6.3",
     "lint-staged": "^10.5.3",
     "minimist": "^1.2.5",
     "npm-run-all": "^4.1.5",
+    "playwright-chromium": "^1.7.0",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "semver": "^7.3.4",
+    "ts-jest": "^26.4.4",
     "typescript": "^4.1.2",
     "yorkie": "^2.0.0"
   },

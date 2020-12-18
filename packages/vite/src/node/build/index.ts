@@ -216,12 +216,9 @@ async function doBuild(
       ...options.rollupOptions.output
     })
   } catch (e) {
-    console.log()
     console.log(chalk.red(`[${e.code}] ${e.message}`))
     console.log(chalk.cyan(`${e.id}:${e.loc.line}:${e.loc.column}`))
     console.log(chalk.yellow(e.frame))
-    console.log(e.stack)
-    console.log()
-    process.exit(1)
+    throw e
   }
 }

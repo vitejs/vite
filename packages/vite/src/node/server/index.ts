@@ -1,6 +1,7 @@
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
+import * as net from 'net'
 import * as http from 'http'
 import * as https from 'https'
 import connect from 'connect'
@@ -36,7 +37,8 @@ import { TransformResult } from 'rollup'
 import { transformRequest } from './transformRequest'
 import {
   transformWithEsbuild,
-  EsbuildTransformResult
+  EsbuildTransformResult,
+  stopService
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 
@@ -167,6 +169,14 @@ export interface ViteDevServer {
     options?: EsbuildTransformOptions,
     inMap?: object
   ): Promise<EsbuildTransformResult>
+  /**
+   * Start the server.
+   */
+  listen(port?: number): Promise<ViteDevServer>
+  /**
+   * Stop the server.
+   */
+  close(): Promise<void>
 }
 
 export async function createServer(
@@ -203,6 +213,7 @@ export async function createServer(
   const plugins = resolvedConfig.plugins
   const container = await createPluginContainer(plugins, {}, root, watcher)
   const moduleGraph = new ModuleGraph(container)
+  const closeHttpServer = createSeverCloseFn(httpServer)
 
   const server: ViteDevServer = {
     config: resolvedConfig,
@@ -212,10 +223,21 @@ export async function createServer(
     container,
     ws,
     moduleGraph,
+    transformWithEsbuild,
     transformRequest(url) {
       return transformRequest(url, server)
     },
-    transformWithEsbuild
+    listen(port?: number) {
+      return startServer(server, port)
+    },
+    async close() {
+      await Promise.all([
+        watcher.close(),
+        ws.close(),
+        closeHttpServer(),
+        stopService()
+      ])
+    }
   }
 
   if (serverConfig.hmr !== false) {
@@ -322,15 +344,12 @@ async function resolveHttpServer(
   }
 }
 
-export async function startServer(
-  inlineConfig: UserConfig = {},
-  mode = 'development',
-  configPath?: string | false
+async function startServer(
+  server: ViteDevServer,
+  inlinePort?: number
 ): Promise<ViteDevServer> {
-  const server = await createServer(inlineConfig, mode, configPath)
-
   const options = server.config.server || {}
-  let port = options.port || 3000
+  let port = inlinePort || options.port || 3000
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
   const httpServer = server.httpServer
@@ -349,9 +368,7 @@ export async function startServer(
     })
 
     httpServer.listen(port, () => {
-      console.log()
-      console.log(`  Dev server running at:`)
-      console.log()
+      console.log(`\n  Dev server running at:\n`)
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>
         (interfaces[key] || [])
@@ -370,12 +387,15 @@ export async function startServer(
           })
       )
 
-      console.log()
-      console.log(
-        // @ts-ignore
-        chalk.cyan(`  ready in ${Date.now() - global.__vite_start_time}ms.`)
-      )
-      console.log()
+      // @ts-ignore
+      if (global.__vite_start_time) {
+        console.log(
+          chalk.cyan(
+            // @ts-ignore
+            `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
+          )
+        )
+      }
 
       // @ts-ignore
       const profileSession = global.__vite_profile_session
@@ -404,4 +424,27 @@ export async function startServer(
       resolve(server)
     })
   })
+}
+
+function createSeverCloseFn(server: http.Server) {
+  const openSockets = new Set<net.Socket>()
+
+  server.on('connection', (socket) => {
+    openSockets.add(socket)
+    socket.on('close', () => {
+      openSockets.delete(socket)
+    })
+  })
+
+  return () =>
+    new Promise<void>((resolve, reject) => {
+      server.close((err) => {
+        if (err) {
+          reject(err)
+        } else {
+          openSockets.forEach((s) => s.destroy())
+          resolve()
+        }
+      })
+    })
 }

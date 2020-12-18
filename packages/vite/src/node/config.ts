@@ -111,6 +111,7 @@ export async function resolveConfig(
         mode,
         command
       },
+      config.root ? path.resolve(config.root) : process.cwd(),
       configPath
     )
     if (loadResult) {
@@ -142,12 +143,7 @@ export async function resolveConfig(
   })
 
   // resolve root
-  const { root } = config
-  const resolvedRoot = root
-    ? path.isAbsolute(root)
-      ? root
-      : path.resolve(root)
-    : process.cwd()
+  const resolvedRoot = config.root ? path.resolve(config.root) : process.cwd()
 
   // resolve alias - inject internal alias for /@vite/ client files
   const userAlias = config.alias || []
@@ -220,20 +216,21 @@ export async function resolveConfig(
 
 async function loadConfigFromFile(
   configEnv: ConfigEnv,
+  configRoot: string,
   configPath?: string
 ): Promise<{ path: string; config: UserConfig } | null> {
   const start = Date.now()
-  const cwd = process.cwd()
 
   let resolvedPath: string | undefined
   if (configPath) {
-    resolvedPath = path.resolve(cwd, configPath)
+    // explicit config path is always resolved from cwd
+    resolvedPath = path.resolve(configPath)
   } else {
-    const jsConfigPath = path.resolve(cwd, 'vite.config.js')
+    const jsConfigPath = path.resolve(configRoot, 'vite.config.js')
     if (fs.existsSync(jsConfigPath)) {
       resolvedPath = jsConfigPath
     } else {
-      const tsConfigPath = path.resolve(cwd, 'vite.config.ts')
+      const tsConfigPath = path.resolve(configRoot, 'vite.config.ts')
       if (fs.existsSync(tsConfigPath)) {
         resolvedPath = tsConfigPath
       }
@@ -311,8 +308,7 @@ async function loadConfigFromFile(
     console.error(
       chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
     )
-    console.error(e.stack)
-    process.exit(1)
+    throw e
   }
 }
 

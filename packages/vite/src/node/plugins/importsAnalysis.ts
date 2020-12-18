@@ -14,9 +14,12 @@ import {
   prettifyUrl,
   timeFrom
 } from '../utils'
-import { debugHmr, handlePrunedModules } from '../server/hmr'
+import {
+  debugHmr,
+  handlePrunedModules,
+  lexAcceptedHmrDeps
+} from '../server/hmr'
 import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
-import { RollupError } from 'rollup'
 import { FAILED_RESOLVE } from './resolve'
 import { ViteDevServer } from '../'
 
@@ -125,7 +128,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (source.slice(end + 4, end + 11) === '.accept') {
               // further analyze accepted modules
               if (
-                lexAccepted(
+                lexAcceptedHmrDeps(
                   source,
                   source.indexOf('(', end + 11) + 1,
                   acceptedUrls
@@ -277,106 +280,4 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
-}
-
-const enum LexerState {
-  inCall,
-  inSingleQuoteString,
-  inDoubleQuoteString,
-  inTemplateString,
-  inArray
-}
-
-/**
- * Lex the accepted HMR deps.
- * Since hot.accept() can only accept string literals or array of string
- * literals, we don't really need a heavy @babel/parse call on the entire source.
- *
- * @returns selfAccepts
- */
-function lexAccepted(code: string, start: number, urls: Set<string>): boolean {
-  let state: LexerState = LexerState.inCall
-  // the state can only be 2 levels deep so no need for a stack
-  let prevState: LexerState = LexerState.inCall
-  let currentDep: string = ''
-
-  for (let i = start; i < code.length; i++) {
-    const char = code.charAt(i)
-    switch (state) {
-      case LexerState.inCall:
-      case LexerState.inArray:
-        if (char === `'`) {
-          prevState = state
-          state = LexerState.inSingleQuoteString
-        } else if (char === `"`) {
-          prevState = state
-          state = LexerState.inDoubleQuoteString
-        } else if (char === '`') {
-          prevState = state
-          state = LexerState.inTemplateString
-        } else if (/\s/.test(char)) {
-          continue
-        } else {
-          if (state === LexerState.inCall) {
-            if (char === `[`) {
-              state = LexerState.inArray
-            } else {
-              // reaching here means the first arg is neither a string literal
-              // nor an Array literal (direct callback) or there is no arg
-              // in both case this indicates a self-accepting module
-              return true // done
-            }
-          } else if (state === LexerState.inArray) {
-            if (char === `]`) {
-              return false // done
-            } else if (char === ',') {
-              continue
-            } else {
-              error(i)
-            }
-          }
-        }
-        break
-      case LexerState.inSingleQuoteString:
-        if (char === `'`) {
-          urls.add(currentDep)
-          currentDep = ''
-          state = prevState
-        } else {
-          currentDep += char
-        }
-        break
-      case LexerState.inDoubleQuoteString:
-        if (char === `"`) {
-          urls.add(currentDep)
-          state = prevState
-        } else {
-          currentDep += char
-        }
-        break
-      case LexerState.inTemplateString:
-        if (char === '`') {
-          urls.add(currentDep)
-          currentDep = ''
-          state = prevState
-        } else if (char === '$' && code.charAt(i + 1) === '{') {
-          error(i)
-        } else {
-          currentDep += char
-        }
-        break
-      default:
-        throw new Error('unknown lexer state')
-    }
-  }
-  return false
-}
-
-function error(pos: number) {
-  const err = new Error(
-    `import.meta.accept() can only accept string literals or an ` +
-      `Array of string literals.`
-  ) as RollupError
-  err.pos = pos
-  throw err
 }

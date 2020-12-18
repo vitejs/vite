@@ -219,7 +219,7 @@ export interface HtmlTagDescriptor {
   tag: string
   attrs?: Record<string, string>
   children?: string | HtmlTagDescriptor[]
-  injectTo?: 'head' | 'body'
+  injectTo?: 'head' | 'body' | 'head-prepend'
 }
 
 export type IndexHtmlTransformResult =
@@ -284,6 +284,7 @@ export async function applyHtmlTransforms(
   bundle?: OutputBundle
 ): Promise<string> {
   const headTags: HtmlTagDescriptor[] = []
+  const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
 
   const ctx = {
@@ -308,14 +309,19 @@ export async function applyHtmlTransforms(
       for (const tag of tags) {
         if (tag.injectTo === 'body') {
           bodyTags.push(tag)
-        } else {
+        } else if (tag.injectTo === 'head') {
           headTags.push(tag)
+        } else {
+          headPrependTags.push(tag)
         }
       }
     }
   }
 
   // inject tags
+  if (headPrependTags.length) {
+    html = injectToHead(html, headPrependTags, true)
+  }
   if (headTags.length) {
     html = injectToHead(html, headTags)
   }
@@ -367,11 +373,25 @@ function injectPreload(html: string, filename: string, config: ResolvedConfig) {
 }
 
 const headInjectRE = /<\/head>/
-function injectToHead(html: string, tags: HtmlTagDescriptor[]) {
-  const tagsHtml = serializeTags(tags) + `\n`
-  // inject after head or doctype
-  if (headInjectRE.test(html)) {
-    return html.replace(headInjectRE, `${tagsHtml}$&`)
+const headPrependInjectRE = [/<head>/, /<!doctype html>/i]
+function injectToHead(
+  html: string,
+  tags: HtmlTagDescriptor[],
+  prepend = false
+) {
+  const tagsHtml = serializeTags(tags)
+  if (prepend) {
+    // inject after head or doctype
+    for (const re of headPrependInjectRE) {
+      if (re.test(html)) {
+        return html.replace(re, `$&\n  ${tagsHtml}`)
+      }
+    }
+  } else {
+    // inject before head close
+    if (headInjectRE.test(html)) {
+      return html.replace(headInjectRE, `${tagsHtml}\n$&`)
+    }
   }
   // if no <head> tag is present, just prepend
   return tagsHtml + html
@@ -381,7 +401,7 @@ const bodyInjectRE = /<\/body>/
 function injectToBody(html: string, tags: HtmlTagDescriptor[]) {
   const tagsHtml = `\n` + serializeTags(tags)
   if (bodyInjectRE.test(html)) {
-    return html.replace(bodyInjectRE, `${tagsHtml}$&`)
+    return html.replace(bodyInjectRE, `${tagsHtml}\n$&`)
   }
   // if no body, append
   return html + tagsHtml
