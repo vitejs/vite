@@ -1,28 +1,28 @@
 <template>
   <h2>Environment Variables</h2>
   <p class="base">
-    <code>import.meta.env.BASE_URL: {{ base }}</code>
+    <code>import.meta.<wbr/>env.BASE_URL: {{ base }}</code>
   </p>
   <p class="mode">
-    <code>import.meta.env.MODE: {{ mode }}</code>
+    <code>import.meta.<wbr/>env.MODE: {{ mode }}</code>
   </p>
   <p class="dev">
-    <code>import.meta.env.DEV: {{ dev }}</code>
+    <code>import.meta.<wbr/>env.DEV: {{ dev }}</code>
   </p>
   <p class="prod">
-    <code>import.meta.env.PROD: {{ prod }}</code>
+    <code>import.meta.<wbr/>env.PROD: {{ prod }}</code>
   </p>
   <p class="custom-env-variable">
-    <code>import.meta.env.VITE_CUSTOM_ENV_VARIABLE: {{ custom }}</code>
+    <code>import.meta.<wbr/>env.VITE_CUSTOM_ENV_VARIABLE: {{ custom }}</code>
   </p>
   <p class="effective-mode-file-name">
-    <code>import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME: {{ modeFile }}</code>
+    <code>import.meta.<wbr/>env.VITE_EFFECTIVE_MODE_FILE_NAME: {{ modeFile }}</code>
   </p>
   <p class="node-env">
-    <code>process.env.NODE_ENV: {{ NODE_ENV }}</code>
+    <code>process.<wbr/>env.NODE_ENV: {{ NODE_ENV }}</code>
   </p>
   <p class="import-meta-env">
-    <pre>import.meta.env: {{ env }}</pre>
+    <pre>import.<wbr/>meta.env: {{ env }}</pre>
   </p>
 </template>
 

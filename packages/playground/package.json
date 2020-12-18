@@ -6,7 +6,7 @@
     "dev": "vite --debug",
     "build": "vite build --debug",
     "serve": "sirv dist",
-    "debug": "node --inspect-brk ../vite/bin/vite.js --debug"
+    "debug": "node --inspect-brk ../vite/bin/vite.js"
   },
   "dependencies": {
     "@pika/react": "^16.13.1",

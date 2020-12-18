@@ -42,6 +42,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           return `export default ${JSON.stringify(publicPath)}`
         } else {
           // TODO: build has different asset resolution rules
+          return 'export default "todo"'
         }
       }
     }

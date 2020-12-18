@@ -1,5 +1,5 @@
 import {
-  createDebugger,
+  // createDebugger,
   isExternalUrl,
   asyncReplace,
   isImportRequest
@@ -18,7 +18,7 @@ import { ViteDevServer } from '../'
 import { injectAssetRE } from './asset'
 import slash from 'slash'
 
-const debug = createDebugger('vite:css')
+// const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
   // https://github.com/css-modules/postcss-modules
@@ -99,16 +99,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // TODO if build, analyze url() asset reference
         // TODO account for comments https://github.com/vitejs/vite/issues/426
       }
-
-      if (process.env.DEBUG) {
-        const file = chalk.dim(path.relative(config.root, id))
-        if (isCSSProxy(id)) {
-          debug(`[import] ${file}`)
-        } else {
-          debug(`[link] ${file}`)
-        }
-      }
-
       return css
     }
   }
