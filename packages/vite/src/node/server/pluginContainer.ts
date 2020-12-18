@@ -29,7 +29,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import fs from 'fs'
+import fs, { close } from 'fs'
 import { resolve, relative, dirname, sep, posix, join } from 'path'
 import { createHash } from 'crypto'
 import { Plugin } from '../plugin'
@@ -88,6 +88,7 @@ export interface PluginContainer {
   ): Promise<SourceDescription | null>
   load(id: string): Promise<LoadResult | null>
   resolveFileUrl(referenceId: string): string | null
+  close(): Promise<void>
 }
 
 type PluginContext = Omit<
@@ -541,6 +542,13 @@ export async function createPluginContainer(
         }
       }
       return JSON.stringify('/' + fileName.split(sep).join(posix.sep))
+    },
+
+    async close() {
+      const ctx = new Context()
+      await Promise.all(
+        plugins.map((p) => p.closeBundle && p.closeBundle.call(ctx as any))
+      )
     }
   }
 
