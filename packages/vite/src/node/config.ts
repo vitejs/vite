@@ -5,7 +5,13 @@ import Rollup from 'rollup'
 import { BuildOptions, resolveBuildOptions } from './build'
 import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
-import { createDebugger, deepMerge, isObject, lookupFile } from './utils'
+import {
+  createDebugger,
+  deepMerge,
+  isObject,
+  lookupFile,
+  normalizePath
+} from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
 import { esbuildPlugin } from './plugins/esbuild'
@@ -145,7 +151,9 @@ export async function resolveConfig(
   })
 
   // resolve root
-  const resolvedRoot = config.root ? path.resolve(config.root) : process.cwd()
+  const resolvedRoot = normalizePath(
+    config.root ? path.resolve(config.root) : process.cwd()
+  )
 
   // resolve alias - inject internal alias for /@vite/ client files
   const userAlias = config.alias || []
@@ -170,7 +178,7 @@ export async function resolveConfig(
 
   const resolved = {
     ...config,
-    configPath: configPath || null,
+    configPath: configPath ? normalizePath(configPath) : null,
     root: resolvedRoot,
     command,
     mode,

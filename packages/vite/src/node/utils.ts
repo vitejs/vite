@@ -1,6 +1,7 @@
 import debug from 'debug'
 import chalk from 'chalk'
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import slash from 'slash'
 import { FILE_PREFIX } from './constants'
@@ -27,6 +28,16 @@ export function createDebugger(ns: string, options: DebuggerOptions = {}) {
     }
     log(msg, ...args)
   }
+}
+
+const isWindows = os.platform() === 'win32'
+const VOLUME_RE = /^[A-Z]:/i
+
+export function normalizePath(id: string): string {
+  if (isWindows && VOLUME_RE.test(id)) {
+    return path.posix.normalize(slash(id.replace(VOLUME_RE, '')))
+  }
+  return path.posix.normalize(id)
 }
 
 export const queryRE = /\?.*$/
@@ -94,7 +105,7 @@ export function timeFrom(start: number, subtract = 0) {
  */
 export function prettifyUrl(url: string, root: string) {
   url = removeTimestampQuery(url)
-  const isAbsoluteFile = url.startsWith(slash(root))
+  const isAbsoluteFile = url.startsWith(normalizePath(root))
   if (isAbsoluteFile || url.startsWith(FILE_PREFIX)) {
     let file = path.relative(
       root,

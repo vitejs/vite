@@ -1,6 +1,10 @@
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
+import { normalizePath } from '../utils'
+
+// ids in transform are normalized to unix style
+const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 
 /**
  * some values used by the client needs to be dynamically injected by the server
@@ -10,7 +14,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:client-inject',
     transform(code, id) {
-      if (id === CLIENT_ENTRY) {
+      if (id === normalizedClientEntry) {
         let options = config.server.hmr
         options = options && typeof options !== 'boolean' ? options : {}
         const host = options.host || null

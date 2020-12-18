@@ -176,7 +176,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // transforms), try to shorten it down to root-relative so source
           // maps can work properly
           if (url === resolved.id && url.startsWith(config.root)) {
-            url = slash(url.slice(config.root.length))
+            url = url.slice(config.root.length)
           }
 
           // bare imports must be rewritten into valid URLs to make them
