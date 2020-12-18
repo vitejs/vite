@@ -10,6 +10,8 @@ test_script:
   - node --version
   - yarn --version
   - cd packages\vite && yarn build
+  - cd packages\plugin-vue && yarn build
+  - yarn test
 
 cache:
   - node_modules -> yarn.lock
