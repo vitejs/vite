@@ -37,8 +37,7 @@ import { TransformResult } from 'rollup'
 import { transformRequest } from './transformRequest'
 import {
   transformWithEsbuild,
-  EsbuildTransformResult,
-  stopService
+  EsbuildTransformResult
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 
@@ -234,8 +233,8 @@ export async function createServer(
       await Promise.all([
         watcher.close(),
         ws.close(),
-        closeHttpServer(),
-        stopService()
+        container.close(),
+        closeHttpServer()
       ])
     }
   }
