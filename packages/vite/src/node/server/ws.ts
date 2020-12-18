@@ -2,6 +2,7 @@ import chalk from 'chalk'
 import { Server } from 'http'
 import WebSocket from 'ws'
 import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import { Logger } from '../logger'
 
 export const HMR_HEADER = 'vite-hmr'
 
@@ -10,7 +11,10 @@ export interface WebSocketServer {
   close(): Promise<void>
 }
 
-export function setupWebSocketServer(server: Server): WebSocketServer {
+export function createWebSocketServer(
+  server: Server,
+  logger: Logger
+): WebSocketServer {
   const wss = new WebSocket.Server({ noServer: true })
 
   server.on('upgrade', (req, socket, head) => {
@@ -31,8 +35,8 @@ export function setupWebSocketServer(server: Server): WebSocketServer {
 
   wss.on('error', (e: Error & { code: string }) => {
     if (e.code !== 'EADDRINUSE') {
-      console.error(chalk.red(`[vite] WebSocket server error:`))
-      console.error(e)
+      logger.error(chalk.red(`[vite] WebSocket server error:`))
+      logger.error(e)
     }
   })
 

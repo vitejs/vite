@@ -10,11 +10,12 @@ export function errorMiddleware(
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
   return (err: RollupError, _req, res, _next) => {
-    console.error(chalk.red(`[vite] Internal server error:`))
-    if (err.plugin) console.error(`  Plugin: ${chalk.green(err.plugin)}`)
-    if (err.id) console.error(`  File: ${chalk.cyan(err.id)}`)
-    if (err.frame) console.error(chalk.yellow(pad(err.frame)))
-    if (err.stack) console.error(pad(err.stack))
+    const logError = server.logger.error
+    logError(chalk.red(`[vite] Internal server error:`))
+    if (err.plugin) logError(`  Plugin: ${chalk.green(err.plugin)}`)
+    if (err.id) logError(`  File: ${chalk.cyan(err.id)}`)
+    if (err.frame) logError(chalk.yellow(pad(err.frame)))
+    if (err.stack) logError(pad(err.stack))
 
     res.statusCode = 500
     res.end(() => {

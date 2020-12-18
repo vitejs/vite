@@ -16,7 +16,7 @@ import {
 } from '../server/pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
-import { setupWebSocketServer, WebSocketServer } from '../server/ws'
+import { createWebSocketServer, WebSocketServer } from '../server/ws'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
@@ -40,6 +40,7 @@ import {
   EsbuildTransformResult
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
+import { createLogger, Logger } from '../logger'
 
 export interface ServerOptions {
   host?: string
@@ -176,6 +177,10 @@ export interface ViteDevServer {
    * Stop the server.
    */
   close(): Promise<void>
+  /**
+   * Logger that respects the logLevel option
+   */
+  logger: Logger
 }
 
 export async function createServer(
@@ -191,11 +196,12 @@ export async function createServer(
   )
 
   const root = resolvedConfig.root
+  const logger = createLogger(resolvedConfig.logLevel)
   const serverConfig = resolvedConfig.server || {}
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(serverConfig, app)
-  const ws = setupWebSocketServer(httpServer)
+  const ws = createWebSocketServer(httpServer, logger)
 
   const watchOptions = serverConfig.watch || {}
   const watcher = chokidar.watch(root, {
@@ -210,12 +216,19 @@ export async function createServer(
   }) as FSWatcher
 
   const plugins = resolvedConfig.plugins
-  const container = await createPluginContainer(plugins, {}, root, watcher)
+  const container = await createPluginContainer(
+    plugins,
+    {},
+    root,
+    watcher,
+    logger
+  )
   const moduleGraph = new ModuleGraph(container)
   const closeHttpServer = createSeverCloseFn(httpServer)
 
   const server: ViteDevServer = {
     config: resolvedConfig,
+    logger,
     app,
     httpServer,
     watcher,
@@ -352,11 +365,12 @@ async function startServer(
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
   const httpServer = server.httpServer
+  const info = server.logger.info
 
   return new Promise((resolve, reject) => {
     httpServer.on('error', (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
-        console.log(`Port ${port} is in use, trying another one...`)
+        info(`Port ${port} is in use, trying another one...`)
         setTimeout(() => {
           httpServer.close()
           httpServer.listen(++port)
@@ -367,7 +381,7 @@ async function startServer(
     })
 
     httpServer.listen(port, () => {
-      console.log(`\n  Dev server running at:\n`)
+      info(`\n  Dev server running at:\n`)
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>
         (interfaces[key] || [])
@@ -382,13 +396,13 @@ async function startServer(
           })
           .forEach(({ type, host }) => {
             const url = `${protocol}://${host}:${chalk.bold(port)}/`
-            console.log(`  > ${type} ${chalk.cyan(url)}`)
+            info(`  > ${type} ${chalk.cyan(url)}`)
           })
       )
 
       // @ts-ignore
       if (global.__vite_start_time) {
-        console.log(
+        info(
           chalk.cyan(
             // @ts-ignore
             `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
@@ -404,12 +418,11 @@ async function startServer(
           if (!err) {
             const outPath = path.resolve('./vite-profile.cpuprofile')
             fs.writeFileSync(outPath, JSON.stringify(profile))
-            console.log(
+            info(
               chalk.yellow(
-                `  CPU profile written to ${chalk.white.dim(outPath)}`
+                `  CPU profile written to ${chalk.white.dim(outPath)}\n`
               )
             )
-            console.log()
           } else {
             throw err
           }
@@ -417,7 +430,11 @@ async function startServer(
       }
 
       if (options.open) {
-        openBrowser(`${protocol}://${hostname}:${port}`, options.open)
+        openBrowser(
+          `${protocol}://${hostname}:${port}`,
+          options.open,
+          server.logger
+        )
       }
 
       resolve(server)

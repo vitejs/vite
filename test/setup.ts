@@ -11,7 +11,7 @@ export function setupPlaygroundTest(dir = '.') {
 
   beforeAll(async () => {
     const root = resolve(__dirname, '../packages/playground', dir)
-    server = await (await createServer({ root })).listen()
+    server = await (await createServer({ root, logLevel: 'error' })).listen()
     await page.goto(
       // use resolved port from server
       `http://localhost:${server.config.server.port}`

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { Plugin } from './plugin'
-import Rollup, { RollupOptions } from 'rollup'
+import Rollup from 'rollup'
 import { BuildOptions, resolveBuildOptions } from './build'
 import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
@@ -15,6 +15,7 @@ import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
 import { resolvePlugin } from './plugins/resolve'
+import { createLogger, LogLevel } from './logger'
 
 const debug = createDebugger('vite:config')
 
@@ -53,27 +54,22 @@ export interface UserConfig {
    */
   define?: Record<string, any>
   /**
+   * List of vite plugins to use.
+   */
+  plugins?: (Plugin | Plugin[])[]
+  /**
    * CSS related options (preprocessors and CSS modules)
    */
   css?: CSSOptions
-  /**
-   * Function that tests a file path for inclusion as a static asset.
-   */
-  assetsInclude?: (file: string) => boolean
   /**
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
    */
   esbuild?: ESbuildTransformOptions | false
   /**
-   * List of vite plugins to use.
+   * Function that tests a file path for inclusion as a static asset.
    */
-  plugins?: (Plugin | Plugin[])[]
-  /**
-   * Universal rollup options (used in both serve and build)
-   * Use function config to use conditional options for serve/build
-   */
-  rollupOptions?: RollupOptions
+  assetsInclude?: (file: string) => boolean
   /**
    * Server specific options, e.g. host, port, https...
    */
@@ -82,6 +78,11 @@ export interface UserConfig {
    * Build specific options
    */
   build?: BuildOptions
+  /**
+   * Log level
+   * @default 'all'
+   */
+  logLevel?: LogLevel
 }
 
 export type ResolvedConfig = Readonly<
@@ -112,7 +113,8 @@ export async function resolveConfig(
         command
       },
       config.root ? path.resolve(config.root) : process.cwd(),
-      configPath
+      configPath,
+      config.logLevel
     )
     if (loadResult) {
       config = deepMerge(loadResult.config, config)
@@ -217,7 +219,8 @@ export async function resolveConfig(
 async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configRoot: string,
-  configPath?: string
+  configPath?: string,
+  logLevel?: LogLevel
 ): Promise<{ path: string; config: UserConfig } | null> {
   const start = Date.now()
 
@@ -305,8 +308,8 @@ async function loadConfigFromFile(
       config
     }
   } catch (e) {
-    console.error(
-      chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
+    createLogger(logLevel).error(
+      chalk.red(`[vite] failed to load config from ${resolvedPath}`)
     )
     throw e
   }
