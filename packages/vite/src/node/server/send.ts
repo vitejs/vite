@@ -24,6 +24,7 @@ export function send(
     return res.end()
   }
 
+  if (type === 'css') debugger
   res.setHeader('Content-Type', alias[type] || type)
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Etag', etag)

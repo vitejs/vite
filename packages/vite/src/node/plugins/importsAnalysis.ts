@@ -183,15 +183,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             url = FILE_PREFIX + slash(resolved.id)
           }
 
-          // resolve CSS imports into js (so it differentiates from actual
-          // CSS references from <link>)
+          // mark CSS imports with ?import query
           if (isCSSRequest(resolved.id)) {
-            const [, query] = url.split('?')
-            if (query !== 'raw') {
-              url += '.js'
-            }
+            url = injectQuery(url, 'import')
           }
 
+          // mark asset imports with ?asset query
           if (config.assetsInclude(cleanUrl(resolved.id))) {
             url = injectQuery(url, `asset`)
           }

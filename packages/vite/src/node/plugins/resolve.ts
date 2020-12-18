@@ -5,7 +5,6 @@ import { createDebugger } from '../utils'
 import { Plugin } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from '../constants'
-import { isCSSProxy } from './css'
 
 export const FAILED_RESOLVE = `__vite_failed_resolve__`
 
@@ -21,13 +20,6 @@ export function resolvePlugin(root: string, allowUrls = true): Plugin {
   return {
     name: 'vite:resolve',
     resolveId(id, importer) {
-      const isCSSProxyId = isCSSProxy(id)
-      if (isCSSProxyId) {
-        id = id.slice(0, -3)
-      }
-      const restoreCSSProxy = (res: string) =>
-        isCSSProxyId ? res + '.js' : res
-
       let res
       if (allowUrls && id.startsWith(FILE_PREFIX)) {
         // explicit fs paths that starts with /@fs/*
@@ -39,7 +31,7 @@ export function resolvePlugin(root: string, allowUrls = true): Plugin {
         isDebug && debug(`[@fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
-        return restoreCSSProxy(res || fsPath)
+        return res || fsPath
       }
 
       // URL
@@ -48,7 +40,7 @@ export function resolvePlugin(root: string, allowUrls = true): Plugin {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath))) {
           isDebug && debug(`[url] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-          return restoreCSSProxy(res)
+          return res
         }
       }
 
@@ -57,14 +49,14 @@ export function resolvePlugin(root: string, allowUrls = true): Plugin {
         const fsPath = path.resolve(path.dirname(importer), id)
         if ((res = tryFsResolve(fsPath))) {
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-          return restoreCSSProxy(res)
+          return res
         }
       }
 
       // absolute fs paths
       if (path.isAbsolute(id) && (res = tryFsResolve(id))) {
         isDebug && debug(`[fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-        return restoreCSSProxy(res)
+        return res
       }
 
       // bare package imports, perform node resolve
@@ -72,7 +64,7 @@ export function resolvePlugin(root: string, allowUrls = true): Plugin {
         /^[\w@]/.test(id) &&
         (res = tryNodeResolve(id, importer ? path.dirname(importer) : root))
       ) {
-        return restoreCSSProxy(res)
+        return res
       }
 
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)

@@ -2,7 +2,6 @@ import fs from 'fs'
 import getEtag from 'etag'
 import { SourceDescription, SourceMap } from 'rollup'
 import { ViteDevServer } from '..'
-import { unwrapCSSProxy } from '../plugins/css'
 import chalk from 'chalk'
 import {
   createDebugger,
@@ -39,7 +38,7 @@ export async function transformRequest(
 
   // resolve
   const id = (await container.resolveId(url)).id
-  const file = unwrapCSSProxy(cleanUrl(id))
+  const file = cleanUrl(id)
 
   let code = null
   let map: SourceDescription['map'] = null

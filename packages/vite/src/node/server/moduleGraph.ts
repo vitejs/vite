@@ -1,6 +1,6 @@
 import { extname } from 'path'
 import { FAILED_RESOLVE } from '../plugins/resolve'
-import { isCSSRequest, unwrapCSSProxy } from '../plugins/css'
+import { isCSSRequest } from '../plugins/css'
 import { cleanUrl, removeTimestampQuery } from '../utils'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
@@ -116,7 +116,7 @@ export class ModuleGraph {
       this.urlToModuleMap.set(url, mod)
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
-      const file = (mod.file = unwrapCSSProxy(cleanUrl(resolvedId)))
+      const file = (mod.file = cleanUrl(resolvedId))
       let fileMappedMdoules = this.fileToModulesMap.get(file)
       if (!fileMappedMdoules) {
         fileMappedMdoules = new Set()
@@ -157,9 +157,7 @@ export class ModuleGraph {
     url = removeTimestampQuery(url)
     const resolvedId = (await this.container.resolveId(url)).id
     if (resolvedId === FAILED_RESOLVE) {
-      throw Error(
-        `Failed to resolve url: ${unwrapCSSProxy(url)}\nDoes the file exist?`
-      )
+      throw Error(`Failed to resolve url: ${url}\nDoes the file exist?`)
     }
     const ext = extname(cleanUrl(resolvedId))
     const [pathname, query] = url.split('?')
