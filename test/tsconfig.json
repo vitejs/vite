@@ -1,17 +1,9 @@
 {
-  "include": ["."],
   "compilerOptions": {
     "target": "ES2019",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "strict": true,
-    "noUnusedLocals": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
-    "paths": {
-      // vite typings uses custom paths that is patched into relative paths during build
-      // this is a shim that makes even dev-time vite typings work for plugin-vue
-      "types/*": ["../packages/vite/types/*"]
-    }
-  }
+    "module": "commonjs",
+    "moduleResolution": "node"
+  },
+  "include": ["."]
 }
