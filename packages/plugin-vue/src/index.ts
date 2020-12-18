@@ -165,4 +165,4 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
 // overwrite for cjs require('...')() usage
 module.exports = vuePlugin
-vuePlugin.default = vuePlugin
+vuePlugin['default'] = vuePlugin
