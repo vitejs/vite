@@ -38,9 +38,23 @@ export const cleanUrl = (url: string) =>
 const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string) => externalRE.test(url)
 
+const knownJsSrcRE = /\.((j|t)sx?|mjs|vue)($|\?)/
+export const isJSRequest = (url: string) => knownJsSrcRE.test(url)
+
+const importQueryRE = /(\?|&)import(&|$)/
+export const isImportRequest = (url: string) => importQueryRE.test(url)
+
+export function removeImportQuery(url: string) {
+  return url.replace(importQueryRE, '$1').replace(/\?$/, '')
+}
+
 export function injectQuery(url: string, queryToInject: string) {
   const [pathname, query] = url.split(`?`, 2)
   return `${pathname}?${queryToInject}${query ? `&${query}` : ``}`
+}
+
+export function removeTimestampQuery(url: string) {
+  return url.replace(/\bt=\d{13}&?\b/, '').replace(/\?$/, '')
 }
 
 export async function asyncReplace(
@@ -70,10 +84,6 @@ export function timeFrom(start: number, subtract = 0) {
   } else {
     return chalk.red(timeString)
   }
-}
-
-export function removeTimestampQuery(url: string) {
-  return url.replace(/\bt=\d{13}&?\b/, '').replace(/\?$/, '')
 }
 
 /**

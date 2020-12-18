@@ -1,15 +1,19 @@
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
-import { isCSSRequest } from '../../plugins/css'
+import { isCSSProxy, isCSSRequest } from '../../plugins/css'
 import {
   cleanUrl,
   createDebugger,
+  isImportRequest,
+  isJSRequest,
   prettifyUrl,
+  removeImportQuery,
   removeTimestampQuery
 } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
+import { CLIENT_PUBLIC_PREFIX } from '../../constants'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -20,12 +24,12 @@ export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   const {
-    config: { root, assetsInclude },
+    config: { root },
     moduleGraph
   } = server
 
   return async (req, res, next) => {
-    const url = removeTimestampQuery(req.url!)
+    let url = removeTimestampQuery(req.url!)
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }
@@ -45,26 +49,23 @@ export function transformMiddleware(
         }
       }
 
-      // Skip assets unless it's marked with ?asset query
-      // this is auto-injected by the import analysis plugin to
-      // differentiate js imports (to get the URL) from actual
-      // asset references
-      if (assetsInclude(url) && !url.includes('?asset')) {
-        return next()
-      }
-
       // Only apply the transform pipeline to:
       // - requests that initiate from ESM imports (any extension)
       // - CSS (even not from ESM)
       // - Source maps (only for resolving)
-      const isCSS = isCSSRequest(url)
       if (
-        // esm imports accept */* in most browsers
-        req.headers['accept'] === '*/*' ||
-        req.headers['sec-fetch-dest'] === 'script' ||
-        isCSS ||
+        url.startsWith(CLIENT_PUBLIC_PREFIX) ||
+        isJSRequest(url) ||
+        isImportRequest(url) ||
+        isCSSRequest(url) ||
         isHTMLProxy(url)
       ) {
+        // strip ?import except for CSS since we need to differentiate between
+        // normal CSS requests and imports
+        if (isImportRequest(url) && !isCSSProxy(url)) {
+          url = removeImportQuery(url)
+        }
+
         // check if we can return 304 early
         const ifNoneMatch = req.headers['if-none-match']
         if (
@@ -80,7 +81,7 @@ export function transformMiddleware(
         // resolve, load and transform using the plugin container
         const result = await transformRequest(url, server)
         if (result) {
-          const type = isCSS ? 'css' : 'js'
+          const type = isCSSRequest(url) ? 'css' : 'js'
           return send(req, res, result.code, type, result.etag, result.map)
         }
       }
