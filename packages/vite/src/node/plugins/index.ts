@@ -1,4 +1,5 @@
-import { Plugin, ResolvedConfig } from '..'
+import { ResolvedConfig } from '../config'
+import { Plugin } from '../plugin'
 import aliasPlugin from '@rollup/plugin-alias'
 import jsonPlugin from '@rollup/plugin-json'
 import { resolvePlugin } from './resolve'
@@ -22,7 +23,10 @@ export function resolvePlugins(
     htmlPlugin(),
     cssPlugin(config),
     esbuildPlugin(config.esbuild || {}),
-    jsonPlugin(),
+    jsonPlugin({
+      preferConst: true,
+      namedExports: true
+    }),
     assetPlugin(config),
     ...normalPlugins,
     ...postPlugins,

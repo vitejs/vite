@@ -99,6 +99,10 @@ export function esbuildPlugin(options?: TransformOptions): Plugin {
           map: result.map
         }
       }
+    },
+
+    async closeBundle() {
+      await stopService()
     }
   }
 }

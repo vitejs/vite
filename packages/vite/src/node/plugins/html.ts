@@ -1,6 +1,6 @@
 import fs from 'fs'
 import { Plugin } from '../plugin'
-import { ViteDevServer } from '..'
+import { ViteDevServer } from '../server'
 import { OutputBundle } from 'rollup'
 import { cleanUrl } from '../utils'
 

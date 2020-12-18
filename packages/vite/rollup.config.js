@@ -78,7 +78,13 @@ const nodeConfig = {
       'utf-8-validate': 1
     }),
     commonjs(),
-    json()
+    json(),
+    {
+      name: 'inspect',
+      generateBundle(_, output) {
+        debugger
+      }
+    }
   ],
   treeshake: {
     moduleSideEffects: 'no-external',
@@ -87,22 +93,12 @@ const nodeConfig = {
   },
   output: {
     dir: path.resolve(__dirname, 'dist/node'),
-    entryFileNames(chunk) {
-      if (chunk.name === 'server') {
-        return `server/index.js`
-      }
-      return `[name].js`
-    },
-    chunkFileNames: 'chunks/[name].js',
+    entryFileNames: `[name].js`,
+    chunkFileNames: 'chunks/dep-[hash].js',
     exports: 'named',
     format: 'cjs',
     externalLiveBindings: false,
-    freeze: false,
-    manualChunks(id) {
-      if (id.includes('node_modules')) {
-        return 'deps'
-      }
-    }
+    freeze: false
   },
   onwarn(warning, warn) {
     // node-resolve complains a lot about this but seems to still work?
