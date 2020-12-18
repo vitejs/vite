@@ -1,14 +1,7 @@
-import hash from 'hash-sum'
-import path from 'path'
 import qs from 'querystring'
-import {
-  parse,
-  rewriteDefault,
-  SFCBlock,
-  SFCDescriptor
-} from '@vue/compiler-sfc'
+import { rewriteDefault, SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
 import { ResolvedOptions } from '.'
-import { getPrevDescriptor, setDescriptor } from './utils/descriptorCache'
+import { createDescriptor, getPrevDescriptor } from './utils/descriptorCache'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
@@ -26,22 +19,12 @@ export async function transformMain(
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
-  const { descriptor, errors } = parse(code, {
-    sourceMap: true,
-    filename
-  })
-
-  // set the id on the descriptor
-  const shortFilePath = path
-    .relative(root, filename)
-    .replace(/^(\.\.[\/\\])+/, '')
-    .replace(/\\/g, '/')
-
-  descriptor.id = hash(
-    isProduction ? shortFilePath + '\n' + code : shortFilePath
+  const { descriptor, errors } = createDescriptor(
+    filename,
+    code,
+    root,
+    isProduction
   )
-
-  setDescriptor(filename, descriptor)
 
   if (errors.length) {
     errors.forEach((error) =>
@@ -100,13 +83,9 @@ export async function transformMain(
       `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
     )
   }
-  if (!isProduction) {
-    output.push(`_sfc_main.__file = ${JSON.stringify(shortFilePath)}`)
-  } else if (devServer) {
+  if (devServer) {
     // expose filename during serve for devtools to pickup
-    output.push(
-      `_sfc_main.__file = ${JSON.stringify(path.basename(shortFilePath))}`
-    )
+    output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }
   output.push('export default _sfc_main')
 

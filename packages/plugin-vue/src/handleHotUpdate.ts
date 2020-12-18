@@ -1,13 +1,13 @@
 import fs from 'fs'
 import _debug from 'debug'
-import { parse, SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
+import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
 import {
+  createDescriptor,
   getDescriptor,
-  setDescriptor,
   setPrevDescriptor
 } from './utils/descriptorCache'
 import { getResolvedScript, setResolvedScript } from './script'
-import { ModuleNode } from 'vite'
+import { ModuleNode, ViteDevServer } from 'vite'
 
 const debug = _debug('vite:hmr')
 
@@ -16,7 +16,8 @@ const debug = _debug('vite:hmr')
  */
 export async function handleHotUpdate(
   file: string,
-  modules: ModuleNode[]
+  modules: ModuleNode[],
+  server: ViteDevServer
 ): Promise<ModuleNode[] | void> {
   if (!file.endsWith('.vue')) {
     return
@@ -34,12 +35,13 @@ export async function handleHotUpdate(
     content = fs.readFileSync(file, 'utf-8')
   }
 
-  const { descriptor } = parse(content, {
-    filename: file,
-    sourceMap: true
-  })
-  setDescriptor(file, descriptor)
   setPrevDescriptor(file, prevDescriptor)
+  const { descriptor } = createDescriptor(
+    file,
+    content,
+    server.config.root,
+    false
+  )
 
   let needRerender = false
   const affectedModules = new Set<ModuleNode | undefined>()
