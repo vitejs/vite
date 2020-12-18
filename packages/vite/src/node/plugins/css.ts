@@ -1,6 +1,5 @@
 import { createDebugger, isExternalUrl, asyncReplace } from '../utils'
 import path from 'path'
-import fs, { promises as fsp } from 'fs'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
@@ -30,17 +29,14 @@ export interface CSSModulesOptions {
   localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
 }
 
-export const cssPreprocessLangRE = /\.(css|less|sass|scss|styl|stylus|postcss)($|\?)/
+const cssLangRE = /\.(css|less|sass|scss|styl|stylus|postcss)($|\?)/
+const cssImportRE = /[\?&]import($|&)/
 
 export const isCSSRequest = (request: string) =>
-  cssPreprocessLangRE.test(request)
+  cssLangRE.test(request) && !cssImportRE.test(request)
 
-export const isCSSProxy = (id: string) => isCSSRequest(id.slice(0, -3))
-
-export const unwrapCSSProxy = (id: string) => {
-  const unwrapped = id.slice(0, -3)
-  return isCSSRequest(unwrapped) ? unwrapped : id
-}
+export const isCSSProxy = (request: string) =>
+  cssLangRE.test(request) && cssImportRE.test(request)
 
 const cssModulesCache = new Map<string, Record<string, string>>()
 
@@ -54,21 +50,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       server = _server
     },
 
-    // server only - this loads *.css.js requests which are a result
-    // of import rewriting in ./rewrite.ts
-    async load(id) {
-      if (isCSSRequest((id = id.slice(0, -3))) && fs.existsSync(id)) {
-        return fsp.readFile(id, 'utf-8')
-      }
-    },
-
     async transform(raw, id) {
-      const isRawRequest = isCSSRequest(id)
-      const isProxyRequest = isCSSProxy(id)
-
-      if (!isProxyRequest && !isRawRequest) {
+      if (!cssLangRE.test(id)) {
         return
       }
+      const isProxyRequest = cssImportRE.test(id)
 
       let { code: css, modules, deps } = await compileCSS(id, raw, config)
       if (modules) {
@@ -127,13 +113,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-post',
     transform(css, id) {
-      const isRawRequest = isCSSRequest(id)
-      const isProxyRequest = isCSSProxy(id)
-
-      if (!isProxyRequest && !isRawRequest) {
+      if (!cssLangRE.test(id)) {
         return
       }
-
+      const isProxyRequest = cssImportRE.test(id)
       const modules = cssModulesCache.get(id)
       const modulesCode = modules && dataToEsm(modules, { namedExports: true })
 
@@ -172,16 +155,14 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  id = unwrapCSSProxy(id)
   const { modules: modulesOptions, preprocessorOptions } = config.css || {}
   const isModule =
-    modulesOptions !== false &&
-    id.replace(cssPreprocessLangRE, '').endsWith('.module')
+    modulesOptions !== false && id.replace(cssLangRE, '').endsWith('.module')
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const postcssConfig = await loadPostcssConfig(config.root)
-  const lang = id.match(cssPreprocessLangRE)?.[1]
+  const lang = id.match(cssLangRE)?.[1]
 
   // 1. plain css that needs no processing
   if (lang === 'css' && !postcssConfig && !isModule && !needInlineImport) {
