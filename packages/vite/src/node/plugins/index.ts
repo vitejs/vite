@@ -19,7 +19,7 @@ export function resolvePlugins(
   return [
     aliasPlugin({ entries: config.alias }),
     ...prePlugins,
-    resolvePlugin(config.root),
+    resolvePlugin(config.root, config.command === 'build'),
     htmlPlugin(),
     cssPlugin(config),
     esbuildPlugin(config.esbuild || {}),

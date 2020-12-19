@@ -1,6 +1,6 @@
-import { setupPlaygroundTest } from './setup'
+import { setupTest } from '@vitejs/test-utils'
 
-setupPlaygroundTest()
+setupTest(__dirname)
 
 test('browser should be available', async () => {
   expect(await page.textContent('pre')).toMatch('loaded')

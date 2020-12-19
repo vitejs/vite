@@ -16,7 +16,11 @@ const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true
 })
 
-export function resolvePlugin(root: string, allowUrls = true): Plugin {
+export function resolvePlugin(
+  root: string,
+  isBuild: boolean,
+  allowUrls = true
+): Plugin {
   return {
     name: 'vite:resolve',
     resolveId(id, importer) {
@@ -71,6 +75,7 @@ export function resolvePlugin(root: string, allowUrls = true): Plugin {
       return this.resolve(id, importer, {
         skipSelf: true
       }).then((result) => {
+        if (isBuild) return result
         return result || FAILED_RESOLVE
       })
     }

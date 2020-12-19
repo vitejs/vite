@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite --debug",
-    "build": "vite build --debug",
+    "dev": "vite",
+    "build": "vite build",
     "serve": "sirv dist",
     "debug": "node --inspect-brk ../vite/bin/vite.js"
   },

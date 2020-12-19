@@ -3,33 +3,12 @@ import vue from '@vitejs/plugin-vue'
 import reactRefresh from '@vitejs/plugin-react-refresh'
 
 export default defineConfig({
-  plugins: [
-    // reactRefresh,
-    vue()
-  ],
+  plugins: [reactRefresh(), vue()],
   alias: {
     react: '@pika/react/source.development.js',
     'react-dom': '@pika/react-dom/source.development.js'
   },
   define: {
-    __DEV__: true,
-    __VUE_OPTIONS_API__: true,
-    __VUE_PROD_DEVTOOLS__: false
-  },
-  esbuild: {
-    // jsxFactory: 'h',
-    // jsxFragment: 'Fragment'
-  },
-  server: {
-    // proxy: {
-    //   '/api': {
-    //     target: 'http://jsonplaceholder.typicode.com',
-    //     changeOrigin: true,
-    //     rewrite: (path) => path.replace(/^\/api/, '')
-    //   }
-    // }
+    __DEV__: true
   }
-  // optimizeDeps: {
-  //   auto: false
-  // }
 })

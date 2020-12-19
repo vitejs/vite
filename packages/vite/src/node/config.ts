@@ -107,18 +107,19 @@ export type ResolvedConfig = Readonly<
 >
 
 export async function resolveConfig(
-  config: UserConfig,
+  cliConfig: UserConfig,
   command: 'build' | 'serve',
   mode: string,
   configPath?: string | false
 ): Promise<ResolvedConfig> {
+  let config = cliConfig
+
   if (configPath !== false) {
     const loadResult = await loadConfigFromFile(
       {
         mode,
         command
       },
-      config.root ? path.resolve(config.root) : process.cwd(),
       configPath,
       config.logLevel
     )
@@ -226,7 +227,6 @@ export async function resolveConfig(
 
 async function loadConfigFromFile(
   configEnv: ConfigEnv,
-  configRoot: string,
   configPath?: string,
   logLevel?: LogLevel
 ): Promise<{ path: string; config: UserConfig } | null> {
@@ -237,11 +237,11 @@ async function loadConfigFromFile(
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configPath)
   } else {
-    const jsConfigPath = path.resolve(configRoot, 'vite.config.js')
+    const jsConfigPath = path.resolve('vite.config.js')
     if (fs.existsSync(jsConfigPath)) {
       resolvedPath = jsConfigPath
     } else {
-      const tsConfigPath = path.resolve(configRoot, 'vite.config.ts')
+      const tsConfigPath = path.resolve('vite.config.ts')
       if (fs.existsSync(tsConfigPath)) {
         resolvedPath = tsConfigPath
       }
@@ -288,6 +288,7 @@ async function loadConfigFromFile(
           esbuildPlugin({ target: 'es2019' }),
           resolvePlugin(
             path.dirname(resolvedPath),
+            true /* isBuild */,
             false /* disallow url resolves */
           )
         ]

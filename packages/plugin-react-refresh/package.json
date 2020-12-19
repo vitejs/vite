@@ -20,8 +20,5 @@
     "@babel/core": "^7.12.10",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
     "react-refresh": "^0.9.0"
-  },
-  "devDependencies": {
-    "@babel/types": "^7.12.10"
   }
 }

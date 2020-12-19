@@ -1,5 +1,5 @@
 <template>
-  <h2>Vue SFC HMRsfsefefs {{ count }}</h2>
+  <h2>Vue SFC {{ count }}</h2>
   <p>Click the button then edit this message. The count should be preserved.</p>
   <div>filler</div>
   <button @click="count++">count is {{ count }}</button>

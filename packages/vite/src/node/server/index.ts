@@ -297,7 +297,20 @@ export async function createServer(
   app.use(serveStaticMiddleware(path.join(root, 'public')))
 
   // spa fallback
-  app.use(history({ logger: createDebugger('vite:spa-fallback') }))
+  app.use(
+    history({
+      logger: createDebugger('vite:spa-fallback'),
+      // support /dir/ without explicit index.html
+      rewrites: [
+        {
+          from: /\/$/,
+          to({ parsedUrl }: any) {
+            return parsedUrl.pathname + 'index.html'
+          }
+        }
+      ]
+    })
+  )
 
   // run post config hooks
   // This is applied before the html middleware so that user middleware can

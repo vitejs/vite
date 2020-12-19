@@ -23,62 +23,66 @@ export default exports
 
 /**
  * Transform plugin for transforming and injecting per-file refresh code.
- * Note this uses `enforce: 'post'` so that it is applied after the esbuild
- * JSX transform.
  *
- * @type { import('vite').Plugin }
+ * @type { () => import('vite').Plugin }
  */
-module.exports = {
-  name: 'react-refresh',
+module.exports = function reactRefreshPlugin() {
+  /**
+   * @type { import('vite').ResolvedConfig }
+   */
+  let config
 
-  resolveId(id) {
-    if (id === runtimePublicPath) {
-      return runtimeFilePath
-    }
-  },
+  return {
+    name: 'react-refresh',
 
-  load(id) {
-    if (id === runtimeFilePath) {
-      return runtimeCode
-    }
-  },
+    configResolved(_config) {
+      config = _config
+    },
 
-  transform(code, id) {
-    if (
-      // @ts-ignore
-      !this.server ||
-      // @ts-ignore
-      this.server.config.mode === 'production'
-    ) {
-      return
-    }
+    resolveId(id) {
+      if (id === runtimePublicPath) {
+        return id
+      }
+    },
 
-    if (!/\.(t|j)sx?$/.test(id) || id.includes('node_modules')) {
-      return
-    }
+    load(id) {
+      if (id === runtimePublicPath) {
+        return runtimeCode
+      }
+    },
 
-    // plain js files can't use React without importing it
-    if (id.endsWith('.js') && !code.includes('react')) {
-      return
-    }
+    transform(code, id) {
+      if (config.command === 'build' || config.isProduction) {
+        return
+      }
 
-    const isReasonReact = id.endsWith('.bs.js')
-    const result = transformSync(code, {
-      plugins: [
-        require('@babel/plugin-syntax-import-meta'),
-        require('react-refresh/babel')
-      ],
-      ast: !isReasonReact,
-      sourceMaps: true,
-      sourceFileName: id
-    })
+      if (!/\.(t|j)sx?$/.test(id) || id.includes('node_modules')) {
+        return
+      }
 
-    if (!/\$RefreshReg\$\(/.test(result.code)) {
-      // no component detected in the file
-      return code
-    }
+      // plain js/ts files can't use React without importing it, so skip
+      // them whenever possible
+      if (!id.endsWith('x') && !code.includes('react')) {
+        return
+      }
 
-    const header = `
+      const isReasonReact = id.endsWith('.bs.js')
+      const result = transformSync(code, {
+        plugins: [
+          require('@babel/plugin-syntax-import-meta'),
+          [require('react-refresh/babel'), { skipEnvCheck: true }]
+        ],
+        ast: !isReasonReact,
+        sourceMaps: true,
+        sourceFileName: id
+      })
+
+      if (!/\$RefreshReg\$\(/.test(result.code)) {
+        // no component detected in the file
+        return code
+      }
+
+      const header = `
   import RefreshRuntime from "${runtimePublicPath}";
 
   let prevRefreshReg;
@@ -100,7 +104,7 @@ module.exports = {
     window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
   }`.replace(/[\n]+/gm, '')
 
-    const footer = `
+      const footer = `
   if (import.meta.hot) {
     window.$RefreshReg$ = prevRefreshReg;
     window.$RefreshSig$ = prevRefreshSig;
@@ -118,31 +122,32 @@ module.exports = {
     }
   }`
 
-    return {
-      code: `${header}${result.code}${footer}`,
-      map: result.map
-    }
-  },
+      return {
+        code: `${header}${result.code}${footer}`,
+        map: result.map
+      }
+    },
 
-  transformIndexHtml() {
-    return [
-      {
-        tag: 'script',
-        attrs: { type: 'module' },
-        children: `
+    transformIndexHtml() {
+      return [
+        {
+          tag: 'script',
+          attrs: { type: 'module' },
+          children: `
   import RefreshRuntime from "${runtimePublicPath}"
   RefreshRuntime.injectIntoGlobalHook(window)
   window.$RefreshReg$ = () => {}
   window.$RefreshSig$ = () => (type) => type
   window.__vite_plugin_react_preamble_installed__ = true
         `
-      }
-    ]
+        }
+      ]
+    }
   }
 }
 
 /**
- * @param {import('@babel/types').File} ast
+ * @param {import('@babel/core').BabelFileResult['ast']} ast
  */
 function isRefreshBoundary(ast) {
   // Every export must be a React component.

@@ -1,5 +1,10 @@
+const os = require('os')
+const fs = require('fs')
+const path = require('path')
 const NodeEnvironment = require('jest-environment-node')
 const { chromium } = require('playwright-chromium')
+
+const DIR = path.join(os.tmpdir(), 'jest_playwright_global_setup')
 
 module.exports = class PlaywrightEnvironment extends NodeEnvironment {
   constructor(config) {
@@ -8,11 +13,11 @@ module.exports = class PlaywrightEnvironment extends NodeEnvironment {
 
   async setup() {
     await super.setup()
-    const wsEndpoint = process.__BROWSER_SESRVER_ENDPOINT__
+    const wsEndpoint = fs.readFileSync(path.join(DIR, 'wsEndpoint'), 'utf-8')
     if (!wsEndpoint) {
       throw new Error('wsEndpoint not found')
     }
-    const browser = (this.global.__BROWSER__ = await chromium.connect({
+    const browser = (this.browser = await chromium.connect({
       wsEndpoint
     }))
     this.global.page = await browser.newPage()
@@ -28,7 +33,7 @@ module.exports = class PlaywrightEnvironment extends NodeEnvironment {
   }
 
   async teardown() {
+    await this.browser.close()
     await super.teardown()
-    await this.global.__BROWSER__.close()
   }
 }
