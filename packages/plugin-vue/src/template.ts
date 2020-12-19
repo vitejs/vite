@@ -19,7 +19,7 @@ export function transformTemplateAsModule(
   const result = compile(code, descriptor, options, pluginContext)
 
   let returnCode = result.code
-  if (options.devServer) {
+  if (options.devServer && !options.isProduction) {
     returnCode += `\nimport.meta.hot.accept(({ render }) => {
       __VUE_HMR_RUNTIME__.rerender(${JSON.stringify(descriptor.id)}, render)
     })`

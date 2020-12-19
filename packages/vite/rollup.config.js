@@ -78,13 +78,7 @@ const nodeConfig = {
       'utf-8-validate': 1
     }),
     commonjs(),
-    json(),
-    {
-      name: 'inspect',
-      generateBundle(_, output) {
-        debugger
-      }
-    }
+    json()
   ],
   treeshake: {
     moduleSideEffects: 'no-external',
