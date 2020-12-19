@@ -1,0 +1,5 @@
+{
+  "name": "@vitejs/test-utils",
+  "private": true,
+  "main": "setup.ts"
+}

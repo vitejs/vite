@@ -53,7 +53,8 @@ const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string) => dataUrlRE.test(url)
 
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue)($|\?)/
-export const isJSRequest = (url: string) => knownJsSrcRE.test(url)
+export const isJSRequest = (url: string) =>
+  knownJsSrcRE.test(url) || (!path.extname(url) && !url.endsWith('/'))
 
 const importQueryRE = /(\?|&)import(&|$)/
 export const isImportRequest = (url: string) => importQueryRE.test(url)

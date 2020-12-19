@@ -11,7 +11,7 @@ module.exports = {
     'node/no-missing-import': [
       'error',
       {
-        allowModules: ['types'],
+        allowModules: ['types', '@vitejs/test-utils'],
         tryExtensions: ['.ts', '.js']
       }
     ],
@@ -57,6 +57,12 @@ module.exports = {
       files: ['packages/vite/src/node/**'],
       rules: {
         'no-console': ['error']
+      }
+    },
+    {
+      files: ['packages/test-utils/**'],
+      rules: {
+        'node/no-extraneous-import': 'off'
       }
     }
   ]
