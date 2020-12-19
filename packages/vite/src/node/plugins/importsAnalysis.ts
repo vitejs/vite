@@ -187,16 +187,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             url = FILE_PREFIX + slash(resolved.id)
           }
 
-          // ensure extension so we can rely on extension checks in the transform middleware
-          const cleanId = cleanUrl(resolved.id)
-          const resolvedExt = path.extname(cleanId)
-          if (path.extname(cleanUrl(url)) !== resolvedExt) {
-            const [pathname, query] = url.split('?')
-            url = `${pathname}${resolvedExt}${query ? `?${query}` : ``}`
-          }
-
           // mark non-js imports with `?import`
-          if (!isJSRequest(cleanId) || isCSSRequest(url)) {
+          if (!isJSRequest(cleanUrl(resolved.id)) || isCSSRequest(url)) {
             url = injectQuery(url, 'import')
           }
 
