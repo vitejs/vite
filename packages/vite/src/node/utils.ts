@@ -34,7 +34,7 @@ const isWindows = os.platform() === 'win32'
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
-  if (isWindows && VOLUME_RE.test(id)) {
+  if (isWindows) {
     return path.posix.normalize(slash(id.replace(VOLUME_RE, '')))
   }
   return path.posix.normalize(id)
