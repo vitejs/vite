@@ -151,7 +151,6 @@ export class ErrorOverlay extends HTMLElement {
 
   text(selector: string, text: string, linkFiles = false) {
     const el = this.root.querySelector(selector)!
-    if (!el) debugger
     if (!linkFiles) {
       el.textContent = text
     } else {

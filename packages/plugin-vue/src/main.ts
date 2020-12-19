@@ -90,15 +90,15 @@ export async function transformMain(
   output.push('export default _sfc_main')
 
   // HMR
-  if (devServer) {
-    // check if the template is the only thing that changed
-    if (prevDescriptor && isOnlyTemplateChanged(prevDescriptor, descriptor)) {
-      output.push(`export const _rerender_only = true`)
-    }
+  if (devServer && !isProduction) {
     output.push(`_sfc_main.__hmrId = ${JSON.stringify(descriptor.id)}`)
     output.push(
       `__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)`
     )
+    // check if the template is the only thing that changed
+    if (prevDescriptor && isOnlyTemplateChanged(prevDescriptor, descriptor)) {
+      output.push(`export const _rerender_only = true`)
+    }
     output.push(
       `import.meta.hot.accept(({ default: updated, _rerender_only }) => {`,
       `  if (_rerender_only) {`,

@@ -67,6 +67,15 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     handleHotUpdate,
 
+    config(config) {
+      // provide default values for vue runtime esm defines
+      config.define = {
+        __VUE_OPTIONS_API__: true,
+        __VUE_PROD_DEVTOOLS__: false,
+        ...config.define
+      }
+    },
+
     configResolved(config) {
       options = {
         ...options,
