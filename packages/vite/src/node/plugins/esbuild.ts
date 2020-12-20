@@ -11,6 +11,7 @@ import {
 import { createDebugger, generateCodeFrame } from '../utils'
 import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
+import { ResolvedConfig } from '..'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -103,6 +104,23 @@ export function esbuildPlugin(options?: TransformOptions): Plugin {
 
     async closeBundle() {
       await stopService()
+    }
+  }
+}
+
+export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+  return {
+    name: 'vite:esbuild-transpile',
+    async renderChunk(code, chunk) {
+      const target = config.esbuild ? config.esbuild.target : undefined
+      const minify = config.build.minify === 'esbuild'
+      if (!target && !minify) {
+        return null
+      }
+      return transformWithEsbuild(code, chunk.fileName, {
+        target,
+        minify
+      })
     }
   }
 }
