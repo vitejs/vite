@@ -7,6 +7,7 @@ import { buildDefinePlugin } from '../plugins/define'
 import chalk from 'chalk'
 import { buildHtmlPlugin } from '../plugins/html'
 import { createLogger } from '../logger'
+import { buildEsbuildPlugin } from '../plugins/esbuild'
 
 export interface BuildOptions {
   /**
@@ -184,10 +185,9 @@ async function doBuild(
     ...(options.rollupOptions.plugins || []),
     buildHtmlPlugin(config),
     buildDefinePlugin(config),
-    ...(options.minify
-      ? options.minify === 'esbuild'
-        ? [] // TODO
-        : [(await import('rollup-plugin-terser')).terser(options.terserOptions)]
+    buildEsbuildPlugin(config),
+    ...(options.minify && options.minify !== 'esbuild'
+      ? [(await import('rollup-plugin-terser')).terser(options.terserOptions)]
       : []),
     sizeReporPlugin(config)
   ]
