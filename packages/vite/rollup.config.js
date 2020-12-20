@@ -29,57 +29,7 @@ const clientConfig = {
 /**
  * @type { import('rollup').RollupOptions }
  */
-const nodeConfig = {
-  input: {
-    index: path.resolve(__dirname, 'src/node/index.ts'),
-    cli: path.resolve(__dirname, 'src/node/cli.ts'),
-    server: path.resolve(__dirname, 'src/node/server/index.ts'),
-    build: path.resolve(__dirname, 'src/node/build/index.ts')
-  },
-  external: [
-    'fsevents',
-    ...Object.keys(require('./package.json').dependencies)
-  ],
-  plugins: [
-    nodeResolve(),
-    typescript({
-      target: 'es2019',
-      include: ['src/**/*.ts'],
-      esModuleInterop: true,
-      baseUrl: path.resolve(__dirname, 'src/node'),
-      paths: {
-        'types/*': ['../../types/*']
-      }
-    }),
-    // Some deps have try...catch require of optional deps, but rollup will
-    // generate code that force require them upfront for side effects.
-    // Shim them with eval() so rollup can skip these calls.
-    shimDepsPlugin({
-      // chokidar -> fs-events
-      'fsevents-handler.js': {
-        src: `require('fsevents')`,
-        replacement: `eval('require')('fsevents')`
-      },
-      // cac re-assigns module.exports even in its mjs dist
-      [`cac${path.sep}mod.mjs`]: {
-        src: `if (typeof module !== "undefined") {`,
-        replacement: `if (false) {`
-      },
-      // postcss-import -> sugarss
-      'process-content.js': {
-        src: 'require("sugarss")',
-        replacement: `eval('require')('sugarss')`
-      }
-    }),
-    // Optional peer deps of ws. Native deps that are mostly for performance.
-    // Since ws is not that perf critical for us, just ignore these deps.
-    ignoreDepPlugin({
-      bufferutil: 1,
-      'utf-8-validate': 1
-    }),
-    commonjs(),
-    json()
-  ],
+const sharedNodeOptions = {
   treeshake: {
     moduleSideEffects: 'no-external',
     propertyReadSideEffects: false,
@@ -105,6 +55,86 @@ const nodeConfig = {
     }
     warn(warning)
   }
+}
+
+/**
+ * @type { import('rollup').RollupOptions }
+ */
+const nodeConfig = {
+  ...sharedNodeOptions,
+  input: {
+    index: path.resolve(__dirname, 'src/node/index.ts'),
+    cli: path.resolve(__dirname, 'src/node/cli.ts'),
+    server: path.resolve(__dirname, 'src/node/server/index.ts'),
+    build: path.resolve(__dirname, 'src/node/build/index.ts')
+  },
+  external: [
+    'fsevents',
+    ...Object.keys(require('./package.json').dependencies)
+  ],
+  plugins: [
+    nodeResolve(),
+    typescript({
+      target: 'es2019',
+      include: ['src/**/*.ts'],
+      esModuleInterop: true,
+      baseUrl: path.resolve(__dirname, 'src/node'),
+      paths: {
+        'types/*': ['../../types/*']
+      }
+    }),
+    // Some deps have try...catch require of optional deps, but rollup will
+    // generate code that force require them upfront for side effects.
+    // Shim them with eval() so rollup can skip these calls.
+    shimDepsPlugin({
+      'plugins/terser.ts': {
+        src: `require('terser')`,
+        replacement: `require('vite/dist/node/terser')`
+      },
+      // chokidar -> fs-events
+      'fsevents-handler.js': {
+        src: `require('fsevents')`,
+        replacement: `eval('require')('fsevents')`
+      },
+      // cac re-assigns module.exports even in its mjs dist
+      [`cac${path.sep}mod.mjs`]: {
+        src: `if (typeof module !== "undefined") {`,
+        replacement: `if (false) {`
+      },
+      // postcss-import -> sugarss
+      'process-content.js': {
+        src: 'require("sugarss")',
+        replacement: `eval('require')('sugarss')`
+      }
+    }),
+    // Optional peer deps of ws. Native deps that are mostly for performance.
+    // Since ws is not that perf critical for us, just ignore these deps.
+    ignoreDepPlugin({
+      bufferutil: 1,
+      'utf-8-validate': 1
+    }),
+    commonjs(),
+    json()
+  ]
+}
+
+/**
+ * Terser needs to be run inside a worker, so it cannot be part of the main
+ * bundle. We produce a separate bundle for it and shims plugin/terser.ts to
+ * use the production path during build.
+ *
+ * @type { import('rollup').RollupOptions }
+ */
+const terserConfig = {
+  ...sharedNodeOptions,
+  output: {
+    ...sharedNodeOptions.output,
+    exports: 'default'
+  },
+  input: {
+    terser: require.resolve('terser')
+  },
+  plugins: [nodeResolve(), commonjs()]
 }
 
 /**
@@ -168,4 +198,4 @@ function ignoreDepPlugin(ignoredDeps) {
   }
 }
 
-export default [clientConfig, nodeConfig]
+export default [clientConfig, nodeConfig, terserConfig]

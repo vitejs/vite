@@ -273,6 +273,12 @@ export async function createPluginContainer(
             ...numberToPos(this._activeCode, pos)
           }
           err.frame = err.frame || generateCodeFrame(this._activeCode, pos)
+        } else if ((err as any).line && (err as any).column) {
+          err.loc = {
+            file: err.id,
+            line: (err as any).line,
+            column: (err as any).column
+          }
         }
       }
       // error thrown here is caught by the transform middleware and passed on
