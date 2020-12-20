@@ -4,8 +4,8 @@ export * from './config'
 export { createLogger } from './logger'
 
 // additional types
-export { Plugin } from './plugin'
-export { Logger, LogLevel } from './logger'
+export type { Plugin } from './plugin'
+export type { Logger, LogLevel } from './logger'
 export type {
   AliasOptions,
   ResolverFunction,
