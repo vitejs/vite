@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "target": "ES2019",
-    "esModuleInterop": true,
-    "module": "commonjs",
-    "moduleResolution": "node"
-  },
-  "include": ["."]
-}

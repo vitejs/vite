@@ -16,4 +16,9 @@ module.exports = async () => {
 
   fs.mkdirSync(DIR, { recursive: true })
   fs.writeFileSync(path.join(DIR, 'wsEndpoint'), browserServer.wsEndpoint())
+
+  const fixtureDir = path.resolve(__dirname, '../temp')
+  if (fs.existsSync(fixtureDir)) {
+    fs.rmSync(fixtureDir, { recursive: true })
+  }
 }

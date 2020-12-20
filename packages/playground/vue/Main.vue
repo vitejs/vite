@@ -1,4 +1,5 @@
 <template>
+  <h1>Vue SFCs</h1>
   <pre>{{ time }}</pre>
   <Hmr />
   <Env />

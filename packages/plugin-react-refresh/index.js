@@ -27,16 +27,13 @@ export default exports
  * @type { () => import('vite').Plugin }
  */
 module.exports = function reactRefreshPlugin() {
-  /**
-   * @type { import('vite').ResolvedConfig }
-   */
-  let config
+  let shouldSkip = false
 
   return {
     name: 'react-refresh',
 
-    configResolved(_config) {
-      config = _config
+    configResolved(config) {
+      shouldSkip = config.command === 'build' || config.isProduction
     },
 
     resolveId(id) {
@@ -52,7 +49,7 @@ module.exports = function reactRefreshPlugin() {
     },
 
     transform(code, id) {
-      if (config.command === 'build' || config.isProduction) {
+      if (shouldSkip) {
         return
       }
 
@@ -129,6 +126,10 @@ module.exports = function reactRefreshPlugin() {
     },
 
     transformIndexHtml() {
+      if (shouldSkip) {
+        return
+      }
+
       return [
         {
           tag: 'script',
