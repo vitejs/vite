@@ -86,6 +86,7 @@
     "launch-editor-middleware": "^2.2.1",
     "magic-string": "^0.25.7",
     "merge-source-map": "^1.1.0",
+    "okie": "^1.0.0",
     "open": "^7.3.0",
     "open-in-editor": "^2.2.0",
     "postcss-import": "^13.0.0",
@@ -93,12 +94,12 @@
     "postcss-modules": "^4.0.0",
     "resolve": "^1.19.0",
     "rollup-plugin-dynamic-import-variables": "^1.1.0",
-    "rollup-plugin-terser": "^7.0.2",
     "selfsigned": "^1.10.8",
     "sirv": "^1.0.10",
     "slash": "^3.0.0",
     "source-map-support": "^0.5.19",
     "strip-ansi": "^6.0.0",
+    "terser": "^5.5.1",
     "tslib": "^2.0.3",
     "ws": "^7.4.1"
   }

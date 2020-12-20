@@ -1,13 +1,14 @@
 import path from 'path'
 import { resolveConfig, UserConfig } from '../config'
 import Rollup, { Plugin, RollupBuild, RollupOptions } from 'rollup'
-import { Options as RollupTerserOptions } from 'rollup-plugin-terser'
 import { sizeReporPlugin } from '../plugins/size'
 import { buildDefinePlugin } from '../plugins/define'
 import chalk from 'chalk'
 import { buildHtmlPlugin } from '../plugins/html'
 import { createLogger } from '../logger'
 import { buildEsbuildPlugin } from '../plugins/esbuild'
+import { terserPlugin } from '../plugins/terser'
+import { Terser } from 'types/terser'
 
 export interface BuildOptions {
   /**
@@ -61,7 +62,7 @@ export interface BuildOptions {
    * The option for `terser`
    * TODO inline the type
    */
-  terserOptions?: RollupTerserOptions
+  terserOptions?: Terser.MinifyOptions
   /**
    * Build for server-side rendering, only as a CLI flag
    * for programmatic usage, use `ssrBuild` directly.
@@ -187,7 +188,7 @@ async function doBuild(
     buildDefinePlugin(config),
     buildEsbuildPlugin(config),
     ...(options.minify && options.minify !== 'esbuild'
-      ? [(await import('rollup-plugin-terser')).terser(options.terserOptions)]
+      ? [terserPlugin(options.terserOptions)]
       : []),
     sizeReporPlugin(config)
   ]
