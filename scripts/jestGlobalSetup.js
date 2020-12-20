@@ -1,5 +1,5 @@
 const os = require('os')
-const fs = require('fs')
+const fs = require('fs-extra')
 const path = require('path')
 const { chromium } = require('playwright-chromium')
 
@@ -14,11 +14,7 @@ module.exports = async () => {
 
   global.__BROWSER_SERVER__ = browserServer
 
-  fs.mkdirSync(DIR, { recursive: true })
-  fs.writeFileSync(path.join(DIR, 'wsEndpoint'), browserServer.wsEndpoint())
-
-  const fixtureDir = path.resolve(__dirname, '../temp')
-  if (fs.existsSync(fixtureDir)) {
-    fs.rmSync(fixtureDir, { recursive: true })
-  }
+  await fs.mkdirp(DIR)
+  await fs.writeFile(path.join(DIR, 'wsEndpoint'), browserServer.wsEndpoint())
+  await fs.remove(path.resolve(__dirname, '../temp'))
 }
