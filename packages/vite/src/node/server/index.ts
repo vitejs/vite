@@ -382,19 +382,21 @@ async function startServer(
   const info = server.logger.info
 
   return new Promise((resolve, reject) => {
-    httpServer.on('error', (e: Error & { code?: string }) => {
+    const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
         info(`Port ${port} is in use, trying another one...`)
-        setTimeout(() => {
-          httpServer.close()
-          httpServer.listen(++port)
-        }, 100)
+        httpServer.listen(++port)
       } else {
+        httpServer.removeListener('error', onError)
         reject(e)
       }
-    })
+    }
+
+    httpServer.on('error', onError)
 
     httpServer.listen(port, () => {
+      httpServer.removeListener('error', onError)
+
       info(`\n  Dev server running at:\n`)
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>

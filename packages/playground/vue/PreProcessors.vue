@@ -1,6 +1,6 @@
 <template lang="pug">
-h2 Pre-Processors
-p(id).pug
+h2.pre-processors Pre-Processors
+p.pug
   | This is rendered from &lt;template lang="pug"&gt;
   | and styled with &lt;style lang="sass"&gt;. It should be megenta.
 p.pug-less
@@ -17,9 +17,9 @@ $color: magenta;
 </style>
 
 <style lang="less" scoped>
-@preprocess-custom-color: green;
+@color: green;
 
 .pug-less {
-  color: @preprocess-custom-color;
+  color: @color;
 }
 </style>

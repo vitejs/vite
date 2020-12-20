@@ -246,7 +246,7 @@ export interface IndexHtmlTransformContext {
 export type IndexHtmlTransformHook = (
   html: string,
   ctx: IndexHtmlTransformContext
-) => IndexHtmlTransformResult | Promise<IndexHtmlTransformResult>
+) => IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
 
 export type IndexHtmlTransform =
   | IndexHtmlTransformHook
@@ -296,7 +296,9 @@ export async function applyHtmlTransforms(
 
   for (const hook of hooks) {
     const res = await hook(html, ctx)
-    if (typeof res === 'string') {
+    if (!res) {
+      continue
+    } else if (typeof res === 'string') {
       html = res
     } else {
       let tags

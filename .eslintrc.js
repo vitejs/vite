@@ -11,7 +11,7 @@ module.exports = {
     'node/no-missing-import': [
       'error',
       {
-        allowModules: ['types', '@vitejs/test-utils'],
+        allowModules: ['types', 'testUtils'],
         tryExtensions: ['.ts', '.js']
       }
     ],
@@ -60,9 +60,10 @@ module.exports = {
       }
     },
     {
-      files: ['packages/test-utils/**'],
+      files: ['packages/playground/**'],
       rules: {
-        'node/no-extraneous-import': 'off'
+        'node/no-extraneous-import': 'off',
+        'node/no-extraneous-require': 'off'
       }
     }
   ]

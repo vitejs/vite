@@ -16,12 +16,12 @@
     "vue": "^3.0.4"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^1.0.0",
     "@vitejs/plugin-react-refresh": "^1.0.0",
+    "@vitejs/plugin-vue": "^1.0.0",
+    "css-color-names": "^1.0.1",
     "less": "^3.13.0",
     "pug": "^3.0.0",
     "rollup-plugin-vue": "^6.0.0",
-    "sass": "^1.30.0",
-    "sirv-cli": "^1.0.9"
+    "sass": "^1.30.0"
   }
 }

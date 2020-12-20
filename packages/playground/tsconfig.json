@@ -1,11 +1,10 @@
 {
+  "include": ["."],
   "exclude": ["**/dist/**"],
   "compilerOptions": {
+    "outDir": "dist",
     "allowJs": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
-    "paths": {
-      "@vitejs/test-utils": ["../test-utils/setup.ts"]
-    }
+    "baseUrl": "."
   }
 }
