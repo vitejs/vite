@@ -1,5 +1,6 @@
 // @ts-check
 import path from 'path'
+import slash from 'slash'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -97,7 +98,7 @@ const nodeConfig = {
         replacement: `eval('require')('fsevents')`
       },
       // cac re-assigns module.exports even in its mjs dist
-      [`cac${path.sep}mod.mjs`]: {
+      'cac/mod.mjs': {
         src: `if (typeof module !== "undefined") {`,
         replacement: `if (false) {`
       },
@@ -147,7 +148,7 @@ function shimDepsPlugin(deps) {
     name: 'shim-deps',
     transform(code, id) {
       for (const file in deps) {
-        if (id.endsWith(file)) {
+        if (slash(id).endsWith(file)) {
           const { src, replacement } = deps[file]
           const pos = code.indexOf(src)
           if (pos < 0) {
