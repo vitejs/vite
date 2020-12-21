@@ -188,7 +188,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // mark non-js imports with `?import`
-          if (!isJSRequest(cleanUrl(resolved.id)) || isCSSRequest(url)) {
+          if (!isJSRequest(cleanUrl(url)) || isCSSRequest(url)) {
             url = injectQuery(url, 'import')
           }
 

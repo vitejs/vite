@@ -48,19 +48,21 @@ export function indexHtmlMiddleware(
       req.headers['sec-fetch-dest'] !== 'script'
     ) {
       const filename = path.join(server.config.root, req.url!.slice(1))
-      try {
-        let html = fs.readFileSync(filename, 'utf-8')
-        // apply transforms
-        html = await applyHtmlTransforms(
-          html,
-          req.url!,
-          filename,
-          [...preHooks, devHtmlHook, ...postHooks],
-          server
-        )
-        return send(req, res, html, 'html')
-      } catch (e) {
-        return next(e)
+      if (fs.existsSync(filename)) {
+        try {
+          let html = fs.readFileSync(filename, 'utf-8')
+          // apply transforms
+          html = await applyHtmlTransforms(
+            html,
+            req.url!,
+            filename,
+            [...preHooks, devHtmlHook, ...postHooks],
+            server
+          )
+          return send(req, res, html, 'html')
+        } catch (e) {
+          return next(e)
+        }
       }
     }
     next()
