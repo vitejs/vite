@@ -4,7 +4,12 @@ import resolve from 'resolve'
 import { Plugin } from '..'
 import chalk from 'chalk'
 import { FILE_PREFIX } from '../constants'
-import { createDebugger, isObject, normalizePath } from '../utils'
+import {
+  createDebugger,
+  isExternalUrl,
+  isObject,
+  normalizePath
+} from '../utils'
 
 export const FAILED_RESOLVE = `__vite_failed_resolve__`
 
@@ -61,6 +66,14 @@ export function resolvePlugin(
       if (path.isAbsolute(id) && (res = tryFsResolve(id))) {
         isDebug && debug(`[fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
         return res
+      }
+
+      // external
+      if (isExternalUrl(id)) {
+        return {
+          id,
+          external: true
+        }
       }
 
       // bare package imports, perform node resolve

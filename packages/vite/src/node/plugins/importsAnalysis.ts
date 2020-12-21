@@ -10,6 +10,7 @@ import {
   cleanUrl,
   createDebugger,
   injectQuery,
+  isExternalUrl,
   isJSRequest,
   prettifyUrl,
   timeFrom
@@ -119,6 +120,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       for (const { s: start, e: end, d: dynamicIndex } of imports) {
         const rawUrl = source.slice(start, end)
         let url = rawUrl
+
+        if (isExternalUrl(url)) {
+          continue
+        }
 
         // check import.meta usage
         if (url === 'import.meta') {
