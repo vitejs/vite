@@ -24,7 +24,7 @@ export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   const {
-    config: { root, logger },
+    config: { root },
     moduleGraph
   } = server
 
@@ -47,18 +47,6 @@ export function transformMiddleware(
           res.statusCode = 404
           return res.end()
         }
-      }
-
-      // warn public usage
-      if (url.startsWith('/public/')) {
-        logger.warn(
-          chalk.yellow(
-            `[vite] files in the public directory are served at the root path.\n` +
-              `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
-                url.replace(/^\/public\//, '/')
-              )}.`
-          )
-        )
       }
 
       // Only apply the transform pipeline to:
