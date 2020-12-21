@@ -261,6 +261,9 @@ export function generateCodeFrame(
 }
 
 export function emptyDir(dir: string) {
+  if (!fs.existsSync(dir)) {
+    return
+  }
   for (const file of fs.readdirSync(dir)) {
     const abs = path.resolve(dir, file)
     // baseline is Node 12 so can't use rmSync :(
