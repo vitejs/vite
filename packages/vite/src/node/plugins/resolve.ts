@@ -11,8 +11,6 @@ import {
   normalizePath
 } from '../utils'
 
-export const FAILED_RESOLVE = `__vite_failed_resolve__`
-
 const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx']
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
@@ -85,19 +83,7 @@ export function resolvePlugin(
       }
 
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
-      return this.resolve(id, importer, {
-        skipSelf: true
-      }).then((result) => {
-        if (isBuild) {
-          if (result) {
-            return result
-          } else {
-            // check if this is a public dir request
-          }
-        } else {
-          return result || FAILED_RESOLVE
-        }
-      })
+      return this.resolve(id, importer, { skipSelf: true })
     }
   }
 }

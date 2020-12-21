@@ -8,7 +8,16 @@ import slash from 'slash'
 import colors from 'css-color-names'
 import { ElementHandle } from 'playwright-chromium'
 
-const isBuildTest = !!process.env.VITE_TEST_BUILD
+export const browserLogs = []
+
+beforeAll(() => {
+  page.on('console', (msg) => {
+    browserLogs.push(msg.text())
+  })
+})
+
+export const isBuild = !!process.env.VITE_TEST_BUILD
+
 const testPath = expect.getState().testPath
 const testName = slash(testPath).match(/playground\/(\w+)\//)?.[1]
 const testDir = path.resolve(__dirname, '../../temp', testName)
@@ -48,8 +57,13 @@ export async function getColor(el: string | ElementHandle) {
   return hexToNameMap[rgbToHex(rgb)] || rgb
 }
 
+export async function getBg(el: string | ElementHandle) {
+  el = await toEl(el)
+  return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
+}
+
 export function editFile(filename: string, replacer: (str: string) => string) {
-  if (isBuildTest) return
+  if (isBuild) return
   filename = path.resolve(testDir, filename)
   const content = fs.readFileSync(filename, 'utf-8')
   const modified = replacer(content)
@@ -63,7 +77,7 @@ export async function untilUpdated(
   poll: () => Promise<string>,
   expected: string
 ) {
-  if (isBuildTest) return
+  if (isBuild) return
   const maxTries = 20
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) || ''

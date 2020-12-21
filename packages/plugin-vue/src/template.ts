@@ -58,7 +58,7 @@ export function compile(
 ) {
   const filename = descriptor.filename
   const result = compileTemplate({
-    ...getTemplateCompilerOptions(descriptor, options)!,
+    ...resolveTemplateCompilerOptions(descriptor, options)!,
     source: code
   })
 
@@ -84,7 +84,7 @@ export function compile(
   return result
 }
 
-export function getTemplateCompilerOptions(
+export function resolveTemplateCompilerOptions(
   descriptor: SFCDescriptor,
   options: ResolvedOptions
 ): Omit<SFCTemplateCompileOptions, 'source'> | undefined {
@@ -97,26 +97,40 @@ export function getTemplateCompilerOptions(
   const { id, filename, cssVars } = descriptor
 
   let transformAssetUrls = options.template?.transformAssetUrls
-  // inject vite base so that @vue/compiler-sfc can transform relative paths
-  // directly to absolute paths without incurring an extra import request
-  if (filename.startsWith(options.root)) {
-    // TODO account for vite base config
-    const base =
-      '/' + slash(path.relative(options.root, path.dirname(filename)))
-    if (transformAssetUrls && typeof transformAssetUrls === 'object') {
-      // presence of array fields means this is raw tags config
-      if (
-        Object.keys(transformAssetUrls).some((key) =>
-          Array.isArray((transformAssetUrls as any)[key])
-        )
-      ) {
-        transformAssetUrls = { base, tags: transformAssetUrls } as any
-      } else {
-        transformAssetUrls = { ...transformAssetUrls, base }
+  let assetUrlOptions
+  if (options.devServer) {
+    // during dev, inject vite base so that @vue/compiler-sfc can transform
+    // relative paths directly to absolute paths without incurring an extra import
+    // request
+    if (filename.startsWith(options.root)) {
+      assetUrlOptions = {
+        base: '/' + slash(path.relative(options.root, path.dirname(filename)))
+      }
+    }
+  } else {
+    // build: force all asset urls into import requests so that they go through
+    // the assets plugin for asset registration
+    assetUrlOptions = {
+      includeAbsolute: true
+    }
+  }
+
+  if (transformAssetUrls && typeof transformAssetUrls === 'object') {
+    // presence of array fields means this is raw tags config
+    if (
+      Object.keys(transformAssetUrls).some((key) =>
+        Array.isArray((transformAssetUrls as any)[key])
+      )
+    ) {
+      transformAssetUrls = {
+        ...assetUrlOptions,
+        tags: transformAssetUrls as any
       }
     } else {
-      transformAssetUrls = { base }
+      transformAssetUrls = { ...transformAssetUrls, ...assetUrlOptions }
     }
+  } else {
+    transformAssetUrls = assetUrlOptions
   }
 
   return {

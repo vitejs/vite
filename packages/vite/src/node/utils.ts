@@ -259,3 +259,30 @@ export function generateCodeFrame(
   }
   return res.join('\n')
 }
+
+export function emptyDir(dir: string) {
+  for (const file of fs.readdirSync(dir)) {
+    const abs = path.resolve(dir, file)
+    // baseline is Node 12 so can't use rmSync :(
+    if (fs.lstatSync(abs).isDirectory()) {
+      emptyDir(abs)
+      fs.rmdirSync(abs)
+    } else {
+      fs.unlinkSync(abs)
+    }
+  }
+}
+
+export function copyDir(srcDir: string, destDir: string) {
+  fs.mkdirSync(destDir, { recursive: true })
+  for (const file of fs.readdirSync(srcDir)) {
+    const srcFile = path.resolve(srcDir, file)
+    const destFile = path.resolve(destDir, file)
+    const stat = fs.statSync(srcFile)
+    if (stat.isDirectory()) {
+      copyDir(srcFile, destFile)
+    } else {
+      fs.copyFileSync(srcFile, destFile)
+    }
+  }
+}

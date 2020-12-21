@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import { resolveConfig, UserConfig } from '../config'
 import Rollup, { Plugin, RollupBuild, RollupOptions } from 'rollup'
@@ -8,6 +9,7 @@ import { buildHtmlPlugin } from '../plugins/html'
 import { buildEsbuildPlugin } from '../plugins/esbuild'
 import { terserPlugin } from '../plugins/terser'
 import { Terser } from 'types/terser'
+import { copyDir, emptyDir } from '../utils'
 
 export interface BuildOptions {
   /**
@@ -59,7 +61,6 @@ export interface BuildOptions {
   minify?: boolean | 'terser' | 'esbuild'
   /**
    * The option for `terser`
-   * TODO inline the type
    */
   terserOptions?: Terser.MinifyOptions
   /**
@@ -178,6 +179,7 @@ async function doBuild(
 
   const input = resolve(options.entry)
   const outDir = resolve(options.outDir)
+  const publicDir = resolve('public')
 
   const plugins = [
     ...(config.plugins as Plugin[]),
@@ -204,6 +206,13 @@ async function doBuild(
 
     paralellBuilds.push(bundle)
 
+    if (options.write) {
+      emptyDir(outDir)
+      if (fs.existsSync(publicDir)) {
+        copyDir(publicDir, outDir)
+      }
+    }
+
     await bundle[options.write ? 'write' : 'generate']({
       dir: outDir,
       format: 'es',
@@ -217,9 +226,16 @@ async function doBuild(
       ...options.rollupOptions.output
     })
   } catch (e) {
-    config.logger.error(chalk.red(`[${e.code}] ${e.message}`))
-    config.logger.error(chalk.cyan(`${e.id}:${e.loc.line}:${e.loc.column}`))
-    config.logger.error(chalk.yellow(e.frame))
+    config.logger.error(
+      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ``}${e.message}`)
+    )
+    if (e.id) {
+      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ``
+      config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
+    }
+    if (e.frame) {
+      config.logger.error(chalk.yellow(e.frame))
+    }
     throw e
   }
 }
