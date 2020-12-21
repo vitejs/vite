@@ -1,0 +1,11 @@
+{
+  "name": "resolve-conditional-exports",
+  "version": "1.0.0",
+  "exports": {
+    ".": {
+      "import": "./main.js",
+      "require": "./cjs.js"
+    },
+    "./deep.js": "./deep.js"
+  }
+}

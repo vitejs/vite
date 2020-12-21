@@ -1,0 +1,68 @@
+<h1>Resolve</h1>
+
+<h2>Deep import</h2>
+<p>Should show [2,4]:<pre class="deep-import">fail</pre></p>
+
+<h2>Entry resolving with exports field</h2>
+<p class="exports-entry">fail</p>
+
+<h2>Deep import with exports field</h2>
+<p class="exports-deep">fail</p>
+
+<h2>Resolve /index.*</h2>
+<p class="index">fail</p>
+
+<h2>Resolve file name containing dot</h2>
+<p class="dot">fail</p>
+
+<h2>Browser Field</h2>
+<p class="browser">fail</p>
+
+<h2>CSS Entry</h2>
+<p class="css"></p>
+
+<script type="module">
+  function text(selector, text) {
+    document.querySelector(selector).textContent = text
+  }
+
+  // deep import
+  import slicedToArray from '@babel/runtime/helpers/esm/slicedToArray'
+
+  const iterable = (function* () {
+    yield 2
+    yield 4
+    yield 6
+    yield 8
+  })()
+
+  text('.deep-import', JSON.stringify(
+    slicedToArray(iterable, 2)
+  ))
+
+  // exports field
+  import { msg } from 'resolve-conditional-exports'
+  text('.exports-entry', msg)
+
+  // deep import w/ exports
+  import { msg as deepMsg } from 'resolve-conditional-exports/deep.js'
+  text('.exports-deep', deepMsg)
+
+  // implicit index resolving
+  import { foo } from './util'
+  text('.index', foo())
+
+  // filename with dot
+  import { bar } from './util/bar.util'
+  text('.dot', bar())
+
+  // browser field
+  import value from 'resolve-browser-field'
+  text('.browser', value)
+
+  // css entry
+  import css from 'normalize.css'
+  if (typeof css === 'string') {
+    text('.css', '[success] resolve package with css entry file')
+  }
+</script>

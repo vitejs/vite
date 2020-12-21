@@ -13,15 +13,18 @@
     "@pika/react-dom": "^16.13.1",
     "lodash-es": "^4.17.15",
     "preact": "^10.5.7",
-    "vue": "^3.0.4"
+    "vue": "^3.0.4",
+    "resolve-conditional-exports": "link:./resolve/conditional-exports",
+    "resolve-browser-field": "link:./resolve/browser-field"
   },
   "devDependencies": {
+    "@babel/runtime": "^7.12.5",
     "@vitejs/plugin-react-refresh": "^1.0.0",
     "@vitejs/plugin-vue": "^1.0.0",
     "css-color-names": "^1.0.1",
     "less": "^3.13.0",
+    "normalize.css": "^8.0.1",
     "pug": "^3.0.0",
-    "rollup-plugin-vue": "^6.0.0",
     "sass": "^1.30.0"
   }
 }
