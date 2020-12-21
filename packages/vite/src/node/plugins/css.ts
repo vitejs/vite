@@ -17,7 +17,7 @@ import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
 import { injectAssetRE } from './asset'
 import slash from 'slash'
-import { createLogger, Logger } from '../logger'
+import { Logger } from '../logger'
 
 // const debug = createDebugger('vite:css')
 
@@ -115,7 +115,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   let staticCss = ''
   const styles = new Map<string, string>()
   const emptyChunks = new Set<string>()
-  const logger = createLogger(config.logLevel)
 
   return {
     name: 'vite:css-post',
@@ -201,7 +200,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
         if (chunk.isDynamicEntry && chunkCSS) {
-          chunkCSS = await minifyCSS(chunkCSS, logger)
+          chunkCSS = await minifyCSS(chunkCSS, config.logger)
           code =
             `let ${cssInjectionMarker} = document.createElement('style');` +
             `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
@@ -223,7 +222,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     async generateBundle(_options, bundle) {
       // minify css
       if (config.build.minify && staticCss) {
-        staticCss = await minifyCSS(staticCss, logger)
+        staticCss = await minifyCSS(staticCss, config.logger)
       }
 
       // remove empty css chunks and their imports
@@ -607,15 +606,16 @@ async function minifyCSS(css: string, logger: Logger) {
   const res = new CleanCSS({ level: 2, rebase: false }).minify(css)
 
   if (res.errors && res.errors.length) {
-    logger.error(chalk.red(`[vite] error when minifying css:`))
-    logger.error(res.errors)
+    logger.error(chalk.red(`[vite] error when minifying css:\n`), res.errors)
     // TODO format this
     throw res.errors[0]
   }
 
   if (res.warnings && res.warnings.length) {
-    logger.warn(chalk.yellow(`[vite] warnings when minifying css:`))
-    logger.warn(res.warnings)
+    logger.warn(
+      chalk.yellow(`[vite] warnings when minifying css:\n`),
+      res.warnings
+    )
   }
 
   return res.styles

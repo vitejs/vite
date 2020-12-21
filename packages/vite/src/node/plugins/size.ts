@@ -3,7 +3,6 @@ import chalk from 'chalk'
 import { Plugin } from 'rollup'
 import { ResolvedConfig } from '../config'
 import { sync as brotliSizeSync } from 'brotli-size'
-import { createLogger } from '../logger'
 
 const enum WriteType {
   JS,
@@ -22,7 +21,6 @@ const writeColors = {
 }
 
 export function sizeReporPlugin(config: ResolvedConfig): Plugin {
-  const logger = createLogger(config.logLevel)
   const options = config.build
 
   function printFileInfo(
@@ -41,7 +39,7 @@ export function sizeReporPlugin(config: ResolvedConfig): Plugin {
         ).toFixed(2)}kb`
       : ``
 
-    logger.info(
+    config.logger.info(
       `${chalk.gray(`[write]`)} ${writeColors[type](
         path.relative(process.cwd(), filePath)
       )} ${(content.length / 1024).toFixed(2)}kb${compressed}`

@@ -40,7 +40,7 @@ import {
   EsbuildTransformResult
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import { createLogger, Logger } from '../logger'
+import { createLogger } from '../logger'
 
 export interface ServerOptions {
   host?: string
@@ -177,10 +177,6 @@ export interface ViteDevServer {
    * Stop the server.
    */
   close(): Promise<void>
-  /**
-   * Logger that respects the logLevel option
-   */
-  logger: Logger
 }
 
 export async function createServer(
@@ -228,7 +224,6 @@ export async function createServer(
 
   const server: ViteDevServer = {
     config: resolvedConfig,
-    logger,
     app,
     httpServer,
     watcher,
@@ -379,7 +374,7 @@ async function startServer(
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
   const httpServer = server.httpServer
-  const info = server.logger.info
+  const info = server.config.logger.info
 
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
@@ -449,7 +444,7 @@ async function startServer(
         openBrowser(
           `${protocol}://${hostname}:${port}`,
           options.open,
-          server.logger
+          server.config.logger
         )
       }
 

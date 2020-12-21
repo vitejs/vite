@@ -10,6 +10,7 @@ import {
   removeTimestampQuery,
   timeFrom
 } from '../utils'
+import { FAILED_RESOLVE } from '../plugins/resolve'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -38,8 +39,11 @@ export async function transformRequest(
 
   // resolve
   const id = (await pluginContainer.resolveId(url)).id
-  const file = cleanUrl(id)
+  if (id === FAILED_RESOLVE) {
+    return null
+  }
 
+  const file = cleanUrl(id)
   let code = null
   let map: SourceDescription['map'] = null
 
