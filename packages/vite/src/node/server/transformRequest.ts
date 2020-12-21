@@ -10,7 +10,7 @@ import {
   removeTimestampQuery,
   timeFrom
 } from '../utils'
-import { FAILED_RESOLVE } from '../plugins/resolve'
+import { isPublicFile } from '../plugins/asset'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -39,11 +39,8 @@ export async function transformRequest(
 
   // resolve
   const id = (await pluginContainer.resolveId(url)).id
-  if (id === FAILED_RESOLVE) {
-    return null
-  }
-
   const file = cleanUrl(id)
+
   let code = null
   let map: SourceDescription['map'] = null
 
@@ -72,8 +69,11 @@ export async function transformRequest(
     }
   }
   if (code == null) {
-    isDebug && debugLoad(`${chalk.red.bold(`[fail]`)} ${chalk.yellow(id)}`)
-    return null
+    // try to see if this is an attempt of importing from the public dir
+    const reason = isPublicFile(file, root)
+      ? 'Non-asset files in /public cannot be imported.'
+      : 'Does the file exist?'
+    throw new Error(`Failed to load url ${url}. ${reason}`)
   }
 
   // ensure module in graph after successful load

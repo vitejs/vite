@@ -44,7 +44,9 @@
   },
   "//": "READ .github/maintenance.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
+    "@types/mime": "^2.0.3",
     "esbuild": "^0.8.20",
+    "mime": "^2.4.7",
     "postcss": "^8.2.1",
     "rollup": "^2.35.1"
   },

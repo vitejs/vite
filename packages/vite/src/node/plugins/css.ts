@@ -2,7 +2,8 @@ import {
   // createDebugger,
   isExternalUrl,
   asyncReplace,
-  isImportRequest
+  isImportRequest,
+  cleanUrl
 } from '../utils'
 import path from 'path'
 import { Plugin } from '../plugin'
@@ -15,8 +16,7 @@ import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
 import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
-import { injectAssetRE } from './asset'
-import slash from 'slash'
+import { assetUrlRE, isPublicFile, registerBuildAsset } from './asset'
 import { Logger } from '../logger'
 
 // const debug = createDebugger('vite:css')
@@ -97,8 +97,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // rewrite urls based on BASE_URL
         css = await rewriteCssUrls(css, thisModule.url)
       } else {
-        // TODO if build, analyze url() asset reference
-        // TODO account for comments https://github.com/vitejs/vite/issues/426
+        // if build, analyze url() asset reference
+        // account for comments https://github.com/vitejs/vite/issues/426
+        css = css.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1')
+        if (cssUrlRE.test(css)) {
+          css = await rewriteCssUrls(css, (rawUrl) => {
+            const file = rawUrl.startsWith('/')
+              ? isPublicFile(rawUrl, config.root) ||
+                path.join(config.root, rawUrl)
+              : path.join(path.dirname(id), rawUrl)
+            return registerBuildAsset(cleanUrl(file), config, this)
+          })
+        }
       }
       return css
     }
@@ -148,8 +158,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // build CSS handling ----------------------------------------------------
 
-      // TODO process url() asset references
-
       // record css
       styles.set(id, css)
 
@@ -183,13 +191,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      let match
-      while ((match = injectAssetRE.exec(chunkCSS))) {
-        const outputFilepath =
-          config.build.base +
-          slash(path.join(config.build.assetsDir, this.getFileName(match[1])))
-        chunkCSS = chunkCSS.replace(match[0], outputFilepath)
-      }
+      // replace asset url references with resolved url
+      chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId) => {
+        return config.build.base + this.getFileName(fileId)
+      })
 
       if (config.build.cssCodeSplit) {
         code = code.replace(cssInjectionRE, '')

@@ -177,6 +177,7 @@ export async function resolveConfig(
   // loaded from `.staging.env` and set by us as VITE_USER_NODE_ENV
   const resolvedMode = process.env.VITE_USER_NODE_ENV || mode
   const isProduction = resolvedMode === 'production'
+  const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   const resolved = {
     ...config,
@@ -188,10 +189,10 @@ export async function resolveConfig(
     alias: resolvedAlias,
     plugins: userPlugins,
     server: config.server || {},
-    build: resolveBuildOptions(config.build),
+    build: resolvedBuildOptions,
     env: {
       ...userEnv,
-      BASE_URL: '/', // TODO
+      BASE_URL: resolvedBuildOptions.base,
       MODE: mode,
       DEV: !isProduction,
       PROD: isProduction

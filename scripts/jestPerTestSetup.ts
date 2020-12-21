@@ -28,6 +28,7 @@ beforeAll(async () => {
       const srcDir = resolve(playgroundRoot, testName)
       tempDir = resolve(__dirname, '../temp', testName)
       await fs.copy(srcDir, tempDir, {
+        dereference: true,
         filter(file) {
           return !file.includes('__tests__')
         }

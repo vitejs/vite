@@ -1,0 +1,42 @@
+<!doctype html>
+
+<link rel="stylesheet" href="/raw.css" />
+
+<h1>Assets</h1>
+<ul>
+  <li class="raw-js"></li>
+  <li class="raw-css">Raw CSS from /public should load (this should be red)</li>
+  <li>Font should be loaded (all text should be italic)</li>
+  <li>Relative asset import from js: <code class="asset-import-relative"></code></li>
+  <li>Absolute asset import from js: <code class="asset-import-absolute"></code></li>
+  <li>/public asset import from js: <code class="public-import"></code></li>
+</ul>
+
+<div class="css-url-absolute">
+  <span style="background: #fff">CSS background (absolute)</span>
+</div>
+<div class="css-url-relative">
+  <span style="background: #fff">CSS background (relative)</span>
+</div>
+<div class="css-url-public">
+  <span style="background: #fff">CSS background (public)</span>
+</div>
+<div class="css-url-data-uri">
+  <span style="background: #fff">CSS background (data URI)</span>
+</div>
+
+<script src="/raw.js"></script>
+
+<script type="module">
+  import './css/fonts.css'
+  import './css/css-url.css'
+
+  import url from './nested/asset.png'
+  document.querySelector('.asset-import-relative').textContent = url
+
+  import absoluteUrl from '/nested/asset.png'
+  document.querySelector('.asset-import-absolute').textContent = absoluteUrl
+
+  import publicUrl from '/icon.png'
+  document.querySelector('.public-import').textContent = publicUrl
+</script>
