@@ -10,7 +10,7 @@ function App() {
           <button onClick={() => setCount(count => count + 1)}>count is: {count}</button>
         </p>
         <p>
-          Edit <code>App.jsx</code> and save to test HMR updates?!@#.
+          Edit <code>App.jsx</code> and save to test HMR updates.
         </p>
         <a
           className="App-link"
