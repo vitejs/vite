@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import readline from 'readline'
 
-type LogType = 'error' | 'warn' | 'info'
+export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
 
 const LogLevels: Record<LogLevel, number> = {
