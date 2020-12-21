@@ -88,8 +88,15 @@ export function resolvePlugin(
       return this.resolve(id, importer, {
         skipSelf: true
       }).then((result) => {
-        if (isBuild) return result
-        return result || FAILED_RESOLVE
+        if (isBuild) {
+          if (result) {
+            return result
+          } else {
+            // check if this is a public dir request
+          }
+        } else {
+          return result || FAILED_RESOLVE
+        }
       })
     }
   }

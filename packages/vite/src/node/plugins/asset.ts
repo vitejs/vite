@@ -6,6 +6,7 @@ import { ResolvedConfig } from '../config'
 import { createDebugger, cleanUrl } from '../utils'
 import { FILE_PREFIX } from '../constants'
 import slash from 'slash'
+import { PluginContext } from 'rollup'
 
 const debug = createDebugger('vite:asset')
 
@@ -48,3 +49,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     }
   }
 }
+
+export function registerAsset(
+  file: string,
+  config: ResolvedConfig,
+  pluginContext: PluginContext
+) {}

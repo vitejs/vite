@@ -21,7 +21,7 @@ import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
 import { resolvePlugin } from './plugins/resolve'
-import { createLogger, LogLevel } from './logger'
+import { createLogger, Logger, LogLevel } from './logger'
 
 const debug = createDebugger('vite:config')
 
@@ -103,6 +103,7 @@ export type ResolvedConfig = Readonly<
     server: ServerOptions
     build: Required<BuildOptions>
     assetsInclude: (file: string) => boolean
+    logger: Logger
   }
 >
 
@@ -188,18 +189,19 @@ export async function resolveConfig(
     plugins: userPlugins,
     server: config.server || {},
     build: resolveBuildOptions(config.build),
-    assetsInclude: (file: string) => {
-      return (
-        DEFAULT_ASSETS_RE.test(file) || config.assetsInclude?.(file) || false
-      )
-    },
     env: {
       ...userEnv,
       BASE_URL: '/', // TODO
       MODE: mode,
       DEV: !isProduction,
       PROD: isProduction
-    }
+    },
+    assetsInclude: (file: string) => {
+      return (
+        DEFAULT_ASSETS_RE.test(file) || config.assetsInclude?.(file) || false
+      )
+    },
+    logger: createLogger(config.logLevel)
   }
 
   resolved.plugins = resolvePlugins(
