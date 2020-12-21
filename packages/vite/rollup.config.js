@@ -98,7 +98,7 @@ const nodeConfig = {
         replacement: `eval('require')('fsevents')`
       },
       // cac re-assigns module.exports even in its mjs dist
-      'cac/mod.mjs': {
+      'cac/dist/index.mjs': {
         src: `if (typeof module !== "undefined") {`,
         replacement: `if (false) {`
       },
