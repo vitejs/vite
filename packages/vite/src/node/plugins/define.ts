@@ -10,6 +10,11 @@ import { isCSSRequest } from './css'
  * to avoid transform cost during dev.
  */
 export function buildDefinePlugin(config: ResolvedConfig): Plugin {
+  const userDefine: Record<string, string> = {}
+  for (const key in config.define) {
+    userDefine[key] = JSON.stringify(config.define[key])
+  }
+
   const individualEnvKeys: Record<string, string> = {}
   for (const key in config.env) {
     individualEnvKeys[`import.meta.env.${key}`] = JSON.stringify(
@@ -18,7 +23,7 @@ export function buildDefinePlugin(config: ResolvedConfig): Plugin {
   }
 
   const replacements: Record<string, string | undefined> = {
-    ...config.define,
+    ...userDefine,
     ...individualEnvKeys,
     'import.meta.env.': `({}).`,
     'import.meta.env': JSON.stringify(config.env),
