@@ -1,3 +1,4 @@
+import os from 'os'
 import fs from 'fs-extra'
 import * as http from 'http'
 import { resolve } from 'path'
@@ -35,8 +36,15 @@ beforeAll(async () => {
 
       const options: UserConfig = {
         root: tempDir,
-        logLevel: 'error'
-      } as const
+        logLevel: 'error',
+        server: {
+          watch: {
+            // on Windows CI, sometimes the file change event doesn't fire when
+            // we edit files too fast
+            usePolling: os.platform() === 'win32'
+          }
+        }
+      }
 
       if (!isBuildTest) {
         server = await (await createServer(options)).listen()
