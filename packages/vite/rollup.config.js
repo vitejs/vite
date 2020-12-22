@@ -5,6 +5,7 @@ import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
+import alias from '@rollup/plugin-alias'
 import MagicString from 'magic-string'
 
 /**
@@ -72,6 +73,13 @@ const nodeConfig = {
     ...Object.keys(require('./package.json').dependencies)
   ],
   plugins: [
+    alias({
+      entries: {
+        '@vue/compiler-dom': require.resolve(
+          '@vue/compiler-dom/dist/compiler-dom.cjs.js'
+        )
+      }
+    }),
     nodeResolve(),
     typescript({
       target: 'es2019',
