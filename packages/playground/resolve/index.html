@@ -21,6 +21,9 @@
 <h2>CSS Entry</h2>
 <p class="css"></p>
 
+<h2>Monorepo linked dep</h2>
+<p class="monorepo"></p>
+
 <script type="module">
   function text(selector, text) {
     document.querySelector(selector).textContent = text
@@ -65,4 +68,8 @@
   if (typeof css === 'string') {
     text('.css', '[success] resolve package with css entry file')
   }
+
+  // monorepo linked dep w/ upper directory import
+  import { msg as linkedMsg } from 'test-resolve-target'
+  text('.monorepo', linkedMsg)
 </script>

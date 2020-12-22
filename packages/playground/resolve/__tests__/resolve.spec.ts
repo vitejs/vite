@@ -25,3 +25,7 @@ test('browser field', async () => {
 test('css entry', async () => {
   expect(await page.textContent('.css')).toMatch('[success]')
 })
+
+test('monorepo linked dep', async () => {
+  expect(await page.textContent('.monorepo')).toMatch('[success]')
+})
