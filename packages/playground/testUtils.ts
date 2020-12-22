@@ -20,7 +20,7 @@ export const isBuild = !!process.env.VITE_TEST_BUILD
 
 const testPath = expect.getState().testPath
 const testName = slash(testPath).match(/playground\/(\w+)\//)?.[1]
-const testDir = path.resolve(__dirname, '../../temp', testName)
+export const testDir = path.resolve(__dirname, '../../temp', testName)
 
 const hexToNameMap: Record<string, string> = {}
 Object.keys(colors).forEach((color) => {

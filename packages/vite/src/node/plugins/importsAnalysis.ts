@@ -29,6 +29,13 @@ const debugRewrite = createDebugger('vite:rewrite')
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
 
+function markExplicitImport(url: string) {
+  if (!isJSRequest(cleanUrl(url)) || isCSSRequest(url)) {
+    return injectQuery(url, 'import')
+  }
+  return url
+}
+
 /**
  * Server-only plugin that lexes, resolves, rewrites and analyzes url imports.
  *
@@ -112,7 +119,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
-      const acceptedUrls = new Set<string>()
+      const acceptedUrls = new Set<{
+        url: string
+        start: number
+        end: number
+      }>()
       const toAbsoluteUrl = (url: string) =>
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
@@ -186,9 +197,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // mark non-js imports with `?import`
-          if (!isJSRequest(cleanUrl(url)) || isCSSRequest(url)) {
-            url = injectQuery(url, 'import')
-          }
+          url = markExplicitImport(url)
 
           const absoluteUrl = toAbsoluteUrl(url)
 
@@ -243,6 +252,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
+      // normalize and rewrite accepted urls
+      const normalizedAcceptedUrls = new Set<string>()
+      acceptedUrls.forEach(({ url, start, end }) => {
+        const normalized = toAbsoluteUrl(markExplicitImport(url))
+        normalizedAcceptedUrls.add(normalized)
+        str().overwrite(start, end, JSON.stringify(normalized))
+      })
+
       // update the module graph for HMR analysis.
       // node CSS imports does its own graph update in the css plugin so we
       // only handle js graph updates here.
@@ -250,7 +267,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
           importedUrls,
-          new Set([...acceptedUrls].map(toAbsoluteUrl)),
+          normalizedAcceptedUrls,
           isSelfAccepting
         )
         if (hasHMR && prunedImports) {

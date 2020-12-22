@@ -1,23 +1,23 @@
 import chalk from 'chalk'
 import path from 'path'
+import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
 import mime from 'mime/lite'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { createDebugger, cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import slash from 'slash'
 import { PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 
 const debug = createDebugger('vite:asset')
 
-export const assetUrlRE = /__VITE_ASSET__(\w+)/g
+export const assetUrlRE = /"__VITE_ASSET__(\w+)(?:__(.*)__)?"/g
 
-export function isPublicFile(file: string, root: string): string | undefined {
+export function isPublicFile(url: string, root: string): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
-  const publicFile = path.posix.join(root, 'public', file)
+  const publicFile = path.posix.join(root, 'public', cleanUrl(url))
   if (fs.existsSync(publicFile)) {
     return publicFile
   } else {
@@ -37,7 +37,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     resolveId(id) {
       // imports to absolute urls pointing to files in /public
       // will fail to resolve in the main resolver. handle them here.
-      const publicFile = isPublicFile(cleanUrl(id), config.root)
+      const publicFile = isPublicFile(id, config.root)
       if (publicFile) {
         publicIdMap.set(id, publicFile)
         return id
@@ -61,27 +61,40 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return `export default ${JSON.stringify(
           await fsp.readFile(file, 'utf-8')
         )}`
-      } else if (publicFile) {
-        // public request, return as-is
-        return `export default ${JSON.stringify(id)}`
-      } else {
-        debug(`[import] ${chalk.dim(file)}`)
-        if (config.command === 'serve') {
-          // return the url of the file relative to served root.
-          const publicPath = id.startsWith(config.root)
-            ? // in project root, infer short public path
-              `/${slash(path.relative(config.root, id))}`
-            : // outside of project root, use absolute fs path
-              // (this is speical handled by the serve static middleware
-              `${FS_PREFIX}${slash(id)}`
-          return `export default ${JSON.stringify(publicPath)}`
+      }
+
+      debug(`[import] ${chalk.dim(file)}`)
+
+      // serve
+      if (config.command === 'serve') {
+        let publicPath
+        if (publicFile) {
+          // in public dir, keep the url as-is
+          publicPath = id
+        } else if (id.startsWith(config.root)) {
+          // in project root, infer short public path
+          publicPath = '/' + path.posix.relative(config.root, id)
         } else {
-          return `export default ${await registerBuildAsset(
-            file,
-            config,
-            this
-          )}`
+          // outside of project root, use absolute fs path
+          // (this is speical handled by the serve static middleware
+          publicPath = FS_PREFIX + id
         }
+        return `export default ${JSON.stringify(publicPath)}`
+      }
+
+      // build
+      if (publicFile) {
+        // in public dir, will be copied over to the same url, but need to
+        // account for base config
+        return `export default ${JSON.stringify(
+          config.build.base + id.slice(1)
+        )}`
+      } else {
+        return `export default ${await registerBuildAssetFromFile(
+          id,
+          config,
+          this
+        )}`
       }
     },
 
@@ -90,11 +103,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let s
       while ((match = assetUrlRE.exec(code))) {
         s = s || (s = new MagicString(code))
-        const fileHandle = match[1]
-        const outputFilepath = config.build.base + this.getFileName(fileHandle)
+        const [full, fileHandle, postfix = ''] = match
+        const outputFilepath =
+          config.build.base + this.getFileName(fileHandle) + postfix
         s.overwrite(
           match.index,
-          match.index + match[0].length,
+          match.index + full.length,
           JSON.stringify(outputFilepath)
         )
       }
@@ -110,34 +124,73 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
+export async function registerBuildAsset(
+  url: string,
+  importer: string,
+  config: ResolvedConfig,
+  pluginContext: PluginContext
+): Promise<string> {
+  if (url.startsWith('/') && isPublicFile(url, config.root)) {
+    return config.build.base + url.slice(1)
+  }
+  const file = url.startsWith('/')
+    ? path.join(config.root, url)
+    : path.join(path.dirname(importer), url)
+  return registerBuildAssetFromFile(file, config, pluginContext)
+}
+
+const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
  */
-export async function registerBuildAsset(
-  file: string,
+async function registerBuildAssetFromFile(
+  id: string,
   config: ResolvedConfig,
   pluginContext: PluginContext
 ): Promise<string> {
+  let cache = assetCache.get(config)
+  if (!cache) {
+    cache = new Map()
+    assetCache.set(config, cache)
+  }
+  const cached = cache.get(id)
+  if (cached) {
+    return cached
+  }
+
+  const file = cleanUrl(id)
+  const { search, hash } = parseUrl(id)
+  const postfix = (search || '') + (hash || '')
+  // TODO preserve fragment hash or queries
   const content = await fsp.readFile(file)
+
+  let url
   if (
     !file.endsWith('.svg') &&
     content.length < Number(config.build.assetsInlineLimit)
   ) {
     // base64 inlined as a string
-    return JSON.stringify(
+    url = JSON.stringify(
       `data:${mime.getType(file)};base64,${content.toString('base64')}`
     )
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
     // that uses runtime url sniffing and it can be verbose when targeting
-    // non-module format. For consistency, let's generate
+    // non-module format. For consistency, generate a marker here and replace
+    // with resolved url strings in renderChunk.
     const fileId = pluginContext.emitFile({
       name: path.basename(file),
       type: 'asset',
       source: content
     })
-    return `__VITE_ASSET__${fileId}`
+    url = JSON.stringify(
+      `__VITE_ASSET__${fileId}${postfix ? `__${postfix}__` : ``}`
+    )
   }
+
+  cache.set(id, url)
+  return url
 }

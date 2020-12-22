@@ -1,4 +1,6 @@
-import { getBg, getColor, browserLogs, isBuild } from '../../testUtils'
+import fs from 'fs'
+import path from 'path'
+import { getBg, getColor, browserLogs, isBuild, testDir } from '../../testUtils'
 
 const assetMatch = isBuild ? /\/assets\/asset\.\w{8}\.png/ : '/nested/asset.png'
 
@@ -47,7 +49,23 @@ test('css absolute url()', async () => {
 })
 
 test('css public url()', async () => {
-  // should be inlined in production
-  const iconMatch = isBuild ? `data:image/png;base64` : `/icon.png`
-  expect(await getBg('.css-url-public')).toMatch(iconMatch)
+  expect(await getBg('.css-url-public')).toMatch(`/icon.png`)
 })
+
+test('css url() base64 inline', async () => {
+  const match = isBuild ? `data:image/png;base64` : `/icon.png`
+  expect(await getBg('.css-url-base64-inline')).toMatch(match)
+})
+
+if (isBuild) {
+  test('css url should preserve postfix query/hash', () => {
+    const assetsDir = path.resolve(testDir, 'dist/assets')
+    const files = fs.readdirSync(assetsDir)
+    const file = files.find((file) => {
+      return /style\.\w+\.css/.test(file)
+    })
+    expect(fs.readFileSync(path.resolve(assetsDir, file), 'utf-8')).toMatch(
+      `woff2?#iefix`
+    )
+  })
+}

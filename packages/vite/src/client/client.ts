@@ -91,6 +91,7 @@ async function handleMessage(payload: HMRPayload) {
               `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
             )
           }
+          console.log(`[vite] css hot updated: ${path}`)
         }
       })
       break
@@ -310,12 +311,8 @@ async function fetchUpdate({ path, accpetedPath, timestamp }: Update) {
     for (const { deps, fn } of qualifiedCallbacks) {
       fn(deps.map((dep) => moduleMap.get(dep)))
     }
-    const updateType = /\.(css|less|sass|scss|styl|stylus|postcss)($|\?)/.test(
-      path.slice(0, -3)
-    )
-      ? 'css'
-      : 'js'
-    console.log(`[vite]: ${updateType} module hot updated: `, path)
+    const loggedPath = isSelfUpdate ? path : `${accpetedPath} via ${path}`
+    console.log(`[vite] hot updated: ${loggedPath}`)
   }
 }
 
@@ -360,11 +357,7 @@ export const createHotContext = (ownerPath: string) => {
       callbacks: []
     }
     mod.callbacks.push({
-      deps: deps.map((dep) => {
-        if (dep == ownerPath) return ownerPath
-        const url = new URL(dep, location.origin + ownerPath)
-        return url.pathname + url.search + url.hash
-      }),
+      deps,
       fn: callback
     })
     hotModulesMap.set(ownerPath, mod)
