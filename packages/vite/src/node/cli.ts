@@ -1,7 +1,7 @@
 import { cac } from 'cac'
 import chalk from 'chalk'
-import { build, BuildOptions } from './build'
-import { createServer, ServerOptions } from './server'
+import { BuildOptions } from './build'
+import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
 
 const cli = cac('vite')
@@ -10,13 +10,17 @@ const cli = cac('vite')
 interface GlobalCLIOptions {
   '--'?: string[]
   debug?: boolean | string
-  filter?: string
   d?: boolean | string
+  filter?: string
+  f?: string
   config?: string
   c?: boolean | string
   root?: string
+  r?: string
   mode?: string
+  m?: string
   logLevel?: LogLevel
+  l?: LogLevel
 }
 
 /**
@@ -28,20 +32,24 @@ function cleanOptions(options: GlobalCLIOptions) {
   delete ret.debug
   delete ret.d
   delete ret.filter
+  delete ret.f
   delete ret.config
   delete ret.c
   delete ret.root
+  delete ret.r
   delete ret.mode
+  delete ret.m
   delete ret.logLevel
+  delete ret.l
   return ret
 }
 
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
-  .option('--root <path>', `[string] use specified config file`)
-  .option('--logLevel <level>', `[string] silent | error | warn | all`)
-  .option('--debug [feat]', `[string | boolean] show debug logs`)
-  .option('--filter [filter]', `[string] filter debug logs`)
+  .option('-r, --root <path>', `[string] use specified config file`)
+  .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
+  .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
+  .option('-f, --filter [filter]', `[string] filter debug logs`)
 
 // dev
 cli
@@ -52,29 +60,30 @@ cli
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
-  .option('--mode <mode>', `[string] set env mode`, {
+  .option('-m, --mode <mode>', `[string] set env mode`, {
     default: 'development'
   })
-  .action((root: string, options: ServerOptions & GlobalCLIOptions) => {
+  .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
     // output structure is preserved even after bundling so require()
     // is ok here
-    const create = require('./server').createServer as typeof createServer
-    create(
-      {
-        root,
-        mode: options.mode,
-        logLevel: options.logLevel,
-        server: cleanOptions(options) as ServerOptions
-      },
-      options.config
-    )
-      .then((server) => server.listen())
-      .catch((e) => {
-        const logError = createLogger(options.logLevel).error
-        logError(chalk.red('[vite] failed to start dev server'))
-        logError(e.stack)
-        process.exit(1)
-      })
+    const { createServer } = await import('./server')
+    try {
+      const server = await createServer(
+        {
+          root,
+          mode: options.mode,
+          logLevel: options.logLevel,
+          server: cleanOptions(options) as ServerOptions
+        },
+        options.config
+      )
+      await server.listen()
+    } catch (e) {
+      const logError = createLogger(options.logLevel).error
+      logError(chalk.red('[vite] failed to start dev server'))
+      logError(e.stack)
+      process.exit(1)
+    }
   })
 
 // build
@@ -104,25 +113,27 @@ cli
     `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
       `or specify minifier to use (default: terser)`
   )
-  .option('--mode <mode>', `[string]  set env mode`, {
+  .option('-m, --mode <mode>', `[string]  set env mode`, {
     default: 'production'
   })
-  .action((root: string, options: BuildOptions & GlobalCLIOptions) => {
-    const runBuild = require('./build').build as typeof build
-    runBuild(
-      {
-        root,
-        mode: options.mode,
-        logLevel: options.logLevel,
-        build: cleanOptions(options) as BuildOptions
-      },
-      options.config
-    ).catch((e) => {
+  .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
+    const { build } = await import('./build')
+    try {
+      await build(
+        {
+          root,
+          mode: options.mode,
+          logLevel: options.logLevel,
+          build: cleanOptions(options) as BuildOptions
+        },
+        options.config
+      )
+    } catch (e) {
       const logError = createLogger(options.logLevel).error
       logError(chalk.red('[vite] build failed.'))
       logError(e.stack)
       process.exit(1)
-    })
+    }
   })
 
 cli.help()

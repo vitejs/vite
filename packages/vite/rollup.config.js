@@ -65,9 +65,7 @@ const nodeConfig = {
   ...sharedNodeOptions,
   input: {
     index: path.resolve(__dirname, 'src/node/index.ts'),
-    cli: path.resolve(__dirname, 'src/node/cli.ts'),
-    server: path.resolve(__dirname, 'src/node/server/index.ts'),
-    build: path.resolve(__dirname, 'src/node/build/index.ts')
+    cli: path.resolve(__dirname, 'src/node/cli.ts')
   },
   external: [
     'fsevents',
