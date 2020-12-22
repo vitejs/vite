@@ -3,7 +3,7 @@ import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
 import { OutputBundle } from 'rollup'
-import { cleanUrl, isExternalUrl, isDataUrl } from '../utils'
+import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
 import { ResolvedConfig } from '../config'
 import slash from 'slash'
 import {
@@ -79,9 +79,27 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         html = await applyHtmlTransforms(html, publicPath, id, preHooks)
         // compile index.html into an entry js module
 
+        function formatError(e: any): Error {
+          // normalize the error to rollup format
+          if (e.loc) {
+            e.frame = generateCodeFrame(html, e.loc.start.offset)
+            e.loc = {
+              file: id,
+              line: e.loc.start.line,
+              column: e.loc.start.column
+            }
+          }
+          return e
+        }
+
         // @vue/compiler-core doesn't like lowercase doctypes
         html = html.replace(/<!doctype\s/i, '<!DOCTYPE ')
-        const ast = parse(html)
+        let ast
+        try {
+          ast = parse(html)
+        } catch (e) {
+          this.error(formatError(e))
+        }
 
         let js = ''
         const s = new MagicString(html)
@@ -169,9 +187,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        transform(ast, {
-          nodeTransforms: [viteHtmlTransform]
-        })
+        try {
+          transform(ast, {
+            nodeTransforms: [viteHtmlTransform]
+          })
+        } catch (e) {
+          this.error(formatError(e))
+        }
 
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location.
