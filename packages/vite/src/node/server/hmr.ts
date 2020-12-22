@@ -190,12 +190,21 @@ const enum LexerState {
 export function lexAcceptedHmrDeps(
   code: string,
   start: number,
-  urls: Set<string>
+  urls: Set<{ url: string; start: number; end: number }>
 ): boolean {
   let state: LexerState = LexerState.inCall
   // the state can only be 2 levels deep so no need for a stack
   let prevState: LexerState = LexerState.inCall
   let currentDep: string = ''
+
+  function addDep(index: number) {
+    urls.add({
+      url: currentDep,
+      start: index - currentDep.length - 1,
+      end: index + 1
+    })
+    currentDep = ''
+  }
 
   for (let i = start; i < code.length; i++) {
     const char = code.charAt(i)
@@ -236,26 +245,39 @@ export function lexAcceptedHmrDeps(
         break
       case LexerState.inSingleQuoteString:
         if (char === `'`) {
-          urls.add(currentDep)
-          currentDep = ''
-          state = prevState
+          addDep(i)
+          if (prevState === LexerState.inCall) {
+            // accept('foo', ...)
+            return false
+          } else {
+            state = prevState
+          }
         } else {
           currentDep += char
         }
         break
       case LexerState.inDoubleQuoteString:
         if (char === `"`) {
-          urls.add(currentDep)
-          state = prevState
+          addDep(i)
+          if (prevState === LexerState.inCall) {
+            // accept('foo', ...)
+            return false
+          } else {
+            state = prevState
+          }
         } else {
           currentDep += char
         }
         break
       case LexerState.inTemplateString:
         if (char === '`') {
-          urls.add(currentDep)
-          currentDep = ''
-          state = prevState
+          addDep(i)
+          if (prevState === LexerState.inCall) {
+            // accept('foo', ...)
+            return false
+          } else {
+            state = prevState
+          }
         } else if (char === '$' && code.charAt(i + 1) === '{') {
           error(i)
         } else {

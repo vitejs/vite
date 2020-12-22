@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <link rel="stylesheet" href="/raw.css" />
 
@@ -7,8 +7,12 @@
   <li class="raw-js"></li>
   <li class="raw-css">Raw CSS from /public should load (this should be red)</li>
   <li>Font should be loaded (all text should be italic)</li>
-  <li>Relative asset import from js: <code class="asset-import-relative"></code></li>
-  <li>Absolute asset import from js: <code class="asset-import-absolute"></code></li>
+  <li>
+    Relative asset import from js: <code class="asset-import-relative"></code>
+  </li>
+  <li>
+    Absolute asset import from js: <code class="asset-import-absolute"></code>
+  </li>
   <li>/public asset import from js: <code class="public-import"></code></li>
 </ul>
 
@@ -23,6 +27,9 @@
 </div>
 <div class="css-url-data-uri">
   <span style="background: #fff">CSS background (data URI)</span>
+</div>
+<div class="css-url-base64-inline">
+  <span style="background: #fff">CSS background (base64 inline in prod)</span>
 </div>
 
 <script src="/raw.js"></script>

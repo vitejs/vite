@@ -1,4 +1,3 @@
-import os from 'os'
 import fs from 'fs-extra'
 import * as http from 'http'
 import { resolve } from 'path'
@@ -39,9 +38,10 @@ beforeAll(async () => {
         logLevel: 'error',
         server: {
           watch: {
-            // on Windows CI, sometimes the file change event doesn't fire when
-            // we edit files too fast
-            usePolling: os.platform() === 'win32'
+            // During tests we edit the files too fast and sometimes chokidar
+            // misses change events, so enforce polling for consistency
+            usePolling: true,
+            interval: 50
           }
         }
       }

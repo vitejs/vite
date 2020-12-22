@@ -15,6 +15,8 @@ import {
   transform
 } from '@vue/compiler-dom'
 import MagicString from 'magic-string'
+import { registerBuildAsset, isPublicFile } from './asset'
+import { isCSSRequest } from './css'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
@@ -64,6 +66,8 @@ const assetAttrsConfig: Record<string, string[]> = {
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
+  const isExcludedUrl = (url: string) =>
+    isExternalUrl(url) || isDataUrl(url) || isPublicFile(url, config.root)
 
   return {
     name: 'vite:build-html',
@@ -83,63 +87,70 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
         const viteHtmlTransform: NodeTransform = (node) => {
-          if (node.type === NodeTypes.ELEMENT) {
-            if (node.tag === 'script') {
-              let shouldRemove = false
+          if (node.type !== NodeTypes.ELEMENT) {
+            return
+          }
 
-              const srcAttr = node.props.find(
-                (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
-              ) as AttributeNode
-              const typeAttr = node.props.find(
-                (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'type'
-              ) as AttributeNode
-              const isJsModule =
-                typeAttr &&
-                typeAttr.value &&
-                typeAttr.value.content === 'module'
+          let shouldRemove = false
 
-              if (isJsModule) {
-                if (srcAttr && srcAttr.value) {
-                  if (!isExternalUrl(srcAttr.value.content)) {
-                    // <script type="module" src="..."/>
-                    // add it as an import
-                    js += `\nimport ${JSON.stringify(srcAttr.value.content)}`
-                    shouldRemove = true
-                  }
-                } else if (node.children.length) {
-                  // <script type="module">...</script>
-                  // add its content
-                  // TODO: if there are multiple inline module scripts on the page,
-                  // they should technically be turned into separate modules, but
-                  // it's hard to imagine any reason for anyone to do that.
-                  js +=
-                    `\n` + (node.children[0] as TextNode).content.trim() + `\n`
+          // script tags
+          if (node.tag === 'script') {
+            const srcAttr = node.props.find(
+              (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
+            ) as AttributeNode
+            const typeAttr = node.props.find(
+              (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'type'
+            ) as AttributeNode
+            const isJsModule =
+              typeAttr && typeAttr.value && typeAttr.value.content === 'module'
+
+            if (isJsModule) {
+              if (srcAttr && srcAttr.value) {
+                const url = srcAttr.value.content
+                if (!isExcludedUrl(url)) {
+                  // <script type="module" src="..."/>
+                  // add it as an import
+                  js += `\nimport ${JSON.stringify(url)}`
                   shouldRemove = true
                 }
-              }
-
-              if (shouldRemove) {
-                // remove the script tag from the html. we are going to inject new
-                // ones in the end.
-                s.remove(node.loc.start.offset, node.loc.end.offset)
+              } else if (node.children.length) {
+                // <script type="module">...</script>
+                // add its content
+                // TODO: if there are multiple inline module scripts on the page,
+                // they should technically be turned into separate modules, but
+                // it's hard to imagine any reason for anyone to do that.
+                js += `\n${(node.children[0] as TextNode).content.trim()}\n`
+                shouldRemove = true
               }
             }
-            // For asset references in index.html, also generate an import
-            // statement for each - this will be handled by the asset plugin
-            const assetAttrs = assetAttrsConfig[node.tag]
-            if (assetAttrs) {
-              for (const p of node.props) {
-                if (
-                  p.type === NodeTypes.ATTRIBUTE &&
-                  p.value &&
-                  assetAttrs.includes(p.name) &&
-                  !isExternalUrl(p.value.content) &&
-                  !isDataUrl(p.value.content)
-                ) {
+          }
+
+          // For asset references in index.html, also generate an import
+          // statement for each - this will be handled by the asset plugin
+          const assetAttrs = assetAttrsConfig[node.tag]
+          if (assetAttrs) {
+            for (const p of node.props) {
+              if (
+                p.type === NodeTypes.ATTRIBUTE &&
+                p.value &&
+                assetAttrs.includes(p.name) &&
+                !isExcludedUrl(p.value.content)
+              ) {
+                if (node.tag === 'link' && isCSSRequest(p.value.content)) {
+                  // CSS references, convert to import
+                  js += `\nimport ${JSON.stringify(p.value.content)}`
+                  shouldRemove = true
+                } else {
                   assetUrls.push(p)
                 }
               }
             }
+          }
+
+          if (shouldRemove) {
+            // remove the script tag from the html. we are going to inject new
+            // ones in the end.
+            s.remove(node.loc.start.offset, node.loc.end.offset)
           }
         }
 
@@ -147,22 +158,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           nodeTransforms: [viteHtmlTransform]
         })
 
-        // TODO for each encountered asset url, rewrite original html so that it
+        // for each encountered asset url, rewrite original html so that it
         // references the post-build location.
-        // for (const attr of assetUrls) {
-        // const value = attr.value!
-        // const { fileName, content, url } = await resolveAsset(
-        //   resolver.requestToFile(value.content),
-        //   root,
-        //   publicBasePath,
-        //   assetsDir,
-        //   cleanUrl(value.content).endsWith('.css') ? 0 : inlineLimit
-        // )
-        // s.overwrite(value.loc.start.offset, value.loc.end.offset, `"${url}"`)
-        // if (fileName && content) {
-        //   assets.set(fileName, content)
-        // }
-        // }
+        for (const attr of assetUrls) {
+          const value = attr.value!
+          const url = await registerBuildAsset(value.content, id, config, this)
+          s.overwrite(
+            value.loc.start.offset,
+            value.loc.end.offset,
+            JSON.stringify(url)
+          )
+        }
 
         // TODO should store the imported entries for each page
         // and inject corresponding assets

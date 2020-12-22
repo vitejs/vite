@@ -1,3 +1,5 @@
+/* eslint no-console: 0 */
+
 import chalk from 'chalk'
 import readline from 'readline'
 
@@ -17,41 +19,35 @@ export interface Logger {
   error(...msgs: any[]): void
 }
 
-const lastMessages: Record<LogType, any[]> = {
-  info: [],
-  warn: [],
-  error: []
-}
-
-const sameCount: Record<LogType, number> = {
-  info: 0,
-  warn: 0,
-  error: 0
-}
+let lastType: LogType | undefined
+let lastMsg: any[] = []
+let sameCount = 0
 
 function sameAsLast(msgs: any[], last: any[]) {
   return msgs.length === last.length && msgs.every((m, i) => m === last[i])
+}
+
+function clearScreen() {
+  const blank = '\n'.repeat(process.stdout.rows)
+  console.log(blank)
+  readline.cursorTo(process.stdout, 0, 0)
+  readline.clearScreenDown(process.stdout)
 }
 
 export function createLogger(level: LogLevel = 'info'): Logger {
   const thresh = LogLevels[level]
 
   function output(type: LogType, msgs: any[]) {
-    const stream = type === 'info' ? process.stdout : process.stderr
     const method = type === 'info' ? 'log' : type
-
     if (thresh >= LogLevels[type]) {
-      if (sameAsLast(msgs, lastMessages[type])) {
-        sameCount[type]++
-        // move to the start of the last message and clear it
-        readline.moveCursor(stream, 0, -msgs.join('').split('\n').length)
-        readline.clearScreenDown(stream)
-        // eslint-disable-next-line no-console
-        console[method](...msgs, chalk.yellow(`(x${sameCount[type]})`))
+      if (type === lastType && sameAsLast(msgs, lastMsg)) {
+        sameCount++
+        clearScreen()
+        console[method](...msgs, chalk.yellow(`(x${sameCount + 1})`))
       } else {
-        sameCount[type] = 0
-        lastMessages[type] = msgs
-        // eslint-disable-next-line no-console
+        sameCount = 0
+        lastMsg = msgs
+        lastType = type
         console[method](...msgs)
       }
     }

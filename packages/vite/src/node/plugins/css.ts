@@ -3,7 +3,9 @@ import {
   isExternalUrl,
   asyncReplace,
   isImportRequest,
-  cleanUrl
+  cleanUrl,
+  generateCodeFrame,
+  isDataUrl
 } from '../utils'
 import path from 'path'
 import { Plugin } from '../plugin'
@@ -16,7 +18,7 @@ import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
 import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
-import { assetUrlRE, isPublicFile, registerBuildAsset } from './asset'
+import { assetUrlRE, registerBuildAsset } from './asset'
 import { Logger } from '../logger'
 
 // const debug = createDebugger('vite:css')
@@ -37,7 +39,9 @@ export interface CSSModulesOptions {
   localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
 }
 
-const cssLangRE = /\.(css|less|sass|scss|styl|stylus|postcss)($|\?)/
+const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
+const cssLangRE = new RegExp(cssLangs)
+const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 
 export const isCSSRequest = (request: string) =>
   cssLangRE.test(request) && !isImportRequest(request)
@@ -85,7 +89,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           moduleGraph.updateModuleInfo(
             thisModule,
             depModules,
-            depModules,
+            // The root CSS proxy module is self-accepting and should not
+            // have an explicit accept list
+            new Set(),
             isSelfAccepting
           )
           for (const file of deps) {
@@ -101,12 +107,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // account for comments https://github.com/vitejs/vite/issues/426
         css = css.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1')
         if (cssUrlRE.test(css)) {
-          css = await rewriteCssUrls(css, (rawUrl) => {
-            const file = rawUrl.startsWith('/')
-              ? isPublicFile(rawUrl, config.root) ||
-                path.join(config.root, rawUrl)
-              : path.join(path.dirname(id), rawUrl)
-            return registerBuildAsset(cleanUrl(file), config, this)
+          css = await rewriteCssUrls(css, (url) => {
+            if (isExternalUrl(url) || isDataUrl(url)) {
+              return url
+            }
+            return registerBuildAsset(url, id, config, this)
           })
         }
       }
@@ -192,8 +197,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       // replace asset url references with resolved url
-      chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId) => {
-        return config.build.base + this.getFileName(fileId)
+      chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId, postfix = '') => {
+        return config.build.base + this.getFileName(fileId) + postfix
       })
 
       if (config.build.cssCodeSplit) {
@@ -271,8 +276,7 @@ async function compileCSS(
   deps?: Set<string>
 }> {
   const { modules: modulesOptions, preprocessorOptions } = config.css || {}
-  const isModule =
-    modulesOptions !== false && id.replace(cssLangRE, '').endsWith('.module')
+  const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
@@ -308,6 +312,8 @@ async function compileCSS(
           ...opts
         }
     }
+    // important: set this for relative import resolving
+    opts.filename = cleanUrl(id)
     const preprocessResult = await preProcessor(code, undefined, opts)
     if (preprocessResult.errors.length) {
       throw preprocessResult.errors[0]
@@ -316,7 +322,12 @@ async function compileCSS(
     code = preprocessResult.code
     map = preprocessResult.map as SourceMap
     if (preprocessResult.deps) {
-      preprocessResult.deps.forEach((dep) => deps.add(dep))
+      preprocessResult.deps.forEach((dep) => {
+        // sometimes sass registers the file itself as a dep
+        if (dep !== opts.filename) {
+          deps.add(dep)
+        }
+      })
     }
   }
 
@@ -366,6 +377,15 @@ async function compileCSS(
   for (const message of postcssResult.messages) {
     if (message.type === 'dependency') {
       deps.add(message.file as string)
+    } else if (message.type === 'warning') {
+      let msg = `[vite:css] ${message.text}`
+      if (message.line && message.column) {
+        msg += `\n${generateCodeFrame(code, {
+          line: message.line,
+          column: message.column
+        })}`
+      }
+      config.logger.warn(chalk.yellow(msg))
     }
   }
 
