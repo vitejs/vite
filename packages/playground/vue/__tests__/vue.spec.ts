@@ -1,4 +1,10 @@
-import { editFile, getColor, untilUpdated } from 'testUtils'
+import {
+  browserLogs,
+  editFile,
+  getColor,
+  isBuild,
+  untilUpdated
+} from 'testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('h1')).toMatch('Vue SFCs')
@@ -8,6 +14,10 @@ test('should update', async () => {
   expect(await page.textContent('.hmr-inc')).toMatch('count is 0')
   await page.click('.hmr-inc')
   expect(await page.textContent('.hmr-inc')).toMatch('count is 1')
+})
+
+test('template/script latest syntax support', async () => {
+  expect(await page.textContent('.syntax')).toBe('baz')
 })
 
 describe('pre-processors', () => {
@@ -37,6 +47,57 @@ describe('pre-processors', () => {
       code.replace('@color: green;', '@color: blue;')
     )
     await untilUpdated(() => getColor(el), 'blue')
+  })
+})
+
+describe('css modules', () => {
+  test('basic', async () => {
+    expect(await getColor('.sfc-css-modules')).toBe('blue')
+    editFile('CssModules.vue', (code) =>
+      code.replace('color: blue;', 'color: red;')
+    )
+    await untilUpdated(() => getColor('.sfc-css-modules'), 'red')
+  })
+
+  test('with preprocessor + name', async () => {
+    expect(await getColor('.sfc-css-modules-with-pre')).toBe('orange')
+    editFile('CssModules.vue', (code) =>
+      code.replace('color: orange;', 'color: blue;')
+    )
+    await untilUpdated(() => getColor('.sfc-css-modules-with-pre'), 'blue')
+  })
+})
+
+describe('template asset reference', () => {
+  const assetMatch = isBuild
+    ? /\/assets\/asset\.\w{8}\.png/
+    : '/assets/asset.png'
+
+  test('should not 404', () => {
+    browserLogs.forEach((msg) => {
+      expect(msg).not.toMatch('404')
+    })
+  })
+
+  test('relative import', async () => {
+    const el = await page.$('img.relative-import')
+    expect(await el.evaluate((el) => (el as HTMLImageElement).src)).toMatch(
+      assetMatch
+    )
+  })
+
+  test('absolute import', async () => {
+    const el = await page.$('img.relative-import')
+    expect(await el.evaluate((el) => (el as HTMLImageElement).src)).toMatch(
+      assetMatch
+    )
+  })
+
+  test('absolute import from public dir', async () => {
+    const el = await page.$('img.public-import')
+    expect(await el.evaluate((el) => (el as HTMLImageElement).src)).toMatch(
+      `/icon.png`
+    )
   })
 })
 

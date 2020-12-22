@@ -33,13 +33,18 @@ function componentToHex(c: number): string {
 }
 
 function rgbToHex(rgb: string): string {
-  const [_, rs, gs, bs] = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
-  return (
-    '#' +
-    componentToHex(parseInt(rs, 10)) +
-    componentToHex(parseInt(gs, 10)) +
-    componentToHex(parseInt(bs, 10))
-  )
+  const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
+  if (match) {
+    const [_, rs, gs, bs] = match
+    return (
+      '#' +
+      componentToHex(parseInt(rs, 10)) +
+      componentToHex(parseInt(gs, 10)) +
+      componentToHex(parseInt(bs, 10))
+    )
+  } else {
+    return '#000000'
+  }
 }
 
 const timeout = (n: number) => new Promise((r) => setTimeout(r, n))

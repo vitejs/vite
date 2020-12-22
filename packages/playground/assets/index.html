@@ -3,6 +3,9 @@
 <link rel="stylesheet" href="/raw.css" />
 
 <h1>Assets</h1>
+
+<p class="base"></p>
+
 <ul>
   <li class="raw-js"></li>
   <li class="raw-css">Raw CSS from /public should load (this should be red)</li>
@@ -38,12 +41,18 @@
   import './css/fonts.css'
   import './css/css-url.css'
 
+  text('.base', `import.meta.${``}env.BASE_URL: ${import.meta.env.BASE_URL}`)
+
   import url from './nested/asset.png'
-  document.querySelector('.asset-import-relative').textContent = url
+  text('.asset-import-relative', url)
 
   import absoluteUrl from '/nested/asset.png'
-  document.querySelector('.asset-import-absolute').textContent = absoluteUrl
+  text('.asset-import-absolute', absoluteUrl)
 
   import publicUrl from '/icon.png'
-  document.querySelector('.public-import').textContent = publicUrl
+  text('.public-import', publicUrl)
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
 </script>

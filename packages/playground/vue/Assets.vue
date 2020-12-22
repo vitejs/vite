@@ -6,6 +6,10 @@
   </p>
   <p>
     Absolute
-    <img src="/icon.png" style="width: 30px;" />
+    <img class="absolute-import" src="/assets/asset.png" style="width: 30px;" />
+  </p>
+  <p>
+    Absolute import from public dir
+    <img class="public-import" src="/icon.png" style="width: 30px;" />
   </p>
 </template>

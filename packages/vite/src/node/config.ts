@@ -193,7 +193,7 @@ export async function resolveConfig(
     build: resolvedBuildOptions,
     env: {
       ...userEnv,
-      BASE_URL: resolvedBuildOptions.base,
+      BASE_URL: command === 'build' ? resolvedBuildOptions.base : '/',
       MODE: mode,
       DEV: !isProduction,
       PROD: isProduction

@@ -41,7 +41,7 @@ beforeAll(async () => {
             // During tests we edit the files too fast and sometimes chokidar
             // misses change events, so enforce polling for consistency
             usePolling: true,
-            interval: 50
+            interval: 100
           }
         }
       }
@@ -74,6 +74,14 @@ afterAll(async () => {
 })
 
 function startStaticServer(): Promise<string> {
+  // check if the test project has base config
+  const configFile = resolve(tempDir, 'vite.config.js')
+  let config: UserConfig
+  try {
+    config = require(configFile)
+  } catch (e) {}
+  const base = config?.build?.base || ''
+
   // start static file server
   const httpServer = (server = http.createServer(
     sirv(resolve(tempDir, 'dist'))
@@ -91,7 +99,7 @@ function startStaticServer(): Promise<string> {
     httpServer.on('error', onError)
     httpServer.listen(port, () => {
       httpServer.removeListener('error', onError)
-      resolve(`http://localhost:${port}`)
+      resolve(`http://localhost:${port}${base}`)
     })
   })
 }

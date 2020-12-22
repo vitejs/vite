@@ -1,7 +1,7 @@
 <template>
   <h2>CSS Modules</h2>
   <div class="sfc-css-modules" :class="$style.blueColor">
-    &lt;style module&gt; - this should be blueeee
+    &lt;style module&gt; - this should be blue
     <pre>{{ $style }}</pre>
   </div>
   <div class="sfc-css-modules-with-pre" :class="mod.orangeColor">

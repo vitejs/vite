@@ -2,14 +2,16 @@ import fs from 'fs'
 import path from 'path'
 import { getBg, getColor, browserLogs, isBuild, testDir } from '../../testUtils'
 
-const assetMatch = isBuild ? /\/assets\/asset\.\w{8}\.png/ : '/nested/asset.png'
+const assetMatch = isBuild
+  ? /\/foo\/assets\/asset\.\w{8}\.png/
+  : '/nested/asset.png'
+
+const iconMatch = isBuild ? `/foo/icon.png` : `icon.png`
 
 test('should have no 404s', () => {
-  const has404 = browserLogs.some((msg) => msg.match('404'))
-  if (has404) {
-    console.log(browserLogs)
-  }
-  expect(has404).toBe(false)
+  browserLogs.forEach((msg) => {
+    expect(msg).not.toMatch('404')
+  })
 })
 
 test('load raw js from /public', async () => {
@@ -37,7 +39,7 @@ test('asset import from js (absolute)', async () => {
 })
 
 test('/public asset import from js', async () => {
-  expect(await page.textContent('.public-import')).toMatch(`/icon.png`)
+  expect(await page.textContent('.public-import')).toMatch(iconMatch)
 })
 
 test('css relative url()', async () => {
@@ -49,7 +51,7 @@ test('css absolute url()', async () => {
 })
 
 test('css public url()', async () => {
-  expect(await getBg('.css-url-public')).toMatch(`/icon.png`)
+  expect(await getBg('.css-url-public')).toMatch(iconMatch)
 })
 
 test('css url() base64 inline', async () => {
@@ -59,7 +61,7 @@ test('css url() base64 inline', async () => {
 
 if (isBuild) {
   test('css url should preserve postfix query/hash', () => {
-    const assetsDir = path.resolve(testDir, 'dist/assets')
+    const assetsDir = path.resolve(testDir, 'dist/foo/assets')
     const files = fs.readdirSync(assetsDir)
     const file = files.find((file) => {
       return /style\.\w+\.css/.test(file)
