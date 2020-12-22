@@ -6,8 +6,6 @@
   </p>
   <p>
     Absolute
-    <!-- note we duplicate the public dir in both playground root and the vue
-    sub dir so this should work when served from either root or sub dir -->
-    <img src="/public/icon.png" style="width: 30px;" />
+    <img src="/icon.png" style="width: 30px;" />
   </p>
 </template>
