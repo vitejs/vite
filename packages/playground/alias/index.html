@@ -1,0 +1,22 @@
+<h1>Alias</h1>
+
+<p class="fs"></p>
+<p class="fs-dir"></p>
+<p class="regex"></p>
+<p class="dep"></p>
+
+<script type="module">
+  import { msg as fsMsg } from 'fs'
+  import { msg as fsDirMsg } from 'fs-dir/test'
+  import { msg as regexMsg } from 'regex/test'
+  import { msg as depMsg } from 'dep'
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+
+  text('.fs', fsMsg)
+  text('.fs-dir', fsDirMsg)
+  text('.regex', regexMsg + ' via regex')
+  text('.dep', depMsg)
+</script>
