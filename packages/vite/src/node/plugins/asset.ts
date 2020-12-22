@@ -17,6 +17,9 @@ export const assetUrlRE = /"__VITE_ASSET__(\w+)(?:__(.*)__)?"/g
 export function isPublicFile(url: string, root: string): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
+  if (!url.startsWith('/')) {
+    return
+  }
   const publicFile = path.posix.join(root, 'public', cleanUrl(url))
   if (fs.existsSync(publicFile)) {
     return publicFile
@@ -130,7 +133,7 @@ export async function registerBuildAsset(
   config: ResolvedConfig,
   pluginContext: PluginContext
 ): Promise<string> {
-  if (url.startsWith('/') && isPublicFile(url, config.root)) {
+  if (isPublicFile(url, config.root)) {
     return config.build.base + url.slice(1)
   }
   const file = url.startsWith('/')

@@ -2,7 +2,6 @@
   <h1>Vue SFCs</h1>
   <pre>{{ time }}</pre>
   <Hmr />
-  <Env />
   <Syntax />
   <PreProcessors />
   <CssModules />
@@ -11,7 +10,6 @@
 
 <script setup lang="ts">
 import Hmr from './Hmr.vue'
-import Env from './Env.vue'
 import Syntax from './Syntax.vue'
 import PreProcessors from './PreProcessors.vue'
 import CssModules from './CssModules.vue'

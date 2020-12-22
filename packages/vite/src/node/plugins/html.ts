@@ -104,15 +104,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const isJsModule =
               typeAttr && typeAttr.value && typeAttr.value.content === 'module'
 
+            const url = srcAttr && srcAttr.value && srcAttr.value.content
+            if (url && isPublicFile(url, config.root)) {
+              // referencing public dir url, prefix with base
+              s.overwrite(
+                srcAttr.value!.loc.start.offset,
+                srcAttr.value!.loc.end.offset,
+                config.build.base + url.slice(1)
+              )
+            }
+
             if (isJsModule) {
-              if (srcAttr && srcAttr.value) {
-                const url = srcAttr.value.content
-                if (!isExcludedUrl(url)) {
-                  // <script type="module" src="..."/>
-                  // add it as an import
-                  js += `\nimport ${JSON.stringify(url)}`
-                  shouldRemove = true
-                }
+              if (url && !isExcludedUrl(url)) {
+                // <script type="module" src="..."/>
+                // add it as an import
+                js += `\nimport ${JSON.stringify(url)}`
+                shouldRemove = true
               } else if (node.children.length) {
                 // <script type="module">...</script>
                 // add its content
@@ -133,15 +140,23 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               if (
                 p.type === NodeTypes.ATTRIBUTE &&
                 p.value &&
-                assetAttrs.includes(p.name) &&
-                !isExcludedUrl(p.value.content)
+                assetAttrs.includes(p.name)
               ) {
-                if (node.tag === 'link' && isCSSRequest(p.value.content)) {
-                  // CSS references, convert to import
-                  js += `\nimport ${JSON.stringify(p.value.content)}`
-                  shouldRemove = true
-                } else {
-                  assetUrls.push(p)
+                const url = p.value.content
+                if (!isExcludedUrl(url)) {
+                  if (node.tag === 'link' && isCSSRequest(url)) {
+                    // CSS references, convert to import
+                    js += `\nimport ${JSON.stringify(url)}`
+                    shouldRemove = true
+                  } else {
+                    assetUrls.push(p)
+                  }
+                } else if (isPublicFile(url, config.root)) {
+                  s.overwrite(
+                    p.value.loc.start.offset,
+                    p.value.loc.end.offset,
+                    config.build.base + url.slice(1)
+                  )
                 }
               }
             }
