@@ -140,7 +140,7 @@ function tryNodeResolve(id: string, basedir: string): string | undefined {
       return resolvePackageEntry(id, pkgData)
     }
   } else {
-    isDebug && debug(`${chalk.red(`[failed node resolve]`)} ${id}`)
+    throw new Error(`Failed to resolve package.json for module "${id}"`)
   }
 }
 
@@ -233,7 +233,10 @@ function resolvePackageEntry(
       )
     return resolvedEntryPont
   } else {
-    isDebug && debug(`${chalk.red(`[missing pkg entry]`)} ${id}`)
+    throw new Error(
+      `Failed to resolve entry for package "${id}". ` +
+        `The package may have incorrect main/module/exports specified in its package.json.`
+    )
   }
 }
 
