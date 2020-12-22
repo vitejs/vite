@@ -10,28 +10,6 @@ test('should update', async () => {
   expect(await page.textContent('.hmr-inc')).toMatch('count is 1')
 })
 
-describe('hmr', () => {
-  test('should re-render and preserve state when template is edited', async () => {
-    editFile('Hmr.vue', (code) => code.replace('HMR', 'HMR updated'))
-    await untilUpdated(() => page.textContent('h2.hmr'), 'HMR updated')
-    expect(await page.textContent('.hmr-inc')).toMatch('count is 1')
-  })
-
-  test('should update style and preserve state when style is edited', async () => {
-    expect(await getColor('.hmr-inc')).toBe('red')
-    editFile('Hmr.vue', (code) => code.replace('color: red;', 'color: blue;'))
-    await untilUpdated(() => getColor('.hmr-inc'), 'blue')
-    expect(await page.textContent('.hmr-inc')).toMatch('count is 1')
-  })
-
-  test('should reload and reset state when script is edited', async () => {
-    editFile('Hmr.vue', (code) =>
-      code.replace('let foo: number = 0', 'let foo: number = 100')
-    )
-    await untilUpdated(() => page.textContent('.hmr-inc'), 'count is 100')
-  })
-})
-
 describe('pre-processors', () => {
   test('pug', async () => {
     expect(await page.textContent('p.pug')).toMatch(
@@ -59,5 +37,27 @@ describe('pre-processors', () => {
       code.replace('@color: green;', '@color: blue;')
     )
     await untilUpdated(() => getColor(el), 'blue')
+  })
+})
+
+describe('hmr', () => {
+  test('should re-render and preserve state when template is edited', async () => {
+    editFile('Hmr.vue', (code) => code.replace('HMR', 'HMR updated'))
+    await untilUpdated(() => page.textContent('h2.hmr'), 'HMR updated')
+    expect(await page.textContent('.hmr-inc')).toMatch('count is 1')
+  })
+
+  test('should update style and preserve state when style is edited', async () => {
+    expect(await getColor('.hmr-inc')).toBe('red')
+    editFile('Hmr.vue', (code) => code.replace('color: red;', 'color: blue;'))
+    await untilUpdated(() => getColor('.hmr-inc'), 'blue')
+    expect(await page.textContent('.hmr-inc')).toMatch('count is 1')
+  })
+
+  test('should reload and reset state when script is edited', async () => {
+    editFile('Hmr.vue', (code) =>
+      code.replace('let foo: number = 0', 'let foo: number = 100')
+    )
+    await untilUpdated(() => page.textContent('.hmr-inc'), 'count is 100')
   })
 })

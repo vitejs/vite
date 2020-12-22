@@ -78,7 +78,7 @@ export async function untilUpdated(
   expected: string
 ) {
   if (isBuild) return
-  const maxTries = 20
+  const maxTries = process.env.CI ? 100 : 20
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) || ''
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
