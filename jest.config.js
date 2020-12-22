@@ -5,6 +5,7 @@ module.exports = {
   globalTeardown: './scripts/jestGlobalTeardown.js',
   testEnvironment: './scripts/jestEnv.js',
   setupFilesAfterEnv: ['./scripts/jestPerTestSetup.ts'],
+  watchPathIgnorePatterns: ['<rootDir>/temp'],
   moduleNameMapper: {
     testUtils: '<rootDir>/packages/playground/testUtils.ts'
   },

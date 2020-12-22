@@ -5,7 +5,7 @@ import mime from 'mime/lite'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { createDebugger, cleanUrl } from '../utils'
-import { FILE_PREFIX } from '../constants'
+import { FS_PREFIX } from '../constants'
 import slash from 'slash'
 import { PluginContext } from 'rollup'
 import MagicString from 'magic-string'
@@ -73,7 +73,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
               `/${slash(path.relative(config.root, id))}`
             : // outside of project root, use absolute fs path
               // (this is speical handled by the serve static middleware
-              `${FILE_PREFIX}${slash(id)}`
+              `${FS_PREFIX}${slash(id)}`
           return `export default ${JSON.stringify(publicPath)}`
         } else {
           return `export default ${await registerBuildAsset(

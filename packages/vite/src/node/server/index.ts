@@ -180,10 +180,10 @@ export interface ViteDevServer {
 }
 
 export async function createServer(
-  inlineConfig: UserConfig = {},
-  mode = 'development',
+  inlineConfig: UserConfig & { mode?: string } = {},
   configPath?: string | false
 ): Promise<ViteDevServer> {
+  const mode = inlineConfig.mode || 'development'
   const resolvedConfig = await resolveConfig(
     inlineConfig,
     'serve',
