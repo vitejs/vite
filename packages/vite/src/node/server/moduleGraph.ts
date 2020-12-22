@@ -1,6 +1,6 @@
 import { extname } from 'path'
 import { isCSSRequest } from '../plugins/css'
-import { cleanUrl, removeTimestampQuery } from '../utils'
+import { cleanUrl, normalizePath, removeTimestampQuery } from '../utils'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
 
@@ -131,6 +131,7 @@ export class ModuleGraph {
   // need to be represented in the module graph so that they can trigger
   // hmr in the importing css file.
   createFileOnlyEntry(file: string) {
+    file = normalizePath(file)
     const url = `/@fs/${file}`
     let fileMappedMdoules = this.fileToModulesMap.get(file)
     if (!fileMappedMdoules) {
