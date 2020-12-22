@@ -4,7 +4,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import slash from 'slash'
-import { FILE_PREFIX } from './constants'
+import { FS_PREFIX } from './constants'
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -107,10 +107,10 @@ export function timeFrom(start: number, subtract = 0) {
 export function prettifyUrl(url: string, root: string) {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(normalizePath(root))
-  if (isAbsoluteFile || url.startsWith(FILE_PREFIX)) {
+  if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
     let file = path.relative(
       root,
-      isAbsoluteFile ? url : url.slice(FILE_PREFIX.length)
+      isAbsoluteFile ? url : url.slice(FS_PREFIX.length)
     )
     const seg = file.split('/')
     const npmIndex = seg.indexOf(`node_modules`)

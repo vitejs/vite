@@ -62,10 +62,10 @@ cli
     create(
       {
         root,
+        mode: options.mode,
         logLevel: options.logLevel,
         server: cleanOptions(options) as ServerOptions
       },
-      options.mode,
       options.config
     )
       .then((server) => server.listen())
@@ -112,10 +112,10 @@ cli
     runBuild(
       {
         root,
+        mode: options.mode,
         logLevel: options.logLevel,
         build: cleanOptions(options) as BuildOptions
       },
-      options.mode,
       options.config
     ).catch((e) => {
       const logError = createLogger(options.logLevel).error

@@ -2,7 +2,7 @@ import os from 'os'
 import path from 'path'
 import sirv from 'sirv'
 import { Connect } from 'types/connect'
-import { FILE_PREFIX } from '../../constants'
+import { FS_PREFIX } from '../../constants'
 import { cleanUrl, isImportRequest } from '../../utils'
 
 const sirvOptions = { dev: true, etag: true }
@@ -40,8 +40,8 @@ export function rawFsStaticMiddleware(): Connect.NextHandleFunction {
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
-    if (url.startsWith(FILE_PREFIX)) {
-      req.url = url.slice(FILE_PREFIX.length)
+    if (url.startsWith(FS_PREFIX)) {
+      req.url = url.slice(FS_PREFIX.length)
       serveFromRoot(req, res, next)
     } else {
       next()

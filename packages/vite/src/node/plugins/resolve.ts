@@ -3,7 +3,7 @@ import path from 'path'
 import resolve from 'resolve'
 import { Plugin } from '..'
 import chalk from 'chalk'
-import { FILE_PREFIX } from '../constants'
+import { FS_PREFIX } from '../constants'
 import {
   createDebugger,
   isExternalUrl,
@@ -28,11 +28,11 @@ export function resolvePlugin(
     name: 'vite:resolve',
     resolveId(id, importer) {
       let res
-      if (allowUrls && id.startsWith(FILE_PREFIX)) {
+      if (allowUrls && id.startsWith(FS_PREFIX)) {
         // explicit fs paths that starts with /@fs/*
         // these are injected by the rewrite plugin so that the file can work
         // in the browser
-        let fsPath = id.slice(FILE_PREFIX.length - 1)
+        let fsPath = id.slice(FS_PREFIX.length - 1)
         if (fsPath.startsWith('//')) fsPath = fsPath.slice(1)
         res = tryFsResolve(fsPath, false)
         isDebug && debug(`[@fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)

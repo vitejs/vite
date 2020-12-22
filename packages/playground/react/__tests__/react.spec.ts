@@ -1,4 +1,4 @@
-import { editFile, untilUpdated } from '../../testUtils'
+import { editFile, untilUpdated, isBuild } from '../../testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('h1')).toMatch('Hello Vite + React')

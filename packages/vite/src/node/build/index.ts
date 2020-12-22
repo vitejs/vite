@@ -151,13 +151,12 @@ const paralellBuilds: RollupBuild[] = []
  * Returns a Promise containing the build result.
  */
 export async function build(
-  inlineConfig: UserConfig = {},
-  mode = 'production',
+  inlineConfig: UserConfig & { mode?: string } = {},
   configPath?: string | false
 ) {
   parallelCallCounts++
   try {
-    return await doBuild(inlineConfig, mode, configPath)
+    return await doBuild(inlineConfig, configPath)
   } finally {
     parallelCallCounts--
     if (parallelCallCounts <= 0) {
@@ -168,10 +167,10 @@ export async function build(
 }
 
 async function doBuild(
-  inlineConfig: UserConfig = {},
-  mode: string,
+  inlineConfig: UserConfig & { mode?: string } = {},
   configPath?: string | false
 ) {
+  const mode = inlineConfig.mode || 'production'
   const config = await resolveConfig(inlineConfig, 'build', mode, configPath)
   const options = config.build
 

@@ -20,7 +20,7 @@ import {
   handlePrunedModules,
   lexAcceptedHmrDeps
 } from '../server/hmr'
-import { FILE_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
+import { FS_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
 import { ViteDevServer } from '../'
 
 const isDebug = !!process.env.DEBUG
@@ -177,9 +177,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // bare imports must be rewritten into valid URLs to make them
           // compliant with native browser ESM.
           // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
-          if (!url.startsWith('/') && !url.startsWith('./')) {
-            // prefix with /@fs/
-            url = FILE_PREFIX + slash(resolved.id)
+          if (
+            url !== resolved.id &&
+            !url.startsWith('/') &&
+            !url.startsWith('./')
+          ) {
+            url = FS_PREFIX + slash(resolved.id)
           }
 
           // mark non-js imports with `?import`

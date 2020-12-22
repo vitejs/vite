@@ -108,12 +108,12 @@ export type ResolvedConfig = Readonly<
 >
 
 export async function resolveConfig(
-  cliConfig: UserConfig,
+  inlineConfig: UserConfig,
   command: 'build' | 'serve',
   mode: string,
   configPath?: string | false
 ): Promise<ResolvedConfig> {
-  let config = cliConfig
+  let config = inlineConfig
 
   if (configPath !== false) {
     const loadResult = await loadConfigFromFile(
@@ -122,6 +122,7 @@ export async function resolveConfig(
         command
       },
       configPath,
+      inlineConfig.root,
       config.logLevel
     )
     if (loadResult) {
@@ -231,6 +232,7 @@ export async function resolveConfig(
 async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configPath?: string,
+  configRoot: string = process.cwd(),
   logLevel?: LogLevel
 ): Promise<{ path: string; config: UserConfig } | null> {
   const start = Date.now()
@@ -240,11 +242,13 @@ async function loadConfigFromFile(
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configPath)
   } else {
-    const jsConfigPath = path.resolve('vite.config.js')
+    // implicit config file loaded from inline root (if present)
+    // otherwise from cwd
+    const jsConfigPath = path.resolve(configRoot, 'vite.config.js')
     if (fs.existsSync(jsConfigPath)) {
       resolvedPath = jsConfigPath
     } else {
-      const tsConfigPath = path.resolve('vite.config.ts')
+      const tsConfigPath = path.resolve(configRoot, 'vite.config.ts')
       if (fs.existsSync(tsConfigPath)) {
         resolvedPath = tsConfigPath
       }

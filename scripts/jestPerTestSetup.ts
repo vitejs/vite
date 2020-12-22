@@ -3,7 +3,7 @@ import * as http from 'http'
 import { resolve } from 'path'
 import slash from 'slash'
 import sirv from 'sirv'
-import { createServer, build, ViteDevServer } from 'vite'
+import { createServer, build, ViteDevServer, UserConfig } from 'vite'
 import { Page } from 'playwright-chromium'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
@@ -24,7 +24,6 @@ beforeAll(async () => {
     // start a vite server in that directory.
     if (testName) {
       const playgroundRoot = resolve(__dirname, '../packages/playground')
-      const configPath = resolve(playgroundRoot, 'vite.config.ts')
       const srcDir = resolve(playgroundRoot, testName)
       tempDir = resolve(__dirname, '../temp', testName)
       await fs.copy(srcDir, tempDir, {
@@ -34,22 +33,18 @@ beforeAll(async () => {
         }
       })
 
-      const sharedArgs = [
-        {
-          root: tempDir,
-          logLevel: 'error'
-        },
-        undefined,
-        configPath
-      ] as const
+      const options: UserConfig = {
+        root: tempDir,
+        logLevel: 'error'
+      } as const
 
       if (!isBuildTest) {
-        server = await (await createServer(...sharedArgs)).listen()
+        server = await (await createServer(options)).listen()
         // use resolved port from server
         const url = `http://localhost:${server.config.server.port}`
         await page.goto(url)
       } else {
-        await build(...sharedArgs)
+        await build(options)
         const url = await startStaticServer()
         await page.goto(url)
       }

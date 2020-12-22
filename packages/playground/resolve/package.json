@@ -1,0 +1,16 @@
+{
+  "name": "test-resolve",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../vite/bin/vite"
+  },
+  "dependencies": {
+    "resolve-conditional-exports": "link:./conditional-exports",
+    "resolve-browser-field": "link:./browser-field",
+    "@babel/runtime": "^7.12.5",
+    "normalize.css": "^8.0.1"
+  }
+}
