@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
-import { OutputBundle } from 'rollup'
+import { OutputBundle, OutputChunk } from 'rollup'
 import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
 import { ResolvedConfig } from '../config'
 import slash from 'slash'
@@ -16,7 +16,7 @@ import {
 } from '@vue/compiler-dom'
 import MagicString from 'magic-string'
 import { registerBuildAsset, isPublicFile } from './asset'
-import { isCSSRequest } from './css'
+import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
@@ -215,34 +215,67 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(_, bundle) {
-      for (const [file, html] of processedHtml) {
+      for (const [id, html] of processedHtml) {
         let result = html
-        for (const chunkName in bundle) {
-          const chunk = bundle[chunkName]
-          if (chunk.type === 'chunk') {
-            if (chunk.isEntry) {
-              // js entry chunk
-              result = injectScript(result, chunk.fileName, config)
-            } else {
-              // TODO anaylyze if this should preload or not
-              result = injectPreload(result, chunk.fileName, config)
-            }
-          } else {
-            // imported css chunks
-            if (
-              chunk.fileName.endsWith('.css') &&
-              chunk.source
-              // && !assets.has(chunk.fileName)
-            ) {
-              result = injectCSS(result, chunk.fileName, config)
+
+        const chunk = Object.values(bundle).find(
+          (chunk) =>
+            chunk.type === 'chunk' &&
+            chunk.isEntry &&
+            chunk.facadeModuleId === id
+        ) as OutputChunk | undefined
+
+        const getCssTagForChunk = (chunk: OutputChunk) => {
+          const cssFileHandle = chunkToEmittedCssFileMap.get(chunk)
+          if (cssFileHandle) {
+            const file = this.getFileName(cssFileHandle)
+            return {
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                href: toPublicPath(file, config)
+              }
             }
           }
         }
 
+        if (chunk) {
+          const assetTags = [
+            // js entry chunk for this page
+            {
+              tag: 'script',
+              attrs: {
+                type: 'module',
+                src: toPublicPath(chunk.fileName, config)
+              }
+            },
+            // preload for imports
+            ...chunk.imports.map((file) => ({
+              tag: 'link',
+              attrs: {
+                rel: 'modulepreload',
+                href: toPublicPath(file, config)
+              }
+            }))
+          ]
+
+          // inject css
+          const cssTag = getCssTagForChunk(chunk)
+          if (cssTag) assetTags.push(cssTag)
+          // also inject css from imported split chunks
+          chunk.imports.forEach((file) => {
+            const tag = getCssTagForChunk(bundle[file] as OutputChunk)
+            if (tag) assetTags.push(tag)
+          })
+
+          result = injectToHead(result, assetTags)
+        }
+
+        const shortEmitName = path.posix.relative(config.root, id)
         result = await applyHtmlTransforms(
           result,
-          file,
-          file,
+          '/' + shortEmitName,
+          id,
           postHooks,
           undefined,
           bundle
@@ -250,7 +283,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         this.emitFile({
           type: 'asset',
-          fileName: path.relative(config.root, file),
+          fileName: shortEmitName,
           source: result
         })
       }
@@ -262,6 +295,9 @@ export interface HtmlTagDescriptor {
   tag: string
   attrs?: Record<string, string>
   children?: string | HtmlTagDescriptor[]
+  /**
+   * @default: 'head-prepend'
+   */
   injectTo?: 'head' | 'body' | 'head-prepend'
 }
 
@@ -348,7 +384,7 @@ export async function applyHtmlTransforms(
       if (Array.isArray(res)) {
         tags = res
       } else {
-        html = res.html
+        html = res.html || html
         tags = res.tags
       }
       for (const tag of tags) {
@@ -381,42 +417,6 @@ function toPublicPath(filename: string, config: ResolvedConfig) {
   return isExternalUrl(filename) ? filename : config.build.base + filename
 }
 
-function injectScript(html: string, filename: string, config: ResolvedConfig) {
-  return injectToHead(html, [
-    {
-      tag: 'script',
-      attrs: {
-        type: 'module',
-        src: toPublicPath(filename, config)
-      }
-    }
-  ])
-}
-
-function injectCSS(html: string, filename: string, config: ResolvedConfig) {
-  return injectToHead(html, [
-    {
-      tag: 'link',
-      attrs: {
-        rel: 'stylesheet',
-        href: toPublicPath(filename, config)
-      }
-    }
-  ])
-}
-
-function injectPreload(html: string, filename: string, config: ResolvedConfig) {
-  return injectToHead(html, [
-    {
-      tag: 'link',
-      attrs: {
-        rel: 'modulepreload',
-        href: toPublicPath(filename, config)
-      }
-    }
-  ])
-}
-
 const headInjectRE = /<\/head>/
 const headPrependInjectRE = [/<head>/, /<!doctype html>/i]
 function injectToHead(
@@ -429,7 +429,7 @@ function injectToHead(
     // inject after head or doctype
     for (const re of headPrependInjectRE) {
       if (re.test(html)) {
-        return html.replace(re, `$&\n  ${tagsHtml}`)
+        return html.replace(re, `$&\n${tagsHtml}`)
       }
     }
   } else {
@@ -439,7 +439,7 @@ function injectToHead(
     }
   }
   // if no <head> tag is present, just prepend
-  return tagsHtml + html
+  return tagsHtml + `\n` + html
 }
 
 const bodyInjectRE = /<\/body>/
@@ -449,7 +449,7 @@ function injectToBody(html: string, tags: HtmlTagDescriptor[]) {
     return html.replace(bodyInjectRE, `${tagsHtml}\n$&`)
   }
   // if no body, append
-  return html + tagsHtml
+  return html + `\n` + tagsHtml
 }
 
 const unaryTags = new Set(['link', 'meta', 'base'])

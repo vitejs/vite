@@ -12,7 +12,7 @@ import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
-import { RollupError, SourceMap } from 'rollup'
+import { RenderedChunk, RollupError, SourceMap } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
@@ -49,13 +49,20 @@ export const isCSSRequest = (request: string) =>
 export const isCSSProxy = (request: string) =>
   cssLangRE.test(request) && isImportRequest(request)
 
-const cssModulesCache = new Map<string, Record<string, string>>()
+const cssModulesCache = new WeakMap<
+  ResolvedConfig,
+  Map<string, Record<string, string>>
+>()
+
+export const chunkToEmittedCssFileMap = new WeakMap<RenderedChunk, string>()
 
 /**
  * Plugin applied before user plugins
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
+  const moduleCache = new Map<string, Record<string, string>>()
+  cssModulesCache.set(config, moduleCache)
 
   return {
     name: 'vite:css',
@@ -71,7 +78,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       let { code: css, modules, deps } = await compileCSS(id, raw, config)
       if (modules) {
-        cssModulesCache.set(id, modules)
+        moduleCache.set(id, modules)
       }
 
       if (server) {
@@ -127,9 +134,11 @@ const cssInjectionRE = /__VITE_CSS__\(\);?/g
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  let staticCss = ''
   const styles = new Map<string, string>()
   const emptyChunks = new Set<string>()
+  const moduleCache = cssModulesCache.get(config)!
+
+  let extractedCss = ''
 
   return {
     name: 'vite:css-post',
@@ -139,7 +148,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const modules = cssModulesCache.get(id)
+      const modules = moduleCache.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
@@ -196,6 +205,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      if (!chunkCSS) {
+        return null
+      }
+
       // replace asset url references with resolved url
       chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId, postfix = '') => {
         return config.build.base + this.getFileName(fileId) + postfix
@@ -207,32 +220,39 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           emptyChunks.add(chunk.fileName)
         }
+        // minify
+        chunkCSS = await minifyCSS(chunkCSS, config.logger)
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
         if (chunk.isDynamicEntry && chunkCSS) {
-          chunkCSS = await minifyCSS(chunkCSS, config.logger)
           code =
             `let ${cssInjectionMarker} = document.createElement('style');` +
             `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
             `document.head.appendChild(${cssInjectionMarker});` +
             code
         } else {
-          staticCss += chunkCSS
+          // for normal chunks, emit corresponding css file
+          const fileHandle = this.emitFile({
+            name: chunk.name + '.css',
+            type: 'asset',
+            source: chunkCSS
+          })
+          chunkToEmittedCssFileMap.set(chunk, fileHandle)
         }
         return {
           code,
           map: null
         }
       } else {
-        staticCss += chunkCSS
+        extractedCss += chunkCSS
         return null
       }
     },
 
     async generateBundle(_options, bundle) {
       // minify css
-      if (config.build.minify && staticCss) {
-        staticCss = await minifyCSS(staticCss, config.logger)
+      if (config.build.minify && extractedCss) {
+        extractedCss = await minifyCSS(extractedCss, config.logger)
       }
 
       // remove empty css chunks and their imports
@@ -253,11 +273,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (staticCss) {
+      if (extractedCss) {
         this.emitFile({
           name: 'style.css',
           type: 'asset',
-          source: staticCss
+          source: extractedCss
         })
       }
     }

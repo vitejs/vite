@@ -16,9 +16,14 @@ let tempDir: string
 let err: Error
 
 const logs = ((global as any).pageLogs = [])
+const onConsole = (msg) => {
+  logs.push(msg.text())
+}
 
 beforeAll(async () => {
   try {
+    page.on('console', onConsole)
+
     const testPath = expect.getState().testPath
     const testName = slash(testPath).match(/playground\/(\w+)\//)?.[1]
 
@@ -31,7 +36,8 @@ beforeAll(async () => {
       await fs.copy(srcDir, tempDir, {
         dereference: true,
         filter(file) {
-          return !file.includes('__tests__')
+          file = slash(file)
+          return !file.includes('/__tests__/') && !file.includes('/dist/')
         }
       })
 
@@ -48,18 +54,14 @@ beforeAll(async () => {
         }
       }
 
-      page.on('console', (msg) => {
-        logs.push(msg.text())
-      })
-
       if (!isBuildTest) {
         server = await (await createServer(options)).listen()
         // use resolved port from server
-        const url = `http://localhost:${server.config.server.port}`
+        const url = ((global as any).testURL = `http://localhost:${server.config.server.port}`)
         await page.goto(url)
       } else {
         await build(options)
-        const url = await startStaticServer()
+        const url = ((global as any).testURL = await startStaticServer())
         await page.goto(url)
       }
     }
@@ -71,6 +73,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
+  page.off('console', onConsole)
   if (server) {
     await server.close()
   }
