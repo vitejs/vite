@@ -254,11 +254,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
-      acceptedUrls.forEach(({ url, start, end }) => {
-        const normalized = toAbsoluteUrl(markExplicitImport(url))
+      for (const { url, start, end } of acceptedUrls) {
+        const [normalized] = await moduleGraph.resolveUrl(
+          toAbsoluteUrl(markExplicitImport(url))
+        )
         normalizedAcceptedUrls.add(normalized)
         str().overwrite(start, end, JSON.stringify(normalized))
-      })
+      }
 
       // update the module graph for HMR analysis.
       // node CSS imports does its own graph update in the css plugin so we

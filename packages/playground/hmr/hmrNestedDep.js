@@ -1,1 +1,1 @@
-console.log('I should log?')
+export const foo = 1

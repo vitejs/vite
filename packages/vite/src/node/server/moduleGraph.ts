@@ -3,6 +3,7 @@ import { isCSSRequest } from '../plugins/css'
 import { cleanUrl, normalizePath, removeTimestampQuery } from '../utils'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
+import { parse as parseUrl } from 'url'
 
 export class ModuleNode {
   /**
@@ -157,9 +158,9 @@ export class ModuleGraph {
     url = removeTimestampQuery(url)
     const resolvedId = (await this.container.resolveId(url)).id
     const ext = extname(cleanUrl(resolvedId))
-    const [pathname, query] = url.split('?')
-    if (ext && !pathname.endsWith(ext)) {
-      url = pathname + ext + (query ? `?${query}` : ``)
+    const { pathname, search, hash } = parseUrl(url)
+    if (ext && !pathname!.endsWith(ext)) {
+      url = pathname + ext + (search || '') + (hash || '')
     }
     return [url, resolvedId]
   }
