@@ -21,7 +21,7 @@ import {
   handlePrunedModules,
   lexAcceptedHmrDeps
 } from '../server/hmr'
-import { FS_PREFIX, CLIENT_PUBLIC_PATH } from '../constants'
+import { FS_PREFIX, CLIENT_PUBLIC_PATH, DEP_VERSION_RE } from '../constants'
 import { ViteDevServer } from '../'
 
 const isDebug = !!process.env.DEBUG
@@ -195,6 +195,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             !url.startsWith('./')
           ) {
             url = FS_PREFIX + slash(resolved.id)
+          }
+
+          // for relative imports, inherit its importer's version query.
+          // this allows modules inside the same dependency to also be strongly
+          // cached by the browser.
+          if (url.startsWith('./')) {
+            const versionMatch = importer.match(DEP_VERSION_RE)
+            if (versionMatch) {
+              url = injectQuery(url, versionMatch[1])
+            }
           }
 
           // mark non-js imports with `?import`

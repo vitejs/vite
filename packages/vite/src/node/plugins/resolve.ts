@@ -6,6 +6,8 @@ import chalk from 'chalk'
 import { FS_PREFIX } from '../constants'
 import {
   createDebugger,
+  injectQuery,
+  isDataUrl,
   isExternalUrl,
   isObject,
   normalizePath
@@ -67,7 +69,7 @@ export function resolvePlugin(
       }
 
       // external
-      if (isExternalUrl(id)) {
+      if (isExternalUrl(id) || isDataUrl(id)) {
         return {
           id,
           external: true
@@ -77,7 +79,11 @@ export function resolvePlugin(
       // bare package imports, perform node resolve
       if (
         /^[\w@]/.test(id) &&
-        (res = tryNodeResolve(id, importer ? path.dirname(importer) : root))
+        (res = tryNodeResolve(
+          id,
+          importer ? path.dirname(importer) : root,
+          isBuild
+        ))
       ) {
         return res
       }
@@ -127,17 +133,25 @@ try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-function tryNodeResolve(id: string, basedir: string): string | undefined {
+function tryNodeResolve(
+  id: string,
+  basedir: string,
+  isBuild: boolean
+): string | undefined {
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
-  const pkgData = resolvePackageData(pkgId, basedir)
+  const pkg = resolvePackageData(pkgId, basedir)
 
-  if (pkgData) {
-    if (deepMatch) {
-      return resolveDeepImport(id, pkgData)
+  if (pkg) {
+    const resolved = deepMatch
+      ? resolveDeepImport(id, pkg)
+      : resolvePackageEntry(id, pkg)
+    if (isBuild) {
+      return resolved
     } else {
-      // resolve package entry
-      return resolvePackageEntry(id, pkgData)
+      // during serve, inject a version query so that the browser can cache it
+      // without revalidation.
+      return resolved && injectQuery(resolved, `v=${pkg.data.version}`)
     }
   } else {
     throw new Error(`Failed to resolve package.json for module "${id}"`)
@@ -148,7 +162,9 @@ interface PackageData {
   dir: string
   data: {
     [field: string]: any
+    version: string
     exports: string | Record<string, any> | string[]
+    dependencies: Record<string, string>
   }
 }
 

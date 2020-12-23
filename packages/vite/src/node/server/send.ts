@@ -17,6 +17,7 @@ export function send(
   content: string | Buffer,
   type: string,
   etag = getEtag(content, { weak: true }),
+  cacheControl = 'no-cache',
   map?: SourceMap | null
 ) {
   if (req.headers['if-none-match'] === etag) {
@@ -25,7 +26,7 @@ export function send(
   }
 
   res.setHeader('Content-Type', alias[type] || type)
-  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Cache-Control', cacheControl)
   res.setHeader('Etag', etag)
 
   // inject source map reference
