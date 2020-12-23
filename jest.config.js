@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testMatch: ['**/*.spec.[jt]s?(x)'],
-  testTimeout: process.env.CI ? 150000 : 5000,
+  testTimeout: process.env.CI ? 15000 : 5000,
   globalSetup: './scripts/jestGlobalSetup.js',
   globalTeardown: './scripts/jestGlobalTeardown.js',
   testEnvironment: './scripts/jestEnv.js',

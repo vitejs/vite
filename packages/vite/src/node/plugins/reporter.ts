@@ -20,7 +20,7 @@ const writeColors = {
   [WriteType.SOURCE_MAP]: chalk.gray
 }
 
-export function sizeReporPlugin(config: ResolvedConfig): Plugin {
+export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const options = config.build
 
   function printFileInfo(
@@ -52,18 +52,17 @@ export function sizeReporPlugin(config: ResolvedConfig): Plugin {
       for (const file in output) {
         const chunk = output[file]
         if (chunk.type === 'chunk') {
-          const filePath = path.join(options.assetsDir, chunk.fileName)
-          printFileInfo(filePath, chunk.code, WriteType.JS)
+          printFileInfo(chunk.fileName, chunk.code, WriteType.JS)
           if (chunk.map) {
             printFileInfo(
-              filePath + '.map',
+              chunk.fileName + '.map',
               chunk.map.toString(),
               WriteType.SOURCE_MAP
             )
           }
         } else if (options.emitAssets && chunk.source) {
           printFileInfo(
-            path.join(options.assetsDir, chunk.fileName),
+            chunk.fileName,
             chunk.source,
             chunk.fileName.endsWith('.css') ? WriteType.CSS : WriteType.ASSET
           )

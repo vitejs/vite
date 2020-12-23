@@ -64,7 +64,7 @@ if (isBuild) {
     const assetsDir = path.resolve(testDir, 'dist/foo/assets')
     const files = fs.readdirSync(assetsDir)
     const file = files.find((file) => {
-      return /style\.\w+\.css/.test(file)
+      return /\.\w+\.css$/.test(file)
     })
     expect(fs.readFileSync(path.resolve(assetsDir, file), 'utf-8')).toMatch(
       `woff2?#iefix`

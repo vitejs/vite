@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { resolveConfig, UserConfig } from '../config'
 import Rollup, { Plugin, RollupBuild, RollupOptions } from 'rollup'
-import { sizeReporPlugin } from '../plugins/size'
+import { buildReporterPlugin } from '../plugins/reporter'
 import { buildDefinePlugin } from '../plugins/define'
 import chalk from 'chalk'
 import { buildHtmlPlugin } from '../plugins/html'
@@ -12,12 +12,6 @@ import { Terser } from 'types/terser'
 import { copyDir, emptyDir } from '../utils'
 
 export interface BuildOptions {
-  /**
-   * Entry. Use this to specify a js entry file in use cases where an
-   * `index.html` does not exist (e.g. serving vite assets from a different host)
-   * @default 'index.html'
-   */
-  entry?: string
   /**
    * Base public path when served in production.
    * @default '/'
@@ -113,7 +107,6 @@ export function resolveBuildOptions(
   raw?: BuildOptions
 ): Required<BuildOptions> {
   const resolved: Required<BuildOptions> = {
-    entry: 'index.html',
     base: '/',
     outDir: 'dist',
     assetsDir: 'assets',
@@ -176,7 +169,7 @@ async function doBuild(
 
   const resolve = (p: string) => path.resolve(config.root, p)
 
-  const input = resolve(options.entry)
+  const input = options.rollupOptions?.input || resolve('index.html')
   const outDir = resolve(options.outDir)
   const publicDir = resolve('public')
 
@@ -189,7 +182,7 @@ async function doBuild(
     ...(options.minify && options.minify !== 'esbuild'
       ? [terserPlugin(options.terserOptions)]
       : []),
-    sizeReporPlugin(config)
+    buildReporterPlugin(config)
   ]
 
   const rollup = require('rollup') as typeof Rollup
