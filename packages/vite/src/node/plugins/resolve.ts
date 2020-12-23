@@ -149,9 +149,15 @@ function tryNodeResolve(
     if (isBuild) {
       return resolved
     } else {
-      // during serve, inject a version query so that the browser can cache it
-      // without revalidation.
-      return resolved && injectQuery(resolved, `v=${pkg.data.version}`)
+      // During serve, inject a version query to npm deps so that the browser
+      // can cache it without revalidation. Make sure to apply this only to
+      // files actually inside node_modules so that locally linked packages
+      // in monorepos are not cached this way.
+      if (resolved && resolved.includes('node_modules')) {
+        return injectQuery(resolved, `v=${pkg.data.version}`)
+      } else {
+        return resolved
+      }
     }
   } else {
     throw new Error(`Failed to resolve package.json for module "${id}"`)
