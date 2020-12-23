@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { getBg, getColor, browserLogs, isBuild, testDir } from '../../testUtils'
+import { getBg, getColor, isBuild, testDir } from '../../testUtils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
@@ -9,7 +9,7 @@ const assetMatch = isBuild
 const iconMatch = isBuild ? `/foo/icon.png` : `icon.png`
 
 test('should have no 404s', () => {
-  browserLogs.forEach((msg) => {
+  pageLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
 })

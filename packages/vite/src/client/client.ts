@@ -278,7 +278,7 @@ async function fetchUpdate({ path, accpetedPath, timestamp }: Update) {
     // dep update
     for (const { deps } of mod.callbacks) {
       deps.forEach((dep) => {
-        if (accpetedPath.startsWith(dep)) {
+        if (accpetedPath === dep) {
           modulesToUpdate.add(dep)
         }
       })

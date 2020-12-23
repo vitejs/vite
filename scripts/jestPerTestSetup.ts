@@ -15,6 +15,8 @@ let server: ViteDevServer | http.Server
 let tempDir: string
 let err: Error
 
+const logs = ((global as any).pageLogs = [])
+
 beforeAll(async () => {
   try {
     const testPath = expect.getState().testPath
@@ -45,6 +47,10 @@ beforeAll(async () => {
           }
         }
       }
+
+      page.on('console', (msg) => {
+        logs.push(msg.text())
+      })
 
       if (!isBuildTest) {
         server = await (await createServer(options)).listen()

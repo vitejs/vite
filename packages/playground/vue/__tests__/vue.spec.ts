@@ -1,10 +1,4 @@
-import {
-  browserLogs,
-  editFile,
-  getColor,
-  isBuild,
-  untilUpdated
-} from 'testUtils'
+import { editFile, getColor, isBuild, untilUpdated } from 'testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('h1')).toMatch('Vue SFCs')
@@ -74,7 +68,7 @@ describe('template asset reference', () => {
     : '/assets/asset.png'
 
   test('should not 404', () => {
-    browserLogs.forEach((msg) => {
+    pageLogs.forEach((msg) => {
       expect(msg).not.toMatch('404')
     })
   })

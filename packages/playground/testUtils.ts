@@ -8,14 +8,6 @@ import slash from 'slash'
 import colors from 'css-color-names'
 import { ElementHandle } from 'playwright-chromium'
 
-export const browserLogs = []
-
-beforeAll(() => {
-  page.on('console', (msg) => {
-    browserLogs.push(msg.text())
-  })
-})
-
 export const isBuild = !!process.env.VITE_TEST_BUILD
 
 const testPath = expect.getState().testPath
@@ -79,7 +71,7 @@ export function editFile(filename: string, replacer: (str: string) => string) {
  * Poll a getter until the value it returns includes the expected value.
  */
 export async function untilUpdated(
-  poll: () => Promise<string>,
+  poll: () => string | Promise<string>,
   expected: string
 ) {
   if (isBuild) return

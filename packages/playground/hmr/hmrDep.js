@@ -1,6 +1,5 @@
-import './hmrNestedDep'
-
-export const foo = 'from depppp'
+export const foo = 1
+export { foo as nestedFoo } from './hmrNestedDep'
 
 if (import.meta.hot) {
   const data = import.meta.hot.data
@@ -10,6 +9,6 @@ if (import.meta.hot) {
 
   import.meta.hot.dispose((data) => {
     console.log(`(dep) foo was: ${foo}`)
-    data.fromDispose = foo * 1033
+    data.fromDispose = foo
   })
 }
