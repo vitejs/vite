@@ -19,3 +19,5 @@ export const DEFAULT_ASSETS_RE = new RegExp(
     `woff2?|eot|ttf|otf` +
     `)(\\?.*)?$`
 )
+
+export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/

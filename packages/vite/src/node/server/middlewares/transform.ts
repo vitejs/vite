@@ -14,6 +14,7 @@ import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import chalk from 'chalk'
+import { DEP_VERSION_RE } from '../../constants'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -93,7 +94,17 @@ export function transformMiddleware(
         const result = await transformRequest(url, server)
         if (result) {
           const type = isCSSRequest(url) ? 'css' : 'js'
-          return send(req, res, result.code, type, result.etag, result.map)
+          const isDep = DEP_VERSION_RE.test(url)
+          return send(
+            req,
+            res,
+            result.code,
+            type,
+            result.etag,
+            // allow browser to cache npm deps!
+            isDep ? 'max-age=86400,immutable' : 'no-cache',
+            result.map
+          )
         }
       }
     } catch (e) {
