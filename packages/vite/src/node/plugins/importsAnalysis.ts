@@ -10,6 +10,7 @@ import {
   cleanUrl,
   createDebugger,
   injectQuery,
+  isDataUrl,
   isExternalUrl,
   isJSRequest,
   prettifyUrl,
@@ -131,7 +132,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const rawUrl = source.slice(start, end)
         let url = rawUrl
 
-        if (isExternalUrl(url)) {
+        if (isExternalUrl(url) || isDataUrl(url)) {
           continue
         }
 
