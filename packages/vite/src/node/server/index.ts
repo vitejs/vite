@@ -398,7 +398,7 @@ async function startServer(
     httpServer.listen(port, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n  Dev server running at:\n`)
+      info(`\n  Vite dev server running at:\n`)
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>
         (interfaces[key] || [])

@@ -93,7 +93,8 @@ export interface UserConfig {
 
 export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins'> & {
-    configPath: string | null
+    configPath: string | undefined
+    inlineConfig: UserConfig
     root: string
     command: 'build' | 'serve'
     mode: string
@@ -182,7 +183,8 @@ export async function resolveConfig(
 
   const resolved = {
     ...config,
-    configPath: configPath ? normalizePath(configPath) : null,
+    configPath: configPath ? normalizePath(configPath) : undefined,
+    inlineConfig,
     root: resolvedRoot,
     command,
     mode,
@@ -241,22 +243,27 @@ async function loadConfigFromFile(
   let isTS = false
   let isMjs = false
 
+  function checkMjs() {
+    // check package.json for type: "module" and set `isMjs` to true
+    try {
+      const pkg = lookupFile(configRoot, ['package.json'])
+      if (pkg && JSON.parse(pkg).type === 'module') {
+        isMjs = true
+      }
+    } catch (e) {}
+  }
+
   if (configPath) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configPath)
+    if (configPath.endsWith('.js')) checkMjs()
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
     const jsConfigPath = path.resolve(configRoot, 'vite.config.js')
     if (fs.existsSync(jsConfigPath)) {
       resolvedPath = jsConfigPath
-      // check package.json for type: "module" and set `isMjs` to true
-      try {
-        const pkg = lookupFile(configRoot, ['package.json'])
-        if (pkg && JSON.parse(pkg).type === 'module') {
-          isMjs = true
-        }
-      } catch (e) {}
+      checkMjs()
     }
 
     if (!resolvedPath) {
@@ -286,13 +293,18 @@ async function loadConfigFromFile(
 
     if (isMjs) {
       // using eval to avoid this from being compiled away by TS/Rollup
-      userConfig = (await eval(`import(resolvedPath)`)).default
+      // append a query so that we force reload fresh config in case of
+      // server restart
+      userConfig = (await eval(`import(resolvedPath + '?t=${Date.now()}')`))
+        .default
       debug(`native esm config loaded in ${Date.now() - start}ms`)
     }
 
     if (!userConfig && !isTS && !isMjs) {
       // 1. try to directly require the module (assuming commonjs)
       try {
+        // clear cache in case of server restart
+        delete require.cache[resolvedPath]
         userConfig = require(resolvedPath)
         debug(`cjs config loaded in ${Date.now() - start}ms`)
       } catch (e) {

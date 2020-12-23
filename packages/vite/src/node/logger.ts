@@ -17,6 +17,7 @@ export interface Logger {
   info(...msgs: any[]): void
   warn(...msgs: any[]): void
   error(...msgs: any[]): void
+  clearScreen(): void
 }
 
 let lastType: LogType | undefined
@@ -62,6 +63,7 @@ export function createLogger(level: LogLevel = 'info'): Logger {
     },
     error(...msgs) {
       output('error', msgs)
-    }
+    },
+    clearScreen
   }
 }

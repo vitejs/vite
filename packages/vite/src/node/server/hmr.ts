@@ -1,5 +1,5 @@
 import path from 'path'
-import { ViteDevServer } from '..'
+import { createServer, ViteDevServer } from '..'
 import { createDebugger } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
@@ -25,15 +25,20 @@ export async function handleHMRUpdate(
 ): Promise<any> {
   const { ws, config, moduleGraph } = server
 
-  if (file === config.configPath) {
+  if (file === config.configPath || file.endsWith('.env')) {
     // TODO auto restart server
     debugHmr(`[config change] ${chalk.dim(file)}`)
-    return
-  }
-
-  if (file.endsWith('.env')) {
-    // TODO notification for manual server restart
-    debugHmr(`[.env change] ${chalk.dim(file)}`)
+    server.config.logger.clearScreen()
+    server.config.logger.info(
+      chalk.green('[vite] config or .env file changed, restarting server...')
+    )
+    await server.close()
+    ;(global as any).__vite_start_time = Date.now()
+    server = await createServer(
+      server.config.inlineConfig,
+      server.config.configPath
+    )
+    await server.listen()
     return
   }
 
