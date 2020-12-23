@@ -1,0 +1,9 @@
+<pre class="full"></pre>
+<pre class="named"></pre>
+
+<script type="module">
+import json, { hello } from './test.json'
+
+document.querySelector('.full').textContent = JSON.stringify(json, null, 2)
+document.querySelector('.named').textContent = hello
+</script>
