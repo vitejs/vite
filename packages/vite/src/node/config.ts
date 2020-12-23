@@ -238,6 +238,9 @@ async function loadConfigFromFile(
   const start = Date.now()
 
   let resolvedPath: string | undefined
+  let isTS = false
+  let isMjs = false
+
   if (configPath) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configPath)
@@ -247,10 +250,28 @@ async function loadConfigFromFile(
     const jsConfigPath = path.resolve(configRoot, 'vite.config.js')
     if (fs.existsSync(jsConfigPath)) {
       resolvedPath = jsConfigPath
-    } else {
+      // check package.json for type: "module" and set `isMjs` to true
+      try {
+        const pkg = lookupFile(configRoot, ['package.json'])
+        if (pkg && JSON.parse(pkg).type === 'module') {
+          isMjs = true
+        }
+      } catch (e) {}
+    }
+
+    if (!resolvedPath) {
+      const mjsConfigPath = path.resolve(configRoot, 'vite.config.mjs')
+      if (fs.existsSync(mjsConfigPath)) {
+        resolvedPath = mjsConfigPath
+        isMjs = true
+      }
+    }
+
+    if (!resolvedPath) {
       const tsConfigPath = path.resolve(configRoot, 'vite.config.ts')
       if (fs.existsSync(tsConfigPath)) {
         resolvedPath = tsConfigPath
+        isTS = true
       }
     }
   }
@@ -260,11 +281,16 @@ async function loadConfigFromFile(
     return null
   }
 
-  const isTS = resolvedPath.endsWith('.ts')
   try {
     let userConfig: UserConfigExport | undefined
 
-    if (!isTS) {
+    if (isMjs) {
+      // using eval to avoid this from being compiled away by TS/Rollup
+      userConfig = (await eval(`import(resolvedPath)`)).default
+      debug(`native esm config loaded in ${Date.now() - start}ms`)
+    }
+
+    if (!userConfig && !isTS && !isMjs) {
       // 1. try to directly require the module (assuming commonjs)
       try {
         userConfig = require(resolvedPath)
@@ -309,9 +335,7 @@ async function loadConfigFromFile(
       })
 
       userConfig = await loadConfigFromBundledFile(resolvedPath, code)
-      debug(
-        `${isTS ? 'ts' : 'es'} config file loaded in ${Date.now() - start}ms`
-      )
+      debug(`bundled config file loaded in ${Date.now() - start}ms`)
     }
 
     const config =
