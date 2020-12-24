@@ -10,7 +10,6 @@ import {
   removeTimestampQuery,
   timeFrom
 } from '../utils'
-import { isPublicFile } from '../plugins/asset'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -69,11 +68,7 @@ export async function transformRequest(
     }
   }
   if (code == null) {
-    // try to see if this is an attempt of importing from the public dir
-    const reason = isPublicFile(file, root)
-      ? 'Non-asset files in /public cannot be imported.'
-      : 'Does the file exist?'
-    throw new Error(`Failed to load url ${url}. ${reason}`)
+    throw new Error(`Failed to load url ${url}. Does the file exist?`)
   }
 
   // ensure module in graph after successful load

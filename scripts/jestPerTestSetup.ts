@@ -25,7 +25,7 @@ beforeAll(async () => {
     page.on('console', onConsole)
 
     const testPath = expect.getState().testPath
-    const testName = slash(testPath).match(/playground\/(\w+)\//)?.[1]
+    const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
 
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.

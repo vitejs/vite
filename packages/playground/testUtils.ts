@@ -11,7 +11,7 @@ import { ElementHandle } from 'playwright-chromium'
 export const isBuild = !!process.env.VITE_TEST_BUILD
 
 const testPath = expect.getState().testPath
-const testName = slash(testPath).match(/playground\/(\w+)\//)?.[1]
+const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
 export const testDir = path.resolve(__dirname, '../../temp', testName)
 
 const hexToNameMap: Record<string, string> = {}

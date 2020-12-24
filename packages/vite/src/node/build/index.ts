@@ -11,6 +11,7 @@ import { terserPlugin } from '../plugins/terser'
 import { Terser } from 'types/terser'
 import { copyDir, emptyDir } from '../utils'
 import { manifestPlugin } from '../plugins/manifest'
+import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 
 export interface BuildOptions {
   /**
@@ -167,6 +168,10 @@ async function doBuild(
     ...(options.rollupOptions.plugins || []),
     buildHtmlPlugin(config),
     buildDefinePlugin(config),
+    dynamicImportVars({
+      warnOnError: true,
+      exclude: [/node_modules/]
+    }),
     buildEsbuildPlugin(config),
     ...(options.minify && options.minify !== 'esbuild'
       ? [terserPlugin(options.terserOptions)]

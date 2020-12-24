@@ -59,3 +59,16 @@ declare module 'postcss-modules' {
   const plugin: (options: any) => Plugin
   export = plugin
 }
+
+declare module '@rollup/plugin-dynamic-import-vars' {
+  import { Plugin } from 'rollup'
+
+  interface Options {
+    include?: string | RegExp | (string | RegExp)[]
+    exclude?: string | RegExp | (string | RegExp)[]
+    warnOnError?: boolean
+  }
+
+  const p: (o?: Options) => Plugin
+  export default p
+}

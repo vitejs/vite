@@ -95,7 +95,7 @@ export function resolvePlugin(
 }
 
 function tryFsResolve(fsPath: string, tryIndex = true): string | undefined {
-  const [file, q] = fsPath.split(`?`)
+  const [file, q] = fsPath.split(`?`, 2)
   const query = q ? `?${q}` : ``
   let res: string | undefined
   if ((res = tryResolveFile(file, query, tryIndex))) {

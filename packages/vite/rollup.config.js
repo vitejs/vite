@@ -126,7 +126,7 @@ const nodeConfig = {
       bufferutil: 1,
       'utf-8-validate': 1
     }),
-    commonjs(),
+    commonjs({ extensions: ['.js'] }),
     json()
   ]
 }

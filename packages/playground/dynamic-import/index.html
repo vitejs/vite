@@ -1,0 +1,26 @@
+<button class="foo">Foo</button>
+<button class="bar">Bar</button>
+<button class="baz">Baz</button>
+
+<div class="view"></div>
+
+<script type="module">
+  async function setView(view) {
+    const { msg } = await import(`./views/${view}.js`)
+    text('.view', msg)
+  }
+
+  ;['foo', 'bar'].forEach((id) => {
+    document.querySelector(`.${id}`).addEventListener('click', () => setView(id))
+  })
+
+  document.querySelector('.baz').addEventListener('click', async () => {
+    // literal dynamic from public
+    const { msg } = await import('./views/baz.js')
+    text('.view', msg)
+  })
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
