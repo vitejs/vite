@@ -14,7 +14,7 @@ export function parseVueRequest(id: string) {
   if (query.vue != null) {
     query.vue = true
   }
-  if (query.index) {
+  if (query.index != null) {
     query.index = Number(query.index)
   }
   return {

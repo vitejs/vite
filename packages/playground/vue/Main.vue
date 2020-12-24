@@ -6,6 +6,7 @@
   <PreProcessors />
   <CssModules />
   <Assets />
+  <CustomBlock />
 </template>
 
 <script setup lang="ts">
@@ -14,6 +15,7 @@ import Syntax from './Syntax.vue'
 import PreProcessors from './PreProcessors.vue'
 import CssModules from './CssModules.vue'
 import Assets from './Assets.vue'
+import CustomBlock from './CustomBlock.vue'
 
 import { ref } from 'vue'
 

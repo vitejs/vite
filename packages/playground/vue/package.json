@@ -13,6 +13,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^1.0.0",
     "@vue/compiler-sfc": "^3.0.4",
+    "js-yaml": "^3.14.1",
     "less": "^3.13.0",
     "pug": "^3.0.0",
     "sass": "^1.30.0"

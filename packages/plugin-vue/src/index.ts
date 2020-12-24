@@ -131,7 +131,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
           block = descriptor.template!
         } else if (query.type === 'style') {
           block = descriptor.styles[query.index!]
-        } else if (query.index) {
+        } else if (query.index != null) {
           block = descriptor.customBlocks[query.index]
         }
         if (block) {

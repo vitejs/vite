@@ -1,6 +1,7 @@
-import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
+import vuePlugin from '@vitejs/plugin-vue'
+import { vueI18nPlugin } from './CustomBlockPlugin'
 
 export default defineConfig({
-  plugins: [vue()]
+  plugins: [vuePlugin(), vueI18nPlugin]
 })
