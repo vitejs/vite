@@ -10,6 +10,7 @@ import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { htmlPlugin } from './html'
 import { wasmPlugin } from './wasm'
+import { webWorkerPlugin } from './worker'
 
 export function resolvePlugins(
   config: ResolvedConfig,
@@ -29,6 +30,7 @@ export function resolvePlugins(
       namedExports: true
     }),
     wasmPlugin(config),
+    webWorkerPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
     ...postPlugins,

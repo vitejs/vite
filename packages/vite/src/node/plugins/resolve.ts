@@ -13,7 +13,7 @@ import {
   normalizePath
 } from '../utils'
 
-const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx']
+export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx']
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
 const isDebug = process.env.DEBUG
