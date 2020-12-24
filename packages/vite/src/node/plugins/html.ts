@@ -298,7 +298,7 @@ export interface HtmlTagDescriptor {
   attrs?: Record<string, string>
   children?: string | HtmlTagDescriptor[]
   /**
-   * @default: 'head-prepend'
+   * default: 'head-prepend'
    */
   injectTo?: 'head' | 'body' | 'head-prepend'
 }
