@@ -46,7 +46,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:size',
-    generateBundle(_, output) {
+    writeBundle(_, output) {
       for (const file in output) {
         const chunk = output[file]
         if (chunk.type === 'chunk') {

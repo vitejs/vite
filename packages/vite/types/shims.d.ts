@@ -72,3 +72,18 @@ declare module '@rollup/plugin-dynamic-import-vars' {
   const p: (o?: Options) => Plugin
   export default p
 }
+
+declare module 'rollup-plugin-web-worker-loader' {
+  import { Plugin } from 'rollup'
+
+  interface Options {
+    targetPlatform?: string
+    pattern?: RegExp
+    extensions?: string[]
+    sourcemap?: boolean
+    inline?: boolean
+  }
+
+  const p: (o?: Options) => Plugin
+  export default p
+}

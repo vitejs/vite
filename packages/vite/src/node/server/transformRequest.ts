@@ -1,4 +1,4 @@
-import fs from 'fs'
+import { promises as fs } from 'fs'
 import getEtag from 'etag'
 import { SourceDescription, SourceMap } from 'rollup'
 import { ViteDevServer } from '..'
@@ -51,7 +51,7 @@ export async function transformRequest(
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
     try {
-      code = fs.readFileSync(file, 'utf-8')
+      code = await fs.readFile(file, 'utf-8')
       isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
     } catch (e) {
       if (e.code !== 'ENOENT') {

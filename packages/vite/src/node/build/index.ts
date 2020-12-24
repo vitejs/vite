@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { resolveConfig, UserConfig } from '../config'
+import { resolveConfig, UserConfig, ResolvedConfig } from '../config'
 import Rollup, { Plugin, RollupBuild, RollupOptions } from 'rollup'
 import { buildReporterPlugin } from '../plugins/reporter'
 import { buildDefinePlugin } from '../plugins/define'
@@ -149,21 +149,9 @@ export async function build(
   }
 }
 
-async function doBuild(
-  inlineConfig: UserConfig & { mode?: string } = {},
-  configPath?: string | false
-) {
-  const mode = inlineConfig.mode || 'production'
-  const config = await resolveConfig(inlineConfig, 'build', mode, configPath)
+export function resolveBuildPlugins(config: ResolvedConfig): Plugin[] {
   const options = config.build
-
-  const resolve = (p: string) => path.resolve(config.root, p)
-
-  const input = options.rollupOptions?.input || resolve('index.html')
-  const outDir = resolve(options.outDir)
-  const publicDir = resolve('public')
-
-  const plugins = [
+  return [
     ...(config.plugins as Plugin[]),
     ...(options.rollupOptions.plugins || []),
     buildHtmlPlugin(config),
@@ -179,6 +167,22 @@ async function doBuild(
     ...(options.manifest ? [manifestPlugin()] : []),
     buildReporterPlugin(config)
   ]
+}
+
+async function doBuild(
+  inlineConfig: UserConfig & { mode?: string } = {},
+  configPath?: string | false
+) {
+  const mode = inlineConfig.mode || 'production'
+  const config = await resolveConfig(inlineConfig, 'build', mode, configPath)
+  const options = config.build
+
+  const resolve = (p: string) => path.resolve(config.root, p)
+
+  const input = options.rollupOptions?.input || resolve('index.html')
+  const outDir = resolve(options.outDir)
+  const publicDir = resolve('public')
+  const plugins = resolveBuildPlugins(config)
 
   const rollup = require('rollup') as typeof Rollup
 
