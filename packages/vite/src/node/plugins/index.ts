@@ -9,6 +9,7 @@ import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { htmlPlugin } from './html'
+import { wasmPlugin } from './wasm'
 
 export function resolvePlugins(
   config: ResolvedConfig,
@@ -27,6 +28,7 @@ export function resolvePlugins(
       preferConst: true,
       namedExports: true
     }),
+    wasmPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
     ...postPlugins,
