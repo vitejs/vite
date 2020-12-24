@@ -121,3 +121,9 @@ describe('hmr', () => {
     await untilUpdated(() => page.textContent('.hmr-inc'), 'count is 100')
   })
 })
+
+describe('custom blocks', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.custom-block')).toMatch('こんにちは')
+  })
+})
