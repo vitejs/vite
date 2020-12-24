@@ -44,9 +44,7 @@
   },
   "//": "READ .github/maintenance.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@types/mime": "^2.0.3",
     "esbuild": "^0.8.20",
-    "mime": "^2.4.7",
     "postcss": "^8.2.1",
     "rollup": "^2.35.1"
   },
@@ -64,6 +62,7 @@
     "@types/debug": "^4.1.5",
     "@types/es-module-lexer": "^0.3.0",
     "@types/etag": "^1.8.0",
+    "@types/mime": "^2.0.3",
     "@types/node": "^14.14.10",
     "@types/resolve": "^1.17.1",
     "@types/ws": "^7.4.0",
@@ -88,6 +87,7 @@
     "launch-editor-middleware": "^2.2.1",
     "magic-string": "^0.25.7",
     "merge-source-map": "^1.1.0",
+    "mime": "^2.4.7",
     "okie": "^1.0.0",
     "open": "^7.3.0",
     "open-in-editor": "^2.2.0",
