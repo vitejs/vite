@@ -254,7 +254,7 @@ export async function createPluginContainer(
     }
 
     warn(...args: any[]) {
-      logger.warn(`[${this._activePlugin!.name}]`, ...args)
+      logger.warn(chalk.yellow(`[${this._activePlugin!.name}]`, ...args))
     }
 
     error(

@@ -49,6 +49,9 @@ export async function handleHMRUpdate(
 
   // html files and the client itself cannot be hot updated.
   if (file.endsWith('.html') || file.startsWith(CLIENT_DIR)) {
+    config.logger.info(
+      chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
+    )
     ws.send({
       type: 'full-reload',
       path: '/' + slash(path.relative(config.root, file))

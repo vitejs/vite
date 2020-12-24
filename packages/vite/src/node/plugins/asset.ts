@@ -38,6 +38,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:asset',
 
     resolveId(id) {
+      if (!config.assetsInclude(cleanUrl(id))) {
+        return
+      }
       // imports to absolute urls pointing to files in /public
       // will fail to resolve in the main resolver. handle them here.
       const publicFile = isPublicFile(id, config.root)

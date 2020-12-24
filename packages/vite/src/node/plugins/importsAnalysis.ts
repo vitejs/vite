@@ -9,6 +9,7 @@ import slash from 'slash'
 import {
   cleanUrl,
   createDebugger,
+  generateCodeFrame,
   injectQuery,
   isDataUrl,
   isExternalUrl,
@@ -23,6 +24,7 @@ import {
 } from '../server/hmr'
 import { FS_PREFIX, CLIENT_PUBLIC_PATH, DEP_VERSION_RE } from '../constants'
 import { ViteDevServer } from '../'
+import { isPublicFile } from './asset'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -207,6 +209,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           }
 
+          // warn imports to non-asset /public files
+          if (
+            url.startsWith('/') &&
+            !config.assetsInclude(cleanUrl(url)) &&
+            isPublicFile(url, config.root)
+          ) {
+            throw new Error(
+              `Cannot import non-asset file ${url} which is inside /public.` +
+                `JS/CSS files inside /public are copied as-is on build and ` +
+                `can only be referenced via <script src> or <link href> in html.`
+            )
+          }
+
           // mark non-js imports with `?import`
           url = markExplicitImport(url)
 
@@ -234,8 +249,24 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           importedUrls.add(absoluteUrl)
-        } else if (url !== 'import.meta' && !hasViteIgnore) {
-          this.warn(`ignored dynamic import(${url}) in ${importer}.`)
+        } else if (
+          url !== 'import.meta' &&
+          !hasViteIgnore &&
+          !isSupportedDynamicImport(url)
+        ) {
+          this.warn(
+            `\n` +
+              chalk.cyan(importerModule.file) +
+              `\n` +
+              generateCodeFrame(source, start) +
+              `\nThe above dynamic import cannot be analyzed by vite.\n` +
+              `See ${chalk.blue(
+                `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+              )} ` +
+              `for supported dynamic import formats. ` +
+              `If this is intended to be left as-is, you can use the ` +
+              `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+          )
         }
       }
 
@@ -300,4 +331,25 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
+}
+
+/**
+ * https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
+ * This is probably less accurate but is much cheaper than a full AST parse.
+ */
+function isSupportedDynamicImport(url: string) {
+  url = url.trim().slice(1, -1)
+  // must be relative
+  if (!url.startsWith('./') && !url.startsWith('../')) {
+    return false
+  }
+  // must have extension
+  if (!path.extname(url)) {
+    return false
+  }
+  // must be more specific if importing from same dir
+  if (url.startsWith('./${') && url.indexOf('/') === url.lastIndexOf('/')) {
+    return false
+  }
+  return true
 }
