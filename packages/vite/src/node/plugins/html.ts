@@ -63,6 +63,9 @@ const assetAttrsConfig: Record<string, string[]> = {
   use: ['xlink:href', 'href']
 }
 
+/**
+ * Compiles index.html into an entry js module
+ */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
@@ -77,7 +80,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const publicPath = `/${slash(path.relative(config.root, id))}`
         // pre-transform
         html = await applyHtmlTransforms(html, publicPath, id, preHooks)
-        // compile index.html into an entry js module
 
         function formatError(e: any): Error {
           // normalize the error to rollup format

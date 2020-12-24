@@ -21,8 +21,6 @@ const writeColors = {
 }
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
-  const options = config.build
-
   function printFileInfo(
     filePath: string,
     content: string | Uint8Array,
@@ -60,7 +58,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               WriteType.SOURCE_MAP
             )
           }
-        } else if (options.emitAssets && chunk.source) {
+        } else if (chunk.source) {
           printFileInfo(
             chunk.fileName,
             chunk.source,
