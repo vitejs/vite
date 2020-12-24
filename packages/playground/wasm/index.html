@@ -1,0 +1,16 @@
+<button class="run">Click to run wasm</button>
+<div class="result"></div>
+
+<script type="module">
+  import init from './simple.wasm'
+  ;(async () => {
+    const { exported_func } = await init({
+      imports: {
+        imported_func: (res) => {
+          document.querySelector('.result').textContent = `Wasm result: ${res}`
+        }
+      }
+    })
+    document.querySelector('.run').addEventListener('click', exported_func)
+  })()
+</script>

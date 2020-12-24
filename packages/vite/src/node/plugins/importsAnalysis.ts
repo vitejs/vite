@@ -24,7 +24,7 @@ import {
 } from '../server/hmr'
 import { FS_PREFIX, CLIENT_PUBLIC_PATH, DEP_VERSION_RE } from '../constants'
 import { ViteDevServer } from '../'
-import { isPublicFile } from './asset'
+import { checkPublicFile } from './asset'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -213,7 +213,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (
             url.startsWith('/') &&
             !config.assetsInclude(cleanUrl(url)) &&
-            isPublicFile(url, config.root)
+            checkPublicFile(url, config.root)
           ) {
             throw new Error(
               `Cannot import non-asset file ${url} which is inside /public.` +

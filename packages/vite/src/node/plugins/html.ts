@@ -15,7 +15,7 @@ import {
   transform
 } from '@vue/compiler-dom'
 import MagicString from 'magic-string'
-import { registerBuildAsset, isPublicFile, assetUrlRE } from './asset'
+import { checkPublicFile, assetUrlRE, urlToBuiltUrl } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
@@ -70,7 +70,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    isExternalUrl(url) || isDataUrl(url) || isPublicFile(url, config.root)
+    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config.root)
 
   return {
     name: 'vite:build-html',
@@ -125,7 +125,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               typeAttr && typeAttr.value && typeAttr.value.content === 'module'
 
             const url = srcAttr && srcAttr.value && srcAttr.value.content
-            if (url && isPublicFile(url, config.root)) {
+            if (url && checkPublicFile(url, config.root)) {
               // referencing public dir url, prefix with base
               s.overwrite(
                 srcAttr.value!.loc.start.offset,
@@ -171,7 +171,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   } else {
                     assetUrls.push(p)
                   }
-                } else if (isPublicFile(url, config.root)) {
+                } else if (checkPublicFile(url, config.root)) {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
@@ -201,8 +201,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // references the post-build location.
         for (const attr of assetUrls) {
           const value = attr.value!
-          const url = await registerBuildAsset(value.content, id, config, this)
-          s.overwrite(value.loc.start.offset, value.loc.end.offset, url)
+          const url = await urlToBuiltUrl(value.content, id, config, this)
+          s.overwrite(
+            value.loc.start.offset,
+            value.loc.end.offset,
+            JSON.stringify(url)
+          )
         }
 
         // TODO should store the imported entries for each page

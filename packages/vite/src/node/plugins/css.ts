@@ -18,7 +18,7 @@ import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
 import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
-import { assetUrlRE, registerBuildAsset } from './asset'
+import { assetUrlRE, urlToBuiltUrl } from './asset'
 import { Logger } from '../logger'
 
 // const debug = createDebugger('vite:css')
@@ -119,11 +119,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // account for comments https://github.com/vitejs/vite/issues/426
         css = css.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1')
         if (cssUrlRE.test(css)) {
-          css = await rewriteCssUrls(css, (url) => {
+          css = await rewriteCssUrls(css, async (url) => {
             if (isExternalUrl(url) || isDataUrl(url)) {
               return url
             }
-            return registerBuildAsset(url, id, config, this)
+            url = await urlToBuiltUrl(url, id, config, this)
+            return JSON.stringify(url)
           })
         }
       }
