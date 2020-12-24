@@ -74,10 +74,12 @@ const nodeConfig = {
   ],
   plugins: [
     alias({
+      // packages with "module" field that doesn't play well with cjs bundles
       entries: {
         '@vue/compiler-dom': require.resolve(
           '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-        )
+        ),
+        'big.js': require.resolve('big.js/big.js')
       }
     }),
     nodeResolve(),
@@ -112,6 +114,10 @@ const nodeConfig = {
       'process-content.js': {
         src: 'require("sugarss")',
         replacement: `eval('require')('sugarss')`
+      },
+      'import-fresh/index.js': {
+        src: 'require(filePath)',
+        replacement: `eval('require')(filePath)`
       }
     }),
     // Optional peer deps of ws. Native deps that are mostly for performance.
