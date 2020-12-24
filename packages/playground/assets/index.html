@@ -6,19 +6,22 @@
 
 <p class="base"></p>
 
+<h2>Raw References from /public</h2>
 <ul>
   <li class="raw-js"></li>
+  <script src="/raw.js"></script>
   <li class="raw-css">Raw CSS from /public should load (this should be red)</li>
-  <li>Font should be loaded (all text should be italic)</li>
-  <li>
-    Relative asset import from js: <code class="asset-import-relative"></code>
-  </li>
-  <li>
-    Absolute asset import from js: <code class="asset-import-absolute"></code>
-  </li>
-  <li>/public asset import from js: <code class="public-import"></code></li>
 </ul>
 
+<h2>Asset Imports from JS</h2>
+<ul>
+  <li>Relative: <code class="asset-import-relative"></code></li>
+  <li>Absolute: <code class="asset-import-absolute"></code></li>
+  <li>From /public: <code class="public-import"></code></li>
+</ul>
+
+<h2>CSS url references</h2>
+<div>Font should be loaded (all text should be italic)</div>
 <div class="css-url-absolute">
   <span style="background: #fff">CSS background (absolute)</span>
 </div>
@@ -35,11 +38,42 @@
   <span style="background: #fff">CSS background (base64 inline in prod)</span>
 </div>
 
-<script src="/raw.js"></script>
+<h2>SVG Fragments</h2>
+<div>
+  <img
+    class="svg-frag-img"
+    src="./nested/fragment.svg#icon-clock-view"
+    alt=""
+  />
+  <img
+    class="svg-frag-img"
+    src="./nested/fragment.svg#icon-heart-view"
+    alt=""
+  />
+  <img
+    class="svg-frag-img"
+    src="./nested/fragment.svg#icon-arrow-right-view"
+    alt=""
+  />
+</div>
+
+<h2>SVG Fragments via CSS background url</h2>
+<div>
+  <span class="icon icon-clock"></span>
+  <span class="icon icon-heart"></span>
+  <span class="icon icon-arrow-right"></span>
+</div>
+
+<h2>SVG Fragments via JS Import</h2>
+<div>
+  <p>Imported path: <code class="svg-frag-import-path"></code></p>
+  <img class="svg-frag-import" alt="" />
+</div>
 
 <script type="module">
   import './css/fonts.css'
   import './css/css-url.css'
+  import './css/icons.css'
 
   text('.base', `import.meta.${``}env.BASE_URL: ${import.meta.env.BASE_URL}`)
 
@@ -51,6 +85,10 @@
 
   import publicUrl from '/icon.png'
   text('.public-import', publicUrl)
+
+  import svgFrag from './nested/fragment.svg'
+  text('.svg-frag-import-path', svgFrag)
+  document.querySelector('.svg-frag-import').src = svgFrag + '#icon-heart-view'
 
   function text(el, text) {
     document.querySelector(el).textContent = text
