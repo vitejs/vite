@@ -29,7 +29,7 @@ function sameAsLast(msgs: any[], last: any[]) {
 }
 
 function clearScreen() {
-  const blank = '\n'.repeat(process.stdout.rows)
+  const blank = '\n'.repeat(process.stdout.rows - 1)
   console.log(blank)
   readline.cursorTo(process.stdout, 0, 0)
   readline.clearScreenDown(process.stdout)

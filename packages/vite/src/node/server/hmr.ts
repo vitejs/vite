@@ -24,10 +24,13 @@ export async function handleHMRUpdate(
   server: ViteDevServer
 ): Promise<any> {
   const { ws, config, moduleGraph } = server
+  const shortFile = file.startsWith(config.root + '/')
+    ? path.posix.relative(config.root, file)
+    : file
 
   if (file === config.configPath || file.endsWith('.env')) {
     // TODO auto restart server
-    debugHmr(`[config change] ${chalk.dim(file)}`)
+    debugHmr(`[config change] ${chalk.dim(shortFile)}`)
     server.config.logger.clearScreen()
     server.config.logger.info(
       chalk.green('[vite] config or .env file changed, restarting server...')
@@ -42,7 +45,7 @@ export async function handleHMRUpdate(
     return
   }
 
-  debugHmr(`[file change] ${chalk.dim(file)}`)
+  debugHmr(`[file change] ${chalk.dim(shortFile)}`)
 
   // html files and the client itself cannot be hot updated.
   if (file.endsWith('.html') || file.startsWith(CLIENT_DIR)) {
@@ -56,7 +59,7 @@ export async function handleHMRUpdate(
   let mods = moduleGraph.getModulesByFile(file)
   if (!mods) {
     // loaded but not in the module graph, probably not js
-    debugHmr(`[no module entry] ${chalk.dim(file)}`)
+    debugHmr(`[no module entry] ${chalk.dim(shortFile)}`)
     return
   }
 
@@ -80,7 +83,9 @@ export async function handleHMRUpdate(
     }>()
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
-      debugHmr(`[full reload] ${chalk.dim(file)}`)
+      config.logger.info(
+        chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
+      )
       ws.send({
         type: 'full-reload'
       })
@@ -90,7 +95,9 @@ export async function handleHMRUpdate(
     updates.push(
       ...[...boundaries].map(({ boundary, acceptedVia }) => {
         const type = `${boundary.type}-update` as Update['type']
-        debugHmr(`[${type}] ${chalk.dim(boundary.url)}`)
+        config.logger.info(
+          chalk.green(`[vite] hmr update `) + chalk.dim(boundary.url)
+        )
         return {
           type,
           timestamp,
