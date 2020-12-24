@@ -113,6 +113,7 @@ cli
     `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
       `or specify minifier to use (default: terser)`
   )
+  .option('--manifest', `[boolean] emit build manifest json`)
   .option('-m, --mode <mode>', `[string]  set env mode`, {
     default: 'production'
   })
