@@ -8,9 +8,9 @@ test('should render', async () => {
 
 if (!isBuild) {
   test('should connect', async () => {
-    expect(pageLogs.length).toBe(2)
-    expect(pageLogs.some((msg) => msg.match('connected'))).toBe(true)
-    pageLogs.length = 0
+    expect(browserLogs.length).toBe(2)
+    expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
+    browserLogs.length = 0
   })
 
   test('self accept', async () => {
@@ -19,24 +19,24 @@ if (!isBuild) {
     editFile('hmr.js', (code) => code.replace('const foo = 1', 'const foo = 2'))
     await untilUpdated(() => el.textContent(), '2')
 
-    expect(pageLogs).toMatchObject([
+    expect(browserLogs).toMatchObject([
       'foo was: 1',
       '(self-accepting 1) foo is now: 2',
       '(self-accepting 2) foo is now: 2',
       '[vite] hot updated: /hmr.js'
     ])
-    pageLogs.length = 0
+    browserLogs.length = 0
 
     editFile('hmr.js', (code) => code.replace('const foo = 2', 'const foo = 3'))
     await untilUpdated(() => el.textContent(), '3')
 
-    expect(pageLogs).toMatchObject([
+    expect(browserLogs).toMatchObject([
       'foo was: 2',
       '(self-accepting 1) foo is now: 3',
       '(self-accepting 2) foo is now: 3',
       '[vite] hot updated: /hmr.js'
     ])
-    pageLogs.length = 0
+    browserLogs.length = 0
   })
 
   test('accept dep', async () => {
@@ -47,7 +47,7 @@ if (!isBuild) {
     )
     await untilUpdated(() => el.textContent(), '2')
 
-    expect(pageLogs).toMatchObject([
+    expect(browserLogs).toMatchObject([
       '(dep) foo was: 1',
       '(dep) foo from dispose: 1',
       '(single dep) foo is now: 2',
@@ -56,14 +56,14 @@ if (!isBuild) {
       '(multi deps) nested foo is now: 1',
       '[vite] hot updated: /hmrDep.js via /hmr.js'
     ])
-    pageLogs.length = 0
+    browserLogs.length = 0
 
     editFile('hmrDep.js', (code) =>
       code.replace('const foo = 2', 'const foo = 3')
     )
     await untilUpdated(() => el.textContent(), '3')
 
-    expect(pageLogs).toMatchObject([
+    expect(browserLogs).toMatchObject([
       '(dep) foo was: 2',
       '(dep) foo from dispose: 2',
       '(single dep) foo is now: 3',
@@ -72,7 +72,7 @@ if (!isBuild) {
       '(multi deps) nested foo is now: 1',
       '[vite] hot updated: /hmrDep.js via /hmr.js'
     ])
-    pageLogs.length = 0
+    browserLogs.length = 0
   })
 
   test('nested dep propagation', async () => {
@@ -83,7 +83,7 @@ if (!isBuild) {
     )
     await untilUpdated(() => el.textContent(), '2')
 
-    expect(pageLogs).toMatchObject([
+    expect(browserLogs).toMatchObject([
       '(dep) foo was: 3',
       '(dep) foo from dispose: 3',
       '(single dep) foo is now: 3',
@@ -92,14 +92,14 @@ if (!isBuild) {
       '(multi deps) nested foo is now: 2',
       '[vite] hot updated: /hmrDep.js via /hmr.js'
     ])
-    pageLogs.length = 0
+    browserLogs.length = 0
 
     editFile('hmrNestedDep.js', (code) =>
       code.replace('const foo = 2', 'const foo = 3')
     )
     await untilUpdated(() => el.textContent(), '3')
 
-    expect(pageLogs).toMatchObject([
+    expect(browserLogs).toMatchObject([
       '(dep) foo was: 3',
       '(dep) foo from dispose: 3',
       '(single dep) foo is now: 3',
@@ -108,6 +108,6 @@ if (!isBuild) {
       '(multi deps) nested foo is now: 3',
       '[vite] hot updated: /hmrDep.js via /hmr.js'
     ])
-    pageLogs.length = 0
+    browserLogs.length = 0
   })
 }

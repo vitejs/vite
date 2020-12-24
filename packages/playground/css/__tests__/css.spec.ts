@@ -35,6 +35,14 @@ test('css import from js', async () => {
   await untilUpdated(() => getColor(atImport), 'blue')
 })
 
+test('postcss config', async () => {
+  const imported = await page.$('.postcss .nesting')
+  expect(await getColor(imported)).toBe('pink')
+
+  editFile('imported.css', (code) => code.replace('color: pink', 'color: red'))
+  await untilUpdated(() => getColor(imported), 'red')
+})
+
 test('sass', async () => {
   const imported = await page.$('.sass')
   const atImport = await page.$('.sass-at-import')
@@ -42,7 +50,9 @@ test('sass', async () => {
   expect(await getColor(imported)).toBe('orange')
   expect(await getColor(atImport)).toBe('olive')
 
-  editFile('sass.scss', (code) => code.replace('color: orange', 'color: red'))
+  editFile('sass.scss', (code) =>
+    code.replace('color: $injectedColor', 'color: red')
+  )
   await untilUpdated(() => getColor(imported), 'red')
 
   editFile('sass-at-import.scss', (code) =>
@@ -54,6 +64,13 @@ test('sass', async () => {
 test('css modules', async () => {
   const imported = await page.$('.modules')
   expect(await getColor(imported)).toBe('turquoise')
+
+  // check if the generated CSS module class name is indeed using the
+  // format specified in vite.config.js
+  expect(await imported.getAttribute('class')).toMatch(
+    /.mod-module__apply-color___[\w-]{5}/
+  )
+
   editFile('mod.module.css', (code) =>
     code.replace('color: turquoise', 'color: red')
   )
@@ -63,6 +80,10 @@ test('css modules', async () => {
 test('css modules w/ sass', async () => {
   const imported = await page.$('.modules-sass')
   expect(await getColor(imported)).toBe('orangered')
+  expect(await imported.getAttribute('class')).toMatch(
+    /.mod-module__apply-color___[\w-]{5}/
+  )
+
   editFile('mod.module.scss', (code) =>
     code.replace('color: orangered', 'color: blue')
   )

@@ -9,7 +9,7 @@ const assetMatch = isBuild
 const iconMatch = isBuild ? `/foo/icon.png` : `icon.png`
 
 test('should have no 404s', () => {
-  pageLogs.forEach((msg) => {
+  browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
 })
