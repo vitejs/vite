@@ -67,7 +67,8 @@ describe('main', () => {
 
 describe('nested', () => {
   beforeAll(async () => {
-    await page.goto(testURL + '/nested/')
+    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    await page.goto(viteTestUrl + '/nested/')
   })
 
   testPage(true)

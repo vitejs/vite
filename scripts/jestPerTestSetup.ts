@@ -15,7 +15,7 @@ let server: ViteDevServer | http.Server
 let tempDir: string
 let err: Error
 
-const logs = ((global as any).pageLogs = [])
+const logs = ((global as any).browserLogs = [])
 const onConsole = (msg) => {
   logs.push(msg.text())
 }
@@ -57,11 +57,11 @@ beforeAll(async () => {
       if (!isBuildTest) {
         server = await (await createServer(options)).listen()
         // use resolved port from server
-        const url = ((global as any).testURL = `http://localhost:${server.config.server.port}`)
+        const url = ((global as any).viteTestUrl = `http://localhost:${server.config.server.port}`)
         await page.goto(url)
       } else {
         await build(options)
-        const url = ((global as any).testURL = await startStaticServer())
+        const url = ((global as any).viteTestUrl = await startStaticServer())
         await page.goto(url)
       }
     }

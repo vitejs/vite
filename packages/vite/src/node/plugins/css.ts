@@ -24,7 +24,9 @@ import { Logger } from '../logger'
 // const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
-  // https://github.com/css-modules/postcss-modules
+  /**
+   * https://github.com/css-modules/postcss-modules
+   */
   modules?: CSSModulesOptions | false
   preprocessorOptions?: Record<string, any>
 }
@@ -36,6 +38,9 @@ export interface CSSModulesOptions {
     | string
     | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
+  /**
+   * default: 'camelCaseOnly'
+   */
   localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
 }
 
