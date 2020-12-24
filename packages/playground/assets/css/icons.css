@@ -1,0 +1,22 @@
+img {
+  width: 32px;
+  height: 32px;
+}
+
+.icon {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+}
+
+.icon-clock {
+  background: url(../nested/fragment-bg.svg#icon-clock-view) no-repeat;
+}
+
+.icon-heart {
+  background: url(../nested/fragment-bg.svg#icon-heart-view) no-repeat;
+}
+
+.icon-arrow-right {
+  background: url(../nested/fragment-bg.svg#icon-arrow-right-view) no-repeat;
+}

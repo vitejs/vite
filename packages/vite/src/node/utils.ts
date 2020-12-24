@@ -3,6 +3,7 @@ import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { parse as parseUrl } from 'url'
 import slash from 'slash'
 import { FS_PREFIX } from './constants'
 
@@ -64,8 +65,10 @@ export function removeImportQuery(url: string) {
 }
 
 export function injectQuery(url: string, queryToInject: string) {
-  const [pathname, query] = url.split(`?`, 2)
-  return `${pathname}?${queryToInject}${query ? `&${query}` : ``}`
+  const { pathname, search, hash } = parseUrl(url)
+  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
+    hash || ''
+  }`
 }
 
 export function removeTimestampQuery(url: string) {

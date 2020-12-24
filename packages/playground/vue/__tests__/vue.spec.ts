@@ -93,6 +93,11 @@ describe('template asset reference', () => {
       `/icon.png`
     )
   })
+
+  test('svg fragment', async () => {
+    const img = await page.$('.svg-frag')
+    expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
+  })
 })
 
 describe('hmr', () => {

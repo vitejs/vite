@@ -15,7 +15,7 @@ import {
   transform
 } from '@vue/compiler-dom'
 import MagicString from 'magic-string'
-import { registerBuildAsset, isPublicFile } from './asset'
+import { registerBuildAsset, isPublicFile, assetUrlRE } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
@@ -202,11 +202,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         for (const attr of assetUrls) {
           const value = attr.value!
           const url = await registerBuildAsset(value.content, id, config, this)
-          s.overwrite(
-            value.loc.start.offset,
-            value.loc.end.offset,
-            JSON.stringify(url)
-          )
+          s.overwrite(value.loc.start.offset, value.loc.end.offset, url)
         }
 
         // TODO should store the imported entries for each page
@@ -218,8 +214,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(_, bundle) {
       for (const [id, html] of processedHtml) {
-        let result = html
+        // resolve asset url references
+        let result = html.replace(assetUrlRE, (_, fileId, postfix = '') => {
+          return config.build.base + this.getFileName(fileId) + postfix
+        })
 
+        // find corresponding entry chunk
         const chunk = Object.values(bundle).find(
           (chunk) =>
             chunk.type === 'chunk' &&
@@ -241,6 +241,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
+        // inject chunk asset links
         if (chunk) {
           const assetTags = [
             // js entry chunk for this page
