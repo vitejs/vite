@@ -79,7 +79,7 @@ export async function transformRequest(
   // ensure module in graph after successful load
   const mod = await moduleGraph.ensureEntryFromUrl(url)
   // file is out of root, add it to the watch list
-  if (mod.file && !mod.file.startsWith(root)) {
+  if (mod.file && !mod.file.startsWith(root + '/')) {
     watcher.add(mod.file)
   }
 
