@@ -55,9 +55,14 @@ export interface DepOptimizationOptions {
   auto?: boolean
 }
 
+export interface DepOptimizationMetadata {
+  hash: string
+  cjsEntries: Record<string, true>
+}
+
 export async function optimizeDeps(
   config: ResolvedConfig,
-  force = false,
+  force = config.server.force,
   asCommand = false
 ) {
   config = {
@@ -74,7 +79,10 @@ export async function optimizeDeps(
   }
 
   const dataPath = path.join(cacheDir, 'metadata.json')
-  const depHash = getDepHash(root, config.configPath)
+  const data: DepOptimizationMetadata = {
+    hash: getDepHash(root, config.configPath),
+    cjsEntries: {}
+  }
 
   if (!force) {
     let prevData
@@ -82,7 +90,7 @@ export async function optimizeDeps(
       prevData = JSON.parse(fs.readFileSync(dataPath, 'utf-8'))
     } catch (e) {}
     // hash is consistent, no need to re-bundle
-    if (prevData && prevData.hash === depHash) {
+    if (prevData && prevData.hash === data.hash) {
       log('Hash is consistent. Skipping. Use --force to override.')
       return
     }
@@ -136,7 +144,7 @@ export async function optimizeDeps(
   }
 
   if (!Object.keys(qualified).length) {
-    writeFile(dataPath, JSON.stringify({ hash: depHash }))
+    writeFile(dataPath, JSON.stringify(data, null, 2))
     log(`No listed dependency requires optimization. Skipping.`)
     return
   }
@@ -164,7 +172,6 @@ export async function optimizeDeps(
 
   try {
     const rollup = require('rollup') as typeof Rollup
-    const cjsEntries: Record<string, true> = Object.create(null)
 
     const bundle = await rollup.rollup({
       input: qualified,
@@ -189,7 +196,7 @@ export async function optimizeDeps(
         }),
         buildDefinePlugin(config),
         depAssetRewritePlugin(config),
-        recordCjsEntryPlugin(cjsEntries)
+        recordCjsEntryPlugin(data.cjsEntries)
       ]
     })
 
@@ -206,17 +213,7 @@ export async function optimizeDeps(
         writeFile(path.join(cacheDir, chunk.fileName), chunk.code)
       }
     }
-    writeFile(
-      dataPath,
-      JSON.stringify(
-        {
-          hash: depHash,
-          cjsEntries
-        },
-        null,
-        2
-      )
-    )
+    writeFile(dataPath, JSON.stringify(data, null, 2))
   } catch (e) {
     if (asCommand) {
       throw e
@@ -310,7 +307,10 @@ async function resolveQualifiedDeps(
       debug(`skipping ${id} (ts declaration)`)
       continue
     }
-    const filePath = tryNodeResolve(id, root)
+    let filePath
+    try {
+      filePath = tryNodeResolve(id, root)
+    } catch (e) {}
     if (!filePath) {
       debug(`skipping ${id} (cannot resolve entry)`)
       continue
@@ -379,7 +379,7 @@ async function resolveLinkedDeps(
   config: ResolvedConfig,
   aliasResolver: PluginContainer
 ) {
-  const depRoot = path.dirname(resolveFrom(config.root, `${dep}/package.json`))
+  const depRoot = path.dirname(resolveFrom(`${dep}/package.json`, config.root))
   const { qualified: q, external: e } = await resolveQualifiedDeps(
     depRoot,
     config,

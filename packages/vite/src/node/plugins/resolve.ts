@@ -88,7 +88,7 @@ export function resolvePlugin(
         (res = tryNodeResolve(
           id,
           importer ? path.dirname(importer) : root,
-          !isBuild, // inject version query if is dev server
+          isBuild,
           optimizedCacheDir
         ))
       ) {
@@ -136,7 +136,7 @@ function tryResolveFile(
 export function tryNodeResolve(
   id: string,
   basedir: string,
-  injectVersionQuery = false,
+  isBuild = true,
   optimizeCacheDir?: string
 ): string | undefined {
   const deepMatch = id.match(deepImportRE)
@@ -145,7 +145,7 @@ export function tryNodeResolve(
 
   if (pkg) {
     let resolved: string | undefined
-    if (optimizeCacheDir) {
+    if (!isBuild && optimizeCacheDir) {
       resolved = tryOptimizedResolve(id, optimizeCacheDir)
     }
     if (!resolved) {
@@ -153,7 +153,7 @@ export function tryNodeResolve(
         ? resolveDeepImport(id, pkg)
         : resolvePackageEntry(id, pkg)
     }
-    if (!injectVersionQuery) {
+    if (isBuild) {
       return resolved
     } else {
       // During serve, inject a version query to npm deps so that the browser

@@ -41,6 +41,7 @@ import {
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { createLogger } from '../logger'
+import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 
 export interface ServerOptions {
   host?: string
@@ -177,6 +178,10 @@ export interface ViteDevServer {
    * Stop the server.
    */
   close(): Promise<void>
+  /**
+   * @intenral
+   */
+  optimizeDepsMetadata: DepOptimizationMetadata | null
 }
 
 export async function createServer(
@@ -224,6 +229,7 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
+    optimizeDepsMetadata: null,
     transformWithEsbuild,
     transformRequest(url) {
       return transformRequest(url, server)
@@ -328,7 +334,22 @@ export async function createServer(
   const listen = httpServer.listen.bind(httpServer)
   httpServer.listen = (async (port: number, ...args: any[]) => {
     await container.buildStart({})
-    // TODO run optimizer
+
+    if (resolvedConfig.optimizeCacheDir) {
+      // run optimizer
+      await optimizeDeps(resolvedConfig)
+      // after optimization, read updated optimization metadata
+      const dataPath = path.resolve(
+        resolvedConfig.optimizeCacheDir,
+        'metadata.json'
+      )
+      if (fs.existsSync(dataPath)) {
+        server.optimizeDepsMetadata = JSON.parse(
+          fs.readFileSync(dataPath, 'utf-8')
+        )
+      }
+    }
+
     return listen(port, ...args)
   }) as any
 
@@ -392,6 +413,7 @@ async function startServer(
     httpServer.listen(port, () => {
       httpServer.removeListener('error', onError)
 
+      server.config.logger.clearScreen('info')
       info(`\n  Vite dev server running at:\n`)
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>

@@ -4,8 +4,19 @@
   import React, { useState } from 'react'
   import ReactDOM from 'react-dom'
 
-  ReactDOM.render(
-    React.createElement('div', null, 'hello'),
-    document.getElementById('app')
-  )
+  function App() {
+    const [count, setCount] = useState(0)
+
+    return React.createElement(
+      'button',
+      {
+        onClick() {
+          setCount(count + 1)
+        }
+      },
+      `count is ${count}`
+    )
+  }
+
+  ReactDOM.render(React.createElement(App), document.getElementById('app'))
 </script>

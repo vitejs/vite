@@ -8,8 +8,8 @@
     "debug": "node --inspect-brk ../../vite/bin/vite"
   },
   "dependencies": {
-    "@pika/react": "^16.13.1",
-    "@pika/react-dom": "^16.13.1"
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react-refresh": "^1.0.0"

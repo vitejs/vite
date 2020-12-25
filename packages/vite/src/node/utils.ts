@@ -127,7 +127,7 @@ export function timeFrom(start: number, subtract = 0) {
  */
 export function prettifyUrl(url: string, root: string) {
   url = removeTimestampQuery(url)
-  const isAbsoluteFile = url.startsWith(normalizePath(root))
+  const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
     let file = path.relative(
       root,

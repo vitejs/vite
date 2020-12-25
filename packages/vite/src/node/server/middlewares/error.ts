@@ -16,7 +16,7 @@ export function errorMiddleware(
     if (err.frame) args.push(chalk.yellow(pad(err.frame)))
     if (err.stack) args.push(pad(err.stack))
 
-    server.config.logger.clearScreen()
+    server.config.logger.clearScreen('error')
     server.config.logger.error(args.join('\n'))
 
     res.statusCode = 500
