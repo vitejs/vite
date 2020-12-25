@@ -22,6 +22,7 @@ import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
 import { resolvePlugin } from './plugins/resolve'
 import { createLogger, Logger, LogLevel } from './logger'
+import { DepOptimizationOptions } from './optimizer'
 
 const debug = createDebugger('vite:config')
 
@@ -85,6 +86,10 @@ export interface UserConfig {
    */
   build?: BuildOptions
   /**
+   * Dep optimization options
+   */
+  optimizeDeps?: DepOptimizationOptions
+  /**
    * Log level
    * @default 'all'
    */
@@ -96,6 +101,7 @@ export type ResolvedConfig = Readonly<
     configPath: string | undefined
     inlineConfig: UserConfig
     root: string
+    optimizeCacheDir: string | undefined
     command: 'build' | 'serve'
     mode: string
     isProduction: boolean
@@ -133,18 +139,9 @@ export async function resolveConfig(
   }
 
   // resolve plugins
-  const { plugins } = config
-  const prePlugins: Plugin[] = []
-  const postPlugins: Plugin[] = []
-  const normalPlugins: Plugin[] = []
-
-  if (plugins) {
-    plugins.flat().forEach((p) => {
-      if (p.enforce === 'pre') prePlugins.push(p)
-      else if (p.enforce === 'post') postPlugins.push(p)
-      else normalPlugins.push(p)
-    })
-  }
+  const [prePlugins, postPlugins, normalPlugins] = sortUserPlugins(
+    config.plugins
+  )
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
@@ -181,11 +178,21 @@ export async function resolveConfig(
   const isProduction = resolvedMode === 'production'
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
+  // resolve optimizer cache directory
+  const pkgPath = lookupFile(
+    resolvedRoot,
+    [`package.json`],
+    true /* pathOnly */
+  )
+  const optimizeCacheDir =
+    pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite_opt_cache`)
+
   const resolved = {
     ...config,
     configPath: configPath ? normalizePath(configPath) : undefined,
     inlineConfig,
     root: resolvedRoot,
+    optimizeCacheDir,
     command,
     mode,
     isProduction,
@@ -229,6 +236,24 @@ export async function resolveConfig(
     })
   }
   return resolved
+}
+
+export function sortUserPlugins(
+  plugins: (Plugin | Plugin[])[] | undefined
+): [Plugin[], Plugin[], Plugin[]] {
+  const prePlugins: Plugin[] = []
+  const postPlugins: Plugin[] = []
+  const normalPlugins: Plugin[] = []
+
+  if (plugins) {
+    plugins.flat().forEach((p) => {
+      if (p.enforce === 'pre') prePlugins.push(p)
+      else if (p.enforce === 'post') postPlugins.push(p)
+      else normalPlugins.push(p)
+    })
+  }
+
+  return [prePlugins, postPlugins, normalPlugins]
 }
 
 async function loadConfigFromFile(
@@ -334,7 +359,7 @@ async function loadConfigFromFile(
           resolvePlugin(
             path.dirname(resolvedPath),
             true /* isBuild */,
-            false /* disallow url resolves */
+            false /* disallow src code only resolves */
           )
         ]
       })

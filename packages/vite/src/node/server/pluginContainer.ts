@@ -34,7 +34,6 @@ import { resolve, relative, dirname, sep, posix, join } from 'path'
 import { createHash } from 'crypto'
 import { Plugin } from '../plugin'
 import {
-  RollupOptions,
   InputOptions,
   MinimalPluginContext,
   OutputOptions,
@@ -63,7 +62,7 @@ import {
   timeFrom
 } from '../utils'
 import chalk from 'chalk'
-import { Logger } from '../logger'
+import { ResolvedConfig } from '..'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -107,11 +106,8 @@ type PluginContext = Omit<
 >
 
 export async function createPluginContainer(
-  plugins: readonly Plugin[],
-  rollupOptions: RollupOptions,
-  root: string,
-  watcher: FSWatcher,
-  logger: Logger
+  { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
 
@@ -206,7 +202,7 @@ export async function createPluginContainer(
     addWatchFile(id: string) {
       watchFiles.add(id)
       // only need to add it if file is out of root.
-      if (!id.startsWith(root)) {
+      if (watcher && !id.startsWith(root)) {
         watcher.add(id)
       }
     }

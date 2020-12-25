@@ -1,7 +1,13 @@
 import fs from 'fs'
 import path from 'path'
 import { resolveConfig, UserConfig, ResolvedConfig } from './config'
-import Rollup, { Plugin, RollupBuild, RollupOptions } from 'rollup'
+import Rollup, {
+  Plugin,
+  RollupBuild,
+  RollupOptions,
+  RollupWarning,
+  WarningHandler
+} from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
 import chalk from 'chalk'
@@ -9,9 +15,11 @@ import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import { Terser } from 'types/terser'
-import { copyDir, emptyDir } from './utils'
+import { copyDir, emptyDir, lookupFile } from './utils'
 import { manifestPlugin } from './plugins/manifest'
+import commonjsPlugin from '@rollup/plugin-commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
+import isBuiltin from 'isbuiltin'
 
 export interface BuildOptions {
   /**
@@ -125,6 +133,10 @@ export function resolveBuildPlugins(config: ResolvedConfig): Plugin[] {
   return [
     ...(config.plugins as Plugin[]),
     ...(options.rollupOptions.plugins || []),
+    commonjsPlugin({
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs']
+    }),
     buildHtmlPlugin(config),
     buildDefinePlugin(config),
     dynamicImportVars({
@@ -175,8 +187,10 @@ async function doBuild(
 ) {
   const mode = inlineConfig.mode || 'production'
   const config = await resolveConfig(inlineConfig, 'build', mode, configPath)
-  const options = config.build
 
+  config.logger.info(chalk.cyan(`[vite] building for production...`))
+
+  const options = config.build
   const resolve = (p: string) => path.resolve(config.root, p)
 
   const input = options.rollupOptions?.input || resolve('index.html')
@@ -192,7 +206,8 @@ async function doBuild(
       preserveEntrySignatures: false,
       treeshake: { moduleSideEffects: 'no-external' },
       ...options.rollupOptions,
-      plugins
+      plugins,
+      onwarn: onRollupWarning
     })
 
     paralellBuilds.push(bundle)
@@ -228,5 +243,61 @@ async function doBuild(
       config.logger.error(chalk.yellow(e.frame))
     }
     throw e
+  }
+}
+
+const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
+const dynamicImportWarningIgnoreList = [
+  `Unsupported expression`,
+  `statically analyzed`
+]
+
+export function onRollupWarning(
+  warning: RollupWarning,
+  warn: WarningHandler,
+  allowNodeBuiltins: string[] = []
+) {
+  if (warning.code === 'UNRESOLVED_IMPORT') {
+    let message: string
+    const id = warning.source
+    const importer = warning.importer
+    if (id && isBuiltin(id)) {
+      let importingDep
+      if (importer) {
+        const pkg = JSON.parse(lookupFile(importer, ['package.json']) || `{}`)
+        if (pkg.name) {
+          importingDep = pkg.name
+        }
+      }
+      if (importingDep && allowNodeBuiltins.includes(importingDep)) {
+        return
+      }
+      const dep = importingDep
+        ? `Dependency ${chalk.yellow(importingDep)}`
+        : `A dependency`
+      message =
+        `${dep} is attempting to import Node built-in module ${chalk.yellow(
+          id
+        )}.\n` +
+        `This will not work in a browser environment.\n` +
+        `Imported by: ${chalk.gray(importer)}`
+    } else {
+      message =
+        `[vite]: Rollup failed to resolve import "${warning.source}" from "${warning.importer}".\n` +
+        `This is most likely unintended because it can break your application at runtime.\n` +
+        `If you do want to externalize this module explicitly add it to\n` +
+        `\`rollupInputOptions.external\``
+    }
+    throw new Error(message)
+  }
+  if (
+    warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+    dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
+  ) {
+    return
+  }
+
+  if (!warningIgnoreList.includes(warning.code!)) {
+    warn(warning)
   }
 }
