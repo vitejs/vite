@@ -3,6 +3,7 @@ import chalk from 'chalk'
 import { BuildOptions } from './build'
 import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
+import { resolveConfig } from '.'
 
 const cli = cac('vite')
 
@@ -80,8 +81,7 @@ cli
       await server.listen()
     } catch (e) {
       const logError = createLogger(options.logLevel).error
-      logError(chalk.red('[vite] failed to start dev server'))
-      logError(e.stack)
+      logError(chalk.red(`[vite] error when starting dev server:\n${e.stack}`))
       process.exit(1)
     }
   })
@@ -131,11 +131,39 @@ cli
       )
     } catch (e) {
       const logError = createLogger(options.logLevel).error
-      logError(chalk.red('[vite] build failed.'))
-      logError(e.stack)
+      logError(chalk.red(`[vite] error during build:\n${e.stack}`))
       process.exit(1)
     }
   })
+
+// optimize
+cli
+  .command('optimize [root]')
+  .option(
+    '--force',
+    `[boolean]  force the optimizer to ignore the cache and re-bundle`
+  )
+  .action(
+    async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
+      const { optimizeDeps } = await import('./optimizer')
+      try {
+        const config = await resolveConfig(
+          {
+            root,
+            logLevel: options.logLevel
+          },
+          'build',
+          'development',
+          options.config
+        )
+        await optimizeDeps(config, options.force, true)
+      } catch (e) {
+        const logError = createLogger(options.logLevel).error
+        logError(chalk.red(`[vite] error when optimizing deps:\n${e.stack}`))
+        process.exit(1)
+      }
+    }
+  )
 
 cli.help()
 cli.version(require('../../package.json').version)

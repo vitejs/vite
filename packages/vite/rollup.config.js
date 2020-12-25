@@ -55,6 +55,9 @@ const sharedNodeOptions = {
     if (warning.message.includes('Use of eval')) {
       return
     }
+    if (warning.message.includes('Circular dependency')) {
+      return
+    }
     warn(warning)
   }
 }

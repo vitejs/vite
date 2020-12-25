@@ -87,3 +87,8 @@ declare module 'rollup-plugin-web-worker-loader' {
   const p: (o?: Options) => Plugin
   export default p
 }
+
+declare module 'isbuiltin' {
+  function isBuiltin(moduleName: string): boolean
+  export default isBuiltin
+}

@@ -212,13 +212,7 @@ export async function createServer(
   }) as FSWatcher
 
   const plugins = resolvedConfig.plugins
-  const container = await createPluginContainer(
-    plugins,
-    {},
-    root,
-    watcher,
-    logger
-  )
+  const container = await createPluginContainer(resolvedConfig, watcher)
   const moduleGraph = new ModuleGraph(container)
   const closeHttpServer = createSeverCloseFn(httpServer)
 

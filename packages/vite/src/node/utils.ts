@@ -5,7 +5,25 @@ import os from 'os'
 import path from 'path'
 import { parse as parseUrl } from 'url'
 import slash from 'slash'
-import { FS_PREFIX } from './constants'
+import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
+import resolve from 'resolve'
+
+export const bareImportRE = /^[^\/\.]/
+export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
+
+let isRunningWithYarnPnp: boolean
+try {
+  isRunningWithYarnPnp = Boolean(require('pnpapi'))
+} catch {}
+
+export function resolveFrom(id: string, basedir: string) {
+  return resolve.sync(id, {
+    basedir,
+    extensions: SUPPORTED_EXTS,
+    // necessary to work with pnpm
+    preserveSymlinks: isRunningWithYarnPnp || false
+  })
+}
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -261,6 +279,14 @@ export function generateCodeFrame(
     }
   }
   return res.join('\n')
+}
+
+export function writeFile(filename: string, content: string | Uint8Array) {
+  const dir = path.dirname(filename)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+  fs.writeFileSync(filename, content)
 }
 
 export function emptyDir(dir: string) {

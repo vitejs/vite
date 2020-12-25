@@ -1,19 +1,19 @@
 import fs from 'fs'
 import path from 'path'
-import resolve from 'resolve'
-import { Plugin } from '..'
+import { Plugin } from '../plugin'
 import chalk from 'chalk'
-import { FS_PREFIX } from '../constants'
+import { FS_PREFIX, SUPPORTED_EXTS } from '../constants'
 import {
   createDebugger,
+  deepImportRE,
   injectQuery,
   isDataUrl,
   isExternalUrl,
   isObject,
-  normalizePath
+  normalizePath,
+  resolveFrom
 } from '../utils'
 
-export const supportedExts = ['.mjs', '.js', '.ts', '.jsx', '.tsx']
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
 const isDebug = process.env.DEBUG
@@ -24,13 +24,19 @@ const debug = createDebugger('vite:resolve-details', {
 export function resolvePlugin(
   root: string,
   isBuild: boolean,
-  allowUrls = true
+  /**
+   * src code mode also attempts the following:
+   * - resolving /xxx as URLs
+   * - resolving bare imports from optimized deps
+   */
+  asSrc: boolean,
+  optimizedCacheDir?: string
 ): Plugin {
   return {
     name: 'vite:resolve',
     resolveId(id, importer) {
       let res
-      if (allowUrls && id.startsWith(FS_PREFIX)) {
+      if (asSrc && id.startsWith(FS_PREFIX)) {
         // explicit fs paths that starts with /@fs/*
         // these are injected by the rewrite plugin so that the file can work
         // in the browser
@@ -45,7 +51,7 @@ export function resolvePlugin(
 
       // URL
       // /foo -> /fs-root/foo
-      if (allowUrls && id.startsWith('/')) {
+      if (asSrc && id.startsWith('/')) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath))) {
           isDebug && debug(`[url] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
@@ -82,7 +88,8 @@ export function resolvePlugin(
         (res = tryNodeResolve(
           id,
           importer ? path.dirname(importer) : root,
-          isBuild
+          !isBuild, // inject version query if is dev server
+          optimizedCacheDir
         ))
       ) {
         return res
@@ -101,7 +108,7 @@ function tryFsResolve(fsPath: string, tryIndex = true): string | undefined {
   if ((res = tryResolveFile(file, query, tryIndex))) {
     return res
   }
-  for (const ext of supportedExts) {
+  for (const ext of SUPPORTED_EXTS) {
     if ((res = tryResolveFile(file + ext, query, tryIndex))) {
       return res
     }
@@ -126,27 +133,27 @@ function tryResolveFile(
   }
 }
 
-const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
-
-let isRunningWithYarnPnp: boolean
-try {
-  isRunningWithYarnPnp = Boolean(require('pnpapi'))
-} catch {}
-
-function tryNodeResolve(
+export function tryNodeResolve(
   id: string,
   basedir: string,
-  isBuild: boolean
+  injectVersionQuery = false,
+  optimizeCacheDir?: string
 ): string | undefined {
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
   const pkg = resolvePackageData(pkgId, basedir)
 
   if (pkg) {
-    const resolved = deepMatch
-      ? resolveDeepImport(id, pkg)
-      : resolvePackageEntry(id, pkg)
-    if (isBuild) {
+    let resolved: string | undefined
+    if (optimizeCacheDir) {
+      resolved = tryOptimizedResolve(id, optimizeCacheDir)
+    }
+    if (!resolved) {
+      resolved = deepMatch
+        ? resolveDeepImport(id, pkg)
+        : resolvePackageEntry(id, pkg)
+    }
+    if (!injectVersionQuery) {
       return resolved
     } else {
       // During serve, inject a version query to npm deps so that the browser
@@ -161,6 +168,16 @@ function tryNodeResolve(
     }
   } else {
     throw new Error(`Failed to resolve package.json for module "${id}"`)
+  }
+}
+
+function tryOptimizedResolve(id: string, cacheDir: string): string | undefined {
+  let [file, q] = id.split(`?`, 2)
+  const query = q ? `?${q}` : ``
+  if (!path.extname(file)) file += `.js`
+  const optimizedFilePath = path.resolve(cacheDir, file)
+  if (fs.existsSync(optimizedFilePath)) {
+    return normalizePath(optimizedFilePath) + query
   }
 }
 
@@ -186,12 +203,7 @@ function resolvePackageData(
   }
   let data
   try {
-    const pkgPath = resolve.sync(`${id}/package.json`, {
-      basedir,
-      extensions: supportedExts,
-      // necessary to work with pnpm
-      preserveSymlinks: isRunningWithYarnPnp || false
-    })
+    const pkgPath = resolveFrom(`${id}/package.json`, basedir)
     data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
     const pkg = {
       dir: path.dirname(pkgPath),
@@ -204,7 +216,7 @@ function resolvePackageData(
   }
 }
 
-function resolvePackageEntry(
+export function resolvePackageEntry(
   id: string,
   { dir, data }: PackageData
 ): string | undefined {
