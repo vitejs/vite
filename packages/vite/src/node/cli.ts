@@ -49,7 +49,7 @@ cli
   .option('-r, --root <path>', `[string] use specified config file`)
   .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
-  .option('-f, --filter [filter]', `[string] filter debug logs`)
+  .option('-f, --filter <filter>', `[string] filter debug logs`)
 
 // dev
 cli
