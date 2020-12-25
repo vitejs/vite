@@ -158,6 +158,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           } else if (prop === '.env') {
             hasEnv = true
           }
+          continue
         }
 
         // For dynamic id, check if it's a literal that we can resolve
@@ -249,11 +250,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           importedUrls.add(absoluteUrl)
-        } else if (
-          url !== 'import.meta' &&
-          !hasViteIgnore &&
-          !isSupportedDynamicImport(url)
-        ) {
+        } else if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
           this.warn(
             `\n` +
               chalk.cyan(importerModule.file) +
