@@ -15,7 +15,7 @@ import {
   writeFile
 } from '../utils'
 import { depAssetExternalPlugin, depAssetRewritePlugin } from './depAssetPlugin'
-import { recordCjsEntryPlugin } from './cjsEntryPlugin'
+import { recordCjsEntryPlugin } from './depMetadataPlugin'
 import {
   createPluginContainer,
   PluginContainer
@@ -57,6 +57,7 @@ export interface DepOptimizationOptions {
 
 export interface DepOptimizationMetadata {
   hash: string
+  map: Record<string, string>
   cjsEntries: Record<string, true>
 }
 
@@ -81,6 +82,7 @@ export async function optimizeDeps(
   const dataPath = path.join(cacheDir, 'metadata.json')
   const data: DepOptimizationMetadata = {
     hash: getDepHash(root, config.configPath),
+    map: {},
     cjsEntries: {}
   }
 
@@ -196,7 +198,7 @@ export async function optimizeDeps(
         }),
         buildDefinePlugin(config),
         depAssetRewritePlugin(config),
-        recordCjsEntryPlugin(data.cjsEntries)
+        recordCjsEntryPlugin(data)
       ]
     })
 
@@ -204,8 +206,8 @@ export async function optimizeDeps(
       ...config.build.rollupOptions,
       format: 'es',
       exports: 'named',
-      entryFileNames: '[name].js',
-      chunkFileNames: 'common/[name]-[hash].js'
+      entryFileNames: '[name].[hash].js',
+      chunkFileNames: 'common/[name].[hash].js'
     })
 
     for (const chunk of output) {

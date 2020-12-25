@@ -4,6 +4,7 @@ import { Plugin } from '../plugin'
 import chalk from 'chalk'
 import { FS_PREFIX, SUPPORTED_EXTS } from '../constants'
 import {
+  bareImportRE,
   createDebugger,
   deepImportRE,
   injectQuery,
@@ -13,6 +14,7 @@ import {
   normalizePath,
   resolveFrom
 } from '../utils'
+import { ViteDevServer } from '..'
 
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
@@ -29,11 +31,17 @@ export function resolvePlugin(
    * - resolving /xxx as URLs
    * - resolving bare imports from optimized deps
    */
-  asSrc: boolean,
-  optimizedCacheDir?: string
+  asSrc: boolean
 ): Plugin {
+  let server: ViteDevServer
+
   return {
     name: 'vite:resolve',
+
+    configureServer(_server) {
+      server = _server
+    },
+
     resolveId(id, importer) {
       let res
       if (asSrc && id.startsWith(FS_PREFIX)) {
@@ -83,16 +91,20 @@ export function resolvePlugin(
       }
 
       // bare package imports, perform node resolve
-      if (
-        /^[\w@]/.test(id) &&
-        (res = tryNodeResolve(
-          id,
-          importer ? path.dirname(importer) : root,
-          isBuild,
-          optimizedCacheDir
-        ))
-      ) {
-        return res
+      if (bareImportRE.test(id)) {
+        if (asSrc && server && (res = tryOptimizedResolve(id, server))) {
+          return res
+        }
+
+        if (
+          (res = tryNodeResolve(
+            id,
+            importer ? path.dirname(importer) : root,
+            isBuild
+          ))
+        ) {
+          return res
+        }
       }
 
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
@@ -136,23 +148,16 @@ function tryResolveFile(
 export function tryNodeResolve(
   id: string,
   basedir: string,
-  isBuild = true,
-  optimizeCacheDir?: string
+  isBuild = true
 ): string | undefined {
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
   const pkg = resolvePackageData(pkgId, basedir)
 
   if (pkg) {
-    let resolved: string | undefined
-    if (!isBuild && optimizeCacheDir) {
-      resolved = tryOptimizedResolve(id, optimizeCacheDir)
-    }
-    if (!resolved) {
-      resolved = deepMatch
-        ? resolveDeepImport(id, pkg)
-        : resolvePackageEntry(id, pkg)
-    }
+    const resolved = deepMatch
+      ? resolveDeepImport(id, pkg)
+      : resolvePackageEntry(id, pkg)
     if (isBuild) {
       return resolved
     } else {
@@ -171,13 +176,19 @@ export function tryNodeResolve(
   }
 }
 
-function tryOptimizedResolve(id: string, cacheDir: string): string | undefined {
-  let [file, q] = id.split(`?`, 2)
-  const query = q ? `?${q}` : ``
-  if (!path.extname(file)) file += `.js`
-  const optimizedFilePath = path.resolve(cacheDir, file)
-  if (fs.existsSync(optimizedFilePath)) {
-    return normalizePath(optimizedFilePath) + query
+function tryOptimizedResolve(
+  rawId: string,
+  server: ViteDevServer
+): string | undefined {
+  const cacheDir = server.config.optimizeCacheDir
+  const depData = server.optimizeDepsMetadata
+  if (cacheDir && depData) {
+    const [id, q] = rawId.split(`?`, 2)
+    const query = q ? `?${q}` : ``
+    const filePath = depData.map[id]
+    if (filePath) {
+      return normalizePath(path.resolve(cacheDir, filePath)) + query
+    }
   }
 }
 

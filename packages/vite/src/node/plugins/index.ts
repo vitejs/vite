@@ -21,12 +21,7 @@ export function resolvePlugins(
   return [
     aliasPlugin({ entries: config.alias }),
     ...prePlugins,
-    resolvePlugin(
-      config.root,
-      config.command === 'build',
-      true,
-      config.optimizeCacheDir
-    ),
+    resolvePlugin(config.root, config.command === 'build', true),
     htmlPlugin(),
     cssPlugin(config),
     esbuildPlugin(config.esbuild || {}),
