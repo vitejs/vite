@@ -101,10 +101,10 @@ export type ResolvedConfig = Readonly<
     configPath: string | undefined
     inlineConfig: UserConfig
     root: string
-    optimizeCacheDir: string | undefined
     command: 'build' | 'serve'
     mode: string
     isProduction: boolean
+    optimizeCacheDir: string | undefined
     env: Record<string, any>
     plugins: readonly Plugin[]
     server: ServerOptions
@@ -185,17 +185,17 @@ export async function resolveConfig(
     true /* pathOnly */
   )
   const optimizeCacheDir =
-    pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite_opt_cache`)
+    pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite`)
 
   const resolved = {
     ...config,
     configPath: configPath ? normalizePath(configPath) : undefined,
     inlineConfig,
     root: resolvedRoot,
-    optimizeCacheDir,
     command,
     mode,
     isProduction,
+    optimizeCacheDir,
     alias: resolvedAlias,
     plugins: userPlugins,
     server: config.server || {},

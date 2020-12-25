@@ -64,6 +64,10 @@ cli
   .option('-m, --mode <mode>', `[string] set env mode`, {
     default: 'development'
   })
+  .option(
+    '--force',
+    `[boolean]  force the optimizer to ignore the cache and re-bundle`
+  )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
     // output structure is preserved even after bundling so require()
     // is ok here

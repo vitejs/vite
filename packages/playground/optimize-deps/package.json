@@ -10,6 +10,6 @@
   "dependencies": {
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "vue": "^3.0.4"
+    "test-resolve-linked": "0.0.0"
   }
 }

@@ -10,7 +10,7 @@ export function recordCjsEntryPlugin(data: Record<string, true>): Plugin {
             const facadeInfo = this.getModuleInfo(chunk.facadeModuleId)
             // this info is exposed by rollup commonjs plugin
             if (facadeInfo?.meta?.commonjs?.isCommonJS) {
-              data[chunk.facadeModuleId] = true
+              data[chunk.fileName] = true
             }
           }
         }

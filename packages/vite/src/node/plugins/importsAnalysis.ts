@@ -3,9 +3,8 @@ import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import chalk from 'chalk'
 import MagicString from 'magic-string'
-import { init, parse, ImportSpecifier } from 'es-module-lexer'
+import { init, parse as parseImports, ImportSpecifier } from 'es-module-lexer'
 import { isCSSProxy, isCSSRequest } from './css'
-import slash from 'slash'
 import {
   cleanUrl,
   createDebugger,
@@ -14,6 +13,7 @@ import {
   isDataUrl,
   isExternalUrl,
   isJSRequest,
+  normalizePath,
   prettifyUrl,
   timeFrom
 } from '../utils'
@@ -25,6 +25,9 @@ import {
 import { FS_PREFIX, CLIENT_PUBLIC_PATH, DEP_VERSION_RE } from '../constants'
 import { ViteDevServer } from '../'
 import { checkPublicFile } from './asset'
+import { parse as parseJS } from 'acorn'
+import { ImportDeclaration } from 'estree'
+import { makeLegalIdentifier } from '@rollup/pluginutils'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -79,7 +82,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      const prettyImporter = prettifyUrl(slash(importer), config.root)
+      const prettyImporter = prettifyUrl(normalizePath(importer), config.root)
 
       if (canSkip(importer)) {
         isDebug && debugRewrite(chalk.dim(`[skipped] ${prettyImporter}`))
@@ -91,7 +94,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       await init
       let imports: ImportSpecifier[] = []
       try {
-        imports = parse(source)[0]
+        imports = parseImports(source)[0]
       } catch (e) {
         this.error(
           `Failed to parse source for import rewrite.\n` +
@@ -130,7 +133,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const toAbsoluteUrl = (url: string) =>
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
-      for (const { s: start, e: end, d: dynamicIndex } of imports) {
+      for (let i = 0; i < imports.length; i++) {
+        const {
+          s: start,
+          e: end,
+          ss: expStart,
+          se: expEnd,
+          d: dynamicIndex
+        } = imports[i]
+
         const rawUrl = source.slice(start, end)
         let url = rawUrl
 
@@ -197,7 +208,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             !url.startsWith('/') &&
             !url.startsWith('./')
           ) {
-            url = FS_PREFIX + slash(resolved.id)
+            url = FS_PREFIX + normalizePath(resolved.id)
           }
 
           // for relative imports, inherit its importer's version query.
@@ -245,7 +256,27 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // rewrite
           if (url !== rawUrl) {
-            str().overwrite(start, end, isLiteralDynamicId ? `'${url}'` : url)
+            // for optimized cjs deps, support named imports by rewriting named
+            // imports to const assignments.
+            if (isOptimizedCjs(resolved.id, server)) {
+              if (isLiteralDynamicId) {
+                // rewrite `import('package')` to expose module.exports
+                str().overwrite(
+                  dynamicIndex,
+                  end + 1,
+                  `import('${url}').then(m => m.default)`
+                )
+              } else {
+                const exp = source.slice(expStart, expEnd)
+                str().overwrite(
+                  expStart,
+                  expEnd,
+                  transformCjsImport(exp, url, rawUrl, i)
+                )
+              }
+            } else {
+              str().overwrite(start, end, isLiteralDynamicId ? `'${url}'` : url)
+            }
           }
 
           // record for HMR import chain analysis
@@ -349,4 +380,58 @@ function isSupportedDynamicImport(url: string) {
     return false
   }
   return true
+}
+
+function isOptimizedCjs(
+  id: string,
+  { optimizeDepsMetadata, config: { optimizeCacheDir } }: ViteDevServer
+): boolean {
+  if (optimizeDepsMetadata && optimizeCacheDir) {
+    const relative = path.relative(optimizeCacheDir, cleanUrl(id))
+    return relative in optimizeDepsMetadata.cjsEntries
+  }
+  return false
+}
+
+type ImportNameSpecifier = { importedName: string; localName: string }
+
+function transformCjsImport(
+  importExp: string,
+  url: string,
+  rawUrl: string,
+  importIndex: number
+): string {
+  const ast = (parseJS(importExp, {
+    ecmaVersion: 2020,
+    sourceType: 'module'
+  }) as any).body[0] as ImportDeclaration
+
+  const importNames: ImportNameSpecifier[] = []
+
+  ast.specifiers.forEach((obj) => {
+    if (obj.type === 'ImportSpecifier' && obj.imported.type === 'Identifier') {
+      const importedName = obj.imported.name
+      const localName = obj.local.name
+      importNames.push({ importedName, localName })
+    } else if (obj.type === 'ImportDefaultSpecifier') {
+      importNames.push({ importedName: 'default', localName: obj.local.name })
+    } else if (obj.type === 'ImportNamespaceSpecifier') {
+      importNames.push({ importedName: '*', localName: obj.local.name })
+    }
+  })
+
+  // If there is multiple import for same id in one file,
+  // importIndex will prevent the cjsModuleName to be duplicate
+  const cjsModuleName = makeLegalIdentifier(
+    `$viteCjsImport${importIndex}_${rawUrl}`
+  )
+  const lines: string[] = [`import ${cjsModuleName} from "${url}";`]
+  importNames.forEach(({ importedName, localName }) => {
+    if (importedName === '*' || importedName === 'default') {
+      lines.push(`const ${localName} = ${cjsModuleName};`)
+    } else {
+      lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"];`)
+    }
+  })
+  return lines.join('\n')
 }

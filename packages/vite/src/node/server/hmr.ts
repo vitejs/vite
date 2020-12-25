@@ -31,7 +31,7 @@ export async function handleHMRUpdate(
   if (file === config.configPath || file.endsWith('.env')) {
     // TODO auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
-    server.config.logger.clearScreen()
+    server.config.logger.clearScreen('info')
     server.config.logger.info(
       chalk.green('[vite] config or .env file changed, restarting server...')
     )
