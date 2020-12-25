@@ -19,7 +19,7 @@ import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
-import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
+import { CLIENT_DIR, DEFAULT_ASSETS_RE, DEP_CACHE_DIR } from './constants'
 import { resolvePlugin } from './plugins/resolve'
 import { createLogger, Logger, LogLevel } from './logger'
 import { DepOptimizationOptions } from './optimizer'
@@ -185,7 +185,7 @@ export async function resolveConfig(
     true /* pathOnly */
   )
   const optimizeCacheDir =
-    pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite`)
+    pkgPath && path.join(path.dirname(pkgPath), `node_modules/${DEP_CACHE_DIR}`)
 
   const resolved = {
     ...config,

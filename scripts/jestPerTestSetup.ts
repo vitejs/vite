@@ -37,7 +37,11 @@ beforeAll(async () => {
         dereference: true,
         filter(file) {
           file = slash(file)
-          return !file.includes('__tests__') && !file.match(/dist(\/|$)/)
+          return (
+            !file.includes('__tests__') &&
+            !file.includes('node_modules') &&
+            !file.match(/dist(\/|$)/)
+          )
         }
       })
 

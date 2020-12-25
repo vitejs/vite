@@ -2,6 +2,8 @@ import path from 'path'
 
 export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx']
 
+export const DEP_CACHE_DIR = `.vite`
+
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
  */
