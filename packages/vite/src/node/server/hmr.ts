@@ -47,8 +47,10 @@ export async function handleHMRUpdate(
 
   debugHmr(`[file change] ${chalk.dim(shortFile)}`)
 
+  let mods = moduleGraph.getModulesByFile(file)
+
   // html files and the client itself cannot be hot updated.
-  if (file.endsWith('.html') || file.startsWith(CLIENT_DIR)) {
+  if ((!mods && file.endsWith('.html')) || file.startsWith(CLIENT_DIR)) {
     config.logger.info(
       chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
     )
@@ -59,7 +61,7 @@ export async function handleHMRUpdate(
     return
   }
 
-  let mods = moduleGraph.getModulesByFile(file)
+  // let mods = moduleGraph.getModulesByFile(file)
   if (!mods) {
     // loaded but not in the module graph, probably not js
     debugHmr(`[no module entry] ${chalk.dim(shortFile)}`)

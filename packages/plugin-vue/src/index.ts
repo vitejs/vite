@@ -17,7 +17,7 @@ import {
   SFCTemplateCompileOptions
 } from '@vue/compiler-sfc'
 import { parseVueRequest } from './utils/query'
-import { getDescriptor, setDescriptor } from './utils/descriptorCache'
+import { getDescriptor } from './utils/descriptorCache'
 import { getResolvedScript } from './script'
 import { transformMain } from './main'
 import { handleHotUpdate } from './handleHotUpdate'
@@ -90,34 +90,15 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     async resolveId(id, importer) {
-      const { filename, query } = parseVueRequest(id)
       // serve subpart requests (*?vue) as virtual modules
-      if (query.vue) {
-        if (query.src) {
-          const resolved = await this.resolve(filename, importer, {
-            skipSelf: true
-          })
-          if (resolved) {
-            // associate this imported file to the importer SFC's descriptor
-            // so that we can retrieve it in transform()
-            setDescriptor(resolved.id, getDescriptor(importer!))
-            const [, originalQuery] = id.split('?', 2)
-            resolved.id += `?${originalQuery}`
-            return resolved
-          }
-        } else if (!filter(filename)) {
-          return null
-        }
+      if (parseVueRequest(id).query.vue) {
         return id
       }
     },
 
     load(id) {
       const { filename, query } = parseVueRequest(id)
-      if (!filter(filename)) {
-        return
-      }
-      // serve subpart virtual modules
+      // select corresponding block for subpart virtual modules
       if (query.vue) {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')
@@ -145,16 +126,15 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     transform(code, id) {
       const { filename, query } = parseVueRequest(id)
-      if (!filter(filename)) {
+      if (!query.vue && !filter(filename)) {
         return
       }
 
       if (!query.vue) {
         // main request
         return transformMain(code, filename, options, this)
-      }
-
-      if (query.vue) {
+      } else {
+        // sub block request
         const descriptor = getDescriptor(filename)
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this)

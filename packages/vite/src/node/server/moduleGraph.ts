@@ -1,6 +1,11 @@
 import { extname } from 'path'
-import { isCSSRequest } from '../plugins/css'
-import { cleanUrl, normalizePath, removeTimestampQuery } from '../utils'
+import { isCSSProxy, isCSSRequest } from '../plugins/css'
+import {
+  cleanUrl,
+  normalizePath,
+  removeImportQuery,
+  removeTimestampQuery
+} from '../utils'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
 import { parse as parseUrl } from 'url'
@@ -156,6 +161,9 @@ export class ModuleGraph {
   // the same module
   async resolveUrl(url: string): Promise<[string, string]> {
     url = removeTimestampQuery(url)
+    if (!isCSSProxy(url)) {
+      url = removeImportQuery(url)
+    }
     const resolvedId = (await this.container.resolveId(url)).id
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)

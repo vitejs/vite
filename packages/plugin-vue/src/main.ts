@@ -1,7 +1,12 @@
 import qs from 'querystring'
+import path from 'path'
 import { rewriteDefault, SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
 import { ResolvedOptions } from '.'
-import { createDescriptor, getPrevDescriptor } from './utils/descriptorCache'
+import {
+  createDescriptor,
+  getPrevDescriptor,
+  setDescriptor
+} from './utils/descriptorCache'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
@@ -162,14 +167,16 @@ function genTemplateCode(
       pluginContext
     )
   } else {
+    if (template.src) {
+      linkSrcToDescriptor(template.src, descriptor)
+    }
     const src = template.src || descriptor.filename
     const srcQuery = template.src ? `&src` : ``
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${attrsQuery}`
+    const request = JSON.stringify(src + query)
     return {
-      code: `import { ${renderFnName} as _sfc_${renderFnName} } from ${JSON.stringify(
-        src + query
-      )}`,
+      code: `import { ${renderFnName} as _sfc_${renderFnName} } from ${request}`,
       map: undefined
     }
   }
@@ -205,14 +212,17 @@ async function genScriptCode(
         map = result.map
       }
     } else {
+      if (script.src) {
+        linkSrcToDescriptor(script.src, descriptor)
+      }
       const src = script.src || descriptor.filename
-      const attrsQuery = attrsToQuery(script.attrs, 'js')
+      const langFallback = (script.src && path.extname(src).slice(1)) || 'js'
+      const attrsQuery = attrsToQuery(script.attrs, langFallback)
       const srcQuery = script.src ? `&src` : ``
       const query = `?vue&type=script${srcQuery}${attrsQuery}`
-      const scriptRequest = JSON.stringify(src + query)
+      const request = JSON.stringify(src + query)
       scriptCode =
-        `import _sfc_main from ${scriptRequest}\n` +
-        `export * from ${scriptRequest}` // support named exports
+        `import _sfc_main from ${request}\n` + `export * from ${request}` // support named exports
     }
   }
   return {
@@ -226,6 +236,9 @@ function genStyleCode(descriptor: SFCDescriptor) {
   let hasCSSModules = false
   if (descriptor.styles.length) {
     descriptor.styles.forEach((style, i) => {
+      if (style.src) {
+        linkSrcToDescriptor(style.src, descriptor)
+      }
       const src = style.src || descriptor.filename
       // do not include module in default query, since we use it to indicate
       // that the module needs to export the modules json
@@ -251,6 +264,9 @@ function genStyleCode(descriptor: SFCDescriptor) {
 function genCustomBlockCode(descriptor: SFCDescriptor) {
   let code = ''
   descriptor.customBlocks.forEach((block, index) => {
+    if (block.src) {
+      linkSrcToDescriptor(block.src, descriptor)
+    }
     const src = block.src || descriptor.filename
     const attrsQuery = attrsToQuery(block.attrs, block.type)
     const srcQuery = block.src ? `&src` : ``
@@ -275,6 +291,19 @@ function genCSSModulesCode(
     `\nimport ${styleVar} from ${JSON.stringify(moduleRequest)}` +
     `\ncssModules["${exposedName}"] = ${styleVar}`
   )
+}
+
+/**
+ * For blocks with src imports, it is important to link the imported file
+ * with its owner SFC descriptor so that we can get the information about
+ * the owner SFC when compiling that file in the transform phase.
+ */
+function linkSrcToDescriptor(src: string, descriptor: SFCDescriptor) {
+  const srcFile = path.posix.resolve(
+    path.posix.dirname(descriptor.filename),
+    src
+  )
+  setDescriptor(srcFile, descriptor)
 }
 
 // these are built-in query parameters so should be ignored
