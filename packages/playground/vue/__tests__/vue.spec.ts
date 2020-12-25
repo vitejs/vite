@@ -122,6 +122,35 @@ describe('hmr', () => {
   })
 })
 
+describe('src imports', () => {
+  test('script src with ts', async () => {
+    expect(await page.textContent('.src-imports-script')).toMatch(
+      'hello from script src'
+    )
+    editFile('src-import/script.ts', (code) =>
+      code.replace('hello from script src', 'updated')
+    )
+    await untilUpdated(() => page.textContent('.src-imports-script'), 'updated')
+  })
+
+  test('style src', async () => {
+    const el = await page.$('.src-imports-style')
+    expect(await getColor(el)).toBe('tan')
+    editFile('src-import/style.css', (code) =>
+      code.replace('color: tan', 'color: red')
+    )
+    await untilUpdated(() => getColor(el), 'red')
+  })
+
+  test('tempalte src import hmr', async () => {
+    const el = await page.$('.src-imports-style')
+    editFile('src-import/template.html', (code) =>
+      code.replace('should be tan', 'should be red')
+    )
+    await untilUpdated(() => el.textContent(), 'should be red')
+  })
+})
+
 describe('custom blocks', () => {
   test('should work', async () => {
     expect(await page.textContent('.custom-block')).toMatch('こんにちは')

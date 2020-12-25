@@ -7,6 +7,7 @@
   <CssModules />
   <Assets />
   <CustomBlock />
+  <SrcImport />
 </template>
 
 <script setup lang="ts">
@@ -16,6 +17,7 @@ import PreProcessors from './PreProcessors.vue'
 import CssModules from './CssModules.vue'
 import Assets from './Assets.vue'
 import CustomBlock from './CustomBlock.vue'
+import SrcImport from './src-import/SrcImport.vue'
 
 import { ref } from 'vue'
 

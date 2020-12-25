@@ -74,7 +74,7 @@ export function transformMiddleware(
       ) {
         // strip ?import except for CSS since we need to differentiate between
         // normal CSS requests and imports
-        if (isImportRequest(url) && !isCSSProxy(url)) {
+        if (!isCSSProxy(url)) {
           url = removeImportQuery(url)
         }
 
