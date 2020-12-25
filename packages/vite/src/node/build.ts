@@ -1,16 +1,16 @@
 import fs from 'fs'
 import path from 'path'
-import { resolveConfig, UserConfig, ResolvedConfig } from '../config'
+import { resolveConfig, UserConfig, ResolvedConfig } from './config'
 import Rollup, { Plugin, RollupBuild, RollupOptions } from 'rollup'
-import { buildReporterPlugin } from '../plugins/reporter'
-import { buildDefinePlugin } from '../plugins/define'
+import { buildReporterPlugin } from './plugins/reporter'
+import { buildDefinePlugin } from './plugins/define'
 import chalk from 'chalk'
-import { buildHtmlPlugin } from '../plugins/html'
-import { buildEsbuildPlugin } from '../plugins/esbuild'
-import { terserPlugin } from '../plugins/terser'
+import { buildHtmlPlugin } from './plugins/html'
+import { buildEsbuildPlugin } from './plugins/esbuild'
+import { terserPlugin } from './plugins/terser'
 import { Terser } from 'types/terser'
-import { copyDir, emptyDir } from '../utils'
-import { manifestPlugin } from '../plugins/manifest'
+import { copyDir, emptyDir } from './utils'
+import { manifestPlugin } from './plugins/manifest'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 
 export interface BuildOptions {
@@ -120,6 +120,26 @@ export function resolveBuildOptions(
   return resolved
 }
 
+export function resolveBuildPlugins(config: ResolvedConfig): Plugin[] {
+  const options = config.build
+  return [
+    ...(config.plugins as Plugin[]),
+    ...(options.rollupOptions.plugins || []),
+    buildHtmlPlugin(config),
+    buildDefinePlugin(config),
+    dynamicImportVars({
+      warnOnError: true,
+      exclude: [/node_modules/]
+    }),
+    buildEsbuildPlugin(config),
+    ...(options.minify && options.minify !== 'esbuild'
+      ? [terserPlugin(options.terserOptions)]
+      : []),
+    ...(options.manifest ? [manifestPlugin()] : []),
+    buildReporterPlugin(config)
+  ]
+}
+
 /**
  * Track parallel build calls and only stop the esbuild service when all
  * builds are done. (#1098)
@@ -147,26 +167,6 @@ export async function build(
       paralellBuilds.length = 0
     }
   }
-}
-
-export function resolveBuildPlugins(config: ResolvedConfig): Plugin[] {
-  const options = config.build
-  return [
-    ...(config.plugins as Plugin[]),
-    ...(options.rollupOptions.plugins || []),
-    buildHtmlPlugin(config),
-    buildDefinePlugin(config),
-    dynamicImportVars({
-      warnOnError: true,
-      exclude: [/node_modules/]
-    }),
-    buildEsbuildPlugin(config),
-    ...(options.minify && options.minify !== 'esbuild'
-      ? [terserPlugin(options.terserOptions)]
-      : []),
-    ...(options.manifest ? [manifestPlugin()] : []),
-    buildReporterPlugin(config)
-  ]
 }
 
 async function doBuild(
