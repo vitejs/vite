@@ -631,7 +631,7 @@ async function loadConfigFromBundledFile(
   return config
 }
 
-function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
+export function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   return {
     ...config,
     ...plugin,
@@ -686,7 +686,7 @@ function resolvePlugin(config: UserConfig, plugin: Plugin): UserConfig {
   }
 }
 
-function mergeAssetUrlOptions(
+export function mergeAssetUrlOptions(
   to: SFCTemplateCompileOptions['transformAssetUrls'],
   from: SFCTemplateCompileOptions['transformAssetUrls']
 ): SFCTemplateCompileOptions['transformAssetUrls'] {
