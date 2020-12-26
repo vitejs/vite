@@ -562,33 +562,23 @@ export async function resolveConfig(mode: string, configPath?: string) {
       ? userConfig(mode)
       : userConfig) as ResolvedConfig
 
-    // resolve plugins
-    if (config.plugins) {
-      for (const plugin of config.plugins) {
-        config = resolvePlugin(config, plugin) as any
-      }
-    }
-
     // normalize config root to absolute
     if (config.root && !path.isAbsolute(config.root)) {
       config.root = path.resolve(path.dirname(resolvedPath), config.root)
     }
 
-    if (typeof config.vueTransformAssetUrls === 'object') {
-      config.vueTransformAssetUrls = normalizeAssetUrlOptions(
-        config.vueTransformAssetUrls
-      )
-    }
+    config.__path = resolvedPath
 
     const env = loadEnv(mode, config.root || cwd)
     config.env = {
       ...config.env,
       ...env
     }
+
+    const resolvedConfig = resolveUserConfig(config)
     debug(`config resolved in ${Date.now() - start}ms`)
 
-    config.__path = resolvedPath
-    return config
+    return resolvedConfig
   } catch (e) {
     console.error(
       chalk.red(`[vite] failed to load config from ${resolvedPath}:`)
@@ -596,6 +586,25 @@ export async function resolveConfig(mode: string, configPath?: string) {
     console.error(e)
     process.exit(1)
   }
+}
+
+export function resolveUserConfig(config: UserConfig): ResolvedConfig {
+  let _config = config as ResolvedConfig
+
+  // resolve plugins
+  if (_config.plugins) {
+    for (const plugin of _config.plugins) {
+      _config = resolvePlugin(_config, plugin) as any
+    }
+  }
+
+  if (typeof _config.vueTransformAssetUrls === 'object') {
+    _config.vueTransformAssetUrls = normalizeAssetUrlOptions(
+      _config.vueTransformAssetUrls
+    )
+  }
+
+  return _config
 }
 
 interface NodeModuleWithCompile extends NodeModule {
