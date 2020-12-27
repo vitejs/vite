@@ -11,7 +11,7 @@
     "test-serve": "jest",
     "debug-serve": "cross-env VITE_DEBUG_SERVE=1 node --inspect-brk ./node_modules/.bin/jest",
     "test-build": "cross-env VITE_TEST_BUILD=1 jest",
-    "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 jest"
+    "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 node --inspect-brk ./node_modules/.bin/jest"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.12.1",

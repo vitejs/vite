@@ -71,10 +71,11 @@ export function resolvePlugin(
       }
 
       // relative
-      if (id.startsWith('.') && importer && path.isAbsolute(importer)) {
-        let fsPath = path.resolve(path.dirname(importer), id)
+      if (id.startsWith('.')) {
+        const basedir = importer ? path.dirname(importer) : process.cwd()
+        let fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
-        const pkg = idToPkgMap.get(importer)
+        const pkg = importer && idToPkgMap.get(importer)
         if (pkg && pkg.data.browser) {
           const pkgRealtivePath = './' + slash(path.relative(pkg.dir, fsPath))
           fsPath = path.resolve(
@@ -124,7 +125,6 @@ export function resolvePlugin(
       }
 
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
-      return this.resolve(id, importer, { skipSelf: true })
     }
   }
 }
