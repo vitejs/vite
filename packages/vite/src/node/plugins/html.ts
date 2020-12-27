@@ -11,7 +11,6 @@ import {
   NodeTransform,
   NodeTypes,
   parse,
-  TextNode,
   transform
 } from '@vue/compiler-dom'
 import MagicString from 'magic-string'
@@ -106,6 +105,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let js = ''
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
+        let inlineModuleIndex = 0
         const viteHtmlTransform: NodeTransform = (node) => {
           if (node.type !== NodeTypes.ELEMENT) {
             return
@@ -142,11 +142,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 shouldRemove = true
               } else if (node.children.length) {
                 // <script type="module">...</script>
-                // add its content
-                // TODO: if there are multiple inline module scripts on the page,
-                // they should technically be turned into separate modules, but
-                // it's hard to imagine any reason for anyone to do that.
-                js += `\n${(node.children[0] as TextNode).content.trim()}\n`
+                js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex++}.js"`
                 shouldRemove = true
               }
             }
