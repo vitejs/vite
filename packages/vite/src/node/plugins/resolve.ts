@@ -15,6 +15,7 @@ import {
   resolveFrom
 } from '../utils'
 import { ViteDevServer } from '..'
+import slash from 'slash'
 
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
@@ -69,9 +70,21 @@ export function resolvePlugin(
 
       // relative
       if (id.startsWith('.') && importer && path.isAbsolute(importer)) {
-        const fsPath = path.resolve(path.dirname(importer), id)
+        let fsPath = path.resolve(path.dirname(importer), id)
+        // handle browser field mapping for relative imports
+        const pkg = idToPkgMap.get(importer)
+        if (pkg && pkg.data.browser) {
+          const pkgRealtivePath = './' + slash(path.relative(pkg.dir, fsPath))
+          fsPath = path.resolve(
+            pkg.dir,
+            mapWithBrowserField(pkgRealtivePath, pkg.data.browser)
+          )
+        }
         if ((res = tryFsResolve(fsPath))) {
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+          if (pkg) {
+            idToPkgMap.set(res, pkg)
+          }
           return res
         }
       }
@@ -100,7 +113,8 @@ export function resolvePlugin(
           (res = tryNodeResolve(
             id,
             importer ? path.dirname(importer) : root,
-            isBuild
+            isBuild,
+            server
           ))
         ) {
           return res
@@ -145,19 +159,47 @@ function tryResolveFile(
   }
 }
 
+const idToPkgMap = new Map<string, PackageData>()
+
 export function tryNodeResolve(
   id: string,
   basedir: string,
-  isBuild = true
+  isBuild = true,
+  server?: ViteDevServer
 ): string | undefined {
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
   const pkg = resolvePackageData(pkgId, basedir)
 
   if (pkg) {
+    // prevent deep imports to optimized deps.
+    if (
+      deepMatch &&
+      server &&
+      server.optimizeDepsMetadata &&
+      pkg.data.name in server.optimizeDepsMetadata.map
+    ) {
+      throw new Error(
+        chalk.yellow(
+          `Deep import "${chalk.cyan(
+            id
+          )}" should be avoided because dependency "${chalk.cyan(
+            pkg.data.name
+          )}" has been pre-optimized. Prefer importing directly from the module entry:\n\n` +
+            `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
+            `If the used import is not exported from the package's main entry ` +
+            `and can only be attained via deep import, you can explicitly add ` +
+            `the deep import path to "optimizeDeps.include" in vite.config.js.`
+        )
+      )
+    }
+
     const resolved = deepMatch
       ? resolveDeepImport(id, pkg)
       : resolvePackageEntry(id, pkg)
+    if (resolved) {
+      idToPkgMap.set(resolved, pkg)
+    }
     if (isBuild) {
       return resolved
     } else {
@@ -290,7 +332,8 @@ function resolveDeepImport(
   { dir, data }: PackageData
 ): string | undefined {
   let relativeId: string | undefined = '.' + id.slice(data.name.length)
-  const { exports: exportsField } = data
+  const { exports: exportsField, browser: browserField } = data
+
   // map relative based on exports data
   if (exportsField) {
     if (
@@ -305,7 +348,10 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`
       )
     }
+  } else if (browserField) {
+    relativeId = mapWithBrowserField(relativeId, browserField)
   }
+
   if (relativeId) {
     const resolved = tryFsResolve(path.resolve(dir, relativeId), !exportsField)
     if (resolved) {
@@ -333,8 +379,6 @@ function resolveConditionalExports(exp: any): string | undefined {
   }
 }
 
-const normalize = path.posix.normalize
-
 /**
  * given a relative path in pkg dir,
  * return a relative path in pkg dir,
@@ -352,4 +396,8 @@ function mapWithBrowserField(
     return normalized
   }
   return normalize(foundEntry[1])
+}
+
+function normalize(file: string) {
+  return path.posix.normalize(path.extname(file) ? file : file + '.js')
 }

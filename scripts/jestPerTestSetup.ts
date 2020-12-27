@@ -96,9 +96,15 @@ function startStaticServer(): Promise<string> {
   const base = config?.build?.base || ''
 
   // start static file server
-  const httpServer = (server = http.createServer(
-    sirv(resolve(tempDir, 'dist'))
-  ))
+  const serve = sirv(resolve(tempDir, 'dist'))
+  const httpServer = (server = http.createServer((req, res) => {
+    if (req.url === '/ping') {
+      res.statusCode = 200
+      res.end('pong')
+    } else {
+      serve(req, res)
+    }
+  }))
   let port = 5000
   return new Promise((resolve, reject) => {
     const onError = (e: any) => {
