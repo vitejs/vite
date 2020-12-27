@@ -8,8 +8,11 @@
     "debug": "node --inspect-brk ../../vite/bin/vite"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "test-resolve-linked": "0.0.0"
+    "resolve-linked": "0.0.0",
+    "optimize-deps-linked": "0.0.0",
+    "linked-force-include": "link:./linked-force-include"
   }
 }

@@ -19,6 +19,7 @@ import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
+export const htmlCommentRE = /<!--[\s\S]*?-->/g
 export const scriptRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
 
 export function htmlPlugin(): Plugin {
@@ -36,7 +37,7 @@ export function htmlPlugin(): Plugin {
       if (proxyMatch) {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
-        const html = fs.readFileSync(file, 'utf-8')
+        const html = fs.readFileSync(file, 'utf-8').replace(htmlCommentRE, '')
         let match
         scriptRE.lastIndex = 0
         for (let i = 0; i <= index; i++) {
@@ -105,7 +106,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let js = ''
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
-        let inlineModuleIndex = 0
+        let inlineModuleIndex = -1
         const viteHtmlTransform: NodeTransform = (node) => {
           if (node.type !== NodeTypes.ELEMENT) {
             return
@@ -135,6 +136,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (isJsModule) {
+              inlineModuleIndex++
               if (url && !isExcludedUrl(url)) {
                 // <script type="module" src="..."/>
                 // add it as an import
@@ -142,7 +144,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 shouldRemove = true
               } else if (node.children.length) {
                 // <script type="module">...</script>
-                js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex++}.js"`
+                js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
                 shouldRemove = true
               }
             }

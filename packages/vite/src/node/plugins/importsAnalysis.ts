@@ -261,10 +261,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (isOptimizedCjs(resolved.id, server)) {
               if (isLiteralDynamicId) {
                 // rewrite `import('package')` to expose module.exports
+                // note plugin-commonjs' behavior is exposing all properties on
+                // `module.exports` PLUS `module.exports` itself as `default`.
                 str().overwrite(
                   dynamicIndex,
                   end + 1,
-                  `import('${url}').then(m => m.default)`
+                  `import('${url}').then(m => ({ ...m.default, default: m.default }))`
                 )
               } else {
                 const exp = source.slice(expStart, expEnd)
@@ -395,6 +397,15 @@ function isOptimizedCjs(
 
 type ImportNameSpecifier = { importedName: string; localName: string }
 
+/**
+ * Detect import statements to a known optimized CJS dependency and provide
+ * ES named imports interop. We do this by rewriting named imports to a variable
+ * assignment to the corresponding property on the `module.exports` of the cjs
+ * module. Note this doesn't support dynamic re-assisgnments from within the cjs
+ * module.
+ *
+ * Credits \@csr632 via #837
+ */
 function transformCjsImport(
   importExp: string,
   url: string,
