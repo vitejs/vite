@@ -32,7 +32,8 @@ jobs:
       - *save_cache
       - run: cd packages/vite && yarn build
       - run: cd packages/plugin-vue && yarn build
-      - run: yarn test
+      - run: yarn test-serve --runInBand
+      - run: yarn test-build --runInBand
 
 workflows:
   version: 2
