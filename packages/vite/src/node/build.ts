@@ -20,6 +20,7 @@ import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import isBuiltin from 'isbuiltin'
+import resolve from 'resolve'
 
 export interface BuildOptions {
   /**
@@ -124,6 +125,11 @@ export function resolveBuildOptions(
 
   // ensure base ending slash
   resolved.base = resolved.base.replace(/([^/])$/, '$1/')
+
+  // normalize false string into actual false
+  if ((resolved.minify as any) === 'false') {
+    resolved.minify = false
+  }
 
   return resolved
 }
