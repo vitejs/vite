@@ -22,6 +22,7 @@ import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import isBuiltin from 'isbuiltin'
+import { Logger } from './logger'
 
 export interface BuildOptions {
   /**
@@ -275,7 +276,8 @@ async function doBuild(
     // resolve lib mode outputs
     const outputs = resolveBuildOutputs(
       options.rollupOptions?.output,
-      libOptions
+      libOptions,
+      config.logger
     )
     if (Array.isArray(outputs)) {
       await Promise.all(outputs.map(generate))
@@ -299,7 +301,8 @@ async function doBuild(
 
 function resolveBuildOutputs(
   outputs: OutputOptions | OutputOptions[] | undefined,
-  libOptions: LibraryOptions | false
+  libOptions: LibraryOptions | false,
+  logger: Logger
 ): OutputOptions | OutputOptions[] | undefined {
   if (libOptions) {
     const formats = libOptions.formats || ['es', 'umd']
@@ -316,11 +319,17 @@ function resolveBuildOutputs(
       return formats.map((format) => ({ format }))
     } else if (!Array.isArray(outputs)) {
       return formats.map((format) => ({ ...outputs, format }))
-    } else {
+    } else if (libOptions.formats) {
       // user explicitly specifying own output array
-      return outputs
+      logger.warn(
+        chalk.yellow(
+          `"build.lib.formats" will be ignored because ` +
+            `"build.rollupOptions.output" is already an array format`
+        )
+      )
     }
   }
+  return outputs
 }
 
 const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
