@@ -20,7 +20,6 @@ import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import isBuiltin from 'isbuiltin'
-import resolve from 'resolve'
 
 export interface BuildOptions {
   /**

@@ -16,6 +16,8 @@ import {
 } from '../utils'
 import { ViteDevServer } from '..'
 import slash from 'slash'
+import { createFilter } from '@rollup/pluginutils'
+import { PartialResolvedId } from 'rollup'
 
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
@@ -166,7 +168,7 @@ export function tryNodeResolve(
   basedir: string,
   isBuild = true,
   server?: ViteDevServer
-): string | undefined {
+): PartialResolvedId | undefined {
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
   const pkg = resolvePackageData(pkgId, basedir)
@@ -194,24 +196,30 @@ export function tryNodeResolve(
       )
     }
 
-    const resolved = deepMatch
+    let resolved = deepMatch
       ? resolveDeepImport(id, pkg)
       : resolvePackageEntry(id, pkg)
-    if (resolved) {
-      idToPkgMap.set(resolved, pkg)
+    if (!resolved) {
+      return
     }
+    // link id to pkg for browser field mapping check
+    idToPkgMap.set(resolved, pkg)
     if (isBuild) {
-      return resolved
+      // Resolve package side effects for build so that rollup can better
+      // perform tree-shaking
+      return {
+        id: resolved,
+        moduleSideEffects: pkg.hasSideEffects(resolved)
+      }
     } else {
       // During serve, inject a version query to npm deps so that the browser
       // can cache it without revalidation. Make sure to apply this only to
       // files actually inside node_modules so that locally linked packages
       // in monorepos are not cached this way.
-      if (resolved && resolved.includes('node_modules')) {
-        return injectQuery(resolved, `v=${pkg.data.version}`)
-      } else {
-        return resolved
+      if (resolved.includes('node_modules')) {
+        resolved = injectQuery(resolved, `v=${pkg.data.version}`)
       }
+      return { id: resolved }
     }
   } else {
     throw new Error(`Failed to resolve package.json for module "${id}"`)
@@ -236,6 +244,7 @@ function tryOptimizedResolve(
 
 interface PackageData {
   dir: string
+  hasSideEffects: (id: string) => boolean
   data: {
     [field: string]: any
     version: string
@@ -258,9 +267,21 @@ function resolvePackageData(
   try {
     const pkgPath = resolveFrom(`${id}/package.json`, basedir)
     data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+    const pkgDir = path.dirname(pkgPath)
+    const { sideEffects } = data
+    let hasSideEffects
+    if (typeof sideEffects === 'boolean') {
+      hasSideEffects = () => sideEffects
+    } else if (Array.isArray(sideEffects)) {
+      hasSideEffects = createFilter(sideEffects, null, { resolve: pkgDir })
+    } else {
+      hasSideEffects = () => true
+    }
+
     const pkg = {
-      dir: path.dirname(pkgPath),
-      data
+      dir: pkgDir,
+      data,
+      hasSideEffects
     }
     packageCache.set(cacheKey, pkg)
     return pkg
