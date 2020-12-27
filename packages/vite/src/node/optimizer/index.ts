@@ -140,7 +140,7 @@ export async function optimizeDeps(
     options.include.forEach((id) => {
       const filePath = tryNodeResolve(id, root)
       if (filePath) {
-        qualified[id] = filePath
+        qualified[id] = filePath.id
       }
     })
   }
@@ -311,7 +311,8 @@ async function resolveQualifiedDeps(
     }
     let filePath
     try {
-      filePath = tryNodeResolve(id, root)
+      const resolved = tryNodeResolve(id, root)
+      filePath = resolved && resolved.id
     } catch (e) {}
     if (!filePath) {
       debug(`skipping ${id} (cannot resolve entry)`)
