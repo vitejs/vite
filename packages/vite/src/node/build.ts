@@ -6,7 +6,9 @@ import Rollup, {
   RollupBuild,
   RollupOptions,
   RollupWarning,
-  WarningHandler
+  WarningHandler,
+  WarningHandlerWithDefault,
+  OutputOptions
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
@@ -68,12 +70,6 @@ export interface BuildOptions {
    */
   terserOptions?: Terser.MinifyOptions
   /**
-   * Build for server-side rendering, only as a CLI flag
-   * for programmatic usage, use `ssrBuild` directly.
-   * @internal
-   */
-  ssr?: boolean
-  /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
@@ -99,7 +95,27 @@ export interface BuildOptions {
    * @default false
    */
   manifest?: boolean
+  /**
+   * Build in library mode. The value should be the global name of the lib in
+   * UMD mode. This will produce esm + cjs + umd bundle formats with default
+   * configurations that are suitable for distributing libraries.
+   */
+  lib?: LibraryOptions | false
+  /**
+   * Build for server-side rendering, only as a CLI flag
+   * for programmatic usage, use `ssrBuild` directly.
+   * @internal
+   */
+  ssr?: boolean
 }
+
+export interface LibraryOptions {
+  entry: string
+  name?: string
+  formats?: LibraryFormats[]
+}
+
+export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export type BuildHook = (options: BuildOptions) => BuildOptions | void
 
@@ -119,6 +135,7 @@ export function resolveBuildOptions(
     ssr: false,
     write: true,
     manifest: false,
+    lib: false,
     ...raw
   }
 
@@ -196,9 +213,12 @@ async function doBuild(
   config.logger.info(chalk.cyan(`[vite] building for production...`))
 
   const options = config.build
+  const libOptions = options.lib
   const resolve = (p: string) => path.resolve(config.root, p)
 
-  const input = options.rollupOptions?.input || resolve('index.html')
+  const input = libOptions
+    ? libOptions.entry
+    : options.rollupOptions?.input || resolve('index.html')
   const outDir = resolve(options.outDir)
   const publicDir = resolve('public')
   const plugins = resolveBuildPlugins(config)
@@ -208,14 +228,42 @@ async function doBuild(
   try {
     const bundle = await rollup.rollup({
       input,
-      preserveEntrySignatures: false,
-      treeshake: { moduleSideEffects: 'no-external' },
+      preserveEntrySignatures: libOptions ? 'strict' : false,
       ...options.rollupOptions,
       plugins,
-      onwarn: onRollupWarning
+      onwarn(warning, warn) {
+        onRollupWarning(warning, warn, [], options.rollupOptions?.onwarn)
+      }
     })
 
     paralellBuilds.push(bundle)
+
+    const pkgName =
+      libOptions &&
+      JSON.parse(lookupFile(config.root, ['package.json']) || `{}`).name
+
+    const generate = (output: OutputOptions = {}) => {
+      return bundle[options.write ? 'write' : 'generate']({
+        dir: outDir,
+        format: 'es',
+        exports: 'auto',
+        sourcemap: options.sourcemap,
+        name: libOptions ? libOptions.name : undefined,
+        entryFileNames: libOptions
+          ? `${pkgName}.${output.format || `es`}.js`
+          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+        chunkFileNames: libOptions
+          ? `[name].js`
+          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+        assetFileNames: libOptions
+          ? `[name].[ext]`
+          : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
+        // #764 add `Symbol.toStringTag` when build es module into cjs chunk
+        // #1048 add `Symbol.toStringTag` for module default export
+        namespaceToStringTag: true,
+        ...output
+      })
+    }
 
     if (options.write) {
       emptyDir(outDir)
@@ -224,18 +272,16 @@ async function doBuild(
       }
     }
 
-    await bundle[options.write ? 'write' : 'generate']({
-      dir: outDir,
-      format: 'es',
-      sourcemap: options.sourcemap,
-      entryFileNames: path.posix.join(options.assetsDir, `[name].[hash].js`),
-      chunkFileNames: path.posix.join(options.assetsDir, `[name].[hash].js`),
-      assetFileNames: path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
-      // #764 add `Symbol.toStringTag` when build es module into cjs chunk
-      // #1048 add `Symbol.toStringTag` for module default export
-      namespaceToStringTag: true,
-      ...options.rollupOptions.output
-    })
+    // resolve lib mode outputs
+    const outputs = resolveBuildOutputs(
+      options.rollupOptions?.output,
+      libOptions
+    )
+    if (Array.isArray(outputs)) {
+      await Promise.all(outputs.map(generate))
+    } else {
+      await generate(outputs)
+    }
   } catch (e) {
     config.logger.error(
       chalk.red(`${e.plugin ? `[${e.plugin}] ` : ``}${e.message}`)
@@ -251,6 +297,32 @@ async function doBuild(
   }
 }
 
+function resolveBuildOutputs(
+  outputs: OutputOptions | OutputOptions[] | undefined,
+  libOptions: LibraryOptions | false
+): OutputOptions | OutputOptions[] | undefined {
+  if (libOptions) {
+    const formats = libOptions.formats || ['es', 'umd']
+    if (
+      (formats.includes('umd') || formats.includes('iife')) &&
+      !libOptions.name
+    ) {
+      throw new Error(
+        `Option "build.lib.name" is required when output formats ` +
+          `include "umd" or "iife".`
+      )
+    }
+    if (!outputs) {
+      return formats.map((format) => ({ format }))
+    } else if (!Array.isArray(outputs)) {
+      return formats.map((format) => ({ ...outputs, format }))
+    } else {
+      // user explicitly specifying own output array
+      return outputs
+    }
+  }
+}
+
 const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
 const dynamicImportWarningIgnoreList = [
   `Unsupported expression`,
@@ -260,7 +332,8 @@ const dynamicImportWarningIgnoreList = [
 export function onRollupWarning(
   warning: RollupWarning,
   warn: WarningHandler,
-  allowNodeBuiltins: string[] = []
+  allowNodeBuiltins: string[] = [],
+  userOnWarn?: WarningHandlerWithDefault
 ) {
   if (warning.code === 'UNRESOLVED_IMPORT') {
     let message: string
@@ -303,6 +376,10 @@ export function onRollupWarning(
   }
 
   if (!warningIgnoreList.includes(warning.code!)) {
-    warn(warning)
+    if (userOnWarn) {
+      userOnWarn(warning, warn)
+    } else {
+      warn(warning)
+    }
   }
 }

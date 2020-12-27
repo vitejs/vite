@@ -1,0 +1,15 @@
+<!-- the production demo page, copied into dist/ -->
+
+<div class="es"></div>
+<div class="umd"></div>
+
+<script type="module">
+import myLib from './my-lib.es.js'
+
+myLib('.es')
+</script>
+
+<script src="./my-lib.umd.js"></script>
+<script>
+MyLib('.umd')
+</script>
