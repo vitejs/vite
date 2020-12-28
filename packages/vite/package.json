@@ -99,6 +99,7 @@
     "postcss-modules": "^4.0.0",
     "resolve": "^1.19.0",
     "rollup-plugin-dynamic-import-variables": "^1.1.0",
+    "rollup-plugin-license": "^2.2.0",
     "selfsigned": "^1.10.8",
     "sirv": "^1.0.10",
     "slash": "^3.0.0",

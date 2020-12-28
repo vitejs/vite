@@ -1,4 +1,5 @@
 // @ts-check
+import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
 import nodeResolve from '@rollup/plugin-node-resolve'
@@ -6,7 +7,9 @@ import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import alias from '@rollup/plugin-alias'
+import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
+import chalk from 'chalk'
 
 /**
  * @type { import('rollup').RollupOptions }
@@ -130,7 +133,8 @@ const nodeConfig = {
       'utf-8-validate': 1
     }),
     commonjs({ extensions: ['.js'] }),
-    json()
+    json(),
+    licensePlugin()
   ]
 }
 
@@ -212,6 +216,84 @@ function ignoreDepPlugin(ignoredDeps) {
       }
     }
   }
+}
+
+function licensePlugin() {
+  return license({
+    thirdParty(dependencies) {
+      // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
+      // MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE-CORE.md
+      const coreLicense = fs.readFileSync(
+        path.resolve(__dirname, '../../LICENSE')
+      )
+      const licenses = new Set()
+      const dependencyLicenseTexts = dependencies
+        .sort(({ name: nameA }, { name: nameB }) => (nameA > nameB ? 1 : -1))
+        .map(
+          ({
+            name,
+            license,
+            licenseText,
+            author,
+            maintainers,
+            contributors,
+            repository
+          }) => {
+            let text = `## ${name}\n`
+            if (license) {
+              text += `License: ${license}\n`
+            }
+            const names = new Set()
+            if (author && author.name) {
+              names.add(author.name)
+            }
+            for (const person of maintainers.concat(contributors)) {
+              if (person && person.name) {
+                names.add(person.name)
+              }
+            }
+            if (names.size > 0) {
+              text += `By: ${Array.from(names).join(', ')}\n`
+            }
+            if (repository) {
+              text += `Repository: ${repository.url || repository}\n`
+            }
+            if (licenseText) {
+              text +=
+                '\n' +
+                licenseText
+                  .trim()
+                  .replace(/(\r\n|\r)/gm, '\n')
+                  .split('\n')
+                  .map((line) => `> ${line}`)
+                  .join('\n') +
+                '\n'
+            }
+            licenses.add(license)
+            return text
+          }
+        )
+        .join('\n---------------------------------------\n\n')
+      const licenseText =
+        `# Vite core license\n` +
+        `Vite is released under the MIT license:\n\n` +
+        coreLicense +
+        `\n# Licenses of bundled dependencies\n` +
+        `The published Vite artifact additionally contains code with the following licenses:\n` +
+        `${Array.from(licenses).join(', ')}\n\n` +
+        `# Bundled dependencies:\n` +
+        dependencyLicenseTexts
+      const existingLicenseText = fs.readFileSync('LICENSE.md', 'utf8')
+      if (existingLicenseText !== licenseText) {
+        fs.writeFileSync('LICENSE.md', licenseText)
+        console.warn(
+          chalk.yellow(
+            '\nLICENSE.md updated. You should commit the updated file.\n'
+          )
+        )
+      }
+    }
+  })
 }
 
 export default [clientConfig, nodeConfig, terserConfig]
