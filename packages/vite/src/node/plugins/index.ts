@@ -12,16 +12,22 @@ import { htmlPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { webWorkerPlugin } from './worker'
 
-export function resolvePlugins(
+export async function resolvePlugins(
   config: ResolvedConfig,
   prePlugins: Plugin[],
   normalPlugins: Plugin[],
   postPlugins: Plugin[]
-): Plugin[] {
+): Promise<Plugin[]> {
+  const isBuild = config.command === 'build'
+
+  const buildPlugins = isBuild
+    ? (await import('../build')).resolveBuildPlugins(config)
+    : []
+
   return [
     aliasPlugin({ entries: config.alias }),
     ...prePlugins,
-    resolvePlugin(config.root, config.command === 'build', true),
+    resolvePlugin(config.root, isBuild, true),
     htmlPlugin(),
     cssPlugin(config),
     esbuildPlugin(config.esbuild || {}),
@@ -33,10 +39,11 @@ export function resolvePlugins(
     webWorkerPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
-    ...postPlugins,
     cssPostPlugin(config),
+    ...buildPlugins,
+    ...postPlugins,
     // internal server-only plugins are always applied after everything else
-    ...(config.command === 'build'
+    ...(isBuild
       ? []
       : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
   ].filter(Boolean) as Plugin[]

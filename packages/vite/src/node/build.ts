@@ -152,7 +152,6 @@ export function resolveBuildOptions(
 export function resolveBuildPlugins(config: ResolvedConfig): Plugin[] {
   const options = config.build
   return [
-    ...(config.plugins as Plugin[]),
     ...(options.rollupOptions.plugins || []),
     commonjsPlugin({
       include: [/node_modules/],
@@ -220,7 +219,6 @@ async function doBuild(
     : options.rollupOptions?.input || resolve('index.html')
   const outDir = resolve(options.outDir)
   const publicDir = resolve('public')
-  const plugins = resolveBuildPlugins(config)
 
   const rollup = require('rollup') as typeof Rollup
 
@@ -229,7 +227,7 @@ async function doBuild(
       input,
       preserveEntrySignatures: libOptions ? 'strict' : false,
       ...options.rollupOptions,
-      plugins,
+      plugins: config.plugins as Plugin[],
       onwarn(warning, warn) {
         onRollupWarning(warning, warn, [], options.rollupOptions?.onwarn)
       }
