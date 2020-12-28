@@ -1,6 +1,7 @@
+import fs from 'fs'
 import path from 'path'
 import { createServer, ViteDevServer } from '..'
-import { createDebugger } from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
 import slash from 'slash'
@@ -9,6 +10,8 @@ import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
 
 export const debugHmr = createDebugger('vite:hmr')
+
+const normalizedClientDir = normalizePath(CLIENT_DIR)
 
 export interface HmrOptions {
   protocol?: string
@@ -50,7 +53,10 @@ export async function handleHMRUpdate(
   let mods = moduleGraph.getModulesByFile(file)
 
   // html files and the client itself cannot be hot updated.
-  if ((!mods && file.endsWith('.html')) || file.startsWith(CLIENT_DIR)) {
+  if (
+    (!mods && file.endsWith('.html')) ||
+    file.startsWith(normalizedClientDir)
+  ) {
     config.logger.info(
       chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
     )
@@ -70,10 +76,11 @@ export async function handleHMRUpdate(
 
   // check if any plugin wants to perform custom HMR handling
   let filteredMods = [...mods]
+  const read = () => readModifiedFile(file)
   for (const plugin of config.plugins) {
     if (plugin.handleHotUpdate) {
       filteredMods =
-        (await plugin.handleHotUpdate(file, filteredMods, server)) ||
+        (await plugin.handleHotUpdate(file, filteredMods, read, server)) ||
         filteredMods
     }
   }
@@ -315,4 +322,30 @@ function error(pos: number) {
   ) as RollupError
   err.pos = pos
   throw err
+}
+
+// vitejs/vite#610 when hot-reloading Vue files, we read immediately on file
+// change event and sometimes this can be too early and get an empty buffer.
+// Poll until the file's modified time has changed before reading again.
+async function readModifiedFile(file: string): Promise<string> {
+  const content = fs.readFileSync(file, 'utf-8')
+  if (!content) {
+    const mtime = fs.statSync(file).mtimeMs
+    await new Promise((r) => {
+      let n = 0
+      const poll = async () => {
+        n++
+        const newMtime = fs.statSync(file).mtimeMs
+        if (newMtime !== mtime || n > 10) {
+          r(0)
+        } else {
+          setTimeout(poll, 10)
+        }
+      }
+      setTimeout(poll, 10)
+    })
+    return fs.readFileSync(file, 'utf-8')
+  } else {
+    return content
+  }
 }

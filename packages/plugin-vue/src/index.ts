@@ -65,7 +65,12 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
   return {
     name: 'vite:vue',
 
-    handleHotUpdate,
+    handleHotUpdate(file, mods, read, server) {
+      if (!filter(file)) {
+        return
+      }
+      return handleHotUpdate(file, mods, read, server)
+    },
 
     config(config) {
       // provide default values for vue runtime esm defines

@@ -35,8 +35,10 @@ export function transformMiddleware(
       return next()
     }
 
+    const withoutQuery = cleanUrl(url)
+
     try {
-      const isSourceMap = cleanUrl(url).endsWith('.map')
+      const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
         const originalUrl = url.replace(/\.map($|\?)/, '$1')
@@ -70,7 +72,8 @@ export function transformMiddleware(
         isJSRequest(url) ||
         isImportRequest(url) ||
         isCSSRequest(url) ||
-        isHTMLProxy(url)
+        isHTMLProxy(url) ||
+        server.config.transformInclude(withoutQuery)
       ) {
         // strip ?import except for CSS since we need to differentiate between
         // normal CSS requests and imports

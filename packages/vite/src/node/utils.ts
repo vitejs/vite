@@ -149,27 +149,6 @@ export function prettifyUrl(url: string, root: string) {
   }
 }
 
-export function deepMerge(
-  a: Record<string, any>,
-  b: Record<string, any>
-): Record<string, any> {
-  const merged: Record<string, any> = { ...a }
-  for (const key in b) {
-    const value = b[key]
-    const existing = merged[key]
-    if (Array.isArray(existing) && Array.isArray(value)) {
-      merged[key] = [...existing, ...value]
-      continue
-    }
-    if (isObject(existing) && isObject(value)) {
-      merged[key] = { ...existing, ...value }
-      continue
-    }
-    merged[key] = value
-  }
-  return merged
-}
-
 export function isObject(value: unknown): value is Record<string, any> {
   return Object.prototype.toString.call(value) === '[object Object]'
 }

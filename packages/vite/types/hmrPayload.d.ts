@@ -34,7 +34,6 @@ export interface FullReloadPayload {
 
 export interface CustomPayload {
   type: 'custom'
-  path: string
   event: string
   data?: any
 }

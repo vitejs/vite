@@ -2,6 +2,7 @@ export * from './server'
 export * from './build'
 export * from './optimizer'
 export * from './config'
+export { send } from './server/send'
 export { createLogger } from './logger'
 
 // additional types

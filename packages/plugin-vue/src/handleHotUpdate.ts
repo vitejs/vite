@@ -1,4 +1,3 @@
-import fs from 'fs'
 import _debug from 'debug'
 import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
 import {
@@ -17,25 +16,18 @@ const debug = _debug('vite:hmr')
 export async function handleHotUpdate(
   file: string,
   modules: ModuleNode[],
+  read: () => string | Promise<string>,
   server: ViteDevServer
 ): Promise<ModuleNode[] | void> {
-  if (!file.endsWith('.vue')) {
-    return
-  }
-
   const prevDescriptor = getDescriptor(file)
   if (!prevDescriptor) {
     // file hasn't been requested yet (e.g. async component)
     return
   }
 
-  let content = fs.readFileSync(file, 'utf-8')
-  if (!content) {
-    await untilModified(file)
-    content = fs.readFileSync(file, 'utf-8')
-  }
-
   setPrevDescriptor(file, prevDescriptor)
+
+  const content = await read()
   const { descriptor } = createDescriptor(
     file,
     content,
@@ -145,26 +137,6 @@ export async function handleHotUpdate(
     debug(`[vue:update(${updateType.join('&')})] ${file}`)
   }
   return [...affectedModules].filter(Boolean) as ModuleNode[]
-}
-
-// vitejs/vite#610 when hot-reloading Vue files, we read immediately on file
-// change event and sometimes this can be too early and get an empty buffer.
-// Poll until the file's modified time has changed before reading again.
-async function untilModified(file: string) {
-  const mtime = fs.statSync(file).mtimeMs
-  return new Promise((r) => {
-    let n = 0
-    const poll = async () => {
-      n++
-      const newMtime = fs.statSync(file).mtimeMs
-      if (newMtime !== mtime || n > 10) {
-        r(0)
-      } else {
-        setTimeout(poll, 10)
-      }
-    }
-    setTimeout(poll, 10)
-  })
 }
 
 function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {

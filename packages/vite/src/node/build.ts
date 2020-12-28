@@ -8,7 +8,8 @@ import Rollup, {
   RollupWarning,
   WarningHandler,
   WarningHandlerWithDefault,
-  OutputOptions
+  OutputOptions,
+  RollupOutput
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
@@ -188,7 +189,7 @@ const paralellBuilds: RollupBuild[] = []
 export async function build(
   inlineConfig: UserConfig & { mode?: string } = {},
   configPath?: string | false
-) {
+): Promise<RollupOutput | RollupOutput[]> {
   parallelCallCounts++
   try {
     return await doBuild(inlineConfig, configPath)
@@ -204,7 +205,7 @@ export async function build(
 async function doBuild(
   inlineConfig: UserConfig & { mode?: string } = {},
   configPath?: string | false
-) {
+): Promise<RollupOutput | RollupOutput[]> {
   const mode = inlineConfig.mode || 'production'
   const config = await resolveConfig(inlineConfig, 'build', mode, configPath)
 
@@ -276,9 +277,9 @@ async function doBuild(
       config.logger
     )
     if (Array.isArray(outputs)) {
-      await Promise.all(outputs.map(generate))
+      return Promise.all(outputs.map(generate))
     } else {
-      await generate(outputs)
+      return generate(outputs)
     }
   } catch (e) {
     config.logger.error(
