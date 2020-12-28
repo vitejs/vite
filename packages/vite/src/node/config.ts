@@ -5,13 +5,7 @@ import Rollup from 'rollup'
 import { BuildOptions, resolveBuildOptions } from './build'
 import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
-import {
-  createDebugger,
-  deepMerge,
-  isObject,
-  lookupFile,
-  normalizePath
-} from './utils'
+import { createDebugger, isObject, lookupFile, normalizePath } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
 import { esbuildPlugin } from './plugins/esbuild'
@@ -23,6 +17,7 @@ import { CLIENT_DIR, DEFAULT_ASSETS_RE, DEP_CACHE_DIR } from './constants'
 import { resolvePlugin } from './plugins/resolve'
 import { createLogger, Logger, LogLevel } from './logger'
 import { DepOptimizationOptions } from './optimizer'
+import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:config')
 
@@ -74,9 +69,14 @@ export interface UserConfig {
    */
   esbuild?: ESbuildTransformOptions | false
   /**
-   * Function that tests a file path for inclusion as a static asset.
+   * Specify additional files to be treated as source file (included into the
+   * transform pipeline).
    */
-  assetsInclude?: (file: string) => boolean
+  transformInclude?: string | RegExp | (string | RegExp)[]
+  /**
+   * Specify additional files to be treated as static assets.
+   */
+  assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
    * Server specific options, e.g. host, port, https...
    */
@@ -97,7 +97,7 @@ export interface UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins'> & {
+  Omit<UserConfig, 'plugins' | 'assetsInclude' | 'transformInclude'> & {
     configPath: string | undefined
     inlineConfig: UserConfig
     root: string
@@ -110,6 +110,7 @@ export type ResolvedConfig = Readonly<
     server: ServerOptions
     build: Required<BuildOptions>
     assetsInclude: (file: string) => boolean
+    transformInclude: (file: string) => boolean
     logger: Logger
   }
 >
@@ -133,7 +134,7 @@ export async function resolveConfig(
       config.logLevel
     )
     if (loadResult) {
-      config = deepMerge(loadResult.config, config)
+      config = mergeConfig(loadResult.config, config)
       configPath = loadResult.path
     }
   }
@@ -147,7 +148,10 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   userPlugins.forEach((p) => {
     if (p.config) {
-      config = p.config(config) || config
+      const res = p.config(config)
+      if (res) {
+        config = mergeConfig(config, res)
+      }
     }
   })
 
@@ -156,19 +160,13 @@ export async function resolveConfig(
     config.root ? path.resolve(config.root) : process.cwd()
   )
 
-  // resolve alias - inject internal alias for /@vite/ client files
-  const userAlias = config.alias || []
-  const normalizedAlias: Alias[] = isObject(userAlias)
-    ? Object.keys(userAlias).map((find) => ({
-        find,
-        replacement: (userAlias as any)[find]
-      }))
-    : userAlias
-  const resolvedAlias = [
-    { find: /^\/@vite\//, replacement: CLIENT_DIR + '/' },
-    ...normalizedAlias
-  ]
+  // resolve alias with internal client alias
+  const resolvedAlias = mergeAlias(
+    [{ find: /^\/@vite\//, replacement: CLIENT_DIR + '/' }],
+    config.alias || []
+  )
 
+  // load .env files
   const userEnv = loadEnv(mode, resolvedRoot)
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
@@ -186,6 +184,13 @@ export async function resolveConfig(
   )
   const optimizeCacheDir =
     pkgPath && path.join(path.dirname(pkgPath), `node_modules/${DEP_CACHE_DIR}`)
+
+  const assetsFilter = config.assetsInclude
+    ? createFilter(config.assetsInclude)
+    : () => false
+  const transformFilter = config.transformInclude
+    ? createFilter(config.transformInclude)
+    : () => false
 
   const resolved = {
     ...config,
@@ -207,10 +212,11 @@ export async function resolveConfig(
       DEV: !isProduction,
       PROD: isProduction
     },
-    assetsInclude: (file: string) => {
-      return (
-        DEFAULT_ASSETS_RE.test(file) || config.assetsInclude?.(file) || false
-      )
+    assetsInclude(file: string) {
+      return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
+    },
+    transformInclude(file: string) {
+      return transformFilter(file)
     },
     logger: createLogger(config.logLevel)
   }
@@ -236,6 +242,57 @@ export async function resolveConfig(
     })
   }
   return resolved
+}
+
+function mergeConfig(
+  a: Record<string, any>,
+  b: Record<string, any>,
+  isRoot = true
+): Record<string, any> {
+  const merged: Record<string, any> = { ...a }
+  for (const key in b) {
+    const value = b[key]
+    if (value == null) {
+      continue
+    }
+
+    const existing = merged[key]
+    if (Array.isArray(existing) && Array.isArray(value)) {
+      merged[key] = [...existing, ...value]
+      continue
+    }
+    if (isObject(existing) && isObject(value)) {
+      merged[key] = mergeConfig(existing, value, false)
+      continue
+    }
+
+    // root fields that require special handling
+    if (existing != null && isRoot) {
+      if (key === 'alias') {
+        merged[key] = mergeAlias(existing, value)
+        continue
+      } else if (key === 'transformInclude' || key === 'assetsInclude') {
+        merged[key] = [].concat(existing, value)
+        continue
+      }
+    }
+
+    merged[key] = value
+  }
+  return merged
+}
+
+function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
+  return [...normalizeAlias(a), ...normalizeAlias(b)]
+}
+
+function normalizeAlias(o: AliasOptions): Alias[] {
+  return isObject(o)
+    ? Object.keys(o).map((find) => ({
+        find,
+        replacement: (o as any)[find]
+      }))
+    : o
 }
 
 export function sortUserPlugins(

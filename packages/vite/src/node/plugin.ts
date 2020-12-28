@@ -42,7 +42,10 @@ export interface Plugin extends RollupPlugin {
    */
   enforce?: 'pre' | 'post'
   /**
-   * Mutate or return new vite config before it's resolved.
+   * Modify vite config before it's resolved. The hook can either mutate the
+   * passed-in config directly, or return a partial config object that will be
+   * deeply merged into existing config.
+   *
    * Note user plugins are resolved before this hook so adding plugins inside
    * a plugin's modifyConfig hook will have no effect.
    */
@@ -95,6 +98,7 @@ export interface Plugin extends RollupPlugin {
   handleHotUpdate?: (
     file: string,
     mods: Array<ModuleNode>,
+    read: () => string | Promise<string>,
     server: ViteDevServer
   ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
 }

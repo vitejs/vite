@@ -6,7 +6,7 @@ const slash = require('slash')
 const { parse } = require('@babel/parser')
 const MagicString = require('magic-string').default
 
-// inject the importMeta augmentations into temp index.d.ts
+// inject the importMeta augmentations into index.d.ts
 // so that user projects have typings for vite-injected import.meta.* properties
 const importMetaCode = fs.readFileSync(
   path.resolve(__dirname, '../types/importMeta.d.ts'),

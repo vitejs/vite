@@ -11,7 +11,7 @@ import {
 } from '../../plugins/html'
 import { ViteDevServer } from '../..'
 import { send } from '../send'
-import { CLIENT_PUBLIC_PATH } from '../../constants'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 
 const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
   let index = -1
@@ -50,7 +50,12 @@ export function indexHtmlMiddleware(
       req.url?.endsWith('.html') &&
       req.headers['sec-fetch-dest'] !== 'script'
     ) {
-      const filename = path.join(server.config.root, req.url!.slice(1))
+      let filename
+      if (req.url!.startsWith(FS_PREFIX)) {
+        filename = req.url.slice(FS_PREFIX.length)
+      } else {
+        filename = path.join(server.config.root, req.url!.slice(1))
+      }
       if (fs.existsSync(filename)) {
         try {
           let html = fs.readFileSync(filename, 'utf-8')
