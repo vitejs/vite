@@ -118,8 +118,6 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type BuildHook = (options: BuildOptions) => BuildOptions | void
-
 export function resolveBuildOptions(
   raw?: BuildOptions
 ): Required<BuildOptions> {
