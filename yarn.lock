@@ -4336,10 +4336,10 @@ object.pick@^1.3.0:
   dependencies:
     isobject "^3.0.1"
 
-okie@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/okie/-/okie-1.0.0.tgz#3c176cb579b7aec3c969b1fdd02dd53e8a736649"
-  integrity sha512-ZMCfMhpTDDq5QLhqZwS4zW8PVWnEnysj3vUMZ/Du0tVZDlF5uZ62ClnmzAhqgrNlwc5vbwgBOsff1ad7G9THdA==
+okie@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/okie/-/okie-1.0.1.tgz#5ce8e5bd21606988514fccd1c5e3a5e1fb0b37d5"
+  integrity sha512-JQh5TdSYhzXSuKN3zzX8Rw9Q/Tec1fm0jwP/k9+cBDk6tyLjlARVu936MLY//2NZp76UGHH+5gXPzRejU1bTjQ==
 
 on-finished@~2.3.0:
   version "2.3.0"

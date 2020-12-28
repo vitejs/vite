@@ -41,10 +41,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           // bundle the file as entry to support imports and inline as base64
           // data url
           const rollup = require('rollup') as typeof Rollup
-          const { resolveBuildPlugins } = await import('../build')
           const bundle = await rollup.rollup({
             input: cleanUrl(id),
-            plugins: resolveBuildPlugins(config)
+            plugins: config.plugins as Plugin[]
           })
           try {
             const { output } = await bundle.generate({

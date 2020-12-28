@@ -215,7 +215,7 @@ export async function resolveConfig(
     logger: createLogger(config.logLevel)
   }
 
-  resolved.plugins = resolvePlugins(
+  resolved.plugins = await resolvePlugins(
     resolved,
     prePlugins,
     normalPlugins,
