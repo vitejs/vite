@@ -34,14 +34,16 @@ export function setPrevDescriptor(filename: string, entry: SFCDescriptor) {
   prevCache.set(filename, entry)
 }
 
-export function getDescriptor(filename: string) {
+export function getDescriptor(filename: string, errorOnMissing = true) {
   if (cache.has(filename)) {
     return cache.get(filename)!
   }
-  throw new Error(
-    `${filename} has no corresponding SFC entry in the cache. ` +
-      `This is a @vitejs/plugin-vue internal error, please open an issue.`
-  )
+  if (errorOnMissing) {
+    throw new Error(
+      `${filename} has no corresponding SFC entry in the cache. ` +
+        `This is a @vitejs/plugin-vue internal error, please open an issue.`
+    )
+  }
 }
 
 export function setDescriptor(filename: string, entry: SFCDescriptor) {

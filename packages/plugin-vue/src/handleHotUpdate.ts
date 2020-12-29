@@ -19,7 +19,7 @@ export async function handleHotUpdate(
   read: () => string | Promise<string>,
   server: ViteDevServer
 ): Promise<ModuleNode[] | void> {
-  const prevDescriptor = getDescriptor(file)
+  const prevDescriptor = getDescriptor(file, false)
   if (!prevDescriptor) {
     // file hasn't been requested yet (e.g. async component)
     return

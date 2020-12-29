@@ -107,7 +107,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')
         }
-        const descriptor = getDescriptor(filename)
+        const descriptor = getDescriptor(filename)!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
           // handle <scrip> + <script setup> merge via compileScript()
@@ -139,7 +139,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         return transformMain(code, filename, options, this)
       } else {
         // sub block request
-        const descriptor = getDescriptor(filename)
+        const descriptor = getDescriptor(filename)!
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this)
         } else if (query.type === 'style') {
