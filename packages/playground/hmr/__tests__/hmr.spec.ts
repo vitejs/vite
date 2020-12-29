@@ -110,4 +110,10 @@ if (!isBuild) {
     ])
     browserLogs.length = 0
   })
+
+  test('plugin hmr handler + custom event', async () => {
+    const el = await page.$('.custom')
+    editFile('customFile.js', (code) => code.replace('custom', 'edited'))
+    await untilUpdated(() => el.textContent(), 'edited')
+  })
 }

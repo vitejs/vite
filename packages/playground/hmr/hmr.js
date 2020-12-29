@@ -32,6 +32,10 @@ if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     console.log(`foo was:`, foo)
   })
+
+  import.meta.hot.on('foo', ({ msg }) => {
+    text('.custom', msg)
+  })
 }
 
 function text(el, text) {
