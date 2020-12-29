@@ -11,7 +11,8 @@
     "dev": "tsc -p . -w --incremental",
     "build": "rimraf dist && run-s build-bundle build-types",
     "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@vue/compiler-sfc --outfile=dist/index.js",
-    "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp"
+    "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
+    "prepublishOnly": "yarn build"
   },
   "engines": {
     "node": ">=12.0.0"
