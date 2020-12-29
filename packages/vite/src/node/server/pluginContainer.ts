@@ -267,6 +267,9 @@ export async function createPluginContainer(
             line: (err as any).line,
             column: (err as any).column
           }
+          err.frame = err.frame || generateCodeFrame(this._activeCode, err.loc)
+        } else if (err.loc) {
+          err.frame = err.frame || generateCodeFrame(this._activeCode, err.loc)
         }
       }
       // error thrown here is caught by the transform middleware and passed on

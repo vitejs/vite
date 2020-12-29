@@ -187,10 +187,10 @@ export function posToNumber(
   const lines = source.split(splitRE)
   const { line, column } = pos
   let start = 0
-  for (let i = 0; i < line; i++) {
+  for (let i = 0; i < line - 1; i++) {
     start += lines[i].length
   }
-  return start + column - 1
+  return start + column
 }
 
 export function numberToPos(
