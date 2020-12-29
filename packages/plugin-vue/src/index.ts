@@ -86,7 +86,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         ...options,
         root: config.root,
         isProduction: config.isProduction,
-        ssr: !!config.build.ssr
+        ssr: !!(config.build.ssr ?? options.ssr)
       }
     },
 
