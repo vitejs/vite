@@ -37,7 +37,7 @@ export async function transformRequest(
   }
 
   // resolve
-  const id = (await pluginContainer.resolveId(url)).id
+  const id = (await pluginContainer.resolveId(url))?.id || url
   const file = cleanUrl(id)
 
   let code = null

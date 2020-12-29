@@ -204,7 +204,7 @@ async function doBuild(
   const mode = inlineConfig.mode || 'production'
   const config = await resolveConfig(inlineConfig, 'build', mode, configPath)
 
-  config.logger.info(chalk.cyan(`[vite] building for production...`))
+  config.logger.info(chalk.cyan(`building for production...`))
 
   const options = config.build
   const libOptions = options.lib

@@ -30,7 +30,7 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import { resolve, relative, dirname, sep, posix, join } from 'path'
+import { resolve, relative, sep, posix, join } from 'path'
 import { createHash } from 'crypto'
 import { Plugin } from '../plugin'
 import {
@@ -80,7 +80,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     skip?: Plugin[]
-  ): Promise<PartialResolvedId>
+  ): Promise<PartialResolvedId | null>
   transform(
     code: string,
     id: string,
@@ -172,15 +172,7 @@ export async function createPluginContainer(
       if (options?.skipSelf && this._activePlugin) skip.push(this._activePlugin)
       let out = await container.resolveId(id, importer, skip)
       if (typeof out === 'string') out = { id: out }
-      if (!out || !out.id) out = { id }
-      if (out.id.match(/^\.\.?[/\\]/)) {
-        out.id = resolve(
-          root || '.',
-          importer ? dirname(importer) : '.',
-          out.id
-        )
-      }
-      return (out as ResolvedId) || null
+      return out as ResolvedId | null
     }
 
     getModuleInfo(id: string) {
@@ -372,7 +364,6 @@ export async function createPluginContainer(
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), _skip) {
-      let id = rawId
       const ctx = new Context()
       const key =
         `${rawId}\n${importer}` +
@@ -381,6 +372,7 @@ export async function createPluginContainer(
       nestedResolveCall++
       const resolveStart = Date.now()
 
+      let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of plugins) {
         if (!plugin.resolveId) continue
@@ -396,23 +388,25 @@ export async function createPluginContainer(
         let result
         const pluginResolveStart = Date.now()
         try {
-          result = await plugin.resolveId.call(ctx as any, id, importer, {})
+          result = await plugin.resolveId.call(ctx as any, rawId, importer, {})
         } finally {
           if (_skip) resolveSkips.delete(plugin, key)
         }
         if (!result) continue
-        isDebug &&
-          debugPluginResolve(
-            timeFrom(pluginResolveStart),
-            plugin.name,
-            prettifyUrl(id, root)
-          )
+
         if (typeof result === 'string') {
           id = result
         } else {
           id = result.id
           Object.assign(partial, result)
         }
+
+        isDebug &&
+          debugPluginResolve(
+            timeFrom(pluginResolveStart),
+            plugin.name,
+            prettifyUrl(id, root)
+          )
 
         // resolveId() is hookFirst - first non-null result is returned.
         break
@@ -439,7 +433,7 @@ export async function createPluginContainer(
         }
       }
 
-      return id ? (partial as PartialResolvedId) : { id: rawId }
+      return id ? (partial as PartialResolvedId) : null
     },
 
     async load(id) {

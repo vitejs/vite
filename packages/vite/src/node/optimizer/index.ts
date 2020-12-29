@@ -158,18 +158,14 @@ export async function optimizeDeps(
     // This is auto run on server start - let the user know that we are
     // pre-optimizing deps
     logger.info(
-      chalk.greenBright(
-        `[vite] Optimizable dependencies detected:\n${depsString}`
-      )
+      chalk.greenBright(`Optimizable dependencies detected:\n${depsString}`)
     )
     logger.info(
       `Pre-bundling them to speed up dev server page load...\n` +
         `(this will be run only when your dependencies have changed)`
     )
   } else {
-    logger.info(
-      chalk.greenBright(`[vite] Optimizing dependencies:\n${depsString}`)
-    )
+    logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
 
   try {
@@ -221,7 +217,7 @@ export async function optimizeDeps(
       throw e
     } else {
       logger.error(
-        chalk.red(`\n[vite] Dep optimization failed with error:\n${e.message}`)
+        chalk.red(`\nDep optimization failed with error:\n${e.message}`)
       )
       if (e.code === 'PARSE_ERROR') {
         logger.error(
@@ -337,7 +333,7 @@ async function resolveQualifiedDeps(
     }
     for (const { s, e } of imports) {
       let i = content.slice(s, e).trim()
-      i = (await aliasResolver.resolveId(i)).id || i
+      i = (await aliasResolver.resolveId(i))?.id || i
       if (i.startsWith('.')) {
         debug(`optimizing ${id} (contains relative imports)`)
         qualified[id] = filePath
@@ -359,7 +355,7 @@ async function resolveQualifiedDeps(
         .filter((id) => !qualified[id])
         // make sure aliased deps are external
         // https://github.com/vitejs/vite-plugin-react/issues/4
-        .map(async (id) => (await aliasResolver.resolveId(id)).id || id)
+        .map(async (id) => (await aliasResolver.resolveId(id))?.id || id)
     ))
   )
 

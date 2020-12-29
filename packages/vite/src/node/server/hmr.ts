@@ -34,16 +34,13 @@ export async function handleHMRUpdate(
   if (file === config.configPath || file.endsWith('.env')) {
     // TODO auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
-    server.config.logger.clearScreen('info')
-    server.config.logger.info(
-      chalk.green('[vite] config or .env file changed, restarting server...')
+    config.logger.info(
+      chalk.green('config or .env file changed, restarting server...'),
+      { clear: true, timestamp: true }
     )
     await server.close()
     ;(global as any).__vite_start_time = Date.now()
-    server = await createServer(
-      server.config.inlineConfig,
-      server.config.configPath
-    )
+    server = await createServer(config.inlineConfig, config.configPath)
     await server.listen()
     return
   }
@@ -75,9 +72,10 @@ export async function handleHMRUpdate(
   if (!filteredMods.length) {
     // html file cannot be hot updated
     if (file.endsWith('.html')) {
-      config.logger.info(
-        chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
-      )
+      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+        clear: true,
+        timestamp: true
+      })
       ws.send({
         type: 'full-reload',
         path: '/' + slash(path.relative(config.root, file))
@@ -99,9 +97,10 @@ export async function handleHMRUpdate(
     }>()
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
-      config.logger.info(
-        chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
-      )
+      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+        clear: true,
+        timestamp: true
+      })
       ws.send({
         type: 'full-reload'
       })
@@ -109,20 +108,21 @@ export async function handleHMRUpdate(
     }
 
     updates.push(
-      ...[...boundaries].map(({ boundary, acceptedVia }) => {
-        const type = `${boundary.type}-update` as Update['type']
-        config.logger.info(
-          chalk.green(`[vite] hmr update `) + chalk.dim(boundary.url)
-        )
-        return {
-          type,
-          timestamp,
-          path: boundary.url,
-          accpetedPath: acceptedVia.url
-        }
-      })
+      ...[...boundaries].map(({ boundary, acceptedVia }) => ({
+        type: `${boundary.type}-update` as Update['type'],
+        timestamp,
+        path: boundary.url,
+        accpetedPath: acceptedVia.url
+      }))
     )
   }
+
+  config.logger.info(
+    updates
+      .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
+      .join('\n'),
+    { clear: true, timestamp: true }
+  )
 
   ws.send({
     type: 'update',

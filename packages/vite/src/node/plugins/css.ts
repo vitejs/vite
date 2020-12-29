@@ -655,16 +655,13 @@ async function minifyCSS(css: string, logger: Logger) {
   const res = new CleanCSS({ level: 2, rebase: false }).minify(css)
 
   if (res.errors && res.errors.length) {
-    logger.error(chalk.red(`[vite] error when minifying css:\n`), res.errors)
+    logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
     // TODO format this
     throw res.errors[0]
   }
 
   if (res.warnings && res.warnings.length) {
-    logger.warn(
-      chalk.yellow(`[vite] warnings when minifying css:\n`),
-      res.warnings
-    )
+    logger.warn(chalk.yellow(`warnings when minifying css:\n${res.warnings}`))
   }
 
   return res.styles

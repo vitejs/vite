@@ -443,7 +443,7 @@ async function loadConfigFromFile(
     }
   } catch (e) {
     createLogger(logLevel).error(
-      chalk.red(`[vite] failed to load config from ${resolvedPath}`)
+      chalk.red(`failed to load config from ${resolvedPath}`)
     )
     throw e
   }

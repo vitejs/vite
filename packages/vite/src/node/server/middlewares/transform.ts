@@ -56,7 +56,7 @@ export function transformMiddleware(
       if (url.startsWith('/public/')) {
         logger.warn(
           chalk.yellow(
-            `[vite] files in the public directory are served at the root path.\n` +
+            `files in the public directory are served at the root path.\n` +
               `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
                 url.replace(/^\/public\//, '/')
               )}.`
