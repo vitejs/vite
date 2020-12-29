@@ -18,6 +18,7 @@ import { ViteDevServer } from '..'
 import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
+import isBuiltin from 'isbuiltin'
 
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
@@ -108,6 +109,13 @@ export function resolvePlugin(
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
+        if (isBuild && isBuiltin(id)) {
+          return {
+            id,
+            external: true
+          }
+        }
+
         if (asSrc && server && (res = tryOptimizedResolve(id, server))) {
           return res
         }

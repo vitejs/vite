@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
@@ -219,9 +220,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (resolved.id.startsWith(config.root)) {
               // in root: infer short absolute path from root
               url = resolved.id.slice(config.root.length)
-            } else {
-              // out of root: rewrite to absolute /@fs/ paths
+            } else if (fs.existsSync(cleanUrl(resolved.id))) {
+              // exists but out of root: rewrite to absolute /@fs/ paths
               url = FS_PREFIX + normalizePath(resolved.id)
+            } else {
+              url = resolved.id
             }
           }
 

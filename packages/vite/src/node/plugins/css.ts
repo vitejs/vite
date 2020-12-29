@@ -202,9 +202,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk) {
       let chunkCSS = ''
-      // the order of module import is reversive
-      // see https://github.com/rollup/rollup/issues/435#issue-125406562
-      const ids = Object.keys(chunk.modules).reverse()
+      const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
           chunkCSS += styles.get(id)

@@ -50,16 +50,8 @@ export async function handleHMRUpdate(
 
   debugHmr(`[file change] ${chalk.dim(shortFile)}`)
 
-  let mods = moduleGraph.getModulesByFile(file)
-
-  // html files and the client itself cannot be hot updated.
-  if (
-    (!mods && file.endsWith('.html')) ||
-    file.startsWith(normalizedClientDir)
-  ) {
-    config.logger.info(
-      chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
-    )
+  // (dev only) the client itself cannot be hot updated.
+  if (file.startsWith(normalizedClientDir)) {
     ws.send({
       type: 'full-reload',
       path: '/' + slash(path.relative(config.root, file))
@@ -67,15 +59,10 @@ export async function handleHMRUpdate(
     return
   }
 
-  // let mods = moduleGraph.getModulesByFile(file)
-  if (!mods) {
-    // loaded but not in the module graph, probably not js
-    debugHmr(`[no module entry] ${chalk.dim(shortFile)}`)
-    return
-  }
+  const mods = moduleGraph.getModulesByFile(file)
 
   // check if any plugin wants to perform custom HMR handling
-  let filteredMods = [...mods]
+  let filteredMods = mods ? [...mods] : []
   const read = () => readModifiedFile(file)
   for (const plugin of config.plugins) {
     if (plugin.handleHotUpdate) {
@@ -83,6 +70,23 @@ export async function handleHMRUpdate(
         (await plugin.handleHotUpdate(file, filteredMods, read, server)) ||
         filteredMods
     }
+  }
+
+  if (!filteredMods.length) {
+    // html file cannot be hot updated
+    if (file.endsWith('.html')) {
+      config.logger.info(
+        chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
+      )
+      ws.send({
+        type: 'full-reload',
+        path: '/' + slash(path.relative(config.root, file))
+      })
+    } else {
+      // loaded but not in the module graph, probably not js
+      debugHmr(`[no modules matched] ${chalk.dim(shortFile)}`)
+    }
+    return
   }
 
   const timestamp = Date.now()

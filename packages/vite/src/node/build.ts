@@ -103,12 +103,6 @@ export interface BuildOptions {
    * configurations that are suitable for distributing libraries.
    */
   lib?: LibraryOptions | false
-  /**
-   * Build for server-side rendering, only as a CLI flag
-   * for programmatic usage, use `ssrBuild` directly.
-   * @internal
-   */
-  ssr?: boolean
 }
 
 export interface LibraryOptions {
@@ -132,7 +126,6 @@ export function resolveBuildOptions(
     rollupOptions: {},
     minify: 'terser',
     terserOptions: {},
-    ssr: false,
     write: true,
     manifest: false,
     lib: false,
@@ -169,7 +162,9 @@ export function resolveBuildPlugins(config: ResolvedConfig): Plugin[] {
       ? [terserPlugin(options.terserOptions)]
       : []),
     ...(options.manifest ? [manifestPlugin()] : []),
-    buildReporterPlugin(config)
+    ...(!config.logLevel || config.logLevel === 'info'
+      ? [buildReporterPlugin(config)]
+      : [])
   ]
 }
 
