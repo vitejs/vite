@@ -11,7 +11,7 @@ export function errorMiddleware(
   // note the 4 args must be kept for connect to treat this as error middleware
   return (err: RollupError, _req, res, _next) => {
     const args = [chalk.red(`Internal server error:`)]
-    if (err.plugin) args.push(`  Plugin: ${chalk.green(err.plugin)}`)
+    if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
     if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
     if (err.frame) args.push(chalk.yellow(pad(err.frame)))
     if (err.stack) args.push(pad(err.stack))
