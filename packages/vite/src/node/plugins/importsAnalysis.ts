@@ -209,7 +209,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           const resolveStart = Date.now()
-          const resolved = (await this.resolve(url, importer))!
+          const resolved = await this.resolve(url, importer)
+
+          if (!resolved) {
+            this.error(
+              `Failed to resolve import "${rawUrl}". Does the file exist?`,
+              start
+            )
+          }
+
           timeSpentResolving += Date.now() - resolveStart
 
           const isRelative = url.startsWith('.')

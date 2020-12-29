@@ -164,7 +164,7 @@ export class ModuleGraph {
     if (!isCSSProxy(url)) {
       url = removeImportQuery(url)
     }
-    const resolvedId = (await this.container.resolveId(url)).id
+    const resolvedId = (await this.container.resolveId(url))?.id || url
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)
     if (ext && !pathname!.endsWith(ext)) {

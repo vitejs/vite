@@ -85,7 +85,7 @@ cli
       await server.listen()
     } catch (e) {
       const logError = createLogger(options.logLevel).error
-      logError(chalk.red(`[vite] error when starting dev server:\n${e.stack}`))
+      logError(chalk.red(`error when starting dev server:\n${e.stack}`))
       process.exit(1)
     }
   })
@@ -135,7 +135,7 @@ cli
       )
     } catch (e) {
       const logError = createLogger(options.logLevel).error
-      logError(chalk.red(`[vite] error during build:\n${e.stack}`))
+      logError(chalk.red(`error during build:\n${e.stack}`))
       process.exit(1)
     }
   })
@@ -163,7 +163,7 @@ cli
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         const logError = createLogger(options.logLevel).error
-        logError(chalk.red(`[vite] error when optimizing deps:\n${e.stack}`))
+        logError(chalk.red(`error when optimizing deps:\n${e.stack}`))
         process.exit(1)
       }
     }
