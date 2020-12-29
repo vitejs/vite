@@ -1,4 +1,4 @@
-declare interface ImportMeta {
+interface ImportMeta {
   url: string
 
   readonly hot?: {
@@ -24,7 +24,7 @@ declare interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 
-declare interface ImportMetaEnv {
+interface ImportMetaEnv {
   [key: string]: string | boolean | undefined
   BASE_URL: string
   MODE: string
