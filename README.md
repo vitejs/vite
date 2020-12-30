@@ -1,7 +1,5 @@
 # vite ⚡
 
-> This is the WIP 2.0 branch.
-
 <!-- [![npm][npm-img]][npm-url]
 [![node][node-img]][node-url] -->
 [![unix CI status][unix-ci-img]][unix-ci-url]
@@ -10,17 +8,11 @@
 Vite is an opinionated web dev build tool that serves your code via native ES Module imports during dev and bundles it with [Rollup](https://rollupjs.org/) for production.
 
 - Lightning-fast cold server start
-- Instant hot module replacement (HMR)
+- Instant hot module replacement (HMR) regardless of app size
 - True on-demand compilation
 - More details in [How and Why](#how-and-why)
 
-## Status
-
-In beta and will likely release 1.0 soon.
-
 ## Getting Started
-
-> Note to Vue users: Vite currently only works with Vue 3.x. This also means you can't use libraries that are not yet compatible with Vue 3.
 
 Make sure you have [node.js](https://nodejs.org/en/) installed on your machine before proceeding.
 
@@ -40,14 +32,13 @@ $ yarn
 $ yarn dev
 ```
 
-> Although Vite is primarily designed to work with Vue 3, it can support other frameworks as well. For example, try `npm init vite-app --template react` or `--template preact`.
-
 ### Using master branch
 
 If you can't wait for a new release to test the latest features, clone the `vite` to your local machine and execute the following commands:
 
 ```
 yarn
+cd packages/vite
 yarn build
 yarn link
 ```
@@ -56,13 +47,15 @@ Then go to your vite based project and run `yarn link vite`. Now restart the dev
 
 ## Browser Support
 
-Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development. The production build also relies on dynamic imports for code-splitting (which can be [polyfilled](https://github.com/GoogleChromeLabs/dynamic-import-polyfill)).
+- Vite requires [native ES module imports](https://caniuse.com/#feat=es6-module) during development.
 
-Vite assumes you are targeting modern browsers and by default only transpiles your code to `es2020` during build (so that optional chaining can work with terser minification). You can specify the target range via the `esbuildTarget` config option, where the lowest target available is `es2015`.
+- The production build assumes a baseline support for [Native ES modules dynamic imports](https://caniuse.com/es6-module-dynamic-import). By default, all code is minimally transpiled with target `es2020` (only for terser minification compatibility). You can specify the target range via the `esbuild.target` config option, where the lowest target available is `es2015`.
+
+- Legacy browsers can be supported via plugins that post-process the build output for compatibility.
 
 ## Features
 
-- [Bare Module Resolving](#bare-module-resolving)
+- [NPM Dependency Resolving](#npm-dependency-resolving)
 - [Hot Module Replacement](#hot-module-replacement)
 - [TypeScript](#typescript)
 - [CSS / JSON Importing](#css--json-importing)
@@ -83,17 +76,15 @@ Vite assumes you are targeting modern browsers and by default only transpiles yo
 
 Vite tries to mirror the default configuration in [vue-cli](http://cli.vuejs.org/) as much as possible. If you've used `vue-cli` or other webpack-based boilerplates before, you should feel right at home. That said, do expect things to be different here and there.
 
-### Bare Module Resolving
+### NPM Dependency Resolving
 
 Native ES imports don't support bare module imports like
 
 ```js
-import { createApp } from 'vue'
+import { someMethod } from 'my-dep'
 ```
 
-The above will throw an error by default. Vite detects such bare module imports in all served `.js` files and rewrites them with special paths like `/@modules/vue`. Under these special paths, Vite performs module resolution to locate the correct files from your installed dependencies.
-
-Note that `vue` has special treatment - if it isn't installed in the project locally, Vite will fallback to the version from its own dependencies. If you have Vite installed globally, this makes it possible to quickly prototype with Vue without installing anything locally.
+The above will throw an error by default. Vite detects such bare module imports in all served `.js` files and rewrites them to resolved paths like `/node_modules/my-dep/dist/my-dep.js?v=1.0.0` (These paths are only present during development and your file system paths will never show up in the production build).
 
 ### Hot Module Replacement
 
@@ -115,7 +106,7 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
   }
   ```
 
-  A module can also accept updates from direct dependencies without reloading itself, using `import.meta.hot.acceptDeps`:
+  A module can also accept updates from direct dependencies without reloading itself:
 
   ```js
   import { foo } from './foo.js'
@@ -123,13 +114,13 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
   foo()
 
   if (import.meta.hot) {
-    import.meta.hot.acceptDeps('./foo.js', (newFoo) => {
+    import.meta.hot.accept('./foo.js', (newFoo) => {
       // the callback receives the updated './foo.js' module
       newFoo.foo()
     })
 
     // Can also accept an array of dep modules:
-    import.meta.hot.acceptDeps(['./foo.js', './bar.js'], ([newFooModule, newBarModule]) => {
+    import.meta.hot.accept(['./foo.js', './bar.js'], ([newFooModule, newBarModule]) => {
       // the callback receives the updated modules in an Array
     })
   }
@@ -157,7 +148,7 @@ Note that `vue` has special treatment - if it isn't installed in the project loc
 
 ### TypeScript
 
-Vite supports importing `.ts` files and `<script lang="ts">` in Vue SFCs out of the box.
+Vite supports importing `.ts` files out of the box.
 
 Vite only performs transpilation on `.ts` files and does **NOT** perform type checking. It assumes type checking is taken care of by your IDE and build process (you can run `tsc --noEmit` in the build script).
 
@@ -523,27 +514,32 @@ const { build } = require('vite')
 
 ### How is This Different from `vue-cli` or Other Bundler-based Solutions?
 
-The primary difference is that for Vite there is no bundling during development. The ES Import syntax in your source code is served directly to the browser, and the browser parses them via native `<script module>` support, making HTTP requests for each import. The dev server intercepts the requests and performs code transforms if necessary. For example, an import to a `*.vue` file is compiled on the fly right before it's sent back to the browser.
+The primary difference is that for Vite there is no bundling during development. The ES Import syntax in your source code is served directly to the browser, and the browser parses them via native `<script module>` support, making HTTP requests for each import. The dev server intercepts the requests and performs code transforms (only if necessary). For example, an import to a `*.vue` file is compiled on the fly right before it's sent back to the browser.
 
 There are a few advantages to this approach:
 
 - Since there is no bundling work to be done, the server cold start is extremely fast.
 
-- The code is compiled on-demand, so only code actually imported on the current screen is compiled. You don't have to wait until your entire app to be bundled to start developing. This can be a huge difference in apps with dozens of screens.
+- Files are served and processed on-demand. In a large app with routing, it is typical for each route to be code-split (via dynamic import) and only contain a small subset of all the modules in the app. With the native ESM approach, only the modules in the current route needs to be processed and served, which is much more efficient than bundling the entire app in memory.
 
-- Hot module replacement (HMR) performance is decoupled from the total number of modules. This makes HMR consistently fast no matter how big your app is.
+- Hot module replacement (HMR) performance is decoupled from the total number of modules. There is no re-bundling - only the dirty modules are re-fetched. This makes HMR consistently fast no matter how big your app is.
 
-Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However, since this is local development, the difference should be trivial compared to actual compilation time. (There is no compile cost on page reload since already compiled files are cached in memory.)
+**As a result, the workflow feels almost like starting a normal static file server - the "build" step has become invisible.**
 
-Finally, because compilation is still done in Node, it can technically support any code transforms a bundler can, and nothing prevents you from eventually bundling the code for production. In fact, Vite provides a `vite build` command to do exactly that so the app doesn't suffer from network waterfall in production.
+Full page reload could be slightly slower than a bundler-based setup, since native ES imports result in network waterfalls with deep import chains. However, with HMR, full page reloads are needed much less frequently. In addition, Vite performs some smart optimizations to make the difference unnoticeable in most scenarios:
 
-### How is This Different from [es-dev-server](https://github.com/open-wc/es-dev-server/)?
+- Compiled modules are served with etag cache headers and will return a fast 304 response if the file hasn't changed.
+- Even with browser caching disabled via devtools, the compile results are also cached in memory.
+- Dependencies with many internal modules are automatically pre-bundled into a single file (e.g. `lodash-es` has over 600 internal modules but will result in only one request)
+- All requests to npm dependencies are strongly cached (with auto invalidation on version change) so after the initial page load, they will be served directly from disk cache for subsequent page reloads.
 
-`es-dev-server` is a great project and we did take some inspiration from it when refactoring Vite in the early stages. That said, here is why Vite is different from `es-dev-server` and why we didn't just implement Vite as a middleware for `es-dev-server`:
+### How is This Different from [@web/dev-server](https://modern-web.dev/docs/dev-server/overview/)?
 
-- One of Vite's primary goals was to support Hot Module Replacement, but `es-dev-server` internals are a bit too opaque to get this working nicely via a middleware.
+`@web/dev-server` (previously `es-dev-server`) is a great project and Vite 1.0's Koa-based server setup was inspired by it. However, one of Vite's primary goals was to support Hot Module Replacement for native ES modules, and `es-dev-server`'s internals were a bit too opaque to get HMR working nicely via a middleware. This is why Vite ended up being a standalone project.
 
-- Vite aims to be a single tool that integrates both the dev and the build process. You can use Vite to both serve and bundle the same source code, with zero configuration.
+Some other differences:
+
+- Vite aims to be a more opinionated and streamlined tool that integrates both the dev and the build process. You can use Vite to both serve and bundle the same source code, with zero configuration. With `@web/dev-server`,
 
 - Vite is more opinionated on how certain types of imports are handled, e.g. `.css` and static assets. The handling is similar to `vue-cli` for obvious reasons.
 
