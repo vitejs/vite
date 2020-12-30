@@ -88,7 +88,7 @@ const nodeConfig = {
         'big.js': require.resolve('big.js/big.js')
       }
     }),
-    nodeResolve(),
+    nodeResolve({ preferBuiltins: true }),
     typescript({
       target: 'es2019',
       include: ['src/**/*.ts'],
@@ -103,8 +103,8 @@ const nodeConfig = {
     // Shim them with eval() so rollup can skip these calls.
     shimDepsPlugin({
       'plugins/terser.ts': {
-        src: `require('terser')`,
-        replacement: `require('vite/dist/node/terser')`
+        src: `require.resolve('terser'`,
+        replacement: `require.resolve('vite/dist/node/terser'`
       },
       // chokidar -> fs-events
       'fsevents-handler.js': {
