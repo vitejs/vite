@@ -4,11 +4,29 @@ Note: requires `@vue/compiler-sfc` as peer dependency. This is largely a port of
 
 ```js
 // vite.config.js
-import vue from '@vitejs/plugin-vue'
+// @ts-check
+import vuePlugin from '@vitejs/plugin-vue'
 
-export default {
-  plugins: [vue()]
+/**
+ * @type {import('vite').UserConfig}
+ */
+const config = {
+  plugins: [vuePlugin()]
 }
+
+export default config
+```
+
+```ts
+// vite.config.ts
+import vuePlugin from '@vitejs/plugin-vue'
+import type { UserConfig } from 'vite'
+
+const config: UserConfig = {
+  plugins: [vuePlugin()]
+}
+
+export default config
 ```
 
 ## License
