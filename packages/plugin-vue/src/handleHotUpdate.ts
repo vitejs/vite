@@ -108,7 +108,7 @@ export async function handleHotUpdate(
     const next = nextCustoms[i]
     if (!prev || !isEqualBlock(prev, next)) {
       const mod = modules.find((m) =>
-        m.url.includes(`type=${prev.type}&index=${i}`)
+        m.url.includes(`type=${prev?.type}&index=${i}`)
       )
       if (mod) {
         affectedModules.add(mod)
