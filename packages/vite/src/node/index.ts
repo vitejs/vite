@@ -7,7 +7,7 @@ export { createLogger } from './logger'
 
 // additional types
 export type { Plugin } from './plugin'
-export type { Logger, LogLevel, LogType } from './logger'
+export type { Logger, LogOptions, LogLevel, LogType } from './logger'
 export type {
   AliasOptions,
   ResolverFunction,

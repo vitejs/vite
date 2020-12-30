@@ -5,19 +5,23 @@ import readline from 'readline'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
+export interface Logger {
+  info(msg: string, options?: LogOptions): void
+  warn(msg: string, options?: LogOptions): void
+  error(msg: string, options?: LogOptions): void
+  clearScreen(type: LogType): void
+}
+
+export interface LogOptions {
+  clear?: boolean
+  timestamp?: boolean
+}
 
 const LogLevels: Record<LogLevel, number> = {
   silent: 0,
   error: 1,
   warn: 2,
   info: 3
-}
-
-export interface Logger {
-  info(msg: string, options?: LogOptions): void
-  warn(msg: string, options?: LogOptions): void
-  error(msg: string, options?: LogOptions): void
-  clearScreen(type: LogType): void
 }
 
 let lastType: LogType | undefined
@@ -29,11 +33,6 @@ function clearScreen() {
   console.log(blank)
   readline.cursorTo(process.stdout, 0, 0)
   readline.clearScreenDown(process.stdout)
-}
-
-interface LogOptions {
-  clear?: boolean
-  timestamp?: boolean
 }
 
 export function createLogger(level: LogLevel = 'info'): Logger {
