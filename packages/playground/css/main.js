@@ -31,3 +31,10 @@ if (import.meta.hot) {
     text('.modules-sass-code', JSON.stringify(newMod.default, null, 2))
   })
 }
+
+// async
+import('./async')
+
+if (import.meta.env.DEV) {
+  import('./async-treeshaken')
+}
