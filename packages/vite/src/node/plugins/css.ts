@@ -181,23 +181,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // record css
       styles.set(id, css)
 
-      let code = modulesCode || ''
-      if (!code) {
-        if (config.build.cssCodeSplit) {
-          // If code-splitting CSS, inject a fake marker to avoid the module
-          // from being tree-shaken. This preserves the .css file as a
-          // module in the chunk's metadata so that we can retrieve them in
-          // renderChunk.
-          code += `${cssInjectionMarker}()\n`
-        }
-        code += `export default ${JSON.stringify(css)}`
-      }
-      return {
-        code,
-        map: null,
-        // #795 css always has side effect
-        moduleSideEffects: true
-      }
+      const code =
+        // Inject a fake marker to avoid the module
+        // from being tree-shaken. This preserves the .css file as a
+        // module in the chunk's metadata so that we can retrieve them in
+        // renderChunk.
+        `${cssInjectionMarker}();` +
+        (modulesCode || `export default ${JSON.stringify(css)}`)
+
+      return code
     },
 
     async renderChunk(code, chunk) {
@@ -213,13 +205,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      // remove the injected side effect marker
+      code = code.replace(cssInjectionRE, '')
+
       // replace asset url references with resolved url
       chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId, postfix = '') => {
         return config.build.base + this.getFileName(fileId) + postfix
       })
 
       if (config.build.cssCodeSplit) {
-        code = code.replace(cssInjectionRE, '')
         if (!code.trim()) {
           // this is a shared CSS-only chunk that is empty.
           emptyChunks.add(chunk.fileName)
@@ -249,16 +243,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         extractedCss += chunkCSS
-        return null
+        return {
+          code,
+          map: null
+        }
       }
     },
 
     async generateBundle(_options, bundle) {
-      // minify css
-      if (config.build.minify && extractedCss) {
-        extractedCss = await minifyCSS(extractedCss, config.logger)
-      }
-
       // remove empty css chunks and their imports
       if (emptyChunks.size) {
         emptyChunks.forEach((fileName) => {
@@ -278,6 +270,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (extractedCss) {
+        // minify css
+        if (config.build.minify) {
+          extractedCss = await minifyCSS(extractedCss, config.logger)
+        }
         this.emitFile({
           name: 'style.css',
           type: 'asset',
