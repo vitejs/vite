@@ -11,7 +11,9 @@
     "test-serve": "jest",
     "debug-serve": "cross-env VITE_DEBUG_SERVE=1 node --inspect-brk ./node_modules/.bin/jest",
     "test-build": "cross-env VITE_TEST_BUILD=1 jest",
-    "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 node --inspect-brk ./node_modules/.bin/jest"
+    "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 node --inspect-brk ./node_modules/.bin/jest",
+    "docs": "vitepress dev docs",
+    "build-docs": "vitepress build docs"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.12.1",
@@ -38,6 +40,7 @@
     "slash": "^3.0.0",
     "ts-jest": "^26.4.4",
     "typescript": "^4.1.2",
+    "vitepress": "^0.10.0",
     "yorkie": "^2.0.0"
   },
   "gitHooks": {
