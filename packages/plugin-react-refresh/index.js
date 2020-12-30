@@ -24,9 +24,9 @@ export default exports
 /**
  * Transform plugin for transforming and injecting per-file refresh code.
  *
- * @type { () => import('vite').Plugin }
+ * @returns { import('vite').Plugin }
  */
-module.exports = function reactRefreshPlugin() {
+function reactRefreshPlugin() {
   let shouldSkip = false
 
   return {
@@ -175,3 +175,6 @@ function isRefreshBoundary(ast) {
 function isComponentishName(name) {
   return typeof name === 'string' && name[0] >= 'A' && name[0] <= 'Z'
 }
+
+module.exports = reactRefreshPlugin
+module.exports.default = reactRefreshPlugin
