@@ -67,6 +67,15 @@ export function editFile(filename: string, replacer: (str: string) => string) {
   fs.writeFileSync(filename, modified)
 }
 
+export function findAssetFile(match: string | RegExp, base = '') {
+  const assetsDir = path.join(testDir, 'dist', base, 'assets')
+  const files = fs.readdirSync(assetsDir)
+  const file = files.find((file) => {
+    return file.match(match)
+  })
+  return file ? fs.readFileSync(path.resolve(assetsDir, file), 'utf-8') : ''
+}
+
 /**
  * Poll a getter until the value it returns includes the expected value.
  */
