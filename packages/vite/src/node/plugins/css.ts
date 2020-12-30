@@ -133,9 +133,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-const cssInjectionMarker = `__VITE_CSS__`
-const cssInjectionRE = /__VITE_CSS__\(\);?/g
-
 /**
  * Plugin applied after user plugins
  */
@@ -181,15 +178,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // record css
       styles.set(id, css)
 
-      const code =
-        // Inject a fake marker to avoid the module
-        // from being tree-shaken. This preserves the .css file as a
-        // module in the chunk's metadata so that we can retrieve them in
-        // renderChunk.
-        `${cssInjectionMarker}();` +
-        (modulesCode || `export default ${JSON.stringify(css)}`)
-
-      return code
+      return {
+        code: modulesCode || `export default ${JSON.stringify(css)}`,
+        map: null,
+        // avoid the css module from being tree-shaken so that we can retrieve
+        // it in renderChunk()
+        moduleSideEffects: 'no-treeshake'
+      }
     },
 
     async renderChunk(code, chunk) {
@@ -204,9 +199,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (!chunkCSS) {
         return null
       }
-
-      // remove the injected side effect marker
-      code = code.replace(cssInjectionRE, '')
 
       // replace asset url references with resolved url
       chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId, postfix = '') => {
@@ -223,10 +215,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
         if (chunk.isDynamicEntry && chunkCSS) {
+          const placeholder = `__VITE_CSS__`
           code =
-            `let ${cssInjectionMarker} = document.createElement('style');` +
-            `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-            `document.head.appendChild(${cssInjectionMarker});` +
+            `let ${placeholder} = document.createElement('style');` +
+            `${placeholder}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `document.head.appendChild(${placeholder});` +
             code
         } else {
           // for normal chunks, emit corresponding css file
@@ -243,10 +236,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         extractedCss += chunkCSS
-        return {
-          code,
-          map: null
-        }
+        return null
       }
     },
 
