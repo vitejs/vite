@@ -121,7 +121,7 @@ export function resolveBuildOptions(
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
-    cssCodeSplit: true,
+    cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},
     minify: 'terser',
