@@ -211,10 +211,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           emptyChunks.add(chunk.fileName)
         }
         // minify
-        chunkCSS = await minifyCSS(chunkCSS, config.logger)
+        if (config.build.minify) {
+          chunkCSS = await minifyCSS(chunkCSS, config.logger)
+        }
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
-        if (chunk.isDynamicEntry && chunkCSS) {
+        if (chunk.isDynamicEntry) {
           const placeholder = `__VITE_CSS__`
           code =
             `let ${placeholder} = document.createElement('style');` +
