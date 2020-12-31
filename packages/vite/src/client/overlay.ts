@@ -4,6 +4,7 @@ const template = /*html*/ `
 <style>
 :host {
   position: fixed;
+  z-index: 99999;
   top: 0;
   left: 0;
   width: 100%;
