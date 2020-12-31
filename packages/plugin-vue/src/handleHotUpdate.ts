@@ -103,23 +103,24 @@ export async function handleHotUpdate(
 
   // custom blocks update causes a reload
   // because the custom block contents is changed and it may be used in JS.
-  for (let i = 0; i < nextCustoms.length; i++) {
-    const prev = prevCustoms[i]
-    const next = nextCustoms[i]
-    if (!prev || !isEqualBlock(prev, next)) {
-      const mod = modules.find((m) =>
-        m.url.includes(`type=${prev.type}&index=${i}`)
-      )
-      if (mod) {
-        affectedModules.add(mod)
-      } else {
-        affectedModules.add(mainModule)
+  if (prevCustoms.length !== nextCustoms.length) {
+    // block rmeoved/added, force reload
+    affectedModules.add(mainModule)
+  } else {
+    for (let i = 0; i < nextCustoms.length; i++) {
+      const prev = prevCustoms[i]
+      const next = nextCustoms[i]
+      if (!prev || !isEqualBlock(prev, next)) {
+        const mod = modules.find((m) =>
+          m.url.includes(`type=${prev.type}&index=${i}`)
+        )
+        if (mod) {
+          affectedModules.add(mod)
+        } else {
+          affectedModules.add(mainModule)
+        }
       }
     }
-  }
-  if (prevCustoms.length > nextCustoms.length) {
-    // block rmeoved, force reload
-    affectedModules.add(mainModule)
   }
 
   let updateType = []
