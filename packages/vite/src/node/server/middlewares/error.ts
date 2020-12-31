@@ -5,6 +5,15 @@ import { Connect } from 'types/connect'
 import { pad } from '../../utils'
 import strip from 'strip-ansi'
 
+export function prepareError(err: Error | RollupError) {
+  return {
+    ...err,
+    message: strip(err.message),
+    stack: strip(err.stack || ''),
+    frame: strip((err as RollupError).frame || '')
+  }
+}
+
 export function errorMiddleware(
   server: ViteDevServer
 ): Connect.ErrorHandleFunction {
@@ -25,12 +34,7 @@ export function errorMiddleware(
     res.end(() => {
       server.ws.send({
         type: 'error',
-        err: {
-          ...err,
-          message: strip(err.message),
-          stack: strip(err.stack || ''),
-          frame: strip(err.frame || '')
-        }
+        err: prepareError(err)
       })
     })
   }
