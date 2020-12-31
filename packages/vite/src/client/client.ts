@@ -83,7 +83,8 @@ async function handleMessage(payload: HMRPayload) {
         } else {
           // css-update
           // this is only sent when a css file referened with <link> is updated
-          const { path, timestamp } = update
+          let { path, timestamp } = update
+          path = path.replace(/\?.*/, '')
           const el = document.querySelector(`link[href*='${path}']`)
           if (el) {
             el.setAttribute(

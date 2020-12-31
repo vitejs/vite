@@ -1,11 +1,6 @@
 import { extname } from 'path'
-import { isCSSProxy, isCSSRequest } from '../plugins/css'
-import {
-  cleanUrl,
-  normalizePath,
-  removeImportQuery,
-  removeTimestampQuery
-} from '../utils'
+import { isDirectCSSRequest } from '../plugins/css'
+import { cleanUrl, normalizePath, removeTimestampQuery } from '../utils'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
 import { parse as parseUrl } from 'url'
@@ -30,7 +25,7 @@ export class ModuleNode {
 
   constructor(url: string) {
     this.url = url
-    this.type = isCSSRequest(url) ? 'css' : 'js'
+    this.type = isDirectCSSRequest(url) ? 'css' : 'js'
   }
 }
 
@@ -161,9 +156,6 @@ export class ModuleGraph {
   // the same module
   async resolveUrl(url: string): Promise<[string, string]> {
     url = removeTimestampQuery(url)
-    if (!isCSSProxy(url)) {
-      url = removeImportQuery(url)
-    }
     const resolvedId = (await this.container.resolveId(url))?.id || url
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)

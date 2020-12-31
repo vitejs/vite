@@ -2,7 +2,6 @@ import {
   // createDebugger,
   isExternalUrl,
   asyncReplace,
-  isImportRequest,
   cleanUrl,
   generateCodeFrame,
   isDataUrl
@@ -47,12 +46,13 @@ export interface CSSModulesOptions {
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
+const directRequestRE = /(\?|&)direct\b/
 
 export const isCSSRequest = (request: string) =>
-  cssLangRE.test(request) && !isImportRequest(request)
+  cssLangRE.test(request) && !directRequestRE.test(request)
 
-export const isCSSProxy = (request: string) =>
-  cssLangRE.test(request) && isImportRequest(request)
+export const isDirectCSSRequest = (request: string) =>
+  cssLangRE.test(request) && directRequestRE.test(request)
 
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
@@ -156,7 +156,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
       if (config.command === 'serve') {
-        if (isCSSProxy(id)) {
+        if (isDirectCSSRequest(id)) {
+          return css
+        } else {
           // server only
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
@@ -170,7 +172,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `import.meta.hot.prune(() => removeStyle(id))`
           ].join('\n')
         }
-        return modulesCode || css
       }
 
       // build CSS handling ----------------------------------------------------
@@ -224,7 +225,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `document.head.appendChild(${placeholder});` +
             code
         } else {
-          // for normal chunks, emit corresponding css file
+          // for normal entry chunks, emit corresponding css file
           const fileHandle = this.emitFile({
             name: chunk.name + '.css',
             type: 'asset',
