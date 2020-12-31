@@ -5,7 +5,7 @@ import { ResolvedConfig } from '../config'
 import chalk from 'chalk'
 import MagicString from 'magic-string'
 import { init, parse as parseImports, ImportSpecifier } from 'es-module-lexer'
-import { isCSSProxy, isCSSRequest } from './css'
+import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
   cleanUrl,
   createDebugger,
@@ -34,10 +34,10 @@ const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
 
 const skipRE = /\.(map|json)$/
-const canSkip = (id: string) => skipRE.test(id) || isCSSRequest(id)
+const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
 
 function markExplicitImport(url: string) {
-  if (!isJSRequest(cleanUrl(url)) || isCSSRequest(url)) {
+  if (!isJSRequest(cleanUrl(url)) && !isCSSRequest(url)) {
     return injectQuery(url, 'import')
   }
   return url
@@ -345,7 +345,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // update the module graph for HMR analysis.
       // node CSS imports does its own graph update in the css plugin so we
       // only handle js graph updates here.
-      if (!isCSSProxy(importer)) {
+      if (!isCSSRequest(importer)) {
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
           importedUrls,

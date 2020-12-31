@@ -1,9 +1,10 @@
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
-import { isCSSProxy, isCSSRequest } from '../../plugins/css'
+import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 import {
   cleanUrl,
   createDebugger,
+  injectQuery,
   isImportRequest,
   isJSRequest,
   prettifyUrl,
@@ -75,10 +76,13 @@ export function transformMiddleware(
         isHTMLProxy(url) ||
         server.config.transformInclude(withoutQuery)
       ) {
-        // strip ?import except for CSS since we need to differentiate between
-        // normal CSS requests and imports
-        if (!isCSSProxy(url)) {
-          url = removeImportQuery(url)
+        // strip ?import
+        url = removeImportQuery(url)
+
+        // for CSS, we need to differentiate between normal CSS requests and
+        // imports
+        if (isCSSRequest(url) && req.headers.accept?.includes('text/css')) {
+          url = injectQuery(url, 'direct')
         }
 
         // check if we can return 304 early
@@ -96,7 +100,7 @@ export function transformMiddleware(
         // resolve, load and transform using the plugin container
         const result = await transformRequest(url, server)
         if (result) {
-          const type = isCSSRequest(url) ? 'css' : 'js'
+          const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) ||
             url.includes(`node_modules/${DEP_CACHE_DIR}`)
