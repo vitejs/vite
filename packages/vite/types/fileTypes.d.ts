@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
 
@@ -135,4 +137,19 @@ declare module '*.ttf' {
 declare module '*.otf' {
   const src: string
   export default src
+}
+
+// web worker
+declare module '*?worker' {
+  const workerConstructor: {
+    new (): Worker
+  }
+  export default workerConstructor
+}
+
+declare module '*?worker&inline' {
+  const workerConstructor: {
+    new (): Worker
+  }
+  export default workerConstructor
 }
