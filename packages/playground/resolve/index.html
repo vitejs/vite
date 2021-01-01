@@ -24,6 +24,9 @@
 <h2>Monorepo linked dep</h2>
 <p class="monorepo"></p>
 
+<h2>Plugin resolved virtual file</h2>
+<p class="virtual"></p>
+
 <script type="module">
   function text(selector, text) {
     document.querySelector(selector).textContent = text
@@ -72,4 +75,7 @@
   // monorepo linked dep w/ upper directory import
   import { msg as linkedMsg } from 'resolve-linked'
   text('.monorepo', linkedMsg)
+
+  import { msg as virtualMsg } from '@virtual-file'
+  text('.virtual', virtualMsg)
 </script>

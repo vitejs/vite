@@ -29,3 +29,7 @@ test('css entry', async () => {
 test('monorepo linked dep', async () => {
   expect(await page.textContent('.monorepo')).toMatch('[success]')
 })
+
+test('plugin resolved virutal file', async () => {
+  expect(await page.textContent('.virtual')).toMatch('[success]')
+})

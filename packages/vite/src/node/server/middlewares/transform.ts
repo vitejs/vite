@@ -15,7 +15,7 @@ import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import chalk from 'chalk'
-import { DEP_CACHE_DIR, DEP_VERSION_RE } from '../../constants'
+import { DEP_CACHE_DIR, DEP_VERSION_RE, VALID_ID_PREFIX } from '../../constants'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -78,6 +78,12 @@ export function transformMiddleware(
       ) {
         // strip ?import
         url = removeImportQuery(url)
+
+        // Strip valid id prefix. This is preprended to resolved Ids that are
+        // not valid browser import specifiers by the importAnalysis plugin.
+        if (url.startsWith(VALID_ID_PREFIX)) {
+          url = url.slice(VALID_ID_PREFIX.length)
+        }
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports
