@@ -6,7 +6,7 @@ import { ModuleNode } from './server/moduleGraph'
 import { ResolvedConfig } from './'
 
 /**
- * Vite plugins support a subset of Rollup plugin API with a few extra
+ * Vite plugins extends the Rollup plugin interface with a few extra
  * vite-specific options. A valid vite plugin is also a valid Rollup plugin.
  * On the contrary, a Rollup plugin may or may NOT be a valid vite universal
  * plugin, since some Rollup features do not make sense in an unbundled
@@ -19,9 +19,6 @@ import { ResolvedConfig } from './'
  * rollup type definition of {@link rollup#PluginHooks}). You can think of the
  * dev server as only running `const bundle = rollup.rollup()` but never calling
  * `bundle.generate()`.
- *
- * When running on the dev server, the plugin also has access to `this.server`
- * via the plugin context, which is the {@link ViteDevServer} instance.
  *
  * A plugin that expects to have different behavior depending on serve/build can
  * export a factory function that receives the command being run via options.
