@@ -5,6 +5,17 @@ import readline from 'readline'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
+export interface Logger {
+  info(msg: string, options?: LogOptions): void
+  warn(msg: string, options?: LogOptions): void
+  error(msg: string, options?: LogOptions): void
+  clearScreen(type: LogType): void
+}
+
+export interface LogOptions {
+  clear?: boolean
+  timestamp?: boolean
+}
 
 const LogLevels: Record<LogLevel, number> = {
   silent: 0,
@@ -13,23 +24,12 @@ const LogLevels: Record<LogLevel, number> = {
   info: 3
 }
 
-export interface Logger {
-  info(...msgs: any[]): void
-  warn(...msgs: any[]): void
-  error(...msgs: any[]): void
-  clearScreen(): void
-}
-
 let lastType: LogType | undefined
-let lastMsg: any[] = []
+let lastMsg: string | undefined
 let sameCount = 0
 
-function sameAsLast(msgs: any[], last: any[]) {
-  return msgs.length === last.length && msgs.every((m, i) => m === last[i])
-}
-
 function clearScreen() {
-  const blank = '\n'.repeat(process.stdout.rows - 1)
+  const blank = '\n'.repeat(process.stdout.rows - 2)
   console.log(blank)
   readline.cursorTo(process.stdout, 0, 0)
   readline.clearScreenDown(process.stdout)
@@ -38,32 +38,54 @@ function clearScreen() {
 export function createLogger(level: LogLevel = 'info'): Logger {
   const thresh = LogLevels[level]
 
-  function output(type: LogType, msgs: any[]) {
-    const method = type === 'info' ? 'log' : type
+  function output(type: LogType, msg: string, options: LogOptions = {}) {
     if (thresh >= LogLevels[type]) {
-      if (type === lastType && sameAsLast(msgs, lastMsg)) {
+      const method = type === 'info' ? 'log' : type
+      const format = () => {
+        if (options.timestamp) {
+          const tag =
+            type === 'info'
+              ? chalk.cyan.bold(`[vite]`)
+              : type === 'warn'
+              ? chalk.yellow.bold(`[vite]`)
+              : chalk.red.bold(`[vite]`)
+          return `${chalk.dim(
+            new Date().toLocaleString().split(', ')[1]
+          )} ${tag} ${msg}`
+        } else {
+          return msg
+        }
+      }
+      if (type === lastType && msg === lastMsg) {
         sameCount++
         clearScreen()
-        console[method](...msgs, chalk.yellow(`(x${sameCount + 1})`))
+        console[method](format(), chalk.yellow(`(x${sameCount + 1})`))
       } else {
         sameCount = 0
-        lastMsg = msgs
+        lastMsg = msg
         lastType = type
-        console[method](...msgs)
+        if (options.clear) {
+          clearScreen()
+        }
+        console[method](format())
       }
     }
   }
 
   return {
-    info(...msgs) {
-      output('info', msgs)
+    info(msg, opts) {
+      output('info', msg, opts)
     },
-    warn(...msgs) {
-      output('warn', msgs)
+    warn(msg, opts) {
+      output('warn', msg, opts)
     },
-    error(...msgs) {
-      output('error', msgs)
+    error(msg, opts) {
+      output('error', msg, opts)
     },
-    clearScreen
+    clearScreen(type) {
+      if (thresh >= LogLevels[type]) {
+        clearScreen()
+      }
+    }
   }
 }

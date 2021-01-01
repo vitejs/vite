@@ -29,7 +29,7 @@ import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
 import { Connect } from 'types/connect'
 import { createDebugger, normalizePath } from '../utils'
-import { errorMiddleware } from './middlewares/error'
+import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
@@ -41,6 +41,7 @@ import {
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { createLogger } from '../logger'
+import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 
 export interface ServerOptions {
   host?: string
@@ -177,6 +178,10 @@ export interface ViteDevServer {
    * Stop the server.
    */
   close(): Promise<void>
+  /**
+   * @intenral
+   */
+  optimizeDepsMetadata: DepOptimizationMetadata | null
 }
 
 export async function createServer(
@@ -212,13 +217,7 @@ export async function createServer(
   }) as FSWatcher
 
   const plugins = resolvedConfig.plugins
-  const container = await createPluginContainer(
-    plugins,
-    {},
-    root,
-    watcher,
-    logger
-  )
+  const container = await createPluginContainer(resolvedConfig, watcher)
   const moduleGraph = new ModuleGraph(container)
   const closeHttpServer = createSeverCloseFn(httpServer)
 
@@ -230,6 +229,7 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
+    optimizeDepsMetadata: null,
     transformWithEsbuild,
     transformRequest(url) {
       return transformRequest(url, server)
@@ -248,11 +248,18 @@ export async function createServer(
   }
 
   if (serverConfig.hmr !== false) {
-    watcher.on('change', (file) => {
+    watcher.on('change', async (file) => {
       file = normalizePath(file)
       // invalidate module graph cache on file change
       moduleGraph.onFileChange(file)
-      handleHMRUpdate(file, server)
+      try {
+        await handleHMRUpdate(file, server)
+      } catch (err) {
+        ws.send({
+          type: 'error',
+          err: prepareError(err)
+        })
+      }
     })
   }
 
@@ -334,7 +341,22 @@ export async function createServer(
   const listen = httpServer.listen.bind(httpServer)
   httpServer.listen = (async (port: number, ...args: any[]) => {
     await container.buildStart({})
-    // TODO run optimizer
+
+    if (resolvedConfig.optimizeCacheDir) {
+      // run optimizer
+      await optimizeDeps(resolvedConfig)
+      // after optimization, read updated optimization metadata
+      const dataPath = path.resolve(
+        resolvedConfig.optimizeCacheDir,
+        'metadata.json'
+      )
+      if (fs.existsSync(dataPath)) {
+        server.optimizeDepsMetadata = JSON.parse(
+          fs.readFileSync(dataPath, 'utf-8')
+        )
+      }
+    }
+
     return listen(port, ...args)
   }) as any
 
@@ -398,7 +420,7 @@ async function startServer(
     httpServer.listen(port, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n  Vite dev server running at:\n`)
+      info(`\n  Vite dev server running at:\n`, { clear: true })
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>
         (interfaces[key] || [])

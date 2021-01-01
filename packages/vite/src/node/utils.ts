@@ -5,7 +5,25 @@ import os from 'os'
 import path from 'path'
 import { parse as parseUrl } from 'url'
 import slash from 'slash'
-import { FS_PREFIX } from './constants'
+import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
+import resolve from 'resolve'
+
+export const bareImportRE = /^[\w@]/
+export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
+
+let isRunningWithYarnPnp: boolean
+try {
+  isRunningWithYarnPnp = Boolean(require('pnpapi'))
+} catch {}
+
+export function resolveFrom(id: string, basedir: string) {
+  return resolve.sync(id, {
+    basedir,
+    extensions: SUPPORTED_EXTS,
+    // necessary to work with pnpm
+    preserveSymlinks: isRunningWithYarnPnp || false
+  })
+}
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -109,7 +127,7 @@ export function timeFrom(start: number, subtract = 0) {
  */
 export function prettifyUrl(url: string, root: string) {
   url = removeTimestampQuery(url)
-  const isAbsoluteFile = url.startsWith(normalizePath(root))
+  const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
     let file = path.relative(
       root,
@@ -129,27 +147,6 @@ export function prettifyUrl(url: string, root: string) {
   } else {
     return chalk.dim(url)
   }
-}
-
-export function deepMerge(
-  a: Record<string, any>,
-  b: Record<string, any>
-): Record<string, any> {
-  const merged: Record<string, any> = { ...a }
-  for (const key in b) {
-    const value = b[key]
-    const existing = merged[key]
-    if (Array.isArray(existing) && Array.isArray(value)) {
-      merged[key] = [...existing, ...value]
-      continue
-    }
-    if (isObject(existing) && isObject(value)) {
-      merged[key] = { ...existing, ...value }
-      continue
-    }
-    merged[key] = value
-  }
-  return merged
 }
 
 export function isObject(value: unknown): value is Record<string, any> {
@@ -190,10 +187,10 @@ export function posToNumber(
   const lines = source.split(splitRE)
   const { line, column } = pos
   let start = 0
-  for (let i = 0; i < line; i++) {
+  for (let i = 0; i < line - 1; i++) {
     start += lines[i].length
   }
-  return start + column - 1
+  return start + column
 }
 
 export function numberToPos(
@@ -261,6 +258,14 @@ export function generateCodeFrame(
     }
   }
   return res.join('\n')
+}
+
+export function writeFile(filename: string, content: string | Uint8Array) {
+  const dir = path.dirname(filename)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+  fs.writeFileSync(filename, content)
 }
 
 export function emptyDir(dir: string) {

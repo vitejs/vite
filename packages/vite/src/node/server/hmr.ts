@@ -1,6 +1,7 @@
+import fs from 'fs'
 import path from 'path'
 import { createServer, ViteDevServer } from '..'
-import { createDebugger } from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
 import slash from 'slash'
@@ -9,6 +10,8 @@ import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
 
 export const debugHmr = createDebugger('vite:hmr')
+
+const normalizedClientDir = normalizePath(CLIENT_DIR)
 
 export interface HmrOptions {
   protocol?: string
@@ -31,29 +34,21 @@ export async function handleHMRUpdate(
   if (file === config.configPath || file.endsWith('.env')) {
     // TODO auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
-    server.config.logger.clearScreen()
-    server.config.logger.info(
-      chalk.green('[vite] config or .env file changed, restarting server...')
+    config.logger.info(
+      chalk.green('config or .env file changed, restarting server...'),
+      { clear: true, timestamp: true }
     )
     await server.close()
     ;(global as any).__vite_start_time = Date.now()
-    server = await createServer(
-      server.config.inlineConfig,
-      server.config.configPath
-    )
+    server = await createServer(config.inlineConfig, config.configPath)
     await server.listen()
     return
   }
 
   debugHmr(`[file change] ${chalk.dim(shortFile)}`)
 
-  let mods = moduleGraph.getModulesByFile(file)
-
-  // html files and the client itself cannot be hot updated.
-  if ((!mods && file.endsWith('.html')) || file.startsWith(CLIENT_DIR)) {
-    config.logger.info(
-      chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
-    )
+  // (dev only) the client itself cannot be hot updated.
+  if (file.startsWith(normalizedClientDir)) {
     ws.send({
       type: 'full-reload',
       path: '/' + slash(path.relative(config.root, file))
@@ -61,21 +56,35 @@ export async function handleHMRUpdate(
     return
   }
 
-  // let mods = moduleGraph.getModulesByFile(file)
-  if (!mods) {
-    // loaded but not in the module graph, probably not js
-    debugHmr(`[no module entry] ${chalk.dim(shortFile)}`)
-    return
-  }
+  const mods = moduleGraph.getModulesByFile(file)
 
   // check if any plugin wants to perform custom HMR handling
-  let filteredMods = [...mods]
+  let filteredMods = mods ? [...mods] : []
+  const read = () => readModifiedFile(file)
   for (const plugin of config.plugins) {
     if (plugin.handleHotUpdate) {
       filteredMods =
-        (await plugin.handleHotUpdate(file, filteredMods, server)) ||
+        (await plugin.handleHotUpdate(file, filteredMods, read, server)) ||
         filteredMods
     }
+  }
+
+  if (!filteredMods.length) {
+    // html file cannot be hot updated
+    if (file.endsWith('.html')) {
+      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+        clear: true,
+        timestamp: true
+      })
+      ws.send({
+        type: 'full-reload',
+        path: '/' + slash(path.relative(config.root, file))
+      })
+    } else {
+      // loaded but not in the module graph, probably not js
+      debugHmr(`[no modules matched] ${chalk.dim(shortFile)}`)
+    }
+    return
   }
 
   const timestamp = Date.now()
@@ -88,9 +97,10 @@ export async function handleHMRUpdate(
     }>()
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
-      config.logger.info(
-        chalk.green(`[vite] page reload `) + chalk.dim(shortFile)
-      )
+      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+        clear: true,
+        timestamp: true
+      })
       ws.send({
         type: 'full-reload'
       })
@@ -98,20 +108,21 @@ export async function handleHMRUpdate(
     }
 
     updates.push(
-      ...[...boundaries].map(({ boundary, acceptedVia }) => {
-        const type = `${boundary.type}-update` as Update['type']
-        config.logger.info(
-          chalk.green(`[vite] hmr update `) + chalk.dim(boundary.url)
-        )
-        return {
-          type,
-          timestamp,
-          path: boundary.url,
-          accpetedPath: acceptedVia.url
-        }
-      })
+      ...[...boundaries].map(({ boundary, acceptedVia }) => ({
+        type: `${boundary.type}-update` as Update['type'],
+        timestamp,
+        path: boundary.url,
+        accpetedPath: acceptedVia.url
+      }))
     )
   }
+
+  config.logger.info(
+    updates
+      .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
+      .join('\n'),
+    { clear: true, timestamp: true }
+  )
 
   ws.send({
     type: 'update',
@@ -315,4 +326,30 @@ function error(pos: number) {
   ) as RollupError
   err.pos = pos
   throw err
+}
+
+// vitejs/vite#610 when hot-reloading Vue files, we read immediately on file
+// change event and sometimes this can be too early and get an empty buffer.
+// Poll until the file's modified time has changed before reading again.
+async function readModifiedFile(file: string): Promise<string> {
+  const content = fs.readFileSync(file, 'utf-8')
+  if (!content) {
+    const mtime = fs.statSync(file).mtimeMs
+    await new Promise((r) => {
+      let n = 0
+      const poll = async () => {
+        n++
+        const newMtime = fs.statSync(file).mtimeMs
+        if (newMtime !== mtime || n > 10) {
+          r(0)
+        } else {
+          setTimeout(poll, 10)
+        }
+      }
+      setTimeout(poll, 10)
+    })
+    return fs.readFileSync(file, 'utf-8')
+  } else {
+    return content
+  }
 }

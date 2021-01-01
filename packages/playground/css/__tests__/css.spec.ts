@@ -1,4 +1,13 @@
-import { editFile, getColor, untilUpdated } from '../../testUtils'
+import fs from 'fs'
+import path from 'path'
+import {
+  editFile,
+  findAssetFile,
+  getColor,
+  isBuild,
+  testDir,
+  untilUpdated
+} from '../../testUtils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
@@ -88,4 +97,44 @@ test('css modules w/ sass', async () => {
     code.replace('color: orangered', 'color: blue')
   )
   await untilUpdated(() => getColor(imported), 'blue')
+})
+
+test('async chunk', async () => {
+  const el = await page.$('.async')
+  expect(await getColor(el)).toBe('teal')
+
+  if (isBuild) {
+    // assert that the css is inlined in the async chunk instead of in the
+    // main css file
+    expect(findAssetFile(/\.css$/)).not.toMatch('teal')
+    expect(findAssetFile(/async\.\w+\.js$/)).toMatch('.async{color:teal}')
+  } else {
+    // test hmr
+    editFile('async.css', (code) => code.replace('color: teal', 'color: blue'))
+    await untilUpdated(() => getColor(el), 'blue')
+  }
+})
+
+test('treeshaken async chunk', async () => {
+  if (isBuild) {
+    // should be absent in prod
+    expect(
+      await page.evaluate(() => {
+        return document.querySelector('.async-treeshaken')
+      })
+    ).toBeNull()
+    // assert that the css is not present anywhere
+    expect(findAssetFile(/\.css$/)).not.toMatch('plum')
+    expect(findAssetFile(/index\.\w+\.js$/)).not.toMatch('.async{color:plum}')
+    expect(findAssetFile(/async\.\w+\.js$/)).not.toMatch('.async{color:plum}')
+    // should have no chunk!
+    expect(findAssetFile(/async-treeshaken/)).toBe('')
+  } else {
+    // should be present in dev
+    const el = await page.$('.async-treeshaken')
+    editFile('async-treeshaken.css', (code) =>
+      code.replace('color: plum', 'color: blue')
+    )
+    await untilUpdated(() => getColor(el), 'blue')
+  }
 })

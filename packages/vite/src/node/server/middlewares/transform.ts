@@ -1,9 +1,10 @@
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
-import { isCSSProxy, isCSSRequest } from '../../plugins/css'
+import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 import {
   cleanUrl,
   createDebugger,
+  injectQuery,
   isImportRequest,
   isJSRequest,
   prettifyUrl,
@@ -14,7 +15,7 @@ import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import chalk from 'chalk'
-import { DEP_VERSION_RE } from '../../constants'
+import { DEP_CACHE_DIR, DEP_VERSION_RE } from '../../constants'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -35,8 +36,10 @@ export function transformMiddleware(
       return next()
     }
 
+    const withoutQuery = cleanUrl(url)
+
     try {
-      const isSourceMap = cleanUrl(url).endsWith('.map')
+      const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
         const originalUrl = url.replace(/\.map($|\?)/, '$1')
@@ -54,7 +57,7 @@ export function transformMiddleware(
       if (url.startsWith('/public/')) {
         logger.warn(
           chalk.yellow(
-            `[vite] files in the public directory are served at the root path.\n` +
+            `files in the public directory are served at the root path.\n` +
               `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
                 url.replace(/^\/public\//, '/')
               )}.`
@@ -70,12 +73,16 @@ export function transformMiddleware(
         isJSRequest(url) ||
         isImportRequest(url) ||
         isCSSRequest(url) ||
-        isHTMLProxy(url)
+        isHTMLProxy(url) ||
+        server.config.transformInclude(withoutQuery)
       ) {
-        // strip ?import except for CSS since we need to differentiate between
-        // normal CSS requests and imports
-        if (!isCSSProxy(url)) {
-          url = removeImportQuery(url)
+        // strip ?import
+        url = removeImportQuery(url)
+
+        // for CSS, we need to differentiate between normal CSS requests and
+        // imports
+        if (isCSSRequest(url) && req.headers.accept?.includes('text/css')) {
+          url = injectQuery(url, 'direct')
         }
 
         // check if we can return 304 early
@@ -93,8 +100,10 @@ export function transformMiddleware(
         // resolve, load and transform using the plugin container
         const result = await transformRequest(url, server)
         if (result) {
-          const type = isCSSRequest(url) ? 'css' : 'js'
-          const isDep = DEP_VERSION_RE.test(url)
+          const type = isDirectCSSRequest(url) ? 'css' : 'js'
+          const isDep =
+            DEP_VERSION_RE.test(url) ||
+            url.includes(`node_modules/${DEP_CACHE_DIR}`)
           return send(
             req,
             res,

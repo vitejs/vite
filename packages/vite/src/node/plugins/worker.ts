@@ -5,7 +5,6 @@ import qs, { ParsedUrlQuery } from 'querystring'
 import { fileToUrl } from './asset'
 import { cleanUrl } from '../utils'
 import Rollup from 'rollup'
-import { resolveBuildPlugins } from '..'
 
 function isWorkerRequest(id: string): ParsedUrlQuery | false {
   const { search } = parseUrl(id)
@@ -44,7 +43,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const rollup = require('rollup') as typeof Rollup
           const bundle = await rollup.rollup({
             input: cleanUrl(id),
-            plugins: resolveBuildPlugins(config)
+            plugins: config.plugins as Plugin[]
           })
           try {
             const { output } = await bundle.generate({

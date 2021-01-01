@@ -1,6 +1,12 @@
 import fs from 'fs'
 import path from 'path'
-import { getBg, getColor, isBuild, testDir } from '../../testUtils'
+import {
+  findAssetFile,
+  getBg,
+  getColor,
+  isBuild,
+  testDir
+} from '../../testUtils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
@@ -66,14 +72,7 @@ describe('css url() references', () => {
 
   if (isBuild) {
     test('preserve postfix query/hash', () => {
-      const assetsDir = path.resolve(testDir, 'dist/foo/assets')
-      const files = fs.readdirSync(assetsDir)
-      const file = files.find((file) => {
-        return /\.\w+\.css$/.test(file)
-      })
-      expect(fs.readFileSync(path.resolve(assetsDir, file), 'utf-8')).toMatch(
-        `woff2?#iefix`
-      )
+      expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2?#iefix`)
     })
   }
 })

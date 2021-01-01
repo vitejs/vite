@@ -1,11 +1,13 @@
 export * from './server'
 export * from './build'
+export * from './optimizer'
 export * from './config'
+export { send } from './server/send'
 export { createLogger } from './logger'
 
 // additional types
 export type { Plugin } from './plugin'
-export type { Logger, LogLevel, LogType } from './logger'
+export type { Logger, LogOptions, LogLevel, LogType } from './logger'
 export type {
   AliasOptions,
   ResolverFunction,

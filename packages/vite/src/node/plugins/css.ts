@@ -2,7 +2,6 @@ import {
   // createDebugger,
   isExternalUrl,
   asyncReplace,
-  isImportRequest,
   cleanUrl,
   generateCodeFrame,
   isDataUrl
@@ -47,12 +46,13 @@ export interface CSSModulesOptions {
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
+const directRequestRE = /(\?|&)direct\b/
 
 export const isCSSRequest = (request: string) =>
-  cssLangRE.test(request) && !isImportRequest(request)
+  cssLangRE.test(request) && !directRequestRE.test(request)
 
-export const isCSSProxy = (request: string) =>
-  cssLangRE.test(request) && isImportRequest(request)
+export const isDirectCSSRequest = (request: string) =>
+  cssLangRE.test(request) && directRequestRE.test(request)
 
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
@@ -133,9 +133,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-const cssInjectionMarker = `__VITE_CSS__`
-const cssInjectionRE = /__VITE_CSS__\(\);?/g
-
 /**
  * Plugin applied after user plugins
  */
@@ -159,7 +156,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
       if (config.command === 'serve') {
-        if (isCSSProxy(id)) {
+        if (isDirectCSSRequest(id)) {
+          return css
+        } else {
           // server only
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
@@ -173,7 +172,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `import.meta.hot.prune(() => removeStyle(id))`
           ].join('\n')
         }
-        return modulesCode || css
       }
 
       // build CSS handling ----------------------------------------------------
@@ -181,30 +179,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // record css
       styles.set(id, css)
 
-      let code = modulesCode || ''
-      if (!code) {
-        if (config.build.cssCodeSplit) {
-          // If code-splitting CSS, inject a fake marker to avoid the module
-          // from being tree-shaken. This preserves the .css file as a
-          // module in the chunk's metadata so that we can retrieve them in
-          // renderChunk.
-          code += `${cssInjectionMarker}()\n`
-        }
-        code += `export default ${JSON.stringify(css)}`
-      }
       return {
-        code,
+        code: modulesCode || `export default ${JSON.stringify(css)}`,
         map: null,
-        // #795 css always has side effect
-        moduleSideEffects: true
+        // avoid the css module from being tree-shaken so that we can retrieve
+        // it in renderChunk()
+        moduleSideEffects: 'no-treeshake'
       }
     },
 
     async renderChunk(code, chunk) {
       let chunkCSS = ''
-      // the order of module import is reversive
-      // see https://github.com/rollup/rollup/issues/435#issue-125406562
-      const ids = Object.keys(chunk.modules).reverse()
+      const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
@@ -221,23 +207,25 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       })
 
       if (config.build.cssCodeSplit) {
-        code = code.replace(cssInjectionRE, '')
         if (!code.trim()) {
           // this is a shared CSS-only chunk that is empty.
           emptyChunks.add(chunk.fileName)
         }
         // minify
-        chunkCSS = await minifyCSS(chunkCSS, config.logger)
+        if (config.build.minify) {
+          chunkCSS = await minifyCSS(chunkCSS, config.logger)
+        }
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
-        if (chunk.isDynamicEntry && chunkCSS) {
+        if (chunk.isDynamicEntry) {
+          const placeholder = `__VITE_CSS__`
           code =
-            `let ${cssInjectionMarker} = document.createElement('style');` +
-            `${cssInjectionMarker}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-            `document.head.appendChild(${cssInjectionMarker});` +
+            `let ${placeholder} = document.createElement('style');` +
+            `${placeholder}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `document.head.appendChild(${placeholder});` +
             code
         } else {
-          // for normal chunks, emit corresponding css file
+          // for normal entry chunks, emit corresponding css file
           const fileHandle = this.emitFile({
             name: chunk.name + '.css',
             type: 'asset',
@@ -256,11 +244,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(_options, bundle) {
-      // minify css
-      if (config.build.minify && extractedCss) {
-        extractedCss = await minifyCSS(extractedCss, config.logger)
-      }
-
       // remove empty css chunks and their imports
       if (emptyChunks.size) {
         emptyChunks.forEach((fileName) => {
@@ -280,6 +263,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (extractedCss) {
+        // minify css
+        if (config.build.minify) {
+          extractedCss = await minifyCSS(extractedCss, config.logger)
+        }
         this.emitFile({
           name: 'style.css',
           type: 'asset',
@@ -657,16 +644,13 @@ async function minifyCSS(css: string, logger: Logger) {
   const res = new CleanCSS({ level: 2, rebase: false }).minify(css)
 
   if (res.errors && res.errors.length) {
-    logger.error(chalk.red(`[vite] error when minifying css:\n`), res.errors)
+    logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
     // TODO format this
     throw res.errors[0]
   }
 
   if (res.warnings && res.warnings.length) {
-    logger.warn(
-      chalk.yellow(`[vite] warnings when minifying css:\n`),
-      res.warnings
-    )
+    logger.warn(chalk.yellow(`warnings when minifying css:\n${res.warnings}`))
   }
 
   return res.styles

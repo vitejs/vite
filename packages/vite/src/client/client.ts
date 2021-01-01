@@ -83,7 +83,8 @@ async function handleMessage(payload: HMRPayload) {
         } else {
           // css-update
           // this is only sent when a css file referened with <link> is updated
-          const { path, timestamp } = update
+          let { path, timestamp } = update
+          path = path.replace(/\?.*/, '')
           const el = document.querySelector(`link[href*='${path}']`)
           if (el) {
             el.setAttribute(
@@ -96,7 +97,7 @@ async function handleMessage(payload: HMRPayload) {
       })
       break
     case 'custom':
-      const cbs = customUpdateMap.get(payload.path)?.get(payload.event)
+      const cbs = customListenersMap.get(payload.event)
       if (cbs) {
         cbs.forEach((cb) => cb(payload.data))
       }
@@ -331,7 +332,8 @@ const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
-const customUpdateMap = new Map<
+const customListenersMap = new Map<string, ((customData: any) => void)[]>()
+const ctxToListenersMap = new Map<
   string,
   Map<string, ((customData: any) => void)[]>
 >()
@@ -347,9 +349,23 @@ export const createHotContext = (ownerPath: string) => {
   if (mod) {
     mod.callbacks = []
   }
+
   // clear stale custom event listeners
-  const customListeners = new Map()
-  customUpdateMap.set(ownerPath, customListeners)
+  const staleListeners = ctxToListenersMap.get(ownerPath)
+  if (staleListeners) {
+    for (const [event, staleFns] of staleListeners) {
+      const listeners = customListenersMap.get(event)
+      if (listeners) {
+        customListenersMap.set(
+          event,
+          listeners.filter((l) => !staleFns.includes(l))
+        )
+      }
+    }
+  }
+
+  const newListeners = new Map()
+  ctxToListenersMap.set(ownerPath, newListeners)
 
   function acceptDeps(deps: string[], callback: HotCallback['fn'] = () => {}) {
     const mod: HotModule = hotModulesMap.get(ownerPath) || {
@@ -408,9 +424,13 @@ export const createHotContext = (ownerPath: string) => {
 
     // custom events
     on(event: string, cb: () => void) {
-      const existing = customListeners.get(event) || []
-      existing.push(cb)
-      customListeners.set(event, existing)
+      const addToMap = (map: Map<string, any[]>) => {
+        const existing = map.get(event) || []
+        existing.push(cb)
+        map.set(event, existing)
+      }
+      addToMap(customListenersMap)
+      addToMap(newListeners)
     }
   }
 

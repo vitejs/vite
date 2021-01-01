@@ -1,7 +1,6 @@
 import { UserConfig } from './config'
 import { Plugin as RollupPlugin } from 'rollup'
 import { ServerHook, ViteDevServer } from './server'
-import { BuildHook } from './build'
 import { IndexHtmlTransform } from './plugins/html'
 import { ModuleNode } from './server/moduleGraph'
 import { ResolvedConfig } from './'
@@ -43,7 +42,10 @@ export interface Plugin extends RollupPlugin {
    */
   enforce?: 'pre' | 'post'
   /**
-   * Mutate or return new vite config before it's resolved.
+   * Modify vite config before it's resolved. The hook can either mutate the
+   * passed-in config directly, or return a partial config object that will be
+   * deeply merged into existing config.
+   *
    * Note user plugins are resolved before this hook so adding plugins inside
    * a plugin's modifyConfig hook will have no effect.
    */
@@ -62,12 +64,6 @@ export interface Plugin extends RollupPlugin {
    * are applied. Hook can be async functions and will be called in series.
    */
   configureServer?: ServerHook
-  /**
-   * Configure production build. The hook receives the build options which
-   * it can mutate or return. Passing multiple build hooks will produce multiple
-   * builds similar to a multi-config rollup build.
-   */
-  configureBuild?: BuildHook | BuildHook[]
   /**
    * Transform index.html.
    * The hook receives the following arguments:
@@ -102,6 +98,7 @@ export interface Plugin extends RollupPlugin {
   handleHotUpdate?: (
     file: string,
     mods: Array<ModuleNode>,
+    read: () => string | Promise<string>,
     server: ViteDevServer
   ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
 }

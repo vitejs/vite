@@ -65,7 +65,12 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
   return {
     name: 'vite:vue',
 
-    handleHotUpdate,
+    handleHotUpdate(file, mods, read, server) {
+      if (!filter(file)) {
+        return
+      }
+      return handleHotUpdate(file, mods, read, server)
+    },
 
     config(config) {
       // provide default values for vue runtime esm defines
@@ -80,8 +85,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       options = {
         ...options,
         root: config.root,
-        isProduction: config.isProduction,
-        ssr: !!config.build.ssr
+        isProduction: config.isProduction
       }
     },
 
@@ -103,7 +107,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')
         }
-        const descriptor = getDescriptor(filename)
+        const descriptor = getDescriptor(filename)!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
           // handle <scrip> + <script setup> merge via compileScript()
@@ -135,7 +139,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         return transformMain(code, filename, options, this)
       } else {
         // sub block request
-        const descriptor = getDescriptor(filename)
+        const descriptor = getDescriptor(filename)!
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this)
         } else if (query.type === 'style') {

@@ -148,8 +148,9 @@ async function fileToBuiltUrl(
 
   let url
   if (
-    !file.endsWith('.svg') &&
-    content.length < Number(config.build.assetsInlineLimit)
+    config.build.lib ||
+    (!file.endsWith('.svg') &&
+      content.length < Number(config.build.assetsInlineLimit))
   ) {
     // base64 inlined as a string
     url = `data:${mime.getType(file)};base64,${content.toString('base64')}`
