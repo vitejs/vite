@@ -7457,10 +7457,10 @@ verror@1.10.0:
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
 
-vitepress@^0.10.1:
-  version "0.10.1"
-  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-0.10.1.tgz#7c08b9e201505cc9408e261e96bc6a96bc85a51a"
-  integrity sha512-d5eCqA+BT4AwJauFDRbGEFoHussIzzRSirgZABMykPS854DJnT9sO8SYVPrE94QiuGQRcO3CvaNTfQ8EAnVTnQ==
+vitepress@^0.10.4:
+  version "0.10.4"
+  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-0.10.4.tgz#65b5a6be2503ea492fd79082d576bd73725abc25"
+  integrity sha512-VvSANRPGNsUlsieruktRacdtG1P/jsQdMcY6NEs/lc7k/YwW1np7wLSQChk0DPgUdEnLDu/pOXQq+iTuOarTdA==
   dependencies:
     "@docsearch/css" "^1.0.0-alpha.28"
     "@docsearch/js" "^1.0.0-alpha.28"

@@ -39,8 +39,6 @@ export interface DepOptimizationOptions {
   exclude?: string[]
   /**
    * A list of linked dependencies that should be treated as source code.
-   * Use this to list linked packages in a monorepo so that their dependencies
-   * are also included for optimization.
    */
   link?: string[]
   /**

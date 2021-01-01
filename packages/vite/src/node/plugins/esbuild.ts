@@ -40,16 +40,20 @@ export type EsbuildTransformResult = Omit<TransformResult, 'map'> & {
 export async function transformWithEsbuild(
   code: string,
   filename: string,
-  options?: TransformOptions,
+  options?: TransformOptions | ((file: string) => TransformOptions),
   inMap?: object
 ): Promise<EsbuildTransformResult> {
   const service = await ensureService()
+
+  if (typeof options === 'function') {
+    options = options(filename)
+  }
+
   const resolvedOptions = {
     loader: path.extname(filename).slice(1) as Loader,
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
-    target: 'es2020',
     ...options
   }
 
@@ -84,7 +88,9 @@ export async function transformWithEsbuild(
   }
 }
 
-export function esbuildPlugin(options?: TransformOptions): Plugin {
+export function esbuildPlugin(
+  options: TransformOptions | ((file: string) => TransformOptions) = {}
+): Plugin {
   return {
     name: 'vite:esbuild',
     async transform(code, id) {
@@ -112,13 +118,13 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
     async renderChunk(code, chunk) {
-      const target = config.esbuild ? config.esbuild.target : undefined
+      const target = config.build.target
       const minify = config.build.minify === 'esbuild'
       if (!target && !minify) {
         return null
       }
       return transformWithEsbuild(code, chunk.fileName, {
-        target,
+        target: target || undefined,
         minify
       })
     }

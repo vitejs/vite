@@ -67,7 +67,10 @@ export interface UserConfig {
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
    */
-  esbuild?: ESbuildTransformOptions | false
+  esbuild?:
+    | ESbuildTransformOptions
+    | ((file: string) => ESbuildTransformOptions)
+    | false
   /**
    * Specify additional files to be treated as source file (included into the
    * transform pipeline).
@@ -90,8 +93,8 @@ export interface UserConfig {
    */
   optimizeDeps?: DepOptimizationOptions
   /**
-   * Log level
-   * @default 'all'
+   * Log level.
+   * Default: 'info'
    */
   logLevel?: LogLevel
 }
