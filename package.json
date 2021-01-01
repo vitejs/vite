@@ -15,7 +15,8 @@
     "docs": "vitepress dev docs",
     "build-docs": "vitepress build docs",
     "build-vite": "cd packages/vite && yarn build",
-    "ci-docs": "run-s build-vite build-docs"
+    "build-plugin-vue": "cd packages/plugin-vue && yarn build",
+    "ci-docs": "run-s build-vite build-plugin-vue build-docs"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.12.1",
