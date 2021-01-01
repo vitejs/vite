@@ -50,7 +50,7 @@ cli
   .option('-r, --root <path>', `[string] use specified config file`)
   .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
-  .option('-f, --filter [filter]', `[string] filter debug logs`)
+  .option('-f, --filter <filter>', `[string] filter debug logs`)
 
 // dev
 cli
@@ -59,7 +59,7 @@ cli
   .option('--host <host>', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
-  .option('--open', `[boolean | string] open browser on startup`)
+  .option('--open [browser]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('-m, --mode <mode>', `[string] set env mode`, {
     default: 'development'
