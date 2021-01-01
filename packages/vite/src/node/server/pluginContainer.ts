@@ -547,6 +547,9 @@ export async function createPluginContainer(
     async close() {
       const ctx = new Context()
       await Promise.all(
+        plugins.map((p) => p.buildEnd && p.buildEnd.call(ctx as any))
+      )
+      await Promise.all(
         plugins.map((p) => p.closeBundle && p.closeBundle.call(ctx as any))
       )
     }
