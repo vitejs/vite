@@ -23,7 +23,12 @@ import {
   handlePrunedModules,
   lexAcceptedHmrDeps
 } from '../server/hmr'
-import { FS_PREFIX, CLIENT_PUBLIC_PATH, DEP_VERSION_RE } from '../constants'
+import {
+  FS_PREFIX,
+  CLIENT_PUBLIC_PATH,
+  DEP_VERSION_RE,
+  VALID_ID_PREFIX
+} from '../constants'
 import { ViteDevServer } from '../'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
@@ -234,6 +239,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             } else {
               url = resolved.id
             }
+          }
+
+          // if the resolved id is not a valid browser import specifier,
+          // prefix it to make it valid. We will strip this before feeding it
+          // back into the transform pipeline
+          if (!url.startsWith('.') && !url.startsWith('/')) {
+            url = VALID_ID_PREFIX + resolved.id
           }
 
           // for relative imports, inherit importer's version query

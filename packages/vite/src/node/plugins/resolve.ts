@@ -48,10 +48,9 @@ export function resolvePlugin(
 
     resolveId(id, importer) {
       let res
+
+      // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
-        // explicit fs paths that starts with /@fs/*
-        // these are injected by the rewrite plugin so that the file can work
-        // in the browser
         let fsPath = id.slice(FS_PREFIX.length - 1)
         if (fsPath.startsWith('//')) fsPath = fsPath.slice(1)
         res = tryFsResolve(fsPath, false)
@@ -181,56 +180,56 @@ export function tryNodeResolve(
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
   const pkg = resolvePackageData(pkgId, basedir)
 
-  if (pkg) {
-    // prevent deep imports to optimized deps.
-    if (
-      deepMatch &&
-      server &&
-      server.optimizeDepsMetadata &&
-      pkg.data.name in server.optimizeDepsMetadata.map
-    ) {
-      throw new Error(
-        chalk.yellow(
-          `Deep import "${chalk.cyan(
-            id
-          )}" should be avoided because dependency "${chalk.cyan(
-            pkg.data.name
-          )}" has been pre-optimized. Prefer importing directly from the module entry:\n\n` +
-            `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
-            `If the used import is not exported from the package's main entry ` +
-            `and can only be attained via deep import, you can explicitly add ` +
-            `the deep import path to "optimizeDeps.include" in vite.config.js.`
-        )
-      )
-    }
+  if (!pkg) {
+    return
+  }
 
-    let resolved = deepMatch
-      ? resolveDeepImport(id, pkg)
-      : resolvePackageEntry(id, pkg)
-    if (!resolved) {
-      return
-    }
-    // link id to pkg for browser field mapping check
-    idToPkgMap.set(resolved, pkg)
-    if (isBuild) {
-      // Resolve package side effects for build so that rollup can better
-      // perform tree-shaking
-      return {
-        id: resolved,
-        moduleSideEffects: pkg.hasSideEffects(resolved)
-      }
-    } else {
-      // During serve, inject a version query to npm deps so that the browser
-      // can cache it without revalidation. Make sure to apply this only to
-      // files actually inside node_modules so that locally linked packages
-      // in monorepos are not cached this way.
-      if (resolved.includes('node_modules')) {
-        resolved = injectQuery(resolved, `v=${pkg.data.version}`)
-      }
-      return { id: resolved }
+  // prevent deep imports to optimized deps.
+  if (
+    deepMatch &&
+    server &&
+    server.optimizeDepsMetadata &&
+    pkg.data.name in server.optimizeDepsMetadata.map
+  ) {
+    throw new Error(
+      chalk.yellow(
+        `Deep import "${chalk.cyan(
+          id
+        )}" should be avoided because dependency "${chalk.cyan(
+          pkg.data.name
+        )}" has been pre-optimized. Prefer importing directly from the module entry:\n\n` +
+          `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
+          `If the used import is not exported from the package's main entry ` +
+          `and can only be attained via deep import, you can explicitly add ` +
+          `the deep import path to "optimizeDeps.include" in vite.config.js.`
+      )
+    )
+  }
+
+  let resolved = deepMatch
+    ? resolveDeepImport(id, pkg)
+    : resolvePackageEntry(id, pkg)
+  if (!resolved) {
+    return
+  }
+  // link id to pkg for browser field mapping check
+  idToPkgMap.set(resolved, pkg)
+  if (isBuild) {
+    // Resolve package side effects for build so that rollup can better
+    // perform tree-shaking
+    return {
+      id: resolved,
+      moduleSideEffects: pkg.hasSideEffects(resolved)
     }
   } else {
-    throw new Error(`Failed to resolve package.json for module "${id}"`)
+    // During serve, inject a version query to npm deps so that the browser
+    // can cache it without revalidation. Make sure to apply this only to
+    // files actually inside node_modules so that locally linked packages
+    // in monorepos are not cached this way.
+    if (resolved.includes('node_modules')) {
+      resolved = injectQuery(resolved, `v=${pkg.data.version}`)
+    }
+    return { id: resolved }
   }
 }
 

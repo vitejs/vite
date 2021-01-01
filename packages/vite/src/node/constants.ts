@@ -9,6 +9,11 @@ export const DEP_CACHE_DIR = `.vite`
  */
 export const FS_PREFIX = `/@fs/`
 
+/**
+ * Prefix for resolved Ids that are not valid browser import specifiers
+ */
+export const VALID_ID_PREFIX = `/@id/`
+
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 // eslint-disable-next-line
 export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
