@@ -43,8 +43,8 @@ export interface Plugin extends RollupPlugin {
    * passed-in config directly, or return a partial config object that will be
    * deeply merged into existing config.
    *
-   * Note user plugins are resolved before this hook so adding plugins inside
-   * a plugin's modifyConfig hook will have no effect.
+   * Note: User plugins are resolved before running this hook so injecting other
+   * plugins inside  the `config` hook will have no effect.
    */
   config?: (config: UserConfig) => UserConfig | null | void
   /**
