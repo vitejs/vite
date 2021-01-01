@@ -11,6 +11,32 @@ export default {
 }
 ```
 
+## Example for transforming custom blocks
+
+```ts
+// vite.config.js
+import vue from '@vitejs/plugin-vue'
+
+const vueI18nPlugin = {
+  name: 'vue-i18n',
+  transform(code, id) {
+    if (!/vue&type=i18n/.test(id)) {
+      return
+    }
+    if (/\.ya?ml$/.test(id)) {
+      code = JSON.stringify(require('js-yaml').safeLoad(code.trim()))
+    }
+    return `export default Comp => {
+      Comp.i18n = ${code}
+    }`
+  }
+}
+
+export default {
+  plugins: [vue(), vueI18nPlugin]
+}
+``` 
+
 ## License
 
 MIT
