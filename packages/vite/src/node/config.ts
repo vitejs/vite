@@ -56,7 +56,7 @@ export interface UserConfig {
    */
   define?: Record<string, any>
   /**
-   * List of vite plugins to use.
+   * Array of vite plugins to use.
    */
   plugins?: (Plugin | Plugin[])[]
   /**
