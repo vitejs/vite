@@ -30,7 +30,7 @@ export async function resolvePlugins(
     resolvePlugin(config.root, isBuild, true),
     htmlPlugin(),
     cssPlugin(config),
-    esbuildPlugin(config.esbuild || {}),
+    config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
     jsonPlugin({
       preferConst: true,
       namedExports: true

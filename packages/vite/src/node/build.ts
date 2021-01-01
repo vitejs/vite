@@ -24,6 +24,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import isBuiltin from 'isbuiltin'
 import { Logger } from './logger'
+import { TransformOptions } from 'esbuild'
 
 export interface BuildOptions {
   /**
@@ -31,6 +32,12 @@ export interface BuildOptions {
    * @default '/'
    */
   base?: string
+  /**
+   * Compatibility transform target. The transform is performed with esbuild
+   * and the lowest supported target is es2015/es6. Default: es2020
+   * https://esbuild.github.io/api/#target
+   */
+  target?: TransformOptions['target'] | false
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
@@ -90,8 +97,8 @@ export interface BuildOptions {
    *
    * ```json
    * {
-   *   "main.js": "main.68fe3fad.js",
-   *   "style.css": "style.e6b63442.css"
+   *   "main.js": { "file": "main.68fe3fad.js" },
+   *   "style.css": { "file": "style.e6b63442.css" }
    * }
    * ```
    * @default false
@@ -118,6 +125,7 @@ export function resolveBuildOptions(
 ): Required<BuildOptions> {
   const resolved: Required<BuildOptions> = {
     base: '/',
+    target: 'es2019',
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
