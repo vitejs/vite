@@ -4,7 +4,7 @@ If you are interested to learn more about Vite before trying it, check out the [
 
 ## Scaffolding Your First Vite Project
 
-::: tip Comaptibility Note
+::: tip Compatibility Note
 Vite requires [Node.js](https://nodejs.org/en/) version >=12.0.0.
 :::
 
@@ -56,7 +56,7 @@ You can specify additional CLI options like `--port` or `--https`. For a full li
 
 Since Vite is a dev server, it has the concept of a "root directory" from which your files are served from, similar to a static file server (although much more powerful).
 
-Running `vite` starts the dev server using the current working direcotry as root. You can specify an alternative root with `vite serve some/sub/dir`.
+Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
 
 Vite will serve **`<root>/index.html`** when you open the server's local address. It is also used as the default build entry point. Unlike some bundlers that treat HTML as an afterthought, Vite treats HTML files as part of the application graph (similar to Parcel). Therefore you should treat `index.html` as part of your source code instead of a static file. Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.html` entry points.
 
