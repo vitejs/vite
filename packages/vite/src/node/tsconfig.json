@@ -8,10 +8,6 @@
     "outDir": "../../dist/node",
     "module": "commonjs",
     "lib": ["ESNext"],
-    "sourceMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "types/*": ["../../types/*"]
-    }
+    "sourceMap": true
   }
 }

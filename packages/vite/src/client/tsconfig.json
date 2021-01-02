@@ -6,10 +6,6 @@
     "module": "esnext",
     "types": [],
     "lib": ["ESNext", "DOM"],
-    "declaration": false,
-    "baseUrl": ".",
-    "paths": {
-      "types/*": ["../../types/*"]
-    }
+    "declaration": false
   }
 }

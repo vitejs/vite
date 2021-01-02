@@ -76,6 +76,7 @@ const nodeConfig = {
   },
   external: [
     'fsevents',
+    /^types\//,
     ...Object.keys(require('./package.json').dependencies)
   ],
   plugins: [
