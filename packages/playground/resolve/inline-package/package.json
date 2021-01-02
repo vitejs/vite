@@ -1,0 +1,6 @@
+{
+  "name": "inline-package",
+  "private": true,
+  "sideEffects": false,
+  "main": "./inline"
+}

@@ -162,6 +162,12 @@ function tryResolveFile(
         const index = tryFsResolve(file + '/index', false)
         if (index) return normalizePath(index) + query
       }
+      const pkgPath = file + '/package.json'
+      if (fs.existsSync(pkgPath)) {
+        // path points to a node package
+        const pkg = loadPackageData(pkgPath)
+        return resolvePackageEntry(file, pkg)
+      }
     } else {
       return normalizePath(file) + query
     }
@@ -270,31 +276,34 @@ function resolvePackageData(
   if (packageCache.has(cacheKey)) {
     return packageCache.get(cacheKey)
   }
-  let data
   try {
     const pkgPath = resolveFrom(`${id}/package.json`, basedir)
-    data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-    const pkgDir = path.dirname(pkgPath)
-    const { sideEffects } = data
-    let hasSideEffects
-    if (typeof sideEffects === 'boolean') {
-      hasSideEffects = () => sideEffects
-    } else if (Array.isArray(sideEffects)) {
-      hasSideEffects = createFilter(sideEffects, null, { resolve: pkgDir })
-    } else {
-      hasSideEffects = () => true
-    }
-
-    const pkg = {
-      dir: pkgDir,
-      data,
-      hasSideEffects
-    }
-    packageCache.set(cacheKey, pkg)
-    return pkg
+    return loadPackageData(pkgPath, cacheKey)
   } catch (e) {
     isDebug && debug(`${chalk.red(`[failed loading package.json]`)} ${id}`)
   }
+}
+
+function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
+  const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+  const pkgDir = path.dirname(pkgPath)
+  const { sideEffects } = data
+  let hasSideEffects
+  if (typeof sideEffects === 'boolean') {
+    hasSideEffects = () => sideEffects
+  } else if (Array.isArray(sideEffects)) {
+    hasSideEffects = createFilter(sideEffects, null, { resolve: pkgDir })
+  } else {
+    hasSideEffects = () => true
+  }
+
+  const pkg = {
+    dir: pkgDir,
+    data,
+    hasSideEffects
+  }
+  packageCache.set(cacheKey, pkg)
+  return pkg
 }
 
 export function resolvePackageEntry(
