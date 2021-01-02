@@ -33,3 +33,7 @@ test('monorepo linked dep', async () => {
 test('plugin resolved virutal file', async () => {
   expect(await page.textContent('.virtual')).toMatch('[success]')
 })
+
+test('resolve inline package', async () => {
+  expect(await page.textContent('.inline-pkg')).toMatch('[success]')
+})
