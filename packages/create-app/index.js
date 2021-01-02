@@ -6,15 +6,30 @@ const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 const { prompt } = require('enquirer')
 
-const targetDir = argv._[0] || '.'
 const cwd = process.cwd()
-const root = path.join(cwd, targetDir)
+
 const renameFiles = {
   _gitignore: '.gitignore'
 }
-console.log(`Scaffolding project in ${root}...`)
 
 async function init() {
+  let targetDir = argv._[0]
+  if (!targetDir) {
+    /**
+     * @type {{ name: string }}
+     */
+    const { name } = await prompt({
+      type: 'input',
+      name: 'name',
+      message: `Project name:`,
+      initial: 'vite-project'
+    })
+    targetDir = name
+  }
+
+  const root = path.join(cwd, targetDir)
+  console.log(`Scaffolding project in ${root}...`)
+
   if (!fs.existsSync(root)) {
     fs.mkdirSync(root, { recursive: true })
   } else {
@@ -26,6 +41,7 @@ async function init() {
       const { yes } = await prompt({
         type: 'confirm',
         name: 'yes',
+        initial: 'Y',
         message:
           `Target directory ${targetDir} is not empty.\n` +
           `Remove existing files and continue?`
@@ -38,10 +54,22 @@ async function init() {
     }
   }
 
-  const templateDir = path.join(
-    __dirname,
-    `template-${argv.t || argv.template || 'vue'}`
-  )
+  // determine template
+  let template = argv.t || argv.template
+  if (!template) {
+    /**
+     * @type {{ t: string }}
+     */
+    const { t } = await prompt({
+      type: 'select',
+      name: 't',
+      message: `Select a template:`,
+      choices: ['vanilla', 'vue', 'vue-ts', 'react', 'react-ts']
+    })
+    template = t
+  }
+
+  const templateDir = path.join(__dirname, `template-${template}`)
 
   const write = (file, content) => {
     const targetPath = renameFiles[file]

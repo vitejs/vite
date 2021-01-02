@@ -27,6 +27,7 @@ npm init @vitejs/app my-vue-app --template vue
 
 Currently supported template presets include:
 
+- `vanilla`
 - `vue`
 - `vue-ts`
 - `react`

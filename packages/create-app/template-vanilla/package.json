@@ -1,0 +1,11 @@
+{
+  "name": "vite-starter",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^2.0.0-beta.1"
+  }
+}
