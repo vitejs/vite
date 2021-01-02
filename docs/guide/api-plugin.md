@@ -271,17 +271,23 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `handleHotUpdate`
 
-- **Type:** `(file: string, mods: Array<ModuleNode>, read: () => string | Promise<string>, server: ViteDevServer) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
+- **Type:** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
 
-  Perform custom HMR update handling. The hook receives the following arguments:
-  
-  1. The changed file path
+  Perform custom HMR update handling. The hook receives a context object with the following signature:
 
-  2. An array of modules that are affected by the changed file. It's an array because a single file may map to multiple served modules (e.g. Vue SFCs).
+  ```ts
+  interface HmrContext {
+    file: string
+    timestamp: number
+    modules: Array<ModuleNode>
+    read: () => string | Promise<string>
+    server: ViteDevServer
+  }
+  ```
 
-  3. An async read function that returns the content of the file. This is provided because on some systems, the file change callback may fire too fast before the editor finishes updating the file and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
+  - `modules` is an array of modules that are affected by the changed file. It's an array because a single file may map to multiple served modules (e.g. Vue SFCs).
 
-  4. The [`ViteDevServer`](./api-javascript#vitedevserver) instance.
+  - `read` is an async read function that returns the content of the file. This is provided because on some systems, the file change callback may fire too fast before the editor finishes updating the file and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
 
   The hook can choose to:
 
@@ -290,7 +296,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   - Return an empty array and perform complete custom HMR handling by sending custom events to the client:
 
     ```js
-    handleHotUpdate(file, mods, read, server) {
+    handleHotUpdate({ server }) {
       server.ws.send({
         type: 'custom',
         event: 'special-update',
@@ -304,7 +310,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
     ```js
     if (import.meta.hot) {
-      import.meta.hot.on('special-update', data => {
+      import.meta.hot.on('special-update', (data) => {
         // perform custom update
       })
     }

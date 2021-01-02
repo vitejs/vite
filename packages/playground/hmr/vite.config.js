@@ -5,7 +5,7 @@ module.exports = {
   plugins: [
     {
       name: 'mock-custom',
-      async handleHotUpdate(file, mods, read, server) {
+      async handleHotUpdate({ file, read, server }) {
         if (file.endsWith('customFile.js')) {
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
