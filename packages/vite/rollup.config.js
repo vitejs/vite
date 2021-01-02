@@ -123,8 +123,12 @@ const nodeConfig = {
         replacement: `eval('require')('sugarss')`
       },
       'import-fresh/index.js': {
-        src: 'require(filePath)',
+        pattern: /require\(filePath\)/g,
         replacement: `eval('require')(filePath)`
+      },
+      'import-from/index.js': {
+        pattern: /require\(resolveFrom/g,
+        replacement: `eval('require')(resolveFrom`
       }
     }),
     // Optional peer deps of ws. Native deps that are mostly for performance.
@@ -159,7 +163,7 @@ const terserConfig = {
 }
 
 /**
- * @type { (deps: Record<string, { src: string, replacement: string }>) => import('rollup').Plugin }
+ * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: string }>) => import('rollup').Plugin }
  */
 function shimDepsPlugin(deps) {
   const transformed = {}
@@ -169,15 +173,37 @@ function shimDepsPlugin(deps) {
     transform(code, id) {
       for (const file in deps) {
         if (slash(id).endsWith(file)) {
-          const { src, replacement } = deps[file]
-          const pos = code.indexOf(src)
-          if (pos < 0) {
-            this.error(`Could not find expected src "${src}" in file "${file}"`)
-          }
+          const { src, replacement, pattern } = deps[file]
+
           const magicString = new MagicString(code)
-          magicString.overwrite(pos, pos + src.length, replacement)
-          transformed[file] = true
-          console.log(`shimmed: ${file}`)
+          if (src) {
+            const pos = code.indexOf(src)
+            if (pos < 0) {
+              this.error(
+                `Could not find expected src "${src}" in file "${file}"`
+              )
+            }
+            transformed[file] = true
+            magicString.overwrite(pos, pos + src.length, replacement)
+            console.log(`shimmed: ${file}`)
+          }
+
+          if (pattern) {
+            let match
+            while ((match = pattern.exec(code))) {
+              transformed[file] = true
+              const start = match.index
+              const end = start + match[0].length
+              magicString.overwrite(start, end, replacement)
+            }
+            if (!transformed[file]) {
+              this.error(
+                `Could not find expected pattern "${pattern}" in file "${file}"`
+              )
+            }
+            console.log(`shimmed: ${file}`)
+          }
+
           return {
             code: magicString.toString(),
             map: magicString.generateMap({ hires: true })
