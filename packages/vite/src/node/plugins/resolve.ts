@@ -20,7 +20,7 @@ import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import isBuiltin from 'isbuiltin'
 
-const mainFields = ['browser', 'module', 'jsnext', 'jsnext:main', 'main']
+const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -432,9 +432,9 @@ function mapWithBrowserField(
     ([from]) => normalize(from) === normalized
   )
   if (!foundEntry) {
-    return normalized
+    return relativePathInPkgDir
   }
-  return normalize(foundEntry[1])
+  return foundEntry[1]
 }
 
 function normalize(file: string) {
