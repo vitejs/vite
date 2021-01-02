@@ -47,7 +47,7 @@ The default pre-bundling heuristics may not always be desirable. In cases where 
 
 ## Caching
 
-Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determins whether it needs to re-run the pre-bundling step based on a few sources:
+Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
 - The `dependencies` list in your `package.json`
 - Package manager lockfiles, e.g. `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
