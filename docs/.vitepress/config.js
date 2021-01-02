@@ -37,7 +37,7 @@ module.exports = {
               link: '/guide/introduction'
             },
             {
-              text: 'Getting Stared',
+              text: 'Getting Started',
               link: '/guide/'
             },
             {
