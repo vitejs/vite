@@ -1,3 +1,23 @@
+## [1.0.3](https://github.com/vitejs/vite/compare/plugin-vue@1.0.2...plugin-vue@1.0.3) (2021-01-02)
+
+
+### Bug Fixes
+
+* **plugin-vue:** custom block prev handling ([8dbc2b4](https://github.com/vitejs/vite/commit/8dbc2b47dd8fea4a953fb05057edb47122e2dcb7))
+
+
+### Code Refactoring
+
+* **hmr:** pass context object to `handleHotUpdate` plugin hook ([b314771](https://github.com/vitejs/vite/commit/b3147710e96a8f88ab81b2e45dbf7e7174ad976c))
+
+
+### BREAKING CHANGES
+
+* **hmr:** `handleHotUpdate` plugin hook now receives a single
+`HmrContext` argument instead of multiple args.
+
+
+
 ## [1.0.2](https://github.com/vitejs/vite/compare/plugin-vue@1.0.2...plugin-vue@1.0.2) (2021-01-02)
 
 
