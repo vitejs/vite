@@ -8,7 +8,7 @@ Vite provides an [HMR API](./api-hmr) over native ESM. Frameworks with HMR capab
 
 Note you don't need to manually set these up - when you [create an app via `@vitejs/create-app`](./), the selected templates would have these pre-configured for you already.
 
-## NPM Depndency Resolving
+## NPM Dependency Resolving
 
 Native ES imports do not support bare module imports like the following:
 
