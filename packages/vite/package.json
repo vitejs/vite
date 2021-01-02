@@ -106,6 +106,7 @@
     "strip-ansi": "^6.0.0",
     "terser": "^5.5.1",
     "tslib": "^2.0.3",
+    "types": "link:./types",
     "ws": "^7.4.1"
   }
 }
