@@ -34,9 +34,6 @@ Supported template presets include:
 - `vue-ts`
 - `react`
 - `react-ts`
-- `preact`
-- `preact-ts`
-- `reason-react`
 
 See [@vitejs/create-app](https://github.com/vitejs/vite/tree/main/packages/create-app) for more details on each template.
 
