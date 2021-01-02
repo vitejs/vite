@@ -53,7 +53,7 @@ module.exports = {
               link: '/guide/build'
             },
             {
-              text: 'Env Varaibles and Modes',
+              text: 'Env Variables and Modes',
               link: '/guide/env-and-mode'
             },
             {
