@@ -76,7 +76,6 @@ const nodeConfig = {
   },
   external: [
     'fsevents',
-    /^types\//,
     ...Object.keys(require('./package.json').dependencies)
   ],
   plugins: [
@@ -93,11 +92,7 @@ const nodeConfig = {
     typescript({
       target: 'es2019',
       include: ['src/**/*.ts'],
-      esModuleInterop: true,
-      baseUrl: path.resolve(__dirname, 'src/node'),
-      paths: {
-        'types/*': ['../../types/*']
-      }
+      esModuleInterop: true
     }),
     // Some deps have try...catch require of optional deps, but rollup will
     // generate code that force require them upfront for side effects.
@@ -163,7 +158,7 @@ const terserConfig = {
 }
 
 /**
- * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: string }>) => import('rollup').Plugin }
+ * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: RegExp }>) => import('rollup').Plugin }
  */
 function shimDepsPlugin(deps) {
   const transformed = {}
