@@ -1,3 +1,6 @@
+/// <reference path="../../types/fileTypes.d.ts" />
+/// <reference path="../../types/importMeta.d.ts" />
+
 export * from './server'
 export * from './build'
 export * from './optimizer'
