@@ -24,6 +24,10 @@ In addition, Vite is highly extensible via its [Plugin API](./api-plugin) and [J
 
 [Read the Docs to Learn More](https://vitejs.dev).
 
+## Migrating from 1.x
+
+Vite is now in 2.0 beta. Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you are upgrading from 1.x.
+
 ## Contribution
 
 See [Contributing Guide](https://github.com/vitejs/vite/tree/main/.github/contributing.md).
