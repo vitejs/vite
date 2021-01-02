@@ -1,9 +1,10 @@
 import { UserConfig } from './config'
 import { Plugin as RollupPlugin } from 'rollup'
-import { ServerHook, ViteDevServer } from './server'
+import { ServerHook } from './server'
 import { IndexHtmlTransform } from './plugins/html'
 import { ModuleNode } from './server/moduleGraph'
 import { ResolvedConfig } from './'
+import { HmrContext } from './server/hmr'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -79,8 +80,8 @@ export interface Plugin extends RollupPlugin {
   transformIndexHtml?: IndexHtmlTransform
   /**
    * Perform custom handling of HMR updates.
-   * The handler receives the changed filename, a list of modules affected by
-   * the file change, and the dev server instance.
+   * The handler receives a context containing changed filename, timestamp, a
+   * list of modules affected by the file change, and the dev server instance.
    *
    * - The hook can return a filtered list of modules to narrow down the update.
    *   e.g. for a Vue SFC, we can narrow down the part to update by comparing
@@ -93,9 +94,6 @@ export interface Plugin extends RollupPlugin {
    *   normal.
    */
   handleHotUpdate?: (
-    file: string,
-    mods: Array<ModuleNode>,
-    read: () => string | Promise<string>,
-    server: ViteDevServer
+    ctx: HmrContext
   ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
 }

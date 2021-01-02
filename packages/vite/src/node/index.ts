@@ -28,7 +28,7 @@ export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode } from './server/moduleGraph'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type { TransformResult } from './server/transformRequest'
-export type { HmrOptions } from './server/hmr'
+export type { HmrOptions, HmrContext } from './server/hmr'
 export type {
   HMRPayload,
   ConnectedPayload,

@@ -22,6 +22,14 @@ export interface HmrOptions {
   overlay?: boolean
 }
 
+export interface HmrContext {
+  file: string
+  timestamp: number
+  modules: Array<ModuleNode>
+  read: () => string | Promise<string>
+  server: ViteDevServer
+}
+
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer
@@ -59,17 +67,25 @@ export async function handleHMRUpdate(
   const mods = moduleGraph.getModulesByFile(file)
 
   // check if any plugin wants to perform custom HMR handling
-  let filteredMods = mods ? [...mods] : []
-  const read = () => readModifiedFile(file)
+  const timestamp = Date.now()
+  const hmrContext: HmrContext = {
+    file,
+    timestamp,
+    modules: mods ? [...mods] : [],
+    read: () => readModifiedFile(file),
+    server
+  }
+
   for (const plugin of config.plugins) {
     if (plugin.handleHotUpdate) {
-      filteredMods =
-        (await plugin.handleHotUpdate(file, filteredMods, read, server)) ||
-        filteredMods
+      const filteredModules = await plugin.handleHotUpdate(hmrContext)
+      if (filteredModules) {
+        hmrContext.modules = filteredModules
+      }
     }
   }
 
-  if (!filteredMods.length) {
+  if (!hmrContext.modules.length) {
     // html file cannot be hot updated
     if (file.endsWith('.html')) {
       config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
@@ -87,10 +103,9 @@ export async function handleHMRUpdate(
     return
   }
 
-  const timestamp = Date.now()
   const updates: Update[] = []
 
-  for (const mod of filteredMods) {
+  for (const mod of hmrContext.modules) {
     const boundaries = new Set<{
       boundary: ModuleNode
       acceptedVia: ModuleNode

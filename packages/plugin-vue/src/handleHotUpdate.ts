@@ -6,19 +6,19 @@ import {
   setPrevDescriptor
 } from './utils/descriptorCache'
 import { getResolvedScript, setResolvedScript } from './script'
-import { ModuleNode, ViteDevServer } from 'vite'
+import { ModuleNode, HmrContext } from 'vite'
 
 const debug = _debug('vite:hmr')
 
 /**
  * Vite-specific HMR handling
  */
-export async function handleHotUpdate(
-  file: string,
-  modules: ModuleNode[],
-  read: () => string | Promise<string>,
-  server: ViteDevServer
-): Promise<ModuleNode[] | void> {
+export async function handleHotUpdate({
+  file,
+  modules,
+  read,
+  server
+}: HmrContext): Promise<ModuleNode[] | void> {
   const prevDescriptor = getDescriptor(file, false)
   if (!prevDescriptor) {
     // file hasn't been requested yet (e.g. async component)

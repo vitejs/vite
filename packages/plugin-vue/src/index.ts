@@ -65,11 +65,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
   return {
     name: 'vite:vue',
 
-    handleHotUpdate(file, mods, read, server) {
-      if (!filter(file)) {
+    handleHotUpdate(ctx) {
+      if (!filter(ctx.file)) {
         return
       }
-      return handleHotUpdate(file, mods, read, server)
+      return handleHotUpdate(ctx)
     },
 
     config(config) {
