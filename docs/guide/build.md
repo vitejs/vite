@@ -6,7 +6,7 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 The production bundle assumes a baseline support for [Native ES modules dynamic imports](https://caniuse.com/es6-module-dynamic-import). By default, all code is minimally transpiled with target `es2020` (only for terser minification compatibility). You can specify the target range via the [`build.target` config option](/config/#build-target), where the lowest target available is `es2015`.
 
-Legacy browsers _can_ be supported via plugins that post-process the build output for compatibility (e.g. [`@rollup/plugin-babel`](https://github.com/rollup/plugins/tree/master/packages/babel) + [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env) + [SystemJS](https://github.com/systemjs/systemjs)), however this is not a built-in feature.
+Legacy browsers _can_ be supported via plugins that post-process the build output for compatibility (e.g. [`@rollup/plugin-babel`](https://github.com/rollup/plugins/tree/master/packages/babel) + [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env) + [SystemJS](https://github.com/systemjs/systemjs)). This is not a built-in feature, but there is plan to provide an official plugin that automatically emits a separate legacy bundle.
 
 ## Public Base Path
 
