@@ -23,7 +23,7 @@
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://github.com/vitejs/vite/tree/master/#readme",
+  "homepage": "https://github.com/vitejs/vite/tree/main/#readme",
   "scripts": {
     "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --incremental --p src/client",

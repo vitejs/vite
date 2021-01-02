@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://github.com/vitejs/vite/tree/master/packages/plugin-react-refresh#readme",
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh#readme",
   "dependencies": {
     "@babel/core": "^7.12.10",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
