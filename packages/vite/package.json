@@ -83,6 +83,7 @@
     "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^0.3.26",
     "etag": "^1.8.1",
+    "execa": "^5.0.0",
     "http-proxy": "^1.18.1",
     "isbuiltin": "^1.0.0",
     "launch-editor-middleware": "^2.2.1",
