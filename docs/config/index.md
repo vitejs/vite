@@ -51,7 +51,7 @@ export default defineConfig({
 If the config needs to conditional determine options based on the command (`serve` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
 
 ```js
-export default (({ command, mode }) => {
+export default ({ command, mode }) => {
   if (command === 'serve') {
     return {
       // serve specific config
@@ -61,7 +61,7 @@ export default (({ command, mode }) => {
       // build specific config
     }
   }
-})
+}
 ```
 
 ## Shared Options
@@ -192,9 +192,11 @@ export default (({ command, mode }) => {
 
 ### server.https
 
-- **Type:** `boolean`
+- **Type:** `boolean | https.ServerOptions`
 
   Enable TLS + HTTP/2. Note this downgrades to TLS only when the [`server.proxy` option](#server-proxy) is also used.
+
+  The value can also be an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
 
 ### server.open
 
