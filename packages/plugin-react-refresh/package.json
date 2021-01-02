@@ -2,6 +2,7 @@
   "name": "@vitejs/plugin-react-refresh",
   "version": "1.1.0",
   "license": "MIT",
+  "author": "Evan You",
   "files": [
     "index.js"
   ],
