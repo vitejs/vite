@@ -11,6 +11,23 @@ export default {
 }
 ```
 
+## Options
+
+```ts
+export interface Options {
+  include?: string | RegExp | (string | RegExp)[]
+  exclude?: string | RegExp | (string | RegExp)[]
+
+  ssr?: boolean
+  isProduction?: boolean
+
+  // options to pass on to @vue/compiler-sfc
+  script?: SFCScriptCompileOptions
+  template?: SFCTemplateCompileOptions
+  style?: SFCStyleCompileOptions
+}
+```
+
 ## Example for transforming custom blocks
 
 ```ts
