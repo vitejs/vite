@@ -2,7 +2,7 @@
 
 ## Scaffolding Your First Vite Project
 
-> **Comaptibility Note:**
+> **Compatibility Note:**
 > Vite requires [Node.js](https://nodejs.org/en/) version >=12.0.0.
 
 With NPM:
