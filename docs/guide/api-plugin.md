@@ -2,7 +2,7 @@
 
 Vite plugins extends Rollup's well-designed plugin interface with a few extra vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
 
-**It is recommended to go through [Rollup's plugin documentation](<](https://rollupjs.org/guide/en/#plugin-development)>) first before reading the sections below.**
+**It is recommended to go through [Rollup's plugin documentation](https://rollupjs.org/guide/en/#plugin-development) first before reading the sections below.**
 
 ## Simple Examples
 

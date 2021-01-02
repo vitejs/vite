@@ -2,7 +2,7 @@
 
 ## Snowpack
 
-[Snowpack]((https://www.snowpack.dev/)) is also a no-bundle native ESM dev server that is very similar in scope to Vite. Aside from different implementation details, the two projects share a lot in terms of technical advantages over traditional tooling. Vite's dependency pre-bundling is also inspired by Snowpack v1 (now [`esinstall`](https://github.com/snowpackjs/snowpack/tree/main/esinstall)). Some of the main differences between the two projects are:
+[Snowpack](https://www.snowpack.dev/) is also a no-bundle native ESM dev server that is very similar in scope to Vite. Aside from different implementation details, the two projects share a lot in terms of technical advantages over traditional tooling. Vite's dependency pre-bundling is also inspired by Snowpack v1 (now [`esinstall`](https://github.com/snowpackjs/snowpack/tree/main/esinstall)). Some of the main differences between the two projects are:
 
 **Production Build Handling**
 
@@ -22,7 +22,7 @@ WMR is mainly designed for [Preact](https://preactjs.com/) projects, and offers 
 
 ## @web/dev-server
 
-[@web/dev-server](](https://modern-web.dev/docs/dev-server/overview/)) (previously `es-dev-server`) is a great project and Vite 1.0's Koa-based server setup was inspired by it.
+[@web/dev-server](https://modern-web.dev/docs/dev-server/overview/) (previously `es-dev-server`) is a great project and Vite 1.0's Koa-based server setup was inspired by it.
 
 `@web/dev-server` is a bit lower-level in terms of scope. It does not provide out-of-the-box framework integrations, and requires manually setting up a Rollup configuration for the production build. However, its parent project does provide a collection of excellent Rollup plugins.
 
