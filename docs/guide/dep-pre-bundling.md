@@ -19,7 +19,7 @@ This is Vite performing what we call "dependency pre-bundling". This process ser
 
     ```js
     // works as expected
-    import React { useState } from 'react
+    import React, { useState } from 'react'
     ```
 
 2. It converts ESM dependencies with many internal modules into a single module to improve subsequent page load performance.
