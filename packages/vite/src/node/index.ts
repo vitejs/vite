@@ -6,8 +6,6 @@ export { send } from './server/send'
 export { createLogger } from './logger'
 
 // additional types
-import 'types/fileTypes'
-import 'types/importMeta'
 export type { Plugin } from './plugin'
 export type { Logger, LogOptions, LogLevel, LogType } from './logger'
 export type {
