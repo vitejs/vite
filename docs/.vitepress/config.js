@@ -16,6 +16,7 @@ module.exports = {
   themeConfig: {
     repo: 'vitejs/vite',
     docsDir: 'docs',
+    docsBranch: 'main',
     editLinks: true,
     editLinkText: 'Suggest changes to this page',
 
