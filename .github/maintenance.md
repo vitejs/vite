@@ -22,9 +22,9 @@ Avoid deps that has large transitive dependencies that results in bloated size c
 
 ## Ensure type support
 
-Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it should provide proper typings for VitePress), and also in `vite.config.ts`. This means any types that are exposed needs to be part of `dependencies` instead of `devDependencies`. For example, if a config option uses an imported type from a `@types/x` package, that type package should be included as a dependency (e.g. `@types/http-proxy`)
+Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it should provide proper typings for VitePress), and also in `vite.config.ts`. This means technically a dependency whose types are exposed needs to be part of `dependencies` instead of `devDependencies`. However, these means we won't be able to bundle it.
 
-On the contrary, if a dependency's type isn't exposed, then its typing should be left in `devDependencies` to reduce user dependency downloads (e.g. `@types/ws`).
+To get around this, we inline some of these dependencies' types in `packages/vite/types`. This way we can still expose the typing but bundle the dependency's source code.
 
 ## Think before adding yet another option
 
