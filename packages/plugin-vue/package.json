@@ -25,7 +25,7 @@
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://github.com/vitejs/vite/tree/master/packages/plugin-vue#readme",
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue#readme",
   "peerDependencies": {
     "@vue/compiler-sfc": "^3.0.4"
   },
