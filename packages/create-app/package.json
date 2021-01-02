@@ -4,7 +4,7 @@
   "license": "MIT",
   "author": "Evan You",
   "bin": {
-    "create-vite-app": "index.js",
+    "create-app": "index.js",
     "cva": "index.js"
   },
   "files": [
