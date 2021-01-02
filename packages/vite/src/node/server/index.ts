@@ -313,7 +313,12 @@ export async function createServer(
         {
           from: /\/$/,
           to({ parsedUrl }: any) {
-            return parsedUrl.pathname + 'index.html'
+            const rewritten = parsedUrl.pathname + 'index.html'
+            if (fs.existsSync(path.join(root, rewritten))) {
+              return rewritten
+            } else {
+              return `/index.html`
+            }
           }
         }
       ]
