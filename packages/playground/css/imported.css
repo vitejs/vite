@@ -11,6 +11,7 @@ pre {
   border-radius: 10px;
 }
 
+/* test postcss nesting */
 .postcss {
   .nesting {
     color: pink;
