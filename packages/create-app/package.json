@@ -8,7 +8,8 @@
     "cva": "index.js"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "template-*"
   ],
   "main": "index.js",
   "scripts": {
