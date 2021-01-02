@@ -287,7 +287,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   - Filter and narrow down the affected module list so that the HMR is more accurate.
 
-  - Return an empty array and perform complete custom HRM handling by sending custom events to the client:
+  - Return an empty array and perform complete custom HMR handling by sending custom events to the client:
 
     ```js
     handleHotUpdate(file, mods, read, server) {
