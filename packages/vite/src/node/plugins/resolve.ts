@@ -20,7 +20,7 @@ import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import isBuiltin from 'isbuiltin'
 
-const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
+const mainFields = ['browser', 'module', 'jsnext', 'jsnext:main', 'main']
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -403,7 +403,9 @@ function resolveConditionalExports(exp: any): string | undefined {
   if (typeof exp === 'string') {
     return exp
   } else if (isObject(exp)) {
-    if (typeof exp.import === 'string') {
+    if (typeof exp.browser === 'string') {
+      return exp.browser
+    } else if (typeof exp.import === 'string') {
       return exp.import
     } else if (typeof exp.default === 'string') {
       return exp.default
