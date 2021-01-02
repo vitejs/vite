@@ -83,7 +83,7 @@ export async function transformRequest(
   const transformResult = await pluginContainer.transform(code, id)
   if (
     transformResult == null ||
-    (typeof transformResult === 'object' && !transformResult.code)
+    (typeof transformResult === 'object' && transformResult.code == null)
   ) {
     // no transform applied, keep code as-is
     isDebug &&
