@@ -112,7 +112,7 @@ export async function handleHMRUpdate(
         type: `${boundary.type}-update` as Update['type'],
         timestamp,
         path: boundary.url,
-        accpetedPath: acceptedVia.url
+        acceptedPath: acceptedVia.url
       }))
     )
   }

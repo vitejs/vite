@@ -258,7 +258,7 @@ export function removeStyle(id: string) {
   }
 }
 
-async function fetchUpdate({ path, accpetedPath, timestamp }: Update) {
+async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-spliting project,
@@ -268,7 +268,7 @@ async function fetchUpdate({ path, accpetedPath, timestamp }: Update) {
   }
 
   const moduleMap = new Map()
-  const isSelfUpdate = path === accpetedPath
+  const isSelfUpdate = path === acceptedPath
 
   // make sure we only import each dep once
   const modulesToUpdate = new Set<string>()
@@ -279,7 +279,7 @@ async function fetchUpdate({ path, accpetedPath, timestamp }: Update) {
     // dep update
     for (const { deps } of mod.callbacks) {
       deps.forEach((dep) => {
-        if (accpetedPath === dep) {
+        if (acceptedPath === dep) {
           modulesToUpdate.add(dep)
         }
       })
@@ -312,7 +312,7 @@ async function fetchUpdate({ path, accpetedPath, timestamp }: Update) {
     for (const { deps, fn } of qualifiedCallbacks) {
       fn(deps.map((dep) => moduleMap.get(dep)))
     }
-    const loggedPath = isSelfUpdate ? path : `${accpetedPath} via ${path}`
+    const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
     console.log(`[vite] hot updated: ${loggedPath}`)
   }
 }
