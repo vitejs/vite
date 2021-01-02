@@ -117,4 +117,4 @@ Some general pointers on migrating a v1 plugin to v2:
 - Serving virtual files -> use [`resolveId`](https://rollupjs.org/guide/en/#resolveid) + [`load`](https://rollupjs.org/guide/en/#load) hooks
 - Adding `alias`, `define` or other config options -> use the [`config`](./api-plugin#config) hook
 
-Since most of the logic should be done via plugin hooks instead of middlewares, the need for middlewares are greatly reduced. The ineternal server app is now a good old [connect](https://github.com/senchalabs/connect) instance instead of Koa.
+Since most of the logic should be done via plugin hooks instead of middlewares, the need for middlewares is greatly reduced. The internal server app is now a good old [connect](https://github.com/senchalabs/connect) instance instead of Koa.

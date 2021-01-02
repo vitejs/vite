@@ -83,7 +83,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(config: UserConfig) => UserConfig | null | void`
 - **Kind:** `sync`, `sequential`
 
-  Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file). It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot acheive desired result).
+  Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file). It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
 
   **Example**
 
@@ -203,14 +203,14 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   }
   ```
 
-  Note `configureServer` is not called when running the production build so your other hooks need to guard against its absense.
+  Note `configureServer` is not called when running the production build so your other hooks need to guard against its absence.
 
 ### `transformIndexHtml`
 
 - **Type:** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post' transform: IndexHtmlTransformHook }`
 - **Kind:** `async`, `sequential`
 
-  Dedicated hook for transforming `index.html`. The hook receives the curreht HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
+  Dedicated hook for transforming `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
 
   The hook can be async and can return one of the following:
 
@@ -285,7 +285,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   The hook can choose to:
 
-  - Filter and narrow down the affected mdoule list so that the HMR is more accurate.
+  - Filter and narrow down the affected module list so that the HMR is more accurate.
 
   - Return an empty array and perform complete custom HRM handling by sending custom events to the client:
 

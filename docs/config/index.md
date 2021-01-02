@@ -15,7 +15,7 @@ export default {
 }
 ```
 
-Note Vite supports using ES modules syntax in the config file even if the project is not using native Node ESM via `type: "module"`. In this case the config file is auto pre-procssed before load.
+Note Vite supports using ES modules syntax in the config file even if the project is not using native Node ESM via `type: "module"`. In this case the config file is auto pre-processed before load.
 
 You can also explicitly specify a config file to use with the `--config` CLI option (resolved relative to `cwd`):
 
@@ -377,7 +377,7 @@ export default ({ command, mode }) => {
 
 - **Type:** `string[]`
 
-  A list of depdendencies that imports Node built-ins, but do not actually use them in browsers. Suppresses related warnings.
+  A list of dependencies that imports Node built-ins, but do not actually use them in browsers. Suppresses related warnings.
 
 ### optimizeDeps.auto
 
