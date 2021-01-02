@@ -12,7 +12,8 @@
     "build": "rimraf dist && run-s build-bundle build-types",
     "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@vue/compiler-sfc --outfile=dist/index.js",
     "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
-    "prepublishOnly": "yarn build"
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-vue",
+    "release": "node ../../scripts/release.js"
   },
   "engines": {
     "node": ">=12.0.0"
@@ -24,7 +25,7 @@
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://github.com/vitejs/vite/tree/master/#readme",
+  "homepage": "https://github.com/vitejs/vite/tree/master/packages/plugin-vue#readme",
   "peerDependencies": {
     "@vue/compiler-sfc": "^3.0.4"
   },

@@ -7,6 +7,10 @@
   ],
   "main": "index.js",
   "types": "index.d.ts",
+  "scripts": {
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-react-refresh",
+    "release": "node ../../scripts/release.js --skipBuild"
+  },
   "engines": {
     "node": ">=12.0.0"
   },
@@ -17,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://github.com/vitejs/vite/tree/master/#readme",
+  "homepage": "https://github.com/vitejs/vite/tree/master/packages/plugin-react-refresh#readme",
   "dependencies": {
     "@babel/core": "^7.12.10",
     "@babel/plugin-syntax-import-meta": "^7.10.4",

@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * modified from https://github.com/vuejs/vue-next/blob/master/scripts/release.js
  */
@@ -8,12 +10,27 @@ const args = require('minimist')(process.argv.slice(2))
 const semver = require('semver')
 const chalk = require('chalk')
 const { prompt } = require('enquirer')
-const currentVersion = require('../package.json').version
-const pkgPath = path.resolve(__dirname, '../package.json')
 
+const pkgDir = process.cwd()
+const pkgPath = path.resolve(pkgDir, 'package.json')
+/**
+ * @type {{ name: string, version: string }}
+ */
+const pkg = require(pkgPath)
+const pkgName = pkg.name.replace(/^@vitejs\//, '')
+const currentVersion = pkg.version
+/**
+ * @type {boolean}
+ */
 const isDryRun = args.dry
+/**
+ * @type {boolean}
+ */
 const skipBuild = args.skipBuild
 
+/**
+ * @type {import('semver').ReleaseType[]}
+ */
 const versionIncrements = [
   'patch',
   'minor',
@@ -24,12 +41,32 @@ const versionIncrements = [
   'prerelease'
 ]
 
+/**
+ * @param {import('semver').ReleaseType} i
+ */
 const inc = (i) => semver.inc(currentVersion, i)
+
+/**
+ * @param {string} bin
+ * @param {string[]} args
+ * @param {object} opts
+ */
 const run = (bin, args, opts = {}) =>
   execa(bin, args, { stdio: 'inherit', ...opts })
+
+/**
+ * @param {string} bin
+ * @param {string[]} args
+ * @param {object} opts
+ */
 const dryRun = (bin, args, opts = {}) =>
   console.log(chalk.blue(`[dryrun] ${bin} ${args.join(' ')}`), opts)
+
 const runIfNotDry = isDryRun ? dryRun : run
+
+/**
+ * @param {string} msg
+ */
 const step = (msg) => console.log(chalk.cyan(msg))
 
 async function main() {
@@ -37,6 +74,9 @@ async function main() {
 
   if (!targetVersion) {
     // no explicit version, offer suggestions
+    /**
+     * @type {{ release: string }}
+     */
     const { release } = await prompt({
       type: 'select',
       name: 'release',
@@ -47,14 +87,16 @@ async function main() {
     })
 
     if (release === 'custom') {
-      targetVersion = (
-        await prompt({
-          type: 'input',
-          name: 'version',
-          message: 'Input custom version',
-          initial: currentVersion
-        })
-      ).version
+      /**
+       * @type {{ version: string }}
+       */
+      const res = await prompt({
+        type: 'input',
+        name: 'version',
+        message: 'Input custom version',
+        initial: currentVersion
+      })
+      targetVersion = res.version
     } else {
       targetVersion = release.match(/\((.*)\)/)[1]
     }
@@ -64,10 +106,16 @@ async function main() {
     throw new Error(`invalid target version: ${targetVersion}`)
   }
 
+  const tag =
+    pkgName === 'vite' ? `v${targetVersion}` : `${pkgName}@${targetVersion}`
+
+  /**
+   * @type {{ yes: boolean }}
+   */
   const { yes } = await prompt({
     type: 'confirm',
     name: 'yes',
-    message: `Releasing v${targetVersion}. Confirm?`
+    message: `Releasing ${tag}. Confirm?`
   })
 
   if (!yes) {
@@ -91,7 +139,7 @@ async function main() {
   if (stdout) {
     step('\nCommitting changes...')
     await runIfNotDry('git', ['add', '-A'])
-    await runIfNotDry('git', ['commit', '-m', `release: v${targetVersion}`])
+    await runIfNotDry('git', ['commit', '-m', `release: ${tag}`])
   } else {
     console.log('No changes to commit.')
   }
@@ -100,8 +148,8 @@ async function main() {
   await publishPackage(targetVersion, runIfNotDry)
 
   step('\nPushing to GitHub...')
-  await runIfNotDry('git', ['tag', `v${targetVersion}`])
-  await runIfNotDry('git', ['push', 'origin', `refs/tags/v${targetVersion}`])
+  await runIfNotDry('git', ['tag', tag])
+  await runIfNotDry('git', ['push', 'origin', `refs/tags/${tag}`])
   await runIfNotDry('git', ['push'])
 
   if (isDryRun) {
@@ -111,16 +159,28 @@ async function main() {
   console.log()
 }
 
+/**
+ * @param {string} version
+ */
 function updateVersion(version) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
   pkg.version = version
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
 
+/**
+ * @param {string} version
+ * @param {Function} runIfNotDry
+ */
 async function publishPackage(version, runIfNotDry) {
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-  const pkgName = pkg.name
-  const publicArgs = ['publish', '--new-version', version, '--access', 'public']
+  const publicArgs = [
+    'publish',
+    '--no-git-tag-version',
+    '--new-version',
+    version,
+    '--access',
+    'public'
+  ]
   if (args.tag) {
     publicArgs.push(`--tag`, args.tag)
   }
