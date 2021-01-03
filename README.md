@@ -40,7 +40,7 @@ MIT
 [npm-url]: https://npmjs.com/package/vite
 [node-img]: https://img.shields.io/node/v/vite.svg
 [node-url]: https://nodejs.org/en/about/releases/
-[unix-ci-img]: https://circleci.com/gh/vitejs/vite/tree/2.0.svg?style=shield
-[unix-ci-url]: https://app.circleci.com/pipelines/github/vitejs/vite?branch=2.0
-[windows-ci-img]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/2.0?svg=true
-[windows-ci-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/2.0
+[unix-ci-img]: https://circleci.com/gh/vitejs/vite/tree/main.svg?style=shield
+[unix-ci-url]: https://app.circleci.com/pipelines/github/vitejs/vite?branch=main
+[windows-ci-img]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/main?svg=true
+[windows-ci-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/main
