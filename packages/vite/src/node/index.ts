@@ -4,6 +4,7 @@ export * from './optimizer'
 export * from './config'
 export { send } from './server/send'
 export { createLogger } from './logger'
+export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
 
 // additional types
 export type { Plugin } from './plugin'
@@ -23,6 +24,7 @@ export type {
 } from './plugins/html'
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
 export type { EsbuildTransformResult } from './plugins/esbuild'
+export type { PackageData } from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode } from './server/moduleGraph'
