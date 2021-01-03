@@ -375,6 +375,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
 
       if (s) {
+        if (hasEnv || hasHMR)
+          return {
+            code: s.toString(),
+            map: s.generateMap({
+              source: importer
+            })
+          }
         return s.toString()
       } else {
         return source
