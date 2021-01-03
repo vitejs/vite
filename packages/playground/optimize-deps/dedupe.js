@@ -1,8 +1,9 @@
-// test importing both default and named exports from a CommonJS module
-// React is the ultimate test of this because its dynamic exports assignments
-// are not statically detectable by @rollup/plugin-commonjs.
-import React, { useState } from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom'
+
+// #1302: The linked package has a different version of React in its deps
+// and is itself optimized. Without `dedupe`, the linked package is optimized
+// with a separate copy of React included, and results in runtime errors.
 import { useCount } from 'optimize-deps-linked-include'
 
 function App() {
