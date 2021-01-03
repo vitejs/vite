@@ -20,20 +20,90 @@ module.exports = {
     editLinks: true,
     editLinkText: 'Suggest changes to this page',
 
-    nav: [
-      { text: 'Guide & APIs', link: '/guide/' },
-      { text: 'Config Reference', link: '/config/' },
-      { text: 'Plugins', link: '/plugins/' },
-      {
-        text: 'Changelog',
-        link:
-          'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
-      }
-    ],
+    locales: {
+      '/': {
+        lang: 'en-US',
+        label: 'English',
+        selectText: 'Languages',
+        nav: [
+          { text: 'Guide & APIs', link: '/guide/' },
+          { text: 'Config Reference', link: '/config/' }
+        ],
+      },
+      '/zh/': {
+        lang: 'zh-CN',
+        label: '中文',
+        selectText: '选择语言',
+        editLinkText: '为此页提供修改建议',
+        nav: [
+          { text: '指引 & API', link: '/zh/guide/' },
+          { text: '配置参考', link: '/zh/config/' }
+        ],
+      },
+    },
 
     sidebar: {
       '/config/': 'auto',
-      '/plugins': 'auto',
+      '/zh/': [
+        {
+          text: '指引',
+          children: [
+            {
+              text: '介绍',
+              link: '/zh/guide/introduction'
+            },
+            {
+              text: '开始',
+              link: '/zh/guide/'
+            },
+            {
+              text: '功能',
+              link: '/zh/guide/features'
+            },
+            {
+              text: '依赖预构建',
+              link: '/zh/guide/dep-pre-bundling'
+            },
+            {
+              text: '构建生产版本',
+              link: '/zh/guide/build'
+            },
+            {
+              text: '环境变量与模式',
+              link: '/zh/guide/env-and-mode'
+            },
+            {
+              text: '后端集成',
+              link: '/zh/guide/backend-integration'
+            },
+            {
+              text: '比较',
+              link: '/zh/guide/comparisons'
+            },
+            {
+              text: '从 v1 迁移',
+              link: '/zh/guide/migration'
+            }
+          ]
+        },
+        {
+          text: 'API',
+          children: [
+            {
+              text: '插件 API',
+              link: '/zh/guide/api-plugin'
+            },
+            {
+              text: 'HMR API',
+              link: '/zh/guide/api-hmr'
+            },
+            {
+              text: 'JavaScript API',
+              link: '/zh/guide/api-javascript'
+            }
+          ]
+        }
+      ],
       // catch-all fallback
       '/': [
         {
@@ -95,6 +165,15 @@ module.exports = {
           ]
         }
       ]
+    },
+  },
+  locales: {
+    '/': {
+      lang: 'en-US',
+    },
+    '/zh': {
+      lang: 'zh-CN',
+      description: '下一代前端开发与构建工具',
     }
   }
 }
