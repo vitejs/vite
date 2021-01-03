@@ -272,7 +272,7 @@ function tryOptimizedResolve(
   }
 }
 
-interface PackageData {
+export interface PackageData {
   dir: string
   hasSideEffects: (id: string) => boolean
   data: {
@@ -285,7 +285,7 @@ interface PackageData {
 
 const packageCache = new Map<string, PackageData>()
 
-function resolvePackageData(
+export function resolvePackageData(
   id: string,
   basedir: string
 ): PackageData | undefined {
