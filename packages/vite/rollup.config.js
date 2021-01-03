@@ -118,7 +118,7 @@ const nodeConfig = {
         replacement: `eval('require')('sugarss')`
       },
       'import-fresh/index.js': {
-        pattern: /require\(filePath\)/g,
+        src: `require(filePath)`,
         replacement: `eval('require')(filePath)`
       },
       'import-from/index.js': {
