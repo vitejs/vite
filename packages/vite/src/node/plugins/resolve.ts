@@ -255,7 +255,7 @@ function tryOptimizedResolve(
   }
 }
 
-interface PackageData {
+export interface PackageData {
   dir: string
   hasSideEffects: (id: string) => boolean
   data: {
