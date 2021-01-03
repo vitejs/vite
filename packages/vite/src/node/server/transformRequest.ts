@@ -1,5 +1,7 @@
 import { promises as fs } from 'fs'
+import path from 'path'
 import getEtag from 'etag'
+import * as convertSourceMap from 'convert-source-map'
 import { SourceDescription, SourceMap } from 'rollup'
 import { ViteDevServer } from '..'
 import chalk from 'chalk'
@@ -58,6 +60,12 @@ export async function transformRequest(
         throw e
       }
     }
+    if (code) {
+      map = (
+        convertSourceMap.fromSource(code) ||
+        convertSourceMap.fromMapFileSource(code, path.dirname(file))
+      )?.toObject()
+    }
   } else {
     isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
     if (typeof loadResult === 'object') {
@@ -80,7 +88,7 @@ export async function transformRequest(
 
   // transform
   const transformStart = Date.now()
-  const transformResult = await pluginContainer.transform(code, id)
+  const transformResult = await pluginContainer.transform(code, id, map)
   if (
     transformResult == null ||
     (typeof transformResult === 'object' && transformResult.code == null)
