@@ -19,6 +19,7 @@ import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import isBuiltin from 'isbuiltin'
+import { isCSSRequest } from './css'
 
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
 
@@ -212,7 +213,8 @@ export function tryNodeResolve(
     deepMatch &&
     server &&
     server.optimizeDepsMetadata &&
-    pkg.data.name in server.optimizeDepsMetadata.map
+    pkg.data.name in server.optimizeDepsMetadata.map &&
+    !isCSSRequest(id)
   ) {
     throw new Error(
       chalk.yellow(
