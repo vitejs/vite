@@ -4,8 +4,8 @@ import { fileToUrl } from './asset'
 
 const wasmHelperId = '/__vite-wasm-helper'
 
-const wasmHelper = (opts = {}, url: string) => {
-  let instance
+const wasmHelper = async (opts = {}, url: string) => {
+  let result
   if (url.startsWith('data:')) {
     // @ts-ignore
     const binaryString = atob(url.replace(/^data:.*?base64,/, ''))
@@ -14,7 +14,7 @@ const wasmHelper = (opts = {}, url: string) => {
       bytes[i] = binaryString.charCodeAt(i)
     }
     // @ts-ignore
-    instance = WebAssembly.instantiate(bytes.buffer, opts)
+    result = await WebAssembly.instantiate(bytes, opts)
   } else {
     // https://github.com/mdn/webassembly-examples/issues/5
     // WebAssembly.instantiateStreaming requires the server to provide the
@@ -22,13 +22,22 @@ const wasmHelper = (opts = {}, url: string) => {
     // a lot of static file servers, so we just work around it by getting the
     // raw buffer.
     // @ts-ignore
-    instance = fetch(url)
+    const response = await fetch(url)
+    const contentType = response.headers.get('Content-Type') || ''
+    if (
       // @ts-ignore
-      .then((r) => r.arrayBuffer())
+      'instantiateStreaming' in WebAssembly &&
+      contentType.startsWith('application/wasm')
+    ) {
       // @ts-ignore
-      .then((bytes) => WebAssembly.instantiate(bytes, opts))
+      result = await WebAssembly.instantiateStreaming(response, opts)
+    } else {
+      const buffer = await response.arrayBuffer()
+      // @ts-ignore
+      result = await WebAssembly.instantiate(buffer, opts)
+    }
   }
-  return instance.then((i: any) => i.instance.exports)
+  return result.instance.exports
 }
 
 const wasmHelperCode = wasmHelper.toString()
