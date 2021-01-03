@@ -59,6 +59,17 @@ export function normalizePath(id: string): string {
   return path.posix.normalize(id)
 }
 
+const SLASH_VOLUME_RE = /^\/[A-Z]:/
+export function fsPathFromId(id: string): string {
+  let fsPath = id.slice(FS_PREFIX.length - 1)
+  if (fsPath.startsWith('//')) {
+    fsPath = fsPath.slice(1)
+  } else if (isWindows && SLASH_VOLUME_RE.test(fsPath)) {
+    fsPath = normalizePath(fsPath.slice(1))
+  }
+  return fsPath
+}
+
 export const queryRE = /\?.*$/
 export const hashRE = /#.*$/
 
