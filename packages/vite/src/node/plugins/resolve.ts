@@ -27,16 +27,24 @@ const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true
 })
 
-export function resolvePlugin(
-  root: string,
-  isBuild: boolean,
+interface ResolveOptions {
+  root: string
+  isBuild: boolean
   /**
    * src code mode also attempts the following:
    * - resolving /xxx as URLs
    * - resolving bare imports from optimized deps
    */
   asSrc: boolean
-): Plugin {
+  dedupe?: string[]
+}
+
+export function resolvePlugin({
+  root,
+  isBuild,
+  asSrc,
+  dedupe
+}: ResolveOptions): Plugin {
   let server: ViteDevServer
 
   return {
@@ -124,6 +132,8 @@ export function resolvePlugin(
             id,
             importer ? path.dirname(importer) : root,
             isBuild,
+            dedupe,
+            root,
             server
           ))
         ) {
@@ -180,10 +190,17 @@ export function tryNodeResolve(
   id: string,
   basedir: string,
   isBuild = true,
+  dedupe?: string[],
+  dedupeRoot?: string,
   server?: ViteDevServer
 ): PartialResolvedId | undefined {
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
+
+  if (dedupe && dedupeRoot && dedupe.includes(pkgId)) {
+    basedir = dedupeRoot
+  }
+
   const pkg = resolvePackageData(pkgId, basedir)
 
   if (!pkg) {

@@ -13,6 +13,6 @@
     "react-dom": "^17.0.1",
     "resolve-linked": "0.0.0",
     "optimize-deps-linked": "0.0.0",
-    "linked-force-include": "link:./linked-force-include"
+    "optimize-deps-linked-include": "0.0.0"
   }
 }

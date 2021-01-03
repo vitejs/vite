@@ -170,6 +170,13 @@ export default ({ command, mode }) => {
 
   Vite will not be able to know that the file needs to be transformed to JavaScript (instead of being served directly as a static file). `transformInclude` allows you to explicitly declare the file type to always be transformed and served as JavaScript.
 
+### dedupe
+
+- **Type:** `string[]`
+
+  If you have duplicated copies of the same depdendency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
+  project root).
+
 ### logLevel
 
 - **Type:** `'info' | 'warn' | 'error' | 'silent'`

@@ -2,8 +2,10 @@
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  dedupe: ['react'],
+
   optimizeDeps: {
-    include: ['linked-force-include']
+    include: ['optimize-deps-linked-include']
   },
 
   build: {

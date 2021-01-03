@@ -1,0 +1,8 @@
+{
+  "name": "optimize-deps-linked-include",
+  "version": "0.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "react": "17.0.0"
+  }
+}
