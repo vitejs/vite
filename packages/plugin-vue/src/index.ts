@@ -41,9 +41,9 @@ export interface Options {
   isProduction?: boolean
 
   // options to pass on to @vue/compiler-sfc
-  script?: SFCScriptCompileOptions
-  template?: SFCTemplateCompileOptions
-  style?: SFCStyleCompileOptions
+  script?: Partial<SFCScriptCompileOptions>
+  template?: Partial<SFCTemplateCompileOptions>
+  style?: Partial<SFCStyleCompileOptions>
 }
 
 export interface ResolvedOptions extends Options {
