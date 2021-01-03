@@ -31,7 +31,6 @@ export function transformMiddleware(
   } = server
 
   return async (req, res, next) => {
-    let url = removeTimestampQuery(req.url!)
     if (
       req.method !== 'GET' ||
       req.headers.accept?.includes('text/html') ||
@@ -40,6 +39,7 @@ export function transformMiddleware(
       return next()
     }
 
+    let url = decodeURI(removeTimestampQuery(req.url!))
     const withoutQuery = cleanUrl(url)
 
     try {
