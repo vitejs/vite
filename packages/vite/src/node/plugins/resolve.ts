@@ -268,7 +268,7 @@ interface PackageData {
 
 const packageCache = new Map<string, PackageData>()
 
-function resolvePackageData(
+export function resolvePackageData(
   id: string,
   basedir: string
 ): PackageData | undefined {

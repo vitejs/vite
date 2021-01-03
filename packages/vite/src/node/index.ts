@@ -4,6 +4,7 @@ export * from './optimizer'
 export * from './config'
 export { send } from './server/send'
 export { createLogger } from './logger'
+export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
 
 // additional types
 export type { Plugin } from './plugin'
