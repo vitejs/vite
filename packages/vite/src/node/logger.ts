@@ -50,7 +50,7 @@ export function createLogger(level: LogLevel = 'info'): Logger {
               ? chalk.yellow.bold(`[vite]`)
               : chalk.red.bold(`[vite]`)
           return `${chalk.dim(
-            new Date().toLocaleString().split(', ')[1]
+            new Date().toLocaleTimeString()
           )} ${tag} ${msg}`
         } else {
           return msg
