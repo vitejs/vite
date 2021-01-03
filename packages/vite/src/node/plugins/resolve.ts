@@ -60,7 +60,7 @@ export function resolvePlugin({
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
         let fsPath = id.slice(FS_PREFIX.length - 1)
-        if (fsPath.startsWith('//')) fsPath = fsPath.slice(1)
+        if (fsPath.startsWith('/')) fsPath = fsPath.slice(1)
         res = tryFsResolve(fsPath, false)
         isDebug && debug(`[@fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
