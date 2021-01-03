@@ -180,7 +180,12 @@ export async function optimizeDeps(
         aliasPlugin({ entries: config.alias }),
         depAssetExternalPlugin(config),
         // TODO user pre plugins?
-        resolvePlugin(config.root, true /* isBuild */, false /* asSrc */),
+        resolvePlugin({
+          root: config.root,
+          dedupe: config.dedupe,
+          isBuild: true,
+          asSrc: false
+        }),
         jsonPlugin({
           preferConst: true,
           namedExports: true

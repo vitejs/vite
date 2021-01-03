@@ -93,6 +93,11 @@ export interface UserConfig {
    */
   optimizeDeps?: DepOptimizationOptions
   /**
+   * Force Vite to always resolve listed dependencies to the same copy (from
+   * project root).
+   */
+  dedupe?: string[]
+  /**
    * Log level.
    * Default: 'info'
    */
@@ -416,11 +421,11 @@ async function loadConfigFromFile(
         plugins: [
           // use esbuild + node-resolve to support .ts files
           esbuildPlugin({ target: 'es2019' }),
-          resolvePlugin(
-            path.dirname(resolvedPath),
-            true /* isBuild */,
-            false /* disallow src code only resolves */
-          )
+          resolvePlugin({
+            root: path.dirname(resolvedPath),
+            isBuild: true,
+            asSrc: false
+          })
         ]
       })
 

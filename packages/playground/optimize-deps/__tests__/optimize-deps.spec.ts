@@ -10,6 +10,12 @@ test('dynamic imports from cjs dep (react)', async () => {
   expect(await page.textContent('.cjs-dynamic button')).toBe('count is 1')
 })
 
+test('dedupe', async () => {
+  expect(await page.textContent('.dedupe button')).toBe('count is 0')
+  await page.click('.dedupe button')
+  expect(await page.textContent('.dedupe button')).toBe('count is 1')
+})
+
 test('cjs borwser field (axios)', async () => {
   expect(await page.textContent('.cjs-browser-field')).toBe('pong')
 })

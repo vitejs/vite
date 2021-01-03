@@ -8,6 +8,10 @@
 <div class="cjs-dynamic"></div>
 <script type="module" src="./cjs-dynamic.js"></script>
 
+<h2>Dedupe (dep in linked & optimized package)</h2>
+<div class="dedupe"></div>
+<script type="module" src="./dedupe.js"></script>
+
 <h2>CommonJS w/ browser field mapping (axios)</h2>
 <div>This should show ping: <span class="cjs-browser-field"></span></div>
 
@@ -27,6 +31,6 @@ axios.get('/ping').then(res => {
 import { camelCase } from 'optimize-deps-linked'
 document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')
 
-import { msg } from 'linked-force-include'
+import { msg } from 'optimize-deps-linked-include'
 document.querySelector('.force-include').textContent = msg
 </script>

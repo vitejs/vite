@@ -27,7 +27,12 @@ export async function resolvePlugins(
   return [
     aliasPlugin({ entries: config.alias }),
     ...prePlugins,
-    resolvePlugin(config.root, isBuild, true),
+    resolvePlugin({
+      root: config.root,
+      dedupe: config.dedupe,
+      isBuild,
+      asSrc: true
+    }),
     htmlPlugin(),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
