@@ -1,0 +1,13 @@
+{
+  "name": "test-vue-jsx",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../vite/bin/vite"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue-jsx": "^1.0.0"
+  }
+}

@@ -5,6 +5,7 @@
     "outDir": "dist",
     "allowJs": true,
     "esModuleInterop": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "jsx": "preserve"
   }
 }
