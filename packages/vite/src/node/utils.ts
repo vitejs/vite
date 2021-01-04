@@ -59,6 +59,11 @@ export function normalizePath(id: string): string {
   return path.posix.normalize(id)
 }
 
+export function fsPathFromId(id: string): string {
+  const fsPath = normalizePath(id.slice(FS_PREFIX.length))
+  return fsPath.startsWith('/') ? fsPath : `/${fsPath}`
+}
+
 export const queryRE = /\?.*$/
 export const hashRE = /#.*$/
 
