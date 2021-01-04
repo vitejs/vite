@@ -373,7 +373,7 @@ export function onRollupWarning(
         `[vite]: Rollup failed to resolve import "${warning.source}" from "${warning.importer}".\n` +
         `This is most likely unintended because it can break your application at runtime.\n` +
         `If you do want to externalize this module explicitly add it to\n` +
-        `\`rollupInputOptions.external\``
+        `\`build.rollupOptions.external\``
     }
     throw new Error(message)
   }
