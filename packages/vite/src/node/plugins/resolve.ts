@@ -22,7 +22,7 @@ import { PartialResolvedId } from 'rollup'
 import isBuiltin from 'isbuiltin'
 import { isCSSRequest } from './css'
 
-const mainFields = ['module', 'jsnext', 'jsnext:main', 'browser', 'main']
+const mainFields = ['module', 'jsnext', 'jsnext:main', 'main']
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -85,7 +85,7 @@ export function resolvePlugin({
         let fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
         const pkg = importer && idToPkgMap.get(importer)
-        if (pkg && pkg.data.browser) {
+        if (pkg && isObject(pkg.data.browser)) {
           const pkgRealtivePath = './' + slash(path.relative(pkg.dir, fsPath))
           fsPath = path.resolve(
             pkg.dir,
@@ -280,6 +280,9 @@ export interface PackageData {
   data: {
     [field: string]: any
     version: string
+    main: string
+    module: string
+    browser: string | Record<string, string>
     exports: string | Record<string, any> | string[]
     dependencies: Record<string, string>
   }
@@ -331,19 +334,30 @@ export function resolvePackageEntry(
 ): string | undefined {
   let entryPoint: string | undefined
 
-  // resolve exports field
-  // https://nodejs.org/api/packages.html#packages_package_entry_points
-  const { exports: exportsField } = data
-  if (exportsField) {
-    if (typeof exportsField === 'string') {
-      entryPoint = exportsField
-    } else if (Array.isArray(exportsField)) {
-      entryPoint = exportsField[0]
-    } else if (isObject(exportsField)) {
-      if ('.' in exportsField) {
-        entryPoint = resolveConditionalExports(exportsField['.'])
-      } else {
-        entryPoint = resolveConditionalExports(exportsField)
+  // check browser field first with highest priority
+  const browserEntry =
+    typeof data.browser === 'string'
+      ? data.browser
+      : isObject(data.browser) && data.browser['.']
+  if (browserEntry) {
+    entryPoint = browserEntry
+  }
+
+  if (!entryPoint) {
+    // resolve exports field
+    // https://nodejs.org/api/packages.html#packages_package_entry_points
+    const { exports: exportsField } = data
+    if (exportsField) {
+      if (typeof exportsField === 'string') {
+        entryPoint = exportsField
+      } else if (Array.isArray(exportsField)) {
+        entryPoint = exportsField[0]
+      } else if (isObject(exportsField)) {
+        if ('.' in exportsField) {
+          entryPoint = resolveConditionalExports(exportsField['.'])
+        } else {
+          entryPoint = resolveConditionalExports(exportsField)
+        }
       }
     }
   }
@@ -362,7 +376,7 @@ export function resolvePackageEntry(
   // resolve object browser field in package.json
   // https://github.com/defunctzombie/package-browser-field-spec
   const { browser: browserField } = data
-  if (browserField && typeof browserField === 'object') {
+  if (isObject(browserField)) {
     entryPoint = mapWithBrowserField(entryPoint, browserField)
   }
 
@@ -404,7 +418,7 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`
       )
     }
-  } else if (browserField) {
+  } else if (isObject(browserField)) {
     relativeId = mapWithBrowserField(relativeId, browserField)
   }
 
