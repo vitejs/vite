@@ -34,11 +34,17 @@ export interface Plugin extends RollupPlugin {
    * Plugin invocation order:
    * - alias resolution
    * - `enforce: 'pre'` plugins
-   * - vite internal plugins
+   * - vite core plugins
    * - normal plugins
+   * - vite build plugins
    * - `enforce: 'post'` plugins
+   * - vite build post plugins
    */
   enforce?: 'pre' | 'post'
+  /**
+   * Apply the plugin only for serve or for build.
+   */
+  apply?: 'serve' | 'build'
   /**
    * Modify vite config before it's resolved. The hook can either mutate the
    * passed-in config directly, or return a partial config object that will be

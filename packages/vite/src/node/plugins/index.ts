@@ -22,7 +22,7 @@ export async function resolvePlugins(
 
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
-    : []
+    : { pre: [], post: [] }
 
   return [
     aliasPlugin({ entries: config.alias }),
@@ -45,8 +45,9 @@ export async function resolvePlugins(
     assetPlugin(config),
     ...normalPlugins,
     cssPostPlugin(config),
-    ...buildPlugins,
+    ...buildPlugins.pre,
     ...postPlugins,
+    ...buildPlugins.post,
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []

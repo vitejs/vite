@@ -144,8 +144,11 @@ export async function resolveConfig(
   }
 
   // resolve plugins
+  const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
+    return !p.apply || p.apply === command
+  })
   const [prePlugins, postPlugins, normalPlugins] = sortUserPlugins(
-    config.plugins
+    rawUserPlugins
   )
 
   // run config hooks
