@@ -49,7 +49,7 @@ export function transformMiddleware(
 
     try {
       const isSourceMap = withoutQuery.endsWith('.map')
-      // since we generate source map references, handle those requests here
+      // Since we generate source map references, handle those requests here.
       if (isSourceMap) {
         // #1323 - browser may remove // when fetching source maps
         if (url.startsWith(FS_PREFIX)) {
@@ -66,7 +66,7 @@ export function transformMiddleware(
         }
       }
 
-      // warn explicit /public/ paths
+      // Warn explicit /public/ paths.
       if (url.startsWith('/public/')) {
         logger.warn(
           chalk.yellow(
@@ -89,7 +89,7 @@ export function transformMiddleware(
         isHTMLProxy(url) ||
         server.config.transformInclude(withoutQuery)
       ) {
-        // strip ?import
+        // Strip `?import`.
         url = removeImportQuery(url)
 
         // Strip valid id prefix. This is preprended to resolved Ids that are
@@ -98,13 +98,13 @@ export function transformMiddleware(
           url = url.slice(VALID_ID_PREFIX.length)
         }
 
-        // for CSS, we need to differentiate between normal CSS requests and
-        // imports
+        // For CSS, we need to differentiate between normal CSS requests and
+        // imports.
         if (isCSSRequest(url) && req.headers.accept?.includes('text/css')) {
           url = injectQuery(url, 'direct')
         }
 
-        // check if we can return 304 early
+        // check if we can return 304 early.
         const ifNoneMatch = req.headers['if-none-match']
         if (
           ifNoneMatch &&
@@ -116,7 +116,7 @@ export function transformMiddleware(
           return res.end()
         }
 
-        // resolve, load and transform using the plugin container
+        // resolve, load and transform using the plugin container.
         const result = await transformRequest(url, server)
         if (result) {
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
