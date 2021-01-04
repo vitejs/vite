@@ -28,5 +28,5 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
     ```html
     <!-- if production -->
     <link rel="stylesheet" href="/assets/{{ manifest['style.css'].file }}">
-    <script type="module" src="/assets/{{ manifest['index.js].file }}"></script>
+    <script type="module" src="/assets/{{ manifest['index.js'].file }}"></script>
     ```
