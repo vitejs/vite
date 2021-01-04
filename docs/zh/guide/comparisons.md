@@ -8,7 +8,7 @@
 
 Snowpack's default build output is unbundled: it transforms each file into separate built modules, which can then be fed into different "optimizers" that perform the actual bundling. The benefit of this is that you can choose between different end-bundlers (e.g. webpack, Rollup, or even ESbuild), the downside is that it's a bit of a fragmented experience - for example, the `esbuild` optimizer is still unstable, the Rollup optimizer is not officially maintained, and different optimizers have different output and configurations.
 
-Vite opts to have a deeper integration with one single bundler (Rollup) in order to provide a more streamlined experience. The reason for going with Rollup is because we believe for the foreseeable future, Rollup offers the best balance between maturity, extensibility, build speed, and output bundle size. Vite supports a [Universal Plugin API](./api-plugin) that extends Rollup's plugin interface, and offers more build features such as [multi-page support](./build#multi-page-app) and [library mode](./build#library-mode).
+Vite opts to have a deeper integration with one single bundler (Rollup) in order to provide a more streamlined experience. The reason for going with Rollup is because we believe for the foreseeable future, Rollup offers the best balance between maturity, extensibility, build speed, and output bundle size. Vite supports a [Universal Plugin API](./api-plugin) that extends Rollup's plugin interface, and offers more build features such as [multi-page support](./build#多页面应用) and [library mode](./build#库模式).
 
 **First Class Vue Support**
 

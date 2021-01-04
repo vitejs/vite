@@ -1,26 +1,26 @@
-# Building for Production
+# 构建生产版本
 
-When it is time to deploy your app for production, simply run the `vite build` command. By default, it uses `<root>/index.html` as the build entry point, and produces an application bundle that is suitable to be served over a static hosting service.
+当需要将应用程序部署到生产环境时，只需运行 `vite build` 命令。默认情况下，它使用 `<root>/index.html` 作为构建入口点，并生成一个适合通过静态部署的应用程序包。
 
-## Browser Compatibility
+## 浏览器兼容性
 
-The production bundle assumes a baseline support for [Native ES modules dynamic imports](https://caniuse.com/es6-module-dynamic-import). By default, all code is minimally transpiled with target `es2020` (only for terser minification compatibility). You can specify the target range via the [`build.target` config option](/config/#build-target), where the lowest target available is `es2015`.
+生产版本假设浏览器对 [原生 ES 模块动态导入](https://caniuse.com/es6-module-dynamic-import) 有基本支持。默认情况下，所有代码都会至少以 `es2020` 为目标转译（只是为了更简洁和缩小兼容性差距）。你也可以通过 [`build.target` 配置项](/config/#build-target) 指定构建目标，最低支持 `es2015`。
 
-Legacy browsers _can_ be supported via plugins that post-process the build output for compatibility (e.g. [`@rollup/plugin-babel`](https://github.com/rollup/plugins/tree/master/packages/babel) + [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env) + [SystemJS](https://github.com/systemjs/systemjs)). This is not a built-in feature, but there is plan to provide an official plugin that automatically emits a separate legacy bundle.
+为了兼容，_可以_ 通过处理构建输出产物的插件来支持传统浏览器（例如 [`@rollup/plugin-babel`](https://github.com/rollup/plugins/tree/master/packages/babel) + [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env) + [SystemJS](https://github.com/systemjs/systemjs)）。这不是一个内置功能，单我们有计划提供一个官方插件来自动生成一份兼容产物。
 
-## Public Base Path
+## public base 路径
 
-- Related: [Asset Handling](./features#asset-handling)
+- 相关内容：[资源处理](./features#asset-handling)
 
-If you are deploying your project under a nested public path, simply specify the [`build.base` config option](/config/#build-base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
+如果您正在嵌套的公共路径下部署项目，可以简单指定一个 [`build.base` 配置项](/config/#build-base) 然后所有资源的路径都将据此重写。这个选项也可以通过命令行参数指定，例如 `vite build --base=/my/public/path/`。
 
-JS-imported asset URLs, CSS `url()` references, and asset references in your `.html` files are all automatically adjusted to respect this option during build.
+由 JS 导入的资源路径，CSS 中的 `url()` 引用，和 `.html` 文件中的资源引用在构建过程中都会自动调整以适配此选项。
 
-The exception is when you need to dynamically concatenate URLs on the fly. In this case, you can use the globally injected `import.meta.env.BASE_URL` variable which will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `import.meta.env['BASE_URL']` won't work).
+例外情况是需要动态连接 url。在这种情况下，你可以使用全局注入的 `import.meta.env.BASE_URL` 变量，它将是 public base 路径。注意这个变量在构建中是被静态替换的所以它必须是原本的样子（例如 `import.meta.env['BASE_URL']` 是无效的）
 
-## Customizing the Build
+## 自定义构建
 
-The build can be customized via various [build config options](/config/#build-options). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
+构建过程可以通过多种 [构建配置选项](/config/#build-options) 来自定义。特别地，你可以通过 `build.rollupOptions` 直接调整底层的 [Rollup 选项](https://rollupjs.org/guide/en/#big-list-of-options)：
 
 ```js
 // vite.config.js
@@ -33,11 +33,11 @@ module.exports = {
 }
 ```
 
-For example, you can specify multiple Rollup outputs with plugins that only applied during build.
+例如，您可以使用仅在构建期间应用的插件来指定多个 Rollup 输出。
 
-## Multi-Page App
+## 多页面应用模式
 
-Suppose you have the following source code structure:
+假设你有下面这样的项目文件结构
 
 ```
 |-package.json
@@ -49,9 +49,9 @@ Suppose you have the following source code structure:
 |---nested.js
 ```
 
-During dev, simply navigate or link to `/nested/` - it works as expected, just like for a normal static file server.
+在开发中，简单地导航或链接到 `/nested/` - 将会按预期工作，就如同一个正常的静态文件服务器。
 
-During build, all you need to do is to specify multiple `.html` files as entry points:
+在构建中，你要做的只有指定多个 `.html` 文件作为入口点：
 
 ```js
 // vite.config.js
@@ -69,11 +69,11 @@ module.exports = {
 }
 ```
 
-## Library Mode
+## 库模式
 
-When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
+当您开发面向浏览器的库时，您可能会将大部分时间花在该库的测试/演示页面上。使用 Vite，你可以使用 `index.html` 来获得如丝般顺滑的开发体验。
 
-When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib):
+当需要构建你的库用于发布时，请使用 [`build.lib` 配置项](/config/#build-lib)：
 
 ```js
 // vite.config.js
@@ -89,7 +89,7 @@ module.exports = {
 }
 ```
 
-Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats: `es` and `umd` (configurable via `build.lib`):
+运行 `vite build` 配合如上配置将会使用一套 Rollup 预设，为发行该库提供两种构建格式：`es` 和 `umd`（在 `build.lib` 中配置的）：
 
 ```
 $ vite build
@@ -98,7 +98,7 @@ building for production...
 [write] my-lib.umd.js 0.30kb, brotli: 0.16kb
 ```
 
-Recommended `package.json` for your lib:
+推荐你的库中 `package.json` 的采用如下格式:
 
 ```json
 {

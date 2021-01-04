@@ -6,7 +6,7 @@
 
 Vite 提供了一套原生 ESM 的 [HMR API](./api-hmr)。 具有 HMR 功能的框架可以利用该 API 提供即时、准确的更新，而无需重新加载页面或删除应用程序状态。Vite 提供了第一优先级的 HMR 集成给 [Vue 单文件组件（SFC）](https://github.com/vitejs/vite/tree/main/packages/plugin-vue) 和 [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh)。也有对 Preact 的集成 [@prefresh/vite](https://github.com/JoviDeCroock/prefresh/tree/main/packages/vite).
 
-注意，你不需要手动设置这些 - 当你[create an app via `@vitejs/create-app`](./) 创建应用程序时，所选模板已经为你预先配置了这些。
+注意，你不需要手动设置这些 - 当你 [create an app via `@vitejs/create-app`](./) 创建应用程序时，所选模板已经为你预先配置了这些。
 
 ## NPM 依赖解析
 
@@ -92,7 +92,7 @@ CSS modules 行为可通过 [`css.modules` 选项](/config/#css-modules) 配置�
 
 ## 静态资源处理
 
-- 相关文档：[public base 路径](./build#public-base-path)
+- 相关文档：[public base 路径](./build#public-base-路径)
 - 相关文档：[`assetsInclude` 配置项](/config/#assetsinclude)
 
 ### URL Imports

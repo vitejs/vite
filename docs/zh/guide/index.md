@@ -58,7 +58,7 @@ npm init @vitejs/app my-vue-app --template vue
 
 运行 `vite` 后使用当前工作目录作为根目录启动一个开发服务器。你可以使用 `vite serve some/sub/dir` 制定一个替代的根目录。
 
-当你打开服务器的本地地址，Vite 则会打开 **`<root>/index.html`**。它也被用作默认的构建入口点。与一些把 HTML 作为事后考虑的打包程序不同，Vite 把 HTML 文件作为应用程序图的一部分（类似于 Parcel）。因此，你应该将 `index.html` 作为你源代码的一部分，而不只是一个静态文件。Vite 还支持多个 `.html` 的入口点的[多页应用程序](./build#multi-page-app)。
+当你打开服务器的本地地址，Vite 则会打开 **`<root>/index.html`**。它也被用作默认的构建入口点。与一些把 HTML 作为事后考虑的打包程序不同，Vite 把 HTML 文件作为应用程序图的一部分（类似于 Parcel）。因此，你应该将 `index.html` 作为你源代码的一部分，而不只是一个静态文件。Vite 还支持多个 `.html` 的入口点的[多页应用程序](./build#多页面应用)。
 
 如果存在，Vite 会自动启用 **`<root>/vite.config.js`**，你也可以通过命令行选项 `--config <file>` 显式指定一个要使用的配置文件。
 

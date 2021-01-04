@@ -28,7 +28,6 @@ Vite 使用 [dotenv](https://github.com/motdotla/dotenv) 在你的项目根目�
 ```
 
 加载的环境变量也会通过 `import.meta.env` 暴露给客户端源代码。
-Loaded env variables are also exposed to your client source code via `import.meta.env`.
 
 为了防止意外地将一些环境变量泄漏到客户端，只有以 `VITE_` 为前缀的变量才会暴露给经过 vite 处理的代码。例如下面这个文件中：
 

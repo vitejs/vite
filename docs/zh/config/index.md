@@ -326,7 +326,7 @@ export default ({ command, mode }) => {
 ### build.lib
 
 - **Type:** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[] }`
-- **Related:** [Library Mode](/guide/build#library-mode)
+- **Related:** [Library Mode](/zh/guide/build#库模式)
 
   Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`.
 
