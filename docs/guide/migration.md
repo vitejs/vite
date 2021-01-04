@@ -36,10 +36,10 @@
 
 - All Vue specific options are removed; Pass options to the Vue plugin instead.
 
-- [`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias`. Thus, directory aliases now require RegEx: 
+- [`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias`. Thus, directory aliases need to end with a slash since they are direct string replacements: 
 ```diff
 - alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') }
-+ alias: [ { find: /^\/@foo\/(.*)/, replacement: `${path.resolve(__dirname, 'some-special-dir')}/$1`, } ]
++ alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') + '/' }
 ```
 
 ## Vue Support
