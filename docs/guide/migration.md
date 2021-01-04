@@ -36,6 +36,12 @@
 
 - All Vue specific options are removed; Pass options to the Vue plugin instead.
 
+- [`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias`. Thus, directory aliases now require RegEx: 
+```diff
+- alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') }
++ alias: [ { find: /^\/@foo\/(.*)/, replacement: `${path.resolve(__dirname, 'some-special-dir')}/$1`, } ]
+```
+
 ## Vue Support
 
 Vite 2.0 core is now framework agnostic. Vue support is now provided via [`@vitejs/plugin-vue`](https://github.com/vitejs/vite/tree/main/packages/plugin-vue). Simply install it and add it in the Vite config:
