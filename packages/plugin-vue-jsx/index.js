@@ -10,6 +10,7 @@ const hash = require('hash-sum')
  */
 module.exports = function vueJsxPlugin(options = {}) {
   let needHmr = false
+  let needSourceMap = true
 
   return {
     name: 'vue-jsx',
@@ -31,6 +32,7 @@ module.exports = function vueJsxPlugin(options = {}) {
 
     configResolved(config) {
       needHmr = config.command === 'serve' && !config.isProduction
+      needSourceMap = config.command === 'serve' || !!config.build.sourcemap
     },
 
     transform(code, id) {
@@ -47,7 +49,7 @@ module.exports = function vueJsxPlugin(options = {}) {
         const result = babel.transformSync(code, {
           ast: true,
           plugins,
-          sourceMaps: true,
+          sourceMaps: needSourceMap,
           sourceFileName: id
         })
 
