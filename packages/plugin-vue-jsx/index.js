@@ -16,7 +16,11 @@ module.exports = function vueJsxPlugin(options = {}) {
 
     config(config) {
       return {
-        esbuild: false,
+        // only apply esbuild to ts files
+        // since we are handling jsx and tsx now
+        esbuild: {
+          include: /\.ts$/
+        },
         define: {
           __VUE_OPTIONS_API__: true,
           __VUE_PROD_DEVTOOLS__: false,
