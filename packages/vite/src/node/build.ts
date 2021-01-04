@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import chalk from 'chalk'
 import { resolveConfig, UserConfig, ResolvedConfig } from './config'
 import Rollup, {
   Plugin,
@@ -13,7 +14,6 @@ import Rollup, {
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
-import chalk from 'chalk'
 import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
@@ -110,6 +110,10 @@ export interface BuildOptions {
    * configurations that are suitable for distributing libraries.
    */
   lib?: LibraryOptions | false
+  /**
+   * @internal for now
+   */
+  ssr?: boolean
 }
 
 export interface LibraryOptions {
@@ -137,6 +141,7 @@ export function resolveBuildOptions(
     write: true,
     manifest: false,
     lib: false,
+    ssr: false,
     ...raw
   }
 
@@ -344,10 +349,19 @@ export function onRollupWarning(
   allowNodeBuiltins: string[] = [],
   userOnWarn?: WarningHandlerWithDefault
 ) {
+  function doWarn() {
+    if (userOnWarn) {
+      userOnWarn(warning, warn)
+    } else {
+      warn(warning)
+    }
+  }
+
   if (warning.code === 'UNRESOLVED_IMPORT') {
     let message: string
     const id = warning.source
     const importer = warning.importer
+
     if (id && isBuiltin(id)) {
       let importingDep
       if (importer) {
@@ -377,6 +391,7 @@ export function onRollupWarning(
     }
     throw new Error(message)
   }
+
   if (
     warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
     dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
@@ -385,10 +400,6 @@ export function onRollupWarning(
   }
 
   if (!warningIgnoreList.includes(warning.code!)) {
-    if (userOnWarn) {
-      userOnWarn(warning, warn)
-    } else {
-      warn(warning)
-    }
+    doWarn()
   }
 }

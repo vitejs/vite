@@ -15,7 +15,7 @@ import {
   fsPathFromId,
   resolveFrom
 } from '../utils'
-import { ViteDevServer } from '..'
+import { ResolvedConfig, ViteDevServer } from '..'
 import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
@@ -47,7 +47,8 @@ export function resolvePlugin({
   asSrc,
   dedupe
 }: ResolveOptions): Plugin {
-  let server: ViteDevServer
+  let config: ResolvedConfig | undefined
+  let server: ViteDevServer | undefined
 
   return {
     name: 'vite:resolve',
@@ -56,8 +57,17 @@ export function resolvePlugin({
       server = _server
     },
 
+    configResolved(_config) {
+      config = _config
+    },
+
     resolveId(id, importer) {
       let res
+
+      // fast path for commonjs proxy modules
+      if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
+        return
+      }
 
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
@@ -117,7 +127,8 @@ export function resolvePlugin({
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        if (isBuild && isBuiltin(id)) {
+        // externalize node built-ins only when building for ssr
+        if (isBuild && config && config.build.ssr && isBuiltin(id)) {
           return {
             id,
             external: true
