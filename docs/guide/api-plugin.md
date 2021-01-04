@@ -14,17 +14,17 @@ It is common convention to author a Vite/Rollup plugin as a factory function tha
 
 ```js
 export default function myPlugin() {
-  const vitualFileId = '@my-virtual-file'
+  const virtualFileId = '@my-virtual-file'
 
   return {
     name: 'my-plugin', // required, will show up in warnings and errors
     resolveId(id) {
-      if (id === vitualFileId) {
-        return vitualFileId
+      if (id === virtualFileId) {
+        return virtualFileId
       }
     },
     load(id) {
-      if ((id === vitualFileId)) {
+      if ((id === virtualFileId)) {
         return `export const msg = "from virtual file"`
       }
     }
