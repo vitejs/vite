@@ -36,11 +36,16 @@
 
 - All Vue specific options are removed; Pass options to the Vue plugin instead.
 
-- [`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias`. Thus, directory aliases need to end with a slash since they are direct string replacements: 
+## Alias Behavior Change
+
+[`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias` and no longer require start/ending slashes. The behavior is now a direct replacement, so 1.0-style directory aliases now require an ending slash:
+
 ```diff
 - alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') }
 + alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') + '/' }
 ```
+
+Alternatively, you can use the `[{ find: RegExp, replacement: string }]` option format for more precise control.
 
 ## Vue Support
 
