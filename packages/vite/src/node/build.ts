@@ -362,6 +362,12 @@ export function onRollupWarning(
     const id = warning.source
     const importer = warning.importer
 
+    if (importer && /\?commonjs-external$/.test(importer)) {
+      // allow commonjs external...
+      warning.message = chalk.yellow(warning.message)
+      return doWarn()
+    }
+
     if (id && isBuiltin(id)) {
       let importingDep
       if (importer) {
