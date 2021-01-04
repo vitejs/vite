@@ -28,10 +28,27 @@ export interface Options {
 }
 ```
 
+## Exmaple for passing options to `@vue/compiler-dom`:
+
+```ts
+import vue from '@vitejs/plugin-vue'
+
+export default {
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          // ...
+        }
+      }
+    })
+  ]
+}
+```
+
 ## Example for transforming custom blocks
 
 ```ts
-// vite.config.js
 import vue from '@vitejs/plugin-vue'
 
 const vueI18nPlugin = {
@@ -52,7 +69,7 @@ const vueI18nPlugin = {
 export default {
   plugins: [vue(), vueI18nPlugin]
 }
-``` 
+```
 
 ## License
 
