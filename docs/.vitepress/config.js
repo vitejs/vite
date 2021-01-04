@@ -22,11 +22,13 @@ module.exports = {
 
     nav: [
       { text: 'Guide & APIs', link: '/guide/' },
-      { text: 'Config Reference', link: '/config/' }
+      { text: 'Config Reference', link: '/config/' },
+      { text: 'Plugins', link: '/plugins/' }
     ],
 
     sidebar: {
       '/config/': 'auto',
+      '/plugins': 'auto',
       // catch-all fallback
       '/': [
         {
