@@ -1,5 +1,5 @@
 import { Plugin } from 'vite'
 
-declare function reactRefresh(): Plugin
+declare function createPlugin(): Plugin
 
-export = reactRefresh
+export = createPlugin
