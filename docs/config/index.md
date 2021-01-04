@@ -133,9 +133,9 @@ export default ({ command, mode }) => {
 
 ### esbuild
 
-- **Type:** `ESBuildTransformOptions | ((file: string) => ESBuildTransformOptions) | false`
+- **Type:** `ESBuildOptions | false`
 
-  Specify [esbuild transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
+  `ESBuildOptions` extends [ESbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
 
   ```js
   export default {
@@ -146,9 +146,19 @@ export default ({ command, mode }) => {
   }
   ```
 
-  The option can also be a function to conditionally return options based on the name of the file being transformed.
+  By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, both of which expects type of `string | RegExp | (string | RegExp)[]`.
 
-  Set to `false` to disable ESbuild transforms (applies to `.ts`. `.tsx` and `.jsx` files by default).
+  In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
+
+  ```js
+  export default {
+    esbuild: {
+      jsxInject: `import React from 'react'`
+    }
+  }
+  ```
+
+  Set to `false` to disable ESbuild transforms.
 
 ### assetsInclude
 

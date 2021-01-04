@@ -12,11 +12,18 @@ import { createDebugger, generateCodeFrame } from '../utils'
 import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
+import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:esbuild')
 
 // lazy start the service
 let _servicePromise: Promise<Service> | undefined
+
+export interface ESBuildOptions extends TransformOptions {
+  include?: string | RegExp | string[] | RegExp[]
+  exclude?: string | RegExp | string[] | RegExp[]
+  jsxInject?: string
+}
 
 export async function ensureService() {
   if (!_servicePromise) {
@@ -40,14 +47,10 @@ export type EsbuildTransformResult = Omit<TransformResult, 'map'> & {
 export async function transformWithEsbuild(
   code: string,
   filename: string,
-  options?: TransformOptions | ((file: string) => TransformOptions),
+  options?: TransformOptions,
   inMap?: object
 ): Promise<EsbuildTransformResult> {
   const service = await ensureService()
-
-  if (typeof options === 'function') {
-    options = options(filename)
-  }
 
   const resolvedOptions = {
     loader: path.extname(filename).slice(1) as Loader,
@@ -55,7 +58,11 @@ export async function transformWithEsbuild(
     // ensure source file name contains full query
     sourcefile: filename,
     ...options
-  }
+  } as ESBuildOptions
+
+  delete resolvedOptions.include
+  delete resolvedOptions.exclude
+  delete resolvedOptions.jsxInject
 
   try {
     const result = await service.transform(code, resolvedOptions)
@@ -88,18 +95,24 @@ export async function transformWithEsbuild(
   }
 }
 
-export function esbuildPlugin(
-  options: TransformOptions | ((file: string) => TransformOptions) = {}
-): Plugin {
+export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
+  const filter = createFilter(
+    options.include || /\.(tsx?|jsx)$/,
+    options.exclude
+  )
+
   return {
     name: 'vite:esbuild',
     async transform(code, id) {
-      if (/\.(tsx?|jsx)$/.test(id)) {
+      if (filter(id)) {
         const result = await transformWithEsbuild(code, id, options)
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
             this.warn(prettifyMessage(m, code))
           })
+        }
+        if (options.jsxInject) {
+          result.code = options.jsxInject + ';' + result.code
         }
         return {
           code: result.code,

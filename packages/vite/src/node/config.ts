@@ -8,8 +8,7 @@ import { CSSOptions } from './plugins/css'
 import { createDebugger, isObject, lookupFile, normalizePath } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import { esbuildPlugin } from './plugins/esbuild'
-import { TransformOptions as ESbuildTransformOptions } from 'esbuild'
+import { ESBuildOptions, esbuildPlugin } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
@@ -67,10 +66,7 @@ export interface UserConfig {
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
    */
-  esbuild?:
-    | ESbuildTransformOptions
-    | ((file: string) => ESbuildTransformOptions)
-    | false
+  esbuild?: ESBuildOptions | false
   /**
    * Specify additional files to be treated as source file (included into the
    * transform pipeline).
