@@ -156,29 +156,35 @@ export function resolveBuildOptions(
   return resolved
 }
 
-export function resolveBuildPlugins(config: ResolvedConfig): Plugin[] {
+export function resolveBuildPlugins(
+  config: ResolvedConfig
+): { pre: Plugin[]; post: Plugin[] } {
   const options = config.build
-  return [
-    ...(options.rollupOptions.plugins || []),
-    commonjsPlugin({
-      include: [/node_modules/],
-      extensions: ['.js', '.cjs']
-    }),
-    buildHtmlPlugin(config),
-    buildDefinePlugin(config),
-    dynamicImportVars({
-      warnOnError: true,
-      exclude: [/node_modules/]
-    }),
-    buildEsbuildPlugin(config),
-    ...(options.minify && options.minify !== 'esbuild'
-      ? [terserPlugin(options.terserOptions)]
-      : []),
-    ...(options.manifest ? [manifestPlugin()] : []),
-    ...(!config.logLevel || config.logLevel === 'info'
-      ? [buildReporterPlugin(config)]
-      : [])
-  ]
+  return {
+    pre: [
+      ...(options.rollupOptions.plugins || []),
+      commonjsPlugin({
+        include: [/node_modules/],
+        extensions: ['.js', '.cjs']
+      }),
+      buildHtmlPlugin(config),
+      buildDefinePlugin(config),
+      dynamicImportVars({
+        warnOnError: true,
+        exclude: [/node_modules/]
+      })
+    ],
+    post: [
+      buildEsbuildPlugin(config),
+      ...(options.minify && options.minify !== 'esbuild'
+        ? [terserPlugin(options.terserOptions)]
+        : []),
+      ...(options.manifest ? [manifestPlugin()] : []),
+      ...(!config.logLevel || config.logLevel === 'info'
+        ? [buildReporterPlugin(config)]
+        : [])
+    ]
+  }
 }
 
 /**
