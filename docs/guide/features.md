@@ -50,7 +50,7 @@ export default {
 
 More details in [ESBuild docs](https://esbuild.github.io/content-types/#jsx).
 
-You can inject the JSX helpers using `jsxInject` to avoid manual imports, which is a Vite-only option:
+You can inject the JSX helpers using `jsxInject` (which is a Vite-only option) to avoid manual imports:
 
 ```js
 // vite.config.js
