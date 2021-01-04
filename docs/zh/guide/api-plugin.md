@@ -1,23 +1,23 @@
 # Plugin API
 
-Vite plugins extends Rollup's well-designed plugin interface with a few extra vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
+Vite 插件扩展了设计出色的 Rollup 接口，带有一些 vite 独有的配置项。因此，你只需要编写一个 Vite 插件，就可以同时为开发环境和生产环境工作。
 
-**It is recommended to go through [Rollup's plugin documentation](https://rollupjs.org/guide/en/#plugin-development) first before reading the sections below.**
+**推荐在阅读下面的章节之前，首先阅读下 [Rollup's 插件文档](https://rollupjs.org/guide/en/#plugin-development)**
 
-## Simple Examples
+## 简单示例
 
 :::tip
-It is common convention to author a Vite/Rollup plugin as a factory function that returns the actual plugin object. The function can accept options which allows users to customize the behavior of the plugin.
+通常的惯例是创建一个 Vite/Rollup 插件作为一个返回实际插件对象的工厂函数。该函数可以接受允许用户自定义插件行为的选项。
 :::
 
-### Serving a Virtual File
+### 服务一个虚拟文件
 
 ```js
 export default function myPlugin() {
   const vitualFileId = '@my-virtual-file'
 
   return {
-    name: 'my-plugin', // required, will show up in warnings and errors
+    name: 'my-plugin', // 必须的，将会显示在 warning 和 error 中
     resolveId(id) {
       if (id === vitualFileId) {
         return vitualFileId
@@ -32,7 +32,7 @@ export default function myPlugin() {
 }
 ```
 
-### Transforming Custom File Types
+### 转换自定义文件类型
 
 ```js
 export default function myPlugin() {
@@ -50,45 +50,45 @@ export default function myPlugin() {
 }
 ```
 
-## Universal Hooks
+## 通用钩子
 
-During dev, the Vite dev server creates a plugin container that invokes [Rollup Build Hooks](https://rollupjs.org/guide/en/#build-hooks) the same way Rollup does it.
+在开发中，Vite 开发服务器会创建一个插件容器来调用 [Rollup 构建钩子](https://rollupjs.org/guide/en/#build-hooks)，与 Rollup 如出一辙。
 
-The following hooks are called once on server start:
+以下钩子在服务器启动时被调用：
 
 - [`options`](https://rollupjs.org/guide/en/#options)
 - [`buildStart`](https://rollupjs.org/guide/en/#buildstart)
 
-The following hooks are called on each incoming module request:
+以下钩子会在每个传入模块请求时被调用：
 
 - [`resolveId`](https://rollupjs.org/guide/en/#resolveid)
 - [`load`](https://rollupjs.org/guide/en/#load)
 - [`transform`](https://rollupjs.org/guide/en/#transform)
 
-The following hooks are called when the server is closed:
+以下钩子在服务器关闭时被调用：
 
 - [`buildEnd`](https://rollupjs.org/guide/en/#buildend)
 - [`closeBundle`](https://rollupjs.org/guide/en/#closebundle)
 
-Note that the [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) hook is **not** called during dev, because Vite avoids full AST parses for better performance.
+请注意 [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) 钩子 **不是** 在开发中被调用的，因为 Vite 为了性能会避免完整的 AST 解析。
 
-[Output Generation Hooks](https://rollupjs.org/guide/en/#output-generation-hooks) (except `closeBundle`) are **not** called during dev. You can think of Vite's dev server as only calling `rollup.rollup()` without calling `bundle.generate()`.
+[Output Generation Hooks](https://rollupjs.org/guide/en/#output-generation-hooks)（除了 `closeBundle`) **不是** 在开发中被调用的。你可以认为 Vite 的开发服务器只调用了 `rollup.rollup()` 而没有调用 `bundle.generate()`.
 
-## Vite Specific Hooks
+## Vite 独有钩子
 
-Vite plugins can also provide hooks that serve Vite-specific purposes. These hooks are ignored by Rollup.
+Vite 插件也可以提供钩子来服务于特定的 Vite 目标。这些钩子会被 Rollup 忽略。
 
 ### `config`
 
-- **Type:** `(config: UserConfig) => UserConfig | null | void`
-- **Kind:** `sync`, `sequential`
+- **类型：** `(config: UserConfig) => UserConfig | null | void`
+- **种类：** `sync`, `sequential`
 
-  Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file). It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
+  在被解析之前修改 Vite 配置。钩子接收原始用户配置（命令行选项会与配置文件合并）。它可以返回一个将被深度合并到现有配置中的部分配置对象，或者直接改变配置（如果默认的合并不能达到预期的结果）。
 
-  **Example**
+  **示例**
 
   ```js
-  // return partial config (recommended)
+  // 返回部分配置（推荐）
   const partialConfigPlugin = () => ({
     name: 'return-partial',
     config: () => ({
@@ -98,7 +98,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     })
   })
 
-  // mutate the config directly (use only when merging doesn't work)
+  // 直接改变配置（应仅在合并不起作用时使用）
   const mutateConfigPlugin = () => ({
     name: 'mutate-config',
     config(config) {
@@ -107,18 +107,18 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   })
   ```
 
-  ::: warning Note
-  User plugins are resolved before running this hook so injecting other plugins inside the `config` hook will have no effect.
+  ::: warning 注意
+  用户插件在运行这个钩子之前会被解析，因此在 `config` 钩子中注入其他插件不会有任何效果。
   :::
 
 ### `configResolved`
 
-- **Type:** `(config: ResolvedConfig) => void`
-- **Kind:** `sync`, `sequential`
+- **类型：** `(config: ResolvedConfig) => void`
+- **种类：** `sync`, `sequential`
 
-  Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based the command is being run.
+  在解析 Vite 配置后调用。使用这个钩子读取和存储最终解析的配置。当插件需要根据运行的命令做一些不同的事情时，它也很有用。
 
-  **Example:**
+  **示例：**
 
   ```js
   const exmaplePlugin = () => {
@@ -128,16 +128,16 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       name: 'read-config',
 
       configResolved(resolvedConfig) {
-        // store the resolved config
+        // 存储最终解析的配置
         config = resolvedConfig
       },
 
-      // use stored config in other hooks
+      // 使用其他钩子存储的配置
       transform(code, id) {
         if (config.command === 'serve') {
-          // serve: plugin invoked by dev server
+          // serve: 用于启动开发服务器的插件
         } else {
-          // build: plugin invoked by Rollup
+          // build: 调用 Rollup 的插件
         }
       }
     }
@@ -146,11 +146,11 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `configureServer`
 
-- **Type:** `(server: ViteDevServer) => (() => void) | void | Promise<(() => void) | void>`
-- **Kind:** `async`, `sequential`
-- **See also:** [ViteDevServer](./api-javascript#vitedevserver)
+- **类型：** `(server: ViteDevServer) => (() => void) | void | Promise<(() => void) | void>`
+- **种类：** `async`, `sequential`
+- **此外请看** [ViteDevServer](./api-javascript#vitedevserver)
 
-  Hook for configuring the dev server. The most common use case is adding custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app:
+  是用于配置开发服务器的钩子。最常见的用例是在内部 [connect](https://github.com/senchalabs/connect) 应用程序中添加自定义中间件:
 
   ```js
   const myPlugin = () => ({
@@ -207,16 +207,16 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `transformIndexHtml`
 
-- **Type:** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post' transform: IndexHtmlTransformHook }`
-- **Kind:** `async`, `sequential`
+- **类型：** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post' transform: IndexHtmlTransformHook }`
+- **种类：** `async`, `sequential`
 
-  Dedicated hook for transforming `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
+  转换 `index.html` 的专用钩子。钩子接收当前的 HTML 字符串和转换上下文。上下文在开发期间暴露[`ViteDevServer`](./api-javascript#ViteDevServer)实例，在构建期间暴露 Rollup 输出的包。
 
-  The hook can be async and can return one of the following:
+  这个钩子可以是异步的，并且可以返回以下其中之一:
 
-  - Transformed HTML string
-  - An array of tag descriptor objects (`{ tag, attrs, children }`) to inject to the existing HTML. Each tag can also specify where it should be injected to (default is prepending to `<head>`)
-  - An object containing both as `{ html, tags }`
+  - 经过转换的 HTML 字符串
+  - 注入到现有 HTML 中的标签描述符对象数组（`{ tag, attrs, children }`）。每个标签也可以指定它应该被注入到哪里（默认是在 `<head>` 之前）
+  - 一个包含 `{ html, tags }` 的对象
 
   **Basic Example**
 
@@ -234,7 +234,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   }
   ```
 
-  **Full Hook Signature:**
+  **完整钩子签名：**
 
   ```ts
   type IndexHtmlTransformHook = (
@@ -263,7 +263,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     attrs?: Record<string, string>
     children?: string | HtmlTagDescriptor[]
     /**
-     * default: 'head-prepend'
+     * 默认： 'head-prepend'
      */
     injectTo?: 'head' | 'body' | 'head-prepend'
   }
@@ -271,9 +271,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `handleHotUpdate`
 
-- **Type:** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
+- **类型：** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
 
-  Perform custom HMR update handling. The hook receives a context object with the following signature:
+  执行自定义 HMR 更新处理。钩子接收一个带有以下签名的上下文对象:
 
   ```ts
   interface HmrContext {
@@ -285,15 +285,15 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   }
   ```
 
-  - `modules` is an array of modules that are affected by the changed file. It's an array because a single file may map to multiple served modules (e.g. Vue SFCs).
+  - `modules` 是受更改文件影响的模块数组。它是一个数组，因为单个文件可能映射到多个服务模块（例如 Vue 单文件组件）。
 
-  - `read` is an async read function that returns the content of the file. This is provided because on some systems, the file change callback may fire too fast before the editor finishes updating the file and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
+  - `read` 这是一个异步读函数，它返回文件的内容。之所以这样做，是因为在某些系统上，文件更改的回调函数可能会在编辑器完成文件更新之前过快地触发，并 `fs.readFile` 直接会返回空内容。传入的 `read` 函数规范了这种行为。
 
-  The hook can choose to:
+  钩子可以选择:
 
-  - Filter and narrow down the affected module list so that the HMR is more accurate.
+  - 过滤和缩小受影响的模块列表，使 HMR 更准确。
 
-  - Return an empty array and perform complete custom HMR handling by sending custom events to the client:
+  - 返回一个空数组，并通过向客户端发送自定义事件来执行完整的自定义 HMR 处理:
 
     ```js
     handleHotUpdate({ server }) {
@@ -306,34 +306,34 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     }
     ```
 
-    Client code should register corresponding handler using the [HMR API](./api-hmr) (this could be injected by the same plugin's `transform` hook):
+    客户端代码应该使用 [HMR API](./api-hmr) 注册相应的处理器（这应该被被相同插件的 `transform` 钩子注入）：
 
     ```js
     if (import.meta.hot) {
       import.meta.hot.on('special-update', (data) => {
-        // perform custom update
+        // 执行自定义更新
       })
     }
     ```
 
-## Plugin Ordering
+## 插件顺序
 
-A Vite plugin can additionally specify an `enforce` property (similar to webpack loaders) to adjust its application order. The value of `enforce` can be either `"pre"` or `"post"`. The resolved plugins will be in the following order:
+一个 Vite 插件可以额外指定一个 `enforce` 属性（类似于 webpack 加载器）来调整它的应用顺序。`enforce` 的值可以是`pre` 或 `post`。解析后的插件将按照以下顺序排列:
 
 - Alias
-- User plugins with `enforce: 'pre'`
-- Vite internal plugins
-- User plugins without enforce value
-- Vite build-specific plugins
-- User plugins with `enforce: 'post'`
+- 带有 `enforce: 'pre'` 的用户插件
+- Vite 内置插件
+- 没有 enforce 值的用户插件
+- Vite 构建用的插件
+- 带有 `enforce: 'post'` 的用户插件
 
-## Rollup Plugin Compatiblity
+## Rollup 插件兼容性
 
-A fair number of Rollup plugins will work directly as a Vite plugin (e.g. `@rollup/plugin-alias` or `@rollup/plugin-json`), but not all of them, since some plugin hooks do not make sense in an unbundled dev server context.
+相当数量的 Rollup 插件将直接作为 Vite 插件工作（例如：`@rollup/plugin-alias` 或 `@rollup/plugin-json`），但并不是所有的，因为有些插件钩子在非构建式的开发服务器上下文中没有意义。
 
-In general, as long as a rollup plugin fits the following criterias then it should just work as a Vite plugin:
+一般来说，只要一个 Rollup 插件符合以下标准，那么它应该只是作为一个 Vite 插件:
 
-- It doesn't use the [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) hook.
-- It doesn't have strong coupling between bundle-phase hooks and output-phase hooks.
+- 没有使用 [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) 钩子。
+- 它在打包钩子和输出钩子之间没有很强的耦合。
 
-If a Rollup plugin only makes sense for the build phase, then it can be specified under `build.rollupOptions.plugins` instead.
+如果一个 Rollup 插件只在构建阶段有意义，则在 `build.rollupOptions.plugins` 下指定即可。

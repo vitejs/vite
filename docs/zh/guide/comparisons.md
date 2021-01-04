@@ -1,29 +1,29 @@
-# Comparisons with Other No-Bundler Solutions
+# 同其他非构建式的解决方案的比较
 
 ## Snowpack
 
-[Snowpack](https://www.snowpack.dev/) is also a no-bundle native ESM dev server that is very similar in scope to Vite. Aside from different implementation details, the two projects share a lot in terms of technical advantages over traditional tooling. Vite's dependency pre-bundling is also inspired by Snowpack v1 (now [`esinstall`](https://github.com/snowpackjs/snowpack/tree/main/esinstall)). Some of the main differences between the two projects are:
+[Snowpack](https://www.snowpack.dev/) 也是一个与 Vite 十分类似的非构建式原生 ESM 开发服务器。除了不同的实现细节外，这两个项目在技术上比传统工具有很多共同优势。Vite 的依赖预绑定也受到了 Snowpack v1（现在是 [`esinstall`](https://github.com/snowpackjs/snowpack/tree/main/esinstall)）(now [`esinstall`](https://github.com/snowpackjs/snowpack/tree/main/esinstall)) 的启发。这两个项目之间的一些主要区别是:
 
-**Production Build Handling**
+**生产构建处理**
 
-Snowpack's default build output is unbundled: it transforms each file into separate built modules, which can then be fed into different "optimizers" that perform the actual bundling. The benefit of this is that you can choose between different end-bundlers (e.g. webpack, Rollup, or even ESbuild), the downside is that it's a bit of a fragmented experience - for example, the `esbuild` optimizer is still unstable, the Rollup optimizer is not officially maintained, and different optimizers have different output and configurations.
+Snowpack 的默认构建输出是未打包的：它将每个文件转换为单独的构建模块，然后将这些模块提供给执行实际绑定的不同“优化器”。这么做的好处是,你可以选择不同终端打包器（例如 webpack, Rollup，甚至是 ESbuild），缺点是体验有些支离破碎 —— 例如,`esbuild` 优化器仍然是不稳定的，Rollup 优化器也不是官方维护，而不同的优化器又有不同的输出和配置。
 
-Vite opts to have a deeper integration with one single bundler (Rollup) in order to provide a more streamlined experience. The reason for going with Rollup is because we believe for the foreseeable future, Rollup offers the best balance between maturity, extensibility, build speed, and output bundle size. Vite supports a [Universal Plugin API](./api-plugin) that extends Rollup's plugin interface, and offers more build features such as [multi-page support](./build#多页面应用) and [library mode](./build#库模式).
+为了提供更流畅的体验，Vite 选择了与单个打包器（Rollup）进行更深入的集成。使用 Rollup 的原因是，我们相信在可预见的将来，Rollup 能够在成熟度、可扩展性、构建速度和输出包大小之间提供最佳的平衡。Vite 支持了一套 [通用插件 API](./api-plugin)扩展了 Rollup 的插件接口，并提供了更多的构建等特性例如 [多页面应用支持](./build#多页面应用) and [库模式](./build#库模式).
 
-**First Class Vue Support**
+**Vue 第一优先级支持**
 
-Vite was initially created to serve as the future foundation of [Vue.js](https://vuejs.org/) tooling. Although as of 2.0 Vite is now fully framework-agnostic, the official Vue plugin still provides first-class support for Vue's Single File Component format, covering all advanced features such as template asset reference resolving, `<script setup>`, `<style module>`, custom blocks and more. In addition, Vite provides fine-grained HMR for Vue SFCs. For example, updating the `<template>` or `<style>` of an SFC will perform hot updates without resetting its state.
+Vite 最初是作为 [Vue.js](https://vuejs.org/) 开发工具的未来基础而创建的。尽管 Vite 2.0 版本完全不依赖于框架，但官方 Vue 插件仍然对 Vue 的单文件组件格式提供了一流的支持，涵盖了所有高级特性，如模板资源引用解析、`<script setup>`, `<style module>`，自定义块等等。除此之外，Vite 还对 Vue 单文件组件提供了细粒度的 HMR。举个例子，更新一个单文件组件的 `<template>` 或 `<style>` 会执行不重置其状态的热更新。
 
 ## WMR
 
-[WMR](https://github.com/preactjs/wmr) by the Preact team provides a similar feature set, and Vite 2.0's support for Rollup's plugin interface is inspired by it.
+Preact 团队的 [WMR](https://github.com/preactjs/wmr) 提供了类似的特性集，而 Vite 2.0 对 Rollup 插件接口的支持正是受到了它的启发。
 
-WMR is mainly designed for [Preact](https://preactjs.com/) projects, and offers more integrated features such as pre-rendering. In terms of scope, it's closer to a Preact meta framework, with the same emphasis on compact size as Preact itself. If you are using Preact, WMR is likely going to offer a more fine-tuned experience. However, it's unlikely for WMR to prioritize support for other frameworks.
+WMR 主要是为了 [Preact](https://preactjs.com/) 项目而设计，并为其提供了集成度更高的功能，比如预渲染。就使用范围而言，它更加贴合于 Preact 框架，与 Preact 本身一样强调紧凑的大小。如果您正在使用 Preact，那么 WMR 可能会提供更好的体验。然而，WMR 不太可能优先支持其他框架。
 
 ## @web/dev-server
 
-[@web/dev-server](https://modern-web.dev/docs/dev-server/overview/) (previously `es-dev-server`) is a great project and Vite 1.0's Koa-based server setup was inspired by it.
+[@web/dev-server](https://modern-web.dev/docs/dev-server/overview/)（曾经是 `es-dev-server`）是一个伟大的项目，基于 koa 的 Vite 1.0 开发服务器就是受到了它的启发。
 
-`@web/dev-server` is a bit lower-level in terms of scope. It does not provide out-of-the-box framework integrations, and requires manually setting up a Rollup configuration for the production build. However, its parent project does provide a collection of excellent Rollup plugins.
+就使用范围而言，`@web/dev-server` 的级别稍低一些。它不提供开箱即用的框架集成，并且需要为生产构建手动设置 Rollup 配置。然而，它的父项目确实提供了一组优秀的 Rollup 插件。
 
-Overall, Vite is a more opinionated / higher-level tool that aims to provide a more streamlined workflow compared to `@web/dev-server`. That said, the `@web` umbrella project contains many other excellent tools that may benefit Vite users as well.
+总的来说，与 `@web/dev-server` 相比，Vite 是一个更自持的/更高级的工具，旨在提供更精简的工作流程。话虽如此，但 `@web/dev-server` 这个项目群包含了许多其他的优秀工具，它们也可以使 Vite 用户受益。
