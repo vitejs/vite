@@ -34,7 +34,7 @@ Note that because `esbuild` only performs transpilation without type information
 
 ## JSX
 
-`.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via `esbuild`, and defaults to the React 16 flavor. React 17 style JSX support in esbuild is tracked [here](https://github.com/evanw/esbuild/issues/334).
+`.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via [ESBuild](https://esbuild.github.io), and defaults to the React 16 flavor. React 17 style JSX support in ESBuild is tracked [here](https://github.com/evanw/esbuild/issues/334).
 
 If not using JSX with React, custom `jsxFactory` and `jsxFragment` can be configured using the [`esbuild` option](/config/#esbuild). For example for Preact:
 
@@ -48,9 +48,18 @@ export default {
 }
 ```
 
-More details in [esbuild docs](https://esbuild.github.io/content-types/#jsx).
+More details in [ESBuild docs](https://esbuild.github.io/content-types/#jsx).
 
-A custom plugin can also auto inject the helpers in every file to avoid having to manually import them. See the [Plugin API](./api-plugin) on how to write such a plugin.
+You can inject the JSX helpers using `jsxInject` to avoid manual imports, which is a Vite-only option:
+
+```js
+// vite.config.js
+export default {
+  esbuild: {
+    jsxInject: `import React from 'react'`
+  }
+}
+```
 
 ## CSS
 
