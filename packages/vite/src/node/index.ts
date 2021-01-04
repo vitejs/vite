@@ -24,7 +24,7 @@ export type {
   HtmlTagDescriptor
 } from './plugins/html'
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
-export type { EsbuildTransformResult } from './plugins/esbuild'
+export type { ESBuildOptions, EsbuildTransformResult } from './plugins/esbuild'
 export type { PackageData } from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
