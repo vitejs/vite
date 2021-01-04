@@ -17,7 +17,8 @@ async function createServer(
 
 ```js
 import { createServer } from 'vite'
-;async () => {
+
+;(async () => {
   const server = await createServer({
     // any valid user config options
     root: __dirname,
@@ -26,7 +27,7 @@ import { createServer } from 'vite'
     }
   })
   await server.listen()
-}
+})()
 ```
 
 ## `ViteDevServer`
@@ -107,7 +108,8 @@ async function build(
 ```js
 import path from 'path'
 import { build } from 'vite'
-;async () => {
+
+;(async () => {
   await build({
     root: path.resolve(__dirname, './project'),
     build: {
@@ -117,7 +119,7 @@ import { build } from 'vite'
       }
     }
   })
-}
+})()
 ```
 
 ## `resolveConfig`
