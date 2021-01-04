@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/create-app",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
