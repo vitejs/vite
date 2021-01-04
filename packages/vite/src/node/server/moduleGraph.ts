@@ -1,6 +1,11 @@
 import { extname } from 'path'
 import { isDirectCSSRequest } from '../plugins/css'
-import { cleanUrl, normalizePath, removeTimestampQuery } from '../utils'
+import {
+  cleanUrl,
+  normalizePath,
+  removeImportQuery,
+  removeTimestampQuery
+} from '../utils'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
 import { parse as parseUrl } from 'url'
@@ -155,7 +160,7 @@ export class ModuleGraph {
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
   async resolveUrl(url: string): Promise<[string, string]> {
-    url = removeTimestampQuery(url)
+    url = removeImportQuery(removeTimestampQuery(url))
     const resolvedId = (await this.container.resolveId(url))?.id || url
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)
