@@ -36,7 +36,7 @@ Vite 使用 [esbuild](https://github.com/evanw/esbuild) 将 TypeScript 翻译到
 
 `.jsx` 和 `.tsx` 文件同样开箱即用。JSX 的翻译同样是通过 `esbuild`，默认为 React 16 方式，React 17 风格的 JSX 在 esbuild 中的支持请看 [这里](https://github.com/evanw/esbuild/issues/334).
 
-如果不是在 React 中使用 JSX，自定义的 `jsxFactory` 和 `jsxFragment` 可以使用 [`esbuild` 选项](/config/#esbuild) 进行配置。例如对 Preact：
+如果不是在 React 中使用 JSX，自定义的 `jsxFactory` 和 `jsxFragment` 可以使用 [`esbuild` 选项](/zh/config/#esbuild) 进行配置。例如对 Preact：
 
 ```js
 // vite.config.js
@@ -76,7 +76,7 @@ import classes from './example.module.css'
 document.getElementById('foo').className = classes.red
 ```
 
-CSS modules 行为可通过 [`css.modules` 选项](/config/#css-modules) 配置。
+CSS modules 行为可通过 [`css.modules` 选项](/zh/config/#css-modules) 配置。
 
 ### CSS 预处理器
 
@@ -93,7 +93,7 @@ CSS modules 行为可通过 [`css.modules` 选项](/config/#css-modules) 配置�
 ## 静态资源处理
 
 - 相关文档：[public base 路径](./build#public-base-路径)
-- 相关文档：[`assetsInclude` 配置项](/config/#assetsinclude)
+- 相关文档：[`assetsInclude` 配置项](/zh/config/#assetsinclude)
 
 ### URL Imports
 
@@ -111,11 +111,11 @@ document.getElementById('hero-img').src = imgUrl
 
 - 如果使用 Vue 插件，Vue 单文件组件模板中的资源引用会自动转换其导入。
 
-- 常见的图片，媒体和字体文件格式将会自动被识别为静态资源。你可以使用 [`assetsInclude` 选项](/config/#assetsinclude) 来扩展这个列表。
+- 常见的图片，媒体和字体文件格式将会自动被识别为静态资源。你可以使用 [`assetsInclude` 选项](/zh/config/#assetsinclude) 来扩展这个列表。
 
 - 引用的资源作为构建资产图的一部分包括在内，将得到散列文件名，并可以由插件处理以进行优化。
 
-- 较小的资源体积小于 [`assetsInlineLimit` 选项值](/config/#assetsinlinelimit) 则会被内联为 base64 data URL。
+- 较小的资源体积小于 [`assetsInlineLimit` 选项值](/zh/config/#assetsinlinelimit) 则会被内联为 base64 data URL。
 
 ### `public` 目录
 

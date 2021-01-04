@@ -8,15 +8,15 @@
   - `transforms`
   - `indexHtmlTransforms`
 
-- `jsx` 和 `enableEsbuild` 都已被删除，请使用新的 [`esbuild`](/config/#esbuild) 选项。
+- `jsx` 和 `enableEsbuild` 都已被删除，请使用新的 [`esbuild`](/zh/config/#esbuild) 选项。
 
-- [CSS 相关选项](/config/#css-modules) 都被在 `css` 字段下。
+- [CSS 相关选项](/zh/config/#css-modules) 都被在 `css` 字段下。
 
-- 所有 [用于构建的选项](/config/#build-options) 现在都在在 `build` 字段下.
+- 所有 [用于构建的选项](/zh/config/#build-options) 现在都在在 `build` 字段下.
 
-  - `rollupInputOptions` 和 `rollupOutputOptions` 已经被 [`build.rollupOptions`](/config/#build-rollupoptions) 替换。
-  - `esbuildTarget` 现在是 [`build.target`](/config/#build-target)
-  - `emitManifest` 现在是 [`build.manifest`](/config/#build-manifest)
+  - `rollupInputOptions` 和 `rollupOutputOptions` 已经被 [`build.rollupOptions`](/zh/config/#build-rollupoptions) 替换。
+  - `esbuildTarget` 现在是 [`build.target`](/zh/config/#build-target)
+  - `emitManifest` 现在是 [`build.manifest`](/zh/config/#build-manifest)
   - 以下构建选项已经被移除，因为它们可以通过插件钩子或其他选项实现：
     - `entry`
     - `rollupDedupe`
@@ -25,14 +25,14 @@
     - `shouldPreload`
     - `configureBuild`
 
-- All [server-specific options](/config/#server-options) 现在在
+- All [server-specific options](/zh/config/#server-options) 现在在
   `server` 字段下。
 
-  - `hostname` 现在是 [`server.host`](/config/#server-host)
-  - `httpsOptions` 已被删除，[`server.https`](/config/#server-https) 可以直接接收选项对象。
-  - `chokidarWatchOptions` 现在是 [`server.watch`](/config/#server-watch)
+  - `hostname` 现在是 [`server.host`](/zh/config/#server-host)
+  - `httpsOptions` 已被删除，[`server.https`](/zh/config/#server-https) 可以直接接收选项对象。
+  - `chokidarWatchOptions` 现在是 [`server.watch`](/zh/config/#server-watch)
 
-- [`assetsInclude`](/config/#assetsInclude) 现在接收 `string | RegExp | (string | RegExp)[]` 而不是一个函数。
+- [`assetsInclude`](/zh/config/#assetsInclude) 现在接收 `string | RegExp | (string | RegExp)[]` 而不是一个函数。
 
 - 所有 Vue 特定选项都已删除; 应将选项传递给 Vue 插件。
 

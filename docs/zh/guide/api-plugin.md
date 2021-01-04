@@ -163,28 +163,27 @@ Vite 插件也可以提供钩子来服务于特定的 Vite 目标。这些钩子
   })
   ```
 
-  **Injecting Post Middleware**
+  **注入后置中间件**
 
-  The `configureServer` hook is called before internal middlewares are installed, so the custom middlewares will run before internal middlewares by default. If you want to inject a middleware **after** internal middlewares, you can return a function from `configureServer`, which will be called after internal middlewares are installed:
+  `configureServer` 钩子将在内部中间件被安装前调用，所以自定义的中间件将会默认会比内部中间件早运行。如果你想注入一个在内部中间件 **之后** 运行的中间件，你可以从 `configureServer` 返回一个函数，将会在内部中间件安装后被调用：
 
   ```js
   const myPlugin = () => ({
     name: 'configure-server',
     configureServer(server) {
-      // return a post hook that is called after internal middlewares are
-      // installed
+      // 返回一个在内部中间件安装后被调用的后置钩子
       return () => {
         server.app.use((req, res, next) => {
-          // custom handle request...
+          // 自定义请求处理...
         })
       }
     }
   })
   ```
 
-  **Storing Server Access**
+  **存储服务器访问**
 
-  In some cases, other plugin hooks may need access to the dev server instance (e.g. accessing the web socket server, the file system watcher, or the module graph). This hook can also be used to store the server instance for access in other hooks:
+  在某些情况下，其他插件钩子可能需要访问开发服务器实例（例如访问 websocket 服务器、文件系统监视程序或模块图）。这个钩子也可以用来存储服务器实例以供其他钩子访问:
 
   ```js
   const myPlugin = () => {
@@ -203,7 +202,7 @@ Vite 插件也可以提供钩子来服务于特定的 Vite 目标。这些钩子
   }
   ```
 
-  Note `configureServer` is not called when running the production build so your other hooks need to guard against its absence.
+  注意 `configureServer` 在运行生产版本时不会被调用，所以其他钩子需要注意防止它的缺失。
 
 ### `transformIndexHtml`
 

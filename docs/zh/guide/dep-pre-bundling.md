@@ -43,7 +43,7 @@ Pre-bundling them to speed up dev server page load...（将预构建它们以提
 
 ## 自定义行为
 
-默认启发式的预构建行为可能并不总是可取的。如果您想要显式地从列表中包含/排除依赖项，请使用[`optimizeDeps` 配置项](/config/#dep-optimization-options)。
+默认启发式的预构建行为可能并不总是可取的。如果您想要显式地从列表中包含/排除依赖项，请使用[`optimizeDeps` 配置项](/zh/config/#dep-optimization-options)。
 
 ## 缓存
 

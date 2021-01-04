@@ -4,7 +4,7 @@
 
 ## 浏览器兼容性
 
-生产版本假设浏览器对 [原生 ES 模块动态导入](https://caniuse.com/es6-module-dynamic-import) 有基本支持。默认情况下，所有代码都会至少以 `es2020` 为目标转译（只是为了更简洁和缩小兼容性差距）。你也可以通过 [`build.target` 配置项](/config/#build-target) 指定构建目标，最低支持 `es2015`。
+生产版本假设浏览器对 [原生 ES 模块动态导入](https://caniuse.com/es6-module-dynamic-import) 有基本支持。默认情况下，所有代码都会至少以 `es2020` 为目标转译（只是为了更简洁和缩小兼容性差距）。你也可以通过 [`build.target` 配置项](/zh/config/#build-target) 指定构建目标，最低支持 `es2015`。
 
 为了兼容，_可以_ 通过处理构建输出产物的插件来支持传统浏览器（例如 [`@rollup/plugin-babel`](https://github.com/rollup/plugins/tree/master/packages/babel) + [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env) + [SystemJS](https://github.com/systemjs/systemjs)）。这不是一个内置功能，单我们有计划提供一个官方插件来自动生成一份兼容产物。
 
@@ -12,7 +12,7 @@
 
 - 相关内容：[资源处理](./features#asset-handling)
 
-如果您正在嵌套的公共路径下部署项目，可以简单指定一个 [`build.base` 配置项](/config/#build-base) 然后所有资源的路径都将据此重写。这个选项也可以通过命令行参数指定，例如 `vite build --base=/my/public/path/`。
+如果您正在嵌套的公共路径下部署项目，可以简单指定一个 [`build.base` 配置项](/zh/config/#build-base) 然后所有资源的路径都将据此重写。这个选项也可以通过命令行参数指定，例如 `vite build --base=/my/public/path/`。
 
 由 JS 导入的资源路径，CSS 中的 `url()` 引用，和 `.html` 文件中的资源引用在构建过程中都会自动调整以适配此选项。
 
@@ -20,7 +20,7 @@
 
 ## 自定义构建
 
-构建过程可以通过多种 [构建配置选项](/config/#build-options) 来自定义。特别地，你可以通过 `build.rollupOptions` 直接调整底层的 [Rollup 选项](https://rollupjs.org/guide/en/#big-list-of-options)：
+构建过程可以通过多种 [构建配置选项](/zh/config/#build-options) 来自定义。特别地，你可以通过 `build.rollupOptions` 直接调整底层的 [Rollup 选项](https://rollupjs.org/guide/en/#big-list-of-options)：
 
 ```js
 // vite.config.js
@@ -73,7 +73,7 @@ module.exports = {
 
 当您开发面向浏览器的库时，您可能会将大部分时间花在该库的测试/演示页面上。使用 Vite，你可以使用 `index.html` 来获得如丝般顺滑的开发体验。
 
-当需要构建你的库用于发布时，请使用 [`build.lib` 配置项](/config/#build-lib)：
+当需要构建你的库用于发布时，请使用 [`build.lib` 配置项](/zh/config/#build-lib)：
 
 ```js
 // vite.config.js

@@ -28,7 +28,7 @@ module.exports = {
         nav: [
           { text: 'Guide & APIs', link: '/guide/' },
           { text: 'Config Reference', link: '/config/' }
-        ],
+        ]
       },
       '/zh/': {
         lang: 'zh-CN',
@@ -38,12 +38,13 @@ module.exports = {
         nav: [
           { text: '指引 & API', link: '/zh/guide/' },
           { text: '配置参考', link: '/zh/config/' }
-        ],
-      },
+        ]
+      }
     },
 
     sidebar: {
       '/config/': 'auto',
+      '/zh/config/': 'auto',
       '/zh/': [
         {
           text: '指引',
@@ -165,15 +166,15 @@ module.exports = {
           ]
         }
       ]
-    },
+    }
   },
   locales: {
     '/': {
-      lang: 'en-US',
+      lang: 'en-US'
     },
     '/zh': {
       lang: 'zh-CN',
-      description: '下一代前端开发与构建工具',
+      description: '下一代前端开发与构建工具'
     }
   }
 }
