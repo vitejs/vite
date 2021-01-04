@@ -140,6 +140,10 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         target: target || undefined,
         minify
       })
+    },
+
+    async closeBundle() {
+      await stopService()
     }
   }
 }
