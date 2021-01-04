@@ -316,7 +316,7 @@ export default ({ command, mode }) => {
 - **Type:** `boolean`
 - **Default:** `true`
 
-  Enable/dsiable CSS code splitting. When enabled, CSS imported in async chunks will be inlined into the async chunk itself and inserted when the chunk is loaded.
+  Enable/disable CSS code splitting. When enabled, CSS imported in async chunks will be inlined into the async chunk itself and inserted when the chunk is loaded.
 
   If disabled, all CSS in the entire project will be extracted into a single CSS file.
 
