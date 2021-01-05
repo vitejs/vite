@@ -6,7 +6,7 @@
 
 当以命令行方式运行 `vite` 时，Vite 会自动解析 [项目根目录](/zh/guide/#project-root) 下名为 `vite.config.js` 的文件。
 
-最基本的配置文件是这样的：
+最基础的配置文件是这样的：
 
 ```js
 // vite.config.js
@@ -15,7 +15,7 @@ export default {
 }
 ```
 
-注意，即使项目没有通过 `type: "module"` 使用 Node 原生 ESM， Vite 也会支持在配置文件中会使用 ES 模块语法，在这种情况下，配置文件是在加载之前自动预处理的。
+注意，即使项目没有在 `package.json` 中开启 `type: "module"` ，Vite 也支持在配置文件中使用 ESM 语法。在这种情况下，配置文件是在加载之前自动预处理的。
 
 你可以显式地通过 `--config` 命令行选项指定一个配置文件（解析会相对于 `cwd` 路径）
 
@@ -25,7 +25,7 @@ vite --config my-config.js
 
 ### 配置智能提示
 
-由于 Vite 是完全被 TypeScript 类型标注的，你可以利用你的 IDE 根据 jsdoc 提供的智能提示：
+因为 Vite 本身附带 Typescript 类型，所以你可以通过 IDE 和 jsdoc 的配合来进行智能提示：
 
 ```js
 /**
@@ -36,7 +36,7 @@ export default {
 }
 ```
 
-Vite 同样直接支持 TS 配置文件。你也可以使用 `vite.config.ts`：
+Vite 同样支持 TS 配置文件。你可以直接使用 `vite.config.ts`：
 
 ```ts
 import { defineConfig } from 'vite'
@@ -48,7 +48,7 @@ export default defineConfig({
 
 ### 场景配置
 
-如果配置文件需要根据使用的命令（`serve` 或 `build`）基于不同场景或 [模式](/zh/guide/env-and-mode) 来决定选项，可以选择导出这样一个函数：
+如果配置文件需要基于命令（`serve` 或 `build`）或者不同场景与 [模式](/zh/guide/env-and-mode) 来决定选项，可以选择导出这样一个函数：
 
 ```js
 export default ({ command, mode }) => {
@@ -71,7 +71,7 @@ export default ({ command, mode }) => {
 - **类型：** `string`
 - **默认：** `process.cwd()`
 
-  项目根目录。可以是一个绝对路径，或这是一个相对于该配置文件本身的路径。更多细节请见 [项目根目录](/zh/guide/#项目根目录)。
+  项目根目录。可以是一个绝对路径，或者一个相对于该配置文件本身的路径。更多细节请见 [项目根目录](/zh/guide/#项目根目录)。
 
 ### alias
 
@@ -84,7 +84,7 @@ export default ({ command, mode }) => {
 
 - **类型：** `Record<string, string>`
 
-  定义全局变量替换。在开发期间，enties 将被定义为全局变量，在构建期间被静态替换。
+  定义全局变量替换。在开发期间，entries 将被定义为全局变量，在构建期间被静态替换。
 
 ### plugins
 
@@ -111,7 +111,7 @@ export default ({ command, mode }) => {
   }
   ```
 
-  配置 CSS modules 行为。选项将被传递给 [postcss-modules](https://github.com/css-modules/postcss-modules)。
+  配置 CSS modules 的行为。选项将被传递给 [postcss-modules](https://github.com/css-modules/postcss-modules)。
 
 ### css.preprocessorOptions
 
@@ -133,9 +133,9 @@ export default ({ command, mode }) => {
 
 ### esbuild
 
-- **类型：** `ESBuildTransformOptions | ((file: string) => ESBuildTransformOptions) | false`
+- **类型：** `ESBuildOptions | false`
 
-  指定 [esbuild 转换选项](https://esbuild.github.io/api/#transform-api)。最常见的用例是自定义 JSX：
+  `ESBuildOptions` 继承自 [esbuild 转换选项](https://esbuild.github.io/api/#transform-api)。最常见的用例是自定义 JSX：
 
   ```js
   export default {
@@ -146,35 +146,45 @@ export default ({ command, mode }) => {
   }
   ```
 
-  该选项也可以是一个函数，根据被转换的文件名称有条件地返回选项。
+  默认情况下，ESbuild 应用在 `ts`、`jsx`、`tsx` 文件。你可以通过 `esbuild.include` 和 `esbuild.exclude` 对其进行配置，它们两个配置的类型是`string | RegExp | (string | RegExp)[]`。
 
   设置成 `false` 可以禁用 ESbuild 转换（默认应用于 `.ts`. `.tsx` 和 `.jsx` 文件）。
+
+  此外，你还可以通过`esbuild.jsxInject`来自动为每一个被 ESbuild 转换的文件注入 JSX helper。
+
+  ```js
+  export default {
+    esbuild: {
+      jsxInject: `import React from 'react'`
+    }
+  }
+  ```
 
 ### assetsInclude
 
 - **类型：** `string | RegExp | (string | RegExp)[]`
 - **相关内容：** [Asset Handling](/zh/guide/features#asset-handling)
 
-  指定其他文件类型作为静态资源处理（则导入它们就会返回解析后的 URL）
+  指定其他文件类型作为静态资源处理（这样导入它们就会返回解析后的 URL）
 
 ### transformInclude
 
 - **类型：** `string | RegExp | (string | RegExp)[]`
 
-  默认情况下，代码中所有静态可分析的 `import` 请求都被静态地视为转换管道的一部分。然而，如果你使用完整的动态导入来导入非 js 文件类型，例如:
+  默认情况下，代码中所有静态可分析的 `import` 请求都会被静态地视为转换管道的一部分。当然，如果你使用动态导入来导入非 js 类型的文件，例如:
 
   ```js
   // dynamicPath 是一个非 JS 文件类型，例如 "./foo.gql"
   import(dynamicPath).then(/* ... */)
   ```
 
-  Vite 无法知道文件需要转换为 JavaScript（而不是直接作为静态文件提供服务）。`transfromInclude` 允许你可以显式声明文件类型，使其始终作为 JavaScript 进行转换和服务。
+  Vite 无法知道文件需要被转换为 JavaScript（还是直接被视为静态文件提供服务）。`transfromInclude` 配置项允许你显式地声明文件类型，让它始终被转换或者当成 JavaScript 进行服务。
 
 ### dedupe
 
 - **类型：** `string[]`
 
-  如果你在你的应用程序中有相同依赖的副本（可能是由于在 monorepos 中吊装或链接包），使用这个选项来强制 Vite 总是将列出的依赖关系解析到相同的副本（从项目根目录)。
+  如果你在你的应用程序中有相同依赖的副本（比如 monorepos），使用这个选项来强制 Vite 总是将列出的依赖关系解析到相同的副本（从项目根目录)。
 
 ### logLevel
 
@@ -221,9 +231,9 @@ export default ({ command, mode }) => {
   ```js
   export default {
     proxy: {
-      // string 简写
+      // 字符串写法简写
       '/foo': 'http://localhost:4567/foo',
-      // 使用选项对象
+      // 对象写法
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
