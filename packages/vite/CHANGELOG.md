@@ -1,3 +1,26 @@
+# [2.0.0-beta.7](https://github.com/vitejs/vite/compare/v2.0.0-beta.6...v2.0.0-beta.7) (2021-01-05)
+
+
+### Code Refactoring
+
+* update client type usage ([245303c](https://github.com/vitejs/vite/commit/245303ca35ff2a40eca49e102b4f82cb1210f597))
+
+
+### BREAKING CHANGES
+
+* client types are now exposed under `vite/client.d.ts`.
+It can now be included via the following `tsconfig.json`:
+
+    ```ts
+    {
+      "compilerOptions": {
+        "types": ["vite/client"]
+      }
+    }
+    ```
+
+
+
 # [2.0.0-beta.6](https://github.com/vitejs/vite/compare/v2.0.0-beta.5...v2.0.0-beta.6) (2021-01-05)
 
 
