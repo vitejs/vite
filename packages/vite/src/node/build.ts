@@ -249,8 +249,33 @@ async function doBuild(
   const outDir = resolve(options.outDir)
   const publicDir = resolve('public')
 
-  const rollup = require('rollup') as typeof Rollup
+  if (options.write) {
+    emptyDir(outDir)
+    if (fs.existsSync(publicDir)) {
+      const { getPublicHash } = options
 
+      const dirs = new Set<string>()
+      const ensureDir = (dir: string) =>
+        dirs.has(dir) || (dirs.add(dir), fs.mkdirSync(dir, { recursive: true }))
+
+      crawlDir(publicDir, (file, name, parent) => {
+        const srcFile = path.join(publicDir, file)
+        const assetHash = getPublicHash(srcFile)
+
+        let outFile = file
+        if (assetHash) {
+          const assetExt = path.extname(name)
+          outFile = file.slice(0, -assetExt.length) + '.' + assetHash + assetExt
+        }
+
+        ensureDir(path.join(outDir, parent))
+        fs.copyFileSync(srcFile, path.join(outDir, outFile))
+        config.publicUrls['/' + slash(file)] = '/' + slash(outFile)
+      })
+    }
+  }
+
+  const rollup = require('rollup') as typeof Rollup
   try {
     const bundle = await rollup.rollup({
       input,
@@ -289,41 +314,6 @@ async function doBuild(
         namespaceToStringTag: true,
         ...output
       })
-    }
-
-    if (options.write) {
-      emptyDir(outDir)
-      if (fs.existsSync(publicDir)) {
-        const { getPublicHash } = options
-        const publicMap: { [file: string]: string } = {}
-
-        const dirs = new Set<string>()
-        const ensureDir = (dir: string) =>
-          dirs.has(dir) ||
-          (dirs.add(dir), fs.mkdirSync(dir, { recursive: true }))
-
-        crawlDir(publicDir, (file, name, parent) => {
-          const srcFile = path.join(publicDir, file)
-          const assetHash = getPublicHash(srcFile)
-
-          let outFile = file
-          if (assetHash) {
-            const assetExt = path.extname(name)
-            outFile =
-              file.slice(0, -assetExt.length) + '.' + assetHash + assetExt
-          }
-
-          ensureDir(path.join(outDir, parent))
-          fs.copyFileSync(srcFile, path.join(outDir, outFile))
-          publicMap['/' + slash(file)] = '/' + slash(outFile)
-        })
-
-        for (const plugin of config.plugins) {
-          if (plugin.assetsCopied) {
-            plugin.assetsCopied(publicMap)
-          }
-        }
-      }
     }
 
     // resolve lib mode outputs

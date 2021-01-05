@@ -131,8 +131,9 @@ async function fileToBuiltUrl(
   pluginContext: PluginContext,
   skipPublicCheck = false
 ): Promise<string> {
-  if (!skipPublicCheck && checkPublicFile(id, config.root)) {
-    return config.build.base + id.slice(1)
+  const publicUrl = !skipPublicCheck && config.publicUrls[id]
+  if (publicUrl) {
+    return config.build.base + publicUrl.slice(1)
   }
 
   let cache = assetCache.get(config)
@@ -183,8 +184,9 @@ export async function urlToBuiltUrl(
   config: ResolvedConfig,
   pluginContext: PluginContext
 ): Promise<string> {
-  if (checkPublicFile(url, config.root)) {
-    return config.build.base + url.slice(1)
+  const publicUrl = config.publicUrls[url]
+  if (publicUrl) {
+    return config.build.base + publicUrl.slice(1)
   }
   const file = url.startsWith('/')
     ? path.join(config.root, url)
