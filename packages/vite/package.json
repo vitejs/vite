@@ -45,6 +45,7 @@
   "dependencies": {
     "esbuild": "^0.8.26",
     "postcss": "^8.2.1",
+    "resolve": "^1.19.0",
     "rollup": "^2.35.1"
   },
   "optionalDependencies": {
@@ -98,7 +99,6 @@
     "postcss-import": "^13.0.0",
     "postcss-load-config": "^3.0.0",
     "postcss-modules": "^4.0.0",
-    "resolve": "^1.19.0",
     "rollup-plugin-dynamic-import-variables": "^1.1.0",
     "rollup-plugin-license": "^2.2.0",
     "selfsigned": "^1.10.8",
