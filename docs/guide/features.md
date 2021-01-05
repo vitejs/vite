@@ -32,6 +32,20 @@ Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript in
 
 Note that because `esbuild` only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports. You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOptions` so that TS will warn you against the features that do not work with isolated transpilation.
 
+### Client Type Shims
+
+Vite's default types are for its Node.js API. To shim the environment of client side code in a Vite application, add a `shim.d.ts` file in your project with the following:
+
+```ts
+import 'vite/env'
+```
+
+This will provide the following type shims:
+
+- Asset imports (e.g. importing an `.svg` file)
+- Types for the Vite-injected [env vraibles](./env-and-mode#env-variables) on `import.meta.env`
+- Types for the [HMR API](./api-hmr) on `import.meta.hot`
+
 ## JSX
 
 `.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via [ESBuild](https://esbuild.github.io), and defaults to the React 16 flavor. React 17 style JSX support in ESBuild is tracked [here](https://github.com/evanw/esbuild/issues/334).
