@@ -303,7 +303,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
 export interface HtmlTagDescriptor {
   tag: string
-  attrs?: Record<string, string>
+  attrs?: Record<string, string | boolean>
   children?: string | HtmlTagDescriptor[]
   /**
    * default: 'head-prepend'
@@ -484,7 +484,11 @@ function serializeTags(tags: HtmlTagDescriptor['children']): string {
 function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
   let res = ''
   for (const key in attrs) {
-    res += ` ${key}=${JSON.stringify(attrs[key])}`
+    if (typeof attrs[key] === 'boolean' && attrs[key]) {
+      res += ` ${key}`
+    } else {
+      res += ` ${key}=${JSON.stringify(attrs[key])}`
+    }
   }
   return res
 }
