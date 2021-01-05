@@ -116,7 +116,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       } else {
         // if build, analyze url() asset reference
         // account for comments https://github.com/vitejs/vite/issues/426
-        css = css.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1')
+        css = css.replace(/\/\*[\s\S]*?\*\//gm, '')
         if (cssUrlRE.test(css)) {
           css = await rewriteCssUrls(css, async (url) => {
             if (isExternalUrl(url) || isDataUrl(url)) {
