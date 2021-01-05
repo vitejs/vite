@@ -31,7 +31,7 @@ export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   const {
-    config: { root, logger },
+    config: { root, logger, assetsInclude },
     moduleGraph
   } = server
 
@@ -78,16 +78,12 @@ export function transformMiddleware(
         )
       }
 
-      // Only apply the transform pipeline to:
-      // - requests that initiate from ESM imports (any extension)
-      // - CSS (even not from ESM)
-      // - Source maps (only for resolving)
       if (
         isJSRequest(url) ||
         isImportRequest(url) ||
         isCSSRequest(url) ||
         isHTMLProxy(url) ||
-        server.config.transformInclude(withoutQuery)
+        (req.headers.accept === '*/*' && !assetsInclude(withoutQuery))
       ) {
         // strip ?import
         url = removeImportQuery(url)

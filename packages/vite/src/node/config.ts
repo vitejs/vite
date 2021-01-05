@@ -68,11 +68,6 @@ export interface UserConfig {
    */
   esbuild?: ESBuildOptions | false
   /**
-   * Specify additional files to be treated as source file (included into the
-   * transform pipeline).
-   */
-  transformInclude?: string | RegExp | (string | RegExp)[]
-  /**
    * Specify additional files to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
@@ -101,7 +96,7 @@ export interface UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'assetsInclude' | 'transformInclude'> & {
+  Omit<UserConfig, 'plugins' | 'assetsInclude'> & {
     configPath: string | undefined
     inlineConfig: UserConfig
     root: string
@@ -114,7 +109,6 @@ export type ResolvedConfig = Readonly<
     server: ServerOptions
     build: Required<BuildOptions>
     assetsInclude: (file: string) => boolean
-    transformInclude: (file: string) => boolean
     logger: Logger
   }
 >
@@ -195,9 +189,6 @@ export async function resolveConfig(
   const assetsFilter = config.assetsInclude
     ? createFilter(config.assetsInclude)
     : () => false
-  const transformFilter = config.transformInclude
-    ? createFilter(config.transformInclude)
-    : () => false
 
   const resolved = {
     ...config,
@@ -221,9 +212,6 @@ export async function resolveConfig(
     },
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
-    },
-    transformInclude(file: string) {
-      return transformFilter(file)
     },
     logger: createLogger(config.logLevel)
   }
@@ -278,7 +266,7 @@ function mergeConfig(
       if (key === 'alias') {
         merged[key] = mergeAlias(existing, value)
         continue
-      } else if (key === 'transformInclude' || key === 'assetsInclude') {
+      } else if (key === 'assetsInclude') {
         merged[key] = [].concat(existing, value)
         continue
       }
