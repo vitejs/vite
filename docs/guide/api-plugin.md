@@ -24,7 +24,7 @@ export default function myPlugin() {
       }
     },
     load(id) {
-      if ((id === virtualFileId)) {
+      if (id === virtualFileId) {
         return `export const msg = "from virtual file"`
       }
     }
@@ -322,10 +322,24 @@ A Vite plugin can additionally specify an `enforce` property (similar to webpack
 
 - Alias
 - User plugins with `enforce: 'pre'`
-- Vite internal plugins
+- Vite core plugins
 - User plugins without enforce value
-- Vite build-specific plugins
+- Vite build plugins
 - User plugins with `enforce: 'post'`
+- Vite post build plugins (minify, manifest, reporting)
+
+## Conditional Application
+
+By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property:
+
+```js
+function myPlugin() {
+  return {
+    name: 'build-only',
+    apply: 'build'
+  }
+}
+```
 
 ## Rollup Plugin Compatiblity
 
