@@ -97,7 +97,7 @@ That said, Vite does provide built-in support for `.scss`, `.sass`, `.less`, `.s
 - `.less`: [less](https://www.npmjs.com/package/less)
 - `.styl` and `.stylus`: [stylus](https://www.npmjs.com/package/stylus)
 
-You can also use CSS modules combined with pre-processors by prepending `.mdoule` to the file extension, for example `style.module.scss`.
+You can also use CSS modules combined with pre-processors by prepending `.module` to the file extension, for example `style.module.scss`.
 
 ## Asset Handling
 
