@@ -4,13 +4,19 @@ import { ViteDevServer } from '../..'
 import { Connect } from 'types/connect'
 import { pad } from '../../utils'
 import strip from 'strip-ansi'
+import { ErrorPayload } from 'types/hmrPayload'
 
-export function prepareError(err: Error | RollupError) {
+export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
+  // only copy the information we need and avoid serializing unnecessary
+  // properties, since some errors may attach full objects (e.g. PostCSS)
   return {
-    ...err,
     message: strip(err.message),
     stack: strip(err.stack || ''),
-    frame: strip((err as RollupError).frame || '')
+    id: (err as RollupError).id,
+    frame: strip((err as RollupError).frame || ''),
+    plugin: (err as RollupError).plugin,
+    pluginCode: (err as RollupError).pluginCode,
+    loc: (err as RollupError).loc
   }
 }
 
