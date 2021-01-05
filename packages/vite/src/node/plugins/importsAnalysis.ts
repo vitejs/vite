@@ -102,10 +102,21 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       try {
         imports = parseImports(source)[0]
       } catch (e) {
+        const isVue = importer.endsWith('.vue')
+        const maybeJSX = !isVue && isJSRequest(importer)
+
+        const msg = isVue
+          ? `Install @vitejs/plugin-vue to handle .vue files.`
+          : maybeJSX
+          ? `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
+          : `You may need to install appropriate plugins to handle the ${path.extname(
+              importer
+            )} file format.`
+
         this.error(
-          `Failed to parse source for import rewrite.\n` +
-            `The file either contains syntax error or it has not been properly transformed to JS.\n` +
-            `If you are using JSX, make sure to named the file with the .jsx extension.`,
+          `Failed to parse source for import analysis because the content ` +
+            `contains invalid JS syntax. ` +
+            msg,
           e.idx
         )
       }
