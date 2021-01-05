@@ -256,6 +256,7 @@ interface FilteredDeps {
 }
 
 const KNOWN_IGNORE_LIST = new Set([
+  'vue',
   'vite',
   'vitepress',
   'tailwindcss',
