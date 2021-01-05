@@ -1,4 +1,3 @@
-
 export const vueHotReloadCode = `
 var Vue // late bind
 var version
