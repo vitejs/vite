@@ -18,7 +18,7 @@ import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import { Terser } from 'types/terser'
-import { copyDir, emptyDir, lookupFile } from './utils'
+import { crawlDir, emptyDir, lookupFile } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
@@ -26,6 +26,7 @@ import isBuiltin from 'isbuiltin'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
+import slash from 'slash'
 
 export interface BuildOptions {
   /**
@@ -57,6 +58,10 @@ export interface BuildOptions {
    * @default 4096
    */
   assetsInlineLimit?: number
+  /**
+   * Generate a revision hash for each asset in the "public" directory.
+   */
+  getPublicHash?: (file: string) => string | null
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
@@ -140,6 +145,7 @@ export function resolveBuildOptions(
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
+    getPublicHash: () => null,
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},
@@ -288,7 +294,30 @@ async function doBuild(
     if (options.write) {
       emptyDir(outDir)
       if (fs.existsSync(publicDir)) {
-        copyDir(publicDir, outDir)
+        const { getPublicHash } = options
+        const publicMap: { [file: string]: string } = {}
+
+        fs.mkdirSync(outDir, { recursive: true })
+        crawlDir(publicDir, (file, name) => {
+          const srcFile = path.join(publicDir, file)
+          const assetHash = getPublicHash(srcFile)
+
+          let outFile = file
+          if (assetHash) {
+            const assetExt = path.extname(name)
+            outFile =
+              file.slice(0, -assetExt.length) + '.' + assetHash + assetExt
+          }
+
+          fs.copyFileSync(srcFile, path.join(outDir, outFile))
+          publicMap['/' + slash(file)] = '/' + slash(outFile)
+        })
+
+        for (const plugin of config.plugins) {
+          if (plugin.assetsCopied) {
+            plugin.assetsCopied(publicMap)
+          }
+        }
       }
     }
 

@@ -59,6 +59,10 @@ export interface Plugin extends RollupPlugin {
    */
   configResolved?: (config: ResolvedConfig) => void
   /**
+   * Use this hook to read and store the final resolved vite config.
+   */
+  assetsCopied?: (publicMap: { readonly [file: string]: string }) => void
+  /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
    * instance. This can also be used to store a reference to the server
    * for use in other hooks.

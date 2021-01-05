@@ -289,16 +289,20 @@ export function emptyDir(dir: string) {
   }
 }
 
-export function copyDir(srcDir: string, destDir: string) {
-  fs.mkdirSync(destDir, { recursive: true })
-  for (const file of fs.readdirSync(srcDir)) {
-    const srcFile = path.resolve(srcDir, file)
-    const destFile = path.resolve(destDir, file)
-    const stat = fs.statSync(srcFile)
-    if (stat.isDirectory()) {
-      copyDir(srcFile, destFile)
-    } else {
-      fs.copyFileSync(srcFile, destFile)
-    }
-  }
+export function crawlDir(
+  root: string,
+  onFile: (file: string, name: string) => void
+) {
+  const recurse = (parent: string) =>
+    fs.readdirSync(path.join(root, parent)).forEach((name) => {
+      const child = path.join(parent, name)
+      const stat = fs.statSync(path.join(root, child))
+      if (stat.isDirectory()) {
+        recurse(child)
+      } else {
+        onFile(child, name)
+      }
+    })
+
+  recurse('')
 }

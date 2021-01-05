@@ -14,7 +14,7 @@ import {
   transform
 } from '@vue/compiler-dom'
 import MagicString from 'magic-string'
-import { checkPublicFile, assetUrlRE, urlToBuiltUrl } from './asset'
+import { assetUrlRE, checkPublicFiles, urlToBuiltUrl } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
@@ -69,11 +69,15 @@ const assetAttrsConfig: Record<string, string[]> = {
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
-  const isExcludedUrl = (url: string) =>
-    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config.root)
+  const isExcludedUrl = (url: string) => isExternalUrl(url) || isDataUrl(url)
 
+  let publicMap = checkPublicFiles(config.root)
   return {
     name: 'vite:build-html',
+
+    assetsCopied(_publicMap) {
+      publicMap = _publicMap
+    },
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
@@ -126,16 +130,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               typeAttr && typeAttr.value && typeAttr.value.content === 'module'
 
             const url = srcAttr && srcAttr.value && srcAttr.value.content
-            if (url && checkPublicFile(url, config.root)) {
+            const publicUrl = url && publicMap[url]
+            if (publicUrl) {
               // referencing public dir url, prefix with base
               s.overwrite(
                 srcAttr.value!.loc.start.offset,
                 srcAttr.value!.loc.end.offset,
-                config.build.base + url.slice(1)
+                config.build.base + publicUrl.slice(1)
               )
-            }
-
-            if (isJsModule) {
+            } else if (isJsModule) {
               inlineModuleIndex++
               if (url && !isExcludedUrl(url)) {
                 // <script type="module" src="..."/>
@@ -161,7 +164,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 assetAttrs.includes(p.name)
               ) {
                 const url = p.value.content
-                if (!isExcludedUrl(url)) {
+                const publicUrl = publicMap[url]
+                if (publicUrl) {
+                  s.overwrite(
+                    p.value.loc.start.offset,
+                    p.value.loc.end.offset,
+                    config.build.base + publicUrl.slice(1)
+                  )
+                } else if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
                     js += `\nimport ${JSON.stringify(url)}`
@@ -169,12 +179,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   } else {
                     assetUrls.push(p)
                   }
-                } else if (checkPublicFile(url, config.root)) {
-                  s.overwrite(
-                    p.value.loc.start.offset,
-                    p.value.loc.end.offset,
-                    config.build.base + url.slice(1)
-                  )
                 }
               }
             }

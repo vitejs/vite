@@ -74,6 +74,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
+export function checkPublicFiles(root: string): { [file: string]: string } {
+  const get = (_: any, file: string) => checkPublicFile(file, root) && file
+  return new Proxy({}, { get })
+}
+
 export function checkPublicFile(url: string, root: string): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
