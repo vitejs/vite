@@ -297,8 +297,12 @@ async function doBuild(
         const { getPublicHash } = options
         const publicMap: { [file: string]: string } = {}
 
-        fs.mkdirSync(outDir, { recursive: true })
-        crawlDir(publicDir, (file, name) => {
+        const dirs = new Set<string>()
+        const ensureDir = (dir: string) =>
+          dirs.has(dir) ||
+          (dirs.add(dir), fs.mkdirSync(dir, { recursive: true }))
+
+        crawlDir(publicDir, (file, name, parent) => {
           const srcFile = path.join(publicDir, file)
           const assetHash = getPublicHash(srcFile)
 
@@ -309,6 +313,7 @@ async function doBuild(
               file.slice(0, -assetExt.length) + '.' + assetHash + assetExt
           }
 
+          ensureDir(path.join(outDir, parent))
           fs.copyFileSync(srcFile, path.join(outDir, outFile))
           publicMap['/' + slash(file)] = '/' + slash(outFile)
         })
