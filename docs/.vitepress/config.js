@@ -23,7 +23,12 @@ module.exports = {
     nav: [
       { text: 'Guide & APIs', link: '/guide/' },
       { text: 'Config Reference', link: '/config/' },
-      { text: 'Plugins', link: '/plugins/' }
+      { text: 'Plugins', link: '/plugins/' },
+      {
+        text: 'Changelog',
+        link:
+          'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+      }
     ],
 
     sidebar: {
