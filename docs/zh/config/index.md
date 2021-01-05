@@ -277,7 +277,7 @@ export default ({ command, mode }) => {
 - **类型：** `string`
 - **默认：** `/`
 
-  在生产中服务时的 public base 路径。注意，路径应该以 `/` 开头和结尾。查看 [public base 路径](/zh/guide/build#public-base-path) 来获取更多细节。
+  在生产环境中的 public base 路径。注意，路径应该以 `/` 开头和结尾。查看 [public base 路径](/zh/guide/build#public-base-path) 来获取更多细节。
 
 ### build.target
 
@@ -285,7 +285,7 @@ export default ({ command, mode }) => {
 - **默认：** `es2020`
 - **相关内容：:** [浏览器兼容性](/zh/guide/build#browser-compatibility)
 
-  设置最终产物的浏览器兼容性目标。转换过程将会由 esbuild 执行，最低目标支持 `es2015`。目标也可以是带有浏览器的版本，例如 `chrome58` 或 `safari11`，或由多个目标组成的一个数组。
+  设置构建后浏览器兼容的 ES 版本。转换过程将会由 esbuild 执行，最低目标支持 `es2015`。目标也可以是带有浏览器的版本，例如 `chrome58` 或 `safari11`，或由多个目标组成的一个数组。
 
   注意，如果代码包含不能被 `esbuild` 安全地编译的特性，那么构建将会失败。查看 [esbuild 文档](https://esbuild.github.io/api/#target) 获取更多细节。
 
@@ -308,7 +308,7 @@ export default ({ command, mode }) => {
 - **类型：** `number`
 - **默认：** `4096` (4kb)
 
-  小于此阈值的导入或引用资产将内联为 base64 url，以避免额外的 http 请求。设置为 `0` 可以完全禁用内联。
+  小于此阈值的导入或引用资源将内联为 base64 编码，以避免额外的 http 请求。设置为 `0` 可以完全禁用此项。
 
 ### build.cssCodeSplit
 
@@ -324,13 +324,13 @@ export default ({ command, mode }) => {
 - **类型：** `boolean`
 - **默认：** `false`
 
-  在产物中生成 source map。
+  构建后是否生成 source map 文件。
 
 ### build.rollupOptions
 
 - **类型：** [`RollupOptions`](https://rollupjs.org/guide/en/#big-list-of-options)
 
-  直接自定义底层的 Rollup 打包。这与从 Rollup 配置文件导出的选项相同，并将与 Vite 的内部 Rollup 选项合并。查看 [Rollup 选项文档](https://rollupjs.org/guide/en/#big-list-of-options) 获取更多细节。
+  自定义底层的 Rollup 打包配置。这与从 Rollup 配置文件导出的选项相同，并将与 Vite 的内部 Rollup 选项合并。查看 [Rollup 选项文档](https://rollupjs.org/guide/en/#big-list-of-options) 获取更多细节。
 
 ### build.lib
 
@@ -345,14 +345,14 @@ export default ({ command, mode }) => {
 - **默认：** `false`
 - **相关内容：** [后端集成](/zh/guide/backend-integration)
 
-  当设置为 `true`，构建将会生成一份 `manifest.json` 文件，包含着未被 hash 的资源文件名与相应的它们的 hash 版本。可以为一些服务器框架渲染时提供正确的资源引入链接。
+  当设置为 `true`，构建后将会生成 `manifest.json` 文件，映射没有被 hash 的资源文件名和它们的 hash 版本。可以为一些服务器框架渲染时提供正确的资源引入链接。
 
 ### build.minify
 
 - **类型：** `boolean | 'terser' | 'esbuild'`
 - **默认：** `'terser'`
 
-  设置为 `false` 可以禁用最小化混淆，或是用来指定使用哪种混淆器。默认为 [Terser](https://github.com/terser/terser)，虽然相对较慢，但大多数情况下产物体积更小。Esbuild 最小化混淆显然更快但会最终的产物相对更大。
+  设置为 `false` 可以禁用最小化混淆，或是用来指定使用哪种混淆器。默认为 [Terser](https://github.com/terser/terser)，虽然 Terser 相对较慢，但大多数情况下构建后的文件体积更小。ESbuild 最小化混淆更快但构建后的文件相对更大。
 
 ### build.terserOptions
 
@@ -365,7 +365,7 @@ export default ({ command, mode }) => {
 - **类型：** `boolean`
 - **默认：** `true`
 
-  设置为 `false` 来禁用将产物写入磁盘。这常用于 [编程式地调用 `build()`](/zh/guide/api-javascript#build) 在写入磁盘之前，需要对产物进行进一步的后处理。
+  设置为 `false` 来禁用将构建后的文件写入磁盘。这常用于 [编程式地调用 `build()`](/zh/guide/api-javascript#build) 在写入磁盘之前，需要对构建后的文件进行进一步处理。
 
 ## 依赖优化选项
 
