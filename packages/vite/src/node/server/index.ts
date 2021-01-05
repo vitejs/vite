@@ -303,7 +303,7 @@ export async function createServer(
 
   // serve static files
   app.use(rawFsStaticMiddleware())
-  app.use(serveStaticMiddleware(root))
+  app.use(serveStaticMiddleware(root, resolvedConfig))
 
   // spa fallback
   app.use(

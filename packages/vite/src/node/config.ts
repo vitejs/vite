@@ -96,7 +96,7 @@ export interface UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'assetsInclude'> & {
+  Omit<UserConfig, 'plugins' | 'alias' | 'assetsInclude'> & {
     configPath: string | undefined
     inlineConfig: UserConfig
     root: string
@@ -105,6 +105,7 @@ export type ResolvedConfig = Readonly<
     isProduction: boolean
     optimizeCacheDir: string | undefined
     env: Record<string, any>
+    alias: Alias[]
     plugins: readonly Plugin[]
     server: ServerOptions
     build: Required<BuildOptions>

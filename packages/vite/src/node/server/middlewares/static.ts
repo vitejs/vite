@@ -2,13 +2,17 @@ import os from 'os'
 import path from 'path'
 import sirv from 'sirv'
 import { Connect } from 'types/connect'
+import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { cleanUrl, isImportRequest } from '../../utils'
-
 const sirvOptions = { dev: true, etag: true }
 
-export function serveStaticMiddleware(dir: string): Connect.NextHandleFunction {
+export function serveStaticMiddleware(
+  dir: string,
+  config?: ResolvedConfig
+): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
+
   return (req, res, next) => {
     const url = req.url!
 
@@ -23,6 +27,26 @@ export function serveStaticMiddleware(dir: string): Connect.NextHandleFunction {
     const ext = path.extname(cleanUrl(url))
     if (!ext || ext === '.html') {
       return next()
+    }
+
+    // apply aliases to static requests as well
+    if (config) {
+      let redirected: string | undefined
+      for (const { find, replacement } of config.alias) {
+        const matches =
+          typeof find === 'string' ? url.startsWith(find) : find.test(url)
+        if (matches) {
+          redirected = url.replace(find, replacement)
+          break
+        }
+      }
+      if (redirected) {
+        // dir is pre-normalized to posix style
+        if (redirected.startsWith(dir)) {
+          redirected = redirected.slice(dir.length)
+        }
+        req.url = redirected
+      }
     }
 
     serve(req, res, next)

@@ -11,6 +11,7 @@ module.exports = {
     {
       find: /^regex\/(.*)/,
       replacement: `${path.resolve(__dirname, 'dir')}/$1`
-    }
+    },
+    { find: '/@', replacement: path.resolve(__dirname, 'dir') }
   ]
 }

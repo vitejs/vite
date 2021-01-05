@@ -17,3 +17,7 @@ test('regex', async () => {
 test('dependency', async () => {
   expect(await page.textContent('.dep')).toMatch('[success] out of root')
 })
+
+test('from html', async () => {
+  expect(await page.textContent('.from-html')).toMatch('[success] from html')
+})
