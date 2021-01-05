@@ -213,6 +213,41 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(_, bundle) {
+      const getPreloadLinksForChunk = (
+        chunk: OutputChunk
+      ): HtmlTagDescriptor[] => {
+        const tags: HtmlTagDescriptor[] = chunk.imports.map((file) => ({
+          tag: 'link',
+          attrs: {
+            rel: 'modulepreload',
+            href: toPublicPath(file, config)
+          }
+        }))
+        chunk.imports.forEach((file) => {
+          tags.push(...getPreloadLinksForChunk(bundle[file] as OutputChunk))
+        })
+        return tags
+      }
+
+      const getCssTagsForChunk = (chunk: OutputChunk): HtmlTagDescriptor[] => {
+        const tags: HtmlTagDescriptor[] = []
+        const cssFileHandle = chunkToEmittedCssFileMap.get(chunk)
+        if (cssFileHandle) {
+          const file = this.getFileName(cssFileHandle)
+          tags.push({
+            tag: 'link',
+            attrs: {
+              rel: 'stylesheet',
+              href: toPublicPath(file, config)
+            }
+          })
+        }
+        chunk.imports.forEach((file) => {
+          tags.push(...getCssTagsForChunk(bundle[file] as OutputChunk))
+        })
+        return tags
+      }
+
       for (const [id, html] of processedHtml) {
         // resolve asset url references
         let result = html.replace(assetUrlRE, (_, fileId, postfix = '') => {
@@ -227,20 +262,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             chunk.facadeModuleId === id
         ) as OutputChunk | undefined
 
-        const getCssTagForChunk = (chunk: OutputChunk) => {
-          const cssFileHandle = chunkToEmittedCssFileMap.get(chunk)
-          if (cssFileHandle) {
-            const file = this.getFileName(cssFileHandle)
-            return {
-              tag: 'link',
-              attrs: {
-                rel: 'stylesheet',
-                href: toPublicPath(file, config)
-              }
-            }
-          }
-        }
-
         // inject chunk asset links
         if (chunk) {
           const assetTags = [
@@ -253,23 +274,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             },
             // preload for imports
-            ...chunk.imports.map((file) => ({
-              tag: 'link',
-              attrs: {
-                rel: 'modulepreload',
-                href: toPublicPath(file, config)
-              }
-            }))
+            ...getPreloadLinksForChunk(chunk),
+            ...getCssTagsForChunk(chunk)
           ]
-
-          // inject css
-          const cssTag = getCssTagForChunk(chunk)
-          if (cssTag) assetTags.push(cssTag)
-          // also inject css from imported split chunks
-          chunk.imports.forEach((file) => {
-            const tag = getCssTagForChunk(bundle[file] as OutputChunk)
-            if (tag) assetTags.push(tag)
-          })
 
           result = injectToHead(result, assetTags)
         }
