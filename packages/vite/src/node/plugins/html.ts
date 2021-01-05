@@ -207,8 +207,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        // TODO should store the imported entries for each page
-        // and inject corresponding assets
         processedHtml.set(id, s.toString())
         return js
       }
