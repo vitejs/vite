@@ -44,6 +44,6 @@ Ensuring optimal output and behavioral consistency between the dev server and th
 
 ## Browser Support
 
-- Vite requires [native ES module support](https://caniuse.com/#feat=es6-module) during development.
+- Vite requires [native ESM dynamic import support](https://caniuse.com/es6-module-dynamic-import) during development.
 
-- The production build assumes a baseline support for [Native ES modules dynamic imports](https://caniuse.com/es6-module-dynamic-import). Legacy browsers can be supported via plugins that post-process the build output for compatibility. More details in the [Building for Production](./build) section.
+- The production build assumes a baseline support for [Native ESM via script tags](https://caniuse.com/es6-module), similar to [`targets.esmodules` of `@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targetsesmodules). Legacy browsers can be supported via plugins that post-process the build output for compatibility. More details in the [Building for Production](./build) section.

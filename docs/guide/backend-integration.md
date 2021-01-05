@@ -17,6 +17,13 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
    }
    ```
 
+   Also remember to add the [dynamic import polyfill](/config/#build-dynamicimportpolyfill) to your entry, since it will no longer be auto-injected:
+
+   ```js
+   // add the beginning of your app entry
+   import 'vite/dynamic-import-polyfill'
+   ```
+
 2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
 
    ```html
@@ -31,6 +38,6 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
 
    ```html
    <!-- if production -->
-   <link rel="stylesheet" href="/assets/{{ manifest['style.css'].file }}" />
+   <link rel="stylesheet" href="/assets/{{ manifest['index.css'].file }}" />
    <script type="module" src="/assets/{{ manifest['index.js'].file }}"></script>
    ```

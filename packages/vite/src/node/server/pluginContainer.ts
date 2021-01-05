@@ -445,7 +445,7 @@ export async function createPluginContainer(
         if (!plugin.load) continue
         ctx._activePlugin = plugin
         const result = await plugin.load.call(ctx as any, id)
-        if (result) {
+        if (result != null) {
           return result
         }
       }

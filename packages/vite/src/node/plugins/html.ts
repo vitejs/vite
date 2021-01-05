@@ -16,6 +16,7 @@ import {
 import MagicString from 'magic-string'
 import { checkPublicFile, assetUrlRE, urlToBuiltUrl } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
+import { polyfillId } from './dynamicImportPolyfill'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
@@ -208,6 +209,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         processedHtml.set(id, s.toString())
+
+        // inject dynamic import polyfill
+        if (config.build.polyfillDynamicImport) {
+          js = `import "${polyfillId}";\n${js}`
+        }
+
         return js
       }
     },

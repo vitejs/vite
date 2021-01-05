@@ -4,7 +4,18 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 ## Browser Compatibility
 
-The production bundle assumes a baseline support for [Native ES modules dynamic imports](https://caniuse.com/es6-module-dynamic-import). By default, all code is minimally transpiled with target `es2020` (only for terser minification compatibility). You can specify the target range via the [`build.target` config option](/config/#build-target), where the lowest target available is `es2015`.
+The production bundle assumes a baseline support for modern JavaScript. By default, all code is transpiled targeting [browsers with native ESM script tag support](https://caniuse.com/es6-module):
+
+- Chrome >=61
+- Firefox >=60
+- Safari >=11
+- Edge >=16
+
+A lightweight [dynamic import polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill) is also automatically injected.
+
+You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`.
+
+Note that Vite only handles syntax transforms and **does not cover polyfills**. You can check out [Polyfill.io](https://polyfill.io/v3/) to build custom polyfill bundles.
 
 Legacy browsers _can_ be supported via plugins that post-process the build output for compatibility (e.g. [`@rollup/plugin-babel`](https://github.com/rollup/plugins/tree/master/packages/babel) + [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env) + [SystemJS](https://github.com/systemjs/systemjs)). This is not a built-in feature, but there is plan to provide an official plugin that automatically emits a separate legacy bundle.
 

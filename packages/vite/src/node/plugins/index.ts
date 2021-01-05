@@ -11,6 +11,7 @@ import { clientInjectionsPlugin } from './clientInjections'
 import { htmlPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { webWorkerPlugin } from './worker'
+import { dynamicImportPolyfillPlugin } from './dynamicImportPolyfill'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -26,6 +27,9 @@ export async function resolvePlugins(
 
   return [
     aliasPlugin({ entries: config.alias }),
+    config.build.polyfillDynamicImport
+      ? dynamicImportPolyfillPlugin(config)
+      : null,
     ...prePlugins,
     resolvePlugin({
       root: config.root,
