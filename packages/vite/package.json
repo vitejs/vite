@@ -11,7 +11,8 @@
   "types": "dist/node/index.d.ts",
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "env.d.ts"
   ],
   "engines": {
     "node": ">=12.0.0"
@@ -31,10 +32,9 @@
     "prebuild": "rimraf dist && yarn lint",
     "build": "run-s build-bundle build-types",
     "build-bundle": "rollup -c",
-    "build-types": "run-s build-temp-types patch-types roll-types inject-types",
+    "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "patch-types": "node scripts/patchTypes",
-    "inject-types": "node scripts/injectTypes",
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",
     "format": "prettier --write --parser typescript \"src/**/*.ts\"",
