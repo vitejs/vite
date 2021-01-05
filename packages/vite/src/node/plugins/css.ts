@@ -18,7 +18,6 @@ import { CLIENT_PUBLIC_PATH } from '../constants'
 import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
 import { assetUrlRE, urlToBuiltUrl } from './asset'
-import { Logger } from '../logger'
 
 // const debug = createDebugger('vite:css')
 
@@ -213,7 +212,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
         // minify
         if (config.build.minify) {
-          chunkCSS = await minifyCSS(chunkCSS, config.logger)
+          chunkCSS = await minifyCSS(chunkCSS, config)
         }
         // for each dynamic entry chunk, collect its css and inline it as JS
         // strings.
@@ -265,7 +264,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (extractedCss) {
         // minify css
         if (config.build.minify) {
-          extractedCss = await minifyCSS(extractedCss, config.logger)
+          extractedCss = await minifyCSS(extractedCss, config)
         }
         this.emitFile({
           name: 'style.css',
@@ -639,18 +638,23 @@ function rewriteCssUrls(
 
 let CleanCSS: any
 
-async function minifyCSS(css: string, logger: Logger) {
+async function minifyCSS(css: string, config: ResolvedConfig) {
   CleanCSS = CleanCSS || (await import('clean-css')).default
-  const res = new CleanCSS({ level: 2, rebase: false }).minify(css)
+  const res = new CleanCSS({
+    rebase: false,
+    ...config.build.cleanCssOptions
+  }).minify(css)
 
   if (res.errors && res.errors.length) {
-    logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
+    config.logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
     // TODO format this
     throw res.errors[0]
   }
 
   if (res.warnings && res.warnings.length) {
-    logger.warn(chalk.yellow(`warnings when minifying css:\n${res.warnings}`))
+    config.logger.warn(
+      chalk.yellow(`warnings when minifying css:\n${res.warnings}`)
+    )
   }
 
   return res.styles
