@@ -25,6 +25,7 @@ import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import isBuiltin from 'isbuiltin'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
+import { CleanCSS } from 'types/clean-css'
 
 export interface BuildOptions {
   /**
@@ -75,9 +76,15 @@ export interface BuildOptions {
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
-   * The option for `terser`
+   * Options for terser
+   * https://terser.org/docs/api-reference#minify-options
    */
   terserOptions?: Terser.MinifyOptions
+  /**
+   * Options for clean-css
+   * https://github.com/jakubpawlowicz/clean-css#constructor-options
+   */
+  cleanCssOptions?: CleanCSS.Options
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/guide/en/#big-list-of-options
@@ -138,6 +145,7 @@ export function resolveBuildOptions(
     rollupOptions: {},
     minify: 'terser',
     terserOptions: {},
+    cleanCssOptions: {},
     write: true,
     manifest: false,
     lib: false,
