@@ -153,7 +153,6 @@ function genTemplateCode(
   options: ResolvedOptions,
   pluginContext: PluginContext
 ) {
-  const renderFnName = options.ssr ? 'ssrRender' : 'render'
   const template = descriptor.template!
 
   // If the template is not using pre-processor AND is not using external src,
@@ -175,6 +174,7 @@ function genTemplateCode(
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
+    const renderFnName = options.ssr ? 'ssrRender' : 'render'
     return {
       code: `import { ${renderFnName} as _sfc_${renderFnName} } from ${request}`,
       map: undefined
