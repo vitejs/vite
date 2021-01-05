@@ -387,14 +387,17 @@ export function onRollupWarning(
     }
 
     if (id && isBuiltin(id)) {
-      let importingDep
+      let importingDep: string | undefined
       if (importer) {
         const pkg = JSON.parse(lookupFile(importer, ['package.json']) || `{}`)
         if (pkg.name) {
           importingDep = pkg.name
         }
       }
-      if (importingDep && allowNodeBuiltins.includes(importingDep)) {
+      if (
+        importingDep &&
+        allowNodeBuiltins.some((allowed) => importingDep!.startsWith(allowed))
+      ) {
         return
       }
       const dep = importingDep

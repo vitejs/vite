@@ -179,7 +179,6 @@ export async function optimizeDeps(
       plugins: [
         aliasPlugin({ entries: config.alias }),
         depAssetExternalPlugin(config),
-        // TODO user pre plugins?
         resolvePlugin({
           root: config.root,
           dedupe: config.dedupe,
@@ -190,7 +189,6 @@ export async function optimizeDeps(
           preferConst: true,
           namedExports: true
         }),
-        // TODO user normal/post plugins?
         commonjsPlugin({
           include: [/node_modules/],
           extensions: ['.js', '.cjs']
@@ -215,38 +213,27 @@ export async function optimizeDeps(
     }
     writeFile(dataPath, JSON.stringify(data, null, 2))
   } catch (e) {
-    if (asCommand) {
-      throw e
-    } else {
-      logger.error(
-        chalk.red(`\nDep optimization failed with error:\n${e.message}`)
+    delete e.watchFiles
+    logger.error(chalk.red(`\nDep optimization failed with error:`))
+    if (e.code === 'PARSE_ERROR') {
+      e.message += `\n\n${chalk.cyan(
+        path.relative(root, e.loc.file)
+      )}\n${chalk.dim(e.frame)}`
+    } else if (e.message.match('Node built-in')) {
+      e.message += chalk.yellow(
+        `\n\nTip:\nMake sure your "dependencies" only include packages that you\n` +
+          `intend to use in the browser. If it's a Node.js package, it\n` +
+          `should be in "devDependencies".\n\n` +
+          `If you do intend to use this dependency in the browser and the\n` +
+          `dependency does not actually use these Node built-ins in the\n` +
+          `browser, you can add the dependency (not the built-in) to the\n` +
+          `"optimizeDeps.allowNodeBuiltins" option in vite.config.js.\n\n` +
+          `If that results in a runtime error, then unfortunately the\n` +
+          `package is not distributed in a web-friendly format. You should\n` +
+          `open an issue in its repo, or look for a modern alternative.`
       )
-      if (e.code === 'PARSE_ERROR') {
-        logger.error(
-          chalk.cyan(path.relative(root, e.loc.file)) +
-            `\n` +
-            chalk.dim(e.frame)
-        )
-      } else if (e.message.match('Node built-in')) {
-        logger.warn(
-          chalk.yellow(
-            `Tip:\nMake sure your "dependencies" only include packages that you\n` +
-              `intend to use in the browser. If it's a Node.js package, it\n` +
-              `should be in "devDependencies".\n\n` +
-              `If you do intend to use this dependency in the browser and the\n` +
-              `dependency does not actually use these Node built-ins in the\n` +
-              `browser, you can add the dependency (not the built-in) to the\n` +
-              `"optimizeDeps.allowNodeBuiltins" option in vite.config.js.\n\n` +
-              `If that results in a runtime error, then unfortunately the\n` +
-              `package is not distributed in a web-friendly format. You should\n` +
-              `open an issue in its repo, or look for a modern alternative.`
-          )
-          // TODO link to docs once we have it
-        )
-      } else {
-        throw e
-      }
     }
+    throw e
   }
 }
 
