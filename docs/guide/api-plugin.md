@@ -263,7 +263,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   interface HtmlTagDescriptor {
     tag: string
-    attrs?: Record<string, string>
+    attrs?: Record<string, string | boolean>
     children?: string | HtmlTagDescriptor[]
     /**
      * default: 'head-prepend'
