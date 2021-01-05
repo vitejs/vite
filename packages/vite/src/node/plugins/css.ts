@@ -214,9 +214,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (config.build.minify) {
           chunkCSS = await minifyCSS(chunkCSS, config)
         }
-        // for each dynamic entry chunk, collect its css and inline it as JS
-        // strings.
-        if (chunk.isDynamicEntry) {
+        // for non-entry chunks, collect its css and inline it as JS strings.
+        if (!chunk.isEntry) {
           const placeholder = `__VITE_CSS__`
           code =
             `let ${placeholder} = document.createElement('style');` +
@@ -224,7 +223,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `document.head.appendChild(${placeholder});` +
             code
         } else {
-          // for normal entry chunks, emit corresponding css file
+          // for entry chunks, emit corresponding css file
           const fileHandle = this.emitFile({
             name: chunk.name + '.css',
             type: 'asset',
