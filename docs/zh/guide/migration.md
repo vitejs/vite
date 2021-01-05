@@ -36,6 +36,17 @@
 
 - 所有 Vue 特定选项都已删除; 应将选项传递给 Vue 插件。
 
+## 别名用法变化
+
+[`alias`](/zh/config/#alias) 现在会被传递给 `@rollup/plugin-alias` 并不再需要开始/结尾处的斜线了。此行为目前是一个直接替换，所以 1.0 风格的目录别名需要一个结尾处的斜线：
+
+```diff
+- alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') }
++ alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') + '/' }
+```
+
+另外，你可以对该选项使用 `[{ find: RegExp, replacement: string }]` 格式以求更精确的控制。
+
 ## Vue Support
 
 Vite 2.0 核心已经是框架无关的了。对 Vue 的支持目前详见 [`@vitejs/plugin-vue`](https://github.com/vitejs/vite/tree/main/packages/plugin-vue)。安装它并添加到 Vite 配置十分简单:
