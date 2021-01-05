@@ -35,10 +35,28 @@ export interface BuildOptions {
   base?: string
   /**
    * Compatibility transform target. The transform is performed with esbuild
-   * and the lowest supported target is es2015/es6. Default: es2020
-   * https://esbuild.github.io/api/#target
+   * and the lowest supported target is es2015/es6. Note this only handles
+   * syntax transformation and does not cover polyfills (except for dynamic
+   * import)
+   *
+   * Default: 'modules' - Similar to `@babel/preset-env`'s targets.esmodules,
+   * transpile targeting browsers that natively support es module imports. Also
+   * injects a light-weight dynamic import polyfill.
+   * https://caniuse.com/es6-module
+   *
+   * Another special value is 'esnext' - which only performs minimal trasnpiling
+   * (for minification compat) and assumes native dynamic imports support.
+   *
+   * For custom targets, see https://esbuild.github.io/api/#target and
+   * https://esbuild.github.io/content-types/#javascript for more details.
    */
-  target?: TransformOptions['target'] | false
+  target?: 'modules' | TransformOptions['target'] | false
+  /**
+   * Whether to inject dynamic import polyfill. Defaults to `true`, unless
+   * `target` is `'esnext'`.
+   * Note: does not apply to library mode.
+   */
+  polyfillDynamicImport?: boolean
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
@@ -136,7 +154,8 @@ export function resolveBuildOptions(
 ): Required<BuildOptions> {
   const resolved: Required<BuildOptions> = {
     base: '/',
-    target: 'es2019',
+    target: 'modules',
+    polyfillDynamicImport: raw?.target !== 'esnext' && !raw?.lib,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -151,6 +170,15 @@ export function resolveBuildOptions(
     lib: false,
     ssr: false,
     ...raw
+  }
+
+  // handle special build targets
+  if (resolved.target === 'modules') {
+    // https://caniuse.com/es6-module
+    resolved.target = ['es2019', 'edge16', 'firefox60', 'chrome61', 'safari11']
+  } else if (resolved.target === 'esnext' && resolved.minify !== 'esbuild') {
+    // esnext + terser: limit to es2019 so it can be minified by terser
+    resolved.target = 'es2019'
   }
 
   // ensure base ending slash

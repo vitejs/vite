@@ -93,24 +93,21 @@ cli
 // build
 cli
   .command('build [root]')
-  .option(
-    '--entry <file>',
-    `[string]  entry file for build (default: index.html)`
-  )
-  .option('--base <path>', `[string]  public base path (default: /)`)
-  .option('--outDir <dir>', `[string]  output directory (default: dist)`)
+  .option('--base <path>', `[string] public base path (default: /)`)
+  .option('--target <target>', `[string] transpile target (default: 'modules')`)
+  .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
-    `[string]  directory under outDir to place assets in (default: _assets)`
+    `[string] directory under outDir to place assets in (default: _assets)`
   )
   .option(
     '--assetsInlineLimit <number>',
-    `[number]  static asset base64 inline threshold in bytes (default: 4096)`
+    `[number] static asset base64 inline threshold in bytes (default: 4096)`
   )
-  .option('--ssr', `[boolean]  build for server-side rendering`)
+  .option('--ssr', `[boolean] build for server-side rendering`)
   .option(
     '--sourcemap',
-    `[boolean]  output source maps for build (default: false)`
+    `[boolean] output source maps for build (default: false)`
   )
   .option(
     '--minify [minifier]',

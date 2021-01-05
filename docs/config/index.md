@@ -276,12 +276,31 @@ export default ({ command, mode }) => {
 ### build.target
 
 - **Type:** `string`
-- **Default:** `es2020`
+- **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
-  Browser compatibility target for the final bundle. The transform is performed with esbuild and the lowest supported target is `es2015`. The target can also be a browser with version, e.g. `chrome58` or `safari11`, or an array of multiple target strings.
+  Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets [browsers with native ES module support](https://caniuse.com/es6-module).
 
-  Note the build will fail if the code contains features that cannot be safely transpiled by `esbuild`. See [esbuid docs](https://esbuild.github.io/api/#target) for more details.
+  Another special value is 'esnext' - which only performs minimal trasnpiling (for minification compat) and assumes native dynamic imports support.
+
+  The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
+
+  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuid docs](https://esbuild.github.io/content-types/#javascript) for more details.
+
+### build.dynamicImportPolyfill
+
+- **Type:** `boolean`
+- **Default:** `true` unless `build.target` is `'esnext'`
+
+  Whether to automatically inject [dynamic import polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill).
+
+  The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-html custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
+
+  ```js
+  import 'vite/dynamic-import-polyfill'
+  ```
+
+  Note: the polyfill does **not** apply to [Library Mode](/guide/build#library-mode). If you need to support browsers without native dynamic import, you should probably avoid using it in your library.
 
 ### build.outDir
 
