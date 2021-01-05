@@ -33,7 +33,7 @@ module.exports = {
 }
 ```
 
-For example, you can specify multiple Rollup outputs with plugins that only applied during build.
+For example, you can specify multiple Rollup outputs with plugins that are only applied during build.
 
 ## Multi-Page App
 
