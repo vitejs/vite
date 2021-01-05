@@ -306,7 +306,7 @@ async function compileCSS(
   // 2. pre-processors: sass etc.
   if (lang && lang in preProcessors) {
     const preProcessor = preProcessors[lang as PreprocessLang]
-    let opts = preprocessorOptions && preprocessorOptions[lang]
+    let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
     // support @import from node dependencies by default
     switch (lang) {
       case 'scss':
@@ -317,6 +317,7 @@ async function compileCSS(
         }
         break
       case 'less':
+      case 'styl':
       case 'stylus':
         opts = {
           paths: ['node_modules'],
