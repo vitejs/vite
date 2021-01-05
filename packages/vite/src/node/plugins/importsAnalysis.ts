@@ -248,16 +248,18 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             url = VALID_ID_PREFIX + resolved.id
           }
 
-          // for relative imports, inherit importer's version query
-          if (isRelative) {
+          // mark non-js/css imports with `?import`
+          url = markExplicitImport(url)
+
+          // for relative js/css imports, inherit importer's version query
+          // do not do this for unknown type imports, otherwise the appended
+          // query can break 3rd party plugin's extension checks.
+          if (isRelative && !/[\?&]import\b/.test(url)) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
             }
           }
-
-          // mark non-js imports with `?import`
-          url = markExplicitImport(url)
 
           // check if the dep has been hmr updated. If yes, we need to attach
           // its last updated timestamp to force the browser to fetch the most
