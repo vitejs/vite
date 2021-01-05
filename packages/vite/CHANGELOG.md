@@ -1,3 +1,25 @@
+# [2.0.0-beta.5](https://github.com/vitejs/vite/compare/v2.0.0-beta.4...v2.0.0-beta.5) (2021-01-05)
+
+
+### Bug Fixes
+
+* only append dep version query for known types ([42cd8b2](https://github.com/vitejs/vite/commit/42cd8b217de6afb53163eef69e96514c75de4443))
+* **css:** fix css comment removal ([7b9dee0](https://github.com/vitejs/vite/commit/7b9dee020785022acaa8e6989dcb2cc7ec03c3f2)), closes [#1359](https://github.com/vitejs/vite/issues/1359)
+* **css:** inline css in all non-entry split chunks ([e90ff76](https://github.com/vitejs/vite/commit/e90ff76d1c6d5ad1d079c953ba4fbfc84be73185)), closes [#1356](https://github.com/vitejs/vite/issues/1356)
+* do not bundle resolve for yarn 2 compat ([3524e96](https://github.com/vitejs/vite/commit/3524e96da0de59e5dddf2210dc78e2a1de3f07e0)), closes [#1353](https://github.com/vitejs/vite/issues/1353)
+* do not error on unresolved commonjs externals ([60a4708](https://github.com/vitejs/vite/commit/60a470880034fcd7e54c15b4cf92f738b973a3df)), closes [#1339](https://github.com/vitejs/vite/issues/1339)
+* only allow built-ins as externals if building for ssr ([804c9a3](https://github.com/vitejs/vite/commit/804c9a30e673386c419a0582d0da11f805c285c4))
+* run mutiple output builds sequantially ([ab80522](https://github.com/vitejs/vite/commit/ab805228e55bd79275b6ac67b0408419a8ab5c70))
+
+
+### Features
+
+* **types:** separate client type shims from main types ([0cddbbc](https://github.com/vitejs/vite/commit/0cddbbc4bfc8e85329ba710117b9aec1d67d318d))
+* default clean-css level to 1 + expose options ([ef100d0](https://github.com/vitejs/vite/commit/ef100d09cbd1c6745108afc2877396fe69b08bdd)), closes [#936](https://github.com/vitejs/vite/issues/936)
+* support plugin.apply ([d914b54](https://github.com/vitejs/vite/commit/d914b542450cd7b4bbeb057a0fee8f79efd2bb9d))
+
+
+
 # [2.0.0-beta.4](https://github.com/vitejs/vite/compare/v2.0.0-beta.3...v2.0.0-beta.4) (2021-01-04)
 
 
