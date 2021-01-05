@@ -35,11 +35,22 @@ export default function myPlugin() {
 ### Transforming Custom File Types
 
 ```js
+const fileRegex = /\.(my-file-ext)$/
+
 export default function myPlugin() {
   return {
     name: 'transform-file',
+
+    config() {
+      return {
+        // this is necessary for Vite to know that the file format should be
+        // handled as JS when it's used in import(dynamicPath) calls.
+        transformInclude: fileRegex
+      }
+    },
+
     transform(src, id) {
-      if (!/\.(my-file-ext)$/.test(id)) {
+      if (fileRegex.test(id)) {
         return {
           code: compileFileToJS(src),
           map: null // provide source map if available
