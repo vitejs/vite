@@ -16,4 +16,8 @@
 
 ## Community Plugins
 
+### [vite-plugin-vue2](https://github.com/underfin/vite-plugin-vue2)
+
+- Provides Vue 2 Single File Components support.
+
 > Submit a PR to add yours.
