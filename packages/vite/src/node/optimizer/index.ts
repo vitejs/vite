@@ -124,6 +124,7 @@ export async function optimizeDeps(
   if (options.link) {
     for (const linkedDep of options.link) {
       await resolveLinkedDeps(
+        config.root,
         linkedDep,
         qualified,
         external,
@@ -364,7 +365,14 @@ async function resolveQualifiedDeps(
 
   if (linked.length) {
     for (const dep of linked) {
-      await resolveLinkedDeps(dep, qualified, external, config, aliasResolver)
+      await resolveLinkedDeps(
+        root,
+        dep,
+        qualified,
+        external,
+        config,
+        aliasResolver
+      )
     }
   }
 
@@ -375,13 +383,14 @@ async function resolveQualifiedDeps(
 }
 
 async function resolveLinkedDeps(
+  root: string,
   dep: string,
   qualified: Record<string, string>,
   external: string[],
   config: ResolvedConfig,
   aliasResolver: PluginContainer
 ) {
-  const depRoot = path.dirname(resolveFrom(`${dep}/package.json`, config.root))
+  const depRoot = path.dirname(resolveFrom(`${dep}/package.json`, root))
   const { qualified: q, external: e } = await resolveQualifiedDeps(
     depRoot,
     config,
