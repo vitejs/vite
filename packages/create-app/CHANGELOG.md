@@ -1,3 +1,26 @@
+## [1.0.6](https://github.com/vitejs/vite/compare/create-app@1.0.5...create-app@1.0.6) (2021-01-05)
+
+
+### Code Refactoring
+
+* update client type usage ([245303c](https://github.com/vitejs/vite/commit/245303ca35ff2a40eca49e102b4f82cb1210f597))
+
+
+### BREAKING CHANGES
+
+* client types are now exposed under `vite/client.d.ts`.
+It can now be included via the following `tsconfig.json`:
+
+    ```ts
+    {
+      "compilerOptions": {
+        "types": ["vite/client"]
+      }
+    }
+    ```
+
+
+
 ## [1.0.5](https://github.com/vitejs/vite/compare/create-app@1.0.4...create-app@1.0.5) (2021-01-05)
 
 
