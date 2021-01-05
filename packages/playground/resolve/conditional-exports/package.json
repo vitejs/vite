@@ -6,6 +6,11 @@
       "import": "./main.js",
       "require": "./cjs.js"
     },
-    "./deep.js": "./deep.js"
+    "./deep.js": "./deep.js",
+    "./dir/": "./dir/",
+    "./dir-mapped/": {
+      "import": "./dir/",
+      "require": "./dir-cjs/"
+    }
   }
 }

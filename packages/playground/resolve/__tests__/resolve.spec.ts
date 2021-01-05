@@ -10,6 +10,18 @@ test('deep import with exports field', async () => {
   expect(await page.textContent('.exports-deep')).toMatch('[success]')
 })
 
+test('deep import with exports field + exposed dir', async () => {
+  expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
+    '[success]'
+  )
+})
+
+test('deep import with exports field + mapped dir', async () => {
+  expect(await page.textContent('.exports-deep-mapped-dir')).toMatch(
+    '[success]'
+  )
+})
+
 test('omitted index/*', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })

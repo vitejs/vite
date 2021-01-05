@@ -417,13 +417,24 @@ function resolveDeepImport(
 
   // map relative based on exports data
   if (exportsField) {
-    if (
-      isObject(exportsField) &&
-      !Array.isArray(exportsField) &&
-      relativeId in exportsField
-    ) {
-      relativeId = resolveConditionalExports(exportsField[relativeId])
-    } else {
+    let isExported = false
+    if (isObject(exportsField) && !Array.isArray(exportsField)) {
+      if (relativeId in exportsField) {
+        relativeId = resolveConditionalExports(exportsField[relativeId])
+        isExported = true
+      } else {
+        for (const key in exportsField) {
+          if (key.endsWith('/') && relativeId.startsWith(key)) {
+            // directory mapping
+            const replacement = resolveConditionalExports(exportsField[key])
+            relativeId = replacement && relativeId.replace(key, replacement)
+            isExported = true
+            break
+          }
+        }
+      }
+    }
+    if (!isExported || !relativeId) {
       throw new Error(
         `Package subpath '${relativeId}' is not defined by "exports" in ` +
           `${path.join(dir, 'package.json')}.`
