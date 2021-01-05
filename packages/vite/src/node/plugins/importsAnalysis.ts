@@ -241,7 +241,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // normalize all imports into resolved URLs
           // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
           if (url !== resolved.id) {
-            if (resolved.id.startsWith(config.root)) {
+            if (resolved.id.startsWith(config.root + path.sep)) {
               // in root: infer short absolute path from root
               url = resolved.id.slice(config.root.length)
             } else if (fs.existsSync(cleanUrl(resolved.id))) {
