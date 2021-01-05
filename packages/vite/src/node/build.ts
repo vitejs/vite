@@ -170,7 +170,6 @@ export function resolveBuildPlugins(
   const options = config.build
   return {
     pre: [
-      ...(options.rollupOptions.plugins || []),
       commonjsPlugin({
         include: [/node_modules/],
         extensions: ['.js', '.cjs']
@@ -180,7 +179,8 @@ export function resolveBuildPlugins(
       dynamicImportVars({
         warnOnError: true,
         exclude: [/node_modules/]
-      })
+      }),
+      ...(options.rollupOptions.plugins || [])
     ],
     post: [
       buildEsbuildPlugin(config),
@@ -299,7 +299,11 @@ async function doBuild(
       config.logger
     )
     if (Array.isArray(outputs)) {
-      return Promise.all(outputs.map(generate))
+      const res = []
+      for (const output of outputs) {
+        res.push(await generate(output))
+      }
+      return res
     } else {
       return generate(outputs)
     }
