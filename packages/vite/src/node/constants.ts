@@ -19,15 +19,37 @@ export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
+const knownAssetTypes = [
+  // images
+  'png',
+  'jpe?g',
+  'gif',
+  'svg',
+  'ico',
+  'webp',
+  'avif',
+
+  // media
+  'mp4',
+  'webm',
+  'ogg',
+  'mp3',
+  'wav',
+  'flac',
+  'aac',
+
+  // fonts
+  'woff2?',
+  'eot',
+  'ttf',
+  'otf',
+
+  // other
+  'wasm'
+]
+
 export const DEFAULT_ASSETS_RE = new RegExp(
-  `\\.(` +
-    // images
-    `png|jpe?g|gif|svg|ico|webp|` +
-    // media
-    `mp4|webm|ogg|mp3|wav|flac|aac|` +
-    // fonts
-    `woff2?|eot|ttf|otf` +
-    `)(\\?.*)?$`
+  `\\.(` + knownAssetTypes.join('|') + `)(\\?.*)?$`
 )
 
 export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/

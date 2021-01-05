@@ -41,14 +41,6 @@ export default function myPlugin() {
   return {
     name: 'transform-file',
 
-    config() {
-      return {
-        // this is necessary for Vite to know that the file format should be
-        // handled as JS when it's used in import(dynamicPath) calls.
-        transformInclude: fileRegex
-      }
-    },
-
     transform(src, id) {
       if (fileRegex.test(id)) {
         return {

@@ -165,20 +165,13 @@ export default ({ command, mode }) => {
 - **Type:** `string | RegExp | (string | RegExp)[]`
 - **Related:** [Asset Handling](/guide/features#asset-handling)
 
-  Specify additional file types to be treated as static assets (so that importing them will return their resolved URL).
+  Specify additional file types to be treated as static assets so that:
 
-### transformInclude
+  - They will be excluded from the plugin transform pipeline when referenced from HTML or directly requested over `fetch` or XHR.
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+  - Importing them from JS will return their resolved URL string (this can be overwritten if you have a `enforce: 'pre'` plugin to handle the asset type differently).
 
-  By default, all statically analyzable `import` requests in your code are statically treated as part of the transform pipeline. However, if you are using full dynamic import to import non-js file types, for example:
-
-  ```js
-  // dynamicPath is a non-JS file type, e.g. "./foo.gql"
-  import(dynamicPath).then(/* ... */)
-  ```
-
-  Vite will not be able to know that the file needs to be transformed to JavaScript (instead of being served directly as a static file). `transformInclude` allows you to explicitly declare the file type to always be transformed and served as JavaScript.
+  The built-in asset type list can be found [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts).
 
 ### dedupe
 
