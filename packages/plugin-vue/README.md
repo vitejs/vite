@@ -28,7 +28,7 @@ export interface Options {
 }
 ```
 
-## Exmaple for passing options to `@vue/compiler-dom`:
+## Example for passing options to `@vue/compiler-dom`:
 
 ```ts
 import vue from '@vitejs/plugin-vue'
