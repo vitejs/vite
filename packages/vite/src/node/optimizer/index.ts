@@ -173,7 +173,6 @@ export async function optimizeDeps(
     const bundle = await rollup.rollup({
       input: qualified,
       external,
-      ...config.build.rollupOptions,
       onwarn(warning, warn) {
         onRollupWarning(warning, warn, options.allowNodeBuiltins)
       },
@@ -203,7 +202,6 @@ export async function optimizeDeps(
     })
 
     const { output } = await bundle.generate({
-      ...config.build.rollupOptions,
       format: 'es',
       exports: 'named',
       entryFileNames: '[name].[hash].js',
