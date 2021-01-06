@@ -7,20 +7,17 @@ Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript o
 **Type Signature**
 
 ```ts
-async function createServer(
-  inlineConfig?: UserConfig & { mode?: string },
-  configPath?: string | false
-): Promise<ViteDevServer>
+async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 ```
 
 **Example Usage**
 
 ```js
 import { createServer } from 'vite'
-
 ;(async () => {
   const server = await createServer({
-    // any valid user config options
+    // any valid user config options, plus `mode` and `configFile`
+    configFile: false,
     root: __dirname,
     server: {
       port: 1337
@@ -29,6 +26,13 @@ import { createServer } from 'vite'
   await server.listen()
 })()
 ```
+
+## `InlineConfig`
+
+The `InlineConfig` interface extends `UserConfig` with additional properties:
+
+- `mode`: override default mode (`'development'` for server)
+- `configFile`: specifcy config file to use. If not set, Vite will try to automatically resolve one from project root. Set to `false` to disable auto resolving.
 
 ## `ViteDevServer`
 
@@ -98,8 +102,7 @@ interface ViteDevServer {
 
 ```ts
 async function build(
-  inlineConfig?: UserConfig & { mode?: string },
-  configPath?: string | false
+  inlineConfig?: InlineConfig
 ): Promise<RollupOutput | RollupOutput[]>
 ```
 
@@ -108,7 +111,6 @@ async function build(
 ```js
 import path from 'path'
 import { build } from 'vite'
-
 ;(async () => {
   await build({
     root: path.resolve(__dirname, './project'),
@@ -128,9 +130,7 @@ import { build } from 'vite'
 
 ```ts
 async function resolveConfig(
-  inlineConfig: UserConfig,
-  command: 'build' | 'serve',
-  mode: string,
-  configPath?: string | false
+  inlineConfig: InlineConfig,
+  command: 'build' | 'serve'
 ): Promise<ResolvedConfig>
 ```

@@ -39,7 +39,7 @@ export async function handleHMRUpdate(
     ? path.posix.relative(config.root, file)
     : file
 
-  if (file === config.configPath || file.endsWith('.env')) {
+  if (file === config.configFile || file.endsWith('.env')) {
     // TODO auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
     config.logger.info(
@@ -48,7 +48,7 @@ export async function handleHMRUpdate(
     )
     await server.close()
     ;(global as any).__vite_start_time = Date.now()
-    server = await createServer(config.inlineConfig, config.configPath)
+    server = await createServer(config.inlineConfig)
     await server.listen()
     return
   }

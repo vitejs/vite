@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import { resolveConfig, UserConfig, ResolvedConfig } from './config'
+import { resolveConfig, InlineConfig, ResolvedConfig } from './config'
 import Rollup, {
   Plugin,
   RollupBuild,
@@ -237,12 +237,11 @@ const paralellBuilds: RollupBuild[] = []
  * Returns a Promise containing the build result.
  */
 export async function build(
-  inlineConfig: UserConfig & { mode?: string } = {},
-  configPath?: string | false
+  inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
   parallelCallCounts++
   try {
-    return await doBuild(inlineConfig, configPath)
+    return await doBuild(inlineConfig)
   } finally {
     parallelCallCounts--
     if (parallelCallCounts <= 0) {
@@ -253,11 +252,15 @@ export async function build(
 }
 
 async function doBuild(
-  inlineConfig: UserConfig & { mode?: string } = {},
-  configPath?: string | false
+  inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
-  const mode = inlineConfig.mode || 'production'
-  const config = await resolveConfig(inlineConfig, 'build', mode, configPath)
+  const config = await resolveConfig(
+    {
+      ...inlineConfig,
+      mode: inlineConfig.mode || 'production'
+    },
+    'build'
+  )
 
   config.logger.info(chalk.cyan(`building for production...`))
 

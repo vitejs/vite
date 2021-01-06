@@ -9,7 +9,7 @@ import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import { resolveConfig, UserConfig, ResolvedConfig } from '../config'
+import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
   PluginContainer
@@ -185,15 +185,14 @@ export interface ViteDevServer {
 }
 
 export async function createServer(
-  inlineConfig: UserConfig & { mode?: string } = {},
-  configPath?: string | false
+  inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
-  const mode = inlineConfig.mode || 'development'
   const resolvedConfig = await resolveConfig(
-    inlineConfig,
-    'serve',
-    mode,
-    configPath
+    {
+      ...inlineConfig,
+      mode: inlineConfig.mode || 'development'
+    },
+    'serve'
   )
 
   const root = resolvedConfig.root
