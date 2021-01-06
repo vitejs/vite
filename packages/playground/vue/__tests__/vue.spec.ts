@@ -19,6 +19,8 @@ describe('pre-processors', () => {
     expect(await page.textContent('p.pug')).toMatch(
       `This is rendered from <template lang="pug">`
     )
+    // #1383 pug default doctype
+    expect(await page.textContent('.pug-slot')).toMatch(`slot content`)
     editFile('PreProcessors.vue', (code) =>
       code.replace('Pre-Processors', 'Updated')
     )

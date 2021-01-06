@@ -6,7 +6,16 @@ p.pug
 p.pug-less
   | This is rendered from &lt;template lang="pug"&gt;
   | and styled with &lt;style lang="less"&gt;. It should be green.
+SlotComponent
+  template(v-slot:test-slot)
+    div.pug-slot slot content
 </template>
+
+<script setup>
+function SlotComponent(_, { slots }) {
+  return slots['test-slot']()
+}
+</script>
 
 <style lang="scss">
 $color: magenta;
