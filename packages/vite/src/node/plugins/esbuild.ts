@@ -101,14 +101,14 @@ export async function transformWithEsbuild(
 
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
-    options.include || /\.(tsx?|jsx)($|\?)/,
-    options.exclude
+    options.include || /\.(tsx?|jsx)$/,
+    options.exclude || /\.js$/
   )
 
   return {
     name: 'vite:esbuild',
     async transform(code, id) {
-      if (filter(id)) {
+      if (filter(id) || filter(cleanUrl(id))) {
         const result = await transformWithEsbuild(code, id, options)
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
