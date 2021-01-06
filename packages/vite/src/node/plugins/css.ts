@@ -625,11 +625,7 @@ function rewriteCssUrls(
       wrap = first
       rawUrl = rawUrl.slice(1, -1)
     }
-    if (
-      isExternalUrl(rawUrl) ||
-      rawUrl.startsWith('data:') ||
-      rawUrl.startsWith('#')
-    ) {
+    if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
       return matched
     }
     return `url(${wrap}${await replacer(rawUrl)}${wrap})`
