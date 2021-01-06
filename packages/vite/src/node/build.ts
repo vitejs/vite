@@ -439,7 +439,7 @@ export function onRollupWarning(
         `Imported by: ${chalk.gray(importer)}`
     } else {
       message =
-        `[vite]: Rollup failed to resolve import "${warning.source}" from "${warning.importer}".\n` +
+        `[vite]: Rollup failed to resolve import "${warning.importer}" from "${warning.source}".\n` +
         `This is most likely unintended because it can break your application at runtime.\n` +
         `If you do want to externalize this module explicitly add it to\n` +
         `\`build.rollupOptions.external\``
