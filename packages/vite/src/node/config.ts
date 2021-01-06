@@ -283,12 +283,28 @@ function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
 }
 
 function normalizeAlias(o: AliasOptions): Alias[] {
-  return isObject(o)
-    ? Object.keys(o).map((find) => ({
-        find,
-        replacement: (o as any)[find]
-      }))
-    : o
+  return Array.isArray(o)
+    ? o.map(normalizeSingleAlias)
+    : Object.keys(o).map((find) =>
+        normalizeSingleAlias({
+          find,
+          replacement: (o as any)[find]
+        })
+      )
+}
+
+// https://github.com/vitejs/vite/issues/1363
+// work around https://github.com/rollup/plugins/issues/759
+function normalizeSingleAlias({ find, replacement }: Alias): Alias {
+  if (
+    typeof find === 'string' &&
+    find.endsWith('/') &&
+    replacement.endsWith('/')
+  ) {
+    find = find.slice(0, find.length - 1)
+    replacement = replacement.slice(0, replacement.length - 1)
+  }
+  return { find, replacement }
 }
 
 export function sortUserPlugins(

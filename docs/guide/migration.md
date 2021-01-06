@@ -38,11 +38,11 @@
 
 ## Alias Behavior Change
 
-[`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias` and no longer require start/ending slashes. The behavior is now a direct replacement, so 1.0-style directory aliases now require an ending slash:
+[`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias` and no longer require start/ending slashes. The behavior is now a direct replacement, so 1.0-style directory alias key should remove the ending slash:
 
 ```diff
 - alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') }
-+ alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') + '/' }
++ alias: { '/@foo': path.resolve(__dirname, 'some-special-dir') }
 ```
 
 Alternatively, you can use the `[{ find: RegExp, replacement: string }]` option format for more precise control.

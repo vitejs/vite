@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/#readme",
   "scripts": {
+    "predev": "rimraf dist",
     "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --incremental --p src/client",
     "dev-node": "tsc -w --incremental --p src/node",
