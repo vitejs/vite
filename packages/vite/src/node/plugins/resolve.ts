@@ -24,6 +24,10 @@ import { isCSSRequest } from './css'
 
 const mainFields = ['module', 'jsnext', 'jsnext:main', 'main']
 
+// special id for paths marked with browser: false
+// https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
+const browserExternalId = '__browser-external'
+
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true
@@ -62,12 +66,16 @@ export function resolvePlugin({
     },
 
     resolveId(id, importer) {
-      let res
+      if (id === browserExternalId) {
+        return id
+      }
 
       // fast path for commonjs proxy modules
       if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
         return
       }
+
+      let res
 
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
@@ -97,10 +105,15 @@ export function resolvePlugin({
         const pkg = importer && idToPkgMap.get(importer)
         if (pkg && isObject(pkg.data.browser)) {
           const pkgRealtivePath = './' + slash(path.relative(pkg.dir, fsPath))
-          fsPath = path.resolve(
-            pkg.dir,
-            mapWithBrowserField(pkgRealtivePath, pkg.data.browser)
+          const browserMappedPath = mapWithBrowserField(
+            pkgRealtivePath,
+            pkg.data.browser
           )
+          if (browserMappedPath) {
+            fsPath = path.resolve(pkg.dir, browserMappedPath)
+          } else {
+            return browserExternalId
+          }
         }
         if ((res = tryFsResolve(fsPath))) {
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
@@ -154,6 +167,12 @@ export function resolvePlugin({
       }
 
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
+    },
+
+    load(id) {
+      if (id === browserExternalId) {
+        return `export default {}`
+      }
     }
   }
 }
@@ -293,7 +312,7 @@ export interface PackageData {
     version: string
     main: string
     module: string
-    browser: string | Record<string, string>
+    browser: string | Record<string, string | false>
     exports: string | Record<string, any> | string[]
     dependencies: Record<string, string>
   }
@@ -388,7 +407,7 @@ export function resolvePackageEntry(
   // https://github.com/defunctzombie/package-browser-field-spec
   const { browser: browserField } = data
   if (isObject(browserField)) {
-    entryPoint = mapWithBrowserField(entryPoint, browserField)
+    entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
   }
 
   entryPoint = path.resolve(dir, entryPoint)
@@ -441,7 +460,12 @@ function resolveDeepImport(
       )
     }
   } else if (isObject(browserField)) {
-    relativeId = mapWithBrowserField(relativeId, browserField)
+    const mapped = mapWithBrowserField(relativeId, browserField)
+    if (mapped) {
+      relativeId = mapped
+    } else {
+      return browserExternalId
+    }
   }
 
   if (relativeId) {
@@ -480,7 +504,7 @@ function resolveConditionalExports(exp: any): string | undefined {
  */
 function mapWithBrowserField(
   relativePathInPkgDir: string,
-  map: Record<string, string>
+  map: Record<string, string | false>
 ) {
   const normalized = normalize(relativePathInPkgDir)
   const foundEntry = Object.entries(map).find(
