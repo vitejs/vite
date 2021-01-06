@@ -287,7 +287,7 @@ export default ({ command, mode }) => {
 
   Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuid docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
-### build.dynamicImportPolyfill
+### build.polyfillDynamicImport
 
 - **Type:** `boolean`
 - **Default:** `true` unless `build.target` is `'esnext'`
