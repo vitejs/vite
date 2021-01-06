@@ -73,15 +73,13 @@ cli
     // is ok here
     const { createServer } = await import('./server')
     try {
-      const server = await createServer(
-        {
-          root,
-          mode: options.mode,
-          logLevel: options.logLevel,
-          server: cleanOptions(options) as ServerOptions
-        },
-        options.config
-      )
+      const server = await createServer({
+        root,
+        mode: options.mode,
+        configFile: options.config,
+        logLevel: options.logLevel,
+        server: cleanOptions(options) as ServerOptions
+      })
       await server.listen()
     } catch (e) {
       const logError = createLogger(options.logLevel).error
@@ -121,15 +119,13 @@ cli
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     try {
-      await build(
-        {
-          root,
-          mode: options.mode,
-          logLevel: options.logLevel,
-          build: cleanOptions(options) as BuildOptions
-        },
-        options.config
-      )
+      await build({
+        root,
+        mode: options.mode,
+        configFile: options.config,
+        logLevel: options.logLevel,
+        build: cleanOptions(options) as BuildOptions
+      })
     } catch (e) {
       const logError = createLogger(options.logLevel).error
       logError(chalk.red(`error during build:\n${e.stack}`))
@@ -151,11 +147,10 @@ cli
         const config = await resolveConfig(
           {
             root,
+            configFile: options.config,
             logLevel: options.logLevel
           },
-          'build',
-          'development',
-          options.config
+          'build'
         )
         await optimizeDeps(config, options.force, true)
       } catch (e) {

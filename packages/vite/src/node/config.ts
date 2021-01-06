@@ -95,9 +95,14 @@ export interface UserConfig {
   logLevel?: LogLevel
 }
 
+export interface InlineConfig extends UserConfig {
+  mode?: string
+  configFile?: string | false
+}
+
 export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins' | 'alias' | 'assetsInclude'> & {
-    configPath: string | undefined
+    configFile: string | undefined
     inlineConfig: UserConfig
     root: string
     command: 'build' | 'serve'
@@ -115,26 +120,26 @@ export type ResolvedConfig = Readonly<
 >
 
 export async function resolveConfig(
-  inlineConfig: UserConfig,
-  command: 'build' | 'serve',
-  mode: string,
-  configPath?: string | false
+  inlineConfig: InlineConfig,
+  command: 'build' | 'serve'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
+  let { configFile } = inlineConfig
+  const mode = inlineConfig.mode || 'development'
 
-  if (configPath !== false) {
+  if (configFile !== false) {
     const loadResult = await loadConfigFromFile(
       {
         mode,
         command
       },
-      configPath,
+      configFile,
       inlineConfig.root,
       config.logLevel
     )
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
-      configPath = loadResult.path
+      configFile = loadResult.path
     }
   }
 
@@ -193,7 +198,7 @@ export async function resolveConfig(
 
   const resolved = {
     ...config,
-    configPath: configPath ? normalizePath(configPath) : undefined,
+    configFile: configFile ? normalizePath(configFile) : undefined,
     inlineConfig,
     root: resolvedRoot,
     command,
@@ -327,7 +332,7 @@ export function sortUserPlugins(
 
 async function loadConfigFromFile(
   configEnv: ConfigEnv,
-  configPath?: string,
+  configFile?: string,
   configRoot: string = process.cwd(),
   logLevel?: LogLevel
 ): Promise<{ path: string; config: UserConfig } | null> {
@@ -347,31 +352,31 @@ async function loadConfigFromFile(
     } catch (e) {}
   }
 
-  if (configPath) {
+  if (configFile) {
     // explicit config path is always resolved from cwd
-    resolvedPath = path.resolve(configPath)
-    if (configPath.endsWith('.js')) checkMjs()
+    resolvedPath = path.resolve(configFile)
+    if (configFile.endsWith('.js')) checkMjs()
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    const jsConfigPath = path.resolve(configRoot, 'vite.config.js')
-    if (fs.existsSync(jsConfigPath)) {
-      resolvedPath = jsConfigPath
+    const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
+    if (fs.existsSync(jsconfigFile)) {
+      resolvedPath = jsconfigFile
       checkMjs()
     }
 
     if (!resolvedPath) {
-      const mjsConfigPath = path.resolve(configRoot, 'vite.config.mjs')
-      if (fs.existsSync(mjsConfigPath)) {
-        resolvedPath = mjsConfigPath
+      const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
+      if (fs.existsSync(mjsconfigFile)) {
+        resolvedPath = mjsconfigFile
         isMjs = true
       }
     }
 
     if (!resolvedPath) {
-      const tsConfigPath = path.resolve(configRoot, 'vite.config.ts')
-      if (fs.existsSync(tsConfigPath)) {
-        resolvedPath = tsConfigPath
+      const tsconfigFile = path.resolve(configRoot, 'vite.config.ts')
+      if (fs.existsSync(tsconfigFile)) {
+        resolvedPath = tsconfigFile
         isTS = true
       }
     }

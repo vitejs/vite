@@ -79,7 +79,7 @@ export async function optimizeDeps(
 
   const dataPath = path.join(cacheDir, 'metadata.json')
   const data: DepOptimizationMetadata = {
-    hash: getDepHash(root, config.configPath),
+    hash: getDepHash(root, config.configFile),
     map: {},
     cjsEntries: {}
   }
@@ -400,7 +400,7 @@ let cachedHash: string | undefined
 
 export function getDepHash(
   root: string,
-  configPath: string | undefined
+  configFile: string | undefined
 ): string {
   if (cachedHash) {
     return cachedHash
@@ -409,8 +409,8 @@ export function getDepHash(
   const pkg = JSON.parse(lookupFile(root, [`package.json`]) || '{}')
   content += JSON.stringify(pkg.dependencies)
   // also take config into account
-  if (configPath) {
-    content += fs.readFileSync(configPath, 'utf-8')
+  if (configFile) {
+    content += fs.readFileSync(configFile, 'utf-8')
   }
   return createHash('sha1').update(content).digest('base64')
 }
