@@ -489,7 +489,7 @@ function mapWithBrowserField(
   if (!foundEntry) {
     return relativePathInPkgDir
   }
-  return foundEntry[1]
+  return foundEntry[1] || ''
 }
 
 function normalize(file: string) {
