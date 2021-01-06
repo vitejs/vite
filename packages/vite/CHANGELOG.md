@@ -1,3 +1,18 @@
+# [2.0.0-beta.9](https://github.com/vitejs/vite/compare/v2.0.0-beta.8...v2.0.0-beta.9) (2021-01-06)
+
+
+### Bug Fixes
+
+* properly handle browser: false resolving ([da09320](https://github.com/vitejs/vite/commit/da09320e3671dbf08a5f8c4a78bd273f75fdcd7d)), closes [#1386](https://github.com/vitejs/vite/issues/1386)
+* properly handle ts worker source ([eea1224](https://github.com/vitejs/vite/commit/eea122434740a60d353df54cb4dc108e29d4ef87)), closes [#1385](https://github.com/vitejs/vite/issues/1385)
+
+
+### Features
+
+* **env:** also expose VITE_ variables from actual env ([956cd2c](https://github.com/vitejs/vite/commit/956cd2c76e69ba046f51a36af8e44ae9fb3a67ab))
+
+
+
 # [2.0.0-beta.8](https://github.com/vitejs/vite/compare/v2.0.0-beta.7...v2.0.0-beta.8) (2021-01-05)
 
 
