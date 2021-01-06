@@ -17,7 +17,7 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
    }
    ```
 
-   Also remember to add the [dynamic import polyfill](/config/#build-dynamicimportpolyfill) to your entry, since it will no longer be auto-injected:
+   Also remember to add the [dynamic import polyfill](/config/#build-polyfilldynamicimport) to your entry, since it will no longer be auto-injected:
 
    ```js
    // add the beginning of your app entry
