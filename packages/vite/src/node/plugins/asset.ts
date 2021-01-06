@@ -165,7 +165,9 @@ async function fileToBuiltUrl(
       type: 'asset',
       source: content
     })
-    url = `__VITE_ASSET__${fileId}${postfix ? `__${postfix}__` : ``}`
+    url = JSON.stringify(
+      `__VITE_ASSET__${fileId}${postfix ? `__${postfix}__` : ``}`
+    )
   }
 
   cache.set(id, url)
