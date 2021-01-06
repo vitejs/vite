@@ -59,11 +59,13 @@ beforeAll(async () => {
       }
 
       if (!isBuildTest) {
+        process.env.VITE_INLINE = 'inline-serve'
         server = await (await createServer(options)).listen()
         // use resolved port from server
         const url = ((global as any).viteTestUrl = `http://localhost:${server.config.server.port}`)
         await page.goto(url)
       } else {
+        process.env.VITE_INLINE = 'inline-build'
         await build(options)
         const url = ((global as any).viteTestUrl = await startStaticServer())
         await page.goto(url)
