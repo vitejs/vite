@@ -47,7 +47,7 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 This will provide the following type shims:
 
 - Asset imports (e.g. importing an `.svg` file)
-- Types for the Vite-injected [env vraibles](./env-and-mode#env-variables) on `import.meta.env`
+- Types for the Vite-injected [env variables](./env-and-mode#env-variables) on `import.meta.env`
 - Types for the [HMR API](./api-hmr) on `import.meta.hot`
 
 ## JSX
