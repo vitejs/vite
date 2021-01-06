@@ -3,8 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "cross-env VITE_INLINE=inline-serve vite",
+    "build": "cross-env VITE_INLINE=inline-build vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }

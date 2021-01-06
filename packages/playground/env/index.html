@@ -17,6 +17,9 @@
 <p >
  import.meta.<wbr/>env.VITE_EFFECTIVE_MODE_FILE_NAME: <code class="mode-file"></code>
 </p>
+<p >
+  import.meta.<wbr/>env.VITE_INLINE: <code class="inline"></code>
+ </p>
 <p>
   process.<wbr/>env.NODE_ENV: <code class="node-env"></code>
 </p>
@@ -31,7 +34,8 @@ text('.dev', import.meta.env.DEV)
 text('.prod', import.meta.env.PROD)
 text('.custom', import.meta.env.VITE_CUSTOM_ENV_VARIABLE)
 text('.mode-file', import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME)
-text('.node-env', process.env.NODE_ENV),
+text('.inline', import.meta.env.VITE_INLINE)
+text('.node-env', process.env.NODE_ENV)
 text('.env-object', JSON.stringify(import.meta.env, null, 2))
 
 function text(el, text) {

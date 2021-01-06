@@ -485,6 +485,14 @@ export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
     /** default file */ `.env`
   ]
 
+  // check if there are actual env variables starting with VITE_*
+  // these are typically provided inline and should be prioritized
+  for (const key in process.env) {
+    if (key.startsWith(prefix) && env[key] === undefined) {
+      env[key] = process.env[key] as string
+    }
+  }
+
   for (const file of envFiles) {
     const path = lookupFile(root, [file], true)
     if (path) {

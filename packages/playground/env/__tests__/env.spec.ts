@@ -26,6 +26,12 @@ test('mode file override', async () => {
   expect(await page.textContent('.mode-file')).toBe(`.env.${mode}`)
 })
 
+test('inline variables', async () => {
+  expect(await page.textContent('.inline')).toBe(
+    isBuild ? `inline-build` : `inline-serve`
+  )
+})
+
 test('NODE_ENV', async () => {
   expect(await page.textContent('.node-env')).toBe(mode)
 })
