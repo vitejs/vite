@@ -133,6 +133,14 @@ export function resolveTemplateCompilerOptions(
     transformAssetUrls = assetUrlOptions
   }
 
+  let preprocessOptions = block.lang && options.template?.preprocessOptions
+  if (block.lang === 'pug') {
+    preprocessOptions = {
+      doctype: 'html',
+      ...preprocessOptions
+    }
+  }
+
   return {
     ...options.template,
     id,
@@ -144,7 +152,7 @@ export function resolveTemplateCompilerOptions(
     ssrCssVars: cssVars,
     transformAssetUrls,
     preprocessLang: block.lang,
-    preprocessOptions: block.lang && options.template?.preprocessOptions,
+    preprocessOptions,
     compilerOptions: {
       ...options.template?.compilerOptions,
       scopeId: hasScoped ? `data-v-${id}` : undefined,
