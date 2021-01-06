@@ -8,7 +8,7 @@ import {
   TransformOptions,
   TransformResult
 } from 'esbuild'
-import { createDebugger, generateCodeFrame } from '../utils'
+import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
 import merge from 'merge-source-map'
 import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
@@ -51,9 +51,13 @@ export async function transformWithEsbuild(
   inMap?: object
 ): Promise<EsbuildTransformResult> {
   const service = await ensureService()
-
+  // if the id ends with a valid ext, use it (e.g. vue blocks)
+  // otherwise, cleanup the query before checking the ext
+  const ext = path.extname(
+    /\.\w+$/.test(filename) ? filename : cleanUrl(filename)
+  )
   const resolvedOptions = {
-    loader: path.extname(filename).slice(1) as Loader,
+    loader: ext.slice(1) as Loader,
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
