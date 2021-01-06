@@ -27,10 +27,9 @@ export function buildDefinePlugin(config: ResolvedConfig): Plugin {
     ...individualEnvKeys,
     'import.meta.env.': `({}).`,
     'import.meta.env': JSON.stringify(config.env),
+    'import.meta.hot': `false`,
     'process.env.NODE_ENV': JSON.stringify(config.mode),
-    'process.env.': `({}).`,
-    'process.env': JSON.stringify({ NODE_ENV: config.mode }),
-    'import.meta.hot': `false`
+    'process.env.': `({}).`
   }
 
   const pattern = new RegExp(
