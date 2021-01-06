@@ -1,3 +1,14 @@
+# [2.0.0-beta.10](https://github.com/vitejs/vite/compare/v2.0.0-beta.9...v2.0.0-beta.10) (2021-01-06)
+
+
+### Bug Fixes
+
+* **alias:** normalize alias behavior when there is ending slash ([c4739a3](https://github.com/vitejs/vite/commit/c4739a3f6d341db220cc5732857cf194c7cecc0d)), closes [#1363](https://github.com/vitejs/vite/issues/1363)
+* **build:** Pass `allowNodeBuiltins` to rollup instead of empty array (Fixes [#1392](https://github.com/vitejs/vite/issues/1392)) ([#1393](https://github.com/vitejs/vite/issues/1393)) ([f209ad9](https://github.com/vitejs/vite/commit/f209ad9c858235ea317db6beb3bf2ab5ec26c153))
+* avoid replacing process.env member expression ([c8f4bb9](https://github.com/vitejs/vite/commit/c8f4bb92337c8882f238ea395f169af96a59d2ae)), closes [#930](https://github.com/vitejs/vite/issues/930)
+
+
+
 # [2.0.0-beta.9](https://github.com/vitejs/vite/compare/v2.0.0-beta.8...v2.0.0-beta.9) (2021-01-06)
 
 
