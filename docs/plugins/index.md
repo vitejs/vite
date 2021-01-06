@@ -16,4 +16,8 @@
 
 ## Community Plugins
 
+### [vite-plugin-solid](https://github.com/amoutonbrady/vite-plugin-solid)
+
+- Provides [solid](https://github.com/ryansolid/solid) JSX transformation.
+
 > Submit a PR to add yours.
