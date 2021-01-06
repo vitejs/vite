@@ -26,8 +26,8 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
         )
       }
     },
-    renderDynamicImport() {
-      if (skip) {
+    renderDynamicImport({ format }) {
+      if (skip || format !== 'es') {
         return null
       }
       if (!polyfillLoaded) {
