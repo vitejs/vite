@@ -495,8 +495,8 @@ function serializeTags(tags: HtmlTagDescriptor['children']): string {
 function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
   let res = ''
   for (const key in attrs) {
-    if (typeof attrs[key] === 'boolean' && attrs[key]) {
-      res += ` ${key}`
+    if (typeof attrs[key] === 'boolean') {
+      res += attrs[key] ? ` ${key}` : ``
     } else {
       res += ` ${key}=${JSON.stringify(attrs[key])}`
     }
