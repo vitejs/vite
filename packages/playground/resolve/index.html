@@ -83,6 +83,9 @@
   import value from 'resolve-browser-field'
   text('.browser', value)
 
+  // should be ok to import a file marked with browser: false
+  import 'resolve-browser-field/not-browser'
+
   // css entry
   import css from 'normalize.css'
   if (typeof css === 'string') {
