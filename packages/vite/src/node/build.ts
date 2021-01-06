@@ -280,7 +280,12 @@ async function doBuild(
       ...options.rollupOptions,
       plugins: config.plugins as Plugin[],
       onwarn(warning, warn) {
-        onRollupWarning(warning, warn, config.optimizeDeps.allowNodeBuiltins, options.rollupOptions?.onwarn)
+        onRollupWarning(
+          warning,
+          warn,
+          config.optimizeDeps?.allowNodeBuiltins,
+          options.rollupOptions?.onwarn
+        )
       }
     })
 
