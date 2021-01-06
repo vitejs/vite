@@ -76,7 +76,7 @@ It can now be included via the following `tsconfig.json`:
 
 ### Code Refactoring
 
-* remove the need for specifying `trnasformInclude` ([99522d0](https://github.com/vitejs/vite/commit/99522d0edf06da4b8519c209f5f928cdf2951105))
+* remove the need for specifying `transformInclude` ([99522d0](https://github.com/vitejs/vite/commit/99522d0edf06da4b8519c209f5f928cdf2951105))
 
 
 ### Features
@@ -87,7 +87,7 @@ It can now be included via the following `tsconfig.json`:
 
 ### BREAKING CHANGES
 
-* `trnasformInclude` option has been removed and is no
+* `transformInclude` option has been removed and is no
 longer necessary. This allows full dynamic imports to custom file types
 to automatically qualify for the transform pipeline.
 
