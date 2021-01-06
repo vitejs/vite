@@ -295,7 +295,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           id,
           postHooks,
           undefined,
-          bundle
+          bundle,
+          chunk
         )
 
         this.emitFile({
@@ -337,6 +338,7 @@ export interface IndexHtmlTransformContext {
   filename: string
   server?: ViteDevServer
   bundle?: OutputBundle
+  chunk?: OutputChunk
 }
 
 export type IndexHtmlTransformHook = (
@@ -377,17 +379,19 @@ export async function applyHtmlTransforms(
   filename: string,
   hooks: IndexHtmlTransformHook[],
   server?: ViteDevServer,
-  bundle?: OutputBundle
+  bundle?: OutputBundle,
+  chunk?: OutputChunk
 ): Promise<string> {
   const headTags: HtmlTagDescriptor[] = []
   const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
 
-  const ctx = {
+  const ctx: IndexHtmlTransformContext = {
     path,
     filename,
     server,
-    bundle
+    bundle,
+    chunk
   }
 
   for (const hook of hooks) {
