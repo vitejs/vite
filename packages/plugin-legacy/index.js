@@ -1,8 +1,13 @@
 // @ts-check
 const path = require('path')
-const babel = require('@babel/core')
-const presetEnv = require('@babel/preset-env')
 const { build } = require('vite')
+
+// lazy load babel since it's not used during dev
+let babel
+/**
+ * @return {import('@babel/standalone')}
+ */
+const loadBabel = () => babel || (babel = require('@babel/standalone'))
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
 const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();`
@@ -177,18 +182,19 @@ function viteLegacyPlugin(options = {}) {
 
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
-      let { code, ast, map } = babel.transformSync(raw, {
+      let { code, ast, map } = loadBabel().transform(raw, {
         ast: true,
         configFile: false,
         sourceMaps,
         inputSourceMap: sourceMaps && chunk.map,
         presets: [
           [
-            presetEnv,
+            'env',
             {
               targets,
               modules: false,
               bugfixes: true,
+              loose: true,
               useBuiltIns: needPolyfills ? 'usage' : false,
               corejs: needPolyfills
                 ? { version: 3, proposals: false }
@@ -324,12 +330,12 @@ function viteLegacyPlugin(options = {}) {
  * @param {Set<string>} list
  */
 function detectPolyfills(code, targets, list) {
-  const { ast } = babel.transformSync(code, {
+  const { ast } = loadBabel().transform(code, {
     ast: true,
     configFile: false,
     presets: [
       [
-        presetEnv,
+        'env',
         {
           targets,
           modules: false,
