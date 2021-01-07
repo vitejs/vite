@@ -15,9 +15,9 @@ A lightweight [dynamic import polyfill](https://github.com/GoogleChromeLabs/dyna
 
 You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`.
 
-Note that Vite only handles syntax transforms and **does not cover polyfills by default**. You can check out [Polyfill.io](https://polyfill.io/v3/) or use[create-polyfill-service-url](https://www.npmjs.com/package/create-polyfill-service-url) to automatically generate polyfill bundles.
+Note that by default, Vite only handles syntax transforms and **does not cover polyfills by default**. You can check out [Polyfill.io](https://polyfill.io/v3/) whcih is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
 
-Legacy browsers _can_ be supported via plugins that post-process the build output for compatibility (e.g. [`@rollup/plugin-babel`](https://github.com/rollup/plugins/tree/master/packages/babel) + [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env) + [SystemJS](https://github.com/systemjs/systemjs)). This is not a built-in feature, but there is plan to provide an official plugin that automatically emits a separate legacy bundle.
+Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), which will automatically generate legacy chunks and corresopnding ES language feature polyfills. The legacy chunks are conditionally loaded only in browsers that do not have native ESM support.
 
 ## Public Base Path
 

@@ -14,6 +14,10 @@
 
 - Provides React Fast Refresh Support.
 
+### [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy)
+
+- Provides legacy browsers support for the production build.
+
 ## Community Plugins
 
 Check out [awesome-vite](https://github.com/vitejs/awesome-vite) - you can also submit a PR to list your plugins there.
