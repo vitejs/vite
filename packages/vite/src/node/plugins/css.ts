@@ -118,10 +118,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // account for comments https://github.com/vitejs/vite/issues/426
         css = css.replace(/\/\*[\s\S]*?\*\//gm, '')
         if (cssUrlRE.test(css)) {
-          css = await rewriteCssUrls(css, async (url) => {
-            url = await urlToBuiltUrl(url, id, config, this)
-            return url
-          })
+          css = await rewriteCssUrls(css, async (url) =>
+            urlToBuiltUrl(url, id, config, this)
+          )
         }
       }
       return css
