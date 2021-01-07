@@ -134,7 +134,12 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
-    async renderChunk(code, chunk) {
+    async renderChunk(code, chunk, opts) {
+      // @ts-ignore injected by @vitejs/plugin-legacy
+      if (opts.__vite_skip_esbuild__) {
+        return null
+      }
+
       const target = config.build.target
       const minify = config.build.minify === 'esbuild'
       if (!target && !minify) {
