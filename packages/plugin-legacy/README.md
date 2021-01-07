@@ -1,5 +1,7 @@
 # @vitejs/plugin-legacy
 
+**Note: this plugin requires `vite@^2.0.0-beta.12`**.
+
 Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module). This plugin provides support for legacy browsers that do not support native ESM.
 
 By default, this plugin will:
