@@ -97,7 +97,9 @@ function viteLegacyPlugin(options = {}) {
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
-          config.build.minify
+          // force using terser for legacy polyfill minification, since esbuild
+          // isn't legacy-safe
+          config.build.minify ? 'terser' : false
         )
       }
     }
@@ -165,6 +167,10 @@ function viteLegacyPlugin(options = {}) {
       if (!genLegacy) {
         return
       }
+
+      // @ts-ignore avoid esbuild transform on legacy chunks since it produces
+      // legacy-unsafe code - e.g. rewriting object properties into shorthands
+      opts.__vite_skip_esbuild__ = true
 
       const needPolyfills =
         options.polyfills !== false && !Array.isArray(options.polyfills)
