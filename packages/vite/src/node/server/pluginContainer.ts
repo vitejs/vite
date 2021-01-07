@@ -57,6 +57,7 @@ import { FSWatcher } from 'chokidar'
 import {
   createDebugger,
   generateCodeFrame,
+  normalizePath,
   numberToPos,
   prettifyUrl,
   timeFrom
@@ -415,10 +416,6 @@ export async function createPluginContainer(
         break
       }
 
-      if (id) {
-        partial.id = id
-      }
-
       nestedResolveCall--
       if (
         isDebug &&
@@ -436,7 +433,12 @@ export async function createPluginContainer(
         }
       }
 
-      return id ? (partial as PartialResolvedId) : null
+      if (id) {
+        partial.id = normalizePath(id)
+        return partial as PartialResolvedId
+      } else {
+        return null
+      }
     },
 
     async load(id) {
