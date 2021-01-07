@@ -63,6 +63,12 @@ function testPage(isNested: boolean) {
 
 describe('main', () => {
   testPage(false)
+
+  test('preserve comments', async () => {
+    const html = await page.innerHTML('body')
+    expect(html).toMatch(`<!-- comment one -->`)
+    expect(html).toMatch(`<!-- comment two -->`)
+  })
 })
 
 describe('nested', () => {
