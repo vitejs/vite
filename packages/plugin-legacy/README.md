@@ -128,6 +128,19 @@ export default {
 }
 ```
 
+## Content Security Policy
+
+The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc) and SystemJS initialization. If you have a strict CSP policy requirement, you will need to [add the corresponding hashes to your `script-src` list](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src#unsafe_inline_script):
+
+- `MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
+- `tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
+
+These values can also be retrived via
+
+```js
+const { cspHashes } = require('@vitejs/plugin-legacy')
+```
+
 ## References
 
 - [Vue CLI modern mode](https://cli.vuejs.org/guide/browser-compatibility.html#modern-mode)

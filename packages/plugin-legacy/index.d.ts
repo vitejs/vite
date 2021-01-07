@@ -26,3 +26,5 @@ export interface Options {
 declare function createPlugin(options?: Options): Plugin
 
 export default createPlugin
+
+export const cspHashes: string[]
