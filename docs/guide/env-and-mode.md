@@ -12,9 +12,15 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 - **`import.meta.env.DEV`**: {boolean} whether the app is running in development (always the opposite of `import.meta.env.PROD`)
 
-:::tip
-These env variables are statically replaced during build, so make sure to always reference them using the full string. Dynamic keys will not work.
-:::
+### Production Replacement
+
+During production, these env variables are **statically replaced**. It therefore necessary to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will not work.
+
+It will also replace these strings appearing in JavaScript strings and Vue templates. This should be a rare case, but it can be unintended. There are ways to work around this behavior:
+
+- For JavaScript strings, you can break the string up with a unicode zero-width space, e.g. `'import.meta\u200b.env.MODE'`.
+
+- For Vue templates or other HTML that gets compiled into JavaScript strings, you can use the [`<wbr>` tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/wbr), e.g. `import.meta.<wbr>env.MODE`.
 
 ## `.env` Files
 
