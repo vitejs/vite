@@ -56,14 +56,14 @@ function viteLegacyPlugin(options = {}) {
 
     async generateBundle(opts, bundle) {
       if (!isLegacyOutput(opts)) {
+        if (!modernPolyfills.size) {
+          return
+        }
         isDebug &&
           console.log(
             `[@vitejs/plugin-legacy] modern polyfills:`,
             modernPolyfills
           )
-        if (!modernPolyfills.size) {
-          return
-        }
         await buildPolyfillChunk(
           'polyfills-modern',
           modernPolyfills,
@@ -79,12 +79,19 @@ function viteLegacyPlugin(options = {}) {
       }
 
       // legacy bundle
-      isDebug &&
-        console.log(
-          `[@vitejs/plugin-legacy] legacy polyfills:`,
-          legacyPolyfills
-        )
       if (legacyPolyfills.size) {
+        if (!legacyPolyfills.has('es.promise')) {
+          // check if the target needs Promise polyfill because SystemJS relies
+          // on it
+          detectPolyfills(`Promise.resolve()`, targets, legacyPolyfills)
+        }
+
+        isDebug &&
+          console.log(
+            `[@vitejs/plugin-legacy] legacy polyfills:`,
+            legacyPolyfills
+          )
+
         await buildPolyfillChunk(
           'polyfills-legacy',
           legacyPolyfills,
@@ -150,38 +157,8 @@ function viteLegacyPlugin(options = {}) {
         ) {
           return null
         }
-
         // analyze and record modern polyfills
-        const { ast } = babel.transformSync(raw, {
-          ast: true,
-          code: false,
-          configFile: false,
-          sourceMaps: false,
-          presets: [
-            [
-              presetEnv,
-              {
-                targets: { esmodules: true },
-                modules: false,
-                useBuiltIns: 'usage',
-                corejs: { version: 3, proposals: false },
-                shippedProposals: true,
-                ignoreBrowserslistConfig: true
-              }
-            ]
-          ]
-        })
-        for (const node of ast.program.body) {
-          if (node.type === 'ImportDeclaration') {
-            const source = node.source.value
-            if (
-              source.startsWith('core-js/') ||
-              source.startsWith('regenerator-runtime/')
-            ) {
-              modernPolyfills.add(node.source.value)
-            }
-          }
-        }
+        detectPolyfills(raw, { esmodules: true }, modernPolyfills)
         return null
       }
 
@@ -189,7 +166,7 @@ function viteLegacyPlugin(options = {}) {
         return
       }
 
-      const detectPolyfills =
+      const needPolyfills =
         options.polyfills !== false && !Array.isArray(options.polyfills)
 
       // transform the legacy chunk with @babel/preset-env
@@ -204,21 +181,20 @@ function viteLegacyPlugin(options = {}) {
             presetEnv,
             {
               targets,
-              // modules are already converted to systemjs by rollup
               modules: false,
               bugfixes: true,
-              useBuiltIns: detectPolyfills ? 'usage' : false,
-              shippedProposals: true,
-              corejs: detectPolyfills
+              useBuiltIns: needPolyfills ? 'usage' : false,
+              corejs: needPolyfills
                 ? { version: 3, proposals: false }
                 : undefined,
+              shippedProposals: true,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
             }
           ]
         ]
       })
 
-      if (detectPolyfills) {
+      if (needPolyfills) {
         // detect and remove polyfill imports. Since the legacy bundle uses
         // format: 'system', any import declarations are polyfill imports injected
         // by @babel/preset-env.
@@ -334,6 +310,42 @@ function viteLegacyPlugin(options = {}) {
   }
 
   return [legacyGenerateBundlePlugin, legacyPostPlugin]
+}
+
+/**
+ * @param {string} code
+ * @param {any} targets
+ * @param {Set<string>} list
+ */
+function detectPolyfills(code, targets, list) {
+  const { ast } = babel.transformSync(code, {
+    ast: true,
+    configFile: false,
+    presets: [
+      [
+        presetEnv,
+        {
+          targets,
+          modules: false,
+          useBuiltIns: 'usage',
+          corejs: { version: 3, proposals: false },
+          shippedProposals: true,
+          ignoreBrowserslistConfig: true
+        }
+      ]
+    ]
+  })
+  for (const node of ast.program.body) {
+    if (node.type === 'ImportDeclaration') {
+      const source = node.source.value
+      if (
+        source.startsWith('core-js/') ||
+        source.startsWith('regenerator-runtime/')
+      ) {
+        list.add(source)
+      }
+    }
+  }
 }
 
 /**
