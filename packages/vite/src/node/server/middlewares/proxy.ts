@@ -58,6 +58,9 @@ export function proxyMiddleware({
           (opts.ws || opts.target?.toString().startsWith('ws:')) &&
           req.headers['sec-websocket-protocol'] !== HMR_HEADER
         ) {
+          if (opts.rewrite) {
+            req.url = opts.rewrite(url)
+          }
           proxy.ws(req, socket, head)
         }
       }
