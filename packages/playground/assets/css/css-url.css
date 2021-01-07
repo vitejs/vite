@@ -23,6 +23,10 @@
   background-size: 10px;
 }
 
+.css-url-quotes-base64-inline {
+  background: url('../nested/icon.png');
+  background-size: 10px;
+}
 /*
 urls inside comments should be ignored
 

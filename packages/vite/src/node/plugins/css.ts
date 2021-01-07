@@ -119,10 +119,13 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         css = css.replace(/\/\*[\s\S]*?\*\//gm, '')
         if (cssUrlRE.test(css)) {
           css = await rewriteCssUrls(css, async (url) => {
-            if (isExternalUrl(url) || isDataUrl(url)) {
+            if (isExternalUrl(url)) {
               return url
             }
             url = await urlToBuiltUrl(url, id, config, this)
+            if (isDataUrl(url)) {
+              return url
+            }
             return JSON.stringify(url)
           })
         }
