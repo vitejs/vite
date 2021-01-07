@@ -24,8 +24,10 @@ export function serveStaticMiddleware(
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
     // special processing
-    const ext = path.extname(cleanUrl(url))
-    if (!ext || ext === '.html') {
+    if (
+      req.headers.accept?.includes('text/html') ||
+      path.extname(cleanUrl(url)) === '.html'
+    ) {
       return next()
     }
 
