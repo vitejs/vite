@@ -68,6 +68,7 @@ describe('css url() references', () => {
   test('base64 inline', async () => {
     const match = isBuild ? `data:image/png;base64` : `/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
+    expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
   })
 
   if (isBuild) {
