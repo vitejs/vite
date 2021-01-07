@@ -245,7 +245,7 @@ export async function resolveConfig(
   return resolved
 }
 
-function mergeConfig(
+export function mergeConfig(
   a: Record<string, any>,
   b: Record<string, any>,
   isRoot = true
@@ -330,7 +330,7 @@ export function sortUserPlugins(
   return [prePlugins, postPlugins, normalPlugins]
 }
 
-async function loadConfigFromFile(
+export async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configFile?: string,
   configRoot: string = process.cwd(),
