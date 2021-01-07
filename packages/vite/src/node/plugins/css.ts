@@ -120,7 +120,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (cssUrlRE.test(css)) {
           css = await rewriteCssUrls(css, async (url) => {
             url = await urlToBuiltUrl(url, id, config, this)
-            return isDataUrl(url) ? url : JSON.stringify(url)
+            return url
           })
         }
       }

@@ -9,7 +9,11 @@ import { FS_PREFIX } from '../constants'
 import { PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 
-export const assetUrlRE = /"__VITE_ASSET__(\w+)(?:__(.*)__)?"/g
+export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)(?:__(.*)__)?/g
+
+// urls in JS must be quoted as strings, so when replacing them we need
+// a different regex
+const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]+)(?:__(.*)__)?"/g
 
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
@@ -51,7 +55,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     renderChunk(code) {
       let match
       let s
-      while ((match = assetUrlRE.exec(code))) {
+      while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
         const [full, fileHandle, postfix = ''] = match
         const outputFilepath =
