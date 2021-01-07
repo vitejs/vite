@@ -187,17 +187,10 @@ export interface ViteDevServer {
 export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
-  const resolvedConfig = await resolveConfig(
-    {
-      ...inlineConfig,
-      mode: inlineConfig.mode || 'development'
-    },
-    'serve'
-  )
-
-  const root = resolvedConfig.root
-  const logger = createLogger(resolvedConfig.logLevel)
-  const serverConfig = resolvedConfig.server || {}
+  const config = await resolveConfig(inlineConfig, 'serve', 'development')
+  const root = config.root
+  const logger = createLogger(config.logLevel)
+  const serverConfig = config.server || {}
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(serverConfig, app)
@@ -215,13 +208,13 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const plugins = resolvedConfig.plugins
-  const container = await createPluginContainer(resolvedConfig, watcher)
+  const plugins = config.plugins
+  const container = await createPluginContainer(config, watcher)
   const moduleGraph = new ModuleGraph(container)
   const closeHttpServer = createSeverCloseFn(httpServer)
 
   const server: ViteDevServer = {
-    config: resolvedConfig,
+    config: config,
     app,
     httpServer,
     watcher,
@@ -302,7 +295,7 @@ export async function createServer(
 
   // serve static files
   app.use(rawFsStaticMiddleware())
-  app.use(serveStaticMiddleware(root, resolvedConfig))
+  app.use(serveStaticMiddleware(root, config))
 
   // spa fallback
   app.use(
@@ -347,14 +340,11 @@ export async function createServer(
   httpServer.listen = (async (port: number, ...args: any[]) => {
     await container.buildStart({})
 
-    if (resolvedConfig.optimizeCacheDir) {
+    if (config.optimizeCacheDir) {
       // run optimizer
-      await optimizeDeps(resolvedConfig)
+      await optimizeDeps(config)
       // after optimization, read updated optimization metadata
-      const dataPath = path.resolve(
-        resolvedConfig.optimizeCacheDir,
-        'metadata.json'
-      )
+      const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
       if (fs.existsSync(dataPath)) {
         server.optimizeDepsMetadata = JSON.parse(
           fs.readFileSync(dataPath, 'utf-8')

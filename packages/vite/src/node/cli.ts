@@ -61,9 +61,7 @@ cli
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [browser]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
-  .option('-m, --mode <mode>', `[string] set env mode`, {
-    default: 'development'
-  })
+  .option('-m, --mode <mode>', `[string] set env mode`)
   .option(
     '--force',
     `[boolean]  force the optimizer to ignore the cache and re-bundle`
@@ -113,9 +111,7 @@ cli
       `or specify minifier to use (default: terser)`
   )
   .option('--manifest', `[boolean] emit build manifest json`)
-  .option('-m, --mode <mode>', `[string]  set env mode`, {
-    default: 'production'
-  })
+  .option('-m, --mode <mode>', `[string]  set env mode`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     try {
@@ -150,7 +146,8 @@ cli
             configFile: options.config,
             logLevel: options.logLevel
           },
-          'build'
+          'build',
+          'development'
         )
         await optimizeDeps(config, options.force, true)
       } catch (e) {

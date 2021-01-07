@@ -46,6 +46,11 @@ export interface UserConfig {
    */
   root?: string
   /**
+   * Explicitly set a mode to run in. This will override the default mode for
+   * each command, and can be overridden by the command line --mode option.
+   */
+  mode?: string
+  /**
    * Import aliases
    */
   alias?: AliasOptions
@@ -96,7 +101,6 @@ export interface UserConfig {
 }
 
 export interface InlineConfig extends UserConfig {
-  mode?: string
   configFile?: string | false
 }
 
@@ -121,12 +125,12 @@ export type ResolvedConfig = Readonly<
 
 export async function resolveConfig(
   inlineConfig: InlineConfig,
-  command: 'build' | 'serve'
+  command: 'build' | 'serve',
+  defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
-  let { configFile } = inlineConfig
-  const mode = inlineConfig.mode || 'development'
-
+  let mode = defaultMode
+  let { configFile } = config
   if (configFile !== false) {
     const loadResult = await loadConfigFromFile(
       {
@@ -134,7 +138,7 @@ export async function resolveConfig(
         command
       },
       configFile,
-      inlineConfig.root,
+      config.root,
       config.logLevel
     )
     if (loadResult) {
@@ -142,6 +146,8 @@ export async function resolveConfig(
       configFile = loadResult.path
     }
   }
+  // user config may provide an alternative mode
+  mode = config.mode || mode
 
   // resolve plugins
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
