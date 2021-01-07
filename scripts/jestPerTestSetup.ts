@@ -97,6 +97,12 @@ function startStaticServer(): Promise<string> {
   } catch (e) {}
   const base = config?.build?.base || ''
 
+  // @ts-ignore
+  if (config && config.__test__) {
+    // @ts-ignore
+    config.__test__()
+  }
+
   // start static file server
   const serve = sirv(resolve(tempDir, 'dist'))
   const httpServer = (server = http.createServer((req, res) => {
