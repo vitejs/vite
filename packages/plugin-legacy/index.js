@@ -1,5 +1,6 @@
 // @ts-check
 const path = require('path')
+const { createHash } = require('crypto')
 const { build } = require('vite')
 
 // lazy load babel since it's not used during dev
@@ -10,7 +11,11 @@ let babel
 const loadBabel = () => babel || (babel = require('@babel/standalone'))
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
+// DO NOT ALTER THIS CONTENT
 const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();`
+
+const legacyEntryId = 'vite-legacy-entry'
+const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 
 /**
  * @param {import('.').Options} options
@@ -293,8 +298,15 @@ function viteLegacyPlugin(options = {}) {
       if (legacyEntryFilename) {
         tags.push({
           tag: 'script',
-          attrs: { nomodule: true },
-          children: `System.import("${config.build.base}${legacyEntryFilename}")`,
+          attrs: {
+            nomodule: true,
+            // we set the entry path on the element as an attribute so that the
+            // script content will stay consistent - which allows using a constant
+            // hash value for CSP.
+            id: legacyEntryId,
+            'data-src': config.build.base + legacyEntryFilename
+          },
+          children: systemJSInlineCode,
           injectTo: 'body'
         })
       } else {
@@ -446,4 +458,10 @@ function isLegacyOutput(options) {
 }
 
 module.exports = viteLegacyPlugin
+
 viteLegacyPlugin.default = viteLegacyPlugin
+
+viteLegacyPlugin.cpsHashes = [
+  createHash('sha256').update(safari10NoModuleFix).digest('base64'),
+  createHash('sha256').update(systemJSInlineCode).digest('base64')
+]
