@@ -21,7 +21,7 @@ export default {
     legacy({
       targets: [
         'defaults',
-        'not IE 11
+        'not IE 11'
       ]
     })
   ]
