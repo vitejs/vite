@@ -13,7 +13,8 @@ async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 **Example Usage**
 
 ```js
-import { createServer } from 'vite'
+const { createServer } = require('vite')
+
 ;(async () => {
   const server = await createServer({
     // any valid user config options, plus `mode` and `configFile`
@@ -109,8 +110,9 @@ async function build(
 **Example Usage**
 
 ```js
-import path from 'path'
-import { build } from 'vite'
+const path = require('path')
+const { build } = require('vite')
+
 ;(async () => {
   await build({
     root: path.resolve(__dirname, './project'),
