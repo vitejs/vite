@@ -15,8 +15,13 @@ import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 
 const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
   let index = -1
+  const comments: string[] = []
+
   html = html
-    .replace(htmlCommentRE, '')
+    .replace(htmlCommentRE, (m) => {
+      comments.push(m)
+      return `<!--VITE_COMMENT_${comments.length - 1}-->`
+    })
     .replace(scriptRE, (_match, _openTag, script) => {
       index++
       if (script) {
@@ -25,6 +30,7 @@ const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
       }
       return _match
     })
+    .replace(/<!--VITE_COMMENT_(\d+)-->/g, (_, i) => comments[i])
 
   return {
     html,
