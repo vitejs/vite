@@ -1,11 +1,16 @@
+import MagicString from 'magic-string'
 import { ResolvedConfig } from '..'
 import { Plugin } from '../plugin'
 
 export const polyfillId = 'vite/dynamic-import-polyfill'
+const polyfillPlaceholder = `__DYANMIC_IMPORT_POLYFILL__()`
 
 export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   const skip = config.command === 'serve' || config.build.ssr
   let polyfillLoaded = false
+  const polyfillString =
+    `${__dynamic_import_polyfill__.toString()};` +
+    `__dynamic_import_polyfill__(${JSON.stringify(config.build.base)});`
 
   return {
     name: 'vite:dynamic-import-polyfill',
@@ -20,12 +25,12 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
           return ''
         }
         polyfillLoaded = true
-        return (
-          polyfill.toString() +
-          `;polyfill(${JSON.stringify(config.build.base)});`
-        )
+        // return a placeholder here and defer the injection to renderChunk
+        // so that we can selectively skip the injection based on output format
+        return polyfillPlaceholder
       }
     },
+
     renderDynamicImport({ format }) {
       if (skip || format !== 'es') {
         return null
@@ -41,6 +46,34 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
       return {
         left: '__import__(',
         right: ')'
+      }
+    },
+
+    renderChunk(code, chunk, { format }) {
+      if (skip) {
+        return null
+      }
+      if (!chunk.facadeModuleId) {
+        return null
+      }
+      const i = code.indexOf(polyfillPlaceholder)
+      if (i < 0) {
+        return null
+      }
+      // if format is not ES, simply empty it
+      const replacement = format === 'es' ? polyfillString : ''
+      if (config.build.sourcemap) {
+        const s = new MagicString(code)
+        s.overwrite(i, i + polyfillPlaceholder.length, replacement)
+        return {
+          code: s.toString(),
+          map: s.generateMap({ hires: true })
+        }
+      } else {
+        return {
+          code: code.replace(polyfillPlaceholder, replacement),
+          map: null
+        }
       }
     }
   }
@@ -78,7 +111,10 @@ declare const document: any
 declare const URL: any
 declare const Blob: any
 
-function polyfill(modulePath = '.', importFunctionName = '__import__') {
+function __dynamic_import_polyfill__(
+  modulePath = '.',
+  importFunctionName = '__import__'
+) {
   try {
     self[importFunctionName] = new Function('u', `return import(u)`)
   } catch (error) {

@@ -27,10 +27,10 @@ export async function resolvePlugins(
 
   return [
     aliasPlugin({ entries: config.alias }),
+    ...prePlugins,
     config.build.polyfillDynamicImport
       ? dynamicImportPolyfillPlugin(config)
       : null,
-    ...prePlugins,
     resolvePlugin({
       root: config.root,
       dedupe: config.dedupe,
