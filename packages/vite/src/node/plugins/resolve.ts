@@ -381,17 +381,7 @@ export function resolvePackageEntry(
     // https://nodejs.org/api/packages.html#packages_package_entry_points
     const { exports: exportsField } = data
     if (exportsField) {
-      if (typeof exportsField === 'string') {
-        entryPoint = exportsField
-      } else if (Array.isArray(exportsField)) {
-        entryPoint = exportsField[0]
-      } else if (isObject(exportsField)) {
-        if ('.' in exportsField) {
-          entryPoint = resolveConditionalExports(exportsField['.'])
-        } else {
-          entryPoint = resolveConditionalExports(exportsField)
-        }
-      }
+      entryPoint = resolveConditionalExports(exportsField, '.')
     }
   }
 
@@ -439,24 +429,13 @@ function resolveDeepImport(
 
   // map relative based on exports data
   if (exportsField) {
-    let isExported = false
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      if (relativeId in exportsField) {
-        relativeId = resolveConditionalExports(exportsField[relativeId])
-        isExported = true
-      } else {
-        for (const key in exportsField) {
-          if (key.endsWith('/') && relativeId.startsWith(key)) {
-            // directory mapping
-            const replacement = resolveConditionalExports(exportsField[key])
-            relativeId = replacement && relativeId.replace(key, replacement)
-            isExported = true
-            break
-          }
-        }
-      }
+      relativeId = resolveConditionalExports(exportsField, relativeId)
+    } else {
+      // not exposed
+      relativeId = undefined
     }
-    if (!isExported || !relativeId) {
+    if (!relativeId) {
       throw new Error(
         `Package subpath '${relativeId}' is not defined by "exports" in ` +
           `${path.join(dir, 'package.json')}.`
@@ -481,20 +460,51 @@ function resolveDeepImport(
   }
 }
 
-function resolveConditionalExports(exp: any): string | undefined {
+const ENV_KEYS = [
+  'esmodules',
+  'import',
+  'module',
+  'require',
+  'browser',
+  'node',
+  'default'
+]
+
+function resolveConditionalExports(exp: any, id: string): string | undefined {
   if (typeof exp === 'string') {
     return exp
   } else if (isObject(exp)) {
-    if (typeof exp.browser === 'string') {
-      return exp.browser
-    } else if (typeof exp.import === 'string') {
-      return exp.import
-    } else if (typeof exp.default === 'string') {
-      return exp.default
+    let isFileListing: boolean | undefined
+    let fallback: string | undefined
+    for (const key in exp) {
+      if (isFileListing === undefined) {
+        isFileListing = key[0] === '.'
+      }
+      if (isFileListing) {
+        if (key === id) {
+          return resolveConditionalExports(exp[key], id)
+        } else if (key.endsWith('/') && id.startsWith(key)) {
+          // mapped directory
+          const replacement = resolveConditionalExports(exp[key], id)
+          return replacement && id.replace(key, replacement)
+        }
+      } else if (ENV_KEYS.includes(key)) {
+        // https://github.com/vitejs/vite/issues/1418
+        // respect env key order
+        // but intentionally de-prioritize "require" and "default" keys
+        if (key === 'require' || key === 'default') {
+          if (!fallback) fallback = key
+        } else {
+          return resolveConditionalExports(exp[key], id)
+        }
+      }
+      if (fallback) {
+        return resolveConditionalExports(exp[key], id)
+      }
     }
   } else if (Array.isArray(exp)) {
     for (let i = 0; i < exp.length; i++) {
-      const res = resolveConditionalExports(exp[i])
+      const res = resolveConditionalExports(exp[i], id)
       if (res) return res
     }
   }

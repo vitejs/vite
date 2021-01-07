@@ -1,5 +1,5 @@
 {
-  "name": "resolve-conditional-exports",
+  "name": "resolve-exports-path",
   "version": "1.0.0",
   "exports": {
     ".": {

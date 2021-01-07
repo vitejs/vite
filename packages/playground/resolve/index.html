@@ -15,6 +15,9 @@
 <h2>Deep import with exports field + mapped directory</h2>
 <p class="exports-deep-mapped-dir">fail</p>
 
+<h2>Exports field env priority</h2>
+<p class="exports-env">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -56,20 +59,23 @@
   ))
 
   // exports field
-  import { msg } from 'resolve-conditional-exports'
+  import { msg } from 'resolve-exports-path'
   text('.exports-entry', msg)
 
   // deep import w/ exports
-  import { msg as deepMsg } from 'resolve-conditional-exports/deep.js'
+  import { msg as deepMsg } from 'resolve-exports-path/deep.js'
   text('.exports-deep', deepMsg)
 
   // deep import w/ exposed dir
-  import { msg as exposedDirMsg } from 'resolve-conditional-exports/dir/dir'
+  import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'
   text('.exports-deep-exposed-dir', exposedDirMsg)
 
   // deep import w/ mapped dir
-  import { msg as mappedDirMsg } from 'resolve-conditional-exports/dir-mapped/dir'
+  import { msg as mappedDirMsg } from 'resolve-exports-path/dir-mapped/dir'
   text('.exports-deep-mapped-dir', mappedDirMsg)
+
+  import { msg as exportsEnvMsg } from 'resolve-exports-env'
+  text('.exports-env', exportsEnvMsg)
 
   // implicit index resolving
   import { foo } from './util'

@@ -1,0 +1,11 @@
+{
+  "name": "resolve-exports-env",
+  "version": "1.0.0",
+  "exports": {
+    "import": {
+      "browser": "./browser.mjs"
+    },
+    "browser": "./browser.js",
+    "default": "./fallback.umd.js"
+  }
+}
