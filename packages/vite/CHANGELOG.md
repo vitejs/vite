@@ -1,3 +1,45 @@
+# [2.0.0-beta.11](https://github.com/vitejs/vite/compare/v2.0.0-beta.10...v2.0.0-beta.11) (2021-01-07)
+
+
+### Bug Fixes
+
+* preserve html comments during dev ([b295400](https://github.com/vitejs/vite/commit/b2954009f48da0a0d3202eee802e51eb7a1fb6c5)), closes [#1420](https://github.com/vitejs/vite/issues/1420)
+* **resolve:** respect exports env key order ([b58c860](https://github.com/vitejs/vite/commit/b58c860f1771deecb78e126dfe8b6f663bd5e7c9)), closes [#1418](https://github.com/vitejs/vite/issues/1418)
+* avoid excessive quote in css public urls ([1437129](https://github.com/vitejs/vite/commit/1437129541b36c0453fcecb1f1d44b574cc3326f)), closes [#1399](https://github.com/vitejs/vite/issues/1399)
+* do not rewrite dynamic import if format is not native es ([eb35bd5](https://github.com/vitejs/vite/commit/eb35bd546333f4edea94607d05581b887b2ce9b6))
+* esbuild transform should filter id with and wihtout query ([4cda5be](https://github.com/vitejs/vite/commit/4cda5beb9f62c766dc8a8ab5d7b17704355348fc))
+* fix cache invalidation for non-optimized deps with cross imports ([11c407a](https://github.com/vitejs/vite/commit/11c407a085e9facd810914a5d4256946c11a1ca9)), closes [#1401](https://github.com/vitejs/vite/issues/1401)
+* html transform should not render boolean attr with false value ([a59ffef](https://github.com/vitejs/vite/commit/a59ffefe1087a45cc4c13ab9e15e1d43ccac114a))
+* remove vue from optimize ignore list ([9eab790](https://github.com/vitejs/vite/commit/9eab79088079e95fb32f458a4bf573af7618bec6)), closes [#1408](https://github.com/vitejs/vite/issues/1408)
+* support serving extension-less files in /public ([a7bca9c](https://github.com/vitejs/vite/commit/a7bca9c324db280ad3fa8255a36dee838a29255b)), closes [#1364](https://github.com/vitejs/vite/issues/1364)
+* **build:** inline quotes css url to base64 ([#1412](https://github.com/vitejs/vite/issues/1412)) ([9b5b352](https://github.com/vitejs/vite/commit/9b5b3526de3288fc5d0e0a40fd80378db24674a1)), closes [#1409](https://github.com/vitejs/vite/issues/1409) [#1413](https://github.com/vitejs/vite/issues/1413)
+
+
+### Code Refactoring
+
+* pass `configFile` via inline config instead of extra arg in most ([24b3b5a](https://github.com/vitejs/vite/commit/24b3b5a4e4402543d45bd8e3e4ff9ff26c09d7cb))
+
+
+### Features
+
+* support specifying mode in user config ([396bbf8](https://github.com/vitejs/vite/commit/396bbf8c869b23360a39bc4d99b760e25645c84b)), closes [#1380](https://github.com/vitejs/vite/issues/1380)
+* **plugin-legacy:** @vitejs/plugin-legacy ([8c34870](https://github.com/vitejs/vite/commit/8c34870040f8c2f4be7d00245a3683f9e64d894e))
+* **proxy:** add rewrite support for ws ([#1407](https://github.com/vitejs/vite/issues/1407)) ([fa3bc34](https://github.com/vitejs/vite/commit/fa3bc34e23e757d57ca42e66c41dc8e712ae5547))
+* also expose correspodning chunk in build html transform ([b2f4836](https://github.com/vitejs/vite/commit/b2f4836ea83d7ba86c2ef3a082773d5045f2e7d9))
+* expose loadConfigFromFile API ([#1403](https://github.com/vitejs/vite/issues/1403)) ([9582171](https://github.com/vitejs/vite/commit/958217177c3173b7e5dec7f29048a2e83168649b))
+
+
+### BREAKING CHANGES
+
+* the following JavaScript APIs now expect `configFile`
+as a property of the config object passed in instead of an argument:
+
+    - `createServer`
+    - `build`
+    - `resolveConfig`
+
+
+
 # [2.0.0-beta.10](https://github.com/vitejs/vite/compare/v2.0.0-beta.9...v2.0.0-beta.10) (2021-01-06)
 
 
