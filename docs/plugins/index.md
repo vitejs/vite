@@ -16,4 +16,4 @@
 
 ## Community Plugins
 
-> Submit a PR to add yours.
+Check out [awesome-vite](https://github.com/vitejs/awesome-vite) - you can also submit a PR to list your plugins there.
