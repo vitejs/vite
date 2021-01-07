@@ -412,5 +412,5 @@ export function getDepHash(
   if (configFile) {
     content += fs.readFileSync(configFile, 'utf-8')
   }
-  return createHash('sha1').update(content).digest('base64')
+  return createHash('sha256').update(content).digest('hex').substr(0, 8)
 }

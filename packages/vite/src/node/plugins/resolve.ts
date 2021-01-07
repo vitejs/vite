@@ -282,7 +282,10 @@ export function tryNodeResolve(
     // files actually inside node_modules so that locally linked packages
     // in monorepos are not cached this way.
     if (resolved.includes('node_modules')) {
-      resolved = injectQuery(resolved, `v=${pkg.data.version}`)
+      const versionHash = server?.optimizeDepsMetadata?.hash
+      if (versionHash) {
+        resolved = injectQuery(resolved, `v=${versionHash}`)
+      }
     }
     return { id: resolved }
   }
