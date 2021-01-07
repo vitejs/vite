@@ -8,7 +8,7 @@ const hash = require('hash-sum')
  * @param {import('.').Options} options
  * @returns {import('vite').Plugin}
  */
-module.exports = function vueJsxPlugin(options = {}) {
+function vueJsxPlugin(options = {}) {
   let needHmr = false
   let needSourceMap = true
 
@@ -213,3 +213,6 @@ function isDefineComponentCall(node) {
     node.callee.name === 'defineComponent'
   )
 }
+
+module.exports = vueJsxPlugin
+vueJsxPlugin.default = vueJsxPlugin
