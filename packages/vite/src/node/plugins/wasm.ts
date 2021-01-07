@@ -1,13 +1,12 @@
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
-import { isDataUrl } from '../utils'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '/__vite-wasm-helper'
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
-  if (isDataUrl(url)) {
+  if (url.startsWith('data:')) {
     // @ts-ignore
     const binaryString = atob(url.replace(/^data:.*?base64,/, ''))
     const bytes = new Uint8Array(binaryString.length)
