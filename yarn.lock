@@ -7067,16 +7067,20 @@ requires-port@^1.0.0:
   version "0.0.0"
   uid ""
 
-"resolve-conditional-exports@link:./packages/playground/resolve/conditional-exports":
-  version "0.0.0"
-  uid ""
-
 resolve-cwd@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/resolve-cwd/-/resolve-cwd-3.0.0.tgz#0f0075f1bb2544766cf73ba6a6e2adfebcb13f2d"
   integrity sha512-OrZaX2Mb+rJCpH/6CpSqt9xFVpN++x01XnN2ie9g6P5/3xelLAkXWVADpdz1IHD/KFfEXyE6V0U01OQ3UO2rEg==
   dependencies:
     resolve-from "^5.0.0"
+
+"resolve-exports-env@link:./packages/playground/resolve/exports-env":
+  version "0.0.0"
+  uid ""
+
+"resolve-exports-path@link:./packages/playground/resolve/exports-path":
+  version "0.0.0"
+  uid ""
 
 resolve-from@^4.0.0:
   version "4.0.0"

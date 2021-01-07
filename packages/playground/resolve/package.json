@@ -8,7 +8,8 @@
     "debug": "node --inspect-brk ../../vite/bin/vite"
   },
   "dependencies": {
-    "resolve-conditional-exports": "link:./conditional-exports",
+    "resolve-exports-path": "link:./exports-path",
+    "resolve-exports-env": "link:./exports-env",
     "resolve-browser-field": "link:./browser-field",
     "@babel/runtime": "^7.12.5",
     "normalize.css": "^8.0.1"

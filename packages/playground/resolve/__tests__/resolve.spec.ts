@@ -22,6 +22,10 @@ test('deep import with exports field + mapped dir', async () => {
   )
 })
 
+test('Respect exports field env key priority', async () => {
+  expect(await page.textContent('.exports-env')).toMatch('[success]')
+})
+
 test('omitted index/*', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })
