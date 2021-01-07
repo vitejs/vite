@@ -9,7 +9,7 @@
 }
 
 .css-url-public {
-  background: url(/icon.png);
+  background: url("/icon.png");
   background-size: 10px;
 }
 
