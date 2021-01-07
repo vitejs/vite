@@ -1,3 +1,12 @@
+# [2.0.0-beta.12](https://github.com/vitejs/vite/compare/v2.0.0-beta.11...v2.0.0-beta.12) (2021-01-07)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** avoid esbuild transform on legacy chunks ([7734105](https://github.com/vitejs/vite/commit/7734105093c6dabf64da6bfc11486aa9ac62efea))
+
+
+
 # [2.0.0-beta.11](https://github.com/vitejs/vite/compare/v2.0.0-beta.10...v2.0.0-beta.11) (2021-01-07)
 
 
