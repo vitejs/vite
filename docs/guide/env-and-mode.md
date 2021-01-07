@@ -13,7 +13,7 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 - **`import.meta.env.DEV`**: {boolean} whether the app is running in development (always the opposite of `import.meta.env.PROD`)
 
 :::tip
-These env variables are statically replaced during build, so make sure to always reference them using the full format.
+These env variables are statically replaced during build, so make sure to always reference them using the full string. Dynamic keys will not work.
 :::
 
 ## `.env` Files
@@ -43,7 +43,7 @@ Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your 
 - `.env.*.local` files are local-only and can contain sensitive variables. You should add `.local` to your `.gitignore` to avoid them being checked into git.
 
 - Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
-:::
+  :::
 
 ## Modes
 

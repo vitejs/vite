@@ -66,19 +66,14 @@ export default ({ command, mode }) => {
 
 ## Shared Options
 
-### root
-
-- **Type:** `string`
-- **Default:** `process.cwd()`
-
-  Project root directory. Can be an absolute path, or a path relative from the location of the config file itself. See [Project Root](/guide/#project-root) for more details.
-
 ### alias
 
 - **Type:**
   `Record<string, string> | Array<{ find: string | RegExp, replacement: string }>`
 
   Will be passed to `@rollup/plugin-alias` as its [entries option](https://github.com/rollup/plugins/tree/master/packages/alias#entries). Can either be an object, or an array of `{ find, replacement }` pairs.
+
+  More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
 
 ### define
 
@@ -91,6 +86,24 @@ export default ({ command, mode }) => {
 - **Type:** ` (Plugin | Plugin[])[]`
 
   Array of plugins to use. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
+
+### root
+
+- **Type:** `string`
+- **Default:** `process.cwd()`
+
+  Project root directory. Can be an absolute path, or a path relative from the location of the config file itself.
+
+  See [Project Root](/guide/#project-root) for more details.
+
+### mode
+
+- **Type:** `string`
+- **Default:** `'development'` for serve, `'production'` for build
+
+  Specifying this in config will override the default mode for both serve and build. This value can also be overriden via the command line `--mode` option.
+
+  See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 ### css.modules
 
