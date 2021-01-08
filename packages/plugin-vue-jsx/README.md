@@ -1,4 +1,4 @@
-# @vitejs/plugin-vue-jsx
+# @vitejs/plugin-vue-jsx [![npm](https://img.shields.io/npm/v/@vitejs/plugin-vue-jsx.svg)](https://npmjs.com/package/@vitejs/plugin-vue-jsx)
 
 Provides Vue 3 JSX & TSX support with HMR.
 
