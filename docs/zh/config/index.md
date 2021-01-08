@@ -66,13 +66,6 @@ export default ({ command, mode }) => {
 
 ## 共享配置
 
-### root
-
-- **类型：** `string`
-- **默认：** `process.cwd()`
-
-  项目根目录。可以是一个绝对路径，或者一个相对于该配置文件本身的路径。更多细节请见 [项目根目录](/zh/guide/#项目根目录)。
-
 ### alias
 
 - **类型：**
@@ -80,17 +73,39 @@ export default ({ command, mode }) => {
 
   将会被传递到 `@rollup/plugin-alias` 作为它的 [entries](https://github.com/rollup/plugins/tree/master/packages/alias#entries)。也可以是一个对象，或一个 `{ find, replacement }` 的数组.
 
+  更高级的自定义解析方法可以通过 [插件](/zh/guide/api-plugin) 实现。
+
 ### define
 
 - **类型：** `Record<string, string>`
 
   定义全局变量替换。在开发期间，entries 将被定义为全局变量，在构建期间被静态替换。
 
+### root
+
+- **类型：** `string`
+- **默认：** `process.cwd()`
+
+  项目根目录。可以是一个绝对路径，或者一个相对于该配置文件本身的路径。
+
+  更多细节请见 [项目根目录](/zh/guide/#项目根目录)。
+
+### mode
+
+- **Type:** `string`
+- **Default:** `'development'` for serve, `'production'` for build
+
+  在配置中特别指定将会替换掉 serve 和 build 时的默认模式。还可以通过命令行选项 `--mode` 覆写该值。
+
+  更多细节请见 [环境变量与模式](/zh/guide/env-and-mode)。
+
 ### plugins
 
 - **类型：** ` (Plugin | Plugin[])[]`
 
-  要使用的插件数组。查看 [插件 API](/zh/guide/api-plugin) 获取关于 Vite 插件的更多细节。
+  要使用的插件数组。
+
+  获取关于 Vite 插件的更多细节请见 [插件 API](/zh/guide/api-plugin) 。
 
 ### css.modules
 
@@ -226,18 +241,20 @@ export default ({ command, mode }) => {
 
   为开发服务器配置自定义代理规则。期望接收一个 `{ key: options }` 对象。使用 [`http-proxy`](https://github.com/http-party/node-http-proxy)。完整选项详见 [此处](https://github.com/http-party/node-http-proxy#options).
 
-  **Example:**
+  **示例：**
 
   ```js
   export default {
-    proxy: {
-      // 字符串写法简写
-      '/foo': 'http://localhost:4567/foo',
-      // 对象写法
-      '/api': {
-        target: 'http://jsonplaceholder.typicode.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+    server: {
+      proxy: {
+        // 字符串简写写法
+        '/foo': 'http://localhost:4567/foo',
+        // 选项写法
+        '/api': {
+          target: 'http://jsonplaceholder.typicode.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, '')
+        }
       }
     }
   }

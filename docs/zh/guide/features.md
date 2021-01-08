@@ -32,6 +32,32 @@ Vite 使用 [esbuild](https://github.com/evanw/esbuild) 将 TypeScript 翻译到
 
 注意因为 `esbuild` 只执行转译工作而不含类型信息，所以它无需支持 TypeScript 的特定功能例如常量枚举和隐式 “type-only” 导入。你必须在你的 `tsconfig.json` 中的 `compilerOptions` 里设置 `"isolatedModules": true`，这样 TS 才会警告你哪些功能无法与独立编译模式一同工作。
 
+### Client Types
+
+Vite 默认的类型定义是写给它的 Node.js API 的。要将其补充到一个 Vite 应用的客户端代码环境中，请将 `vite/client` 添加到 `tsconfig` 中的 `compilerOptions.types` 下：
+
+```json
+{
+  "compilerOptions": {
+    "types": ["vite/client"]
+  }
+}
+```
+
+这将会提供一下类型定义补充：
+
+- 资源导入 (例如：导入一个 `.svg` 文件)
+- `import.meta.env` 上 Vite 注入的在 的环境变量的类型定义
+- `import.meta.hot` 上的 [HMR API](./api-hmr) 类型定义
+
+## Vue
+
+Vite 为 Vue 提供第一优先级支持：
+
+- Vue 3 单文件组件支持：[@vitejs/plugin-vue](https://github.com/vitejs/vite/tree/main/packages/plugin-vue)
+- Vue 3 JSX 支持：[@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite/tree/main/packages/plugin-vue)
+- Vue 2 支持：[underfin/vite-plugin-vue2](https://github.com/underfin/vite-plugin-vue2)
+
 ## JSX
 
 `.jsx` 和 `.tsx` 文件同样开箱即用。JSX 的翻译同样是通过 `esbuild`，默认为 React 16 形式，React 17 形式的 JSX 在 esbuild 中的支持请看 [这里](https://github.com/evanw/esbuild/issues/334).

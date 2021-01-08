@@ -242,7 +242,8 @@ Vite 插件也可以提供钩子来服务于特定的 Vite 目标。这些钩子
       path: string
       filename: string
       server?: ViteDevServer
-      bundle?: OutputBundle
+      bundle?: import('rollup').OutputBundle
+      chunk?: import('rollup').OutputChunk
     }
   ) =>
     | IndexHtmlTransformResult

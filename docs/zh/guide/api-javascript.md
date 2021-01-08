@@ -7,19 +7,17 @@ Vite 的 JavaScript API 是完全类型化的，我们推荐使用 TypeScript �
 **类型签名**
 
 ```ts
-async function createServer(
-  inlineConfig?: UserConfig & { mode?: string },
-  configPath?: string | false
-): Promise<ViteDevServer>
+async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 ```
 
 **使用示例**
 
 ```js
-import { createServer } from 'vite'
+const { createServer } = require('vite')
 ;async () => {
   const server = await createServer({
-    // any valid user config options
+    // 任何合法的用户配置选项，加上 `mode` 和 `configFile`
+    configFile: false,
     root: __dirname,
     server: {
       port: 1337
@@ -28,6 +26,13 @@ import { createServer } from 'vite'
   await server.listen()
 }
 ```
+
+## `InlineConfig`
+
+`InlineConfig` 接口扩展了 `UserConfig` 并添加了以下属性：
+
+- `mode`：覆盖默认的模式 (开发服务器使用 `'development'`)
+- `configFile`：指明要使用的配置文件。如果没有设置，Vite 将尝试从项目根目录自动解析。设置为 `false` 可以禁用自动解析功能。
 
 ## `ViteDevServer`
 
@@ -95,16 +100,15 @@ interface ViteDevServer {
 
 ```ts
 async function build(
-  inlineConfig?: UserConfig & { mode?: string },
-  configPath?: string | false
+  inlineConfig?: InlineConfig
 ): Promise<RollupOutput | RollupOutput[]>
 ```
 
 **使用示例**
 
 ```js
-import path from 'path'
-import { build } from 'vite'
+const path = require('path')
+import { build } from 'vite'	const { build } = require('vite')
 ;async () => {
   await build({
     root: path.resolve(__dirname, './project'),
@@ -124,9 +128,7 @@ import { build } from 'vite'
 
 ```ts
 async function resolveConfig(
-  inlineConfig: UserConfig,
-  command: 'build' | 'serve',
-  mode: string,
-  configPath?: string | false
+  inlineConfig: InlineConfig,
+  command: 'build' | 'serve'
 ): Promise<ResolvedConfig>
 ```

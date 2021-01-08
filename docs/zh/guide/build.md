@@ -4,9 +4,20 @@
 
 ## 浏览器兼容性
 
-生产版本假设浏览器对 [原生 ES 模块动态导入](https://caniuse.com/es6-module-dynamic-import) 有基本支持。默认情况下，所有代码都会至少以 `es2020` 为目标转译（只是为了更简洁和缩小兼容性差距）。你也可以通过 [`build.target` 配置项](/zh/config/#build-target) 指定构建目标，最低支持 `es2015`。
+生产版本假设浏览器对 [原生 ES 模块动态导入](https://caniuse.com/es6-module-dynamic-import) 有基本支持。默认情况下，所有代码构建都会以 [支持原生 ESM script 标签的浏览器](https://caniuse.com/es6-module) 为目标。
 
-为了兼容，_可以_ 通过处理构建输出产物的插件来支持传统浏览器（例如 [`@rollup/plugin-babel`](https://github.com/rollup/plugins/tree/master/packages/babel) + [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env) + [SystemJS](https://github.com/systemjs/systemjs)）。这不是一个内置功能，单我们有计划提供一个官方插件来自动生成一份兼容产物。
+一个轻量级的 [动态导入 polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill) 也会同时自动注入。
+
+你也可以通过 [`build.target` 配置项](/zh/config/#build-target) 指定构建目标，最低支持 `es2015`。
+
+- Chrome >=61
+- Firefox >=60
+- Safari >=11
+- Edge >=16
+
+请注意，默认情况下 Vite 只处理语法转译，并 **不默认包含任何 polyfill**。你可以前往 [Polyfill.io](https://polyfill.io/v3/) 查看，这是一个基于用户浏览器 User-Agent 字符串自动生成 polyfill 包的服务。
+
+传统浏览器可以通过插件 [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) 来支持，它将自动生成传统版本的 chunk 和其相应 ES 语言特性方面的 polyfill。兼容版的 chunk 只会在不支持原生 ESM 的浏览器中有按需加载。
 
 ## public base 路径
 

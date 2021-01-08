@@ -12,11 +12,17 @@ Vite 在一个特殊的 **`import.meta.env`** 对象上暴露环境变量。这�
 
 - **`import.meta.env.DEV`**: {boolean} 应用是否运行在开发环境 (永远与 `import.meta.env.PROD` 相反)
 
-:::tip
-这些环境变量在构建过程中会被静态替换，因此请确保始终使用完整格式引用它们。
-:::
+### 生产环境替换
 
-## `.env` Files
+在生产环境中，这些环境变量会在构建时被静态替换，所以请在引用它们时使用完整的字符串。动态的 key 将无法生效。例如，动态 key 取值 `import.meta.env[key]` 是无效的。
+
+它还将替换出现在 JavaScript 和 Vue 模板中的字符串。这应该是比较罕见的情况，但它可能是不小心为之。有一些方法可以避免这个问题:
+
+- 对于 JavaScript 字符串，你可以在相应位置上使用一个 unicode 序列值，例如： `'import.meta\u200b.env.MODE'`。
+
+- 对于 Vue 模板或其他编译到 JavaScript 字符串的 HTML，你可以使用 [`<wbr>` 标签](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/wbr)，例如：`import.meta.<wbr>env.MODE`。
+
+## `.env` 文件
 
 Vite 使用 [dotenv](https://github.com/motdotla/dotenv) 在你的项目根目录下从以下文件加载额外的环境变量:
 
