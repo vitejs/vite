@@ -76,7 +76,9 @@ export async function transformRequest(
     }
   }
   if (code == null) {
-    throw new Error(`Failed to load url ${url}. Does the file exist?`)
+    throw new Error(
+      `Failed to load url ${url} (resolved id: ${id}). Does the file exist?`
+    )
   }
 
   // ensure module in graph after successful load
