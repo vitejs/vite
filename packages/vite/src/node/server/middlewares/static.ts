@@ -14,7 +14,7 @@ export function serveStaticMiddleware(
   const serve = sirv(dir, sirvOptions)
 
   return (req, res, next) => {
-    const url = req.url!
+    let url = req.url!
 
     // skip import request
     if (isImportRequest(url)) {
@@ -30,6 +30,9 @@ export function serveStaticMiddleware(
     ) {
       return next()
     }
+    
+    // #1426
+    url = req.url = decodeURIComponent(url)
 
     // apply aliases to static requests as well
     if (config) {
@@ -51,7 +54,6 @@ export function serveStaticMiddleware(
       }
     }
 
-    req.url = decodeURIComponent(req.url!)
     serve(req, res, next)
   }
 }
