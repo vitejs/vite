@@ -1,9 +1,31 @@
+<h2>Normal Import</h2>
 <pre class="full"></pre>
 <pre class="named"></pre>
 
-<script type="module">
-import json, { hello } from './test.json'
+<h2>Dynamic Import</h2>
+<pre class="dynamic"></pre>
+<pre class="dynamic-named"></pre>
 
-document.querySelector('.full').textContent = JSON.stringify(json, null, 2)
-document.querySelector('.named').textContent = hello
+<h2>Raw fetch</h2>
+<pre class="fetch"></pre>
+
+<script type="module">
+  import json, { hello } from './test.json'
+  text('.full', JSON.stringify(json))
+  text('.named', hello)
+
+  import('/test.json').then((mod) => {
+    text('.dynamic', JSON.stringify(mod.default))
+    text('.dynamic-named', mod.hello)
+  })
+
+  fetch(import.meta.env.DEV ? '/test.json' : '/public.json')
+    .then((r) => r.json())
+    .then((data) => {
+      text('.fetch', JSON.stringify(data))
+    })
+
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
 </script>

@@ -31,7 +31,7 @@ export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   const {
-    config: { root, logger, assetsInclude },
+    config: { root, logger },
     moduleGraph
   } = server
 
@@ -82,8 +82,7 @@ export function transformMiddleware(
         isJSRequest(url) ||
         isImportRequest(url) ||
         isCSSRequest(url) ||
-        isHTMLProxy(url) ||
-        (req.headers.accept === '*/*' && !assetsInclude(withoutQuery))
+        isHTMLProxy(url)
       ) {
         // strip ?import
         url = removeImportQuery(url)
