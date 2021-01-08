@@ -47,7 +47,7 @@ function cleanOptions(options: GlobalCLIOptions) {
 
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
-  .option('-r, --root <path>', `[string] use specified config file`)
+  .option('-r, --root <path>', `[string] use specified root directory`)
   .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
