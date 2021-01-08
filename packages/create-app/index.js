@@ -5,17 +5,18 @@ const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 const { prompt } = require('enquirer')
+const { yellow, green, cyan, magenta, stripColors } = require('kolorist')
 
 const cwd = process.cwd()
 
 const TEMPLATES = [
-  'vanilla',
-  'vue',
-  'vue-ts',
-  'react',
-  'react-ts',
-  'preact',
-  'preact-ts'
+  yellow('vanilla'),
+  green('vue'),
+  green('vue-ts'),
+  cyan('react'),
+  cyan('react-ts'),
+  magenta('preact'),
+  magenta('preact-ts')
 ]
 
 const renameFiles = {
@@ -76,7 +77,7 @@ async function init() {
       message: `Select a template:`,
       choices: TEMPLATES
     })
-    template = t
+    template = stripColors(t)
   }
 
   const templateDir = path.join(__dirname, `template-${template}`)
