@@ -8,9 +8,9 @@ By default, this plugin will:
 
 - Generate a corresponding legacy chunk for every chunk in the final bundle, transformed with [@babel/preset-env](https://babeljs.io/docs/en/babel-preset-env) and emitted as [SystemJS modules](https://github.com/systemjs/systemjs) (code splitting is still supported!).
 
-- Generate a polyfill chunk including SystemJS runtime, and any necessary polyfills determined by specified browser targets and **acutal usage** in the bundle.
+- Generate a polyfill chunk including SystemJS runtime, and any necessary polyfills determined by specified browser targets and **actual usage** in the bundle.
 
-- Inject `<script nomdule>` tags into generated HTML to conditionally load the polyfills and legacy bundle only in browsers without native ESM support.
+- Inject `<script nomodule>` tags into generated HTML to conditionally load the polyfills and legacy bundle only in browsers without native ESM support.
 
 ## Usage
 
@@ -43,7 +43,7 @@ export default {
 - **Type:** `boolean | string[]`
 - **Default:** `true`
 
-  By default, a polyfills chunks is generated based on the target browser ranges and actual usage in the final bundle (detected via `@babel/preset-env`'s `useBuiltIns: 'usage'`).
+  By default, a polyfills chunks are generated based on the target browser ranges and actual usage in the final bundle (detected via `@babel/preset-env`'s `useBuiltIns: 'usage'`).
 
   Set to a list of strings to explicitly control which polyfills to include. See [Polyfill Specifiers](#polyfill-specifiers) for details.
 
@@ -70,9 +70,9 @@ export default {
 
   Set to a list of strings to explicitly control which polyfills to include. See [Polyfill Specifiers](#polyfill-specifiers) for details.
 
-  Note it is **not recommended** to use the `true` value (which uses auto detection) because `core-js@3` is very aggressive in polyfill inclusions due to all the bleeding edge features it supports. Even when targeting native ESM support, it injects 15kb of polyfills!
+  Note it is **not recommended** to use the `true` value (which uses auto-detection) because `core-js@3` is very aggressive in polyfill inclusions due to all the bleeding edge features it supports. Even when targeting native ESM support, it injects 15kb of polyfills!
 
-  If you don't have hard reliance on bleeding edge runtime features, it is not that hard to avoid having to use polyfills in the modern build altogether. Alternatively, consider using an on-demand service like [Polyfill.io](https://polyfill.io/v3/) to only inject necessary polyfills based on actual browser useragents (most modern brwosers will need nothing!).
+  If you don't have hard reliance on bleeding edge runtime features, it is not that hard to avoid having to use polyfills in the modern build altogether. Alternatively, consider using an on-demand service like [Polyfill.io](https://polyfill.io/v3/) to only inject necessary polyfills based on actual browser user-agents (most modern browsers will need nothing!).
 
 ### `renderLegacyChunks`
 
@@ -96,7 +96,7 @@ export default {
   }
   ```
 
-## Polyfill Sepcifiers
+## Polyfill Specifiers
 
 Polyfill specifier strings for `polyfills` and `modernPolyfills` can be either of the following:
 
