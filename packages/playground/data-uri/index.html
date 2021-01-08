@@ -1,0 +1,10 @@
+<div class="plain"></div>
+<div class="base64"></div>
+
+<script type="module">
+  import msg from "data:text/javascript, export default 'hi'"
+  document.querySelector('.plain').textContent = msg
+
+  import base64Msg from 'data:text/javascript;base64, ZXhwb3J0IGRlZmF1bHQgJ2hpJw=='
+  document.querySelector('.base64').textContent = base64Msg
+</script>

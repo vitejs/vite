@@ -8,12 +8,12 @@ import {
   createDebugger,
   deepImportRE,
   injectQuery,
-  isDataUrl,
   isExternalUrl,
   isObject,
   normalizePath,
   fsPathFromId,
-  resolveFrom
+  resolveFrom,
+  isDataUrl
 } from '../utils'
 import { ResolvedConfig, ViteDevServer } from '..'
 import slash from 'slash'
@@ -131,11 +131,17 @@ export function resolvePlugin({
       }
 
       // external
-      if (isExternalUrl(id) || isDataUrl(id)) {
+      if (isExternalUrl(id)) {
         return {
           id,
           external: true
         }
+      }
+
+      // data uri: pass through (this only happens during build and will be
+      // handled by dedicated plugin)
+      if (isDataUrl(id)) {
+        return null
       }
 
       // bare package imports, perform node resolve
