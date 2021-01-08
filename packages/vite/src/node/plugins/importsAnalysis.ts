@@ -15,7 +15,8 @@ import {
   isExternalUrl,
   isJSRequest,
   prettifyUrl,
-  timeFrom
+  timeFrom,
+  normalizePath
 } from '../utils'
 import {
   debugHmr,
@@ -24,6 +25,7 @@ import {
 } from '../server/hmr'
 import {
   FS_PREFIX,
+  CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
   VALID_ID_PREFIX
@@ -36,6 +38,8 @@ import { makeLegalIdentifier } from '@rollup/pluginutils'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
+
+const clientDir = normalizePath(CLIENT_DIR)
 
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
@@ -133,6 +137,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let hasHMR = false
       let isSelfAccepting = false
       let hasEnv = false
+      let needQueryInjectHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       // vite-only server context
@@ -195,8 +200,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // check @vite-ignore which suppresses dynamic import warning
           hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(url)
           // #998 remove comment
-          url = url.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
-          const literalIdMatch = url.match(/^\s*(?:'([^']+)'|"([^"]+)")\s*$/)
+          url = url.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '').trim()
+          const literalIdMatch = url.match(/^'([^']+)'|"([^"]+)"$/)
           if (literalIdMatch) {
             isLiteralDynamicId = true
             url = literalIdMatch[1] || literalIdMatch[2]
@@ -214,6 +219,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (
             url.startsWith('/') &&
             !config.assetsInclude(cleanUrl(url)) &&
+            !url.endsWith('.json') &&
             checkPublicFile(url, config.root)
           ) {
             throw new Error(
@@ -313,20 +319,24 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           importedUrls.add(url)
-        } else if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
-          this.warn(
-            `\n` +
-              chalk.cyan(importerModule.file) +
+        } else if (!importer.startsWith(clientDir)) {
+          if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
+            this.warn(
               `\n` +
-              generateCodeFrame(source, start) +
-              `\nThe above dynamic import cannot be analyzed by vite.\n` +
-              `See ${chalk.blue(
-                `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
-              )} ` +
-              `for supported dynamic import formats. ` +
-              `If this is intended to be left as-is, you can use the ` +
-              `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
-          )
+                chalk.cyan(importerModule.file) +
+                `\n` +
+                generateCodeFrame(source, start) +
+                `\nThe above dynamic import cannot be analyzed by vite.\n` +
+                `See ${chalk.blue(
+                  `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+                )} ` +
+                `for supported dynamic import formats. ` +
+                `If this is intended to be left as-is, you can use the ` +
+                `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+            )
+          }
+          needQueryInjectHelper = true
+          str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
         }
       }
 
@@ -347,10 +357,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
         // inject hot context
         str().prepend(
-          `import { createHotContext } from "${CLIENT_PUBLIC_PATH}";` +
-            `import.meta.hot = createHotContext(${JSON.stringify(
+          `import { createHotContext as __vite__createHotContext } from "${CLIENT_PUBLIC_PATH}";` +
+            `import.meta.hot = __vite__createHotContext(${JSON.stringify(
               importerModule.url
             )});`
+        )
+      }
+
+      if (needQueryInjectHelper) {
+        str().prepend(
+          `import { injectQuery as __vite__injectQuery } from "${CLIENT_PUBLIC_PATH}";`
         )
       }
 

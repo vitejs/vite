@@ -436,3 +436,10 @@ export const createHotContext = (ownerPath: string) => {
 
   return hot
 }
+
+export function injectQuery(url: string, queryToInject: string) {
+  const { pathname, search, hash } = new URL(url, 'http://vitejs.dev')
+  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
+    hash || ''
+  }`
+}
