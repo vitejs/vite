@@ -223,15 +223,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       const getPreloadLinksForChunk = (
         chunk: OutputChunk
       ): HtmlTagDescriptor[] => {
-        const tags: HtmlTagDescriptor[] = chunk.imports.map((file) => ({
-          tag: 'link',
-          attrs: {
-            rel: 'modulepreload',
-            href: toPublicPath(file, config)
-          }
-        }))
+        const tags: HtmlTagDescriptor[] = []
         chunk.imports.forEach((file) => {
-          tags.push(...getPreloadLinksForChunk(bundle[file] as OutputChunk))
+          const importee = bundle[file]
+          if (importee && importee.type === 'chunk') {
+            tags.push({
+              tag: 'link',
+              attrs: {
+                rel: 'modulepreload',
+                href: toPublicPath(file, config)
+              }
+            })
+            tags.push(...getPreloadLinksForChunk(importee))
+          }
         })
         return tags
       }
@@ -241,16 +245,21 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const cssFileHandle = chunkToEmittedCssFileMap.get(chunk)
         if (cssFileHandle) {
           const file = this.getFileName(cssFileHandle)
-          tags.push({
-            tag: 'link',
-            attrs: {
-              rel: 'stylesheet',
-              href: toPublicPath(file, config)
-            }
-          })
+          if (file) {
+            tags.push({
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                href: toPublicPath(file, config)
+              }
+            })
+          }
         }
         chunk.imports.forEach((file) => {
-          tags.push(...getCssTagsForChunk(bundle[file] as OutputChunk))
+          const importee = bundle[file]
+          if (importee && importee.type === 'chunk') {
+            tags.push(...getCssTagsForChunk(importee))
+          }
         })
         return tags
       }
