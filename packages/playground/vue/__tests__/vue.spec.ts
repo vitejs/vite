@@ -1,4 +1,4 @@
-import { editFile, getColor, isBuild, untilUpdated } from 'testUtils'
+import { editFile, getBg, getColor, isBuild, untilUpdated } from 'testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('h1')).toMatch('Vue SFCs')
@@ -64,7 +64,7 @@ describe('css modules', () => {
   })
 })
 
-describe('template asset reference', () => {
+describe('asset reference', () => {
   const assetMatch = isBuild
     ? /\/assets\/asset\.\w{8}\.png/
     : '/assets/asset.png'
@@ -99,6 +99,13 @@ describe('template asset reference', () => {
   test('svg fragment', async () => {
     const img = await page.$('.svg-frag')
     expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
+  })
+
+  test('relative url from <style>', async () => {
+    const assetMatch = isBuild
+      ? /\/assets\/asset\.\w{8}\.png/
+      : '/assets/asset.png'
+    expect(await getBg('.relative-style-url')).toMatch(assetMatch)
   })
 })
 
