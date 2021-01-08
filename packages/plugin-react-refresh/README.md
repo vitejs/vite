@@ -1,4 +1,4 @@
-# @vitejs/plugin-react-refresh
+# @vitejs/plugin-react-refresh [![npm](https://img.shields.io/npm/v/@vitejs/plugin-react-refresh.svg)](https://npmjs.com/package/@vitejs/plugin-react-refresh)
 
 Provides [React Refresh](https://www.npmjs.com/package/react-refresh) support for Vite.
 
