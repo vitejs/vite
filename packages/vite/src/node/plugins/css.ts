@@ -111,7 +111,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         } else {
           thisModule.isSelfAccepting = isSelfAccepting
         }
-        // rewrite urls based on BASE_URL
+        // rewrite urls using current module's url as base
         css = await rewriteCssUrls(css, thisModule.url)
       } else {
         // if build, analyze url() asset reference
