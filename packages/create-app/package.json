@@ -29,6 +29,7 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-app#readme",
   "dependencies": {
     "enquirer": "^2.3.6",
+    "kolorist": "^1.2.9",
     "minimist": "^1.2.5"
   }
 }

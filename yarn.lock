@@ -4669,6 +4669,11 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
+kolorist@^1.2.9:
+  version "1.2.9"
+  resolved "https://registry.yarnpkg.com/kolorist/-/kolorist-1.2.9.tgz#ccd5c68827c0385f0b26588321c3b6c4433dd2ab"
+  integrity sha512-mba6w9rkNlcMSSsGM1Xb9rgGFCDEL1APijLIkgtjsORyr9bKaSvQg/2fP8k7lwEiTh8WlMCHWREvf1ndguIKIQ==
+
 launch-editor-middleware@^2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/launch-editor-middleware/-/launch-editor-middleware-2.2.1.tgz#e14b07e6c7154b0a4b86a0fd345784e45804c157"
