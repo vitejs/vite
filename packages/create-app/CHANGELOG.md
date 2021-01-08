@@ -1,3 +1,12 @@
+# [1.2.0](https://github.com/vitejs/vite/compare/create-app@1.1.0...create-app@1.2.0) (2021-01-08)
+
+
+### Features
+
+* add colors to create-app options ([870f57a](https://github.com/vitejs/vite/commit/870f57a0a67b0ee854b67b40e2c7b9dad58b4004))
+
+
+
 # [1.1.0](https://github.com/vitejs/vite/compare/create-app@1.0.6...create-app@1.1.0) (2021-01-08)
 
 
