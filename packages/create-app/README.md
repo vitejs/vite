@@ -32,3 +32,5 @@ Currently supported template presets include:
 - `vue-ts`
 - `react`
 - `react-ts`
+- `preact`
+- `preact-ts`
