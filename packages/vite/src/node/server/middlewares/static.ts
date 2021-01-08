@@ -14,7 +14,7 @@ export function serveStaticMiddleware(
   const serve = sirv(dir, sirvOptions)
 
   return (req, res, next) => {
-    const url = req.url!
+    let url = req.url!
 
     // skip import request
     if (isImportRequest(url)) {
@@ -30,6 +30,9 @@ export function serveStaticMiddleware(
     ) {
       return next()
     }
+    
+    // #1426
+    url = req.url = decodeURIComponent(url)
 
     // apply aliases to static requests as well
     if (config) {
@@ -67,7 +70,7 @@ export function rawFsStaticMiddleware(): Connect.NextHandleFunction {
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      req.url = url.slice(FS_PREFIX.length)
+      req.url = decodeURIComponent(url.slice(FS_PREFIX.length))
       serveFromRoot(req, res, next)
     } else {
       next()
