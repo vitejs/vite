@@ -8,6 +8,16 @@ const { prompt } = require('enquirer')
 
 const cwd = process.cwd()
 
+const TEMPLATES = [
+  'vanilla',
+  'vue',
+  'vue-ts',
+  'react',
+  'react-ts',
+  'preact',
+  'preact-ts'
+]
+
 const renameFiles = {
   _gitignore: '.gitignore'
 }
@@ -64,7 +74,7 @@ async function init() {
       type: 'select',
       name: 't',
       message: `Select a template:`,
-      choices: ['vanilla', 'vue', 'vue-ts', 'react', 'react-ts']
+      choices: TEMPLATES
     })
     template = t
   }
