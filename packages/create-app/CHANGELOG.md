@@ -1,3 +1,12 @@
+# [1.1.0](https://github.com/vitejs/vite/compare/create-app@1.0.6...create-app@1.1.0) (2021-01-08)
+
+
+### Features
+
+* preact templates ([905cb65](https://github.com/vitejs/vite/commit/905cb65d3b766d584137e5fbb400764bd3156558))
+
+
+
 ## [1.0.6](https://github.com/vitejs/vite/compare/create-app@1.0.5...create-app@1.0.6) (2021-01-05)
 
 
