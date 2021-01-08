@@ -51,6 +51,7 @@ export function serveStaticMiddleware(
       }
     }
 
+    req.url = decodeURIComponent(req.url!)
     serve(req, res, next)
   }
 }
@@ -67,7 +68,7 @@ export function rawFsStaticMiddleware(): Connect.NextHandleFunction {
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      req.url = url.slice(FS_PREFIX.length)
+      req.url = decodeURIComponent(url.slice(FS_PREFIX.length))
       serveFromRoot(req, res, next)
     } else {
       next()
