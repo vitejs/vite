@@ -33,7 +33,7 @@ import {
 import { ViteDevServer } from '../'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
-import { ImportDeclaration } from 'estree'
+import { Node } from 'estree'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 
 const isDebug = !!process.env.DEBUG
@@ -306,11 +306,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 )
               } else {
                 const exp = source.slice(expStart, expEnd)
-                str().overwrite(
-                  expStart,
-                  expEnd,
-                  transformCjsImport(exp, url, rawUrl, i)
-                )
+                const rewritten = transformCjsImport(exp, url, rawUrl, i)
+                if (rewritten) {
+                  str().overwrite(expStart, expEnd, rewritten)
+                } else {
+                  // #1439 export * from '...'
+                  str().overwrite(start, end, url)
+                }
               }
             } else {
               str().overwrite(start, end, isLiteralDynamicId ? `'${url}'` : url)
@@ -450,6 +452,10 @@ type ImportNameSpecifier = { importedName: string; localName: string }
  * module. Note this doesn't support dynamic re-assisgnments from within the cjs
  * module.
  *
+ * Note that es-module-lexer treats `export * from '...'` as an import as well,
+ * so, we may encounter ExportAllDeclaration here, in which case `undefined`
+ * will be returned.
+ *
  * Credits \@csr632 via #837
  */
 function transformCjsImport(
@@ -457,38 +463,42 @@ function transformCjsImport(
   url: string,
   rawUrl: string,
   importIndex: number
-): string {
+): string | undefined {
   const ast = (parseJS(importExp, {
     ecmaVersion: 2020,
     sourceType: 'module'
-  }) as any).body[0] as ImportDeclaration
+  }) as any).body[0] as Node
 
-  const importNames: ImportNameSpecifier[] = []
+  if (ast.type === 'ImportDeclaration') {
+    const importNames: ImportNameSpecifier[] = []
+    ast.specifiers.forEach((obj) => {
+      if (
+        obj.type === 'ImportSpecifier' &&
+        obj.imported.type === 'Identifier'
+      ) {
+        const importedName = obj.imported.name
+        const localName = obj.local.name
+        importNames.push({ importedName, localName })
+      } else if (obj.type === 'ImportDefaultSpecifier') {
+        importNames.push({ importedName: 'default', localName: obj.local.name })
+      } else if (obj.type === 'ImportNamespaceSpecifier') {
+        importNames.push({ importedName: '*', localName: obj.local.name })
+      }
+    })
 
-  ast.specifiers.forEach((obj) => {
-    if (obj.type === 'ImportSpecifier' && obj.imported.type === 'Identifier') {
-      const importedName = obj.imported.name
-      const localName = obj.local.name
-      importNames.push({ importedName, localName })
-    } else if (obj.type === 'ImportDefaultSpecifier') {
-      importNames.push({ importedName: 'default', localName: obj.local.name })
-    } else if (obj.type === 'ImportNamespaceSpecifier') {
-      importNames.push({ importedName: '*', localName: obj.local.name })
-    }
-  })
-
-  // If there is multiple import for same id in one file,
-  // importIndex will prevent the cjsModuleName to be duplicate
-  const cjsModuleName = makeLegalIdentifier(
-    `$viteCjsImport${importIndex}_${rawUrl}`
-  )
-  const lines: string[] = [`import ${cjsModuleName} from "${url}";`]
-  importNames.forEach(({ importedName, localName }) => {
-    if (importedName === '*' || importedName === 'default') {
-      lines.push(`const ${localName} = ${cjsModuleName};`)
-    } else {
-      lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"];`)
-    }
-  })
-  return lines.join('\n')
+    // If there is multiple import for same id in one file,
+    // importIndex will prevent the cjsModuleName to be duplicate
+    const cjsModuleName = makeLegalIdentifier(
+      `$viteCjsImport${importIndex}_${rawUrl}`
+    )
+    const lines: string[] = [`import ${cjsModuleName} from "${url}";`]
+    importNames.forEach(({ importedName, localName }) => {
+      if (importedName === '*' || importedName === 'default') {
+        lines.push(`const ${localName} = ${cjsModuleName};`)
+      } else {
+        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"];`)
+      }
+    })
+    return lines.join('\n')
+  }
 }
