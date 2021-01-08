@@ -470,6 +470,8 @@ const ENV_KEYS = [
   'default'
 ]
 
+// https://nodejs.org/api/packages.html
+// TODO: subpath imports & subpath patterns
 function resolveConditionalExports(exp: any, id: string): string | undefined {
   if (typeof exp === 'string') {
     return exp
