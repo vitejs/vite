@@ -55,6 +55,7 @@ import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import {
+  pad,
   createDebugger,
   generateCodeFrame,
   normalizePath,
@@ -63,7 +64,7 @@ import {
   timeFrom
 } from '../utils'
 import chalk from 'chalk'
-import { ResolvedConfig } from '..'
+import { ResolvedConfig } from '../config'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -242,41 +243,67 @@ export async function createPluginContainer(
       return container.resolveFileUrl(referenceId)!
     }
 
-    warn(...args: any[]) {
-      logger.warn(chalk.yellow(`[${this._activePlugin!.name}]`, ...args))
+    warn(
+      e: string | RollupError,
+      position?: number | { column: number; line: number }
+    ) {
+      const err = formatError(e, position, this)
+      const args = [chalk.yellow(`warning: ${err.message}`)]
+      if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
+      if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
+      if (err.frame) args.push(chalk.yellow(pad(err.frame)))
+      if (err.stack) args.push(pad(err.stack))
+      logger.warn(args.join('\n'), {
+        clear: true,
+        timestamp: true
+      })
     }
 
     error(
       e: string | RollupError,
       position?: number | { column: number; line: number }
     ): never {
-      const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
-      if (this._activePlugin) err.plugin = this._activePlugin.name
-      if (this._activeId && !err.id) err.id = this._activeId
-      if (this._activeCode) {
-        err.pluginCode = this._activeCode
-        const pos = position || err.pos
-        if (pos) {
-          err.loc = err.loc || {
-            file: err.id,
-            ...numberToPos(this._activeCode, pos)
-          }
-          err.frame = err.frame || generateCodeFrame(this._activeCode, pos)
-        } else if ((err as any).line && (err as any).column) {
-          err.loc = {
-            file: err.id,
-            line: (err as any).line,
-            column: (err as any).column
-          }
-          err.frame = err.frame || generateCodeFrame(this._activeCode, err.loc)
-        } else if (err.loc) {
-          err.frame = err.frame || generateCodeFrame(this._activeCode, err.loc)
-        }
-      }
       // error thrown here is caught by the transform middleware and passed on
       // the the error middleware.
-      throw err
+      throw formatError(e, position, this)
     }
+  }
+
+  function formatError(
+    e: string | RollupError,
+    position: number | { column: number; line: number } | undefined,
+    ctx: Context
+  ) {
+    const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
+    if (ctx._activePlugin) err.plugin = ctx._activePlugin.name
+    if (ctx._activeId && !err.id) err.id = ctx._activeId
+    if (ctx._activeCode) {
+      err.pluginCode = ctx._activeCode
+      const pos =
+        position != null
+          ? position
+          : err.pos != null
+          ? err.pos
+          : // some rollup plugins, e.g. json, sets position instead of pos
+            (err as any).position
+      if (pos != null) {
+        err.loc = err.loc || {
+          file: err.id,
+          ...numberToPos(ctx._activeCode, pos)
+        }
+        err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
+      } else if ((err as any).line && (err as any).column) {
+        err.loc = {
+          file: err.id,
+          line: (err as any).line,
+          column: (err as any).column
+        }
+        err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
+      } else if (err.loc) {
+        err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
+      }
+    }
+    return err
   }
 
   class TransformContext extends Context {
