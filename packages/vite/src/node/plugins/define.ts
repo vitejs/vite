@@ -23,13 +23,13 @@ export function buildDefinePlugin(config: ResolvedConfig): Plugin {
   }
 
   const replacements: Record<string, string | undefined> = {
+    'process.env.NODE_ENV': JSON.stringify(config.mode),
+    'process.env.': `({}).`,
     ...userDefine,
     ...individualEnvKeys,
     'import.meta.env.': `({}).`,
     'import.meta.env': JSON.stringify(config.env),
-    'import.meta.hot': `false`,
-    'process.env.NODE_ENV': JSON.stringify(config.mode),
-    'process.env.': `({}).`
+    'import.meta.hot': `false`
   }
 
   const pattern = new RegExp(
