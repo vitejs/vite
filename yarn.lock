@@ -7214,11 +7214,6 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
-"test@workspace:./json":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/test/-/test-0.1.0.tgz#176b4f94188a4e8ea33950d9f2958b95bea7478f"
-  integrity sha1-F2tPlBiKTo6jOVDZ8pWLlb6nR48=
-
 text-extensions@^1.0.0:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/text-extensions/-/text-extensions-1.9.0.tgz#1853e45fee39c945ce6f6c36b2d659b5aabc2a26"
