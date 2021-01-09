@@ -29,21 +29,25 @@ const allResult = {
     msg: 'foo'
   },
   './dir/index.js': {
-    default: filteredResult
+    modules: filteredResult
   },
-  './dir/nested/bar.js': {
-    msg: 'bar'
-  }
+  './dir/nested/bar.js': isBuild
+    ? {
+        msg: 'bar',
+        modules: {
+          '../baz.json': json
+        }
+      }
+    : {
+        modules: {
+          '../baz.json': json
+        },
+        msg: 'bar'
+      }
 }
 
-test('all', async () => {
-  expect(await page.textContent('.all')).toBe(
+test('should work', async () => {
+  expect(await page.textContent('.result')).toBe(
     JSON.stringify(allResult, null, 2)
-  )
-})
-
-test('filtered', async () => {
-  expect(await page.textContent('.filtered')).toBe(
-    JSON.stringify(filteredResult, null, 2)
   )
 })
