@@ -43,7 +43,7 @@ export default {
 - **Type:** `boolean | string[]`
 - **Default:** `true`
 
-  By default, a polyfills chunks are generated based on the target browser ranges and actual usage in the final bundle (detected via `@babel/preset-env`'s `useBuiltIns: 'usage'`).
+  By default, a polyfills chunk is generated based on the target browser ranges and actual usage in the final bundle (detected via `@babel/preset-env`'s `useBuiltIns: 'usage'`).
 
   Set to a list of strings to explicitly control which polyfills to include. See [Polyfill Specifiers](#polyfill-specifiers) for details.
 
