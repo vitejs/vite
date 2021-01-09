@@ -1,13 +1,6 @@
 import { Plugin } from 'vite'
+import { VueJSXPluginOptions } from '@vue/babel-plugin-jsx'
 
-// https://github.com/vuejs/jsx-next/tree/dev/packages/babel-plugin-jsx#options
-export interface Options {
-  transformOn?: boolean
-  optimize?: boolean
-  isCustomElement?: (tag: string) => boolean
-  mergeProps?: boolean
-}
-
-declare function createPlugin(options?: Options): Plugin
+declare function createPlugin(options?: VueJSXPluginOptions): Plugin
 
 export default createPlugin
