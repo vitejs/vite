@@ -6,6 +6,7 @@
     "allowJs": true,
     "esModuleInterop": true,
     "baseUrl": ".",
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "types": ["vite/client"]
   }
 }
