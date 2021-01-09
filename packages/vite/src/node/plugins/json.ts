@@ -45,9 +45,8 @@ export function jsonPlugin(options: RollupJsonOptions = {}): Plugin {
   const indent = 'indent' in options ? options.indent : '\t'
 
   return {
-    name: 'json',
+    name: 'vite:json',
 
-    // eslint-disable-next-line no-shadow
     transform(json, id) {
       if (!jsonExtRE.test(id) || !filter(id)) return null
 
