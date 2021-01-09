@@ -208,7 +208,7 @@ export async function resolveConfig(
     inlineConfig,
     root: resolvedRoot,
     command,
-    mode,
+    mode: resolvedMode,
     isProduction,
     optimizeCacheDir,
     alias: resolvedAlias,
