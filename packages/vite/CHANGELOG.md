@@ -1,3 +1,12 @@
+# [2.0.0-beta.15](https://github.com/vitejs/vite/compare/v2.0.0-beta.14...v2.0.0-beta.15) (2021-01-09)
+
+
+### Bug Fixes
+
+* **hmr:** ensure all modules are fetched as import ([98bc767](https://github.com/vitejs/vite/commit/98bc7675a0f515ec6a908c6f18b2947a4a117836))
+
+
+
 # [2.0.0-beta.14](https://github.com/vitejs/vite/compare/v2.0.0-beta.13...v2.0.0-beta.14) (2021-01-09)
 
 
