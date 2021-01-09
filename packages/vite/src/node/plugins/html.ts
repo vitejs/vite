@@ -408,7 +408,6 @@ export async function applyHtmlTransforms(
     if (!res) {
       continue
     }
-
     if (typeof res === 'string') {
       html = res
     } else {
