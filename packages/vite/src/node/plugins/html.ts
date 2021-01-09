@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
-import { OutputBundle, OutputChunk } from 'rollup'
+import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
 import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
 import { ResolvedConfig } from '../config'
 import slash from 'slash'
@@ -291,6 +291,24 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           ]
 
           result = injectToHead(result, assetTags)
+        }
+
+        // inject css link when cssCodeSplit is false
+        if (!config.build.cssCodeSplit) {
+          const cssChunk = Object.values(bundle).find(
+            (chunk) => chunk.type === 'asset' && chunk.name === 'style.css'
+          ) as OutputAsset | undefined
+          if (cssChunk) {
+            result = injectToHead(result, [
+              {
+                tag: 'link',
+                attrs: {
+                  rel: 'stylesheet',
+                  href: toPublicPath(cssChunk.fileName, config)
+                }
+              }
+            ])
+          }
         }
 
         const shortEmitName = path.posix.relative(config.root, id)
