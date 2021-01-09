@@ -355,3 +355,20 @@ In general, as long as a rollup plugin fits the following criterias then it shou
 - It doesn't have strong coupling between bundle-phase hooks and output-phase hooks.
 
 If a Rollup plugin only makes sense for the build phase, then it can be specified under `build.rollupOptions.plugins` instead.
+
+You can also augment an existing Rollup plugin with Vite-only properties:
+
+```js
+// vite.config.js
+import example from 'rollup-plugin-example'
+
+export default {
+  plugins: [
+    {
+      ...example(),
+      enforce: 'post',
+      apply: 'build'
+    }
+  ]
+}
+```
