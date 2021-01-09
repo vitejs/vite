@@ -111,6 +111,7 @@ cli
       `or specify minifier to use (default: terser)`
   )
   .option('--manifest', `[boolean] emit build manifest json`)
+  .option('--watch', `[boolean] rebuilds when modules have changed on disk.`)
   .option('-m, --mode <mode>', `[string]  set env mode`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')

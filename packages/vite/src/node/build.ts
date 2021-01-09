@@ -10,7 +10,8 @@ import Rollup, {
   WarningHandler,
   WarningHandlerWithDefault,
   OutputOptions,
-  RollupOutput
+  RollupOutput,
+  RollupWatchOptions
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
@@ -141,6 +142,10 @@ export interface BuildOptions {
    * @internal for now
    */
   ssr?: boolean
+  /**
+   * @internal for now
+   */
+  watch?: boolean
 }
 
 export interface LibraryOptions {
@@ -171,6 +176,7 @@ export function resolveBuildOptions(
     manifest: false,
     lib: false,
     ssr: false,
+    watch: false,
     ...raw
   }
 
@@ -242,7 +248,7 @@ const paralellBuilds: RollupBuild[] = []
  */
 export async function build(
   inlineConfig: InlineConfig = {}
-): Promise<RollupOutput | RollupOutput[]> {
+): Promise<RollupOutput | RollupOutput[] | undefined> {
   parallelCallCounts++
   try {
     return await doBuild(inlineConfig)
@@ -257,7 +263,7 @@ export async function build(
 
 async function doBuild(
   inlineConfig: InlineConfig = {}
-): Promise<RollupOutput | RollupOutput[]> {
+): Promise<RollupOutput | RollupOutput[] | undefined> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   config.logger.info(chalk.cyan(`building for production...`))
 
@@ -272,31 +278,28 @@ async function doBuild(
   const publicDir = resolve('public')
 
   const rollup = require('rollup') as typeof Rollup
+  const rollupOptions: RollupOptions = {
+    input,
+    preserveEntrySignatures: libOptions ? 'strict' : false,
+    ...options.rollupOptions,
+    plugins: config.plugins as Plugin[],
+    onwarn(warning, warn) {
+      onRollupWarning(
+        warning,
+        warn,
+        config.optimizeDeps?.allowNodeBuiltins,
+        options.rollupOptions?.onwarn
+      )
+    }
+  }
 
   try {
-    const bundle = await rollup.rollup({
-      input,
-      preserveEntrySignatures: libOptions ? 'strict' : false,
-      ...options.rollupOptions,
-      plugins: config.plugins as Plugin[],
-      onwarn(warning, warn) {
-        onRollupWarning(
-          warning,
-          warn,
-          config.optimizeDeps?.allowNodeBuiltins,
-          options.rollupOptions?.onwarn
-        )
-      }
-    })
-
-    paralellBuilds.push(bundle)
-
     const pkgName =
       libOptions &&
       JSON.parse(lookupFile(config.root, ['package.json']) || `{}`).name
 
-    const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate']({
+    const buildOuputOptions = (output: OutputOptions = {}): OutputOptions => {
+      return {
         dir: outDir,
         format: 'es',
         exports: 'auto',
@@ -315,13 +318,6 @@ async function doBuild(
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
         ...output
-      })
-    }
-
-    if (options.write) {
-      emptyDir(outDir)
-      if (fs.existsSync(publicDir)) {
-        copyDir(publicDir, outDir)
       }
     }
 
@@ -331,14 +327,80 @@ async function doBuild(
       libOptions,
       config.logger
     )
-    if (Array.isArray(outputs)) {
-      const res = []
-      for (const output of outputs) {
-        res.push(await generate(output))
+
+    if (config.build.watch) {
+      config.logger.info(chalk.cyan(`watching for file changes...`))
+
+      const output: OutputOptions[] = []
+      if (Array.isArray(outputs)) {
+        for (const _output of outputs) {
+          output.push(buildOuputOptions(_output))
+        }
+      } else {
+        output.push(buildOuputOptions(outputs))
       }
-      return res
+
+      const watcherOptions: RollupWatchOptions = {
+        ...rollupOptions,
+        output,
+        watch: {
+          clearScreen: true,
+          chokidar: {
+            ignored: [
+              '**/node_modules/**',
+              '**/.git/**'
+              // ...(watchOptions.ignored || [])
+            ],
+            ignoreInitial: true,
+            ignorePermissionErrors: true
+            // ...watchOptions
+          }
+        }
+      }
+      const watcher = rollup.watch(watcherOptions)
+
+      watcher.on('event', (event) => {
+        if (event.code === 'BUNDLE_START') {
+          if (options.write) {
+            emptyDir(outDir)
+            if (fs.existsSync(publicDir)) {
+              copyDir(publicDir, outDir)
+            }
+          }
+        } else if (event.code === 'BUNDLE_END') {
+          event.result.close()
+          config.logger.info(chalk.cyan(`rebuilt in ${event.duration}ms.`))
+        }
+      })
+
+      // stop watching
+      watcher.close()
     } else {
-      return generate(outputs)
+      const bundle = await rollup.rollup(rollupOptions)
+      paralellBuilds.push(bundle)
+
+      const generate = (output: OutputOptions = {}) => {
+        return bundle[options.write ? 'write' : 'generate'](
+          buildOuputOptions(output)
+        )
+      }
+
+      if (options.write) {
+        emptyDir(outDir)
+        if (fs.existsSync(publicDir)) {
+          copyDir(publicDir, outDir)
+        }
+      }
+
+      if (Array.isArray(outputs)) {
+        const res = []
+        for (const output of outputs) {
+          res.push(await generate(output))
+        }
+        return res
+      } else {
+        return generate(outputs)
+      }
     }
   } catch (e) {
     config.logger.error(
