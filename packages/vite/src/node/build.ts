@@ -26,6 +26,8 @@ import isBuiltin from 'isbuiltin'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
+import { dataURIPlugin } from './plugins/dataUri'
+import { importGlobPlugin } from './plugins/importGlob'
 
 export interface BuildOptions {
   /**
@@ -198,11 +200,13 @@ export function resolveBuildPlugins(
   const options = config.build
   return {
     pre: [
+      buildHtmlPlugin(config),
       commonjsPlugin({
         include: [/node_modules/],
         extensions: ['.js', '.cjs']
       }),
-      buildHtmlPlugin(config),
+      dataURIPlugin(),
+      importGlobPlugin(config),
       buildDefinePlugin(config),
       dynamicImportVars({
         warnOnError: true,

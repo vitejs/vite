@@ -33,8 +33,9 @@ import {
 import { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
-import { Node } from 'estree'
+import type { Node } from 'estree'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
+import { transformImportGlob } from './importGlob'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -84,7 +85,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
 
   return {
-    name: 'vite:imports',
+    name: 'vite:import-analysis',
 
     configureServer(_server) {
       server = _server
@@ -99,7 +100,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const rewriteStart = Date.now()
-      let timeSpentResolving = 0
       await init
       let imports: ImportSpecifier[] = []
       try {
@@ -154,14 +154,79 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const toAbsoluteUrl = (url: string) =>
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
-      for (let i = 0; i < imports.length; i++) {
+      const normalizeUrl = async (
+        url: string,
+        pos: number
+      ): Promise<[string, string]> => {
+        const resolved = await this.resolve(url, importer)
+
+        if (!resolved) {
+          this.error(
+            `Failed to resolve import "${url}". Does the file exist?`,
+            pos
+          )
+        }
+
+        const isRelative = url.startsWith('.')
+
+        // normalize all imports into resolved URLs
+        // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
+        if (resolved.id.startsWith(config.root + '/')) {
+          // in root: infer short absolute path from root
+          url = resolved.id.slice(config.root.length)
+        } else if (fs.existsSync(cleanUrl(resolved.id))) {
+          // exists but out of root: rewrite to absolute /@fs/ paths
+          url = FS_PREFIX + resolved.id
+        } else {
+          url = resolved.id
+        }
+
+        // if the resolved id is not a valid browser import specifier,
+        // prefix it to make it valid. We will strip this before feeding it
+        // back into the transform pipeline
+        if (!url.startsWith('.') && !url.startsWith('/')) {
+          url = VALID_ID_PREFIX + resolved.id
+        }
+
+        // mark non-js/css imports with `?import`
+        url = markExplicitImport(url)
+
+        // for relative js/css imports, inherit importer's version query
+        // do not do this for unknown type imports, otherwise the appended
+        // query can break 3rd party plugin's extension checks.
+        if (isRelative && !/[\?&]import\b/.test(url)) {
+          const versionMatch = importer.match(DEP_VERSION_RE)
+          if (versionMatch) {
+            url = injectQuery(url, versionMatch[1])
+          }
+        }
+
+        // check if the dep has been hmr updated. If yes, we need to attach
+        // its last updated timestamp to force the browser to fetch the most
+        // up-to-date version of this module.
+        try {
+          const depModule = await moduleGraph.ensureEntryFromUrl(url)
+          if (depModule.lastHMRTimestamp > 0) {
+            url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
+          }
+        } catch (e) {
+          // it's possible that the dep fails to resolve (non-existent import)
+          // attach location to the missing import
+          e.pos = pos
+          throw e
+        }
+
+        return [url, resolved.id]
+      }
+
+      for (let index = 0; index < imports.length; index++) {
         const {
           s: start,
           e: end,
           ss: expStart,
           se: expEnd,
           d: dynamicIndex
-        } = imports[i]
+        } = imports[index]
 
         const rawUrl = source.slice(start, end)
         let url = rawUrl
@@ -190,6 +255,21 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           } else if (prop === '.env') {
             hasEnv = true
           }
+          continue
+        }
+
+        // transform import context
+        // e.g. `import modules from 'glob:./dir/*.js'`
+        if (url.startsWith('glob:')) {
+          const result = await transformImportGlob(
+            source.slice(expStart, expEnd),
+            url,
+            importer,
+            index,
+            start,
+            normalizeUrl
+          )
+          str().overwrite(expStart, expEnd, result)
           continue
         }
 
@@ -229,72 +309,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           }
 
-          const resolveStart = Date.now()
-          const resolved = await this.resolve(url, importer)
-
-          if (!resolved) {
-            this.error(
-              `Failed to resolve import "${rawUrl}". Does the file exist?`,
-              start
-            )
-          }
-
-          timeSpentResolving += Date.now() - resolveStart
-
-          const isRelative = url.startsWith('.')
-
-          // normalize all imports into resolved URLs
-          // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
-          if (resolved.id.startsWith(config.root + '/')) {
-            // in root: infer short absolute path from root
-            url = resolved.id.slice(config.root.length)
-          } else if (fs.existsSync(cleanUrl(resolved.id))) {
-            // exists but out of root: rewrite to absolute /@fs/ paths
-            url = FS_PREFIX + resolved.id
-          } else {
-            url = resolved.id
-          }
-
-          // if the resolved id is not a valid browser import specifier,
-          // prefix it to make it valid. We will strip this before feeding it
-          // back into the transform pipeline
-          if (!url.startsWith('.') && !url.startsWith('/')) {
-            url = VALID_ID_PREFIX + resolved.id
-          }
-
-          // mark non-js/css imports with `?import`
-          url = markExplicitImport(url)
-
-          // for relative js/css imports, inherit importer's version query
-          // do not do this for unknown type imports, otherwise the appended
-          // query can break 3rd party plugin's extension checks.
-          if (isRelative && !/[\?&]import\b/.test(url)) {
-            const versionMatch = importer.match(DEP_VERSION_RE)
-            if (versionMatch) {
-              url = injectQuery(url, versionMatch[1])
-            }
-          }
-
-          // check if the dep has been hmr updated. If yes, we need to attach
-          // its last updated timestamp to force the browser to fetch the most
-          // up-to-date version of this module.
-          try {
-            const depModule = await moduleGraph.ensureEntryFromUrl(url)
-            if (depModule.lastHMRTimestamp > 0) {
-              url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
-            }
-          } catch (e) {
-            // it's possible that the dep fails to resolve (non-existent import)
-            // attach location to the missing import
-            e.pos = start
-            throw e
-          }
+          // normalize
+          const [normalizedUrl, resolvedId] = await normalizeUrl(url, start)
+          url = normalizedUrl
 
           // rewrite
           if (url !== rawUrl) {
             // for optimized cjs deps, support named imports by rewriting named
             // imports to const assignments.
-            if (isOptimizedCjs(resolved.id, server)) {
+            if (isOptimizedCjs(resolvedId, server)) {
               if (isLiteralDynamicId) {
                 // rewrite `import('package')` to expose module.exports
                 // note plugin-commonjs' behavior is exposing all properties on
@@ -306,7 +329,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 )
               } else {
                 const exp = source.slice(expStart, expEnd)
-                const rewritten = transformCjsImport(exp, url, rawUrl, i)
+                const rewritten = transformCjsImport(exp, url, rawUrl, index)
                 if (rewritten) {
                   str().overwrite(expStart, expEnd, rewritten)
                 } else {
@@ -397,11 +420,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      isDebug &&
-        debugRewrite(
-          `${timeFrom(rewriteStart, timeSpentResolving)} ${prettyImporter}`
-        )
-
       if (s) {
         return s.toString()
       } else {
@@ -464,32 +482,35 @@ function transformCjsImport(
   rawUrl: string,
   importIndex: number
 ): string | undefined {
-  const ast = (parseJS(importExp, {
+  const node = (parseJS(importExp, {
     ecmaVersion: 2020,
     sourceType: 'module'
   }) as any).body[0] as Node
 
-  if (ast.type === 'ImportDeclaration') {
+  if (node.type === 'ImportDeclaration') {
     const importNames: ImportNameSpecifier[] = []
-    ast.specifiers.forEach((obj) => {
+    for (const spec of node.specifiers) {
       if (
-        obj.type === 'ImportSpecifier' &&
-        obj.imported.type === 'Identifier'
+        spec.type === 'ImportSpecifier' &&
+        spec.imported.type === 'Identifier'
       ) {
-        const importedName = obj.imported.name
-        const localName = obj.local.name
+        const importedName = spec.imported.name
+        const localName = spec.local.name
         importNames.push({ importedName, localName })
-      } else if (obj.type === 'ImportDefaultSpecifier') {
-        importNames.push({ importedName: 'default', localName: obj.local.name })
-      } else if (obj.type === 'ImportNamespaceSpecifier') {
-        importNames.push({ importedName: '*', localName: obj.local.name })
+      } else if (spec.type === 'ImportDefaultSpecifier') {
+        importNames.push({
+          importedName: 'default',
+          localName: spec.local.name
+        })
+      } else if (spec.type === 'ImportNamespaceSpecifier') {
+        importNames.push({ importedName: '*', localName: spec.local.name })
       }
-    })
+    }
 
     // If there is multiple import for same id in one file,
     // importIndex will prevent the cjsModuleName to be duplicate
     const cjsModuleName = makeLegalIdentifier(
-      `$viteCjsImport${importIndex}_${rawUrl}`
+      `__vite__cjsImport${importIndex}_${rawUrl}`
     )
     const lines: string[] = [`import ${cjsModuleName} from "${url}";`]
     importNames.forEach(({ importedName, localName }) => {
