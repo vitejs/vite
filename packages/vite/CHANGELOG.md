@@ -1,3 +1,24 @@
+# [2.0.0-beta.13](https://github.com/vitejs/vite/compare/v2.0.0-beta.12...v2.0.0-beta.13) (2021-01-09)
+
+
+### Bug Fixes
+
+* always rebase path against root ([d704b7c](https://github.com/vitejs/vite/commit/d704b7c55fcbf347b5277a1d92dee4cc9583bab5)), closes [#1413](https://github.com/vitejs/vite/issues/1413)
+* handle potential imports that has no correspodning chunks ([d47e10c](https://github.com/vitejs/vite/commit/d47e10c77d642b0446cb6ea1d5fd5a33346e9391))
+* raw fetch requests should not be transformed ([0356c3c](https://github.com/vitejs/vite/commit/0356c3c5193a5aeb8586e5588c8c873df7a1a427)), closes [#1433](https://github.com/vitejs/vite/issues/1433)
+* skip cjs rewrite for export * declarations ([cca015b](https://github.com/vitejs/vite/commit/cca015b1c46fff41e047a92430937f31df5e6dfb)), closes [#1439](https://github.com/vitejs/vite/issues/1439)
+* **cli:** fix help for --root ([#1429](https://github.com/vitejs/vite/issues/1429)) ([7a55c5b](https://github.com/vitejs/vite/commit/7a55c5be36a6d04a5a1e434147f4208c4a64c492))
+* **dev:** decode url before `sirv` resolve ([#1432](https://github.com/vitejs/vite/issues/1432)) ([7cc3cf1](https://github.com/vitejs/vite/commit/7cc3cf1044594297320ed62e1b38b27883f3f6c0)), closes [#1426](https://github.com/vitejs/vite/issues/1426)
+
+
+### Features
+
+* allow user define to overwrite default process.env. defines ([351ad4e](https://github.com/vitejs/vite/commit/351ad4ee56d46eb8837b6a90af19ef953e3fe28b))
+* build support for data uri import ([4fd0b86](https://github.com/vitejs/vite/commit/4fd0b8615ef5ecff704ed44cadece613368cf18b))
+* support import "glob:./*" ([8d8e2cc](https://github.com/vitejs/vite/commit/8d8e2cc9ea0e1cc8f620c0a9d143294c1efb37b0))
+
+
+
 # [2.0.0-beta.12](https://github.com/vitejs/vite/compare/v2.0.0-beta.11...v2.0.0-beta.12) (2021-01-07)
 
 
