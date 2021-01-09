@@ -6,17 +6,11 @@ import { OutputBundle, OutputChunk } from 'rollup'
 import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
 import { ResolvedConfig } from '../config'
 import slash from 'slash'
-import {
-  AttributeNode,
-  NodeTransform,
-  NodeTypes,
-  parse,
-  transform
-} from '@vue/compiler-dom'
 import MagicString from 'magic-string'
 import { checkPublicFile, assetUrlRE, urlToBuiltUrl } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { polyfillId } from './dynamicImportPolyfill'
+import { AttributeNode, NodeTransform, NodeTypes } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
@@ -95,11 +89,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           return e
         }
 
+        // lazy load compiler-dom
+        const { parse, transform } = await import('@vue/compiler-dom')
         // @vue/compiler-core doesn't like lowercase doctypes
         html = html.replace(/<!doctype\s/i, '<!DOCTYPE ')
         let ast
         try {
-          ast = parse(html)
+          ast = parse(html, { comments: true })
         } catch (e) {
           this.error(formatError(e))
         }
