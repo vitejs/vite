@@ -407,7 +407,8 @@ export async function applyHtmlTransforms(
     const res = await hook(html, ctx)
     if (!res) {
       continue
-    } else if (typeof res === 'string') {
+    }
+    if (typeof res === 'string') {
       html = res
     } else {
       let tags
