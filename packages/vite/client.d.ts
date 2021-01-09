@@ -187,3 +187,9 @@ declare module '*?worker&inline' {
   }
   export default workerConstructor
 }
+
+// glob import
+declare module 'glob:*' {
+  const modules: Record<string, Record<string, any>>
+  export default modules
+}

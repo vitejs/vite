@@ -8,6 +8,9 @@ const dataUriRE = /^([^/]+\/[^;,]+)(;base64)?,([\s\S]*)$/
 
 const dataUriPrefix = `/@data-uri/`
 
+/**
+ * Build only, since importing from a data URI works natively.
+ */
 export function dataURIPlugin(): Plugin {
   const resolved: {
     [key: string]: string

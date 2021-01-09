@@ -7,6 +7,6 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "jsx": "preserve",
-    "types": ["vite/client"]
+    "types": ["vite/client", "jest"]
   }
 }

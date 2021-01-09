@@ -12,7 +12,6 @@ import { htmlPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { webWorkerPlugin } from './worker'
 import { dynamicImportPolyfillPlugin } from './dynamicImportPolyfill'
-import { dataURIPlugin } from './dataUri'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -45,7 +44,6 @@ export async function resolvePlugins(
       preferConst: true,
       namedExports: true
     }),
-    isBuild ? dataURIPlugin() : null,
     wasmPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
