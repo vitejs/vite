@@ -179,6 +179,42 @@ import json from './example.json'
 import { field } from './example.json'
 ```
 
+## Glob Import
+
+> Requires ^2.0.0-beta.13
+
+Vite supports importing multiple modules from the file system using a [glob pattern](https://github.com/mrmlnc/fast-glob#pattern-syntax):
+
+```js
+import modules from 'glob:./dir/**'
+```
+
+Will be transformed to the following:
+
+```js
+// code produced by vite
+import * as __glob__0_0 from './dir/foo.js'
+import * as __glob__0_1 from './dir/bar.js'
+const modules = {
+  './dir/foo.js': __glob__0_0,
+  './dir/bar.js': __glob__0_1
+}
+```
+
+You can then iterate over the keys of the `modules` object to access the corresponding modules:
+
+```js
+for (const path in modules) {
+  console.log(modules[path])
+}
+```
+
+Some notes on the glob import syntax:
+
+- Glob imports must start with the `glob:` prefix and followed by a [glob pattern](https://github.com/mrmlnc/fast-glob#pattern-syntax).
+- Glob patterns must be relative and start with `.`
+- Glob imports can only use the default import specifier (no named imports, no `import * as ...`).
+
 ## Web Assembly
 
 Pre-compiled `.wasm` files can be directly imported - the default export will be an initialization function that returns a Promise of the exports object of the wasm instance:
