@@ -1,3 +1,12 @@
+# [2.0.0-beta.14](https://github.com/vitejs/vite/compare/v2.0.0-beta.13...v2.0.0-beta.14) (2021-01-09)
+
+
+### Features
+
+* support ../ paths in glob import ([7f399e1](https://github.com/vitejs/vite/commit/7f399e1a628240fdcd866cddc45c5522b07fd7f6))
+
+
+
 # [2.0.0-beta.13](https://github.com/vitejs/vite/compare/v2.0.0-beta.12...v2.0.0-beta.13) (2021-01-09)
 
 
