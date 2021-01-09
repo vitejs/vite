@@ -38,6 +38,7 @@ export function resolveScript(
   let resolved: SFCScriptBlock | null = null
 
   resolved = compileScript(descriptor, {
+    ...options.script,
     id: descriptor.id,
     isProd: options.isProduction,
     inlineTemplate: !options.devServer,
