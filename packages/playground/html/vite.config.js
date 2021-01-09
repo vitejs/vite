@@ -121,6 +121,23 @@ module.exports = {
           ]
         }
       }
+    },
+    {
+      name: 'body-prepend-transform',
+      transformIndexHtml() {
+        return [
+          {
+            tag: 'noscript',
+            children: '<!-- this is appended to body -->',
+            injectTo: 'body'
+          },
+          {
+            tag: 'noscript',
+            children: '<!-- this is prepended to body -->',
+            injectTo: 'body-prepend'
+          }
+        ]
+      }
     }
   ]
 }
