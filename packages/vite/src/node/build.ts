@@ -11,7 +11,7 @@ import Rollup, {
   WarningHandlerWithDefault,
   OutputOptions,
   RollupOutput,
-  RollupWatchOptions
+  WatcherOptions
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
@@ -139,13 +139,14 @@ export interface BuildOptions {
    */
   lib?: LibraryOptions | false
   /**
-   * @internal for now
+   * Rollup watch options
+   * https://rollupjs.org/guide/en/#watchoptions
    */
-  ssr?: boolean
+  watch?: WatcherOptions | null
   /**
    * @internal for now
    */
-  watch?: boolean
+  ssr?: boolean
 }
 
 export interface LibraryOptions {
@@ -176,7 +177,7 @@ export function resolveBuildOptions(
     manifest: false,
     lib: false,
     ssr: false,
-    watch: false,
+    watch: null,
     ...raw
   }
 
@@ -328,8 +329,9 @@ async function doBuild(
       config.logger
     )
 
+    // watch file changes with rollup
     if (config.build.watch) {
-      config.logger.info(chalk.cyan(`watching for file changes...`))
+      config.logger.info(chalk.cyanBright(`watching for file changes...`))
 
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
@@ -340,27 +342,28 @@ async function doBuild(
         output.push(buildOuputOptions(outputs))
       }
 
-      const watcherOptions: RollupWatchOptions = {
+      const watcherOptions = config.build.watch
+      const watcher = rollup.watch({
         ...rollupOptions,
         output,
         watch: {
-          clearScreen: true,
+          ...watcherOptions,
           chokidar: {
             ignored: [
               '**/node_modules/**',
-              '**/.git/**'
-              // ...(watchOptions.ignored || [])
+              '**/.git/**',
+              ...(watcherOptions?.chokidar?.ignored || [])
             ],
             ignoreInitial: true,
-            ignorePermissionErrors: true
-            // ...watchOptions
+            ignorePermissionErrors: true,
+            ...watcherOptions.chokidar
           }
         }
-      }
-      const watcher = rollup.watch(watcherOptions)
+      })
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
+          // clean previous files
           if (options.write) {
             emptyDir(outDir)
             if (fs.existsSync(publicDir)) {
@@ -369,38 +372,41 @@ async function doBuild(
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
-          config.logger.info(chalk.cyan(`rebuilt in ${event.duration}ms.`))
+          config.logger.info(chalk.cyanBright(`built in ${event.duration}ms.`))
         }
       })
 
       // stop watching
       watcher.close()
+
+      return
+    }
+
+    // write or generate files with rollup
+    const bundle = await rollup.rollup(rollupOptions)
+    paralellBuilds.push(bundle)
+
+    const generate = (output: OutputOptions = {}) => {
+      return bundle[options.write ? 'write' : 'generate'](
+        buildOuputOptions(output)
+      )
+    }
+
+    if (options.write) {
+      emptyDir(outDir)
+      if (fs.existsSync(publicDir)) {
+        copyDir(publicDir, outDir)
+      }
+    }
+
+    if (Array.isArray(outputs)) {
+      const res = []
+      for (const output of outputs) {
+        res.push(await generate(output))
+      }
+      return res
     } else {
-      const bundle = await rollup.rollup(rollupOptions)
-      paralellBuilds.push(bundle)
-
-      const generate = (output: OutputOptions = {}) => {
-        return bundle[options.write ? 'write' : 'generate'](
-          buildOuputOptions(output)
-        )
-      }
-
-      if (options.write) {
-        emptyDir(outDir)
-        if (fs.existsSync(publicDir)) {
-          copyDir(publicDir, outDir)
-        }
-      }
-
-      if (Array.isArray(outputs)) {
-        const res = []
-        for (const output of outputs) {
-          res.push(await generate(output))
-        }
-        return res
-      } else {
-        return generate(outputs)
-      }
+      return generate(outputs)
     }
   } catch (e) {
     config.logger.error(
