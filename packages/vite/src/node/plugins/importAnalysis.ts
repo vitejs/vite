@@ -30,7 +30,7 @@ import {
   DEP_VERSION_RE,
   VALID_ID_PREFIX
 } from '../constants'
-import { ViteDevServer } from '../'
+import { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import { Node } from 'estree'
