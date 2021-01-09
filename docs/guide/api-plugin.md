@@ -269,7 +269,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     /**
      * default: 'head-prepend'
      */
-    injectTo?: 'head' | 'body' | 'head-prepend'
+    injectTo?: 'head' | 'body' | 'head-prepend' | 'body-prepend'
   }
   ```
 
