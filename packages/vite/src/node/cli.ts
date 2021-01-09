@@ -64,7 +64,7 @@ cli
   .option('-m, --mode <mode>', `[string] set env mode`)
   .option(
     '--force',
-    `[boolean]  force the optimizer to ignore the cache and re-bundle`
+    `[boolean] force the optimizer to ignore the cache and re-bundle`
   )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
     // output structure is preserved even after bundling so require()
@@ -111,7 +111,7 @@ cli
       `or specify minifier to use (default: terser)`
   )
   .option('--manifest', `[boolean] emit build manifest json`)
-  .option('-m, --mode <mode>', `[string]  set env mode`)
+  .option('-m, --mode <mode>', `[string] set env mode`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     try {
@@ -134,7 +134,7 @@ cli
   .command('optimize [root]')
   .option(
     '--force',
-    `[boolean]  force the optimizer to ignore the cache and re-bundle`
+    `[boolean] force the optimizer to ignore the cache and re-bundle`
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
