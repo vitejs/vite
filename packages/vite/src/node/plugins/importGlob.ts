@@ -20,7 +20,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         // skip deps
         importer.includes('node_modules') ||
         // fast check for presence of glob keyword
-        source.indexOf('glob:./') < 0
+        source.indexOf('glob:.') < 0
       ) {
         return
       }
@@ -80,11 +80,6 @@ export async function transformImportGlob(
     return e
   }
 
-  const pattern = url.slice(5)
-  if (!pattern.startsWith('./')) {
-    throw err(`pattern must start with "./"`)
-  }
-
   const node = (parseJS(exp, {
     ecmaVersion: 2020,
     sourceType: 'module'
@@ -107,15 +102,32 @@ export async function transformImportGlob(
   }
 
   importer = cleanUrl(importer)
-  const base = path.dirname(importer)
   const importerBasename = path.basename(importer)
-  const files = glob.sync(pattern.slice(2), { cwd: base })
+
+  let pattern = url.slice(5)
+  if (!pattern.startsWith('.')) {
+    throw err(`pattern must start with "."`)
+  }
+  let base = path.dirname(importer)
+  let parentDepth = 0
+  while (pattern.startsWith('../')) {
+    pattern = pattern.slice(3)
+    base = path.resolve(base, '../')
+    parentDepth++
+  }
+  if (pattern.startsWith('./')) {
+    pattern = pattern.slice(2)
+  }
+
+  const files = glob.sync(pattern, { cwd: base })
   let imports = ``
   let entries = ``
   for (let i = 0; i < files.length; i++) {
     // skip importer itself
     if (files[i] === importerBasename) continue
-    const file = `./${files[i]}`
+    const file = parentDepth
+      ? `${'../'.repeat(parentDepth)}${files[i]}`
+      : `./${files[i]}`
     let importee = file
     if (normalizeUrl) {
       ;[importee] = await normalizeUrl(file, pos)
