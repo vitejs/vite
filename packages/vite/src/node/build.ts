@@ -259,6 +259,7 @@ async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
+  process.env.NODE_ENV = config.mode
   config.logger.info(chalk.cyan(`building for production...`))
 
   const options = config.build
