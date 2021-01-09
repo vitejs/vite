@@ -129,7 +129,15 @@ export async function resolveConfig(
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
-  let mode = defaultMode
+  let mode = inlineConfig.mode || defaultMode
+
+  // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
+  // production-specific behavior, so set it here even though we haven't
+  // resolve the final mode yet
+  if (mode === 'production') {
+    process.env.NODE_ENV = 'production'
+  }
+
   let { configFile } = config
   if (configFile !== false) {
     const loadResult = await loadConfigFromFile(
@@ -185,8 +193,12 @@ export async function resolveConfig(
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
   // loaded from `.staging.env` and set by us as VITE_USER_NODE_ENV
-  const resolvedMode = process.env.VITE_USER_NODE_ENV || mode
-  const isProduction = resolvedMode === 'production'
+  const isProduction = (process.env.VITE_USER_NODE_ENV || mode) === 'production'
+  if (isProduction) {
+    // in case default mode was not production and is overwritten
+    process.env.NODE_ENV = 'production'
+  }
+
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // resolve optimizer cache directory
