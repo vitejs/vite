@@ -282,6 +282,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               tag: 'script',
               attrs: {
                 type: 'module',
+                crossorigin: true,
                 src: toPublicPath(chunk.fileName, config)
               }
             },

@@ -104,10 +104,10 @@ test('async chunk', async () => {
   expect(await getColor(el)).toBe('teal')
 
   if (isBuild) {
-    // assert that the css is inlined in the async chunk instead of in the
+    // assert that the css is extracted into its own file instead of in the
     // main css file
-    expect(findAssetFile(/\.css$/)).not.toMatch('teal')
-    expect(findAssetFile(/async\.\w+\.js$/)).toMatch('.async{color:teal}')
+    expect(findAssetFile(/index\.\w+\.css$/)).not.toMatch('teal')
+    expect(findAssetFile(/async\.\w+\.css$/)).toMatch('.async{color:teal}')
   } else {
     // test hmr
     editFile('async.css', (code) => code.replace('color: teal', 'color: blue'))

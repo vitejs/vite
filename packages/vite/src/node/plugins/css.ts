@@ -210,23 +210,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (config.build.minify) {
           chunkCSS = await minifyCSS(chunkCSS, config)
         }
-        // for non-entry chunks, collect its css and inline it as JS strings.
-        if (!chunk.isEntry) {
-          const placeholder = `__VITE_CSS__`
-          code =
-            `let ${placeholder} = document.createElement('style');` +
-            `${placeholder}.innerHTML = ${JSON.stringify(chunkCSS)};` +
-            `document.head.appendChild(${placeholder});` +
-            code
-        } else {
-          // for entry chunks, emit corresponding css file
-          const fileHandle = this.emitFile({
-            name: chunk.name + '.css',
-            type: 'asset',
-            source: chunkCSS
-          })
-          chunkToEmittedCssFileMap.set(chunk, fileHandle)
-        }
+        // emit corresponding css file
+        const fileHandle = this.emitFile({
+          name: chunk.name + '.css',
+          type: 'asset',
+          source: chunkCSS
+        })
+        chunkToEmittedCssFileMap.set(chunk, fileHandle)
         return {
           code,
           map: null
