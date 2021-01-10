@@ -1,7 +1,7 @@
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import aliasPlugin from '@rollup/plugin-alias'
-import jsonPlugin from '@rollup/plugin-json'
+import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'

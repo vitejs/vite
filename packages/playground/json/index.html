@@ -2,6 +2,10 @@
 <pre class="full"></pre>
 <pre class="named"></pre>
 
+<h2>Deep Import</h2>
+<pre class="deep-full"></pre>
+<pre class="deep-named"></pre>
+
 <h2>Dynamic Import</h2>
 <pre class="dynamic"></pre>
 <pre class="dynamic-named"></pre>
@@ -11,8 +15,13 @@
 
 <script type="module">
   import json, { hello } from './test.json'
+  import deepJson, { name } from '@vue/runtime-core/package.json'
+
   text('.full', JSON.stringify(json))
   text('.named', hello)
+
+  text('.deep-full', JSON.stringify(deepJson))
+  text('.deep-named', name)
 
   import('/test.json').then((mod) => {
     text('.dynamic', JSON.stringify(mod.default))
