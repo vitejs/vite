@@ -259,7 +259,8 @@ export function tryNodeResolve(
     server &&
     server.optimizeDepsMetadata &&
     pkg.data.name in server.optimizeDepsMetadata.map &&
-    !isCSSRequest(id)
+    !isCSSRequest(id) &&
+    !server.config.assetsInclude(id)
   ) {
     throw new Error(
       chalk.yellow(
