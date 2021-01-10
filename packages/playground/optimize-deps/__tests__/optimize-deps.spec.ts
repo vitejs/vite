@@ -33,3 +33,7 @@ test('forced include', async () => {
 test('dep with css import', async () => {
   expect(await getColor('h1')).toBe('red')
 })
+
+test('dep w/ non-js files handled via plugin', async () => {
+  expect(await page.textContent('.plugin')).toMatch(`[success]`)
+})

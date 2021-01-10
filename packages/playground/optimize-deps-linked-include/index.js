@@ -17,3 +17,5 @@ if (false) {
 } else {
   console.log('ok')
 }
+
+export { default as VueSFC } from './Test.vue'

@@ -21,6 +21,9 @@
 <h2>Optimizing force included dep even when it's linked</h2>
 <div class="force-include"></div>
 
+<h2>Dep w/ speical file format supported via plugins</h2>
+<div class="plugin"></div>
+
 <script type="module">
   import axios from 'axios'
 
@@ -31,6 +34,7 @@
   import { camelCase } from 'optimize-deps-linked'
   document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')
 
-  import { msg } from 'optimize-deps-linked-include'
+  import { msg, VueSFC } from 'optimize-deps-linked-include'
   document.querySelector('.force-include').textContent = msg
+  document.querySelector('.plugin').textContent = VueSFC.render()
 </script>

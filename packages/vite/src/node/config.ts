@@ -161,7 +161,7 @@ export async function resolveConfig(
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
     return !p.apply || p.apply === command
   })
-  const [prePlugins, postPlugins, normalPlugins] = sortUserPlugins(
+  const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(
     rawUserPlugins
   )
 
@@ -345,7 +345,7 @@ export function sortUserPlugins(
     })
   }
 
-  return [prePlugins, postPlugins, normalPlugins]
+  return [prePlugins, normalPlugins, postPlugins]
 }
 
 export async function loadConfigFromFile(

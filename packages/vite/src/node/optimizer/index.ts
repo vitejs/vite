@@ -3,7 +3,7 @@ import path from 'path'
 import chalk from 'chalk'
 import Rollup from 'rollup'
 import { createHash } from 'crypto'
-import { ResolvedConfig } from '../config'
+import { ResolvedConfig, sortUserPlugins } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
 import { init, parse } from 'es-module-lexer'
 import { onRollupWarning } from '../build'
@@ -26,6 +26,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { buildDefinePlugin } from '../plugins/define'
 import { createFilter } from '@rollup/pluginutils'
+import { Plugin } from '../plugin'
 
 const debug = createDebugger('vite:optimize')
 
@@ -38,6 +39,10 @@ export interface DepOptimizationOptions {
    * Do not optimize these dependencies.
    */
   exclude?: string | RegExp | (string | RegExp)[]
+  /**
+   * Plugins to use for dep optimizations.
+   */
+  plugins?: Plugin[]
   /**
    * Automatically run `vite optimize` on server start?
    * @default true
@@ -164,6 +169,8 @@ export async function optimizeDeps(
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
 
+  const [pre, normal, post] = sortUserPlugins(options.plugins)
+
   try {
     const rollup = require('rollup') as typeof Rollup
 
@@ -175,6 +182,7 @@ export async function optimizeDeps(
       },
       plugins: [
         aliasPlugin({ entries: config.alias }),
+        ...pre,
         depAssetExternalPlugin(config),
         resolvePlugin({
           root: config.root,
@@ -186,13 +194,15 @@ export async function optimizeDeps(
           preferConst: true,
           namedExports: true
         }),
+        ...normal,
         commonjsPlugin({
           include: [/node_modules/],
           extensions: ['.js', '.cjs']
         }),
         buildDefinePlugin(config),
         depAssetRewritePlugin(config),
-        recordCjsEntryPlugin(data)
+        recordCjsEntryPlugin(data),
+        ...post
       ]
     })
 

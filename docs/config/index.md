@@ -419,6 +419,14 @@ export default ({ command, mode }) => {
 
   Dependencies to force exclude in pre-bundling.
 
+### optimizeDeps.plugins
+
+- **Type:** `Plugin[]`
+
+  By default, Vite assumes dependencies ship plain JavaScript and will not attempt to transform non-js file formats during pre-bundling. If you wish to support speical file types, e.g. `.vue` files, you will need to supply the relevant plugins via this option.
+
+  Note that you will also need to include these plugins in the main `plugins` option in order to support the same file types during production build.
+
 ### optimizeDeps.auto
 
 - **Type:** `boolean`
