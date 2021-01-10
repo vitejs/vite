@@ -1,5 +1,5 @@
 const json = require('../test.json')
-const deepJson = require('json-deep-import/dist/test.json')
+const deepJson = require('@vue/runtime-core/package.json')
 const stringified = JSON.stringify(json)
 const deepStringified = JSON.stringify(deepJson)
 
@@ -16,7 +16,7 @@ test('deep import', async () => {
 })
 
 test('named deep import', async () => {
-  expect(await page.textContent('.deep-named')).toBe(deepJson.hello)
+  expect(await page.textContent('.deep-named')).toBe(deepJson.name)
 })
 
 test('dynamic import', async () => {

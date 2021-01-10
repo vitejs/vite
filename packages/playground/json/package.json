@@ -6,8 +6,5 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite"
-  },
-  "dependencies": {
-    "json-deep-import": "0.0.0"
   }
 }

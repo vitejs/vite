@@ -15,13 +15,13 @@
 
 <script type="module">
   import json, { hello } from './test.json'
-  import deepJson, { hello as deepHello } from 'json-deep-import/dist/test.json'
+  import deepJson, { name } from '@vue/runtime-core/package.json'
 
   text('.full', JSON.stringify(json))
   text('.named', hello)
 
   text('.deep-full', JSON.stringify(deepJson))
-  text('.deep-named', deepHello)
+  text('.deep-named', name)
 
   import('/test.json').then((mod) => {
     text('.dynamic', JSON.stringify(mod.default))
