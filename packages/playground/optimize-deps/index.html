@@ -22,15 +22,15 @@
 <div class="force-include"></div>
 
 <script type="module">
-import axios from 'axios'
+  import axios from 'axios'
 
-axios.get('/ping').then(res => {
-  document.querySelector('.cjs-browser-field').textContent = res.data
-})
+  axios.get('/ping').then((res) => {
+    document.querySelector('.cjs-browser-field').textContent = res.data
+  })
 
-import { camelCase } from 'optimize-deps-linked'
-document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')
+  import { camelCase } from 'optimize-deps-linked'
+  document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')
 
-import { msg } from 'optimize-deps-linked-include'
-document.querySelector('.force-include').textContent = msg
+  import { msg } from 'optimize-deps-linked-include'
+  document.querySelector('.force-include').textContent = msg
 </script>

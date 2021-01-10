@@ -221,7 +221,7 @@ function tryResolveFile(
   }
 }
 
-const idToPkgMap = new Map<string, PackageData>()
+export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
