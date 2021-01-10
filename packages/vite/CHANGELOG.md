@@ -1,3 +1,19 @@
+# [2.0.0-beta.17](https://github.com/vitejs/vite/compare/v2.0.0-beta.16...v2.0.0-beta.17) (2021-01-10)
+
+
+### Code Refactoring
+
+* support glob import under `import.meta.glob` ([23d0f2b](https://github.com/vitejs/vite/commit/23d0f2b85d8eb8677e30456342000cabed8e684e))
+
+
+### BREAKING CHANGES
+
+* Glob import syntax has changed. The feature is now
+exposed under `import.meta.glob` (lazy, exposes dynamic import functions)
+and `import.meta.globEager` (eager, exposes already imported modules).
+
+
+
 # [2.0.0-beta.16](https://github.com/vitejs/vite/compare/v2.0.0-beta.15...v2.0.0-beta.16) (2021-01-09)
 
 
