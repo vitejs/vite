@@ -1,3 +1,12 @@
+# [2.0.0-beta.19](https://github.com/vitejs/vite/compare/v2.0.0-beta.18...v2.0.0-beta.19) (2021-01-10)
+
+
+### Bug Fixes
+
+* transform json in deep import ([#1459](https://github.com/vitejs/vite/issues/1459)) ([cf8342b](https://github.com/vitejs/vite/commit/cf8342bef45bebb05d020d4f220b12d2bf526256)), closes [#1458](https://github.com/vitejs/vite/issues/1458)
+
+
+
 # [2.0.0-beta.18](https://github.com/vitejs/vite/compare/v2.0.0-beta.17...v2.0.0-beta.18) (2021-01-10)
 
 
