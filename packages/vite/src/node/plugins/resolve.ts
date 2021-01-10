@@ -146,14 +146,6 @@ export function resolvePlugin({
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        // externalize node built-ins only when building for ssr
-        if (isBuild && config && config.build.ssr && isBuiltin(id)) {
-          return {
-            id,
-            external: true
-          }
-        }
-
         if (asSrc && server && (res = tryOptimizedResolve(id, server))) {
           return res
         }
@@ -169,6 +161,23 @@ export function resolvePlugin({
           ))
         ) {
           return res
+        }
+
+        // node built-ins.
+        // externalize if building for SSR, otherwise redirect to empty module
+        if (isBuiltin(id)) {
+          if (isBuild && config && config.build.ssr) {
+            return {
+              id,
+              external: true
+            }
+          } else {
+            this.warn(
+              `externalized node built-in "${id}" to empty module. ` +
+                `(imported by: ${chalk.white.dim(importer)})`
+            )
+            return browserExternalId
+          }
         }
       }
 

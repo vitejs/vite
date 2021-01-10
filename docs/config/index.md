@@ -415,21 +415,9 @@ export default ({ command, mode }) => {
 
 ### optimizeDeps.exclude
 
-- **Type:** `string[]`
+- **Type:** `string | RegExp | (string | RegExp)[]`
 
   Dependencies to force exclude in pre-bundling.
-
-### optimizeDeps.link
-
-- **Type:** `string[]`
-
-  Dependencies to be explicitly treated as linked source in pre-bundling. Note Vite 2.0 automatically detects linked packages (deps whose resolved path is not inside `node_modules`) so this should only be needed in rare cases.
-
-### optimizeDeps.allowNodeBuiltins
-
-- **Type:** `string[]`
-
-  A list of dependencies that imports Node built-ins, but do not actually use them in browsers. Suppresses related warnings.
 
 ### optimizeDeps.auto
 
