@@ -50,7 +50,7 @@ export interface DepOptimizationOptions {
   auto?: boolean
   /**
    * A list of linked dependencies that should be treated as source code.
-   * @deprecated
+   * @deprecated local linked deps are auto detected in Vite 2.
    */
   link?: string[]
 }
