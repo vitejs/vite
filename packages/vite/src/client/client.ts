@@ -438,7 +438,9 @@ export const createHotContext = (ownerPath: string) => {
 }
 
 export function injectQuery(url: string, queryToInject: string) {
-  const { pathname, search, hash } = new URL(url, 'http://vitejs.dev')
+  // can't use pathname from URL since it may be relative like ../
+  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
+  const { search, hash } = new URL(url, 'http://vitejs.dev')
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
