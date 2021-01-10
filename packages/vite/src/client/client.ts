@@ -82,7 +82,7 @@ async function handleMessage(payload: HMRPayload) {
           queueUpdate(fetchUpdate(update))
         } else {
           // css-update
-          // this is only sent when a css file referened with <link> is updated
+          // this is only sent when a css file referenced with <link> is updated
           let { path, timestamp } = update
           path = path.replace(/\?.*/, '')
           const el = document.querySelector(`link[href*='${path}']`)
@@ -261,7 +261,7 @@ export function removeStyle(id: string) {
 async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   const mod = hotModulesMap.get(path)
   if (!mod) {
-    // In a code-spliting project,
+    // In a code-splitting project,
     // it is common that the hot-updating module is not loaded yet.
     // https://github.com/vitejs/vite/issues/721
     return
