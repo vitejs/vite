@@ -1,3 +1,3 @@
-import modules from 'glob:./*.js'
+const modules = import.meta.globEager('./*.js')
 
 export { modules }

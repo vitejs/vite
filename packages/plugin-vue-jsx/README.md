@@ -33,7 +33,7 @@ import { defineComponent } from 'vue'
 // named exports w/ variable declaration: ok
 export const Foo = defineComponent(...)
 
-// named exports referencing vairable declaration: ok
+// named exports referencing variable declaration: ok
 const Bar = defineComponent(...)
 export { Bar }
 

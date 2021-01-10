@@ -71,7 +71,7 @@ function markExplicitImport(url: string) {
  *     ```
  *
  * - CSS imports are appended with `.js` since both the js module and the actual
- * css (referenced via <link>) may go through the trasnform pipeline:
+ * css (referenced via <link>) may go through the transform pipeline:
  *
  *     ```js
  *     import './style.css'
@@ -254,22 +254,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           } else if (prop === '.env') {
             hasEnv = true
+          } else if (prop === '.glo' && source[end + 4] === 'b') {
+            // transform import.meta.glob()
+            // e.g. `import.meta.glob('glob:./dir/*.js')`
+            const { imports, exp, endIndex } = await transformImportGlob(
+              source,
+              start,
+              importer,
+              index,
+              normalizeUrl
+            )
+            str().prepend(imports)
+            str().overwrite(expStart, endIndex, exp)
           }
-          continue
-        }
-
-        // transform import context
-        // e.g. `import modules from 'glob:./dir/*.js'`
-        if (url.startsWith('glob:')) {
-          const result = await transformImportGlob(
-            source.slice(expStart, expEnd),
-            url,
-            importer,
-            index,
-            start,
-            normalizeUrl
-          )
-          str().overwrite(expStart, expEnd, result)
           continue
         }
 
@@ -467,7 +464,7 @@ type ImportNameSpecifier = { importedName: string; localName: string }
  * Detect import statements to a known optimized CJS dependency and provide
  * ES named imports interop. We do this by rewriting named imports to a variable
  * assignment to the corresponding property on the `module.exports` of the cjs
- * module. Note this doesn't support dynamic re-assisgnments from within the cjs
+ * module. Note this doesn't support dynamic re-assignments from within the cjs
  * module.
  *
  * Note that es-module-lexer treats `export * from '...'` as an import as well,

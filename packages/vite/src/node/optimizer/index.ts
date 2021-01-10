@@ -42,7 +42,7 @@ export interface DepOptimizationOptions {
    */
   link?: string[]
   /**
-   * A list of depdendencies that imports Node built-ins, but do not actually
+   * A list of dependencies that imports Node built-ins, but do not actually
    * use them in browsers.
    */
   allowNodeBuiltins?: string[]
