@@ -25,7 +25,7 @@ import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
-import { importGlobPlugin } from './plugins/importGlob'
+import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
 
 export interface BuildOptions {
   /**
@@ -204,7 +204,6 @@ export function resolveBuildPlugins(
         extensions: ['.js', '.cjs']
       }),
       dataURIPlugin(),
-      importGlobPlugin(config),
       buildDefinePlugin(config),
       dynamicImportVars({
         warnOnError: true,
@@ -213,6 +212,7 @@ export function resolveBuildPlugins(
       ...(options.rollupOptions.plugins || [])
     ],
     post: [
+      buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
       ...(options.minify && options.minify !== 'esbuild'
         ? [terserPlugin(options.terserOptions)]

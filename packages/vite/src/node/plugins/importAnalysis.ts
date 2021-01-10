@@ -35,7 +35,7 @@ import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import { transformImportGlob } from './importGlob'
+import { transformImportGlob } from './importAnaysisBuild'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
