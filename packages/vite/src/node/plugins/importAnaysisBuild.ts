@@ -36,9 +36,13 @@ function __vitePreload(baseModule: () => Promise<{}>, deps?: string[]) {
       if (dep in seen) return
       // @ts-ignore
       seen[dep] = true
+      const isCss = /\.css$/.test(dep)
+      // @ts-ignore check if the css file is already linked in SSR markup
+      if (isCss && document.querySelector(`link[href="${dep}"]`)) {
+        return
+      }
       // @ts-ignore
       const link = document.createElement('link')
-      const isCss = /\.css$/.test(dep)
       link.rel = isCss
         ? 'stylesheet'
         : link.relList &&
