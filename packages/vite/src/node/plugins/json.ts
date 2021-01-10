@@ -1,4 +1,11 @@
-// https://github.com/rollup/plugins/blob/master/packages/json/src/index.js
+/**
+ * https://github.com/rollup/plugins/blob/master/packages/json/src/index.js
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file at
+ * https://github.com/rollup/plugins/blob/master/LICENSE
+ */
+
 import { createFilter, dataToEsm } from '@rollup/pluginutils'
 import { FilterPattern } from '@rollup/pluginutils'
 import { Plugin } from 'rollup'
