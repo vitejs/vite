@@ -20,4 +20,8 @@
 
 ## Community Plugins
 
+### [vite-plugin-react-pages](https://github.com/vitejs/vite-plugin-react-pages)
+
+- A vite framework for building react app. Especially suitable for document site and demos/playgrounds of react components.
+
 Check out [awesome-vite](https://github.com/vitejs/awesome-vite) - you can also submit a PR to list your plugins there.
