@@ -14,6 +14,10 @@
 
 - 提供 React Fast Refresh 支持
 
+### [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy)
+
+- 为打包产物提供传统浏览器兼容性支持
+
 ## 社区插件
 
 > 查看 [awesome-vite](https://github.com/vitejs/awesome-vite) - 你也可以提交一个 PR 来将你的插件添加到此列表中。

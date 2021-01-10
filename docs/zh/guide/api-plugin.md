@@ -265,7 +265,7 @@ Vite 插件也可以提供钩子来服务于特定的 Vite 目标。这些钩子
     /**
      * 默认： 'head-prepend'
      */
-    injectTo?: 'head' | 'body' | 'head-prepend'
+    injectTo?: 'head' | 'body' | 'head-prepend' | 'body-prepend'
   }
   ```
 
@@ -337,3 +337,19 @@ Vite 插件也可以提供钩子来服务于特定的 Vite 目标。这些钩子
 - 它在打包钩子和输出钩子之间没有很强的耦合。
 
 如果一个 Rollup 插件只在构建阶段有意义，则在 `build.rollupOptions.plugins` 下指定即可。
+
+你也可以用 Vite 独有的属性来扩展现有的 Rollup 插件:
+
+```js
+// vite.config.js
+import example from 'rollup-plugin-example'
+export default {
+  plugins: [
+    {
+      ...example(),
+      enforce: 'post',
+      apply: 'build'
+    }
+  ]
+}
+```

@@ -73,6 +73,8 @@ export default ({ command, mode }) => {
 
   将会被传递到 `@rollup/plugin-alias` 作为它的 [entries](https://github.com/rollup/plugins/tree/master/packages/alias#entries)。也可以是一个对象，或一个 `{ find, replacement }` 的数组.
 
+  当使用文件系统路径的别名时，请始终使用绝对路径。相对路径作别名值将按原样使用导致不会解析到文件系统路径中。
+
   更高级的自定义解析方法可以通过 [插件](/zh/guide/api-plugin) 实现。
 
 ### define
@@ -396,23 +398,17 @@ export default ({ command, mode }) => {
 
 ### optimizeDeps.exclude
 
-- **类型：** `string[]`
+- **类型：** `string | RegExp | (string | RegExp)[]`
 
   在预构建中强制排除的依赖项。
 
-### optimizeDeps.link
+### optimizeDeps.plugins
 
-- **类型：** `string[]`
+- **类型：** `Plugin[]`
 
-  在预构建中显式地将依赖项视为链接源。注意 Vite 2.0 会自动检测 “链接包”（解析后路径不在 `node_modules` 内依赖的)，所以只有在极少数情况下才需要这样做。
+  默认情况下，Vite 假定依赖关系提供的是纯 JavaScript，并且在预绑定期间不会尝试转换到非 js 文件格式。 如果您希望支持特定的文件类型，例如 `.vue` 文件，你需要通过这个选项提供相关的插件。
 
-### optimizeDeps.allowNodeBuiltins
-
-- **类型：** `string[]`
-
-  一个导入节点内置组件的依赖项列表，但在浏览器中并不实际使用它们。会抑制相关的警告。
-
-  A list of dependencies that imports Node built-ins, but do not actually use them in browsers. Suppresses related warnings.
+  请注意，您还需要将这些插件包含在主要的 `plugins` 选项中，以便在生产构建过程中支持相同的文件类型。
 
 ### optimizeDeps.auto
 
