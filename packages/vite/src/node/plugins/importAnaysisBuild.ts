@@ -224,7 +224,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 s.overwrite(
                   markPos - 1,
                   markPos + preloadMarker.length + 1,
-                  deps.size
+                  // the dep list includes the main chunk, so only need to
+                  // preload when there are actual other deps.
+                  deps.size > 1
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
                     : ``
                 )
