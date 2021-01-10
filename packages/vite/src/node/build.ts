@@ -20,6 +20,7 @@ import { Terser } from 'types/terser'
 import { copyDir, emptyDir, lookupFile } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
+import { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
@@ -109,6 +110,10 @@ export interface BuildOptions {
    */
   rollupOptions?: RollupOptions
   /**
+   * Options to pass on to `@rollup/plugin-commonjs`
+   */
+  commonjsOptions?: RollupCommonJSOptions
+  /**
    * Whether to write bundle to disk
    * @default true
    */
@@ -162,6 +167,11 @@ export function resolveBuildOptions(
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs'],
+      ...raw?.commonjsOptions
+    },
     minify: 'terser',
     terserOptions: {},
     cleanCssOptions: {},
@@ -199,10 +209,7 @@ export function resolveBuildPlugins(
   return {
     pre: [
       buildHtmlPlugin(config),
-      commonjsPlugin({
-        include: [/node_modules/],
-        extensions: ['.js', '.cjs']
-      }),
+      commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
       buildDefinePlugin(config),
       dynamicImportVars({
