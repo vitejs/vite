@@ -8,10 +8,8 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   const skip = config.command === 'serve' || config.build.ssr
   let polyfillLoaded = false
   const polyfillString =
-    `${__dynamic_import_polyfill__.toString()};` +
-    `${isModernFlag}&&${__dynamic_import_polyfill__.name}(${JSON.stringify(
-      config.build.base
-    )});`
+    `const p = ${polyfill.toString()};` +
+    `${isModernFlag}&&p(${JSON.stringify(config.build.base)});`
 
   return {
     name: 'vite:dynamic-import-polyfill',
@@ -83,14 +81,7 @@ declare const document: any
 declare const URL: any
 declare const Blob: any
 
-function __dynamic_import_polyfill__(
-  modulePath = '.',
-  importFunctionName = '__import__'
-) {
-  // @ts-ignore injected by ./importAnalysisBuild
-  if (!__VITE_IS_MODERN__) {
-    return
-  }
+function polyfill(modulePath = '.', importFunctionName = '__import__') {
   try {
     self[importFunctionName] = new Function('u', `return import(u)`)
   } catch (error) {

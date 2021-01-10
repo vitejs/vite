@@ -17,7 +17,7 @@ export const isModernFlag = `__VITE_IS_MODERN__`
 
 const preloadHelperId = 'vite/preload-helper'
 const preloadMethod = __vitePreload.name
-const preloadModuleCode = `const seen = new Set();export ${__vitePreload.toString()}`
+const preloadModuleCode = `const seen = {};export ${__vitePreload.toString()}`
 const preloadMarker = `__VITE_PRELOAD__`
 const preloadMarkerRE = new RegExp(`,?"${preloadMarker}"`, 'g')
 
@@ -33,9 +33,9 @@ function __vitePreload(baseModule: () => Promise<{}>, deps?: string[]) {
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
-      if (seen.has(dep)) return
+      if (dep in seen) return
       // @ts-ignore
-      seen.add(dep)
+      seen[dep] = true
       // @ts-ignore
       const link = document.createElement('link')
       const isCss = /\.css$/.test(dep)
@@ -138,13 +138,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (dynamicIndex > -1) {
           const dynamicEnd = source.indexOf(`)`, end) + 1
           const original = source.slice(dynamicIndex, dynamicEnd)
-          str().overwrite(
-            dynamicIndex,
-            dynamicEnd,
-            `${preloadMethod}(()=>${original}${
-              isModernFlag ? `,"${preloadMarker}"` : ``
-            })`
-          )
+          let replacement =
+            `(${isModernFlag} ` +
+            `? ${preloadMethod}(() => ${original},"${preloadMarker}")` +
+            ` : ${original})`
+          // backtrace to see if the import call is after a newline
+          for (let i = dynamicIndex - 1; i > 0; i--) {
+            const char = source.charAt(i)
+            if (char === '\n') {
+              replacement = `;` + replacement
+              break
+            } else if (!/\s/.test(char)) {
+              break
+            }
+          }
+          str().overwrite(dynamicIndex, dynamicEnd, replacement)
         }
       }
 
