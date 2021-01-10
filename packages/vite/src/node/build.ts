@@ -8,7 +8,6 @@ import Rollup, {
   RollupOptions,
   RollupWarning,
   WarningHandler,
-  WarningHandlerWithDefault,
   OutputOptions,
   RollupOutput
 } from 'rollup'
@@ -22,7 +21,6 @@ import { copyDir, emptyDir, lookupFile } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
-import isBuiltin from 'isbuiltin'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
@@ -280,12 +278,7 @@ async function doBuild(
       ...options.rollupOptions,
       plugins: config.plugins as Plugin[],
       onwarn(warning, warn) {
-        onRollupWarning(
-          warning,
-          warn,
-          config.optimizeDeps?.allowNodeBuiltins,
-          options.rollupOptions?.onwarn
-        )
+        onRollupWarning(warning, warn, config)
       }
     })
 
@@ -397,59 +390,20 @@ const dynamicImportWarningIgnoreList = [
 export function onRollupWarning(
   warning: RollupWarning,
   warn: WarningHandler,
-  allowNodeBuiltins: string[] = [],
-  userOnWarn?: WarningHandlerWithDefault
+  config: ResolvedConfig
 ) {
-  function doWarn() {
-    if (userOnWarn) {
-      userOnWarn(warning, warn)
-    } else {
-      warn(warning)
-    }
-  }
-
   if (warning.code === 'UNRESOLVED_IMPORT') {
-    let message: string
     const id = warning.source
     const importer = warning.importer
-
-    if (importer && /\?commonjs-external$/.test(importer)) {
-      // allow commonjs external...
-      warning.message = chalk.yellow(warning.message)
-      return doWarn()
+    // throw unless it's commonjs external...
+    if (!importer || !/\?commonjs-external$/.test(importer)) {
+      throw new Error(
+        `[vite]: Rollup failed to resolve import "${id}" from "${importer}".\n` +
+          `This is most likely unintended because it can break your application at runtime.\n` +
+          `If you do want to externalize this module explicitly add it to\n` +
+          `\`build.rollupOptions.external\``
+      )
     }
-
-    if (id && isBuiltin(id)) {
-      let importingDep: string | undefined
-      if (importer) {
-        const pkg = JSON.parse(lookupFile(importer, ['package.json']) || `{}`)
-        if (pkg.name) {
-          importingDep = pkg.name
-        }
-      }
-      if (
-        importingDep &&
-        allowNodeBuiltins.some((allowed) => importingDep!.startsWith(allowed))
-      ) {
-        return
-      }
-      const dep = importingDep
-        ? `Dependency ${chalk.yellow(importingDep)}`
-        : `A dependency`
-      message =
-        `${dep} is attempting to import Node built-in module ${chalk.yellow(
-          id
-        )}.\n` +
-        `This will not work in a browser environment.\n` +
-        `Imported by: ${chalk.gray(importer)}`
-    } else {
-      message =
-        `[vite]: Rollup failed to resolve import "${warning.source}" from "${warning.importer}".\n` +
-        `This is most likely unintended because it can break your application at runtime.\n` +
-        `If you do want to externalize this module explicitly add it to\n` +
-        `\`build.rollupOptions.external\``
-    }
-    throw new Error(message)
   }
 
   if (
@@ -460,6 +414,17 @@ export function onRollupWarning(
   }
 
   if (!warningIgnoreList.includes(warning.code!)) {
-    doWarn()
+    const userOnWarn = config.build.rollupOptions?.onwarn
+    if (userOnWarn) {
+      userOnWarn(warning, warn)
+    } else if (warning.code === 'PLUGIN_WARNING') {
+      config.logger.warn(
+        `${chalk.bold.yellow(`[plugin:${warning.plugin}]`)} ${chalk.yellow(
+          warning.message
+        )}`
+      )
+    } else {
+      warn(warning)
+    }
   }
 }

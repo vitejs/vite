@@ -25,6 +25,7 @@ import aliasPlugin from '@rollup/plugin-alias'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { buildDefinePlugin } from '../plugins/define'
+import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:optimize')
 
@@ -36,21 +37,17 @@ export interface DepOptimizationOptions {
   /**
    * Do not optimize these dependencies.
    */
-  exclude?: string[]
-  /**
-   * A list of linked dependencies that should be treated as source code.
-   */
-  link?: string[]
-  /**
-   * A list of dependencies that imports Node built-ins, but do not actually
-   * use them in browsers.
-   */
-  allowNodeBuiltins?: string[]
+  exclude?: string | RegExp | (string | RegExp)[]
   /**
    * Automatically run `vite optimize` on server start?
    * @default true
    */
   auto?: boolean
+  /**
+   * A list of linked dependencies that should be treated as source code.
+   * @deprecated
+   */
+  link?: string[]
 }
 
 export interface DepOptimizationMetadata {
@@ -174,7 +171,7 @@ export async function optimizeDeps(
       input: qualified,
       external,
       onwarn(warning, warn) {
-        onRollupWarning(warning, warn, options.allowNodeBuiltins)
+        onRollupWarning(warning, warn, config)
       },
       plugins: [
         aliasPlugin({ entries: config.alias }),
@@ -219,19 +216,6 @@ export async function optimizeDeps(
       e.message += `\n\n${chalk.cyan(
         path.relative(root, e.loc.file)
       )}\n${chalk.dim(e.frame)}`
-    } else if (e.message.match('Node built-in')) {
-      e.message += chalk.yellow(
-        `\n\nTip:\nMake sure your "dependencies" only include packages that you\n` +
-          `intend to use in the browser. If it's a Node.js package, it\n` +
-          `should be in "devDependencies".\n\n` +
-          `If you do intend to use this dependency in the browser and the\n` +
-          `dependency does not actually use these Node built-ins in the\n` +
-          `browser, you can add the dependency (not the built-in) to the\n` +
-          `"optimizeDeps.allowNodeBuiltins" option in vite.config.js.\n\n` +
-          `If that results in a runtime error, then unfortunately the\n` +
-          `package is not distributed in a web-friendly format. You should\n` +
-          `open an issue in its repo, or look for a modern alternative.`
-      )
     }
     throw e
   }
@@ -271,13 +255,14 @@ async function resolveQualifiedDeps(
   const pkg = JSON.parse(pkgContent)
   const deps = Object.keys(pkg.dependencies || {})
   const linked: string[] = []
+  const excludeFilter = exclude && createFilter(exclude)
 
   for (const id of deps) {
     if (include && include.includes(id)) {
       // already force included
       continue
     }
-    if (exclude && exclude.includes(id)) {
+    if (excludeFilter && excludeFilter(id)) {
       debug(`skipping ${id} (excluded)`)
       continue
     }
