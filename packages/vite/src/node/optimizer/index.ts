@@ -195,10 +195,7 @@ export async function optimizeDeps(
           namedExports: true
         }),
         ...normal,
-        commonjsPlugin({
-          include: [/node_modules/],
-          extensions: ['.js', '.cjs']
-        }),
+        commonjsPlugin(config.build.commonjsOptions),
         buildDefinePlugin(config),
         depAssetRewritePlugin(config),
         recordCjsEntryPlugin(data),
