@@ -103,7 +103,7 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `'development'` for serve, `'production'` for build
 
-  Specifying this in config will override the default mode for both serve and build. This value can also be overriden via the command line `--mode` option.
+  Specifying this in config will override the default mode for both serve and build. This value can also be overridden via the command line `--mode` option.
 
   See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
@@ -192,7 +192,7 @@ export default ({ command, mode }) => {
 
 - **Type:** `string[]`
 
-  If you have duplicated copies of the same depdendency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
+  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
   project root).
 
 ### logLevel

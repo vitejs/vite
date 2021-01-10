@@ -3,7 +3,7 @@ import { ResolvedConfig } from '..'
 import { Plugin } from '../plugin'
 
 export const polyfillId = 'vite/dynamic-import-polyfill'
-const polyfillPlaceholder = `__DYANMIC_IMPORT_POLYFILL__()`
+const polyfillPlaceholder = `__DYNAMIC_IMPORT_POLYFILL__()`
 
 export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   const skip = config.command === 'serve' || config.build.ssr

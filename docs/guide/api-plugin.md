@@ -124,7 +124,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   **Example:**
 
   ```js
-  const exmaplePlugin = () => {
+  const examplePlugin = () => {
     let config
 
     return {
