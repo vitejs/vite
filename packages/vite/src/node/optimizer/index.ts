@@ -326,12 +326,12 @@ async function resolveQualifiedDeps(
       if (i.startsWith('.')) {
         debug(`optimizing ${id} (contains relative imports)`)
         qualified[id] = filePath
-        continue
+        break
       }
       if (!deps.includes(i)) {
         debug(`optimizing ${id} (imports sub dependencies)`)
         qualified[id] = filePath
-        continue
+        break
       }
     }
     debug(`skipping ${id} (single esm file, doesn't need optimization)`)
