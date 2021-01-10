@@ -181,23 +181,21 @@ import { field } from './example.json'
 
 ## Glob Import
 
-> Requires ^2.0.0-beta.13
+> Requires ^2.0.0-beta.17
 
-Vite supports importing multiple modules from the file system using a [glob pattern](https://github.com/mrmlnc/fast-glob#pattern-syntax):
+Vite supports importing multiple modules from the file system via the special `import.meta.glob` function:
 
 ```js
-import modules from 'glob:./dir/**'
+const modules = import.meta.glob('./dir/*.js')
 ```
 
-Will be transformed to the following:
+The above will be transformed into the following:
 
 ```js
 // code produced by vite
-import * as __glob__0_0 from './dir/foo.js'
-import * as __glob__0_1 from './dir/bar.js'
 const modules = {
-  './dir/foo.js': __glob__0_0,
-  './dir/bar.js': __glob__0_1
+  './dir/foo.js': () => import('./dir/foo.js'),
+  './dir/bar.js': () => import('./dir/bar.js')
 }
 ```
 
@@ -205,15 +203,33 @@ You can then iterate over the keys of the `modules` object to access the corresp
 
 ```js
 for (const path in modules) {
-  console.log(modules[path])
+  modules[path]().then((mod) => {
+    console.log(path, mod)
+  })
 }
 ```
 
-Some notes on the glob import syntax:
+Matched files are by default lazy loaded via dynamic import and will be split into separate chunks during build. If you'd rather import all the modules directly (e.g. relying on side-effects in these modules to be applied first), you can use `import.meta.globEager` instead:
 
-- Glob imports must start with the `glob:` prefix and followed by a [glob pattern](https://github.com/mrmlnc/fast-glob#pattern-syntax).
-- Glob patterns must be relative and start with `.`
-- Glob imports can only use the default import specifier (no named imports, no `import * as ...`).
+```js
+const modules = import.meta.glob('./dir/*.js')
+```
+
+The above will be transformed into the following:
+
+```js
+// code produced by vite
+const modules = {
+  './dir/foo.js': () => import('./dir/foo.js'),
+  './dir/bar.js': () => import('./dir/bar.js')
+}
+```
+
+Note that:
+
+- This is a Vite-only feature and is not a web or ES standard.
+- The glob patterns must be relative and start with `.`.
+- The glob matching is done via `fast-glob` - check out its documentation for [supported glob patterns](https://github.com/mrmlnc/fast-glob#pattern-syntax).
 
 ## Web Assembly
 
