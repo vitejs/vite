@@ -1,3 +1,18 @@
+# [2.0.0-beta.18](https://github.com/vitejs/vite/compare/v2.0.0-beta.17...v2.0.0-beta.18) (2021-01-10)
+
+
+### Bug Fixes
+
+* fix dynamic import with parent relative paths ([bbfe06c](https://github.com/vitejs/vite/commit/bbfe06ce1af8f89490032e609377c6516f7da773)), closes [#1461](https://github.com/vitejs/vite/issues/1461)
+* **optimizer:** properly externalize css/asset imports in optimized deps ([5d180db](https://github.com/vitejs/vite/commit/5d180db4bd19e26de20bb816d594226b4d492804)), closes [#1443](https://github.com/vitejs/vite/issues/1443)
+
+
+### Features
+
+* **optimizer:** support specifying plugins for the optimizer ([1ea0168](https://github.com/vitejs/vite/commit/1ea016823975f3d0e37bf7b65614eded213e0869))
+
+
+
 # [2.0.0-beta.17](https://github.com/vitejs/vite/compare/v2.0.0-beta.16...v2.0.0-beta.17) (2021-01-10)
 
 
