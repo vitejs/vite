@@ -31,19 +31,12 @@ const allResult = {
   './dir/index.js': {
     modules: filteredResult
   },
-  './dir/nested/bar.js': isBuild
-    ? {
-        msg: 'bar',
-        modules: {
-          '../baz.json': json
-        }
-      }
-    : {
-        modules: {
-          '../baz.json': json
-        },
-        msg: 'bar'
-      }
+  './dir/nested/bar.js': {
+    modules: {
+      '../baz.json': json
+    },
+    msg: 'bar'
+  }
 }
 
 test('should work', async () => {

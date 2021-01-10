@@ -2,11 +2,10 @@ import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
-import { parse as parseJS } from 'acorn'
 import { cleanUrl } from '../utils'
-import type { Node } from 'estree'
 import MagicString from 'magic-string'
 import { ImportSpecifier, init, parse as parseImports } from 'es-module-lexer'
+import { RollupError } from 'rollup'
 
 /**
  * Build only. During serve this is performed as part of ./importAnalysis.
@@ -20,7 +19,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         // skip deps
         importer.includes('node_modules') ||
         // fast check for presence of glob keyword
-        source.indexOf('glob:.') < 0
+        source.indexOf('import.meta.glob') < 0
       ) {
         return
       }
@@ -42,17 +41,17 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       const str = () => s || (s = new MagicString(source))
 
       for (let index = 0; index < imports.length; index++) {
-        const { s: start, e: end, ss: expStart, se: expEnd } = imports[index]
+        const { s: start, e: end, ss: expStart } = imports[index]
         const url = source.slice(start, end)
-        if (url.startsWith('glob:')) {
-          const result = await transformImportGlob(
-            source.slice(expStart, expEnd),
-            url,
+        if (url === 'import.meta' && source.slice(end, end + 5) === '.glob') {
+          const { imports, exp, endIndex } = await transformImportGlob(
+            source,
+            start,
             importer,
-            index,
-            start
+            index
           )
-          str().overwrite(expStart, expEnd, result)
+          str().prepend(imports)
+          str().overwrite(expStart, endIndex, exp)
         }
       }
 
@@ -67,44 +66,22 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 }
 
 export async function transformImportGlob(
-  exp: string,
-  url: string,
+  source: string,
+  pos: number,
   importer: string,
   importIndex: number,
-  pos: number,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>
-): Promise<string> {
+): Promise<{ imports: string; exp: string; endIndex: number }> {
   const err = (msg: string) => {
     const e = new Error(`Invalid glob import syntax: ${msg}`)
     ;(e as any).pos = pos
     return e
   }
 
-  const node = (parseJS(exp, {
-    ecmaVersion: 2020,
-    sourceType: 'module'
-  }) as any).body[0] as Node
-
-  if (node.type !== 'ImportDeclaration') {
-    throw err(`statement must be an import declaration.`)
-  }
-
-  let localName: string | undefined
-  for (const spec of node.specifiers) {
-    if (spec.type !== 'ImportDefaultSpecifier') {
-      throw err(`can only use the default import.`)
-    }
-    localName = spec.local.name
-    break
-  }
-  if (!localName) {
-    throw err(`missing default import.`)
-  }
-
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
 
-  let pattern = url.slice(5)
+  let [pattern, endIndex] = lexGlobPattern(source, pos)
   if (!pattern.startsWith('.')) {
     throw err(`pattern must start with "."`)
   }
@@ -133,9 +110,84 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     const identifier = `__glob_${importIndex}_${i}`
-    imports += `import * as ${identifier} from "${importee}";\n`
-    entries += `\n  ${JSON.stringify(file)}: ${identifier},`
+    const isEager = source.slice(pos, pos + 21) === 'import.meta.globEager'
+    if (isEager) {
+      imports += `import * as ${identifier} from ${JSON.stringify(importee)};`
+      entries += ` ${JSON.stringify(file)}: ${identifier},`
+    } else {
+      entries += ` ${JSON.stringify(file)}: () => import(${JSON.stringify(
+        importee
+      )}),`
+    }
   }
 
-  return `${imports}const ${localName} = {${entries}\n}`
+  return {
+    imports,
+    exp: `{${entries}}`,
+    endIndex
+  }
+}
+
+const enum LexerState {
+  inCall,
+  inSingleQuoteString,
+  inDoubleQuoteString,
+  inTemplateString
+}
+
+function lexGlobPattern(code: string, pos: number): [string, number] {
+  let state = LexerState.inCall
+  let pattern = ''
+
+  let i = code.indexOf(`(`, pos) + 1
+  outer: for (; i < code.length; i++) {
+    const char = code.charAt(i)
+    switch (state) {
+      case LexerState.inCall:
+        if (char === `'`) {
+          state = LexerState.inSingleQuoteString
+        } else if (char === `"`) {
+          state = LexerState.inDoubleQuoteString
+        } else if (char === '`') {
+          state = LexerState.inTemplateString
+        } else if (/\s/.test(char)) {
+          continue
+        } else {
+          error(i)
+        }
+        break
+      case LexerState.inSingleQuoteString:
+        if (char === `'`) {
+          break outer
+        } else {
+          pattern += char
+        }
+        break
+      case LexerState.inDoubleQuoteString:
+        if (char === `"`) {
+          break outer
+        } else {
+          pattern += char
+        }
+        break
+      case LexerState.inTemplateString:
+        if (char === '`') {
+          break outer
+        } else {
+          pattern += char
+        }
+        break
+      default:
+        throw new Error('unknown import.meta.glob lexer state')
+    }
+  }
+  return [pattern, code.indexOf(`)`, i) + 1]
+}
+
+function error(pos: number) {
+  const err = new Error(
+    `import.meta.glob() can only accept string literals.`
+  ) as RollupError
+  err.pos = pos
+  throw err
 }

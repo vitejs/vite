@@ -254,22 +254,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           } else if (prop === '.env') {
             hasEnv = true
+          } else if (prop === '.glo' && source[end + 4] === 'b') {
+            // transform import.meta.glob()
+            // e.g. `import.meta.glob('glob:./dir/*.js')`
+            const { imports, exp, endIndex } = await transformImportGlob(
+              source,
+              start,
+              importer,
+              index,
+              normalizeUrl
+            )
+            str().prepend(imports)
+            str().overwrite(expStart, endIndex, exp)
           }
-          continue
-        }
-
-        // transform import context
-        // e.g. `import modules from 'glob:./dir/*.js'`
-        if (url.startsWith('glob:')) {
-          const result = await transformImportGlob(
-            source.slice(expStart, expEnd),
-            url,
-            importer,
-            index,
-            start,
-            normalizeUrl
-          )
-          str().overwrite(expStart, expEnd, result)
           continue
         }
 
