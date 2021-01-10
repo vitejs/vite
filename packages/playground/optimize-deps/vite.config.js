@@ -1,3 +1,5 @@
+const vue = require('@vitejs/plugin-vue')
+
 /**
  * @type {import('vite').UserConfig}
  */
@@ -5,7 +7,8 @@ module.exports = {
   dedupe: ['react'],
 
   optimizeDeps: {
-    include: ['optimize-deps-linked-include']
+    include: ['optimize-deps-linked-include'],
+    plugins: [vue()]
   },
 
   build: {
@@ -14,6 +17,7 @@ module.exports = {
   },
 
   plugins: [
+    vue(),
     // for axios request test
     {
       name: 'mock',
