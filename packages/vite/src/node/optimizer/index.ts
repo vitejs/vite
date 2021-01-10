@@ -265,7 +265,8 @@ async function resolveQualifiedDeps(
   const pkg = JSON.parse(pkgContent)
   const deps = Object.keys(pkg.dependencies || {})
   const linked: string[] = []
-  const excludeFilter = exclude && createFilter(exclude)
+  const excludeFilter =
+    exclude && createFilter(exclude, null, { resolve: false })
 
   for (const id of deps) {
     if (include && include.includes(id)) {
