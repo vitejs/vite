@@ -104,7 +104,7 @@ export async function handleHotUpdate({
   // custom blocks update causes a reload
   // because the custom block contents is changed and it may be used in JS.
   if (prevCustoms.length !== nextCustoms.length) {
-    // block rmeoved/added, force reload
+    // block removed/added, force reload
     affectedModules.add(mainModule)
   } else {
     for (let i = 0; i < nextCustoms.length; i++) {

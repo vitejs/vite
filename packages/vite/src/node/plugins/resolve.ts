@@ -104,9 +104,9 @@ export function resolvePlugin({
         // handle browser field mapping for relative imports
         const pkg = importer && idToPkgMap.get(importer)
         if (pkg && isObject(pkg.data.browser)) {
-          const pkgRealtivePath = './' + slash(path.relative(pkg.dir, fsPath))
+          const pkgRelativePath = './' + slash(path.relative(pkg.dir, fsPath))
           const browserMappedPath = mapWithBrowserField(
-            pkgRealtivePath,
+            pkgRelativePath,
             pkg.data.browser
           )
           if (browserMappedPath) {

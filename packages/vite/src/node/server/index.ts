@@ -156,12 +156,12 @@ export interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * Programatically resolve, load and transform a URL and get the result
+   * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
   transformRequest(url: string): Promise<TransformResult | null>
   /**
-   * Util for transfoming a file with esbuild.
+   * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
    */
   transformWithEsbuild(
@@ -179,7 +179,7 @@ export interface ViteDevServer {
    */
   close(): Promise<void>
   /**
-   * @intenral
+   * @internal
    */
   optimizeDepsMetadata: DepOptimizationMetadata | null
 }

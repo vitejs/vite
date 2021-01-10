@@ -29,7 +29,7 @@
   `server`.
 
   - `hostname` is now [`server.host`](/config/#server-host).
-  - `httpsOptions` has been removed. [`server.https`](/config/#server-https) can diretly accept the options object.
+  - `httpsOptions` has been removed. [`server.https`](/config/#server-https) can directly accept the options object.
   - `chokidarWatchOptions` is now [`server.watch`](/config/#server-watch).
 
 - [`assetsInclude`](/config/#assetsInclude) now expects `string | RegExp | (string | RegExp)[]` instead of a function.

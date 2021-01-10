@@ -3,7 +3,7 @@
 :::tip Note
 This is the client HMR API. For handling HMR update in plugins, see [handleHotUpdate](./api-plugin#handlehotupdate).
 
-The manual HMR API is primarly intended for framework and tooling authors. As an end user, HMR is likely already handled for you in the framework specific starter templates.
+The manual HMR API is primarily intended for framework and tooling authors. As an end user, HMR is likely already handled for you in the framework specific starter templates.
 :::
 
 Vite exposes its manual HMR API via the special `import.meta.hot` object:
