@@ -81,7 +81,7 @@ export async function optimizeDeps(
 
   const dataPath = path.join(cacheDir, 'metadata.json')
   const data: DepOptimizationMetadata = {
-    hash: getDepHash(root, config.configFile),
+    hash: getDepHash(root, config.mode, config.configFile),
     map: {},
     cjsEntries: {}
   }
@@ -163,7 +163,7 @@ export async function optimizeDeps(
     )
     logger.info(
       `Pre-bundling them to speed up dev server page load...\n` +
-        `(this will be run only when your dependencies have changed)`
+        `(this will be run only when your dependencies or config have changed)`
     )
   } else {
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
@@ -392,12 +392,13 @@ let cachedHash: string | undefined
 
 export function getDepHash(
   root: string,
+  mode: string,
   configFile: string | undefined
 ): string {
   if (cachedHash) {
     return cachedHash
   }
-  let content = lookupFile(root, lockfileFormats) || ''
+  let content = mode + (lookupFile(root, lockfileFormats) || '')
   const pkg = JSON.parse(lookupFile(root, [`package.json`]) || '{}')
   content += JSON.stringify(pkg.dependencies)
   // also take config into account
