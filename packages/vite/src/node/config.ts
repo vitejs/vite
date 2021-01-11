@@ -360,27 +360,23 @@ export async function loadConfigFromFile(
   let isTS = false
   let isMjs = false
 
-  function checkMjs() {
-    // check package.json for type: "module" and set `isMjs` to true
-    try {
-      const pkg = lookupFile(configRoot, ['package.json'])
-      if (pkg && JSON.parse(pkg).type === 'module') {
-        isMjs = true
-      }
-    } catch (e) {}
-  }
+  // check package.json for type: "module" and set `isMjs` to true
+  try {
+    const pkg = lookupFile(configRoot, ['package.json'])
+    if (pkg && JSON.parse(pkg).type === 'module') {
+      isMjs = true
+    }
+  } catch (e) {}
 
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
-    if (configFile.endsWith('.js')) checkMjs()
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
     const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
     if (fs.existsSync(jsconfigFile)) {
       resolvedPath = jsconfigFile
-      checkMjs()
     }
 
     if (!resolvedPath) {
@@ -405,16 +401,28 @@ export async function loadConfigFromFile(
     return null
   }
 
+  resolvedPath = normalizePath(resolvedPath)
+
   try {
     let userConfig: UserConfigExport | undefined
 
     if (isMjs) {
-      // using eval to avoid this from being compiled away by TS/Rollup
-      // append a query so that we force reload fresh config in case of
-      // server restart
-      userConfig = (await eval(`import(resolvedPath + '?t=${Date.now()}')`))
-        .default
-      debug(`native esm config loaded in ${Date.now() - start}ms`)
+      if (isTS) {
+        const code = await bundleConfigFile(resolvedPath, 'es')
+        userConfig = (
+          await eval(
+            `import(${JSON.stringify(`data:text/javascript,${code}`)})`
+          )
+        ).default
+        debug(`TS + native esm config loaded in ${Date.now() - start}ms`)
+      } else {
+        // using eval to avoid this from being compiled away by TS/Rollup
+        // append a query so that we force reload fresh config in case of
+        // server restart
+        userConfig = (await eval(`import(resolvedPath + '?t=${Date.now()}')`))
+          .default
+        debug(`native esm config loaded in ${Date.now() - start}ms`)
+      }
     }
 
     if (!userConfig && !isTS && !isMjs) {
@@ -437,32 +445,7 @@ export async function loadConfigFromFile(
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
       // lazy require rollup (it's actually in dependencies)
-      const rollup = require('rollup') as typeof Rollup
-      // node-resolve must be imported since it's bundled
-      const bundle = await rollup.rollup({
-        external: (id: string) =>
-          (id[0] !== '.' && !path.isAbsolute(id)) ||
-          id.slice(-5, id.length) === '.json',
-        input: resolvedPath,
-        treeshake: false,
-        plugins: [
-          // use esbuild + node-resolve to support .ts files
-          esbuildPlugin({ target: 'es2019' }),
-          resolvePlugin({
-            root: path.dirname(resolvedPath),
-            isBuild: true,
-            asSrc: false
-          })
-        ]
-      })
-
-      const {
-        output: [{ code }]
-      } = await bundle.generate({
-        exports: 'named',
-        format: 'cjs'
-      })
-
+      const code = await bundleConfigFile(resolvedPath, 'cjs')
       userConfig = await loadConfigFromBundledFile(resolvedPath, code)
       debug(`bundled config file loaded in ${Date.now() - start}ms`)
     }
@@ -482,6 +465,39 @@ export async function loadConfigFromFile(
     )
     throw e
   }
+}
+
+async function bundleConfigFile(
+  fileName: string,
+  format: 'cjs' | 'es'
+): Promise<string> {
+  const rollup = require('rollup') as typeof Rollup
+  // node-resolve must be imported since it's bundled
+  const bundle = await rollup.rollup({
+    external: (id: string) =>
+      (id[0] !== '.' && !path.isAbsolute(id)) ||
+      id.slice(-5, id.length) === '.json',
+    input: fileName,
+    treeshake: false,
+    plugins: [
+      // use esbuild + node-resolve to support .ts files
+      esbuildPlugin({ target: 'es2019' }),
+      resolvePlugin({
+        root: path.dirname(fileName),
+        isBuild: true,
+        asSrc: false
+      })
+    ]
+  })
+
+  const {
+    output: [{ code }]
+  } = await bundle.generate({
+    exports: format === 'cjs' ? 'named' : undefined,
+    format
+  })
+
+  return code
 }
 
 interface NodeModuleWithCompile extends NodeModule {
