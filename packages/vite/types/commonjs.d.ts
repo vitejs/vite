@@ -5,11 +5,6 @@
  * LICENSE file at
  * https://github.com/rollup/plugins/blob/master/LICENSE
  */
-
-type FilterPattern = string | RegExp | readonly (string | RegExp)[]
-
-type RequireReturnsDefaultOption = boolean | 'auto' | 'preferred' | 'namespace'
-
 export interface RollupCommonJSOptions {
   /**
    * A minimatch pattern, or array of patterns, which specifies the files in
@@ -20,7 +15,7 @@ export interface RollupCommonJSOptions {
    * statements or `transformMixedEsModules` is `true`.
    * @default undefined
    */
-  include?: FilterPattern
+  include?: string | RegExp | readonly (string | RegExp)[]
   /**
    * A minimatch pattern, or array of patterns, which specifies the files in
    * the build the plugin should _ignore_. By default, all files with
@@ -28,7 +23,7 @@ export interface RollupCommonJSOptions {
    * can exclude additional files. See also the `include` option.
    * @default undefined
    */
-  exclude?: FilterPattern
+  exclude?: string | RegExp | readonly (string | RegExp)[]
   /**
    * For extensionless imports, search for extensions other than .js in the
    * order specified. Note that you need to make sure that non-JavaScript files
@@ -133,8 +128,11 @@ export interface RollupCommonJSOptions {
    * @default false
    */
   requireReturnsDefault?:
-    | RequireReturnsDefaultOption
-    | ((id: string) => RequireReturnsDefaultOption)
+    | boolean
+    | 'auto'
+    | 'preferred'
+    | 'namespace'
+    | ((id: string) => boolean | 'auto' | 'preferred' | 'namespace')
   /**
    * Some modules contain dynamic `require` calls, or require modules that
    * contain circular dependencies, which are not handled well by static
@@ -146,7 +144,7 @@ export interface RollupCommonJSOptions {
    * rendered as absolute in the final bundle. The plugin tries to avoid
    * exposing paths from the local machine, but if you are `dynamicRequirePaths`
    * with paths that are far away from your project's folder, that may require
-   * replacing strings like `"/Users/John/Desktop/foo-project/"` -> `"/"`.
+   * replacing strings like `"/Users/John/Desktop/foo-project/"` -\> `"/"`.
    */
   dynamicRequireTargets?: string | ReadonlyArray<string>
 }
