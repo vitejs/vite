@@ -208,6 +208,7 @@ function parseComponentDecls(node, source) {
  */
 function isDefineComponentCall(node) {
   return (
+    node &&
     node.type === 'CallExpression' &&
     node.callee.type === 'Identifier' &&
     node.callee.name === 'defineComponent'
