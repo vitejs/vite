@@ -139,7 +139,7 @@ export async function optimizeDeps(
   // Force included deps - these can also be deep paths
   if (options.include) {
     options.include.forEach((id) => {
-      const filePath = tryNodeResolve(id, root)
+      const filePath = tryNodeResolve(id, root, config.isProduction)
       if (filePath) {
         qualified[id] = filePath.id
       }
@@ -173,7 +173,6 @@ export async function optimizeDeps(
 
   try {
     const rollup = require('rollup') as typeof Rollup
-
     const bundle = await rollup.rollup({
       input: qualified,
       external,
@@ -184,12 +183,15 @@ export async function optimizeDeps(
         aliasPlugin({ entries: config.alias }),
         ...pre,
         depAssetExternalPlugin(config),
-        resolvePlugin({
-          root: config.root,
-          dedupe: config.dedupe,
-          isBuild: true,
-          asSrc: false
-        }),
+        resolvePlugin(
+          {
+            root: config.root,
+            dedupe: config.dedupe,
+            isBuild: true,
+            asSrc: false
+          },
+          config
+        ),
         jsonPlugin({
           preferConst: true,
           namedExports: true
@@ -289,7 +291,7 @@ async function resolveQualifiedDeps(
     }
     let filePath
     try {
-      const resolved = tryNodeResolve(id, root)
+      const resolved = tryNodeResolve(id, root, config.isProduction)
       filePath = resolved && resolved.id
     } catch (e) {}
     if (!filePath) {

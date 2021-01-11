@@ -8,9 +8,9 @@
     },
     "./deep.js": "./deep.js",
     "./dir/": "./dir/",
-    "./dir-mapped/": {
-      "import": "./dir/",
-      "require": "./dir-cjs/"
+    "./dir-mapped/*": {
+      "import": "./dir/*",
+      "require": "./dir-cjs/*"
     }
   }
 }
