@@ -3,7 +3,7 @@ import { transform } from '@babel/core'
 // todo hmr
 export function transformVueJsx(code: string, filename: string) {
   const result = transform(code, {
-    plugins: ['transform-vue-jsx'],
+    presets: ['@vue/babel-preset-jsx'],
     filename,
     sourceMaps: true,
   })!
