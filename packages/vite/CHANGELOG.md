@@ -1,3 +1,21 @@
+# [2.0.0-beta.22](https://github.com/vitejs/vite/compare/v2.0.0-beta.21...v2.0.0-beta.22) (2021-01-11)
+
+
+### Bug Fixes
+
+* handle http proxy error ([4ca20f2](https://github.com/vitejs/vite/commit/4ca20f2e16c1bba0dc330c7e5879ca322b2ab21c)), closes [#1485](https://github.com/vitejs/vite/issues/1485)
+* optimizer hash should take inline mode into account ([0aed0e8](https://github.com/vitejs/vite/commit/0aed0e89f84aff26cfdf57879925a76fa696331d)), closes [#1490](https://github.com/vitejs/vite/issues/1490)
+* support resolved Ids that start with null bytes ([7074414](https://github.com/vitejs/vite/commit/70744143cd09863412a59aad14de888067bd8531)), closes [#1471](https://github.com/vitejs/vite/issues/1471)
+* **config:** support native esm config on windows + support TS config in native esm projects ([803f6da](https://github.com/vitejs/vite/commit/803f6da2ad04846c3ae2622e15b5a18f0691204e)), closes [#1487](https://github.com/vitejs/vite/issues/1487)
+
+
+### Features
+
+* **resolve:** support subpath patterns + production/development conditinals in exports field ([62cbd53](https://github.com/vitejs/vite/commit/62cbd53f25411ddfc7cfd5446c2f487a260da191))
+* **server:** add strict-port option ([#1453](https://github.com/vitejs/vite/issues/1453)) ([0501084](https://github.com/vitejs/vite/commit/05010846cb266f540039f13e280b486c97803f03))
+
+
+
 # [2.0.0-beta.21](https://github.com/vitejs/vite/compare/v2.0.0-beta.20...v2.0.0-beta.21) (2021-01-11)
 
 

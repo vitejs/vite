@@ -3603,6 +3603,13 @@ Repository: sindresorhus/resolve-from
 
 ---------------------------------------
 
+## resolve.exports
+License: MIT
+By: Luke Edwards
+Repository: lukeed/resolve.exports
+
+---------------------------------------
+
 ## reusify
 License: MIT
 By: Matteo Collina
