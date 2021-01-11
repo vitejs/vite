@@ -267,7 +267,7 @@ function viteLegacyPlugin(options = {}) {
       // 2. inject Safari 10 nomodule fix
       tags.push({
         tag: 'script',
-        attrs: { nomdoule: true },
+        attrs: { nomodule: true },
         children: safari10NoModuleFix,
         injectTo: 'body'
       })
