@@ -22,7 +22,7 @@ import { PartialResolvedId } from 'rollup'
 import isBuiltin from 'isbuiltin'
 import { isCSSRequest } from './css'
 
-const mainFields = ['module', 'jsnext', 'jsnext:main', 'main']
+const mainFields = ['module', 'main']
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
@@ -119,6 +119,10 @@ export function resolvePlugin({
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
           if (pkg) {
             idToPkgMap.set(res, pkg)
+            return {
+              id: res,
+              moduleSideEffects: pkg.hasSideEffects(res)
+            }
           }
           return res
         }
@@ -326,6 +330,7 @@ function tryOptimizedResolve(
 export interface PackageData {
   dir: string
   hasSideEffects: (id: string) => boolean
+  resolvedImports: Record<string, string | undefined>
   data: {
     [field: string]: any
     version: string
@@ -371,7 +376,8 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
   const pkg = {
     dir: pkgDir,
     data,
-    hasSideEffects
+    hasSideEffects,
+    resolvedImports: {}
   }
   packageCache.set(cacheKey, pkg)
   return pkg
@@ -379,25 +385,54 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
 
 export function resolvePackageEntry(
   id: string,
-  { dir, data }: PackageData
+  { resolvedImports, dir, data }: PackageData
 ): string | undefined {
+  if (resolvedImports['.']) {
+    return resolvedImports['.']
+  }
+
   let entryPoint: string | undefined
 
-  // check browser field first with highest priority
-  const browserEntry =
-    typeof data.browser === 'string'
-      ? data.browser
-      : isObject(data.browser) && data.browser['.']
-  if (browserEntry) {
-    entryPoint = browserEntry
+  // resolve exports field with highest priority
+  // https://nodejs.org/api/packages.html#packages_package_entry_points
+  const { exports: exportsField } = data
+  if (exportsField) {
+    entryPoint = resolveConditionalExports(exportsField, '.')
   }
 
   if (!entryPoint) {
-    // resolve exports field
-    // https://nodejs.org/api/packages.html#packages_package_entry_points
-    const { exports: exportsField } = data
-    if (exportsField) {
-      entryPoint = resolveConditionalExports(exportsField, '.')
+    // check browser field
+    // https://github.com/defunctzombie/package-browser-field-spec
+    const browserEntry =
+      typeof data.browser === 'string'
+        ? data.browser
+        : isObject(data.browser) && data.browser['.']
+    if (browserEntry) {
+      // check if the package also has a "module" field.
+      if (typeof data.module === 'string' && data.module !== browserEntry) {
+        // if both are present, we may have a problem: some package points both
+        // to ESM, with "module" targeting Node.js, while some packages points
+        // "module" to browser ESM and "browser" to UMD.
+        // the heuristics here is to actually read the browser entry when
+        // possible and check for hints of UMD. If it is UMD, prefer "module"
+        // instead; Otherwise, assume it's ESM and use it.
+        const resolvedBrowserEntry = tryFsResolve(
+          path.resolve(dir, browserEntry)
+        )
+        if (resolvedBrowserEntry) {
+          const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
+          if (
+            (/typeof exports\s*==/.test(content) &&
+              /typeof module\s*==/.test(content)) ||
+            /module\.exports\s*=/.test(content)
+          ) {
+            // likely UMD or CJS(!!! e.g. firebase 7.x), prefer module
+            entryPoint = data.module
+          }
+        }
+      } else {
+        entryPoint = browserEntry
+      }
     }
   }
 
@@ -413,7 +448,6 @@ export function resolvePackageEntry(
   entryPoint = entryPoint || 'index.js'
 
   // resolve object browser field in package.json
-  // https://github.com/defunctzombie/package-browser-field-spec
   const { browser: browserField } = data
   if (isObject(browserField)) {
     entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
@@ -427,6 +461,7 @@ export function resolvePackageEntry(
       debug(
         `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPont)}`
       )
+    resolvedImports['.'] = resolvedEntryPont
     return resolvedEntryPont
   } else {
     throw new Error(
@@ -438,9 +473,14 @@ export function resolvePackageEntry(
 
 function resolveDeepImport(
   id: string,
-  { dir, data }: PackageData
+  { resolvedImports, dir, data }: PackageData
 ): string | undefined {
-  let relativeId: string | undefined = '.' + id.slice(data.name.length)
+  id = '.' + id.slice(data.name.length)
+  if (resolvedImports[id]) {
+    return resolvedImports[id]
+  }
+
+  let relativeId: string | undefined = id
   const { exports: exportsField, browser: browserField } = data
 
   // map relative based on exports data
@@ -462,7 +502,7 @@ function resolveDeepImport(
     if (mapped) {
       relativeId = mapped
     } else {
-      return browserExternalId
+      return (resolvedImports[id] = browserExternalId)
     }
   }
 
@@ -471,7 +511,7 @@ function resolveDeepImport(
     if (resolved) {
       isDebug &&
         debug(`[node/deep-import] ${chalk.cyan(id)} -> ${chalk.dim(resolved)}`)
-      return resolved
+      return (resolvedImports[id] = resolved)
     }
   }
 }
