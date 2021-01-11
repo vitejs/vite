@@ -140,7 +140,7 @@ export class ErrorOverlay extends HTMLElement {
     if (hasFrame) {
       this.text('.frame', err.frame!.trim())
     }
-    this.text('.stack', err.stack.replace(codeframeRE, '').trim(), true)
+    this.text('.stack', err.stack, true)
 
     this.root.querySelector('.window')!.addEventListener('click', (e) => {
       e.stopPropagation()

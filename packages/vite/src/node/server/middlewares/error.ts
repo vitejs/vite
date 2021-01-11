@@ -11,7 +11,7 @@ export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
   // properties, since some errors may attach full objects (e.g. PostCSS)
   return {
     message: strip(err.message),
-    stack: strip(err.stack || ''),
+    stack: strip(cleanStack(err.stack || '')),
     id: (err as RollupError).id,
     frame: strip((err as RollupError).frame || ''),
     plugin: (err as RollupError).plugin,
@@ -20,18 +20,31 @@ export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
   }
 }
 
+export function buildErrorMessage(err: RollupError, args: string[] = []) {
+  if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
+  if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
+  if (err.frame) args.push(chalk.yellow(pad(err.frame)))
+  if (err.stack) args.push(pad(cleanStack(err.stack)))
+  return args.join('\n')
+}
+
+function cleanStack(stack: string) {
+  return stack
+    .split(/\n/g)
+    .filter((l) => /^\s*at/.test(l))
+    .join('\n')
+}
+
 export function errorMiddleware(
   server: ViteDevServer
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
   return (err: RollupError, _req, res, _next) => {
-    const args = [chalk.red(`Internal server error: ${err.message}`)]
-    if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
-    if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
-    if (err.frame) args.push(chalk.yellow(pad(err.frame)))
-    if (err.stack) args.push(pad(err.stack))
+    const msg = buildErrorMessage(err, [
+      chalk.red(`Internal server error: ${err.message}`)
+    ])
 
-    server.config.logger.error(args.join('\n'), {
+    server.config.logger.error(msg, {
       clear: true,
       timestamp: true
     })
