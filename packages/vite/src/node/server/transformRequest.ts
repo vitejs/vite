@@ -12,6 +12,7 @@ import {
   removeTimestampQuery,
   timeFrom
 } from '../utils'
+import { checkPublicFile } from '../plugins/asset'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -76,9 +77,12 @@ export async function transformRequest(
     }
   }
   if (code == null) {
-    throw new Error(
-      `Failed to load url ${url} (resolved id: ${id}). Does the file exist?`
-    )
+    const msg = checkPublicFile(url, root)
+      ? `This file is in /public and will be copied as-is during build without ` +
+        `going through the plugin transforms, and therefore should not be ` +
+        `imported from source code. It can only be referenced via HTML tags.`
+      : `Does the file exist?`
+    throw new Error(`Failed to load url ${url} (resolved id: ${id}). ${msg}`)
   }
 
   // ensure module in graph after successful load
