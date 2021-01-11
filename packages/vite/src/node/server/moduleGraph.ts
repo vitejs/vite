@@ -122,12 +122,12 @@ export class ModuleGraph {
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
       const file = (mod.file = cleanUrl(resolvedId))
-      let fileMappedMdoules = this.fileToModulesMap.get(file)
-      if (!fileMappedMdoules) {
-        fileMappedMdoules = new Set()
-        this.fileToModulesMap.set(file, fileMappedMdoules)
+      let fileMappedModules = this.fileToModulesMap.get(file)
+      if (!fileMappedModules) {
+        fileMappedModules = new Set()
+        this.fileToModulesMap.set(file, fileMappedModules)
       }
-      fileMappedMdoules.add(mod)
+      fileMappedModules.add(mod)
     }
     return mod
   }
@@ -139,19 +139,19 @@ export class ModuleGraph {
   createFileOnlyEntry(file: string) {
     file = normalizePath(file)
     const url = `/@fs/${file}`
-    let fileMappedMdoules = this.fileToModulesMap.get(file)
-    if (!fileMappedMdoules) {
-      fileMappedMdoules = new Set()
-      this.fileToModulesMap.set(file, fileMappedMdoules)
+    let fileMappedModules = this.fileToModulesMap.get(file)
+    if (!fileMappedModules) {
+      fileMappedModules = new Set()
+      this.fileToModulesMap.set(file, fileMappedModules)
     }
-    for (const m of fileMappedMdoules) {
+    for (const m of fileMappedModules) {
       if (m.url === url) {
         return m
       }
     }
     const mod = new ModuleNode(url)
     mod.file = file
-    fileMappedMdoules.add(mod)
+    fileMappedModules.add(mod)
     return mod
   }
 

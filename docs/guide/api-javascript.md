@@ -33,7 +33,7 @@ const { createServer } = require('vite')
 The `InlineConfig` interface extends `UserConfig` with additional properties:
 
 - `mode`: override default mode (`'development'` for server)
-- `configFile`: specifcy config file to use. If not set, Vite will try to automatically resolve one from project root. Set to `false` to disable auto resolving.
+- `configFile`: specify config file to use. If not set, Vite will try to automatically resolve one from project root. Set to `false` to disable auto resolving.
 
 ## `ViteDevServer`
 
@@ -72,12 +72,12 @@ interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * Programatically resolve, load and transform a URL and get the result
+   * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
   transformRequest(url: string): Promise<TransformResult | null>
   /**
-   * Util for transfoming a file with esbuild.
+   * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
    */
   transformWithEsbuild(

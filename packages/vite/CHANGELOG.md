@@ -1,3 +1,83 @@
+# [2.0.0-beta.21](https://github.com/vitejs/vite/compare/v2.0.0-beta.20...v2.0.0-beta.21) (2021-01-11)
+
+
+### Bug Fixes
+
+* properly remove dynamic import args for full dynamic imports ([d9c3fdb](https://github.com/vitejs/vite/commit/d9c3fdb4073d49d427d825007154e873d8aa3d9a))
+
+
+
+# [2.0.0-beta.20](https://github.com/vitejs/vite/compare/v2.0.0-beta.19...v2.0.0-beta.20) (2021-01-11)
+
+
+### Bug Fixes
+
+* **optimizer:** exclude should not be resolve ([#1469](https://github.com/vitejs/vite/issues/1469)) ([f8c34ee](https://github.com/vitejs/vite/commit/f8c34eeb89e327f484293f3156119ba6d14f6aee))
+* **resolve:** heuristics for browser vs. module field ([1865e6e](https://github.com/vitejs/vite/commit/1865e6ee4c3e07c0f4a199c1ba7e1c1c4f68862f)), closes [#1467](https://github.com/vitejs/vite/issues/1467)
+
+
+### Features
+
+* allow passing options to rollup commonjs plugin via build.commonjsOptions ([6ed8e28](https://github.com/vitejs/vite/commit/6ed8e286f149f9474e0fc624110de5f787551d62)), closes [#1460](https://github.com/vitejs/vite/issues/1460)
+* async chunk loading optimizations ([e6f7fba](https://github.com/vitejs/vite/commit/e6f7fbad75c1b406b9a95060c5d2a42d3a8994a8))
+
+
+
+# [2.0.0-beta.19](https://github.com/vitejs/vite/compare/v2.0.0-beta.18...v2.0.0-beta.19) (2021-01-10)
+
+
+### Bug Fixes
+
+* transform json in deep import ([#1459](https://github.com/vitejs/vite/issues/1459)) ([cf8342b](https://github.com/vitejs/vite/commit/cf8342bef45bebb05d020d4f220b12d2bf526256)), closes [#1458](https://github.com/vitejs/vite/issues/1458)
+
+
+
+# [2.0.0-beta.18](https://github.com/vitejs/vite/compare/v2.0.0-beta.17...v2.0.0-beta.18) (2021-01-10)
+
+
+### Bug Fixes
+
+* fix dynamic import with parent relative paths ([bbfe06c](https://github.com/vitejs/vite/commit/bbfe06ce1af8f89490032e609377c6516f7da773)), closes [#1461](https://github.com/vitejs/vite/issues/1461)
+* **optimizer:** properly externalize css/asset imports in optimized deps ([5d180db](https://github.com/vitejs/vite/commit/5d180db4bd19e26de20bb816d594226b4d492804)), closes [#1443](https://github.com/vitejs/vite/issues/1443)
+
+
+### Features
+
+* **optimizer:** support specifying plugins for the optimizer ([1ea0168](https://github.com/vitejs/vite/commit/1ea016823975f3d0e37bf7b65614eded213e0869))
+
+
+
+# [2.0.0-beta.17](https://github.com/vitejs/vite/compare/v2.0.0-beta.16...v2.0.0-beta.17) (2021-01-10)
+
+
+### Code Refactoring
+
+* support glob import under `import.meta.glob` ([23d0f2b](https://github.com/vitejs/vite/commit/23d0f2b85d8eb8677e30456342000cabed8e684e))
+
+
+### BREAKING CHANGES
+
+* Glob import syntax has changed. The feature is now
+exposed under `import.meta.glob` (lazy, exposes dynamic import functions)
+and `import.meta.globEager` (eager, exposes already imported modules).
+
+
+
+# [2.0.0-beta.16](https://github.com/vitejs/vite/compare/v2.0.0-beta.15...v2.0.0-beta.16) (2021-01-09)
+
+
+### Bug Fixes
+
+* inject css link when cssCodeSplit is disabled ([51a02ff](https://github.com/vitejs/vite/commit/51a02ff902c3afa4dff76b43f75b9221768cd7f8)), closes [#1141](https://github.com/vitejs/vite/issues/1141)
+* set NODE_ENV for build ([d7ceabe](https://github.com/vitejs/vite/commit/d7ceabe92efe1c523ee05a6941e3f5042733b2bf)), closes [#1445](https://github.com/vitejs/vite/issues/1445) [#1452](https://github.com/vitejs/vite/issues/1452)
+
+
+### Features
+
+* allow tag injection after body open (body-prepend) ([#1435](https://github.com/vitejs/vite/issues/1435)) ([432487e](https://github.com/vitejs/vite/commit/432487e24cb8688c86502e3b4e284e25c81b7dd8))
+
+
+
 # [2.0.0-beta.15](https://github.com/vitejs/vite/compare/v2.0.0-beta.14...v2.0.0-beta.15) (2021-01-09)
 
 

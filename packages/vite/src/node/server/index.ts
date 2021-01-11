@@ -98,6 +98,10 @@ export interface ServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
+  /**
+   * If enabled, vite will exit if specified port is already in use
+   */
+  strictPort?: boolean
 }
 
 /**
@@ -156,12 +160,12 @@ export interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * Programatically resolve, load and transform a URL and get the result
+   * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
   transformRequest(url: string): Promise<TransformResult | null>
   /**
-   * Util for transfoming a file with esbuild.
+   * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
    */
   transformWithEsbuild(
@@ -179,7 +183,7 @@ export interface ViteDevServer {
    */
   close(): Promise<void>
   /**
-   * @intenral
+   * @internal
    */
   optimizeDepsMetadata: DepOptimizationMetadata | null
 }
@@ -402,8 +406,13 @@ async function startServer(
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
-        info(`Port ${port} is in use, trying another one...`)
-        httpServer.listen(++port)
+        if (options.strictPort) {
+          httpServer.removeListener('error', onError)
+          reject(new Error(`Port ${port} is already in use`))
+        } else {
+          info(`Port ${port} is in use, trying another one...`)
+          httpServer.listen(++port)
+        }
       } else {
         httpServer.removeListener('error', onError)
         reject(e)

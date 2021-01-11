@@ -3,7 +3,7 @@ import path from 'path'
 import chalk from 'chalk'
 import Rollup from 'rollup'
 import { createHash } from 'crypto'
-import { ResolvedConfig } from '../config'
+import { ResolvedConfig, sortUserPlugins } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
 import { init, parse } from 'es-module-lexer'
 import { onRollupWarning } from '../build'
@@ -25,6 +25,8 @@ import aliasPlugin from '@rollup/plugin-alias'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { buildDefinePlugin } from '../plugins/define'
+import { createFilter } from '@rollup/pluginutils'
+import { Plugin } from '../plugin'
 
 const debug = createDebugger('vite:optimize')
 
@@ -36,21 +38,21 @@ export interface DepOptimizationOptions {
   /**
    * Do not optimize these dependencies.
    */
-  exclude?: string[]
+  exclude?: string | RegExp | (string | RegExp)[]
   /**
-   * A list of linked dependencies that should be treated as source code.
+   * Plugins to use for dep optimizations.
    */
-  link?: string[]
-  /**
-   * A list of depdendencies that imports Node built-ins, but do not actually
-   * use them in browsers.
-   */
-  allowNodeBuiltins?: string[]
+  plugins?: Plugin[]
   /**
    * Automatically run `vite optimize` on server start?
    * @default true
    */
   auto?: boolean
+  /**
+   * A list of linked dependencies that should be treated as source code.
+   * @deprecated local linked deps are auto detected in Vite 2.
+   */
+  link?: string[]
 }
 
 export interface DepOptimizationMetadata {
@@ -79,7 +81,7 @@ export async function optimizeDeps(
 
   const dataPath = path.join(cacheDir, 'metadata.json')
   const data: DepOptimizationMetadata = {
-    hash: getDepHash(root, config.configFile),
+    hash: getDepHash(root, config.mode, config.configFile),
     map: {},
     cjsEntries: {}
   }
@@ -137,7 +139,7 @@ export async function optimizeDeps(
   // Force included deps - these can also be deep paths
   if (options.include) {
     options.include.forEach((id) => {
-      const filePath = tryNodeResolve(id, root)
+      const filePath = tryNodeResolve(id, root, config.isProduction)
       if (filePath) {
         qualified[id] = filePath.id
       }
@@ -161,41 +163,45 @@ export async function optimizeDeps(
     )
     logger.info(
       `Pre-bundling them to speed up dev server page load...\n` +
-        `(this will be run only when your dependencies have changed)`
+        `(this will be run only when your dependencies or config have changed)`
     )
   } else {
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
 
+  const [pre, normal, post] = sortUserPlugins(options.plugins)
+
   try {
     const rollup = require('rollup') as typeof Rollup
-
     const bundle = await rollup.rollup({
       input: qualified,
       external,
       onwarn(warning, warn) {
-        onRollupWarning(warning, warn, options.allowNodeBuiltins)
+        onRollupWarning(warning, warn, config)
       },
       plugins: [
         aliasPlugin({ entries: config.alias }),
+        ...pre,
         depAssetExternalPlugin(config),
-        resolvePlugin({
-          root: config.root,
-          dedupe: config.dedupe,
-          isBuild: true,
-          asSrc: false
-        }),
+        resolvePlugin(
+          {
+            root: config.root,
+            dedupe: config.dedupe,
+            isBuild: true,
+            asSrc: false
+          },
+          config
+        ),
         jsonPlugin({
           preferConst: true,
           namedExports: true
         }),
-        commonjsPlugin({
-          include: [/node_modules/],
-          extensions: ['.js', '.cjs']
-        }),
+        ...normal,
+        commonjsPlugin(config.build.commonjsOptions),
         buildDefinePlugin(config),
         depAssetRewritePlugin(config),
-        recordCjsEntryPlugin(data)
+        recordCjsEntryPlugin(data),
+        ...post
       ]
     })
 
@@ -219,19 +225,6 @@ export async function optimizeDeps(
       e.message += `\n\n${chalk.cyan(
         path.relative(root, e.loc.file)
       )}\n${chalk.dim(e.frame)}`
-    } else if (e.message.match('Node built-in')) {
-      e.message += chalk.yellow(
-        `\n\nTip:\nMake sure your "dependencies" only include packages that you\n` +
-          `intend to use in the browser. If it's a Node.js package, it\n` +
-          `should be in "devDependencies".\n\n` +
-          `If you do intend to use this dependency in the browser and the\n` +
-          `dependency does not actually use these Node built-ins in the\n` +
-          `browser, you can add the dependency (not the built-in) to the\n` +
-          `"optimizeDeps.allowNodeBuiltins" option in vite.config.js.\n\n` +
-          `If that results in a runtime error, then unfortunately the\n` +
-          `package is not distributed in a web-friendly format. You should\n` +
-          `open an issue in its repo, or look for a modern alternative.`
-      )
     }
     throw e
   }
@@ -271,13 +264,15 @@ async function resolveQualifiedDeps(
   const pkg = JSON.parse(pkgContent)
   const deps = Object.keys(pkg.dependencies || {})
   const linked: string[] = []
+  const excludeFilter =
+    exclude && createFilter(exclude, null, { resolve: false })
 
   for (const id of deps) {
     if (include && include.includes(id)) {
       // already force included
       continue
     }
-    if (exclude && exclude.includes(id)) {
+    if (excludeFilter && excludeFilter(id)) {
       debug(`skipping ${id} (excluded)`)
       continue
     }
@@ -296,7 +291,7 @@ async function resolveQualifiedDeps(
     }
     let filePath
     try {
-      const resolved = tryNodeResolve(id, root)
+      const resolved = tryNodeResolve(id, root, config.isProduction)
       filePath = resolved && resolved.id
     } catch (e) {}
     if (!filePath) {
@@ -326,12 +321,12 @@ async function resolveQualifiedDeps(
       if (i.startsWith('.')) {
         debug(`optimizing ${id} (contains relative imports)`)
         qualified[id] = filePath
-        continue
+        break
       }
       if (!deps.includes(i)) {
         debug(`optimizing ${id} (imports sub dependencies)`)
         qualified[id] = filePath
-        continue
+        break
       }
     }
     debug(`skipping ${id} (single esm file, doesn't need optimization)`)
@@ -399,12 +394,13 @@ let cachedHash: string | undefined
 
 export function getDepHash(
   root: string,
+  mode: string,
   configFile: string | undefined
 ): string {
   if (cachedHash) {
     return cachedHash
   }
-  let content = lookupFile(root, lockfileFormats) || ''
+  let content = mode + (lookupFile(root, lockfileFormats) || '')
   const pkg = JSON.parse(lookupFile(root, [`package.json`]) || '{}')
   content += JSON.stringify(pkg.dependencies)
   // also take config into account

@@ -1,3 +1,5 @@
+import { getColor } from '../../testUtils'
+
 test('default + named imports from cjs dep (react)', async () => {
   expect(await page.textContent('.cjs button')).toBe('count is 0')
   await page.click('.cjs button')
@@ -26,4 +28,12 @@ test('dep from linked dep (lodash-es)', async () => {
 
 test('forced include', async () => {
   expect(await page.textContent('.force-include')).toMatch(`[success]`)
+})
+
+test('dep with css import', async () => {
+  expect(await getColor('h1')).toBe('red')
+})
+
+test('dep w/ non-js files handled via plugin', async () => {
+  expect(await page.textContent('.plugin')).toMatch(`[success]`)
 })

@@ -14,6 +14,10 @@ test('template/script latest syntax support', async () => {
   expect(await page.textContent('.syntax')).toBe('baz')
 })
 
+test('should remove comments in prod', async () => {
+  expect(await page.innerHTML('.comments')).toBe(isBuild ? `` : `<!--hello-->`)
+})
+
 describe('pre-processors', () => {
   test('pug', async () => {
     expect(await page.textContent('p.pug')).toMatch(

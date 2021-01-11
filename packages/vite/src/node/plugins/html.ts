@@ -2,21 +2,15 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
-import { OutputBundle, OutputChunk } from 'rollup'
+import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
 import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
 import { ResolvedConfig } from '../config'
 import slash from 'slash'
-import {
-  AttributeNode,
-  NodeTransform,
-  NodeTypes,
-  parse,
-  transform
-} from '@vue/compiler-dom'
 import MagicString from 'magic-string'
 import { checkPublicFile, assetUrlRE, urlToBuiltUrl } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { polyfillId } from './dynamicImportPolyfill'
+import { AttributeNode, NodeTransform, NodeTypes } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
@@ -95,11 +89,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           return e
         }
 
+        // lazy load compiler-dom
+        const { parse, transform } = await import('@vue/compiler-dom')
         // @vue/compiler-core doesn't like lowercase doctypes
         html = html.replace(/<!doctype\s/i, '<!DOCTYPE ')
         let ast
         try {
-          ast = parse(html)
+          ast = parse(html, { comments: true })
         } catch (e) {
           this.error(formatError(e))
         }
@@ -286,6 +282,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               tag: 'script',
               attrs: {
                 type: 'module',
+                crossorigin: true,
                 src: toPublicPath(chunk.fileName, config)
               }
             },
@@ -295,6 +292,24 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           ]
 
           result = injectToHead(result, assetTags)
+        }
+
+        // inject css link when cssCodeSplit is false
+        if (!config.build.cssCodeSplit) {
+          const cssChunk = Object.values(bundle).find(
+            (chunk) => chunk.type === 'asset' && chunk.name === 'style.css'
+          ) as OutputAsset | undefined
+          if (cssChunk) {
+            result = injectToHead(result, [
+              {
+                tag: 'link',
+                attrs: {
+                  rel: 'stylesheet',
+                  href: toPublicPath(cssChunk.fileName, config)
+                }
+              }
+            ])
+          }
         }
 
         const shortEmitName = path.posix.relative(config.root, id)
@@ -325,7 +340,7 @@ export interface HtmlTagDescriptor {
   /**
    * default: 'head-prepend'
    */
-  injectTo?: 'head' | 'body' | 'head-prepend'
+  injectTo?: 'head' | 'body' | 'head-prepend' | 'body-prepend'
 }
 
 export type IndexHtmlTransformResult =
@@ -394,6 +409,7 @@ export async function applyHtmlTransforms(
   const headTags: HtmlTagDescriptor[] = []
   const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
+  const bodyPrependTags: HtmlTagDescriptor[] = []
 
   const ctx: IndexHtmlTransformContext = {
     path,
@@ -407,7 +423,8 @@ export async function applyHtmlTransforms(
     const res = await hook(html, ctx)
     if (!res) {
       continue
-    } else if (typeof res === 'string') {
+    }
+    if (typeof res === 'string') {
       html = res
     } else {
       let tags
@@ -420,6 +437,8 @@ export async function applyHtmlTransforms(
       for (const tag of tags) {
         if (tag.injectTo === 'body') {
           bodyTags.push(tag)
+        } else if (tag.injectTo === 'body-prepend') {
+          bodyPrependTags.push(tag)
         } else if (tag.injectTo === 'head') {
           headTags.push(tag)
         } else {
@@ -435,6 +454,9 @@ export async function applyHtmlTransforms(
   }
   if (headTags.length) {
     html = injectToHead(html, headTags)
+  }
+  if (bodyPrependTags.length) {
+    html = injectToBody(html, bodyPrependTags, true)
   }
   if (bodyTags.length) {
     html = injectToBody(html, bodyTags)
@@ -473,13 +495,29 @@ function injectToHead(
 }
 
 const bodyInjectRE = /<\/body>/
-function injectToBody(html: string, tags: HtmlTagDescriptor[]) {
-  const tagsHtml = `\n` + serializeTags(tags)
-  if (bodyInjectRE.test(html)) {
-    return html.replace(bodyInjectRE, `${tagsHtml}\n$&`)
+const bodyPrependInjectRE = /<body>/
+function injectToBody(
+  html: string,
+  tags: HtmlTagDescriptor[],
+  prepend = false
+) {
+  if (prepend) {
+    // inject after body open
+    const tagsHtml = `\n` + serializeTags(tags)
+    if (bodyPrependInjectRE.test(html)) {
+      return html.replace(bodyPrependInjectRE, `$&\n${tagsHtml}`)
+    }
+    // if no body, prepend
+    return tagsHtml + `\n` + html
+  } else {
+    // inject before body close
+    const tagsHtml = `\n` + serializeTags(tags)
+    if (bodyInjectRE.test(html)) {
+      return html.replace(bodyInjectRE, `${tagsHtml}\n$&`)
+    }
+    // if no body, append
+    return html + `\n` + tagsHtml
   }
-  // if no body, append
-  return html + `\n` + tagsHtml
 }
 
 const unaryTags = new Set(['link', 'meta', 'base'])

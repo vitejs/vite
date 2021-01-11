@@ -3,8 +3,9 @@ import { Plugin } from 'rollup'
 import { init, parse } from 'es-module-lexer'
 import { isCSSRequest } from '../plugins/css'
 import MagicString from 'magic-string'
-import { bareImportRE, normalizePath, resolveFrom } from '../utils'
+import { normalizePath } from '../utils'
 import { ResolvedConfig } from '../config'
+import { idToPkgMap } from '../plugins/resolve'
 
 export const depAssetExternalPlugin = (config: ResolvedConfig): Plugin => ({
   name: 'vite:dep-assets-external',
@@ -47,12 +48,17 @@ export const depAssetRewritePlugin = (config: ResolvedConfig): Plugin => {
                   s.remove(statementStart, statementEnd)
                   continue
                 }
-                const deepPath = `/@fs/${normalizePath(
-                  bareImportRE.test(importee)
-                    ? resolveFrom(config.root, importee)
-                    : path.resolve(path.dirname(id), importee)
-                )}`
-                s.overwrite(start, end, deepPath)
+                if (importee.startsWith('.')) {
+                  const pkg = idToPkgMap.get(id)
+                  if (pkg) {
+                    const fsPath = path.resolve(path.dirname(id), importee)
+                    const deepPath =
+                      pkg.data.name +
+                      '/' +
+                      normalizePath(path.relative(pkg.dir, fsPath))
+                    s.overwrite(start, end, deepPath)
+                  }
+                }
               }
             } else {
               // ignore dynamic import

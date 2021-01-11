@@ -1,10 +1,11 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "MIT",
   "author": "Evan You",
   "files": [
-    "index.js"
+    "index.js",
+    "index.d.ts"
   ],
   "main": "index.js",
   "types": "index.d.ts",

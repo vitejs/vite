@@ -11,3 +11,8 @@ test('should load literal dynamic import', async () => {
   await page.click('.baz')
   await untilUpdated(() => page.textContent('.view'), 'Baz view')
 })
+
+test('should load full dynamic import from public', async () => {
+  await page.click('.qux')
+  await untilUpdated(() => page.textContent('.view'), 'Qux view')
+})

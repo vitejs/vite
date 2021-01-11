@@ -55,6 +55,12 @@ function testPage(isNested: boolean) {
     }
   })
 
+  test('body prepend/append transform', async () => {
+    expect(await page.innerHTML('body')).toMatch(
+      /prepended to body(.*)appended to body/s
+    )
+  })
+
   test('css', async () => {
     expect(await getColor('h1')).toBe(isNested ? 'red' : 'blue')
     expect(await getColor('p')).toBe('grey')

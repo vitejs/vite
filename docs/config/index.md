@@ -103,7 +103,7 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `'development'` for serve, `'production'` for build
 
-  Specifying this in config will override the default mode for both serve and build. This value can also be overriden via the command line `--mode` option.
+  Specifying this in config will override the default mode for both serve and build. This value can also be overridden via the command line `--mode` option.
 
   See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
@@ -192,7 +192,7 @@ export default ({ command, mode }) => {
 
 - **Type:** `string[]`
 
-  If you have duplicated copies of the same depdendency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
+  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
   project root).
 
 ### logLevel
@@ -214,6 +214,12 @@ export default ({ command, mode }) => {
 - **Type:** `number`
 
   Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
+
+### server.strictPort
+
+- **Type:** `boolean`
+
+  Set to `true` to exit if port is already in use, instead of automatically try the next available port.
 
 ### server.https
 
@@ -362,6 +368,12 @@ export default ({ command, mode }) => {
 
   Directly customize the underlying Rollup bundle. This is the same as options that can be exported from a Rollup config file and will be merged with Vite's internal Rollup options. See [Rollup options docs](https://rollupjs.org/guide/en/#big-list-of-options) for more details.
 
+### build.commonjsOptions
+
+- **Type:** [`RollupCommonJSOptions`](https://github.com/rollup/plugins/tree/master/packages/commonjs#options)
+
+  Options to pass on to [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs). This applies to dependency pre-bundling as well.
+
 ### build.lib
 
 - **Type:** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[] }`
@@ -415,21 +427,17 @@ export default ({ command, mode }) => {
 
 ### optimizeDeps.exclude
 
-- **Type:** `string[]`
+- **Type:** `string | RegExp | (string | RegExp)[]`
 
   Dependencies to force exclude in pre-bundling.
 
-### optimizeDeps.link
+### optimizeDeps.plugins
 
-- **Type:** `string[]`
+- **Type:** `Plugin[]`
 
-  Dependencies to be explicitly treated as linked source in pre-bundling. Note Vite 2.0 automatically detects linked packages (deps whose resolved path is not inside `node_modules`) so this should only be needed in rare cases.
+  By default, Vite assumes dependencies ship plain JavaScript and will not attempt to transform non-js file formats during pre-bundling. If you wish to support speical file types, e.g. `.vue` files, you will need to supply the relevant plugins via this option.
 
-### optimizeDeps.allowNodeBuiltins
-
-- **Type:** `string[]`
-
-  A list of dependencies that imports Node built-ins, but do not actually use them in browsers. Suppresses related warnings.
+  Note that you will also need to include these plugins in the main `plugins` option in order to support the same file types during production build.
 
 ### optimizeDeps.auto
 

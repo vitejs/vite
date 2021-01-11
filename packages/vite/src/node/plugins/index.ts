@@ -1,7 +1,7 @@
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import aliasPlugin from '@rollup/plugin-alias'
-import jsonPlugin from '@rollup/plugin-json'
+import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -31,12 +31,15 @@ export async function resolvePlugins(
     config.build.polyfillDynamicImport
       ? dynamicImportPolyfillPlugin(config)
       : null,
-    resolvePlugin({
-      root: config.root,
-      dedupe: config.dedupe,
-      isBuild,
-      asSrc: true
-    }),
+    resolvePlugin(
+      {
+        root: config.root,
+        dedupe: config.dedupe,
+        isBuild,
+        asSrc: true
+      },
+      config
+    ),
     htmlPlugin(),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,

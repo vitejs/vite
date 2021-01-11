@@ -61,10 +61,11 @@ cli
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [browser]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
+  .option('--strict-port', `[boolean] exit if specified port is already in use`)
   .option('-m, --mode <mode>', `[string] set env mode`)
   .option(
     '--force',
-    `[boolean]  force the optimizer to ignore the cache and re-bundle`
+    `[boolean] force the optimizer to ignore the cache and re-bundle`
   )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
     // output structure is preserved even after bundling so require()
@@ -112,7 +113,7 @@ cli
   )
   .option('--manifest', `[boolean] emit build manifest json`)
   .option('--watch', `[boolean] rebuilds when modules have changed on disk.`)
-  .option('-m, --mode <mode>', `[string]  set env mode`)
+  .option('-m, --mode <mode>', `[string] set env mode`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     try {
@@ -135,7 +136,7 @@ cli
   .command('optimize [root]')
   .option(
     '--force',
-    `[boolean]  force the optimizer to ignore the cache and re-bundle`
+    `[boolean] force the optimizer to ignore the cache and re-bundle`
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {

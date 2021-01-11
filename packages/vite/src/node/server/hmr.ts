@@ -328,7 +328,7 @@ export function lexAcceptedHmrDeps(
         }
         break
       default:
-        throw new Error('unknown lexer state')
+        throw new Error('unknown import.meta.hot lexer state')
     }
   }
   return false
