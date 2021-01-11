@@ -98,6 +98,10 @@ export interface ServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
+  /**
+   * If enabled, vite will exit if specified port is already in use
+   */
+  strictPort?: boolean
 }
 
 /**
@@ -402,8 +406,13 @@ async function startServer(
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
-        info(`Port ${port} is in use, trying another one...`)
-        httpServer.listen(++port)
+        if (options.strictPort) {
+          httpServer.removeListener('error', onError)
+          reject(new Error(`Port ${port} is already in use`))
+        } else {
+          info(`Port ${port} is in use, trying another one...`)
+          httpServer.listen(++port)
+        }
       } else {
         httpServer.removeListener('error', onError)
         reject(e)
