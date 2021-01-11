@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.0.0-beta.19",
+  "version": "2.0.0-beta.20",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",

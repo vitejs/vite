@@ -1,3 +1,19 @@
+# [2.0.0-beta.20](https://github.com/vitejs/vite/compare/v2.0.0-beta.19...v2.0.0-beta.20) (2021-01-11)
+
+
+### Bug Fixes
+
+* **optimizer:** exclude should not be resolve ([#1469](https://github.com/vitejs/vite/issues/1469)) ([f8c34ee](https://github.com/vitejs/vite/commit/f8c34eeb89e327f484293f3156119ba6d14f6aee))
+* **resolve:** heuristics for browser vs. module field ([1865e6e](https://github.com/vitejs/vite/commit/1865e6ee4c3e07c0f4a199c1ba7e1c1c4f68862f)), closes [#1467](https://github.com/vitejs/vite/issues/1467)
+
+
+### Features
+
+* allow passing options to rollup commonjs plugin via build.commonjsOptions ([6ed8e28](https://github.com/vitejs/vite/commit/6ed8e286f149f9474e0fc624110de5f787551d62)), closes [#1460](https://github.com/vitejs/vite/issues/1460)
+* async chunk loading optimizations ([e6f7fba](https://github.com/vitejs/vite/commit/e6f7fbad75c1b406b9a95060c5d2a42d3a8994a8))
+
+
+
 # [2.0.0-beta.19](https://github.com/vitejs/vite/compare/v2.0.0-beta.18...v2.0.0-beta.19) (2021-01-10)
 
 
