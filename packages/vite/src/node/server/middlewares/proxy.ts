@@ -5,6 +5,7 @@ import { HMR_HEADER } from '../ws'
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import { HttpProxy } from 'types/http-proxy'
+import chalk from 'chalk'
 
 const debug = createDebugger('vite:proxy')
 
@@ -42,6 +43,13 @@ export function proxyMiddleware({
       opts = { target: opts } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
+
+    proxy.on('error', (err) => {
+      config.logger.error(`${chalk.red(`http proxy error:`)}\n${err.stack}`, {
+        timestamp: true
+      })
+    })
+
     if (opts.configure) {
       opts.configure(proxy, opts)
     }
