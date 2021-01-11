@@ -19,6 +19,7 @@ import {
   DEP_CACHE_DIR,
   DEP_VERSION_RE,
   FS_PREFIX,
+  NULL_BYTE_PLACEHOLDER,
   VALID_ID_PREFIX
 } from '../../constants'
 
@@ -44,7 +45,10 @@ export function transformMiddleware(
       return next()
     }
 
-    let url = decodeURI(removeTimestampQuery(req.url!))
+    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
+      NULL_BYTE_PLACEHOLDER,
+      '\0'
+    )
     const withoutQuery = cleanUrl(url)
 
     try {
