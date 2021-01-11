@@ -56,6 +56,11 @@ function viteLegacyPlugin(options = {}) {
       }
     })
   }
+  if (Array.isArray(options.additionalLegacyPolyfills)) {
+    options.additionalLegacyPolyfills.forEach((i) => {
+      legacyPolyfills.add(i)
+    })
+  }
 
   /**
    * @type {import('vite').Plugin}
