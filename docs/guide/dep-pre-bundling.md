@@ -24,7 +24,7 @@ This is Vite performing what we call "dependency pre-bundling". This process ser
 
 2. **Performance:** Vite converts ESM dependencies with many internal modules into a single module to improve subsequent page load performance.
 
-   Some packages ship their ES modules builds as many separate files importing one another. For example, [`lodash-es` has over 600 internal modules](https://unpkg.com/browse/lodash-es/)! When we do `import { debounce } from 'lodash-es'`, the browser fires off 600+ HTTP requests at the same time! Even though the server has no problem handling them, the large amount of requests create a network congestion on the browser side, causing the page the load quite a bit slower.
+   Some packages ship their ES modules builds as many separate files importing one another. For example, [`lodash-es` has over 600 internal modules](https://unpkg.com/browse/lodash-es/)! When we do `import { debounce } from 'lodash-es'`, the browser fires off 600+ HTTP requests at the same time! Even though the server has no problem handling them, the large amount of requests create a network congestion on the browser side, causing the page to load noticeably slower.
 
    By pre-bundling `lodash-es` into a single module, we now only need one HTTP request instead!
 
