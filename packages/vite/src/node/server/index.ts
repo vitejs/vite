@@ -101,7 +101,7 @@ export interface ServerOptions {
   /**
    * If enabled, vite will exit if specified port is already in use
    */
-  stickyPort?: boolean
+  strictPort?: boolean
 }
 
 /**
@@ -406,7 +406,7 @@ async function startServer(
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
-        if (options.stickyPort) {
+        if (options.strictPort) {
           httpServer.removeListener('error', onError)
           reject(new Error(`Port ${port} is already in use`))
         } else {
