@@ -13,6 +13,12 @@ export const FS_PREFIX = `/@fs/`
  * Prefix for resolved Ids that are not valid browser import specifiers
  */
 export const VALID_ID_PREFIX = `/@id/`
+/**
+ * Some Rollup plugins use ids that starts with the null byte \0 to avoid
+ * collisions, but it is not permitted in import URLs so we have to replace
+ * them.
+ */
+export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 // eslint-disable-next-line

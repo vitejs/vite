@@ -28,7 +28,8 @@ import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
-  VALID_ID_PREFIX
+  VALID_ID_PREFIX,
+  NULL_BYTE_PLACEHOLDER
 } from '../constants'
 import { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
@@ -185,7 +186,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // prefix it to make it valid. We will strip this before feeding it
         // back into the transform pipeline
         if (!url.startsWith('.') && !url.startsWith('/')) {
-          url = VALID_ID_PREFIX + resolved.id
+          url =
+            VALID_ID_PREFIX + resolved.id.replace('\0', NULL_BYTE_PLACEHOLDER)
         }
 
         // mark non-js/css imports with `?import`
