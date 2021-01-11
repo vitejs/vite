@@ -37,8 +37,8 @@ function __vitePreload(baseModule: () => Promise<{}>, deps?: string[]) {
       // @ts-ignore
       seen[dep] = true
       const isCss = /\.css$/.test(dep)
-      // @ts-ignore check if the css file is already linked in SSR markup
-      if (isCss && document.querySelector(`link[href="${dep}"]`)) {
+      // @ts-ignore check if the file is already preloaded by SSR markup
+      if (document.querySelector(`link[href="${dep}"]`)) {
         return
       }
       // @ts-ignore
@@ -207,30 +207,27 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
                 // check the chunk being imported
                 const url = code.slice(start, end)
-                if (url[0] !== `"` || url[url.length - 1] !== `"`) {
-                  // non literal chunk import, skip
-                  continue
-                }
-
                 const deps: Set<string> = new Set()
 
-                // trace direct imports and add to deps
-                const addDeps = (filename: string) => {
-                  const chunk = bundle[filename] as OutputChunk | undefined
-                  if (chunk) {
-                    deps.add(config.build.base + chunk.fileName)
-                    const cssId = chunkToEmittedCssFileMap.get(chunk)
-                    if (cssId) {
-                      deps.add(config.build.base + this.getFileName(cssId))
+                if (url[0] === `"` && url[url.length - 1] === `"`) {
+                  // literal import - trace direct imports and add to deps
+                  const addDeps = (filename: string) => {
+                    const chunk = bundle[filename] as OutputChunk | undefined
+                    if (chunk) {
+                      deps.add(config.build.base + chunk.fileName)
+                      const cssId = chunkToEmittedCssFileMap.get(chunk)
+                      if (cssId) {
+                        deps.add(config.build.base + this.getFileName(cssId))
+                      }
+                      chunk.imports.forEach(addDeps)
                     }
-                    chunk.imports.forEach(addDeps)
                   }
+                  const normalizedFile = path.posix.join(
+                    path.posix.dirname(chunk.fileName),
+                    url.slice(1, -1)
+                  )
+                  addDeps(normalizedFile)
                 }
-                const normalizedFile = path.posix.join(
-                  path.posix.dirname(chunk.fileName),
-                  url.slice(1, -1)
-                )
-                addDeps(normalizedFile)
 
                 const markPos = code.indexOf(preloadMarker, end)
                 s.overwrite(
