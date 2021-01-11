@@ -50,7 +50,7 @@ import debounce from 'lodash-es/debounce'
 import { debounce } from 'lodash-es'
 ```
 
-Some dependencies may be designed to be used via deep imports, e.g. `firebase` exposes sub modules via `firebase/*` deep imports. For such dependencies, you can instruct Vite to explicitly include these deep import paths via the [`optimizeDeps.include` option](http://localhost:3000/config/#optimizedeps-include). If you never use the main entry, it is also a good idea to exclude it from pre-bundling.
+Some dependencies may be designed to be used via deep imports, e.g. `firebase` exposes sub modules via `firebase/*` deep imports. For such dependencies, you can instruct Vite to explicitly include these deep import paths via the [`optimizeDeps.include` option](/config/#optimizedeps-include). If you never use the main entry, it is also a good idea to exclude it from pre-bundling.
 
 ## Dependency Compatibility
 
