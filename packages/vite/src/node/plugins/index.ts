@@ -31,12 +31,15 @@ export async function resolvePlugins(
     config.build.polyfillDynamicImport
       ? dynamicImportPolyfillPlugin(config)
       : null,
-    resolvePlugin({
-      root: config.root,
-      dedupe: config.dedupe,
-      isBuild,
-      asSrc: true
-    }),
+    resolvePlugin(
+      {
+        root: config.root,
+        dedupe: config.dedupe,
+        isBuild,
+        asSrc: true
+      },
+      config
+    ),
     htmlPlugin(),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,

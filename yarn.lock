@@ -6468,6 +6468,11 @@ resolve-url@^0.2.1:
   resolved "https://registry.yarnpkg.com/resolve-url/-/resolve-url-0.2.1.tgz#2c637fe77c893afd2a663fe21aa9080068e2052a"
   integrity sha1-LGN/53yJOv0qZj/iGqkIAGjiBSo=
 
+resolve.exports@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/resolve.exports/-/resolve.exports-1.0.1.tgz#9aff14e2ed43ea40bbdc2f83b9a2465b1f093325"
+  integrity sha512-rV7NC8yDnV2wSg3nB7Faoje+oQk7/7cuxEq4cgOR81mULtAWvHGODowzxojq4FIftNA0FRtnn5v5a+F4aTiSzA==
+
 resolve@^1.1.6, resolve@^1.1.7, resolve@^1.10.0, resolve@^1.10.1, resolve@^1.15.1, resolve@^1.17.0, resolve@^1.18.1, resolve@^1.19.0:
   version "1.19.0"
   resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.19.0.tgz#1af5bf630409734a067cae29318aac7fa29a267c"
