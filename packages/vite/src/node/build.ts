@@ -264,7 +264,7 @@ async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
-  config.logger.info(chalk.cyan(`building for production...`))
+  config.logger.info(chalk.cyan(`building for ${config.mode}...`))
 
   const options = config.build
   const libOptions = options.lib
