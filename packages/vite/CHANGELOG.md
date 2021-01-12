@@ -1,3 +1,22 @@
+# [2.0.0-beta.24](https://github.com/vitejs/vite/compare/v2.0.0-beta.23...v2.0.0-beta.24) (2021-01-12)
+
+
+### Bug Fixes
+
+* **hmr:** watch file changes even when HMR is disabled ([#1504](https://github.com/vitejs/vite/issues/1504)) ([cc5fa6e](https://github.com/vitejs/vite/commit/cc5fa6efb3448e2f83b5d6d428e79803c8993657))
+* always replace preload marker with value ([2d6f524](https://github.com/vitejs/vite/commit/2d6f5243e16f7debd7ba0de4bf22706df35ccf73))
+* more consistent outDir formatting ([50bff79](https://github.com/vitejs/vite/commit/50bff797c536b08661791a833cfbb9179ff54422)), closes [#1497](https://github.com/vitejs/vite/issues/1497)
+* show target build mode in logs ([#1498](https://github.com/vitejs/vite/issues/1498)) ([ae2e14b](https://github.com/vitejs/vite/commit/ae2e14baf1771c2ccdeece8bbc2b9bd11b279490))
+* support import.meta.url in ts esm config file ([cf5f3ab](https://github.com/vitejs/vite/commit/cf5f3ab2c33aca6ab6bff8d600854f93586adcf0)), closes [#1499](https://github.com/vitejs/vite/issues/1499)
+
+
+### Features
+
+* allow browser new window view source ([#1496](https://github.com/vitejs/vite/issues/1496)) ([1629c54](https://github.com/vitejs/vite/commit/1629c546158253f155afecb55846771013f90ec0))
+* require explicit option to empty outDir when it is out of root ([730d2f0](https://github.com/vitejs/vite/commit/730d2f0d8081e11c88b1151086d99b23e0c58823)), closes [#1501](https://github.com/vitejs/vite/issues/1501)
+
+
+
 # [2.0.0-beta.23](https://github.com/vitejs/vite/compare/v2.0.0-beta.22...v2.0.0-beta.23) (2021-01-12)
 
 
