@@ -237,7 +237,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // preload when there are actual other deps.
                   deps.size > 1
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                    : ``
+                    : `void 0`
                 )
               }
             }
