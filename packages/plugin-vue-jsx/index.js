@@ -165,9 +165,7 @@ function vueJsxPlugin(options = {}) {
               `\n${local}.__hmrId = "${id}"` +
               `\n${local}.__hmrHash = "${hash}"` +
               `\n__VUE_HMR_RUNTIME__.createRecord("${id}", ${local})`
-            callbackCode +=
-              `\n  if (__${exported}.__hmrHash !== ${local}.__hmrHash) ` +
-              `__VUE_HMR_RUNTIME__.reload("${id}", __${exported})`
+            callbackCode += `__VUE_HMR_RUNTIME__.reload("${id}", __${exported})`
           }
 
           code += `\nimport.meta.hot.accept(({${hotComponents
