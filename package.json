@@ -14,6 +14,7 @@
     "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 node --inspect-brk ./node_modules/.bin/jest",
     "docs": "vitepress dev docs",
     "build-docs": "vitepress build docs",
+    "serve-docs": "vitepress serve docs",
     "build-vite": "cd packages/vite && yarn build",
     "build-plugin-vue": "cd packages/plugin-vue && yarn build",
     "ci-docs": "run-s build-vite build-plugin-vue build-docs"
