@@ -1,3 +1,19 @@
+## [1.0.2](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.1...plugin-vue-jsx@1.0.2) (2021-01-12)
+
+
+### Bug Fixes
+
+* **plugin-vue-jsx:** files should include `index.d.ts` ([#1473](https://github.com/vitejs/vite/issues/1473)) [skip ci] ([f3ab497](https://github.com/vitejs/vite/commit/f3ab497b762e267721ace628bc6c7c5695b0d431))
+* **plugin-vue-jsx:** fix define call check ([#1480](https://github.com/vitejs/vite/issues/1480)) ([4ea065f](https://github.com/vitejs/vite/commit/4ea065f6278f30c022ed291bfb0412a674b18dd4))
+* **plugin-vue-jsx:** fix vue jsx hmr ([#1495](https://github.com/vitejs/vite/issues/1495)) ([6bdc3eb](https://github.com/vitejs/vite/commit/6bdc3eb2d004a28d2934946e33602f832b1ad8f2))
+
+
+### Performance Improvements
+
+* **plugin-vue-jsx:** only gen source map when necessary ([bfa8530](https://github.com/vitejs/vite/commit/bfa8530fc60deada634c38cfd6a23ab8ca05d47c))
+
+
+
 ## [1.0.1](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.0...plugin-vue-jsx@1.0.1) (2021-01-04)
 
 
