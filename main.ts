@@ -65,8 +65,9 @@ function injectStyles (context) {
   }
 }\n`
 
-  // TODO custom block
-  // // Expose filename. This is used by the devtools and Vue runtime warnings.
+  // custom block
+  code += genCustomBlockCode(filePath, descriptor)
+  // Expose filename. This is used by the devtools and Vue runtime warnings.
   if (options.isProduction) {
     // Expose the file's full path in development, so that it can be opened
     // from the devtools.
@@ -159,6 +160,23 @@ function genTemplateRequest(filename: string, descriptor: SFCDescriptor) {
     code: `import { render, staticRenderFns } from '${templateRequest}'`,
     templateRequest,
   }
+}
+
+function genCustomBlockCode(filename: string, descriptor: SFCDescriptor) {
+  let code = ''
+  descriptor.customBlocks.forEach((block, index) => {
+    // if (block.src) {
+    //   linkSrcToDescriptor(block.src, descriptor)
+    // }
+    const src = filename
+    const attrsQuery = attrsToQuery(block.attrs, block.type)
+    // const srcQuery = block.src ? `&src` : ``
+    const query = `?vue&type=${block.type}&index=${index}${attrsQuery}`
+    const request = JSON.stringify(src + query)
+    code += `import block${index} from ${request}\n`
+    code += `if (typeof block${index} === 'function') block${index}(component)\n`
+  })
+  return code
 }
 
 function genHmrCode(id: string, functional: boolean, templateRequest?: string) {
