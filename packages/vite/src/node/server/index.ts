@@ -243,11 +243,11 @@ export async function createServer(
     }
   }
 
-  if (serverConfig.hmr !== false) {
-    watcher.on('change', async (file) => {
-      file = normalizePath(file)
-      // invalidate module graph cache on file change
-      moduleGraph.onFileChange(file)
+  watcher.on('change', async (file) => {
+    file = normalizePath(file)
+    // invalidate module graph cache on file change
+    moduleGraph.onFileChange(file)
+    if (serverConfig.hmr !== false) {
       try {
         await handleHMRUpdate(file, server)
       } catch (err) {
@@ -256,8 +256,8 @@ export async function createServer(
           err: prepareError(err)
         })
       }
-    })
-  }
+    }
+  })
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
