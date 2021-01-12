@@ -1,4 +1,3 @@
-import path from 'path'
 import chalk from 'chalk'
 import { Plugin } from 'rollup'
 import { ResolvedConfig } from '../config'
@@ -38,8 +37,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         ).toFixed(2)}kb`
       : ``
 
-    let outDir = path.posix.relative(process.cwd(), config.build.outDir)
-    if (!outDir.endsWith('/')) outDir += '/'
+    let outDir = config.build.outDir.replace(/\\/g, '/')
+    !outDir.startsWith('.') && (outDir = './' + outDir)
+    !outDir.endsWith('/') && (outDir += '/')
     config.logger.info(
       `${chalk.gray(chalk.white.dim(outDir))}${writeColors[type](
         filePath.padEnd(maxLength + 2)
