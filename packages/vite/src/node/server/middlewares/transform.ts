@@ -39,7 +39,6 @@ export function transformMiddleware(
   return async (req, res, next) => {
     if (
       req.method !== 'GET' ||
-      req.headers.accept?.includes('text/html') ||
       knownIgnoreList.has(req.url!)
     ) {
       return next()
