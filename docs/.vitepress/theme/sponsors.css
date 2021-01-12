@@ -1,0 +1,24 @@
+.sponsors {
+  padding: 0 1.5rem 2rem;
+  font-size: 0.8rem;
+}
+
+.sponsors a {
+  color: #999;
+}
+
+.sponsors img {
+  width: 200px;
+  display: inline-block;
+  margin: 1.25rem 0;
+}
+
+.sponsors.frontpage {
+  text-align: center;
+}
+
+.sponsors.frontpage h2 {
+  color: #999;
+  font-size: 1.2rem;
+  border: none;
+}
