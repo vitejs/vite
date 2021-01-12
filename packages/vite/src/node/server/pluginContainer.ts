@@ -57,6 +57,7 @@ import { FSWatcher } from 'chokidar'
 import {
   createDebugger,
   generateCodeFrame,
+  isExternalUrl,
   normalizePath,
   numberToPos,
   prettifyUrl,
@@ -459,7 +460,7 @@ export async function createPluginContainer(
       }
 
       if (id) {
-        partial.id = normalizePath(id)
+        partial.id = isExternalUrl(id) ? id : normalizePath(id)
         return partial as PartialResolvedId
       } else {
         return null

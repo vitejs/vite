@@ -185,7 +185,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // if the resolved id is not a valid browser import specifier,
         // prefix it to make it valid. We will strip this before feeding it
         // back into the transform pipeline
-        if (!url.startsWith('.') && !url.startsWith('/')) {
+        if (
+          !url.startsWith('.') &&
+          !url.startsWith('/') &&
+          !isExternalUrl(url)
+        ) {
           url =
             VALID_ID_PREFIX + resolved.id.replace('\0', NULL_BYTE_PLACEHOLDER)
         }
