@@ -3,7 +3,7 @@ import path from 'path'
 import { Connect } from 'types/connect'
 import { Plugin } from '../../plugin'
 import {
-  scriptRE,
+  scriptModuleRE,
   applyHtmlTransforms,
   IndexHtmlTransformHook,
   resolveHtmlTransforms,
@@ -22,7 +22,7 @@ const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
       comments.push(m)
       return `<!--VITE_COMMENT_${comments.length - 1}-->`
     })
-    .replace(scriptRE, (_match, _openTag, script) => {
+    .replace(scriptModuleRE, (_match, _openTag, script) => {
       index++
       if (script) {
         // convert inline <script type="module"> into imported modules

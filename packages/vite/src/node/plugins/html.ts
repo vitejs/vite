@@ -15,7 +15,7 @@ import { AttributeNode, NodeTransform, NodeTypes } from '@vue/compiler-dom'
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
 export const htmlCommentRE = /<!--[\s\S]*?-->/g
-export const scriptRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
+export const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
 
 export function htmlPlugin(): Plugin {
   return {
@@ -34,9 +34,9 @@ export function htmlPlugin(): Plugin {
         const file = cleanUrl(id)
         const html = fs.readFileSync(file, 'utf-8').replace(htmlCommentRE, '')
         let match
-        scriptRE.lastIndex = 0
+        scriptModuleRE.lastIndex = 0
         for (let i = 0; i <= index; i++) {
-          match = scriptRE.exec(html)
+          match = scriptModuleRE.exec(html)
         }
         if (match) {
           return match[2]
