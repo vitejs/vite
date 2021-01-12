@@ -9,12 +9,16 @@
 
 .sponsors img {
   width: 200px;
-  display: inline-block;
+  display: block;
   margin: 1.25rem 0;
 }
 
 .sponsors.frontpage {
   text-align: center;
+}
+
+.sponsors.frontpage img {
+  display: inline-block;
 }
 
 .sponsors.frontpage h2 {
