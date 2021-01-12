@@ -3,12 +3,13 @@ import * as vueTemplateCompiler from 'vue-template-compiler'
 import path from 'path'
 import { TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from './index'
+import { createRollupError } from './utils/error'
 
 export function compileSFCTemplate(
   source: string,
   block: SFCBlock,
   filename: string,
-  { root, isProduction, vueTemplateOptions, devServer }: ResolvedOptions,
+  { root, isProduction, vueTemplateOptions = {}, devServer }: ResolvedOptions,
   pluginContext: TransformPluginContext
 ): string {
   const { tips, errors, code } = compileTemplate({
@@ -29,12 +30,35 @@ export function compileSFCTemplate(
   })
 
   if (tips) {
-    tips.forEach(console.warn)
+    tips.forEach((warn) =>
+      pluginContext.error({
+        id: filename,
+        message: typeof warn === 'string' ? warn : warn.msg,
+      })
+    )
   }
 
-  // todo
   if (errors) {
-    // 	errors.forEach((e) => pluginContext.error(e))
+    errors.forEach((error) => {
+      // 2.6 compiler outputs errors as objects with range
+      if (
+        vueTemplateCompiler.generateCodeFrame &&
+        vueTemplateOptions.compilerOptions?.outputSourceRange
+      ) {
+        const { msg, start, end } = error as vueTemplateCompiler.ErrorWithRange
+        return pluginContext.error(
+          createRollupError(filename, {
+            message: msg,
+            frame: vueTemplateCompiler.generateCodeFrame(source, start, end),
+          })
+        )
+      } else {
+        pluginContext.error({
+          id: filename,
+          message: typeof error === 'string' ? error : error.msg,
+        })
+      }
+    })
   }
 
   if (devServer) {

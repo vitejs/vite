@@ -22,9 +22,9 @@ export async function transformStyle(
   })
 
   if (result.errors.length) {
-    result.errors.forEach((error: any) => {
-      pluginContext.error(error)
-    })
+    result.errors.forEach((error) =>
+      pluginContext.error({ id: filename, message: error })
+    )
     return null
   }
 
