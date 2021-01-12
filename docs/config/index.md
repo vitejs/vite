@@ -415,6 +415,13 @@ export default ({ command, mode }) => {
 
   Set to `false` to disable writing the bundle to disk. This is mostly used in [programmatic `build()` calls](/guide/api-javascript#build) where further post processing of the bundle is needed before writing to disk.
 
+### build.emptyOutDir
+
+- **Type:** `boolean`
+- **Default:** `true` if `outDir` is inside `root`
+
+  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentially removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
+
 ## Dep Optimization Options
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
