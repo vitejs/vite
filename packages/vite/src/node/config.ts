@@ -481,7 +481,7 @@ async function bundleConfigFile(
     treeshake: false,
     plugins: [
       // use esbuild + node-resolve to support .ts files
-      esbuildPlugin({ target: 'es2019' }),
+      esbuildPlugin({ target: 'esnext' }),
       resolvePlugin({
         root: path.dirname(fileName),
         isBuild: true,
