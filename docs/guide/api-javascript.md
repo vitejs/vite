@@ -28,6 +28,34 @@ const { createServer } = require('vite')
 })()
 ```
 
+### Using the Vite Server as a Middleware
+
+Vite can be used as a middleware in an existing raw Node.js http server or frameworks that are comaptible with the `(req, res, next) => {}` style middlewares. For example with `express`:
+
+```js
+const vite = require('vite')
+const express = require('express')
+
+;(async () => {
+  const app = express()
+
+  // create vite dev server in middelware mode
+  // so vite creates the hmr websocket server on its own.
+  // the ws server will be listening at port 24678 by default, and can be
+  // configured via server.hmr.port
+  const viteServer = await vite.createServer({
+    server: {
+      middlewareMode: true
+    }
+  })
+
+  // use vite's connect instance as middleware
+  app.use(viteServer.app)
+
+  app.listen(3000)
+})()
+```
+
 ## `InlineConfig`
 
 The `InlineConfig` interface extends `UserConfig` with additional properties:
