@@ -167,32 +167,50 @@ export async function optimizeDeps(
     })
   }
 
-  const qualifiedIds = Object.keys(qualified)
-  if (!qualifiedIds.length) {
-    writeFile(dataPath, JSON.stringify(data, null, 2))
-    log(`No listed dependency requires optimization. Skipping.`)
-    return
-  }
-
-  const invalid = qualifiedIds.filter(
+  let qualifiedIds = Object.keys(qualified)
+  const invalidIds = qualifiedIds.filter(
     (id) => KNOWN_WARN_LIST.has(id) || WARN_RE.test(id)
   )
-  if (invalid.length) {
+
+  if (invalidIds.length) {
     const { yes } = (await prompt({
       type: 'confirm',
       name: 'yes',
-      initial: false,
+      initial: true,
       message: chalk.yellow(
         `It seems your dependencies contain packages that are not meant to\n` +
-          `be used in the browser, e.g. ${chalk.cyan(invalid.join(', '))}. ` +
+          `be used in the browser, e.g. ${chalk.cyan(
+            invalidIds.join(', ')
+          )}. ` +
           `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
           `they should probably be moved to devDepndencies instead.\n` +
-          `Continue anyway?`
+          `Auto-update package.json and continue without these deps?`
       )
     })) as { yes: boolean }
-    if (!yes) {
+    if (yes) {
+      invalidIds.forEach((id) => {
+        delete qualified[id]
+      })
+      qualifiedIds = qualifiedIds.filter((id) => !invalidIds.includes(id))
+      const pkgPath = lookupFile(root, ['package.json'], true)!
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+      invalidIds.forEach((id) => {
+        const v = pkg.dependencies[id]
+        delete pkg.dependencies[id]
+        ;(pkg.devDependencies || (pkg.devDependencies = {}))[id] = v
+      })
+      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
+      // udpate data hash
+      data.hash = getDepHash(root, config.mode, config.configFile)
+    } else {
       process.exit(1)
     }
+  }
+
+  if (!qualifiedIds.length) {
+    writeFile(dataPath, JSON.stringify(data, null, 2))
+    log(`No listed dependency requires optimization. Skipping.\n\n\n`)
+    return
   }
 
   const depsString = qualifiedIds.map((id) => chalk.yellow(id)).join(`, `)
