@@ -486,7 +486,16 @@ async function bundleConfigFile(
         root: path.dirname(fileName),
         isBuild: true,
         asSrc: false
-      })
+      }),
+      {
+        name: 'replace-import-meta',
+        transform(code, id) {
+          return code.replace(
+            /\bimport\.meta\.url\b/g,
+            JSON.stringify(`file://${id}`)
+          )
+        }
+      }
     ]
   })
 
