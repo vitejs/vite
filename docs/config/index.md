@@ -85,7 +85,7 @@ export default ({ command, mode }) => {
 
 ### plugins
 
-- **Type:** `(Plugin | Plugin[])[]`
+- **Type:** ` (Plugin | Plugin[])[]`
 
   Array of plugins to use. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
