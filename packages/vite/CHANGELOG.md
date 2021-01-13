@@ -1,3 +1,18 @@
+# [2.0.0-beta.27](https://github.com/vitejs/vite/compare/v2.0.0-beta.26...v2.0.0-beta.27) (2021-01-13)
+
+
+### Bug Fixes
+
+* transform import.meta.url in config files ([98e57de](https://github.com/vitejs/vite/commit/98e57deb9d16b23b7ae0c382cca49a9420443b47)), closes [#1511](https://github.com/vitejs/vite/issues/1511)
+
+
+### Features
+
+* **vite:** support RegExp strings as server.proxy keys ([#1510](https://github.com/vitejs/vite/issues/1510)) ([f39a2aa](https://github.com/vitejs/vite/commit/f39a2aafd35a70effc298d53b0b7539fbac79e89))
+* warn unintended dependency during pre-bundling ([ae6cc27](https://github.com/vitejs/vite/commit/ae6cc27349e66945a0964635e6ad64933fe33960))
+
+
+
 # [2.0.0-beta.26](https://github.com/vitejs/vite/compare/v2.0.0-beta.25...v2.0.0-beta.26) (2021-01-13)
 
 
