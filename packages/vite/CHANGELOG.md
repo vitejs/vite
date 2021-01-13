@@ -1,3 +1,12 @@
+# [2.0.0-beta.26](https://github.com/vitejs/vite/compare/v2.0.0-beta.25...v2.0.0-beta.26) (2021-01-13)
+
+
+### Bug Fixes
+
+* properly externalize resolved external urls ([6cda88d](https://github.com/vitejs/vite/commit/6cda88d882ffcd5b3fdaa005296bfe1f0991925c))
+
+
+
 # [2.0.0-beta.25](https://github.com/vitejs/vite/compare/v2.0.0-beta.24...v2.0.0-beta.25) (2021-01-12)
 
 
