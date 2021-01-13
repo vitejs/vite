@@ -78,7 +78,10 @@ export function proxyMiddleware({
   return (req, res, next) => {
     const url = req.url!
     for (const context in proxies) {
-      if (url.startsWith(context)) {
+      if (
+        (context.startsWith('^') && new RegExp(context).test(url)) ||
+        url.startsWith(context)
+      ) {
         const [proxy, opts] = proxies[context]
 
         if (opts.bypass) {
