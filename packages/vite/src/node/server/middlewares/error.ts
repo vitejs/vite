@@ -36,10 +36,11 @@ function cleanStack(stack: string) {
 }
 
 export function errorMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
+  allowNext = false
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
-  return (err: RollupError, _req, res, _next) => {
+  return (err: RollupError, _req, res, next) => {
     const msg = buildErrorMessage(err, [
       chalk.red(`Internal server error: ${err.message}`)
     ])
@@ -49,12 +50,16 @@ export function errorMiddleware(
       timestamp: true
     })
 
-    res.statusCode = 500
-    res.end(() => {
-      server.ws.send({
-        type: 'error',
-        err: prepareError(err)
-      })
+    server.ws.send({
+      type: 'error',
+      err: prepareError(err)
     })
+
+    if (allowNext) {
+      next()
+    } else {
+      res.statusCode = 500
+      res.end()
+    }
   }
 }

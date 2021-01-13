@@ -336,13 +336,15 @@ export async function createServer(
   app.use(indexHtmlMiddleware(server, plugins))
 
   // handle 404s
-  app.use((_, res) => {
-    res.statusCode = 404
-    res.end()
-  })
+  if (!serverConfig.middlewareMode) {
+    app.use((_, res) => {
+      res.statusCode = 404
+      res.end()
+    })
+  }
 
   // error handler
-  app.use(errorMiddleware(server))
+  app.use(errorMiddleware(server, serverConfig.middlewareMode))
 
   if (httpServer) {
     // overwrite listen to run optimizer before server start
