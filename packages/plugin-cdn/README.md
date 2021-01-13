@@ -24,6 +24,10 @@ export default {
 
 ## Supported Native ESM CDNs
 
-- [`'skypack'`](https://www.skypack.dev/)
-- [`esm.run`](https://www.jsdelivr.com/esm)
-- [`jspm`](https://jspm.org/)
+- [skypack](https://www.skypack.dev/)
+- [esm.run](https://www.jsdelivr.com/esm)
+- [jspm](https://jspm.org/)*
+
+---
+
+*Note: `jspm` does not support semver ranges and can only use exact version of dist tags. It also detects the usage of `process.env` and turns Vue esm files into CJS which breaks its usage as native ESM.
