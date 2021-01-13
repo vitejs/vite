@@ -27,8 +27,29 @@ import jsonPlugin from '@rollup/plugin-json'
 import { buildDefinePlugin } from '../plugins/define'
 import { createFilter } from '@rollup/pluginutils'
 import { Plugin } from '../plugin'
+import { prompt } from 'enquirer'
 
 const debug = createDebugger('vite:optimize')
+
+const KNOWN_IGNORE_LIST = new Set([
+  'vite',
+  'vitepress',
+  'tailwindcss',
+  '@tailwindcss/ui'
+])
+
+const KNOWN_WARN_LIST = new Set([
+  'sass',
+  'less',
+  'stylus',
+  'postcss',
+  'autoprefixer',
+  'pug',
+  'jest',
+  'typescript'
+])
+
+const WARN_RE = /^(@vitejs\/|vite-)plugin-/
 
 export interface DepOptimizationOptions {
   /**
@@ -146,15 +167,35 @@ export async function optimizeDeps(
     })
   }
 
-  if (!Object.keys(qualified).length) {
+  const qualifiedIds = Object.keys(qualified)
+  if (!qualifiedIds.length) {
     writeFile(dataPath, JSON.stringify(data, null, 2))
     log(`No listed dependency requires optimization. Skipping.`)
     return
   }
 
-  const depsString = Object.keys(qualified)
-    .map((id) => chalk.yellow(id))
-    .join(`, `)
+  const invalid = qualifiedIds.filter(
+    (id) => KNOWN_WARN_LIST.has(id) || WARN_RE.test(id)
+  )
+  if (invalid.length) {
+    const { yes } = (await prompt({
+      type: 'confirm',
+      name: 'yes',
+      initial: false,
+      message: chalk.yellow(
+        `It seems your dependencies contain packages that are not meant to\n` +
+          `be used in the browser, e.g. ${chalk.cyan(invalid.join(', '))}. ` +
+          `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
+          `they should probably be moved to devDepndencies instead.\n` +
+          `Continue anyway?`
+      )
+    })) as { yes: boolean }
+    if (!yes) {
+      process.exit(0)
+    }
+  }
+
+  const depsString = qualifiedIds.map((id) => chalk.yellow(id)).join(`, `)
   if (!asCommand) {
     // This is auto run on server start - let the user know that we are
     // pre-optimizing deps
@@ -234,15 +275,6 @@ interface FilteredDeps {
   qualified: Record<string, string>
   external: string[]
 }
-
-const KNOWN_IGNORE_LIST = new Set([
-  'vite',
-  'vitepress',
-  'tailwindcss',
-  '@tailwindcss/ui',
-  '@pika/react',
-  '@pika/react-dom'
-])
 
 async function resolveQualifiedDeps(
   root: string,
