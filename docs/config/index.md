@@ -239,7 +239,9 @@ export default ({ command, mode }) => {
 
 - **Type:** `Record<string, string | ProxyOptions>`
 
-  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
+  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`.
+
+  Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
   **Example:**
 
@@ -254,6 +256,12 @@ export default ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
+        }
+        // with RegEx
+        '^/fallback/.*': {
+          target: 'http://jsonplaceholder.typicode.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/fallback/, '')
         }
       }
     }
