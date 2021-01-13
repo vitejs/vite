@@ -235,6 +235,12 @@ export default ({ command, mode }) => {
 
   Automatically open the app in the browser on server start.
 
+### server.openPage
+
+- **Type:** `string`
+
+  Specify a page to navigate to when opening the browser.
+
 ### server.proxy
 
 - **Type:** `Record<string, string | ProxyOptions>`

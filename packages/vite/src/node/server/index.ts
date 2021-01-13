@@ -55,6 +55,10 @@ export interface ServerOptions {
    */
   open?: boolean
   /**
+   * Specify a page to navigate to when opening the browser.
+   */
+  openPage?: string
+  /**
    * Force dep pre-optimization regardless of whether deps have changed.
    */
   force?: boolean
@@ -414,6 +418,7 @@ async function startServer(
   let port = inlinePort || options.port || 3000
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
+  const openPage = options.openPage || ''
   const info = server.config.logger.info
 
   return new Promise((resolve, reject) => {
@@ -487,7 +492,7 @@ async function startServer(
 
       if (options.open) {
         openBrowser(
-          `${protocol}://${hostname}:${port}`,
+          `${protocol}://${hostname}:${port}${openPage}`,
           options.open,
           server.config.logger
         )
