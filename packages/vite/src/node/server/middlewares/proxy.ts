@@ -1,11 +1,11 @@
-import chalk from 'chalk'
 import * as http from 'http'
+import { createDebugger } from '../../utils'
 import httpProxy from 'http-proxy'
+import { HMR_HEADER } from '../ws'
+import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import { HttpProxy } from 'types/http-proxy'
-import { ViteDevServer } from '..'
-import { createDebugger } from '../../utils'
-import { HMR_HEADER } from '../ws'
+import chalk from 'chalk'
 
 const debug = createDebugger('vite:proxy')
 
