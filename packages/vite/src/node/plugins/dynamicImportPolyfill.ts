@@ -2,7 +2,7 @@ import { ResolvedConfig } from '..'
 import { Plugin } from '../plugin'
 import { isModernFlag } from './importAnaysisBuild'
 
-export const polyfillId = 'vite/dynamic-import-polyfill'
+export const polyfillId = '/vite/dynamic-import-polyfill'
 
 export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   const skip = config.command === 'serve' || config.build.ssr
