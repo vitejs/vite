@@ -183,7 +183,7 @@ export async function optimizeDeps(
             invalidIds.join(', ')
           )}. ` +
           `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
-          `they should probably be moved to devDepndencies instead.\n` +
+          `they should probably be moved to devDependencies instead.\n` +
           `Auto-update package.json and continue without these deps?`
       )
     })) as { yes: boolean }
