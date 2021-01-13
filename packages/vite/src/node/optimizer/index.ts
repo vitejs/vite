@@ -191,7 +191,7 @@ export async function optimizeDeps(
       )
     })) as { yes: boolean }
     if (!yes) {
-      process.exit(0)
+      process.exit(1)
     }
   }
 
