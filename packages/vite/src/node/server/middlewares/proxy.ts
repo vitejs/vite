@@ -1,11 +1,11 @@
+import chalk from 'chalk'
 import * as http from 'http'
-import { createDebugger } from '../../utils'
 import httpProxy from 'http-proxy'
-import { HMR_HEADER } from '../ws'
-import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import { HttpProxy } from 'types/http-proxy'
-import chalk from 'chalk'
+import { ViteDevServer } from '..'
+import { createDebugger } from '../../utils'
+import { HMR_HEADER } from '../ws'
 
 const debug = createDebugger('vite:proxy')
 
@@ -78,7 +78,10 @@ export function proxyMiddleware({
   return (req, res, next) => {
     const url = req.url!
     for (const context in proxies) {
-      if (url.startsWith(context)) {
+      if (
+        (context.startsWith('^') && new RegExp(context).test(url)) ||
+        url.startsWith(context)
+      ) {
         const [proxy, opts] = proxies[context]
 
         if (opts.bypass) {
