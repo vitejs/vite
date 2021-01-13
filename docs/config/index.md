@@ -258,7 +258,7 @@ export default ({ command, mode }) => {
           rewrite: (path) => path.replace(/^\/api/, '')
         }
         // with RegEx
-        '^\/fallback\/.*': {
+        '^/fallback/.*': {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/fallback/, '')
