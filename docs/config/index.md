@@ -85,7 +85,7 @@ export default ({ command, mode }) => {
 
 ### plugins
 
-- **Type:** ` (Plugin | Plugin[])[]`
+- **Type:** `(Plugin | Plugin[])[]`
 
   Array of plugins to use. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
@@ -257,7 +257,7 @@ export default ({ command, mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
         }
-        // with RegEx expression
+        // with RegEx
         '^\/fallback\/.*': {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
