@@ -98,6 +98,10 @@ export interface UserConfig {
    * Default: 'info'
    */
   logLevel?: LogLevel
+  /**
+   * Default: true
+   */
+  clearScreen?: boolean
 }
 
 export interface InlineConfig extends UserConfig {
@@ -237,7 +241,7 @@ export async function resolveConfig(
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
-    logger: createLogger(config.logLevel)
+    logger: createLogger(config.logLevel, config.clearScreen)
   }
 
   resolved.plugins = await resolvePlugins(

@@ -201,6 +201,13 @@ export default ({ command, mode }) => {
 
   Adjust console output verbosity. Default is `'info'`.
 
+### clearScreen
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Set to `false` to prevent Vite from clearing the terminal screen when logging certain messages. Via command line, use `--clearScreen false`.
+
 ## Server Options
 
 ### server.host
@@ -234,8 +241,9 @@ export default ({ command, mode }) => {
 - **Type:** `boolean | string`
 
   Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname.
-  
+
   **Example:**
+
   ```js
   export default {
     server: {
