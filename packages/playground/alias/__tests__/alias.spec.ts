@@ -21,3 +21,9 @@ test('dependency', async () => {
 test('from html', async () => {
   expect(await page.textContent('.from-html')).toMatch('[success] from html')
 })
+
+test('optimized dep', async () => {
+  expect(await page.textContent('.optimized')).toMatch(
+    '[success] alias optimized'
+  )
+})

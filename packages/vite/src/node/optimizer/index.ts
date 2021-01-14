@@ -159,12 +159,13 @@ export async function optimizeDeps(
 
   // Force included deps - these can also be deep paths
   if (options.include) {
-    options.include.forEach((id) => {
-      const filePath = tryNodeResolve(id, root, config.isProduction)
+    for (let id of options.include) {
+      const aliased = (await aliasResolver.resolveId(id))?.id || id
+      const filePath = tryNodeResolve(aliased, root, config.isProduction)
       if (filePath) {
         qualified[id] = filePath.id
       }
-    })
+    }
   }
 
   let qualifiedIds = Object.keys(qualified)
@@ -345,7 +346,8 @@ async function resolveQualifiedDeps(
     }
     let filePath
     try {
-      const resolved = tryNodeResolve(id, root, config.isProduction)
+      const aliased = (await aliasResolver.resolveId(id))?.id || id
+      const resolved = tryNodeResolve(aliased, root, config.isProduction)
       filePath = resolved && resolved.id
     } catch (e) {}
     if (!filePath) {

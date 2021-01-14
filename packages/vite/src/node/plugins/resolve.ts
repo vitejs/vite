@@ -328,7 +328,7 @@ export function tryNodeResolve(
   }
 }
 
-function tryOptimizedResolve(
+export function tryOptimizedResolve(
   rawId: string,
   server: ViteDevServer
 ): string | undefined {
