@@ -233,7 +233,7 @@ export default ({ command, mode }) => {
 
 - **Type:** `boolean | string`
 
-  Automatically open the app in the browser on server start. When `path` string is provided, the browser will automatically open the page.
+  Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname.
   
   **Example:**
   ```js
@@ -243,7 +243,6 @@ export default ({ command, mode }) => {
     }
   }
   ```
-
 
 ### server.proxy
 
