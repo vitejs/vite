@@ -13,7 +13,7 @@ import {
   timeFrom
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
-import { transformForSSR } from './ssrTransform'
+import { ssrTransform } from './ssrTransform'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -24,6 +24,7 @@ export interface TransformResult {
   code: string
   map: SourceMap | null
   etag?: string
+  deps?: string[]
 }
 
 export interface TransformOptions {
@@ -139,10 +140,7 @@ export async function transformRequest(
   }
 
   if (ssr) {
-    return (mod.ssrTransformResult = await transformForSSR(
-      code,
-      map as SourceMap
-    ))
+    return (mod.ssrTransformResult = await ssrTransform(code, map as SourceMap))
   } else {
     return (mod.transformResult = {
       code,
