@@ -1,3 +1,14 @@
+# [2.0.0-beta.29](https://github.com/vitejs/vite/compare/v2.0.0-beta.28...v2.0.0-beta.29) (2021-01-14)
+
+
+### Bug Fixes
+
+* **optimizer:** fix empty exclude filter ([4579c38](https://github.com/vitejs/vite/commit/4579c382d4a1b0385510bb708f74305c87c4a68a))
+* fix graceful shutdown on sigint ([fe7238c](https://github.com/vitejs/vite/commit/fe7238c530533d7ea7bff20ce97485669c7dfb46))
+* warn failed source map load instead of erroring ([7a1261b](https://github.com/vitejs/vite/commit/7a1261b51695cbe7d41da6835c360b9bb26d189e))
+
+
+
 # [2.0.0-beta.28](https://github.com/vitejs/vite/compare/v2.0.0-beta.27...v2.0.0-beta.28) (2021-01-14)
 
 
