@@ -13,6 +13,7 @@ import {
   timeFrom
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
+import { transformForSSR } from './ssrTransform'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -22,7 +23,11 @@ const isDebug = !!process.env.DEBUG
 export interface TransformResult {
   code: string
   map: SourceMap | null
-  etag: string
+  etag?: string
+}
+
+export interface TransformOptions {
+  ssr?: boolean
 }
 
 export async function transformRequest(
@@ -32,13 +37,16 @@ export async function transformRequest(
     pluginContainer,
     moduleGraph,
     watcher
-  }: ViteDevServer
+  }: ViteDevServer,
+  { ssr }: TransformOptions = {}
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
 
   // check if we have a fresh cache
-  const cached = (await moduleGraph.getModuleByUrl(url))?.transformResult
+  const module = await moduleGraph.getModuleByUrl(url)
+  const cached =
+    module && (ssr ? module.ssrTransformResult : module.transformResult)
   if (cached) {
     isDebug && debugCache(`[memory] ${prettyUrl}`)
     return cached
@@ -53,7 +61,7 @@ export async function transformRequest(
 
   // load
   const loadStart = Date.now()
-  const loadResult = await pluginContainer.load(id)
+  const loadResult = await pluginContainer.load(id, ssr)
   if (loadResult == null) {
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
@@ -110,7 +118,7 @@ export async function transformRequest(
 
   // transform
   const transformStart = Date.now()
-  const transformResult = await pluginContainer.transform(code, id, map)
+  const transformResult = await pluginContainer.transform(code, id, map, ssr)
   if (
     transformResult == null ||
     (typeof transformResult === 'object' && transformResult.code == null)
@@ -130,9 +138,16 @@ export async function transformRequest(
     }
   }
 
-  return (mod.transformResult = {
-    code,
-    map,
-    etag: getEtag(code, { weak: true })
-  } as TransformResult)
+  if (ssr) {
+    return (mod.ssrTransformResult = await transformForSSR(
+      code,
+      map as SourceMap
+    ))
+  } else {
+    return (mod.transformResult = {
+      code,
+      map,
+      etag: getEtag(code, { weak: true })
+    } as TransformResult)
+  }
 }
