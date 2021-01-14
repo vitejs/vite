@@ -320,14 +320,14 @@ async function resolveQualifiedDeps(
   const deps = Object.keys(pkg.dependencies || {})
   const linked: string[] = []
   const excludeFilter =
-    exclude && createFilter(exclude, null, { resolve: false })
+    exclude && createFilter(null, exclude, { resolve: false })
 
   for (const id of deps) {
     if (include && include.includes(id)) {
       // already force included
       continue
     }
-    if (excludeFilter && excludeFilter(id)) {
+    if (excludeFilter && !excludeFilter(id)) {
       debug(`skipping ${id} (excluded)`)
       continue
     }
