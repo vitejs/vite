@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import Rollup from 'rollup'
+import Rollup, { ExternalOption } from 'rollup'
 import { createHash } from 'crypto'
 import { ResolvedConfig, sortUserPlugins } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
@@ -229,12 +229,16 @@ export async function optimizeDeps(
   }
 
   const [pre, normal, post] = sortUserPlugins(options.plugins)
+  const resolvedExternal = resolveExternal(
+    external,
+    config.build.rollupOptions?.external
+  )
 
   try {
     const rollup = require('rollup') as typeof Rollup
     const bundle = await rollup.rollup({
       input: qualified,
-      external,
+      external: resolvedExternal,
       onwarn(warning, warn) {
         onRollupWarning(warning, warn, config)
       },
@@ -436,6 +440,20 @@ async function resolveLinkedDeps(
       external.push(id)
     }
   })
+}
+
+function resolveExternal(
+  existing: string[],
+  user: ExternalOption | undefined
+): ExternalOption {
+  if (!user) return existing
+  if (typeof user !== 'function') {
+    return existing.concat(user as any[])
+  }
+  return ((id, parentId, isResolved) => {
+    if (existing.includes(id)) return true
+    return user(id, parentId, isResolved)
+  }) as ExternalOption
 }
 
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
