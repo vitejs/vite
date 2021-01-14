@@ -359,6 +359,7 @@ export async function createPluginContainer(
   }
 
   let nestedResolveCall = 0
+  let closed = false
 
   const container: PluginContainer = {
     options: await (async () => {
@@ -573,6 +574,7 @@ export async function createPluginContainer(
     },
 
     async close() {
+      if (closed) return
       const ctx = new Context()
       await Promise.all(
         plugins.map((p) => p.buildEnd && p.buildEnd.call(ctx as any))
@@ -580,6 +582,7 @@ export async function createPluginContainer(
       await Promise.all(
         plugins.map((p) => p.closeBundle && p.closeBundle.call(ctx as any))
       )
+      closed = true
     }
   }
 
