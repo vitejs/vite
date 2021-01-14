@@ -231,15 +231,19 @@ export default ({ command, mode }) => {
 
 ### server.open
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 
-  Automatically open the app in the browser on server start.
+  Automatically open the app in the browser on server start. When `path` string is provided, the browser will automatically open the page.
+  
+  **Example:**
+  ```js
+  export default {
+    server: {
+      open: '/docs/index.html'
+    }
+  }
+  ```
 
-### server.openPage
-
-- **Type:** `string`
-
-  Specify a page to navigate to when opening the browser.
 
 ### server.proxy
 
