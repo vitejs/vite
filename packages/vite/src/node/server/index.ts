@@ -248,8 +248,15 @@ export async function createServer(
     }
   }
 
-  process.once('SIGINT', server.close)
-  process.once('SIGTERM', server.close)
+  const onExit = async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit(0)
+    }
+  }
+  process.once('SIGINT', onExit)
+  process.once('SIGTERM', onExit)
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
