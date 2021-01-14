@@ -53,7 +53,7 @@ export interface ServerOptions {
   /**
    * Open browser window on startup
    */
-  open?: boolean
+  open?: boolean | string
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    */
@@ -486,9 +486,10 @@ async function startServer(
       }
 
       if (options.open) {
+        const path = typeof options.open === 'string' ? options.open : ''
         openBrowser(
-          `${protocol}://${hostname}:${port}`,
-          options.open,
+          `${protocol}://${hostname}:${port}${path}`,
+          true,
           server.config.logger
         )
       }

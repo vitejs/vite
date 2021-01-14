@@ -231,9 +231,18 @@ export default ({ command, mode }) => {
 
 ### server.open
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 
-  Automatically open the app in the browser on server start.
+  Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname.
+  
+  **Example:**
+  ```js
+  export default {
+    server: {
+      open: '/docs/index.html'
+    }
+  }
+  ```
 
 ### server.proxy
 
