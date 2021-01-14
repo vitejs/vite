@@ -60,7 +60,7 @@ export function serveStaticMiddleware(
 
 export function rawFsStaticMiddleware(): Connect.NextHandleFunction {
   const fsRoot =
-    os.platform() == 'win32' ? process.cwd().split(path.sep)[0] : '/'
+    os.platform() == 'win32' ? process.cwd().split(path.sep)[0] + '/' : '/'
   const serveFromRoot = sirv(fsRoot, sirvOptions)
 
   return (req, res, next) => {
