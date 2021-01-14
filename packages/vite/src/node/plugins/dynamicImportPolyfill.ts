@@ -17,6 +17,11 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
       if (id === polyfillId) {
         return id
       }
+      if (id === 'vite/dynamic-import-polyfill') {
+        this.error(
+          `The 'vite/dynamic-import-polyfill' is deprecated, Please use '/vite/dynamic-import-polyfill'.`
+        )
+      }
     },
     load(id) {
       if (id === polyfillId) {
