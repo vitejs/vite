@@ -26,6 +26,8 @@ export class ModuleNode {
   acceptedHmrDeps = new Set<ModuleNode>()
   isSelfAccepting = false
   transformResult: TransformResult | null = null
+  ssrTransformResult: TransformResult | null = null
+  ssrModule: Record<string, any> | null = null
   lastHMRTimestamp = 0
 
   constructor(url: string) {
@@ -63,6 +65,8 @@ export class ModuleGraph {
     if (mods) {
       mods.forEach((mod) => {
         mod.transformResult = null
+        mod.ssrTransformResult = null
+        mod.ssrModule = null
       })
     }
   }

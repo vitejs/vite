@@ -51,6 +51,8 @@ import {
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
+import acornNumericSeparator from 'acorn-numeric-separator'
+import acornStaticClassFeatures from 'acorn-static-class-features'
 import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
@@ -87,9 +89,10 @@ export interface PluginContainer {
   transform(
     code: string,
     id: string,
-    inMap?: SourceDescription['map']
+    inMap?: SourceDescription['map'],
+    ssr?: boolean
   ): Promise<SourceDescription | null>
-  load(id: string): Promise<LoadResult | null>
+  load(id: string, ssr?: boolean): Promise<LoadResult | null>
   resolveFileUrl(referenceId: string): string | null
   close(): Promise<void>
 }
@@ -107,6 +110,12 @@ type PluginContext = Omit<
   | 'moduleIds'
   | 'resolveId'
 >
+
+export let parser = acorn.Parser.extend(
+  acornClassFields,
+  acornStaticClassFeatures,
+  acornNumericSeparator
+)
 
 export async function createPluginContainer(
   { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
@@ -127,7 +136,6 @@ export async function createPluginContainer(
 
   // counter for generating unique emitted asset IDs
   let ids = 0
-  let parser = acorn.Parser
 
   const MODULES = new Map()
   const files = new Map<string, EmittedFile>()
@@ -161,7 +169,6 @@ export async function createPluginContainer(
         sourceType: 'module',
         ecmaVersion: 2020,
         locations: true,
-        onComment: [],
         ...opts
       })
     }
@@ -371,7 +378,11 @@ export async function createPluginContainer(
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
-          ...[acornClassFields].concat(options.acornInjectPlugins)
+          ...[
+            acornClassFields,
+            acornStaticClassFeatures,
+            acornNumericSeparator
+          ].concat(options.acornInjectPlugins)
         )
       }
       return {
@@ -468,12 +479,13 @@ export async function createPluginContainer(
       }
     },
 
-    async load(id) {
+    async load(id, ssr = false) {
       const ctx = new Context()
       for (const plugin of plugins) {
-        if (!plugin.load) continue
+        const load = (ssr && plugin.ssrLoad) || plugin.load
+        if (!load) continue
         ctx._activePlugin = plugin
-        const result = await plugin.load.call(ctx as any, id)
+        const result = await load.call(ctx as any, id)
         if (result != null) {
           return result
         }
@@ -481,17 +493,18 @@ export async function createPluginContainer(
       return null
     },
 
-    async transform(code, id, inMap) {
+    async transform(code, id, inMap, ssr = false) {
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       for (const plugin of plugins) {
-        if (!plugin.transform) continue
+        const transform = (ssr && plugin.ssrTransform) || plugin.transform
+        if (!transform) continue
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
         const start = Date.now()
         let result
         try {
-          result = await plugin.transform.call(ctx as any, code, id)
+          result = await transform.call(ctx as any, code, id)
         } catch (e) {
           ctx.error(e)
         }
