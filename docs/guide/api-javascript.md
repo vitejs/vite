@@ -39,7 +39,7 @@ const express = require('express')
 ;(async () => {
   const app = express()
 
-  // create vite dev server in middelware mode
+  // create vite dev server in middleware mode
   // so vite creates the hmr websocket server on its own.
   // the ws server will be listening at port 24678 by default, and can be
   // configured via server.hmr.port
