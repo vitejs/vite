@@ -248,6 +248,9 @@ export async function createServer(
     }
   }
 
+  process.once('SIGINT', server.close)
+  process.once('SIGTERM', server.close)
+
   watcher.on('change', async (file) => {
     file = normalizePath(file)
     // invalidate module graph cache on file change
