@@ -391,7 +391,8 @@ async function buildPolyfillChunk(
   facadeToChunkMap,
   buildOptions
 ) {
-  const { minify, assetsDir } = buildOptions
+  let { minify, assetsDir } = buildOptions
+  minify = minify ? 'terser' : false
   const res = await build({
     // so that everything is resolved from here
     root: __dirname,
