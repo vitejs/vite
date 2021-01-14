@@ -36,11 +36,15 @@ export class ModuleNode {
   }
 }
 
+function invalidateSSRModule(mod: ModuleNode) {
+  mod.ssrModule = null
+  mod.importers.forEach(invalidateSSRModule)
+}
 export class ModuleGraph {
-  private urlToModuleMap = new Map<string, ModuleNode>()
-  private idToModuleMap = new Map<string, ModuleNode>()
+  urlToModuleMap = new Map<string, ModuleNode>()
+  idToModuleMap = new Map<string, ModuleNode>()
   // a single file may corresponds to multiple modules with different queries
-  private fileToModulesMap = new Map<string, Set<ModuleNode>>()
+  fileToModulesMap = new Map<string, Set<ModuleNode>>()
   container: PluginContainer
 
   constructor(container: PluginContainer) {
@@ -66,7 +70,7 @@ export class ModuleGraph {
       mods.forEach((mod) => {
         mod.transformResult = null
         mod.ssrTransformResult = null
-        mod.ssrModule = null
+        invalidateSSRModule(mod)
       })
     }
   }

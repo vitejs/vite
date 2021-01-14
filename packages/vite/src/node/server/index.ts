@@ -34,13 +34,14 @@ import { handleHMRUpdate, HmrOptions } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { TransformResult } from 'rollup'
-import { transformRequest } from './transformRequest'
+import { TransformOptions, transformRequest } from './transformRequest'
 import {
   transformWithEsbuild,
   EsbuildTransformResult
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
+import { ssrLoadModule } from './ssrModuleLoader'
 
 export interface ServerOptions {
   host?: string
@@ -167,7 +168,10 @@ export interface ViteDevServer {
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
-  transformRequest(url: string): Promise<TransformResult | null>
+  transformRequest(
+    url: string,
+    options?: TransformOptions
+  ): Promise<TransformResult | null>
   /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
@@ -178,6 +182,10 @@ export interface ViteDevServer {
     options?: EsbuildTransformOptions,
     inMap?: object
   ): Promise<EsbuildTransformResult>
+  /**
+   * Load a given URL as an instantiated module for SSR.
+   */
+  ssrLoadModule(url: string): Promise<Record<string, any>>
   /**
    * Start the server.
    */
@@ -198,9 +206,10 @@ export async function createServer(
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
   const serverConfig = config.server || {}
+  const middlewareMode = !!serverConfig.middlewareMode
 
   const app = connect() as Connect.Server
-  const httpServer = serverConfig.middlewareMode
+  const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, app)
   const ws = createWebSocketServer(httpServer, config)
@@ -232,8 +241,11 @@ export async function createServer(
     moduleGraph,
     optimizeDepsMetadata: null,
     transformWithEsbuild,
-    transformRequest(url) {
-      return transformRequest(url, server)
+    transformRequest(url, options) {
+      return transformRequest(url, server, options)
+    },
+    ssrLoadModule(url) {
+      return ssrLoadModule(url, server)
     },
     listen(port?: number) {
       return startServer(server, port)
@@ -344,7 +356,7 @@ export async function createServer(
   app.use(indexHtmlMiddleware(server, plugins))
 
   // handle 404s
-  if (!serverConfig.middlewareMode) {
+  if (!middlewareMode) {
     app.use((_, res) => {
       res.statusCode = 404
       res.end()
@@ -352,7 +364,7 @@ export async function createServer(
   }
 
   // error handler
-  app.use(errorMiddleware(server, serverConfig.middlewareMode))
+  app.use(errorMiddleware(server, middlewareMode))
 
   if (httpServer) {
     // overwrite listen to run optimizer before server start
