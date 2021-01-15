@@ -415,7 +415,11 @@ export async function loadConfigFromFile(
         const code = await bundleConfigFile(resolvedPath, 'es')
         userConfig = (
           await eval(
-            `import(${JSON.stringify(`data:text/javascript,${code}`)})`
+            `import(${JSON.stringify(
+              `data:text/javascript;base64,${Buffer.from(code).toString(
+                'base64'
+              )}`
+            )})`
           )
         ).default
         debug(`TS + native esm config loaded in ${Date.now() - start}ms`)
