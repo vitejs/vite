@@ -41,6 +41,11 @@ export async function ssrTransform(
             node.start,
             `const ${spec.local.name} = ${importId}.${spec.imported.name}\n`
           )
+        } else if (spec.type === 'ImportDefaultSpecifier') {
+          s.appendLeft(
+            node.start,
+            `const ${spec.local.name} = ${importId}.default\n`
+          )
         }
       }
       s.remove(node.start, node.end)
@@ -55,9 +60,15 @@ export async function ssrTransform(
           )
         }
         // TODO Class / Var
+      } else {
+        for (const spec of node.specifiers) {
+          s.append(`\n__exports__.${spec.exported.name} = ${spec.local.name}`)
+        }
+        s.remove(node.start, node.end)
       }
     }
     if (node.type === 'ExportDefaultDeclaration') {
+      s.overwrite(node.start, node.start + 14, '__exports__.default =')
     }
     if (node.type === 'ExportAllDeclaration') {
     }

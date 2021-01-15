@@ -366,24 +366,26 @@ export async function createServer(
   // error handler
   app.use(errorMiddleware(server, middlewareMode))
 
+  const runOptimize = async () => {
+    if (config.optimizeCacheDir) {
+      // run optimizer
+      await optimizeDeps(config)
+      // after optimization, read updated optimization metadata
+      const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
+      if (fs.existsSync(dataPath)) {
+        server.optimizeDepsMetadata = JSON.parse(
+          fs.readFileSync(dataPath, 'utf-8')
+        )
+      }
+    }
+  }
+
   if (httpServer) {
     // overwrite listen to run optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       await container.buildStart({})
-
-      if (config.optimizeCacheDir) {
-        // run optimizer
-        await optimizeDeps(config)
-        // after optimization, read updated optimization metadata
-        const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
-        if (fs.existsSync(dataPath)) {
-          server.optimizeDepsMetadata = JSON.parse(
-            fs.readFileSync(dataPath, 'utf-8')
-          )
-        }
-      }
-
+      await runOptimize()
       return listen(port, ...args)
     }) as any
 
@@ -391,6 +393,8 @@ export async function createServer(
       // update actual port since this may be different from initial value
       serverConfig.port = (httpServer.address() as AddressInfo).port
     })
+  } else {
+    await runOptimize()
   }
 
   return server

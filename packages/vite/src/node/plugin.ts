@@ -2,6 +2,7 @@ import { UserConfig } from './config'
 import {
   LoadResult,
   Plugin as RollupPlugin,
+  PluginContext,
   TransformPluginContext,
   TransformResult
 } from 'rollup'
@@ -109,14 +110,17 @@ export interface Plugin extends RollupPlugin {
   ): Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
 
   /**
-   * SSR-specific load/transform hooks called during SSR module loads. If these
-   * are not provided, then the normal load/transform hooks will be called if
-   * present.
+   * extend hooks with ssr flag
    */
-  ssrLoad?(id: string): Promise<LoadResult> | LoadResult
-  ssrTransform?(
+  load?(
+    this: PluginContext,
+    id: string,
+    ssr?: boolean
+  ): Promise<LoadResult> | LoadResult
+  transform?(
     this: TransformPluginContext,
     code: string,
-    id: string
+    id: string,
+    ssr?: boolean
   ): Promise<TransformResult> | TransformResult
 }
