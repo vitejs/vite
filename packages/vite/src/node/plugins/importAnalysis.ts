@@ -399,7 +399,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH
           }";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              importerModule.url
+              config.env.BASE_URL_NOSLASH + importerModule.url
             )});`
         )
       }

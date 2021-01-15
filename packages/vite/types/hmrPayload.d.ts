@@ -18,6 +18,7 @@ export interface UpdatePayload {
 export interface Update {
   type: 'js-update' | 'css-update'
   path: string
+  base: string
   acceptedPath: string
   timestamp: number
 }

@@ -258,7 +258,10 @@ export function removeStyle(id: string) {
   }
 }
 
-async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
+async function fetchUpdate({ base, path, acceptedPath, timestamp }: Update) {
+  path = base + path
+  acceptedPath = base + acceptedPath
+
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-splitting project,
