@@ -5,6 +5,7 @@
   "main": "out/cjs.node.js",
   "browser": {
     "./out/cjs.node.js": "./out/esm.browser.js",
-    "./not-browser.js": false
+    "./not-browser.js": false,
+    "jsdom": false
   }
 }

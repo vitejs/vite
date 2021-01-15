@@ -434,7 +434,11 @@ export async function loadConfigFromFile(
         const code = await bundleConfigFile(resolvedPath, 'es')
         userConfig = (
           await eval(
-            `import(${JSON.stringify(`data:text/javascript,${code}`)})`
+            `import(${JSON.stringify(
+              `data:text/javascript;base64,${Buffer.from(code).toString(
+                'base64'
+              )}`
+            )})`
           )
         ).default
         debug(`TS + native esm config loaded in ${Date.now() - start}ms`)
@@ -452,7 +456,7 @@ export async function loadConfigFromFile(
       // 1. try to directly require the module (assuming commonjs)
       try {
         // clear cache in case of server restart
-        delete require.cache[resolvedPath]
+        delete require.cache[require.resolve(resolvedPath)]
         userConfig = require(resolvedPath)
         debug(`cjs config loaded in ${Date.now() - start}ms`)
       } catch (e) {
@@ -549,7 +553,8 @@ async function loadConfigFromBundledFile(
       defaultLoader(module, filename)
     }
   }
-  delete require.cache[fileName]
+  // clear cache in case of server restart
+  delete require.cache[require.resolve(fileName)]
   const raw = require(fileName)
   const config = raw.__esModule ? raw.default : raw
   require.extensions[extension] = defaultLoader
