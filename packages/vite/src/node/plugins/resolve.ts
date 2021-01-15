@@ -112,21 +112,16 @@ export function resolvePlugin(
         const basedir = importer ? path.dirname(importer) : process.cwd()
         let fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
-        const pkg = importer && idToPkgMap.get(importer)
-        if (pkg && isObject(pkg.data.browser)) {
-          const pkgRelativePath = './' + slash(path.relative(pkg.dir, fsPath))
-          const browserMappedPath = mapWithBrowserField(
-            pkgRelativePath,
-            pkg.data.browser
-          )
-          if (browserMappedPath) {
-            fsPath = path.resolve(pkg.dir, browserMappedPath)
-          } else {
-            return browserExternalId
-          }
+
+        if (
+          (res = tryResolveBrowserMapping(fsPath, importer, true, isProduction))
+        ) {
+          return res
         }
+
         if ((res = tryFsResolve(fsPath, isProduction))) {
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+          const pkg = idToPkgMap.get(id)
           if (pkg) {
             idToPkgMap.set(res, pkg)
             return {
@@ -161,6 +156,12 @@ export function resolvePlugin(
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
         if (asSrc && server && (res = tryOptimizedResolve(id, server))) {
+          return res
+        }
+
+        if (
+          (res = tryResolveBrowserMapping(id, importer, false, isProduction))
+        ) {
           return res
         }
 
@@ -531,6 +532,34 @@ function resolveDeepImport(
       isDebug &&
         debug(`[node/deep-import] ${chalk.cyan(id)} -> ${chalk.dim(resolved)}`)
       return (resolvedImports[id] = resolved)
+    }
+  }
+}
+
+function tryResolveBrowserMapping(
+  id: string,
+  importer: string | undefined,
+  isFilePath: boolean,
+  isProduction: boolean
+) {
+  let res: string | undefined
+  const pkg = importer && idToPkgMap.get(importer)
+  if (pkg && isObject(pkg.data.browser)) {
+    const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
+    const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
+    if (browserMappedPath) {
+      const fsPath = path.resolve(pkg.dir, browserMappedPath)
+      if ((res = tryFsResolve(fsPath, isProduction))) {
+        isDebug &&
+          debug(`[browser mapped] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+        idToPkgMap.set(res, pkg)
+        return {
+          id: res,
+          moduleSideEffects: pkg.hasSideEffects(res)
+        }
+      }
+    } else {
+      return browserExternalId
     }
   }
 }
