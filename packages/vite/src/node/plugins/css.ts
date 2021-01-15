@@ -112,7 +112,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           thisModule.isSelfAccepting = isSelfAccepting
         }
         // rewrite urls using current module's url as base
-        css = await rewriteCssUrls(css, thisModule.url)
+        css = await rewriteCssUrls(css, thisModule.url, config.env.BASE_URL_NOSLASH)
       } else {
         // if build, analyze url() asset reference
         // account for comments https://github.com/vitejs/vite/issues/426
@@ -592,12 +592,13 @@ const cssUrlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 
 function rewriteCssUrls(
   css: string,
-  replacerOrBase: string | Replacer
+  replacerOrBase: string | Replacer,
+  prependBase: string = ''
 ): Promise<string> {
   let replacer: Replacer
   if (typeof replacerOrBase === 'string') {
     replacer = (rawUrl) => {
-      return path.posix.resolve(path.posix.dirname(replacerOrBase), rawUrl)
+      return prependBase + path.posix.resolve(path.posix.dirname(replacerOrBase), rawUrl)
     }
   } else {
     replacer = replacerOrBase
