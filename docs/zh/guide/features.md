@@ -168,14 +168,14 @@ import json from './example.json'
 import { field } from './example.json'
 ```
 
-## Glob 倒入
+## Glob 导入
 
 > Requires ^2.0.0-beta.17
 
 Vite 支持使用特殊的 `import.meta.glob` 函数从文件系统导入多个模块：
 
 ```js
-const modules = import.meta.glob('./dir/*.js')
+const modules = import.meta.globEager('./dir/*.js')
 ```
 
 以上将会被转译为下面的样子：

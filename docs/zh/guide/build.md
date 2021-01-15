@@ -84,7 +84,7 @@ module.exports = {
 
 当您开发面向浏览器的库时，您可能会将大部分时间花在该库的测试/演示页面上。使用 Vite，你可以使用 `index.html` 来获得如丝般顺滑的开发体验。
 
-当需要构建你的库用于发布时，请使用 [`build.lib` 配置项](/zh/config/#build-lib)：
+当需要构建你的库用于发布时，请使用 [`build.lib` 配置项](/zh/config/#build-lib)，请确保将你不想打包进你库中的依赖进行外部化，例如 `vue` 或 `react`：
 
 ```js
 // vite.config.js
@@ -95,6 +95,9 @@ module.exports = {
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
       name: 'MyLib'
+    },
+    rollupOptions: {
+      external: ['vue']
     }
   }
 }
@@ -117,6 +120,11 @@ building for production...
   "files": ["dist"],
   "main": "./dist/my-lib.umd.js",
   "module": "./dist/my-lib.es.js",
-  "exports": "./dist/my-lib.es.js"
+  "exports": {
+    ".": {
+      "import": "./dist/my-lib.es.js",
+      "require": "./dist/my-lib.umd.js"
+    }
+  }
 }
 ```

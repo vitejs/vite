@@ -49,8 +49,7 @@ import debounce from 'lodash-es/debounce'
 import { debounce } from 'lodash-es'
 ```
 
-但有些依赖可能就是设计为需要深层导入的，例如 `firebase` 都是在 `firebase/*` 中暴露其子模块的。对于这类的依赖，你可以
-Some dependencies may be designed to be used via deep imports, e.g. `firebase` exposes sub modules via `firebase/*` deep imports. For such dependencies, 您可以指示 Vite 通过 [`optimizeDeps.include` 选项](http://localhost:3000/config/#optimizedeps-include) 显式包含这些深度导入路径。 如果您从未使用过主入口，建议将其从预构建中排除。
+但有些依赖可能就是设计为需要按路径导入的，例如 `firebase` 都是在 `firebase/*` 中暴露其子模块的。对于这类的依赖，可以给 Vite 配置 [`optimizeDeps.include` 选项](/zh/config/#optimizedeps-include) 来显式包含这些深层导入路径。 如果您从未使用过默认导出，建议将其从预构建中排除。
 
 ## 依赖兼容性
 

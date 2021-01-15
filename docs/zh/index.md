@@ -21,3 +21,16 @@ features:
     details: 灵活的 API 和完整 TypeScript 类型。
 footer: MIT Licensed | Copyright © 2019-present Evan You & Vite Contributors
 ---
+
+<div class="frontpage sponsors">
+  <h2>赞助</h2>
+  <a v-for="{ href, src, name } of sponsors" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
+    <img :src="src" :alt="name">
+  </a>
+  <br>
+  <a href="https://github.com/sponsors/yyx990803" target="_blank" rel="noopener">在 GitHub 上赞助我们</a>
+</div>
+
+<script setup>
+import sponsors from '../.vitepress/theme/sponsors.json'
+</script>

@@ -103,7 +103,7 @@ export default ({ command, mode }) => {
 
 ### plugins
 
-- **类型：** ` (Plugin | Plugin[])[]`
+- **类型：** `(Plugin | Plugin[])[]`
 
   要使用的插件数组。
 
@@ -207,7 +207,14 @@ export default ({ command, mode }) => {
 
 - **类型：** `'info' | 'warn' | 'error' | 'silent'`
 
-  调整控制台输出的级别，默认为 `'info'`.
+  调整控制台输出的级别，默认为 `'info'`。
+
+### clearScreen
+
+- **类型：** `boolean`
+- **默认：** `true`
+
+  设为 `false` 可以避免 Vite 清屏而错过在终端中打印某些关键信息。命令行模式下请通过 `--clearScreen false` 设置。
 
 ## Server Options
 
@@ -223,6 +230,12 @@ export default ({ command, mode }) => {
 
   指定服务器端口。注意：如果端口已经被使用，Vite 会自动尝试下一个可用的端口，所以这可能不是服务器最终监听的实际端口。
 
+### server.strictPort
+
+- **类型：** `boolean`
+
+  设为 `true` 时若端口已被占用则会直接退出，而不是尝试下一个可用端口。
+
 ### server.https
 
 - **类型：** `boolean | https.ServerOptions`
@@ -233,15 +246,27 @@ export default ({ command, mode }) => {
 
 ### server.open
 
-- **类型：** `boolean`
+- **类型：** `boolean | string`
 
-  在服务器启动时自动在浏览器中打开应用程序。
+  在服务器启动时自动在浏览器中打开应用程序。当此值为字符串时，会被用作 URL 的路径名。
+
+  **示例：**
+
+  ```js
+  export default {
+    server: {
+      open: '/docs/index.html'
+    }
+  }
+  ```
 
 ### server.proxy
 
 - **类型：** `Record<string, string | ProxyOptions>`
 
-  为开发服务器配置自定义代理规则。期望接收一个 `{ key: options }` 对象。使用 [`http-proxy`](https://github.com/http-party/node-http-proxy)。完整选项详见 [此处](https://github.com/http-party/node-http-proxy#options).
+  为开发服务器配置自定义代理规则。期望接收一个 `{ key: options }` 对象。如果 key 值以 `^` 开头，将会被解释为 `RegExp`。
+
+  使用 [`http-proxy`](https://github.com/http-party/node-http-proxy)。完整选项详见 [此处](https://github.com/http-party/node-http-proxy#options).
 
   **示例：**
 
@@ -256,6 +281,12 @@ export default ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
+        },
+        // 正则表达式写法
+        '^/fallback/.*': {
+          target: 'http://jsonplaceholder.typicode.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/fallback/, '')
         }
       }
     }
@@ -351,6 +382,12 @@ export default ({ command, mode }) => {
 
   自定义底层的 Rollup 打包配置。这与从 Rollup 配置文件导出的选项相同，并将与 Vite 的内部 Rollup 选项合并。查看 [Rollup 选项文档](https://rollupjs.org/guide/en/#big-list-of-options) 获取更多细节。
 
+### build.commonjsOptions
+
+- **类型：** [`RollupCommonJSOptions`](https://github.com/rollup/plugins/tree/master/packages/commonjs#options)
+
+  传递给 [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs) 插件的选项。这也会应用在预构建的依赖上。
+
 ### build.lib
 
 - **类型：** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[] }`
@@ -386,9 +423,16 @@ export default ({ command, mode }) => {
 
   设置为 `false` 来禁用将构建后的文件写入磁盘。这常用于 [编程式地调用 `build()`](/zh/guide/api-javascript#build) 在写入磁盘之前，需要对构建后的文件进行进一步处理。
 
+### build.emptyOutDir
+
+- **类型：** `boolean`
+- **默认：** 若 `outDir` 在 `root` 目录下，则为 `true`
+
+  默认情况下，若 `outDir` 在 `root` 目录下，则 Vite 会在构建时清空该目录。若 `outDir` 在根目录之外则会抛出一个警告避免意外删除掉重要的文件。可以设置该选项来关闭这个警告。该功能也可以通过命令行参数 `--emptyOutDir` 来使用。
+
 ## 依赖优化选项
 
-- **相关内容：** [Dependency Pre-Bundling](/zh/guide/dep-pre-bundling)
+- **相关内容：** [依赖预构建](/zh/guide/dep-pre-bundling)
 
 ### optimizeDeps.include
 
