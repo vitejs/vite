@@ -37,7 +37,6 @@ export interface Options {
   include?: string | RegExp | (string | RegExp)[]
   exclude?: string | RegExp | (string | RegExp)[]
 
-  ssr?: boolean
   isProduction?: boolean
 
   // options to pass on to @vue/compiler-sfc
@@ -53,7 +52,6 @@ export interface ResolvedOptions extends Options {
 
 export default function vuePlugin(rawOptions: Options = {}): Plugin {
   let options: ResolvedOptions = {
-    ssr: false,
     isProduction: process.env.NODE_ENV === 'production',
     ...rawOptions,
     root: process.cwd()
@@ -75,11 +73,12 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     config(config) {
-      // provide default values for vue runtime esm defines
-      config.define = {
-        __VUE_OPTIONS_API__: true,
-        __VUE_PROD_DEVTOOLS__: false,
-        ...config.define
+      return {
+        define: {
+          __VUE_OPTIONS_API__: true,
+          __VUE_PROD_DEVTOOLS__: false
+        },
+        ssrExternal: ['vue', '@vue/server-renderer']
       }
     },
 
@@ -102,7 +101,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       }
     },
 
-    load(id) {
+    load(id, ssr = false) {
       const { filename, query } = parseVueRequest(id)
       // select corresponding block for subpart virtual modules
       if (query.vue) {
@@ -113,7 +112,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
           // handle <scrip> + <script setup> merge via compileScript()
-          block = getResolvedScript(descriptor, options.ssr)
+          block = getResolvedScript(descriptor, ssr)
         } else if (query.type === 'template') {
           block = descriptor.template!
         } else if (query.type === 'style') {
@@ -130,7 +129,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       }
     },
 
-    transform(code, id) {
+    transform(code, id, ssr = false) {
       const { filename, query } = parseVueRequest(id)
       if (!query.vue && !filter(filename)) {
         return
@@ -138,12 +137,12 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
       if (!query.vue) {
         // main request
-        return transformMain(code, filename, options, this)
+        return transformMain(code, filename, options, this, ssr)
       } else {
         // sub block request
         const descriptor = getDescriptor(filename)!
         if (query.type === 'template') {
-          return transformTemplateAsModule(code, descriptor, options, this)
+          return transformTemplateAsModule(code, descriptor, options, this, ssr)
         } else if (query.type === 'style') {
           return transformStyle(
             code,
