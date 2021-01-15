@@ -9,7 +9,8 @@ import Rollup, {
   RollupWarning,
   WarningHandler,
   OutputOptions,
-  RollupOutput
+  RollupOutput,
+  ExternalOption
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
@@ -282,6 +283,18 @@ async function doBuild(
   const outDir = resolve(options.outDir)
   const publicDir = resolve('public')
 
+  // inject ssr arg to plugin load/transform hooks
+  const plugins = (options.ssr
+    ? config.plugins.map((p) => injectSsrFlagToHooks(p))
+    : config.plugins) as Plugin[]
+
+  // inject ssrExternal if present
+  const userExternal = options.rollupOptions?.external
+  const external =
+    options.ssr && config.ssrExternal
+      ? resolveExternal(config.ssrExternal, userExternal)
+      : userExternal
+
   const rollup = require('rollup') as typeof Rollup
 
   try {
@@ -289,7 +302,8 @@ async function doBuild(
       input,
       preserveEntrySignatures: libOptions ? 'strict' : false,
       ...options.rollupOptions,
-      plugins: config.plugins as Plugin[],
+      plugins,
+      external,
       onwarn(warning, warn) {
         onRollupWarning(warning, warn, config)
       }
@@ -457,5 +471,36 @@ export function onRollupWarning(
     } else {
       warn(warning)
     }
+  }
+}
+
+export function resolveExternal(
+  existing: string[],
+  user: ExternalOption | undefined
+): ExternalOption {
+  if (!user) return existing
+  if (typeof user !== 'function') {
+    return existing.concat(user as any[])
+  }
+  return ((id, parentId, isResolved) => {
+    if (existing.includes(id)) return true
+    return user(id, parentId, isResolved)
+  }) as ExternalOption
+}
+
+function injectSsrFlagToHooks(p: Plugin): Plugin {
+  const { resolveId, load, transform } = p
+  return {
+    ...p,
+    resolveId: wrapSsrHook(resolveId),
+    load: wrapSsrHook(load),
+    transform: wrapSsrHook(transform)
+  }
+}
+
+function wrapSsrHook(fn: Function | undefined) {
+  if (!fn) return
+  return function (this: any, ...args: any[]) {
+    return fn.call(this, ...args, true)
   }
 }

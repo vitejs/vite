@@ -92,7 +92,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       server = _server
     },
 
-    async transform(source, importer) {
+    async transform(source, importer, ssr) {
       const prettyImporter = prettifyUrl(importer, config.root)
 
       if (canSkip(importer)) {
@@ -237,10 +237,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const rawUrl = source.slice(start, end)
         let url = rawUrl
 
-        if (isExternalUrl(url) || isDataUrl(url)) {
-          continue
-        }
-
         // check import.meta usage
         if (url === 'import.meta') {
           const prop = source.slice(end, end + 4)
@@ -293,6 +289,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // If resolvable, let's resolve it
         if (dynamicIndex === -1 || isLiteralDynamicId) {
+          // skip external / data uri
+          if (isExternalUrl(url) || isDataUrl(url)) {
+            continue
+          }
+          // skip ssr external
+          if (ssr && config.ssrExternal?.includes(url)) {
+            continue
+          }
           // skip client
           if (url === CLIENT_PUBLIC_PATH) {
             continue

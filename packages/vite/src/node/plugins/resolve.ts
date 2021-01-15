@@ -71,10 +71,6 @@ export function resolvePlugin(
       server = _server
     },
 
-    configResolved(_config) {
-      config = _config
-    },
-
     resolveId(id, importer) {
       if (id === browserExternalId) {
         return id

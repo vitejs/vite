@@ -107,6 +107,11 @@ export interface UserConfig {
    * Default: true
    */
   clearScreen?: boolean
+  /**
+   * Externalize deps for SSR. These deps must provide a CommonJS build that
+   * can be `required()` and has the same module signature as its ESM build.
+   */
+  ssrExternal?: string[]
 }
 
 export interface InlineConfig extends UserConfig {

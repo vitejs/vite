@@ -482,10 +482,9 @@ export async function createPluginContainer(
     async load(id, ssr = false) {
       const ctx = new Context()
       for (const plugin of plugins) {
-        const load = (ssr && plugin.ssrLoad) || plugin.load
-        if (!load) continue
+        if (!plugin.load) continue
         ctx._activePlugin = plugin
-        const result = await load.call(ctx as any, id)
+        const result = await plugin.load.call(ctx as any, id, ssr)
         if (result != null) {
           return result
         }
@@ -496,15 +495,14 @@ export async function createPluginContainer(
     async transform(code, id, inMap, ssr = false) {
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       for (const plugin of plugins) {
-        const transform = (ssr && plugin.ssrTransform) || plugin.transform
-        if (!transform) continue
+        if (!plugin.transform) continue
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
         const start = Date.now()
         let result
         try {
-          result = await transform.call(ctx as any, code, id)
+          result = await plugin.transform.call(ctx as any, code, id, ssr)
         } catch (e) {
           ctx.error(e)
         }
