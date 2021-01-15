@@ -185,7 +185,7 @@ const modules = import.meta.glob('./dir/*.js')
 const modules = {
   './dir/foo.js': () => import('./dir/foo.js'),
   './dir/bar.js': () => import('./dir/bar.js')
-}	}
+} }
 ```
 
 你可以遍历 `modules` 对象的 key 值来访问相应的模块：
@@ -231,8 +231,6 @@ init().then((exports) => {
   exports.test()
 })
 ```
-
-The init function can also take the `imports` object which is passed along to `WebAssembly.instantiate` as its second argument:
 
 这个 `init` 函数也可以使用将传递给 `WebAssembly.instantiate` ，作为其第二个参数的 `imports` 对象：
 

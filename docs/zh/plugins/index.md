@@ -1,6 +1,6 @@
 # 插件
 
-## Official Plugins
+## 官方插件
 
 ### [@vitejs/plugin-vue](https://github.com/vitejs/vite/tree/main/packages/plugin-vue)
 
@@ -16,7 +16,7 @@
 
 ### [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy)
 
-- 为打包产物提供传统浏览器兼容性支持
+- 为打包后的文件提供传统浏览器兼容性支持
 
 ## 社区插件
 

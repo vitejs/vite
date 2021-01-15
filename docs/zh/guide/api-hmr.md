@@ -27,9 +27,9 @@ interface ImportMeta {
 }
 ```
 
-## 所需条件
+## 必需的条件守卫
 
-首先，请确保用一个条件块用于所有 HMR API 的使用，这样代码就可以在生产环境中被 tree-shaking 优化:
+首先，请确保用一个条件语句守护所有 HMR API 的使用，这样代码就可以在生产环境中被 tree-shaking 优化:
 
 ```js
 if (import.meta.hot) {
