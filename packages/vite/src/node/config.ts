@@ -433,7 +433,7 @@ export async function loadConfigFromFile(
       // 1. try to directly require the module (assuming commonjs)
       try {
         // clear cache in case of server restart
-        delete require.cache[resolvedPath]
+        delete require.cache[require.resolve(resolvedPath)]
         userConfig = require(resolvedPath)
         debug(`cjs config loaded in ${Date.now() - start}ms`)
       } catch (e) {
@@ -530,7 +530,8 @@ async function loadConfigFromBundledFile(
       defaultLoader(module, filename)
     }
   }
-  delete require.cache[fileName]
+  // clear cache in case of server restart
+  delete require.cache[require.resolve(fileName)]
   const raw = require(fileName)
   const config = raw.__esModule ? raw.default : raw
   require.extensions[extension] = defaultLoader
