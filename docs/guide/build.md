@@ -84,7 +84,7 @@ module.exports = {
 
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
 
-When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib):
+When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
 ```js
 // vite.config.js
@@ -95,6 +95,9 @@ module.exports = {
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
       name: 'MyLib'
+    },
+    rollupOptions: {
+      external: ['vue']
     }
   }
 }
@@ -117,6 +120,11 @@ Recommended `package.json` for your lib:
   "files": ["dist"],
   "main": "./dist/my-lib.umd.js",
   "module": "./dist/my-lib.es.js",
-  "exports": "./dist/my-lib.es.js"
+  "exports": {
+    ".": {
+      "import": "./dist/my-lib.es.js",
+      "require": "./dist/my-lib.umd.js"
+    }
+  }
 }
 ```

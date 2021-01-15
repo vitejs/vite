@@ -12,6 +12,7 @@ import {
   removeTimestampQuery,
   timeFrom
 } from '../utils'
+import { checkPublicFile } from '../plugins/asset'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -26,7 +27,12 @@ export interface TransformResult {
 
 export async function transformRequest(
   url: string,
-  { config: { root }, pluginContainer, moduleGraph, watcher }: ViteDevServer
+  {
+    config: { root, logger },
+    pluginContainer,
+    moduleGraph,
+    watcher
+  }: ViteDevServer
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
@@ -61,10 +67,16 @@ export async function transformRequest(
       }
     }
     if (code) {
-      map = (
-        convertSourceMap.fromSource(code) ||
-        convertSourceMap.fromMapFileSource(code, path.dirname(file))
-      )?.toObject()
+      try {
+        map = (
+          convertSourceMap.fromSource(code) ||
+          convertSourceMap.fromMapFileSource(code, path.dirname(file))
+        )?.toObject()
+      } catch (e) {
+        logger.warn(`Failed to load source map for ${url}.`, {
+          timestamp: true
+        })
+      }
     }
   } else {
     isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
@@ -76,15 +88,23 @@ export async function transformRequest(
     }
   }
   if (code == null) {
-    throw new Error(
-      `Failed to load url ${url} (resolved id: ${id}). Does the file exist?`
-    )
+    const msg = checkPublicFile(url, root)
+      ? `This file is in /public and will be copied as-is during build without ` +
+        `going through the plugin transforms, and therefore should not be ` +
+        `imported from source code. It can only be referenced via HTML tags.`
+      : `Does the file exist?`
+    throw new Error(`Failed to load url ${url} (resolved id: ${id}). ${msg}`)
   }
 
   // ensure module in graph after successful load
   const mod = await moduleGraph.ensureEntryFromUrl(url)
   // file is out of root, add it to the watch list
-  if (mod.file && !mod.file.startsWith(root + '/')) {
+  if (
+    mod.file &&
+    !mod.file.startsWith(root + '/') &&
+    // some rollup plugins use null bytes for private resolved Ids
+    !mod.file.includes('\0')
+  ) {
     watcher.add(mod.file)
   }
 

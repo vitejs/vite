@@ -55,9 +55,9 @@ import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import {
-  pad,
   createDebugger,
   generateCodeFrame,
+  isExternalUrl,
   normalizePath,
   numberToPos,
   prettifyUrl,
@@ -65,6 +65,7 @@ import {
 } from '../utils'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
+import { buildErrorMessage } from './middlewares/error'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -248,12 +249,10 @@ export async function createPluginContainer(
       position?: number | { column: number; line: number }
     ) {
       const err = formatError(e, position, this)
-      const args = [chalk.yellow(`warning: ${err.message}`)]
-      if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
-      if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
-      if (err.frame) args.push(chalk.yellow(pad(err.frame)))
-      if (err.stack) args.push(pad(err.stack))
-      logger.warn(args.join('\n'), {
+      const msg = buildErrorMessage(err, [
+        chalk.yellow(`warning: ${err.message}`)
+      ])
+      logger.warn(msg, {
         clear: true,
         timestamp: true
       })
@@ -360,6 +359,7 @@ export async function createPluginContainer(
   }
 
   let nestedResolveCall = 0
+  let closed = false
 
   const container: PluginContainer = {
     options: await (async () => {
@@ -461,7 +461,7 @@ export async function createPluginContainer(
       }
 
       if (id) {
-        partial.id = normalizePath(id)
+        partial.id = isExternalUrl(id) ? id : normalizePath(id)
         return partial as PartialResolvedId
       } else {
         return null
@@ -574,6 +574,7 @@ export async function createPluginContainer(
     },
 
     async close() {
+      if (closed) return
       const ctx = new Context()
       await Promise.all(
         plugins.map((p) => p.buildEnd && p.buildEnd.call(ctx as any))
@@ -581,6 +582,7 @@ export async function createPluginContainer(
       await Promise.all(
         plugins.map((p) => p.closeBundle && p.closeBundle.call(ctx as any))
       )
+      closed = true
     }
   }
 

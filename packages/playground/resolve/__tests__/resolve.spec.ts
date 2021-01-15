@@ -1,3 +1,5 @@
+import { isBuild } from '../../testUtils'
+
 test('deep import', async () => {
   expect(await page.textContent('.deep-import')).toMatch('[2,4]')
 })
@@ -24,6 +26,12 @@ test('deep import with exports field + mapped dir', async () => {
 
 test('Respect exports field env key priority', async () => {
   expect(await page.textContent('.exports-env')).toMatch('[success]')
+})
+
+test('Respect production/development conditionals', async () => {
+  expect(await page.textContent('.exports-env')).toMatch(
+    isBuild ? `browser.prod.mjs` : `browser.mjs`
+  )
 })
 
 test('omitted index/*', async () => {

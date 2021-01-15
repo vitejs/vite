@@ -40,7 +40,6 @@ import {
   EsbuildTransformResult
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import { createLogger } from '../logger'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 
 export interface ServerOptions {
@@ -54,7 +53,7 @@ export interface ServerOptions {
   /**
    * Open browser window on startup
    */
-  open?: boolean
+  open?: boolean | string
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    */
@@ -98,6 +97,14 @@ export interface ServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
+  /**
+   * If enabled, vite will exit if specified port is already in use
+   */
+  strictPort?: boolean
+  /**
+   * Create Vite dev server to be used as a middleware in an existing server
+   */
+  middlewareMode?: boolean
 }
 
 /**
@@ -135,8 +142,9 @@ export interface ViteDevServer {
   app: Connect.Server
   /**
    * native Node http server instance
+   * will be null in middleware mode
    */
-  httpServer: http.Server
+  httpServer: http.Server | null
   /**
    * chokidar watcher instance
    * https://github.com/paulmillr/chokidar#api
@@ -189,12 +197,13 @@ export async function createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
-  const logger = createLogger(config.logLevel)
   const serverConfig = config.server || {}
 
   const app = connect() as Connect.Server
-  const httpServer = await resolveHttpServer(serverConfig, app)
-  const ws = createWebSocketServer(httpServer, logger)
+  const httpServer = serverConfig.middlewareMode
+    ? null
+    : await resolveHttpServer(serverConfig, app)
+  const ws = createWebSocketServer(httpServer, config)
 
   const watchOptions = serverConfig.watch || {}
   const watcher = chokidar.watch(root, {
@@ -239,11 +248,19 @@ export async function createServer(
     }
   }
 
-  if (serverConfig.hmr !== false) {
-    watcher.on('change', async (file) => {
-      file = normalizePath(file)
-      // invalidate module graph cache on file change
-      moduleGraph.onFileChange(file)
+  process.once('SIGTERM', async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit(0)
+    }
+  })
+
+  watcher.on('change', async (file) => {
+    file = normalizePath(file)
+    // invalidate module graph cache on file change
+    moduleGraph.onFileChange(file)
+    if (serverConfig.hmr !== false) {
       try {
         await handleHMRUpdate(file, server)
       } catch (err) {
@@ -252,8 +269,8 @@ export async function createServer(
           err: prepareError(err)
         })
       }
-    })
-  }
+    }
+  })
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
@@ -327,38 +344,42 @@ export async function createServer(
   app.use(indexHtmlMiddleware(server, plugins))
 
   // handle 404s
-  app.use((_, res) => {
-    res.statusCode = 404
-    res.end()
-  })
+  if (!serverConfig.middlewareMode) {
+    app.use((_, res) => {
+      res.statusCode = 404
+      res.end()
+    })
+  }
 
   // error handler
-  app.use(errorMiddleware(server))
+  app.use(errorMiddleware(server, serverConfig.middlewareMode))
 
-  // overwrite listen to run optimizer before server start
-  const listen = httpServer.listen.bind(httpServer)
-  httpServer.listen = (async (port: number, ...args: any[]) => {
-    await container.buildStart({})
+  if (httpServer) {
+    // overwrite listen to run optimizer before server start
+    const listen = httpServer.listen.bind(httpServer)
+    httpServer.listen = (async (port: number, ...args: any[]) => {
+      await container.buildStart({})
 
-    if (config.optimizeCacheDir) {
-      // run optimizer
-      await optimizeDeps(config)
-      // after optimization, read updated optimization metadata
-      const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
-      if (fs.existsSync(dataPath)) {
-        server.optimizeDepsMetadata = JSON.parse(
-          fs.readFileSync(dataPath, 'utf-8')
-        )
+      if (config.optimizeCacheDir) {
+        // run optimizer
+        await optimizeDeps(config)
+        // after optimization, read updated optimization metadata
+        const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
+        if (fs.existsSync(dataPath)) {
+          server.optimizeDepsMetadata = JSON.parse(
+            fs.readFileSync(dataPath, 'utf-8')
+          )
+        }
       }
-    }
 
-    return listen(port, ...args)
-  }) as any
+      return listen(port, ...args)
+    }) as any
 
-  httpServer.once('listening', () => {
-    // update actual port since this may be different from initial value
-    serverConfig.port = (httpServer.address() as AddressInfo).port
-  })
+    httpServer.once('listening', () => {
+      // update actual port since this may be different from initial value
+      serverConfig.port = (httpServer.address() as AddressInfo).port
+    })
+  }
 
   return server
 }
@@ -392,18 +413,27 @@ async function startServer(
   server: ViteDevServer,
   inlinePort?: number
 ): Promise<ViteDevServer> {
+  const httpServer = server.httpServer
+  if (!httpServer) {
+    throw new Error('Cannot call server.listen in middleware mode.')
+  }
+
   const options = server.config.server || {}
   let port = inlinePort || options.port || 3000
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
-  const httpServer = server.httpServer
   const info = server.config.logger.info
 
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
-        info(`Port ${port} is in use, trying another one...`)
-        httpServer.listen(++port)
+        if (options.strictPort) {
+          httpServer.removeListener('error', onError)
+          reject(new Error(`Port ${port} is already in use`))
+        } else {
+          info(`Port ${port} is in use, trying another one...`)
+          httpServer.listen(++port)
+        }
       } else {
         httpServer.removeListener('error', onError)
         reject(e)
@@ -464,9 +494,10 @@ async function startServer(
       }
 
       if (options.open) {
+        const path = typeof options.open === 'string' ? options.open : ''
         openBrowser(
-          `${protocol}://${hostname}:${port}`,
-          options.open,
+          `${protocol}://${hostname}:${port}${path}`,
+          true,
           server.config.logger
         )
       }
@@ -476,7 +507,11 @@ async function startServer(
   })
 }
 
-function createSeverCloseFn(server: http.Server) {
+function createSeverCloseFn(server: http.Server | null) {
+  if (!server) {
+    return () => {}
+  }
+
   const openSockets = new Set<net.Socket>()
 
   server.on('connection', (socket) => {

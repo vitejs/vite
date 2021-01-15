@@ -16,11 +16,6 @@ export function serveStaticMiddleware(
   return (req, res, next) => {
     let url = req.url!
 
-    // skip import request
-    if (isImportRequest(url)) {
-      return next()
-    }
-
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
     // special processing
@@ -30,7 +25,12 @@ export function serveStaticMiddleware(
     ) {
       return next()
     }
-    
+
+    // skip import request
+    if (isImportRequest(url)) {
+      return next()
+    }
+
     // #1426
     url = req.url = decodeURIComponent(url)
 
@@ -60,7 +60,7 @@ export function serveStaticMiddleware(
 
 export function rawFsStaticMiddleware(): Connect.NextHandleFunction {
   const fsRoot =
-    os.platform() == 'win32' ? process.cwd().split(path.sep)[0] : '/'
+    os.platform() == 'win32' ? process.cwd().split(path.sep)[0] + '/' : '/'
   const serveFromRoot = sirv(fsRoot, sirvOptions)
 
   return (req, res, next) => {

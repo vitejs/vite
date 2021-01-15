@@ -56,6 +56,11 @@ function viteLegacyPlugin(options = {}) {
       }
     })
   }
+  if (Array.isArray(options.additionalLegacyPolyfills)) {
+    options.additionalLegacyPolyfills.forEach((i) => {
+      legacyPolyfills.add(i)
+    })
+  }
 
   /**
    * @type {import('vite').Plugin}
@@ -79,7 +84,7 @@ function viteLegacyPlugin(options = {}) {
           modernPolyfills,
           bundle,
           facadeToModernPolyfillMap,
-          config.build.minify
+          config.build
         )
         return
       }
@@ -109,7 +114,7 @@ function viteLegacyPlugin(options = {}) {
           facadeToLegacyPolyfillMap,
           // force using terser for legacy polyfill minification, since esbuild
           // isn't legacy-safe
-          config.build.minify ? 'terser' : false
+          config.build
         )
       }
     }
@@ -267,7 +272,7 @@ function viteLegacyPlugin(options = {}) {
       // 2. inject Safari 10 nomodule fix
       tags.push({
         tag: 'script',
-        attrs: { nomdoule: true },
+        attrs: { nomodule: true },
         children: safari10NoModuleFix,
         injectTo: 'body'
       })
@@ -377,15 +382,17 @@ function detectPolyfills(code, targets, list) {
  * @param {Set<string>} imports
  * @param {import('rollup').OutputBundle} bundle
  * @param {Map<string, string>} facadeToChunkMap
- * @param {import('vite').BuildOptions['minify']} minify
+ * @param {import('vite').BuildOptions} buildOptions
  */
 async function buildPolyfillChunk(
   name,
   imports,
   bundle,
   facadeToChunkMap,
-  minify
+  buildOptions
 ) {
+  let { minify, assetsDir } = buildOptions
+  minify = minify ? 'terser' : false
   const res = await build({
     // so that everything is resolved from here
     root: __dirname,
@@ -396,6 +403,7 @@ async function buildPolyfillChunk(
       write: false,
       target: false,
       minify,
+      assetsDir,
       rollupOptions: {
         input: {
           [name]: polyfillId

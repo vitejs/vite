@@ -1,10 +1,11 @@
 {
   "name": "@vitejs/plugin-vue-jsx",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "author": "Evan You",
   "files": [
-    "index.js"
+    "index.js",
+    "index.d.ts"
   ],
   "main": "index.js",
   "types": "index.d.ts",

@@ -28,14 +28,15 @@ import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
-  VALID_ID_PREFIX
+  VALID_ID_PREFIX,
+  NULL_BYTE_PLACEHOLDER
 } from '../constants'
 import { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import { transformImportGlob } from './importGlob'
+import { transformImportGlob } from './importAnaysisBuild'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -181,11 +182,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id
         }
 
+        if (isExternalUrl(url)) {
+          return [url, url]
+        }
+
         // if the resolved id is not a valid browser import specifier,
         // prefix it to make it valid. We will strip this before feeding it
         // back into the transform pipeline
         if (!url.startsWith('.') && !url.startsWith('/')) {
-          url = VALID_ID_PREFIX + resolved.id
+          url =
+            VALID_ID_PREFIX + resolved.id.replace('\0', NULL_BYTE_PLACEHOLDER)
         }
 
         // mark non-js/css imports with `?import`

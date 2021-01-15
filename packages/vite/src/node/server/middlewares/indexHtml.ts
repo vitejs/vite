@@ -3,7 +3,7 @@ import path from 'path'
 import { Connect } from 'types/connect'
 import { Plugin } from '../../plugin'
 import {
-  scriptRE,
+  scriptModuleRE,
   applyHtmlTransforms,
   IndexHtmlTransformHook,
   resolveHtmlTransforms,
@@ -12,6 +12,7 @@ import {
 import { ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import { cleanUrl } from '../../utils'
 
 const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
   let index = -1
@@ -22,7 +23,7 @@ const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
       comments.push(m)
       return `<!--VITE_COMMENT_${comments.length - 1}-->`
     })
-    .replace(scriptRE, (_match, _openTag, script) => {
+    .replace(scriptModuleRE, (_match, _openTag, script) => {
       index++
       if (script) {
         // convert inline <script type="module"> into imported modules
@@ -51,16 +52,14 @@ export function indexHtmlMiddleware(
   const [preHooks, postHooks] = resolveHtmlTransforms(plugins)
 
   return async (req, res, next) => {
+    const url = req.url && cleanUrl(req.url)
     // spa-fallback always redirects to /index.html
-    if (
-      req.url?.endsWith('.html') &&
-      req.headers['sec-fetch-dest'] !== 'script'
-    ) {
+    if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       let filename
-      if (req.url!.startsWith(FS_PREFIX)) {
-        filename = req.url.slice(FS_PREFIX.length)
+      if (url.startsWith(FS_PREFIX)) {
+        filename = url.slice(FS_PREFIX.length)
       } else {
-        filename = path.join(server.config.root, req.url!.slice(1))
+        filename = path.join(server.config.root, url.slice(1))
       }
       if (fs.existsSync(filename)) {
         try {
@@ -68,7 +67,7 @@ export function indexHtmlMiddleware(
           // apply transforms
           html = await applyHtmlTransforms(
             html,
-            req.url!,
+            url,
             filename,
             [...preHooks, devHtmlHook, ...postHooks],
             server

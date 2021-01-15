@@ -5,6 +5,7 @@ import { HMR_HEADER } from '../ws'
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import { HttpProxy } from 'types/http-proxy'
+import chalk from 'chalk'
 
 const debug = createDebugger('vite:proxy')
 
@@ -42,6 +43,13 @@ export function proxyMiddleware({
       opts = { target: opts } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
+
+    proxy.on('error', (err) => {
+      config.logger.error(`${chalk.red(`http proxy error:`)}\n${err.stack}`, {
+        timestamp: true
+      })
+    })
+
     if (opts.configure) {
       opts.configure(proxy, opts)
     }
@@ -49,28 +57,33 @@ export function proxyMiddleware({
     proxies[context] = [proxy, { ...opts }]
   })
 
-  httpServer.on('upgrade', (req, socket, head) => {
-    const url = req.url!
-    for (const context in proxies) {
-      if (url.startsWith(context)) {
-        const [proxy, opts] = proxies[context]
-        if (
-          (opts.ws || opts.target?.toString().startsWith('ws:')) &&
-          req.headers['sec-websocket-protocol'] !== HMR_HEADER
-        ) {
-          if (opts.rewrite) {
-            req.url = opts.rewrite(url)
+  if (httpServer) {
+    httpServer.on('upgrade', (req, socket, head) => {
+      const url = req.url!
+      for (const context in proxies) {
+        if (url.startsWith(context)) {
+          const [proxy, opts] = proxies[context]
+          if (
+            (opts.ws || opts.target?.toString().startsWith('ws:')) &&
+            req.headers['sec-websocket-protocol'] !== HMR_HEADER
+          ) {
+            if (opts.rewrite) {
+              req.url = opts.rewrite(url)
+            }
+            proxy.ws(req, socket, head)
           }
-          proxy.ws(req, socket, head)
         }
       }
-    }
-  })
+    })
+  }
 
   return (req, res, next) => {
     const url = req.url!
     for (const context in proxies) {
-      if (url.startsWith(context)) {
+      if (
+        (context.startsWith('^') && new RegExp(context).test(url)) ||
+        url.startsWith(context)
+      ) {
         const [proxy, opts] = proxies[context]
 
         if (opts.bypass) {

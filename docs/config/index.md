@@ -201,6 +201,13 @@ export default ({ command, mode }) => {
 
   Adjust console output verbosity. Default is `'info'`.
 
+### clearScreen
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Set to `false` to prevent Vite from clearing the terminal screen when logging certain messages. Via command line, use `--clearScreen false`.
+
 ## Server Options
 
 ### server.host
@@ -215,6 +222,12 @@ export default ({ command, mode }) => {
 
   Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
 
+### server.strictPort
+
+- **Type:** `boolean`
+
+  Set to `true` to exit if port is already in use, instead of automatically try the next available port.
+
 ### server.https
 
 - **Type:** `boolean | https.ServerOptions`
@@ -225,15 +238,27 @@ export default ({ command, mode }) => {
 
 ### server.open
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 
-  Automatically open the app in the browser on server start.
+  Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname.
+
+  **Example:**
+
+  ```js
+  export default {
+    server: {
+      open: '/docs/index.html'
+    }
+  }
+  ```
 
 ### server.proxy
 
 - **Type:** `Record<string, string | ProxyOptions>`
 
-  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
+  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`.
+
+  Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
   **Example:**
 
@@ -248,6 +273,12 @@ export default ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
+        }
+        // with RegEx
+        '^/fallback/.*': {
+          target: 'http://jsonplaceholder.typicode.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/fallback/, '')
         }
       }
     }
@@ -362,6 +393,12 @@ export default ({ command, mode }) => {
 
   Directly customize the underlying Rollup bundle. This is the same as options that can be exported from a Rollup config file and will be merged with Vite's internal Rollup options. See [Rollup options docs](https://rollupjs.org/guide/en/#big-list-of-options) for more details.
 
+### build.commonjsOptions
+
+- **Type:** [`RollupCommonJSOptions`](https://github.com/rollup/plugins/tree/master/packages/commonjs#options)
+
+  Options to pass on to [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs). This applies to dependency pre-bundling as well.
+
 ### build.lib
 
 - **Type:** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[] }`
@@ -403,6 +440,13 @@ export default ({ command, mode }) => {
 
   Set to `false` to disable writing the bundle to disk. This is mostly used in [programmatic `build()` calls](/guide/api-javascript#build) where further post processing of the bundle is needed before writing to disk.
 
+### build.emptyOutDir
+
+- **Type:** `boolean`
+- **Default:** `true` if `outDir` is inside `root`
+
+  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentially removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
+
 ## Dep Optimization Options
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
@@ -423,7 +467,7 @@ export default ({ command, mode }) => {
 
 - **Type:** `Plugin[]`
 
-  By default, Vite assumes dependencies ship plain JavaScript and will not attempt to transform non-js file formats during pre-bundling. If you wish to support speical file types, e.g. `.vue` files, you will need to supply the relevant plugins via this option.
+  By default, Vite assumes dependencies ship plain JavaScript and will not attempt to transform non-js file formats during pre-bundling. If you wish to support special file types, e.g. `.vue` files, you will need to supply the relevant plugins via this option.
 
   Note that you will also need to include these plugins in the main `plugins` option in order to support the same file types during production build.
 

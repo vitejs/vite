@@ -85,3 +85,12 @@ describe('nested', () => {
 
   testPage(true)
 })
+
+describe('nested w/ query', () => {
+  beforeAll(async () => {
+    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    await page.goto(viteTestUrl + '/nested/index.html?v=1')
+  })
+
+  testPage(true)
+})

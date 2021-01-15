@@ -17,15 +17,16 @@ import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import { Terser } from 'types/terser'
-import { copyDir, emptyDir, lookupFile } from './utils'
+import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
+import { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
-import { importGlobPlugin } from './plugins/importGlob'
+import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
 
 export interface BuildOptions {
   /**
@@ -109,10 +110,19 @@ export interface BuildOptions {
    */
   rollupOptions?: RollupOptions
   /**
+   * Options to pass on to `@rollup/plugin-commonjs`
+   */
+  commonjsOptions?: RollupCommonJSOptions
+  /**
    * Whether to write bundle to disk
    * @default true
    */
   write?: boolean
+  /**
+   * Empty outDir on write.
+   * @default true when outDir is a sub directory of project root
+   */
+  emptyOutDir?: boolean | null
   /**
    * Whether to emit a manifest.json under assets dir to map hash-less filenames
    * to their hashed versions. Useful when you want to generate your own HTML
@@ -162,10 +172,16 @@ export function resolveBuildOptions(
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs'],
+      ...raw?.commonjsOptions
+    },
     minify: 'terser',
     terserOptions: {},
     cleanCssOptions: {},
     write: true,
+    emptyOutDir: null,
     manifest: false,
     lib: false,
     ssr: false,
@@ -199,12 +215,8 @@ export function resolveBuildPlugins(
   return {
     pre: [
       buildHtmlPlugin(config),
-      commonjsPlugin({
-        include: [/node_modules/],
-        extensions: ['.js', '.cjs']
-      }),
+      commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
-      importGlobPlugin(config),
       buildDefinePlugin(config),
       dynamicImportVars({
         warnOnError: true,
@@ -213,6 +225,7 @@ export function resolveBuildPlugins(
       ...(options.rollupOptions.plugins || [])
     ],
     post: [
+      buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
       ...(options.minify && options.minify !== 'esbuild'
         ? [terserPlugin(options.terserOptions)]
@@ -257,7 +270,7 @@ async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
-  config.logger.info(chalk.cyan(`building for production...`))
+  config.logger.info(chalk.cyan(`building for ${config.mode}...`))
 
   const options = config.build
   const libOptions = options.lib
@@ -312,7 +325,25 @@ async function doBuild(
     }
 
     if (options.write) {
-      emptyDir(outDir)
+      // warn if outDir is outside of root
+      if (fs.existsSync(outDir)) {
+        const inferEmpty = options.emptyOutDir === null
+        if (
+          options.emptyOutDir ||
+          (inferEmpty && normalizePath(outDir).startsWith(config.root + '/'))
+        ) {
+          emptyDir(outDir)
+        } else if (inferEmpty) {
+          config.logger.warn(
+            chalk.yellow(
+              `\n${chalk.bold(`(!)`)} outDir ${chalk.white.dim(
+                outDir
+              )} is not inside project root and will not be emptied.\n` +
+                `Use --emptyOutDir to override.\n`
+            )
+          )
+        }
+      }
       if (fs.existsSync(publicDir)) {
         copyDir(publicDir, outDir)
       }
