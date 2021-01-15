@@ -54,7 +54,7 @@ Some dependencies may be designed to be used via deep imports, e.g. `firebase` e
 
 ## Dependency Compatibility
 
-While Vite tries its best to accomodate non-ESM dependencies, there are going to be some dependencies that won't work out of the box. The most common types are those that import Node.js built-in modules (e.g. `os` or `path`) and expect the bundler to automatically shim them. These packages are typically written assuming all users will be consuming it with `webpack`, but such usage does not make sense when targeting browser environments.
+While Vite tries its best to accommodate non-ESM dependencies, there are going to be some dependencies that won't work out of the box. The most common types are those that import Node.js built-in modules (e.g. `os` or `path`) and expect the bundler to automatically shim them. These packages are typically written assuming all users will be consuming it with `webpack`, but such usage does not make sense when targeting browser environments.
 
 When using Vite, it is strongly recommended to always prefer dependencies that provide ESM formats. This will make your build faster, and results in smaller production bundles due to more efficient tree-shaking.
 
