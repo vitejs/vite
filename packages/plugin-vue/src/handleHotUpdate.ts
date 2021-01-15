@@ -55,7 +55,11 @@ export async function handleHotUpdate({
     // metadata will not be available since the script part isn't loaded.
     // in this case, reuse the compiled script from previous descriptor.
     if (mainModule && !affectedModules.has(mainModule)) {
-      setResolvedScript(descriptor, getResolvedScript(prevDescriptor)!)
+      setResolvedScript(
+        descriptor,
+        getResolvedScript(prevDescriptor, false)!,
+        false
+      )
     }
     affectedModules.add(templateModule)
     needRerender = true
