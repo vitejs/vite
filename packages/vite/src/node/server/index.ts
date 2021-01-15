@@ -17,6 +17,7 @@ import {
 import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { createWebSocketServer, WebSocketServer } from '../server/ws'
+import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
@@ -105,6 +106,11 @@ export interface ServerOptions {
    * Create Vite dev server to be used as a middleware in an existing server
    */
   middlewareMode?: boolean
+  /**
+   * Prepend this folder to http requests, for use when proxying vite as a subfolder
+   * Should start and end with the `/` character
+   */
+  base?: string
 }
 
 /**
@@ -291,6 +297,10 @@ export async function createServer(
     app.use(proxyMiddleware(server))
   }
 
+  if (config.env.BASE_URL !== '/') {
+    app.use(baseMiddleware(server))
+  }
+
   // open in editor support
   app.use('/__open-in-editor', launchEditorMiddleware())
 
@@ -315,12 +325,7 @@ export async function createServer(
         {
           from: /\/$/,
           to({ parsedUrl }: any) {
-            const rewritten = parsedUrl.pathname + 'index.html'
-            if (fs.existsSync(path.join(root, rewritten))) {
-              return rewritten
-            } else {
-              return `/index.html`
-            }
+            return parsedUrl.pathname + 'index.html'
           }
         }
       ]
@@ -414,7 +419,12 @@ async function startServer(
   let port = inlinePort || options.port || 3000
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
+  const base = options.base || '/'
   const info = server.config.logger.info
+
+  if (!base.startsWith('/') || !base.endsWith('/')) {
+    throw new Error(`server.base must start and end with "/".`)
+  }
 
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
@@ -451,7 +461,7 @@ async function startServer(
             }
           })
           .forEach(({ type, host }) => {
-            const url = `${protocol}://${host}:${chalk.bold(port)}/`
+            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
             info(`  > ${type} ${chalk.cyan(url)}`)
           })
       )
@@ -487,7 +497,7 @@ async function startServer(
 
       if (options.open) {
         openBrowser(
-          `${protocol}://${hostname}:${port}`,
+          `${protocol}://${hostname}:${port}${base}`,
           options.open,
           server.config.logger
         )

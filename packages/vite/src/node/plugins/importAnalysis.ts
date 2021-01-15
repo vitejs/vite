@@ -159,6 +159,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<[string, string]> => {
+        if (
+          config.env.BASE_URL !== '/' &&
+          url.startsWith(config.env.BASE_URL)
+        ) {
+          url = url.replace(config.env.BASE_URL, '/')
+        }
+
         const resolved = await this.resolve(url, importer)
 
         if (!resolved) {
@@ -196,6 +203,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // mark non-js/css imports with `?import`
         url = markExplicitImport(url)
+
+        // prepend base path without trailing slash ( default empty string )
+        url = config.env.BASE_URL_NOSLASH + url
 
         // for relative js/css imports, inherit importer's version query
         // do not do this for unknown type imports, otherwise the appended
@@ -294,7 +304,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // If resolvable, let's resolve it
         if (dynamicIndex === -1 || isLiteralDynamicId) {
           // skip client
-          if (url === CLIENT_PUBLIC_PATH) {
+          if (url === config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH) {
             continue
           }
 
@@ -385,7 +395,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
         // inject hot context
         str().prepend(
-          `import { createHotContext as __vite__createHotContext } from "${CLIENT_PUBLIC_PATH}";` +
+          `import { createHotContext as __vite__createHotContext } from "${
+            config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH
+          }";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
               importerModule.url
             )});`
@@ -394,7 +406,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (needQueryInjectHelper) {
         str().prepend(
-          `import { injectQuery as __vite__injectQuery } from "${CLIENT_PUBLIC_PATH}";`
+          `import { injectQuery as __vite__injectQuery } from "${
+            config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH
+          }";`
         )
       }
 

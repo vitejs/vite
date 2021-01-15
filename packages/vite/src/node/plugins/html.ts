@@ -335,7 +335,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
 export interface HtmlTagDescriptor {
   tag: string
-  attrs?: Record<string, string | boolean>
+  attrs?: Record<string, string | boolean | undefined>
   children?: string | HtmlTagDescriptor[]
   /**
    * default: 'head-prepend'

@@ -104,18 +104,22 @@ export function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, { root }: ResolvedConfig) {
+function fileToDevUrl(id: string, { root, env }: ResolvedConfig) {
+  let rtn: string
+
   if (checkPublicFile(id, root)) {
     // in public dir, keep the url as-is
-    return id
-  }
-  if (id.startsWith(root)) {
+    rtn = id
+  } else if (id.startsWith(root)) {
     // in project root, infer short public path
-    return '/' + path.posix.relative(root, id)
+    rtn = '/' + path.posix.relative(root, id)
+  } else {
+    // outside of project root, use absolute fs path
+    // (this is special handled by the serve static middleware
+    rtn = FS_PREFIX + id
   }
-  // outside of project root, use absolute fs path
-  // (this is special handled by the serve static middleware
-  return FS_PREFIX + id
+
+  return env.BASE_URL_NOSLASH + rtn
 }
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()

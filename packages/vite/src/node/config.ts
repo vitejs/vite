@@ -214,6 +214,24 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
+  const serverBase = config.server?.base || '/'
+  const BASE_URL = command === 'build' ? resolvedBuildOptions.base : serverBase
+  const trailingSlashRE = /\/$/
+
+  let hmr = undefined
+  if (serverBase !== '/') {
+    hmr = config.server?.hmr === true ? {} : config.server?.hmr
+    hmr = {
+      ...hmr,
+      path: BASE_URL !== '/' ? BASE_URL.substr(1) : undefined
+    }
+  }
+
+  const server = {
+    ...config.server,
+    hmr
+  }
+
   const resolved = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -225,11 +243,12 @@ export async function resolveConfig(
     optimizeCacheDir,
     alias: resolvedAlias,
     plugins: userPlugins,
-    server: config.server || {},
+    server,
     build: resolvedBuildOptions,
     env: {
       ...userEnv,
-      BASE_URL: command === 'build' ? resolvedBuildOptions.base : '/',
+      BASE_URL,
+      BASE_URL_NOSLASH: BASE_URL.replace(trailingSlashRE, ''),
       MODE: mode,
       DEV: !isProduction,
       PROD: isProduction

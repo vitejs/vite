@@ -48,8 +48,17 @@ export async function handleHMRUpdate(
     )
     await server.close()
     ;(global as any).__vite_start_time = Date.now()
-    server = await createServer(config.inlineConfig)
-    await server.listen()
+
+    try {
+      server = await createServer(config.inlineConfig)
+      await server.listen()
+    } catch (e) {
+      config.logger.error(
+        chalk.red(`error when starting dev server:\n${e.stack}`)
+      )
+      process.exit(1)
+    }
+
     return
   }
 

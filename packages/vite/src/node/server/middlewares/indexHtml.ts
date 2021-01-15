@@ -14,9 +14,13 @@ import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl } from '../../utils'
 
-const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
+const devHtmlHook: IndexHtmlTransformHook = (
+  html,
+  { path: filePath, server }
+) => {
   let index = -1
   const comments: string[] = []
+  const base: string = server?.config.env.BASE_URL || '/'
 
   html = html
     .replace(htmlCommentRE, (m) => {
@@ -27,7 +31,7 @@ const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
       index++
       if (script) {
         // convert inline <script type="module"> into imported modules
-        return `<script type="module" src="${path}?html-proxy&index=${index}.js"></script>`
+        return `<script type="module" src="${filePath}?html-proxy&index=${index}.js"></script>`
       }
       return _match
     })
@@ -37,8 +41,13 @@ const devHtmlHook: IndexHtmlTransformHook = (html, { path }) => {
     html,
     tags: [
       {
+        tag: 'base',
+        attrs: { href: path.join(base, path.dirname(filePath), '/') },
+        injectTo: 'head-prepend'
+      },
+      {
         tag: 'script',
-        attrs: { type: 'module', src: CLIENT_PUBLIC_PATH },
+        attrs: { type: 'module', src: path.join(base, CLIENT_PUBLIC_PATH) },
         injectTo: 'head-prepend'
       }
     ]

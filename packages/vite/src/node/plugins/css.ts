@@ -157,7 +157,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // server only
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
-              CLIENT_PUBLIC_PATH
+              config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH
             )}`,
             `const id = ${JSON.stringify(id)}`,
             `const css = ${JSON.stringify(css)}`,
