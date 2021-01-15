@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import Rollup from 'rollup'
+import Rollup, { ExternalOption } from 'rollup'
 import { createHash } from 'crypto'
 import { ResolvedConfig, sortUserPlugins } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
@@ -159,12 +159,13 @@ export async function optimizeDeps(
 
   // Force included deps - these can also be deep paths
   if (options.include) {
-    options.include.forEach((id) => {
-      const filePath = tryNodeResolve(id, root, config.isProduction)
+    for (let id of options.include) {
+      const aliased = (await aliasResolver.resolveId(id))?.id || id
+      const filePath = tryNodeResolve(aliased, root, config.isProduction)
       if (filePath) {
         qualified[id] = filePath.id
       }
-    })
+    }
   }
 
   let qualifiedIds = Object.keys(qualified)
@@ -229,12 +230,16 @@ export async function optimizeDeps(
   }
 
   const [pre, normal, post] = sortUserPlugins(options.plugins)
+  const resolvedExternal = resolveExternal(
+    external,
+    config.build.rollupOptions?.external
+  )
 
   try {
     const rollup = require('rollup') as typeof Rollup
     const bundle = await rollup.rollup({
       input: qualified,
-      external,
+      external: resolvedExternal,
       onwarn(warning, warn) {
         onRollupWarning(warning, warn, config)
       },
@@ -315,14 +320,14 @@ async function resolveQualifiedDeps(
   const deps = Object.keys(pkg.dependencies || {})
   const linked: string[] = []
   const excludeFilter =
-    exclude && createFilter(exclude, null, { resolve: false })
+    exclude && createFilter(null, exclude, { resolve: false })
 
   for (const id of deps) {
     if (include && include.includes(id)) {
       // already force included
       continue
     }
-    if (excludeFilter && excludeFilter(id)) {
+    if (excludeFilter && !excludeFilter(id)) {
       debug(`skipping ${id} (excluded)`)
       continue
     }
@@ -341,7 +346,8 @@ async function resolveQualifiedDeps(
     }
     let filePath
     try {
-      const resolved = tryNodeResolve(id, root, config.isProduction)
+      const aliased = (await aliasResolver.resolveId(id))?.id || id
+      const resolved = tryNodeResolve(aliased, root, config.isProduction)
       filePath = resolved && resolved.id
     } catch (e) {}
     if (!filePath) {
@@ -436,6 +442,20 @@ async function resolveLinkedDeps(
       external.push(id)
     }
   })
+}
+
+function resolveExternal(
+  existing: string[],
+  user: ExternalOption | undefined
+): ExternalOption {
+  if (!user) return existing
+  if (typeof user !== 'function') {
+    return existing.concat(user as any[])
+  }
+  return ((id, parentId, isResolved) => {
+    if (existing.includes(id)) return true
+    return user(id, parentId, isResolved)
+  }) as ExternalOption
 }
 
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']

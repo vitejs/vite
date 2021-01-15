@@ -54,7 +54,7 @@ export interface ServerOptions {
   /**
    * Open browser window on startup
    */
-  open?: boolean
+  open?: boolean | string
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    */
@@ -253,6 +253,14 @@ export async function createServer(
       ])
     }
   }
+
+  process.once('SIGTERM', async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit(0)
+    }
+  })
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
@@ -496,9 +504,10 @@ async function startServer(
       }
 
       if (options.open) {
+        const path = typeof options.open === 'string' ? options.open : base
         openBrowser(
-          `${protocol}://${hostname}:${port}${base}`,
-          options.open,
+          `${protocol}://${hostname}:${port}${path}`,
+          true,
           server.config.logger
         )
       }

@@ -35,8 +35,12 @@ function clearScreen() {
   readline.clearScreenDown(process.stdout)
 }
 
-export function createLogger(level: LogLevel = 'info'): Logger {
+export function createLogger(
+  level: LogLevel = 'info',
+  allowClearScreen = true
+): Logger {
   const thresh = LogLevels[level]
+  const clear = allowClearScreen ? clearScreen : () => {}
 
   function output(type: LogType, msg: string, options: LogOptions = {}) {
     if (thresh >= LogLevels[type]) {
@@ -49,23 +53,21 @@ export function createLogger(level: LogLevel = 'info'): Logger {
               : type === 'warn'
               ? chalk.yellow.bold(`[vite]`)
               : chalk.red.bold(`[vite]`)
-          return `${chalk.dim(
-            new Date().toLocaleTimeString()
-          )} ${tag} ${msg}`
+          return `${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
         } else {
           return msg
         }
       }
       if (type === lastType && msg === lastMsg) {
         sameCount++
-        clearScreen()
+        clear()
         console[method](format(), chalk.yellow(`(x${sameCount + 1})`))
       } else {
         sameCount = 0
         lastMsg = msg
         lastType = type
         if (options.clear) {
-          clearScreen()
+          clear()
         }
         console[method](format())
       }
@@ -84,7 +86,7 @@ export function createLogger(level: LogLevel = 'info'): Logger {
     },
     clearScreen(type) {
       if (thresh >= LogLevels[type]) {
-        clearScreen()
+        clear()
       }
     }
   }

@@ -12,6 +12,7 @@ import { htmlPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { webWorkerPlugin } from './worker'
 import { dynamicImportPolyfillPlugin } from './dynamicImportPolyfill'
+import { preAliasPlugin } from './preAlias'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -26,6 +27,7 @@ export async function resolvePlugins(
     : { pre: [], post: [] }
 
   return [
+    isBuild ? null : preAliasPlugin(),
     aliasPlugin({ entries: config.alias }),
     ...prePlugins,
     config.build.polyfillDynamicImport

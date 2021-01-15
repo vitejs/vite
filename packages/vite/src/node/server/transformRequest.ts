@@ -27,7 +27,12 @@ export interface TransformResult {
 
 export async function transformRequest(
   url: string,
-  { config: { root }, pluginContainer, moduleGraph, watcher }: ViteDevServer
+  {
+    config: { root, logger },
+    pluginContainer,
+    moduleGraph,
+    watcher
+  }: ViteDevServer
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
@@ -62,10 +67,16 @@ export async function transformRequest(
       }
     }
     if (code) {
-      map = (
-        convertSourceMap.fromSource(code) ||
-        convertSourceMap.fromMapFileSource(code, path.dirname(file))
-      )?.toObject()
+      try {
+        map = (
+          convertSourceMap.fromSource(code) ||
+          convertSourceMap.fromMapFileSource(code, path.dirname(file))
+        )?.toObject()
+      } catch (e) {
+        logger.warn(`Failed to load source map for ${url}.`, {
+          timestamp: true
+        })
+      }
     }
   } else {
     isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
