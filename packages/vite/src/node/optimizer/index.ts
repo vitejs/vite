@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import Rollup from 'rollup'
+import Rollup, { ExternalOption } from 'rollup'
 import { createHash } from 'crypto'
 import { ResolvedConfig, sortUserPlugins } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
@@ -27,8 +27,29 @@ import jsonPlugin from '@rollup/plugin-json'
 import { buildDefinePlugin } from '../plugins/define'
 import { createFilter } from '@rollup/pluginutils'
 import { Plugin } from '../plugin'
+import { prompt } from 'enquirer'
 
 const debug = createDebugger('vite:optimize')
+
+const KNOWN_IGNORE_LIST = new Set([
+  'vite',
+  'vitepress',
+  'tailwindcss',
+  '@tailwindcss/ui'
+])
+
+const KNOWN_WARN_LIST = new Set([
+  'sass',
+  'less',
+  'stylus',
+  'postcss',
+  'autoprefixer',
+  'pug',
+  'jest',
+  'typescript'
+])
+
+const WARN_RE = /^(@vitejs\/|vite-)plugin-/
 
 export interface DepOptimizationOptions {
   /**
@@ -138,23 +159,62 @@ export async function optimizeDeps(
 
   // Force included deps - these can also be deep paths
   if (options.include) {
-    options.include.forEach((id) => {
-      const filePath = tryNodeResolve(id, root, config.isProduction)
+    for (let id of options.include) {
+      const aliased = (await aliasResolver.resolveId(id))?.id || id
+      const filePath = tryNodeResolve(aliased, root, config.isProduction)
       if (filePath) {
         qualified[id] = filePath.id
       }
-    })
+    }
   }
 
-  if (!Object.keys(qualified).length) {
+  let qualifiedIds = Object.keys(qualified)
+  const invalidIds = qualifiedIds.filter(
+    (id) => KNOWN_WARN_LIST.has(id) || WARN_RE.test(id)
+  )
+
+  if (invalidIds.length) {
+    const { yes } = (await prompt({
+      type: 'confirm',
+      name: 'yes',
+      initial: true,
+      message: chalk.yellow(
+        `It seems your dependencies contain packages that are not meant to\n` +
+          `be used in the browser, e.g. ${chalk.cyan(
+            invalidIds.join(', ')
+          )}. ` +
+          `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
+          `they should probably be moved to devDependencies instead.\n` +
+          `Auto-update package.json and continue without these deps?`
+      )
+    })) as { yes: boolean }
+    if (yes) {
+      invalidIds.forEach((id) => {
+        delete qualified[id]
+      })
+      qualifiedIds = qualifiedIds.filter((id) => !invalidIds.includes(id))
+      const pkgPath = lookupFile(root, ['package.json'], true)!
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+      invalidIds.forEach((id) => {
+        const v = pkg.dependencies[id]
+        delete pkg.dependencies[id]
+        ;(pkg.devDependencies || (pkg.devDependencies = {}))[id] = v
+      })
+      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
+      // udpate data hash
+      data.hash = getDepHash(root, config.mode, config.configFile)
+    } else {
+      process.exit(1)
+    }
+  }
+
+  if (!qualifiedIds.length) {
     writeFile(dataPath, JSON.stringify(data, null, 2))
-    log(`No listed dependency requires optimization. Skipping.`)
+    log(`No listed dependency requires optimization. Skipping.\n\n\n`)
     return
   }
 
-  const depsString = Object.keys(qualified)
-    .map((id) => chalk.yellow(id))
-    .join(`, `)
+  const depsString = qualifiedIds.map((id) => chalk.yellow(id)).join(`, `)
   if (!asCommand) {
     // This is auto run on server start - let the user know that we are
     // pre-optimizing deps
@@ -170,12 +230,16 @@ export async function optimizeDeps(
   }
 
   const [pre, normal, post] = sortUserPlugins(options.plugins)
+  const resolvedExternal = resolveExternal(
+    external,
+    config.build.rollupOptions?.external
+  )
 
   try {
     const rollup = require('rollup') as typeof Rollup
     const bundle = await rollup.rollup({
       input: qualified,
-      external,
+      external: resolvedExternal,
       onwarn(warning, warn) {
         onRollupWarning(warning, warn, config)
       },
@@ -235,15 +299,6 @@ interface FilteredDeps {
   external: string[]
 }
 
-const KNOWN_IGNORE_LIST = new Set([
-  'vite',
-  'vitepress',
-  'tailwindcss',
-  '@tailwindcss/ui',
-  '@pika/react',
-  '@pika/react-dom'
-])
-
 async function resolveQualifiedDeps(
   root: string,
   config: ResolvedConfig,
@@ -265,14 +320,14 @@ async function resolveQualifiedDeps(
   const deps = Object.keys(pkg.dependencies || {})
   const linked: string[] = []
   const excludeFilter =
-    exclude && createFilter(exclude, null, { resolve: false })
+    exclude && createFilter(null, exclude, { resolve: false })
 
   for (const id of deps) {
     if (include && include.includes(id)) {
       // already force included
       continue
     }
-    if (excludeFilter && excludeFilter(id)) {
+    if (excludeFilter && !excludeFilter(id)) {
       debug(`skipping ${id} (excluded)`)
       continue
     }
@@ -291,7 +346,8 @@ async function resolveQualifiedDeps(
     }
     let filePath
     try {
-      const resolved = tryNodeResolve(id, root, config.isProduction)
+      const aliased = (await aliasResolver.resolveId(id))?.id || id
+      const resolved = tryNodeResolve(aliased, root, config.isProduction)
       filePath = resolved && resolved.id
     } catch (e) {}
     if (!filePath) {
@@ -386,6 +442,20 @@ async function resolveLinkedDeps(
       external.push(id)
     }
   })
+}
+
+function resolveExternal(
+  existing: string[],
+  user: ExternalOption | undefined
+): ExternalOption {
+  if (!user) return existing
+  if (typeof user !== 'function') {
+    return existing.concat(user as any[])
+  }
+  return ((id, parentId, isResolved) => {
+    if (existing.includes(id)) return true
+    return user(id, parentId, isResolved)
+  }) as ExternalOption
 }
 
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']

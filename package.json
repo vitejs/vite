@@ -14,6 +14,7 @@
     "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 node --inspect-brk ./node_modules/.bin/jest",
     "docs": "vitepress dev docs",
     "build-docs": "vitepress build docs",
+    "serve-docs": "vitepress serve docs",
     "build-vite": "cd packages/vite && yarn build",
     "build-plugin-vue": "cd packages/plugin-vue && yarn build",
     "ci-docs": "run-s build-vite build-plugin-vue build-docs"
@@ -45,7 +46,7 @@
     "slash": "^3.0.0",
     "ts-jest": "^26.4.4",
     "typescript": "^4.1.2",
-    "vitepress": "^0.10.7",
+    "vitepress": "^0.11.1",
     "yorkie": "^2.0.0"
   },
   "gitHooks": {

@@ -98,6 +98,10 @@ export interface UserConfig {
    * Default: 'info'
    */
   logLevel?: LogLevel
+  /**
+   * Default: true
+   */
+  clearScreen?: boolean
 }
 
 export interface InlineConfig extends UserConfig {
@@ -237,7 +241,7 @@ export async function resolveConfig(
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
-    logger: createLogger(config.logLevel)
+    logger: createLogger(config.logLevel, config.clearScreen)
   }
 
   resolved.plugins = await resolvePlugins(
@@ -411,7 +415,11 @@ export async function loadConfigFromFile(
         const code = await bundleConfigFile(resolvedPath, 'es')
         userConfig = (
           await eval(
-            `import(${JSON.stringify(`data:text/javascript,${code}`)})`
+            `import(${JSON.stringify(
+              `data:text/javascript;base64,${Buffer.from(code).toString(
+                'base64'
+              )}`
+            )})`
           )
         ).default
         debug(`TS + native esm config loaded in ${Date.now() - start}ms`)
@@ -429,7 +437,7 @@ export async function loadConfigFromFile(
       // 1. try to directly require the module (assuming commonjs)
       try {
         // clear cache in case of server restart
-        delete require.cache[resolvedPath]
+        delete require.cache[require.resolve(resolvedPath)]
         userConfig = require(resolvedPath)
         debug(`cjs config loaded in ${Date.now() - start}ms`)
       } catch (e) {
@@ -481,12 +489,21 @@ async function bundleConfigFile(
     treeshake: false,
     plugins: [
       // use esbuild + node-resolve to support .ts files
-      esbuildPlugin({ target: 'es2019' }),
+      esbuildPlugin({ target: 'esnext' }),
       resolvePlugin({
         root: path.dirname(fileName),
         isBuild: true,
         asSrc: false
-      })
+      }),
+      {
+        name: 'replace-import-meta',
+        transform(code, id) {
+          return code.replace(
+            /\bimport\.meta\.url\b/g,
+            JSON.stringify(`file://${id}`)
+          )
+        }
+      }
     ]
   })
 
@@ -511,13 +528,14 @@ async function loadConfigFromBundledFile(
   const extension = path.extname(fileName)
   const defaultLoader = require.extensions[extension]!
   require.extensions[extension] = (module: NodeModule, filename: string) => {
-    if (filename === fileName) {
+    if (normalizePath(filename) === fileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
       defaultLoader(module, filename)
     }
   }
-  delete require.cache[fileName]
+  // clear cache in case of server restart
+  delete require.cache[require.resolve(fileName)]
   const raw = require(fileName)
   const config = raw.__esModule ? raw.default : raw
   require.extensions[extension] = defaultLoader

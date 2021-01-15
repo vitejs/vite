@@ -18,7 +18,7 @@ Today most JavaScript developers are familiar with the following ES modules synt
 import { foo } from './other-module'
 ```
 
-Today, this syntax has [wide native support in major browsers](https://caniuse.com/es6-module). However, before browsers had native support for ES modules, we had to rely on bundlers (Browserify, webpack, Parcel or Rollup) to combine all our module source code into a single file so that it can be served by the browser, even during development.
+This syntax already has [wide native support in major browsers](https://caniuse.com/es6-module). However, before browsers had native support for ES modules, we had to rely on bundlers (Browserify, webpack, Parcel or Rollup) to combine all our module source code into a single file so that it can be served by the browser, even during development.
 
 There are two downsides to bundling during development:
 
@@ -46,4 +46,4 @@ Ensuring optimal output and behavioral consistency between the dev server and th
 
 - Vite requires [native ESM dynamic import support](https://caniuse.com/es6-module-dynamic-import) during development.
 
-- The production build assumes a baseline support for [native ESM via script tags](https://caniuse.com/es6-module), and legacy browsers can be supported via an official plugin. See [Building for Production](./build) section.
+- The production build assumes a baseline support for [native ESM via script tags](https://caniuse.com/es6-module), and legacy browsers can be supported via an official plugin. See the [Building for Production](./build) section for more details.

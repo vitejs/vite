@@ -57,28 +57,33 @@ export function proxyMiddleware({
     proxies[context] = [proxy, { ...opts }]
   })
 
-  httpServer.on('upgrade', (req, socket, head) => {
-    const url = req.url!
-    for (const context in proxies) {
-      if (url.startsWith(context)) {
-        const [proxy, opts] = proxies[context]
-        if (
-          (opts.ws || opts.target?.toString().startsWith('ws:')) &&
-          req.headers['sec-websocket-protocol'] !== HMR_HEADER
-        ) {
-          if (opts.rewrite) {
-            req.url = opts.rewrite(url)
+  if (httpServer) {
+    httpServer.on('upgrade', (req, socket, head) => {
+      const url = req.url!
+      for (const context in proxies) {
+        if (url.startsWith(context)) {
+          const [proxy, opts] = proxies[context]
+          if (
+            (opts.ws || opts.target?.toString().startsWith('ws:')) &&
+            req.headers['sec-websocket-protocol'] !== HMR_HEADER
+          ) {
+            if (opts.rewrite) {
+              req.url = opts.rewrite(url)
+            }
+            proxy.ws(req, socket, head)
           }
-          proxy.ws(req, socket, head)
         }
       }
-    }
-  })
+    })
+  }
 
   return (req, res, next) => {
     const url = req.url!
     for (const context in proxies) {
-      if (url.startsWith(context)) {
+      if (
+        (context.startsWith('^') && new RegExp(context).test(url)) ||
+        url.startsWith(context)
+      ) {
         const [proxy, opts] = proxies[context]
 
         if (opts.bypass) {

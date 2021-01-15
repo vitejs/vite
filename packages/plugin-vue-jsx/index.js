@@ -62,7 +62,7 @@ function vueJsxPlugin(options = {}) {
 
         // check for hmr injection
         /**
-         * @type {{ name: string, hash: string }[]}
+         * @type {{ name: string }[]}
          */
         const declaredComponents = []
         /**
@@ -70,7 +70,6 @@ function vueJsxPlugin(options = {}) {
          *  local: string,
          *  exported: string,
          *  id: string,
-         *  hash: string
          * }[]}
          */
         const hotComponents = []
@@ -91,11 +90,10 @@ function vueJsxPlugin(options = {}) {
             ) {
               hotComponents.push(
                 ...parseComponentDecls(node.declaration, code).map(
-                  ({ name, hash: _hash }) => ({
+                  ({ name }) => ({
                     local: name,
                     exported: name,
-                    id: hash(id + name),
-                    hash: _hash
+                    id: hash(id + name)
                   })
                 )
               )
@@ -112,8 +110,7 @@ function vueJsxPlugin(options = {}) {
                     hotComponents.push({
                       local: spec.local.name,
                       exported: spec.exported.name,
-                      id: hash(id + spec.exported.name),
-                      hash: matched.hash
+                      id: hash(id + spec.exported.name)
                     })
                   }
                 }
@@ -131,8 +128,7 @@ function vueJsxPlugin(options = {}) {
                 hotComponents.push({
                   local: node.declaration.name,
                   exported: 'default',
-                  id: hash(id + 'default'),
-                  hash: matched.hash
+                  id: hash(id + 'default')
                 })
               }
             } else if (isDefineComponentCall(node.declaration)) {
@@ -140,10 +136,7 @@ function vueJsxPlugin(options = {}) {
               hotComponents.push({
                 local: '__default__',
                 exported: 'default',
-                id: hash(id + 'default'),
-                hash: hash(
-                  code.slice(node.declaration.start, node.declaration.end)
-                )
+                id: hash(id + 'default')
               })
             }
           }
@@ -160,14 +153,11 @@ function vueJsxPlugin(options = {}) {
           }
 
           let callbackCode = ``
-          for (const { local, exported, id, hash } of hotComponents) {
+          for (const { local, exported, id } of hotComponents) {
             code +=
               `\n${local}.__hmrId = "${id}"` +
-              `\n${local}.__hmrHash = "${hash}"` +
               `\n__VUE_HMR_RUNTIME__.createRecord("${id}", ${local})`
-            callbackCode +=
-              `\n  if (__${exported}.__hmrHash !== ${local}.__hmrHash) ` +
-              `__VUE_HMR_RUNTIME__.reload("${id}", __${exported})`
+            callbackCode += `\n__VUE_HMR_RUNTIME__.reload("${id}", __${exported})`
           }
 
           code += `\nimport.meta.hot.accept(({${hotComponents
@@ -195,8 +185,7 @@ function parseComponentDecls(node, source) {
   for (const decl of node.declarations) {
     if (decl.id.type === 'Identifier' && isDefineComponentCall(decl.init)) {
       names.push({
-        name: decl.id.name,
-        hash: hash(source.slice(decl.init.start, decl.init.end))
+        name: decl.id.name
       })
     }
   }

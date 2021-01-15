@@ -3,6 +3,7 @@ import chalk from 'chalk'
 import { Plugin } from 'rollup'
 import { ResolvedConfig } from '../config'
 import { sync as brotliSizeSync } from 'brotli-size'
+import { normalizePath } from '../utils'
 
 const enum WriteType {
   JS,
@@ -38,8 +39,13 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         ).toFixed(2)}kb`
       : ``
 
-    let outDir = path.posix.relative(process.cwd(), config.build.outDir)
-    if (!outDir.endsWith('/')) outDir += '/'
+    const outDir =
+      normalizePath(
+        path.relative(
+          config.root,
+          path.resolve(config.root, config.build.outDir)
+        )
+      ) + '/'
     config.logger.info(
       `${chalk.gray(chalk.white.dim(outDir))}${writeColors[type](
         filePath.padEnd(maxLength + 2)

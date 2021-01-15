@@ -22,6 +22,7 @@ interface GlobalCLIOptions {
   m?: string
   logLevel?: LogLevel
   l?: LogLevel
+  clearScreen?: boolean
 }
 
 /**
@@ -42,6 +43,7 @@ function cleanOptions(options: GlobalCLIOptions) {
   delete ret.m
   delete ret.logLevel
   delete ret.l
+  delete ret.clearScreen
   return ret
 }
 
@@ -49,6 +51,7 @@ cli
   .option('-c, --config <file>', `[string] use specified config file`)
   .option('-r, --root <path>', `[string] use specified root directory`)
   .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
+  .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
 
@@ -61,7 +64,7 @@ cli
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [browser]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
-  .option('--strict-port', `[boolean] exit if specified port is already in use`)
+  .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('-m, --mode <mode>', `[string] set env mode`)
   .option(
     '--force',
@@ -77,12 +80,14 @@ cli
         mode: options.mode,
         configFile: options.config,
         logLevel: options.logLevel,
+        clearScreen: options.clearScreen,
         server: cleanOptions(options) as ServerOptions
       })
       await server.listen()
     } catch (e) {
-      const logError = createLogger(options.logLevel).error
-      logError(chalk.red(`error when starting dev server:\n${e.stack}`))
+      createLogger(options.logLevel).error(
+        chalk.red(`error when starting dev server:\n${e.stack}`)
+      )
       process.exit(1)
     }
   })
@@ -113,6 +118,10 @@ cli
   )
   .option('--manifest', `[boolean] emit build manifest json`)
   .option('--watch', `[boolean] rebuilds when modules have changed on disk.`)
+  .option(
+    '--emptyOutDir',
+    `[boolean] force empty outDir when it's outside of root`
+  )
   .option('-m, --mode <mode>', `[string] set env mode`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
@@ -122,11 +131,13 @@ cli
         mode: options.mode,
         configFile: options.config,
         logLevel: options.logLevel,
+        clearScreen: options.clearScreen,
         build: cleanOptions(options) as BuildOptions
       })
     } catch (e) {
-      const logError = createLogger(options.logLevel).error
-      logError(chalk.red(`error during build:\n${e.stack}`))
+      createLogger(options.logLevel).error(
+        chalk.red(`error during build:\n${e.stack}`)
+      )
       process.exit(1)
     }
   })
@@ -153,8 +164,9 @@ cli
         )
         await optimizeDeps(config, options.force, true)
       } catch (e) {
-        const logError = createLogger(options.logLevel).error
-        logError(chalk.red(`error when optimizing deps:\n${e.stack}`))
+        createLogger(options.logLevel).error(
+          chalk.red(`error when optimizing deps:\n${e.stack}`)
+        )
         process.exit(1)
       }
     }

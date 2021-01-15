@@ -49,6 +49,14 @@ export default {
 
   Set to `false` to avoid generating polyfills and handle it yourself (will still generate legacy chunks with syntax transformations).
 
+### `additionalLegacyPolyfills`
+
+- **Type:** `string[]`
+
+  Add custom imports to the legacy polyfills chunk. Since the usage-based polyfill detection only covers ES language features, it may be necessary to manually specify additional DOM API polyfills using this option.
+
+  Note: if additional plyfills are needed for both the modern and legacy chunks, they can simply be imported in the application source code.
+
 ### `ignoreBrowserslistConfig`
 
 - **Type:** `boolean`
