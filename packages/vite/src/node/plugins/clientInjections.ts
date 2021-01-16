@@ -37,6 +37,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
         return code
           .replace(`__MODE__`, JSON.stringify(config.mode))
+          .replace(`__BASE__`, JSON.stringify(config.base))
           .replace(`__ROOT__`, JSON.stringify(config.root))
           .replace(`__DEFINES__`, JSON.stringify(config.define || {}))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))

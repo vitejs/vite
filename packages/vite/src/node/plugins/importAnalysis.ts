@@ -83,6 +83,7 @@ function markExplicitImport(url: string) {
  *     ```
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
+  const clientPublicPath = path.posix.join(config.base, CLIENT_PUBLIC_PATH)
   let server: ViteDevServer
 
   return {
@@ -159,11 +160,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<[string, string]> => {
-        if (
-          config.env.BASE_URL !== '/' &&
-          url.startsWith(config.env.BASE_URL)
-        ) {
-          url = url.replace(config.env.BASE_URL, '/')
+        if (config.base !== '/' && url.startsWith(config.base)) {
+          url = url.replace(config.base, '/')
         }
 
         const resolved = await this.resolve(url, importer)
@@ -205,7 +203,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url = markExplicitImport(url)
 
         // prepend base path without trailing slash ( default empty string )
-        url = config.env.BASE_URL_NOSLASH + url
+        url = path.posix.join(config.base, url)
 
         // for relative js/css imports, inherit importer's version query
         // do not do this for unknown type imports, otherwise the appended
@@ -304,7 +302,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // If resolvable, let's resolve it
         if (dynamicIndex === -1 || isLiteralDynamicId) {
           // skip client
-          if (url === config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH) {
+          if (url === clientPublicPath) {
             continue
           }
 
@@ -395,20 +393,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
         // inject hot context
         str().prepend(
-          `import { createHotContext as __vite__createHotContext } from "${
-            config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH
-          }";` +
+          `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              config.env.BASE_URL_NOSLASH + importerModule.url
+              path.posix.join(config.base, importerModule.url)
             )});`
         )
       }
 
       if (needQueryInjectHelper) {
         str().prepend(
-          `import { injectQuery as __vite__injectQuery } from "${
-            config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH
-          }";`
+          `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`
         )
       }
 

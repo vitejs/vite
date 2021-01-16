@@ -135,7 +135,6 @@ export async function handleHMRUpdate(
       ...[...boundaries].map(({ boundary, acceptedVia }) => ({
         type: `${boundary.type}-update` as Update['type'],
         timestamp,
-        base: config.env.BASE_URL_NOSLASH,
         path: boundary.url,
         acceptedPath: acceptedVia.url
       }))

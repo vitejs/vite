@@ -102,6 +102,11 @@ export interface UserConfig {
    * Default: true
    */
   clearScreen?: boolean
+  /**
+   * Base public path when served in development or production.
+   * @default '/'
+   */
+  base?: string
 }
 
 export interface InlineConfig extends UserConfig {
@@ -124,6 +129,7 @@ export type ResolvedConfig = Readonly<
     build: Required<BuildOptions>
     assetsInclude: (file: string) => boolean
     logger: Logger
+    base: string
   }
 >
 
@@ -203,7 +209,8 @@ export async function resolveConfig(
     process.env.NODE_ENV = 'production'
   }
 
-  const resolvedBuildOptions = resolveBuildOptions(config.build)
+  const BASE_URL = config.base || '/'
+  const resolvedBuildOptions = resolveBuildOptions(BASE_URL, config.build)
 
   // resolve optimizer cache directory
   const pkgPath = lookupFile(
@@ -218,17 +225,10 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
-  const serverBase = config.server?.base || '/'
-  const BASE_URL = command === 'build' ? resolvedBuildOptions.base : serverBase
-  const trailingSlashRE = /\/$/
-
-  let hmr = undefined
-  if (serverBase !== '/') {
-    hmr = config.server?.hmr === true ? {} : config.server?.hmr
-    hmr = {
-      ...hmr,
-      path: BASE_URL !== '/' ? BASE_URL.substr(1) : undefined
-    }
+  let hmr = config.server?.hmr === true ? {} : config.server?.hmr
+  hmr = {
+    ...hmr,
+    path: BASE_URL !== '/' ? BASE_URL.substr(1) : undefined
   }
 
   const server = {
@@ -252,7 +252,6 @@ export async function resolveConfig(
     env: {
       ...userEnv,
       BASE_URL,
-      BASE_URL_NOSLASH: BASE_URL.replace(trailingSlashRE, ''),
       MODE: mode,
       DEV: !isProduction,
       PROD: isProduction
@@ -260,7 +259,8 @@ export async function resolveConfig(
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
-    logger: createLogger(config.logLevel, config.clearScreen)
+    logger: createLogger(config.logLevel, config.clearScreen),
+    base: BASE_URL
   }
 
   resolved.plugins = await resolvePlugins(

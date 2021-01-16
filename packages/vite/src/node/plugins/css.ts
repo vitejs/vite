@@ -112,7 +112,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           thisModule.isSelfAccepting = isSelfAccepting
         }
         // rewrite urls using current module's url as base
-        css = await rewriteCssUrls(css, thisModule.url, config.env.BASE_URL_NOSLASH)
+        css = await rewriteCssUrls(css, thisModule.url, config.base)
       } else {
         // if build, analyze url() asset reference
         // account for comments https://github.com/vitejs/vite/issues/426
@@ -157,7 +157,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // server only
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
-              config.env.BASE_URL_NOSLASH + CLIENT_PUBLIC_PATH
+              path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
             `const id = ${JSON.stringify(id)}`,
             `const css = ${JSON.stringify(css)}`,
@@ -598,7 +598,10 @@ function rewriteCssUrls(
   let replacer: Replacer
   if (typeof replacerOrBase === 'string') {
     replacer = (rawUrl) => {
-      return prependBase + path.posix.resolve(path.posix.dirname(replacerOrBase), rawUrl)
+      return path.posix.join(
+        prependBase,
+        path.posix.resolve(path.posix.dirname(replacerOrBase), rawUrl)
+      )
     }
   } else {
     replacer = replacerOrBase

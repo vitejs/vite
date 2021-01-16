@@ -104,7 +104,7 @@ export function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, { root, env }: ResolvedConfig) {
+function fileToDevUrl(id: string, { root, base }: ResolvedConfig) {
   let rtn: string
 
   if (checkPublicFile(id, root)) {
@@ -119,7 +119,7 @@ function fileToDevUrl(id: string, { root, env }: ResolvedConfig) {
     rtn = FS_PREFIX + id
   }
 
-  return env.BASE_URL_NOSLASH + rtn
+  return path.posix.join(base, rtn)
 }
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()

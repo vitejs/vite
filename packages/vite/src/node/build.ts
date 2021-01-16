@@ -160,10 +160,11 @@ export interface LibraryOptions {
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export function resolveBuildOptions(
+  base: string,
   raw?: BuildOptions
 ): Required<BuildOptions> {
   const resolved: Required<BuildOptions> = {
-    base: '/',
+    base: base || '/',
     target: 'modules',
     polyfillDynamicImport: raw?.target !== 'esnext' && !raw?.lib,
     outDir: 'dist',

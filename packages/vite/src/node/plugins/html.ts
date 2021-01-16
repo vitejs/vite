@@ -48,8 +48,21 @@ export function htmlPlugin(): Plugin {
   }
 }
 
+export function formatParseError(e: any, id: string, html: string): Error {
+  // normalize the error to rollup format
+  if (e.loc) {
+    e.frame = generateCodeFrame(html, e.loc.start.offset)
+    e.loc = {
+      file: id,
+      line: e.loc.start.line,
+      column: e.loc.start.column
+    }
+  }
+  return e
+}
+
 // this extends the config in @vue/compiler-sfc with <link href>
-const assetAttrsConfig: Record<string, string[]> = {
+export const assetAttrsConfig: Record<string, string[]> = {
   link: ['href'],
   video: ['src', 'poster'],
   source: ['src'],
@@ -76,19 +89,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // pre-transform
         html = await applyHtmlTransforms(html, publicPath, id, preHooks)
 
-        function formatError(e: any): Error {
-          // normalize the error to rollup format
-          if (e.loc) {
-            e.frame = generateCodeFrame(html, e.loc.start.offset)
-            e.loc = {
-              file: id,
-              line: e.loc.start.line,
-              column: e.loc.start.column
-            }
-          }
-          return e
-        }
-
         // lazy load compiler-dom
         const { parse, transform } = await import('@vue/compiler-dom')
         // @vue/compiler-core doesn't like lowercase doctypes
@@ -97,7 +97,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         try {
           ast = parse(html, { comments: true })
         } catch (e) {
-          this.error(formatError(e))
+          this.error(formatParseError(e, id, html))
         }
 
         let js = ''
@@ -189,7 +189,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             nodeTransforms: [viteHtmlTransform]
           })
         } catch (e) {
-          this.error(formatError(e))
+          this.error(formatParseError(e, id, html))
         }
 
         // for each encountered asset url, rewrite original html so that it

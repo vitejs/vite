@@ -10,9 +10,9 @@ import {
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
-  : '/nested/asset.png'
+  : '/foo/nested/asset.png'
 
-const iconMatch = isBuild ? `/foo/icon.png` : `icon.png`
+const iconMatch = `/foo/icon.png`
 
 test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
@@ -66,7 +66,7 @@ describe('css url() references', () => {
   })
 
   test('base64 inline', async () => {
-    const match = isBuild ? `data:image/png;base64` : `/icon.png`
+    const match = isBuild ? `data:image/png;base64` : `/foo/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
   })

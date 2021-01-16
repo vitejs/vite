@@ -305,7 +305,8 @@ export async function createServer(
     app.use(proxyMiddleware(server))
   }
 
-  if (config.env.BASE_URL !== '/') {
+  // base
+  if (config.base !== '/') {
     app.use(baseMiddleware(server))
   }
 
@@ -427,11 +428,11 @@ async function startServer(
   let port = inlinePort || options.port || 3000
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
-  const base = options.base || '/'
   const info = server.config.logger.info
+  const base = server.config.base
 
   if (!base.startsWith('/') || !base.endsWith('/')) {
-    throw new Error(`server.base must start and end with "/".`)
+    throw new Error(`"base" must start and end with "/".`)
   }
 
   return new Promise((resolve, reject) => {
