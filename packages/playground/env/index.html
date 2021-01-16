@@ -1,44 +1,37 @@
 <h1>Environment Variables</h1>
+<p>import.meta.env.BASE_URL: <code class="base"></code></p>
+<p>import.meta.env.MODE: <code class="mode"></code></p>
+<p>import.meta.env.DEV: <code class="dev"></code></p>
+<p>import.meta.env.PROD: <code class="prod"></code></p>
+<p>import.meta.env.VITE_CUSTOM_ENV_VARIABLE: <code class="custom"></code></p>
 <p>
-  import.meta.env.BASE_URL: <code class="base"></code>
+  import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME: <code class="mode-file"></code>
 </p>
-<p>
-  import.meta.env.MODE: <code class="mode"></code>
-</p>
-<p >
-  import.meta.env.DEV: <code class="dev"></code>
-</p>
-<p >
-  import.meta.env.PROD: <code class="prod"></code>
-</p>
-<p >
-  import.meta.env.VITE_CUSTOM_ENV_VARIABLE: <code class="custom"></code>
-</p>
-<p >
- import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME: <code class="mode-file"></code>
-</p>
-<p >
-  import.meta.env.VITE_INLINE: <code class="inline"></code>
- </p>
-<p>
-  process.env.NODE_ENV: <code class="node-env"></code>
-</p>
-<p >
-  import.meta.env: <pre class="env-object"></pre>
-</p>
+<p>import.meta.env.VITE_INLINE: <code class="inline"></code></p>
+<p>process.env.NODE_ENV: <code class="node-env"></code></p>
+<p>import.meta.env: <span class="pre env-object"></span></p>
 
 <script type="module">
-text('.base', import.meta.env.BASE_URL)
-text('.mode', import.meta.env.MODE)
-text('.dev', import.meta.env.DEV)
-text('.prod', import.meta.env.PROD)
-text('.custom', import.meta.env.VITE_CUSTOM_ENV_VARIABLE)
-text('.mode-file', import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME)
-text('.inline', import.meta.env.VITE_INLINE)
-text('.node-env', process.env.NODE_ENV)
-text('.env-object', JSON.stringify(import.meta.env, null, 2))
+  text('.base', import.meta.env.BASE_URL)
+  text('.mode', import.meta.env.MODE)
+  text('.dev', import.meta.env.DEV)
+  text('.prod', import.meta.env.PROD)
+  text('.custom', import.meta.env.VITE_CUSTOM_ENV_VARIABLE)
+  text('.mode-file', import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME)
+  text('.inline', import.meta.env.VITE_INLINE)
+  text('.node-env', process.env.NODE_ENV)
+  text('.env-object', JSON.stringify(import.meta.env, null, 2))
 
-function text(el, text) {
-  document.querySelector(el).textContent = text
-}
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
 </script>
+
+<style>
+  .pre {
+    display: block;
+    unicode-bidi: embed;
+    font-family: monospace;
+    white-space: pre;
+  }
+</style>

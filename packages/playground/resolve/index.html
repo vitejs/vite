@@ -1,7 +1,7 @@
 <h1>Resolve</h1>
 
 <h2>Deep import</h2>
-<p>Should show [2,4]:<pre class="deep-import">fail</pre></p>
+<p>Should show [2,4]:<span class="pre deep-import">fail</span></p>
 
 <h2>Entry resolving with exports field</h2>
 <p class="exports-entry">fail</p>
@@ -54,9 +54,7 @@
     yield 8
   })()
 
-  text('.deep-import', JSON.stringify(
-    slicedToArray(iterable, 2)
-  ))
+  text('.deep-import', JSON.stringify(slicedToArray(iterable, 2)))
 
   // exports field
   import { msg } from 'resolve-exports-path'
@@ -108,3 +106,12 @@
   import { msg as inlineMsg } from './inline-package'
   text('.inline-pkg', inlineMsg)
 </script>
+
+<style>
+  .pre {
+    display: block;
+    unicode-bidi: embed;
+    font-family: monospace;
+    white-space: pre;
+  }
+</style>
