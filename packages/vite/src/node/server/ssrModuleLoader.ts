@@ -1,6 +1,12 @@
 import path from 'path'
 import { ViteDevServer } from '..'
 import { resolveFrom } from '../utils'
+import {
+  ssrExportAllKey,
+  ssrModuleExportsKey,
+  ssrImportKey,
+  ssrImportMetaKey
+} from './ssrTransform'
 import { transformRequest } from './transformRequest'
 
 export async function ssrLoadModule(
@@ -29,30 +35,67 @@ export async function ssrLoadModule(
     })
   )
 
-  const __import__ = (dep: string) => {
+  const ssrModule = {}
+  const ssrImportMeta = {
+    url,
+    get hot() {
+      // TODO better error location
+      throw new Error('import.meta.hot is not available in code targeting SSR.')
+    }
+  }
+
+  const ssrImport = (dep: string) => {
     if (external?.includes(dep)) {
-      if (mod.file) {
-        return require(resolveFrom(dep, path.dirname(mod.file)))
-      } else {
-        return require(dep)
-      }
+      return nodeRequire(dep, mod.file)
     } else {
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     }
   }
-  const __exports__ = {}
 
-  try {
-    new Function(`__import__`, `__exports__`, result.code)(
-      __import__,
-      __exports__
-    )
-  } catch (e) {
-    // console.log(e.message)
-    // console.log(result.code)
-    // TODO
+  function ssrExportAll(sourceModule: any) {
+    for (const key in sourceModule) {
+      if (key !== 'default') {
+        Object.defineProperty(ssrModule, key, {
+          get() {
+            return sourceModule[key]
+          }
+        })
+      }
+    }
   }
 
-  mod.ssrModule = __exports__
-  return __exports__
+  try {
+    new Function(
+      ssrModuleExportsKey,
+      ssrImportMetaKey,
+      ssrImportKey,
+      ssrExportAllKey,
+      result.code
+    )(ssrModule, ssrImportMeta, ssrImport, ssrExportAll)
+  } catch (e) {
+    // TODO source map
+    server.config.logger.error(
+      `Error when evaluating SSR module ${url}:\n${e.stack}`,
+      {
+        timestamp: true,
+        clear: true
+      }
+    )
+  }
+
+  mod.ssrModule = ssrModule
+  return ssrModule
+}
+
+function nodeRequire(id: string, importer: string | null) {
+  const mod = importer
+    ? require(resolveFrom(id, path.dirname(importer)))
+    : require(id)
+  // rollup-style default import interop for cjs
+  return new Proxy(mod, {
+    get(mod, prop) {
+      if (prop === 'default') return mod
+      return mod[prop]
+    }
+  })
 }
