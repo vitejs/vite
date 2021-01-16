@@ -102,6 +102,7 @@
     "okie": "^1.0.1",
     "open": "^7.3.0",
     "open-in-editor": "^2.2.0",
+    "periscopic": "^2.0.3",
     "postcss-import": "^13.0.0",
     "postcss-load-config": "^3.0.0",
     "postcss-modules": "^4.0.0",
