@@ -3,15 +3,24 @@
 <p>String <code class="string"></code></p>
 <p>Number <code class="number"></code></p>
 <p>Boolean <code class="boolean"></code></p>
-<p>Object <pre class="object"></pre></p>
+<p>Object <span class="pre object"></span></p>
 
 <script type="module">
-text('.string', __STRING__)
-text('.number', __NUMBER__)
-text('.boolean', __BOOLEAN__)
-text('.object', JSON.stringify(__OBJ__, null, 2))
+  text('.string', __STRING__)
+  text('.number', __NUMBER__)
+  text('.boolean', __BOOLEAN__)
+  text('.object', JSON.stringify(__OBJ__, null, 2))
 
-function text(el, text) {
-  document.querySelector(el).textContent = text
-}
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
 </script>
+
+<style>
+  .pre {
+    display: block;
+    unicode-bidi: embed;
+    font-family: monospace;
+    white-space: pre;
+  }
+</style>

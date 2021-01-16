@@ -19,18 +19,21 @@
   async function testWasm(init, resultElement) {
     const { exported_func } = await init({
       imports: {
-        imported_func: (res) => resultElement.textContent = res
+        imported_func: (res) => (resultElement.textContent = res)
       }
     })
     exported_func()
   }
 
-  document.querySelector('.inline-wasm .run')
+  document
+    .querySelector('.inline-wasm .run')
     .addEventListener('click', async () =>
-      testWasm(light, document.querySelector('.inline-wasm .result')))
+      testWasm(light, document.querySelector('.inline-wasm .result'))
+    )
 
-  document.querySelector('.output-wasm .run')
+  document
+    .querySelector('.output-wasm .run')
     .addEventListener('click', async () =>
-      testWasm(heavy, document.querySelector('.output-wasm .result')))
-
+      testWasm(heavy, document.querySelector('.output-wasm .result'))
+    )
 </script>

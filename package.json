@@ -60,6 +60,9 @@
     "*.ts": [
       "eslint",
       "prettier --parser=typescript --write"
+    ],
+    "*.html": [
+      "prettier --write"
     ]
   }
 }
