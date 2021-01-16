@@ -275,8 +275,8 @@ export function tryNodeResolve(
   if (
     deepMatch &&
     server &&
-    server.optimizeDepsMetadata &&
-    pkg.data.name in server.optimizeDepsMetadata.map &&
+    server._optimizeDepsMetadata &&
+    pkg.data.name in server._optimizeDepsMetadata.map &&
     !isCSSRequest(id) &&
     !server.config.assetsInclude(id)
   ) {
@@ -316,7 +316,7 @@ export function tryNodeResolve(
     // files actually inside node_modules so that locally linked packages
     // in monorepos are not cached this way.
     if (resolved.includes('node_modules')) {
-      const versionHash = server?.optimizeDepsMetadata?.hash
+      const versionHash = server?._optimizeDepsMetadata?.hash
       if (versionHash) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
@@ -330,7 +330,7 @@ export function tryOptimizedResolve(
   server: ViteDevServer
 ): string | undefined {
   const cacheDir = server.config.optimizeCacheDir
-  const depData = server.optimizeDepsMetadata
+  const depData = server._optimizeDepsMetadata
   if (cacheDir && depData) {
     const [id, q] = rawId.split(`?`, 2)
     const query = q ? `?${q}` : ``

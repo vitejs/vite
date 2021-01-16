@@ -294,7 +294,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             continue
           }
           // skip ssr external
-          if (ssr && config.ssrExternal?.includes(url)) {
+          if (ssr && server._ssrExternals?.includes(url)) {
             continue
           }
           // skip client
@@ -459,7 +459,10 @@ function isSupportedDynamicImport(url: string) {
 
 function isOptimizedCjs(
   id: string,
-  { optimizeDepsMetadata, config: { optimizeCacheDir } }: ViteDevServer
+  {
+    _optimizeDepsMetadata: optimizeDepsMetadata,
+    config: { optimizeCacheDir }
+  }: ViteDevServer
 ): boolean {
   if (optimizeDepsMetadata && optimizeCacheDir) {
     const relative = path.relative(optimizeCacheDir, cleanUrl(id))

@@ -42,6 +42,7 @@ import {
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from './ssrModuleLoader'
+import { resolveSSRExternal } from '../ssrExternal'
 
 export interface ServerOptions {
   host?: string
@@ -197,7 +198,12 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  optimizeDepsMetadata: DepOptimizationMetadata | null
+  _optimizeDepsMetadata: DepOptimizationMetadata | null
+  /**
+   * Deps that are extenralized
+   * @internal
+   */
+  _ssrExternals: string[] | null
 }
 
 export async function createServer(
@@ -239,12 +245,14 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
-    optimizeDepsMetadata: null,
     transformWithEsbuild,
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
     ssrLoadModule(url) {
+      if (!server._ssrExternals) {
+        server._ssrExternals = resolveSSRExternal(config.root)
+      }
       return ssrLoadModule(url, server)
     },
     listen(port?: number) {
@@ -257,7 +265,9 @@ export async function createServer(
         container.close(),
         closeHttpServer()
       ])
-    }
+    },
+    _optimizeDepsMetadata: null,
+    _ssrExternals: null
   }
 
   process.once('SIGTERM', async () => {
@@ -373,7 +383,7 @@ export async function createServer(
       // after optimization, read updated optimization metadata
       const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
       if (fs.existsSync(dataPath)) {
-        server.optimizeDepsMetadata = JSON.parse(
+        server._optimizeDepsMetadata = JSON.parse(
           fs.readFileSync(dataPath, 'utf-8')
         )
       }

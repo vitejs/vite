@@ -28,6 +28,7 @@ import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
+import { resolveSSRExternal } from './ssrExternal'
 
 export interface BuildOptions {
   /**
@@ -290,10 +291,9 @@ async function doBuild(
 
   // inject ssrExternal if present
   const userExternal = options.rollupOptions?.external
-  const external =
-    options.ssr && config.ssrExternal
-      ? resolveExternal(config.ssrExternal, userExternal)
-      : userExternal
+  const external = options.ssr
+    ? resolveExternal(resolveSSRExternal(config.root), userExternal)
+    : userExternal
 
   const rollup = require('rollup') as typeof Rollup
 
