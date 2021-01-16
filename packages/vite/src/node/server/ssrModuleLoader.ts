@@ -12,8 +12,16 @@ import { transformRequest } from './transformRequest'
 
 export async function ssrLoadModule(
   url: string,
-  server: ViteDevServer
+  server: ViteDevServer,
+  urlStack: string[] = []
 ): Promise<Record<string, any>> {
+  if (urlStack.includes(url)) {
+    server.config.logger.warn(
+      `Circular dependency: ${urlStack.join(' -> ')} -> ${url}`
+    )
+    return {}
+  }
+
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url)
   if (mod.ssrModule) {
@@ -31,7 +39,7 @@ export async function ssrLoadModule(
   await Promise.all(
     result.deps!.map((dep) => {
       if (!isExternal(dep)) {
-        return ssrLoadModule(dep, server)
+        return ssrLoadModule(dep, server, urlStack.concat(url))
       }
     })
   )
@@ -61,7 +69,7 @@ export async function ssrLoadModule(
     if (isExternal(dep)) {
       return Promise.resolve(nodeRequire(dep, mod.file))
     } else {
-      return ssrLoadModule(dep, server)
+      return ssrLoadModule(dep, server, urlStack.concat(url))
     }
   }
 
