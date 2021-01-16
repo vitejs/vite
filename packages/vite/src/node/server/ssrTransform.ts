@@ -18,6 +18,7 @@ type Node = _Node & {
 
 export const ssrModuleExportsKey = `__vite_ssr_exports__`
 export const ssrImportKey = `__vite_ssr_import__`
+export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
@@ -152,7 +153,7 @@ export async function ssrTransform(
       s.overwrite(node.start, node.end, ssrImportMetaKey)
     },
     onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrImportKey)
+      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
     }
   })
 

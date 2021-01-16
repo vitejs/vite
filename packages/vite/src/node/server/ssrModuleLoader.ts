@@ -5,7 +5,8 @@ import {
   ssrExportAllKey,
   ssrModuleExportsKey,
   ssrImportKey,
-  ssrImportMetaKey
+  ssrImportMetaKey,
+  ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from './transformRequest'
 
@@ -25,17 +26,21 @@ export async function ssrLoadModule(
     throw new Error(`failed to load module for ssr: $${url}`)
   }
 
-  const external = server.config.ssrExternal
+  const isExternal = (dep: string) => dep[0] !== '.' && dep[0] !== '/'
 
   await Promise.all(
     result.deps!.map((dep) => {
-      if (!external?.includes(dep)) {
+      if (!isExternal(dep)) {
         return ssrLoadModule(dep, server)
       }
     })
   )
 
-  const ssrModule = {}
+  const ssrModule = {
+    [Symbol.toStringTag]: 'Module'
+  }
+  Object.defineProperty(ssrModule, '__esModule', { value: true })
+
   const ssrImportMeta = {
     url,
     get hot() {
@@ -45,10 +50,18 @@ export async function ssrLoadModule(
   }
 
   const ssrImport = (dep: string) => {
-    if (external?.includes(dep)) {
+    if (isExternal(dep)) {
       return nodeRequire(dep, mod.file)
     } else {
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
+    }
+  }
+
+  const ssrDynamicImport = (dep: string) => {
+    if (isExternal(dep)) {
+      return Promise.resolve(nodeRequire(dep, mod.file))
+    } else {
+      return ssrLoadModule(dep, server)
     }
   }
 
@@ -69,9 +82,10 @@ export async function ssrLoadModule(
       ssrModuleExportsKey,
       ssrImportMetaKey,
       ssrImportKey,
+      ssrDynamicImportKey,
       ssrExportAllKey,
       result.code
-    )(ssrModule, ssrImportMeta, ssrImport, ssrExportAll)
+    )(ssrModule, ssrImportMeta, ssrImport, ssrDynamicImport, ssrExportAll)
   } catch (e) {
     // TODO source map
     server.config.logger.error(
