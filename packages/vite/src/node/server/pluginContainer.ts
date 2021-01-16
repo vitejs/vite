@@ -460,12 +460,11 @@ export async function createPluginContainer(
         }
       }
 
-      if (id) {
-        partial.id = isExternalUrl(id) ? id : normalizePath(id)
-        return partial as PartialResolvedId
-      } else {
+      if (!id) {
         return null
       }
+      partial.id = isExternalUrl(id) ? id : normalizePath(id)
+      return partial as PartialResolvedId
     },
 
     async load(id) {

@@ -355,15 +355,14 @@ async function doBuild(
       libOptions,
       config.logger
     )
-    if (Array.isArray(outputs)) {
-      const res = []
-      for (const output of outputs) {
-        res.push(await generate(output))
-      }
-      return res
-    } else {
+    if (!Array.isArray(outputs)) {
       return generate(outputs)
     }
+    const res = []
+    for (const output of outputs) {
+      res.push(await generate(output))
+    }
+    return res
   } catch (e) {
     config.logger.error(
       chalk.red(`${e.plugin ? `[${e.plugin}] ` : ``}${e.message}`)

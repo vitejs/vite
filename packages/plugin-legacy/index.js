@@ -300,26 +300,24 @@ function viteLegacyPlugin(options = {}) {
       const legacyEntryFilename = facadeToLegacyChunkMap.get(
         chunk.facadeModuleId
       )
-      if (legacyEntryFilename) {
-        tags.push({
-          tag: 'script',
-          attrs: {
-            nomodule: true,
-            // we set the entry path on the element as an attribute so that the
-            // script content will stay consistent - which allows using a constant
-            // hash value for CSP.
-            id: legacyEntryId,
-            'data-src': config.build.base + legacyEntryFilename
-          },
-          children: systemJSInlineCode,
-          injectTo: 'body'
-        })
-      } else {
+      if (!legacyEntryFilename) {
         throw new Error(
           `No corresponding legacy entry chunk found for ${htmlFilename}`
         )
       }
-
+      tags.push({
+        tag: 'script',
+        attrs: {
+          nomodule: true,
+          // we set the entry path on the element as an attribute so that the
+          // script content will stay consistent - which allows using a constant
+          // hash value for CSP.
+          id: legacyEntryId,
+          'data-src': config.build.base + legacyEntryFilename
+        },
+        children: systemJSInlineCode,
+        injectTo: 'body'
+      })
       return {
         html,
         tags

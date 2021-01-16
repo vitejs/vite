@@ -46,17 +46,16 @@ export function createLogger(
     if (thresh >= LogLevels[type]) {
       const method = type === 'info' ? 'log' : type
       const format = () => {
-        if (options.timestamp) {
-          const tag =
-            type === 'info'
-              ? chalk.cyan.bold(`[vite]`)
-              : type === 'warn'
-              ? chalk.yellow.bold(`[vite]`)
-              : chalk.red.bold(`[vite]`)
-          return `${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
-        } else {
+        if (!options.timestamp) {
           return msg
         }
+        const tag =
+          type === 'info'
+            ? chalk.cyan.bold(`[vite]`)
+            : type === 'warn'
+            ? chalk.yellow.bold(`[vite]`)
+            : chalk.red.bold(`[vite]`)
+        return `${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
       }
       if (type === lastType && msg === lastMsg) {
         sameCount++

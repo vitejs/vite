@@ -38,11 +38,10 @@ export function htmlPlugin(): Plugin {
         for (let i = 0; i <= index; i++) {
           match = scriptModuleRE.exec(html)
         }
-        if (match) {
-          return match[2]
-        } else {
+        if (!match) {
           throw new Error(`No matching html proxy module found from ${id}`)
         }
+        return match[2]
       }
     }
   }
@@ -525,9 +524,8 @@ const unaryTags = new Set(['link', 'meta', 'base'])
 function serializeTag({ tag, attrs, children }: HtmlTagDescriptor): string {
   if (unaryTags.has(tag)) {
     return `<${tag}${serializeAttrs(attrs)}>`
-  } else {
-    return `<${tag}${serializeAttrs(attrs)}>${serializeTags(children)}</${tag}>`
   }
+  return `<${tag}${serializeAttrs(attrs)}>${serializeTags(children)}</${tag}>`
 }
 
 function serializeTags(tags: HtmlTagDescriptor['children']): string {

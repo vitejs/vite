@@ -169,20 +169,20 @@ async function genTemplateCode(
       options,
       pluginContext
     )
-  } else {
-    if (template.src) {
-      await linkSrcToDescriptor(template.src, descriptor, pluginContext)
-    }
-    const src = template.src || descriptor.filename
-    const srcQuery = template.src ? `&src` : ``
-    const attrsQuery = attrsToQuery(template.attrs, 'js', true)
-    const query = `?vue&type=template${srcQuery}${attrsQuery}`
-    const request = JSON.stringify(src + query)
-    const renderFnName = options.ssr ? 'ssrRender' : 'render'
-    return {
-      code: `import { ${renderFnName} as _sfc_${renderFnName} } from ${request}`,
-      map: undefined
-    }
+  }
+
+  if (template.src) {
+    await linkSrcToDescriptor(template.src, descriptor, pluginContext)
+  }
+  const src = template.src || descriptor.filename
+  const srcQuery = template.src ? `&src` : ``
+  const attrsQuery = attrsToQuery(template.attrs, 'js', true)
+  const query = `?vue&type=template${srcQuery}${attrsQuery}`
+  const request = JSON.stringify(src + query)
+  const renderFnName = options.ssr ? 'ssrRender' : 'render'
+  return {
+    code: `import { ${renderFnName} as _sfc_${renderFnName} } from ${request}`,
+    map: undefined
   }
 }
 

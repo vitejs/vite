@@ -187,13 +187,12 @@ export function resolvePlugin(
               id,
               external: true
             }
-          } else {
-            this.warn(
-              `externalized node built-in "${id}" to empty module. ` +
-                `(imported by: ${chalk.white.dim(importer)})`
-            )
-            return browserExternalId
           }
+          this.warn(
+            `externalized node built-in "${id}" to empty module. ` +
+              `(imported by: ${chalk.white.dim(importer)})`
+          )
+          return browserExternalId
         }
       }
 
@@ -234,19 +233,18 @@ function tryResolveFile(
 ): string | undefined {
   if (fs.existsSync(file)) {
     const isDir = fs.statSync(file).isDirectory()
-    if (isDir) {
-      if (tryIndex) {
-        const index = tryFsResolve(file + '/index', isProduction, false)
-        if (index) return normalizePath(index) + query
-      }
-      const pkgPath = file + '/package.json'
-      if (fs.existsSync(pkgPath)) {
-        // path points to a node package
-        const pkg = loadPackageData(pkgPath)
-        return resolvePackageEntry(file, pkg, isProduction)
-      }
-    } else {
+    if (!isDir) {
       return normalizePath(file) + query
+    }
+    if (tryIndex) {
+      const index = tryFsResolve(file + '/index', isProduction, false)
+      if (index) return normalizePath(index) + query
+    }
+    const pkgPath = file + '/package.json'
+    if (fs.existsSync(pkgPath)) {
+      // path points to a node package
+      const pkg = loadPackageData(pkgPath)
+      return resolvePackageEntry(file, pkg, isProduction)
     }
   }
 }
@@ -314,19 +312,18 @@ export function tryNodeResolve(
       id: resolved,
       moduleSideEffects: pkg.hasSideEffects(resolved)
     }
-  } else {
-    // During serve, inject a version query to npm deps so that the browser
-    // can cache it without revalidation. Make sure to apply this only to
-    // files actually inside node_modules so that locally linked packages
-    // in monorepos are not cached this way.
-    if (resolved.includes('node_modules')) {
-      const versionHash = server?.optimizeDepsMetadata?.hash
-      if (versionHash) {
-        resolved = injectQuery(resolved, `v=${versionHash}`)
-      }
-    }
-    return { id: resolved }
   }
+  // During serve, inject a version query to npm deps so that the browser
+  // can cache it without revalidation. Make sure to apply this only to
+  // files actually inside node_modules so that locally linked packages
+  // in monorepos are not cached this way.
+  if (resolved.includes('node_modules')) {
+    const versionHash = server?.optimizeDepsMetadata?.hash
+    if (versionHash) {
+      resolved = injectQuery(resolved, `v=${versionHash}`)
+    }
+  }
+  return { id: resolved }
 }
 
 export function tryOptimizedResolve(
@@ -482,12 +479,12 @@ export function resolvePackageEntry(
       )
     resolvedImports['.'] = resolvedEntryPont
     return resolvedEntryPont
-  } else {
-    throw new Error(
-      `Failed to resolve entry for package "${id}". ` +
-        `The package may have incorrect main/module/exports specified in its package.json.`
-    )
   }
+
+  throw new Error(
+    `Failed to resolve entry for package "${id}". ` +
+      `The package may have incorrect main/module/exports specified in its package.json.`
+  )
 }
 
 function resolveDeepImport(
@@ -547,19 +544,18 @@ function tryResolveBrowserMapping(
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
-    if (browserMappedPath) {
-      const fsPath = path.resolve(pkg.dir, browserMappedPath)
-      if ((res = tryFsResolve(fsPath, isProduction))) {
-        isDebug &&
-          debug(`[browser mapped] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-        idToPkgMap.set(res, pkg)
-        return {
-          id: res,
-          moduleSideEffects: pkg.hasSideEffects(res)
-        }
-      }
-    } else {
+    if (!browserMappedPath) {
       return browserExternalId
+    }
+    const fsPath = path.resolve(pkg.dir, browserMappedPath)
+    if ((res = tryFsResolve(fsPath, isProduction))) {
+      isDebug &&
+        debug(`[browser mapped] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+      idToPkgMap.set(res, pkg)
+      return {
+        id: res,
+        moduleSideEffects: pkg.hasSideEffects(res)
+      }
     }
   }
 }

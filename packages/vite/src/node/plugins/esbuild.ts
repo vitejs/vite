@@ -70,20 +70,19 @@ export async function transformWithEsbuild(
 
   try {
     const result = await service.transform(code, resolvedOptions)
-    if (inMap) {
-      const nextMap = JSON.parse(result.map)
-      // merge-source-map will overwrite original sources if newMap also has
-      // sourcesContent
-      nextMap.sourcesContent = []
-      return {
-        ...result,
-        map: merge(inMap, nextMap) as SourceMap
-      }
-    } else {
+    if (!inMap) {
       return {
         ...result,
         map: JSON.parse(result.map)
       }
+    }
+    const nextMap = JSON.parse(result.map)
+    // merge-source-map will overwrite original sources if newMap also has
+    // sourcesContent
+    nextMap.sourcesContent = []
+    return {
+      ...result,
+      map: merge(inMap, nextMap) as SourceMap
     }
   } catch (e) {
     debug(`esbuild error with options used: `, resolvedOptions)

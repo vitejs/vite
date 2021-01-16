@@ -326,9 +326,8 @@ export async function createServer(
             const rewritten = parsedUrl.pathname + 'index.html'
             if (fs.existsSync(path.join(root, rewritten))) {
               return rewritten
-            } else {
-              return `/index.html`
             }
+            return `/index.html`
           }
         }
       ]
@@ -398,15 +397,14 @@ async function resolveHttpServer(
   if (proxy) {
     // #484 fallback to http1 when proxy is needed.
     return require('https').createServer(httpsOptions, app)
-  } else {
-    return require('http2').createSecureServer(
-      {
-        ...httpsOptions,
-        allowHTTP1: true
-      },
-      app
-    )
   }
+  return require('http2').createSecureServer(
+    {
+      ...httpsOptions,
+      allowHTTP1: true
+    },
+    app
+  )
 }
 
 async function startServer(
@@ -478,18 +476,17 @@ async function startServer(
       const profileSession = global.__vite_profile_session
       if (profileSession) {
         profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
-          // Write profile to disk, upload, etc.
-          if (!err) {
-            const outPath = path.resolve('./vite-profile.cpuprofile')
-            fs.writeFileSync(outPath, JSON.stringify(profile))
-            info(
-              chalk.yellow(
-                `  CPU profile written to ${chalk.white.dim(outPath)}\n`
-              )
-            )
-          } else {
+          if (err) {
             throw err
           }
+          // Write profile to disk, upload, etc.
+          const outPath = path.resolve('./vite-profile.cpuprofile')
+          fs.writeFileSync(outPath, JSON.stringify(profile))
+          info(
+            chalk.yellow(
+              `  CPU profile written to ${chalk.white.dim(outPath)}\n`
+            )
+          )
         })
       }
 

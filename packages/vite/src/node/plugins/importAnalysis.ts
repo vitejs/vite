@@ -425,9 +425,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (s) {
         return s.toString()
-      } else {
-        return source
       }
+      return source
     }
   }
 }

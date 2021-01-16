@@ -64,10 +64,9 @@ export function transformMiddleware(
           ?.transformResult?.map
         if (map) {
           return send(req, res, JSON.stringify(map), 'json')
-        } else {
-          res.statusCode = 404
-          return res.end()
         }
+        res.statusCode = 404
+        return res.end()
       }
 
       // warn explicit /public/ paths

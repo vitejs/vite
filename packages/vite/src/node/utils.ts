@@ -128,11 +128,11 @@ export function timeFrom(start: number, subtract = 0) {
   const timeString = (time + `ms`).padEnd(5, ' ')
   if (time < 10) {
     return chalk.green(timeString)
-  } else if (time < 50) {
-    return chalk.yellow(timeString)
-  } else {
-    return chalk.red(timeString)
   }
+  if (time < 50) {
+    return chalk.yellow(timeString)
+  }
+  return chalk.red(timeString)
 }
 
 /**
@@ -157,9 +157,8 @@ export function prettifyUrl(url: string, root: string) {
       file = `npm: ${chalk.dim(file)}${isSourceMap ? ` (source map)` : ``}`
     }
     return chalk.dim(file)
-  } else {
-    return chalk.dim(url)
   }
+  return chalk.dim(url)
 }
 
 export function isObject(value: unknown): value is Record<string, any> {

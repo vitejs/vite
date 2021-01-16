@@ -57,11 +57,10 @@ async function init() {
           `Target directory ${targetDir} is not empty.\n` +
           `Remove existing files and continue?`
       })
-      if (yes) {
-        emptyDir(root)
-      } else {
+      if (!yes) {
         return
       }
+      emptyDir(root)
     }
   }
 

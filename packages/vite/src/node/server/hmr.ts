@@ -347,24 +347,21 @@ function error(pos: number) {
 // change event and sometimes this can be too early and get an empty buffer.
 // Poll until the file's modified time has changed before reading again.
 async function readModifiedFile(file: string): Promise<string> {
-  const content = fs.readFileSync(file, 'utf-8')
+  let content = fs.readFileSync(file, 'utf-8')
   if (!content) {
     const mtime = fs.statSync(file).mtimeMs
     await new Promise((r) => {
       let n = 0
-      const poll = async () => {
+      const interval = setInterval(() => {
         n++
         const newMtime = fs.statSync(file).mtimeMs
         if (newMtime !== mtime || n > 10) {
+          clearInterval(interval)
           r(0)
-        } else {
-          setTimeout(poll, 10)
         }
-      }
-      setTimeout(poll, 10)
+      }, 10)
     })
-    return fs.readFileSync(file, 'utf-8')
-  } else {
-    return content
+    content = fs.readFileSync(file, 'utf-8')
   }
+  return content
 }

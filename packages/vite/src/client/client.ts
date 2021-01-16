@@ -73,10 +73,9 @@ async function handleMessage(payload: HMRPayload) {
       if (isFirstUpdate && hasErrorOverlay()) {
         window.location.reload()
         return
-      } else {
-        clearErrorOverlay()
-        isFirstUpdate = false
       }
+      clearErrorOverlay()
+      isFirstUpdate = false
       payload.updates.forEach((update) => {
         if (update.type === 'js-update') {
           queueUpdate(fetchUpdate(update))
@@ -114,9 +113,8 @@ async function handleMessage(payload: HMRPayload) {
           location.reload()
         }
         return
-      } else {
-        location.reload()
       }
+      location.reload()
       break
     case 'prune':
       // After an HMR update, some modules are no longer imported on the page

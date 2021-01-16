@@ -66,13 +66,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           JSON.stringify(outputFilepath)
         )
       }
-      if (s) {
-        return {
-          code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-        }
-      } else {
+      if (!s) {
         return null
+      }
+      return {
+        code: s.toString(),
+        map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
       }
     }
   }
@@ -87,8 +86,6 @@ export function checkPublicFile(url: string, root: string): string | undefined {
   const publicFile = path.posix.join(root, 'public', cleanUrl(url))
   if (fs.existsSync(publicFile)) {
     return publicFile
-  } else {
-    return
   }
 }
 
@@ -99,9 +96,8 @@ export function fileToUrl(
 ) {
   if (config.command === 'serve') {
     return fileToDevUrl(id, config)
-  } else {
-    return fileToBuiltUrl(id, config, ctx)
   }
+  return fileToBuiltUrl(id, config, ctx)
 }
 
 function fileToDevUrl(id: string, { root }: ResolvedConfig) {

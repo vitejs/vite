@@ -153,20 +153,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (config.command === 'serve') {
         if (isDirectCSSRequest(id)) {
           return css
-        } else {
-          // server only
-          return [
-            `import { updateStyle, removeStyle } from ${JSON.stringify(
-              CLIENT_PUBLIC_PATH
-            )}`,
-            `const id = ${JSON.stringify(id)}`,
-            `const css = ${JSON.stringify(css)}`,
-            `updateStyle(id, css)`,
-            // css modules exports change on edit so it can't self accept
-            `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
-            `import.meta.hot.prune(() => removeStyle(id))`
-          ].join('\n')
         }
+        // server only
+        return [
+          `import { updateStyle, removeStyle } from ${JSON.stringify(
+            CLIENT_PUBLIC_PATH
+          )}`,
+          `const id = ${JSON.stringify(id)}`,
+          `const css = ${JSON.stringify(css)}`,
+          `updateStyle(id, css)`,
+          // css modules exports change on edit so it can't self accept
+          `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
+          `import.meta.hot.prune(() => removeStyle(id))`
+        ].join('\n')
       }
 
       // build CSS handling ----------------------------------------------------
@@ -201,29 +200,28 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return config.build.base + this.getFileName(fileId) + postfix
       })
 
-      if (config.build.cssCodeSplit) {
-        if (!code.trim()) {
-          // this is a shared CSS-only chunk that is empty.
-          emptyChunks.add(chunk.fileName)
-        }
-        // minify
-        if (config.build.minify) {
-          chunkCSS = await minifyCSS(chunkCSS, config)
-        }
-        // emit corresponding css file
-        const fileHandle = this.emitFile({
-          name: chunk.name + '.css',
-          type: 'asset',
-          source: chunkCSS
-        })
-        chunkToEmittedCssFileMap.set(chunk, fileHandle)
-        return {
-          code,
-          map: null
-        }
-      } else {
+      if (!config.build.cssCodeSplit) {
         extractedCss += chunkCSS
         return null
+      }
+      if (!code.trim()) {
+        // this is a shared CSS-only chunk that is empty.
+        emptyChunks.add(chunk.fileName)
+      }
+      // minify
+      if (config.build.minify) {
+        chunkCSS = await minifyCSS(chunkCSS, config)
+      }
+      // emit corresponding css file
+      const fileHandle = this.emitFile({
+        name: chunk.name + '.css',
+        type: 'asset',
+        source: chunkCSS
+      })
+      chunkToEmittedCssFileMap.set(chunk, fileHandle)
+      return {
+        code,
+        map: null
       }
     },
 
