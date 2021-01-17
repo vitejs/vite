@@ -106,7 +106,10 @@ cli
     '--assetsInlineLimit <number>',
     `[number] static asset base64 inline threshold in bytes (default: 4096)`
   )
-  .option('--ssr', `[boolean] build for server-side rendering`)
+  .option(
+    '--ssr <entry>',
+    `[string] build specified entry for server-side rendering`
+  )
   .option(
     '--sourcemap',
     `[boolean] output source maps for build (default: false)`
@@ -124,6 +127,16 @@ cli
   .option('-m, --mode <mode>', `[string] set env mode`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
+    const buildOptions = cleanOptions(options) as BuildOptions
+
+    if (buildOptions.ssr) {
+      buildOptions.rollupOptions = {
+        ...buildOptions.rollupOptions,
+        input: (buildOptions.ssr as any) as string
+      }
+      buildOptions.ssr = true
+    }
+
     try {
       await build({
         root,
@@ -131,7 +144,7 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        build: cleanOptions(options) as BuildOptions
+        build: buildOptions
       })
     } catch (e) {
       createLogger(options.logLevel).error(

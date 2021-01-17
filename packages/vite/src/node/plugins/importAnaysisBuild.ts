@@ -85,8 +85,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(source, importer) {
-      if (importer.includes('node_modules')) {
+    async transform(source, importer, ssr) {
+      if (ssr || importer.includes('node_modules')) {
         return
       }
 
