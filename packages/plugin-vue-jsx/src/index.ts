@@ -1,14 +1,15 @@
-// @ts-check
-const babel = require('@babel/core')
-const jsx = require('@vue/babel-plugin-jsx')
-const importMeta = require('@babel/plugin-syntax-import-meta')
-const hash = require('hash-sum')
+import babel = require('@babel/core')
+import jsx = require('@vue/babel-plugin-jsx')
+import importMeta = require('@babel/plugin-syntax-import-meta')
+import hash = require('hash-sum')
+import { Plugin } from 'vite'
+import traverse from '@babel/traverse'
+import t = require('@babel/types')
+import { isDefineComponentCall, parseComponentDecls } from './utils'
 
-/**
- * @param {import('.').Options} options
- * @returns {import('vite').Plugin}
- */
-function vueJsxPlugin(options = {}) {
+export default function vueJsxPlugin(
+  options: jsx.VueJSXPluginOptions = {}
+): Plugin {
   let needHmr = false
   let needSourceMap = true
 
@@ -41,7 +42,6 @@ function vueJsxPlugin(options = {}) {
         if (id.endsWith('.tsx')) {
           plugins.push([
             require('@babel/plugin-transform-typescript'),
-            // @ts-ignore
             { isTSX: true, allowExtensions: true }
           ])
         }
@@ -53,55 +53,50 @@ function vueJsxPlugin(options = {}) {
           sourceFileName: id
         })
 
+        if (!result) {
+          return {
+            code: '',
+            map: ''
+          }
+        }
+
         if (!needHmr) {
           return {
-            code: result.code,
-            map: result.map
+            code: result.code!,
+            map: result.map!
           }
         }
 
         // check for hmr injection
-        /**
-         * @type {{ name: string }[]}
-         */
-        const declaredComponents = []
-        /**
-         * @type {{
-         *  local: string,
-         *  exported: string,
-         *  id: string,
-         * }[]}
-         */
-        const hotComponents = []
+        const declaredComponents: { name: string }[] = []
+        const hotComponents: {
+          local: string
+          exported: string
+          id: string
+        }[] = []
         let hasDefault = false
 
-        for (const node of result.ast.program.body) {
-          if (node.type === 'VariableDeclaration') {
-            const names = parseComponentDecls(node, code)
+        traverse(result.ast, {
+          VariableDeclaration({ node }) {
+            const names = parseComponentDecls(node)
             if (names.length) {
               declaredComponents.push(...names)
             }
-          }
-
-          if (node.type === 'ExportNamedDeclaration') {
-            if (
-              node.declaration &&
-              node.declaration.type === 'VariableDeclaration'
-            ) {
+          },
+          ExportNamedDeclaration({ node }) {
+            if (node.declaration && t.isVariableDeclaration(node.declaration)) {
               hotComponents.push(
-                ...parseComponentDecls(node.declaration, code).map(
-                  ({ name }) => ({
-                    local: name,
-                    exported: name,
-                    id: hash(id + name)
-                  })
-                )
+                ...parseComponentDecls(node.declaration).map(({ name }) => ({
+                  local: name,
+                  exported: name,
+                  id: hash(id + name)
+                }))
               )
             } else if (node.specifiers.length) {
               for (const spec of node.specifiers) {
                 if (
-                  spec.type === 'ExportSpecifier' &&
-                  spec.exported.type === 'Identifier'
+                  t.isExportSpecifier(spec) &&
+                  t.isIdentifier(spec.exported)
                 ) {
                   const matched = declaredComponents.find(
                     ({ name }) => name === spec.local.name
@@ -116,10 +111,10 @@ function vueJsxPlugin(options = {}) {
                 }
               }
             }
-          }
-
-          if (node.type === 'ExportDefaultDeclaration') {
-            if (node.declaration.type === 'Identifier') {
+          },
+          ExportDefaultDeclaration(nodePath) {
+            const { node } = nodePath
+            if (t.isIdentifier(node.declaration)) {
               const _name = node.declaration.name
               const matched = declaredComponents.find(
                 ({ name }) => name === _name
@@ -140,10 +135,10 @@ function vueJsxPlugin(options = {}) {
               })
             }
           }
-        }
+        })
 
         if (hotComponents.length) {
-          let code = result.code
+          let code = result.code!
           if (hasDefault) {
             code =
               code.replace(
@@ -168,41 +163,13 @@ function vueJsxPlugin(options = {}) {
         }
 
         return {
-          code: result.code,
-          map: result.map
+          code: result.code!,
+          map: result.map!
         }
       }
     }
   }
 }
 
-/**
- * @param {import('@babel/core').types.VariableDeclaration} node
- * @param {string} source
- */
-function parseComponentDecls(node, source) {
-  const names = []
-  for (const decl of node.declarations) {
-    if (decl.id.type === 'Identifier' && isDefineComponentCall(decl.init)) {
-      names.push({
-        name: decl.id.name
-      })
-    }
-  }
-  return names
-}
-
-/**
- * @param {import('@babel/core').types.Node} node
- */
-function isDefineComponentCall(node) {
-  return (
-    node &&
-    node.type === 'CallExpression' &&
-    node.callee.type === 'Identifier' &&
-    node.callee.name === 'defineComponent'
-  )
-}
-
 module.exports = vueJsxPlugin
-vueJsxPlugin.default = vueJsxPlugin
+vueJsxPlugin['default'] = vueJsxPlugin
