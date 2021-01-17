@@ -71,7 +71,7 @@ export function resolvePlugin(
       server = _server
     },
 
-    resolveId(id, importer) {
+    resolveId(id, importer, _, ssr) {
       if (id === browserExternalId) {
         return id
       }
@@ -178,16 +178,18 @@ export function resolvePlugin(
         // node built-ins.
         // externalize if building for SSR, otherwise redirect to empty module
         if (isBuiltin(id)) {
-          if (isBuild && config && config.build.ssr) {
+          if (ssr) {
             return {
               id,
               external: true
             }
           } else {
-            this.warn(
-              `externalized node built-in "${id}" to empty module. ` +
-                `(imported by: ${chalk.white.dim(importer)})`
-            )
+            if (!asSrc) {
+              this.warn(
+                `externalized node built-in "${id}" to empty module. ` +
+                  `(imported by: ${chalk.white.dim(importer)})`
+              )
+            }
             return browserExternalId
           }
         }

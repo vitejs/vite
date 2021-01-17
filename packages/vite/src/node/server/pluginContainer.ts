@@ -84,7 +84,8 @@ export interface PluginContainer {
   resolveId(
     id: string,
     importer?: string,
-    skip?: Plugin[]
+    skip?: Plugin[],
+    ssr?: boolean
   ): Promise<PartialResolvedId | null>
   transform(
     code: string,
@@ -156,6 +157,7 @@ export async function createPluginContainer(
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
     meta = minimalContext.meta
+    ssr = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
     _activeCode: string | null = null
@@ -180,7 +182,7 @@ export async function createPluginContainer(
     ) {
       const skip = []
       if (options?.skipSelf && this._activePlugin) skip.push(this._activePlugin)
-      let out = await container.resolveId(id, importer, skip)
+      let out = await container.resolveId(id, importer, skip, this.ssr)
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -405,8 +407,9 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(rawId, importer = join(root, 'index.html'), _skip) {
+    async resolveId(rawId, importer = join(root, 'index.html'), _skip, ssr) {
       const ctx = new Context()
+      ctx.ssr = !!ssr
       const key =
         `${rawId}\n${importer}` +
         (_skip ? _skip.map((p) => p.name).join('\n') : ``)
@@ -430,7 +433,13 @@ export async function createPluginContainer(
         let result
         const pluginResolveStart = Date.now()
         try {
-          result = await plugin.resolveId.call(ctx as any, rawId, importer, {})
+          result = await plugin.resolveId.call(
+            ctx as any,
+            rawId,
+            importer,
+            {},
+            ssr
+          )
         } finally {
           if (_skip) resolveSkips.delete(plugin, key)
         }
@@ -479,8 +488,9 @@ export async function createPluginContainer(
       }
     },
 
-    async load(id, ssr = false) {
+    async load(id, ssr) {
       const ctx = new Context()
+      ctx.ssr = !!ssr
       for (const plugin of plugins) {
         if (!plugin.load) continue
         ctx._activePlugin = plugin
@@ -492,8 +502,9 @@ export async function createPluginContainer(
       return null
     },
 
-    async transform(code, id, inMap, ssr = false) {
+    async transform(code, id, inMap, ssr) {
       const ctx = new TransformContext(id, code, inMap as SourceMap)
+      ctx.ssr = !!ssr
       for (const plugin of plugins) {
         if (!plugin.transform) continue
         ctx._activePlugin = plugin

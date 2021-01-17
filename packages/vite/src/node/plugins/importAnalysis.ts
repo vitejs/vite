@@ -37,6 +37,7 @@ import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { transformImportGlob } from './importAnaysisBuild'
+import isBuiltin from 'isbuiltin'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -294,8 +295,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             continue
           }
           // skip ssr external
-          if (ssr && server._ssrExternals?.includes(url)) {
-            continue
+          if (ssr) {
+            if (server._ssrExternals?.includes(url)) {
+              continue
+            }
+            if (isBuiltin(url)) {
+              continue
+            }
           }
           // skip client
           if (url === CLIENT_PUBLIC_PATH) {
