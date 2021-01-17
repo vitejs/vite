@@ -43,6 +43,7 @@ import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from './ssrModuleLoader'
 import { resolveSSRExternal } from '../ssrExternal'
+import { ssrRewriteStacktrace } from './ssrStacktrace'
 
 export interface ServerOptions {
   host?: string
@@ -188,6 +189,10 @@ export interface ViteDevServer {
    */
   ssrLoadModule(url: string): Promise<Record<string, any>>
   /**
+   * Fix ssr error stacktrace
+   */
+  ssrFixStacktrace(e: Error): void
+  /**
    * Start the server.
    */
   listen(port?: number): Promise<ViteDevServer>
@@ -254,6 +259,11 @@ export async function createServer(
         server._ssrExternals = resolveSSRExternal(config.root)
       }
       return ssrLoadModule(url, server)
+    },
+    ssrFixStacktrace(e) {
+      if (e.stack) {
+        e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
+      }
     },
     listen(port?: number) {
       return startServer(server, port)
