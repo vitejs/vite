@@ -65,13 +65,7 @@ export async function ssrLoadModule(
   }
   Object.defineProperty(ssrModule, '__esModule', { value: true })
 
-  const ssrImportMeta = {
-    url,
-    get hot() {
-      // TODO better error location
-      throw new Error('import.meta.hot is not available in code targeting SSR.')
-    }
-  }
+  const ssrImportMeta = { url }
 
   const ssrImport = (dep: string) => {
     if (isExternal(dep)) {
