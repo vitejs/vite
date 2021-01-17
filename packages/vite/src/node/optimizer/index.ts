@@ -28,6 +28,8 @@ import { buildDefinePlugin } from '../plugins/define'
 import { createFilter } from '@rollup/pluginutils'
 import { Plugin } from '../plugin'
 import { prompt } from 'enquirer'
+import glob from 'fast-glob'
+import { resolvePackageData } from '../plugins/resolve'
 
 const debug = createDebugger('vite:optimize')
 
@@ -159,9 +161,47 @@ export async function optimizeDeps(
 
   // Force included deps - these can also be deep paths
   if (options.include) {
-    for (let id of options.include) {
+    const includedDeps = options.include.filter((id) => !id.includes('*'))
+    log(JSON.stringify(includedDeps))
+    // Resolve glob includes
+    for (const globId of options.include.filter((id) => id.includes('*'))) {
+      if (!/^[^\*]*\/\*.*$/.test(globId)) {
+        logger.error(
+          chalk.red(
+            `\nGlob patterns in ${chalk.white(
+              'optimizeDeps.include'
+            )} are only allowed after packages names, i.e. ${chalk.white(
+              '<package-name>/<pattern>'
+            )}.\nInvalid pattern found: "${chalk.yellow(globId)}".`
+          )
+        )
+        return
+      }
+
+      const [packageName, ...rest] = globId.split('/')
+      const aliased =
+        (await aliasResolver.resolveId(packageName))?.id || packageName
+      const packageData = resolvePackageData(aliased, root)
+
+      if (!packageData) {
+        logger.error(
+          chalk.red(
+            `\nNo corresponding package ${chalk.white(
+              packageName
+            )} found for glob pattern "${chalk.yellow(globId)}".`
+          )
+        )
+      } else {
+        glob.sync(rest.join('/'), { cwd: packageData.dir }).forEach((file) => {
+          includedDeps.push(packageName + '/' + file)
+        })
+      }
+    }
+
+    for (let id of includedDeps) {
       const aliased = (await aliasResolver.resolveId(id))?.id || id
       const filePath = tryNodeResolve(aliased, root, config.isProduction)
+
       if (filePath) {
         qualified[id] = filePath.id
       }
