@@ -107,6 +107,11 @@ export interface UserConfig {
    * Default: true
    */
   clearScreen?: boolean
+  /**
+   * Set to true to expose all variables in your `.env` files
+   * to the client. This removes the need for `VITE_` prefixing.
+   */
+  unsafeEnv?: boolean
 }
 
 export interface InlineConfig extends UserConfig {
@@ -197,7 +202,7 @@ export async function resolveConfig(
   )
 
   // load .env files
-  const userEnv = loadEnv(mode, resolvedRoot)
+  const userEnv = loadEnv(mode, resolvedRoot, !!config.unsafeEnv)
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
@@ -547,7 +552,7 @@ async function loadConfigFromBundledFile(
   return config
 }
 
-export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
+export function loadEnv(mode: string, root: string, unsafeEnv: boolean) {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -565,8 +570,9 @@ export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
 
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
-  for (const key in process.env) {
-    if (key.startsWith(prefix) && env[key] === undefined) {
+  for (let key in process.env) {
+    if (key.startsWith('VITE_')) {
+      if (unsafeEnv) key = key.slice(5)
       env[key] = process.env[key] as string
     }
   }
@@ -587,11 +593,14 @@ export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
 
       // only keys that start with prefix are exposed to client
       for (const [key, value] of Object.entries(parsed)) {
-        if (key.startsWith(prefix) && env[key] === undefined) {
-          env[key] = value
-        } else if (key === 'NODE_ENV') {
+        if (key === 'NODE_ENV') {
           // NODE_ENV override in .env file
           process.env.VITE_USER_NODE_ENV = value
+        } else if (
+          (unsafeEnv || key.startsWith('VITE_')) &&
+          env[key] === undefined
+        ) {
+          env[key] = value
         }
       }
     }
