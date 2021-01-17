@@ -380,7 +380,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (hasEnv) {
         // inject import.meta.env
-        str().prepend(`import.meta.env = ${JSON.stringify(config.env)};`)
+        str().prepend(
+          `import.meta.env = ${JSON.stringify({
+            ...config.env,
+            SSR: !!ssr
+          })};`
+        )
       }
 
       if (hasHMR) {

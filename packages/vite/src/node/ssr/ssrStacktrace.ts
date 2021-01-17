@@ -23,7 +23,7 @@ export function ssrRewriteStacktrace(stack: string, moduleGraph: ModuleGraph) {
 
           const pos = consumer.originalPositionFor({
             // source map lines generated via new Function() in Node.js is always
-            // incremented by 2 - no idea why
+            // incremented by 2 due to the function wrapper
             line: Number(line) - 2,
             column: Number(column),
             bias: SourceMapConsumer.LEAST_UPPER_BOUND
