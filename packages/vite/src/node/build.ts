@@ -179,7 +179,7 @@ export function resolveBuildOptions(
       extensions: ['.js', '.cjs'],
       ...raw?.commonjsOptions
     },
-    minify: 'terser',
+    minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
     cleanCssOptions: {},
     write: true,
@@ -275,23 +275,32 @@ async function doBuild(
   config.logger.info(chalk.cyan(`building for ${config.mode}...`))
 
   const options = config.build
+  const ssr = !!options.ssr
   const libOptions = options.lib
   const resolve = (p: string) => path.resolve(config.root, p)
 
   const input = libOptions
     ? libOptions.entry
     : options.rollupOptions?.input || resolve('index.html')
+
+  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
+    throw new Error(
+      `rollupOptions.input should not be an html file when building for SSR. ` +
+        `Please specify a dedicated SSR entry.`
+    )
+  }
+
   const outDir = resolve(options.outDir)
   const publicDir = resolve('public')
 
   // inject ssr arg to plugin load/transform hooks
-  const plugins = (options.ssr
+  const plugins = (ssr
     ? config.plugins.map((p) => injectSsrFlagToHooks(p))
     : config.plugins) as Plugin[]
 
   // inject ssrExternal if present
   const userExternal = options.rollupOptions?.external
-  const external = options.ssr
+  const external = ssr
     ? resolveExternal(resolveSSRExternal(config.root), userExternal)
     : userExternal
 
@@ -300,7 +309,11 @@ async function doBuild(
   try {
     const bundle = await rollup.rollup({
       input,
-      preserveEntrySignatures: libOptions ? 'strict' : false,
+      preserveEntrySignatures: ssr
+        ? 'allow-extension'
+        : libOptions
+        ? 'strict'
+        : false,
       ...options.rollupOptions,
       plugins,
       external,
@@ -318,22 +331,27 @@ async function doBuild(
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate']({
         dir: outDir,
-        format: 'es',
-        exports: 'auto',
+        format: options.ssr ? 'cjs' : 'es',
+        exports: options.ssr ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
-        entryFileNames: libOptions
+        entryFileNames: ssr
+          ? `[name].js`
+          : libOptions
           ? `${pkgName}.${output.format || `es`}.js`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
-        chunkFileNames: libOptions
-          ? `[name].js`
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
-        assetFileNames: libOptions
-          ? `[name].[ext]`
-          : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
+        chunkFileNames:
+          libOptions || ssr
+            ? `[name].js`
+            : path.posix.join(options.assetsDir, `[name].[hash].js`),
+        assetFileNames:
+          libOptions || ssr
+            ? `[name].[ext]`
+            : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
         // #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
+        inlineDynamicImports: ssr,
         ...output
       })
     }
