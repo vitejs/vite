@@ -14,6 +14,7 @@ import { transformRequest } from '../server/transformRequest'
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
+  isolatedMode: boolean,
   urlStack: string[] = []
 ): Promise<Record<string, any>> {
   if (urlStack.includes(url)) {
@@ -25,11 +26,13 @@ export async function ssrLoadModule(
 
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url)
-  if (mod.ssrModule) {
+  if (!isolatedMode && mod.ssrModule) {
     return mod.ssrModule
   }
 
-  const result = await transformRequest(url, server, { ssr: true })
+  const result =
+    mod.ssrTransformResult ||
+    (await transformRequest(url, server, { ssr: true }))
   if (!result) {
     // TODO more info? is this even necessary?
     throw new Error(`failed to load module for ssr: $${url}`)
@@ -40,7 +43,7 @@ export async function ssrLoadModule(
   await Promise.all(
     result.deps!.map((dep) => {
       if (!isExternal(dep)) {
-        return ssrLoadModule(dep, server, urlStack.concat(url))
+        return ssrLoadModule(dep, server, isolatedMode, urlStack.concat(url))
       }
     })
   )
@@ -70,7 +73,7 @@ export async function ssrLoadModule(
     if (isExternal(dep)) {
       return Promise.resolve(nodeRequire(dep, mod.file))
     } else {
-      return ssrLoadModule(dep, server, urlStack.concat(url))
+      return ssrLoadModule(dep, server, isolatedMode, urlStack.concat(url))
     }
   }
 

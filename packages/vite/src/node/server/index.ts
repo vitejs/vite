@@ -187,7 +187,10 @@ export interface ViteDevServer {
   /**
    * Load a given URL as an instantiated module for SSR.
    */
-  ssrLoadModule(url: string): Promise<Record<string, any>>
+  ssrLoadModule(
+    url: string,
+    options?: { isolated?: boolean }
+  ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace
    */
@@ -254,11 +257,11 @@ export async function createServer(
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
-    ssrLoadModule(url) {
+    ssrLoadModule(url, options) {
       if (!server._ssrExternals) {
         server._ssrExternals = resolveSSRExternal(config.root)
       }
-      return ssrLoadModule(url, server)
+      return ssrLoadModule(url, server, !!options?.isolated)
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
