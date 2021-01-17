@@ -9,7 +9,7 @@ import {
   ssrImportMetaKey,
   ssrDynamicImportKey
 } from './ssrTransform'
-import { transformRequest } from './transformRequest'
+import { transformRequest } from '../server/transformRequest'
 
 export async function ssrLoadModule(
   url: string,

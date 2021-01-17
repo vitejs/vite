@@ -41,9 +41,9 @@ import {
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
-import { ssrLoadModule } from './ssrModuleLoader'
-import { resolveSSRExternal } from '../ssrExternal'
-import { ssrRewriteStacktrace } from './ssrStacktrace'
+import { ssrLoadModule } from '../ssr/ssrModuleLoader'
+import { resolveSSRExternal } from '../ssr/ssrExternal'
+import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 
 export interface ServerOptions {
   host?: string

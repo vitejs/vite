@@ -28,7 +28,7 @@ import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
-import { resolveSSRExternal } from './ssrExternal'
+import { resolveSSRExternal } from './ssr/ssrExternal'
 
 export interface BuildOptions {
   /**

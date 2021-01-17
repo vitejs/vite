@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import { tryNodeResolve } from './plugins/resolve'
-import { lookupFile, resolveFrom } from './utils'
+import { tryNodeResolve } from '../plugins/resolve'
+import { lookupFile, resolveFrom } from '../utils'
 
 /**
  * Heuristics for determining whether a dependency should be externalized for

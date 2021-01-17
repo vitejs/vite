@@ -13,7 +13,7 @@ import {
   timeFrom
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
-import { ssrTransform } from './ssrTransform'
+import { ssrTransform } from '../ssr/ssrTransform'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
