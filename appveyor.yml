@@ -11,6 +11,7 @@ test_script:
   - yarn --version
   - cd packages\vite && yarn build
   - cd packages\plugin-vue && yarn build
+  - cd packages\plugin-vue-jsx && yarn build
   - yarn test
 
 cache:
