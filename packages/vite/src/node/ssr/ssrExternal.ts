@@ -6,6 +6,9 @@ import { lookupFile, resolveFrom } from '../utils'
 /**
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
+ *
+ * TODO right now externals are imported using require(), we probably need to
+ * rework this when more libraries ship native ESM distributions for Node.
  */
 export function resolveSSRExternal(root: string): string[] {
   const pkgContent = lookupFile(root, ['package.json'])
