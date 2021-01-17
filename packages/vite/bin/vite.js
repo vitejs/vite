@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+
+if (!__dirname.includes('node_modules')) {
+  try {
+    // only available as dev dependency
+    require('source-map-support').install()
+  } catch (e) {}
+}
+
 global.__vite_start_time = Date.now()
 
 // check debug mode first before requiring the CLI.
@@ -25,11 +33,6 @@ if (debugIndex > 0) {
       process.env.VITE_DEBUG_FILTER = filter
     }
   }
-
-  try {
-    // only available as dev dependency
-    require('source-map-support').install()
-  } catch (e) {}
 }
 
 function start() {
