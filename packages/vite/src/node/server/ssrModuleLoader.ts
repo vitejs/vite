@@ -1,6 +1,7 @@
 import path from 'path'
 import { ViteDevServer } from '..'
 import { resolveFrom } from '../utils'
+import { ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
   ssrModuleExportsKey,
@@ -92,10 +93,10 @@ export async function ssrLoadModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      result.code
+      result.code + `\n//# sourceURL=${mod.url}`
     )(ssrModule, ssrImportMeta, ssrImport, ssrDynamicImport, ssrExportAll)
   } catch (e) {
-    // TODO source map
+    e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
     server.config.logger.error(
       `Error when evaluating SSR module ${url}:\n${e.stack}`,
       {

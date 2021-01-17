@@ -10,6 +10,7 @@ import {
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
+import merge from 'merge-source-map'
 
 type Node = _Node & {
   start: number
@@ -157,10 +158,18 @@ export async function ssrTransform(
     }
   })
 
+  let map = s.generateMap({ hires: true })
+  if (inMap) {
+    map = merge(inMap, {
+      ...map,
+      sources: inMap.sources,
+      sourcesContent: inMap.sourcesContent
+    }) as SourceMap
+  }
+
   return {
     code: s.toString(),
-    // TODO handle inMap
-    map: null, //s.generateMap({ hires: true }),
+    map,
     deps: [...deps]
   }
 }
