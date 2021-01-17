@@ -7,6 +7,8 @@ import { normalizePath } from '../utils'
 import { ResolvedConfig } from '../config'
 import { idToPkgMap } from '../plugins/resolve'
 
+export const REQUIRE_SUFFIX = '?commonjs-require'
+
 export const depAssetExternalPlugin = (config: ResolvedConfig): Plugin => ({
   name: 'vite:dep-assets-external',
   resolveId(id) {
@@ -46,6 +48,15 @@ export const depAssetRewritePlugin = (config: ResolvedConfig): Plugin => {
                 // it is unnecessary for assets
                 if (importee.endsWith('?commonjs-proxy')) {
                   s.remove(statementStart, statementEnd)
+                  continue
+                }
+                // rollup-plugin-commonjs will inject require suffix for require call
+                if (importee.endsWith(REQUIRE_SUFFIX)) {
+                  s.overwrite(
+                    start,
+                    end,
+                    importee.slice(1, -REQUIRE_SUFFIX.length)
+                  )
                   continue
                 }
                 if (importee.startsWith('.')) {
