@@ -11,10 +11,15 @@ import {
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
 
+interface SSRContext {
+  global: NodeJS.Global
+}
+
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
-  isolatedMode: boolean,
+  isolated: boolean,
+  context: SSRContext = { global: isolated ? Object.create(global) : global },
   urlStack: string[] = []
 ): Promise<Record<string, any>> {
   if (urlStack.includes(url)) {
@@ -26,7 +31,8 @@ export async function ssrLoadModule(
 
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url)
-  if (!isolatedMode && mod.ssrModule) {
+
+  if (!isolated && mod.ssrModule) {
     return mod.ssrModule
   }
 
@@ -43,7 +49,13 @@ export async function ssrLoadModule(
   await Promise.all(
     result.deps!.map((dep) => {
       if (!isExternal(dep)) {
-        return ssrLoadModule(dep, server, isolatedMode, urlStack.concat(url))
+        return ssrLoadModule(
+          dep,
+          server,
+          isolated,
+          context,
+          urlStack.concat(url)
+        )
       }
     })
   )
@@ -73,7 +85,7 @@ export async function ssrLoadModule(
     if (isExternal(dep)) {
       return Promise.resolve(nodeRequire(dep, mod.file))
     } else {
-      return ssrLoadModule(dep, server, isolatedMode, urlStack.concat(url))
+      return ssrLoadModule(dep, server, isolated, context, urlStack.concat(url))
     }
   }
 
@@ -91,13 +103,21 @@ export async function ssrLoadModule(
 
   try {
     new Function(
+      `global`,
       ssrModuleExportsKey,
       ssrImportMetaKey,
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
       result.code + `\n//# sourceURL=${mod.url}`
-    )(ssrModule, ssrImportMeta, ssrImport, ssrDynamicImport, ssrExportAll)
+    )(
+      context.global,
+      ssrModule,
+      ssrImportMeta,
+      ssrImport,
+      ssrDynamicImport,
+      ssrExportAll
+    )
   } catch (e) {
     e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
     server.config.logger.error(
