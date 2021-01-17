@@ -1,5 +1,5 @@
 import { SourceMapConsumer, RawSourceMap } from 'source-map'
-import { ModuleGraph } from './moduleGraph'
+import { ModuleGraph } from '../server/moduleGraph'
 
 export function ssrRewriteStacktrace(stack: string, moduleGraph: ModuleGraph) {
   return stack

@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
 import { SourceMap } from 'rollup'
-import { TransformResult } from './transformRequest'
-import { parser } from './pluginContainer'
+import { TransformResult } from '../server/transformRequest'
+import { parser } from '../server/pluginContainer'
 import {
   Identifier,
   Node as _Node,
@@ -91,7 +91,7 @@ export async function ssrTransform(
         } else {
           // export const foo = 1, bar = 2
           for (const decl of node.declaration.declarations) {
-            const names = extractNames(decl)
+            const names = extractNames(decl.id)
             for (const name of names) {
               defineExport(name)
             }
