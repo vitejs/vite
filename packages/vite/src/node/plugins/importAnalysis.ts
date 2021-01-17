@@ -388,7 +388,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
-      if (hasHMR) {
+      if (hasHMR && !ssr) {
         debugHmr(
           `${
             isSelfAccepting
