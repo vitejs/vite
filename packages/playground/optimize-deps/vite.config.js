@@ -7,7 +7,10 @@ module.exports = {
   dedupe: ['react'],
 
   optimizeDeps: {
-    include: ['optimize-deps-linked-include'],
+    include: [
+      'optimize-deps-linked-include',
+      'optimize-deps-glob/glob_example/*'
+    ],
     plugins: [vue()]
   },
 
