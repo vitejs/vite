@@ -5,7 +5,7 @@ const { createServer } = require('vite')
 
 const isProd = process.env.NODE_ENV === 'production'
 
-const indexTemplateProd = isProd
+const indexProd = isProd
   ? fs.readFileSync('dist/client/index.html', 'utf-8')
   : ''
 
@@ -14,11 +14,24 @@ const manifest = isProd
     require('./dist/client/ssr-manifest.json')
   : {}
 
-function getIndexTemplate() {
-  return isProd
-    ? indexTemplateProd
-    : `<script type="module" src="/@vite/client"></script>` +
-        fs.readFileSync('index.html', 'utf-8')
+function getIndexTemplate(url) {
+  if (isProd) {
+    return indexProd
+  }
+
+  // TODO handle plugin indexHtmlTransforms?
+  const reactPreamble = url.startsWith('/react')
+    ? `<script type="module">${
+        require('@vitejs/plugin-react-refresh').preambleCode
+      }</script>`
+    : ''
+
+  // during dev, inject vite client + always read fresh index.html
+  return (
+    `<script type="module" src="/@vite/client"></script>` +
+    reactPreamble +
+    fs.readFileSync('index.html', 'utf-8')
+  )
 }
 
 async function startServer() {
@@ -52,7 +65,7 @@ async function startServer() {
 
       const html = `
       ${preloadLinks}
-      ${getIndexTemplate().replace(`<!--ssr-outlet-->`, appHtml)}
+      ${getIndexTemplate(req.originalUrl).replace(`<!--ssr-outlet-->`, appHtml)}
       `
 
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)

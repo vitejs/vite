@@ -21,6 +21,14 @@ exports.performReactRefresh = debounce(exports.performReactRefresh, 16)
 export default exports
 `
 
+const preambleCode = `
+import RefreshRuntime from "${runtimePublicPath}"
+RefreshRuntime.injectIntoGlobalHook(window)
+window.$RefreshReg$ = () => {}
+window.$RefreshSig$ = () => (type) => type
+window.__vite_plugin_react_preamble_installed__ = true
+`
+
 /**
  * Transform plugin for transforming and injecting per-file refresh code.
  *
@@ -134,18 +142,14 @@ module.exports = function reactRefreshPlugin() {
         {
           tag: 'script',
           attrs: { type: 'module' },
-          children: `
-  import RefreshRuntime from "${runtimePublicPath}"
-  RefreshRuntime.injectIntoGlobalHook(window)
-  window.$RefreshReg$ = () => {}
-  window.$RefreshSig$ = () => (type) => type
-  window.__vite_plugin_react_preamble_installed__ = true
-        `
+          children: preambleCode
         }
       ]
     }
   }
 }
+
+module.exports.preambleCode = preambleCode
 
 /**
  * @param {import('@babel/core').BabelFileResult['ast']} ast
