@@ -1,7 +1,13 @@
 import { Plugin } from '../plugin'
 
 export function manifestPlugin(): Plugin {
-  const manifest: Record<string, { file: string; imports?: string[] }> = {}
+  const manifest: Record<
+    string,
+    {
+      file: string
+      imports?: string[]
+    }
+  > = {}
 
   return {
     name: 'vite:manifest',

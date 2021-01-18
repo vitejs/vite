@@ -29,6 +29,7 @@ import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
 import { resolveSSRExternal } from './ssr/ssrExternal'
+import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 
 export interface BuildOptions {
   /**
@@ -148,9 +149,15 @@ export interface BuildOptions {
    */
   lib?: LibraryOptions | false
   /**
-   * @internal for now
+   * Produce SSR oriented build. Note this requires specifying SSR entry via
+   * `rollupOptions.input`.
    */
   ssr?: boolean
+  /**
+   * Generate SSR manifest for determining style links and asset preload
+   * directives in production.
+   */
+  ssrManifest?: boolean
 }
 
 export interface LibraryOptions {
@@ -187,6 +194,7 @@ export function resolveBuildOptions(
     manifest: false,
     lib: false,
     ssr: false,
+    ssrManifest: false,
     ...raw
   }
 
@@ -233,6 +241,7 @@ export function resolveBuildPlugins(
         ? [terserPlugin(options.terserOptions)]
         : []),
       ...(options.manifest ? [manifestPlugin()] : []),
+      ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       ...(!config.logLevel || config.logLevel === 'info'
         ? [buildReporterPlugin(config)]
         : [])
@@ -272,13 +281,15 @@ async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
-  config.logger.info(chalk.cyan(`building for ${config.mode}...`))
-
   const options = config.build
   const ssr = !!options.ssr
   const libOptions = options.lib
-  const resolve = (p: string) => path.resolve(config.root, p)
 
+  config.logger.info(
+    chalk.cyan(`building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`)
+  )
+
+  const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
     ? libOptions.entry
     : options.rollupOptions?.input || resolve('index.html')
@@ -351,6 +362,7 @@ async function doBuild(
         // #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
+        inlineDynamicImports: ssr && typeof input === 'string',
         ...output
       })
     }
