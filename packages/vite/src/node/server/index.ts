@@ -147,6 +147,10 @@ export interface ViteDevServer {
    */
   middlewares: Connect.Server
   /**
+   * @deprecated use `server.middlewares` instead
+   */
+  app: Connect.Server
+  /**
    * native Node http server instance
    * will be null in middleware mode
    */
@@ -251,6 +255,12 @@ export async function createServer(
   const server: ViteDevServer = {
     config: config,
     middlewares,
+    get app() {
+      config.logger.warn(
+        `ViteDevServer.app is deprecated. Use ViteDevServer.middlewares instead.`
+      )
+      return middlewares
+    },
     httpServer,
     watcher,
     pluginContainer: container,
