@@ -20,6 +20,30 @@ test('should have no 404s', () => {
   })
 })
 
+describe('injected scripts', () => {
+  test('@vite/client', async () => {
+    const hasClient = await page.$(
+      'script[type="module"][src="/foo/@vite/client"]'
+    )
+    if (isBuild) {
+      expect(hasClient).toBeFalsy()
+    } else {
+      expect(hasClient).toBeTruthy()
+    }
+  })
+
+  test('html-proxy', async () => {
+    const hasHtmlProxy = await page.$(
+      'script[type="module"][src="/foo/index.html?html-proxy&index=0.js"]'
+    )
+    if (isBuild) {
+      expect(hasHtmlProxy).toBeFalsy()
+    } else {
+      expect(hasHtmlProxy).toBeTruthy()
+    }
+  })
+})
+
 describe('raw references from /public', () => {
   test('load raw js from /public', async () => {
     expect(await page.textContent('.raw-js')).toMatch('[success]')
