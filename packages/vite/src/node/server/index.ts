@@ -138,11 +138,14 @@ export interface ViteDevServer {
    */
   config: ResolvedConfig
   /**
-   * connect app instance
-   * This can also be used as the handler function of a custom http server
+   * A connect app instance.
+   * - Can be used to attach custom middlewares to the dev server.
+   * - Can also be used as the handler function of a custom http server
+   *   or as a middleware in any connect-style Node.js frameworks
+   *
    * https://github.com/senchalabs/connect#use-middleware
    */
-  app: Connect.Server
+  middlewares: Connect.Server
   /**
    * native Node http server instance
    * will be null in middleware mode
@@ -222,10 +225,10 @@ export async function createServer(
   const serverConfig = config.server || {}
   const middlewareMode = !!serverConfig.middlewareMode
 
-  const app = connect() as Connect.Server
+  const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, app)
+    : await resolveHttpServer(serverConfig, middlewares)
   const ws = createWebSocketServer(httpServer, config)
 
   const watchOptions = serverConfig.watch || {}
@@ -247,7 +250,7 @@ export async function createServer(
 
   const server: ViteDevServer = {
     config: config,
-    app,
+    middlewares,
     httpServer,
     watcher,
     pluginContainer: container,
@@ -319,38 +322,38 @@ export async function createServer(
 
   // request timer
   if (process.env.DEBUG) {
-    app.use(timeMiddleware(root))
+    middlewares.use(timeMiddleware(root))
   }
 
   // cors (enabled by default)
   const { cors } = serverConfig
   if (cors !== false) {
-    app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+    middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    app.use(proxyMiddleware(server))
+    middlewares.use(proxyMiddleware(server))
   }
 
   // open in editor support
-  app.use('/__open-in-editor', launchEditorMiddleware())
+  middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  app.use(serveStaticMiddleware(path.join(root, 'public')))
+  middlewares.use(serveStaticMiddleware(path.join(root, 'public')))
 
   // main transform middleware
-  app.use(transformMiddleware(server))
+  middlewares.use(transformMiddleware(server))
 
   // serve static files
-  app.use(rawFsStaticMiddleware())
-  app.use(serveStaticMiddleware(root, config))
+  middlewares.use(rawFsStaticMiddleware())
+  middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
-  app.use(
+  middlewares.use(
     history({
       logger: createDebugger('vite:spa-fallback'),
       // support /dir/ without explicit index.html
@@ -375,19 +378,18 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  // transform index.html
-  app.use(indexHtmlMiddleware(server, plugins))
-
-  // handle 404s
   if (!middlewareMode) {
-    app.use((_, res) => {
+    // transform index.html
+    middlewares.use(indexHtmlMiddleware(server, plugins))
+    // handle 404s
+    middlewares.use((_, res) => {
       res.statusCode = 404
       res.end()
     })
   }
 
   // error handler
-  app.use(errorMiddleware(server, middlewareMode))
+  middlewares.use(errorMiddleware(server, middlewareMode))
 
   const runOptimize = async () => {
     if (config.optimizeCacheDir) {
@@ -403,7 +405,7 @@ export async function createServer(
     }
   }
 
-  if (httpServer) {
+  if (!middlewareMode && httpServer) {
     // overwrite listen to run optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
