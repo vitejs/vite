@@ -1,0 +1,28 @@
+{
+  "name": "test-ssr",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "node server",
+    "build": "yarn build:client && yarn build:server",
+    "build:client": "vite build --ssrManifest --outDir dist/client",
+    "build:server": "vite build --ssr src/entry-server.ts --outDir dist/server",
+    "serve": "NODE_ENV=production node server",
+    "debug": "node --inspect-brk server"
+  },
+  "dependencies": {
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "vue": "^3.0.5"
+  },
+  "devDependencies": {
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "@vitejs/plugin-vue": "^1.0.0",
+    "@vue/compiler-sfc": "^3.0.5",
+    "compression": "^1.7.4",
+    "cross-env": "^7.0.3",
+    "express": "^4.17.1",
+    "serve-static": "^1.14.1"
+  }
+}

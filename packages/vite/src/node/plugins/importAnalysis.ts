@@ -296,7 +296,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // skip ssr external
           if (ssr) {
-            if (server._ssrExternals?.includes(url)) {
+            if (
+              server._ssrExternals?.some((id) => {
+                return url === id || url.startsWith(id + '/')
+              })
+            ) {
               continue
             }
             if (isBuiltin(url)) {
