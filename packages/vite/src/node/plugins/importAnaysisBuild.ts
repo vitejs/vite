@@ -16,8 +16,8 @@ import { chunkToEmittedCssFileMap } from './css'
 export const isModernFlag = `__VITE_IS_MODERN__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadMethod = __vitePreload.name
-const preloadModuleCode = `const seen = {};export ${__vitePreload.toString()}`
+const preloadMethod = `__vitePreload`
+const preloadCode = `const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 const preloadMarker = `__VITE_PRELOAD__`
 const preloadMarkerRE = new RegExp(`,?"${preloadMarker}"`, 'g')
 
@@ -25,7 +25,7 @@ const preloadMarkerRE = new RegExp(`,?"${preloadMarker}"`, 'g')
  * Helper for preloading CSS and direct imports of async chunks in parallell to
  * the async chunk itself.
  */
-function __vitePreload(baseModule: () => Promise<{}>, deps?: string[]) {
+function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps) {
     return baseModule()
@@ -70,6 +70,8 @@ function __vitePreload(baseModule: () => Promise<{}>, deps?: string[]) {
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
+  const ssr = !!config.build.ssr
+
   return {
     name: 'vite:import-analysis',
 
@@ -81,12 +83,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadModuleCode
+        return preloadCode
       }
     },
 
-    async transform(source, importer, ssr) {
-      if (ssr || importer.includes('node_modules')) {
+    async transform(source, importer) {
+      if (importer.includes('node_modules')) {
         return
       }
 
@@ -105,7 +107,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
-      let hasInjectedHelper = false
+      let needPreloadHelper = false
 
       for (let index = 0; index < imports.length; index++) {
         const { s: start, e: end, ss: expStart, d: dynamicIndex } = imports[
@@ -116,19 +118,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           source.slice(start, end) === 'import.meta' &&
           source.slice(end, end + 5) === '.glob'
 
-        if (isGlob || dynamicIndex > -1) {
-          // inject parallelPreload helper.
-          if (!hasInjectedHelper) {
-            hasInjectedHelper = true
-            str().prepend(
-              `import { ${preloadMethod} } from "${preloadHelperId}";`
-            )
-          }
-        }
-
         // import.meta.glob
         if (isGlob) {
-          const { imports, exp, endIndex } = await transformImportGlob(
+          const { imports, exp, endIndex, isEager } = await transformImportGlob(
             source,
             start,
             importer,
@@ -136,10 +128,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
           str().prepend(imports)
           str().overwrite(expStart, endIndex, exp)
+          if (!isEager) {
+            needPreloadHelper = true
+          }
           continue
         }
 
-        if (dynamicIndex > -1) {
+        if (dynamicIndex > -1 && !ssr) {
+          needPreloadHelper = true
           const dynamicEnd = source.indexOf(`)`, end) + 1
           const original = source.slice(dynamicIndex, dynamicEnd)
           let replacement =
@@ -160,6 +156,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      if (needPreloadHelper && !ssr) {
+        str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
+      }
+
       if (s) {
         return {
           code: s.toString(),
@@ -177,7 +177,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (format !== 'es') {
+      if (format !== 'es' || ssr) {
         return
       }
 
@@ -261,7 +261,14 @@ export async function transformImportGlob(
   importer: string,
   importIndex: number,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>
-): Promise<{ imports: string; exp: string; endIndex: number }> {
+): Promise<{
+  imports: string
+  exp: string
+  endIndex: number
+  isEager: boolean
+}> {
+  const isEager = source.slice(pos, pos + 21) === 'import.meta.globEager'
+
   const err = (msg: string) => {
     const e = new Error(`Invalid glob import syntax: ${msg}`)
     ;(e as any).pos = pos
@@ -300,7 +307,6 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     const identifier = `__glob_${importIndex}_${i}`
-    const isEager = source.slice(pos, pos + 21) === 'import.meta.globEager'
     if (isEager) {
       imports += `import * as ${identifier} from ${JSON.stringify(importee)};`
       entries += ` ${JSON.stringify(file)}: ${identifier},`
@@ -319,7 +325,8 @@ export async function transformImportGlob(
   return {
     imports,
     exp: `{${entries}}`,
-    endIndex
+    endIndex,
+    isEager
   }
 }
 

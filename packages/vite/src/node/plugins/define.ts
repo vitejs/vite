@@ -16,14 +16,12 @@ export function buildDefinePlugin(config: ResolvedConfig): Plugin {
   }
 
   const individualEnvKeys: Record<string, string> = {}
-  const env = {
+  const env: Record<string, any> = {
     ...config.env,
     SSR: !!config.build.ssr
   }
   for (const key in env) {
-    individualEnvKeys[`import.meta.env.${key}`] = JSON.stringify(
-      config.env[key]
-    )
+    individualEnvKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
   }
 
   const replacements: Record<string, string | undefined> = {
