@@ -262,7 +262,7 @@ export async function createServer(
     },
     ssrLoadModule(url, options) {
       if (!server._ssrExternals) {
-        server._ssrExternals = resolveSSRExternal(config.root)
+        server._ssrExternals = resolveSSRExternal(config)
       }
       return ssrLoadModule(url, server, !!options?.isolated)
     },

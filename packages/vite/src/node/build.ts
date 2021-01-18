@@ -301,7 +301,7 @@ async function doBuild(
   // inject ssrExternal if present
   const userExternal = options.rollupOptions?.external
   const external = ssr
-    ? resolveExternal(resolveSSRExternal(config.root), userExternal)
+    ? resolveExternal(resolveSSRExternal(config), userExternal)
     : userExternal
 
   const rollup = require('rollup') as typeof Rollup

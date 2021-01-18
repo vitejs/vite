@@ -94,6 +94,10 @@ export interface UserConfig {
    */
   optimizeDeps?: DepOptimizationOptions
   /**
+   * SSR specific options
+   */
+  ssr?: SSROptions
+  /**
    * Force Vite to always resolve listed dependencies to the same copy (from
    * project root).
    */
@@ -107,6 +111,11 @@ export interface UserConfig {
    * Default: true
    */
   clearScreen?: boolean
+}
+
+export interface SSROptions {
+  external?: string[]
+  noExternal?: string[]
 }
 
 export interface InlineConfig extends UserConfig {
