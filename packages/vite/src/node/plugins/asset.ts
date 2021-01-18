@@ -74,6 +74,17 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       } else {
         return null
       }
+    },
+
+    generateBundle(_, bundle) {
+      // do not emit assets for SSR build
+      if (config.command === 'build' && config.build.ssr) {
+        for (const file in bundle) {
+          if (bundle[file].type === 'asset') {
+            delete bundle[file]
+          }
+        }
+      }
     }
   }
 }
