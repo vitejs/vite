@@ -38,7 +38,7 @@ function resolveExports(
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
-const browserExternalId = '__browser-external'
+const browserExternalId = '__vite-browser-external'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -72,7 +72,7 @@ export function resolvePlugin(
     },
 
     resolveId(id, importer, _, ssr) {
-      if (id === browserExternalId) {
+      if (id.startsWith(browserExternalId)) {
         return id
       }
 
@@ -190,7 +190,9 @@ export function resolvePlugin(
                   `(imported by: ${chalk.white.dim(importer)})`
               )
             }
-            return browserExternalId
+            return isProduction
+              ? browserExternalId
+              : `${browserExternalId}:${id}`
           }
         }
       }
@@ -199,8 +201,16 @@ export function resolvePlugin(
     },
 
     load(id) {
-      if (id === browserExternalId) {
-        return `export default {}`
+      if (id.startsWith(browserExternalId)) {
+        return isProduction
+          ? `export default {}`
+          : `export default new Proxy({}, {
+  get() {
+    throw new Error('Module "${id.slice(
+      browserExternalId.length + 1
+    )}" has been externalized for browser compatibility and cannot be accessed in client code.')
+  }
+})`
       }
     }
   }
