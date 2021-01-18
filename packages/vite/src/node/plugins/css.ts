@@ -141,7 +141,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-post',
 
-    transform(css, id) {
+    transform(css, id, ssr) {
       if (!cssLangRE.test(id)) {
         return
       }
@@ -155,6 +155,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return css
         } else {
           // server only
+          if (ssr) {
+            return modulesCode || `export default ${JSON.stringify(css)}`
+          }
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
               CLIENT_PUBLIC_PATH
