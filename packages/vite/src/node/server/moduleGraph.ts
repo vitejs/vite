@@ -36,9 +36,12 @@ export class ModuleNode {
   }
 }
 
-function invalidateSSRModule(mod: ModuleNode) {
+function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
+  if (seen.has(mod)) {
+    return
+  }
   mod.ssrModule = null
-  mod.importers.forEach(invalidateSSRModule)
+  mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
 }
 export class ModuleGraph {
   urlToModuleMap = new Map<string, ModuleNode>()
@@ -67,10 +70,11 @@ export class ModuleGraph {
   onFileChange(file: string) {
     const mods = this.getModulesByFile(file)
     if (mods) {
+      const seen = new Set<ModuleNode>()
       mods.forEach((mod) => {
         mod.transformResult = null
         mod.ssrTransformResult = null
-        invalidateSSRModule(mod)
+        invalidateSSRModule(mod, seen)
       })
     }
   }
