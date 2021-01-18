@@ -95,7 +95,7 @@ export async function transformMain(
       `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
     )
   }
-  if (devServer) {
+  if (devServer && !isProduction) {
     // expose filename during serve for devtools to pickup
     output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }
@@ -119,6 +119,21 @@ export async function transformMain(
       `    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)`,
       `  }`,
       `})`
+    )
+  }
+
+  // SSR module registration by wrapping user setup
+  if (ssr) {
+    output.push(
+      `import { useSSRContext } from 'vue'`,
+      `const _sfc_setup = _sfc_main.setup`,
+      `_sfc_main.setup = (props, ctx) => {`,
+      `  const ssrContext = useSSRContext()`,
+      `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
+        filename
+      )})`,
+      `  return _sfc_setup ? _sfc_setup(props, ctx) : undefined`,
+      `}`
     )
   }
 

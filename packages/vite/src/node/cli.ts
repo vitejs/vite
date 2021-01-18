@@ -120,6 +120,7 @@ cli
       `or specify minifier to use (default: terser)`
   )
   .option('--manifest', `[boolean] emit build manifest json`)
+  .option('--ssrManifest', `[boolean] emit ssr manifest json`)
   .option(
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`
