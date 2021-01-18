@@ -210,8 +210,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const deps: Set<string> = new Set()
 
                 if (url[0] === `"` && url[url.length - 1] === `"`) {
+                  const ownerFilename = chunk.fileName
                   // literal import - trace direct imports and add to deps
                   const addDeps = (filename: string) => {
+                    if (filename === ownerFilename) return
                     const chunk = bundle[filename] as OutputChunk | undefined
                     if (chunk) {
                       deps.add(config.build.base + chunk.fileName)
