@@ -39,10 +39,11 @@ export async function transformRequest(
     moduleGraph,
     watcher
   }: ViteDevServer,
-  { ssr }: TransformOptions = {}
+  options: TransformOptions = {}
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
+  const ssr = !!options.ssr
 
   // check if we have a fresh cache
   const module = await moduleGraph.getModuleByUrl(url)
