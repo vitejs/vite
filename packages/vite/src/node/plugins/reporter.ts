@@ -29,7 +29,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     maxLength: number
   ) {
     const needCompression =
-      type === WriteType.JS || type === WriteType.CSS || type === WriteType.HTML
+      !config.build.ssr &&
+      (type === WriteType.JS ||
+        type === WriteType.CSS ||
+        type === WriteType.HTML)
 
     const compressed = needCompression
       ? ` / brotli: ${(
