@@ -26,6 +26,8 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue-jsx#readme",
   "dependencies": {
     "@babel/core": "^7.12.10",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/plugin-proposal-decorators": "^7.12.12",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
     "@babel/plugin-transform-typescript": "^7.12.1",
     "@vue/babel-plugin-jsx": "^1.0.1",

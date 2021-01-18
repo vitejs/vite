@@ -37,8 +37,19 @@ function vueJsxPlugin(options = {}) {
 
     transform(code, id) {
       if (/\.[jt]sx$/.test(id)) {
+        /** @type {any[]} */
         const plugins = [importMeta, [jsx, options]]
         if (id.endsWith('.tsx')) {
+          if (options.tsxLegacyDecorator) {
+            plugins.push([
+              require('@babel/plugin-proposal-decorators'),
+              { legacy: true }
+            ], [
+              require('@babel/plugin-proposal-class-properties'),
+              { loose: true }
+            ])
+          }
+
           plugins.push([
             require('@babel/plugin-transform-typescript'),
             // @ts-ignore
