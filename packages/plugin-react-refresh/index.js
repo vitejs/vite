@@ -48,8 +48,8 @@ module.exports = function reactRefreshPlugin() {
       }
     },
 
-    transform(code, id) {
-      if (shouldSkip) {
+    transform(code, id, ssr) {
+      if (shouldSkip || ssr) {
         return
       }
 
