@@ -1,3 +1,12 @@
+## [1.1.2](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.1.1...plugin-react-refresh@1.1.2) (2021-01-19)
+
+
+### Bug Fixes
+
+* **plugin-react-refresh:** skip during ssr ([d1383ed](https://github.com/vitejs/vite/commit/d1383ed126b37b922a532ff6cb59b32c0a97e1a2))
+
+
+
 ## [1.1.1](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.1.0...plugin-react-refresh@1.1.1) (2021-01-06)
 
 
