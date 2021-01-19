@@ -240,7 +240,7 @@ export function resolveBuildPlugins(
       ...(options.minify && options.minify !== 'esbuild'
         ? [terserPlugin(options.terserOptions)]
         : []),
-      ...(options.manifest ? [manifestPlugin()] : []),
+      ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       ...(!config.logLevel || config.logLevel === 'info'
         ? [buildReporterPlugin(config)]
