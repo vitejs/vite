@@ -69,6 +69,15 @@ function viteLegacyPlugin(options = {}) {
     name: 'legacy-generate-polyfill-chunk',
     apply: 'build',
 
+    configResolved(config) {
+      if (config.build.minify === 'esbuild') {
+        throw new Error(
+          `Can't use esbuild as the minifier when targeting legacy browsers ` +
+            `because esbuild minification is not legacy safe.`
+        )
+      }
+    },
+
     async generateBundle(opts, bundle) {
       if (!isLegacyOutput(opts)) {
         if (!modernPolyfills.size) {
