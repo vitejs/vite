@@ -293,6 +293,8 @@ If you know you are only targeting browsers with native dynamic import support, 
 
 Vite automatically extracts the CSS used by modules in an async chunk and generate a separate file for it. The CSS file is automatically loaded via a `<link>` tag when the associated async chunk is loaded, and the async chunk is guaranteed to only be evaluated after the CSS is loaded to avoid [FOUC](https://en.wikipedia.org/wiki/Flash_of_unstyled_content#:~:text=A%20flash%20of%20unstyled%20content,before%20all%20information%20is%20retrieved.).
 
+If you'd rather have all the CSS extracted into a single file, you can disable CSS code splitting by setting [`build.cssCodeSplit`](/config/#build-csscodesplit) to `false`.
+
 ### Preload Directives Generation
 
 Vite automatically generates `<link rel="modulepreload">` directives for entry chunks and their direct imports in the built HTML.
