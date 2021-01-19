@@ -8,7 +8,20 @@
 
 Snowpack's default build output is unbundled: it transforms each file into separate built modules, which can then be fed into different "optimizers" that perform the actual bundling. The benefit of this is that you can choose between different end-bundlers (e.g. webpack, Rollup, or even ESbuild), the downside is that it's a bit of a fragmented experience - for example, the `esbuild` optimizer is still unstable, the Rollup optimizer is not officially maintained, and different optimizers have different output and configurations.
 
-Vite opts to have a deeper integration with one single bundler (Rollup) in order to provide a more streamlined experience. The reason for going with Rollup is because we believe for the foreseeable future, Rollup offers the best balance between maturity, extensibility, build speed, and output bundle size. Vite supports a [Universal Plugin API](./api-plugin) that extends Rollup's plugin interface, and offers more build features such as [multi-page support](./build#multi-page-app) and [library mode](./build#library-mode).
+Vite opts to have a deeper integration with one single bundler (Rollup) in order to provide a more streamlined experience. The reason for going with Rollup is because we believe for the foreseeable future, Rollup offers the best balance between maturity, extensibility, build speed, and output bundle size. It also allows Vite to support a [Universal Plugin API](./api-plugin) that works for both dev and build.
+
+Due to a more integrated build process, Vite supports a wide range of features that are currently not available in Snowpack build optimizers:
+
+- [Multi-Page Support](./build#multi-page-app)
+- [Library Mode](./build#library-mode)
+- [Automatic CSS code-splitting](./features#css-code-splitting)
+- [Optimized async chunk loading](./features#async-chunk-loading-optimization)
+- [Automatic dynamic import polyfill](./features#dynamic-import-polyfill)
+- Official [legacy mode plugin](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) that generates dual modern/legacy bundles and auto delivers the right bundle based on browser support.
+
+**Monorepo Support**
+
+Vite is designed to handle monorepo setups and we have users successfully using it with Yarn, Yarn 2, and PNPM based monorepos.
 
 **First Class Vue Support**
 
