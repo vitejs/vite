@@ -95,6 +95,7 @@ export interface UserConfig {
   optimizeDeps?: DepOptimizationOptions
   /**
    * SSR specific options
+   * @alpha
    */
   ssr?: SSROptions
   /**

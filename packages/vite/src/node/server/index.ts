@@ -193,6 +193,7 @@ export interface ViteDevServer {
   ): Promise<EsbuildTransformResult>
   /**
    * Load a given URL as an instantiated module for SSR.
+   * @alpha
    */
   ssrLoadModule(
     url: string,
@@ -200,6 +201,7 @@ export interface ViteDevServer {
   ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace
+   * @alpha
    */
   ssrFixStacktrace(e: Error): void
   /**
