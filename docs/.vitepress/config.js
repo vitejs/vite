@@ -81,6 +81,10 @@ module.exports = {
           text: 'APIs',
           children: [
             {
+              text: 'Config Reference',
+              link: '/config/'
+            },
+            {
               text: 'Plugin API',
               link: '/guide/api-plugin'
             },
