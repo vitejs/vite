@@ -40,7 +40,7 @@ export function proxyMiddleware({
   Object.keys(options).forEach((context) => {
     let opts = options[context]
     if (typeof opts === 'string') {
-      opts = { target: opts } as ProxyOptions
+      opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
