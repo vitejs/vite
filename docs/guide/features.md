@@ -278,3 +278,41 @@ By default, the worker script will be emitted as a separate chunk in the product
 ```js
 import MyWorker from './worker?worker&inline'
 ```
+
+## Build Optimizations
+
+> Features listed below are automatically applied as part of the build process and there is no need for explicit configuration unless you want to disable them.
+
+### Dynamic Import Polyfill
+
+Vite uses ES dynamic import as code-splitting points. The generated code will also use dynamic imports to load the async chunks. However, native ESM dynamic imports support landed later than ESM via script tags and there is a browser support discrepancy between the two features. Vite automatically injects a light-weight [dynamic import polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill) to ease out that difference.
+
+If you know you are only targeting browsers with native dynamic import support, you can explicitly disable this feature via [`build.polyfillDynamicImport`](/config/#build-polyfilldynamicimport).
+
+### CSS Code Splitting
+
+Vite automatically extracts the CSS used by modules in an async chunk and generate a separate file for it. The CSS file is automatically loaded via a `<link>` tag when the associated async chunk is loaded, and the async chunk is guaranteed to only be evaluated after the CSS is loaded to avoid [FOUC](https://en.wikipedia.org/wiki/Flash_of_unstyled_content#:~:text=A%20flash%20of%20unstyled%20content,before%20all%20information%20is%20retrieved.).
+
+### Preload Directives Generation
+
+Vite automatically generates `<link rel="modulepreload">` directives for entry chunks and their direct imports in the built HTML.
+
+### Async Chunk Loading Optimization
+
+In real world applications, Rollup often generates "common" chunks - code that is shared between two or more other chunks. Combined with dynamic imports, it is quite common to have the following scenario:
+
+![graph](/graph.png)
+
+In the non-optimized scenarios, when async chunk `A` is imported, the browser will have to request and parse `A` before it can figure out that is also needs the common chunk `C` first. This results in an extra network roundtrip:
+
+```
+Entry ---> A ---> C
+```
+
+Vite automatically rewrites code-split dynamic import calls with a preload step so that when `A` is requested, `C` is fetched **in parallel**:
+
+```
+Entry ---> (A + C)
+```
+
+It is possible for `C` to have further imports, which will result in even roundtrips in the un-optimized scenario. Vite's optimization will trace all the direct imports to completely eliminate the roundtrips regardless of import depth.
