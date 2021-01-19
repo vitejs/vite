@@ -305,7 +305,7 @@ In real world applications, Rollup often generates "common" chunks - code that i
 
 ![graph](/graph.png)
 
-In the non-optimized scenarios, when async chunk `A` is imported, the browser will have to request and parse `A` before it can figure out that is also needs the common chunk `C` first. This results in an extra network roundtrip:
+In the non-optimized scenarios, when async chunk `A` is imported, the browser will have to request and parse `A` before it can figure out that it also needs the common chunk `C`. This results in an extra network roundtrip:
 
 ```
 Entry ---> A ---> C
