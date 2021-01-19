@@ -40,6 +40,7 @@ function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
   if (seen.has(mod)) {
     return
   }
+  seen.add(mod)
   mod.ssrModule = null
   mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
 }
