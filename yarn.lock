@@ -7849,14 +7849,14 @@ verror@1.10.0:
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
 
-vitepress@^0.11.1:
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-0.11.1.tgz#1eee2dac8d3aad8d488558ddbc2367e33b2a2a3f"
-  integrity sha512-ThjTFNQjlVcVz0UNv1zV6fs1cYs8h/xNWmzrbF08gqKtE6vTSRVEb9SVlIXq1LVt13/0+t5XyddEURi5wo1Big==
+vitepress@^0.11.4:
+  version "0.11.4"
+  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-0.11.4.tgz#0ca9c406d0f0f10cf7baa4117184d05890bc75dc"
+  integrity sha512-WvofLFpPxgaaHeAF72uv2XHKtuQ7ouwJu2n3wuDyAOwU1BeyL9YpnVQPBw/L7LAjApJe9bdbK7om0J/hloXN0g==
   dependencies:
     "@docsearch/css" "^1.0.0-alpha.28"
     "@docsearch/js" "^1.0.0-alpha.28"
-    "@vitejs/plugin-vue" "^1.0.3"
+    "@vitejs/plugin-vue" "^1.1.0"
     "@vue/compiler-sfc" "^3.0.5"
     "@vue/server-renderer" "^3.0.5"
     chalk "^4.1.0"
@@ -7879,7 +7879,7 @@ vitepress@^0.11.1:
     prismjs "^1.20.0"
     sirv "^1.0.10"
     slash "^3.0.0"
-    vite "^2.0.0-beta.21"
+    vite "^2.0.0-beta.32"
     vue "^3.0.5"
 
 void-elements@^3.1.0:
