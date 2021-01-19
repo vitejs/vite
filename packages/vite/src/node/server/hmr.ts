@@ -104,12 +104,14 @@ export async function handleHMRUpdate(
   }
 
   const updates: Update[] = []
+  const invalidatedModules = new Set<ModuleNode>()
 
   for (const mod of hmrContext.modules) {
     const boundaries = new Set<{
       boundary: ModuleNode
       acceptedVia: ModuleNode
     }>()
+    invalidate(mod, timestamp, invalidatedModules)
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
       config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
@@ -159,10 +161,6 @@ function propagateUpdate(
       boundary: node,
       acceptedVia: node
     })
-    // mark current propagation chain dirty.
-    // timestamp is used for injecting timestamp query during rewrite
-    // also invalidate cache
-    invalidateChain(currentChain, timestamp)
     return false
   }
 
@@ -177,24 +175,29 @@ function propagateUpdate(
         boundary: importer,
         acceptedVia: node
       })
-      invalidateChain(subChain, timestamp)
       continue
     }
 
-    if (!currentChain.includes(importer)) {
-      if (propagateUpdate(importer, timestamp, boundaries, subChain)) {
-        return true
-      }
+    if (currentChain.includes(importer)) {
+      // circular deps is considered dead end
+      return true
+    }
+
+    if (propagateUpdate(importer, timestamp, boundaries, subChain)) {
+      return true
     }
   }
   return false
 }
 
-function invalidateChain(chain: ModuleNode[], timestamp: number) {
-  chain.forEach((node) => {
-    node.lastHMRTimestamp = timestamp
-    node.transformResult = null
-  })
+function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
+  if (seen.has(mod)) {
+    return
+  }
+  seen.add(mod)
+  mod.lastHMRTimestamp = timestamp
+  mod.transformResult = null
+  mod.importers.forEach((importer) => invalidate(importer, timestamp, seen))
 }
 
 export function handlePrunedModules(
