@@ -159,7 +159,7 @@ export async function ssrTransform(
   })
 
   let map = s.generateMap({ hires: true })
-  if (inMap) {
+  if (inMap && inMap.mappings) {
     map = merge(inMap, {
       ...map,
       sources: inMap.sources,
