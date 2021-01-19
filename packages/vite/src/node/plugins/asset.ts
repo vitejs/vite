@@ -199,14 +199,66 @@ export async function urlToBuiltUrl(
   if (checkPublicFile(url, config.root)) {
     return config.build.base + url.slice(1)
   }
-  const file = url.startsWith('/')
+
+  const id = url.startsWith('/')
     ? path.join(config.root, url)
     : path.join(path.dirname(importer), url)
+
+  const file = cleanUrl(id)
+  if (!fs.existsSync(file)) {
+    const builtUrl = await virtualFileToBuiltUrl(
+      url,
+      importer,
+      config,
+      pluginContext
+    )
+    if (builtUrl) {
+      return builtUrl
+    }
+  }
+
   return fileToBuiltUrl(
-    file,
+    id,
     config,
     pluginContext,
     // skip public check since we just did it above
     true
   )
+}
+
+async function virtualFileToBuiltUrl(
+  id: string,
+  importer: string,
+  config: ResolvedConfig,
+  pluginContext: PluginContext
+) {
+  let cache = assetCache.get(config)
+  if (!cache) {
+    cache = new Map()
+    assetCache.set(config, cache)
+  }
+  const cached = cache.get(id)
+  if (cached) {
+    return cached
+  }
+  const resolved = await pluginContext.resolve(id, importer)
+  if (resolved) {
+    const { id } = resolved
+    for (const plugin of config.plugins) {
+      if (!plugin.load) continue
+
+      const loaded = await plugin.load.call(pluginContext, id)
+      if (loaded == null) continue
+
+      const fileId = pluginContext.emitFile({
+        name: id.slice(1),
+        type: 'asset',
+        source: typeof loaded === 'string' ? loaded : loaded.code
+      })
+
+      const url = `__VITE_ASSET__${fileId}`
+      cache.set(id, url)
+      return url
+    }
+  }
 }
