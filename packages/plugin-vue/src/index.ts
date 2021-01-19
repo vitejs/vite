@@ -43,6 +43,10 @@ export interface Options {
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
   style?: Partial<SFCStyleCompileOptions>
+  /**
+   * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
+   */
+  ssr?: boolean
 }
 
 export interface ResolvedOptions extends Options {
@@ -103,7 +107,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       }
     },
 
-    load(id, ssr = false) {
+    load(id, ssr = !!options.ssr) {
       const { filename, query } = parseVueRequest(id)
       // select corresponding block for subpart virtual modules
       if (query.vue) {
@@ -131,7 +135,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       }
     },
 
-    transform(code, id, ssr = false) {
+    transform(code, id, ssr = !!options.ssr) {
       const { filename, query } = parseVueRequest(id)
       if (!query.vue && !filter(filename)) {
         return
