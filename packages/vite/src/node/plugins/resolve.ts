@@ -13,7 +13,8 @@ import {
   normalizePath,
   fsPathFromId,
   resolveFrom,
-  isDataUrl
+  isDataUrl,
+  cleanUrl
 } from '../utils'
 import { ResolvedConfig, ViteDevServer } from '..'
 import slash from 'slash'
@@ -164,7 +165,9 @@ export function resolvePlugin(
         if (
           (res = tryNodeResolve(
             id,
-            importer ? path.dirname(importer) : root,
+            importer && importer[0] === '/' && fs.existsSync(cleanUrl(importer))
+              ? path.dirname(importer)
+              : root,
             isProduction,
             isBuild,
             dedupe,
