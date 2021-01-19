@@ -138,20 +138,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           needPreloadHelper = true
           const dynamicEnd = source.indexOf(`)`, end) + 1
           const original = source.slice(dynamicIndex, dynamicEnd)
-          let replacement =
-            `(${isModernFlag} ` +
-            `? ${preloadMethod}(() => ${original},"${preloadMarker}")` +
-            ` : ${original})`
-          // backtrace to see if the import call is after a newline
-          for (let i = dynamicIndex - 1; i > 0; i--) {
-            const char = source.charAt(i)
-            if (char === '\n') {
-              replacement = `;` + replacement
-              break
-            } else if (!/\s/.test(char)) {
-              break
-            }
-          }
+          const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
           str().overwrite(dynamicIndex, dynamicEnd, replacement)
         }
       }
