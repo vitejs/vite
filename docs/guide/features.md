@@ -317,4 +317,4 @@ Vite automatically rewrites code-split dynamic import calls with a preload step 
 Entry ---> (A + C)
 ```
 
-It is possible for `C` to have further imports, which will result in even roundtrips in the un-optimized scenario. Vite's optimization will trace all the direct imports to completely eliminate the roundtrips regardless of import depth.
+It is possible for `C` to have further imports, which will result in even more roundtrips in the un-optimized scenario. Vite's optimization will trace all the direct imports to completely eliminate the roundtrips regardless of import depth.
