@@ -1,7 +1,6 @@
 // @ts-check
 const fs = require('fs')
 const express = require('express')
-const { createServer } = require('vite')
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -42,7 +41,7 @@ async function startServer() {
    */
   let vite
   if (!isProd) {
-    vite = await createServer({
+    vite = await require('vite').createServer({
       server: {
         middlewareMode: true
       }
