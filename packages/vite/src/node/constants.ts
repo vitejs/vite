@@ -1,6 +1,6 @@
 import path from 'path'
 
-export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx']
+export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
 
 export const DEP_CACHE_DIR = `.vite`
 
