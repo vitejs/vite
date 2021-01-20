@@ -115,7 +115,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
             this.warn(prettifyMessage(m, code))
           })
         }
-        if (options.jsxInject) {
+        if (options.jsxInject && /\.(?:j|t)sx\b/.test(id)) {
           result.code = options.jsxInject + ';' + result.code
         }
         return {
