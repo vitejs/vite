@@ -33,7 +33,7 @@ function resolveExports(
 ) {
   return _resolveExports(pkg, key, {
     browser: true,
-    conditions: isProduction ? ['production'] : ['development']
+    conditions: ['module', isProduction ? 'production' : 'development']
   })
 }
 
