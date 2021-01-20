@@ -1,4 +1,10 @@
-import { isBuild } from '../../testUtils'
+import {
+  addFile,
+  editFile,
+  isBuild,
+  removeFile,
+  untilUpdated
+} from '../../testUtils'
 
 const filteredResult = {
   './foo.js': {
@@ -44,3 +50,42 @@ test('should work', async () => {
     JSON.stringify(allResult, null, 2)
   )
 })
+
+if (!isBuild) {
+  test('hmr for adding/removing files', async () => {
+    addFile('dir/a.js', '')
+    await untilUpdated(
+      () => page.textContent('.result'),
+      JSON.stringify(
+        {
+          './dir/a.js': {},
+          ...allResult
+        },
+        null,
+        2
+      )
+    )
+
+    // edit the added file
+    editFile('dir/a.js', () => 'export const msg ="a"')
+    await untilUpdated(
+      () => page.textContent('.result'),
+      JSON.stringify(
+        {
+          './dir/a.js': {
+            msg: 'a'
+          },
+          ...allResult
+        },
+        null,
+        2
+      )
+    )
+
+    removeFile('dir/a.js')
+    await untilUpdated(
+      () => page.textContent('.result'),
+      JSON.stringify(allResult, null, 2)
+    )
+  })
+}
