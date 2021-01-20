@@ -9,7 +9,9 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   let polyfillLoaded = false
   const polyfillString =
     `const p = ${polyfill.toString()};` +
-    `${isModernFlag}&&p(${JSON.stringify(config.build.base)});`
+    `${isModernFlag}&&p(${JSON.stringify(
+      path.posix.join(config.build.base, config.build.assetsDir, '/')
+    )});`
 
   return {
     name: 'vite:dynamic-import-polyfill',
