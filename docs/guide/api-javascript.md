@@ -52,8 +52,18 @@ const express = require('express')
   // use vite's connect instance as middleware
   app.use(viteServer.app)
 
+  app.use('*', (req, res) => {
+    // serve custom index.html
+  })
+
   app.listen(3000)
 })()
+```
+
+Note that in middleware mode, Vite will not be serving `index.html` - that is now the responsibility of the parent server. When serving the HTML, make sure to include a link to Vite's dev client:
+
+```html
+<script type="module" src="/@vite/client"></script>
 ```
 
 ## `InlineConfig`
