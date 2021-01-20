@@ -79,6 +79,7 @@ export interface DepOptimizationOptions {
 export interface DepOptimizationMetadata {
   hash: string
   optimized: Record<string, string>
+  transitiveOptimized: Record<string, true>
   cjsEntries: Record<string, true>
   dependencies: Record<string, string>
 }
@@ -108,6 +109,7 @@ export async function optimizeDeps(
   const data: DepOptimizationMetadata = {
     hash: getDepHash(root, pkg, config),
     optimized: {},
+    transitiveOptimized: {},
     cjsEntries: {},
     dependencies: pkg.dependencies
   }
