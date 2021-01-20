@@ -23,6 +23,7 @@ import { CLIENT_PUBLIC_PATH } from '../constants'
 import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
 import { assetUrlRE, urlToBuiltUrl } from './asset'
+import MagicString from 'magic-string'
 
 // const debug = createDebugger('vite:css')
 
@@ -221,13 +222,32 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (config.build.minify) {
           chunkCSS = await minifyCSS(chunkCSS, config)
         }
-        // emit corresponding css file
-        const fileHandle = this.emitFile({
-          name: chunk.name + '.css',
-          type: 'asset',
-          source: chunkCSS
-        })
-        chunkToEmittedCssFileMap.set(chunk, fileHandle)
+        if (opts.format === 'es') {
+          // emit corresponding css file
+          const fileHandle = this.emitFile({
+            name: chunk.name + '.css',
+            type: 'asset',
+            source: chunkCSS
+          })
+          chunkToEmittedCssFileMap.set(chunk, fileHandle)
+        } else {
+          // legacy build, inline css
+          const style = `__vite_style__`
+          const injectCode =
+            `var ${style} = document.createElement('style');` +
+            `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `document.head.appendChild(${style});`
+          if (config.build.sourcemap) {
+            const s = new MagicString(code)
+            s.prepend(injectCode)
+            return {
+              code: s.toString(),
+              map: s.generateMap({ hires: true })
+            }
+          } else {
+            return { code: injectCode + code }
+          }
+        }
         return {
           code,
           map: null
