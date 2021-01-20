@@ -4,7 +4,8 @@ import {
   asyncReplace,
   cleanUrl,
   generateCodeFrame,
-  isDataUrl
+  isDataUrl,
+  isObject
 } from '../utils'
 import path from 'path'
 import { Plugin } from '../plugin'
@@ -33,6 +34,11 @@ export interface CSSOptions {
    */
   modules?: CSSModulesOptions | false
   preprocessorOptions?: Record<string, any>
+  postcss?:
+    | string
+    | (ProcessOptions & {
+        plugins?: PostcssPlugin[]
+      })
 }
 
 export interface CSSModulesOptions {
@@ -311,7 +317,7 @@ async function compileCSS(
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
-  const postcssConfig = await loadPostcssConfig(config.root)
+  const postcssConfig = await resolvePostcssConfig(config)
   const lang = id.match(cssLangRE)?.[1]
 
   // 1. plain css that needs no processing
@@ -437,14 +443,28 @@ interface PostCSSConfigResult {
 
 let cachedPostcssConfig: PostCSSConfigResult | null | undefined
 
-async function loadPostcssConfig(
-  root: string
+async function resolvePostcssConfig(
+  config: ResolvedConfig
 ): Promise<PostCSSConfigResult | null> {
   if (cachedPostcssConfig !== undefined) {
     return cachedPostcssConfig
   }
+
+  // inline postcss config via vite config
+  const inlineOptions = config.css?.postcss
+  if (isObject(inlineOptions)) {
+    const result = {
+      options: { ...inlineOptions },
+      plugins: inlineOptions.plugins || []
+    }
+    delete result.options.plugins
+    return (cachedPostcssConfig = result)
+  }
+
   try {
-    return (cachedPostcssConfig = await postcssrc({}, root))
+    const searchPath =
+      typeof inlineOptions === 'string' ? inlineOptions : config.root
+    return (cachedPostcssConfig = await postcssrc({}, searchPath))
   } catch (e) {
     if (!/No PostCSS Config found/.test(e.message)) {
       throw e
