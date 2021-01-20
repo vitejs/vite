@@ -1,3 +1,26 @@
+# [2.0.0-beta.35](https://github.com/vitejs/vite/compare/v2.0.0-beta.34...v2.0.0-beta.35) (2021-01-20)
+
+
+### Bug Fixes
+
+* allow direct inspection of static file via browser ([a3c334f](https://github.com/vitejs/vite/commit/a3c334f66dbe1e5c49c4e5d77381aa0098c4a8a9)), closes [#1612](https://github.com/vitejs/vite/issues/1612)
+* also resolve for module condition ([3a3029e](https://github.com/vitejs/vite/commit/3a3029effa0b83775f02fbd9469ef104eb6adb33)), closes [#1583](https://github.com/vitejs/vite/issues/1583)
+* do not apply jsxInject on ts files ([a72a59c](https://github.com/vitejs/vite/commit/a72a59c55355a2a247b84178e63ce8c7cc1d7564))
+* inline async css for legacy builds ([940d483](https://github.com/vitejs/vite/commit/940d48333f6572314576da9312f36018fd70bdc8))
+* manually test global regex codeframeRE index ([#1608](https://github.com/vitejs/vite/issues/1608)) ([20d6c0f](https://github.com/vitejs/vite/commit/20d6c0fae160e25ab6cb76484baf910388dccdc6))
+* properly format css pre-processor errors from [@imported](https://github.com/imported) files ([ec18bde](https://github.com/vitejs/vite/commit/ec18bde7ee4045a47362240a6f5ff4997657c7ba)), closes [#1600](https://github.com/vitejs/vite/issues/1600) [#1601](https://github.com/vitejs/vite/issues/1601)
+* **asset:** use stricter asset url marker and regex ([e6c8478](https://github.com/vitejs/vite/commit/e6c8478dd765e63f56e2c4559daf03f976f60b4c)), closes [#1602](https://github.com/vitejs/vite/issues/1602)
+* **plugin-dynamic-import:** include assetDir in dynamic import polyfill module path ([#1610](https://github.com/vitejs/vite/issues/1610)) ([47ff0f4](https://github.com/vitejs/vite/commit/47ff0f4307da6a90db2fc43fcf0aaffdb9e36643))
+* **resolve:** get pkg  from importer for relative id ([#1599](https://github.com/vitejs/vite/issues/1599)) ([c821f09](https://github.com/vitejs/vite/commit/c821f094c25a7acde87b868dced265aa6e792a57))
+
+
+### Features
+
+* **manifest:** include dynamic entries and dynamic imports ([#1609](https://github.com/vitejs/vite/issues/1609)) ([9ed4908](https://github.com/vitejs/vite/commit/9ed49085ae860fb96d51ac50845f96ceb9fa649f))
+* detect and warn against imports to transitively optimized deps ([3841e70](https://github.com/vitejs/vite/commit/3841e702213efac178aa90ab01825a813d3b4819)), closes [#1543](https://github.com/vitejs/vite/issues/1543)
+
+
+
 # [2.0.0-beta.34](https://github.com/vitejs/vite/compare/v2.0.0-beta.33...v2.0.0-beta.34) (2021-01-20)
 
 
