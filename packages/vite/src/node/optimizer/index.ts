@@ -78,8 +78,9 @@ export interface DepOptimizationOptions {
 
 export interface DepOptimizationMetadata {
   hash: string
-  map: Record<string, string>
+  optimized: Record<string, string>
   cjsEntries: Record<string, true>
+  dependencies: Record<string, string>
 }
 
 export async function optimizeDeps(
@@ -101,10 +102,14 @@ export async function optimizeDeps(
   }
 
   const dataPath = path.join(cacheDir, 'metadata.json')
+  const pkgPath = lookupFile(root, [`package.json`], true)!
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+
   const data: DepOptimizationMetadata = {
-    hash: getDepHash(root, config.mode, config.configFile),
-    map: {},
-    cjsEntries: {}
+    hash: getDepHash(root, pkg, config),
+    optimized: {},
+    cjsEntries: {},
+    dependencies: pkg.dependencies
   }
 
   if (!force) {
@@ -202,7 +207,7 @@ export async function optimizeDeps(
       })
       fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
       // udpate data hash
-      data.hash = getDepHash(root, config.mode, config.configFile)
+      data.hash = getDepHash(root, pkg, config)
     } else {
       process.exit(1)
     }
@@ -448,20 +453,44 @@ const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
 
 let cachedHash: string | undefined
 
-export function getDepHash(
+function getDepHash(
   root: string,
-  mode: string,
-  configFile: string | undefined
+  pkg: Record<string, any>,
+  config: ResolvedConfig
 ): string {
   if (cachedHash) {
     return cachedHash
   }
-  let content = mode + (lookupFile(root, lockfileFormats) || '')
-  const pkg = JSON.parse(lookupFile(root, [`package.json`]) || '{}')
+  let content = lookupFile(root, lockfileFormats) || ''
   content += JSON.stringify(pkg.dependencies)
   // also take config into account
-  if (configFile) {
-    content += fs.readFileSync(configFile, 'utf-8')
-  }
+  // only a subset of config options that can affect dep optimization
+  content += JSON.stringify(
+    {
+      mode: config.mode,
+      root: config.root,
+      alias: config.alias,
+      dedupe: config.dedupe,
+      assetsInclude: config.assetsInclude,
+      build: {
+        commonjsOptions: config.build.commonjsOptions,
+        rollupOptions: {
+          external: config.build.rollupOptions?.external
+        }
+      },
+      optimizeDeps: {
+        include: config.optimizeDeps?.include,
+        exclude: config.optimizeDeps?.exclude,
+        plugins: config.optimizeDeps?.plugins?.map((p) => p.name),
+        link: config.optimizeDeps?.link
+      }
+    },
+    (_, value) => {
+      if (typeof value === 'function' || value instanceof RegExp) {
+        return value.toString()
+      }
+      return value
+    }
+  )
   return createHash('sha256').update(content).digest('hex').substr(0, 8)
 }
