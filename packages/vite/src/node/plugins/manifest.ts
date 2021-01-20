@@ -6,7 +6,8 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
     string,
     {
       file: string
-      imports?: string[]
+      imports?: string[],
+      dynamicImports?: string[]
     }
   > = {}
 
@@ -18,14 +19,15 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
-          if (chunk.isEntry) {
+          if (chunk.isEntry || chunk.isDynamicEntry) {
             const name =
               format === 'system' && !chunk.name.includes('-legacy')
                 ? chunk.name + '-legacy'
                 : chunk.name
             manifest[name + '.js'] = {
               file: chunk.fileName,
-              imports: chunk.imports
+              imports: chunk.imports,
+              dynamicImports: chunk.dynamicImports
             }
           }
         } else if (chunk.name) {
