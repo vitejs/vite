@@ -291,7 +291,7 @@ export function tryNodeResolve(
     deepMatch &&
     server &&
     server._optimizeDepsMetadata &&
-    pkg.data.name in server._optimizeDepsMetadata.map &&
+    pkg.data.name in server._optimizeDepsMetadata.optimized &&
     !isCSSRequest(id) &&
     !server.config.assetsInclude(id)
   ) {
@@ -349,7 +349,7 @@ export function tryOptimizedResolve(
   if (cacheDir && depData) {
     const [id, q] = rawId.split(`?`, 2)
     const query = q ? `?${q}` : ``
-    const filePath = depData.map[id]
+    const filePath = depData.optimized[id]
     if (filePath) {
       return normalizePath(path.resolve(cacheDir, filePath)) + query
     }

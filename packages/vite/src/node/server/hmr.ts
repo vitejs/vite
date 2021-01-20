@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { createServer, ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, lookupFile, normalizePath } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
 import slash from 'slash'
@@ -46,10 +46,25 @@ export async function handleHMRUpdate(
       chalk.green('config or .env file changed, restarting server...'),
       { clear: true, timestamp: true }
     )
-    await server.close()
-    ;(global as any).__vite_start_time = Date.now()
-    server = await createServer(config.inlineConfig)
-    await server.listen()
+    await restartServer(server)
+    return
+  }
+
+  if (
+    file.endsWith('package.json') &&
+    file ===
+      normalizePath(lookupFile(config.root, [`package.json`], true) || '')
+  ) {
+    const deps = require(file).dependencies || {}
+    const prevDeps = server._optimizeDepsMetadata?.dependencies || {}
+    // check if deps have changed
+    if (hasDepsChanged(deps, prevDeps)) {
+      config.logger.info(
+        chalk.green('dependencies have changed, restarting server...'),
+        { clear: true, timestamp: true }
+      )
+      await restartServer(server)
+    }
     return
   }
 
@@ -370,4 +385,23 @@ async function readModifiedFile(file: string): Promise<string> {
   } else {
     return content
   }
+}
+
+function hasDepsChanged(deps: any, prevDeps: any): boolean {
+  if (Object.keys(deps).length !== Object.keys(prevDeps).length) {
+    return true
+  }
+  for (const key in deps) {
+    if (deps[key] !== prevDeps[key]) {
+      return true
+    }
+  }
+  return false
+}
+
+async function restartServer(server: ViteDevServer) {
+  await server.close()
+  ;(global as any).__vite_start_time = Date.now()
+  server = await createServer(server.config.inlineConfig)
+  await server.listen()
 }
