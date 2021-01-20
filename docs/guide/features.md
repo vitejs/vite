@@ -119,11 +119,18 @@ CSS modules behavior can be configured via the [`css.modules` option](/config/#c
 
 Because Vite targets modern browsers only, it is recommended to use native CSS variables with PostCSS plugins that implement CSSWG drafts (e.g. [postcss-nesting](https://github.com/jonathantneal/postcss-nesting)) and author plain, future-standards-compliant CSS.
 
-That said, Vite does provide built-in support for `.scss`, `.sass`, `.less`, `.styl` and `.stylus` files. There is no need to install Vite-specific plugins for them, but the corresponding pre-processor itself must be installed as a peer dependency:
+That said, Vite does provide built-in support for `.scss`, `.sass`, `.less`, `.styl` and `.stylus` files. There is no need to install Vite-specific plugins for them, but the corresponding pre-processor itself must be installed:
 
-- `.scss` and `.sass`: [sass](https://www.npmjs.com/package/sass)
-- `.less`: [less](https://www.npmjs.com/package/less)
-- `.styl` and `.stylus`: [stylus](https://www.npmjs.com/package/stylus)
+```bash
+# .scss and .sass
+npm install -D sass
+
+# .less
+npm install -D less
+
+# .styl and .stylus
+npm install -D stylus
+```
 
 You can also use CSS modules combined with pre-processors by prepending `.module` to the file extension, for example `style.module.scss`.
 
