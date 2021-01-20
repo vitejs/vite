@@ -123,13 +123,13 @@ That said, Vite does provide built-in support for `.scss`, `.sass`, `.less`, `.s
 
 ```bash
 # .scss and .sass
-yarn add -D sass
+npm install -D sass
 
 # .less
-yarn add -D less
+npm install -D less
 
 # .styl and .stylus
-yarn add -D stylus
+npm install -D stylus
 ```
 
 You can also use CSS modules combined with pre-processors by prepending `.module` to the file extension, for example `style.module.scss`.
