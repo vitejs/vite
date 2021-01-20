@@ -18,9 +18,10 @@ export async function transformMain(
   code: string,
   filename: string,
   options: ResolvedOptions,
-  pluginContext: TransformPluginContext
+  pluginContext: TransformPluginContext,
+  ssr: boolean
 ) {
-  const { root, devServer, isProduction, ssr } = options
+  const { root, devServer, isProduction } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
@@ -42,7 +43,12 @@ export async function transformMain(
   const hasScoped = descriptor.styles.some((s) => s.scoped)
 
   // script
-  const { code: scriptCode, map } = await genScriptCode(descriptor, options)
+  const { code: scriptCode, map } = await genScriptCode(
+    descriptor,
+    options,
+    pluginContext,
+    ssr
+  )
 
   // template
   // Check if we can use compile template as inlined render function
@@ -57,10 +63,11 @@ export async function transformMain(
   let templateCode = ''
   let templateMap
   if (hasTemplateImport) {
-    ;({ code: templateCode, map: templateMap } = genTemplateCode(
+    ;({ code: templateCode, map: templateMap } = await genTemplateCode(
       descriptor,
       options,
-      pluginContext
+      pluginContext,
+      ssr
     ))
   }
 
@@ -71,10 +78,10 @@ export async function transformMain(
     : ''
 
   // styles
-  const stylesCode = genStyleCode(descriptor)
+  const stylesCode = await genStyleCode(descriptor, pluginContext)
 
   // custom blocks
-  const customBlocksCode = genCustomBlockCode(descriptor)
+  const customBlocksCode = await genCustomBlockCode(descriptor, pluginContext)
 
   const output: string[] = [
     scriptCode,
@@ -88,14 +95,14 @@ export async function transformMain(
       `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
     )
   }
-  if (devServer) {
+  if (devServer && !isProduction) {
     // expose filename during serve for devtools to pickup
     output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }
   output.push('export default _sfc_main')
 
   // HMR
-  if (devServer && !isProduction) {
+  if (devServer && !ssr && !isProduction) {
     output.push(`_sfc_main.__hmrId = ${JSON.stringify(descriptor.id)}`)
     output.push(
       `__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)`
@@ -112,6 +119,21 @@ export async function transformMain(
       `    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)`,
       `  }`,
       `})`
+    )
+  }
+
+  // SSR module registration by wrapping user setup
+  if (ssr) {
+    output.push(
+      `import { useSSRContext } from 'vue'`,
+      `const _sfc_setup = _sfc_main.setup`,
+      `_sfc_main.setup = (props, ctx) => {`,
+      `  const ssrContext = useSSRContext()`,
+      `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
+        filename
+      )})`,
+      `  return _sfc_setup ? _sfc_setup(props, ctx) : undefined`,
+      `}`
     )
   }
 
@@ -148,10 +170,11 @@ export async function transformMain(
   }
 }
 
-function genTemplateCode(
+async function genTemplateCode(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
-  pluginContext: PluginContext
+  pluginContext: PluginContext,
+  ssr: boolean
 ) {
   const template = descriptor.template!
 
@@ -163,18 +186,19 @@ function genTemplateCode(
       template.content,
       descriptor,
       options,
-      pluginContext
+      pluginContext,
+      ssr
     )
   } else {
     if (template.src) {
-      linkSrcToDescriptor(template.src, descriptor)
+      await linkSrcToDescriptor(template.src, descriptor, pluginContext)
     }
     const src = template.src || descriptor.filename
     const srcQuery = template.src ? `&src` : ``
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
-    const renderFnName = options.ssr ? 'ssrRender' : 'render'
+    const renderFnName = ssr ? 'ssrRender' : 'render'
     return {
       code: `import { ${renderFnName} as _sfc_${renderFnName} } from ${request}`,
       map: undefined
@@ -184,14 +208,16 @@ function genTemplateCode(
 
 async function genScriptCode(
   descriptor: SFCDescriptor,
-  options: ResolvedOptions
+  options: ResolvedOptions,
+  pluginContext: PluginContext,
+  ssr: boolean
 ): Promise<{
   code: string
   map: RawSourceMap
 }> {
   let scriptCode = `const _sfc_main = {}`
   let map
-  const script = resolveScript(descriptor, options)
+  const script = resolveScript(descriptor, options, ssr)
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
@@ -213,7 +239,7 @@ async function genScriptCode(
       }
     } else {
       if (script.src) {
-        linkSrcToDescriptor(script.src, descriptor)
+        await linkSrcToDescriptor(script.src, descriptor, pluginContext)
       }
       const src = script.src || descriptor.filename
       const langFallback = (script.src && path.extname(src).slice(1)) || 'js'
@@ -231,13 +257,17 @@ async function genScriptCode(
   }
 }
 
-function genStyleCode(descriptor: SFCDescriptor) {
+async function genStyleCode(
+  descriptor: SFCDescriptor,
+  pluginContext: PluginContext
+) {
   let stylesCode = ``
   let hasCSSModules = false
   if (descriptor.styles.length) {
-    descriptor.styles.forEach((style, i) => {
+    for (let i = 0; i < descriptor.styles.length; i++) {
+      const style = descriptor.styles[i]
       if (style.src) {
-        linkSrcToDescriptor(style.src, descriptor)
+        await linkSrcToDescriptor(style.src, descriptor, pluginContext)
       }
       const src = style.src || descriptor.filename
       // do not include module in default query, since we use it to indicate
@@ -256,16 +286,20 @@ function genStyleCode(descriptor: SFCDescriptor) {
         stylesCode += `\nimport ${JSON.stringify(styleRequest)}`
       }
       // TODO SSR critical CSS collection
-    })
+    }
   }
   return stylesCode
 }
 
-function genCustomBlockCode(descriptor: SFCDescriptor) {
+async function genCustomBlockCode(
+  descriptor: SFCDescriptor,
+  pluginContext: PluginContext
+) {
   let code = ''
-  descriptor.customBlocks.forEach((block, index) => {
+  for (let index = 0; index < descriptor.customBlocks.length; index++) {
+    const block = descriptor.customBlocks[index]
     if (block.src) {
-      linkSrcToDescriptor(block.src, descriptor)
+      await linkSrcToDescriptor(block.src, descriptor, pluginContext)
     }
     const src = block.src || descriptor.filename
     const attrsQuery = attrsToQuery(block.attrs, block.type)
@@ -274,7 +308,7 @@ function genCustomBlockCode(descriptor: SFCDescriptor) {
     const request = JSON.stringify(src + query)
     code += `import block${index} from ${request}\n`
     code += `if (typeof block${index} === 'function') block${index}(_sfc_main)\n`
-  })
+  }
   return code
 }
 
@@ -298,11 +332,13 @@ function genCSSModulesCode(
  * with its owner SFC descriptor so that we can get the information about
  * the owner SFC when compiling that file in the transform phase.
  */
-function linkSrcToDescriptor(src: string, descriptor: SFCDescriptor) {
-  const srcFile = path.posix.resolve(
-    path.posix.dirname(descriptor.filename),
-    src
-  )
+async function linkSrcToDescriptor(
+  src: string,
+  descriptor: SFCDescriptor,
+  pluginContext: PluginContext
+) {
+  const srcFile =
+    (await pluginContext.resolve(src, descriptor.filename))?.id || src
   setDescriptor(srcFile, descriptor)
 }
 

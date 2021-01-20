@@ -1,3 +1,79 @@
+# [2.0.0-beta.34](https://github.com/vitejs/vite/compare/v2.0.0-beta.33...v2.0.0-beta.34) (2021-01-20)
+
+
+### Bug Fixes
+
+* default changeOrigin to true in proxy option shorthand ([b008bd5](https://github.com/vitejs/vite/commit/b008bd59674c6d46ca41108b1c9d5076374bd1b8)), closes [#1577](https://github.com/vitejs/vite/issues/1577)
+* emit css only once when there are multiple outputs ([6bce108](https://github.com/vitejs/vite/commit/6bce1081991501f3779bff1a81e5dd1e63e5d38e)), closes [#1590](https://github.com/vitejs/vite/issues/1590)
+* **optimizer:** handle commonjs require css ([#1568](https://github.com/vitejs/vite/issues/1568)) ([3d09b50](https://github.com/vitejs/vite/commit/3d09b50b8774cf85a8c1dee24b3e379cbd3e9eb5)), closes [#1566](https://github.com/vitejs/vite/issues/1566)
+* handle legacy chunks in manifest ([123b6f6](https://github.com/vitejs/vite/commit/123b6f67f7e159d098109d5c65a74dc0d17bd495)), closes [#1551](https://github.com/vitejs/vite/issues/1551)
+* use safe dynamic import rewrite ([5cb02ce](https://github.com/vitejs/vite/commit/5cb02ce0b24ff167b7da3e2de9b0237186d9e95a)), closes [#1563](https://github.com/vitejs/vite/issues/1563)
+* **hmr:** fix hmr invalidation on circular deps ([ca8442c](https://github.com/vitejs/vite/commit/ca8442c19e51526e2fa75f0c4976941a2b9089e6)), closes [#1477](https://github.com/vitejs/vite/issues/1477)
+* **resolve:** node resolve from virtual modules ([c6d5ed8](https://github.com/vitejs/vite/commit/c6d5ed833befafaaea14fbd2fb62a7ed8d58c409))
+
+
+
+# [2.0.0-beta.33](https://github.com/vitejs/vite/compare/v2.0.0-beta.32...v2.0.0-beta.33) (2021-01-19)
+
+
+### Bug Fixes
+
+* fix ssr module invalidation infinite loop ([30885d1](https://github.com/vitejs/vite/commit/30885d1673a282a12e0c7471fc80236b72ebeb16)), closes [#1591](https://github.com/vitejs/vite/issues/1591)
+
+
+
+# [2.0.0-beta.32](https://github.com/vitejs/vite/compare/v2.0.0-beta.31...v2.0.0-beta.32) (2021-01-19)
+
+
+### Bug Fixes
+
+* avoid preloading owner chunk ([61969d7](https://github.com/vitejs/vite/commit/61969d787200ab0b03179ecf2855c5b4aff3baa6))
+* ssr transform check valid inMap ([bf4b3e9](https://github.com/vitejs/vite/commit/bf4b3e9b416bb0f2a8ee8bfce969d452429a8282))
+* support resolving .json ext to be consistent with Node ([a1d1dde](https://github.com/vitejs/vite/commit/a1d1dde70c4626ab603ed07234fe296ef8d5a65f))
+
+
+### Code Refactoring
+
+* rename ViteDevServer.app -> ViteDevServer.middlewares ([394390a](https://github.com/vitejs/vite/commit/394390a983deccd8cbca101066db93f60577b810))
+
+
+### Features
+
+* import.meta.env.SSR ([fe7396d](https://github.com/vitejs/vite/commit/fe7396d3896d04db17f73ea265eebe0397414e65))
+* ssr manifest for preload inference ([107e79e](https://github.com/vitejs/vite/commit/107e79e7b7d422f0d1dbe8b7b435636df7c6281c))
+* **ssr:** isolated mode ([e954ed2](https://github.com/vitejs/vite/commit/e954ed25099d9217d30a5a4d38e5dfee5acee0fd))
+* ssr sourcemap + stacktrace fix ([6cb04fa](https://github.com/vitejs/vite/commit/6cb04fa3b3a7a4ac4676a7b1c41d9d5068fae5de))
+
+
+### BREAKING CHANGES
+
+* `ViteDevServer.app` is now `ViteDevServer.middlewares`.
+In addition, Vite no longer serves `index.html` in middleware mode. The
+server using Vite as middleware is responsible for serving HTML with
+`/@vite/client` injected.
+
+
+
+# [2.0.0-beta.31](https://github.com/vitejs/vite/compare/v2.0.0-beta.30...v2.0.0-beta.31) (2021-01-18)
+
+
+### Bug Fixes
+
+* workaround for ts config + native esm w/ imports ([4a7d2eb](https://github.com/vitejs/vite/commit/4a7d2ebca1719d83c22d7dce5214e61f7906a772)), closes [#1560](https://github.com/vitejs/vite/issues/1560)
+* **resolve:** also respect browser mapping of dependencies ([12b706d](https://github.com/vitejs/vite/commit/12b706d6ecd99c98f326deae53f9aa79cd8a81f4)), closes [#1547](https://github.com/vitejs/vite/issues/1547)
+
+
+
+# [2.0.0-beta.30](https://github.com/vitejs/vite/compare/v2.0.0-beta.29...v2.0.0-beta.30) (2021-01-15)
+
+
+### Bug Fixes
+
+* **config:** delete cache correctly when restarting server ([#1541](https://github.com/vitejs/vite/issues/1541)) ([bd3b1bf](https://github.com/vitejs/vite/commit/bd3b1bfd83488b05a188a9d1c7093e3003721d91))
+* **config:** load native esm ts config string with base64 encoding ([55b05db](https://github.com/vitejs/vite/commit/55b05dba3d157da72eaf9c445b0bb5084b9858d0)), closes [#1548](https://github.com/vitejs/vite/issues/1548)
+
+
+
 # [2.0.0-beta.29](https://github.com/vitejs/vite/compare/v2.0.0-beta.28...v2.0.0-beta.29) (2021-01-14)
 
 

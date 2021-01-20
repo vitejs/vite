@@ -9,7 +9,8 @@ import Rollup, {
   RollupWarning,
   WarningHandler,
   OutputOptions,
-  RollupOutput
+  RollupOutput,
+  ExternalOption
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
@@ -27,6 +28,8 @@ import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
+import { resolveSSRExternal } from './ssr/ssrExternal'
+import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 
 export interface BuildOptions {
   /**
@@ -146,9 +149,15 @@ export interface BuildOptions {
    */
   lib?: LibraryOptions | false
   /**
-   * @internal for now
+   * Produce SSR oriented build. Note this requires specifying SSR entry via
+   * `rollupOptions.input`.
    */
   ssr?: boolean
+  /**
+   * Generate SSR manifest for determining style links and asset preload
+   * directives in production.
+   */
+  ssrManifest?: boolean
 }
 
 export interface LibraryOptions {
@@ -177,7 +186,7 @@ export function resolveBuildOptions(
       extensions: ['.js', '.cjs'],
       ...raw?.commonjsOptions
     },
-    minify: 'terser',
+    minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
     cleanCssOptions: {},
     write: true,
@@ -185,6 +194,7 @@ export function resolveBuildOptions(
     manifest: false,
     lib: false,
     ssr: false,
+    ssrManifest: false,
     ...raw
   }
 
@@ -230,7 +240,8 @@ export function resolveBuildPlugins(
       ...(options.minify && options.minify !== 'esbuild'
         ? [terserPlugin(options.terserOptions)]
         : []),
-      ...(options.manifest ? [manifestPlugin()] : []),
+      ...(options.manifest ? [manifestPlugin(config)] : []),
+      ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       ...(!config.logLevel || config.logLevel === 'info'
         ? [buildReporterPlugin(config)]
         : [])
@@ -270,26 +281,53 @@ async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
-  config.logger.info(chalk.cyan(`building for ${config.mode}...`))
-
   const options = config.build
+  const ssr = !!options.ssr
   const libOptions = options.lib
-  const resolve = (p: string) => path.resolve(config.root, p)
 
+  config.logger.info(
+    chalk.cyan(`building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`)
+  )
+
+  const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
     ? libOptions.entry
     : options.rollupOptions?.input || resolve('index.html')
+
+  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
+    throw new Error(
+      `rollupOptions.input should not be an html file when building for SSR. ` +
+        `Please specify a dedicated SSR entry.`
+    )
+  }
+
   const outDir = resolve(options.outDir)
   const publicDir = resolve('public')
+
+  // inject ssr arg to plugin load/transform hooks
+  const plugins = (ssr
+    ? config.plugins.map((p) => injectSsrFlagToHooks(p))
+    : config.plugins) as Plugin[]
+
+  // inject ssrExternal if present
+  const userExternal = options.rollupOptions?.external
+  const external = ssr
+    ? resolveExternal(resolveSSRExternal(config), userExternal)
+    : userExternal
 
   const rollup = require('rollup') as typeof Rollup
 
   try {
     const bundle = await rollup.rollup({
       input,
-      preserveEntrySignatures: libOptions ? 'strict' : false,
+      preserveEntrySignatures: ssr
+        ? 'allow-extension'
+        : libOptions
+        ? 'strict'
+        : false,
       ...options.rollupOptions,
-      plugins: config.plugins as Plugin[],
+      plugins,
+      external,
       onwarn(warning, warn) {
         onRollupWarning(warning, warn, config)
       }
@@ -304,22 +342,27 @@ async function doBuild(
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate']({
         dir: outDir,
-        format: 'es',
-        exports: 'auto',
+        format: options.ssr ? 'cjs' : 'es',
+        exports: options.ssr ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
-        entryFileNames: libOptions
+        entryFileNames: ssr
+          ? `[name].js`
+          : libOptions
           ? `${pkgName}.${output.format || `es`}.js`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
-        chunkFileNames: libOptions
-          ? `[name].js`
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
-        assetFileNames: libOptions
-          ? `[name].[ext]`
-          : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
+        chunkFileNames:
+          libOptions || ssr
+            ? `[name].js`
+            : path.posix.join(options.assetsDir, `[name].[hash].js`),
+        assetFileNames:
+          libOptions || ssr
+            ? `[name].[ext]`
+            : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
         // #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
+        inlineDynamicImports: ssr && typeof input === 'string',
         ...output
       })
     }
@@ -457,5 +500,36 @@ export function onRollupWarning(
     } else {
       warn(warning)
     }
+  }
+}
+
+export function resolveExternal(
+  existing: string[],
+  user: ExternalOption | undefined
+): ExternalOption {
+  if (!user) return existing
+  if (typeof user !== 'function') {
+    return existing.concat(user as any[])
+  }
+  return ((id, parentId, isResolved) => {
+    if (existing.includes(id)) return true
+    return user(id, parentId, isResolved)
+  }) as ExternalOption
+}
+
+function injectSsrFlagToHooks(p: Plugin): Plugin {
+  const { resolveId, load, transform } = p
+  return {
+    ...p,
+    resolveId: wrapSsrHook(resolveId),
+    load: wrapSsrHook(load),
+    transform: wrapSsrHook(transform)
+  }
+}
+
+function wrapSsrHook(fn: Function | undefined) {
+  if (!fn) return
+  return function (this: any, ...args: any[]) {
+    return fn.call(this, ...args, true)
   }
 }

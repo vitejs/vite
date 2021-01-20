@@ -37,6 +37,7 @@ import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { transformImportGlob } from './importAnaysisBuild'
+import isBuiltin from 'isbuiltin'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -92,7 +93,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       server = _server
     },
 
-    async transform(source, importer) {
+    async transform(source, importer, ssr) {
       const prettyImporter = prettifyUrl(importer, config.root)
 
       if (canSkip(importer)) {
@@ -237,10 +238,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const rawUrl = source.slice(start, end)
         let url = rawUrl
 
-        if (isExternalUrl(url) || isDataUrl(url)) {
-          continue
-        }
-
         // check import.meta usage
         if (url === 'import.meta') {
           const prop = source.slice(end, end + 4)
@@ -293,6 +290,23 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // If resolvable, let's resolve it
         if (dynamicIndex === -1 || isLiteralDynamicId) {
+          // skip external / data uri
+          if (isExternalUrl(url) || isDataUrl(url)) {
+            continue
+          }
+          // skip ssr external
+          if (ssr) {
+            if (
+              server._ssrExternals?.some((id) => {
+                return url === id || url.startsWith(id + '/')
+              })
+            ) {
+              continue
+            }
+            if (isBuiltin(url)) {
+              continue
+            }
+          }
           // skip client
           if (url === CLIENT_PUBLIC_PATH) {
             continue
@@ -370,10 +384,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (hasEnv) {
         // inject import.meta.env
-        str().prepend(`import.meta.env = ${JSON.stringify(config.env)};`)
+        str().prepend(
+          `import.meta.env = ${JSON.stringify({
+            ...config.env,
+            SSR: !!ssr
+          })};`
+        )
       }
 
-      if (hasHMR) {
+      if (hasHMR && !ssr) {
         debugHmr(
           `${
             isSelfAccepting
@@ -455,7 +474,10 @@ function isSupportedDynamicImport(url: string) {
 
 function isOptimizedCjs(
   id: string,
-  { optimizeDepsMetadata, config: { optimizeCacheDir } }: ViteDevServer
+  {
+    _optimizeDepsMetadata: optimizeDepsMetadata,
+    config: { optimizeCacheDir }
+  }: ViteDevServer
 ): boolean {
   if (optimizeDepsMetadata && optimizeCacheDir) {
     const relative = path.relative(optimizeCacheDir, cleanUrl(id))

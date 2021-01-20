@@ -11,13 +11,19 @@ import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
-import { RenderedChunk, RollupError, SourceMap } from 'rollup'
+import {
+  NormalizedOutputOptions,
+  RenderedChunk,
+  RollupError,
+  SourceMap
+} from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
 import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
 import { ViteDevServer } from '../'
 import { assetUrlRE, urlToBuiltUrl } from './asset'
+import MagicString from 'magic-string'
 
 // const debug = createDebugger('vite:css')
 
@@ -136,12 +142,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   const emptyChunks = new Set<string>()
   const moduleCache = cssModulesCache.get(config)!
 
-  let extractedCss = ''
+  // when there are multiple rollup outputs and extracting CSS, only emit once,
+  // since output formats have no effect on the generated CSS.
+  const outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+  let hasEmitted = false
 
   return {
     name: 'vite:css-post',
 
-    transform(css, id) {
+    transform(css, id, ssr) {
       if (!cssLangRE.test(id)) {
         return
       }
@@ -155,6 +164,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return css
         } else {
           // server only
+          if (ssr) {
+            return modulesCode || `export default ${JSON.stringify(css)}`
+          }
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
               CLIENT_PUBLIC_PATH
@@ -183,7 +195,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async renderChunk(code, chunk) {
+    async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
@@ -210,24 +222,44 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (config.build.minify) {
           chunkCSS = await minifyCSS(chunkCSS, config)
         }
-        // emit corresponding css file
-        const fileHandle = this.emitFile({
-          name: chunk.name + '.css',
-          type: 'asset',
-          source: chunkCSS
-        })
-        chunkToEmittedCssFileMap.set(chunk, fileHandle)
+        if (opts.format === 'es') {
+          // emit corresponding css file
+          const fileHandle = this.emitFile({
+            name: chunk.name + '.css',
+            type: 'asset',
+            source: chunkCSS
+          })
+          chunkToEmittedCssFileMap.set(chunk, fileHandle)
+        } else {
+          // legacy build, inline css
+          const style = `__vite_style__`
+          const injectCode =
+            `var ${style} = document.createElement('style');` +
+            `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `document.head.appendChild(${style});`
+          if (config.build.sourcemap) {
+            const s = new MagicString(code)
+            s.prepend(injectCode)
+            return {
+              code: s.toString(),
+              map: s.generateMap({ hires: true })
+            }
+          } else {
+            return { code: injectCode + code }
+          }
+        }
         return {
           code,
           map: null
         }
       } else {
-        extractedCss += chunkCSS
+        const extractedCss = outputToExtractedCSSMap.get(opts) || ''
+        outputToExtractedCSSMap.set(opts, extractedCss + chunkCSS)
         return null
       }
     },
 
-    async generateBundle(_options, bundle) {
+    async generateBundle(opts, bundle) {
       // remove empty css chunks and their imports
       if (emptyChunks.size) {
         emptyChunks.forEach((fileName) => {
@@ -246,7 +278,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (extractedCss) {
+      let extractedCss = outputToExtractedCSSMap.get(opts)
+      if (extractedCss && !hasEmitted) {
+        hasEmitted = true
         // minify css
         if (config.build.minify) {
           extractedCss = await minifyCSS(extractedCss, config)
