@@ -112,7 +112,9 @@ export async function handleHMRUpdate(
       })
       ws.send({
         type: 'full-reload',
-        path: '/' + slash(path.relative(config.root, file))
+        path: config.server.middlewareMode
+          ? '*'
+          : '/' + slash(path.relative(config.root, file))
       })
     } else {
       // loaded but not in the module graph, probably not js
