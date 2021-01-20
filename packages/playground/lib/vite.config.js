@@ -1,3 +1,4 @@
+const fs = require('fs')
 const path = require('path')
 
 /**
@@ -9,5 +10,20 @@ module.exports = {
       entry: path.resolve(__dirname, 'src/main.js'),
       name: 'MyLib'
     }
-  }
+  },
+  plugins: [
+    {
+      name: 'emit-index',
+      generateBundle() {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'index.html',
+          source: fs.readFileSync(
+            path.resolve(__dirname, 'index.dist.html'),
+            'utf-8'
+          )
+        })
+      }
+    }
+  ]
 }

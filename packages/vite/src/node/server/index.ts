@@ -22,7 +22,8 @@ import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import {
-  rawFsStaticMiddleware,
+  serveRawFsMiddleware,
+  servePublicMiddleware,
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
@@ -355,13 +356,13 @@ export async function createServer(
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  middlewares.use(serveStaticMiddleware(path.join(root, 'public')))
+  middlewares.use(servePublicMiddleware(path.join(root, 'public')))
 
   // main transform middleware
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(rawFsStaticMiddleware())
+  middlewares.use(serveRawFsMiddleware())
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
