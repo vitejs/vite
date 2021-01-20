@@ -5,11 +5,24 @@ import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { cleanUrl, isImportRequest } from '../../utils'
-const sirvOptions = { dev: true, etag: true }
+
+const sirvOptions = { dev: true, etag: true, extensions: [] }
+
+export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
+  const serve = sirv(dir, sirvOptions)
+
+  return (req, res, next) => {
+    // skip import request
+    if (isImportRequest(req.url!)) {
+      return next()
+    }
+    serve(req, res, next)
+  }
+}
 
 export function serveStaticMiddleware(
   dir: string,
-  config?: ResolvedConfig
+  config: ResolvedConfig
 ): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
 
@@ -19,46 +32,36 @@ export function serveStaticMiddleware(
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
     // special processing
-    if (
-      req.headers.accept?.includes('text/html') ||
-      path.extname(cleanUrl(url)) === '.html'
-    ) {
-      return next()
-    }
-
-    // skip import request
-    if (isImportRequest(url)) {
+    if (path.extname(cleanUrl(url)) === '.html') {
       return next()
     }
 
     // #1426
-    url = req.url = decodeURIComponent(url)
+    url = req.url = decodeURI(url)
 
     // apply aliases to static requests as well
-    if (config) {
-      let redirected: string | undefined
-      for (const { find, replacement } of config.alias) {
-        const matches =
-          typeof find === 'string' ? url.startsWith(find) : find.test(url)
-        if (matches) {
-          redirected = url.replace(find, replacement)
-          break
-        }
+    let redirected: string | undefined
+    for (const { find, replacement } of config.alias) {
+      const matches =
+        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+      if (matches) {
+        redirected = url.replace(find, replacement)
+        break
       }
-      if (redirected) {
-        // dir is pre-normalized to posix style
-        if (redirected.startsWith(dir)) {
-          redirected = redirected.slice(dir.length)
-        }
-        req.url = redirected
+    }
+    if (redirected) {
+      // dir is pre-normalized to posix style
+      if (redirected.startsWith(dir)) {
+        redirected = redirected.slice(dir.length)
       }
+      req.url = redirected
     }
 
     serve(req, res, next)
   }
 }
 
-export function rawFsStaticMiddleware(): Connect.NextHandleFunction {
+export function serveRawFsMiddleware(): Connect.NextHandleFunction {
   const fsRoot =
     os.platform() == 'win32' ? process.cwd().split(path.sep)[0] + '/' : '/'
   const serveFromRoot = sirv(fsRoot, sirvOptions)
@@ -70,7 +73,7 @@ export function rawFsStaticMiddleware(): Connect.NextHandleFunction {
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      req.url = decodeURIComponent(url.slice(FS_PREFIX.length))
+      req.url = decodeURI(url.slice(FS_PREFIX.length))
       serveFromRoot(req, res, next)
     } else {
       next()
