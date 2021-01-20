@@ -517,6 +517,9 @@ const scss: StylePreprocessor = async (source, map, options) => {
 
     return { code: result.css.toString(), errors: [], deps }
   } catch (e) {
+    // normalize SASS error
+    e.id = e.file
+    e.frame = e.formatted
     return { code: '', errors: [e], deps: [] }
   }
 }
@@ -529,6 +532,7 @@ const sass: StylePreprocessor = (source, map, options) =>
 
 // .less
 interface LessError {
+  filename: string
   message: string
   line: number
   column: number
@@ -552,7 +556,7 @@ const less: StylePreprocessor = (source, map, options) => {
     // normalize error info
     const normalizedError: RollupError = new Error(error!.message)
     normalizedError.loc = {
-      file: options.filename,
+      file: error!.filename || options.filename,
       line: error!.line,
       column: error!.column
     }

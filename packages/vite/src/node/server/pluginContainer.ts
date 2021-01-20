@@ -300,14 +300,22 @@ export async function createPluginContainer(
           ...numberToPos(ctx._activeCode, pos)
         }
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
+      } else if (err.loc) {
+        // css preprocessors may report errors in an included file
+        if (!err.frame) {
+          let code = ctx._activeCode
+          if (err.loc.file) {
+            err.id = normalizePath(err.loc.file)
+            code = fs.readFileSync(err.loc.file, 'utf-8')
+          }
+          err.frame = generateCodeFrame(code, err.loc)
+        }
       } else if ((err as any).line && (err as any).column) {
         err.loc = {
           file: err.id,
           line: (err as any).line,
           column: (err as any).column
         }
-        err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
-      } else if (err.loc) {
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
       }
     }
