@@ -14,7 +14,7 @@ Vite 在一个特殊的 **`import.meta.env`** 对象上暴露环境变量。这�
 
 ### 生产环境替换
 
-在生产环境中，这些环境变量会在构建时被静态替换，所以请在引用它们时使用完整的字符串。动态的 key 将无法生效。例如，动态 key 取值 `import.meta.env[key]` 是无效的。
+在生产环境中，这些环境变量会在构建时被静态替换，因此请在引用它们时使用完全静态的字符串。动态的 key 将无法生效。例如，动态 key 取值 `import.meta.env[key]` 是无效的。
 
 它还将替换出现在 JavaScript 和 Vue 模板中的字符串。这应该是比较罕见的情况，但它可能是不小心为之。有一些方法可以避免这个问题:
 
@@ -27,10 +27,10 @@ Vite 在一个特殊的 **`import.meta.env`** 对象上暴露环境变量。这�
 Vite 使用 [dotenv](https://github.com/motdotla/dotenv) 在你的项目根目录下从以下文件加载额外的环境变量:
 
 ```
-.env                # loaded in all cases
-.env.local          # loaded in all cases, ignored by git
-.env.[mode]         # only loaded in specified mode
-.env.[mode].local   # only loaded in specified mode, ignored by git
+.env                # 所有情况下都会加载
+.env.local          # 所有情况下都会加载，但会被 git 忽略
+.env.[mode]         # 只在指定模式下加载
+.env.[mode].local   # 只在指定模式下加载，但会被 git 忽略
 ```
 
 加载的环境变量也会通过 `import.meta.env` 暴露给客户端源代码。

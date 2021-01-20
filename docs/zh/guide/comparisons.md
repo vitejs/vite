@@ -8,7 +8,20 @@
 
 Snowpack 的默认构建输出是未打包的：它将每个文件转换为单独的构建模块，然后将这些模块提供给执行实际绑定的不同“优化器”。这么做的好处是,你可以选择不同终端打包器（例如 webpack, Rollup，甚至是 ESbuild），缺点是体验有些支离破碎 —— 例如,`esbuild` 优化器仍然是不稳定的，Rollup 优化器也不是官方维护，而不同的优化器又有不同的输出和配置。
 
-为了提供更流畅的体验，Vite 选择了与单个打包器（Rollup）进行更深入的集成。使用 Rollup 的原因是，我们相信在可预见的将来，Rollup 能够在成熟度、可扩展性、构建速度和输出包大小之间提供最佳的平衡。Vite 支持了一套 [通用插件 API](./api-plugin)扩展了 Rollup 的插件接口，并提供了更多的构建等特性例如 [多页面应用支持](./build#多页面应用) and [库模式](./build#库模式).
+为了提供更流畅的体验，Vite 选择了与单个打包器（Rollup）进行更深入的集成。使用 Rollup 的原因是，我们相信在可预见的将来，Rollup 能够在成熟度、可扩展性、构建速度和输出包大小之间提供最佳的平衡。Vite 还支持一套 [通用插件 API](./api-plugin) 扩展了 Rollup 的插件接口，开发和构建两种模式都适用。
+
+Vite 支持广泛的功能，构建过程也集成度更高，以下功能目前在 Snowpack 构建优化器中不可用：
+
+- [多页面应用支持](./build#多页面应用模式)
+- [库模式](./build#库模式)
+- [自动分割 CSS 代码](./features#CSS-代码分割)
+- [预优化的异步 chunk 加载](./features#异步-Chunk-加载优化)
+- [自动对动态导入 polyfill](./features#动态导入-Polyfill)
+- 官方 [兼容模式插件](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) 打包为现代/传统两种产物，并根据浏览器支持自动交付正确的版本。
+
+**Monorepo 支持**
+
+Vite 能够支持 monorepo，我们已经有用户成功地将 Vite 基于 monorepo 模式，与 Yarn, Yarn 2 和 PNPM 使用。
 
 **Vue 第一优先级支持**
 

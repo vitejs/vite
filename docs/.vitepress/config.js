@@ -91,6 +91,10 @@ module.exports = {
           text: 'API',
           children: [
             {
+              text: '配置参考',
+              link: '/zh/config/'
+            },
+            {
               text: '插件 API',
               link: '/zh/guide/api-plugin'
             },
