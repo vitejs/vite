@@ -1,7 +1,6 @@
 import { ResolvedConfig } from '..'
 import { Plugin } from '../plugin'
 import { isModernFlag } from './importAnaysisBuild'
-import path from 'path'
 
 export const polyfillId = 'vite/dynamic-import-polyfill'
 
@@ -11,7 +10,7 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   const polyfillString =
     `const p = ${polyfill.toString()};` +
     `${isModernFlag}&&p(${JSON.stringify(
-      path.join(config.build.base, config.build.assetsDir, '/')
+      path.posix.join(config.build.base, config.build.assetsDir, '/')
     )});`
 
   return {
