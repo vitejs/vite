@@ -61,7 +61,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           url = `__VITE_ASSET__${this.emitFile({
             type: 'chunk',
             id: cleanUrl(id)
-          })}`
+          })}__`
         }
       }
 
