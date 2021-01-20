@@ -121,6 +121,7 @@ export class ErrorOverlay extends HTMLElement {
     this.root = this.attachShadow({ mode: 'open' })
     this.root.innerHTML = template
 
+    codeframeRE.lastIndex = 0
     const hasFrame = err.frame && codeframeRE.test(err.frame)
     const message = hasFrame
       ? err.message.replace(codeframeRE, '')
