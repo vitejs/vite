@@ -225,13 +225,14 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _globImporters: Record<string, GlobImporter>
-}
-
-interface GlobImporter {
-  base: string
-  pattern: string
-  module: ModuleNode
+  _globImporters: Record<
+    string,
+    {
+      base: string
+      pattern: string
+      module: ModuleNode
+    }
+  >
 }
 
 export async function createServer(
