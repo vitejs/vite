@@ -118,7 +118,7 @@ export function resolvePlugin(
 
         if ((res = tryFsResolve(fsPath, isProduction))) {
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-          const pkg = idToPkgMap.get(id)
+          const pkg = importer != null && idToPkgMap.get(importer)
           if (pkg) {
             idToPkgMap.set(res, pkg)
             return {
