@@ -27,11 +27,11 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import { ModuleGraph } from './moduleGraph'
+import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
 import { createDebugger, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import { handleHMRUpdate, HmrOptions } from './hmr'
+import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { TransformResult } from 'rollup'
@@ -222,6 +222,16 @@ export interface ViteDevServer {
    * @internal
    */
   _ssrExternals: string[] | null
+  /**
+   * @internal
+   */
+  _globImporters: Record<string, GlobImporter>
+}
+
+interface GlobImporter {
+  base: string
+  pattern: string
+  module: ModuleNode
 }
 
 export async function createServer(
@@ -296,7 +306,8 @@ export async function createServer(
       ])
     },
     _optimizeDepsMetadata: null,
-    _ssrExternals: null
+    _ssrExternals: null,
+    _globImporters: {}
   }
 
   process.once('SIGTERM', async () => {
@@ -321,6 +332,14 @@ export async function createServer(
         })
       }
     }
+  })
+
+  watcher.on('add', (file) => {
+    handleFileAddUnlink(normalizePath(file), server)
+  })
+
+  watcher.on('unlink', (file) => {
+    handleFileAddUnlink(normalizePath(file), server, true)
   })
 
   // apply server configuration hooks from plugins

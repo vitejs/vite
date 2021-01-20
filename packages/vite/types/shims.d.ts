@@ -102,3 +102,8 @@ declare module 'isbuiltin' {
   function isBuiltin(moduleName: string): boolean
   export default isBuiltin
 }
+
+declare module 'minimatch' {
+  function match(path: string, pattern: string): boolean
+  export default match
+}
