@@ -25,7 +25,12 @@ import isBuiltin from 'isbuiltin'
 import { isCSSRequest } from './css'
 import { resolve as _resolveExports } from 'resolve.exports'
 
-const mainFields = ['module', 'main']
+const mainFields = [
+  'module',
+  'jsnext:main', // moment still uses this...
+  'jsnext',
+  'main'
+]
 
 function resolveExports(
   pkg: PackageData['data'],
