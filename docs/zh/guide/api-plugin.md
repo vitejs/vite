@@ -10,7 +10,7 @@ Vite 插件扩展了设计出色的 Rollup 接口，带有一些 vite 独有的�
 通常的惯例是创建一个 Vite/Rollup 插件作为一个返回实际插件对象的工厂函数。该函数可以接受允许用户自定义插件行为的选项。
 :::
 
-### 服务一个虚拟文件
+### 引入一个虚拟文件
 
 ```js
 export default function myPlugin() {
@@ -30,6 +30,13 @@ export default function myPlugin() {
     }
   }
 }
+```
+
+这使得可以在 JavaScript 中引入这些文件：
+
+```js
+import { msg } from '@my-virtual-file'
+console.log(msg)
 ```
 
 ### 转换自定义文件类型

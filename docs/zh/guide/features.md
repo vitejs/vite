@@ -110,9 +110,18 @@ CSS modules 行为可通过 [`css.modules` 选项](/zh/config/#css-modules) 配�
 
 话虽如此，但 Vite 也同时提供了对 `.scss`, `.sass`, `.less`, `.styl` 和 `.stylus` 文件的内置支持。没有必要为他们安装特定的 vite 插件，但相应的预处理器依赖本身必须安装：
 
-- `.scss` 和 `.sass`: [sass](https://www.npmjs.com/package/sass)
-- `.less`: [less](https://www.npmjs.com/package/less)
-- `.styl` 和 `.stylus`: [stylus](https://www.npmjs.com/package/stylus)
+也就是说，Vite 的确为 `.scss`, `.sass`，`.less`，`.styl` 和 `.stylus` 文件提供了内建支持。不需要为他们安装特定的插件，但相应的预处理器本身必须安装：
+
+```bash
+# .scss and .sass
+npm install -D sass
+
+# .less
+npm install -D less
+
+# .styl and .stylus
+npm install -D stylus
+```
 
 您还可以通过在文件扩展名前加上 `.module` 来结合使用 CSS modules 和预处理器，例如 `style.module.scss`。
 

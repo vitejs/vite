@@ -21,3 +21,7 @@
 ## 社区插件
 
 > 查看 [awesome-vite](https://github.com/vitejs/awesome-vite) - 你也可以提交一个 PR 来将你的插件添加到此列表中。
+
+## Rollup 插件
+
+[Vite 插件](../guide/api-plugin) 是 Rollup 插件接口的一种扩展。查看 [Rollup 插件兼容性章节](../guide/api-plugin#Rollup-插件兼容性) 获取更多信息。

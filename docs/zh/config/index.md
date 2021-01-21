@@ -130,6 +130,14 @@ export default ({ command, mode }) => {
 
   配置 CSS modules 的行为。选项将被传递给 [postcss-modules](https://github.com/css-modules/postcss-modules)。
 
+### css.postcss
+
+- **类型：** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
+
+  内联的 PostCSS 配置（格式同 `postcss.config.js`），或者一个（默认基于项目根目录的）自定义的 PostCSS 配置路径。其路径搜索是通过 [postcss-load-config](https://github.com/postcss/postcss-load-config) 实现的。
+
+  注意，如果提供了该内联配置，Vite 将不会搜索其他 PostCSS 配置源。
+
 ### css.preprocessorOptions
 
 - **类型：** `Record<string, object>`

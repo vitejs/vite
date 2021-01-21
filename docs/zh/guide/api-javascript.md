@@ -46,8 +46,19 @@ const express = require('express')
   })
   // 将 vite 的连接实例作为中间件使用
   app.use(viteServer.app)
+
+  app.use('*', (req, res) => {
+    // serve custom index.html
+  })
+
   app.listen(3000)
 })()
+```
+
+请注意在中间件模式下，Vite 不会对 `index.html` 提供服务 - 现在这是父服务器的职责。在提供 HTML 时，请确保在 Vite 的开发客户端中提供引入一个链接：
+
+```html
+<script type="module" src="/@vite/client"></script>
 ```
 
 ## `InlineConfig`
