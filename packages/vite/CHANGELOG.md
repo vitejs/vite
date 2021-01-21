@@ -1,3 +1,19 @@
+# [2.0.0-beta.36](https://github.com/vitejs/vite/compare/v2.0.0-beta.35...v2.0.0-beta.36) (2021-01-21)
+
+
+### Bug Fixes
+
+* always reload when html is edited in middleware mode ([85c89be](https://github.com/vitejs/vite/commit/85c89bea9807090d928942a72b972183ebf8483a))
+* still resolve jsnext fields ([6e06108](https://github.com/vitejs/vite/commit/6e061089c62898086c07fad7154b178446a18da5))
+
+
+### Features
+
+* allow inline postcss config ([6bd2140](https://github.com/vitejs/vite/commit/6bd21402a9e5955433656024f5548f12b12ea2fa)), closes [#1061](https://github.com/vitejs/vite/issues/1061)
+* hmr for glob import ([edd2fd9](https://github.com/vitejs/vite/commit/edd2fd9de904a194f25e18136dfe298c7bcbbd8d))
+
+
+
 # [2.0.0-beta.35](https://github.com/vitejs/vite/compare/v2.0.0-beta.34...v2.0.0-beta.35) (2021-01-20)
 
 
