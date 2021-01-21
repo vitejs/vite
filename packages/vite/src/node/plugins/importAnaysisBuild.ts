@@ -1,12 +1,11 @@
 import path from 'path'
-import glob from 'fast-glob'
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
-import { cleanUrl } from '../utils'
 import MagicString from 'magic-string'
 import { ImportSpecifier, init, parse as parseImports } from 'es-module-lexer'
-import { RollupError, OutputChunk } from 'rollup'
+import { OutputChunk } from 'rollup'
 import { chunkToEmittedCssFileMap } from './css'
+import { transformImportGlob } from '../importGlob'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -14,18 +13,18 @@ import { chunkToEmittedCssFileMap } from './css'
  * dropped.
  */
 export const isModernFlag = `__VITE_IS_MODERN__`
+export const preloadMethod = `__vitePreload`
+export const preloadMarker = `__VITE_PRELOAD__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadMethod = __vitePreload.name
-const preloadModuleCode = `const seen = {};export ${__vitePreload.toString()}`
-const preloadMarker = `__VITE_PRELOAD__`
+const preloadCode = `const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 const preloadMarkerRE = new RegExp(`,?"${preloadMarker}"`, 'g')
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallell to
  * the async chunk itself.
  */
-function __vitePreload(baseModule: () => Promise<{}>, deps?: string[]) {
+function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps) {
     return baseModule()
@@ -70,6 +69,8 @@ function __vitePreload(baseModule: () => Promise<{}>, deps?: string[]) {
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
+  const ssr = !!config.build.ssr
+
   return {
     name: 'vite:import-analysis',
 
@@ -81,7 +82,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadModuleCode
+        return preloadCode
       }
     },
 
@@ -105,7 +106,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
-      let hasInjectedHelper = false
+      let needPreloadHelper = false
 
       for (let index = 0; index < imports.length; index++) {
         const { s: start, e: end, ss: expStart, d: dynamicIndex } = imports[
@@ -116,48 +117,33 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           source.slice(start, end) === 'import.meta' &&
           source.slice(end, end + 5) === '.glob'
 
-        if (isGlob || dynamicIndex > -1) {
-          // inject parallelPreload helper.
-          if (!hasInjectedHelper) {
-            hasInjectedHelper = true
-            str().prepend(
-              `import { ${preloadMethod} } from "${preloadHelperId}";`
-            )
-          }
-        }
-
         // import.meta.glob
         if (isGlob) {
-          const { imports, exp, endIndex } = await transformImportGlob(
-            source,
-            start,
-            importer,
-            index
-          )
-          str().prepend(imports)
+          const {
+            importsString,
+            exp,
+            endIndex,
+            isEager
+          } = await transformImportGlob(source, start, importer, index)
+          str().prepend(importsString)
           str().overwrite(expStart, endIndex, exp)
+          if (!isEager) {
+            needPreloadHelper = true
+          }
           continue
         }
 
-        if (dynamicIndex > -1) {
+        if (dynamicIndex > -1 && !ssr) {
+          needPreloadHelper = true
           const dynamicEnd = source.indexOf(`)`, end) + 1
           const original = source.slice(dynamicIndex, dynamicEnd)
-          let replacement =
-            `(${isModernFlag} ` +
-            `? ${preloadMethod}(() => ${original},"${preloadMarker}")` +
-            ` : ${original})`
-          // backtrace to see if the import call is after a newline
-          for (let i = dynamicIndex - 1; i > 0; i--) {
-            const char = source.charAt(i)
-            if (char === '\n') {
-              replacement = `;` + replacement
-              break
-            } else if (!/\s/.test(char)) {
-              break
-            }
-          }
+          const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
           str().overwrite(dynamicIndex, dynamicEnd, replacement)
         }
+      }
+
+      if (needPreloadHelper && !ssr) {
+        str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
       }
 
       if (s) {
@@ -177,7 +163,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (format !== 'es') {
+      if (format !== 'es' || ssr) {
         return
       }
 
@@ -210,8 +196,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const deps: Set<string> = new Set()
 
                 if (url[0] === `"` && url[url.length - 1] === `"`) {
+                  const ownerFilename = chunk.fileName
                   // literal import - trace direct imports and add to deps
                   const addDeps = (filename: string) => {
+                    if (filename === ownerFilename) return
                     const chunk = bundle[filename] as OutputChunk | undefined
                     if (chunk) {
                       deps.add(config.build.base + chunk.fileName)
@@ -251,136 +239,4 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
-}
-
-export async function transformImportGlob(
-  source: string,
-  pos: number,
-  importer: string,
-  importIndex: number,
-  normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>
-): Promise<{ imports: string; exp: string; endIndex: number }> {
-  const err = (msg: string) => {
-    const e = new Error(`Invalid glob import syntax: ${msg}`)
-    ;(e as any).pos = pos
-    return e
-  }
-
-  importer = cleanUrl(importer)
-  const importerBasename = path.basename(importer)
-
-  let [pattern, endIndex] = lexGlobPattern(source, pos)
-  if (!pattern.startsWith('.')) {
-    throw err(`pattern must start with "."`)
-  }
-  let base = path.dirname(importer)
-  let parentDepth = 0
-  while (pattern.startsWith('../')) {
-    pattern = pattern.slice(3)
-    base = path.resolve(base, '../')
-    parentDepth++
-  }
-  if (pattern.startsWith('./')) {
-    pattern = pattern.slice(2)
-  }
-
-  const files = glob.sync(pattern, { cwd: base })
-  let imports = ``
-  let entries = ``
-  for (let i = 0; i < files.length; i++) {
-    // skip importer itself
-    if (files[i] === importerBasename) continue
-    const file = parentDepth
-      ? `${'../'.repeat(parentDepth)}${files[i]}`
-      : `./${files[i]}`
-    let importee = file
-    if (normalizeUrl) {
-      ;[importee] = await normalizeUrl(file, pos)
-    }
-    const identifier = `__glob_${importIndex}_${i}`
-    const isEager = source.slice(pos, pos + 21) === 'import.meta.globEager'
-    if (isEager) {
-      imports += `import * as ${identifier} from ${JSON.stringify(importee)};`
-      entries += ` ${JSON.stringify(file)}: ${identifier},`
-    } else {
-      let imp = `import(${JSON.stringify(importee)})`
-      if (!normalizeUrl) {
-        imp =
-          `(${isModernFlag}` +
-          `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
-          `: ${imp})`
-      }
-      entries += ` ${JSON.stringify(file)}: () => ${imp},`
-    }
-  }
-
-  return {
-    imports,
-    exp: `{${entries}}`,
-    endIndex
-  }
-}
-
-const enum LexerState {
-  inCall,
-  inSingleQuoteString,
-  inDoubleQuoteString,
-  inTemplateString
-}
-
-function lexGlobPattern(code: string, pos: number): [string, number] {
-  let state = LexerState.inCall
-  let pattern = ''
-
-  let i = code.indexOf(`(`, pos) + 1
-  outer: for (; i < code.length; i++) {
-    const char = code.charAt(i)
-    switch (state) {
-      case LexerState.inCall:
-        if (char === `'`) {
-          state = LexerState.inSingleQuoteString
-        } else if (char === `"`) {
-          state = LexerState.inDoubleQuoteString
-        } else if (char === '`') {
-          state = LexerState.inTemplateString
-        } else if (/\s/.test(char)) {
-          continue
-        } else {
-          error(i)
-        }
-        break
-      case LexerState.inSingleQuoteString:
-        if (char === `'`) {
-          break outer
-        } else {
-          pattern += char
-        }
-        break
-      case LexerState.inDoubleQuoteString:
-        if (char === `"`) {
-          break outer
-        } else {
-          pattern += char
-        }
-        break
-      case LexerState.inTemplateString:
-        if (char === '`') {
-          break outer
-        } else {
-          pattern += char
-        }
-        break
-      default:
-        throw new Error('unknown import.meta.glob lexer state')
-    }
-  }
-  return [pattern, code.indexOf(`)`, i) + 1]
-}
-
-function error(pos: number) {
-  const err = new Error(
-    `import.meta.glob() can only accept string literals.`
-  ) as RollupError
-  err.pos = pos
-  throw err
 }

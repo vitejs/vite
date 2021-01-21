@@ -21,8 +21,8 @@ module.exports = {
     // for axios request test
     {
       name: 'mock',
-      configureServer({ app }) {
-        app.use('/ping', (_, res) => {
+      configureServer({ middlewares }) {
+        middlewares.use('/ping', (_, res) => {
           res.statusCode = 200
           res.end('pong')
         })

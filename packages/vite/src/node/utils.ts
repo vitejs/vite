@@ -8,7 +8,7 @@ import slash from 'slash'
 import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
 import resolve from 'resolve'
 
-export const bareImportRE = /^[\w@]/
+export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 let isRunningWithYarnPnp: boolean
@@ -201,7 +201,7 @@ export function posToNumber(
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1; i++) {
-    start += lines[i].length
+    start += lines[i].length + 1
   }
   return start + column
 }

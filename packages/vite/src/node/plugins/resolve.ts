@@ -13,7 +13,9 @@ import {
   normalizePath,
   fsPathFromId,
   resolveFrom,
-  isDataUrl
+  isDataUrl,
+  cleanUrl,
+  isJSRequest
 } from '../utils'
 import { ResolvedConfig, ViteDevServer } from '..'
 import slash from 'slash'
@@ -23,7 +25,12 @@ import isBuiltin from 'isbuiltin'
 import { isCSSRequest } from './css'
 import { resolve as _resolveExports } from 'resolve.exports'
 
-const mainFields = ['module', 'main']
+const mainFields = [
+  'module',
+  'jsnext:main', // moment still uses this...
+  'jsnext',
+  'main'
+]
 
 function resolveExports(
   pkg: PackageData['data'],
@@ -32,13 +39,13 @@ function resolveExports(
 ) {
   return _resolveExports(pkg, key, {
     browser: true,
-    conditions: isProduction ? ['production'] : ['development']
+    conditions: ['module', isProduction ? 'production' : 'development']
   })
 }
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
-const browserExternalId = '__browser-external'
+const browserExternalId = '__vite-browser-external'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -71,12 +78,8 @@ export function resolvePlugin(
       server = _server
     },
 
-    configResolved(_config) {
-      config = _config
-    },
-
-    resolveId(id, importer) {
-      if (id === browserExternalId) {
+    resolveId(id, importer, _, ssr) {
+      if (id.startsWith(browserExternalId)) {
         return id
       }
 
@@ -121,7 +124,7 @@ export function resolvePlugin(
 
         if ((res = tryFsResolve(fsPath, isProduction))) {
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-          const pkg = idToPkgMap.get(id)
+          const pkg = importer != null && idToPkgMap.get(importer)
           if (pkg) {
             idToPkgMap.set(res, pkg)
             return {
@@ -168,7 +171,9 @@ export function resolvePlugin(
         if (
           (res = tryNodeResolve(
             id,
-            importer ? path.dirname(importer) : root,
+            importer && importer[0] === '/' && fs.existsSync(cleanUrl(importer))
+              ? path.dirname(importer)
+              : root,
             isProduction,
             isBuild,
             dedupe,
@@ -182,17 +187,21 @@ export function resolvePlugin(
         // node built-ins.
         // externalize if building for SSR, otherwise redirect to empty module
         if (isBuiltin(id)) {
-          if (isBuild && config && config.build.ssr) {
+          if (ssr) {
             return {
               id,
               external: true
             }
           } else {
-            this.warn(
-              `externalized node built-in "${id}" to empty module. ` +
-                `(imported by: ${chalk.white.dim(importer)})`
-            )
-            return browserExternalId
+            if (!asSrc) {
+              this.warn(
+                `externalized node built-in "${id}" to empty module. ` +
+                  `(imported by: ${chalk.white.dim(importer)})`
+              )
+            }
+            return isProduction
+              ? browserExternalId
+              : `${browserExternalId}:${id}`
           }
         }
       }
@@ -201,8 +210,16 @@ export function resolvePlugin(
     },
 
     load(id) {
-      if (id === browserExternalId) {
-        return `export default {}`
+      if (id.startsWith(browserExternalId)) {
+        return isProduction
+          ? `export default {}`
+          : `export default new Proxy({}, {
+  get() {
+    throw new Error('Module "${id.slice(
+      browserExternalId.length + 1
+    )}" has been externalized for browser compatibility and cannot be accessed in client code.')
+  }
+})`
       }
     }
   }
@@ -276,27 +293,44 @@ export function tryNodeResolve(
   }
 
   // prevent deep imports to optimized deps.
-  if (
-    deepMatch &&
-    server &&
-    server.optimizeDepsMetadata &&
-    pkg.data.name in server.optimizeDepsMetadata.map &&
-    !isCSSRequest(id) &&
-    !server.config.assetsInclude(id)
-  ) {
-    throw new Error(
-      chalk.yellow(
-        `Deep import "${chalk.cyan(
-          id
-        )}" should be avoided because dependency "${chalk.cyan(
-          pkg.data.name
-        )}" has been pre-optimized. Prefer importing directly from the module entry:\n\n` +
-          `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
-          `If the used import is not exported from the package's main entry ` +
-          `and can only be attained via deep import, you can explicitly add ` +
-          `the deep import path to "optimizeDeps.include" in vite.config.js.`
+  if (server && server._optimizeDepsMetadata) {
+    const data = server._optimizeDepsMetadata
+    if (
+      deepMatch &&
+      pkg.data.name in data.optimized &&
+      !isCSSRequest(id) &&
+      !server.config.assetsInclude(id)
+    ) {
+      throw new Error(
+        chalk.yellow(
+          `Deep import "${chalk.cyan(
+            id
+          )}" should be avoided because dependency "${chalk.cyan(
+            pkg.data.name
+          )}" has been pre-optimized. Prefer importing directly from the module entry:\n\n` +
+            `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
+            `If the used import is not exported from the package's main entry ` +
+            `and can only be attained via deep import, you can explicitly add ` +
+            `the deep import path to "optimizeDeps.include" in vite.config.js.`
+        )
       )
-    )
+    }
+
+    if (
+      pkgId in data.transitiveOptimized &&
+      isJSRequest(id) &&
+      basedir.startsWith(server.config.root) &&
+      !basedir.includes('node_modules')
+    ) {
+      throw new Error(
+        chalk.yellow(
+          `dependency "${chalk.bold(pkgId)}" is imported in source code, ` +
+            `but was transitively pre-bundled as part of another package. ` +
+            `It should be explicitly listed as a dependency in package.json in ` +
+            `order to avoid duplicated instances of this module.`
+        )
+      )
+    }
   }
 
   let resolved = deepMatch
@@ -320,7 +354,7 @@ export function tryNodeResolve(
     // files actually inside node_modules so that locally linked packages
     // in monorepos are not cached this way.
     if (resolved.includes('node_modules')) {
-      const versionHash = server?.optimizeDepsMetadata?.hash
+      const versionHash = server?._optimizeDepsMetadata?.hash
       if (versionHash) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
@@ -334,11 +368,11 @@ export function tryOptimizedResolve(
   server: ViteDevServer
 ): string | undefined {
   const cacheDir = server.config.optimizeCacheDir
-  const depData = server.optimizeDepsMetadata
+  const depData = server._optimizeDepsMetadata
   if (cacheDir && depData) {
     const [id, q] = rawId.split(`?`, 2)
     const query = q ? `?${q}` : ``
-    const filePath = depData.map[id]
+    const filePath = depData.optimized[id]
     if (filePath) {
       return normalizePath(path.resolve(cacheDir, filePath)) + query
     }

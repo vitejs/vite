@@ -22,6 +22,16 @@ declare module 'acorn-class-fields' {
   export = plugin
 }
 
+declare module 'acorn-static-class-features' {
+  const plugin: any
+  export default plugin
+}
+
+declare module 'acorn-numeric-separator' {
+  const plugin: any
+  export default plugin
+}
+
 declare module 'connect-history-api-fallback' {
   const plugin: any
   export = plugin
@@ -91,4 +101,9 @@ declare module 'rollup-plugin-web-worker-loader' {
 declare module 'isbuiltin' {
   function isBuiltin(moduleName: string): boolean
   export default isBuiltin
+}
+
+declare module 'minimatch' {
+  function match(path: string, pattern: string): boolean
+  export default match
 }

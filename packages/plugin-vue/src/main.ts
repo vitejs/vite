@@ -18,9 +18,10 @@ export async function transformMain(
   code: string,
   filename: string,
   options: ResolvedOptions,
-  pluginContext: TransformPluginContext
+  pluginContext: TransformPluginContext,
+  ssr: boolean
 ) {
-  const { root, devServer, isProduction, ssr } = options
+  const { root, devServer, isProduction } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
@@ -45,7 +46,8 @@ export async function transformMain(
   const { code: scriptCode, map } = await genScriptCode(
     descriptor,
     options,
-    pluginContext
+    pluginContext,
+    ssr
   )
 
   // template
@@ -64,7 +66,8 @@ export async function transformMain(
     ;({ code: templateCode, map: templateMap } = await genTemplateCode(
       descriptor,
       options,
-      pluginContext
+      pluginContext,
+      ssr
     ))
   }
 
@@ -92,14 +95,14 @@ export async function transformMain(
       `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
     )
   }
-  if (devServer) {
+  if (devServer && !isProduction) {
     // expose filename during serve for devtools to pickup
     output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }
   output.push('export default _sfc_main')
 
   // HMR
-  if (devServer && !isProduction) {
+  if (devServer && !ssr && !isProduction) {
     output.push(`_sfc_main.__hmrId = ${JSON.stringify(descriptor.id)}`)
     output.push(
       `__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)`
@@ -116,6 +119,21 @@ export async function transformMain(
       `    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)`,
       `  }`,
       `})`
+    )
+  }
+
+  // SSR module registration by wrapping user setup
+  if (ssr) {
+    output.push(
+      `import { useSSRContext } from 'vue'`,
+      `const _sfc_setup = _sfc_main.setup`,
+      `_sfc_main.setup = (props, ctx) => {`,
+      `  const ssrContext = useSSRContext()`,
+      `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
+        filename
+      )})`,
+      `  return _sfc_setup ? _sfc_setup(props, ctx) : undefined`,
+      `}`
     )
   }
 
@@ -155,7 +173,8 @@ export async function transformMain(
 async function genTemplateCode(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
-  pluginContext: PluginContext
+  pluginContext: PluginContext,
+  ssr: boolean
 ) {
   const template = descriptor.template!
 
@@ -167,7 +186,8 @@ async function genTemplateCode(
       template.content,
       descriptor,
       options,
-      pluginContext
+      pluginContext,
+      ssr
     )
   } else {
     if (template.src) {
@@ -178,7 +198,7 @@ async function genTemplateCode(
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
-    const renderFnName = options.ssr ? 'ssrRender' : 'render'
+    const renderFnName = ssr ? 'ssrRender' : 'render'
     return {
       code: `import { ${renderFnName} as _sfc_${renderFnName} } from ${request}`,
       map: undefined
@@ -189,14 +209,15 @@ async function genTemplateCode(
 async function genScriptCode(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
-  pluginContext: PluginContext
+  pluginContext: PluginContext,
+  ssr: boolean
 ): Promise<{
   code: string
   map: RawSourceMap
 }> {
   let scriptCode = `const _sfc_main = {}`
   let map
-  const script = resolveScript(descriptor, options)
+  const script = resolveScript(descriptor, options, ssr)
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.

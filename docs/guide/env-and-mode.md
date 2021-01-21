@@ -14,7 +14,7 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 ### Production Replacement
 
-During production, these env variables are **statically replaced**. It therefore necessary to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will not work.
+During production, these env variables are **statically replaced**. It is therefore necessary to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will not work.
 
 It will also replace these strings appearing in JavaScript strings and Vue templates. This should be a rare case, but it can be unintended. There are ways to work around this behavior:
 

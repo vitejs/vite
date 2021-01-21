@@ -8,7 +8,12 @@ import { CSSOptions } from './plugins/css'
 import { createDebugger, isObject, lookupFile, normalizePath } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import { ESBuildOptions, esbuildPlugin } from './plugins/esbuild'
+import {
+  ESBuildOptions,
+  esbuildPlugin,
+  stopService,
+  transformWithEsbuild
+} from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
@@ -89,6 +94,11 @@ export interface UserConfig {
    */
   optimizeDeps?: DepOptimizationOptions
   /**
+   * SSR specific options
+   * @alpha
+   */
+  ssr?: SSROptions
+  /**
    * Force Vite to always resolve listed dependencies to the same copy (from
    * project root).
    */
@@ -107,6 +117,11 @@ export interface UserConfig {
    * @default '/'
    */
   base?: string
+}
+
+export interface SSROptions {
+  external?: string[]
+  noExternal?: string[]
 }
 
 export interface InlineConfig extends UserConfig {
@@ -431,16 +446,17 @@ export async function loadConfigFromFile(
 
     if (isMjs) {
       if (isTS) {
-        const code = await bundleConfigFile(resolvedPath, 'es')
+        // before we can register loaders without requiring users to run node
+        // with --experimental-loader themselves, we have to do a hack here:
+        // transpile the ts config file with esbuild first, write it to disk,
+        // load it with native Node ESM, then delete the file.
+        const src = fs.readFileSync(resolvedPath, 'utf-8')
+        const { code } = await transformWithEsbuild(src, resolvedPath)
+        fs.writeFileSync(resolvedPath + '.js', code)
         userConfig = (
-          await eval(
-            `import(${JSON.stringify(
-              `data:text/javascript;base64,${Buffer.from(code).toString(
-                'base64'
-              )}`
-            )})`
-          )
+          await eval(`import(resolvedPath + '.js?t=${Date.now()}')`)
         ).default
+        fs.unlinkSync(resolvedPath + '.js')
         debug(`TS + native esm config loaded in ${Date.now() - start}ms`)
       } else {
         // using eval to avoid this from being compiled away by TS/Rollup
@@ -472,7 +488,7 @@ export async function loadConfigFromFile(
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
       // lazy require rollup (it's actually in dependencies)
-      const code = await bundleConfigFile(resolvedPath, 'cjs')
+      const code = await bundleConfigFile(resolvedPath)
       userConfig = await loadConfigFromBundledFile(resolvedPath, code)
       debug(`bundled config file loaded in ${Date.now() - start}ms`)
     }
@@ -491,13 +507,12 @@ export async function loadConfigFromFile(
       chalk.red(`failed to load config from ${resolvedPath}`)
     )
     throw e
+  } finally {
+    await stopService()
   }
 }
 
-async function bundleConfigFile(
-  fileName: string,
-  format: 'cjs' | 'es'
-): Promise<string> {
+async function bundleConfigFile(fileName: string): Promise<string> {
   const rollup = require('rollup') as typeof Rollup
   // node-resolve must be imported since it's bundled
   const bundle = await rollup.rollup({
@@ -529,8 +544,8 @@ async function bundleConfigFile(
   const {
     output: [{ code }]
   } = await bundle.generate({
-    exports: format === 'cjs' ? 'named' : undefined,
-    format
+    exports: 'named',
+    format: 'cjs'
   })
 
   return code

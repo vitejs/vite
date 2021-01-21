@@ -23,25 +23,29 @@ import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import {
-  rawFsStaticMiddleware,
+  serveRawFsMiddleware,
+  servePublicMiddleware,
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import { ModuleGraph } from './moduleGraph'
+import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
 import { createDebugger, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import { handleHMRUpdate, HmrOptions } from './hmr'
+import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { TransformResult } from 'rollup'
-import { transformRequest } from './transformRequest'
+import { TransformOptions, transformRequest } from './transformRequest'
 import {
   transformWithEsbuild,
   EsbuildTransformResult
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
+import { ssrLoadModule } from '../ssr/ssrModuleLoader'
+import { resolveSSRExternal } from '../ssr/ssrExternal'
+import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 
 export interface ServerOptions {
   host?: string
@@ -141,9 +145,16 @@ export interface ViteDevServer {
    */
   config: ResolvedConfig
   /**
-   * connect app instance
-   * This can also be used as the handler function of a custom http server
+   * A connect app instance.
+   * - Can be used to attach custom middlewares to the dev server.
+   * - Can also be used as the handler function of a custom http server
+   *   or as a middleware in any connect-style Node.js frameworks
+   *
    * https://github.com/senchalabs/connect#use-middleware
+   */
+  middlewares: Connect.Server
+  /**
+   * @deprecated use `server.middlewares` instead
    */
   app: Connect.Server
   /**
@@ -173,7 +184,10 @@ export interface ViteDevServer {
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
-  transformRequest(url: string): Promise<TransformResult | null>
+  transformRequest(
+    url: string,
+    options?: TransformOptions
+  ): Promise<TransformResult | null>
   /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
@@ -185,6 +199,19 @@ export interface ViteDevServer {
     inMap?: object
   ): Promise<EsbuildTransformResult>
   /**
+   * Load a given URL as an instantiated module for SSR.
+   * @alpha
+   */
+  ssrLoadModule(
+    url: string,
+    options?: { isolated?: boolean }
+  ): Promise<Record<string, any>>
+  /**
+   * Fix ssr error stacktrace
+   * @alpha
+   */
+  ssrFixStacktrace(e: Error): void
+  /**
    * Start the server.
    */
   listen(port?: number): Promise<ViteDevServer>
@@ -195,7 +222,23 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  optimizeDepsMetadata: DepOptimizationMetadata | null
+  _optimizeDepsMetadata: DepOptimizationMetadata | null
+  /**
+   * Deps that are extenralized
+   * @internal
+   */
+  _ssrExternals: string[] | null
+  /**
+   * @internal
+   */
+  _globImporters: Record<
+    string,
+    {
+      base: string
+      pattern: string
+      module: ModuleNode
+    }
+  >
 }
 
 export async function createServer(
@@ -204,11 +247,12 @@ export async function createServer(
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
   const serverConfig = config.server || {}
+  const middlewareMode = !!serverConfig.middlewareMode
 
-  const app = connect() as Connect.Server
-  const httpServer = serverConfig.middlewareMode
+  const middlewares = connect() as Connect.Server
+  const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, app)
+    : await resolveHttpServer(serverConfig, middlewares)
   const ws = createWebSocketServer(httpServer, config)
 
   const watchOptions = serverConfig.watch || {}
@@ -230,16 +274,32 @@ export async function createServer(
 
   const server: ViteDevServer = {
     config: config,
-    app,
+    middlewares,
+    get app() {
+      config.logger.warn(
+        `ViteDevServer.app is deprecated. Use ViteDevServer.middlewares instead.`
+      )
+      return middlewares
+    },
     httpServer,
     watcher,
     pluginContainer: container,
     ws,
     moduleGraph,
-    optimizeDepsMetadata: null,
     transformWithEsbuild,
-    transformRequest(url) {
-      return transformRequest(url, server)
+    transformRequest(url, options) {
+      return transformRequest(url, server, options)
+    },
+    ssrLoadModule(url, options) {
+      if (!server._ssrExternals) {
+        server._ssrExternals = resolveSSRExternal(config)
+      }
+      return ssrLoadModule(url, server, !!options?.isolated)
+    },
+    ssrFixStacktrace(e) {
+      if (e.stack) {
+        e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
+      }
     },
     listen(port?: number) {
       return startServer(server, port)
@@ -251,7 +311,10 @@ export async function createServer(
         container.close(),
         closeHttpServer()
       ])
-    }
+    },
+    _optimizeDepsMetadata: null,
+    _ssrExternals: null,
+    _globImporters: {}
   }
 
   process.once('SIGTERM', async () => {
@@ -278,6 +341,14 @@ export async function createServer(
     }
   })
 
+  watcher.on('add', (file) => {
+    handleFileAddUnlink(normalizePath(file), server)
+  })
+
+  watcher.on('unlink', (file) => {
+    handleFileAddUnlink(normalizePath(file), server, true)
+  })
+
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const plugin of plugins) {
@@ -290,19 +361,19 @@ export async function createServer(
 
   // request timer
   if (process.env.DEBUG) {
-    app.use(timeMiddleware(root))
+    middlewares.use(timeMiddleware(root))
   }
 
   // cors (enabled by default)
   const { cors } = serverConfig
   if (cors !== false) {
-    app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+    middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    app.use(proxyMiddleware(server))
+    middlewares.use(proxyMiddleware(server))
   }
 
   // base
@@ -311,22 +382,22 @@ export async function createServer(
   }
 
   // open in editor support
-  app.use('/__open-in-editor', launchEditorMiddleware())
+  middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  app.use(serveStaticMiddleware(path.join(root, 'public')))
+  middlewares.use(servePublicMiddleware(path.join(root, 'public')))
 
   // main transform middleware
-  app.use(transformMiddleware(server))
+  middlewares.use(transformMiddleware(server))
 
   // serve static files
-  app.use(rawFsStaticMiddleware())
-  app.use(serveStaticMiddleware(root, config))
+  middlewares.use(serveRawFsMiddleware())
+  middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
-  app.use(
+  middlewares.use(
     history({
       logger: createDebugger('vite:spa-fallback'),
       // support /dir/ without explicit index.html
@@ -346,38 +417,39 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  // transform index.html
-  app.use(indexHtmlMiddleware(server, plugins))
-
-  // handle 404s
-  if (!serverConfig.middlewareMode) {
-    app.use((_, res) => {
+  if (!middlewareMode) {
+    // transform index.html
+    middlewares.use(indexHtmlMiddleware(server, plugins))
+    // handle 404s
+    middlewares.use((_, res) => {
       res.statusCode = 404
       res.end()
     })
   }
 
   // error handler
-  app.use(errorMiddleware(server, serverConfig.middlewareMode))
+  middlewares.use(errorMiddleware(server, middlewareMode))
 
-  if (httpServer) {
+  const runOptimize = async () => {
+    if (config.optimizeCacheDir) {
+      // run optimizer
+      await optimizeDeps(config)
+      // after optimization, read updated optimization metadata
+      const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
+      if (fs.existsSync(dataPath)) {
+        server._optimizeDepsMetadata = JSON.parse(
+          fs.readFileSync(dataPath, 'utf-8')
+        )
+      }
+    }
+  }
+
+  if (!middlewareMode && httpServer) {
     // overwrite listen to run optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       await container.buildStart({})
-
-      if (config.optimizeCacheDir) {
-        // run optimizer
-        await optimizeDeps(config)
-        // after optimization, read updated optimization metadata
-        const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
-        if (fs.existsSync(dataPath)) {
-          server.optimizeDepsMetadata = JSON.parse(
-            fs.readFileSync(dataPath, 'utf-8')
-          )
-        }
-      }
-
+      await runOptimize()
       return listen(port, ...args)
     }) as any
 
@@ -385,6 +457,8 @@ export async function createServer(
       // update actual port since this may be different from initial value
       serverConfig.port = (httpServer.address() as AddressInfo).port
     })
+  } else {
+    await runOptimize()
   }
 
   return server
