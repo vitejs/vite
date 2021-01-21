@@ -378,7 +378,7 @@ export async function createServer(
 
   // base
   if (config.base !== '/') {
-    app.use(baseMiddleware(server))
+    middlewares.use(baseMiddleware(server))
   }
 
   // open in editor support
