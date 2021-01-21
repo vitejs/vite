@@ -8,7 +8,7 @@ import slash from 'slash'
 import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
 import resolve from 'resolve'
 
-export const bareImportRE = /^[\w@]/
+export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 let isRunningWithYarnPnp: boolean
