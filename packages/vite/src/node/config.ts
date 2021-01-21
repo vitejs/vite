@@ -43,6 +43,8 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
+export type PluginOption = Plugin | false | null | undefined
+
 export interface UserConfig {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
@@ -67,7 +69,7 @@ export interface UserConfig {
   /**
    * Array of vite plugins to use.
    */
-  plugins?: (Plugin | Plugin[])[]
+  plugins?: (PluginOption | PluginOption[])[]
   /**
    * CSS related options (preprocessors and CSS modules)
    */
@@ -178,8 +180,8 @@ export async function resolveConfig(
 
   // resolve plugins
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
-    return !p.apply || p.apply === command
-  })
+    return p && (!p.apply || p.apply === command)
+  }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(
     rawUserPlugins
   )
