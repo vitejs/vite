@@ -105,7 +105,8 @@ export async function transformMain(
   if (devServer && !ssr && !isProduction) {
     output.push(`_sfc_main.__hmrId = ${JSON.stringify(descriptor.id)}`)
     output.push(
-      `__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)`
+      `typeof __VUE_HMR_RUNTIME__ !== 'undefined' && ` +
+        `__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)`
     )
     // check if the template is the only thing that changed
     if (prevDescriptor && isOnlyTemplateChanged(prevDescriptor, descriptor)) {
