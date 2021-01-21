@@ -30,14 +30,14 @@ Vite is now in 2.0 beta. Check out the [Migration Guide](https://vitejs.dev/guid
 
 ## Packages
 
-| Package                                                       | Version                                                                                                                                                |
-|---------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Package                                                       | Version (click for changelogs)                                                                                                                                               |
+| ------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [vite](packages/vite)                                         | [![vite version](https://img.shields.io/npm/v/vite.svg?label=%20)](packages/vite/CHANGELOG.md)                                                         |
 | [@vitejs/plugin-vue](packages/plugin-vue)                     | [![plugin-vue version](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg?label=%20)](packages/plugin-vue/CHANGELOG.md)                               |
 | [@vitejs/plugin-vue-jsx](packages/plugin-vue-jsx)             | [![plugin-vue-jsx version](https://img.shields.io/npm/v/@vitejs/plugin-vue-jsx.svg?label=%20)](packages/plugin-vue-jsx/CHANGELOG.md)                   |
 | [@vitejs/plugin-react-refresh](packages/plugin-react-refresh) | [![plugin-react-refresh version](https://img.shields.io/npm/v/@vitejs/plugin-react-refresh.svg?label=%20)](packages/plugin-react-refresh/CHANGELOG.md) |
 | [@vitejs/plugin-legacy](packages/plugin-legacy)               | [![plugin-legacy version](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg?label=%20)](packages/plugin-legacy/CHANGELOG.md)                      |
-| [@vitejs/create-app](packages/create-app)                     | [![create-app version](https://img.shields.io/npm/v/@vitejs/create-app.svg?label=%20)](packages/create-app/CHANGELOG.md)  
+| [@vitejs/create-app](packages/create-app)                     | [![create-app version](https://img.shields.io/npm/v/@vitejs/create-app.svg?label=%20)](packages/create-app/CHANGELOG.md)                               |
 
 ## Contribution
 
