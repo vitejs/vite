@@ -36,7 +36,7 @@ import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import { transformImportGlob } from './importAnaysisBuild'
+import { transformImportGlob } from '../importGlob'
 import isBuiltin from 'isbuiltin'
 
 const isDebug = !!process.env.DEBUG
@@ -260,15 +260,28 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           } else if (prop === '.glo' && source[end + 4] === 'b') {
             // transform import.meta.glob()
             // e.g. `import.meta.glob('glob:./dir/*.js')`
-            const { imports, exp, endIndex } = await transformImportGlob(
+            const {
+              imports,
+              importsString,
+              exp,
+              endIndex,
+              base,
+              pattern
+            } = await transformImportGlob(
               source,
               start,
               importer,
               index,
               normalizeUrl
             )
-            str().prepend(imports)
+            str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
+            imports.forEach((url) => importedUrls.add(url))
+            server._globImporters[importerModule.file!] = {
+              module: importerModule,
+              base,
+              pattern
+            }
           }
           continue
         }

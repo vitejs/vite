@@ -67,6 +67,14 @@ export function editFile(filename: string, replacer: (str: string) => string) {
   fs.writeFileSync(filename, modified)
 }
 
+export function addFile(filename: string, content: string) {
+  fs.writeFileSync(path.resolve(testDir, filename), content)
+}
+
+export function removeFile(filename: string) {
+  fs.unlinkSync(path.resolve(testDir, filename))
+}
+
 export function findAssetFile(match: string | RegExp, base = '') {
   const assetsDir = path.join(testDir, 'dist', base, 'assets')
   const files = fs.readdirSync(assetsDir)

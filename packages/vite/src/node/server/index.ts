@@ -22,15 +22,16 @@ import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import {
-  rawFsStaticMiddleware,
+  serveRawFsMiddleware,
+  servePublicMiddleware,
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import { ModuleGraph } from './moduleGraph'
+import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
 import { createDebugger, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import { handleHMRUpdate, HmrOptions } from './hmr'
+import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { TransformResult } from 'rollup'
@@ -221,6 +222,17 @@ export interface ViteDevServer {
    * @internal
    */
   _ssrExternals: string[] | null
+  /**
+   * @internal
+   */
+  _globImporters: Record<
+    string,
+    {
+      base: string
+      pattern: string
+      module: ModuleNode
+    }
+  >
 }
 
 export async function createServer(
@@ -295,7 +307,8 @@ export async function createServer(
       ])
     },
     _optimizeDepsMetadata: null,
-    _ssrExternals: null
+    _ssrExternals: null,
+    _globImporters: {}
   }
 
   process.once('SIGTERM', async () => {
@@ -320,6 +333,14 @@ export async function createServer(
         })
       }
     }
+  })
+
+  watcher.on('add', (file) => {
+    handleFileAddUnlink(normalizePath(file), server)
+  })
+
+  watcher.on('unlink', (file) => {
+    handleFileAddUnlink(normalizePath(file), server, true)
   })
 
   // apply server configuration hooks from plugins
@@ -355,13 +376,13 @@ export async function createServer(
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  middlewares.use(serveStaticMiddleware(path.join(root, 'public')))
+  middlewares.use(servePublicMiddleware(path.join(root, 'public')))
 
   // main transform middleware
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(rawFsStaticMiddleware())
+  middlewares.use(serveRawFsMiddleware())
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback

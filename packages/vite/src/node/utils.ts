@@ -201,7 +201,7 @@ export function posToNumber(
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1; i++) {
-    start += lines[i].length
+    start += lines[i].length + 1
   }
   return start + column
 }

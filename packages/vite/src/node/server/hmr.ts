@@ -1,13 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 import { createServer, ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, lookupFile, normalizePath } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import chalk from 'chalk'
 import slash from 'slash'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
+import match from 'minimatch'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -30,14 +31,16 @@ export interface HmrContext {
   server: ViteDevServer
 }
 
+function getShortName(file: string, root: string) {
+  return file.startsWith(root + '/') ? path.posix.relative(root, file) : file
+}
+
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer
 ): Promise<any> {
   const { ws, config, moduleGraph } = server
-  const shortFile = file.startsWith(config.root + '/')
-    ? path.posix.relative(config.root, file)
-    : file
+  const shortFile = getShortName(file, config.root)
 
   if (file === config.configFile || file.endsWith('.env')) {
     // TODO auto restart server
@@ -46,10 +49,25 @@ export async function handleHMRUpdate(
       chalk.green('config or .env file changed, restarting server...'),
       { clear: true, timestamp: true }
     )
-    await server.close()
-    ;(global as any).__vite_start_time = Date.now()
-    server = await createServer(config.inlineConfig)
-    await server.listen()
+    await restartServer(server)
+    return
+  }
+
+  if (
+    file.endsWith('package.json') &&
+    file ===
+      normalizePath(lookupFile(config.root, [`package.json`], true) || '')
+  ) {
+    const deps = require(file).dependencies || {}
+    const prevDeps = server._optimizeDepsMetadata?.dependencies || {}
+    // check if deps have changed
+    if (hasDepsChanged(deps, prevDeps)) {
+      config.logger.info(
+        chalk.green('dependencies have changed, restarting server...'),
+        { clear: true, timestamp: true }
+      )
+      await restartServer(server)
+    }
     return
   }
 
@@ -94,7 +112,9 @@ export async function handleHMRUpdate(
       })
       ws.send({
         type: 'full-reload',
-        path: '/' + slash(path.relative(config.root, file))
+        path: config.server.middlewareMode
+          ? '*'
+          : '/' + slash(path.relative(config.root, file))
       })
     } else {
       // loaded but not in the module graph, probably not js
@@ -103,10 +123,19 @@ export async function handleHMRUpdate(
     return
   }
 
+  updateModules(shortFile, hmrContext.modules, timestamp, server)
+}
+
+function updateModules(
+  file: string,
+  modules: ModuleNode[],
+  timestamp: number,
+  { config, ws }: ViteDevServer
+) {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
 
-  for (const mod of hmrContext.modules) {
+  for (const mod of modules) {
     const boundaries = new Set<{
       boundary: ModuleNode
       acceptedVia: ModuleNode
@@ -114,7 +143,7 @@ export async function handleHMRUpdate(
     invalidate(mod, timestamp, invalidatedModules)
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+      config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
         clear: true,
         timestamp: true
       })
@@ -145,6 +174,31 @@ export async function handleHMRUpdate(
     type: 'update',
     updates
   })
+}
+
+export async function handleFileAddUnlink(
+  file: string,
+  server: ViteDevServer,
+  isUnlink = false
+) {
+  if (isUnlink && file in server._globImporters) {
+    delete server._globImporters[file]
+  } else {
+    const modules = []
+    for (const i in server._globImporters) {
+      const { module, base, pattern } = server._globImporters[i]
+      const relative = path.relative(base, file)
+      if (match(relative, pattern)) {
+        modules.push(module)
+      }
+    }
+    updateModules(
+      getShortName(file, server.config.root),
+      modules,
+      Date.now(),
+      server
+    )
+  }
 }
 
 function propagateUpdate(
@@ -370,4 +424,23 @@ async function readModifiedFile(file: string): Promise<string> {
   } else {
     return content
   }
+}
+
+function hasDepsChanged(deps: any, prevDeps: any): boolean {
+  if (Object.keys(deps).length !== Object.keys(prevDeps).length) {
+    return true
+  }
+  for (const key in deps) {
+    if (deps[key] !== prevDeps[key]) {
+      return true
+    }
+  }
+  return false
+}
+
+async function restartServer(server: ViteDevServer) {
+  await server.close()
+  ;(global as any).__vite_start_time = Date.now()
+  server = await createServer(server.config.inlineConfig)
+  await server.listen()
 }

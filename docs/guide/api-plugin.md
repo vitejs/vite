@@ -10,7 +10,7 @@ Vite plugins extends Rollup's well-designed plugin interface with a few extra vi
 It is common convention to author a Vite/Rollup plugin as a factory function that returns the actual plugin object. The function can accept options which allows users to customize the behavior of the plugin.
 :::
 
-### Serving a Virtual File
+### Importing a Virtual File
 
 ```js
 export default function myPlugin() {
@@ -30,6 +30,14 @@ export default function myPlugin() {
     }
   }
 }
+```
+
+Which allows importing the file in JavaScript:
+
+```js
+import { msg } from '@my-virtual-file'
+
+console.log(msg)
 ```
 
 ### Transforming Custom File Types
@@ -345,7 +353,7 @@ function myPlugin() {
 }
 ```
 
-## Rollup Plugin Compatiblity
+## Rollup Plugin Compatibility
 
 A fair number of Rollup plugins will work directly as a Vite plugin (e.g. `@rollup/plugin-alias` or `@rollup/plugin-json`), but not all of them, since some plugin hooks do not make sense in an unbundled dev server context.
 
@@ -372,3 +380,5 @@ export default {
   ]
 }
 ```
+
+Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official rollup plugins with usage instructions.
