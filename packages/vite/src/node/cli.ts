@@ -17,6 +17,7 @@ interface GlobalCLIOptions {
   config?: string
   c?: boolean | string
   root?: string
+  base?: string
   r?: string
   mode?: string
   m?: string
@@ -38,6 +39,7 @@ function cleanOptions(options: GlobalCLIOptions) {
   delete ret.config
   delete ret.c
   delete ret.root
+  delete ret.base
   delete ret.r
   delete ret.mode
   delete ret.m
@@ -50,6 +52,7 @@ function cleanOptions(options: GlobalCLIOptions) {
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
   .option('-r, --root <path>', `[string] use specified root directory`)
+  .option('--base <path>', `[string] public base path (default: /)`)
   .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
@@ -77,6 +80,7 @@ cli
     try {
       const server = await createServer({
         root,
+        base: options.base,
         mode: options.mode,
         configFile: options.config,
         logLevel: options.logLevel,
@@ -95,7 +99,6 @@ cli
 // build
 cli
   .command('build [root]')
-  .option('--base <path>', `[string] public base path (default: /)`)
   .option('--target <target>', `[string] transpile target (default: 'modules')`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
@@ -141,6 +144,7 @@ cli
     try {
       await build({
         root,
+        base: options.base,
         mode: options.mode,
         configFile: options.config,
         logLevel: options.logLevel,
@@ -169,6 +173,7 @@ cli
         const config = await resolveConfig(
           {
             root,
+            base: options.base,
             configFile: options.config,
             logLevel: options.logLevel
           },

@@ -59,7 +59,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         s = s || (s = new MagicString(code))
         const [full, fileHandle, postfix = ''] = match
         const outputFilepath =
-          config.build.base + this.getFileName(fileHandle) + postfix
+          config.base + this.getFileName(fileHandle) + postfix
         s.overwrite(
           match.index,
           match.index + full.length,
@@ -118,18 +118,22 @@ export function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, { root }: ResolvedConfig) {
+function fileToDevUrl(id: string, { root, base }: ResolvedConfig) {
+  let rtn: string
+
   if (checkPublicFile(id, root)) {
     // in public dir, keep the url as-is
-    return id
-  }
-  if (id.startsWith(root)) {
+    rtn = id
+  } else if (id.startsWith(root)) {
     // in project root, infer short public path
-    return '/' + path.posix.relative(root, id)
+    rtn = '/' + path.posix.relative(root, id)
+  } else {
+    // outside of project root, use absolute fs path
+    // (this is special handled by the serve static middleware
+    rtn = FS_PREFIX + id
   }
-  // outside of project root, use absolute fs path
-  // (this is special handled by the serve static middleware
-  return FS_PREFIX + id
+
+  return path.posix.join(base, rtn)
 }
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
@@ -145,7 +149,7 @@ async function fileToBuiltUrl(
   skipPublicCheck = false
 ): Promise<string> {
   if (!skipPublicCheck && checkPublicFile(id, config.root)) {
-    return config.build.base + id.slice(1)
+    return config.base + id.slice(1)
   }
 
   let cache = assetCache.get(config)
@@ -197,7 +201,7 @@ export async function urlToBuiltUrl(
   pluginContext: PluginContext
 ): Promise<string> {
   if (checkPublicFile(url, config.root)) {
-    return config.build.base + url.slice(1)
+    return config.base + url.slice(1)
   }
   const file = url.startsWith('/')
     ? path.join(config.root, url)

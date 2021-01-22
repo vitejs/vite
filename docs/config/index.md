@@ -98,6 +98,13 @@ export default ({ command, mode }) => {
 
   See [Project Root](/guide/#project-root) for more details.
 
+### base
+
+- **Type:** `string`
+- **Default:** `/`
+
+  Base public path when served in development or production. Note the path should start and end with `/`. See [Public Base Path](/guide/build#public-base-path) for more details.
+
 ### mode
 
 - **Type:** `string`
@@ -321,13 +328,6 @@ export default ({ command, mode }) => {
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
 ## Build Options
-
-### build.base
-
-- **Type:** `string`
-- **Default:** `/`
-
-  Base public path when served in production. Note the path should start and end with `/`. See [Public Base Path](/guide/build#public-base-path) for more details.
 
 ### build.target
 

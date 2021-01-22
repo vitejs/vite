@@ -22,6 +22,7 @@ import { resolvePlugin } from './plugins/resolve'
 import { createLogger, Logger, LogLevel } from './logger'
 import { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
+import { ResolvedBuildOptions } from '.'
 
 const debug = createDebugger('vite:config')
 
@@ -112,6 +113,11 @@ export interface UserConfig {
    * Default: true
    */
   clearScreen?: boolean
+  /**
+   * Base public path when served in development or production.
+   * @default '/'
+   */
+  base?: string
 }
 
 export interface SSROptions {
@@ -136,9 +142,10 @@ export type ResolvedConfig = Readonly<
     alias: Alias[]
     plugins: readonly Plugin[]
     server: ServerOptions
-    build: Required<BuildOptions>
+    build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
+    base: string
   }
 >
 
@@ -149,6 +156,7 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let mode = inlineConfig.mode || defaultMode
+  const logger = createLogger(config.logLevel, config.clearScreen)
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
   // production-specific behavior, so set it here even though we haven't
@@ -218,7 +226,44 @@ export async function resolveConfig(
     process.env.NODE_ENV = 'production'
   }
 
+  // resolve public base url
+  // TODO remove when out of beta
+  if (config.build?.base) {
+    logger.warn(
+      chalk.yellow.bold(
+        `(!) "build.base" config option is deprecated. ` +
+          `"base" is now a root-level config option.`
+      )
+    )
+    config.base = config.build.base
+  }
+
+  let BASE_URL = config.base || '/'
+  if (!BASE_URL.startsWith('/') || !BASE_URL.endsWith('/')) {
+    logger.warn(
+      chalk.bold.yellow(
+        `(!) "base" config option should start and end with "/".`
+      )
+    )
+    if (!BASE_URL.startsWith('/')) BASE_URL = '/' + BASE_URL
+    if (!BASE_URL.endsWith('/')) BASE_URL = BASE_URL + '/'
+  }
+
   const resolvedBuildOptions = resolveBuildOptions(config.build)
+
+  // TODO remove when out of beta
+  Object.defineProperty(resolvedBuildOptions, 'base', {
+    get() {
+      logger.warn(
+        chalk.yellow.bold(
+          `(!) "build.base" config option is deprecated. ` +
+            `"base" is now a root-level config option.\n` +
+            new Error().stack
+        )
+      )
+      return config.base
+    }
+  })
 
   // resolve optimizer cache directory
   const pkgPath = lookupFile(
@@ -233,6 +278,17 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
+  let hmr = config.server?.hmr === true ? {} : config.server?.hmr
+  hmr = {
+    ...hmr,
+    path: BASE_URL !== '/' ? BASE_URL.substr(1) : undefined
+  }
+
+  const server = {
+    ...config.server,
+    hmr
+  }
+
   const resolved = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -244,11 +300,11 @@ export async function resolveConfig(
     optimizeCacheDir,
     alias: resolvedAlias,
     plugins: userPlugins,
-    server: config.server || {},
+    server,
     build: resolvedBuildOptions,
     env: {
       ...userEnv,
-      BASE_URL: command === 'build' ? resolvedBuildOptions.base : '/',
+      BASE_URL,
       MODE: mode,
       DEV: !isProduction,
       PROD: isProduction
@@ -256,7 +312,8 @@ export async function resolveConfig(
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
-    logger: createLogger(config.logLevel, config.clearScreen)
+    logger,
+    base: BASE_URL
   }
 
   resolved.plugins = await resolvePlugins(
