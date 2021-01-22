@@ -407,6 +407,7 @@ export async function createServer(
             from: /\/$/,
             to({ parsedUrl }: any) {
               return parsedUrl.pathname + 'index.html'
+            }
           }
         ]
       })
