@@ -203,6 +203,10 @@ export async function urlToBuiltUrl(
     return url.slice(1)
   }
 
+  if (url.startsWith(config.root + '/')) {
+    url = url.split(config.root)[1]
+  }
+
   if (checkPublicFile(url, config.root)) {
     return config.build.base + url.slice(1)
   }
