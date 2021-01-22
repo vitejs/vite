@@ -240,7 +240,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // replace asset url references with resolved url
       chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId, postfix = '') => {
-        return config.build.base + this.getFileName(fileId) + postfix
+        return config.base + this.getFileName(fileId) + postfix
       })
 
       if (config.build.cssCodeSplit) {

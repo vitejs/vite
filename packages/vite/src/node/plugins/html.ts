@@ -159,7 +159,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 src!.value!.loc.start.offset,
                 src!.value!.loc.end.offset,
-                config.build.base + url.slice(1)
+                config.base + url.slice(1)
               )
             }
 
@@ -201,7 +201,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
-                    config.build.base + url.slice(1)
+                    config.base + url.slice(1)
                   )
                 }
               }
@@ -286,7 +286,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       for (const [id, html] of processedHtml) {
         // resolve asset url references
         let result = html.replace(assetUrlRE, (_, fileId, postfix = '') => {
-          return config.build.base + this.getFileName(fileId) + postfix
+          return config.base + this.getFileName(fileId) + postfix
         })
 
         // find corresponding entry chunk
@@ -489,7 +489,7 @@ export async function applyHtmlTransforms(
 }
 
 function toPublicPath(filename: string, config: ResolvedConfig) {
-  return isExternalUrl(filename) ? filename : config.build.base + filename
+  return isExternalUrl(filename) ? filename : config.base + filename
 }
 
 const headInjectRE = /<\/head>/
