@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Discussions
+    url: https://github.com/vitejs/vite/discussions
+    about: Use Discussions tab for questions and discussions.
