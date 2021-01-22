@@ -386,25 +386,27 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
-  middlewares.use(
-    history({
-      logger: createDebugger('vite:spa-fallback'),
-      // support /dir/ without explicit index.html
-      rewrites: [
-        {
-          from: /\/$/,
-          to({ parsedUrl }: any) {
-            const rewritten = parsedUrl.pathname + 'index.html'
-            if (fs.existsSync(path.join(root, rewritten))) {
-              return rewritten
-            } else {
-              return `/index.html`
+  if (!middlewareMode) {
+    middlewares.use(
+      history({
+        logger: createDebugger('vite:spa-fallback'),
+        // support /dir/ without explicit index.html
+        rewrites: [
+          {
+            from: /\/$/,
+            to({ parsedUrl }: any) {
+              const rewritten = parsedUrl.pathname + 'index.html'
+              if (fs.existsSync(path.join(root, rewritten))) {
+                return rewritten
+              } else {
+                return `/index.html`
+              }
             }
           }
-        }
-      ]
-    })
-  )
+        ]
+      })
+    )
+  }
 
   // run post config hooks
   // This is applied before the html middleware so that user middleware can
