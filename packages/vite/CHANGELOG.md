@@ -1,3 +1,24 @@
+# [2.0.0-beta.37](https://github.com/vitejs/vite/compare/v2.0.0-beta.35...v2.0.0-beta.37) (2021-01-22)
+
+
+### Bug Fixes
+
+* **css:** fix url rewriting in [@imported](https://github.com/imported) css ([52ae44f](https://github.com/vitejs/vite/commit/52ae44fe97b53ce82633268030bb46594f385860)), closes [#1629](https://github.com/vitejs/vite/issues/1629)
+* **manifest:** avoid chunks with same name overwriting one another ([cf81aa3](https://github.com/vitejs/vite/commit/cf81aa399b2df1ee8441a1b8922908f4e36358d6)), closes [#1632](https://github.com/vitejs/vite/issues/1632)
+* **ssr:** do not inject inlined css in ssr build ([5d77665](https://github.com/vitejs/vite/commit/5d77665def42ffafc699a0006e4527536dfd1114)), closes [#1643](https://github.com/vitejs/vite/issues/1643)
+* always reload when html is edited in middleware mode ([85c89be](https://github.com/vitejs/vite/commit/85c89bea9807090d928942a72b972183ebf8483a))
+* handle esm config syntax error in Node 12 ([20cf718](https://github.com/vitejs/vite/commit/20cf718ac77abfce5656ee9836f8c06ddbbc440d)), closes [#1635](https://github.com/vitejs/vite/issues/1635)
+* normalize paths for cjs optimized deps on windows ([#1631](https://github.com/vitejs/vite/issues/1631)) ([b462e33](https://github.com/vitejs/vite/commit/b462e33ce3d31df49ada436324a9c32cd5c9053a))
+* still resolve jsnext fields ([4e0cd73](https://github.com/vitejs/vite/commit/4e0cd7384e850e4b7f23b68e5b591bb717650b79))
+
+
+### Features
+
+* allow inline postcss config ([6bd2140](https://github.com/vitejs/vite/commit/6bd21402a9e5955433656024f5548f12b12ea2fa)), closes [#1061](https://github.com/vitejs/vite/issues/1061)
+* hmr for glob import ([edd2fd9](https://github.com/vitejs/vite/commit/edd2fd9de904a194f25e18136dfe298c7bcbbd8d))
+
+
+
 # [2.0.0-beta.36](https://github.com/vitejs/vite/compare/v2.0.0-beta.35...v2.0.0-beta.36) (2021-01-21)
 
 
