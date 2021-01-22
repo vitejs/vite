@@ -1,33 +1,29 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import Rollup from 'rollup'
 import { createHash } from 'crypto'
-import { ResolvedConfig, sortUserPlugins } from '../config'
+import { ResolvedConfig } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
-import { init, parse } from 'es-module-lexer'
-import { onRollupWarning, resolveExternal } from '../build'
 import {
   createDebugger,
   emptyDir,
   lookupFile,
+  normalizePath,
   resolveFrom,
   writeFile
 } from '../utils'
-import { depAssetExternalPlugin, depAssetRewritePlugin } from './depAssetPlugin'
-import { recordCjsEntryPlugin } from './depMetadataPlugin'
 import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
-import { resolvePlugin, tryNodeResolve } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import aliasPlugin from '@rollup/plugin-alias'
-import commonjsPlugin from '@rollup/plugin-commonjs'
-import jsonPlugin from '@rollup/plugin-json'
-import { buildDefinePlugin } from '../plugins/define'
-import { createFilter } from '@rollup/pluginutils'
+import { createFilter, makeLegalIdentifier } from '@rollup/pluginutils'
 import { Plugin } from '../plugin'
 import { prompt } from 'enquirer'
+import { build } from 'esbuild'
+import { esbuildDepPlugin } from './esbuildDepPlugin'
+import { init, parse } from 'es-module-lexer'
 
 const debug = createDebugger('vite:optimize')
 
@@ -71,16 +67,14 @@ export interface DepOptimizationOptions {
   auto?: boolean
   /**
    * A list of linked dependencies that should be treated as source code.
-   * @deprecated local linked deps are auto detected in Vite 2.
    */
   link?: string[]
 }
 
 export interface DepOptimizationMetadata {
   hash: string
-  optimized: Record<string, string>
+  optimized: Record<string, string[]>
   transitiveOptimized: Record<string, true>
-  cjsEntries: Record<string, true>
   dependencies: Record<string, string>
 }
 
@@ -89,6 +83,8 @@ export async function optimizeDeps(
   force = config.server.force,
   asCommand = false
 ) {
+  await init
+
   config = {
     ...config,
     command: 'build'
@@ -110,7 +106,6 @@ export async function optimizeDeps(
     hash: getDepHash(root, pkg, config),
     optimized: {},
     transitiveOptimized: {},
-    cjsEntries: {},
     dependencies: pkg.dependencies
   }
 
@@ -139,7 +134,7 @@ export async function optimizeDeps(
   // 1. Has imports to relative files (e.g. lodash-es, lit-html)
   // 2. Has imports to bare modules that are not in the project's own deps
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
-  await init
+  // await init
   const aliasResolver = await createPluginContainer({
     ...config,
     plugins: [aliasPlugin({ entries: config.alias })]
@@ -236,69 +231,32 @@ export async function optimizeDeps(
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
 
-  const [pre, normal, post] = sortUserPlugins(options.plugins)
-  const resolvedExternal = resolveExternal(
-    external,
-    config.build.rollupOptions?.external
-  )
-
-  try {
-    const rollup = require('rollup') as typeof Rollup
-    const bundle = await rollup.rollup({
-      input: qualified,
-      external: resolvedExternal,
-      onwarn(warning, warn) {
-        onRollupWarning(warning, warn, config)
-      },
-      plugins: [
-        aliasPlugin({ entries: config.alias }),
-        ...pre,
-        depAssetExternalPlugin(config),
-        resolvePlugin(
-          {
-            root: config.root,
-            dedupe: config.dedupe,
-            isBuild: true,
-            asSrc: false
-          },
-          config
-        ),
-        jsonPlugin({
-          preferConst: true,
-          namedExports: true
-        }),
-        ...normal,
-        commonjsPlugin(config.build.commonjsOptions),
-        buildDefinePlugin(config),
-        depAssetRewritePlugin(config),
-        recordCjsEntryPlugin(data),
-        ...post
-      ]
-    })
-
-    const { output } = await bundle.generate({
-      format: 'es',
-      exports: 'named',
-      entryFileNames: '[name].[hash].js',
-      chunkFileNames: 'common/[name].[hash].js'
-    })
-
-    for (const chunk of output) {
-      if (chunk.type === 'chunk') {
-        writeFile(path.join(cacheDir, chunk.fileName), chunk.code)
-      }
-    }
-    writeFile(dataPath, JSON.stringify(data, null, 2))
-  } catch (e) {
-    delete e.watchFiles
-    logger.error(chalk.red(`\nDep optimization failed with error:`))
-    if (e.code === 'PARSE_ERROR') {
-      e.message += `\n\n${chalk.cyan(
-        path.relative(root, e.loc.file)
-      )}\n${chalk.dim(e.frame)}`
-    }
-    throw e
+  for (const id in qualified) {
+    data.optimized[id] = await parseExports(
+      qualified[id],
+      config,
+      aliasResolver
+    )
   }
+
+  // construct a entry containing all the deps
+  const tempEntry = buildTempEntry(qualified, data.optimized, cacheDir)
+  const tempEntryPath = path.resolve(path.join(cacheDir, 'depsEntry.js'))
+  fs.writeFileSync(tempEntryPath, tempEntry)
+
+  await build({
+    entryPoints: [tempEntryPath],
+    bundle: true,
+    format: 'esm',
+    outfile: path.join(cacheDir, 'deps.js'),
+    define: {
+      'process.env.NODE_ENV': '"development"'
+    },
+    plugins: [esbuildDepPlugin(qualified, config, data.transitiveOptimized)]
+  })
+
+  fs.unlinkSync(tempEntryPath)
+  writeFile(dataPath, JSON.stringify(data, null, 2))
 }
 
 interface FilteredDeps {
@@ -371,28 +329,8 @@ async function resolveQualifiedDeps(
       debug(`skipping ${id} (entry is not js)`)
       continue
     }
-    const content = fs.readFileSync(filePath, 'utf-8')
-    const [imports, exports] = parse(content)
-    if (!exports.length && !/export\s+\*\s+from/.test(content)) {
-      debug(`optimizing ${id} (no exports, likely commonjs)`)
-      qualified[id] = filePath
-      continue
-    }
-    for (const { s, e } of imports) {
-      let i = content.slice(s, e).trim()
-      i = (await aliasResolver.resolveId(i))?.id || i
-      if (i.startsWith('.')) {
-        debug(`optimizing ${id} (contains relative imports)`)
-        qualified[id] = filePath
-        break
-      }
-      if (!deps.includes(i)) {
-        debug(`optimizing ${id} (imports sub dependencies)`)
-        qualified[id] = filePath
-        break
-      }
-    }
-    debug(`skipping ${id} (single esm file, doesn't need optimization)`)
+    // qualified!
+    qualified[id] = filePath
   }
 
   // mark non-optimized deps as external
@@ -495,4 +433,70 @@ function getDepHash(
     }
   )
   return createHash('sha256').update(content).digest('hex').substr(0, 8)
+}
+
+function buildTempEntry(
+  qualified: Record<string, string>,
+  idToExports: DepOptimizationMetadata['optimized'],
+  basedir: string
+) {
+  let res = ''
+  for (const id in qualified) {
+    const validId = makeLegalIdentifier(id)
+    const exports = idToExports[id]
+    const entry = normalizePath(path.relative(basedir, qualified[id]))
+    if (!exports.length) {
+      // cjs or umd - provide rollup-style compat
+      // by exposing both the default and named properties
+      res += `import ${validId}_default from "${entry}"\n`
+      res += `import * as ${validId}_all from "${entry}"\n`
+      res += `const ${validId} = { ...${validId}_all, default: ${validId}_default }\n`
+      res += `export { ${validId} }\n`
+    } else {
+      res += `export { ${exports
+        .map((e) => `${e} as ${validId}_${e}`)
+        .join(', ')} } from "${entry}"\n`
+    }
+  }
+  return res
+}
+
+async function parseExports(
+  entry: string,
+  config: ResolvedConfig,
+  aliasResolver: PluginContainer
+) {
+  const content = fs.readFileSync(entry, 'utf-8')
+  const [imports, exports] = parse(content)
+
+  // check for export * from statements
+  for (const {
+    s: start,
+    e: end,
+    ss: expStart,
+    se: expEnd,
+    d: dynamicIndex
+  } of imports) {
+    if (dynamicIndex < 0) {
+      const exp = content.slice(expStart, expEnd)
+      if (exp.startsWith(`export * from`)) {
+        const id = content.slice(start, end)
+        const aliased = (await aliasResolver.resolveId(id))?.id || id
+        const filePath = tryNodeResolve(
+          aliased,
+          config.root,
+          config.isProduction
+        )?.id
+        if (filePath) {
+          const childExports = await parseExports(
+            filePath,
+            config,
+            aliasResolver
+          )
+          exports.push(...childExports)
+        }
+      }
+    }
+  }
+  return exports
 }

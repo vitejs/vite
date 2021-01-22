@@ -2,8 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import chalk from 'chalk'
-import { FS_PREFIX, SUPPORTED_EXTS } from '../constants'
+import { FS_PREFIX, OPTIMIZED_PREFIX, SUPPORTED_EXTS } from '../constants'
 import {
+  isBuiltin,
   bareImportRE,
   createDebugger,
   deepImportRE,
@@ -21,7 +22,6 @@ import { ResolvedConfig, ViteDevServer } from '..'
 import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
-import isBuiltin from 'isbuiltin'
 import { isCSSRequest } from './css'
 import { resolve as _resolveExports } from 'resolve.exports'
 
@@ -364,17 +364,15 @@ export function tryNodeResolve(
 }
 
 export function tryOptimizedResolve(
-  rawId: string,
+  id: string,
   server: ViteDevServer
 ): string | undefined {
   const cacheDir = server.config.optimizeCacheDir
   const depData = server._optimizeDepsMetadata
   if (cacheDir && depData) {
-    const [id, q] = rawId.split(`?`, 2)
-    const query = q ? `?${q}` : ``
-    const filePath = depData.optimized[id]
-    if (filePath) {
-      return normalizePath(path.resolve(cacheDir, filePath)) + query
+    const isOptimized = depData.optimized[cleanUrl(id)]
+    if (isOptimized) {
+      return `${OPTIMIZED_PREFIX}${id}`
     }
   }
 }
