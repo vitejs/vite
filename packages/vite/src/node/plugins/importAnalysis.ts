@@ -7,6 +7,7 @@ import MagicString from 'magic-string'
 import { init, parse as parseImports, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
+  isBuiltin,
   cleanUrl,
   createDebugger,
   generateCodeFrame,
@@ -29,15 +30,15 @@ import {
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
   VALID_ID_PREFIX,
-  NULL_BYTE_PLACEHOLDER
+  NULL_BYTE_PLACEHOLDER,
+  OPTIMIZED_PREFIX
 } from '../constants'
 import { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
-import type { Node } from 'estree'
+import type { ImportDeclaration, Node } from 'estree'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { transformImportGlob } from '../importGlob'
-import isBuiltin from 'isbuiltin'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -85,6 +86,7 @@ function markExplicitImport(url: string) {
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
+  let optimizedSource: string | undefined
 
   return {
     name: 'vite:import-analysis',
@@ -347,7 +349,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== rawUrl) {
             // for optimized cjs deps, support named imports by rewriting named
             // imports to const assignments.
-            if (isOptimizedCjs(resolvedId, server)) {
+            if (url.startsWith(OPTIMIZED_PREFIX)) {
+              const depId = resolvedId.slice(OPTIMIZED_PREFIX.length)
+              const optimizedId = makeLegalIdentifier(depId)
+              optimizedSource =
+                optimizedSource ||
+                normalizePath(path.join(config.optimizeCacheDir!, 'deps.js')) +
+                  `?v=${server._optimizeDepsMetadata!.hash}`
+
               if (isLiteralDynamicId) {
                 // rewrite `import('package')` to expose module.exports
                 // note plugin-commonjs' behavior is exposing all properties on
@@ -355,11 +364,18 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 str().overwrite(
                   dynamicIndex,
                   end + 1,
-                  `import('${url}').then(m => ({ ...m.default, default: m.default }))`
+                  `import('${optimizedSource}').then(m => m.${optimizedId})`
                 )
               } else {
                 const exp = source.slice(expStart, expEnd)
-                const rewritten = transformCjsImport(exp, url, rawUrl, index)
+                const rewritten = transformOptimizedImport(
+                  exp,
+                  optimizedSource,
+                  optimizedId,
+                  index,
+                  depId,
+                  server._optimizeDepsMetadata!.optimized[depId]
+                )
                 if (rewritten) {
                   str().overwrite(expStart, expEnd, rewritten)
                 } else {
@@ -485,81 +501,106 @@ function isSupportedDynamicImport(url: string) {
   return true
 }
 
-function isOptimizedCjs(
-  id: string,
-  {
-    _optimizeDepsMetadata: optimizeDepsMetadata,
-    config: { optimizeCacheDir }
-  }: ViteDevServer
-): boolean {
-  if (optimizeDepsMetadata && optimizeCacheDir) {
-    const relative = normalizePath(
-      path.relative(optimizeCacheDir, cleanUrl(id))
-    )
-    return relative in optimizeDepsMetadata.cjsEntries
-  }
-  return false
-}
-
-type ImportNameSpecifier = { importedName: string; localName: string }
-
-/**
- * Detect import statements to a known optimized CJS dependency and provide
- * ES named imports interop. We do this by rewriting named imports to a variable
- * assignment to the corresponding property on the `module.exports` of the cjs
- * module. Note this doesn't support dynamic re-assignments from within the cjs
- * module.
- *
- * Note that es-module-lexer treats `export * from '...'` as an import as well,
- * so, we may encounter ExportAllDeclaration here, in which case `undefined`
- * will be returned.
- *
- * Credits \@csr632 via #837
- */
-function transformCjsImport(
+function transformOptimizedImport(
   importExp: string,
-  url: string,
-  rawUrl: string,
-  importIndex: number
+  optimizedSource: string,
+  optimizedId: string,
+  importIndex: number,
+  id: string,
+  exports: string[]
 ): string | undefined {
   const node = (parseJS(importExp, {
     ecmaVersion: 2020,
     sourceType: 'module'
   }) as any).body[0] as Node
 
-  if (node.type === 'ImportDeclaration') {
-    const importNames: ImportNameSpecifier[] = []
-    for (const spec of node.specifiers) {
-      if (
-        spec.type === 'ImportSpecifier' &&
-        spec.imported.type === 'Identifier'
-      ) {
-        const importedName = spec.imported.name
-        const localName = spec.local.name
-        importNames.push({ importedName, localName })
-      } else if (spec.type === 'ImportDefaultSpecifier') {
-        importNames.push({
-          importedName: 'default',
-          localName: spec.local.name
-        })
-      } else if (spec.type === 'ImportNamespaceSpecifier') {
-        importNames.push({ importedName: '*', localName: spec.local.name })
-      }
-    }
-
+  const lines: string[] = []
+  if (!exports.length) {
+    // optimized cjs dep. import then assign.
+    // Credits \@csr632 via #837
     // If there is multiple import for same id in one file,
     // importIndex will prevent the cjsModuleName to be duplicate
-    const cjsModuleName = makeLegalIdentifier(
-      `__vite__cjsImport${importIndex}_${rawUrl}`
+    const moduleName = `__vite__${optimizedId}_${importIndex}`
+    lines.push(
+      `import { ${optimizedId} as ${moduleName} } from "${optimizedSource}";`
     )
-    const lines: string[] = [`import ${cjsModuleName} from "${url}";`]
-    importNames.forEach(({ importedName, localName }) => {
-      if (importedName === '*' || importedName === 'default') {
-        lines.push(`const ${localName} = ${cjsModuleName};`)
-      } else {
-        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"];`)
-      }
-    })
-    return lines.join('\n')
+    if (node.type === 'ImportDeclaration') {
+      getImportNamePairs(node, id, exports).forEach(
+        ({ importedName, localName }) => {
+          if (importedName === '*' || importedName === 'default') {
+            lines.push(`const ${localName} = ${moduleName}.default`)
+          } else {
+            lines.push(`const ${localName} = ${moduleName}["${importedName}"]`)
+          }
+        }
+      )
+    } else if (node.type === 'ExportAllDeclaration') {
+      const namedExports = exports.filter((e) => e !== 'default')
+      lines.push(`const { ${namedExports.join(', ')} } = ${moduleName}`)
+      lines.push(`export { ${namedExports.join(', ')} }`)
+    }
+  } else {
+    const namedExports = exports.filter((e) => e !== 'default')
+    // optimized esm dep
+    if (node.type === 'ImportDeclaration') {
+      getImportNamePairs(node, id, exports).forEach(
+        ({ importedName, localName }) => {
+          if (importedName === '*') {
+            lines.push(
+              `import { ${namedExports
+                .map(
+                  (e) => `${optimizedId}_${e} as __vite__${optimizedId}_${e}`
+                )
+                .join(', ')} } from "${optimizedSource}"`,
+              `const ${localName} = Object.freeze({ ${namedExports
+                .map((e) => `${e}: __vite__${optimizedId}_${e}`)
+                .join(',')} })`
+            )
+          } else {
+            lines.push(
+              `import { ${optimizedId}_${importedName} as ${localName} } from "${optimizedSource}"`
+            )
+          }
+        }
+      )
+    } else if (node.type === 'ExportAllDeclaration') {
+      lines.push(
+        `export { ${namedExports
+          .map((e) => `${optimizedId}_${e} as ${e}`)
+          .join(', ')} } from "${optimizedSource}"`
+      )
+    }
   }
+  return lines.join('\n')
+}
+
+type ImportNameSpecifier = { importedName: string; localName: string }
+
+function getImportNamePairs(
+  node: ImportDeclaration,
+  id: string,
+  exports: string[]
+): ImportNameSpecifier[] {
+  const importNames: ImportNameSpecifier[] = []
+  for (const spec of node.specifiers) {
+    if (
+      spec.type === 'ImportSpecifier' &&
+      spec.imported.type === 'Identifier'
+    ) {
+      const importedName = spec.imported.name
+      const localName = spec.local.name
+      importNames.push({ importedName, localName })
+    } else if (spec.type === 'ImportDefaultSpecifier') {
+      if (exports.length && !exports.includes('default')) {
+        throw new Error(`Module "${id}" has no default export.`)
+      }
+      importNames.push({
+        importedName: 'default',
+        localName: spec.local.name
+      })
+    } else if (spec.type === 'ImportNamespaceSpecifier') {
+      importNames.push({ importedName: '*', localName: spec.local.name })
+    }
+  }
+  return importNames
 }

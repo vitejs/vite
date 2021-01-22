@@ -44,7 +44,7 @@
   },
   "//": "READ .github/contributing.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.8.26",
+    "esbuild": "^0.8.34",
     "postcss": "^8.2.1",
     "resolve": "^1.19.0",
     "rollup": "^2.35.1"
@@ -76,6 +76,7 @@
     "acorn-numeric-separator": "^0.3.6",
     "acorn-static-class-features": "^0.2.4",
     "brotli-size": "^4.0.0",
+    "builtin-modules": "^3.2.0",
     "cac": "^6.6.1",
     "chalk": "^4.1.0",
     "chokidar": "^3.4.3",
@@ -94,7 +95,6 @@
     "execa": "^5.0.0",
     "fast-glob": "^3.2.4",
     "http-proxy": "^1.18.1",
-    "isbuiltin": "^1.0.0",
     "launch-editor-middleware": "^2.2.1",
     "magic-string": "^0.25.7",
     "merge-source-map": "^1.1.0",

@@ -7,6 +7,11 @@ import { parse as parseUrl } from 'url'
 import slash from 'slash'
 import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
 import resolve from 'resolve'
+import builtins from 'builtin-modules'
+
+export function isBuiltin(id: string): boolean {
+  return builtins.includes(id)
+}
 
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
