@@ -493,7 +493,7 @@ function isOptimizedCjs(
   }: ViteDevServer
 ): boolean {
   if (optimizeDepsMetadata && optimizeCacheDir) {
-    const relative = path.relative(optimizeCacheDir, cleanUrl(id))
+    const relative = path.relative(optimizeCacheDir, cleanUrl(id)).replace('\\', '/')
     return relative in optimizeDepsMetadata.cjsEntries
   }
   return false
