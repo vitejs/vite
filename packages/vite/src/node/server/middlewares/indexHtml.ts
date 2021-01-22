@@ -1,13 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import {
-  AttributeNode,
-  NodeTransform,
-  NodeTypes,
-  parse,
-  transform
-} from '@vue/compiler-dom'
+import { AttributeNode, NodeTransform, NodeTypes } from '@vue/compiler-dom'
 import { Connect } from 'types/connect'
 import { Plugin } from '../../plugin'
 import {
@@ -48,6 +42,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     .replace(/<!--VITE_COMMENT_(\d+)-->/g, (_, i) => comments[i])
     // @vue/compiler-core doesn't like lowercase doctypes
     .replace(/<!doctype\s/i, '<!DOCTYPE ')
+
+  const { parse, transform } = await import('@vue/compiler-dom')
 
   let ast
   try {
