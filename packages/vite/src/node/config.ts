@@ -225,6 +225,10 @@ export async function resolveConfig(
   }
 
   const BASE_URL = config.base || '/'
+  if (!BASE_URL.startsWith('/') || !BASE_URL.endsWith('/')) {
+    throw new Error(`config error: "base" must start and end with "/".`)
+  }
+
   const resolvedBuildOptions = resolveBuildOptions(BASE_URL, config.build)
 
   // resolve optimizer cache directory

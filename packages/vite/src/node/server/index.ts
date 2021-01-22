@@ -507,10 +507,6 @@ async function startServer(
   const info = server.config.logger.info
   const base = server.config.base
 
-  if (!base.startsWith('/') || !base.endsWith('/')) {
-    throw new Error(`"base" must start and end with "/".`)
-  }
-
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
