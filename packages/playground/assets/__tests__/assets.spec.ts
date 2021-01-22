@@ -57,6 +57,10 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-relative')).toMatch(assetMatch)
   })
 
+  test('relative in @import', async () => {
+    expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
+  })
+
   test('absolute', async () => {
     expect(await getBg('.css-url-absolute')).toMatch(assetMatch)
   })
