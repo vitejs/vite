@@ -236,7 +236,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             source: chunkCSS
           })
           chunkToEmittedCssFileMap.set(chunk, fileHandle)
-        } else {
+        } else if (!config.build.ssr) {
           // legacy build, inline css
           const style = `__vite_style__`
           const injectCode =
