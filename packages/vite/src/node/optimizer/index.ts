@@ -5,6 +5,7 @@ import { createHash } from 'crypto'
 import { ResolvedConfig } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
 import {
+  bareImportRE,
   createDebugger,
   emptyDir,
   lookupFile,
@@ -16,7 +17,7 @@ import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
-import { tryNodeResolve } from '../plugins/resolve'
+import { tryNodeResolve, tryFsResolve } from '../plugins/resolve'
 import aliasPlugin from '@rollup/plugin-alias'
 import { createFilter, makeLegalIdentifier } from '@rollup/pluginutils'
 import { Plugin } from '../plugin'
@@ -232,11 +233,9 @@ export async function optimizeDeps(
   }
 
   for (const id in qualified) {
-    data.optimized[id] = await parseExports(
-      qualified[id],
-      config,
-      aliasResolver
-    )
+    data.optimized[id] = [
+      ...new Set(await parseExports(qualified[id], config, aliasResolver))
+    ]
   }
 
   // construct a entry containing all the deps
@@ -255,7 +254,7 @@ export async function optimizeDeps(
     plugins: [esbuildDepPlugin(qualified, config, data.transitiveOptimized)]
   })
 
-  fs.unlinkSync(tempEntryPath)
+  // fs.unlinkSync(tempEntryPath)
   writeFile(dataPath, JSON.stringify(data, null, 2))
 }
 
@@ -455,18 +454,18 @@ function buildTempEntry(
     } else {
       res += `export { ${exports
         .map((e) => `${e} as ${validId}_${e}`)
-        .join(', ')} } from "${entry}"\n`
+        .join(',\n')} } from "${entry}"\n`
     }
   }
   return res
 }
 
 async function parseExports(
-  entry: string,
+  file: string,
   config: ResolvedConfig,
   aliasResolver: PluginContainer
 ) {
-  const content = fs.readFileSync(entry, 'utf-8')
+  const content = fs.readFileSync(file, 'utf-8')
   const [imports, exports] = parse(content)
 
   // check for export * from statements
@@ -480,20 +479,20 @@ async function parseExports(
     if (dynamicIndex < 0) {
       const exp = content.slice(expStart, expEnd)
       if (exp.startsWith(`export * from`)) {
-        const id = content.slice(start, end)
-        const aliased = (await aliasResolver.resolveId(id))?.id || id
-        const filePath = tryNodeResolve(
-          aliased,
-          config.root,
-          config.isProduction
-        )?.id
-        if (filePath) {
-          const childExports = await parseExports(
-            filePath,
-            config,
-            aliasResolver
+        let id: string | undefined = content.slice(start, end)
+        id = (await aliasResolver.resolveId(id))?.id || id
+        if (bareImportRE.test(id)) {
+          id = tryNodeResolve(id, config.root, config.isProduction)?.id
+        } else {
+          id = tryFsResolve(
+            normalizePath(path.resolve(path.dirname(file), id)),
+            false, // production: false
+            true // tryIndex: true
           )
-          exports.push(...childExports)
+        }
+        if (id) {
+          const childExports = await parseExports(id, config, aliasResolver)
+          exports.push(...childExports.filter((e) => e !== 'default'))
         }
       }
     }

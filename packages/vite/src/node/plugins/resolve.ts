@@ -225,7 +225,7 @@ export function resolvePlugin(
   }
 }
 
-function tryFsResolve(
+export function tryFsResolve(
   fsPath: string,
   isProduction: boolean,
   tryIndex = true
