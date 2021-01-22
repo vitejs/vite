@@ -457,7 +457,14 @@ export async function loadConfigFromFile(
         userConfig = require(resolvedPath)
         debug(`cjs config loaded in ${Date.now() - start}ms`)
       } catch (e) {
-        const ignored = /Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/
+        const ignored = new RegExp(
+          [
+            `Cannot use import statement`,
+            `Unexpected token 'export'`,
+            `Must use import to load ES Module`,
+            `Unexpected identifier` // #1635 Node <= 12.4 has no esm detection
+          ].join('|')
+        )
         if (!ignored.test(e.message)) {
           throw e
         }
