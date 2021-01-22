@@ -8,7 +8,7 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { htmlPlugin } from './html'
+import { htmlInlineScriptProxyPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { webWorkerPlugin } from './worker'
 import { dynamicImportPolyfillPlugin } from './dynamicImportPolyfill'
@@ -42,7 +42,7 @@ export async function resolvePlugins(
       },
       config
     ),
-    htmlPlugin(),
+    htmlInlineScriptProxyPlugin(),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
     jsonPlugin({

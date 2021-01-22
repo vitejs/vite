@@ -85,6 +85,7 @@ function markExplicitImport(url: string) {
  *     ```
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
+  const clientPublicPath = path.posix.join(config.base, CLIENT_PUBLIC_PATH)
   let server: ViteDevServer
   let optimizedSource: string | undefined
 
@@ -162,6 +163,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<[string, string]> => {
+        if (config.base !== '/' && url.startsWith(config.base)) {
+          url = url.replace(config.base, '/')
+        }
+
         const resolved = await this.resolve(url, importer)
 
         if (!resolved) {
@@ -199,6 +204,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // mark non-js/css imports with `?import`
         url = markExplicitImport(url)
+
+        // prepend base path without trailing slash ( default empty string )
+        url = path.posix.join(config.base, url)
 
         // for relative js/css imports, inherit importer's version query
         // do not do this for unknown type imports, otherwise the appended
@@ -323,7 +331,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           }
           // skip client
-          if (url === CLIENT_PUBLIC_PATH) {
+          if (url === clientPublicPath) {
             continue
           }
 
@@ -349,7 +357,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== rawUrl) {
             // for optimized cjs deps, support named imports by rewriting named
             // imports to const assignments.
-            if (url.startsWith(OPTIMIZED_PREFIX)) {
+            if (resolvedId.startsWith(OPTIMIZED_PREFIX)) {
               const depId = resolvedId.slice(OPTIMIZED_PREFIX.length)
               const optimizedId = makeLegalIdentifier(depId)
               optimizedSource =
@@ -433,16 +441,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
         // inject hot context
         str().prepend(
-          `import { createHotContext as __vite__createHotContext } from "${CLIENT_PUBLIC_PATH}";` +
+          `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              importerModule.url
+              path.posix.join(config.base, importerModule.url)
             )});`
         )
       }
 
       if (needQueryInjectHelper) {
         str().prepend(
-          `import { injectQuery as __vite__injectQuery } from "${CLIENT_PUBLIC_PATH}";`
+          `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`
         )
       }
 

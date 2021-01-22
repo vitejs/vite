@@ -100,15 +100,20 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = server
         ? (url, importer) => {
-            if (url.startsWith('/')) return url
-            const filePath = normalizePath(
-              path.resolve(path.dirname(importer || id), url)
-            )
-            if (filePath.startsWith(config.root)) {
-              return filePath.slice(config.root.length)
+            let rtn: string
+
+            if (url.startsWith('/')) {
+              rtn = url
             } else {
-              return `${FS_PREFIX}${filePath}`
+              const filePath = normalizePath(
+                path.resolve(path.dirname(importer || id), url)
+              )
+              rtn = filePath.startsWith(config.root)
+                ? filePath.slice(config.root.length)
+                : `${FS_PREFIX}${filePath}`
             }
+
+            return path.posix.join(config.base, rtn)
           }
         : (url, importer) => {
             return urlToBuiltUrl(url, importer || id, config, this)
@@ -194,7 +199,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
-              CLIENT_PUBLIC_PATH
+              path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
             `const id = ${JSON.stringify(id)}`,
             `const css = ${JSON.stringify(css)}`,
@@ -235,7 +240,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // replace asset url references with resolved url
       chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId, postfix = '') => {
-        return config.build.base + this.getFileName(fileId) + postfix
+        return config.base + this.getFileName(fileId) + postfix
       })
 
       if (config.build.cssCodeSplit) {

@@ -202,10 +202,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     if (filename === ownerFilename) return
                     const chunk = bundle[filename] as OutputChunk | undefined
                     if (chunk) {
-                      deps.add(config.build.base + chunk.fileName)
+                      deps.add(config.base + chunk.fileName)
                       const cssId = chunkToEmittedCssFileMap.get(chunk)
                       if (cssId) {
-                        deps.add(config.build.base + this.getFileName(cssId))
+                        deps.add(config.base + this.getFileName(cssId))
                       }
                       chunk.imports.forEach(addDeps)
                     }

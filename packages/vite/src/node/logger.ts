@@ -10,6 +10,7 @@ export interface Logger {
   warn(msg: string, options?: LogOptions): void
   error(msg: string, options?: LogOptions): void
   clearScreen(type: LogType): void
+  hasWarned: boolean
 }
 
 export interface LogOptions {
@@ -74,11 +75,13 @@ export function createLogger(
     }
   }
 
-  return {
+  const logger: Logger = {
+    hasWarned: false,
     info(msg, opts) {
       output('info', msg, opts)
     },
     warn(msg, opts) {
+      logger.hasWarned = true
       output('warn', msg, opts)
     },
     error(msg, opts) {
@@ -90,4 +93,6 @@ export function createLogger(
       }
     }
   }
+
+  return logger
 }

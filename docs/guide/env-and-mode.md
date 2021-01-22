@@ -6,7 +6,7 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 - **`import.meta.env.MODE`**: {string} the [mode](#modes) the app is running in.
 
-- **`import.meta.env.BASE_URL`**: {string} the base url the app is being served from. In development, this is always `/`. In production, this is determined by the [`build.base` config option](/config/#build-base).
+- **`import.meta.env.BASE_URL`**: {string} the base url the app is being served from. This is determined by the [`base` config option](/config/#base).
 
 - **`import.meta.env.PROD`**: {boolean} whether the app is running in production.
 

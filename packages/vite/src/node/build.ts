@@ -34,7 +34,7 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 export interface BuildOptions {
   /**
    * Base public path when served in production.
-   * @default '/'
+   * @deprecated `base` is now a root-level config option.
    */
   base?: string
   /**
@@ -168,11 +168,10 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export function resolveBuildOptions(
-  raw?: BuildOptions
-): Required<BuildOptions> {
-  const resolved: Required<BuildOptions> = {
-    base: '/',
+export type ResolvedBuildOptions = Required<Omit<BuildOptions, 'base'>>
+
+export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
+  const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillDynamicImport: raw?.target !== 'esnext' && !raw?.lib,
     outDir: 'dist',
@@ -206,9 +205,6 @@ export function resolveBuildOptions(
     // esnext + terser: limit to es2019 so it can be minified by terser
     resolved.target = 'es2019'
   }
-
-  // ensure base ending slash
-  resolved.base = resolved.base.replace(/([^/])$/, '$1/')
 
   // normalize false string into actual false
   if ((resolved.minify as any) === 'false') {

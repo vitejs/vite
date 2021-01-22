@@ -2,8 +2,8 @@
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  base: '/foo/',
   build: {
-    base: '/foo/',
     outDir: 'dist/foo'
   }
 }

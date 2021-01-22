@@ -11,7 +11,7 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   const polyfillString =
     `const p = ${polyfill.toString()};` +
     `${isModernFlag}&&p(${JSON.stringify(
-      path.posix.join(config.build.base, config.build.assetsDir, '/')
+      path.posix.join(config.base, config.build.assetsDir, '/')
     )});`
 
   return {

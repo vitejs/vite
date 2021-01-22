@@ -265,7 +265,7 @@ function viteLegacyPlugin(options = {}) {
           tag: 'script',
           attrs: {
             type: 'module',
-            src: `${config.build.base}${modernPolyfillFilename}`
+            src: `${config.base}${modernPolyfillFilename}`
           }
         })
       } else if (modernPolyfills.size) {
@@ -295,7 +295,7 @@ function viteLegacyPlugin(options = {}) {
           tag: 'script',
           attrs: {
             nomodule: true,
-            src: `${config.build.base}${legacyPolyfillFilename}`
+            src: `${config.base}${legacyPolyfillFilename}`
           },
           injectTo: 'body'
         })
@@ -318,7 +318,7 @@ function viteLegacyPlugin(options = {}) {
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
             id: legacyEntryId,
-            'data-src': config.build.base + legacyEntryFilename
+            'data-src': config.base + legacyEntryFilename
           },
           children: systemJSInlineCode,
           injectTo: 'body'
