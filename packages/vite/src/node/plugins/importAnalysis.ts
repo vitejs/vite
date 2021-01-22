@@ -357,7 +357,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== rawUrl) {
             // for optimized cjs deps, support named imports by rewriting named
             // imports to const assignments.
-            if (url.startsWith(OPTIMIZED_PREFIX)) {
+            if (resolvedId.startsWith(OPTIMIZED_PREFIX)) {
               const depId = resolvedId.slice(OPTIMIZED_PREFIX.length)
               const optimizedId = makeLegalIdentifier(depId)
               optimizedSource =
