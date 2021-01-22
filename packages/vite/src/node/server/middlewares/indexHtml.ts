@@ -1,83 +1,62 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import { AttributeNode, NodeTransform, NodeTypes } from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
 import { Connect } from 'types/connect'
 import { Plugin } from '../../plugin'
 import {
-  scriptModuleRE,
   applyHtmlTransforms,
+  getScriptInfo,
   IndexHtmlTransformHook,
   resolveHtmlTransforms,
-  htmlCommentRE
+  traverseHtml
 } from '../../plugins/html'
 import { ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl } from '../../utils'
-import { assetAttrsConfig, formatParseError } from '../../plugins/html'
+import { assetAttrsConfig } from '../../plugins/html'
 
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
-  { path: filePath, server }
+  { path: htmlPath, server }
 ) => {
-  let index = -1
-  const comments: string[] = []
   const config = server?.config!
   const base = config.base || '/'
 
-  html = html
-    .replace(htmlCommentRE, (m) => {
-      comments.push(m)
-      return `<!--VITE_COMMENT_${comments.length - 1}-->`
-    })
-    .replace(scriptModuleRE, (_match, _openTag, script) => {
-      index++
-      if (script) {
-        // convert inline <script type="module"> into imported modules
-        return `<script type="module" src="${filePath}?html-proxy&index=${index}.js"></script>`
-      }
-      return _match
-    })
-    .replace(/<!--VITE_COMMENT_(\d+)-->/g, (_, i) => comments[i])
-    // @vue/compiler-core doesn't like lowercase doctypes
-    .replace(/<!doctype\s/i, '<!DOCTYPE ')
-
-  const { parse, transform } = await import('@vue/compiler-dom')
-
-  let ast
-  try {
-    ast = parse(html, { comments: true })
-  } catch (e) {
-    const parseError = {
-      loc: filePath,
-      frame: '',
-      ...formatParseError(e, filePath, html)
-    }
-    throw new Error(
-      `Unable to parse ${JSON.stringify(parseError.loc)}\n${parseError.frame}`
-    )
-  }
-
   const s = new MagicString(html)
-  const viteDevIndexHtmlTransform: NodeTransform = (node) => {
+  let scriptModuleIndex = -1
+
+  await traverseHtml(html, htmlPath, (node) => {
     if (node.type !== NodeTypes.ELEMENT) {
       return
     }
 
     // script tags
     if (node.tag === 'script') {
-      const srcAttr = node.props.find(
-        (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
-      ) as AttributeNode
+      const { src, isModule } = getScriptInfo(node)
+      if (isModule) {
+        scriptModuleIndex++
+      }
 
-      const url = srcAttr?.value?.content || ''
-      if (url.startsWith('/')) {
-        // prefix with base
+      if (src) {
+        const url = src.value?.content || ''
+        if (url.startsWith('/')) {
+          // prefix with base
+          s.overwrite(
+            src.value!.loc.start.offset,
+            src.value!.loc.end.offset,
+            `"${config.base + url.slice(1)}"`
+          )
+        }
+      } else if (isModule) {
+        // inline js module. convert to src="proxy"
         s.overwrite(
-          srcAttr.value!.loc.start.offset,
-          srcAttr.value!.loc.end.offset,
-          config.base + url.slice(1)
+          node.loc.start.offset,
+          node.loc.end.offset,
+          `<script type="module" src="${
+            config.base + htmlPath.slice(1)
+          }?html-proxy&index=${scriptModuleIndex}.js"></script>`
         )
       }
     }
@@ -96,28 +75,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             s.overwrite(
               p.value.loc.start.offset,
               p.value.loc.end.offset,
-              config.base + url.slice(1)
+              `"${config.base + url.slice(1)}"`
             )
           }
         }
       }
     }
-  }
-
-  try {
-    transform(ast, {
-      nodeTransforms: [viteDevIndexHtmlTransform]
-    })
-  } catch (e) {
-    const parseError = {
-      loc: filePath,
-      frame: '',
-      ...formatParseError(e, filePath, html)
-    }
-    throw new Error(
-      `Unable to parse ${JSON.stringify(parseError.loc)}\n${parseError.frame}`
-    )
-  }
+  })
 
   html = s.toString()
 
