@@ -1,3 +1,5 @@
+@import './nested/at-imported-css-url.css';
+
 .css-url-absolute {
   background: url(/nested/asset.png);
   background-size: 10px;
@@ -9,7 +11,7 @@
 }
 
 .css-url-public {
-  background: url("/icon.png");
+  background: url('/icon.png');
   background-size: 10px;
 }
 

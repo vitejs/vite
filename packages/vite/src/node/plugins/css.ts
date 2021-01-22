@@ -5,7 +5,8 @@ import {
   cleanUrl,
   generateCodeFrame,
   isDataUrl,
-  isObject
+  isObject,
+  normalizePath
 } from '../utils'
 import path from 'path'
 import { Plugin } from '../plugin'
@@ -20,8 +21,13 @@ import {
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
-import { CLIENT_PUBLIC_PATH } from '../constants'
-import { ProcessOptions, Result, Plugin as PostcssPlugin } from 'postcss'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../constants'
+import {
+  ProcessOptions,
+  Result,
+  Plugin as PostcssPlugin,
+  PluginCreator
+} from 'postcss'
 import { ViteDevServer } from '../'
 import { assetUrlRE, urlToBuiltUrl } from './asset'
 import MagicString from 'magic-string'
@@ -92,15 +98,38 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      let { code: css, modules, deps } = await compileCSS(id, raw, config)
+      const urlReplacer: CssUrlReplacer = server
+        ? (url, importer) => {
+            if (url.startsWith('/')) return url
+            const filePath = normalizePath(
+              path.resolve(path.dirname(importer || id), url)
+            )
+            if (filePath.startsWith(config.root)) {
+              return filePath.slice(config.root.length)
+            } else {
+              return `${FS_PREFIX}${filePath}`
+            }
+          }
+        : (url, importer) => {
+            return urlToBuiltUrl(url, importer || id, config, this)
+          }
+
+      const { code: css, modules, deps } = await compileCSS(
+        id,
+        raw,
+        config,
+        urlReplacer
+      )
       if (modules) {
         moduleCache.set(id, modules)
       }
 
+      // dev
       if (server) {
         // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = server
         const thisModule = moduleGraph.getModuleById(id)!
+
         // CSS modules cannot self-accept since it exports values
         const isSelfAccepting = !modules
         if (deps) {
@@ -123,18 +152,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         } else {
           thisModule.isSelfAccepting = isSelfAccepting
         }
-        // rewrite urls using current module's url as base
-        css = await rewriteCssUrls(css, thisModule.url)
-      } else {
-        // if build, analyze url() asset reference
-        // account for comments https://github.com/vitejs/vite/issues/426
-        css = css.replace(/\/\*[\s\S]*?\*\//gm, '')
-        if (cssUrlRE.test(css)) {
-          css = await rewriteCssUrls(css, async (url) =>
-            urlToBuiltUrl(url, id, config, this)
-          )
-        }
       }
+
       return css
     }
   }
@@ -304,7 +323,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 async function compileCSS(
   id: string,
   code: string,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  urlReplacer: CssUrlReplacer
 ): Promise<{
   code: string
   map?: SourceMap
@@ -317,11 +337,18 @@ async function compileCSS(
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
+  const hasUrl = cssUrlRE.test(code)
   const postcssConfig = await resolvePostcssConfig(config)
   const lang = id.match(cssLangRE)?.[1]
 
   // 1. plain css that needs no processing
-  if (lang === 'css' && !postcssConfig && !isModule && !needInlineImport) {
+  if (
+    lang === 'css' &&
+    !postcssConfig &&
+    !isModule &&
+    !needInlineImport &&
+    !hasUrl
+  ) {
     return { code }
   }
 
@@ -377,6 +404,11 @@ async function compileCSS(
   if (needInlineImport) {
     postcssPlugins.unshift((await import('postcss-import')).default())
   }
+  postcssPlugins.push(
+    UrlRewritePostcssPlugin({
+      replacer: urlReplacer
+    }) as PostcssPlugin
+  )
 
   if (isModule) {
     postcssPlugins.unshift(
@@ -645,22 +677,48 @@ const preProcessors = {
   stylus: styl
 }
 
-type Replacer = (url: string) => string | Promise<string>
+type CssUrlReplacer = (
+  url: string,
+  importer?: string
+) => string | Promise<string>
 const cssUrlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+
+const UrlRewritePostcssPlugin: PluginCreator<{
+  replacer: CssUrlReplacer
+}> = (opts) => {
+  if (!opts) {
+    throw new Error('base or replace is required')
+  }
+
+  return {
+    postcssPlugin: 'vite-url-rewrite',
+    Once(root) {
+      const promises: Promise<void>[] = []
+      root.walkDecls((decl) => {
+        if (cssUrlRE.test(decl.value)) {
+          const replacerForDecl = (rawUrl: string) => {
+            const importer = decl.source?.input.file
+            return opts.replacer(rawUrl, importer)
+          }
+          promises.push(
+            rewriteCssUrls(decl.value, replacerForDecl).then((url) => {
+              decl.value = url
+            })
+          )
+        }
+      })
+      if (promises.length) {
+        return Promise.all(promises) as any
+      }
+    }
+  }
+}
+UrlRewritePostcssPlugin.postcss = true
 
 function rewriteCssUrls(
   css: string,
-  replacerOrBase: string | Replacer
+  replacer: CssUrlReplacer
 ): Promise<string> {
-  let replacer: Replacer
-  if (typeof replacerOrBase === 'string') {
-    replacer = (rawUrl) => {
-      return path.posix.resolve(path.posix.dirname(replacerOrBase), rawUrl)
-    }
-  } else {
-    replacer = replacerOrBase
-  }
-
   return asyncReplace(css, cssUrlRE, async (match) => {
     let [matched, rawUrl] = match
     let wrap = ''
