@@ -15,12 +15,23 @@ export function baseMiddleware({
     const path = parsed.pathname || '/'
 
     if (path.startsWith(base)) {
-      // rewrite url to remove base.. this ensures that other middleware does not need to consider base being prepended or not
+      // rewrite url to remove base.. this ensures that other middleware does
+      // not need to consider base being prepended or not
       req.url = url.replace(base, '/')
     } else if (path === '/' || path === '/index.html') {
-      // to prevent confusion, do not allow access at / if we have specified a base path
-      res.statusCode = 404
+      // redirect root visit to based url
+      res.writeHead(302, {
+        Location: base
+      })
       res.end()
+      return
+    } else if (req.headers.accept?.includes('text/html')) {
+      // non-based page visit
+      res.statusCode = 404
+      res.end(
+        `The server is configured with a public base URL of ${base} - ` +
+          `did you mean to visit ${base}${url.slice(1)} instead?`
+      )
       return
     }
 
