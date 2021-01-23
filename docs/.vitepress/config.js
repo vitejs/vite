@@ -20,9 +20,14 @@ module.exports = {
     editLinks: true,
     editLinkText: 'Suggest changes to this page',
 
+    algolia: {
+      apiKey: 'b573aa848fd57fb47d693b531297403c',
+      indexName: 'vitejs'
+    },
+
     nav: [
-      { text: 'Guide & APIs', link: '/guide/' },
-      { text: 'Config Reference', link: '/config/' },
+      { text: 'Guide', link: '/guide/' },
+      { text: 'Config', link: '/config/' },
       { text: 'Plugins', link: '/plugins/' },
       {
         text: 'Changelog',
@@ -81,10 +86,6 @@ module.exports = {
           text: 'APIs',
           children: [
             {
-              text: 'Config Reference',
-              link: '/config/'
-            },
-            {
               text: 'Plugin API',
               link: '/guide/api-plugin'
             },
@@ -95,6 +96,10 @@ module.exports = {
             {
               text: 'JavaScript API',
               link: '/guide/api-javascript'
+            },
+            {
+              text: 'Config Reference',
+              link: '/config/'
             }
           ]
         }
