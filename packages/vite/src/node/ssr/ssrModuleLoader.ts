@@ -131,7 +131,7 @@ export async function ssrLoadModule(
 
 function nodeRequire(id: string, importer: string | null) {
   const mod = importer
-    ? require(resolveFrom(id, path.dirname(importer)))
+    ? require(resolveFrom(id, path.dirname(importer), true))
     : require(id)
   // rollup-style default import interop for cjs
   return new Proxy(mod, {
