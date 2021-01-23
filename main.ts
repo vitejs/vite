@@ -4,6 +4,7 @@ import { vueHotReload, vueComponentNormalizer, ResolvedOptions } from './index'
 import qs from 'querystring'
 import { createDescriptor, setDescriptor } from './utils/descriptorCache'
 import path from 'path'
+import fs from 'fs'
 import { TransformPluginContext } from 'rollup'
 import { RawSourceMap } from '@vue/component-compiler-utils/dist/types'
 
@@ -82,7 +83,12 @@ function injectStyles (context) {
   // }
 
   if (options.devServer && !options.isProduction) {
-    result += genHmrCode(descriptor.id, !!hasFunctional, templateRequest)
+    result += genHmrCode(
+      options.root,
+      descriptor.id,
+      !!hasFunctional,
+      templateRequest
+    )
   }
 
   result += `\nexport default component.exports`
@@ -179,7 +185,12 @@ function genCustomBlockCode(filename: string, descriptor: SFCDescriptor) {
   return code
 }
 
-function genHmrCode(id: string, functional: boolean, templateRequest?: string) {
+function genHmrCode(
+  root: string,
+  id: string,
+  functional: boolean,
+  templateRequest?: string
+) {
   return `\n/* hot reload */
 import __VUE_HMR_RUNTIME__ from "${vueHotReload}"
 import vue from "vue"
@@ -195,7 +206,10 @@ if(__VUE_HMR_RUNTIME__.compatible){
    })
    ${
      templateRequest
-       ? `import.meta.hot.accept('${templateRequest}', (update) => {
+       ? `import.meta.hot.accept('${normalizeDevPath(
+           root,
+           templateRequest
+         )}', (update) => {
       __VUE_HMR_RUNTIME__.rerender('${id}', update)
    })`
        : ''
@@ -295,3 +309,20 @@ function attrsToQuery(
   }
   return query
 }
+
+export const FS_PREFIX = `/@fs/`
+
+function normalizeDevPath(root: string, id: string) {
+  if (id.startsWith(root + '/')) {
+    return id.slice(root.length)
+  } else if (fs.existsSync(cleanUrl(id))) {
+    return FS_PREFIX + id
+  }
+  return id
+}
+
+export const queryRE = /\?.*$/
+export const hashRE = /#.*$/
+
+export const cleanUrl = (url: string) =>
+  url.replace(hashRE, '').replace(queryRE, '')
