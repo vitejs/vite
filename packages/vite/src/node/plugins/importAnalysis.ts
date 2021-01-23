@@ -201,7 +201,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         // mark non-js/css imports with `?import`
-        url = markExplicitImport(url)
+        if (!ssr) {
+          url = markExplicitImport(url)
+        }
 
         // prepend base path without trailing slash ( default empty string )
         url = path.posix.join(config.base, url)
@@ -381,7 +383,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           importedUrls.add(url)
-        } else if (!importer.startsWith(clientDir)) {
+        } else if (!importer.startsWith(clientDir) && !ssr) {
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
               `\n` +
