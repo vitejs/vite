@@ -1,3 +1,12 @@
+# [2.0.0-beta.42](https://github.com/vitejs/vite/compare/v2.0.0-beta.41...v2.0.0-beta.42) (2021-01-23)
+
+
+### Bug Fixes
+
+* **optimizer:** ensure esbuild use vite-resolved entries ([bdb9b3c](https://github.com/vitejs/vite/commit/bdb9b3c5a5c8da83d8b8082e936cb3cc16eeb1e0))
+
+
+
 # [2.0.0-beta.41](https://github.com/vitejs/vite/compare/v2.0.0-beta.40...v2.0.0-beta.41) (2021-01-23)
 
 
