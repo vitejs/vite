@@ -238,7 +238,7 @@ export async function optimizeDeps(
   const esbuildMetaPath = path.join(cacheDir, 'esbuild.json')
 
   await build({
-    entryPoints: Object.values(qualified),
+    entryPoints: Object.values(qualified).map((p) => path.resolve(p)),
     bundle: true,
     format: 'esm',
     splitting: true,
