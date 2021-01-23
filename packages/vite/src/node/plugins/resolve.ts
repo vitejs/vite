@@ -252,15 +252,15 @@ function tryResolveFile(
   if (fs.existsSync(file)) {
     const isDir = fs.statSync(file).isDirectory()
     if (isDir) {
-      if (tryIndex) {
-        const index = tryFsResolve(file + '/index', isProduction, false)
-        if (index) return normalizePath(index) + query
-      }
       const pkgPath = file + '/package.json'
       if (fs.existsSync(pkgPath)) {
         // path points to a node package
         const pkg = loadPackageData(pkgPath)
         return resolvePackageEntry(file, pkg, isProduction)
+      }
+      if (tryIndex) {
+        const index = tryFsResolve(file + '/index', isProduction, false)
+        if (index) return normalizePath(index) + query
       }
     } else {
       return normalizePath(file) + query
