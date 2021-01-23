@@ -256,10 +256,10 @@ export async function optimizeDeps(
       const entry = qualified[id]
       if (entry.endsWith(relative)) {
         // check if this is a cjs dep.
-        const [, exports] = parse(fs.readFileSync(entry, 'utf-8'))
+        const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
         data.optimized[id] = {
           file: absolute,
-          needsInterop: !exports.length
+          needsInterop: !exports.length && !imports.length
         }
       }
     }
