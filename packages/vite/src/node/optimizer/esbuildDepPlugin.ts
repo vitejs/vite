@@ -54,7 +54,7 @@ export function esbuildDepPlugin(
           )
           if (resolved) {
             return {
-              path: resolved.id
+              path: path.resolve(resolved.id)
             }
           }
         } else {
