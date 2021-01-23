@@ -21,10 +21,12 @@ try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-export function resolveFrom(id: string, basedir: string) {
+const ssrExtensions = ['.js', '.json', '.node']
+
+export function resolveFrom(id: string, basedir: string, ssr = false) {
   return resolve.sync(id, {
     basedir,
-    extensions: SUPPORTED_EXTS,
+    extensions: ssr ? ssrExtensions : SUPPORTED_EXTS,
     // necessary to work with pnpm
     preserveSymlinks: isRunningWithYarnPnp || false
   })
