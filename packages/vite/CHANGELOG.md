@@ -1,3 +1,17 @@
+# [2.0.0-beta.39](https://github.com/vitejs/vite/compare/v2.0.0-beta.38...v2.0.0-beta.39) (2021-01-23)
+
+
+### Bug Fixes
+
+* **optimizer:** fix es interop heuristics for entry with only export * from ([ef1a7e3](https://github.com/vitejs/vite/commit/ef1a7e33cc19bac7893bca85b6df14adeb847516))
+* **ssr:** do not inject ?import query for ssr transforms ([7d26119](https://github.com/vitejs/vite/commit/7d261191e5ebf0c2fede0c6fc82137999d58cc5c)), closes [#1655](https://github.com/vitejs/vite/issues/1655)
+* hmr port fallback in middlewareMode ([36a9456](https://github.com/vitejs/vite/commit/36a94560399e03cdbdbdbdb16913c05deb87ab9b))
+* **ssr:** avoid resolving externals to mjs ([3955fe3](https://github.com/vitejs/vite/commit/3955fe37fe4498e6c7df122376a942d63afe6acb))
+* file dir resolve should prioritize package.json ([ce2d49a](https://github.com/vitejs/vite/commit/ce2d49ab396aa7b4ed582650e569d7f2f6d3ef9f))
+* **ssr:** remove import query in ssrLoadModule ([80473c1](https://github.com/vitejs/vite/commit/80473c1423209824d143df77b38f1bdb8723f47b))
+
+
+
 # [2.0.0-beta.38](https://github.com/vitejs/vite/compare/v2.0.0-beta.37...v2.0.0-beta.38) (2021-01-23)
 
 
