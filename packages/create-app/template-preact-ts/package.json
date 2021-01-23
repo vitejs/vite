@@ -11,6 +11,6 @@
   "devDependencies": {
     "@prefresh/vite": "^2.0.0",
     "typescript": "^4.1.3",
-    "vite": "^2.0.0-beta.12"
+    "vite": "^2.0.0-beta.44"
   }
 }
