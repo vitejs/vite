@@ -311,7 +311,9 @@ export function tryNodeResolve(
             `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
             `If the used import is not exported from the package's main entry ` +
             `and can only be attained via deep import, you can explicitly add ` +
-            `the deep import path to "optimizeDeps.include" in vite.config.js.`
+            `the deep import path to "optimizeDeps.include" in vite.config.js.\n\n` +
+            `If you intend to only use deep imports with this package and it ` +
+            `exposes valid ESM, consider adding it to "optimizeDeps.exclude".`
         )
       )
     }
