@@ -103,7 +103,13 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `/`
 
-  Base public path when served in development or production. Note the path should start and end with `/`. See [Public Base Path](/guide/build#public-base-path) for more details.
+  Base public path when served in development or production. Valid values include:
+  
+  - Absolute URL pathname, e.g. `/foo/`
+  - Full URL, e.g. `https://foo.com/`
+  - Empty string or `./` (for embedded deployment)
+  
+  See [Public Base Path](/guide/build#public-base-path) for more details.
 
 ### mode
 
