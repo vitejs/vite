@@ -44,7 +44,7 @@ const KNOWN_WARN_LIST = new Set([
   'typescript'
 ])
 
-const WARN_RE = /^(@vitejs\/|vite-)plugin-/
+const WARN_RE = /^(@vitejs\/|@rollup\/|vite-|rollup-|postcss-|babel-)plugin-/
 
 export interface DepOptimizationOptions {
   /**
