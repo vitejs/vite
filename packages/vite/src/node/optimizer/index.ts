@@ -253,6 +253,7 @@ export async function optimizeDeps(
     if (/chunk\.\w+\.js$/.test(output)) continue
     const absolute = normalizePath(path.resolve(output))
     const relative = normalizePath(path.relative(cacheDir, absolute))
+    const generateExports = meta.outputs[output].exports
     for (const id in qualified) {
       const entry = qualified[id]
       if (entry.replace(/\.mjs$/, '.js').endsWith(relative)) {
@@ -260,13 +261,24 @@ export async function optimizeDeps(
         const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
         data.optimized[id] = {
           file: absolute,
-          needsInterop: !exports.length && !imports.length
+          needsInterop:
+            // entry has no ESM syntax - likely CJS or UMD
+            (!exports.length && !imports.length) ||
+            // if a peer dep used require() on a ESM dep, esbuild turns the
+            // ESM dep's entry chunk into a single default export... detect
+            // such cases by checking exports mismatch, and force interop.
+            (isSingleDefaultExport(generateExports) &&
+              !isSingleDefaultExport(exports))
         }
       }
     }
   }
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
+}
+
+function isSingleDefaultExport(exports: string[]) {
+  return exports.length === 1 && exports[0] === 'default'
 }
 
 interface FilteredDeps {

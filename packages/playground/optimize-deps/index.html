@@ -27,6 +27,9 @@
 <h2>Dep w/ special file format supported via plugins</h2>
 <div class="plugin"></div>
 
+<h2>Vue & Vuex</h2>
+<div class="vue"></div>
+
 <script type="module">
   import axios from 'axios'
 
@@ -47,5 +50,11 @@
     document.querySelector('.import-star').textContent = `[success] ${keys.join(
       ', '
     )}`
+  }
+
+  import { createApp } from 'vue'
+  import { createStore } from 'vuex'
+  if (typeof createApp === 'function' && typeof createStore === 'function') {
+    document.querySelector('.vue').textContent = '[success]'
   }
 </script>
