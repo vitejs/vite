@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import chalk from 'chalk'
-import { FS_PREFIX, OPTIMIZED_PREFIX, SUPPORTED_EXTS } from '../constants'
+import { FS_PREFIX, SUPPORTED_EXTS } from '../constants'
 import {
   isBuiltin,
   bareImportRE,
@@ -370,9 +370,12 @@ export function tryOptimizedResolve(
   const cacheDir = server.config.optimizeCacheDir
   const depData = server._optimizeDepsMetadata
   if (cacheDir && depData) {
-    const isOptimized = depData.optimized[cleanUrl(id)]
+    const isOptimized = depData.optimized[id]
     if (isOptimized) {
-      return `${OPTIMIZED_PREFIX}${id}`
+      return (
+        isOptimized.file +
+        `?v=${depData.hash}${isOptimized.needsInterop ? `&es-interop` : ``}`
+      )
     }
   }
 }

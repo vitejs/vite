@@ -4,7 +4,7 @@ import { knownAssetTypes } from '../constants'
 import builtins from 'builtin-modules'
 import { ResolvedConfig } from '..'
 import chalk from 'chalk'
-import { deepImportRE } from '../utils'
+import { deepImportRE, isBuiltin } from '../utils'
 
 const externalTypes = ['css', 'vue', 'svelte', ...knownAssetTypes]
 
@@ -34,7 +34,7 @@ export function esbuildDepPlugin(
 
       // record transitive deps
       build.onResolve({ filter: /^[\w@]/ }, ({ path: id }) => {
-        if (!(id in qualified) && !/:\/\//.test(id)) {
+        if (!(id in qualified) && !isBuiltin(id)) {
           const deepMatch = id.match(deepImportRE)
           const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
           transitiveOptimized[pkgId] = true

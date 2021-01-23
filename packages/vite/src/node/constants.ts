@@ -14,8 +14,6 @@ export const FS_PREFIX = `/@fs/`
  */
 export const VALID_ID_PREFIX = `/@id/`
 
-export const OPTIMIZED_PREFIX = `/@optimized/`
-
 /**
  * Some Rollup plugins use ids that starts with the null byte \0 to avoid
  * collisions, but it is not permitted in import URLs so we have to replace

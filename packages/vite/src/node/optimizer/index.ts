@@ -5,7 +5,6 @@ import { createHash } from 'crypto'
 import { ResolvedConfig } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
 import {
-  bareImportRE,
   createDebugger,
   emptyDir,
   lookupFile,
@@ -17,9 +16,9 @@ import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
-import { tryNodeResolve, tryFsResolve } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import aliasPlugin from '@rollup/plugin-alias'
-import { createFilter, makeLegalIdentifier } from '@rollup/pluginutils'
+import { createFilter } from '@rollup/pluginutils'
 import { Plugin } from '../plugin'
 import { prompt } from 'enquirer'
 import { build } from 'esbuild'
@@ -74,7 +73,13 @@ export interface DepOptimizationOptions {
 
 export interface DepOptimizationMetadata {
   hash: string
-  optimized: Record<string, string[]>
+  optimized: Record<
+    string,
+    {
+      file: string
+      needsInterop: boolean
+    }
+  >
   transitiveOptimized: Record<string, true>
   dependencies: Record<string, string>
 }
@@ -84,8 +89,6 @@ export async function optimizeDeps(
   force = config.server.force,
   asCommand = false
 ) {
-  await init
-
   config = {
     ...config,
     command: 'build'
@@ -232,29 +235,40 @@ export async function optimizeDeps(
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
 
-  for (const id in qualified) {
-    data.optimized[id] = [
-      ...new Set(await parseExports(qualified[id], config, aliasResolver))
-    ]
-  }
-
-  // construct a entry containing all the deps
-  const tempEntry = buildTempEntry(qualified, data.optimized, cacheDir)
-  const tempEntryPath = path.resolve(path.join(cacheDir, 'depsEntry.js'))
-  fs.writeFileSync(tempEntryPath, tempEntry)
+  const esbuildMetaPath = path.join(cacheDir, 'esbuild.json')
 
   await build({
-    entryPoints: [tempEntryPath],
+    entryPoints: Object.values(qualified),
     bundle: true,
     format: 'esm',
-    outfile: path.join(cacheDir, 'deps.js'),
+    splitting: true,
+    outdir: cacheDir,
+    metafile: esbuildMetaPath,
     define: {
       'process.env.NODE_ENV': '"development"'
     },
     plugins: [esbuildDepPlugin(qualified, config, data.transitiveOptimized)]
   })
 
-  // fs.unlinkSync(tempEntryPath)
+  const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
+
+  await init
+  for (const output in meta.outputs) {
+    const absolute = normalizePath(path.resolve(output))
+    const relative = normalizePath(path.relative(cacheDir, absolute))
+    for (const id in qualified) {
+      const entry = qualified[id]
+      if (entry.endsWith(relative)) {
+        // check if this is a cjs dep.
+        const [, exports] = parse(fs.readFileSync(entry, 'utf-8'))
+        data.optimized[id] = {
+          file: absolute,
+          needsInterop: !exports.length
+        }
+      }
+    }
+  }
+
   writeFile(dataPath, JSON.stringify(data, null, 2))
 }
 
@@ -432,70 +446,4 @@ function getDepHash(
     }
   )
   return createHash('sha256').update(content).digest('hex').substr(0, 8)
-}
-
-function buildTempEntry(
-  qualified: Record<string, string>,
-  idToExports: DepOptimizationMetadata['optimized'],
-  basedir: string
-) {
-  let res = ''
-  for (const id in qualified) {
-    const validId = makeLegalIdentifier(id)
-    const exports = idToExports[id]
-    const entry = normalizePath(path.relative(basedir, qualified[id]))
-    if (!exports.length) {
-      // cjs or umd - provide rollup-style compat
-      // by exposing both the default and named properties
-      res += `import ${validId}_default from "${entry}"\n`
-      res += `import * as ${validId}_all from "${entry}"\n`
-      res += `const ${validId} = { ...${validId}_all, default: ${validId}_default }\n`
-      res += `export { ${validId} }\n`
-    } else {
-      res += `export { ${exports
-        .map((e) => `${e} as ${validId}_${e}`)
-        .join(',\n')} } from "${entry}"\n`
-    }
-  }
-  return res
-}
-
-async function parseExports(
-  file: string,
-  config: ResolvedConfig,
-  aliasResolver: PluginContainer
-) {
-  const content = fs.readFileSync(file, 'utf-8')
-  const [imports, exports] = parse(content)
-
-  // check for export * from statements
-  for (const {
-    s: start,
-    e: end,
-    ss: expStart,
-    se: expEnd,
-    d: dynamicIndex
-  } of imports) {
-    if (dynamicIndex < 0) {
-      const exp = content.slice(expStart, expEnd)
-      if (exp.startsWith(`export * from`)) {
-        let id: string | undefined = content.slice(start, end)
-        id = (await aliasResolver.resolveId(id))?.id || id
-        if (bareImportRE.test(id)) {
-          id = tryNodeResolve(id, config.root, config.isProduction)?.id
-        } else {
-          id = tryFsResolve(
-            normalizePath(path.resolve(path.dirname(file), id)),
-            false, // production: false
-            true // tryIndex: true
-          )
-        }
-        if (id) {
-          const childExports = await parseExports(id, config, aliasResolver)
-          exports.push(...childExports.filter((e) => e !== 'default'))
-        }
-      }
-    }
-  }
-  return exports
 }
