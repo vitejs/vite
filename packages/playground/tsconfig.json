@@ -2,7 +2,7 @@
   "include": ["."],
   "exclude": ["**/dist/**"],
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2019",
     "outDir": "dist",
     "allowJs": true,
     "esModuleInterop": true,
