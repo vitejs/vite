@@ -41,3 +41,7 @@ test('dep with css import', async () => {
 test('dep w/ non-js files handled via plugin', async () => {
   expect(await page.textContent('.plugin')).toMatch(`[success]`)
 })
+
+test('vue + vuex', async () => {
+  expect(await page.textContent('.vue')).toMatch(`[success]`)
+})

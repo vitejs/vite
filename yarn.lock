@@ -7889,6 +7889,11 @@ vue@^3.0.5:
     "@vue/runtime-dom" "3.0.5"
     "@vue/shared" "3.0.5"
 
+vuex@^4.0.0-rc.2:
+  version "4.0.0-rc.2"
+  resolved "https://registry.yarnpkg.com/vuex/-/vuex-4.0.0-rc.2.tgz#3681c84eb6f5171b039edaa17cc78105e20724f3"
+  integrity sha512-HCPzYGea1xL7fMpDoMiHKujC1Bi/HM9LS5ML0Kv55zQtZJvOl0Lq7eWvJoen+SI4Lf7p9V5AqcVsoLPXNBywjg==
+
 w3c-hr-time@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/w3c-hr-time/-/w3c-hr-time-1.0.2.tgz#0a89cdf5cc15822df9c360543676963e0cc308cd"

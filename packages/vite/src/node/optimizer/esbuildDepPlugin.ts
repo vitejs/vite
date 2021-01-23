@@ -1,10 +1,10 @@
 import path from 'path'
 import { Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
-import builtins from 'builtin-modules'
 import { ResolvedConfig } from '..'
 import chalk from 'chalk'
 import { deepImportRE, isBuiltin } from '../utils'
+import { tryNodeResolve } from '../plugins/resolve'
 
 const externalTypes = ['css', 'vue', 'svelte', ...knownAssetTypes]
 
@@ -32,28 +32,33 @@ export function esbuildDepPlugin(
         }
       )
 
-      build.onResolve({ filter: /^[\w@]/ }, ({ path: id }) => {
+      build.onResolve({ filter: /^[\w@]/ }, ({ path: id, importer }) => {
         // ensure esbuild uses our resolved entires of optimized deps in all
         // cases
         if (id in qualified) {
           return {
             path: path.resolve(qualified[id])
           }
-        }
-        // record transitive deps
-        if (!isBuiltin(id)) {
+        } else if (!isBuiltin(id)) {
+          // record transitive deps
           const deepMatch = id.match(deepImportRE)
           const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
           transitiveOptimized[pkgId] = true
-        }
-      })
-
-      // redirect node-builtins to empty module for browser
-      build.onResolve(
-        {
-          filter: new RegExp(`^(${builtins.join('|')})$`)
-        },
-        ({ path: id, importer }) => {
+          const resolved = tryNodeResolve(
+            id,
+            path.dirname(importer),
+            false,
+            true,
+            config.dedupe,
+            config.root
+          )
+          if (resolved) {
+            return {
+              path: resolved.id
+            }
+          }
+        } else {
+          // redirect node-builtins to empty module for browser
           config.logger.warn(
             chalk.yellow(
               `externalized node built-in "${id}" to empty module. ` +
@@ -65,7 +70,7 @@ export function esbuildDepPlugin(
             namespace: 'browser-external'
           }
         }
-      )
+      })
 
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
