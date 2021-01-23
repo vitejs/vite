@@ -98,6 +98,13 @@ export default ({ command, mode }) => {
 
   See [Project Root](/guide/#project-root) for more details.
 
+### base
+
+- **Type:** `string`
+- **Default:** `/`
+
+  Base public path when served in development or production. Note the path should start and end with `/`. See [Public Base Path](/guide/build#public-base-path) for more details.
+
 ### mode
 
 - **Type:** `string`
@@ -322,13 +329,6 @@ export default ({ command, mode }) => {
 
 ## Build Options
 
-### build.base
-
-- **Type:** `string`
-- **Default:** `/`
-
-  Base public path when served in production. Note the path should start and end with `/`. See [Public Base Path](/guide/build#public-base-path) for more details.
-
 ### build.target
 
 - **Type:** `string`
@@ -471,13 +471,13 @@ export default ({ command, mode }) => {
 
   Dependencies to force exclude in pre-bundling.
 
-### optimizeDeps.plugins
+### optimizeDeps.link
 
-- **Type:** `Plugin[]`
+- **Type:** `string[]`
 
-  By default, Vite assumes dependencies ship plain JavaScript and will not attempt to transform non-js file formats during pre-bundling. If you wish to support special file types, e.g. `.vue` files, you will need to supply the relevant plugins via this option.
+  A list of packages to be treated as "linked". Linked packages will not be pre-bundled - Vite will analyze and pre-bundle its depndencies instead.
 
-  Note that you will also need to include these plugins in the main `plugins` option in order to support the same file types during production build.
+  Note that if you are using a monorepo via package manager workspaces, and have the packages listed as dependencies in your Vite entry package, Vite will automatically treat them as linked (by checking if it's inside `node_modules`). This option is only needed if you have unusual setups where your Vite app is importing from a package that isn't already linked as a Node-resolvable dependency.
 
 ### optimizeDeps.auto
 

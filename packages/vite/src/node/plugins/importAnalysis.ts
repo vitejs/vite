@@ -7,6 +7,7 @@ import MagicString from 'magic-string'
 import { init, parse as parseImports, ImportSpecifier } from 'es-module-lexer'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
+  isBuiltin,
   cleanUrl,
   createDebugger,
   generateCodeFrame,
@@ -35,9 +36,8 @@ import { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
-import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { transformImportGlob } from '../importGlob'
-import isBuiltin from 'isbuiltin'
+import { makeLegalIdentifier } from '@rollup/pluginutils'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -84,6 +84,7 @@ function markExplicitImport(url: string) {
  *     ```
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
+  const clientPublicPath = path.posix.join(config.base, CLIENT_PUBLIC_PATH)
   let server: ViteDevServer
 
   return {
@@ -160,6 +161,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<[string, string]> => {
+        if (config.base !== '/' && url.startsWith(config.base)) {
+          url = url.replace(config.base, '/')
+        }
+
         const resolved = await this.resolve(url, importer)
 
         if (!resolved) {
@@ -196,7 +201,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         // mark non-js/css imports with `?import`
-        url = markExplicitImport(url)
+        if (!ssr) {
+          url = markExplicitImport(url)
+        }
+
+        // prepend base path without trailing slash ( default empty string )
+        url = path.posix.join(config.base, url)
 
         // for relative js/css imports, inherit importer's version query
         // do not do this for unknown type imports, otherwise the appended
@@ -321,7 +331,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           }
           // skip client
-          if (url === CLIENT_PUBLIC_PATH) {
+          if (url === clientPublicPath) {
             continue
           }
 
@@ -347,11 +357,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== rawUrl) {
             // for optimized cjs deps, support named imports by rewriting named
             // imports to const assignments.
-            if (isOptimizedCjs(resolvedId, server)) {
+            if (resolvedId.endsWith(`&es-interop`)) {
+              url = url.slice(0, -11)
               if (isLiteralDynamicId) {
-                // rewrite `import('package')` to expose module.exports
-                // note plugin-commonjs' behavior is exposing all properties on
-                // `module.exports` PLUS `module.exports` itself as `default`.
+                // rewrite `import('package')` to expose the default directly
                 str().overwrite(
                   dynamicIndex,
                   end + 1,
@@ -374,7 +383,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           importedUrls.add(url)
-        } else if (!importer.startsWith(clientDir)) {
+        } else if (!importer.startsWith(clientDir) && !ssr) {
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
               `\n` +
@@ -417,16 +426,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
         // inject hot context
         str().prepend(
-          `import { createHotContext as __vite__createHotContext } from "${CLIENT_PUBLIC_PATH}";` +
+          `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              importerModule.url
+              path.posix.join(config.base, importerModule.url)
             )});`
         )
       }
 
       if (needQueryInjectHelper) {
         str().prepend(
-          `import { injectQuery as __vite__injectQuery } from "${CLIENT_PUBLIC_PATH}";`
+          `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`
         )
       }
 
@@ -485,20 +494,6 @@ function isSupportedDynamicImport(url: string) {
   return true
 }
 
-function isOptimizedCjs(
-  id: string,
-  {
-    _optimizeDepsMetadata: optimizeDepsMetadata,
-    config: { optimizeCacheDir }
-  }: ViteDevServer
-): boolean {
-  if (optimizeDepsMetadata && optimizeCacheDir) {
-    const relative = path.relative(optimizeCacheDir, cleanUrl(id))
-    return relative in optimizeDepsMetadata.cjsEntries
-  }
-  return false
-}
-
 type ImportNameSpecifier = { importedName: string; localName: string }
 
 /**
@@ -550,12 +545,16 @@ function transformCjsImport(
     const cjsModuleName = makeLegalIdentifier(
       `__vite__cjsImport${importIndex}_${rawUrl}`
     )
-    const lines: string[] = [`import ${cjsModuleName} from "${url}";`]
+    const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
     importNames.forEach(({ importedName, localName }) => {
-      if (importedName === '*' || importedName === 'default') {
-        lines.push(`const ${localName} = ${cjsModuleName};`)
+      if (importedName === '*') {
+        lines.push(`const ${localName} = ${cjsModuleName}`)
+      } else if (importedName === 'default') {
+        lines.push(
+          `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`
+        )
       } else {
-        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"];`)
+        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
     return lines.join('\n')

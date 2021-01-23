@@ -7,8 +7,13 @@ import { parse as parseUrl } from 'url'
 import slash from 'slash'
 import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
 import resolve from 'resolve'
+import builtins from 'builtin-modules'
 
-export const bareImportRE = /^[\w@]/
+export function isBuiltin(id: string): boolean {
+  return builtins.includes(id)
+}
+
+export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 let isRunningWithYarnPnp: boolean
@@ -16,10 +21,12 @@ try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-export function resolveFrom(id: string, basedir: string) {
+const ssrExtensions = ['.js', '.json', '.node']
+
+export function resolveFrom(id: string, basedir: string, ssr = false) {
   return resolve.sync(id, {
     basedir,
-    extensions: SUPPORTED_EXTS,
+    extensions: ssr ? ssrExtensions : SUPPORTED_EXTS,
     // necessary to work with pnpm
     preserveSymlinks: isRunningWithYarnPnp || false
   })

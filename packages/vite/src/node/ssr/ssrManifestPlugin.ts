@@ -5,7 +5,7 @@ import { chunkToEmittedCssFileMap } from '../plugins/css'
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
   const ssrManifest: Record<string, string[]> = {}
-  const base = config.build.base
+  const base = config.base
 
   return {
     name: 'vite:manifest',

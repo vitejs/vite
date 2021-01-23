@@ -1,44 +1,35 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import Rollup from 'rollup'
 import { createHash } from 'crypto'
-import { ResolvedConfig, sortUserPlugins } from '../config'
+import { ResolvedConfig } from '../config'
 import { SUPPORTED_EXTS } from '../constants'
-import { init, parse } from 'es-module-lexer'
-import { onRollupWarning, resolveExternal } from '../build'
 import {
   createDebugger,
   emptyDir,
   lookupFile,
+  normalizePath,
   resolveFrom,
   writeFile
 } from '../utils'
-import { depAssetExternalPlugin, depAssetRewritePlugin } from './depAssetPlugin'
-import { recordCjsEntryPlugin } from './depMetadataPlugin'
 import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
-import { resolvePlugin, tryNodeResolve } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import aliasPlugin from '@rollup/plugin-alias'
-import commonjsPlugin from '@rollup/plugin-commonjs'
-import jsonPlugin from '@rollup/plugin-json'
-import { buildDefinePlugin } from '../plugins/define'
 import { createFilter } from '@rollup/pluginutils'
-import { Plugin } from '../plugin'
 import { prompt } from 'enquirer'
+import { build } from 'esbuild'
+import { esbuildDepPlugin } from './esbuildDepPlugin'
+import { init, parse } from 'es-module-lexer'
 
 const debug = createDebugger('vite:optimize')
 
-const KNOWN_IGNORE_LIST = new Set([
+const KNOWN_WARN_LIST = new Set([
   'vite',
   'vitepress',
   'tailwindcss',
-  '@tailwindcss/ui'
-])
-
-const KNOWN_WARN_LIST = new Set([
   'sass',
   'less',
   'stylus',
@@ -49,7 +40,7 @@ const KNOWN_WARN_LIST = new Set([
   'typescript'
 ])
 
-const WARN_RE = /^(@vitejs\/|vite-)plugin-/
+const WARN_RE = /^(@vitejs\/|@rollup\/|vite-|rollup-|postcss-|babel-)plugin-|^@babel\/|^@tailwindcss\//
 
 export interface DepOptimizationOptions {
   /**
@@ -61,26 +52,26 @@ export interface DepOptimizationOptions {
    */
   exclude?: string | RegExp | (string | RegExp)[]
   /**
-   * Plugins to use for dep optimizations.
+   * A list of linked dependencies that should be treated as source code.
    */
-  plugins?: Plugin[]
+  link?: string[]
   /**
    * Automatically run `vite optimize` on server start?
    * @default true
    */
   auto?: boolean
-  /**
-   * A list of linked dependencies that should be treated as source code.
-   * @deprecated local linked deps are auto detected in Vite 2.
-   */
-  link?: string[]
 }
 
 export interface DepOptimizationMetadata {
   hash: string
-  optimized: Record<string, string>
+  optimized: Record<
+    string,
+    {
+      file: string
+      needsInterop: boolean
+    }
+  >
   transitiveOptimized: Record<string, true>
-  cjsEntries: Record<string, true>
   dependencies: Record<string, string>
 }
 
@@ -110,7 +101,6 @@ export async function optimizeDeps(
     hash: getDepHash(root, pkg, config),
     optimized: {},
     transitiveOptimized: {},
-    cjsEntries: {},
     dependencies: pkg.dependencies
   }
 
@@ -139,7 +129,7 @@ export async function optimizeDeps(
   // 1. Has imports to relative files (e.g. lodash-es, lit-html)
   // 2. Has imports to bare modules that are not in the project's own deps
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
-  await init
+  // await init
   const aliasResolver = await createPluginContainer({
     ...config,
     plugins: [aliasPlugin({ entries: config.alias })]
@@ -236,69 +226,55 @@ export async function optimizeDeps(
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
 
-  const [pre, normal, post] = sortUserPlugins(options.plugins)
-  const resolvedExternal = resolveExternal(
+  const esbuildMetaPath = path.join(cacheDir, 'esbuild.json')
+
+  await build({
+    entryPoints: Object.values(qualified).map((p) => path.resolve(p)),
+    bundle: true,
+    format: 'esm',
     external,
-    config.build.rollupOptions?.external
-  )
+    splitting: true,
+    outdir: cacheDir,
+    metafile: esbuildMetaPath,
+    define: {
+      'process.env.NODE_ENV': '"development"'
+    },
+    plugins: [esbuildDepPlugin(qualified, config, data.transitiveOptimized)]
+  })
 
-  try {
-    const rollup = require('rollup') as typeof Rollup
-    const bundle = await rollup.rollup({
-      input: qualified,
-      external: resolvedExternal,
-      onwarn(warning, warn) {
-        onRollupWarning(warning, warn, config)
-      },
-      plugins: [
-        aliasPlugin({ entries: config.alias }),
-        ...pre,
-        depAssetExternalPlugin(config),
-        resolvePlugin(
-          {
-            root: config.root,
-            dedupe: config.dedupe,
-            isBuild: true,
-            asSrc: false
-          },
-          config
-        ),
-        jsonPlugin({
-          preferConst: true,
-          namedExports: true
-        }),
-        ...normal,
-        commonjsPlugin(config.build.commonjsOptions),
-        buildDefinePlugin(config),
-        depAssetRewritePlugin(config),
-        recordCjsEntryPlugin(data),
-        ...post
-      ]
-    })
+  const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
 
-    const { output } = await bundle.generate({
-      format: 'es',
-      exports: 'named',
-      entryFileNames: '[name].[hash].js',
-      chunkFileNames: 'common/[name].[hash].js'
-    })
-
-    for (const chunk of output) {
-      if (chunk.type === 'chunk') {
-        writeFile(path.join(cacheDir, chunk.fileName), chunk.code)
+  await init
+  for (const output in meta.outputs) {
+    if (/chunk\.\w+\.js$/.test(output)) continue
+    const absolute = normalizePath(path.resolve(output))
+    const relative = normalizePath(path.relative(cacheDir, absolute))
+    const generateExports = meta.outputs[output].exports
+    for (const id in qualified) {
+      const entry = qualified[id]
+      if (entry.replace(/\.mjs$/, '.js').endsWith(relative)) {
+        // check if this is a cjs dep.
+        const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
+        data.optimized[id] = {
+          file: absolute,
+          needsInterop:
+            // entry has no ESM syntax - likely CJS or UMD
+            (!exports.length && !imports.length) ||
+            // if a peer dep used require() on a ESM dep, esbuild turns the
+            // ESM dep's entry chunk into a single default export... detect
+            // such cases by checking exports mismatch, and force interop.
+            (isSingleDefaultExport(generateExports) &&
+              !isSingleDefaultExport(exports))
+        }
       }
     }
-    writeFile(dataPath, JSON.stringify(data, null, 2))
-  } catch (e) {
-    delete e.watchFiles
-    logger.error(chalk.red(`\nDep optimization failed with error:`))
-    if (e.code === 'PARSE_ERROR') {
-      e.message += `\n\n${chalk.cyan(
-        path.relative(root, e.loc.file)
-      )}\n${chalk.dim(e.frame)}`
-    }
-    throw e
   }
+
+  writeFile(dataPath, JSON.stringify(data, null, 2))
+}
+
+function isSingleDefaultExport(exports: string[]) {
+  return exports.length === 1 && exports[0] === 'default'
 }
 
 interface FilteredDeps {
@@ -342,10 +318,6 @@ async function resolveQualifiedDeps(
       debug(`skipping ${id} (link)`)
       continue
     }
-    if (KNOWN_IGNORE_LIST.has(id)) {
-      debug(`skipping ${id} (internal excluded)`)
-      continue
-    }
     // #804
     if (id.startsWith('@types/')) {
       debug(`skipping ${id} (ts declaration)`)
@@ -371,28 +343,8 @@ async function resolveQualifiedDeps(
       debug(`skipping ${id} (entry is not js)`)
       continue
     }
-    const content = fs.readFileSync(filePath, 'utf-8')
-    const [imports, exports] = parse(content)
-    if (!exports.length && !/export\s+\*\s+from/.test(content)) {
-      debug(`optimizing ${id} (no exports, likely commonjs)`)
-      qualified[id] = filePath
-      continue
-    }
-    for (const { s, e } of imports) {
-      let i = content.slice(s, e).trim()
-      i = (await aliasResolver.resolveId(i))?.id || i
-      if (i.startsWith('.')) {
-        debug(`optimizing ${id} (contains relative imports)`)
-        qualified[id] = filePath
-        break
-      }
-      if (!deps.includes(i)) {
-        debug(`optimizing ${id} (imports sub dependencies)`)
-        qualified[id] = filePath
-        break
-      }
-    }
-    debug(`skipping ${id} (single esm file, doesn't need optimization)`)
+    // qualified!
+    qualified[id] = filePath
   }
 
   // mark non-optimized deps as external
@@ -474,16 +426,9 @@ function getDepHash(
       alias: config.alias,
       dedupe: config.dedupe,
       assetsInclude: config.assetsInclude,
-      build: {
-        commonjsOptions: config.build.commonjsOptions,
-        rollupOptions: {
-          external: config.build.rollupOptions?.external
-        }
-      },
       optimizeDeps: {
         include: config.optimizeDeps?.include,
         exclude: config.optimizeDeps?.exclude,
-        plugins: config.optimizeDeps?.plugins?.map((p) => p.name),
         link: config.optimizeDeps?.link
       }
     },

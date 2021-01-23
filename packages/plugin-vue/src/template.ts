@@ -108,7 +108,9 @@ export function resolveTemplateCompilerOptions(
     // request
     if (filename.startsWith(options.root)) {
       assetUrlOptions = {
-        base: '/' + slash(path.relative(options.root, path.dirname(filename)))
+        base:
+          options.devServer.config.base +
+          slash(path.relative(options.root, path.dirname(filename)))
       }
     }
   } else {

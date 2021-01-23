@@ -10,7 +10,7 @@ module.exports = {
     [
       'style',
       {},
-      'img { border-radius: 10px }' + 'h1.title { margin-left: 0.5em }'
+      '.content img { border-radius: 10px }' + 'h1.title { margin-left: 0.5em }'
     ]
   ],
   themeConfig: {
@@ -20,6 +20,16 @@ module.exports = {
     editLinks: true,
     editLinkText: 'Suggest changes to this page',
 
+    algolia: {
+      apiKey: 'b573aa848fd57fb47d693b531297403c',
+      indexName: 'vitejs'
+    },
+
+    carbonAds: {
+      carbon: 'CEBIEK3N',
+      placement: 'vitejsdev'
+    },
+
     locales: {
       '/': {
         lang: 'en-US',
@@ -27,7 +37,12 @@ module.exports = {
         selectText: 'Languages',
         nav: [
           { text: 'Guide & APIs', link: '/guide/' },
-          { text: 'Config Reference', link: '/config/' }
+          { text: 'Config Reference', link: '/config/' },
+          { text: 'Plugins', link: '/plugins/' },
+          {
+            text: 'Changelog',
+            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+          }
         ]
       },
       '/zh/': {
@@ -36,8 +51,13 @@ module.exports = {
         selectText: '选择语言',
         editLinkText: '为此页提供修改建议',
         nav: [
-          { text: '指引 & API', link: '/zh/guide/' },
-          { text: '配置参考', link: '/zh/config/' }
+          { text: '指引', link: '/zh/guide/' },
+          { text: '配置', link: '/zh/config/' },
+          { text: '插件', link: '/plugins/' },
+          {
+            text: '更新日志',
+            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+          }
         ]
       }
     },
@@ -156,10 +176,6 @@ module.exports = {
           text: 'APIs',
           children: [
             {
-              text: 'Config Reference',
-              link: '/config/'
-            },
-            {
               text: 'Plugin API',
               link: '/guide/api-plugin'
             },
@@ -170,6 +186,10 @@ module.exports = {
             {
               text: 'JavaScript API',
               link: '/guide/api-javascript'
+            },
+            {
+              text: 'Config Reference',
+              link: '/config/'
             }
           ]
         }

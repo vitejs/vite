@@ -56,7 +56,7 @@ export async function ssrTransform(
     )
   }
 
-  // 1. check all import/export statements
+  // 1. check all import statements and record id -> importName map
   for (const node of ast.body as Node[]) {
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
@@ -78,7 +78,10 @@ export async function ssrTransform(
       }
       s.remove(node.start, node.end)
     }
+  }
 
+  // 2. check all export statements and define exports
+  for (const node of ast.body as Node[]) {
     // named exports
     if (node.type === 'ExportNamedDeclaration') {
       if (node.declaration) {
@@ -104,10 +107,13 @@ export async function ssrTransform(
         for (const spec of node.specifiers) {
           defineExport(spec.exported.name, `${importId}.${spec.local.name}`)
         }
+        s.remove(node.start, node.end)
       } else {
         // export { foo, bar }
         for (const spec of node.specifiers) {
-          defineExport(spec.exported.name, spec.local.name)
+          const local = spec.local.name
+          const binding = idToImportMap.get(local)
+          defineExport(spec.exported.name, binding || local)
         }
         s.remove(node.start, node.end)
       }
@@ -125,6 +131,7 @@ export async function ssrTransform(
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
       const importId = defineImport(node, node.source.value as string)
+      s.remove(node.start, node.end)
       s.append(`\n${ssrExportAllKey}(${importId})`)
     }
   }
@@ -316,6 +323,10 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
     parent.property === id &&
     !parent.computed
   ) {
+    return false
+  }
+
+  if (parent.type === 'ExportSpecifier') {
     return false
   }
 

@@ -4,6 +4,7 @@ import { Plugin } from '../plugin'
 import chalk from 'chalk'
 import { FS_PREFIX, SUPPORTED_EXTS } from '../constants'
 import {
+  isBuiltin,
   bareImportRE,
   createDebugger,
   deepImportRE,
@@ -21,11 +22,14 @@ import { ResolvedConfig, ViteDevServer } from '..'
 import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
-import isBuiltin from 'isbuiltin'
 import { isCSSRequest } from './css'
 import { resolve as _resolveExports } from 'resolve.exports'
 
-const mainFields = ['module', 'main']
+const altMainFields = [
+  'module',
+  'jsnext:main', // moment still uses this...
+  'jsnext'
+]
 
 function resolveExports(
   pkg: PackageData['data'],
@@ -220,7 +224,7 @@ export function resolvePlugin(
   }
 }
 
-function tryFsResolve(
+export function tryFsResolve(
   fsPath: string,
   isProduction: boolean,
   tryIndex = true
@@ -247,15 +251,15 @@ function tryResolveFile(
   if (fs.existsSync(file)) {
     const isDir = fs.statSync(file).isDirectory()
     if (isDir) {
-      if (tryIndex) {
-        const index = tryFsResolve(file + '/index', isProduction, false)
-        if (index) return normalizePath(index) + query
-      }
       const pkgPath = file + '/package.json'
       if (fs.existsSync(pkgPath)) {
         // path points to a node package
         const pkg = loadPackageData(pkgPath)
         return resolvePackageEntry(file, pkg, isProduction)
+      }
+      if (tryIndex) {
+        const index = tryFsResolve(file + '/index', isProduction, false)
+        if (index) return normalizePath(index) + query
       }
     } else {
       return normalizePath(file) + query
@@ -306,7 +310,9 @@ export function tryNodeResolve(
             `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
             `If the used import is not exported from the package's main entry ` +
             `and can only be attained via deep import, you can explicitly add ` +
-            `the deep import path to "optimizeDeps.include" in vite.config.js.`
+            `the deep import path to "optimizeDeps.include" in vite.config.js.\n\n` +
+            `If you intend to only use deep imports with this package and it ` +
+            `exposes valid ESM, consider adding it to "optimizeDeps.exclude".`
         )
       )
     }
@@ -359,17 +365,18 @@ export function tryNodeResolve(
 }
 
 export function tryOptimizedResolve(
-  rawId: string,
+  id: string,
   server: ViteDevServer
 ): string | undefined {
   const cacheDir = server.config.optimizeCacheDir
   const depData = server._optimizeDepsMetadata
   if (cacheDir && depData) {
-    const [id, q] = rawId.split(`?`, 2)
-    const query = q ? `?${q}` : ``
-    const filePath = depData.optimized[id]
-    if (filePath) {
-      return normalizePath(path.resolve(cacheDir, filePath)) + query
+    const isOptimized = depData.optimized[id]
+    if (isOptimized) {
+      return (
+        isOptimized.file +
+        `?v=${depData.hash}${isOptimized.needsInterop ? `&es-interop` : ``}`
+      )
     }
   }
 }
@@ -447,7 +454,11 @@ export function resolvePackageEntry(
     entryPoint = resolveExports(data, '.', isProduction)
   }
 
-  if (!entryPoint) {
+  // if exports resolved to .mjs, still resolve other fields.
+  // This is because .mjs files can technically import .cjs files which would
+  // make them invalid for pure ESM environments - so if other module/browser
+  // fields are present, prioritize those instead.
+  if (!entryPoint || entryPoint.endsWith('.mjs')) {
     // check browser field
     // https://github.com/defunctzombie/package-browser-field-spec
     const browserEntry =
@@ -484,8 +495,8 @@ export function resolvePackageEntry(
     }
   }
 
-  if (!entryPoint) {
-    for (const field of mainFields) {
+  if (!entryPoint || entryPoint.endsWith('.mjs')) {
+    for (const field of altMainFields) {
       if (typeof data[field] === 'string') {
         entryPoint = data[field]
         break
@@ -493,7 +504,7 @@ export function resolvePackageEntry(
     }
   }
 
-  entryPoint = entryPoint || 'index.js'
+  entryPoint = entryPoint || data.main || 'index.js'
 
   // resolve object browser field in package.json
   const { browser: browserField } = data

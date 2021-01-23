@@ -13,6 +13,8 @@
     "optimize-deps-linked-include": "0.0.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "resolve-linked": "0.0.0"
+    "resolve-linked": "0.0.0",
+    "vue": "^3.0.5",
+    "vuex": "^4.0.0-rc.2"
   }
 }

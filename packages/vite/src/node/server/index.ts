@@ -17,6 +17,7 @@ import {
 import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { resolveHttpsConfig } from '../server/https'
 import { createWebSocketServer, WebSocketServer } from '../server/ws'
+import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
 import { indexHtmlMiddleware } from './middlewares/indexHtml'
@@ -109,6 +110,11 @@ export interface ServerOptions {
    * Create Vite dev server to be used as a middleware in an existing server
    */
   middlewareMode?: boolean
+  /**
+   * Prepend this folder to http requests, for use when proxying vite as a subfolder
+   * Should start and end with the `/` character
+   */
+  base?: string
 }
 
 /**
@@ -370,6 +376,11 @@ export async function createServer(
     middlewares.use(proxyMiddleware(server))
   }
 
+  // base
+  if (config.base !== '/') {
+    middlewares.use(baseMiddleware(server))
+  }
+
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
@@ -386,25 +397,22 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
-  middlewares.use(
-    history({
-      logger: createDebugger('vite:spa-fallback'),
-      // support /dir/ without explicit index.html
-      rewrites: [
-        {
-          from: /\/$/,
-          to({ parsedUrl }: any) {
-            const rewritten = parsedUrl.pathname + 'index.html'
-            if (fs.existsSync(path.join(root, rewritten))) {
-              return rewritten
-            } else {
-              return `/index.html`
+  if (!middlewareMode) {
+    middlewares.use(
+      history({
+        logger: createDebugger('vite:spa-fallback'),
+        // support /dir/ without explicit index.html
+        rewrites: [
+          {
+            from: /\/$/,
+            to({ parsedUrl }: any) {
+              return parsedUrl.pathname + 'index.html'
             }
           }
-        }
-      ]
-    })
-  )
+        ]
+      })
+    )
+  }
 
   // run post config hooks
   // This is applied before the html middleware so that user middleware can
@@ -497,6 +505,7 @@ async function startServer(
   let hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
+  const base = server.config.base
 
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
@@ -519,7 +528,9 @@ async function startServer(
     httpServer.listen(port, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n  Vite dev server running at:\n`, { clear: true })
+      info(`\n  Vite dev server running at:\n`, {
+        clear: !server.config.logger.hasWarned
+      })
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>
         (interfaces[key] || [])
@@ -533,7 +544,7 @@ async function startServer(
             }
           })
           .forEach(({ type, host }) => {
-            const url = `${protocol}://${host}:${chalk.bold(port)}/`
+            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
             info(`  > ${type} ${chalk.cyan(url)}`)
           })
       )
@@ -568,7 +579,7 @@ async function startServer(
       }
 
       if (options.open) {
-        const path = typeof options.open === 'string' ? options.open : ''
+        const path = typeof options.open === 'string' ? options.open : base
         openBrowser(
           `${protocol}://${hostname}:${port}${path}`,
           true,
