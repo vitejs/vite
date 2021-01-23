@@ -33,8 +33,8 @@ export function send(
   if (map && map.mappings) {
     if (isDebug) {
       content += `\n/*${JSON.stringify(map, null, 2).replace(
-        /\/\*[\s\S]+?\*\//g,
-        ''
+        /\*\//g,
+        '*\\/'
       )}*/\n`
     }
     content += genSourceMapString(map)
