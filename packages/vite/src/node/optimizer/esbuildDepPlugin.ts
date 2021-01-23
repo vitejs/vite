@@ -32,14 +32,20 @@ export function esbuildDepPlugin(
         }
       )
 
-      // record transitive deps
       build.onResolve({ filter: /^[\w@]/ }, ({ path: id }) => {
-        if (!(id in qualified) && !isBuiltin(id)) {
+        // ensure esbuild uses our resolved entires of optimized deps in all
+        // cases
+        if (id in qualified) {
+          return {
+            path: path.resolve(qualified[id])
+          }
+        }
+        // record transitive deps
+        if (!isBuiltin(id)) {
           const deepMatch = id.match(deepImportRE)
           const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
           transitiveOptimized[pkgId] = true
         }
-        return null
       })
 
       // redirect node-builtins to empty module for browser
@@ -75,21 +81,6 @@ export function esbuildDepPlugin(
           }
         }
       )
-
-      if (config.dedupe) {
-        build.onResolve(
-          {
-            filter: new RegExp(`^(${config.dedupe.join('|')})$`)
-          },
-          ({ path: id }) => {
-            if (id in qualified) {
-              return {
-                path: path.resolve(qualified[id])
-              }
-            }
-          }
-        )
-      }
     }
   }
 }
