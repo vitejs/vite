@@ -68,6 +68,11 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
       return handleHotUpdate(ctx, options)
     },
 
+    configResolved(config) {
+      options.isProduction = config.isProduction
+      options.root = config.root
+    },
+
     configureServer(server) {
       options.devServer = server
     },
@@ -121,7 +126,7 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
     async transform(code, id) {
       const { filename, query } = parseVueRequest(id)
 
-      if (/\.(tsx?|jsx)$/.test(id)) {
+      if (/\.(tsx|jsx)$/.test(id)) {
         return transformVueJsx(code, id)
       }
 

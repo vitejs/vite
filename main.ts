@@ -146,7 +146,7 @@ async function genScriptCode(
 function genTemplateRequest(filename: string, descriptor: SFCDescriptor) {
   const template = descriptor.template
   if (!template) {
-    return { code: `const render, staticRenderFns` }
+    return { code: `let render, staticRenderFns` }
   }
   if (template.src) {
     linkSrcToDescriptor(template.src, filename, descriptor)

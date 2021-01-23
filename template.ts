@@ -2,6 +2,7 @@ import { SFCBlock, compileTemplate } from '@vue/component-compiler-utils'
 import * as vueTemplateCompiler from 'vue-template-compiler'
 import path from 'path'
 import { TransformPluginContext } from 'rollup'
+import slash from 'slash'
 import { ResolvedOptions } from './index'
 import { createRollupError } from './utils/error'
 
@@ -19,7 +20,7 @@ export function compileSFCTemplate(
     transformAssetUrls: true,
     transformAssetUrlsOptions: devServer
       ? {
-          base: path.posix.dirname(path.relative(root, filename)),
+          base: '/' + slash(path.relative(root, path.dirname(filename))),
         }
       : {},
     isProduction,
