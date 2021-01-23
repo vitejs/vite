@@ -250,11 +250,12 @@ export async function optimizeDeps(
 
   await init
   for (const output in meta.outputs) {
+    if (/chunk\.\w+\.js$/.test(output)) continue
     const absolute = normalizePath(path.resolve(output))
     const relative = normalizePath(path.relative(cacheDir, absolute))
     for (const id in qualified) {
       const entry = qualified[id]
-      if (entry.endsWith(relative)) {
+      if (entry.replace(/\.mjs$/, '.js').endsWith(relative)) {
         // check if this is a cjs dep.
         const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
         data.optimized[id] = {
