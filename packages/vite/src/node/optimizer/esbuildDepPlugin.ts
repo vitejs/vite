@@ -5,13 +5,15 @@ import { ResolvedConfig } from '..'
 import chalk from 'chalk'
 import { deepImportRE, isBuiltin } from '../utils'
 import { tryNodeResolve } from '../plugins/resolve'
+import { PluginContainer } from '../server/pluginContainer'
 
 const externalTypes = ['css', 'vue', 'svelte', ...knownAssetTypes]
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   config: ResolvedConfig,
-  transitiveOptimized: Record<string, true>
+  transitiveOptimized: Record<string, true>,
+  aliasResolver: PluginContainer
 ): Plugin {
   return {
     name: 'vite:dep-pre-bundle',
@@ -32,7 +34,7 @@ export function esbuildDepPlugin(
         }
       )
 
-      build.onResolve({ filter: /^[\w@]/ }, ({ path: id, importer }) => {
+      build.onResolve({ filter: /^[\w@]/ }, async ({ path: id, importer }) => {
         // ensure esbuild uses our resolved entires of optimized deps in all
         // cases
         if (id in qualified) {
@@ -44,6 +46,8 @@ export function esbuildDepPlugin(
           const deepMatch = id.match(deepImportRE)
           const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
           transitiveOptimized[pkgId] = true
+
+          id = (await aliasResolver.resolveId(id))?.id || id
           const resolved = tryNodeResolve(
             id,
             path.dirname(importer),
