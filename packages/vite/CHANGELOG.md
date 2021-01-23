@@ -1,3 +1,12 @@
+# [2.0.0-beta.40](https://github.com/vitejs/vite/compare/v2.0.0-beta.39...v2.0.0-beta.40) (2021-01-23)
+
+
+### Bug Fixes
+
+* **optimizer:** compiled esmdoule interop ([6826624](https://github.com/vitejs/vite/commit/68266245338d4f1c27d9552d5d54eff3420af8b6)), closes [#1659](https://github.com/vitejs/vite/issues/1659)
+
+
+
 # [2.0.0-beta.39](https://github.com/vitejs/vite/compare/v2.0.0-beta.38...v2.0.0-beta.39) (2021-01-23)
 
 
