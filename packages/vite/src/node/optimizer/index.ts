@@ -241,6 +241,7 @@ export async function optimizeDeps(
     entryPoints: Object.values(qualified).map((p) => path.resolve(p)),
     bundle: true,
     format: 'esm',
+    external,
     splitting: true,
     outdir: cacheDir,
     metafile: esbuildMetaPath,
@@ -425,12 +426,6 @@ function getDepHash(
       alias: config.alias,
       dedupe: config.dedupe,
       assetsInclude: config.assetsInclude,
-      build: {
-        commonjsOptions: config.build.commonjsOptions,
-        rollupOptions: {
-          external: config.build.rollupOptions?.external
-        }
-      },
       optimizeDeps: {
         include: config.optimizeDeps?.include,
         exclude: config.optimizeDeps?.exclude,
