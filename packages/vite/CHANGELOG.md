@@ -1,3 +1,12 @@
+# [2.0.0-beta.44](https://github.com/vitejs/vite/compare/v2.0.0-beta.43...v2.0.0-beta.44) (2021-01-23)
+
+
+### Bug Fixes
+
+* esbuild dep resolving on windows ([62e4d72](https://github.com/vitejs/vite/commit/62e4d724a8a008cb6bd6f2122753880ec3568192))
+
+
+
 # [2.0.0-beta.43](https://github.com/vitejs/vite/compare/v2.0.0-beta.42...v2.0.0-beta.43) (2021-01-23)
 
 
