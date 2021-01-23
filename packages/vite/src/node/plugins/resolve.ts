@@ -25,11 +25,10 @@ import { PartialResolvedId } from 'rollup'
 import { isCSSRequest } from './css'
 import { resolve as _resolveExports } from 'resolve.exports'
 
-const mainFields = [
+const altMainFields = [
   'module',
   'jsnext:main', // moment still uses this...
-  'jsnext',
-  'main'
+  'jsnext'
 ]
 
 function resolveExports(
@@ -455,7 +454,11 @@ export function resolvePackageEntry(
     entryPoint = resolveExports(data, '.', isProduction)
   }
 
-  if (!entryPoint) {
+  // if exports resolved to .mjs, still resolve other fields.
+  // This is because .mjs files can technically import .cjs files which would
+  // make them invalid for pure ESM environments - so if other module/browser
+  // fields are present, prioritize those instead.
+  if (!entryPoint || entryPoint.endsWith('.mjs')) {
     // check browser field
     // https://github.com/defunctzombie/package-browser-field-spec
     const browserEntry =
@@ -492,8 +495,8 @@ export function resolvePackageEntry(
     }
   }
 
-  if (!entryPoint) {
-    for (const field of mainFields) {
+  if (!entryPoint || entryPoint.endsWith('.mjs')) {
+    for (const field of altMainFields) {
       if (typeof data[field] === 'string') {
         entryPoint = data[field]
         break
@@ -501,7 +504,7 @@ export function resolvePackageEntry(
     }
   }
 
-  entryPoint = entryPoint || 'index.js'
+  entryPoint = entryPoint || data.main || 'index.js'
 
   // resolve object browser field in package.json
   const { browser: browserField } = data
