@@ -545,12 +545,16 @@ function transformCjsImport(
     const cjsModuleName = makeLegalIdentifier(
       `__vite__cjsImport${importIndex}_${rawUrl}`
     )
-    const lines: string[] = [`import ${cjsModuleName} from "${url}";`]
+    const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
     importNames.forEach(({ importedName, localName }) => {
-      if (importedName === '*' || importedName === 'default') {
-        lines.push(`const ${localName} = ${cjsModuleName};`)
+      if (importedName === '*') {
+        lines.push(`const ${localName} = ${cjsModuleName}`)
+      } else if (importedName === 'default') {
+        lines.push(
+          `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`
+        )
       } else {
-        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"];`)
+        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
     return lines.join('\n')
