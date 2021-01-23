@@ -77,7 +77,7 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
       options.devServer = server
     },
 
-    async resolveId(id, importer) {
+    async resolveId(id) {
       if (id === vueComponentNormalizer || id === vueHotReload) {
         return id
       }
