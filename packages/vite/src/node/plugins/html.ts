@@ -159,7 +159,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 src!.value!.loc.start.offset,
                 src!.value!.loc.end.offset,
-                config.base + url.slice(1)
+                `"${config.base + url.slice(1)}"`
               )
             }
 
@@ -201,7 +201,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
-                    config.base + url.slice(1)
+                    `"${config.base + url.slice(1)}"`
                   )
                 }
               }
@@ -220,11 +220,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         for (const attr of assetUrls) {
           const value = attr.value!
           const url = await urlToBuiltUrl(value.content, id, config, this)
-          s.overwrite(
-            value.loc.start.offset,
-            value.loc.end.offset,
-            JSON.stringify(url)
-          )
+          s.overwrite(value.loc.start.offset, value.loc.end.offset, `"${url}"`)
         }
 
         processedHtml.set(id, s.toString())
