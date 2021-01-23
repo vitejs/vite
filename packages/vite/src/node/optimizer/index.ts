@@ -239,7 +239,14 @@ export async function optimizeDeps(
     define: {
       'process.env.NODE_ENV': '"development"'
     },
-    plugins: [esbuildDepPlugin(qualified, config, data.transitiveOptimized)]
+    plugins: [
+      esbuildDepPlugin(
+        qualified,
+        config,
+        data.transitiveOptimized,
+        aliasResolver
+      )
+    ]
   })
 
   const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
