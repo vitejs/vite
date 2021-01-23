@@ -186,7 +186,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             for (let index = 0; index < imports.length; index++) {
               const { s: start, e: end, d: dynamicIndex } = imports[index]
               if (dynamicIndex > -1) {
-                // if dynmamic import polyfill is used, rewrite the import to
+                // if dynamic import polyfill is used, rewrite the import to
                 // use the polyfilled function.
                 if (isPolyfillEnabled) {
                   s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
@@ -218,15 +218,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
 
                 const markPos = code.indexOf(preloadMarker, end)
-                s.overwrite(
-                  markPos - 1,
-                  markPos + preloadMarker.length + 1,
-                  // the dep list includes the main chunk, so only need to
-                  // preload when there are actual other deps.
-                  deps.size > 1
-                    ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                    : `void 0`
-                )
+                if (markPos > 0) {
+                  s.overwrite(
+                    markPos - 1,
+                    markPos + preloadMarker.length + 1,
+                    // the dep list includes the main chunk, so only need to
+                    // preload when there are actual other deps.
+                    deps.size > 1
+                      ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
+                      : `void 0`
+                  )
+                }
               }
             }
             chunk.code = s.toString()
