@@ -1,6 +1,6 @@
 import path from 'path'
 import { ViteDevServer } from '..'
-import { removeImportQuery, resolveFrom } from '../utils'
+import { resolveFrom } from '../utils'
 import { ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -22,8 +22,6 @@ export async function ssrLoadModule(
   context: SSRContext = { global: isolated ? Object.create(global) : global },
   urlStack: string[] = []
 ): Promise<Record<string, any>> {
-  url = removeImportQuery(url)
-
   if (urlStack.includes(url)) {
     server.config.logger.warn(
       `Circular dependency: ${urlStack.join(' -> ')} -> ${url}`
