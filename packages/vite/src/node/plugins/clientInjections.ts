@@ -24,9 +24,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         let port
         if (config.server.middlewareMode) {
           port = String(
-            typeof config.server.hmr === 'object'
-              ? config.server.hmr.port
-              : 24678
+            (typeof config.server.hmr === 'object' && config.server.hmr.port) ||
+              24678
           )
         } else {
           port = String(options.port || config.server.port!)
