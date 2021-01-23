@@ -26,14 +26,10 @@ import { init, parse } from 'es-module-lexer'
 
 const debug = createDebugger('vite:optimize')
 
-const KNOWN_IGNORE_LIST = new Set([
+const KNOWN_WARN_LIST = new Set([
   'vite',
   'vitepress',
   'tailwindcss',
-  '@tailwindcss/ui'
-])
-
-const KNOWN_WARN_LIST = new Set([
   'sass',
   'less',
   'stylus',
@@ -44,7 +40,7 @@ const KNOWN_WARN_LIST = new Set([
   'typescript'
 ])
 
-const WARN_RE = /^(@vitejs\/|@rollup\/|vite-|rollup-|postcss-|babel-)plugin-/
+const WARN_RE = /^(@vitejs\/|@rollup\/|vite-|rollup-|postcss-|babel-)plugin-|^@babel\/|^@tailwindcss\//
 
 export interface DepOptimizationOptions {
   /**
@@ -320,10 +316,6 @@ async function resolveQualifiedDeps(
     }
     if (link && link.includes(id)) {
       debug(`skipping ${id} (link)`)
-      continue
-    }
-    if (KNOWN_IGNORE_LIST.has(id)) {
-      debug(`skipping ${id} (internal excluded)`)
       continue
     }
     // #804
