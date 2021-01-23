@@ -92,10 +92,17 @@ export default ({ command, mode }) => {
 
   更多细节请见 [项目根目录](/zh/guide/#项目根目录)。
 
+### base
+
+- **类型：** `string`
+- **默认：** `/`
+
+  开发或生产环境服务的 public base 路径。注意路径应以 `/` 开头和结尾。更多信息详见 [Public Base 路径](/guide/build#public-base-路径)。
+
 ### mode
 
-- **Type:** `string`
-- **Default:** `'development'` for serve, `'production'` for build
+- **类型：** `string`
+- **默认：** `'development'` for serve, `'production'` for build
 
   在配置中特别指定将会替换掉 serve 和 build 时的默认模式。还可以通过命令行选项 `--mode` 覆写该值。
 
@@ -330,13 +337,6 @@ export default ({ command, mode }) => {
 
 ## Build Options
 
-### build.base
-
-- **类型：** `string`
-- **默认：** `/`
-
-  在生产环境中的 public base 路径。注意，路径应该以 `/` 开头和结尾。查看 [public base 路径](/zh/guide/build#public-base-path) 来获取更多细节。
-
 ### build.target
 
 - **类型：** `string`
@@ -454,13 +454,13 @@ export default ({ command, mode }) => {
 
   在预构建中强制排除的依赖项。
 
-### optimizeDeps.plugins
+### optimizeDeps.link
 
-- **类型：** `Plugin[]`
+- **类型：** `string[]`
 
-  默认情况下，Vite 假定依赖关系提供的是纯 JavaScript，并且在预绑定期间不会尝试转换到非 js 文件格式。 如果您希望支持特定的文件类型，例如 `.vue` 文件，你需要通过这个选项提供相关的插件。
+  一个视为 “已链接” 的包列表。已链接的包不会被预构建 - Vite 会分析并预构建它们的依赖。
 
-  请注意，您还需要将这些插件包含在主要的 `plugins` 选项中，以便在生产构建过程中支持相同的文件类型。
+  请注意，您还需要在主 `plugins` 选项中引入这些插件，以便在生产构建过程中支持相应的文件类型。请注意，如果您通过包管理器工作区使用 monorepo，并且在您的 Vite 入口包中将包列为依赖项，Vite 会自动将它们视为已链接（通过检查它是否在 `node_modules` 中）。若你的 Vite 应用正在导入某个作为 Node 解析依赖而又还未链接的包，你只需要为这种不寻常的情况配置此设置项。
 
 ### optimizeDeps.auto
 

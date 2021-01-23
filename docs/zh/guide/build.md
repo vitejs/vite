@@ -23,7 +23,7 @@
 
 - 相关内容：[资源处理](./features#asset-handling)
 
-如果您正在嵌套的公共路径下部署项目，可以简单指定一个 [`build.base` 配置项](/zh/config/#build-base) 然后所有资源的路径都将据此重写。这个选项也可以通过命令行参数指定，例如 `vite build --base=/my/public/path/`。
+如果您正在嵌套的公共路径下部署项目，可以简单指定一个 [`build.base` 配置项](/zh/config/#base) 然后所有资源的路径都将据此重写。这个选项也可以通过命令行参数指定，例如 `vite build --base=/my/public/path/`。
 
 由 JS 导入的资源路径，CSS 中的 `url()` 引用，和 `.html` 文件中的资源引用在构建过程中都会自动调整以适配此选项。
 
