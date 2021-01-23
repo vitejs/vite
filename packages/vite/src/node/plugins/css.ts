@@ -15,6 +15,7 @@ import postcssrc from 'postcss-load-config'
 import merge from 'merge-source-map'
 import {
   NormalizedOutputOptions,
+  PluginContext,
   RenderedChunk,
   RollupError,
   SourceMap
@@ -238,21 +239,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      // replace asset url references with resolved url
-      chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileId, postfix = '') => {
-        return config.base + this.getFileName(fileId) + postfix
-      })
-
       if (config.build.cssCodeSplit) {
         if (!code.trim()) {
           // this is a shared CSS-only chunk that is empty.
           emptyChunks.add(chunk.fileName)
         }
-        // minify
-        if (config.build.minify) {
-          chunkCSS = await minifyCSS(chunkCSS, config)
-        }
         if (opts.format === 'es') {
+          chunkCSS = await processChunkCSS(chunkCSS, config, this, false)
           // emit corresponding css file
           const fileHandle = this.emitFile({
             name: chunk.name + '.css',
@@ -262,6 +255,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunkToEmittedCssFileMap.set(chunk, fileHandle)
         } else if (!config.build.ssr) {
           // legacy build, inline css
+          chunkCSS = await processChunkCSS(chunkCSS, config, this, true)
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
@@ -284,6 +278,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         const extractedCss = outputToExtractedCSSMap.get(opts) || ''
+        chunkCSS = await processChunkCSS(chunkCSS, config, this, false)
         outputToExtractedCSSMap.set(opts, extractedCss + chunkCSS)
         return null
       }
@@ -737,6 +732,31 @@ function rewriteCssUrls(
     }
     return `url(${wrap}${await replacer(rawUrl)}${wrap})`
   })
+}
+
+async function processChunkCSS(
+  css: string,
+  config: ResolvedConfig,
+  pluginCtx: PluginContext,
+  isInlined: boolean
+): Promise<string> {
+  // replace asset url references with resolved url.
+  const isRelativeBase = config.base === '' || config.base.startsWith('.')
+  css = css.replace(assetUrlRE, (_, fileId, postfix = '') => {
+    const filename = pluginCtx.getFileName(fileId) + postfix
+    if (!isRelativeBase || isInlined) {
+      // absoulte base or relative base but inlined (injected as style tag into
+      // index.html) use the base as-is
+      return config.base + filename
+    } else {
+      // relative base + extracted CSS - asset file will be in the same dir
+      return `./${path.posix.basename(filename)}`
+    }
+  })
+  if (config.build.minify) {
+    css = await minifyCSS(css, config)
+  }
+  return css
 }
 
 let CleanCSS: any
