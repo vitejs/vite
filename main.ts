@@ -20,9 +20,10 @@ export async function transformMain(
     descriptor.template && descriptor.template.attrs.functional
 
   // template
-  const { code: templateCode, templateRequest } = genTemplateRequest(
+  const { code: templateCode, templateRequest } = await genTemplateRequest(
     filePath,
-    descriptor
+    descriptor,
+    pluginContext
   )
   // script
   const scriptVar = 'script'
@@ -30,14 +31,16 @@ export async function transformMain(
     scriptVar,
     descriptor,
     filePath,
-    options
+    options,
+    pluginContext
   )
   // style
   const cssModuleVar = '__cssModules'
-  const { scoped, stylesCode } = genStyleRequest(
+  const { scoped, stylesCode } = await genStyleRequest(
     cssModuleVar,
     descriptor,
-    filePath
+    filePath,
+    pluginContext
   )
 
   let result =
@@ -99,7 +102,8 @@ async function genScriptCode(
   scriptVar: string,
   descriptor: SFCDescriptor,
   filename: string,
-  options: ResolvedOptions
+  options: ResolvedOptions,
+  pluginContext: TransformPluginContext
 ): Promise<{
   scriptCode: string
   map?: RawSourceMap
@@ -131,7 +135,12 @@ async function genScriptCode(
       }
     } else {
       if (script.src) {
-        linkSrcToDescriptor(script.src, filename, descriptor)
+        await linkSrcToDescriptor(
+          script.src,
+          filename,
+          descriptor,
+          pluginContext
+        )
       }
       const src = script.src || filename
       const langFallback = (script.src && path.extname(src).slice(1)) || 'js'
@@ -149,13 +158,17 @@ async function genScriptCode(
   }
 }
 
-function genTemplateRequest(filename: string, descriptor: SFCDescriptor) {
+async function genTemplateRequest(
+  filename: string,
+  descriptor: SFCDescriptor,
+  pluginContext: TransformPluginContext
+) {
   const template = descriptor.template
   if (!template) {
     return { code: `let render, staticRenderFns` }
   }
   if (template.src) {
-    linkSrcToDescriptor(template.src, filename, descriptor)
+    await linkSrcToDescriptor(template.src, filename, descriptor, pluginContext)
   }
   const src = template.src || filename
   const srcQuery = template.src ? `&src` : ``
@@ -219,16 +232,18 @@ if(__VUE_HMR_RUNTIME__.compatible){
 }`
 }
 
-function genStyleRequest(
+async function genStyleRequest(
   cssModuleVar: string,
   descriptor: SFCDescriptor,
-  filename: string
+  filename: string,
+  pluginContext: TransformPluginContext
 ) {
   let scoped: boolean = false
   let stylesCode = ''
-  descriptor.styles.forEach((style, i) => {
+  for (let i = 0; i < descriptor.styles.length; i++) {
+    const style = descriptor.styles[i]
     if (style.src) {
-      linkSrcToDescriptor(style.src, filename, descriptor)
+      await linkSrcToDescriptor(style.src, filename, descriptor, pluginContext)
     }
     const src = style.src || filename
     const attrsQuery = attrsToQuery(style.attrs, 'css')
@@ -246,7 +261,7 @@ function genStyleRequest(
     } else {
       stylesCode += `\nimport ${JSON.stringify(styleRequest)}`
     }
-  })
+  }
 
   return { scoped, stylesCode }
 }
@@ -272,12 +287,13 @@ function genCSSModulesCode(
  * with its owner SFC descriptor so that we can get the information about
  * the owner SFC when compiling that file in the transform phase.
  */
-function linkSrcToDescriptor(
+async function linkSrcToDescriptor(
   src: string,
   filename: string,
-  descriptor: SFCDescriptor
+  descriptor: SFCDescriptor,
+  pluginContext: TransformPluginContext
 ) {
-  const srcFile = path.posix.resolve(path.posix.dirname(filename), src)
+  const srcFile = (await pluginContext.resolve(src, filename))?.id || src
   setDescriptor(srcFile, descriptor)
 }
 
