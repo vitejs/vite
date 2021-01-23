@@ -441,6 +441,16 @@ function hasDepsChanged(deps: any, prevDeps: any): boolean {
 async function restartServer(server: ViteDevServer) {
   await server.close()
   ;(global as any).__vite_start_time = Date.now()
-  server = await createServer(server.config.inlineConfig)
-  await server.listen()
+  const newServer = await createServer(server.config.inlineConfig)
+  for (const key in newServer) {
+    if (key !== 'app') {
+      // @ts-ignore
+      server[key] = newServer[key]
+    }
+  }
+  if (!server.config.server.middlewareMode) {
+    await server.listen()
+  } else {
+    server.config.logger.info('server restarted.', { timestamp: true })
+  }
 }
