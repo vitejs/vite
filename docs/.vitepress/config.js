@@ -10,7 +10,7 @@ module.exports = {
     [
       'style',
       {},
-      'img { border-radius: 10px }' + 'h1.title { margin-left: 0.5em }'
+      '.content img { border-radius: 10px }' + 'h1.title { margin-left: 0.5em }'
     ]
   ],
   themeConfig: {
@@ -23,6 +23,11 @@ module.exports = {
     algolia: {
       apiKey: '***REMOVED***',
       indexName: 'vitejs'
+    },
+
+    carbonAds: {
+      carbon: 'CEBIEK3N',
+      placement: 'vitejsdev'
     },
 
     nav: [
