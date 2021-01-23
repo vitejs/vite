@@ -19,7 +19,6 @@ import {
 import { tryNodeResolve } from '../plugins/resolve'
 import aliasPlugin from '@rollup/plugin-alias'
 import { createFilter } from '@rollup/pluginutils'
-import { Plugin } from '../plugin'
 import { prompt } from 'enquirer'
 import { build } from 'esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
@@ -57,18 +56,14 @@ export interface DepOptimizationOptions {
    */
   exclude?: string | RegExp | (string | RegExp)[]
   /**
-   * Plugins to use for dep optimizations.
+   * A list of linked dependencies that should be treated as source code.
    */
-  plugins?: Plugin[]
+  link?: string[]
   /**
    * Automatically run `vite optimize` on server start?
    * @default true
    */
   auto?: boolean
-  /**
-   * A list of linked dependencies that should be treated as source code.
-   */
-  link?: string[]
 }
 
 export interface DepOptimizationMetadata {
@@ -429,7 +424,6 @@ function getDepHash(
       optimizeDeps: {
         include: config.optimizeDeps?.include,
         exclude: config.optimizeDeps?.exclude,
-        plugins: config.optimizeDeps?.plugins?.map((p) => p.name),
         link: config.optimizeDeps?.link
       }
     },
