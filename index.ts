@@ -13,8 +13,8 @@ import { SFCBlock } from '@vue/component-compiler-utils'
 import { handleHotUpdate } from './hmr'
 import { transformVueJsx } from './jsxTransform'
 
-export const vueComponentNormalizer = '/vite/vueComponentNormalizer'
-export const vueHotReload = '/vite/vueHotReload'
+export const vueComponentNormalizer = '\0/vite/vueComponentNormalizer'
+export const vueHotReload = '\0/vite/vueHotReload'
 
 // extend the descriptor so we can store the scopeId on it
 declare module '@vue/component-compiler-utils' {
