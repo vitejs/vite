@@ -134,6 +134,15 @@ npm install -D stylus
 
 You can also use CSS modules combined with pre-processors by prepending `.module` to the file extension, for example `style.module.scss`.
 
+In addition, if you are working with a framework, you may also need to install the corresponding loader. For example, if you are working with Vue and want to add Sass to your Vite setup, you would need to install both:
+
+```bash
+npm install -D sass
+npm install -D sass-loader
+```
+
+Once you do this, you should see it work properly in your app!
+
 ## Asset Handling
 
 - Related: [Public Base Path](./build#public-base-path)
