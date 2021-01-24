@@ -157,7 +157,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     renderChunk(code, _, { format }) {
       // make sure we only perform the preload logic in modern builds.
       if (code.indexOf(isModernFlag) > -1) {
-        return code.replace(/__VITE_IS_MODERN__/g, String(format === 'es'))
+        const re = new RegExp(isModernFlag, 'g')
+        const isModern = String(format === 'es')
+        if (config.build.sourcemap) {
+          const s = new MagicString(code)
+          let match
+          while ((match = re.exec(code))) {
+            s.overwrite(
+              match.index,
+              match.index + isModernFlag.length,
+              isModern
+            )
+          }
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: true })
+          }
+        } else {
+          return code.replace(re, isModern)
+        }
       }
       return null
     },

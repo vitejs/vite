@@ -160,7 +160,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      return css
+      return {
+        code: css,
+        // TODO CSS source map
+        map: { mappings: '' }
+      }
     }
   }
 }
@@ -219,7 +223,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       return {
         code: modulesCode || `export default ${JSON.stringify(css)}`,
-        map: null,
+        map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
         moduleSideEffects: 'no-treeshake'
@@ -272,16 +276,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return { code: injectCode + code }
           }
         }
-        return {
-          code,
-          map: null
-        }
       } else {
         const extractedCss = outputToExtractedCSSMap.get(opts) || ''
         chunkCSS = await processChunkCSS(chunkCSS, config, this, false)
         outputToExtractedCSSMap.set(opts, extractedCss + chunkCSS)
-        return null
       }
+      return null
     },
 
     async generateBundle(opts, bundle) {
