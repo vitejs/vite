@@ -1,3 +1,12 @@
+# [2.0.0-beta.46](https://github.com/vitejs/vite/compare/v2.0.0-beta.45...v2.0.0-beta.46) (2021-01-24)
+
+
+### Bug Fixes
+
+* **css:** fix extract concurrency issue when disabling cssCodeSplit ([4ac7e7e](https://github.com/vitejs/vite/commit/4ac7e7ec9915bd044454f90a6a3d5a9676b3615c))
+
+
+
 # [2.0.0-beta.45](https://github.com/vitejs/vite/compare/v2.0.0-beta.44...v2.0.0-beta.45) (2021-01-24)
 
 
