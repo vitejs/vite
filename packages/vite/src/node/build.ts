@@ -10,7 +10,9 @@ import Rollup, {
   WarningHandler,
   OutputOptions,
   RollupOutput,
-  ExternalOption
+  ExternalOption,
+  GetManualChunk,
+  GetModuleInfo
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
@@ -338,8 +340,8 @@ async function doBuild(
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate']({
         dir: outDir,
-        format: options.ssr ? 'cjs' : 'es',
-        exports: options.ssr ? 'named' : 'auto',
+        format: ssr ? 'cjs' : 'es',
+        exports: ssr ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         entryFileNames: ssr
@@ -359,6 +361,13 @@ async function doBuild(
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
         inlineDynamicImports: ssr && typeof input === 'string',
+        manualChunks:
+          !ssr &&
+          !libOptions &&
+          output?.format !== 'umd' &&
+          output?.format !== 'iife'
+            ? moveToVendorChunk
+            : undefined,
         ...output
       })
     }
@@ -416,6 +425,33 @@ async function doBuild(
     }
     throw e
   }
+}
+
+const moveToVendorChunk: GetManualChunk = (id, { getModuleInfo }) => {
+  if (id.includes('node_modules') && !hasDynamicImporter(id, getModuleInfo)) {
+    return 'vendor'
+  }
+}
+
+function hasDynamicImporter(
+  id: string,
+  getModuleInfo: GetModuleInfo,
+  importStack: string[] = []
+): boolean {
+  if (importStack.includes(id)) {
+    // circular deps!
+    return false
+  }
+  const mod = getModuleInfo(id)
+  if (!mod) {
+    return false
+  }
+  if (mod.dynamicImporters.length) {
+    return true
+  }
+  return mod.importers.some((importer) =>
+    hasDynamicImporter(importer, getModuleInfo, importStack.concat(id))
+  )
 }
 
 function resolveBuildOutputs(
