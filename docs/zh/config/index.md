@@ -97,7 +97,13 @@ export default ({ command, mode }) => {
 - **类型：** `string`
 - **默认：** `/`
 
-  开发或生产环境服务的 public base 路径。注意路径应以 `/` 开头和结尾。更多信息详见 [Public Base 路径](/guide/build#public-base-路径)。
+  开发或生产环境服务的 public base 路径。合法的值包括以下几种：
+
+  - 绝对 URL 路径名，例如 `/foo/`
+  - 完整的 URL，例如 `https://foo.com/`
+  - 空字符串或 `./`（用于开发环境）
+
+  更多信息详见 [Public Base 路径](/guide/build#public-base-路径)。
 
 ### mode
 
@@ -162,6 +168,22 @@ export default ({ command, mode }) => {
     }
   }
   ```
+
+### json.namedExports
+
+- **类型：** `boolean`
+- **默认：** `true`
+
+  是否支持从 `.json` 文件中进行动态导入。
+
+### json.stringify
+
+- **类型：** `boolean`
+- **默认：** `false`
+
+  若设置为 `true`，导入的 JSON 会被转换为 `export default JSON.parse("...")` 会比转译成对象字面量性能更好，尤其是当 JSON 文件较大的时候。
+
+  开启此项，则会禁用动态导入。
 
 ### esbuild
 
