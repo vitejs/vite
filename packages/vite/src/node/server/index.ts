@@ -9,13 +9,13 @@ import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
+import { resolveHttpServer } from './http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
-import { resolveHttpsConfig } from '../server/https'
 import { createWebSocketServer, WebSocketServer } from '../server/ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
@@ -469,31 +469,6 @@ export async function createServer(
   }
 
   return server
-}
-
-async function resolveHttpServer(
-  { https = false, proxy }: ServerOptions,
-  app: Connect.Server
-): Promise<http.Server> {
-  if (!https) {
-    return require('http').createServer(app)
-  }
-
-  const httpsOptions = await resolveHttpsConfig(
-    typeof https === 'boolean' ? {} : https
-  )
-  if (proxy) {
-    // #484 fallback to http1 when proxy is needed.
-    return require('https').createServer(httpsOptions, app)
-  } else {
-    return require('http2').createSecureServer(
-      {
-        ...httpsOptions,
-        allowHTTP1: true
-      },
-      app
-    )
-  }
 }
 
 async function startServer(

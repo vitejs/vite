@@ -102,3 +102,8 @@ declare module 'minimatch' {
   function match(path: string, pattern: string): boolean
   export default match
 }
+
+declare module 'compression' {
+  function compression(): any
+  export default compression
+}
