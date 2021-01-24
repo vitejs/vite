@@ -40,6 +40,20 @@ Supported template presets include:
 
 See [@vitejs/create-app](https://github.com/vitejs/vite/tree/main/packages/create-app) for more details on each template.
 
+## `index.html` and Project Root
+
+One thing you may have noticed is that in a Vite project, `index.html` is front-and-central instead of being tucked away inside `public`. This is intentional: during development Vite is a server, and `index.html` is the entry point to your application.
+
+Vite treats `index.html` as source code and part of the module graph. It resolves `<script type="module" src="...">` that references your JavaScript source code. Even inline `<script type="module">` and CSS referenced via `<link href>` also enjoy Vite-specific features. In addition, URLs inside `index.html` are automatically rebased so there's no need for special `%PUBLIC_URL%` placeholders.
+
+Similar to static http servers, Vite has the concept of a "root directory" from which your files are served from. Absolute URLs in your source code will be resolved using the project root as base, so you can write code as if you are working with a normal static file server (except way more powerful!). Vite is also capable of handling dependencies that resolve to out-of-root file system locations, which makes it usable even in a monorepo-based setup.
+
+Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.html` entry points.
+
+#### Specifying Alternative Root
+
+Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
+
 ## Command Line Interface
 
 In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here is the default npm scripts in a scaffolded Vite project:
@@ -54,18 +68,6 @@ In a project where Vite is installed, you can use the `vite` binary in your npm 
 ```
 
 You can specify additional CLI options like `--port` or `--https`. For a full list of CLI options, run `npx vite --help` in your project.
-
-## Project Root
-
-Since Vite is a dev server, it has the concept of a "root directory" from which your files are served from, similar to a static file server (although much more powerful).
-
-Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
-
-Vite will serve **`<root>/index.html`** when you open the server's local address. It is also used as the default build entry point. Unlike some bundlers that treat HTML as an afterthought, Vite treats HTML files as part of the application graph (similar to Parcel). Therefore you should treat `index.html` as part of your source code instead of a static file. Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.html` entry points.
-
-Vite will automatically pick up **`<root>/vite.config.js`** if there is one. You can also explicitly specify a config file to use via the `--config <file>` CLI option.
-
-Unlike a static file server, Vite can actually resolve and serve dependencies located anywhere on your file system, even if they are out of the project root. This allows Vite to work properly inside a sub package of a monorepo.
 
 ## Using Unreleased Commits
 
