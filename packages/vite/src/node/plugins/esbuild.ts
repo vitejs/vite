@@ -42,6 +42,7 @@ export async function stopService() {
 
 export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
   map: SourceMap
+  loader: Loader
 }
 
 export async function transformWithEsbuild(
@@ -77,11 +78,13 @@ export async function transformWithEsbuild(
       nextMap.sourcesContent = []
       return {
         ...result,
+        loader: resolvedOptions.loader!,
         map: merge(inMap, nextMap) as SourceMap
       }
     } else {
       return {
         ...result,
+        loader: resolvedOptions.loader!,
         map: JSON.parse(result.map)
       }
     }
@@ -102,7 +105,7 @@ export async function transformWithEsbuild(
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
     options.include || /\.(tsx?|jsx)$/,
-    options.exclude || /\.js$/
+    options.exclude || /node_modules/
   )
 
   return {
@@ -115,7 +118,10 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
             this.warn(prettifyMessage(m, code))
           })
         }
-        if (options.jsxInject && /\.(?:j|t)sx\b/.test(id)) {
+        if (
+          options.jsxInject &&
+          (result.loader === 'jsx' || result.loader === 'tsx')
+        ) {
           result.code = options.jsxInject + ';' + result.code
         }
         return {
