@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "serve": "vite preview"
   },
   "dependencies": {
     "react": "^17.0.0",
@@ -11,6 +12,6 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react-refresh": "^1.1.0",
-    "vite": "^2.0.0-beta.44"
+    "vite": "^2.0.0-beta.45"
   }
 }
