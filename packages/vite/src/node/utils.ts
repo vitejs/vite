@@ -16,7 +16,7 @@ export function isBuiltin(id: string): boolean {
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-let isRunningWithYarnPnp: boolean
+export let isRunningWithYarnPnp: boolean
 try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
