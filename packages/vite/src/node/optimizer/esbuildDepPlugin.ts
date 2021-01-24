@@ -3,7 +3,7 @@ import { Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
 import { ResolvedConfig } from '..'
 import chalk from 'chalk'
-import { deepImportRE, isBuiltin } from '../utils'
+import { deepImportRE, isBuiltin, isRunningWithYarnPnp } from '../utils'
 import { tryNodeResolve } from '../plugins/resolve'
 import { PluginContainer } from '../server/pluginContainer'
 
@@ -90,6 +90,17 @@ export function esbuildDepPlugin(
           }
         }
       )
+
+      // yarn 2 pnp compat
+      if (isRunningWithYarnPnp) {
+        build.onResolve({ filter: /\.yarn.*/ }, (args) => ({
+          path: require.resolve(args.path, { paths: [args.resolveDir] })
+        }))
+        build.onLoad({ filter: /\.yarn.*/ }, async (args) => ({
+          contents: await require('fs').promises.readFile(args.path),
+          loader: 'default'
+        }))
+      }
     }
   }
 }
