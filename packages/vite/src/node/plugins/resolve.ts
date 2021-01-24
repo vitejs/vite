@@ -13,6 +13,7 @@ import {
   isObject,
   normalizePath,
   fsPathFromId,
+  ensureVolumeInPath,
   resolveFrom,
   isDataUrl,
   cleanUrl,
@@ -262,7 +263,7 @@ function tryResolveFile(
         if (index) return normalizePath(index) + query
       }
     } else {
-      return normalizePath(file) + query
+      return normalizePath(ensureVolumeInPath(file)) + query
     }
   }
 }
