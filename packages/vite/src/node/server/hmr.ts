@@ -77,7 +77,7 @@ export async function handleHMRUpdate(
   if (file.startsWith(normalizedClientDir)) {
     ws.send({
       type: 'full-reload',
-      path: '/' + slash(path.relative(config.root, file))
+      path: '*'
     })
     return
   }

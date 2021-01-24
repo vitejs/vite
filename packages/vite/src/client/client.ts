@@ -40,7 +40,6 @@ const socketProtocol =
 const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
-const baseNoSlash = base.replace(/\/$/, '')
 
 function warnFailedFetch(err: Error, path: string | string[]) {
   if (!err.message.match('fetch')) {
@@ -115,7 +114,7 @@ async function handleMessage(payload: HMRPayload) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
         const pagePath = location.pathname
-        const payloadPath = baseNoSlash + payload.path
+        const payloadPath = base + payload.path.slice(1)
         if (
           pagePath === payloadPath ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
@@ -268,9 +267,6 @@ export function removeStyle(id: string) {
 }
 
 async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
-  path = baseNoSlash + path
-  acceptedPath = baseNoSlash + acceptedPath
-
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-splitting project,
@@ -311,7 +307,9 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       try {
         const newMod = await import(
           /* @vite-ignore */
-          path + `?import&t=${timestamp}${query ? `&${query}` : ''}`
+          base +
+            path.slice(1) +
+            `?import&t=${timestamp}${query ? `&${query}` : ''}`
         )
         moduleMap.set(dep, newMod)
       } catch (e) {

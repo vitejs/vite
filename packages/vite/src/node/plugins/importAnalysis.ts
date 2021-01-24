@@ -205,9 +205,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = markExplicitImport(url)
         }
 
-        // prepend base path without trailing slash ( default empty string )
-        url = path.posix.join(config.base, url)
-
         // for relative js/css imports, inherit importer's version query
         // do not do this for unknown type imports, otherwise the appended
         // query can break 3rd party plugin's extension checks.
@@ -233,6 +230,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           throw e
         }
 
+        // prepend base path without trailing slash ( default empty string )
+        url = path.posix.join(config.base, url)
         return [url, resolved.id]
       }
 
@@ -286,7 +285,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
-            imports.forEach((url) => importedUrls.add(url))
+            imports.forEach((url) =>
+              importedUrls.add(url.replace(config.base, '/'))
+            )
             server._globImporters[importerModule.file!] = {
               module: importerModule,
               base,
@@ -382,7 +383,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // record for HMR import chain analysis
-          importedUrls.add(url)
+          // make sure to normalize away base
+          importedUrls.add(url.replace(config.base, '/'))
         } else if (!importer.startsWith(clientDir) && !ssr) {
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
@@ -428,7 +430,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         str().prepend(
           `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              path.posix.join(config.base, importerModule.url)
+              importerModule.url
             )});`
         )
       }
