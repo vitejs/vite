@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "serve": "vite preview"
   },
   "dependencies": {
     "react": "^17.0.0",
@@ -14,6 +15,6 @@
     "@types/react-dom": "^17.0.0",
     "@vitejs/plugin-react-refresh": "^1.1.0",
     "typescript": "^4.1.2",
-    "vite": "^2.0.0-beta.44"
+    "vite": "^2.0.0-beta.45"
   }
 }
