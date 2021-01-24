@@ -255,12 +255,12 @@ export async function createServer(
     : await resolveHttpServer(serverConfig, middlewares)
   const ws = createWebSocketServer(httpServer, config)
 
-  const watchOptions = serverConfig.watch || {}
+  const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(root, {
     ignored: [
       '**/node_modules/**',
       '**/.git/**',
-      ...(watchOptions.ignored || [])
+      ...ignored
     ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
