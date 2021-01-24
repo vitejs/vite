@@ -18,7 +18,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 
 const preloadHelperId = 'vite/preload-helper'
 const preloadCode = `const seen = {};export const ${preloadMethod} = ${preload.toString()}`
-const preloadMarkerRE = new RegExp(`,?"${preloadMarker}"`, 'g')
+const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallell to
