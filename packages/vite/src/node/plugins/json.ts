@@ -6,65 +6,57 @@
  * https://github.com/rollup/plugins/blob/master/LICENSE
  */
 
-import { createFilter, dataToEsm } from '@rollup/pluginutils'
-import { FilterPattern } from '@rollup/pluginutils'
+import { dataToEsm } from '@rollup/pluginutils'
 import { Plugin } from 'rollup'
 
-export interface RollupJsonOptions {
-  /**
-   * All JSON files will be parsed by default,
-   * but you can also specifically include files
-   */
-  include?: FilterPattern
-  /**
-   * All JSON files will be parsed by default,
-   * but you can also specifically exclude files
-   */
-  exclude?: FilterPattern
-  /**
-   * For tree-shaking, properties will be declared as variables, using
-   * either `var` or `const`.
-   * @default false
-   */
-  preferConst?: boolean
-  /**
-   * Specify indentation for the generated default export
-   * @default '\t'
-   */
-  indent?: string
-  /**
-   * Ignores indent and generates the smallest code
-   * @default false
-   */
-  compact?: boolean
+export interface JsonOptions {
   /**
    * Generate a named export for every property of the JSON object
    * @default true
    */
   namedExports?: boolean
+  /**
+   * Generate performant output as JSON.parse("stringified").
+   * Enabling this will disable namedExports.
+   * @default false
+   */
+  stringify?: boolean
 }
 
 // Custom json filter for vite
 const jsonExtRE = new RegExp(`\\.json($|\\?)`)
 
-export function jsonPlugin(options: RollupJsonOptions = {}): Plugin {
-  const filter = createFilter(options.include, options.exclude)
-  const indent = 'indent' in options ? options.indent : '\t'
-
+export function jsonPlugin(
+  options: JsonOptions = {},
+  isBuild: boolean
+): Plugin {
   return {
     name: 'vite:json',
 
     transform(json, id) {
-      if (!jsonExtRE.test(id) || !filter(id)) return null
+      if (!jsonExtRE.test(id)) return null
 
       try {
+        if (options.stringify) {
+          if (isBuild) {
+            return {
+              // during build, parse then double-stringify to remove all
+              // unnecessary whitespaces to reduce bundle size.
+              code: `export default JSON.parse(${JSON.stringify(
+                JSON.stringify(JSON.parse(json))
+              )})`,
+              map: { mappings: '' }
+            }
+          } else {
+            return `export default JSON.parse(${JSON.stringify(json)})`
+          }
+        }
+
         const parsed = JSON.parse(json)
         return {
           code: dataToEsm(parsed, {
-            preferConst: options.preferConst,
-            compact: options.compact,
-            namedExports: options.namedExports,
-            indent
+            preferConst: true,
+            namedExports: options.namedExports
           }),
           map: { mappings: '' }
         }

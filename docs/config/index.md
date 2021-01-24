@@ -104,11 +104,11 @@ export default ({ command, mode }) => {
 - **Default:** `/`
 
   Base public path when served in development or production. Valid values include:
-  
+
   - Absolute URL pathname, e.g. `/foo/`
   - Full URL, e.g. `https://foo.com/`
   - Empty string or `./` (for embedded deployment)
-  
+
   See [Public Base Path](/guide/build#public-base-path) for more details.
 
 ### mode
@@ -166,6 +166,22 @@ export default ({ command, mode }) => {
     }
   }
   ```
+
+### json.namedExports
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Whether to support named imports from `.json` files.
+
+### json.stringify
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, espeically when the JSON file is large.
+
+  Enabling this disables named imports.
 
 ### esbuild
 
