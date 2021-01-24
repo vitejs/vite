@@ -475,7 +475,7 @@ export function resolvePackageEntry(
         // possible and check for hints of UMD. If it is UMD, prefer "module"
         // instead; Otherwise, assume it's ESM and use it.
         const resolvedBrowserEntry = tryFsResolve(
-          path.resolve(dir, browserEntry),
+          path.join(dir, browserEntry),
           isProduction
         )
         if (resolvedBrowserEntry) {
@@ -512,7 +512,7 @@ export function resolvePackageEntry(
     entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
   }
 
-  entryPoint = path.resolve(dir, entryPoint)
+  entryPoint = path.join(dir, entryPoint)
   const resolvedEntryPont = tryFsResolve(entryPoint, isProduction)
 
   if (resolvedEntryPont) {
@@ -567,7 +567,7 @@ function resolveDeepImport(
   }
 
   if (relativeId) {
-    const resolved = tryFsResolve(path.resolve(dir, relativeId), !exportsField)
+    const resolved = tryFsResolve(path.join(dir, relativeId), !exportsField)
     if (resolved) {
       isDebug &&
         debug(`[node/deep-import] ${chalk.cyan(id)} -> ${chalk.dim(resolved)}`)
@@ -588,7 +588,7 @@ function tryResolveBrowserMapping(
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
     if (browserMappedPath) {
-      const fsPath = path.resolve(pkg.dir, browserMappedPath)
+      const fsPath = path.join(pkg.dir, browserMappedPath)
       if ((res = tryFsResolve(fsPath, isProduction))) {
         isDebug &&
           debug(`[browser mapped] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
