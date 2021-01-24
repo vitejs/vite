@@ -239,6 +239,7 @@ export async function optimizeDeps(
     format: 'esm',
     external,
     splitting: true,
+    sourcemap: true,
     outdir: cacheDir,
     metafile: esbuildMetaPath,
     define: {
