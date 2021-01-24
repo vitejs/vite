@@ -41,7 +41,7 @@ export function createLogger(
   allowClearScreen = true
 ): Logger {
   const thresh = LogLevels[level]
-  const clear = allowClearScreen ? clearScreen : () => {}
+  const clear = allowClearScreen && !process.env.CI ? clearScreen : () => {}
 
   function output(type: LogType, msg: string, options: LogOptions = {}) {
     if (thresh >= LogLevels[type]) {

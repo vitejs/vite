@@ -171,18 +171,23 @@ export async function optimizeDeps(
   )
 
   if (invalidIds.length) {
+    const msg =
+      `It seems your dependencies contain packages that are not meant to\n` +
+      `be used in the browser, e.g. ${chalk.cyan(invalidIds.join(', '))}. ` +
+      `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
+      `they should probably be moved to devDependencies instead.`
+
+    if (process.env.CI) {
+      logger.error(msg)
+      process.exit(1)
+    }
+
     const { yes } = (await prompt({
       type: 'confirm',
       name: 'yes',
       initial: true,
       message: chalk.yellow(
-        `It seems your dependencies contain packages that are not meant to\n` +
-          `be used in the browser, e.g. ${chalk.cyan(
-            invalidIds.join(', ')
-          )}. ` +
-          `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
-          `they should probably be moved to devDependencies instead.\n` +
-          `Auto-update package.json and continue without these deps?`
+        msg + `\nAuto-update package.json and continue without these deps?`
       )
     })) as { yes: boolean }
     if (yes) {
