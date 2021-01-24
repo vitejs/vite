@@ -24,7 +24,7 @@ export interface JsonOptions {
 }
 
 // Custom json filter for vite
-const jsonExtRE = new RegExp(`\\.json($|\\?)`)
+const jsonExtRE = /\.json($|\?)(?!commonjs-proxy)/
 
 export function jsonPlugin(
   options: JsonOptions = {},
