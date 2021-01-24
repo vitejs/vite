@@ -1,6 +1,7 @@
 // @ts-check
 const fs = require('fs')
 const { transformSync } = require('@babel/core')
+const { createFilter } = require('@rollup/pluginutils')
 
 const runtimePublicPath = '/@react-refresh'
 const runtimeFilePath = require.resolve(
@@ -34,8 +35,12 @@ window.__vite_plugin_react_preamble_installed__ = true
  *
  * @returns {import('vite').Plugin}
  */
-module.exports = function reactRefreshPlugin() {
+module.exports = function reactRefreshPlugin(options) {
   let shouldSkip = false
+  const filter = createFilter(
+    options.include || /\.(t|j)sx?$/,
+    options.exclude || /node_modules/
+  )
 
   return {
     name: 'react-refresh',
@@ -61,7 +66,7 @@ module.exports = function reactRefreshPlugin() {
         return
       }
 
-      if (!/\.(t|j)sx?$/.test(id) || id.includes('node_modules')) {
+      if (!filter(id)) {
         return
       }
 
