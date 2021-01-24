@@ -47,7 +47,6 @@ export async function resolvePlugins(
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
     jsonPlugin(
       {
-        preferConst: true,
         namedExports: true,
         ...config.json
       },
