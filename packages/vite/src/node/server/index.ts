@@ -39,7 +39,7 @@ import { TransformResult } from 'rollup'
 import { TransformOptions, transformRequest } from './transformRequest'
 import {
   transformWithEsbuild,
-  EsbuildTransformResult
+  ESBuildTransformResult
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
@@ -197,7 +197,7 @@ export interface ViteDevServer {
     filename: string,
     options?: EsbuildTransformOptions,
     inMap?: object
-  ): Promise<EsbuildTransformResult>
+  ): Promise<ESBuildTransformResult>
   /**
    * Load a given URL as an instantiated module for SSR.
    * @alpha
