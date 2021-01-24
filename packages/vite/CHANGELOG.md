@@ -1,3 +1,20 @@
+# [2.0.0-beta.47](https://github.com/vitejs/vite/compare/v2.0.0-beta.46...v2.0.0-beta.47) (2021-01-24)
+
+
+### Bug Fixes
+
+* do not apply json plugin to commonjs proxy ([a92f430](https://github.com/vitejs/vite/commit/a92f4303253c9423093bedad6b06744d66dd1d39)), closes [#1679](https://github.com/vitejs/vite/issues/1679)
+* esbuild optimizer yarn 2 pnp compat ([028c3bb](https://github.com/vitejs/vite/commit/028c3bb1a6c5f56eaa7f8f122200d6262a1a8683)), closes [#1688](https://github.com/vitejs/vite/issues/1688)
+* fix incorrect preload placeholder regex ([5ca43ef](https://github.com/vitejs/vite/commit/5ca43ef6e91e41f09e06d92adef79953a3df9782)), closes [#1686](https://github.com/vitejs/vite/issues/1686)
+* fix server.watch option ignore overwriting defaults ([#1680](https://github.com/vitejs/vite/issues/1680)) ([33cffa3](https://github.com/vitejs/vite/commit/33cffa3910600c5adfb10f2cab07029f1ff8f35f))
+
+
+### Performance Improvements
+
+* **build:** improve performance of default vendor chunk splitting ([#1690](https://github.com/vitejs/vite/issues/1690)) ([0bed9c4](https://github.com/vitejs/vite/commit/0bed9c44b2c89ad4fb7439907959f78d946b42cd))
+
+
+
 # [2.0.0-beta.46](https://github.com/vitejs/vite/compare/v2.0.0-beta.45...v2.0.0-beta.46) (2021-01-24)
 
 
