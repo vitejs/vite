@@ -342,6 +342,11 @@ export async function createPluginContainer(
       let combinedMap = this.combinedMap
       for (let m of this.sourcemapChain) {
         if (typeof m === 'string') m = JSON.parse(m)
+        if (!('version' in (m as SourceMap))) {
+          // empty, nullified source map
+          combinedMap = null
+          break
+        }
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
