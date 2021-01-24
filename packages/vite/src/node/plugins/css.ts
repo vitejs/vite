@@ -277,9 +277,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
       } else {
-        const extractedCss = outputToExtractedCSSMap.get(opts) || ''
-        chunkCSS = await processChunkCSS(chunkCSS, config, this, false)
-        outputToExtractedCSSMap.set(opts, extractedCss + chunkCSS)
+        chunkCSS = await processChunkCSS(chunkCSS, config, this, false, false)
+        outputToExtractedCSSMap.set(
+          opts,
+          (outputToExtractedCSSMap.get(opts) || '') + chunkCSS
+        )
       }
       return null
     },
@@ -738,7 +740,8 @@ async function processChunkCSS(
   css: string,
   config: ResolvedConfig,
   pluginCtx: PluginContext,
-  isInlined: boolean
+  isInlined: boolean,
+  minify = true
 ): Promise<string> {
   // replace asset url references with resolved url.
   const isRelativeBase = config.base === '' || config.base.startsWith('.')
@@ -753,7 +756,7 @@ async function processChunkCSS(
       return `./${path.posix.basename(filename)}`
     }
   })
-  if (config.build.minify) {
+  if (minify && config.build.minify) {
     css = await minifyCSS(css, config)
   }
   return css
