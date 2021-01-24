@@ -30,6 +30,7 @@ import { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
 import { ResolvedBuildOptions } from '.'
 import { parse as parseUrl } from 'url'
+import { JsonOptions } from './plugins/json'
 
 const debug = createDebugger('vite:config')
 
@@ -59,6 +60,11 @@ export interface UserConfig {
    */
   root?: string
   /**
+   * Base public path when served in development or production.
+   * @default '/'
+   */
+  base?: string
+  /**
    * Explicitly set a mode to run in. This will override the default mode for
    * each command, and can be overridden by the command line --mode option.
    */
@@ -80,6 +86,10 @@ export interface UserConfig {
    * CSS related options (preprocessors and CSS modules)
    */
   css?: CSSOptions
+  /**
+   * JSON loading options
+   */
+  json?: JsonOptions
   /**
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
@@ -120,11 +130,6 @@ export interface UserConfig {
    * Default: true
    */
   clearScreen?: boolean
-  /**
-   * Base public path when served in development or production.
-   * @default '/'
-   */
-  base?: string
 }
 
 export interface SSROptions {
