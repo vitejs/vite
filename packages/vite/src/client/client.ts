@@ -88,12 +88,17 @@ async function handleMessage(payload: HMRPayload) {
           // this is only sent when a css file referenced with <link> is updated
           let { path, timestamp } = update
           path = path.replace(/\?.*/, '')
-          const el = document.querySelector(`link[href*='${path}']`)
+          // can't use querySelector with `[href*=]` here since the link may be
+          // using relative paths so we need to use link.href to grab the full
+          // URL for the include check.
+          const el = ([].slice.call(
+            document.querySelectorAll(`link`)
+          ) as HTMLLinkElement[]).find((e) => e.href.includes(path))
           if (el) {
-            el.setAttribute(
-              'href',
-              `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
-            )
+            const newPath = `${path}${
+              path.includes('?') ? '&' : '?'
+            }t=${timestamp}`
+            el.href = new URL(newPath, el.href).href
           }
           console.log(`[vite] css hot updated: ${path}`)
         }
