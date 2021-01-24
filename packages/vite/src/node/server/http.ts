@@ -1,6 +1,34 @@
 import fs from 'fs'
 import path from 'path'
+import { Server as HttpServer } from 'http'
 import { ServerOptions as HttpsServerOptions } from 'https'
+import { ServerOptions } from '..'
+import { Connect } from 'types/connect'
+
+export async function resolveHttpServer(
+  { https = false, proxy }: ServerOptions,
+  app: Connect.Server
+): Promise<HttpServer> {
+  if (!https) {
+    return require('http').createServer(app)
+  }
+
+  const httpsOptions = await resolveHttpsConfig(
+    typeof https === 'boolean' ? {} : https
+  )
+  if (proxy) {
+    // #484 fallback to http1 when proxy is needed.
+    return require('https').createServer(httpsOptions, app)
+  } else {
+    return require('http2').createSecureServer(
+      {
+        ...httpsOptions,
+        allowHTTP1: true
+      },
+      app
+    )
+  }
+}
 
 export async function resolveHttpsConfig(httpsOption: HttpsServerOptions) {
   const { ca, cert, key, pfx } = httpsOption

@@ -81,6 +81,7 @@
     "chalk": "^4.1.0",
     "chokidar": "^3.4.3",
     "clean-css": "^4.2.3",
+    "compression": "^1.7.4",
     "connect": "^3.7.0",
     "connect-history-api-fallback": "^1.6.0",
     "convert-source-map": "^1.7.0",
