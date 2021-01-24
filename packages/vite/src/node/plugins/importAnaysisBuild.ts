@@ -176,7 +176,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const code = chunk.code
           let imports: ImportSpecifier[]
           try {
-            imports = parseImports(code)[0]
+            imports = parseImports(code)[0].filter((i) => i.d > -1)
           } catch (e) {
             this.error(e, e.idx)
           }
@@ -185,50 +185,48 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
               const { s: start, e: end, d: dynamicIndex } = imports[index]
-              if (dynamicIndex > -1) {
-                // if dynamic import polyfill is used, rewrite the import to
-                // use the polyfilled function.
-                if (isPolyfillEnabled) {
-                  s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
-                }
-                // check the chunk being imported
-                const url = code.slice(start, end)
-                const deps: Set<string> = new Set()
+              // if dynamic import polyfill is used, rewrite the import to
+              // use the polyfilled function.
+              if (isPolyfillEnabled) {
+                s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
+              }
+              // check the chunk being imported
+              const url = code.slice(start, end)
+              const deps: Set<string> = new Set()
 
-                if (url[0] === `"` && url[url.length - 1] === `"`) {
-                  const ownerFilename = chunk.fileName
-                  // literal import - trace direct imports and add to deps
-                  const addDeps = (filename: string) => {
-                    if (filename === ownerFilename) return
-                    const chunk = bundle[filename] as OutputChunk | undefined
-                    if (chunk) {
-                      deps.add(config.base + chunk.fileName)
-                      const cssId = chunkToEmittedCssFileMap.get(chunk)
-                      if (cssId) {
-                        deps.add(config.base + this.getFileName(cssId))
-                      }
-                      chunk.imports.forEach(addDeps)
+              if (url[0] === `"` && url[url.length - 1] === `"`) {
+                const ownerFilename = chunk.fileName
+                // literal import - trace direct imports and add to deps
+                const addDeps = (filename: string) => {
+                  if (filename === ownerFilename) return
+                  const chunk = bundle[filename] as OutputChunk | undefined
+                  if (chunk) {
+                    deps.add(config.base + chunk.fileName)
+                    const cssId = chunkToEmittedCssFileMap.get(chunk)
+                    if (cssId) {
+                      deps.add(config.base + this.getFileName(cssId))
                     }
+                    chunk.imports.forEach(addDeps)
                   }
-                  const normalizedFile = path.posix.join(
-                    path.posix.dirname(chunk.fileName),
-                    url.slice(1, -1)
-                  )
-                  addDeps(normalizedFile)
                 }
+                const normalizedFile = path.posix.join(
+                  path.posix.dirname(chunk.fileName),
+                  url.slice(1, -1)
+                )
+                addDeps(normalizedFile)
+              }
 
-                const markPos = code.indexOf(preloadMarker, end)
-                if (markPos > 0) {
-                  s.overwrite(
-                    markPos - 1,
-                    markPos + preloadMarker.length + 1,
-                    // the dep list includes the main chunk, so only need to
-                    // preload when there are actual other deps.
-                    deps.size > 1
-                      ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                      : `void 0`
-                  )
-                }
+              const markPos = code.indexOf(preloadMarker, end)
+              if (markPos > 0) {
+                s.overwrite(
+                  markPos - 1,
+                  markPos + preloadMarker.length + 1,
+                  // the dep list includes the main chunk, so only need to
+                  // preload when there are actual other deps.
+                  deps.size > 1
+                    ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
+                    : `void 0`
+                )
               }
             }
             chunk.code = s.toString()
