@@ -366,7 +366,7 @@ async function doBuild(
           !libOptions &&
           output?.format !== 'umd' &&
           output?.format !== 'iife'
-            ? moveToVendorChunk
+            ? createMoveToVendorChunkFn()
             : undefined,
         ...output
       })
@@ -427,31 +427,46 @@ async function doBuild(
   }
 }
 
-const moveToVendorChunk: GetManualChunk = (id, { getModuleInfo }) => {
-  if (id.includes('node_modules') && !hasDynamicImporter(id, getModuleInfo)) {
-    return 'vendor'
+function createMoveToVendorChunkFn(): GetManualChunk {
+  const cache = new Map<string, boolean>()
+  return (id, { getModuleInfo }) => {
+    if (
+      id.includes('node_modules') &&
+      !hasDynamicImporter(id, getModuleInfo, cache)
+    ) {
+      return 'vendor'
+    }
   }
 }
 
 function hasDynamicImporter(
   id: string,
   getModuleInfo: GetModuleInfo,
+  cache: Map<string, boolean>,
   importStack: string[] = []
 ): boolean {
+  if (cache.has(id)) {
+    return cache.get(id) as boolean
+  }
   if (importStack.includes(id)) {
     // circular deps!
+    cache.set(id, false)
     return false
   }
   const mod = getModuleInfo(id)
   if (!mod) {
+    cache.set(id, false)
     return false
   }
   if (mod.dynamicImporters.length) {
+    cache.set(id, true)
     return true
   }
-  return mod.importers.some((importer) =>
-    hasDynamicImporter(importer, getModuleInfo, importStack.concat(id))
+  const someImporterHas = mod.importers.some((importer) =>
+    hasDynamicImporter(importer, getModuleInfo, cache, importStack.concat(id))
   )
+  cache.set(id, someImporterHas)
+  return someImporterHas
 }
 
 function resolveBuildOutputs(
