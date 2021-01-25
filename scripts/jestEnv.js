@@ -7,8 +7,9 @@ const { chromium } = require('playwright-chromium')
 const DIR = path.join(os.tmpdir(), 'jest_playwright_global_setup')
 
 module.exports = class PlaywrightEnvironment extends NodeEnvironment {
-  constructor(config) {
+  constructor(config, context) {
     super(config)
+    this.testPath = context.testPath
   }
 
   async setup() {
@@ -17,6 +18,12 @@ module.exports = class PlaywrightEnvironment extends NodeEnvironment {
     if (!wsEndpoint) {
       throw new Error('wsEndpoint not found')
     }
+
+    // skip browser setup for non-playground tests
+    if (!this.testPath.includes('playground')) {
+      return
+    }
+
     const browser = (this.browser = await chromium.connect({
       wsEndpoint
     }))
@@ -33,7 +40,9 @@ module.exports = class PlaywrightEnvironment extends NodeEnvironment {
   }
 
   async teardown() {
-    await this.browser.close()
+    if (this.browser) {
+      await this.browser.close()
+    }
     await super.teardown()
   }
 }
