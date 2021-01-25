@@ -14,12 +14,7 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import {
-  ESBuildOptions,
-  esbuildPlugin,
-  stopService,
-  transformWithEsbuild
-} from './plugins/esbuild'
+import { ESBuildOptions, esbuildPlugin, stopService } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
@@ -522,32 +517,32 @@ export async function loadConfigFromFile(
     return null
   }
 
-  resolvedPath = normalizePath(resolvedPath)
-
   try {
     let userConfig: UserConfigExport | undefined
 
     if (isMjs) {
+      const fileUrl = require('url').pathToFileURL(resolvedPath)
       if (isTS) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
-        // transpile the ts config file with esbuild first, write it to disk,
+        // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        const src = fs.readFileSync(resolvedPath, 'utf-8')
-        const { code } = await transformWithEsbuild(src, resolvedPath)
+        const code = await bundleConfigFile(resolvedPath, true)
         fs.writeFileSync(resolvedPath + '.js', code)
-        userConfig = (
-          await eval(`import(resolvedPath + '.js?t=${Date.now()}')`)
-        ).default
+        userConfig = (await eval(`import(fileUrl + '.js?t=${Date.now()}')`))
+          .default
         fs.unlinkSync(resolvedPath + '.js')
-        debug(`TS + native esm config loaded in ${Date.now() - start}ms`)
+        debug(
+          `TS + native esm config loaded in ${Date.now() - start}ms`,
+          fileUrl
+        )
       } else {
         // using eval to avoid this from being compiled away by TS/Rollup
         // append a query so that we force reload fresh config in case of
         // server restart
-        userConfig = (await eval(`import(resolvedPath + '?t=${Date.now()}')`))
+        userConfig = (await eval(`import(fileUrl + '?t=${Date.now()}')`))
           .default
-        debug(`native esm config loaded in ${Date.now() - start}ms`)
+        debug(`native esm config loaded in ${Date.now() - start}ms`, fileUrl)
       }
     }
 
@@ -589,7 +584,7 @@ export async function loadConfigFromFile(
       throw new Error(`config must export or return an object.`)
     }
     return {
-      path: resolvedPath,
+      path: normalizePath(resolvedPath),
       config
     }
   } catch (e) {
@@ -602,7 +597,10 @@ export async function loadConfigFromFile(
   }
 }
 
-async function bundleConfigFile(fileName: string): Promise<string> {
+async function bundleConfigFile(
+  fileName: string,
+  mjs = false
+): Promise<string> {
   const rollup = require('rollup') as typeof Rollup
   // node-resolve must be imported since it's bundled
   const bundle = await rollup.rollup({
@@ -634,8 +632,8 @@ async function bundleConfigFile(fileName: string): Promise<string> {
   const {
     output: [{ code }]
   } = await bundle.generate({
-    exports: 'named',
-    format: 'cjs'
+    exports: mjs ? 'auto' : 'named',
+    format: mjs ? 'es' : 'cjs'
   })
 
   return code
@@ -652,7 +650,7 @@ async function loadConfigFromBundledFile(
   const extension = path.extname(fileName)
   const defaultLoader = require.extensions[extension]!
   require.extensions[extension] = (module: NodeModule, filename: string) => {
-    if (normalizePath(filename) === fileName) {
+    if (filename === fileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
       defaultLoader(module, filename)
