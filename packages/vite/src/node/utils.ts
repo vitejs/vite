@@ -60,15 +60,18 @@ const isWindows = os.platform() === 'win32'
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
-  if (isWindows) {
-    return path.posix.normalize(slash(id.replace(VOLUME_RE, '')))
-  }
-  return path.posix.normalize(id)
+  return path.posix.normalize(isWindows ? slash(id) : id)
 }
 
 export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(id.slice(FS_PREFIX.length))
-  return fsPath.startsWith('/') ? fsPath : `/${fsPath}`
+  return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
+    ? fsPath
+    : `/${fsPath}`
+}
+
+export function ensureVolumeInPath(file: string): string {
+  return isWindows ? path.resolve(file) : file
 }
 
 export const queryRE = /\?.*$/
