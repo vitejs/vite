@@ -251,6 +251,10 @@ export async function resolveConfig(
   }
 
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
+  // adjust hmr path config
+  if (isObject(config.server?.hmr) && config.server?.hmr.path) {
+    config.server.hmr.path = path.posix.join(BASE_URL, config.server.hmr.path)
+  }
 
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
@@ -281,17 +285,6 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
-  let hmr = config.server?.hmr === true ? {} : config.server?.hmr
-  hmr = {
-    ...hmr,
-    path: BASE_URL !== '/' ? BASE_URL.substr(1) : undefined
-  }
-
-  const server = {
-    ...config.server,
-    hmr
-  }
-
   const resolved = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -303,7 +296,7 @@ export async function resolveConfig(
     optimizeCacheDir,
     alias: resolvedAlias,
     plugins: userPlugins,
-    server,
+    server: config.server || {},
     build: resolvedBuildOptions,
     env: {
       ...userEnv,
