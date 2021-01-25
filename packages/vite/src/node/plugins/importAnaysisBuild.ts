@@ -253,7 +253,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          chunk.code = code.replace(preloadMarkerRE, 'void 0')
+          chunk.code = chunk.code.replace(preloadMarkerRE, 'void 0')
         }
       }
     }
