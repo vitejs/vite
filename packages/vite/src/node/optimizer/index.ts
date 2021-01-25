@@ -260,7 +260,7 @@ export async function optimizeDeps(
   await init
   const entryToIdMap: Record<string, string> = {}
   for (const id in qualified) {
-    entryToIdMap[qualified[id]] = id
+    entryToIdMap[qualified[id].toLowerCase()] = id
   }
 
   for (const output in meta.outputs) {
@@ -268,7 +268,7 @@ export async function optimizeDeps(
       continue
     const { inputs, exports: generatedExports } = meta.outputs[output]
     for (const input in inputs) {
-      const entry = normalizePath(path.resolve(input))
+      const entry = normalizePath(path.resolve(input)).toLowerCase()
       const id = entryToIdMap[entry]
       if (id) {
         // check if this is a cjs dep.
