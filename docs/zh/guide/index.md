@@ -37,8 +37,24 @@ npm init @vitejs/app my-vue-app --template vue
 - `react-ts`
 - `preact`
 - `preact-ts`
+- `lit-element`
+- `lit-element-ts`
 
 查看 [@vitejs/create-app](https://github.com/vitejs/vite/tree/main/packages/create-app) 获取每个模板的更多细节。
+
+## `index.html` 与项目根目录
+
+你可能已经注意到，在一个 Vite 项目中，`index.html` 是放在项目最外层而不是藏在 `public` 文件夹里。如此为之的是因为：在开发期间 Vite 是一个服务器，而 `index.html` 是该应用的入口点。
+
+Vite 将 `index.html` 视为源代码和模块图谱的一部分。它将解析引用了你 JavaScript 源代码的 `<script type="module" src="...">`。即使是内联的 `<script type="module">` 和通过 `<link href>` 引用的 CSS 也可以享受到 Vite 独有的功能。另外，`index.html` 中的 URL 将被自动变基，所以无需那个特殊的 `%PUBLIC_URL%` 占位符了。
+
+与静态 http 服务器类似，Vite 也有提供文件的 “根目录” 的概念。源代码中的绝对 URL 路径将以项目根文件作为基础来解析，因此您可以像使用普通的静态文件服务器一样编写代码（并且功能更强大!）。Vite 还能够处理依赖关系，解析出处于根目录外的文件位置，这使得它即使在基于 monorepo 的设置中也十分有用。
+
+Vite 也支持多个 `.html` 作入口点的 [多页面应用模式](./build#多页面应用模式)。
+
+#### 指定替代根目录
+
+运行 `vite` 启动开发服务器时，将以当前工作目录作为根。你可以通过 `vite serve some/sub/dir` 来指定一个替代的根目录。
 
 ## 命令行接口
 
@@ -54,18 +70,6 @@ npm init @vitejs/app my-vue-app --template vue
 ```
 
 可以指定额外的命令行选项，如 `--port` 或 `--https`。运行 `npx vite --help` 获得完整的命令行选项列表。
-
-## 项目根目录
-
-由于 Vite 是一个开发服务器，对所服务的文件 “根目录” 的概念，类似于静态文件服务器（不过功能更强大）。
-
-运行 `vite` 后会使用当前工作目录作为根目录启动一个开发服务器。可以使用 `vite serve some/sub/dir` 指定一个替代的根目录。
-
-当用浏览器访问服务器的本地地址，Vite 则会打开 **`<root>/index.html`**。它也被用作默认的构建入口点。与一些把 HTML 作后置处理的打包程序不同，Vite 把 HTML 文件作为应用程序图的一部分（类似于 Parcel）。因此，应该将 `index.html` 作为源代码的一部分，而不只是一个静态文件。Vite 还支持多个 `.html` 的入口点的 [多页应用程序](./build#多页面应用)。
-
-如果存在 **`<root>/vite.config.js`**，Vite 会自动启用，也可以通过命令行选项 `--config <file>` 显式指定一个要使用的配置文件。
-
-与静态文件服务器不同，Vite 实际上可以解析和服务文件系统上任何地方的依赖项，即使它们不在项目根目录下。这使得 Vite 可以在 monorepo 的子包中正常工作。
 
 ## 使用未发布的特性
 

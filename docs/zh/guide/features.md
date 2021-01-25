@@ -102,7 +102,7 @@ import classes from './example.module.css'
 document.getElementById('foo').className = classes.red
 ```
 
-CSS modules 行为可通过 [`css.modules` 选项](/zh/config/#css-modules) 配置。
+请注意 CSS modules `localsConvention` 默认是 `cameCaesOnly` - 例如一个名为 `.foo-bar` 的类会被暴露为 `classes.fooBar`。CSS modules 行为可以通过 [`css.modules` option](/config/#css-modules) 选项配置。
 
 ### CSS 预处理器
 
