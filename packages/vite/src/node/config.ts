@@ -246,11 +246,6 @@ export async function resolveConfig(
   }
 
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  // adjust hmr path config
-  if (isObject(config.server?.hmr) && config.server?.hmr.path) {
-    config.server.hmr.path = path.posix.join(BASE_URL, config.server.hmr.path)
-  }
-
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // TODO remove when out of beta
