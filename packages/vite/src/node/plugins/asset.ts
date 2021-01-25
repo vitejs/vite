@@ -208,11 +208,13 @@ async function fileToBuiltUrl(
   let url
   if (
     config.build.lib ||
-    (!file.endsWith('.svg') &&
-      content.length < Number(config.build.assetsInlineLimit))
+    Buffer.byteLength(content) < config.build.assetsInlineLimit
   ) {
-    // base64 inlined as a string
-    url = `data:${mime.getType(file)};base64,${content.toString('base64')}`
+    // svgs can be inlined without base64
+    url = file.endsWith('.svg')
+      ? `data:image/svg+xml;utf8,${uriEncodeSvg(content.toString('utf-8'))}`
+      : // base64 inlined as a string
+        `data:${mime.getType(file)};base64,${content.toString('base64')}`
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
@@ -248,6 +250,39 @@ async function fileToBuiltUrl(
 
   cache.set(id, url)
   return url
+}
+
+function specialHexEncode(match: string) {
+  // Browsers tolerate these characters, and they're frequent
+  switch (match) {
+    case '%20':
+      return ' '
+    case '%3D':
+      return '='
+    case '%3A':
+      return ':'
+    case '%2F':
+      return '/'
+    default:
+      return match.toLowerCase() // compresses better
+  }
+}
+
+const doubleQuoteRE = /"/g
+const whitespaceRE = /\s+/g
+const urlHexPairsRE = /%[\dA-F]{2}/g
+
+// Adopted from https://github.com/tigt/mini-svg-data-uri
+function uriEncodeSvg(content: string) {
+  const normalizedContent = content
+    .trim()
+    .replace(whitespaceRE, ' ')
+    .replace(doubleQuoteRE, "'")
+
+  return encodeURIComponent(normalizedContent).replace(
+    urlHexPairsRE,
+    specialHexEncode
+  )
 }
 
 function getAssetHash(content: Buffer) {
