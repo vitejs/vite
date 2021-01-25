@@ -6,8 +6,9 @@
     "outDir": "dist",
     "allowJs": true,
     "esModuleInterop": true,
+    "moduleResolution": "node",
     "baseUrl": ".",
     "jsx": "preserve",
-    "types": ["vite/client", "jest"]
+    "types": ["vite/client", "jest", "node"]
   }
 }
