@@ -258,27 +258,33 @@ export async function optimizeDeps(
   const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
 
   await init
+  const entryToIdMap: Record<string, string> = {}
+  for (const id in qualified) {
+    entryToIdMap[qualified[id]] = id
+  }
+
   for (const output in meta.outputs) {
-    if (/chunk\.\w+\.js$/.test(output)) continue
-    const absolute = normalizePath(path.resolve(output))
-    const relative = normalizePath(path.relative(cacheDir, absolute))
-    const generateExports = meta.outputs[output].exports
-    for (const id in qualified) {
-      const entry = qualified[id]
-      if (entry.replace(/\.mjs$/, '.js').endsWith(relative)) {
+    if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map'))
+      continue
+    const { inputs, exports: generatedExports } = meta.outputs[output]
+    for (const input in inputs) {
+      const entry = normalizePath(path.resolve(input))
+      const id = entryToIdMap[entry]
+      if (id) {
         // check if this is a cjs dep.
         const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
         data.optimized[id] = {
-          file: absolute,
+          file: normalizePath(path.resolve(output)),
           needsInterop:
             // entry has no ESM syntax - likely CJS or UMD
             (!exports.length && !imports.length) ||
             // if a peer dep used require() on a ESM dep, esbuild turns the
             // ESM dep's entry chunk into a single default export... detect
             // such cases by checking exports mismatch, and force interop.
-            (isSingleDefaultExport(generateExports) &&
+            (isSingleDefaultExport(generatedExports) &&
               !isSingleDefaultExport(exports))
         }
+        break
       }
     }
   }
