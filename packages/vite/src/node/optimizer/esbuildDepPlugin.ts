@@ -7,7 +7,19 @@ import { deepImportRE, isBuiltin, isRunningWithYarnPnp } from '../utils'
 import { tryNodeResolve } from '../plugins/resolve'
 import { PluginContainer } from '../server/pluginContainer'
 
-const externalTypes = ['css', 'vue', 'svelte', ...knownAssetTypes]
+const externalTypes = [
+  'css',
+  // supported pre-processor types
+  'less',
+  'sass',
+  'scss',
+  'style',
+  'stylus',
+  // known SFC types
+  'vue',
+  'svelte',
+  ...knownAssetTypes
+]
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
