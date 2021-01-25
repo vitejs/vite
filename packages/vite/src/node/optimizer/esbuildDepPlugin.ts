@@ -105,10 +105,10 @@ export function esbuildDepPlugin(
 
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
-        build.onResolve({ filter: /\.yarn.*/ }, (args) => ({
+        build.onResolve({ filter: /.*/ }, (args) => ({
           path: require.resolve(args.path, { paths: [args.resolveDir] })
         }))
-        build.onLoad({ filter: /\.yarn.*/ }, async (args) => ({
+        build.onLoad({ filter: /.*/ }, async (args) => ({
           contents: await require('fs').promises.readFile(args.path),
           loader: 'default'
         }))
