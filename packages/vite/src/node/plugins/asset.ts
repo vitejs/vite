@@ -171,11 +171,13 @@ async function fileToBuiltUrl(
   let url
   if (
     config.build.lib ||
-    (!file.endsWith('.svg') &&
-      content.length < Number(config.build.assetsInlineLimit))
+    Buffer.byteLength(content) < config.build.assetsInlineLimit
   ) {
-    // base64 inlined as a string
-    url = `data:${mime.getType(file)};base64,${content.toString('base64')}`
+    // svgs can be inlined without base64
+    url = file.endsWith('.svg')
+      ? `data:image/svg+xml;utf8,${content}`
+      : // base64 inlined as a string
+        `data:${mime.getType(file)};base64,${content.toString('base64')}`
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
