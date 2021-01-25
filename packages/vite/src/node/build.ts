@@ -349,14 +349,12 @@ async function doBuild(
           : libOptions
           ? `${pkgName}.${output.format || `es`}.js`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
-        chunkFileNames:
-          libOptions || ssr
-            ? `[name].js`
-            : path.posix.join(options.assetsDir, `[name].[hash].js`),
-        assetFileNames:
-          libOptions || ssr
-            ? `[name].[ext]`
-            : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
+        chunkFileNames: libOptions
+          ? `[name].js`
+          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+        assetFileNames: libOptions
+          ? `[name].[ext]`
+          : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
         // #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
