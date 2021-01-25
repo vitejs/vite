@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc --emitDeclarationOnly && vite build"
+    "build": "tsc && vite build"
   },
   "dependencies": {
     "lit-element": "^2.4.0"

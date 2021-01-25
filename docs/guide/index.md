@@ -37,6 +37,8 @@ Supported template presets include:
 - `react-ts`
 - `preact`
 - `preact-ts`
+- `lit-element`
+- `lit-element-ts`
 
 See [@vitejs/create-app](https://github.com/vitejs/vite/tree/main/packages/create-app) for more details on each template.
 

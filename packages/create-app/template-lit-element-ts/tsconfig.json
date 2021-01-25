@@ -2,9 +2,8 @@
   "compilerOptions": {
     "module": "esnext",
     "lib": ["es2017", "dom", "dom.iterable"],
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    "types": ["vite/client"],
+    "emitDeclarationOnly": true,
     "outDir": "./types",
     "rootDir": "./src",
     "strict": true,
