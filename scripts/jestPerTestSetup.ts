@@ -1,6 +1,6 @@
 import fs from 'fs-extra'
 import * as http from 'http'
-import { resolve } from 'path'
+import { resolve, dirname } from 'path'
 import slash from 'slash'
 import sirv from 'sirv'
 import { createServer, build, ViteDevServer, UserConfig } from 'vite'
@@ -55,6 +55,14 @@ beforeAll(async () => {
           )
         }
       })
+
+      const testCustomServe = resolve(dirname(testPath), 'serve.js')
+      if (fs.existsSync(testCustomServe)) {
+        // test has custom server configuration.
+        const { serve } = require(testCustomServe)
+        server = await serve(tempDir, isBuildTest)
+        return
+      }
 
       const options: UserConfig = {
         root: tempDir,

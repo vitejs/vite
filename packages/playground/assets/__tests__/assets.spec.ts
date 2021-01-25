@@ -1,12 +1,4 @@
-import fs from 'fs'
-import path from 'path'
-import {
-  findAssetFile,
-  getBg,
-  getColor,
-  isBuild,
-  testDir
-} from '../../testUtils'
+import { findAssetFile, getBg, getColor, isBuild } from '../../testUtils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
