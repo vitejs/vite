@@ -249,10 +249,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             chunk.code = s.toString()
             // TODO source map
-          } else {
-            // inlined dynamic import, remove the marker
-            chunk.code = code.replace(preloadMarkerRE, 'void 0')
           }
+
+          // there may still be markers due to inlined dynamic imports, remove
+          // all the markers regardless
+          chunk.code = code.replace(preloadMarkerRE, 'void 0')
         }
       }
     }
