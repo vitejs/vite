@@ -8,6 +8,7 @@ import slash from 'slash'
 import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
+import { FSWatcher } from 'chokidar'
 
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
@@ -318,5 +319,23 @@ export function copyDir(srcDir: string, destDir: string) {
     } else {
       fs.copyFileSync(srcFile, destFile)
     }
+  }
+}
+
+export function ensureWatchedFile(
+  watcher: FSWatcher,
+  file: string | null,
+  root: string
+) {
+  if (
+    file &&
+    // only need to watch if out of root
+    !file.startsWith(root + '/') &&
+    // some rollup plugins use null bytes for private resolved Ids
+    !file.includes('\0') &&
+    fs.existsSync(file)
+  ) {
+    // resolve file to normalized system path
+    watcher.add(path.resolve(file))
   }
 }

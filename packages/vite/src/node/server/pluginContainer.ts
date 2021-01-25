@@ -58,6 +58,7 @@ import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import {
   createDebugger,
+  ensureWatchedFile,
   generateCodeFrame,
   isExternalUrl,
   normalizePath,
@@ -205,10 +206,7 @@ export async function createPluginContainer(
 
     addWatchFile(id: string) {
       watchFiles.add(id)
-      // only need to add it if file is out of root.
-      if (watcher && !id.startsWith(root)) {
-        watcher.add(id)
-      }
+      if (watcher) ensureWatchedFile(watcher, id, root)
     }
 
     getWatchFiles() {
