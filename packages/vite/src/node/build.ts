@@ -10,7 +10,9 @@ import Rollup, {
   WarningHandler,
   OutputOptions,
   RollupOutput,
-  ExternalOption
+  ExternalOption,
+  GetManualChunk,
+  GetModuleInfo
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildDefinePlugin } from './plugins/define'
@@ -287,7 +289,7 @@ async function doBuild(
 
   const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
-    ? libOptions.entry
+    ? resolve(libOptions.entry)
     : options.rollupOptions?.input || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
@@ -338,8 +340,8 @@ async function doBuild(
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate']({
         dir: outDir,
-        format: options.ssr ? 'cjs' : 'es',
-        exports: options.ssr ? 'named' : 'auto',
+        format: ssr ? 'cjs' : 'es',
+        exports: ssr ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         entryFileNames: ssr
@@ -347,18 +349,23 @@ async function doBuild(
           : libOptions
           ? `${pkgName}.${output.format || `es`}.js`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
-        chunkFileNames:
-          libOptions || ssr
-            ? `[name].js`
-            : path.posix.join(options.assetsDir, `[name].[hash].js`),
-        assetFileNames:
-          libOptions || ssr
-            ? `[name].[ext]`
-            : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
+        chunkFileNames: libOptions
+          ? `[name].js`
+          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+        assetFileNames: libOptions
+          ? `[name].[ext]`
+          : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
         // #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
         inlineDynamicImports: ssr && typeof input === 'string',
+        manualChunks:
+          !ssr &&
+          !libOptions &&
+          output?.format !== 'umd' &&
+          output?.format !== 'iife'
+            ? createMoveToVendorChunkFn()
+            : undefined,
         ...output
       })
     }
@@ -416,6 +423,48 @@ async function doBuild(
     }
     throw e
   }
+}
+
+function createMoveToVendorChunkFn(): GetManualChunk {
+  const cache = new Map<string, boolean>()
+  return (id, { getModuleInfo }) => {
+    if (
+      id.includes('node_modules') &&
+      !hasDynamicImporter(id, getModuleInfo, cache)
+    ) {
+      return 'vendor'
+    }
+  }
+}
+
+function hasDynamicImporter(
+  id: string,
+  getModuleInfo: GetModuleInfo,
+  cache: Map<string, boolean>,
+  importStack: string[] = []
+): boolean {
+  if (cache.has(id)) {
+    return cache.get(id) as boolean
+  }
+  if (importStack.includes(id)) {
+    // circular deps!
+    cache.set(id, false)
+    return false
+  }
+  const mod = getModuleInfo(id)
+  if (!mod) {
+    cache.set(id, false)
+    return false
+  }
+  if (mod.dynamicImporters.length) {
+    cache.set(id, true)
+    return true
+  }
+  const someImporterHas = mod.importers.some((importer) =>
+    hasDynamicImporter(importer, getModuleInfo, cache, importStack.concat(id))
+  )
+  cache.set(id, someImporterHas)
+  return someImporterHas
 }
 
 function resolveBuildOutputs(

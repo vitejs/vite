@@ -418,7 +418,8 @@ async function buildPolyfillChunk(
           [name]: polyfillId
         },
         output: {
-          format: name.includes('legacy') ? 'iife' : 'es'
+          format: name.includes('legacy') ? 'iife' : 'es',
+          manualChunks: undefined
         }
       }
     }

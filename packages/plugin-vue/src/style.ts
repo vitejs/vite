@@ -37,6 +37,6 @@ export async function transformStyle(
 
   return {
     code: result.code,
-    map: result.map as any
+    map: result.map || ({ mappings: '' } as any)
   }
 }

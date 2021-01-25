@@ -171,18 +171,23 @@ export async function optimizeDeps(
   )
 
   if (invalidIds.length) {
+    const msg =
+      `It seems your dependencies contain packages that are not meant to\n` +
+      `be used in the browser, e.g. ${chalk.cyan(invalidIds.join(', '))}. ` +
+      `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
+      `they should probably be moved to devDependencies instead.`
+
+    if (process.env.CI) {
+      logger.error(msg)
+      process.exit(1)
+    }
+
     const { yes } = (await prompt({
       type: 'confirm',
       name: 'yes',
       initial: true,
       message: chalk.yellow(
-        `It seems your dependencies contain packages that are not meant to\n` +
-          `be used in the browser, e.g. ${chalk.cyan(
-            invalidIds.join(', ')
-          )}. ` +
-          `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
-          `they should probably be moved to devDependencies instead.\n` +
-          `Auto-update package.json and continue without these deps?`
+        msg + `\nAuto-update package.json and continue without these deps?`
       )
     })) as { yes: boolean }
     if (yes) {
@@ -234,38 +239,52 @@ export async function optimizeDeps(
     format: 'esm',
     external,
     splitting: true,
+    sourcemap: true,
     outdir: cacheDir,
     metafile: esbuildMetaPath,
     define: {
       'process.env.NODE_ENV': '"development"'
     },
-    plugins: [esbuildDepPlugin(qualified, config, data.transitiveOptimized)]
+    plugins: [
+      esbuildDepPlugin(
+        qualified,
+        config,
+        data.transitiveOptimized,
+        aliasResolver
+      )
+    ]
   })
 
   const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
 
   await init
+  const entryToIdMap: Record<string, string> = {}
+  for (const id in qualified) {
+    entryToIdMap[qualified[id]] = id
+  }
+
   for (const output in meta.outputs) {
-    if (/chunk\.\w+\.js$/.test(output)) continue
-    const absolute = normalizePath(path.resolve(output))
-    const relative = normalizePath(path.relative(cacheDir, absolute))
-    const generateExports = meta.outputs[output].exports
-    for (const id in qualified) {
-      const entry = qualified[id]
-      if (entry.replace(/\.mjs$/, '.js').endsWith(relative)) {
+    if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map'))
+      continue
+    const { inputs, exports: generatedExports } = meta.outputs[output]
+    for (const input in inputs) {
+      const entry = normalizePath(path.resolve(input))
+      const id = entryToIdMap[entry]
+      if (id) {
         // check if this is a cjs dep.
         const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
         data.optimized[id] = {
-          file: absolute,
+          file: normalizePath(path.resolve(output)),
           needsInterop:
             // entry has no ESM syntax - likely CJS or UMD
             (!exports.length && !imports.length) ||
             // if a peer dep used require() on a ESM dep, esbuild turns the
             // ESM dep's entry chunk into a single default export... detect
             // such cases by checking exports mismatch, and force interop.
-            (isSingleDefaultExport(generateExports) &&
+            (isSingleDefaultExport(generatedExports) &&
               !isSingleDefaultExport(exports))
         }
+        break
       }
     }
   }

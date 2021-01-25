@@ -4,6 +4,7 @@ import { BuildOptions } from './build'
 import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
+import { serve } from './serve'
 
 const cli = cac('vite')
 
@@ -184,6 +185,32 @@ cli
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when optimizing deps:\n${e.stack}`)
+        )
+        process.exit(1)
+      }
+    }
+  )
+
+cli
+  .command('preview [root]')
+  .option('--port <port>', `[number] specify port`)
+  .action(
+    async (root: string, options: { port?: number } & GlobalCLIOptions) => {
+      try {
+        const config = await resolveConfig(
+          {
+            root,
+            base: options.base,
+            configFile: options.config,
+            logLevel: options.logLevel
+          },
+          'serve',
+          'development'
+        )
+        await serve(config, options.port)
+      } catch (e) {
+        createLogger(options.logLevel).error(
+          chalk.red(`error when starting preview server:\n${e.stack}`)
         )
         process.exit(1)
       }

@@ -9,13 +9,13 @@ import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
+import { resolveHttpServer } from './http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
-import { resolveHttpsConfig } from '../server/https'
 import { createWebSocketServer, WebSocketServer } from '../server/ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
@@ -39,7 +39,7 @@ import { TransformResult } from 'rollup'
 import { TransformOptions, transformRequest } from './transformRequest'
 import {
   transformWithEsbuild,
-  EsbuildTransformResult
+  ESBuildTransformResult
 } from '../plugins/esbuild'
 import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
@@ -197,7 +197,7 @@ export interface ViteDevServer {
     filename: string,
     options?: EsbuildTransformOptions,
     inMap?: object
-  ): Promise<EsbuildTransformResult>
+  ): Promise<ESBuildTransformResult>
   /**
    * Load a given URL as an instantiated module for SSR.
    * @alpha
@@ -255,13 +255,9 @@ export async function createServer(
     : await resolveHttpServer(serverConfig, middlewares)
   const ws = createWebSocketServer(httpServer, config)
 
-  const watchOptions = serverConfig.watch || {}
+  const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(root, {
-    ignored: [
-      '**/node_modules/**',
-      '**/.git/**',
-      ...(watchOptions.ignored || [])
-    ],
+    ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
     ignoreInitial: true,
     ignorePermissionErrors: true,
     ...watchOptions
@@ -406,7 +402,12 @@ export async function createServer(
           {
             from: /\/$/,
             to({ parsedUrl }: any) {
-              return parsedUrl.pathname + 'index.html'
+              const rewritten = parsedUrl.pathname + 'index.html'
+              if (fs.existsSync(path.join(root, rewritten))) {
+                return rewritten
+              } else {
+                return `/index.html`
+              }
             }
           }
         ]
@@ -464,31 +465,6 @@ export async function createServer(
   }
 
   return server
-}
-
-async function resolveHttpServer(
-  { https = false, proxy }: ServerOptions,
-  app: Connect.Server
-): Promise<http.Server> {
-  if (!https) {
-    return require('http').createServer(app)
-  }
-
-  const httpsOptions = await resolveHttpsConfig(
-    typeof https === 'boolean' ? {} : https
-  )
-  if (proxy) {
-    // #484 fallback to http1 when proxy is needed.
-    return require('https').createServer(httpsOptions, app)
-  } else {
-    return require('http2').createSecureServer(
-      {
-        ...httpsOptions,
-        allowHTTP1: true
-      },
-      app
-    )
-  }
 }
 
 async function startServer(

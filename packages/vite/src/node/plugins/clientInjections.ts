@@ -1,3 +1,4 @@
+import path from 'path'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -31,7 +32,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           port = String(options.port || config.server.port!)
         }
         if (options.path) {
-          port = `${port}/${options.path}`
+          port = path.posix.normalize(`${port}/${options.path}`)
         }
 
         return code

@@ -45,10 +45,13 @@ export async function resolvePlugins(
     htmlInlineScriptProxyPlugin(),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
-    jsonPlugin({
-      preferConst: true,
-      namedExports: true
-    }),
+    jsonPlugin(
+      {
+        namedExports: true,
+        ...config.json
+      },
+      isBuild
+    ),
     wasmPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),

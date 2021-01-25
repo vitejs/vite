@@ -5,7 +5,13 @@ import Rollup from 'rollup'
 import { BuildOptions, resolveBuildOptions } from './build'
 import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
-import { createDebugger, isObject, lookupFile, normalizePath } from './utils'
+import {
+  createDebugger,
+  isExternalUrl,
+  isObject,
+  lookupFile,
+  normalizePath
+} from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
 import {
@@ -23,6 +29,8 @@ import { createLogger, Logger, LogLevel } from './logger'
 import { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
 import { ResolvedBuildOptions } from '.'
+import { parse as parseUrl } from 'url'
+import { JsonOptions } from './plugins/json'
 
 const debug = createDebugger('vite:config')
 
@@ -52,6 +60,11 @@ export interface UserConfig {
    */
   root?: string
   /**
+   * Base public path when served in development or production.
+   * @default '/'
+   */
+  base?: string
+  /**
    * Explicitly set a mode to run in. This will override the default mode for
    * each command, and can be overridden by the command line --mode option.
    */
@@ -73,6 +86,10 @@ export interface UserConfig {
    * CSS related options (preprocessors and CSS modules)
    */
   css?: CSSOptions
+  /**
+   * JSON loading options
+   */
+  json?: JsonOptions
   /**
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
@@ -113,11 +130,6 @@ export interface UserConfig {
    * Default: true
    */
   clearScreen?: boolean
-  /**
-   * Base public path when served in development or production.
-   * @default '/'
-   */
-  base?: string
 }
 
 export interface SSROptions {
@@ -238,15 +250,10 @@ export async function resolveConfig(
     config.base = config.build.base
   }
 
-  let BASE_URL = config.base || '/'
-  if (!BASE_URL.startsWith('/') || !BASE_URL.endsWith('/')) {
-    logger.warn(
-      chalk.bold.yellow(
-        `(!) "base" config option should start and end with "/".`
-      )
-    )
-    if (!BASE_URL.startsWith('/')) BASE_URL = '/' + BASE_URL
-    if (!BASE_URL.endsWith('/')) BASE_URL = BASE_URL + '/'
+  const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
+  // adjust hmr path config
+  if (isObject(config.server?.hmr) && config.server?.hmr.path) {
+    config.server.hmr.path = path.posix.join(BASE_URL, config.server.hmr.path)
   }
 
   const resolvedBuildOptions = resolveBuildOptions(config.build)
@@ -278,17 +285,6 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
-  let hmr = config.server?.hmr === true ? {} : config.server?.hmr
-  hmr = {
-    ...hmr,
-    path: BASE_URL !== '/' ? BASE_URL.substr(1) : undefined
-  }
-
-  const server = {
-    ...config.server,
-    hmr
-  }
-
   const resolved = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -300,7 +296,7 @@ export async function resolveConfig(
     optimizeCacheDir,
     alias: resolvedAlias,
     plugins: userPlugins,
-    server,
+    server: config.server || {},
     build: resolvedBuildOptions,
     env: {
       ...userEnv,
@@ -337,6 +333,55 @@ export async function resolveConfig(
     })
   }
   return resolved
+}
+
+/**
+ * Resolve base. Note that some users use Vite to build for non-web targets like
+ * electron or expects to deploy
+ */
+function resolveBaseUrl(
+  base: UserConfig['base'] = '/',
+  isBuild: boolean,
+  logger: Logger
+): string {
+  // #1669 special treatment for empty for same dir relative base
+  if (base === '' || base === './') {
+    return isBuild ? base : '/'
+  }
+  if (base.startsWith('.')) {
+    logger.warn(
+      chalk.yellow.bold(
+        `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
+          `URL, ./, or an empty string.`
+      )
+    )
+    base = '/'
+  }
+
+  // external URL
+  if (isExternalUrl(base)) {
+    if (!isBuild) {
+      // get base from full url during dev
+      const parsed = parseUrl(base)
+      base = parsed.pathname || '/'
+    }
+  } else {
+    // ensure leading slash
+    if (!base.startsWith('/')) {
+      logger.warn(
+        chalk.yellow.bold(`(!) "base" option should start with a slash.`)
+      )
+      base = '/' + base
+    }
+  }
+
+  // ensure ending slash
+  if (!base.endsWith('/')) {
+    logger.warn(chalk.yellow.bold(`(!) "base" option should end with a slash.`))
+    base += '/'
+  }
+
+  return base
 }
 
 export function mergeConfig(

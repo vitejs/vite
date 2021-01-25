@@ -18,7 +18,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 
 const preloadHelperId = 'vite/preload-helper'
 const preloadCode = `const seen = {};export const ${preloadMethod} = ${preload.toString()}`
-const preloadMarkerRE = new RegExp(`,?"${preloadMarker}"`, 'g')
+const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallell to
@@ -157,7 +157,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     renderChunk(code, _, { format }) {
       // make sure we only perform the preload logic in modern builds.
       if (code.indexOf(isModernFlag) > -1) {
-        return code.replace(/__VITE_IS_MODERN__/g, String(format === 'es'))
+        const re = new RegExp(isModernFlag, 'g')
+        const isModern = String(format === 'es')
+        if (config.build.sourcemap) {
+          const s = new MagicString(code)
+          let match
+          while ((match = re.exec(code))) {
+            s.overwrite(
+              match.index,
+              match.index + isModernFlag.length,
+              isModern
+            )
+          }
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: true })
+          }
+        } else {
+          return code.replace(re, isModern)
+        }
       }
       return null
     },
@@ -176,7 +194,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const code = chunk.code
           let imports: ImportSpecifier[]
           try {
-            imports = parseImports(code)[0]
+            imports = parseImports(code)[0].filter((i) => i.d > -1)
           } catch (e) {
             this.error(e, e.idx)
           }
@@ -185,39 +203,39 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
               const { s: start, e: end, d: dynamicIndex } = imports[index]
-              if (dynamicIndex > -1) {
-                // if dynmamic import polyfill is used, rewrite the import to
-                // use the polyfilled function.
-                if (isPolyfillEnabled) {
-                  s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
-                }
-                // check the chunk being imported
-                const url = code.slice(start, end)
-                const deps: Set<string> = new Set()
+              // if dynamic import polyfill is used, rewrite the import to
+              // use the polyfilled function.
+              if (isPolyfillEnabled) {
+                s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
+              }
+              // check the chunk being imported
+              const url = code.slice(start, end)
+              const deps: Set<string> = new Set()
 
-                if (url[0] === `"` && url[url.length - 1] === `"`) {
-                  const ownerFilename = chunk.fileName
-                  // literal import - trace direct imports and add to deps
-                  const addDeps = (filename: string) => {
-                    if (filename === ownerFilename) return
-                    const chunk = bundle[filename] as OutputChunk | undefined
-                    if (chunk) {
-                      deps.add(config.base + chunk.fileName)
-                      const cssId = chunkToEmittedCssFileMap.get(chunk)
-                      if (cssId) {
-                        deps.add(config.base + this.getFileName(cssId))
-                      }
-                      chunk.imports.forEach(addDeps)
+              if (url[0] === `"` && url[url.length - 1] === `"`) {
+                const ownerFilename = chunk.fileName
+                // literal import - trace direct imports and add to deps
+                const addDeps = (filename: string) => {
+                  if (filename === ownerFilename) return
+                  const chunk = bundle[filename] as OutputChunk | undefined
+                  if (chunk) {
+                    deps.add(config.base + chunk.fileName)
+                    const cssId = chunkToEmittedCssFileMap.get(chunk)
+                    if (cssId) {
+                      deps.add(config.base + this.getFileName(cssId))
                     }
+                    chunk.imports.forEach(addDeps)
                   }
-                  const normalizedFile = path.posix.join(
-                    path.posix.dirname(chunk.fileName),
-                    url.slice(1, -1)
-                  )
-                  addDeps(normalizedFile)
                 }
+                const normalizedFile = path.posix.join(
+                  path.posix.dirname(chunk.fileName),
+                  url.slice(1, -1)
+                )
+                addDeps(normalizedFile)
+              }
 
-                const markPos = code.indexOf(preloadMarker, end)
+              const markPos = code.indexOf(preloadMarker, end)
+              if (markPos > 0) {
                 s.overwrite(
                   markPos - 1,
                   markPos + preloadMarker.length + 1,
@@ -231,10 +249,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             chunk.code = s.toString()
             // TODO source map
-          } else {
-            // inlined dynamic import, remove the marker
-            chunk.code = code.replace(preloadMarkerRE, 'void 0')
           }
+
+          // there may still be markers due to inlined dynamic imports, remove
+          // all the markers regardless
+          chunk.code = chunk.code.replace(preloadMarkerRE, 'void 0')
         }
       }
     }

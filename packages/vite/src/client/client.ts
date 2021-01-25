@@ -40,7 +40,6 @@ const socketProtocol =
 const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
-const baseNoSlash = base.replace(/\/$/, '')
 
 function warnFailedFetch(err: Error, path: string | string[]) {
   if (!err.message.match('fetch')) {
@@ -88,12 +87,17 @@ async function handleMessage(payload: HMRPayload) {
           // this is only sent when a css file referenced with <link> is updated
           let { path, timestamp } = update
           path = path.replace(/\?.*/, '')
-          const el = document.querySelector(`link[href*='${path}']`)
+          // can't use querySelector with `[href*=]` here since the link may be
+          // using relative paths so we need to use link.href to grab the full
+          // URL for the include check.
+          const el = ([].slice.call(
+            document.querySelectorAll(`link`)
+          ) as HTMLLinkElement[]).find((e) => e.href.includes(path))
           if (el) {
-            el.setAttribute(
-              'href',
-              `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
-            )
+            const newPath = `${path}${
+              path.includes('?') ? '&' : '?'
+            }t=${timestamp}`
+            el.href = new URL(newPath, el.href).href
           }
           console.log(`[vite] css hot updated: ${path}`)
         }
@@ -110,7 +114,7 @@ async function handleMessage(payload: HMRPayload) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
         const pagePath = location.pathname
-        const payloadPath = baseNoSlash + payload.path
+        const payloadPath = base + payload.path.slice(1)
         if (
           pagePath === payloadPath ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
@@ -263,9 +267,6 @@ export function removeStyle(id: string) {
 }
 
 async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
-  path = baseNoSlash + path
-  acceptedPath = baseNoSlash + acceptedPath
-
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-splitting project,
@@ -306,7 +307,9 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       try {
         const newMod = await import(
           /* @vite-ignore */
-          path + `?import&t=${timestamp}${query ? `&${query}` : ''}`
+          base +
+            path.slice(1) +
+            `?import&t=${timestamp}${query ? `&${query}` : ''}`
         )
         moduleMap.set(dep, newMod)
       } catch (e) {

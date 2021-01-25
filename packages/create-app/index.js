@@ -5,7 +5,14 @@ const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 const { prompt } = require('enquirer')
-const { yellow, green, cyan, magenta, stripColors } = require('kolorist')
+const {
+  yellow,
+  green,
+  cyan,
+  magenta,
+  lightRed,
+  stripColors
+} = require('kolorist')
 
 const cwd = process.cwd()
 
@@ -16,7 +23,9 @@ const TEMPLATES = [
   cyan('react'),
   cyan('react-ts'),
   magenta('preact'),
-  magenta('preact-ts')
+  magenta('preact-ts'),
+  lightRed('lit-element'),
+  lightRed('lit-element-ts')
 ]
 
 const renameFiles = {

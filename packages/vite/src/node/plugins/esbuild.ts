@@ -40,7 +40,7 @@ export async function stopService() {
   }
 }
 
-export type EsbuildTransformResult = Omit<TransformResult, 'map'> & {
+export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
   map: SourceMap
 }
 
@@ -49,7 +49,7 @@ export async function transformWithEsbuild(
   filename: string,
   options?: TransformOptions,
   inMap?: object
-): Promise<EsbuildTransformResult> {
+): Promise<ESBuildTransformResult> {
   const service = await ensureService()
   // if the id ends with a valid ext, use it (e.g. vue blocks)
   // otherwise, cleanup the query before checking the ext
