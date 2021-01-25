@@ -31,8 +31,12 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         } else {
           port = String(options.port || config.server.port!)
         }
+        let hmrBase = config.base
         if (options.path) {
-          port = path.posix.normalize(`${port}/${options.path}`)
+          hmrBase = path.posix.join(hmrBase, options.path)
+        }
+        if (hmrBase !== '/') {
+          port = path.posix.normalize(`${port}${hmrBase}`)
         }
 
         return code
