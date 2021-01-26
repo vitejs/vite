@@ -416,7 +416,7 @@ async function compileCSS(
               path.join(basedir, '*')
             )
             if (resolved) {
-              return resolved.id
+              return path.resolve(resolved.id)
             }
           }
           return id
