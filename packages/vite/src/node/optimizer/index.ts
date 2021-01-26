@@ -12,12 +12,8 @@ import {
   resolveFrom,
   writeFile
 } from '../utils'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
+import { PluginContainer } from '../server/pluginContainer'
 import { tryNodeResolve } from '../plugins/resolve'
-import aliasPlugin from '@rollup/plugin-alias'
 import { createFilter } from '@rollup/pluginutils'
 import { prompt } from 'enquirer'
 import { build } from 'esbuild'
@@ -123,17 +119,13 @@ export async function optimizeDeps(
   }
 
   const options = config.optimizeDeps || {}
+  const aliasResolver = config.aliasResolver
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
   // 1. Has imports to relative files (e.g. lodash-es, lit-html)
   // 2. Has imports to bare modules that are not in the project's own deps
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
-  // await init
-  const aliasResolver = await createPluginContainer({
-    ...config,
-    plugins: [aliasPlugin({ entries: config.alias })]
-  })
   const { qualified, external } = await resolveQualifiedDeps(
     root,
     config,

@@ -32,6 +32,7 @@ import {
 import { ViteDevServer } from '../'
 import { assetUrlRE, urlToBuiltUrl } from './asset'
 import MagicString from 'magic-string'
+import { PluginContainer } from '../server/pluginContainer'
 
 // const debug = createDebugger('vite:css')
 
@@ -124,7 +125,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         id,
         raw,
         config,
-        urlReplacer
+        urlReplacer,
+        config.aliasResolver
       )
       if (modules) {
         moduleCache.set(id, modules)
@@ -326,7 +328,8 @@ async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
-  urlReplacer: CssUrlReplacer
+  urlReplacer: CssUrlReplacer,
+  aliasResolver: PluginContainer
 ): Promise<{
   code: string
   map?: SourceMap
@@ -404,7 +407,22 @@ async function compileCSS(
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
   if (needInlineImport) {
-    postcssPlugins.unshift((await import('postcss-import')).default())
+    postcssPlugins.unshift(
+      (await import('postcss-import')).default({
+        async resolve(id, basedir) {
+          if (!id.startsWith('.')) {
+            const resolved = await aliasResolver.resolveId(
+              id,
+              path.join(basedir, '*')
+            )
+            if (resolved) {
+              return resolved.id
+            }
+          }
+          return id
+        }
+      })
+    )
   }
   postcssPlugins.push(
     UrlRewritePostcssPlugin({
