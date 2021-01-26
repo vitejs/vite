@@ -48,8 +48,9 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
       // @ts-ignore
       seen[dep] = true
       const isCss = dep.endsWith('.css')
+      const cssSelector = isCss ? '[rel="stylesheet"]' : ''
       // @ts-ignore check if the file is already preloaded by SSR markup
-      if (document.querySelector(`link[href="${dep}"]`)) {
+      if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
         return
       }
       // @ts-ignore
