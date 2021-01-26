@@ -3,6 +3,7 @@ import path from 'path'
 import {
   editFile,
   findAssetFile,
+  getBg,
   getColor,
   isBuild,
   testDir,
@@ -58,13 +59,14 @@ test('sass', async () => {
 
   expect(await getColor(imported)).toBe('orange')
   expect(await getColor(atImport)).toBe('olive')
+  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
 
   editFile('sass.scss', (code) =>
     code.replace('color: $injectedColor', 'color: red')
   )
   await untilUpdated(() => getColor(imported), 'red')
 
-  editFile('sass-at-import.scss', (code) =>
+  editFile('nested/_index.scss', (code) =>
     code.replace('color: olive', 'color: blue')
   )
   await untilUpdated(() => getColor(atImport), 'blue')

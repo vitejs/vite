@@ -1,4 +1,4 @@
-@import './sass-at-import.scss';
+@import '@/nested'; // alias + custom index resolving -> /nested/_index.scss
 
 .sass {
   /* injected via vite.config.js */

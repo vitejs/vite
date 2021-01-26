@@ -1,11 +1,9 @@
 import path from 'path'
 import { Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
-import { ResolvedConfig } from '..'
+import { ResolvedConfig, ResolveFn } from '..'
 import chalk from 'chalk'
 import { deepImportRE, isBuiltin, isRunningWithYarnPnp } from '../utils'
-import { tryNodeResolve } from '../plugins/resolve'
-import { PluginContainer } from '../server/pluginContainer'
 
 const externalTypes = [
   'css',
@@ -25,26 +23,11 @@ export function esbuildDepPlugin(
   qualified: Record<string, string>,
   config: ResolvedConfig,
   transitiveOptimized: Record<string, true>,
-  aliasResolver: PluginContainer
+  resolve: ResolveFn
 ): Plugin {
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
-      async function useViteResolve(id: string, importer: string) {
-        id = (await aliasResolver.resolveId(id))?.id || id
-        const resolved = tryNodeResolve(
-          id,
-          path.dirname(importer),
-          false,
-          true,
-          config.dedupe,
-          config.root
-        )
-        if (resolved) {
-          return path.resolve(resolved.id)
-        }
-      }
-
       // externalize assets and commonly known non-js file types
       build.onResolve(
         {
@@ -58,7 +41,7 @@ export function esbuildDepPlugin(
               external: true
             }
           } else {
-            const resolved = await useViteResolve(id, importer)
+            const resolved = await resolve(id, importer)
             if (resolved) {
               return {
                 path: resolved,
@@ -82,7 +65,7 @@ export function esbuildDepPlugin(
           const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
           transitiveOptimized[pkgId] = true
           // use vite resolver
-          const resolved = await useViteResolve(id, importer)
+          const resolved = await resolve(id, importer)
           if (resolved) {
             return {
               path: resolved

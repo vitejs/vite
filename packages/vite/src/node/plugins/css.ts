@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import {
   // createDebugger,
   isExternalUrl,
@@ -8,11 +10,9 @@ import {
   isObject,
   normalizePath
 } from '../utils'
-import path from 'path'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
-import merge from 'merge-source-map'
 import {
   NormalizedOutputOptions,
   PluginContext,
@@ -29,10 +29,9 @@ import {
   Plugin as PostcssPlugin,
   PluginCreator
 } from 'postcss'
-import { ViteDevServer } from '../'
+import { ResolveFn, ViteDevServer } from '../'
 import { assetUrlRE, urlToBuiltUrl } from './asset'
 import MagicString from 'magic-string'
-import { PluginContainer } from '../server/pluginContainer'
 
 // const debug = createDebugger('vite:css')
 
@@ -88,6 +87,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   const moduleCache = new Map<string, Record<string, string>>()
   cssModulesCache.set(config, moduleCache)
 
+  const resolvers = createCSSResolvers(config)
+
   return {
     name: 'vite:css',
 
@@ -102,20 +103,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = server
         ? (url, importer) => {
-            let rtn: string
-
+            let replaced: string
             if (url.startsWith('/')) {
-              rtn = url
+              replaced = url
             } else {
               const filePath = normalizePath(
                 path.resolve(path.dirname(importer || id), url)
               )
-              rtn = filePath.startsWith(config.root)
+              replaced = filePath.startsWith(config.root)
                 ? filePath.slice(config.root.length)
                 : `${FS_PREFIX}${filePath}`
             }
-
-            return path.posix.join(config.base, rtn)
+            return path.posix.join(config.base, replaced)
           }
         : (url, importer) => {
             return urlToBuiltUrl(url, importer || id, config, this)
@@ -126,7 +125,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         raw,
         config,
         urlReplacer,
-        config.aliasResolver
+        resolvers
       )
       if (modules) {
         moduleCache.set(id, modules)
@@ -324,12 +323,54 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
+interface CSSResolvers {
+  css: ResolveFn
+  sass: ResolveFn
+  less: ResolveFn
+}
+
+function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
+  let cssResolve: ResolveFn | undefined
+  let sassResolve: ResolveFn | undefined
+  let lessResolve: ResolveFn | undefined
+  return {
+    get css() {
+      return (
+        cssResolve ||
+        (cssResolve = config.createResolver({
+          extensions: ['.css'],
+          tryIndex: false
+        }))
+      )
+    },
+
+    get sass() {
+      return (
+        sassResolve ||
+        (sassResolve = config.createResolver({
+          extensions: ['.scss', '.sass', '.css'],
+          tryIndex: '_index'
+        }))
+      )
+    },
+
+    get less() {
+      return (
+        lessResolve ||
+        (lessResolve = config.createResolver({
+          extensions: ['.less', '.css']
+        }))
+      )
+    }
+  }
+}
+
 async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
   urlReplacer: CssUrlReplacer,
-  aliasResolver: PluginContainer
+  resolvers: CSSResolvers
 ): Promise<{
   code: string
   map?: SourceMap
@@ -384,7 +425,7 @@ async function compileCSS(
     }
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)
-    const preprocessResult = await preProcessor(code, undefined, opts)
+    const preprocessResult = await preProcessor(code, opts, resolvers)
     if (preprocessResult.errors.length) {
       throw preprocessResult.errors[0]
     }
@@ -410,14 +451,9 @@ async function compileCSS(
     postcssPlugins.unshift(
       (await import('postcss-import')).default({
         async resolve(id, basedir) {
-          if (!id.startsWith('.')) {
-            const resolved = await aliasResolver.resolveId(
-              id,
-              path.join(basedir, '*')
-            )
-            if (resolved) {
-              return path.resolve(resolved.id)
-            }
+          const resolved = await resolvers.css(id, path.join(basedir, '*'))
+          if (resolved) {
+            return path.resolve(resolved)
           }
           return id
         }
@@ -531,12 +567,12 @@ type PreprocessLang = 'less' | 'sass' | 'scss' | 'styl' | 'stylus'
 
 type StylePreprocessor = (
   source: string,
-  map: SourceMap | undefined,
   options: {
     [key: string]: any
     additionalData?: string | ((source: string, filename: string) => string)
     filename: string
-  }
+  },
+  resolvers: CSSResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
 export interface StylePreprocessorResults {
@@ -557,14 +593,26 @@ function loadPreprocessor(lang: PreprocessLang) {
 }
 
 // .scss/.sass processor
-const scss: StylePreprocessor = async (source, map, options) => {
+const scss: StylePreprocessor = async (source, options, resolvers) => {
   const nodeSass = loadPreprocessor('sass')
   const finalOptions = {
     ...options,
     data: getSource(source, options.filename, options.additionalData),
     file: options.filename,
     outFile: options.filename,
-    sourceMap: !!map
+    importer(
+      url: string,
+      importer: string,
+      done: (res: null | { file: string } | { contents: string }) => void
+    ) {
+      resolvers.sass(url, importer).then((resolved) => {
+        if (resolved) {
+          rebaseSassUrls(resolved, options.filename).then(done)
+        } else {
+          done(null)
+        }
+      })
+    }
   }
 
   try {
@@ -578,16 +626,12 @@ const scss: StylePreprocessor = async (source, map, options) => {
       })
     })
     const deps = result.stats.includedFiles
-    if (map) {
-      return {
-        code: result.css.toString(),
-        map: merge(map, JSON.parse(result.map.toString())),
-        errors: [],
-        deps
-      }
-    }
 
-    return { code: result.css.toString(), errors: [], deps }
+    return {
+      code: result.css.toString(),
+      errors: [],
+      deps
+    }
   } catch (e) {
     // normalize SASS error
     e.id = e.file
@@ -596,11 +640,43 @@ const scss: StylePreprocessor = async (source, map, options) => {
   }
 }
 
-const sass: StylePreprocessor = (source, map, options) =>
-  scss(source, map, {
-    ...options,
-    indentedSyntax: true
+const sass: StylePreprocessor = (source, options, aliasResolver) =>
+  scss(
+    source,
+    {
+      ...options,
+      indentedSyntax: true
+    },
+    aliasResolver
+  )
+
+async function rebaseSassUrls(
+  file: string,
+  rootFile: string
+): Promise<{ file: string } | { contents: string } | null> {
+  file = path.resolve(file) // ensure os-specific flashes
+  // in the same dir, no need to rebase
+  const fileDir = path.dirname(file)
+  const rootDir = path.dirname(rootFile)
+  if (fileDir === rootDir) {
+    return { file }
+  }
+  // no url()
+  const content = fs.readFileSync(file, 'utf-8')
+  if (!cssUrlRE.test(content)) {
+    return { file }
+  }
+  const rebased = await rewriteCssUrls(content, (url) => {
+    if (url.startsWith('/')) return url
+    const absolute = path.resolve(fileDir, url)
+    const relative = path.relative(rootDir, absolute)
+    return normalizePath(relative)
   })
+  return {
+    file,
+    contents: rebased
+  }
+}
 
 // .less
 interface LessError {
@@ -610,7 +686,7 @@ interface LessError {
   column: number
 }
 
-const less: StylePreprocessor = (source, map, options) => {
+const less: StylePreprocessor = (source, options) => {
   const nodeLess = loadPreprocessor('less')
 
   let result: any
@@ -635,41 +711,23 @@ const less: StylePreprocessor = (source, map, options) => {
     return { code: '', errors: [normalizedError], deps: [] }
   }
 
-  const deps = result.imports
-  if (map) {
-    return {
-      code: result.css.toString(),
-      map: merge(map, result.map),
-      errors: [],
-      deps
-    }
-  }
-
   return {
     code: result.css.toString(),
-    errors: [],
-    deps
+    deps: result.imports,
+    errors: []
   }
 }
 
 // .styl
-const styl: StylePreprocessor = (source, map, options) => {
+const styl: StylePreprocessor = (source, options) => {
   const nodeStylus = loadPreprocessor('stylus')
   try {
     const ref = nodeStylus(source)
     Object.keys(options).forEach((key) => ref.set(key, options[key]))
-    if (map) ref.set('sourcemap', { inline: false, comment: false })
+    // if (map) ref.set('sourcemap', { inline: false, comment: false })
 
     const result = ref.render()
     const deps = ref.deps()
-    if (map) {
-      return {
-        code: result,
-        map: merge(map, ref.sourcemap),
-        errors: [],
-        deps
-      }
-    }
 
     return { code: result, errors: [], deps }
   } catch (e) {
