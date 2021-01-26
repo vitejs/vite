@@ -268,8 +268,8 @@ export async function optimizeDeps(
       continue
     const { inputs, exports: generatedExports } = meta.outputs[output]
     for (const input in inputs) {
-      const entry = normalizePath(path.resolve(input)).toLowerCase()
-      const id = entryToIdMap[entry]
+      const entry = normalizePath(path.resolve(input))
+      const id = entryToIdMap[entry.toLowerCase()]
       if (id) {
         // check if this is a cjs dep.
         const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
