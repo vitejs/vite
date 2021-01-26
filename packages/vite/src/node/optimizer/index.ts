@@ -12,13 +12,12 @@ import {
   resolveFrom,
   writeFile
 } from '../utils'
-import { PluginContainer } from '../server/pluginContainer'
-import { tryNodeResolve } from '../plugins/resolve'
 import { createFilter } from '@rollup/pluginutils'
 import { prompt } from 'enquirer'
 import { build } from 'esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { init, parse } from 'es-module-lexer'
+import { ResolveFn } from '..'
 
 const debug = createDebugger('vite:optimize')
 
@@ -119,7 +118,7 @@ export async function optimizeDeps(
   }
 
   const options = config.optimizeDeps || {}
-  const aliasResolver = config.aliasResolver
+  const resolve = config.createResolver({ asSrc: false })
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
@@ -129,7 +128,7 @@ export async function optimizeDeps(
   const { qualified, external } = await resolveQualifiedDeps(
     root,
     config,
-    aliasResolver
+    resolve
   )
 
   // Resolve deps from linked packages in a monorepo
@@ -141,7 +140,7 @@ export async function optimizeDeps(
         qualified,
         external,
         config,
-        aliasResolver
+        resolve
       )
     }
   }
@@ -149,10 +148,9 @@ export async function optimizeDeps(
   // Force included deps - these can also be deep paths
   if (options.include) {
     for (let id of options.include) {
-      const aliased = (await aliasResolver.resolveId(id))?.id || id
-      const filePath = tryNodeResolve(aliased, root, config.isProduction)
+      const filePath = await resolve(id)
       if (filePath) {
-        qualified[id] = filePath.id
+        qualified[id] = filePath
       }
     }
   }
@@ -240,12 +238,7 @@ export async function optimizeDeps(
       'process.env.NODE_ENV': '"development"'
     },
     plugins: [
-      esbuildDepPlugin(
-        qualified,
-        config,
-        data.transitiveOptimized,
-        aliasResolver
-      )
+      esbuildDepPlugin(qualified, config, data.transitiveOptimized, resolve)
     ]
   })
 
@@ -326,7 +319,7 @@ interface FilteredDeps {
 async function resolveQualifiedDeps(
   root: string,
   config: ResolvedConfig,
-  aliasResolver: PluginContainer
+  resolve: ResolveFn
 ): Promise<FilteredDeps> {
   const { include, exclude, link } = config.optimizeDeps || {}
   const qualified: Record<string, string> = {}
@@ -366,9 +359,7 @@ async function resolveQualifiedDeps(
     }
     let filePath
     try {
-      const aliased = (await aliasResolver.resolveId(id))?.id || id
-      const resolved = tryNodeResolve(aliased, root, config.isProduction)
-      filePath = resolved && resolved.id
+      filePath = await resolve(id)
     } catch (e) {}
     if (!filePath) {
       debug(`skipping ${id} (cannot resolve entry)`)
@@ -395,20 +386,13 @@ async function resolveQualifiedDeps(
         .filter((id) => !qualified[id])
         // make sure aliased deps are external
         // https://github.com/vitejs/vite-plugin-react/issues/4
-        .map(async (id) => (await aliasResolver.resolveId(id))?.id || id)
+        .map(async (id) => (await resolve(id, undefined, true)) || id)
     ))
   )
 
   if (linked.length) {
     for (const dep of linked) {
-      await resolveLinkedDeps(
-        root,
-        dep,
-        qualified,
-        external,
-        config,
-        aliasResolver
-      )
+      await resolveLinkedDeps(root, dep, qualified, external, config, resolve)
     }
   }
 
@@ -424,13 +408,13 @@ async function resolveLinkedDeps(
   qualified: Record<string, string>,
   external: string[],
   config: ResolvedConfig,
-  aliasResolver: PluginContainer
+  resolve: ResolveFn
 ) {
   const depRoot = path.dirname(resolveFrom(`${dep}/package.json`, root))
   const { qualified: q, external: e } = await resolveQualifiedDeps(
     depRoot,
     config,
-    aliasResolver
+    resolve
   )
   Object.keys(q).forEach((id) => {
     if (!qualified[id]) {

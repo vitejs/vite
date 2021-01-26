@@ -152,15 +152,25 @@ export type ResolvedConfig = Readonly<
     optimizeCacheDir: string | undefined
     env: Record<string, any>
     alias: Alias[]
-    aliasResolver: PluginContainer
     plugins: readonly Plugin[]
     server: ServerOptions
     build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
     base: string
+    createResolver: (options?: {
+      asSrc?: boolean
+      tryIndex?: boolean | string
+      extensions?: string[]
+    }) => ResolveFn
   }
 >
+
+export type ResolveFn = (
+  id: string,
+  importer?: string,
+  aliasOnly?: boolean
+) => Promise<string | undefined>
 
 export async function resolveConfig(
   inlineConfig: InlineConfig,
@@ -285,7 +295,44 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
-  const resolved = {
+  // create an internal resolver to be used in special scenarios, e.g.
+  // optimizer & handling css @imports
+  const createResolver: ResolvedConfig['createResolver'] = (options) => {
+    let aliasContainer: PluginContainer | undefined
+    let resolverContainer: PluginContainer | undefined
+    return async (id, importer, aliasOnly) => {
+      let container: PluginContainer
+      if (aliasOnly) {
+        container =
+          aliasContainer ||
+          (aliasContainer = await createPluginContainer({
+            ...resolved,
+            plugins: [aliasPlugin({ entries: resolved.alias })]
+          }))
+      } else {
+        container =
+          resolverContainer ||
+          (resolverContainer = await createPluginContainer({
+            ...resolved,
+            plugins: [
+              aliasPlugin({ entries: resolved.alias }),
+              resolvePlugin({
+                root: resolvedRoot,
+                dedupe: resolved.dedupe,
+                isProduction,
+                isBuild: command === 'build',
+                asSrc: options?.asSrc || true,
+                tryIndex: options?.tryIndex || true,
+                extensions: options?.extensions
+              })
+            ]
+          }))
+      }
+      return (await container.resolveId(id, importer))?.id
+    }
+  }
+
+  const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
     inlineConfig,
@@ -295,7 +342,6 @@ export async function resolveConfig(
     isProduction,
     optimizeCacheDir,
     alias: resolvedAlias,
-    aliasResolver: null as any,
     plugins: userPlugins,
     server: config.server || {},
     build: resolvedBuildOptions,
@@ -310,20 +356,16 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
-    base: BASE_URL
+    base: BASE_URL,
+    createResolver
   }
 
-  resolved.plugins = await resolvePlugins(
+  ;(resolved as any).plugins = await resolvePlugins(
     resolved,
     prePlugins,
     normalPlugins,
     postPlugins
   )
-
-  resolved.aliasResolver = await createPluginContainer({
-    ...resolved,
-    plugins: [aliasPlugin({ entries: config.alias })]
-  })
 
   // call configResolved hooks
   userPlugins.forEach((p) => {
@@ -626,7 +668,8 @@ async function bundleConfigFile(
       resolvePlugin({
         root: path.dirname(fileName),
         isBuild: true,
-        asSrc: false
+        asSrc: false,
+        isProduction: false
       }),
       {
         name: 'replace-import-meta',
