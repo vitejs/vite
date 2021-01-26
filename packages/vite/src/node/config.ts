@@ -26,6 +26,11 @@ import { createFilter } from '@rollup/pluginutils'
 import { ResolvedBuildOptions } from '.'
 import { parse as parseUrl } from 'url'
 import { JsonOptions } from './plugins/json'
+import {
+  createPluginContainer,
+  PluginContainer
+} from './server/pluginContainer'
+import aliasPlugin from '@rollup/plugin-alias'
 
 const debug = createDebugger('vite:config')
 
@@ -147,6 +152,7 @@ export type ResolvedConfig = Readonly<
     optimizeCacheDir: string | undefined
     env: Record<string, any>
     alias: Alias[]
+    aliasResolver: PluginContainer
     plugins: readonly Plugin[]
     server: ServerOptions
     build: ResolvedBuildOptions
@@ -285,6 +291,7 @@ export async function resolveConfig(
     isProduction,
     optimizeCacheDir,
     alias: resolvedAlias,
+    aliasResolver: null as any,
     plugins: userPlugins,
     server: config.server || {},
     build: resolvedBuildOptions,
@@ -308,6 +315,11 @@ export async function resolveConfig(
     normalPlugins,
     postPlugins
   )
+
+  resolved.aliasResolver = await createPluginContainer({
+    ...resolved,
+    plugins: [aliasPlugin({ entries: config.alias })]
+  })
 
   // call configResolved hooks
   userPlugins.forEach((p) => {
