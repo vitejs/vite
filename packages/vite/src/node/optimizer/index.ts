@@ -267,25 +267,32 @@ export async function optimizeDeps(
     if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map'))
       continue
     const { inputs, exports: generatedExports } = meta.outputs[output]
+    const relativeOutput = normalizePath(
+      path.relative(cacheDir, path.resolve(output))
+    )
     for (const input in inputs) {
       const entry = normalizePath(path.resolve(input))
-      const id = entryToIdMap[entry.toLowerCase()]
-      if (id) {
-        // check if this is a cjs dep.
-        const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
-        data.optimized[id] = {
-          file: normalizePath(path.resolve(output)),
-          needsInterop:
-            // entry has no ESM syntax - likely CJS or UMD
-            (!exports.length && !imports.length) ||
-            // if a peer dep used require() on a ESM dep, esbuild turns the
-            // ESM dep's entry chunk into a single default export... detect
-            // such cases by checking exports mismatch, and force interop.
-            (isSingleDefaultExport(generatedExports) &&
-              !isSingleDefaultExport(exports))
-        }
-        break
+      if (!entry.endsWith(relativeOutput)) {
+        continue
       }
+      const id = entryToIdMap[entry.toLowerCase()]
+      if (!id) {
+        continue
+      }
+      // check if this is a cjs dep.
+      const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
+      data.optimized[id] = {
+        file: normalizePath(path.resolve(output)),
+        needsInterop:
+          // entry has no ESM syntax - likely CJS or UMD
+          (!exports.length && !imports.length) ||
+          // if a peer dep used require() on a ESM dep, esbuild turns the
+          // ESM dep's entry chunk into a single default export... detect
+          // such cases by checking exports mismatch, and force interop.
+          (isSingleDefaultExport(generatedExports) &&
+            !isSingleDefaultExport(exports))
+      }
+      break
     }
   }
 
