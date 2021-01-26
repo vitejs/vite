@@ -93,6 +93,10 @@ export default {
 
 Importing `.css` files will inject its content to the page via a `<style>` tag with HMR support. You can also retrieve the processed CSS as a string as the module's default export.
 
+### `@import` Inlining and Rebasing
+
+Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. All CSS `url()` references are also automatically rebased during production build.
+
 ### PostCSS
 
 If the project contains valid PostCSS config (any format supported by [postcss-load-config](https://github.com/postcss/postcss-load-config), e.g. `postcss.config.js`), it will be automatically applied to all imported CSS.
