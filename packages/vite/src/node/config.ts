@@ -223,7 +223,8 @@ export async function resolveConfig(
 
   // resolve alias with internal client alias
   const resolvedAlias = mergeAlias(
-    [{ find: /^\/@vite\//, replacement: CLIENT_DIR + '/' }],
+    // @ts-ignore
+    [{ find: /^\/@vite\//, replacement: () => CLIENT_DIR + '/' }],
     config.alias || []
   )
 
