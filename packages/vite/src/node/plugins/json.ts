@@ -61,7 +61,7 @@ export function jsonPlugin(
           map: { mappings: '' }
         }
       } catch (e) {
-        const errorMessageList = /[\d]/.exec(e.message)
+        const errorMessageList = /[\d]+/.exec(e.message)
         const position = errorMessageList && parseInt(errorMessageList[0], 10)
         const msg = position
           ? `, invalid JSON syntax found at line ${position}`
