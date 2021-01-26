@@ -17,11 +17,11 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadCode = `const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+const preloadCode = `let scriptRel;const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
 
 /**
- * Helper for preloading CSS and direct imports of async chunks in parallell to
+ * Helper for preloading CSS and direct imports of async chunks in parallel to
  * the async chunk itself.
  */
 function preload(baseModule: () => Promise<{}>, deps?: string[]) {
@@ -29,6 +29,18 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   if (!__VITE_IS_MODERN__ || !deps) {
     return baseModule()
   }
+
+  // @ts-ignore
+  if (scriptRel === undefined) {
+    // @ts-ignore
+    const relList = document.createElement('link').relList
+    // @ts-ignore
+    scriptRel =
+      relList && relList.supports && relList.supports('modulepreload')
+        ? 'modulepreload'
+        : 'preload'
+  }
+
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
@@ -42,13 +54,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
       }
       // @ts-ignore
       const link = document.createElement('link')
-      link.rel = isCss
-        ? 'stylesheet'
-        : link.relList &&
-          link.relList.supports &&
-          link.relList.supports('modulepreload')
-        ? 'modulepreload'
-        : 'preload'
+      // @ts-ignore
+      link.rel = isCss ? 'stylesheet' : scriptRel
       if (!isCss) {
         link.as = 'script'
         link.crossOrigin = ''
