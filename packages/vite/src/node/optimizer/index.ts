@@ -266,7 +266,7 @@ export async function optimizeDeps(
   for (const output in meta.outputs) {
     if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map'))
       continue
-    const { inputs, exports: generatedExports } = meta.outputs[output]
+    const { inputs, exports } = meta.outputs[output]
     const relativeOutput = normalizePath(
       path.relative(cacheDir, path.resolve(output))
     )
@@ -279,24 +279,45 @@ export async function optimizeDeps(
       if (!id) {
         continue
       }
-      // check if this is a cjs dep.
-      const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
       data.optimized[id] = {
         file: normalizePath(path.resolve(output)),
-        needsInterop:
-          // entry has no ESM syntax - likely CJS or UMD
-          (!exports.length && !imports.length) ||
-          // if a peer dep used require() on a ESM dep, esbuild turns the
-          // ESM dep's entry chunk into a single default export... detect
-          // such cases by checking exports mismatch, and force interop.
-          (isSingleDefaultExport(generatedExports) &&
-            !isSingleDefaultExport(exports))
+        needsInterop: needsInterop(id, entry, exports)
       }
       break
     }
   }
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
+}
+
+// https://github.com/vitejs/vite/issues/1724#issuecomment-767619642
+// a list of modules that pretends to be ESM but still uses `require`.
+// this causes esbuild to wrap them as CJS even when its entry appears to be ESM.
+const KNOWN_INTEROP_IDS = new Set(['moment'])
+
+function needsInterop(
+  id: string,
+  entry: string,
+  generatedExports: string[]
+): boolean {
+  if (KNOWN_INTEROP_IDS.has(id)) {
+    return true
+  }
+  const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
+  // entry has no ESM syntax - likely CJS or UMD
+  if (!exports.length && !imports.length) {
+    return true
+  }
+  // if a peer dep used require() on a ESM dep, esbuild turns the
+  // ESM dep's entry chunk into a single default export... detect
+  // such cases by checking exports mismatch, and force interop.
+  if (
+    isSingleDefaultExport(generatedExports) &&
+    !isSingleDefaultExport(exports)
+  ) {
+    return true
+  }
+  return false
 }
 
 function isSingleDefaultExport(exports: string[]) {
