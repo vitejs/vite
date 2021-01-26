@@ -230,6 +230,7 @@ export async function optimizeDeps(
     bundle: true,
     format: 'esm',
     external,
+    logLevel: 'error',
     splitting: true,
     sourcemap: true,
     outdir: cacheDir,
