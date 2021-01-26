@@ -30,17 +30,40 @@ export function esbuildDepPlugin(
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
+      async function useViteResolve(id: string, importer: string) {
+        id = (await aliasResolver.resolveId(id))?.id || id
+        const resolved = tryNodeResolve(
+          id,
+          path.dirname(importer),
+          false,
+          true,
+          config.dedupe,
+          config.root
+        )
+        if (resolved) {
+          return path.resolve(resolved.id)
+        }
+      }
+
       // externalize assets and commonly known non-js file types
       build.onResolve(
         {
           filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
         },
-        ({ path: _path, importer }) => {
-          if (_path.startsWith('.')) {
+        async ({ path: id, importer }) => {
+          if (id.startsWith('.')) {
             const dir = path.dirname(importer)
             return {
-              path: path.resolve(dir, _path),
+              path: path.resolve(dir, id),
               external: true
+            }
+          } else {
+            const resolved = await useViteResolve(id, importer)
+            if (resolved) {
+              return {
+                path: resolved,
+                external: true
+              }
             }
           }
         }
@@ -58,19 +81,11 @@ export function esbuildDepPlugin(
           const deepMatch = id.match(deepImportRE)
           const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
           transitiveOptimized[pkgId] = true
-
-          id = (await aliasResolver.resolveId(id))?.id || id
-          const resolved = tryNodeResolve(
-            id,
-            path.dirname(importer),
-            false,
-            true,
-            config.dedupe,
-            config.root
-          )
+          // use vite resolver
+          const resolved = await useViteResolve(id, importer)
           if (resolved) {
             return {
-              path: path.resolve(resolved.id)
+              path: resolved
             }
           }
         } else {
