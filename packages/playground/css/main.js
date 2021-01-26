@@ -4,6 +4,9 @@ text('.imported-css', css)
 import sass from './sass.scss'
 text('.imported-sass', sass)
 
+import less from './less.less'
+text('.imported-less', less)
+
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod.applyColor)
 text('.modules-code', JSON.stringify(mod, null, 2))
