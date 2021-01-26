@@ -234,6 +234,7 @@ export async function optimizeDeps(
     splitting: true,
     sourcemap: true,
     outdir: cacheDir,
+    treeShaking: 'ignore-annotations',
     metafile: esbuildMetaPath,
     define: {
       'process.env.NODE_ENV': '"development"'
