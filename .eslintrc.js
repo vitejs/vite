@@ -38,7 +38,7 @@ module.exports = {
     'node/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite']
+        allowModules: ['vite', 'less', 'sass']
       }
     ],
     'node/no-extraneous-require': [
