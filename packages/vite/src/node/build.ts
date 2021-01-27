@@ -138,8 +138,12 @@ export interface BuildOptions {
    *
    * ```json
    * {
-   *   "main.js": { "file": "main.68fe3fad.js" },
-   *   "style.css": { "file": "style.e6b63442.css" }
+   *   "main.js": {
+   *     "file": "main.68fe3fad.js",
+   *     "css": "main.e6b63442.css",
+   *     "imports": [...],
+   *     "dynamicImports": [...]
+   *   }
    * }
    * ```
    * @default false
