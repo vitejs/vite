@@ -16,7 +16,7 @@ import {
 
 export async function scanImports(
   config: ResolvedConfig
-): Promise<Record<string, string>> {
+): Promise<{ qualified: Record<string, string>; external: string[] }> {
   const htmlEntries = await glob('**/index.html', {
     cwd: config.root,
     ignore: ['**/node_modules/**', `**/${config.build.outDir}/**`],
@@ -25,8 +25,9 @@ export async function scanImports(
 
   const tempDir = path.join(config.optimizeCacheDir!, 'scan')
   const depImports: Record<string, string> = {}
-  const missingImports = new Set<string>()
-  const plugin = esbuildScanPlugin(config, depImports, missingImports)
+  const excluded = new Set<string>()
+  const missing = new Set<string>()
+  const plugin = esbuildScanPlugin(config, depImports, excluded, missing)
 
   await Promise.all(
     htmlEntries.map((entry) =>
@@ -45,15 +46,18 @@ export async function scanImports(
   emptyDir(tempDir)
   fs.rmdirSync(tempDir)
 
-  if (missingImports.size) {
+  if (missing.size) {
     config.logger.error(
       `The following dependencies are imported but couldn't be resolved: ${[
-        ...missingImports
+        ...missing
       ].join(', ')}`
     )
   }
 
-  return depImports
+  return {
+    qualified: depImports,
+    external: [...excluded]
+  }
 }
 
 const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
@@ -64,7 +68,8 @@ const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 function esbuildScanPlugin(
   config: ResolvedConfig,
   depImports: Record<string, string>,
-  missingImports: Set<string>
+  excluded: Set<string>,
+  missing: Set<string>
 ): Plugin {
   let container: PluginContainer
 
@@ -128,6 +133,8 @@ function esbuildScanPlugin(
             if (resolved.includes('node_modules') || (include && include(id))) {
               if (!(exclude && exclude(id))) {
                 depImports[id] = resolved
+              } else {
+                excluded.add(id)
               }
               return {
                 path: id,
@@ -145,7 +152,7 @@ function esbuildScanPlugin(
                 `Dependency ${id} not found. Is it installed? (imported by ${importer})`
               )
             )
-            missingImports.add(id)
+            missing.add(id)
           }
         }
       )

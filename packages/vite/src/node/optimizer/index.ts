@@ -84,7 +84,7 @@ export async function optimizeDeps(
     fs.mkdirSync(cacheDir, { recursive: true })
   }
 
-  const qualified = await scanImports(config)
+  const { qualified, external } = await scanImports(config)
   const qualifiedIds = Object.keys(qualified)
 
   if (!qualifiedIds.length) {
@@ -111,6 +111,7 @@ export async function optimizeDeps(
     entryPoints: Object.values(qualified).map((p) => path.resolve(p)),
     bundle: true,
     format: 'esm',
+    external,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
