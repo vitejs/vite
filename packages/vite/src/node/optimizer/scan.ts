@@ -4,7 +4,7 @@ import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { build, Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
-import { emptyDir, isDataUrl, isExternalUrl } from '../utils'
+import { createDebugger, emptyDir, isDataUrl, isExternalUrl } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import { createFilter } from '@rollup/pluginutils'
 import { isCSSRequest } from '../plugins/css'
@@ -14,12 +14,19 @@ import {
   PluginContainer
 } from '../server/pluginContainer'
 
+const debug = createDebugger('vite:scan')
+
 export async function scanImports(
   config: ResolvedConfig
 ): Promise<{ qualified: Record<string, string>; external: string[] }> {
+  const s = Date.now()
   const htmlEntries = await glob('**/index.html', {
     cwd: config.root,
-    ignore: ['**/node_modules/**', `**/${config.build.outDir}/**`],
+    ignore: [
+      '**/node_modules/**',
+      `**/${config.build.outDir}/**`,
+      `**/__tests__/**`
+    ],
     absolute: true
   })
 
@@ -45,6 +52,8 @@ export async function scanImports(
 
   emptyDir(tempDir)
   fs.rmdirSync(tempDir)
+
+  debug(`scan completed in ${Date.now() - s}ms:`, depImports)
 
   if (missing.size) {
     config.logger.error(
@@ -182,14 +191,15 @@ function esbuildScanPlugin(
               loader = 'ts'
             }
             if (srcMatch) {
-              js += `import ${JSON.stringify(
-                srcMatch[1] || srcMatch[2] || srcMatch[3]
-              )}\n`
+              const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
+              js += `import ${JSON.stringify(src)}\n`
             } else if (content.trim()) {
               js += content + '\n'
             }
           }
-          js += `export default {}`
+          if (!js.includes(`export default`)) {
+            js += `export default {}`
+          }
           return {
             loader,
             contents: js
@@ -224,9 +234,9 @@ function esbuildScanPlugin(
           }
           // use vite resolver to support urls
           const resolved = await resolve(id, importer)
-          if (id && resolved !== id) {
+          if (resolved && resolved !== id) {
             return {
-              path: path.resolve(id)
+              path: path.resolve(resolved)
             }
           } else {
             // resolve failed... probably usupported type

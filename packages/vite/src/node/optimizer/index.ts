@@ -58,11 +58,8 @@ export async function optimizeDeps(
   }
 
   const dataPath = path.join(cacheDir, 'metadata.json')
-  const pkgPath = lookupFile(root, [`package.json`], true)!
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-
   const data: DepOptimizationMetadata = {
-    hash: getDepHash(root, pkg, config),
+    hash: getDepHash(root, config),
     optimized: {}
   }
 
@@ -197,11 +194,7 @@ const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
 
 let cachedHash: string | undefined
 
-function getDepHash(
-  root: string,
-  pkg: Record<string, any>,
-  config: ResolvedConfig
-): string {
+function getDepHash(root: string, config: ResolvedConfig): string {
   if (cachedHash) {
     return cachedHash
   }
