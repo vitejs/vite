@@ -1,9 +1,9 @@
 import path from 'path'
 import { Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
-import { ResolvedConfig, ResolveFn } from '..'
+import { ResolvedConfig } from '..'
 import chalk from 'chalk'
-import { deepImportRE, isBuiltin, isRunningWithYarnPnp } from '../utils'
+import { isBuiltin, isRunningWithYarnPnp } from '../utils'
 
 const externalTypes = [
   'css',
@@ -13,6 +13,7 @@ const externalTypes = [
   'scss',
   'style',
   'stylus',
+  'postcss',
   // known SFC types
   'vue',
   'svelte',
@@ -21,10 +22,10 @@ const externalTypes = [
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
-  config: ResolvedConfig,
-  transitiveOptimized: Record<string, true>,
-  resolve: ResolveFn
+  config: ResolvedConfig
 ): Plugin {
+  const resolve = config.createResolver({ asSrc: false })
+
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
@@ -60,10 +61,6 @@ export function esbuildDepPlugin(
             path: path.resolve(qualified[id])
           }
         } else if (!isBuiltin(id)) {
-          // record transitive deps
-          const deepMatch = id.match(deepImportRE)
-          const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
-          transitiveOptimized[pkgId] = true
           // use vite resolver
           const resolved = await resolve(id, importer)
           if (resolved) {

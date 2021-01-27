@@ -85,6 +85,7 @@ export function createLogger(
       output('warn', msg, opts)
     },
     error(msg, opts) {
+      logger.hasWarned = true
       output('error', msg, opts)
     },
     clearScreen(type) {
