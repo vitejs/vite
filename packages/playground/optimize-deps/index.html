@@ -13,7 +13,7 @@
 <script type="module" src="./dedupe.js"></script>
 
 <h2>CommonJS w/ browser field mapping (axios)</h2>
-<div>This should show ping: <span class="cjs-browser-field"></span></div>
+<div>This should show pong: <span class="cjs-browser-field"></span></div>
 
 <h2>Detecting linked src package and optimizing its deps (lodash-es)</h2>
 <div>This should show fooBarBaz: <span class="deps-linked"></span></div>
@@ -31,11 +31,8 @@
 <div class="vue"></div>
 
 <script type="module">
-  import axios from 'axios'
-
-  axios.get('/ping').then((res) => {
-    document.querySelector('.cjs-browser-field').textContent = res.data
-  })
+  // test dep detection in globbed files
+  const globbed = import.meta.globEager('./glob/*.js')
 
   import { camelCase } from 'optimize-deps-linked'
   document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')

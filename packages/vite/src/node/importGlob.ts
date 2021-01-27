@@ -48,7 +48,6 @@ export async function transformImportGlob(
   if (pattern.startsWith('./')) {
     pattern = pattern.slice(2)
   }
-
   const files = glob.sync(pattern, { cwd: base })
   const imports: string[] = []
   let importsString = ``

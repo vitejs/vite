@@ -17,6 +17,9 @@ import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
+import { init, parse } from 'es-module-lexer'
+import MagicString from 'magic-string'
+import { transformImportGlob } from '../importGlob'
 
 const debug = createDebugger('vite:deps')
 
@@ -70,7 +73,6 @@ export async function scanImports(
         format: 'esm',
         logLevel: 'error',
         outdir: tempDir,
-        outbase: config.root,
         plugins: [plugin]
       })
     )
@@ -143,40 +145,45 @@ function esbuildScanPlugin(
         }
       })
 
-      build.onLoad(
-        { filter: htmlTypesRe, namespace: 'html' },
-        async ({ path }) => {
-          const raw = await fs.promises.readFile(path, 'utf-8')
-          const regex = path.endsWith('.html') ? scriptModuleRE : scriptRE
-          regex.lastIndex = 0
-          let js = ''
-          let loader: Loader = 'js'
-          let match
-          while ((match = regex.exec(raw))) {
-            const [, openTag, content] = match
-            const srcMatch = openTag.match(srcRE)
-            const langMatch = openTag.match(langRE)
-            const lang =
-              langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
-            if (lang === 'ts') {
-              loader = 'ts'
-            }
-            if (srcMatch) {
-              const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
-              js += `import ${JSON.stringify(src)}\n`
-            } else if (content.trim()) {
-              js += content + '\n'
-            }
+      build.onLoad({ filter: htmlTypesRe, namespace: 'html' }, ({ path }) => {
+        const raw = fs.readFileSync(path, 'utf-8')
+        const regex = path.endsWith('.html') ? scriptModuleRE : scriptRE
+        regex.lastIndex = 0
+        let js = ''
+        let loader: Loader = 'js'
+        let match
+        while ((match = regex.exec(raw))) {
+          const [, openTag, content] = match
+          const srcMatch = openTag.match(srcRE)
+          const langMatch = openTag.match(langRE)
+          const lang =
+            langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
+          if (lang === 'ts') {
+            loader = 'ts'
           }
-          if (!js.includes(`export default`)) {
-            js += `export default {}`
-          }
-          return {
-            loader,
-            contents: js
+          if (srcMatch) {
+            const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
+            js += `import ${JSON.stringify(src)}\n`
+          } else if (content.trim()) {
+            js += content + '\n'
           }
         }
-      )
+        if (!js.includes(`export default`)) {
+          js += `export default {}`
+        }
+
+        if (js.includes('import.meta.glob')) {
+          return transformGlob(js, path).then((contents) => ({
+            loader,
+            contents
+          }))
+        }
+
+        return {
+          loader,
+          contents: js
+        }
+      })
 
       // css: externalize
       build.onResolve(
@@ -255,7 +262,7 @@ function esbuildScanPlugin(
           if (id.includes(`?worker`)) {
             return { path: id, external: true }
           }
-          // use vite resolver to support urls
+          // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer)
           if (resolved && resolved !== id) {
             return {
@@ -270,6 +277,45 @@ function esbuildScanPlugin(
           }
         }
       )
+
+      // for jsx/tsx, we need to access the content and check for
+      // presence of import.meta.glob, since it results in import relationships
+      // but isn't crawled by esbuild.
+      build.onLoad({ filter: /\.(j|t)sx?$/ }, ({ path: id }) => {
+        const loader = path.extname(id).slice(1) as Loader
+        const contents = fs.readFileSync(id, 'utf-8')
+        if (contents.includes('import.meta.glob')) {
+          return transformGlob(contents, id).then((contents) => ({
+            loader,
+            contents
+          }))
+        }
+        return {
+          loader,
+          contents
+        }
+      })
     }
   }
+}
+
+async function transformGlob(source: string, importer: string) {
+  await init
+  const imports = parse(source)[0]
+  const s = new MagicString(source)
+  for (let index = 0; index < imports.length; index++) {
+    const { s: start, e: end, ss: expStart } = imports[index]
+    const url = source.slice(start, end)
+    if (url !== 'import.meta') continue
+    if (source.slice(end, end + 5) !== '.glob') continue
+    const { importsString, exp, endIndex } = await transformImportGlob(
+      source,
+      start,
+      normalizePath(importer),
+      index
+    )
+    s.prepend(importsString)
+    s.overwrite(expStart, endIndex, exp)
+  }
+  return s.toString()
 }
