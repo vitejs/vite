@@ -4,9 +4,14 @@ import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { build, Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
-import { createDebugger, emptyDir, isDataUrl, isExternalUrl } from '../utils'
+import {
+  createDebugger,
+  emptyDir,
+  isDataUrl,
+  isExternalUrl,
+  normalizePath
+} from '../utils'
 import { browserExternalId } from '../plugins/resolve'
-import { isCSSRequest } from '../plugins/css'
 import chalk from 'chalk'
 import {
   createPluginContainer,
@@ -84,7 +89,10 @@ function esbuildScanPlugin(
       return seen.get(key)
     }
     container = container || (container = await createPluginContainer(config))
-    const resolved = await container.resolveId(id, importer)
+    const resolved = await container.resolveId(
+      id,
+      importer && normalizePath(importer)
+    )
     const res = resolved?.id
     seen.set(key, res)
     return res
@@ -96,63 +104,6 @@ function esbuildScanPlugin(
   return {
     name: 'vite:dep-scan',
     setup(build) {
-      // bare imports: record and externalize
-      build.onResolve(
-        {
-          filter: /^[\w@]/
-        },
-        async ({ path: id, importer }) => {
-          if (depImports[id]) {
-            return {
-              path: id,
-              external: true
-            }
-          }
-
-          if (
-            isExternalUrl(id) ||
-            isDataUrl(id) ||
-            isCSSRequest(id) ||
-            config.assetsInclude(id)
-          ) {
-            return {
-              path: id,
-              external: true
-            }
-          }
-
-          const resolved = await resolve(id, importer)
-          if (resolved) {
-            // virtual id or browser external
-            if (id === resolved || resolved.startsWith(browserExternalId)) {
-              return { path: id, external: true }
-            }
-            // dep or force included, externalize and stop crawling
-            if (resolved.includes('node_modules') || include?.includes(id)) {
-              if (!exclude?.includes(id)) {
-                depImports[id] = resolved
-              }
-              return {
-                path: id,
-                external: true
-              }
-            } else {
-              // linked package, keep crawling
-              return {
-                path: path.resolve(resolved)
-              }
-            }
-          } else {
-            config.logger.error(
-              chalk.red(
-                `Dependency ${id} not found. Is it installed? (imported by ${importer})`
-              )
-            )
-            missing.add(id)
-          }
-        }
-      )
-
       const htmlTypesRe = /\.(html|vue|svelte)$/
       // html types: extract script contents
       build.onResolve({ filter: htmlTypesRe }, async ({ path, importer }) => {
@@ -161,6 +112,7 @@ function esbuildScanPlugin(
           namespace: 'html'
         }
       })
+
       build.onLoad(
         { filter: htmlTypesRe, namespace: 'html' },
         async ({ path }) => {
@@ -208,6 +160,63 @@ function esbuildScanPlugin(
           filter: new RegExp(`\\.(${knownAssetTypes.join('|')})$`)
         },
         ({ path }) => ({ path, external: true })
+      )
+
+      // bare imports: record and externalize
+      build.onResolve(
+        {
+          // avoid matching windows volume
+          filter: /^[\w@][^:]/
+        },
+        async ({ path: id, importer }) => {
+          if (depImports[id]) {
+            return {
+              path: id,
+              external: true
+            }
+          }
+
+          if (isExternalUrl(id) || isDataUrl(id)) {
+            return {
+              path: id,
+              external: true
+            }
+          }
+
+          const resolved = await resolve(id, importer)
+          if (resolved) {
+            // browser external
+            if (resolved.startsWith(browserExternalId)) {
+              return { path: id, external: true }
+            }
+            // virtual id
+            if (id === resolved) {
+              return { path: id, external: true }
+            }
+            // dep or force included, externalize and stop crawling
+            if (resolved.includes('node_modules') || include?.includes(id)) {
+              if (!exclude?.includes(id)) {
+                depImports[id] = resolved
+              }
+              return {
+                path: id,
+                external: true
+              }
+            } else {
+              // linked package, keep crawling
+              return {
+                path: path.resolve(resolved)
+              }
+            }
+          } else {
+            config.logger.error(
+              chalk.red(
+                `Dependency ${id} not found. Is it installed? (imported by ${importer})`
+              )
+            )
+            missing.add(id)
+          }
+        }
       )
 
       // catch all
