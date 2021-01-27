@@ -481,29 +481,14 @@ export default ({ command, mode }) => {
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
 
-### optimizeDeps.include
-
-- **Type:** `string[]`
-
-  Dependencies to force include in pre-bundling.
-
 ### optimizeDeps.exclude
 
 - **Type:** `string | RegExp | (string | RegExp)[]`
 
-  Dependencies to force exclude in pre-bundling.
+  Dependencies to exclude from pre-bundling.
 
-### optimizeDeps.link
+### optimizeDeps.include
 
-- **Type:** `string[]`
+- **Type:** `string | RegExp | (string | RegExp)[]`
 
-  A list of packages to be treated as "linked". Linked packages will not be pre-bundled - Vite will analyze and pre-bundle its depndencies instead.
-
-  Note that if you are using a monorepo via package manager workspaces, and have the packages listed as dependencies in your Vite entry package, Vite will automatically treat them as linked (by checking if it's inside `node_modules`). This option is only needed if you have unusual setups where your Vite app is importing from a package that isn't already linked as a Node-resolvable dependency.
-
-### optimizeDeps.auto
-
-- **Type:** `boolean`
-- **Default:** `true`
-
-  Automatically run dep pre-bundling on server start? Set to `false` to disable.
+  By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
