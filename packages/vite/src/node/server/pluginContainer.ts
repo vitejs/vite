@@ -256,9 +256,11 @@ export async function createPluginContainer(
       position?: number | { column: number; line: number }
     ) {
       const err = formatError(e, position, this)
-      const msg = buildErrorMessage(err, [
-        chalk.yellow(`warning: ${err.message}`)
-      ])
+      const msg = buildErrorMessage(
+        err,
+        [chalk.yellow(`warning: ${err.message}`)],
+        false
+      )
       logger.warn(msg, {
         clear: true,
         timestamp: true

@@ -20,11 +20,15 @@ export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
   }
 }
 
-export function buildErrorMessage(err: RollupError, args: string[] = []) {
+export function buildErrorMessage(
+  err: RollupError,
+  args: string[] = [],
+  includeStack = true
+) {
   if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
   if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
   if (err.frame) args.push(chalk.yellow(pad(err.frame)))
-  if (err.stack) args.push(pad(cleanStack(err.stack)))
+  if (includeStack && err.stack) args.push(pad(cleanStack(err.stack)))
   return args.join('\n')
 }
 
