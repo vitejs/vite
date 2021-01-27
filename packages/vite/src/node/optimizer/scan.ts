@@ -154,7 +154,9 @@ function esbuildScanPlugin(
           regex.lastIndex = 0
           let js = ''
           let loader: Loader = 'js'
-          for (const [_, openTag, content] of raw.matchAll(regex)) {
+          let match
+          while ((match = regex.exec(raw))) {
+            const [, openTag, content] = match
             const srcMatch = openTag.match(srcRE)
             const langMatch = openTag.match(langRE)
             const lang =
