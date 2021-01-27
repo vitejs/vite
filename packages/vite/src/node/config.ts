@@ -322,9 +322,9 @@ export async function resolveConfig(
                 dedupe: resolved.dedupe,
                 isProduction,
                 isBuild: command === 'build',
-                asSrc: options?.asSrc || true,
-                relativeFirst: options?.relativeFirst || false,
-                tryIndex: options?.tryIndex || true,
+                asSrc: options?.asSrc ?? true,
+                relativeFirst: options?.relativeFirst ?? false,
+                tryIndex: options?.tryIndex ?? true,
                 extensions: options?.extensions
               })
             ]
