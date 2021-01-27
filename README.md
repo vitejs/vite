@@ -4,6 +4,7 @@
 [![node][node-img]][node-url]
 [![unix CI status][unix-ci-img]][unix-ci-url]
 [![windows CI status][windows-ci-img]][windows-ci-url]
+[![chat on Discord][discord-img]][discord-url]
 
 > Next Generation Frontend Tooling
 
@@ -30,7 +31,7 @@ Vite is now in 2.0 beta. Check out the [Migration Guide](https://vitejs.dev/guid
 
 ## Packages
 
-| Package                                                       | Version (click for changelogs)                                                                                                                                               |
+| Package                                                       | Version (click for changelogs)                                                                                                                         |
 | ------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [vite](packages/vite)                                         | [![vite version](https://img.shields.io/npm/v/vite.svg?label=%20)](packages/vite/CHANGELOG.md)                                                         |
 | [@vitejs/plugin-vue](packages/plugin-vue)                     | [![plugin-vue version](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg?label=%20)](packages/plugin-vue/CHANGELOG.md)                               |
@@ -55,3 +56,5 @@ MIT
 [unix-ci-url]: https://app.circleci.com/pipelines/github/vitejs/vite?branch=main
 [windows-ci-img]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/main?svg=true
 [windows-ci-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/main
+[discord-img]: https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord
+[discord-url]: https://chat.vitejs.dev
