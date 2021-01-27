@@ -162,6 +162,7 @@ export type ResolvedConfig = Readonly<
       asSrc?: boolean
       tryIndex?: boolean | string
       extensions?: string[]
+      relativeFirst?: boolean
     }) => ResolveFn
   }
 >
@@ -322,6 +323,7 @@ export async function resolveConfig(
                 isProduction,
                 isBuild: command === 'build',
                 asSrc: options?.asSrc || true,
+                relativeFirst: options?.relativeFirst || false,
                 tryIndex: options?.tryIndex || true,
                 extensions: options?.extensions
               })
