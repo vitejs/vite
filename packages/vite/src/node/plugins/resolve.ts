@@ -16,14 +16,12 @@ import {
   ensureVolumeInPath,
   resolveFrom,
   isDataUrl,
-  cleanUrl,
-  isJSRequest
+  cleanUrl
 } from '../utils'
 import { ViteDevServer } from '..'
 import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
-import { isCSSRequest } from './css'
 import { resolve as _resolveExports } from 'resolve.exports'
 
 const altMainFields = [
@@ -45,7 +43,7 @@ function resolveExports(
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
-const browserExternalId = '__vite-browser-external'
+export const browserExternalId = '__vite-browser-external'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -319,49 +317,6 @@ export function tryNodeResolve(
 
   if (!pkg) {
     return
-  }
-
-  // prevent deep imports to optimized deps.
-  if (server && server._optimizeDepsMetadata) {
-    const data = server._optimizeDepsMetadata
-    if (
-      deepMatch &&
-      pkg.data.name in data.optimized &&
-      !isCSSRequest(id) &&
-      !server.config.assetsInclude(id)
-    ) {
-      throw new Error(
-        chalk.yellow(
-          `Deep import "${chalk.cyan(
-            id
-          )}" should be avoided because dependency "${chalk.cyan(
-            pkg.data.name
-          )}" has been pre-optimized. Prefer importing directly from the module entry:\n\n` +
-            `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
-            `If the used import is not exported from the package's main entry ` +
-            `and can only be attained via deep import, you can explicitly add ` +
-            `the deep import path to "optimizeDeps.include" in vite.config.js.\n\n` +
-            `If you intend to only use deep imports with this package and it ` +
-            `exposes valid ESM, consider adding it to "optimizeDeps.exclude".`
-        )
-      )
-    }
-
-    if (
-      pkgId in data.transitiveOptimized &&
-      isJSRequest(id) &&
-      basedir.startsWith(server.config.root) &&
-      !basedir.includes('node_modules')
-    ) {
-      throw new Error(
-        chalk.yellow(
-          `dependency "${chalk.bold(pkgId)}" is imported in source code, ` +
-            `but was transitively pre-bundled as part of another package. ` +
-            `It should be explicitly listed as a dependency in package.json in ` +
-            `order to avoid duplicated instances of this module.`
-        )
-      )
-    }
   }
 
   let resolved = deepMatch
