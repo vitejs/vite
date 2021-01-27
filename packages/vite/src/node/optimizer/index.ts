@@ -206,7 +206,6 @@ function getDepHash(
     return cachedHash
   }
   let content = lookupFile(root, lockfileFormats) || ''
-  content += JSON.stringify(pkg.dependencies)
   // also take config into account
   // only a subset of config options that can affect dep optimization
   content += JSON.stringify(
