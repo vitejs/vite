@@ -94,19 +94,36 @@ export async function optimizeDeps(
     fs.mkdirSync(cacheDir, { recursive: true })
   }
 
-  const qualified = await scanImports(config)
-  const qualifiedIds = Object.keys(qualified)
+  const { deps, missing } = await scanImports(config)
+
+  const missingIds = Object.keys(missing)
+  if (missingIds.length) {
+    throw new Error(
+      `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
+        .map(
+          (id) =>
+            `${chalk.cyan(id)} ${chalk.white.dim(
+              `(imported by ${missing[id]})`
+            )}`
+        )
+        .join(`\n  `)}\n\nAre they installed?`
+    )
+  }
+
+  const qualifiedIds = Object.keys(deps)
 
   const include = config.optimizeDeps?.include
   if (include) {
     const resolve = config.createResolver({ asSrc: false })
     for (const id of include) {
-      if (!qualified[id]) {
+      if (!deps[id]) {
         const entry = await resolve(id)
         if (entry) {
-          qualified[id] = entry
+          deps[id] = entry
         } else {
-          throw new Error(`Failed to resolve force included dependency: ${id}`)
+          throw new Error(
+            `Failed to resolve force included dependency: ${chalk.cyan(id)}`
+          )
         }
       }
     }
@@ -133,7 +150,7 @@ export async function optimizeDeps(
   const esbuildMetaPath = path.join(cacheDir, 'esbuild.json')
 
   await build({
-    entryPoints: Object.values(qualified).map((p) => path.resolve(p)),
+    entryPoints: Object.values(deps).map((p) => path.resolve(p)),
     bundle: true,
     format: 'esm',
     external: config.optimizeDeps?.exclude,
@@ -146,15 +163,15 @@ export async function optimizeDeps(
     define: {
       'process.env.NODE_ENV': '"development"'
     },
-    plugins: [esbuildDepPlugin(qualified, config)]
+    plugins: [esbuildDepPlugin(deps, config)]
   })
 
   const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
 
   await init
   const entryToIdMap: Record<string, string> = {}
-  for (const id in qualified) {
-    entryToIdMap[qualified[id].toLowerCase()] = id
+  for (const id in deps) {
+    entryToIdMap[deps[id].toLowerCase()] = id
   }
 
   for (const output in meta.outputs) {
