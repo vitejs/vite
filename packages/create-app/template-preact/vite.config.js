@@ -2,6 +2,7 @@
 import preactRefresh from '@prefresh/vite'
 
 /**
+ * https://vitejs.dev/config/
  * @type { import('vite').UserConfig }
  */
 const config = {
