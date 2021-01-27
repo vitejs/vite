@@ -230,8 +230,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           throw e
         }
 
-        // prepend base path without trailing slash ( default empty string )
-        url = path.posix.join(config.base, url)
+        // prepend base (dev base is guaranteed to have ending slash)
+        url = config.base + url.replace(/^\//, '')
         return [url, resolved.id]
       }
 
