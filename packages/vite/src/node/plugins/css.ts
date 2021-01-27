@@ -264,7 +264,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS
           })
-          chunkToEmittedCssFileMap.set(chunk, fileHandle)
+          chunkToEmittedCssFileMap.set(chunk, this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
           // legacy build, inline css
           chunkCSS = await processChunkCSS(chunkCSS, config, this, true)

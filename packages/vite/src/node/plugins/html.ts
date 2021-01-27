@@ -257,18 +257,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       const getCssTagsForChunk = (chunk: OutputChunk): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
-        const cssFileHandle = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFileHandle) {
-          const file = this.getFileName(cssFileHandle)
-          if (file) {
-            tags.push({
-              tag: 'link',
-              attrs: {
-                rel: 'stylesheet',
-                href: toPublicPath(file, config)
-              }
-            })
-          }
+        const cssFile = chunkToEmittedCssFileMap.get(chunk)
+        if (cssFile) {
+          tags.push({
+            tag: 'link',
+            attrs: {
+              rel: 'stylesheet',
+              href: toPublicPath(cssFile, config)
+            }
+          })
         }
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
