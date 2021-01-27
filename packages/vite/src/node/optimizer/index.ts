@@ -130,15 +130,16 @@ export async function optimizeDeps(
   }
 
   for (const output in meta.outputs) {
-    if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map'))
+    if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map')) {
       continue
+    }
     const { inputs, exports } = meta.outputs[output]
     const relativeOutput = normalizePath(
       path.relative(cacheDir, path.resolve(output))
     )
     for (const input in inputs) {
       const entry = normalizePath(path.resolve(input))
-      if (!entry.endsWith(relativeOutput)) {
+      if (!entry.replace(/\.mjs$/, '.js').endsWith(relativeOutput)) {
         continue
       }
       const id = entryToIdMap[entry.toLowerCase()]
