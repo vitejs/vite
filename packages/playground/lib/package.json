@@ -1,5 +1,5 @@
 {
-  "name": "my-lib",
+  "name": "@example/my-lib",
   "private": true,
   "version": "0.0.0",
   "scripts": {
