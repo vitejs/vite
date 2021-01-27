@@ -23,6 +23,7 @@ import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
+import { isCSSRequest } from './css'
 
 const altMainFields = [
   'module',
@@ -335,15 +336,29 @@ export function tryNodeResolve(
       moduleSideEffects: pkg.hasSideEffects(resolved)
     }
   } else {
-    // During serve, inject a version query to npm deps so that the browser
-    // can cache it without revalidation. Make sure to apply this only to
-    // files actually inside node_modules so that locally linked packages
-    // in monorepos are not cached this way.
-    if (resolved.includes('node_modules')) {
-      const versionHash = server?._optimizeDepsMetadata?.hash
+    if (!resolved.includes('node_modules') || !server) {
+      // linked
+      return { id: resolved }
+    }
+    // if we reach here, it's a valid dep import that hasn't been optimzied.
+    const exclude = server.config.optimizeDeps?.exclude
+    if (
+      exclude?.includes(pkgId) ||
+      exclude?.includes(id) ||
+      isCSSRequest(resolved) ||
+      server.config.assetsInclude(resolved)
+    ) {
+      // excluded from optimization
+      // Inject a version query to npm deps so that the browser
+      // can cache it without revalidation.
+      const versionHash = server._optimizeDepsMetadata?.hash
       if (versionHash) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
+    } else {
+      // this is a missing import.
+      // queue optimize-deps re-run.
+      server._registerMissingImport?.(id, resolved)
     }
     return { id: resolved }
   }

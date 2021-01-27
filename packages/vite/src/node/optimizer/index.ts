@@ -47,6 +47,7 @@ export interface DepOptimizationMetadata {
     string,
     {
       file: string
+      src: string
       needsInterop: boolean
     }
   >
@@ -55,8 +56,9 @@ export interface DepOptimizationMetadata {
 export async function optimizeDeps(
   config: ResolvedConfig,
   force = config.server.force,
-  asCommand = false
-) {
+  asCommand = false,
+  newDeps?: Record<string, string> // missing imports encountered after server has started
+): Promise<DepOptimizationMetadata | null> {
   config = {
     ...config,
     command: 'build'
@@ -67,7 +69,7 @@ export async function optimizeDeps(
 
   if (!cacheDir) {
     log(`No package.json. Skipping.`)
-    return
+    return null
   }
 
   const dataPath = path.join(cacheDir, 'metadata.json')
@@ -84,7 +86,7 @@ export async function optimizeDeps(
     // hash is consistent, no need to re-bundle
     if (prevData && prevData.hash === data.hash) {
       log('Hash is consistent. Skipping. Use --force to override.')
-      return
+      return prevData
     }
   }
 
@@ -94,7 +96,13 @@ export async function optimizeDeps(
     fs.mkdirSync(cacheDir, { recursive: true })
   }
 
-  const { deps, missing } = await scanImports(config)
+  let deps: Record<string, string>, missing: Record<string, string>
+  if (!newDeps) {
+    ;({ deps, missing } = await scanImports(config))
+  } else {
+    deps = newDeps
+    missing = {}
+  }
 
   const missingIds = Object.keys(missing)
   if (missingIds.length) {
@@ -132,17 +140,21 @@ export async function optimizeDeps(
   if (!qualifiedIds.length) {
     writeFile(dataPath, JSON.stringify(data, null, 2))
     log(`No dependencies to bundle. Skipping.\n\n\n`)
-    return
+    return data
   }
 
   const depsString = qualifiedIds.map((id) => chalk.yellow(id)).join(`, `)
   if (!asCommand) {
-    // This is auto run on server start - let the user know that we are
-    // pre-optimizing deps
-    logger.info(chalk.greenBright(`Pre-bundling dependencies:\n${depsString}`))
-    logger.info(
-      `(this will be run only when your dependencies or config have changed)`
-    )
+    if (!newDeps) {
+      // This is auto run on server start - let the user know that we are
+      // pre-optimizing deps
+      logger.info(
+        chalk.greenBright(`Pre-bundling dependencies:\n${depsString}`)
+      )
+      logger.info(
+        `(this will be run only when your dependencies or config have changed)`
+      )
+    }
   } else {
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
@@ -193,6 +205,7 @@ export async function optimizeDeps(
       }
       data.optimized[id] = {
         file: normalizePath(path.resolve(output)),
+        src: entry,
         needsInterop: needsInterop(id, entry, exports)
       }
       break
@@ -200,6 +213,7 @@ export async function optimizeDeps(
   }
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
+  return data
 }
 
 // https://github.com/vitejs/vite/issues/1724#issuecomment-767619642

@@ -46,6 +46,7 @@ import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
+import { createMissingImpoterRegisterFn } from '../optimizer/registerMissing'
 
 export interface ServerOptions {
   host?: string
@@ -239,6 +240,14 @@ export interface ViteDevServer {
       module: ModuleNode
     }
   >
+  /**
+   * @internal
+   */
+  _registerMissingImport: ((id: string, resolved: string) => void) | null
+  /**
+   * @internal
+   */
+  _hasPendingReload: boolean
 }
 
 export async function createServer(
@@ -310,7 +319,9 @@ export async function createServer(
     },
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
-    _globImporters: {}
+    _globImporters: {},
+    _registerMissingImport: null,
+    _hasPendingReload: false
   }
 
   process.once('SIGTERM', async () => {
@@ -435,15 +446,8 @@ export async function createServer(
 
   const runOptimize = async () => {
     if (config.optimizeCacheDir) {
-      // run optimizer
-      await optimizeDeps(config)
-      // after optimization, read updated optimization metadata
-      const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
-      if (fs.existsSync(dataPath)) {
-        server._optimizeDepsMetadata = JSON.parse(
-          fs.readFileSync(dataPath, 'utf-8')
-        )
-      }
+      server._optimizeDepsMetadata = await optimizeDeps(config)
+      server._registerMissingImport = createMissingImpoterRegisterFn(server)
     }
   }
 
