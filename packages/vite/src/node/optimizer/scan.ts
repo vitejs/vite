@@ -13,7 +13,6 @@ import {
   isObject
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
-import chalk from 'chalk'
 import {
   createPluginContainer,
   PluginContainer
@@ -23,7 +22,10 @@ const debug = createDebugger('vite:deps')
 
 export async function scanImports(
   config: ResolvedConfig
-): Promise<Record<string, string>> {
+): Promise<{
+  deps: Record<string, string>
+  missing: Record<string, string>
+}> {
   const s = Date.now()
 
   let entries: string[] = []
@@ -50,15 +52,15 @@ export async function scanImports(
 
   if (!entries.length) {
     debug(`No entry HTML files detected`)
-    return {}
+    return { deps: {}, missing: {} }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
   }
 
   const tempDir = path.join(config.optimizeCacheDir!, 'temp')
-  const depImports: Record<string, string> = {}
-  const missing = new Set<string>()
-  const plugin = esbuildScanPlugin(config, depImports, missing)
+  const deps: Record<string, string> = {}
+  const missing: Record<string, string> = {}
+  const plugin = esbuildScanPlugin(config, deps, missing)
 
   await Promise.all(
     entries.map((entry) =>
@@ -77,17 +79,12 @@ export async function scanImports(
   emptyDir(tempDir)
   fs.rmdirSync(tempDir)
 
-  debug(`Scan completed in ${Date.now() - s}ms:`, depImports)
+  debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 
-  if (missing.size) {
-    config.logger.error(
-      `The following dependencies are imported but couldn't be resolved: ${[
-        ...missing
-      ].join(', ')}`
-    )
+  return {
+    deps,
+    missing
   }
-
-  return depImports
 }
 
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
@@ -110,7 +107,7 @@ const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 function esbuildScanPlugin(
   config: ResolvedConfig,
   depImports: Record<string, string>,
-  missing: Set<string>
+  missing: Record<string, string>
 ): Plugin {
   let container: PluginContainer
 
@@ -244,12 +241,7 @@ function esbuildScanPlugin(
               }
             }
           } else {
-            config.logger.error(
-              chalk.red(
-                `Dependency ${id} not found. Is it installed? (imported by ${importer})`
-              )
-            )
-            missing.add(id)
+            missing[id] = normalizePath(importer)
           }
         }
       )
