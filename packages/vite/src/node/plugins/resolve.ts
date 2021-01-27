@@ -63,6 +63,7 @@ interface ResolveOptions {
    */
   asSrc: boolean
   tryIndex?: boolean | string
+  relativeFirst?: boolean
   extensions?: string[]
   dedupe?: string[]
 }
@@ -74,6 +75,7 @@ export function resolvePlugin({
   asSrc,
   dedupe,
   tryIndex = true,
+  relativeFirst = false,
   extensions = SUPPORTED_EXTS
 }: ResolveOptions): Plugin {
   let server: ViteDevServer | undefined
@@ -122,7 +124,7 @@ export function resolvePlugin({
       }
 
       // relative
-      if (id.startsWith('.')) {
+      if (id.startsWith('.') || (relativeFirst && /^\w/.test(id))) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         let fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
