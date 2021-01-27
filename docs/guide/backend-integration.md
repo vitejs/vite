@@ -8,6 +8,7 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
    // vite.config.js
    export default {
      build: {
+       // generate manifest.json in outDir
        manifest: true,
        rollupOptions: {
          // overwrite default .html entry
@@ -34,10 +35,39 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
 
    Also make sure the server is configured to serve static assets in the Vite working directory, otherwise assets such as images won't be loaded properly.
 
-3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. You can use this file to render links with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
+3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
+
+   ```json
+   {
+     "main.js": {
+       "file": "assets/main.4889e940.js",
+       "src": "main.js",
+       "isEntry": true,
+       "dynamicImports": ["views/foo.js"],
+       "css": "assets/main.b82dbe22.css",
+       "assets": ["assets/asset.0ab0f9cd.png"]
+     },
+     "views/foo.js": {
+       "file": "assets/foo.869aea0d.js",
+       "src": "views/foo.js",
+       "isDynamicEntry": true,
+       "imports": ["_shared.83069a53.js"]
+     },
+     "_shared.83069a53.js": {
+       "file": "assets/shared.83069a53.js"
+     }
+   }
+   ```
+
+   - The manifest has a `Record<name, chunk>` structure
+   - For entry or dynamic entry chunks, the key is the relative src path from project root.
+   - For non entry chunks, the key is the base name of the generated file prefixed with `_`.
+   - Chunks will contain information on its static and dynamic imports (both are keys that maps to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
+
+   You can use this file to render links or preload directives with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
 
    ```html
    <!-- if production -->
-   <link rel="stylesheet" href="/assets/{{ manifest['index.css'].file }}" />
-   <script type="module" src="/assets/{{ manifest['index.js'].file }}"></script>
+   <link rel="stylesheet" href="/assets/{{ manifest['main.js'].css }}" />
+   <script type="module" src="/assets/{{ manifest['main.js'].file }}"></script>
    ```

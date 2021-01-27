@@ -6,7 +6,7 @@ import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { PluginContext } from 'rollup'
+import { PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?/g
@@ -14,6 +14,8 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?/g
 // urls in JS must be quoted as strings, so when replacing them we need
 // a different regex
 const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?"/g
+
+export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
@@ -52,14 +54,20 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       return `export default ${JSON.stringify(url)}`
     },
 
-    renderChunk(code) {
+    renderChunk(code, chunk) {
+      let emitted = chunkToEmittedAssetsMap.get(chunk)
       let match
       let s
       while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
         const [full, fileHandle, postfix = ''] = match
-        const outputFilepath =
-          config.base + this.getFileName(fileHandle) + postfix
+        const file = this.getFileName(fileHandle)
+        if (!emitted) {
+          emitted = new Set()
+          chunkToEmittedAssetsMap.set(chunk, emitted)
+        }
+        emitted.add(file)
+        const outputFilepath = config.base + file + postfix
         s.overwrite(
           match.index,
           match.index + full.length,
