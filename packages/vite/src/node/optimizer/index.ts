@@ -21,11 +21,11 @@ export interface DepOptimizationOptions {
   /**
    * Force optimize listed dependencies (supports deep paths).
    */
-  include?: string | RegExp | (string | RegExp)[]
+  include?: string[]
   /**
    * Do not optimize these dependencies.
    */
-  exclude?: string | RegExp | (string | RegExp)[]
+  exclude?: string[]
 }
 
 export interface DepOptimizationMetadata {
@@ -81,8 +81,23 @@ export async function optimizeDeps(
     fs.mkdirSync(cacheDir, { recursive: true })
   }
 
-  const { qualified, external } = await scanImports(config)
+  const qualified = await scanImports(config)
   const qualifiedIds = Object.keys(qualified)
+
+  const include = config.optimizeDeps?.include
+  if (include) {
+    const resolve = config.createResolver({ asSrc: false })
+    for (const id of include) {
+      if (!qualified[id]) {
+        const entry = await resolve(id)
+        if (entry) {
+          qualified[id] = entry
+        } else {
+          throw new Error(`Failed to resolve force included dependency: ${id}`)
+        }
+      }
+    }
+  }
 
   if (!qualifiedIds.length) {
     writeFile(dataPath, JSON.stringify(data, null, 2))
@@ -108,7 +123,7 @@ export async function optimizeDeps(
     entryPoints: Object.values(qualified).map((p) => path.resolve(p)),
     bundle: true,
     format: 'esm',
-    external,
+    external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
