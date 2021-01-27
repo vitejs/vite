@@ -15,15 +15,28 @@ import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
 
-const debug = createDebugger('vite:optimize')
+const debug = createDebugger('vite:deps')
 
 export interface DepOptimizationOptions {
   /**
-   * Force optimize listed dependencies (supports deep paths).
+   * By default, Vite will crawl your index.html to detect dependencies that
+   * need to be pre-bundled. If build.rollupOptions.input is specified, Vite
+   * will crawl those entry points instead.
+   *
+   * If neither of these fit your needs, you can specify custom entries using
+   * this option - the value should be a fast-glob pattern or array of patterns
+   * (https://github.com/mrmlnc/fast-glob#basic-syntax) that are relative from
+   * vite project root. This will overwrite default entries inference.
+   */
+  entries?: string | string[]
+  /**
+   * Force optimize listed dependencies (must be resolvalble import paths,
+   * cannot be globs).
    */
   include?: string[]
   /**
-   * Do not optimize these dependencies.
+   * Do not optimize these dependencies (must be resolvable import paths,
+   * cannot be globs).
    */
   exclude?: string[]
 }
@@ -101,7 +114,7 @@ export async function optimizeDeps(
 
   if (!qualifiedIds.length) {
     writeFile(dataPath, JSON.stringify(data, null, 2))
-    log(`No listed dependency requires optimization. Skipping.\n\n\n`)
+    log(`No dependencies to bundle. Skipping.\n\n\n`)
     return
   }
 

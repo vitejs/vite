@@ -9,7 +9,8 @@ import {
   emptyDir,
   isDataUrl,
   isExternalUrl,
-  normalizePath
+  normalizePath,
+  isObject
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import chalk from 'chalk'
@@ -18,29 +19,49 @@ import {
   PluginContainer
 } from '../server/pluginContainer'
 
-const debug = createDebugger('vite:scan')
+const debug = createDebugger('vite:deps')
 
 export async function scanImports(
   config: ResolvedConfig
 ): Promise<Record<string, string>> {
   const s = Date.now()
-  const htmlEntries = await glob('**/index.html', {
-    cwd: config.root,
-    ignore: [
-      '**/node_modules/**',
-      `**/${config.build.outDir}/**`,
-      `**/__tests__/**`
-    ],
-    absolute: true
-  })
 
-  const tempDir = path.join(config.optimizeCacheDir!, 'scan')
+  let entries: string[] = []
+
+  const explicitEntryPatterns = config.optimizeDeps?.entries
+  const buildInput = config.build.rollupOptions?.input
+
+  if (explicitEntryPatterns) {
+    entries = await globEntries(explicitEntryPatterns, config)
+  } else if (buildInput) {
+    const resolvePath = (p: string) => path.resolve(config.root, p)
+    if (typeof buildInput === 'string') {
+      entries = [resolvePath(buildInput)]
+    } else if (Array.isArray(buildInput)) {
+      entries = buildInput.map(resolvePath)
+    } else if (isObject(buildInput)) {
+      entries = Object.values(buildInput).map(resolvePath)
+    } else {
+      throw new Error('invalid rollupOptions.input value.')
+    }
+  } else {
+    entries = await globEntries('**/*.html', config)
+  }
+
+  if (!entries.length) {
+    debug(`No entry HTML files detected`)
+    return {}
+  } else {
+    debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
+  }
+
+  const tempDir = path.join(config.optimizeCacheDir!, 'temp')
   const depImports: Record<string, string> = {}
   const missing = new Set<string>()
   const plugin = esbuildScanPlugin(config, depImports, missing)
 
   await Promise.all(
-    htmlEntries.map((entry) =>
+    entries.map((entry) =>
       build({
         entryPoints: [entry],
         bundle: true,
@@ -56,7 +77,7 @@ export async function scanImports(
   emptyDir(tempDir)
   fs.rmdirSync(tempDir)
 
-  debug(`scan completed in ${Date.now() - s}ms:`, depImports)
+  debug(`Scan completed in ${Date.now() - s}ms:`, depImports)
 
   if (missing.size) {
     config.logger.error(
@@ -67,6 +88,18 @@ export async function scanImports(
   }
 
   return depImports
+}
+
+function globEntries(pattern: string | string[], config: ResolvedConfig) {
+  return glob(pattern, {
+    cwd: config.root,
+    ignore: [
+      '**/node_modules/**',
+      `**/${config.build.outDir}/**`,
+      `**/__tests__/**`
+    ],
+    absolute: true
+  })
 }
 
 const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
