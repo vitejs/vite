@@ -143,7 +143,7 @@ function esbuildScanPlugin(
             } else {
               // linked package, keep crawling
               return {
-                path: resolved
+                path: path.resolve(resolved)
               }
             }
           } else {
@@ -218,17 +218,20 @@ function esbuildScanPlugin(
         {
           filter: /.*/
         },
-        async ({ path, importer }) => {
+        async ({ path: id, importer }) => {
+          if (id.includes(`?worker`)) {
+            return { path: id, external: true }
+          }
           // use vite resolver to support urls
-          const id = await resolve(path, importer)
-          if (id && id !== path && !id.includes(`?worker`)) {
+          const resolved = await resolve(id, importer)
+          if (id && resolved !== id) {
             return {
-              path: id
+              path: path.resolve(id)
             }
           } else {
             // resolve failed... probably usupported type
             return {
-              path,
+              path: id,
               external: true
             }
           }
