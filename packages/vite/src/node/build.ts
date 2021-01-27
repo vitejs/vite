@@ -340,9 +340,7 @@ async function doBuild(
 
     paralellBuilds.push(bundle)
 
-    const pkgName =
-      libOptions &&
-      JSON.parse(lookupFile(config.root, ['package.json']) || `{}`).name
+    const pkgName = libOptions && getPkgName(config.root)
 
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate']({
@@ -430,6 +428,14 @@ async function doBuild(
     }
     throw e
   }
+}
+
+function getPkgName(root: string) {
+  const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+
+  if (!name) throw new Error('no name found in package.json')
+
+  return name.startsWith('@') ? name.split('/')[1] : name
 }
 
 function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
