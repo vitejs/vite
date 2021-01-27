@@ -6,7 +6,6 @@ import { build, Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
 import { createDebugger, emptyDir, isDataUrl, isExternalUrl } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
-import { createFilter } from '@rollup/pluginutils'
 import { isCSSRequest } from '../plugins/css'
 import chalk from 'chalk'
 import {
@@ -18,7 +17,7 @@ const debug = createDebugger('vite:scan')
 
 export async function scanImports(
   config: ResolvedConfig
-): Promise<{ qualified: Record<string, string>; external: string[] }> {
+): Promise<Record<string, string>> {
   const s = Date.now()
   const htmlEntries = await glob('**/index.html', {
     cwd: config.root,
@@ -32,9 +31,8 @@ export async function scanImports(
 
   const tempDir = path.join(config.optimizeCacheDir!, 'scan')
   const depImports: Record<string, string> = {}
-  const excluded = new Set<string>()
   const missing = new Set<string>()
-  const plugin = esbuildScanPlugin(config, depImports, excluded, missing)
+  const plugin = esbuildScanPlugin(config, depImports, missing)
 
   await Promise.all(
     htmlEntries.map((entry) =>
@@ -63,10 +61,7 @@ export async function scanImports(
     )
   }
 
-  return {
-    qualified: depImports,
-    external: [...excluded]
-  }
+  return depImports
 }
 
 const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
@@ -77,7 +72,6 @@ const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 function esbuildScanPlugin(
   config: ResolvedConfig,
   depImports: Record<string, string>,
-  excluded: Set<string>,
   missing: Set<string>
 ): Plugin {
   let container: PluginContainer
@@ -96,13 +90,8 @@ function esbuildScanPlugin(
     return res
   }
 
-  const include =
-    config.optimizeDeps?.include &&
-    createFilter(config.optimizeDeps.include, null, { resolve: false })
-
-  const exclude =
-    config.optimizeDeps?.exclude &&
-    createFilter(config.optimizeDeps.exclude, null, { resolve: false })
+  const include = config.optimizeDeps?.include
+  const exclude = config.optimizeDeps?.exclude
 
   return {
     name: 'vite:dep-scan',
@@ -139,11 +128,9 @@ function esbuildScanPlugin(
               return { path: id, external: true }
             }
             // dep or force included, externalize and stop crawling
-            if (resolved.includes('node_modules') || (include && include(id))) {
-              if (!(exclude && exclude(id))) {
+            if (resolved.includes('node_modules') || include?.includes(id)) {
+              if (!exclude?.includes(id)) {
                 depImports[id] = resolved
-              } else {
-                excluded.add(id)
               }
               return {
                 path: id,
