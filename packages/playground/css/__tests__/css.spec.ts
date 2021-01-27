@@ -83,7 +83,7 @@ test('less', async () => {
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
   await untilUpdated(() => getColor(imported), 'red')
 
-  editFile('nested/index.less', (code) =>
+  editFile('nested/nested.less', (code) =>
     code.replace('color: darkslateblue', 'color: blue')
   )
   await untilUpdated(() => getColor(atImport), 'blue')
