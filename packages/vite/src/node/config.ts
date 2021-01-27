@@ -14,12 +14,7 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import {
-  ESBuildOptions,
-  esbuildPlugin,
-  stopService,
-  transformWithEsbuild
-} from './plugins/esbuild'
+import { ESBuildOptions, esbuildPlugin, stopService } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
@@ -31,6 +26,11 @@ import { createFilter } from '@rollup/pluginutils'
 import { ResolvedBuildOptions } from '.'
 import { parse as parseUrl } from 'url'
 import { JsonOptions } from './plugins/json'
+import {
+  createPluginContainer,
+  PluginContainer
+} from './server/pluginContainer'
+import aliasPlugin from '@rollup/plugin-alias'
 
 const debug = createDebugger('vite:config')
 
@@ -158,8 +158,19 @@ export type ResolvedConfig = Readonly<
     assetsInclude: (file: string) => boolean
     logger: Logger
     base: string
+    createResolver: (options?: {
+      asSrc?: boolean
+      tryIndex?: boolean | string
+      extensions?: string[]
+    }) => ResolveFn
   }
 >
+
+export type ResolveFn = (
+  id: string,
+  importer?: string,
+  aliasOnly?: boolean
+) => Promise<string | undefined>
 
 export async function resolveConfig(
   inlineConfig: InlineConfig,
@@ -222,7 +233,11 @@ export async function resolveConfig(
 
   // resolve alias with internal client alias
   const resolvedAlias = mergeAlias(
-    [{ find: /^\/@vite\//, replacement: CLIENT_DIR + '/' }],
+    // #1732 the CLIENT_DIR may contain $$ which cannot be used as direct
+    // replacement string.
+    // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
+    // replacement, but its implementation does work with function values.
+    [{ find: /^\/@vite\//, replacement: () => CLIENT_DIR + '/' }],
     config.alias || []
   )
 
@@ -251,11 +266,6 @@ export async function resolveConfig(
   }
 
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  // adjust hmr path config
-  if (isObject(config.server?.hmr) && config.server?.hmr.path) {
-    config.server.hmr.path = path.posix.join(BASE_URL, config.server.hmr.path)
-  }
-
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // TODO remove when out of beta
@@ -285,7 +295,44 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
-  const resolved = {
+  // create an internal resolver to be used in special scenarios, e.g.
+  // optimizer & handling css @imports
+  const createResolver: ResolvedConfig['createResolver'] = (options) => {
+    let aliasContainer: PluginContainer | undefined
+    let resolverContainer: PluginContainer | undefined
+    return async (id, importer, aliasOnly) => {
+      let container: PluginContainer
+      if (aliasOnly) {
+        container =
+          aliasContainer ||
+          (aliasContainer = await createPluginContainer({
+            ...resolved,
+            plugins: [aliasPlugin({ entries: resolved.alias })]
+          }))
+      } else {
+        container =
+          resolverContainer ||
+          (resolverContainer = await createPluginContainer({
+            ...resolved,
+            plugins: [
+              aliasPlugin({ entries: resolved.alias }),
+              resolvePlugin({
+                root: resolvedRoot,
+                dedupe: resolved.dedupe,
+                isProduction,
+                isBuild: command === 'build',
+                asSrc: options?.asSrc || true,
+                tryIndex: options?.tryIndex || true,
+                extensions: options?.extensions
+              })
+            ]
+          }))
+      }
+      return (await container.resolveId(id, importer))?.id
+    }
+  }
+
+  const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
     inlineConfig,
@@ -309,10 +356,11 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
-    base: BASE_URL
+    base: BASE_URL,
+    createResolver
   }
 
-  resolved.plugins = await resolvePlugins(
+  ;(resolved as any).plugins = await resolvePlugins(
     resolved,
     prePlugins,
     normalPlugins,
@@ -522,32 +570,32 @@ export async function loadConfigFromFile(
     return null
   }
 
-  resolvedPath = normalizePath(resolvedPath)
-
   try {
     let userConfig: UserConfigExport | undefined
 
     if (isMjs) {
+      const fileUrl = require('url').pathToFileURL(resolvedPath)
       if (isTS) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
-        // transpile the ts config file with esbuild first, write it to disk,
+        // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        const src = fs.readFileSync(resolvedPath, 'utf-8')
-        const { code } = await transformWithEsbuild(src, resolvedPath)
+        const code = await bundleConfigFile(resolvedPath, true)
         fs.writeFileSync(resolvedPath + '.js', code)
-        userConfig = (
-          await eval(`import(resolvedPath + '.js?t=${Date.now()}')`)
-        ).default
+        userConfig = (await eval(`import(fileUrl + '.js?t=${Date.now()}')`))
+          .default
         fs.unlinkSync(resolvedPath + '.js')
-        debug(`TS + native esm config loaded in ${Date.now() - start}ms`)
+        debug(
+          `TS + native esm config loaded in ${Date.now() - start}ms`,
+          fileUrl
+        )
       } else {
         // using eval to avoid this from being compiled away by TS/Rollup
         // append a query so that we force reload fresh config in case of
         // server restart
-        userConfig = (await eval(`import(resolvedPath + '?t=${Date.now()}')`))
+        userConfig = (await eval(`import(fileUrl + '?t=${Date.now()}')`))
           .default
-        debug(`native esm config loaded in ${Date.now() - start}ms`)
+        debug(`native esm config loaded in ${Date.now() - start}ms`, fileUrl)
       }
     }
 
@@ -589,7 +637,7 @@ export async function loadConfigFromFile(
       throw new Error(`config must export or return an object.`)
     }
     return {
-      path: resolvedPath,
+      path: normalizePath(resolvedPath),
       config
     }
   } catch (e) {
@@ -602,7 +650,10 @@ export async function loadConfigFromFile(
   }
 }
 
-async function bundleConfigFile(fileName: string): Promise<string> {
+async function bundleConfigFile(
+  fileName: string,
+  mjs = false
+): Promise<string> {
   const rollup = require('rollup') as typeof Rollup
   // node-resolve must be imported since it's bundled
   const bundle = await rollup.rollup({
@@ -617,7 +668,8 @@ async function bundleConfigFile(fileName: string): Promise<string> {
       resolvePlugin({
         root: path.dirname(fileName),
         isBuild: true,
-        asSrc: false
+        asSrc: false,
+        isProduction: false
       }),
       {
         name: 'replace-import-meta',
@@ -634,8 +686,8 @@ async function bundleConfigFile(fileName: string): Promise<string> {
   const {
     output: [{ code }]
   } = await bundle.generate({
-    exports: 'named',
-    format: 'cjs'
+    exports: mjs ? 'auto' : 'named',
+    format: mjs ? 'es' : 'cjs'
   })
 
   return code
@@ -652,7 +704,7 @@ async function loadConfigFromBundledFile(
   const extension = path.extname(fileName)
   const defaultLoader = require.extensions[extension]!
   require.extensions[extension] = (module: NodeModule, filename: string) => {
-    if (normalizePath(filename) === fileName) {
+    if (filename === fileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
       defaultLoader(module, filename)

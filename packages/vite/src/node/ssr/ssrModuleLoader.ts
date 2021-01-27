@@ -41,7 +41,7 @@ export async function ssrLoadModule(
     (await transformRequest(url, server, { ssr: true }))
   if (!result) {
     // TODO more info? is this even necessary?
-    throw new Error(`failed to load module for ssr: $${url}`)
+    throw new Error(`failed to load module for ssr: ${url}`)
   }
 
   const isExternal = (dep: string) => dep[0] !== '.' && dep[0] !== '/'

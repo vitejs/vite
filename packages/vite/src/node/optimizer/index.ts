@@ -12,17 +12,12 @@ import {
   resolveFrom,
   writeFile
 } from '../utils'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
-import { tryNodeResolve } from '../plugins/resolve'
-import aliasPlugin from '@rollup/plugin-alias'
 import { createFilter } from '@rollup/pluginutils'
 import { prompt } from 'enquirer'
 import { build } from 'esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { init, parse } from 'es-module-lexer'
+import { ResolveFn } from '..'
 
 const debug = createDebugger('vite:optimize')
 
@@ -123,21 +118,17 @@ export async function optimizeDeps(
   }
 
   const options = config.optimizeDeps || {}
+  const resolve = config.createResolver({ asSrc: false })
 
   // Determine deps to optimize. The goal is to only pre-bundle deps that falls
   // under one of the following categories:
   // 1. Has imports to relative files (e.g. lodash-es, lit-html)
   // 2. Has imports to bare modules that are not in the project's own deps
   //    (i.e. esm that imports its own dependencies, e.g. styled-components)
-  // await init
-  const aliasResolver = await createPluginContainer({
-    ...config,
-    plugins: [aliasPlugin({ entries: config.alias })]
-  })
   const { qualified, external } = await resolveQualifiedDeps(
     root,
     config,
-    aliasResolver
+    resolve
   )
 
   // Resolve deps from linked packages in a monorepo
@@ -149,7 +140,7 @@ export async function optimizeDeps(
         qualified,
         external,
         config,
-        aliasResolver
+        resolve
       )
     }
   }
@@ -157,10 +148,9 @@ export async function optimizeDeps(
   // Force included deps - these can also be deep paths
   if (options.include) {
     for (let id of options.include) {
-      const aliased = (await aliasResolver.resolveId(id))?.id || id
-      const filePath = tryNodeResolve(aliased, root, config.isProduction)
+      const filePath = await resolve(id)
       if (filePath) {
-        qualified[id] = filePath.id
+        qualified[id] = filePath
       }
     }
   }
@@ -238,20 +228,17 @@ export async function optimizeDeps(
     bundle: true,
     format: 'esm',
     external,
+    logLevel: 'error',
     splitting: true,
     sourcemap: true,
     outdir: cacheDir,
+    treeShaking: 'ignore-annotations',
     metafile: esbuildMetaPath,
     define: {
       'process.env.NODE_ENV': '"development"'
     },
     plugins: [
-      esbuildDepPlugin(
-        qualified,
-        config,
-        data.transitiveOptimized,
-        aliasResolver
-      )
+      esbuildDepPlugin(qualified, config, data.transitiveOptimized, resolve)
     ]
   })
 
@@ -260,36 +247,64 @@ export async function optimizeDeps(
   await init
   const entryToIdMap: Record<string, string> = {}
   for (const id in qualified) {
-    entryToIdMap[qualified[id]] = id
+    entryToIdMap[qualified[id].toLowerCase()] = id
   }
 
   for (const output in meta.outputs) {
     if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map'))
       continue
-    const { inputs, exports: generatedExports } = meta.outputs[output]
+    const { inputs, exports } = meta.outputs[output]
+    const relativeOutput = normalizePath(
+      path.relative(cacheDir, path.resolve(output))
+    )
     for (const input in inputs) {
       const entry = normalizePath(path.resolve(input))
-      const id = entryToIdMap[entry]
-      if (id) {
-        // check if this is a cjs dep.
-        const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
-        data.optimized[id] = {
-          file: normalizePath(path.resolve(output)),
-          needsInterop:
-            // entry has no ESM syntax - likely CJS or UMD
-            (!exports.length && !imports.length) ||
-            // if a peer dep used require() on a ESM dep, esbuild turns the
-            // ESM dep's entry chunk into a single default export... detect
-            // such cases by checking exports mismatch, and force interop.
-            (isSingleDefaultExport(generatedExports) &&
-              !isSingleDefaultExport(exports))
-        }
-        break
+      if (!entry.endsWith(relativeOutput)) {
+        continue
       }
+      const id = entryToIdMap[entry.toLowerCase()]
+      if (!id) {
+        continue
+      }
+      data.optimized[id] = {
+        file: normalizePath(path.resolve(output)),
+        needsInterop: needsInterop(id, entry, exports)
+      }
+      break
     }
   }
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
+}
+
+// https://github.com/vitejs/vite/issues/1724#issuecomment-767619642
+// a list of modules that pretends to be ESM but still uses `require`.
+// this causes esbuild to wrap them as CJS even when its entry appears to be ESM.
+const KNOWN_INTEROP_IDS = new Set(['moment'])
+
+function needsInterop(
+  id: string,
+  entry: string,
+  generatedExports: string[]
+): boolean {
+  if (KNOWN_INTEROP_IDS.has(id)) {
+    return true
+  }
+  const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
+  // entry has no ESM syntax - likely CJS or UMD
+  if (!exports.length && !imports.length) {
+    return true
+  }
+  // if a peer dep used require() on a ESM dep, esbuild turns the
+  // ESM dep's entry chunk into a single default export... detect
+  // such cases by checking exports mismatch, and force interop.
+  if (
+    isSingleDefaultExport(generatedExports) &&
+    !isSingleDefaultExport(exports)
+  ) {
+    return true
+  }
+  return false
 }
 
 function isSingleDefaultExport(exports: string[]) {
@@ -304,7 +319,7 @@ interface FilteredDeps {
 async function resolveQualifiedDeps(
   root: string,
   config: ResolvedConfig,
-  aliasResolver: PluginContainer
+  resolve: ResolveFn
 ): Promise<FilteredDeps> {
   const { include, exclude, link } = config.optimizeDeps || {}
   const qualified: Record<string, string> = {}
@@ -344,9 +359,7 @@ async function resolveQualifiedDeps(
     }
     let filePath
     try {
-      const aliased = (await aliasResolver.resolveId(id))?.id || id
-      const resolved = tryNodeResolve(aliased, root, config.isProduction)
-      filePath = resolved && resolved.id
+      filePath = await resolve(id)
     } catch (e) {}
     if (!filePath) {
       debug(`skipping ${id} (cannot resolve entry)`)
@@ -373,20 +386,13 @@ async function resolveQualifiedDeps(
         .filter((id) => !qualified[id])
         // make sure aliased deps are external
         // https://github.com/vitejs/vite-plugin-react/issues/4
-        .map(async (id) => (await aliasResolver.resolveId(id))?.id || id)
+        .map(async (id) => (await resolve(id, undefined, true)) || id)
     ))
   )
 
   if (linked.length) {
     for (const dep of linked) {
-      await resolveLinkedDeps(
-        root,
-        dep,
-        qualified,
-        external,
-        config,
-        aliasResolver
-      )
+      await resolveLinkedDeps(root, dep, qualified, external, config, resolve)
     }
   }
 
@@ -402,13 +408,13 @@ async function resolveLinkedDeps(
   qualified: Record<string, string>,
   external: string[],
   config: ResolvedConfig,
-  aliasResolver: PluginContainer
+  resolve: ResolveFn
 ) {
   const depRoot = path.dirname(resolveFrom(`${dep}/package.json`, root))
   const { qualified: q, external: e } = await resolveQualifiedDeps(
     depRoot,
     config,
-    aliasResolver
+    resolve
   )
   Object.keys(q).forEach((id) => {
     if (!qualified[id]) {

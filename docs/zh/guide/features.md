@@ -82,6 +82,10 @@ export default {
 
 导入 `.css` 文件将会把内容插入到 `<style>` 标签中，同时也带有 HMR 支持。也能够以字符串的形式检索处理后的、作为其模块默认导出的 CSS。
 
+### `@import` 内联和变基
+
+Vite 通过 `postcss-import` 预配置支持了 CSS `@import` 内联，Vite 的路径别名也遵从 CSS `@import`。换句话说，所有 CSS `url()` 引用，即使导入的文件在不同的目录中，也总是自动变基，以确保正确性。
+
 ### PostCSS
 
 如果项目包含有效的 PostCSS 配置 (任何受 [postcss-load-config](https://github.com/postcss/postcss-load-config) 支持的格式，例如 `postcss.config.js`)，它将会自动应用于所有已导入的 CSS。
@@ -122,6 +126,12 @@ npm install -D less
 # .styl and .stylus
 npm install -D stylus
 ```
+
+如果是用的是单文件组件，可以通过 `<style lang="sass">`（或其他与处理器）自动开启。
+
+Vite 为 Sass 和 Less 改进了 `@import` 解析，因而 Vite 别名也同样受用，另外，`url()` 中的相对路径引用的，与根文件不同目录中的 Sass/Less 文件会自动变基以保证正确性。
+
+由于与其 API 冲突，`@import` 别名和 URL 变基不支持 Stylus。
 
 您还可以通过在文件扩展名前加上 `.module` 来结合使用 CSS modules 和预处理器，例如 `style.module.scss`。
 
@@ -313,4 +323,4 @@ Vite 将使用一个预加载步骤自动重写代码，来分割动态导入调
 Entry ---> (A + C)
 ```
 
-`C` 也可能有更深的导入，在未优化的场景中，这甚至会导致额外网络往返。Vite 的优化将跟踪所有的直接导入，从而完全消除不必要的往返，无论导入深度如何。
+`C` 也可能有更深的导入，在未优化的场景中，这甚至会导致额外网络往返。Vite 的优化将跟踪所有的直接导入，无论导入深度如何，都完全消除不必要的往返。

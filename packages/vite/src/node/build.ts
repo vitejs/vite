@@ -32,6 +32,7 @@ import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
 import { resolveSSRExternal } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
+import { isCSSRequest } from './plugins/css'
 
 export interface BuildOptions {
   /**
@@ -154,7 +155,7 @@ export interface BuildOptions {
    * Produce SSR oriented build. Note this requires specifying SSR entry via
    * `rollupOptions.input`.
    */
-  ssr?: boolean
+  ssr?: boolean | string
   /**
    * Generate SSR manifest for determining style links and asset preload
    * directives in production.
@@ -290,6 +291,8 @@ async function doBuild(
   const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
     ? resolve(libOptions.entry)
+    : typeof options.ssr === 'string'
+    ? resolve(options.ssr)
     : options.rollupOptions?.input || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
@@ -364,7 +367,7 @@ async function doBuild(
           !libOptions &&
           output?.format !== 'umd' &&
           output?.format !== 'iife'
-            ? createMoveToVendorChunkFn()
+            ? createMoveToVendorChunkFn(config)
             : undefined,
         ...output
       })
@@ -425,11 +428,12 @@ async function doBuild(
   }
 }
 
-function createMoveToVendorChunkFn(): GetManualChunk {
+function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
   const cache = new Map<string, boolean>()
   return (id, { getModuleInfo }) => {
     if (
       id.includes('node_modules') &&
+      !isCSSRequest(id) &&
       !hasDynamicImporter(id, getModuleInfo, cache)
     ) {
       return 'vendor'

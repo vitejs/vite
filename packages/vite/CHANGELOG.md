@@ -1,3 +1,40 @@
+# [2.0.0-beta.50](https://github.com/vitejs/vite/compare/v2.0.0-beta.49...v2.0.0-beta.50) (2021-01-26)
+
+
+### Bug Fixes
+
+* json plugin error report line regex ([#1719](https://github.com/vitejs/vite/issues/1719)) ([35e1f52](https://github.com/vitejs/vite/commit/35e1f520c99581248f8241b82a1d568518e72d3f))
+* **optimizer:** externalize cross-package imported css ([0599908](https://github.com/vitejs/vite/commit/0599908dcd233dd5108069ea501a651043c28d5c)), closes [#1722](https://github.com/vitejs/vite/issues/1722)
+* **optimizer:** fix entry analysis fs read on case-sensitive systems ([1a9b321](https://github.com/vitejs/vite/commit/1a9b321c744b830fe8eb3275c4150eb763d9ba76)), closes [#1720](https://github.com/vitejs/vite/issues/1720)
+* **optimizer:** fix entry matching edge case ([c5fe45f](https://github.com/vitejs/vite/commit/c5fe45fdd2c90436e2ee00754aedde2a32325ac6)), closes [#1661](https://github.com/vitejs/vite/issues/1661)
+* **optimizer:** handle special case where esm entry gets converted to cjs by esbuild ([32413ce](https://github.com/vitejs/vite/commit/32413cec52ab12a835d3b3ec7a1e294946d11505)), closes [#1724](https://github.com/vitejs/vite/issues/1724)
+* **optimizer:** pnp compat to match relative paths ([#1714](https://github.com/vitejs/vite/issues/1714)) ([8fb74f5](https://github.com/vitejs/vite/commit/8fb74f5d0983237a95aab683d800d3546b31729f))
+* **sourcemap:** empty source map chain on nullified sourcemap ([52c9416](https://github.com/vitejs/vite/commit/52c94161b5c0f5eb0ad7e676a7b30a2de4a23116)), closes [#1726](https://github.com/vitejs/vite/issues/1726)
+* properly handle base + path in hmr config ([1e67d66](https://github.com/vitejs/vite/commit/1e67d669318fac320c61ea00e0e01e972183fa27))
+
+
+### Features
+
+* allow speicfying ssr entry directly via build.ssr option ([45d8bf4](https://github.com/vitejs/vite/commit/45d8bf4da234f73badcf47e574e1e3ee3dc55b6c))
+
+
+
+# [2.0.0-beta.49](https://github.com/vitejs/vite/compare/v2.0.0-beta.48...v2.0.0-beta.49) (2021-01-25)
+
+
+### Bug Fixes
+
+* **config:** fix native esm config loading on windows ([33d3cca](https://github.com/vitejs/vite/commit/33d3cca78607e14e4d0b13e7012d065a94d184b1))
+* **optimizer:** entry matching on windows ([e6120d5](https://github.com/vitejs/vite/commit/e6120d582051f3535951698df40dc9b6fc485ae0))
+* **optimizer:** fix output to entry matching logic ([6c96883](https://github.com/vitejs/vite/commit/6c96883d794d3396e890907df6b799d79a027420)), closes [#1704](https://github.com/vitejs/vite/issues/1704)
+* **ssr:** generate same asset url links for ssr build ([68960f7](https://github.com/vitejs/vite/commit/68960f7867be13cfdce9ea49a8cc05448dff5e60)), closes [#1711](https://github.com/vitejs/vite/issues/1711)
+* **watcher:** ensure only add normalized file paths ([a19c456](https://github.com/vitejs/vite/commit/a19c4565542c2c3575ab47642f80737a3bf26f3a))
+* **watcher:** watch fs specific root paths ([64d2c17](https://github.com/vitejs/vite/commit/64d2c1772a57b024373e33015740c11c172dba85))
+* do not move css modules to vendor chunk ([3d55e83](https://github.com/vitejs/vite/commit/3d55e8304e0faa71aec49326901048c46d196210)), closes [#1703](https://github.com/vitejs/vite/issues/1703)
+* fix hmr.path option normalization ([cbeb9ba](https://github.com/vitejs/vite/commit/cbeb9ba7c7a192e61279fb00b543b81843663bc1)), closes [#1705](https://github.com/vitejs/vite/issues/1705)
+
+
+
 # [2.0.0-beta.48](https://github.com/vitejs/vite/compare/v2.0.0-beta.47...v2.0.0-beta.48) (2021-01-25)
 
 

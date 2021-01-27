@@ -19,7 +19,7 @@ import {
   cleanUrl,
   isJSRequest
 } from '../utils'
-import { ResolvedConfig, ViteDevServer } from '..'
+import { ViteDevServer } from '..'
 import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
@@ -55,21 +55,32 @@ const debug = createDebugger('vite:resolve-details', {
 interface ResolveOptions {
   root: string
   isBuild: boolean
+  isProduction: boolean
   /**
    * src code mode also attempts the following:
    * - resolving /xxx as URLs
    * - resolving bare imports from optimized deps
    */
   asSrc: boolean
+  tryIndex?: boolean | string
+  extensions?: string[]
   dedupe?: string[]
 }
 
-export function resolvePlugin(
-  { root, isBuild, asSrc, dedupe }: ResolveOptions,
-  config?: ResolvedConfig
-): Plugin {
-  const isProduction = !!config?.isProduction
+export function resolvePlugin({
+  root,
+  isBuild,
+  isProduction,
+  asSrc,
+  dedupe,
+  tryIndex = true,
+  extensions = SUPPORTED_EXTS
+}: ResolveOptions): Plugin {
   let server: ViteDevServer | undefined
+
+  // curried fs resovle
+  const fsResolve = (fsPath: string) =>
+    tryFsResolve(fsPath, isProduction, tryIndex, extensions)
 
   return {
     name: 'vite:resolve',
@@ -93,7 +104,7 @@ export function resolvePlugin(
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
         const fsPath = fsPathFromId(id)
-        res = tryFsResolve(fsPath, false)
+        res = fsResolve(fsPath)
         isDebug && debug(`[@fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
@@ -104,7 +115,7 @@ export function resolvePlugin(
       // /foo -> /fs-root/foo
       if (asSrc && id.startsWith('/')) {
         const fsPath = path.resolve(root, id.slice(1))
-        if ((res = tryFsResolve(fsPath, isProduction))) {
+        if ((res = fsResolve(fsPath))) {
           isDebug && debug(`[url] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
           return res
         }
@@ -122,7 +133,7 @@ export function resolvePlugin(
           return res
         }
 
-        if ((res = tryFsResolve(fsPath, isProduction))) {
+        if ((res = fsResolve(fsPath))) {
           isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
           const pkg = importer != null && idToPkgMap.get(importer)
           if (pkg) {
@@ -137,7 +148,7 @@ export function resolvePlugin(
       }
 
       // absolute fs paths
-      if (path.isAbsolute(id) && (res = tryFsResolve(id, isProduction))) {
+      if (path.isAbsolute(id) && (res = fsResolve(id))) {
         isDebug && debug(`[fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
         return res
       }
@@ -228,16 +239,25 @@ export function resolvePlugin(
 export function tryFsResolve(
   fsPath: string,
   isProduction: boolean,
-  tryIndex = true
+  tryIndex: boolean | string = true,
+  extensions = SUPPORTED_EXTS
 ): string | undefined {
   const [file, q] = fsPath.split(`?`, 2)
   const query = q ? `?${q}` : ``
   let res: string | undefined
-  if ((res = tryResolveFile(file, query, isProduction, tryIndex))) {
+  if ((res = tryResolveFile(file, query, isProduction, tryIndex, extensions))) {
     return res
   }
-  for (const ext of SUPPORTED_EXTS) {
-    if ((res = tryResolveFile(file + ext, query, isProduction, tryIndex))) {
+  for (const ext of extensions) {
+    if (
+      (res = tryResolveFile(
+        file + ext,
+        query,
+        isProduction,
+        tryIndex,
+        extensions
+      ))
+    ) {
       return res
     }
   }
@@ -247,7 +267,8 @@ function tryResolveFile(
   file: string,
   query: string,
   isProduction: boolean,
-  tryIndex: boolean
+  tryIndex: boolean | string,
+  extensions: string[]
 ): string | undefined {
   if (fs.existsSync(file)) {
     const isDir = fs.statSync(file).isDirectory()
@@ -259,7 +280,13 @@ function tryResolveFile(
         return resolvePackageEntry(file, pkg, isProduction)
       }
       if (tryIndex) {
-        const index = tryFsResolve(file + '/index', isProduction, false)
+        const append = typeof tryIndex === 'string' ? `/${tryIndex}` : `/index`
+        const index = tryFsResolve(
+          file + append,
+          isProduction,
+          false,
+          extensions
+        )
         if (index) return normalizePath(index) + query
       }
     } else {

@@ -33,15 +33,13 @@ export async function resolvePlugins(
     config.build.polyfillDynamicImport
       ? dynamicImportPolyfillPlugin(config)
       : null,
-    resolvePlugin(
-      {
-        root: config.root,
-        dedupe: config.dedupe,
-        isBuild,
-        asSrc: true
-      },
-      config
-    ),
+    resolvePlugin({
+      root: config.root,
+      dedupe: config.dedupe,
+      isProduction: config.isProduction,
+      isBuild,
+      asSrc: true
+    }),
     htmlInlineScriptProxyPlugin(),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,

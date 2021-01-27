@@ -10,7 +10,8 @@ import {
   cleanUrl,
   prettifyUrl,
   removeTimestampQuery,
-  timeFrom
+  timeFrom,
+  ensureWatchedFile
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
@@ -112,15 +113,7 @@ export async function transformRequest(
 
   // ensure module in graph after successful load
   const mod = await moduleGraph.ensureEntryFromUrl(url)
-  // file is out of root, add it to the watch list
-  if (
-    mod.file &&
-    !mod.file.startsWith(root + '/') &&
-    // some rollup plugins use null bytes for private resolved Ids
-    !mod.file.includes('\0')
-  ) {
-    watcher.add(mod.file)
-  }
+  ensureWatchedFile(watcher, mod.file, root)
 
   // transform
   const transformStart = Date.now()

@@ -360,3 +360,17 @@ export default {
   ]
 }
 ```
+
+查看 [Vite Rollup 插件](https://vite-rollup-plugins.patak.dev) 获取兼容的官方 rollup 插件列表及其使用指南。
+
+## 路径规范化
+
+Vite 会在解析 id 时使用 POSIX 分隔符（ / ）标准化路径，同时也适用于 Windows 的分卷。而另一方面，Rollup 在默认情况下保持解析的路径不变，因此解析的 id 在 Windows 中会使用 win32 分隔符（ \\ ）。然而，Rollup 插件会从 `@rollup/pluginutils` 中使用一个 [`normalizePath` 工具函数](https://github.com/rollup/plugins/tree/master/packages/pluginutils#normalizepath)，它在执行比较之前将分隔符转换为 POSIX。所以意味着当这些插件在 Vite 中使用时，`include` 和 `exclude` 两个配置模式，以及与已解析路径比较相似的路径会正常工作。
+
+所以对于 Vite 插件来说，在将路径与已解析的 id 进行比较时，首先规范化路径以使用 POSIX 分隔符是很重要的。从 `vite` 模块中也导出了一个等效的 `normalizePath` 工具函数。
+
+```js
+import { normalizePath } from 'vite'
+normalizePath('foo\\bar') // 'foo/bar'
+normalizePath('foo/bar') // 'foo/bar'
+```

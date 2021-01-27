@@ -134,14 +134,6 @@ cli
     const { build } = await import('./build')
     const buildOptions = cleanOptions(options) as BuildOptions
 
-    if (buildOptions.ssr) {
-      buildOptions.rollupOptions = {
-        ...buildOptions.rollupOptions,
-        input: (buildOptions.ssr as any) as string
-      }
-      buildOptions.ssr = true
-    }
-
     try {
       await build({
         root,

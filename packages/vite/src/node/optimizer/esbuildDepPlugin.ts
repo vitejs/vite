@@ -1,11 +1,9 @@
 import path from 'path'
 import { Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
-import { ResolvedConfig } from '..'
+import { ResolvedConfig, ResolveFn } from '..'
 import chalk from 'chalk'
 import { deepImportRE, isBuiltin, isRunningWithYarnPnp } from '../utils'
-import { tryNodeResolve } from '../plugins/resolve'
-import { PluginContainer } from '../server/pluginContainer'
 
 const externalTypes = [
   'css',
@@ -25,7 +23,7 @@ export function esbuildDepPlugin(
   qualified: Record<string, string>,
   config: ResolvedConfig,
   transitiveOptimized: Record<string, true>,
-  aliasResolver: PluginContainer
+  resolve: ResolveFn
 ): Plugin {
   return {
     name: 'vite:dep-pre-bundle',
@@ -35,12 +33,20 @@ export function esbuildDepPlugin(
         {
           filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
         },
-        ({ path: _path, importer }) => {
-          if (_path.startsWith('.')) {
+        async ({ path: id, importer }) => {
+          if (id.startsWith('.')) {
             const dir = path.dirname(importer)
             return {
-              path: path.resolve(dir, _path),
+              path: path.resolve(dir, id),
               external: true
+            }
+          } else {
+            const resolved = await resolve(id, importer)
+            if (resolved) {
+              return {
+                path: resolved,
+                external: true
+              }
             }
           }
         }
@@ -58,19 +64,11 @@ export function esbuildDepPlugin(
           const deepMatch = id.match(deepImportRE)
           const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
           transitiveOptimized[pkgId] = true
-
-          id = (await aliasResolver.resolveId(id))?.id || id
-          const resolved = tryNodeResolve(
-            id,
-            path.dirname(importer),
-            false,
-            true,
-            config.dedupe,
-            config.root
-          )
+          // use vite resolver
+          const resolved = await resolve(id, importer)
           if (resolved) {
             return {
-              path: path.resolve(resolved.id)
+              path: resolved
             }
           }
         } else {
@@ -105,10 +103,10 @@ export function esbuildDepPlugin(
 
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
-        build.onResolve({ filter: /\.yarn.*/ }, (args) => ({
+        build.onResolve({ filter: /.*/ }, (args) => ({
           path: require.resolve(args.path, { paths: [args.resolveDir] })
         }))
-        build.onLoad({ filter: /\.yarn.*/ }, async (args) => ({
+        build.onLoad({ filter: /.*/ }, async (args) => ({
           contents: await require('fs').promises.readFile(args.path),
           loader: 'default'
         }))

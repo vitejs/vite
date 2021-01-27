@@ -93,6 +93,12 @@ export default {
 
 Importing `.css` files will inject its content to the page via a `<style>` tag with HMR support. You can also retrieve the processed CSS as a string as the module's default export.
 
+### `@import` Inlining and Rebasing
+
+Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. Vite alises are also respected for CSS `@import`. In addition, all CSS `url()` references, even if the imported files are in different directories, are always automatically rebased to ensure correctness.
+
+`@import` aliases and URL rebasing are also supported for Sass and Less files (see [CSS Pre-processors](#css-pre-processors)).
+
 ### PostCSS
 
 If the project contains valid PostCSS config (any format supported by [postcss-load-config](https://github.com/postcss/postcss-load-config), e.g. `postcss.config.js`), it will be automatically applied to all imported CSS.
@@ -131,6 +137,12 @@ npm install -D less
 # .styl and .stylus
 npm install -D stylus
 ```
+
+If using Vue single file components, this also automatically enables `<style lang="sass">` et al.
+
+Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness.
+
+`@import` alias and url rebasing are not supported for Stylus due to its API constraints.
 
 You can also use CSS modules combined with pre-processors by prepending `.module` to the file extension, for example `style.module.scss`.
 
