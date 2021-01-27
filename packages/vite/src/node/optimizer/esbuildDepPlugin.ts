@@ -2,8 +2,8 @@ import path from 'path'
 import { Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
 import { ResolvedConfig } from '..'
-import chalk from 'chalk'
-import { isBuiltin, isRunningWithYarnPnp } from '../utils'
+import { isRunningWithYarnPnp } from '../utils'
+import { browserExternalId } from '../plugins/resolve'
 
 const externalTypes = [
   'css',
@@ -53,35 +53,32 @@ export function esbuildDepPlugin(
         }
       )
 
-      build.onResolve({ filter: /^[\w@]/ }, async ({ path: id, importer }) => {
-        // ensure esbuild uses our resolved entires of optimized deps in all
-        // cases
-        if (id in qualified) {
-          return {
-            path: path.resolve(qualified[id])
-          }
-        } else if (!isBuiltin(id)) {
-          // use vite resolver
-          const resolved = await resolve(id, importer)
-          if (resolved) {
+      build.onResolve(
+        { filter: /^[\w@][^:]/ },
+        async ({ path: id, importer }) => {
+          // ensure esbuild uses our resolved entires of optimized deps in all
+          // cases
+          if (id in qualified) {
             return {
-              path: resolved
+              path: path.resolve(qualified[id])
+            }
+          } else {
+            // use vite resolver
+            const resolved = await resolve(id, importer)
+            if (resolved) {
+              if (resolved.startsWith(browserExternalId)) {
+                return {
+                  path: id,
+                  namespace: 'browser-external'
+                }
+              }
+              return {
+                path: resolved
+              }
             }
           }
-        } else {
-          // redirect node-builtins to empty module for browser
-          config.logger.warn(
-            chalk.yellow(
-              `externalized node built-in "${id}" to empty module. ` +
-                `(imported by: ${chalk.white.dim(importer)})`
-            )
-          )
-          return {
-            path: id,
-            namespace: 'browser-external'
-          }
         }
-      })
+      )
 
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
