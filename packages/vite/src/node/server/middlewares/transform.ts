@@ -18,7 +18,6 @@ import chalk from 'chalk'
 import {
   DEP_CACHE_DIR,
   DEP_VERSION_RE,
-  FS_PREFIX,
   NULL_BYTE_PLACEHOLDER,
   VALID_ID_PREFIX
 } from '../../constants'
@@ -55,10 +54,6 @@ export function transformMiddleware(
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        // #1323 - browser may remove // when fetching source maps
-        if (url.startsWith(FS_PREFIX)) {
-          url = FS_PREFIX + url.split(FS_PREFIX)[1].replace(/^\/?/, '/')
-        }
         const originalUrl = url.replace(/\.map($|\?)/, '$1')
         const map = (await moduleGraph.getModuleByUrl(originalUrl))
           ?.transformResult?.map
