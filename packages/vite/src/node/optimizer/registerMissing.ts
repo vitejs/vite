@@ -11,6 +11,8 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
   let currentImporters = new Set<string>()
   let handle: NodeJS.Timeout
 
+  let pendingResolve: (() => void) | null = null
+
   async function rerun() {
     const newDeps = currentMissing
     currentMissing = {}
@@ -61,6 +63,9 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
         chalk.red(`error while updating dependencies:\n${e.stack}`),
         { timestamp: true }
       )
+    } finally {
+      pendingResolve && pendingResolve()
+      server._pendingReload = pendingResolve = null
     }
 
     logger.info(chalk.greenBright(`✨ dependencies updated.`), {
@@ -78,6 +83,9 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
       if (importer) currentImporters.add(importer)
       if (handle) clearTimeout(handle)
       handle = setTimeout(rerun, debounceMs)
+      server._pendingReload = new Promise((r) => {
+        pendingResolve = r
+      })
     }
   }
 }
