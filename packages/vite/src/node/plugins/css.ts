@@ -244,11 +244,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
-      let isAllCSSChunk = true
+      let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (!isCSSRequest(id) || cssModuleRE.test(id)) {
-          isAllCSSChunk = false
+          isPureCssChunk = false
         }
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
@@ -260,7 +260,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (config.build.cssCodeSplit) {
-        if (isAllCSSChunk) {
+        if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
@@ -339,7 +339,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
               return true
             })
-            chunk.code = chunk.code.replace(emptyChunkRE, '')
+            chunk.code = chunk.code.replace(
+              emptyChunkRE,
+              // remove css import while preserving source map location
+              (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`
+            )
           }
         }
         pureCssChunks.forEach((fileName) => {
