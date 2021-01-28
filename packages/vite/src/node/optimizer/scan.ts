@@ -3,7 +3,7 @@ import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { build, Loader, Plugin } from 'esbuild'
-import { knownAssetTypes, DEFAULT_ASSETS_RE } from '../constants'
+import { knownAssetTypes } from '../constants'
 import {
   createDebugger,
   emptyDir,
@@ -21,6 +21,7 @@ import {
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
+import { isCSSRequest } from '../plugins/css'
 
 const debug = createDebugger('vite:deps')
 
@@ -54,8 +55,10 @@ export async function scanImports(
     entries = await globEntries('**/*.html', config)
   }
 
-  // Asset entrypoints should not be scanned for dependencies.
-  entries = entries.filter((entry) => !DEFAULT_ASSETS_RE.test(entry))
+  // CSS/Asset entrypoints should not be scanned for dependencies.
+  entries = entries.filter(
+    (entry) => !(isCSSRequest(entry) || config.assetsInclude(entry))
+  )
 
   if (!entries.length) {
     debug(`No entry HTML files detected`)
@@ -138,7 +141,7 @@ function esbuildScanPlugin(
   const include = config.optimizeDeps?.include
   const exclude = config.optimizeDeps?.exclude
 
-  const externalUnlessEntry = ({ path }) => ({
+  const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
     external: !entries.includes(path)
   })
@@ -216,7 +219,7 @@ function esbuildScanPlugin(
         {
           filter: /\?(worker|raw)\b/
         },
-        ({ path }) => ({ path, external: true })
+        externalUnlessEntry
       )
 
       // bare imports: record and externalize
@@ -231,18 +234,18 @@ function esbuildScanPlugin(
           }
 
           if (isExternalUrl(id) || isDataUrl(id)) {
-            return externalUnlessEntry({ path: id })
+            return { path: id, external: true }
           }
 
           const resolved = await resolve(id, importer)
           if (resolved) {
             // browser external
             if (resolved.startsWith(browserExternalId)) {
-              return externalUnlessEntry({ path: id })
+              return { path: id, external: true }
             }
             // virtual id
             if (id === resolved) {
-              return externalUnlessEntry({ path: id })
+              return { path: id, external: true }
             }
             // dep or force included, externalize and stop crawling
             if (resolved.includes('node_modules') || include?.includes(id)) {
@@ -271,6 +274,10 @@ function esbuildScanPlugin(
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer)
           if (resolved && resolved !== id) {
+            // in case user has configured to externalize additional assets
+            if (config.assetsInclude(id)) {
+              return { path: id, external: true }
+            }
             return {
               path: path.resolve(cleanUrl(resolved))
             }
