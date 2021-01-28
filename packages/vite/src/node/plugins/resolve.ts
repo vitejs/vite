@@ -354,6 +354,7 @@ export function tryNodeResolve(
     // if we reach here, it's a valid dep import that hasn't been optimzied.
     const exclude = server.config.optimizeDeps?.exclude
     if (
+      importer?.includes('node_modules') ||
       exclude?.includes(pkgId) ||
       exclude?.includes(id) ||
       isCSSRequest(resolved) ||
@@ -370,7 +371,7 @@ export function tryNodeResolve(
     } else {
       // this is a missing import.
       // queue optimize-deps re-run.
-      server._registerMissingImport?.(id, resolved, importer)
+      server._registerMissingImport?.(id, resolved)
     }
     return { id: resolved }
   }
