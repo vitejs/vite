@@ -2,6 +2,10 @@ import chalk from 'chalk'
 import { optimizeDeps } from '.'
 import { ViteDevServer } from '..'
 
+/**
+ * The amount to wait for requests to register newfound deps before triggering
+ * a re-bundle + page reload
+ */
 const debounceMs = 100
 
 export function createMissingImpoterRegisterFn(server: ViteDevServer) {

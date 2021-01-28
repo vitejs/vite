@@ -15,12 +15,12 @@ import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import chalk from 'chalk'
 import {
+  CLIENT_PUBLIC_PATH,
   DEP_CACHE_DIR,
   DEP_VERSION_RE,
   NULL_BYTE_PLACEHOLDER,
   VALID_ID_PREFIX
 } from '../../constants'
-import { pendingDepId } from '../../plugins/resolve'
 import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
 const debugCache = createDebugger('vite:cache')
@@ -45,8 +45,13 @@ export function transformMiddleware(
       return next()
     }
 
-    if (server._pendingReload && req.url!.endsWith(pendingDepId)) {
-      // missing dep pending reload, hold request
+    if (
+      server._pendingReload &&
+      // always allow vite client requests so that it can trigger page reload
+      !req.url?.startsWith(CLIENT_PUBLIC_PATH) &&
+      !req.url?.includes('vite/dist/client')
+    ) {
+      // missing dep pending reload, hold request until reload happens
       server._pendingReload.then(() => res.end())
       return
     }
