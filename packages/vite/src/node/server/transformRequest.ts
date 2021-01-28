@@ -63,7 +63,7 @@ export async function transformRequest(
   let map: SourceDescription['map'] = null
 
   // load
-  const loadStart = Date.now()
+  const loadStart = isDebug ? Date.now() : 0
   const loadResult = await pluginContainer.load(id, ssr)
   if (loadResult == null) {
     // try fallback loading it from fs as string
@@ -116,7 +116,7 @@ export async function transformRequest(
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
-  const transformStart = Date.now()
+  const transformStart = isDebug ? Date.now() : 0
   const transformResult = await pluginContainer.transform(code, id, map, ssr)
   if (
     transformResult == null ||
