@@ -1,6 +1,5 @@
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
-import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 import {
   cleanUrl,
   createDebugger,
@@ -21,6 +20,8 @@ import {
   NULL_BYTE_PLACEHOLDER,
   VALID_ID_PREFIX
 } from '../../constants'
+import { pendingDepId } from '../../plugins/resolve'
+import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -42,6 +43,12 @@ export function transformMiddleware(
       knownIgnoreList.has(req.url!)
     ) {
       return next()
+    }
+
+    if (server._pendingReload && req.url!.endsWith(pendingDepId)) {
+      // missing dep pending reload, hold request
+      server._pendingReload.then(() => res.end())
+      return
     }
 
     let url = decodeURI(removeTimestampQuery(req.url!)).replace(
