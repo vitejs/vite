@@ -243,11 +243,13 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _registerMissingImport: ((id: string, resolved: string) => void) | null
+  _registerMissingImport:
+    | ((id: string, resolved: string, importer?: string) => void)
+    | null
   /**
    * @internal
    */
-  _hasPendingReload: boolean
+  _pendingReload: Promise<void> | null
 }
 
 export async function createServer(
@@ -321,7 +323,7 @@ export async function createServer(
     _ssrExternals: null,
     _globImporters: {},
     _registerMissingImport: null,
-    _hasPendingReload: false
+    _pendingReload: null
   }
 
   process.once('SIGTERM', async () => {

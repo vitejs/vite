@@ -73,11 +73,15 @@ export class ModuleGraph {
     if (mods) {
       const seen = new Set<ModuleNode>()
       mods.forEach((mod) => {
-        mod.transformResult = null
-        mod.ssrTransformResult = null
-        invalidateSSRModule(mod, seen)
+        this.invalidateModule(mod, seen)
       })
     }
+  }
+
+  invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()) {
+    mod.transformResult = null
+    mod.ssrTransformResult = null
+    invalidateSSRModule(mod, seen)
   }
 
   /**
