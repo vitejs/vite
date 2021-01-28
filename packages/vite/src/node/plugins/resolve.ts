@@ -204,7 +204,7 @@ export function resolvePlugin({
             }
           } else {
             if (!asSrc) {
-              this.warn(
+              debug(
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${chalk.white.dim(importer)})`
               )
