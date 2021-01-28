@@ -347,7 +347,7 @@ export function tryNodeResolve(
     if (
       !resolved.includes('node_modules') || // linked
       !server || // build
-      !server._optimizeDepsMetadata // optimizer resolve
+      server._isRunningOptimizer // optimizer resolve
     ) {
       return { id: resolved }
     }
@@ -357,7 +357,8 @@ export function tryNodeResolve(
       exclude?.includes(pkgId) ||
       exclude?.includes(id) ||
       isCSSRequest(resolved) ||
-      server.config.assetsInclude(resolved)
+      server.config.assetsInclude(resolved) ||
+      resolved.endsWith('.json')
     ) {
       // excluded from optimization
       // Inject a version query to npm deps so that the browser

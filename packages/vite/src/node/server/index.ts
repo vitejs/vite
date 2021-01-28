@@ -243,6 +243,10 @@ export interface ViteDevServer {
   /**
    * @internal
    */
+  _isRunningOptimizer: boolean
+  /**
+   * @internal
+   */
   _registerMissingImport:
     | ((id: string, resolved: string, importer?: string) => void)
     | null
@@ -322,6 +326,7 @@ export async function createServer(
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
     _globImporters: {},
+    _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null
   }
@@ -448,7 +453,12 @@ export async function createServer(
 
   const runOptimize = async () => {
     if (config.optimizeCacheDir) {
-      server._optimizeDepsMetadata = await optimizeDeps(config)
+      server._isRunningOptimizer = true
+      try {
+        server._optimizeDepsMetadata = await optimizeDeps(config)
+      } finally {
+        server._isRunningOptimizer = false
+      }
       server._registerMissingImport = createMissingImpoterRegisterFn(server)
     }
   }

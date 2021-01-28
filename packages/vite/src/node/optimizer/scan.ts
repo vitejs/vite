@@ -209,7 +209,7 @@ function esbuildScanPlugin(
       // known asset types: externalize
       build.onResolve(
         {
-          filter: new RegExp(`\\.(${knownAssetTypes.join('|')})$`)
+          filter: new RegExp(`\\.(${[...knownAssetTypes, 'json'].join('|')})$`)
         },
         externalUnlessEntry
       )
