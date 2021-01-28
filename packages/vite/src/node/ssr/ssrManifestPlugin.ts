@@ -16,12 +16,14 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
           // links for entry chunks are already generated in static HTML
           // so we only need to record info for non-entry chunks
           // TODO: also include non-CSS assets
-          const cssFile = chunkToEmittedCssFileMap.get(chunk)
+          const cssFiles = chunkToEmittedCssFileMap.get(chunk)
           for (const id in chunk.modules) {
             const mappedChunks = ssrManifest[id] || (ssrManifest[id] = [])
             mappedChunks.push(base + chunk.fileName)
-            if (cssFile) {
-              mappedChunks.push(base + cssFile)
+            if (cssFiles) {
+              cssFiles.forEach((file) => {
+                mappedChunks.push(base + file)
+              })
             }
           }
         }

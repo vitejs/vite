@@ -228,9 +228,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     deps.add(config.base + chunk.fileName)
-                    const cssFile = chunkToEmittedCssFileMap.get(chunk)
-                    if (cssFile) {
-                      deps.add(config.base + cssFile)
+                    const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+                    if (cssFiles) {
+                      cssFiles.forEach((file) => {
+                        deps.add(config.base + file)
+                      })
                     }
                     chunk.imports.forEach(addDeps)
                   }
