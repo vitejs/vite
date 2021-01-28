@@ -19,6 +19,10 @@ interface ManifestChunk {
   dynamicImports?: string[]
 }
 
+function isEmptyChunk(chunk: OutputChunk): boolean {
+  return !chunk.code || (chunk.code.length <= 1 && !chunk.code.trim())
+}
+
 export function manifestPlugin(config: ResolvedConfig): Plugin {
   const manifest: Manifest = {}
 
@@ -40,6 +44,15 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         } else {
           return `_` + path.basename(chunk.fileName)
         }
+      }
+
+      function replaceFileWithAsset(chunk: OutputChunk) {
+        const name = chunk.facadeModuleId ? getChunkName(chunk) : chunk.name
+        const asset = Object.values(bundle).find(
+          (otherChunk) => otherChunk.type === 'asset' && otherChunk.name == name
+        )
+        if (asset) chunk.fileName = asset.fileName
+        return chunk
       }
 
       function createChunk(chunk: OutputChunk): ManifestChunk {
@@ -83,6 +96,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
+          if (isEmptyChunk(chunk)) {
+            replaceFileWithAsset(chunk)
+          }
           manifest[getChunkName(chunk)] = createChunk(chunk)
         }
       }
