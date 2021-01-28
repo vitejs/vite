@@ -11,7 +11,7 @@ type Manifest = Record<string, ManifestChunk>
 interface ManifestChunk {
   src?: string
   file: string
-  css?: string
+  css?: string[]
   assets?: string[]
   isEntry?: boolean
   isDynamicEntry?: boolean
@@ -69,9 +69,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        const cssFile = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFile) {
-          manifestChunk.css = cssFile
+        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+        if (cssFiles) {
+          manifestChunk.css = [...cssFiles]
         }
 
         const assets = chunkToEmittedAssetsMap.get(chunk)

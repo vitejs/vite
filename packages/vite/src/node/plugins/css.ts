@@ -15,6 +15,7 @@ import { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
 import {
   NormalizedOutputOptions,
+  OutputChunk,
   PluginContext,
   RenderedChunk,
   RollupError,
@@ -84,7 +85,10 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const chunkToEmittedCssFileMap = new WeakMap<RenderedChunk, string>()
+export const chunkToEmittedCssFileMap = new WeakMap<
+  RenderedChunk,
+  Set<string>
+>()
 
 /**
  * Plugin applied before user plugins
@@ -182,7 +186,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   const styles = new Map<string, string>()
-  const emptyChunks = new Set<string>()
+  const pureCssChunks = new Set<string>()
   const moduleCache = cssModulesCache.get(config)!
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
@@ -240,8 +244,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
+      let isAllCSSChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
+        if (!isCSSRequest(id) || cssModuleRE.test(id)) {
+          isAllCSSChunk = false
+        }
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
         }
@@ -252,9 +260,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (config.build.cssCodeSplit) {
-        if (!code.trim()) {
+        if (isAllCSSChunk) {
           // this is a shared CSS-only chunk that is empty.
-          emptyChunks.add(chunk.fileName)
+          pureCssChunks.add(chunk.fileName)
         }
         if (opts.format === 'es') {
           chunkCSS = await processChunkCSS(chunkCSS, config, this, false)
@@ -264,7 +272,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS
           })
-          chunkToEmittedCssFileMap.set(chunk, this.getFileName(fileHandle))
+          chunkToEmittedCssFileMap.set(
+            chunk,
+            new Set([this.getFileName(fileHandle)])
+          )
         } else if (!config.build.ssr) {
           // legacy build, inline css
           chunkCSS = await processChunkCSS(chunkCSS, config, this, true)
@@ -296,11 +307,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(opts, bundle) {
       // remove empty css chunks and their imports
-      if (emptyChunks.size) {
-        emptyChunks.forEach((fileName) => {
-          delete bundle[fileName]
-        })
-        const emptyChunkFiles = [...emptyChunks].join('|').replace(/\./g, '\\.')
+      if (pureCssChunks.size) {
+        const emptyChunkFiles = [...pureCssChunks]
+          .map((file) => path.basename(file))
+          .join('|')
+          .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
           `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`,
           'g'
@@ -308,9 +319,32 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         for (const file in bundle) {
           const chunk = bundle[file]
           if (chunk.type === 'chunk') {
+            // remove pure css chunk from other chunk's imports,
+            // and also register the emitted CSS files under the importer
+            // chunks instead.
+            chunk.imports = chunk.imports.filter((file) => {
+              if (pureCssChunks.has(file)) {
+                const css = chunkToEmittedCssFileMap.get(
+                  bundle[file] as OutputChunk
+                )
+                if (css) {
+                  let existing = chunkToEmittedCssFileMap.get(chunk)
+                  if (!existing) {
+                    existing = new Set()
+                  }
+                  css.forEach((file) => existing!.add(file))
+                  chunkToEmittedCssFileMap.set(chunk, existing)
+                }
+                return false
+              }
+              return true
+            })
             chunk.code = chunk.code.replace(emptyChunkRE, '')
           }
         }
+        pureCssChunks.forEach((fileName) => {
+          delete bundle[fileName]
+        })
       }
 
       let extractedCss = outputToExtractedCSSMap.get(opts)
