@@ -83,8 +83,10 @@ export function esbuildDepPlugin(
       // so that esbuild outputs desired output file structure.
       build.onLoad({ filter: /.*/, namespace: 'entry' }, ({ path: id }) => {
         const entryFile = qualified[id]
+        let ext = path.extname(entryFile).slice(1)
+        if (ext === 'mjs') ext = 'js'
         return {
-          loader: path.extname(entryFile).slice(1) as Loader,
+          loader: ext as Loader,
           contents: fs.readFileSync(entryFile, 'utf-8'),
           resolveDir: path.dirname(entryFile)
         }
