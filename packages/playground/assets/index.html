@@ -78,6 +78,9 @@
   <img class="svg-frag-import" alt="" />
 </div>
 
+<h2>?raw import</h2>
+<code class="raw"></code>
+
 <script type="module">
   import './css/fonts.css'
   import './css/css-url.css'
@@ -97,6 +100,9 @@
   import svgFrag from './nested/fragment.svg'
   text('.svg-frag-import-path', svgFrag)
   document.querySelector('.svg-frag-import').src = svgFrag + '#icon-heart-view'
+
+  import rawSvg from './nested/fragment.svg?raw'
+  text('.raw', rawSvg)
 
   function text(el, text) {
     document.querySelector(el).textContent = text
