@@ -137,7 +137,7 @@ function fileToDevUrl(id: string, { root, base }: ResolvedConfig) {
   } else {
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
-    rtn = FS_PREFIX + id
+    rtn = path.posix.join(FS_PREFIX + id)
   }
   return base + rtn.replace(/^\//, '')
 }
