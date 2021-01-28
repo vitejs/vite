@@ -183,13 +183,11 @@ export function resolvePlugin({
         if (
           (res = tryNodeResolve(
             id,
-            importer && importer[0] === '/' && fs.existsSync(cleanUrl(importer))
-              ? path.dirname(importer)
-              : root,
+            importer,
+            root,
             isProduction,
             isBuild,
             dedupe,
-            root,
             server
           ))
         ) {
@@ -300,18 +298,27 @@ export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
-  basedir: string,
+  importer: string | undefined,
+  root: string,
   isProduction: boolean,
   isBuild = true,
   dedupe?: string[],
-  dedupeRoot?: string,
   server?: ViteDevServer
 ): PartialResolvedId | undefined {
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
 
-  if (dedupe && dedupeRoot && dedupe.includes(pkgId)) {
-    basedir = dedupeRoot
+  let basedir
+  if (dedupe && dedupe.includes(pkgId)) {
+    basedir = root
+  } else if (
+    importer &&
+    path.isAbsolute(importer) &&
+    fs.existsSync(cleanUrl(importer))
+  ) {
+    basedir = path.dirname(importer)
+  } else {
+    basedir = root
   }
 
   const pkg = resolvePackageData(pkgId, basedir)
@@ -336,8 +343,11 @@ export function tryNodeResolve(
       moduleSideEffects: pkg.hasSideEffects(resolved)
     }
   } else {
-    if (!resolved.includes('node_modules') || !server) {
-      // linked
+    if (
+      !resolved.includes('node_modules') || // linked
+      !server || // build
+      !server._optimizeDepsMetadata // optimizer resolve
+    ) {
       return { id: resolved }
     }
     // if we reach here, it's a valid dep import that hasn't been optimzied.
@@ -358,7 +368,7 @@ export function tryNodeResolve(
     } else {
       // this is a missing import.
       // queue optimize-deps re-run.
-      server._registerMissingImport?.(id, resolved)
+      server._registerMissingImport?.(id, resolved, importer)
     }
     return { id: resolved }
   }

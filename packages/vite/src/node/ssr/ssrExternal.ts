@@ -29,7 +29,7 @@ export function resolveSSRExternal(
   }
 
   for (const id of deps) {
-    const entry = tryNodeResolve(id, root, false)?.id
+    const entry = tryNodeResolve(id, undefined, root, false)?.id
     let requireEntry
     try {
       requireEntry = require.resolve(id, { paths: [root] })
