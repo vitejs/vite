@@ -1,3 +1,14 @@
+# [2.0.0-beta.52](https://github.com/vitejs/vite/compare/v2.0.0-beta.51...v2.0.0-beta.52) (2021-01-28)
+
+
+### Bug Fixes
+
+* **optimizer:** fix ?raw import and import with queries in pre-bundling ([2f1efa3](https://github.com/vitejs/vite/commit/2f1efa383f5f5e07618101898ce99ccbcbfc2654)), closes [#1759](https://github.com/vitejs/vite/issues/1759)
+* always normalize fs prefix slashes ([99e4edd](https://github.com/vitejs/vite/commit/99e4edd468c5e27f66fd276b2ebf22d1c3424c31))
+* **optimizer:** fix optimizer updates on new dep discovery ([b2110af](https://github.com/vitejs/vite/commit/b2110af04564f184bac9308926116138b9ab7aeb)), closes [#1755](https://github.com/vitejs/vite/issues/1755)
+
+
+
 # [2.0.0-beta.51](https://github.com/vitejs/vite/compare/v2.0.0-beta.50...v2.0.0-beta.51) (2021-01-27)
 
 
