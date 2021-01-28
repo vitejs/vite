@@ -1,3 +1,12 @@
+# [2.0.0-beta.55](https://github.com/vitejs/vite/compare/v2.0.0-beta.54...v2.0.0-beta.55) (2021-01-28)
+
+
+### Bug Fixes
+
+* **optimizer:** use js loader for resolved mjs files in esbuild ([0f2c2ce](https://github.com/vitejs/vite/commit/0f2c2ce4875c3ed87264c4904b047f06ee1c5d2d))
+
+
+
 # [2.0.0-beta.54](https://github.com/vitejs/vite/compare/v2.0.0-beta.53...v2.0.0-beta.54) (2021-01-28)
 
 
