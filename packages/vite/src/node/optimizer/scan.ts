@@ -21,6 +21,7 @@ import {
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
+import { isCSSRequest } from '../plugins/css'
 
 const debug = createDebugger('vite:deps')
 
@@ -54,6 +55,11 @@ export async function scanImports(
     entries = await globEntries('**/*.html', config)
   }
 
+  // CSS/Asset entrypoints should not be scanned for dependencies.
+  entries = entries.filter(
+    (entry) => !(isCSSRequest(entry) || config.assetsInclude(entry))
+  )
+
   if (!entries.length) {
     debug(`No entry HTML files detected`)
     return { deps: {}, missing: {} }
@@ -64,7 +70,7 @@ export async function scanImports(
   const tempDir = path.join(config.optimizeCacheDir!, 'temp')
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
-  const plugin = esbuildScanPlugin(config, deps, missing)
+  const plugin = esbuildScanPlugin(config, deps, missing, entries)
 
   await Promise.all(
     entries.map((entry) =>
@@ -110,7 +116,8 @@ const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 function esbuildScanPlugin(
   config: ResolvedConfig,
   depImports: Record<string, string>,
-  missing: Record<string, string>
+  missing: Record<string, string>,
+  entries: string[]
 ): Plugin {
   let container: PluginContainer
 
@@ -133,6 +140,11 @@ function esbuildScanPlugin(
 
   const include = config.optimizeDeps?.include
   const exclude = config.optimizeDeps?.exclude
+
+  const externalUnlessEntry = ({ path }: { path: string }) => ({
+    path,
+    external: !entries.includes(path)
+  })
 
   return {
     name: 'vite:dep-scan',
@@ -191,7 +203,7 @@ function esbuildScanPlugin(
         {
           filter: /\.(css|less|sass|scss|styl|stylus|postcss)$/
         },
-        ({ path }) => ({ path, external: true })
+        externalUnlessEntry
       )
 
       // known asset types: externalize
@@ -199,7 +211,7 @@ function esbuildScanPlugin(
         {
           filter: new RegExp(`\\.(${knownAssetTypes.join('|')})$`)
         },
-        ({ path }) => ({ path, external: true })
+        externalUnlessEntry
       )
 
       // known vite query types: ?worker, ?raw
@@ -207,7 +219,7 @@ function esbuildScanPlugin(
         {
           filter: /\?(worker|raw)\b/
         },
-        ({ path }) => ({ path, external: true })
+        externalUnlessEntry
       )
 
       // bare imports: record and externalize
@@ -218,17 +230,11 @@ function esbuildScanPlugin(
         },
         async ({ path: id, importer }) => {
           if (depImports[id]) {
-            return {
-              path: id,
-              external: true
-            }
+            return externalUnlessEntry({ path: id })
           }
 
           if (isExternalUrl(id) || isDataUrl(id)) {
-            return {
-              path: id,
-              external: true
-            }
+            return { path: id, external: true }
           }
 
           const resolved = await resolve(id, importer)
@@ -246,10 +252,7 @@ function esbuildScanPlugin(
               if (!exclude?.includes(id)) {
                 depImports[id] = resolved
               }
-              return {
-                path: id,
-                external: true
-              }
+              return externalUnlessEntry({ path: id })
             } else {
               // linked package, keep crawling
               return {
@@ -271,15 +274,17 @@ function esbuildScanPlugin(
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer)
           if (resolved && resolved !== id) {
+            // in case user has configured to externalize additional assets
+            if (config.assetsInclude(id)) {
+              return { path: id, external: true }
+            }
             return {
               path: path.resolve(cleanUrl(resolved))
             }
           } else {
             // resolve failed... probably usupported type
-            return {
-              path: id,
-              external: true
-            }
+            // or file is already resolved because it's an entry
+            return externalUnlessEntry({ path: id })
           }
         }
       )
