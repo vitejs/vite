@@ -10,7 +10,8 @@ import {
   isDataUrl,
   isExternalUrl,
   normalizePath,
-  isObject
+  isObject,
+  cleanUrl
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import {
@@ -201,6 +202,14 @@ function esbuildScanPlugin(
         ({ path }) => ({ path, external: true })
       )
 
+      // known vite query types: ?worker, ?raw
+      build.onResolve(
+        {
+          filter: /\?(worker|raw)\b/
+        },
+        ({ path }) => ({ path, external: true })
+      )
+
       // bare imports: record and externalize
       build.onResolve(
         {
@@ -259,14 +268,11 @@ function esbuildScanPlugin(
           filter: /.*/
         },
         async ({ path: id, importer }) => {
-          if (id.includes(`?worker`)) {
-            return { path: id, external: true }
-          }
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer)
           if (resolved && resolved !== id) {
             return {
-              path: path.resolve(resolved)
+              path: path.resolve(cleanUrl(resolved))
             }
           } else {
             // resolve failed... probably usupported type
