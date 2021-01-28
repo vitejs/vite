@@ -247,9 +247,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _registerMissingImport:
-    | ((id: string, resolved: string, importer?: string) => void)
-    | null
+  _registerMissingImport: ((id: string, resolved: string) => void) | null
   /**
    * @internal
    */

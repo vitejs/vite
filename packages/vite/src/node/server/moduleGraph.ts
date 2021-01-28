@@ -84,6 +84,13 @@ export class ModuleGraph {
     invalidateSSRModule(mod, seen)
   }
 
+  invalidateAll() {
+    const seen = new Set<ModuleNode>()
+    this.idToModuleMap.forEach((mod) => {
+      this.invalidateModule(mod, seen)
+    })
+  }
+
   /**
    * Update the module graph based on a module's updated imports information
    * If there are dependencies that no longer have any importers, they are
