@@ -1,5 +1,6 @@
+import fs from 'fs'
 import path from 'path'
-import { Plugin } from 'esbuild'
+import { Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
 import { ResolvedConfig } from '..'
 import { isRunningWithYarnPnp } from '../utils'
@@ -36,6 +37,10 @@ export function esbuildDepPlugin(
         },
         async ({ path: id, importer }) => {
           if (id.startsWith('.')) {
+            // in case this is imported by an entry point
+            if (importer in qualified) {
+              importer = qualified[importer]
+            }
             const dir = path.dirname(importer)
             return {
               path: path.resolve(dir, id),
@@ -59,8 +64,10 @@ export function esbuildDepPlugin(
           // ensure esbuild uses our resolved entires of optimized deps in all
           // cases
           if (id in qualified) {
+            // if is optimized entry, redirect to entry namespace
             return {
-              path: path.resolve(qualified[id])
+              path: id,
+              namespace: 'entry'
             }
           } else {
             // use vite resolver
@@ -73,12 +80,24 @@ export function esbuildDepPlugin(
                 }
               }
               return {
-                path: resolved
+                path: path.resolve(resolved)
               }
             }
           }
         }
       )
+
+      // for entry files, we'll read it ourselves to retain the entry's raw id
+      // instead of file path
+      // so that esbuild outputs desired output file structure.
+      build.onLoad({ filter: /.*/, namespace: 'entry' }, ({ path: id }) => {
+        const entryFile = qualified[id]
+        return {
+          loader: path.extname(entryFile).slice(1) as Loader,
+          contents: fs.readFileSync(entryFile, 'utf-8'),
+          resolveDir: path.dirname(entryFile)
+        }
+      })
 
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
