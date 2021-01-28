@@ -35,6 +35,7 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
     try {
       // Nullify previous metadata so that the resolver won't
       // resolve to optimized files during the optimizer re-run
+      server._isRunningOptimizer = true
       server._optimizeDepsMetadata = null
 
       const newData = (server._optimizeDepsMetadata = await optimizeDeps(
@@ -50,6 +51,7 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
         { timestamp: true }
       )
     } finally {
+      server._isRunningOptimizer = false
       pendingResolve && pendingResolve()
       server._pendingReload = pendingResolve = null
     }
