@@ -363,7 +363,7 @@ export function tryNodeResolve(
       // excluded from optimization
       // Inject a version query to npm deps so that the browser
       // can cache it without revalidation.
-      const versionHash = server._optimizeDepsMetadata?.hash
+      const versionHash = server._optimizeDepsMetadata?.browserHash
       if (versionHash) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
@@ -387,7 +387,9 @@ export function tryOptimizedResolve(
     if (isOptimized) {
       return (
         isOptimized.file +
-        `?v=${depData.hash}${isOptimized.needsInterop ? `&es-interop` : ``}`
+        `?v=${depData.browserHash}${
+          isOptimized.needsInterop ? `&es-interop` : ``
+        }`
       )
     }
   }
