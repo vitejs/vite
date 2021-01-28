@@ -95,7 +95,7 @@ Importing `.css` files will inject its content to the page via a `<style>` tag w
 
 ### `@import` Inlining and Rebasing
 
-Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. Vite alises are also respected for CSS `@import`. In addition, all CSS `url()` references, even if the imported files are in different directories, are always automatically rebased to ensure correctness.
+Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. Vite aliases are also respected for CSS `@import`. In addition, all CSS `url()` references, even if the imported files are in different directories, are always automatically rebased to ensure correctness.
 
 `@import` aliases and URL rebasing are also supported for Sass and Less files (see [CSS Pre-processors](#css-pre-processors)).
 
