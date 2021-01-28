@@ -97,6 +97,28 @@ export function esbuildDepPlugin(
 
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
+        const qualifiedToPathMap = new Map(
+          Object.keys(qualified).map((k) => [qualified[k], k])
+        )
+        // see https://github.com/evanw/esbuild/issues/588
+        const entrypointNamesRegex = new RegExp(
+          `^(${Object.values(qualified).join('|')})$`
+        )
+        build.onResolve({ filter: entrypointNamesRegex }, (args) => {
+          return {
+            path: args.path,
+            namespace: 'pnp-entrypoint-alias'
+          }
+        })
+        build.onLoad(
+          { filter: /.*/, namespace: 'pnp-entrypoint-alias' },
+          (args) => {
+            const entrypointPath = qualifiedToPathMap.get(args.path)
+            return {
+              contents: `import "${entrypointPath}"`
+            }
+          }
+        )
         build.onResolve({ filter: /.*/ }, (args) => ({
           path: require.resolve(args.path, { paths: [args.resolveDir] })
         }))
