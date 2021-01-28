@@ -49,6 +49,10 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
         newDeps
       ))
       knownOptimized = newData!.optimized
+      logger.info(
+        chalk.greenBright(`✨ dependencies updated, reloading page...`),
+        { timestamp: true }
+      )
     } catch (e) {
       logger.error(
         chalk.red(`error while updating dependencies:\n${e.stack}`),
@@ -59,10 +63,6 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
       pendingResolve && pendingResolve()
       server._pendingReload = pendingResolve = null
     }
-
-    logger.info(chalk.greenBright(`✨ dependencies updated.`), {
-      timestamp: true
-    })
 
     // Importers' cached transform results have stale imports (resolved to
     // old locations) so they need to be invalidated before the page is
