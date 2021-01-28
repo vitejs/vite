@@ -42,7 +42,17 @@ export interface DepOptimizationOptions {
 }
 
 export interface DepOptimizationMetadata {
+  /**
+   * The main hash is determined by user config and dependency lockfiles.
+   * This is checked on server startup to avoid unncessary re-bundles.
+   */
   hash: string
+  /**
+   * The browser hash is determined by the main hash plus additional dependencies
+   * discovered at runtime. This is used to invalidate browser requests to
+   * optimized deps.
+   */
+  browserHash: string
   optimized: Record<
     string,
     {
@@ -73,8 +83,10 @@ export async function optimizeDeps(
   }
 
   const dataPath = path.join(cacheDir, 'metadata.json')
+  const mainHash = getDepHash(root, config)
   const data: DepOptimizationMetadata = {
-    hash: getDepHash(root, config),
+    hash: mainHash,
+    browserHash: mainHash,
     optimized: {}
   }
 
@@ -103,6 +115,12 @@ export async function optimizeDeps(
     deps = newDeps
     missing = {}
   }
+
+  // update browser hash
+  data.browserHash = createHash('sha256')
+    .update(data.hash + JSON.stringify(deps))
+    .digest('hex')
+    .substr(0, 8)
 
   const missingIds = Object.keys(missing)
   if (missingIds.length) {
