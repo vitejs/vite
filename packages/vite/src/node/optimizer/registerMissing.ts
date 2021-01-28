@@ -44,20 +44,6 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
         newDeps
       ))
       knownOptimized = newData!.optimized
-
-      // Importers' cached transform results have stale imports (resolved to
-      // old locations) so they need to be invalidated before the page is
-      // reloaded.
-      currentImporters.forEach((importer) => {
-        const mod = server.moduleGraph.getModuleById(importer)
-        if (mod) server.moduleGraph.invalidateModule(mod)
-      })
-      currentImporters.clear()
-
-      server.ws.send({
-        type: 'full-reload',
-        path: '*'
-      })
     } catch (e) {
       logger.error(
         chalk.red(`error while updating dependencies:\n${e.stack}`),
@@ -70,6 +56,20 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
 
     logger.info(chalk.greenBright(`✨ dependencies updated.`), {
       timestamp: true
+    })
+
+    // Importers' cached transform results have stale imports (resolved to
+    // old locations) so they need to be invalidated before the page is
+    // reloaded.
+    currentImporters.forEach((importer) => {
+      const mod = server.moduleGraph.getModuleById(importer)
+      if (mod) server.moduleGraph.invalidateModule(mod)
+    })
+    currentImporters.clear()
+
+    server.ws.send({
+      type: 'full-reload',
+      path: '*'
     })
   }
 
