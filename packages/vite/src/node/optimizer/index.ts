@@ -63,6 +63,8 @@ export interface DepOptimizationMetadata {
   >
 }
 
+const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
+
 export async function optimizeDeps(
   config: ResolvedConfig,
   force = config.server.force,
@@ -82,7 +84,7 @@ export async function optimizeDeps(
     return null
   }
 
-  const dataPath = path.join(cacheDir, 'metadata.json')
+  const dataPath = path.join(cacheDir, '_metadata.json')
   const mainHash = getDepHash(root, config)
   const data: DepOptimizationMetadata = {
     hash: mainHash,
@@ -177,10 +179,21 @@ export async function optimizeDeps(
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
 
-  const esbuildMetaPath = path.join(cacheDir, 'esbuild.json')
+  const esbuildMetaPath = path.join(cacheDir, '_esbuild.json')
+
+  // esbuild generates nested directory output with lowest common ancestor base
+  // this is unpredictable and makes it difficult to analyze entry / output
+  // mapping. So what we do here is:
+  // 1. flatten all ids to eliminate slash
+  // 2. in the plugin, read the entry ourselves as virtual files to retain the
+  //    path.
+  const flatIdDeps: Record<string, string> = {}
+  for (const id in deps) {
+    flatIdDeps[flattenId(id)] = deps[id]
+  }
 
   await build({
-    entryPoints: Object.values(deps).map((p) => path.resolve(p)),
+    entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
     external: config.optimizeDeps?.exclude,
@@ -193,44 +206,18 @@ export async function optimizeDeps(
     define: {
       'process.env.NODE_ENV': '"development"'
     },
-    plugins: [esbuildDepPlugin(deps, config)]
+    plugins: [esbuildDepPlugin(flatIdDeps, config)]
   })
 
   const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
 
   await init
-  const entryToIdMap: Record<string, string> = {}
   for (const id in deps) {
-    entryToIdMap[deps[id].toLowerCase()] = id
-  }
-
-  const normalizedInputs = Object.keys(meta.inputs).map((input) =>
-    normalizePath(path.resolve(input))
-  )
-
-  for (const output in meta.outputs) {
-    if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map')) {
-      continue
-    }
-    const { exports } = meta.outputs[output]
-    const relativeOutput = normalizePath(
-      path.relative(cacheDir, path.resolve(output))
-    )
-    for (const input of normalizedInputs) {
-      const entry = normalizePath(path.resolve(input))
-      if (!entry.replace(/\.mjs$/, '.js').endsWith(relativeOutput)) {
-        continue
-      }
-      const id = entryToIdMap[entry.toLowerCase()]
-      if (!id) {
-        continue
-      }
-      data.optimized[id] = {
-        file: normalizePath(path.resolve(output)),
-        src: entry,
-        needsInterop: needsInterop(id, entry, exports)
-      }
-      break
+    const entry = deps[id]
+    data.optimized[id] = {
+      file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
+      src: entry,
+      needsInterop: needsInterop(id, entry, meta.outputs)
     }
   }
 
@@ -246,7 +233,7 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 function needsInterop(
   id: string,
   entry: string,
-  generatedExports: string[]
+  outputs: Record<string, any>
 ): boolean {
   if (KNOWN_INTEROP_IDS.has(id)) {
     return true
@@ -256,12 +243,21 @@ function needsInterop(
   if (!exports.length && !imports.length) {
     return true
   }
+
   // if a peer dep used require() on a ESM dep, esbuild turns the
   // ESM dep's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
+  const flatId = flattenId(id) + '.js'
+  let generatedExports: string[] | undefined
+  for (const output in outputs) {
+    if (normalizePath(output).endsWith(flatId)) {
+      generatedExports = outputs[output].exports
+    }
+  }
+
   if (
-    isSingleDefaultExport(generatedExports) &&
-    !isSingleDefaultExport(exports)
+    !generatedExports ||
+    (isSingleDefaultExport(generatedExports) && !isSingleDefaultExport(exports))
   ) {
     return true
   }
