@@ -1,3 +1,33 @@
+# [2.0.0-beta.53](https://github.com/vitejs/vite/compare/v2.0.0-beta.52...v2.0.0-beta.53) (2021-01-28)
+
+
+### Bug Fixes
+
+* **css:** pure css chunk removal + manifest entry with multiple css files ([cadf38c](https://github.com/vitejs/vite/commit/cadf38cdedf5d47c63e8476b16bb74434df35878)), closes [#1776](https://github.com/vitejs/vite/issues/1776)
+* **optimizer:** add separate hash for invalidating optimized deps ([216ae8e](https://github.com/vitejs/vite/commit/216ae8e95cc43dca47da4607086d2948d538fc53))
+* **optimizer:** externalize json ([c3e52f2](https://github.com/vitejs/vite/commit/c3e52f2b204cdcfcab46e4b5e4992a6cefecba6a))
+* **optimizer:** invalidate all modules on deps rebundle ([02053a2](https://github.com/vitejs/vite/commit/02053a2bfc2db82f277625fdf0563b257ef9c221))
+* **optimizer:** use vite resolver for yarn 2 fallback ([475aae4](https://github.com/vitejs/vite/commit/475aae4ee29f9951f715d0ea98746202cfb586d4)), closes [#1778](https://github.com/vitejs/vite/issues/1778)
+* fix pure css chunk removal ([d69d49d](https://github.com/vitejs/vite/commit/d69d49d4ae89b3f8ed37e1cf4345197634514546))
+* **optimizer:** use all inputs for optimized entry matching ([9ecf52b](https://github.com/vitejs/vite/commit/9ecf52b27a3bdd0ce487e142fb45578eea76a3b6)), closes [#1769](https://github.com/vitejs/vite/issues/1769)
+* dependency scan with esbuild when using non-HTML entrypoints ([#1772](https://github.com/vitejs/vite/issues/1772)) ([ca862a2](https://github.com/vitejs/vite/commit/ca862a2ea12853876e38100e8894fa22d9dbbc6e)), closes [#1763](https://github.com/vitejs/vite/issues/1763)
+* hold missing dep requests while re-bundling ([8e28803](https://github.com/vitejs/vite/commit/8e288039a871b56803a7a5b66cc3766b6c2267db))
+* more stable request hold ([be0e698](https://github.com/vitejs/vite/commit/be0e6981f764cb653d107966a755c8daa18d20c9))
+
+
+### Reverts
+
+* Revert "chore: remove unused logic" ([6b154f0](https://github.com/vitejs/vite/commit/6b154f0df3bd73cc3d3bdd91a999a7a4268e6c6b))
+
+
+### BREAKING CHANGES
+
+* **css:** the "css" property of build manifest entries is now an
+array because it is possible for an entry to link to multiple generated
+css files.
+
+
+
 # [2.0.0-beta.52](https://github.com/vitejs/vite/compare/v2.0.0-beta.51...v2.0.0-beta.52) (2021-01-28)
 
 
