@@ -3,7 +3,7 @@ import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { build, Loader, Plugin } from 'esbuild'
-import { knownAssetTypes } from '../constants'
+import { knownAssetTypes, DEFAULT_ASSETS_RE } from '../constants'
 import {
   createDebugger,
   emptyDir,
@@ -54,6 +54,9 @@ export async function scanImports(
     entries = await globEntries('**/*.html', config)
   }
 
+  // Asset entrypoints should not be scanned for dependencies.
+  entries = entries.filter((entry) => !DEFAULT_ASSETS_RE.test(entry))
+
   if (!entries.length) {
     debug(`No entry HTML files detected`)
     return { deps: {}, missing: {} }
@@ -64,7 +67,7 @@ export async function scanImports(
   const tempDir = path.join(config.optimizeCacheDir!, 'temp')
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
-  const plugin = esbuildScanPlugin(config, deps, missing)
+  const plugin = esbuildScanPlugin(config, deps, missing, entries)
 
   await Promise.all(
     entries.map((entry) =>
@@ -110,7 +113,8 @@ const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 function esbuildScanPlugin(
   config: ResolvedConfig,
   depImports: Record<string, string>,
-  missing: Record<string, string>
+  missing: Record<string, string>,
+  entries: string[]
 ): Plugin {
   let container: PluginContainer
 
@@ -133,6 +137,11 @@ function esbuildScanPlugin(
 
   const include = config.optimizeDeps?.include
   const exclude = config.optimizeDeps?.exclude
+
+  const externalUnlessEntry = ({ path }) => ({
+    path,
+    external: !entries.includes(path)
+  })
 
   return {
     name: 'vite:dep-scan',
@@ -191,7 +200,7 @@ function esbuildScanPlugin(
         {
           filter: /\.(css|less|sass|scss|styl|stylus|postcss)$/
         },
-        ({ path }) => ({ path, external: true })
+        externalUnlessEntry
       )
 
       // known asset types: externalize
@@ -199,7 +208,7 @@ function esbuildScanPlugin(
         {
           filter: new RegExp(`\\.(${knownAssetTypes.join('|')})$`)
         },
-        ({ path }) => ({ path, external: true })
+        externalUnlessEntry
       )
 
       // known vite query types: ?worker, ?raw
@@ -218,38 +227,29 @@ function esbuildScanPlugin(
         },
         async ({ path: id, importer }) => {
           if (depImports[id]) {
-            return {
-              path: id,
-              external: true
-            }
+            return externalUnlessEntry({ path: id })
           }
 
           if (isExternalUrl(id) || isDataUrl(id)) {
-            return {
-              path: id,
-              external: true
-            }
+            return externalUnlessEntry({ path: id })
           }
 
           const resolved = await resolve(id, importer)
           if (resolved) {
             // browser external
             if (resolved.startsWith(browserExternalId)) {
-              return { path: id, external: true }
+              return externalUnlessEntry({ path: id })
             }
             // virtual id
             if (id === resolved) {
-              return { path: id, external: true }
+              return externalUnlessEntry({ path: id })
             }
             // dep or force included, externalize and stop crawling
             if (resolved.includes('node_modules') || include?.includes(id)) {
               if (!exclude?.includes(id)) {
                 depImports[id] = resolved
               }
-              return {
-                path: id,
-                external: true
-              }
+              return externalUnlessEntry({ path: id })
             } else {
               // linked package, keep crawling
               return {
@@ -276,10 +276,8 @@ function esbuildScanPlugin(
             }
           } else {
             // resolve failed... probably usupported type
-            return {
-              path: id,
-              external: true
-            }
+            // or file is already resolved because it's an entry
+            return externalUnlessEntry({ path: id })
           }
         }
       )
