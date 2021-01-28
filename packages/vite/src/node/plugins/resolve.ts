@@ -45,7 +45,6 @@ function resolveExports(
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
 export const browserExternalId = '__vite-browser-external'
-export const pendingDepId = '__vite-pending-dep'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -347,7 +346,8 @@ export function tryNodeResolve(
     if (
       !resolved.includes('node_modules') || // linked
       !server || // build
-      server._isRunningOptimizer // optimizer resolve
+      server._isRunningOptimizer || // optimizing
+      !server._optimizeDepsMetadata
     ) {
       return { id: resolved }
     }
@@ -367,13 +367,12 @@ export function tryNodeResolve(
       if (versionHash) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
-      return { id: resolved }
     } else {
       // this is a missing import.
       // queue optimize-deps re-run.
       server._registerMissingImport?.(id, resolved, importer)
-      return { id: pendingDepId }
     }
+    return { id: resolved }
   }
 }
 
