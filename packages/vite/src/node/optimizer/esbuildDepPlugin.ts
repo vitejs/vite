@@ -25,7 +25,10 @@ export function esbuildDepPlugin(
   qualified: Record<string, string>,
   config: ResolvedConfig
 ): Plugin {
-  const resolve = config.createResolver({ asSrc: false })
+  const _resolve = config.createResolver({ asSrc: false })
+  const resolve = (id: string, importer: string) =>
+    // map importer ids to file paths for correct resolution
+    _resolve(id, importer in qualified ? qualified[importer] : importer)
 
   return {
     name: 'vite:dep-pre-bundle',
@@ -36,23 +39,11 @@ export function esbuildDepPlugin(
           filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
         },
         async ({ path: id, importer }) => {
-          if (id.startsWith('.')) {
-            // in case this is imported by an entry point
-            if (importer in qualified) {
-              importer = qualified[importer]
-            }
-            const dir = path.dirname(importer)
+          const resolved = await resolve(id, importer)
+          if (resolved) {
             return {
-              path: path.resolve(dir, id),
+              path: resolved,
               external: true
-            }
-          } else {
-            const resolved = await resolve(id, importer)
-            if (resolved) {
-              return {
-                path: resolved,
-                external: true
-              }
             }
           }
         }
