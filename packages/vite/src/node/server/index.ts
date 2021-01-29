@@ -20,7 +20,10 @@ import { createWebSocketServer, WebSocketServer } from '../server/ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
-import { indexHtmlMiddleware } from './middlewares/indexHtml'
+import {
+  createDevHtmlTransformFn,
+  indexHtmlMiddleware
+} from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import {
   serveRawFsMiddleware,
@@ -190,6 +193,10 @@ export interface ViteDevServer {
     options?: TransformOptions
   ): Promise<TransformResult | null>
   /**
+   * Apply vite built-in HTML transforms and any plugin HTML transforms.
+   */
+  transformIndexHtml(url: string, html: string): Promise<string>
+  /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
    */
@@ -299,6 +306,7 @@ export async function createServer(
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
+    transformIndexHtml: null as any,
     ssrLoadModule(url, options) {
       if (!server._ssrExternals) {
         server._ssrExternals = resolveSSRExternal(config)
@@ -328,6 +336,8 @@ export async function createServer(
     _registerMissingImport: null,
     _pendingReload: null
   }
+
+  server.transformIndexHtml = createDevHtmlTransformFn(server)
 
   process.once('SIGTERM', async () => {
     try {
@@ -438,7 +448,7 @@ export async function createServer(
 
   if (!middlewareMode) {
     // transform index.html
-    middlewares.use(indexHtmlMiddleware(server, plugins))
+    middlewares.use(indexHtmlMiddleware(server))
     // handle 404s
     middlewares.use((_, res) => {
       res.statusCode = 404

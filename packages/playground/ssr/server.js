@@ -20,24 +20,12 @@ async function createServer(
       require('./dist/client/ssr-manifest.json')
     : {}
 
-  function getIndexTemplate(url) {
+  function getIndexTemplate() {
     if (isProd) {
       return indexProd
     }
-
-    // TODO handle plugin indexHtmlTransforms?
-    const reactPreamble = url.startsWith('/react')
-      ? `<script type="module">${
-          require('@vitejs/plugin-react-refresh').preambleCode
-        }</script>`
-      : ''
-
     // during dev, inject vite client + always read fresh index.html
-    return (
-      `<script type="module" src="/@vite/client"></script>` +
-      reactPreamble +
-      fs.readFileSync(toAbsolute('index.html'), 'utf-8')
-    )
+    return fs.readFileSync(toAbsolute('index.html'), 'utf-8')
   }
 
   const app = express()
@@ -67,16 +55,22 @@ async function createServer(
 
   app.use('*', async (req, res, next) => {
     try {
+      const url = req.originalUrl
+      let template = getIndexTemplate()
+      if (!isProd) {
+        template = await vite.transformIndexHtml(url, template)
+      }
+
       const { render } = isProd
         ? // @ts-ignore
           require('./dist/server/entry-server.js')
         : await vite.ssrLoadModule('/src/entry-server.ts')
 
-      const [appHtml, preloadLinks] = await render(req.originalUrl, manifest)
+      const [appHtml, preloadLinks] = await render(url, manifest)
 
       const html = `
       ${preloadLinks}
-      ${getIndexTemplate(req.originalUrl).replace(`<!--ssr-outlet-->`, appHtml)}
+      ${template.replace(`<!--ssr-outlet-->`, appHtml)}
       `
 
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
