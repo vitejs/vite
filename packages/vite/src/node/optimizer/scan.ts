@@ -347,7 +347,7 @@ async function transformGlob(source: string, importer: string) {
 
 export function shouldExternalizeDep(resolvedId: string, rawId?: string) {
   // virtual id
-  if (resolvedId === rawId) {
+  if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
   // browser external
