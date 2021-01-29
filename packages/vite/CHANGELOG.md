@@ -1,3 +1,17 @@
+# [2.0.0-beta.56](https://github.com/vitejs/vite/compare/v2.0.0-beta.55...v2.0.0-beta.56) (2021-01-29)
+
+
+### Bug Fixes
+
+* **optimizer:** handle alias to optimized entries ([81eb7a0](https://github.com/vitejs/vite/commit/81eb7a09ddb0042ec94561052e961c1ee7463bb3)), closes [#1780](https://github.com/vitejs/vite/issues/1780)
+
+
+### Performance Improvements
+
+* use esbuild service mode during pre-bundling ([b24b07c](https://github.com/vitejs/vite/commit/b24b07ce689df721d63b68e2647cc0609e58df32))
+
+
+
 # [2.0.0-beta.55](https://github.com/vitejs/vite/compare/v2.0.0-beta.54...v2.0.0-beta.55) (2021-01-28)
 
 
