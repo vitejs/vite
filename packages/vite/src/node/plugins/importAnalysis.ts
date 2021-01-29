@@ -341,7 +341,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             url.startsWith('/') &&
             !config.assetsInclude(cleanUrl(url)) &&
             !url.endsWith('.json') &&
-            checkPublicFile(url, config.root)
+            checkPublicFile(url, config)
           ) {
             throw new Error(
               `Cannot import non-asset file ${url} which is inside /public.` +

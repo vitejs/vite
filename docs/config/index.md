@@ -94,7 +94,7 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `process.cwd()`
 
-  Project root directory. Can be an absolute path, or a path relative from the location of the config file itself.
+  Project root directory (where `index.html` is located). Can be an absolute path, or a path relative from the location of the config file itself.
 
   See [Project Root](/guide/#project-root) for more details.
 
@@ -110,6 +110,13 @@ export default ({ command, mode }) => {
   - Empty string or `./` (for embedded deployment)
 
   See [Public Base Path](/guide/build#public-base-path) for more details.
+
+### publicDir
+
+- **Type:** `string`
+- **Default:** `"public"`
+
+  Directory to serve as plain static assets. Files in this directory are served at `/` during dev and copied to the root of `outDir` during build, and are always served or copied as-is without transform. The value can be either an absolute file system path or a path relative to project root.
 
 ### mode
 

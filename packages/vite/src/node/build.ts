@@ -307,7 +307,6 @@ async function doBuild(
   }
 
   const outDir = resolve(options.outDir)
-  const publicDir = resolve('public')
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (ssr
@@ -395,8 +394,8 @@ async function doBuild(
           )
         }
       }
-      if (fs.existsSync(publicDir)) {
-        copyDir(publicDir, outDir)
+      if (fs.existsSync(config.publicDir)) {
+        copyDir(config.publicDir, outDir)
       }
     }
 

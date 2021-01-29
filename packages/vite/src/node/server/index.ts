@@ -399,7 +399,7 @@ export async function createServer(
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  middlewares.use(servePublicMiddleware(path.join(root, 'public')))
+  middlewares.use(servePublicMiddleware(config.publicDir))
 
   // main transform middleware
   middlewares.use(transformMiddleware(server))

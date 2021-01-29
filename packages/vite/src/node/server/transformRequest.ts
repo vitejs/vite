@@ -34,15 +34,11 @@ export interface TransformOptions {
 
 export async function transformRequest(
   url: string,
-  {
-    config: { root, logger },
-    pluginContainer,
-    moduleGraph,
-    watcher
-  }: ViteDevServer,
+  { config, pluginContainer, moduleGraph, watcher }: ViteDevServer,
   options: TransformOptions = {}
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
+  const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const ssr = !!options.ssr
 
@@ -99,7 +95,7 @@ export async function transformRequest(
     }
   }
   if (code == null) {
-    if (checkPublicFile(url, root)) {
+    if (checkPublicFile(url, config)) {
       throw new Error(
         `Failed to load url ${url} (resolved id: ${id}). ` +
           `This file is in /public and will be copied as-is during build without ` +
