@@ -359,7 +359,7 @@ export function tryNodeResolve(
       exclude?.includes(id) ||
       isCSSRequest(resolved) ||
       server.config.assetsInclude(resolved) ||
-      resolved.endsWith('.json')
+      /\.json$|\?(worker|raw)/.test(resolved)
     ) {
       // excluded from optimization
       // Inject a version query to npm deps so that the browser
