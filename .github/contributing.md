@@ -1,6 +1,48 @@
 # Vite Contributing Guide
 
-Hi! We are really excited that you are interested in contributing to Vite. Before submitting your contribution, please make sure to take a moment and read through the following guidelines:
+Hi! We are really excited that you are interested in contributing to Vite. Before submitting your contribution, please make sure to take a moment and read through the following guide:
+
+## Repo Setup
+
+The Vite repo is a monorepo using Yarn workspaces. The package manager used to install and link dependencies must be [Yarn v1](https://classic.yarnpkg.com/).
+
+To development and test the core `vite` package:
+
+1. Go to `packages/vite` and run `yarn dev`. This starts `tsc` in watch mode.
+
+2. Run `yarn link` in `packages/vite`. This links `vite` globally so that you can:
+
+    - Run `yarn link vite` in another Vite project to use the locally built Vite;
+    - Use the `vite` binary anywhere.
+
+## Running Tests
+
+Each package under `packages/playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
+
+Each test can be run under either dev server mode or build mode.
+
+- `yarn test` by default runs every test in both serve and build mode.
+
+- `yarn test-serve` runs tests only under serve mode.
+
+- `yarn test-build` runs tests only under build mode.
+
+- You can also use `yarn test-serve [match]` or `yarn test-build [match]` to run tests in a specific playground package, e.g. `yarn test-serve css` will run tests for both `playground/css` and `playground/css-codesplit` under serve mode.
+
+  Note package matching is not aviable for the `yarn test` script, which always runs all tests.
+
+### Test Env and Helpers
+
+Inside playground tests, a global `page` object is automatically available, which is a Playwright [`Page`](https://playwright.dev/docs/api/class-page) instance that has already navigated to the served page of the current playground. So writing a test is as simple as:
+
+```js
+test('should work', async () => {
+  expect(await page.textContent('.foo')).toMatch('foo')
+})
+```
+
+Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `packages/playground/testUtils.ts`.
+
 ## Pull Request Guidelines
 
 - Checkout a topic branch from a base branch, e.g. `main`, and merge back against that branch.
