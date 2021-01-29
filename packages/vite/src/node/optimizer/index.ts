@@ -11,10 +11,10 @@ import {
   writeFile,
   flattenId
 } from '../utils'
-import { build } from 'esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
+import { ensureService, stopService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
@@ -191,7 +191,9 @@ export async function optimizeDeps(
     flatIdDeps[flattenId(id)] = deps[id]
   }
 
-  await build({
+  const start = Date.now()
+  const esbuildService = await ensureService()
+  await esbuildService.build({
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
@@ -221,6 +223,11 @@ export async function optimizeDeps(
   }
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
+  if (asCommand) {
+    await stopService()
+  }
+
+  debug(`deps bundled in ${Date.now() - start}ms`)
   return data
 }
 
