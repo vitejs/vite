@@ -7,11 +7,13 @@ import { knownAssetTypes } from '../constants'
 import {
   createDebugger,
   emptyDir,
-  isDataUrl,
-  isExternalUrl,
   normalizePath,
   isObject,
-  cleanUrl
+  cleanUrl,
+  externalRE,
+  dataUrlRE,
+  isExternalUrl,
+  isDataUrl
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import {
@@ -25,6 +27,9 @@ import { isCSSRequest } from '../plugins/css'
 import { ensureService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
+
+const jsTypesRE = /\.(j|t)sx?$|\.mjs$/
+const htmlTypesRE = /\.(html|vue|svelte)$/
 
 export async function scanImports(
   config: ResolvedConfig
@@ -151,16 +156,28 @@ function esbuildScanPlugin(
   return {
     name: 'vite:dep-scan',
     setup(build) {
-      const htmlTypesRe = /\.(html|vue|svelte)$/
-      // html types: extract script contents
-      build.onResolve({ filter: htmlTypesRe }, async ({ path, importer }) => {
+      // external urls
+      build.onResolve({ filter: externalRE }, ({ path }) => ({
+        path,
+        external: true
+      }))
+
+      // data urls
+      build.onResolve({ filter: dataUrlRE }, ({ path }) => ({
+        path,
+        external: true
+      }))
+
+      // html types: extract script contents -----------------------------------
+      build.onResolve({ filter: htmlTypesRE }, async ({ path, importer }) => {
         return {
           path: await resolve(path, importer),
           namespace: 'html'
         }
       })
 
-      build.onLoad({ filter: htmlTypesRe, namespace: 'html' }, ({ path }) => {
+      // extract scripts inside HTML-like files and treat it as a js module
+      build.onLoad({ filter: htmlTypesRE, namespace: 'html' }, ({ path }) => {
         const raw = fs.readFileSync(path, 'utf-8')
         const regex = path.endsWith('.html') ? scriptModuleRE : scriptRE
         regex.lastIndex = 0
@@ -200,60 +217,27 @@ function esbuildScanPlugin(
         }
       })
 
-      // css: externalize
-      build.onResolve(
-        {
-          filter: /\.(css|less|sass|scss|styl|stylus|postcss)$/
-        },
-        externalUnlessEntry
-      )
-
-      // known asset types: externalize
-      build.onResolve(
-        {
-          filter: new RegExp(`\\.(${[...knownAssetTypes, 'json'].join('|')})$`)
-        },
-        externalUnlessEntry
-      )
-
-      // known vite query types: ?worker, ?raw
-      build.onResolve(
-        {
-          filter: /\?(worker|raw)\b/
-        },
-        externalUnlessEntry
-      )
-
-      // bare imports: record and externalize
+      // bare imports: record and externalize ----------------------------------
       build.onResolve(
         {
           // avoid matching windows volume
           filter: /^[\w@][^:]/
         },
         async ({ path: id, importer }) => {
+          if (exclude?.includes(id)) {
+            return externalUnlessEntry({ path: id })
+          }
           if (depImports[id]) {
             return externalUnlessEntry({ path: id })
           }
-
-          if (isExternalUrl(id) || isDataUrl(id)) {
-            return { path: id, external: true }
-          }
-
           const resolved = await resolve(id, importer)
           if (resolved) {
-            // browser external
-            if (resolved.startsWith(browserExternalId)) {
-              return { path: id, external: true }
+            if (shouldExternalizeDep(resolved, id)) {
+              return externalUnlessEntry({ path: id })
             }
-            // virtual id
-            if (id === resolved) {
-              return { path: id, external: true }
-            }
-            // dep or force included, externalize and stop crawling
             if (resolved.includes('node_modules') || include?.includes(id)) {
-              if (!exclude?.includes(id)) {
-                depImports[id] = resolved
-              }
+              // dep or fordce included, externalize and stop crawling
+              depImports[id] = resolved
               return externalUnlessEntry({ path: id })
             } else {
               // linked package, keep crawling
@@ -267,9 +251,36 @@ function esbuildScanPlugin(
         }
       )
 
-      const parseableTypes = /\.(j|t)sx?$|\.mjs$/
+      // Externalized file types -----------------------------------------------
+      // these are done on raw ids using esbuild's native regex filter so it
+      // snould be faster than doing it in the catch-all via js
+      // they are done after the bare import resolve because a package name
+      // may end with these extensions
 
-      // catch all
+      // css & json
+      build.onResolve(
+        {
+          filter: /\.(css|less|sass|scss|styl|stylus|postcss|json)$/
+        },
+        externalUnlessEntry
+      )
+
+      // known asset types
+      build.onResolve(
+        {
+          filter: new RegExp(`\\.(${knownAssetTypes.join('|')})$`)
+        },
+        externalUnlessEntry
+      )
+
+      // known vite query types: ?worker, ?raw
+      build.onResolve({ filter: /\?(worker|raw)\b/ }, ({ path }) => ({
+        path,
+        external: true
+      }))
+
+      // catch all -------------------------------------------------------------
+
       build.onResolve(
         {
           filter: /.*/
@@ -277,16 +288,15 @@ function esbuildScanPlugin(
         async ({ path: id, importer }) => {
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer)
-          if (resolved && resolved !== id) {
-            if (!parseableTypes.test(resolved)) {
-              return { path: id, external: true }
+          if (resolved) {
+            if (shouldExternalizeDep(resolved, id)) {
+              return externalUnlessEntry({ path: id })
             }
             return {
               path: path.resolve(cleanUrl(resolved))
             }
           } else {
             // resolve failed... probably usupported type
-            // or file is already resolved because it's an entry
             return externalUnlessEntry({ path: id })
           }
         }
@@ -295,7 +305,7 @@ function esbuildScanPlugin(
       // for jsx/tsx, we need to access the content and check for
       // presence of import.meta.glob, since it results in import relationships
       // but isn't crawled by esbuild.
-      build.onLoad({ filter: parseableTypes }, ({ path: id }) => {
+      build.onLoad({ filter: jsTypesRE }, ({ path: id }) => {
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
         const contents = fs.readFileSync(id, 'utf-8')
@@ -333,4 +343,23 @@ async function transformGlob(source: string, importer: string) {
     s.overwrite(expStart, endIndex, exp)
   }
   return s.toString()
+}
+
+export function shouldExternalizeDep(resolvedId: string, rawId?: string) {
+  // virtual id
+  if (resolvedId === rawId) {
+    return true
+  }
+  // browser external
+  if (resolvedId.startsWith(browserExternalId)) {
+    return true
+  }
+  // resovled is not a js type
+  if (!jsTypesRE.test(resolvedId)) {
+    return true
+  }
+  // external or data url
+  if (isExternalUrl(resolvedId) || isDataUrl(resolvedId)) {
+    return true
+  }
 }
