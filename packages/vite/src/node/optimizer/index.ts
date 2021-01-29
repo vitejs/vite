@@ -162,13 +162,20 @@ export async function optimizeDeps(
     return data
   }
 
-  const depsString = qualifiedIds.map((id) => chalk.yellow(id)).join(`, `)
+  const total = qualifiedIds.length
+  const maxListed = 5
+  const listed = Math.min(total, maxListed)
+  const extra = Math.max(0, total - maxListed)
+  const depsString = chalk.yellow(
+    qualifiedIds.slice(0, listed).join(`\n  `) +
+      (extra > 0 ? `\n  (...and ${extra} more)` : ``)
+  )
   if (!asCommand) {
     if (!newDeps) {
       // This is auto run on server start - let the user know that we are
       // pre-optimizing deps
       logger.info(
-        chalk.greenBright(`Pre-bundling dependencies:\n${depsString}`)
+        chalk.greenBright(`Pre-bundling dependencies:\n  ${depsString}`)
       )
       logger.info(
         `(this will be run only when your dependencies or config have changed)`
