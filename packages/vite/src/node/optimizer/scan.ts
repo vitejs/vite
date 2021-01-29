@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
-import { build, Loader, Plugin } from 'esbuild'
+import { Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
 import {
   createDebugger,
@@ -22,6 +22,7 @@ import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
 import { isCSSRequest } from '../plugins/css'
+import { ensureService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
@@ -72,9 +73,10 @@ export async function scanImports(
   const missing: Record<string, string> = {}
   const plugin = esbuildScanPlugin(config, deps, missing, entries)
 
+  const esbuildService = await ensureService()
   await Promise.all(
     entries.map((entry) =>
-      build({
+      esbuildService.build({
         entryPoints: [entry],
         bundle: true,
         format: 'esm',
