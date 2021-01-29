@@ -76,7 +76,8 @@ export async function scanImports(
   const tempDir = path.join(config.optimizeCacheDir!, 'temp')
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
-  const plugin = esbuildScanPlugin(config, deps, missing, entries)
+  const container = await createPluginContainer(config)
+  const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
   const esbuildService = await ensureService()
   await Promise.all(
@@ -122,12 +123,11 @@ const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 
 function esbuildScanPlugin(
   config: ResolvedConfig,
+  container: PluginContainer,
   depImports: Record<string, string>,
   missing: Record<string, string>,
   entries: string[]
 ): Plugin {
-  let container: PluginContainer
-
   const seen = new Map<string, string | undefined>()
 
   const resolve = async (id: string, importer?: string) => {
@@ -135,7 +135,6 @@ function esbuildScanPlugin(
     if (seen.has(key)) {
       return seen.get(key)
     }
-    container = container || (container = await createPluginContainer(config))
     const resolved = await container.resolveId(
       id,
       importer && normalizePath(importer)
