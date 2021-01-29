@@ -24,10 +24,16 @@
   text('.dep', depMsg)
 
   import { createApp } from 'vue'
+  import { ref } from 'foo'
   // vue is aliased to the full browser build AND optimized.
   // should resolve as expected
   createApp({
-    template: '[success] alias optimized dep'
+    template: '[{{ msg }}] alias optimized dep',
+    setup() {
+      return {
+        msg: ref('success')
+      }
+    }
   }).mount('.optimized')
 </script>
 
