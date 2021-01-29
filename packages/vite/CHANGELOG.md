@@ -1,3 +1,19 @@
+# [2.0.0-beta.58](https://github.com/vitejs/vite/compare/v2.0.0-beta.57...v2.0.0-beta.58) (2021-01-29)
+
+
+### Bug Fixes
+
+* **optimizer:** handle rollup plugin virtual ids ([a748896](https://github.com/vitejs/vite/commit/a748896b2058b0bbc2a45ef9cf84969f5681b49e)), closes [#1804](https://github.com/vitejs/vite/issues/1804)
+* do not generate import specifier if not needed ([e438802](https://github.com/vitejs/vite/commit/e438802803d11acf99918690e4010b601fd7e40d))
+
+
+### Features
+
+* add ViteDevServer.transformIndexHtml method for ssr ([dbe1f4a](https://github.com/vitejs/vite/commit/dbe1f4aeadfb9f927f8cd0eec95a32aeee9c3601)), closes [#1745](https://github.com/vitejs/vite/issues/1745)
+* support configuring publicDir via config ([470ceb8](https://github.com/vitejs/vite/commit/470ceb827629ab6cccf76cec3249caee08db247a)), closes [#1799](https://github.com/vitejs/vite/issues/1799)
+
+
+
 # [2.0.0-beta.57](https://github.com/vitejs/vite/compare/v2.0.0-beta.56...v2.0.0-beta.57) (2021-01-29)
 
 
