@@ -267,6 +267,8 @@ function esbuildScanPlugin(
         }
       )
 
+      const parseableTypes = /\.(j|t)sx?$|\.mjs$/
+
       // catch all
       build.onResolve(
         {
@@ -276,8 +278,7 @@ function esbuildScanPlugin(
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer)
           if (resolved && resolved !== id) {
-            // in case user has configured to externalize additional assets
-            if (config.assetsInclude(id)) {
+            if (!parseableTypes.test(resolved)) {
               return { path: id, external: true }
             }
             return {
@@ -294,7 +295,7 @@ function esbuildScanPlugin(
       // for jsx/tsx, we need to access the content and check for
       // presence of import.meta.glob, since it results in import relationships
       // but isn't crawled by esbuild.
-      build.onLoad({ filter: /\.(j|t)sx?$|\.mjs$/ }, ({ path: id }) => {
+      build.onLoad({ filter: parseableTypes }, ({ path: id }) => {
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
         const contents = fs.readFileSync(id, 'utf-8')
