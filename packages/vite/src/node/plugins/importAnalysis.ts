@@ -523,6 +523,10 @@ function transformCjsImport(
   }) as any).body[0] as Node
 
   if (node.type === 'ImportDeclaration') {
+    if (!node.specifiers.length) {
+      return `import "${url}"`
+    }
+
     const importNames: ImportNameSpecifier[] = []
     for (const spec of node.specifiers) {
       if (
