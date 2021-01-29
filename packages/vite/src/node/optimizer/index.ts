@@ -8,7 +8,8 @@ import {
   emptyDir,
   lookupFile,
   normalizePath,
-  writeFile
+  writeFile,
+  flattenId
 } from '../utils'
 import { build } from 'esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
@@ -62,8 +63,6 @@ export interface DepOptimizationMetadata {
     }
   >
 }
-
-const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
 
 export async function optimizeDeps(
   config: ResolvedConfig,

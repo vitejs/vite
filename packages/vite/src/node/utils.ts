@@ -10,6 +10,8 @@ import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
 
+export const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
+
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
 }

@@ -3,7 +3,7 @@ import path from 'path'
 import { Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
 import { ResolvedConfig } from '..'
-import { isRunningWithYarnPnp } from '../utils'
+import { bareImportRE, isRunningWithYarnPnp, flattenId } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 
 const externalTypes = [
@@ -26,9 +26,15 @@ export function esbuildDepPlugin(
   config: ResolvedConfig
 ): Plugin {
   const _resolve = config.createResolver({ asSrc: false })
-  const resolve = (id: string, importer: string) =>
+
+  const resolve = (
+    id: string,
+    importer: string
+  ): Promise<string | undefined> => {
     // map importer ids to file paths for correct resolution
-    _resolve(id, importer in qualified ? qualified[importer] : importer)
+    importer = importer in qualified ? qualified[importer] : importer
+    return _resolve(id, importer)
+  }
 
   return {
     name: 'vite:dep-pre-bundle',
@@ -58,9 +64,24 @@ export function esbuildDepPlugin(
             // if is optimized entry, redirect to entry namespace
             return {
               path: id,
-              namespace: 'entry'
+              namespace: 'dep'
             }
           } else {
+            // check alias fist
+            const aliased = await _resolve(id, undefined, true)
+            if (aliased && bareImportRE.test(aliased)) {
+              const id = flattenId(aliased)
+              if (id in qualified) {
+                // #1780
+                // id was aliased to a qualified entry, use the entry to
+                // avoid duplicated copies of the module
+                return {
+                  path: id,
+                  namespace: 'dep'
+                }
+              }
+            }
+
             // use vite resolver
             const resolved = await resolve(id, importer)
             if (resolved) {
@@ -81,7 +102,7 @@ export function esbuildDepPlugin(
       // for entry files, we'll read it ourselves to retain the entry's raw id
       // instead of file path
       // so that esbuild outputs desired output file structure.
-      build.onLoad({ filter: /.*/, namespace: 'entry' }, ({ path: id }) => {
+      build.onLoad({ filter: /.*/, namespace: 'dep' }, ({ path: id }) => {
         const entryFile = qualified[id]
         let ext = path.extname(entryFile).slice(1)
         if (ext === 'mjs') ext = 'js'
