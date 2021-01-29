@@ -55,7 +55,7 @@ export async function transformRequest(
   const id = (await pluginContainer.resolveId(url))?.id || url
   const file = cleanUrl(id)
 
-  let code = null
+  let code: string | null = null
   let map: SourceDescription['map'] = null
 
   // load
@@ -125,12 +125,8 @@ export async function transformRequest(
       )
   } else {
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
-    if (typeof transformResult === 'object') {
-      code = transformResult.code!
-      map = transformResult.map
-    } else {
-      code = transformResult
-    }
+    code = transformResult.code!
+    map = transformResult.map
   }
 
   if (ssr) {
