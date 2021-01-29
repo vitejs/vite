@@ -223,7 +223,7 @@ function esbuildScanPlugin(
           filter: /^[\w@][^:]/
         },
         async ({ path: id, importer }) => {
-          if (exclude?.includes(id)) {
+          if (exclude?.some((e) => e === id || id.startsWith(e + '/'))) {
             return externalUnlessEntry({ path: id })
           }
           if (depImports[id]) {
