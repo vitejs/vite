@@ -22,7 +22,7 @@ export default exports
 `
 
 const preambleCode = `
-import RefreshRuntime from "${runtimePublicPath}"
+import RefreshRuntime from "__BASE__${runtimePublicPath.slice(1)}"
 RefreshRuntime.injectIntoGlobalHook(window)
 window.$RefreshReg$ = () => {}
 window.$RefreshSig$ = () => (type) => type
@@ -36,12 +36,14 @@ window.__vite_plugin_react_preamble_installed__ = true
  */
 module.exports = function reactRefreshPlugin() {
   let shouldSkip = false
+  let base = '/'
 
   return {
     name: 'react-refresh',
 
     configResolved(config) {
       shouldSkip = config.command === 'build' || config.isProduction
+      base = config.base
     },
 
     resolveId(id) {
@@ -142,7 +144,7 @@ module.exports = function reactRefreshPlugin() {
         {
           tag: 'script',
           attrs: { type: 'module' },
-          children: preambleCode
+          children: preambleCode.replace(`__BASE__`, base)
         }
       ]
     }
