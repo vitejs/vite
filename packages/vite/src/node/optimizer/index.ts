@@ -137,8 +137,6 @@ export async function optimizeDeps(
     )
   }
 
-  const qualifiedIds = Object.keys(deps)
-
   const include = config.optimizeDeps?.include
   if (include) {
     const resolve = config.createResolver({ asSrc: false })
@@ -155,6 +153,8 @@ export async function optimizeDeps(
       }
     }
   }
+
+  const qualifiedIds = Object.keys(deps)
 
   if (!qualifiedIds.length) {
     writeFile(dataPath, JSON.stringify(data, null, 2))
