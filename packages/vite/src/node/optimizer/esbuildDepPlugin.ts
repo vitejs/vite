@@ -60,23 +60,24 @@ export function esbuildDepPlugin(
         async ({ path: id, importer }) => {
           // ensure esbuild uses our resolved entires of optimized deps in all
           // cases
-          if (id in qualified) {
+          const flatId = flattenId(id)
+          if (flatId in qualified) {
             // if is optimized entry, redirect to entry namespace
             return {
-              path: id,
+              path: flatId,
               namespace: 'dep'
             }
           } else {
             // check alias fist
             const aliased = await _resolve(id, undefined, true)
             if (aliased && bareImportRE.test(aliased)) {
-              const id = flattenId(aliased)
-              if (id in qualified) {
+              const flatId = flattenId(aliased)
+              if (flatId in qualified) {
                 // #1780
                 // id was aliased to a qualified entry, use the entry to
                 // avoid duplicated copies of the module
                 return {
-                  path: id,
+                  path: flatId,
                   namespace: 'dep'
                 }
               }
