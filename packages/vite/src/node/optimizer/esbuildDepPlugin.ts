@@ -30,11 +30,19 @@ export function esbuildDepPlugin(
 
   const resolve = (
     id: string,
-    importer: string
+    importer: string,
+    resolveDir?: string
   ): Promise<string | undefined> => {
-    // map importer ids to file paths for correct resolution
-    importer = importer in qualified ? qualified[importer] : importer
-    return _resolve(id, importer)
+    let _importer
+    // explicit resolveDir - this is passed only during yarn pnp resolve for
+    // entries
+    if (resolveDir) {
+      _importer = normalizePath(path.join(resolveDir, '*'))
+    } else {
+      // map importer ids to file paths for correct resolution
+      _importer = importer in qualified ? qualified[importer] : importer
+    }
+    return _resolve(id, _importer)
   }
 
   return {
@@ -137,7 +145,7 @@ export function esbuildDepPlugin(
         return {
           loader: ext as Loader,
           contents,
-          resolveDir: root
+          resolveDir: isRunningWithYarnPnp ? undefined : root
         }
       })
 
@@ -158,9 +166,13 @@ export function esbuildDepPlugin(
 
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
-        build.onResolve({ filter: /.*/ }, async ({ path, importer }) => ({
-          path: await resolve(path, importer)
-        }))
+        build.onResolve(
+          { filter: /.*/ },
+          async ({ path, importer, resolveDir }) => ({
+            // pass along resolveDir for entries
+            path: await resolve(path, importer, resolveDir)
+          })
+        )
         build.onLoad({ filter: /.*/ }, async (args) => ({
           contents: await require('fs').promises.readFile(args.path),
           loader: 'default'
