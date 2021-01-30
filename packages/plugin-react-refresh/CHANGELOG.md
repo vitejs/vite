@@ -1,3 +1,12 @@
+## [1.1.3](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.1.2...plugin-react-refresh@1.1.3) (2021-01-29)
+
+
+### Bug Fixes
+
+* **plugin-react-refresh:** fix react refresh with base option ([59c4e7f](https://github.com/vitejs/vite/commit/59c4e7f824a7d7db689215568b66d68570e3f3da)), closes [#1787](https://github.com/vitejs/vite/issues/1787)
+
+
+
 ## [1.1.2](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.1.1...plugin-react-refresh@1.1.2) (2021-01-19)
 
 

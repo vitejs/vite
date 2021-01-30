@@ -3,78 +3,75 @@ import path from 'path'
 import chalk from 'chalk'
 import { createHash } from 'crypto'
 import { ResolvedConfig } from '../config'
-import { SUPPORTED_EXTS } from '../constants'
 import {
   createDebugger,
   emptyDir,
   lookupFile,
   normalizePath,
-  resolveFrom,
-  writeFile
+  writeFile,
+  flattenId
 } from '../utils'
-import { createFilter } from '@rollup/pluginutils'
-import { prompt } from 'enquirer'
-import { build } from 'esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
-import { init, parse } from 'es-module-lexer'
-import { ResolveFn } from '..'
+import { ImportSpecifier, init, parse } from 'es-module-lexer'
+import { scanImports } from './scan'
+import { ensureService, stopService } from '../plugins/esbuild'
 
-const debug = createDebugger('vite:optimize')
+const debug = createDebugger('vite:deps')
 
-const KNOWN_WARN_LIST = new Set([
-  'vite',
-  'vitepress',
-  'tailwindcss',
-  'sass',
-  'less',
-  'stylus',
-  'postcss',
-  'autoprefixer',
-  'pug',
-  'jest',
-  'typescript'
-])
-
-const WARN_RE = /^(@vitejs\/|@rollup\/|vite-|rollup-|postcss-|babel-)plugin-|^@babel\/|^@tailwindcss\//
+export type ExportsData = [ImportSpecifier[], string[]]
 
 export interface DepOptimizationOptions {
   /**
-   * Force optimize listed dependencies (supports deep paths).
+   * By default, Vite will crawl your index.html to detect dependencies that
+   * need to be pre-bundled. If build.rollupOptions.input is specified, Vite
+   * will crawl those entry points instead.
+   *
+   * If neither of these fit your needs, you can specify custom entries using
+   * this option - the value should be a fast-glob pattern or array of patterns
+   * (https://github.com/mrmlnc/fast-glob#basic-syntax) that are relative from
+   * vite project root. This will overwrite default entries inference.
+   */
+  entries?: string | string[]
+  /**
+   * Force optimize listed dependencies (must be resolvalble import paths,
+   * cannot be globs).
    */
   include?: string[]
   /**
-   * Do not optimize these dependencies.
+   * Do not optimize these dependencies (must be resolvable import paths,
+   * cannot be globs).
    */
-  exclude?: string | RegExp | (string | RegExp)[]
-  /**
-   * A list of linked dependencies that should be treated as source code.
-   */
-  link?: string[]
-  /**
-   * Automatically run `vite optimize` on server start?
-   * @default true
-   */
-  auto?: boolean
+  exclude?: string[]
 }
 
 export interface DepOptimizationMetadata {
+  /**
+   * The main hash is determined by user config and dependency lockfiles.
+   * This is checked on server startup to avoid unncessary re-bundles.
+   */
   hash: string
+  /**
+   * The browser hash is determined by the main hash plus additional dependencies
+   * discovered at runtime. This is used to invalidate browser requests to
+   * optimized deps.
+   */
+  browserHash: string
   optimized: Record<
     string,
     {
       file: string
+      src: string
       needsInterop: boolean
     }
   >
-  transitiveOptimized: Record<string, true>
-  dependencies: Record<string, string>
 }
 
 export async function optimizeDeps(
   config: ResolvedConfig,
   force = config.server.force,
-  asCommand = false
-) {
+  asCommand = false,
+  newDeps?: Record<string, string> // missing imports encountered after server has started
+): Promise<DepOptimizationMetadata | null> {
   config = {
     ...config,
     command: 'build'
@@ -85,18 +82,15 @@ export async function optimizeDeps(
 
   if (!cacheDir) {
     log(`No package.json. Skipping.`)
-    return
+    return null
   }
 
-  const dataPath = path.join(cacheDir, 'metadata.json')
-  const pkgPath = lookupFile(root, [`package.json`], true)!
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-
+  const dataPath = path.join(cacheDir, '_metadata.json')
+  const mainHash = getDepHash(root, config)
   const data: DepOptimizationMetadata = {
-    hash: getDepHash(root, pkg, config),
-    optimized: {},
-    transitiveOptimized: {},
-    dependencies: pkg.dependencies
+    hash: mainHash,
+    browserHash: mainHash,
+    optimized: {}
   }
 
   if (!force) {
@@ -107,7 +101,7 @@ export async function optimizeDeps(
     // hash is consistent, no need to re-bundle
     if (prevData && prevData.hash === data.hash) {
       log('Hash is consistent. Skipping. Use --force to override.')
-      return
+      return prevData
     }
   }
 
@@ -117,117 +111,110 @@ export async function optimizeDeps(
     fs.mkdirSync(cacheDir, { recursive: true })
   }
 
-  const options = config.optimizeDeps || {}
-  const resolve = config.createResolver({ asSrc: false })
-
-  // Determine deps to optimize. The goal is to only pre-bundle deps that falls
-  // under one of the following categories:
-  // 1. Has imports to relative files (e.g. lodash-es, lit-html)
-  // 2. Has imports to bare modules that are not in the project's own deps
-  //    (i.e. esm that imports its own dependencies, e.g. styled-components)
-  const { qualified, external } = await resolveQualifiedDeps(
-    root,
-    config,
-    resolve
-  )
-
-  // Resolve deps from linked packages in a monorepo
-  if (options.link) {
-    for (const linkedDep of options.link) {
-      await resolveLinkedDeps(
-        config.root,
-        linkedDep,
-        qualified,
-        external,
-        config,
-        resolve
-      )
-    }
+  let deps: Record<string, string>, missing: Record<string, string>
+  if (!newDeps) {
+    ;({ deps, missing } = await scanImports(config))
+  } else {
+    deps = newDeps
+    missing = {}
   }
 
-  // Force included deps - these can also be deep paths
-  if (options.include) {
-    for (let id of options.include) {
-      const filePath = await resolve(id)
-      if (filePath) {
-        qualified[id] = filePath
+  // update browser hash
+  data.browserHash = createHash('sha256')
+    .update(data.hash + JSON.stringify(deps))
+    .digest('hex')
+    .substr(0, 8)
+
+  const missingIds = Object.keys(missing)
+  if (missingIds.length) {
+    throw new Error(
+      `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
+        .map(
+          (id) =>
+            `${chalk.cyan(id)} ${chalk.white.dim(
+              `(imported by ${missing[id]})`
+            )}`
+        )
+        .join(`\n  `)}\n\nAre they installed?`
+    )
+  }
+
+  const include = config.optimizeDeps?.include
+  if (include) {
+    const resolve = config.createResolver({ asSrc: false })
+    for (const id of include) {
+      if (!deps[id]) {
+        const entry = await resolve(id)
+        if (entry) {
+          deps[id] = entry
+        } else {
+          throw new Error(
+            `Failed to resolve force included dependency: ${chalk.cyan(id)}`
+          )
+        }
       }
     }
   }
 
-  let qualifiedIds = Object.keys(qualified)
-  const invalidIds = qualifiedIds.filter(
-    (id) => KNOWN_WARN_LIST.has(id) || WARN_RE.test(id)
-  )
-
-  if (invalidIds.length) {
-    const msg =
-      `It seems your dependencies contain packages that are not meant to\n` +
-      `be used in the browser, e.g. ${chalk.cyan(invalidIds.join(', '))}. ` +
-      `\nSince vite pre-bundles eligible dependencies to improve performance,\n` +
-      `they should probably be moved to devDependencies instead.`
-
-    if (process.env.CI) {
-      logger.error(msg)
-      process.exit(1)
-    }
-
-    const { yes } = (await prompt({
-      type: 'confirm',
-      name: 'yes',
-      initial: true,
-      message: chalk.yellow(
-        msg + `\nAuto-update package.json and continue without these deps?`
-      )
-    })) as { yes: boolean }
-    if (yes) {
-      invalidIds.forEach((id) => {
-        delete qualified[id]
-      })
-      qualifiedIds = qualifiedIds.filter((id) => !invalidIds.includes(id))
-      const pkgPath = lookupFile(root, ['package.json'], true)!
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-      invalidIds.forEach((id) => {
-        const v = pkg.dependencies[id]
-        delete pkg.dependencies[id]
-        ;(pkg.devDependencies || (pkg.devDependencies = {}))[id] = v
-      })
-      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
-      // udpate data hash
-      data.hash = getDepHash(root, pkg, config)
-    } else {
-      process.exit(1)
-    }
-  }
+  const qualifiedIds = Object.keys(deps)
 
   if (!qualifiedIds.length) {
     writeFile(dataPath, JSON.stringify(data, null, 2))
-    log(`No listed dependency requires optimization. Skipping.\n\n\n`)
-    return
+    log(`No dependencies to bundle. Skipping.\n\n\n`)
+    return data
   }
 
-  const depsString = qualifiedIds.map((id) => chalk.yellow(id)).join(`, `)
+  const total = qualifiedIds.length
+  const maxListed = 5
+  const listed = Math.min(total, maxListed)
+  const extra = Math.max(0, total - maxListed)
+  const depsString = chalk.yellow(
+    qualifiedIds.slice(0, listed).join(`\n  `) +
+      (extra > 0 ? `\n  (...and ${extra} more)` : ``)
+  )
   if (!asCommand) {
-    // This is auto run on server start - let the user know that we are
-    // pre-optimizing deps
-    logger.info(
-      chalk.greenBright(`Optimizable dependencies detected:\n${depsString}`)
-    )
-    logger.info(
-      `Pre-bundling them to speed up dev server page load...\n` +
+    if (!newDeps) {
+      // This is auto run on server start - let the user know that we are
+      // pre-optimizing deps
+      logger.info(
+        chalk.greenBright(`Pre-bundling dependencies:\n  ${depsString}`)
+      )
+      logger.info(
         `(this will be run only when your dependencies or config have changed)`
-    )
+      )
+    }
   } else {
     logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
   }
 
-  const esbuildMetaPath = path.join(cacheDir, 'esbuild.json')
+  const esbuildMetaPath = path.join(cacheDir, '_esbuild.json')
 
-  await build({
-    entryPoints: Object.values(qualified).map((p) => path.resolve(p)),
+  // esbuild generates nested directory output with lowest common ancestor base
+  // this is unpredictable and makes it difficult to analyze entry / output
+  // mapping. So what we do here is:
+  // 1. flatten all ids to eliminate slash
+  // 2. in the plugin, read the entry ourselves as virtual files to retain the
+  //    path.
+  const flatIdDeps: Record<string, string> = {}
+  const idToExports: Record<string, ExportsData> = {}
+  const flatIdToExports: Record<string, ExportsData> = {}
+
+  await init
+  for (const id in deps) {
+    const flatId = flattenId(id)
+    flatIdDeps[flatId] = deps[id]
+    const exportsData = parse(fs.readFileSync(deps[id], 'utf-8'))
+    idToExports[id] = exportsData
+    flatIdToExports[flatId] = exportsData
+  }
+
+  const start = Date.now()
+  const esbuildService = await ensureService()
+  await esbuildService.build({
+    entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
-    external,
+    external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
@@ -237,44 +224,27 @@ export async function optimizeDeps(
     define: {
       'process.env.NODE_ENV': '"development"'
     },
-    plugins: [
-      esbuildDepPlugin(qualified, config, data.transitiveOptimized, resolve)
-    ]
+    plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
   })
 
   const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
 
-  await init
-  const entryToIdMap: Record<string, string> = {}
-  for (const id in qualified) {
-    entryToIdMap[qualified[id].toLowerCase()] = id
-  }
-
-  for (const output in meta.outputs) {
-    if (/\.vite[\/\\]chunk\.\w+\.js$/.test(output) || output.endsWith('.map'))
-      continue
-    const { inputs, exports } = meta.outputs[output]
-    const relativeOutput = normalizePath(
-      path.relative(cacheDir, path.resolve(output))
-    )
-    for (const input in inputs) {
-      const entry = normalizePath(path.resolve(input))
-      if (!entry.endsWith(relativeOutput)) {
-        continue
-      }
-      const id = entryToIdMap[entry.toLowerCase()]
-      if (!id) {
-        continue
-      }
-      data.optimized[id] = {
-        file: normalizePath(path.resolve(output)),
-        needsInterop: needsInterop(id, entry, exports)
-      }
-      break
+  for (const id in deps) {
+    const entry = deps[id]
+    data.optimized[id] = {
+      file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
+      src: entry,
+      needsInterop: needsInterop(id, entry, idToExports[id], meta.outputs)
     }
   }
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
+  if (asCommand) {
+    await stopService()
+  }
+
+  debug(`deps bundled in ${Date.now() - start}ms`)
+  return data
 }
 
 // https://github.com/vitejs/vite/issues/1724#issuecomment-767619642
@@ -285,22 +255,32 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 function needsInterop(
   id: string,
   entry: string,
-  generatedExports: string[]
+  exportsData: ExportsData,
+  outputs: Record<string, any>
 ): boolean {
   if (KNOWN_INTEROP_IDS.has(id)) {
     return true
   }
-  const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
+  const [imports, exports] = exportsData
   // entry has no ESM syntax - likely CJS or UMD
   if (!exports.length && !imports.length) {
     return true
   }
+
   // if a peer dep used require() on a ESM dep, esbuild turns the
   // ESM dep's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
+  const flatId = flattenId(id) + '.js'
+  let generatedExports: string[] | undefined
+  for (const output in outputs) {
+    if (normalizePath(output).endsWith(flatId)) {
+      generatedExports = outputs[output].exports
+    }
+  }
+
   if (
-    isSingleDefaultExport(generatedExports) &&
-    !isSingleDefaultExport(exports)
+    !generatedExports ||
+    (isSingleDefaultExport(generatedExports) && !isSingleDefaultExport(exports))
   ) {
     return true
   }
@@ -311,137 +291,15 @@ function isSingleDefaultExport(exports: string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
-interface FilteredDeps {
-  qualified: Record<string, string>
-  external: string[]
-}
-
-async function resolveQualifiedDeps(
-  root: string,
-  config: ResolvedConfig,
-  resolve: ResolveFn
-): Promise<FilteredDeps> {
-  const { include, exclude, link } = config.optimizeDeps || {}
-  const qualified: Record<string, string> = {}
-  const external: string[] = []
-
-  const pkgContent = lookupFile(root, ['package.json'])
-  if (!pkgContent) {
-    return {
-      qualified,
-      external
-    }
-  }
-
-  const pkg = JSON.parse(pkgContent)
-  const deps = Object.keys(pkg.dependencies || {})
-  const linked: string[] = []
-  const excludeFilter =
-    exclude && createFilter(null, exclude, { resolve: false })
-
-  for (const id of deps) {
-    if (include && include.includes(id)) {
-      // already force included
-      continue
-    }
-    if (excludeFilter && !excludeFilter(id)) {
-      debug(`skipping ${id} (excluded)`)
-      continue
-    }
-    if (link && link.includes(id)) {
-      debug(`skipping ${id} (link)`)
-      continue
-    }
-    // #804
-    if (id.startsWith('@types/')) {
-      debug(`skipping ${id} (ts declaration)`)
-      continue
-    }
-    let filePath
-    try {
-      filePath = await resolve(id)
-    } catch (e) {}
-    if (!filePath) {
-      debug(`skipping ${id} (cannot resolve entry)`)
-      continue
-    }
-    if (!filePath.includes('node_modules')) {
-      debug(`skipping ${id} (not a node_modules dep, likely linked)`)
-      // resolve deps of the linked module
-      linked.push(id)
-      continue
-    }
-    if (!SUPPORTED_EXTS.includes(path.extname(filePath))) {
-      debug(`skipping ${id} (entry is not js)`)
-      continue
-    }
-    // qualified!
-    qualified[id] = filePath
-  }
-
-  // mark non-optimized deps as external
-  external.push(
-    ...(await Promise.all(
-      deps
-        .filter((id) => !qualified[id])
-        // make sure aliased deps are external
-        // https://github.com/vitejs/vite-plugin-react/issues/4
-        .map(async (id) => (await resolve(id, undefined, true)) || id)
-    ))
-  )
-
-  if (linked.length) {
-    for (const dep of linked) {
-      await resolveLinkedDeps(root, dep, qualified, external, config, resolve)
-    }
-  }
-
-  return {
-    qualified,
-    external
-  }
-}
-
-async function resolveLinkedDeps(
-  root: string,
-  dep: string,
-  qualified: Record<string, string>,
-  external: string[],
-  config: ResolvedConfig,
-  resolve: ResolveFn
-) {
-  const depRoot = path.dirname(resolveFrom(`${dep}/package.json`, root))
-  const { qualified: q, external: e } = await resolveQualifiedDeps(
-    depRoot,
-    config,
-    resolve
-  )
-  Object.keys(q).forEach((id) => {
-    if (!qualified[id]) {
-      qualified[id] = q[id]
-    }
-  })
-  e.forEach((id) => {
-    if (!external.includes(id)) {
-      external.push(id)
-    }
-  })
-}
-
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
 
 let cachedHash: string | undefined
 
-function getDepHash(
-  root: string,
-  pkg: Record<string, any>,
-  config: ResolvedConfig
-): string {
+function getDepHash(root: string, config: ResolvedConfig): string {
   if (cachedHash) {
     return cachedHash
   }
   let content = lookupFile(root, lockfileFormats) || ''
-  content += JSON.stringify(pkg.dependencies)
   // also take config into account
   // only a subset of config options that can affect dep optimization
   content += JSON.stringify(
@@ -451,10 +309,10 @@ function getDepHash(
       alias: config.alias,
       dedupe: config.dedupe,
       assetsInclude: config.assetsInclude,
+      plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
         include: config.optimizeDeps?.include,
-        exclude: config.optimizeDeps?.exclude,
-        link: config.optimizeDeps?.link
+        exclude: config.optimizeDeps?.exclude
       }
     },
     (_, value) => {

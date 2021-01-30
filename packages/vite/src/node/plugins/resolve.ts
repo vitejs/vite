@@ -16,15 +16,14 @@ import {
   ensureVolumeInPath,
   resolveFrom,
   isDataUrl,
-  cleanUrl,
-  isJSRequest
+  cleanUrl
 } from '../utils'
 import { ViteDevServer } from '..'
 import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
-import { isCSSRequest } from './css'
 import { resolve as _resolveExports } from 'resolve.exports'
+import { isCSSRequest } from './css'
 
 const altMainFields = [
   'module',
@@ -45,7 +44,7 @@ function resolveExports(
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
-const browserExternalId = '__vite-browser-external'
+export const browserExternalId = '__vite-browser-external'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -63,6 +62,7 @@ interface ResolveOptions {
    */
   asSrc: boolean
   tryIndex?: boolean | string
+  relativeFirst?: boolean
   extensions?: string[]
   dedupe?: string[]
 }
@@ -74,6 +74,7 @@ export function resolvePlugin({
   asSrc,
   dedupe,
   tryIndex = true,
+  relativeFirst = false,
   extensions = SUPPORTED_EXTS
 }: ResolveOptions): Plugin {
   let server: ViteDevServer | undefined
@@ -122,7 +123,7 @@ export function resolvePlugin({
       }
 
       // relative
-      if (id.startsWith('.')) {
+      if (id.startsWith('.') || (relativeFirst && /^\w/.test(id))) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         let fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
@@ -182,13 +183,11 @@ export function resolvePlugin({
         if (
           (res = tryNodeResolve(
             id,
-            importer && importer[0] === '/' && fs.existsSync(cleanUrl(importer))
-              ? path.dirname(importer)
-              : root,
+            importer,
+            root,
             isProduction,
             isBuild,
             dedupe,
-            root,
             server
           ))
         ) {
@@ -205,7 +204,7 @@ export function resolvePlugin({
             }
           } else {
             if (!asSrc) {
-              this.warn(
+              debug(
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${chalk.white.dim(importer)})`
               )
@@ -299,67 +298,33 @@ export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
-  basedir: string,
+  importer: string | undefined,
+  root: string,
   isProduction: boolean,
   isBuild = true,
   dedupe?: string[],
-  dedupeRoot?: string,
   server?: ViteDevServer
 ): PartialResolvedId | undefined {
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
 
-  if (dedupe && dedupeRoot && dedupe.includes(pkgId)) {
-    basedir = dedupeRoot
+  let basedir
+  if (dedupe && dedupe.includes(pkgId)) {
+    basedir = root
+  } else if (
+    importer &&
+    path.isAbsolute(importer) &&
+    fs.existsSync(cleanUrl(importer))
+  ) {
+    basedir = path.dirname(importer)
+  } else {
+    basedir = root
   }
 
   const pkg = resolvePackageData(pkgId, basedir)
 
   if (!pkg) {
     return
-  }
-
-  // prevent deep imports to optimized deps.
-  if (server && server._optimizeDepsMetadata) {
-    const data = server._optimizeDepsMetadata
-    if (
-      deepMatch &&
-      pkg.data.name in data.optimized &&
-      !isCSSRequest(id) &&
-      !server.config.assetsInclude(id)
-    ) {
-      throw new Error(
-        chalk.yellow(
-          `Deep import "${chalk.cyan(
-            id
-          )}" should be avoided because dependency "${chalk.cyan(
-            pkg.data.name
-          )}" has been pre-optimized. Prefer importing directly from the module entry:\n\n` +
-            `${chalk.green(`import { ... } from "${pkg.data.name}"`)}\n\n` +
-            `If the used import is not exported from the package's main entry ` +
-            `and can only be attained via deep import, you can explicitly add ` +
-            `the deep import path to "optimizeDeps.include" in vite.config.js.\n\n` +
-            `If you intend to only use deep imports with this package and it ` +
-            `exposes valid ESM, consider adding it to "optimizeDeps.exclude".`
-        )
-      )
-    }
-
-    if (
-      pkgId in data.transitiveOptimized &&
-      isJSRequest(id) &&
-      basedir.startsWith(server.config.root) &&
-      !basedir.includes('node_modules')
-    ) {
-      throw new Error(
-        chalk.yellow(
-          `dependency "${chalk.bold(pkgId)}" is imported in source code, ` +
-            `but was transitively pre-bundled as part of another package. ` +
-            `It should be explicitly listed as a dependency in package.json in ` +
-            `order to avoid duplicated instances of this module.`
-        )
-      )
-    }
   }
 
   let resolved = deepMatch
@@ -378,15 +343,35 @@ export function tryNodeResolve(
       moduleSideEffects: pkg.hasSideEffects(resolved)
     }
   } else {
-    // During serve, inject a version query to npm deps so that the browser
-    // can cache it without revalidation. Make sure to apply this only to
-    // files actually inside node_modules so that locally linked packages
-    // in monorepos are not cached this way.
-    if (resolved.includes('node_modules')) {
-      const versionHash = server?._optimizeDepsMetadata?.hash
+    if (
+      !resolved.includes('node_modules') || // linked
+      !server || // build
+      server._isRunningOptimizer || // optimizing
+      !server._optimizeDepsMetadata
+    ) {
+      return { id: resolved }
+    }
+    // if we reach here, it's a valid dep import that hasn't been optimzied.
+    const exclude = server.config.optimizeDeps?.exclude
+    if (
+      importer?.includes('node_modules') ||
+      exclude?.includes(pkgId) ||
+      exclude?.includes(id) ||
+      isCSSRequest(resolved) ||
+      server.config.assetsInclude(resolved) ||
+      /\.json$|\?(worker|raw)/.test(resolved)
+    ) {
+      // excluded from optimization
+      // Inject a version query to npm deps so that the browser
+      // can cache it without revalidation.
+      const versionHash = server._optimizeDepsMetadata?.browserHash
       if (versionHash) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
+    } else {
+      // this is a missing import.
+      // queue optimize-deps re-run.
+      server._registerMissingImport?.(id, resolved)
     }
     return { id: resolved }
   }
@@ -403,7 +388,9 @@ export function tryOptimizedResolve(
     if (isOptimized) {
       return (
         isOptimized.file +
-        `?v=${depData.hash}${isOptimized.needsInterop ? `&es-interop` : ``}`
+        `?v=${depData.browserHash}${
+          isOptimized.needsInterop ? `&es-interop` : ``
+        }`
       )
     }
   }

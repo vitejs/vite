@@ -6,7 +6,7 @@ import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { PluginContext } from 'rollup'
+import { PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?/g
@@ -14,6 +14,8 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?/g
 // urls in JS must be quoted as strings, so when replacing them we need
 // a different regex
 const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?"/g
+
+export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
@@ -28,7 +30,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
       // imports to absolute urls pointing to files in /public
       // will fail to resolve in the main resolver. handle them here.
-      const publicFile = checkPublicFile(id, config.root)
+      const publicFile = checkPublicFile(id, config)
       if (publicFile) {
         return id
       }
@@ -41,7 +43,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       // raw requests, read from disk
       if (/(\?|&)raw\b/.test(id)) {
-        const file = checkPublicFile(id, config.root) || cleanUrl(id)
+        const file = checkPublicFile(id, config) || cleanUrl(id)
         // raw query, read file and return as string
         return `export default ${JSON.stringify(
           await fsp.readFile(file, 'utf-8')
@@ -52,14 +54,20 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       return `export default ${JSON.stringify(url)}`
     },
 
-    renderChunk(code) {
+    renderChunk(code, chunk) {
+      let emitted = chunkToEmittedAssetsMap.get(chunk)
       let match
       let s
       while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
         const [full, fileHandle, postfix = ''] = match
-        const outputFilepath =
-          config.base + this.getFileName(fileHandle) + postfix
+        const file = this.getFileName(fileHandle)
+        if (!emitted) {
+          emitted = new Set()
+          chunkToEmittedAssetsMap.set(chunk, emitted)
+        }
+        emitted.add(file)
+        const outputFilepath = config.base + file + postfix
         s.overwrite(
           match.index,
           match.index + full.length,
@@ -92,13 +100,16 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function checkPublicFile(url: string, root: string): string | undefined {
+export function checkPublicFile(
+  url: string,
+  { publicDir }: ResolvedConfig
+): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
   if (!url.startsWith('/')) {
     return
   }
-  const publicFile = path.posix.join(root, 'public', cleanUrl(url))
+  const publicFile = path.join(publicDir, cleanUrl(url))
   if (fs.existsSync(publicFile)) {
     return publicFile
   } else {
@@ -118,22 +129,20 @@ export function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, { root, base }: ResolvedConfig) {
+function fileToDevUrl(id: string, config: ResolvedConfig) {
   let rtn: string
-
-  if (checkPublicFile(id, root)) {
+  if (checkPublicFile(id, config)) {
     // in public dir, keep the url as-is
     rtn = id
-  } else if (id.startsWith(root)) {
+  } else if (id.startsWith(config.root)) {
     // in project root, infer short public path
-    rtn = '/' + path.posix.relative(root, id)
+    rtn = '/' + path.posix.relative(config.root, id)
   } else {
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
-    rtn = FS_PREFIX + id
+    rtn = path.posix.join(FS_PREFIX + id)
   }
-
-  return path.posix.join(base, rtn)
+  return config.base + rtn.replace(/^\//, '')
 }
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
@@ -148,7 +157,7 @@ async function fileToBuiltUrl(
   pluginContext: PluginContext,
   skipPublicCheck = false
 ): Promise<string> {
-  if (!skipPublicCheck && checkPublicFile(id, config.root)) {
+  if (!skipPublicCheck && checkPublicFile(id, config)) {
     return config.base + id.slice(1)
   }
 
@@ -200,7 +209,7 @@ export async function urlToBuiltUrl(
   config: ResolvedConfig,
   pluginContext: PluginContext
 ): Promise<string> {
-  if (checkPublicFile(url, config.root)) {
+  if (checkPublicFile(url, config)) {
     return config.base + url.slice(1)
   }
   const file = url.startsWith('/')

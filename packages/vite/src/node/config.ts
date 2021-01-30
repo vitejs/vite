@@ -65,6 +65,13 @@ export interface UserConfig {
    */
   base?: string
   /**
+   * Directory to serve as plain static assets. Files in this directory are
+   * served and copied to build dist dir as-is without transform. The value
+   * can be either an absolute file system path or a path relative to <root>.
+   * @default 'public'
+   */
+  publicDir?: string
+  /**
    * Explicitly set a mode to run in. This will override the default mode for
    * each command, and can be overridden by the command line --mode option.
    */
@@ -146,6 +153,8 @@ export type ResolvedConfig = Readonly<
     configFile: string | undefined
     inlineConfig: UserConfig
     root: string
+    base: string
+    publicDir: string
     command: 'build' | 'serve'
     mode: string
     isProduction: boolean
@@ -157,11 +166,11 @@ export type ResolvedConfig = Readonly<
     build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
-    base: string
     createResolver: (options?: {
       asSrc?: boolean
       tryIndex?: boolean | string
       extensions?: string[]
+      relativeFirst?: boolean
     }) => ResolveFn
   }
 >
@@ -321,8 +330,9 @@ export async function resolveConfig(
                 dedupe: resolved.dedupe,
                 isProduction,
                 isBuild: command === 'build',
-                asSrc: options?.asSrc || true,
-                tryIndex: options?.tryIndex || true,
+                asSrc: options?.asSrc ?? true,
+                relativeFirst: options?.relativeFirst ?? false,
+                tryIndex: options?.tryIndex ?? true,
                 extensions: options?.extensions
               })
             ]
@@ -337,6 +347,8 @@ export async function resolveConfig(
     configFile: configFile ? normalizePath(configFile) : undefined,
     inlineConfig,
     root: resolvedRoot,
+    base: BASE_URL,
+    publicDir: path.resolve(resolvedRoot, config.publicDir || 'public'),
     command,
     mode,
     isProduction,
@@ -356,7 +368,6 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
-    base: BASE_URL,
     createResolver
   }
 

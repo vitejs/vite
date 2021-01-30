@@ -183,7 +183,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id.slice(config.root.length)
         } else if (fs.existsSync(cleanUrl(resolved.id))) {
           // exists but out of root: rewrite to absolute /@fs/ paths
-          url = FS_PREFIX + resolved.id
+          url = path.posix.join(FS_PREFIX + resolved.id)
         } else {
           url = resolved.id
         }
@@ -230,8 +230,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           throw e
         }
 
-        // prepend base path without trailing slash ( default empty string )
-        url = path.posix.join(config.base, url)
+        // prepend base (dev base is guaranteed to have ending slash)
+        url = config.base + url.replace(/^\//, '')
         return [url, resolved.id]
       }
 
@@ -341,7 +341,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             url.startsWith('/') &&
             !config.assetsInclude(cleanUrl(url)) &&
             !url.endsWith('.json') &&
-            checkPublicFile(url, config.root)
+            checkPublicFile(url, config)
           ) {
             throw new Error(
               `Cannot import non-asset file ${url} which is inside /public.` +
@@ -523,6 +523,10 @@ function transformCjsImport(
   }) as any).body[0] as Node
 
   if (node.type === 'ImportDeclaration') {
+    if (!node.specifiers.length) {
+      return `import "${url}"`
+    }
+
     const importNames: ImportNameSpecifier[] = []
     for (const spec of node.specifiers) {
       if (

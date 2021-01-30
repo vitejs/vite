@@ -20,7 +20,10 @@ import { createWebSocketServer, WebSocketServer } from '../server/ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
-import { indexHtmlMiddleware } from './middlewares/indexHtml'
+import {
+  createDevHtmlTransformFn,
+  indexHtmlMiddleware
+} from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
 import {
   serveRawFsMiddleware,
@@ -46,6 +49,7 @@ import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
+import { createMissingImpoterRegisterFn } from '../optimizer/registerMissing'
 
 export interface ServerOptions {
   host?: string
@@ -189,6 +193,10 @@ export interface ViteDevServer {
     options?: TransformOptions
   ): Promise<TransformResult | null>
   /**
+   * Apply vite built-in HTML transforms and any plugin HTML transforms.
+   */
+  transformIndexHtml(url: string, html: string): Promise<string>
+  /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
    */
@@ -239,6 +247,18 @@ export interface ViteDevServer {
       module: ModuleNode
     }
   >
+  /**
+   * @internal
+   */
+  _isRunningOptimizer: boolean
+  /**
+   * @internal
+   */
+  _registerMissingImport: ((id: string, resolved: string) => void) | null
+  /**
+   * @internal
+   */
+  _pendingReload: Promise<void> | null
 }
 
 export async function createServer(
@@ -286,6 +306,7 @@ export async function createServer(
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
+    transformIndexHtml: null as any,
     ssrLoadModule(url, options) {
       if (!server._ssrExternals) {
         server._ssrExternals = resolveSSRExternal(config)
@@ -310,8 +331,13 @@ export async function createServer(
     },
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
-    _globImporters: {}
+    _globImporters: {},
+    _isRunningOptimizer: false,
+    _registerMissingImport: null,
+    _pendingReload: null
   }
+
+  server.transformIndexHtml = createDevHtmlTransformFn(server)
 
   process.once('SIGTERM', async () => {
     try {
@@ -383,7 +409,7 @@ export async function createServer(
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  middlewares.use(servePublicMiddleware(path.join(root, 'public')))
+  middlewares.use(servePublicMiddleware(config.publicDir))
 
   // main transform middleware
   middlewares.use(transformMiddleware(server))
@@ -422,7 +448,7 @@ export async function createServer(
 
   if (!middlewareMode) {
     // transform index.html
-    middlewares.use(indexHtmlMiddleware(server, plugins))
+    middlewares.use(indexHtmlMiddleware(server))
     // handle 404s
     middlewares.use((_, res) => {
       res.statusCode = 404
@@ -435,15 +461,13 @@ export async function createServer(
 
   const runOptimize = async () => {
     if (config.optimizeCacheDir) {
-      // run optimizer
-      await optimizeDeps(config)
-      // after optimization, read updated optimization metadata
-      const dataPath = path.resolve(config.optimizeCacheDir, 'metadata.json')
-      if (fs.existsSync(dataPath)) {
-        server._optimizeDepsMetadata = JSON.parse(
-          fs.readFileSync(dataPath, 'utf-8')
-        )
+      server._isRunningOptimizer = true
+      try {
+        server._optimizeDepsMetadata = await optimizeDeps(config)
+      } finally {
+        server._isRunningOptimizer = false
       }
+      server._registerMissingImport = createMissingImpoterRegisterFn(server)
     }
   }
 
@@ -451,8 +475,13 @@ export async function createServer(
     // overwrite listen to run optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
-      await container.buildStart({})
-      await runOptimize()
+      try {
+        await container.buildStart({})
+        await runOptimize()
+      } catch (e) {
+        httpServer.emit('error', e)
+        return
+      }
       return listen(port, ...args)
     }) as any
 
@@ -504,7 +533,7 @@ async function startServer(
     httpServer.listen(port, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n  Vite dev server running at:\n`, {
+      info(`\n  ⚡Vite dev server running at:\n`, {
         clear: !server.config.logger.hasWarned
       })
       const interfaces = os.networkInterfaces()

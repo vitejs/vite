@@ -10,6 +10,8 @@ import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
 
+export const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
+
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
 }
@@ -81,10 +83,10 @@ export const hashRE = /#.*$/
 export const cleanUrl = (url: string) =>
   url.replace(hashRE, '').replace(queryRE, '')
 
-const externalRE = /^(https?:)?\/\//
+export const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string) => externalRE.test(url)
 
-const dataUrlRE = /^\s*data:/i
+export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string) => dataUrlRE.test(url)
 
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue)($|\?)/

@@ -1,9 +1,10 @@
 import path from 'path'
-import { Plugin } from 'esbuild'
+import { Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
-import { ResolvedConfig, ResolveFn } from '..'
-import chalk from 'chalk'
-import { deepImportRE, isBuiltin, isRunningWithYarnPnp } from '../utils'
+import { ResolvedConfig } from '..'
+import { isRunningWithYarnPnp, flattenId, normalizePath } from '../utils'
+import { browserExternalId } from '../plugins/resolve'
+import { ExportsData } from '.'
 
 const externalTypes = [
   'css',
@@ -13,6 +14,7 @@ const externalTypes = [
   'scss',
   'style',
   'stylus',
+  'postcss',
   // known SFC types
   'vue',
   'svelte',
@@ -21,10 +23,20 @@ const externalTypes = [
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
-  config: ResolvedConfig,
-  transitiveOptimized: Record<string, true>,
-  resolve: ResolveFn
+  exportsData: Record<string, ExportsData>,
+  config: ResolvedConfig
 ): Plugin {
+  const _resolve = config.createResolver({ asSrc: false })
+
+  const resolve = (
+    id: string,
+    importer: string
+  ): Promise<string | undefined> => {
+    // map importer ids to file paths for correct resolution
+    importer = importer in qualified ? qualified[importer] : importer
+    return _resolve(id, importer)
+  }
+
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
@@ -34,55 +46,98 @@ export function esbuildDepPlugin(
           filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
         },
         async ({ path: id, importer }) => {
-          if (id.startsWith('.')) {
-            const dir = path.dirname(importer)
+          const resolved = await resolve(id, importer)
+          if (resolved) {
             return {
-              path: path.resolve(dir, id),
+              path: resolved,
               external: true
-            }
-          } else {
-            const resolved = await resolve(id, importer)
-            if (resolved) {
-              return {
-                path: resolved,
-                external: true
-              }
             }
           }
         }
       )
 
-      build.onResolve({ filter: /^[\w@]/ }, async ({ path: id, importer }) => {
-        // ensure esbuild uses our resolved entires of optimized deps in all
-        // cases
-        if (id in qualified) {
-          return {
-            path: path.resolve(qualified[id])
+      function resolveEntry(id: string, isEntry: boolean) {
+        const flatId = flattenId(id)
+        if (flatId in qualified) {
+          return isEntry
+            ? {
+                path: flatId,
+                namespace: 'dep'
+              }
+            : {
+                path: path.resolve(qualified[flatId])
+              }
+        }
+      }
+
+      build.onResolve(
+        { filter: /^[\w@][^:]/ },
+        async ({ path: id, importer }) => {
+          const isEntry = !importer
+          // ensure esbuild uses our resolved entires
+          let entry
+          // if this is an entry, return entry namespace resolve result
+          if ((entry = resolveEntry(id, isEntry))) return entry
+
+          // check if this is aliased to an entry - also return entry namespace
+          const aliased = await _resolve(id, undefined, true)
+          if (aliased && (entry = resolveEntry(aliased, isEntry))) {
+            return entry
           }
-        } else if (!isBuiltin(id)) {
-          // record transitive deps
-          const deepMatch = id.match(deepImportRE)
-          const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
-          transitiveOptimized[pkgId] = true
+
           // use vite resolver
           const resolved = await resolve(id, importer)
           if (resolved) {
+            if (resolved.startsWith(browserExternalId)) {
+              return {
+                path: id,
+                namespace: 'browser-external'
+              }
+            }
             return {
-              path: resolved
+              path: path.resolve(resolved)
             }
           }
+        }
+      )
+
+      // For entry files, we'll read it ourselves and construct a proxy module
+      // to retain the entry's raw id instead of file path so that esbuild
+      // outputs desired output file structure.
+      // It is necessary to do the re-exporting to separate the virtual proxy
+      // module from the actual module since the actual module may get
+      // referenced via relative imports - if we don't separate the proxy and
+      // the actual module, esbuild will create duplicated copies of the same
+      // module!
+      const root = path.resolve(config.root)
+      build.onLoad({ filter: /.*/, namespace: 'dep' }, ({ path: id }) => {
+        const entryFile = qualified[id]
+
+        let relativePath = normalizePath(path.relative(root, entryFile))
+        if (!relativePath.startsWith('.')) {
+          relativePath = `./${relativePath}`
+        }
+
+        let contents = ''
+        const [imports, exports] = exportsData[id]
+        if (!imports.length && !exports.length) {
+          // cjs
+          contents += `import d from "${relativePath}";export default d;`
         } else {
-          // redirect node-builtins to empty module for browser
-          config.logger.warn(
-            chalk.yellow(
-              `externalized node built-in "${id}" to empty module. ` +
-                `(imported by: ${chalk.white.dim(importer)})`
-            )
-          )
-          return {
-            path: id,
-            namespace: 'browser-external'
+          if (exports.includes('default')) {
+            contents += `import d from "${relativePath}";export default d;`
           }
+          if (exports.length > 1 || exports[0] !== 'default') {
+            contents += `\nexport * from "${relativePath}"`
+          }
+        }
+
+        let ext = path.extname(entryFile).slice(1)
+        if (ext === 'mjs') ext = 'js'
+        return {
+          loader: ext as Loader,
+          contents,
+          resolveDir: root
         }
       })
 
@@ -103,8 +158,8 @@ export function esbuildDepPlugin(
 
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
-        build.onResolve({ filter: /.*/ }, (args) => ({
-          path: require.resolve(args.path, { paths: [args.resolveDir] })
+        build.onResolve({ filter: /.*/ }, async ({ path, importer }) => ({
+          path: await resolve(path, importer)
         }))
         build.onLoad({ filter: /.*/ }, async (args) => ({
           contents: await require('fs').promises.readFile(args.path),

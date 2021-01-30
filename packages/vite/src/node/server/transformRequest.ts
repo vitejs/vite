@@ -34,15 +34,11 @@ export interface TransformOptions {
 
 export async function transformRequest(
   url: string,
-  {
-    config: { root, logger },
-    pluginContainer,
-    moduleGraph,
-    watcher
-  }: ViteDevServer,
+  { config, pluginContainer, moduleGraph, watcher }: ViteDevServer,
   options: TransformOptions = {}
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
+  const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const ssr = !!options.ssr
 
@@ -59,11 +55,11 @@ export async function transformRequest(
   const id = (await pluginContainer.resolveId(url))?.id || url
   const file = cleanUrl(id)
 
-  let code = null
+  let code: string | null = null
   let map: SourceDescription['map'] = null
 
   // load
-  const loadStart = Date.now()
+  const loadStart = isDebug ? Date.now() : 0
   const loadResult = await pluginContainer.load(id, ssr)
   if (loadResult == null) {
     // try fallback loading it from fs as string
@@ -99,7 +95,7 @@ export async function transformRequest(
     }
   }
   if (code == null) {
-    if (checkPublicFile(url, root)) {
+    if (checkPublicFile(url, config)) {
       throw new Error(
         `Failed to load url ${url} (resolved id: ${id}). ` +
           `This file is in /public and will be copied as-is during build without ` +
@@ -116,7 +112,7 @@ export async function transformRequest(
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
-  const transformStart = Date.now()
+  const transformStart = isDebug ? Date.now() : 0
   const transformResult = await pluginContainer.transform(code, id, map, ssr)
   if (
     transformResult == null ||
@@ -129,12 +125,8 @@ export async function transformRequest(
       )
   } else {
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
-    if (typeof transformResult === 'object') {
-      code = transformResult.code!
-      map = transformResult.map
-    } else {
-      code = transformResult
-    }
+    code = transformResult.code!
+    map = transformResult.map
   }
 
   if (ssr) {

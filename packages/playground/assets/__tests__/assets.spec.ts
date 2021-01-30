@@ -117,3 +117,7 @@ describe('svg fragments', () => {
     expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
   })
 })
+
+test('?raw import', async () => {
+  expect(await page.textContent('.raw')).toMatch('SVG')
+})

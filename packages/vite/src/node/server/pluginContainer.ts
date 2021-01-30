@@ -256,9 +256,11 @@ export async function createPluginContainer(
       position?: number | { column: number; line: number }
     ) {
       const err = formatError(e, position, this)
-      const msg = buildErrorMessage(err, [
-        chalk.yellow(`warning: ${err.message}`)
-      ])
+      const msg = buildErrorMessage(
+        err,
+        [chalk.yellow(`warning: ${err.message}`)],
+        false
+      )
       logger.warn(msg, {
         clear: true,
         timestamp: true
@@ -427,7 +429,7 @@ export async function createPluginContainer(
         (_skip ? _skip.map((p) => p.name).join('\n') : ``)
 
       nestedResolveCall++
-      const resolveStart = Date.now()
+      const resolveStart = isDebug ? Date.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
@@ -443,7 +445,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
 
         let result
-        const pluginResolveStart = Date.now()
+        const pluginResolveStart = isDebug ? Date.now() : 0
         try {
           result = await plugin.resolveId.call(
             ctx as any,
@@ -522,7 +524,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
-        const start = Date.now()
+        const start = isDebug ? Date.now() : 0
         let result
         try {
           result = await plugin.transform.call(ctx as any, code, id, ssr)

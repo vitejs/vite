@@ -94,7 +94,7 @@ export async function ssrTransform(
         } else {
           // export const foo = 1, bar = 2
           for (const decl of node.declaration.declarations) {
-            const names = extractNames(decl.id)
+            const names = extractNames(decl.id as any)
             for (const name of names) {
               defineExport(name)
             }

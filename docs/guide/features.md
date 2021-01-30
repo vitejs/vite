@@ -95,7 +95,7 @@ Importing `.css` files will inject its content to the page via a `<style>` tag w
 
 ### `@import` Inlining and Rebasing
 
-Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. Vite alises are also respected for CSS `@import`. In addition, all CSS `url()` references, even if the imported files are in different directories, are always automatically rebased to ensure correctness.
+Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. Vite aliases are also respected for CSS `@import`. In addition, all CSS `url()` references, even if the imported files are in different directories, are always automatically rebased to ensure correctness.
 
 `@import` aliases and URL rebasing are also supported for Sass and Less files (see [CSS Pre-processors](#css-pre-processors)).
 
@@ -119,7 +119,7 @@ import classes from './example.module.css'
 document.getElementById('foo').className = classes.red
 ```
 
-Note that the CSS modules `localsConvention` defaults to `cameCaesOnly` - i.e. a class named `.foo-bar` will be exposed as `classes.fooBar`. CSS modules behavior can be configured via the [`css.modules` option](/config/#css-modules).
+Note that the CSS modules `localsConvention` defaults to `camelCaseOnly` - i.e. a class named `.foo-bar` will be exposed as `classes.fooBar`. CSS modules behavior can be configured via the [`css.modules` option](/config/#css-modules).
 
 ### CSS Pre-processors
 
@@ -181,6 +181,8 @@ If you have assets that are:
 - ...or you simply don't want to have to import an asset first just to get its URL
 
 Then you can place the asset in a special `public` directory under your project root. Assets in this directory will be served at root path `/` during dev, and copied to the root of the dist directory as-is.
+
+The directory defaults to `<root>/public`, but can be configured via the [`publicDir` option](/config/#publicdir).
 
 Note that:
 

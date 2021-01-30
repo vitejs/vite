@@ -94,7 +94,7 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `process.cwd()`
 
-  Project root directory. Can be an absolute path, or a path relative from the location of the config file itself.
+  Project root directory (where `index.html` is located). Can be an absolute path, or a path relative from the location of the config file itself.
 
   See [Project Root](/guide/#project-root) for more details.
 
@@ -110,6 +110,13 @@ export default ({ command, mode }) => {
   - Empty string or `./` (for embedded deployment)
 
   See [Public Base Path](/guide/build#public-base-path) for more details.
+
+### publicDir
+
+- **Type:** `string`
+- **Default:** `"public"`
+
+  Directory to serve as plain static assets. Files in this directory are served at `/` during dev and copied to the root of `outDir` during build, and are always served or copied as-is without transform. The value can be either an absolute file system path or a path relative to project root.
 
 ### mode
 
@@ -427,7 +434,7 @@ export default ({ command, mode }) => {
 
 - **Type:** [`RollupCommonJSOptions`](https://github.com/rollup/plugins/tree/master/packages/commonjs#options)
 
-  Options to pass on to [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs). This applies to dependency pre-bundling as well.
+  Options to pass on to [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs).
 
 ### build.lib
 
@@ -481,29 +488,14 @@ export default ({ command, mode }) => {
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
 
-### optimizeDeps.include
-
-- **Type:** `string[]`
-
-  Dependencies to force include in pre-bundling.
-
 ### optimizeDeps.exclude
 
 - **Type:** `string | RegExp | (string | RegExp)[]`
 
-  Dependencies to force exclude in pre-bundling.
+  Dependencies to exclude from pre-bundling.
 
-### optimizeDeps.link
+### optimizeDeps.include
 
-- **Type:** `string[]`
+- **Type:** `string | RegExp | (string | RegExp)[]`
 
-  A list of packages to be treated as "linked". Linked packages will not be pre-bundled - Vite will analyze and pre-bundle its depndencies instead.
-
-  Note that if you are using a monorepo via package manager workspaces, and have the packages listed as dependencies in your Vite entry package, Vite will automatically treat them as linked (by checking if it's inside `node_modules`). This option is only needed if you have unusual setups where your Vite app is importing from a package that isn't already linked as a Node-resolvable dependency.
-
-### optimizeDeps.auto
-
-- **Type:** `boolean`
-- **Default:** `true`
-
-  Automatically run dep pre-bundling on server start? Set to `false` to disable.
+  By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.

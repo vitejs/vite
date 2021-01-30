@@ -21,7 +21,7 @@ const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
 
 const htmlCommentRE = /<!--[\s\S]*?-->/g
-const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
+const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
 
 export function htmlInlineScriptProxyPlugin(): Plugin {
   return {
@@ -126,7 +126,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config.root)
+    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config)
 
   return {
     name: 'vite:build-html',
@@ -154,7 +154,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const { src, isModule } = getScriptInfo(node)
 
             const url = src && src.value && src.value.content
-            if (url && checkPublicFile(url, config.root)) {
+            if (url && checkPublicFile(url, config)) {
               // referencing public dir url, prefix with base
               s.overwrite(
                 src!.value!.loc.start.offset,
@@ -197,7 +197,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   } else {
                     assetUrls.push(p)
                   }
-                } else if (checkPublicFile(url, config.root)) {
+                } else if (checkPublicFile(url, config)) {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
@@ -257,10 +257,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       const getCssTagsForChunk = (chunk: OutputChunk): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
-        const cssFileHandle = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFileHandle) {
-          const file = this.getFileName(cssFileHandle)
-          if (file) {
+        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+        if (cssFiles) {
+          cssFiles.forEach((file) => {
             tags.push({
               tag: 'link',
               attrs: {
@@ -268,7 +267,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 href: toPublicPath(file, config)
               }
             })
-          }
+          })
         }
         chunk.imports.forEach((file) => {
           const importee = bundle[file]

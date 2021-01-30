@@ -138,8 +138,12 @@ export interface BuildOptions {
    *
    * ```json
    * {
-   *   "main.js": { "file": "main.68fe3fad.js" },
-   *   "style.css": { "file": "style.e6b63442.css" }
+   *   "main.js": {
+   *     "file": "main.68fe3fad.js",
+   *     "css": "main.e6b63442.css",
+   *     "imports": [...],
+   *     "dynamicImports": [...]
+   *   }
    * }
    * ```
    * @default false
@@ -303,7 +307,6 @@ async function doBuild(
   }
 
   const outDir = resolve(options.outDir)
-  const publicDir = resolve('public')
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (ssr
@@ -336,9 +339,7 @@ async function doBuild(
 
     paralellBuilds.push(bundle)
 
-    const pkgName =
-      libOptions &&
-      JSON.parse(lookupFile(config.root, ['package.json']) || `{}`).name
+    const pkgName = libOptions && getPkgName(config.root)
 
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate']({
@@ -393,8 +394,8 @@ async function doBuild(
           )
         }
       }
-      if (fs.existsSync(publicDir)) {
-        copyDir(publicDir, outDir)
+      if (fs.existsSync(config.publicDir)) {
+        copyDir(config.publicDir, outDir)
       }
     }
 
@@ -426,6 +427,14 @@ async function doBuild(
     }
     throw e
   }
+}
+
+function getPkgName(root: string) {
+  const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+
+  if (!name) throw new Error('no name found in package.json')
+
+  return name.startsWith('@') ? name.split('/')[1] : name
 }
 
 function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {

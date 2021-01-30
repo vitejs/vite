@@ -1,4 +1,4 @@
-import { getColor, isBuild, untilUpdated } from '../../testUtils'
+import { editFile, getColor, isBuild, untilUpdated } from '../../testUtils'
 import { port } from './serve'
 import fetch from 'node-fetch'
 
@@ -62,6 +62,13 @@ describe('Vue', () => {
     await page.click('button')
     expect(await page.textContent('button')).toBe('1')
   })
+
+  test('hmr', async () => {
+    editFile('src/vue/Async.vue', (code) =>
+      code.replace('Hello from Vue', 'changed')
+    )
+    await untilUpdated(() => page.textContent('h1'), 'changed')
+  })
 })
 
 describe('React', () => {
@@ -81,5 +88,12 @@ describe('React', () => {
         document.querySelector('h1')!.hasAttribute('data-reactroot')
       )
     ).toBe(true)
+  })
+
+  test('hmr', async () => {
+    editFile('src/react/Child.jsx', (code) =>
+      code.replace('Hello from React', 'changed')
+    )
+    await untilUpdated(() => page.textContent('h1'), 'changed')
   })
 })
