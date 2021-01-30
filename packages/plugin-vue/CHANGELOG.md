@@ -1,3 +1,12 @@
+## [1.1.4](https://github.com/vitejs/vite/compare/plugin-vue@1.1.3...plugin-vue@1.1.4) (2021-01-30)
+
+
+### Bug Fixes
+
+* **plugin-vue:** handle block src pointing to dependency files ([bb7da3f](https://github.com/vitejs/vite/commit/bb7da3f0f07da6558f0e81bd82ede4cfe1785a56)), closes [#1812](https://github.com/vitejs/vite/issues/1812)
+
+
+
 ## [1.1.3](https://github.com/vitejs/vite/compare/plugin-vue@1.1.2...plugin-vue@1.1.3) (2021-01-29)
 
 
