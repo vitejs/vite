@@ -174,12 +174,14 @@ export async function handleFileAddUnlink(
         modules.push(module)
       }
     }
-    updateModules(
-      getShortName(file, server.config.root),
-      modules,
-      Date.now(),
-      server
-    )
+    if (modules.length > 0) {
+      updateModules(
+        getShortName(file, server.config.root),
+        modules,
+        Date.now(),
+        server
+      )
+    }
   }
 }
 
