@@ -98,6 +98,8 @@ function injectStyles (context) {
   return result
 }
 
+const exportDefaultClassRE = /export\s+default\s+class\s+([\w$]+)/
+
 async function genScriptCode(
   scriptVar: string,
   descriptor: SFCDescriptor,
@@ -121,7 +123,15 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
-      scriptCode = rewriteDefault(script.content, scriptVar)
+      const classMatch = script.content.match(exportDefaultClassRE)
+      if (classMatch) {
+        scriptCode = `${script.content.replace(
+          exportDefaultClassRE,
+          `class $1`
+        )}\nconst ${scriptVar} = ${classMatch[1]}`
+      } else {
+        scriptCode = rewriteDefault(script.content, scriptVar)
+      }
       map = script.map
       if (script.lang === 'ts') {
         const result = await options.devServer!.transformWithEsbuild(
