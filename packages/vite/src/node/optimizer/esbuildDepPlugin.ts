@@ -2,7 +2,7 @@ import path from 'path'
 import { Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
 import { ResolvedConfig } from '..'
-import { isRunningWithYarnPnp, flattenId } from '../utils'
+import { isRunningWithYarnPnp, flattenId, normalizePath } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import { ExportsData } from '.'
 
@@ -113,7 +113,7 @@ export function esbuildDepPlugin(
       build.onLoad({ filter: /.*/, namespace: 'dep' }, ({ path: id }) => {
         const entryFile = qualified[id]
 
-        let relativePath = path.relative(root, entryFile)
+        let relativePath = normalizePath(path.relative(root, entryFile))
         if (!relativePath.startsWith('.')) {
           relativePath = `./${relativePath}`
         }
