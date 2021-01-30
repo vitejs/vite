@@ -1,10 +1,10 @@
-import fs from 'fs'
 import path from 'path'
 import { Loader, Plugin } from 'esbuild'
 import { knownAssetTypes } from '../constants'
 import { ResolvedConfig } from '..'
-import { bareImportRE, isRunningWithYarnPnp, flattenId } from '../utils'
+import { isRunningWithYarnPnp, flattenId } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
+import { ExportsData } from '.'
 
 const externalTypes = [
   'css',
@@ -23,6 +23,7 @@ const externalTypes = [
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
+  exportsData: Record<string, ExportsData>,
   config: ResolvedConfig
 ): Plugin {
   const _resolve = config.createResolver({ asSrc: false })
@@ -55,62 +56,88 @@ export function esbuildDepPlugin(
         }
       )
 
+      function resolveEntry(id: string, isEntry: boolean) {
+        const flatId = flattenId(id)
+        if (flatId in qualified) {
+          return isEntry
+            ? {
+                path: flatId,
+                namespace: 'dep'
+              }
+            : {
+                path: path.resolve(qualified[flatId])
+              }
+        }
+      }
+
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer }) => {
-          // ensure esbuild uses our resolved entires of optimized deps in all
-          // cases
-          const flatId = flattenId(id)
-          if (flatId in qualified) {
-            // if is optimized entry, redirect to entry namespace
-            return {
-              path: flatId,
-              namespace: 'dep'
-            }
-          } else {
-            // check alias fist
-            const aliased = await _resolve(id, undefined, true)
-            if (aliased && bareImportRE.test(aliased)) {
-              const flatId = flattenId(aliased)
-              if (flatId in qualified) {
-                // #1780
-                // id was aliased to a qualified entry, use the entry to
-                // avoid duplicated copies of the module
-                return {
-                  path: flatId,
-                  namespace: 'dep'
-                }
-              }
-            }
+          const isEntry = !importer
+          // ensure esbuild uses our resolved entires
+          let entry
+          // if this is an entry, return entry namespace resolve result
+          if ((entry = resolveEntry(id, isEntry))) return entry
 
-            // use vite resolver
-            const resolved = await resolve(id, importer)
-            if (resolved) {
-              if (resolved.startsWith(browserExternalId)) {
-                return {
-                  path: id,
-                  namespace: 'browser-external'
-                }
-              }
+          // check if this is aliased to an entry - also return entry namespace
+          const aliased = await _resolve(id, undefined, true)
+          if (aliased && (entry = resolveEntry(aliased, isEntry))) {
+            return entry
+          }
+
+          // use vite resolver
+          const resolved = await resolve(id, importer)
+          if (resolved) {
+            if (resolved.startsWith(browserExternalId)) {
               return {
-                path: path.resolve(resolved)
+                path: id,
+                namespace: 'browser-external'
               }
+            }
+            return {
+              path: path.resolve(resolved)
             }
           }
         }
       )
 
-      // for entry files, we'll read it ourselves to retain the entry's raw id
-      // instead of file path
-      // so that esbuild outputs desired output file structure.
+      // For entry files, we'll read it ourselves and construct a proxy module
+      // to retain the entry's raw id instead of file path so that esbuild
+      // outputs desired output file structure.
+      // It is necessary to do the re-exporting to separate the virtual proxy
+      // module from the actual module since the actual module may get
+      // referenced via relative imports - if we don't separate the proxy and
+      // the actual module, esbuild will create duplicated copies of the same
+      // module!
+      const root = path.resolve(config.root)
       build.onLoad({ filter: /.*/, namespace: 'dep' }, ({ path: id }) => {
         const entryFile = qualified[id]
+
+        let relativePath = path.relative(root, entryFile)
+        if (!relativePath.startsWith('.')) {
+          relativePath = `./${relativePath}`
+        }
+
+        let contents = ''
+        const [imports, exports] = exportsData[id]
+        if (!imports.length && !exports.length) {
+          // cjs
+          contents += `import d from "${relativePath}";export default d;`
+        } else {
+          if (exports.includes('default')) {
+            contents += `import d from "${relativePath}";export default d;`
+          }
+          if (exports.length > 1 || exports[0] !== 'default') {
+            contents += `\nexport * from "${relativePath}"`
+          }
+        }
+
         let ext = path.extname(entryFile).slice(1)
         if (ext === 'mjs') ext = 'js'
         return {
           loader: ext as Loader,
-          contents: fs.readFileSync(entryFile, 'utf-8'),
-          resolveDir: path.dirname(entryFile)
+          contents,
+          resolveDir: root
         }
       })
 

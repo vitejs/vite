@@ -12,11 +12,13 @@ import {
   flattenId
 } from '../utils'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
-import { init, parse } from 'es-module-lexer'
+import { ImportSpecifier, init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
 import { ensureService, stopService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
+
+export type ExportsData = [ImportSpecifier[], string[]]
 
 export interface DepOptimizationOptions {
   /**
@@ -194,8 +196,16 @@ export async function optimizeDeps(
   // 2. in the plugin, read the entry ourselves as virtual files to retain the
   //    path.
   const flatIdDeps: Record<string, string> = {}
+  const idToExports: Record<string, ExportsData> = {}
+  const flatIdToExports: Record<string, ExportsData> = {}
+
+  await init
   for (const id in deps) {
-    flatIdDeps[flattenId(id)] = deps[id]
+    const flatId = flattenId(id)
+    flatIdDeps[flatId] = deps[id]
+    const exportsData = parse(fs.readFileSync(deps[id], 'utf-8'))
+    idToExports[id] = exportsData
+    flatIdToExports[flatId] = exportsData
   }
 
   const start = Date.now()
@@ -214,18 +224,17 @@ export async function optimizeDeps(
     define: {
       'process.env.NODE_ENV': '"development"'
     },
-    plugins: [esbuildDepPlugin(flatIdDeps, config)]
+    plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
   })
 
   const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
 
-  await init
   for (const id in deps) {
     const entry = deps[id]
     data.optimized[id] = {
       file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
       src: entry,
-      needsInterop: needsInterop(id, entry, meta.outputs)
+      needsInterop: needsInterop(id, entry, idToExports[id], meta.outputs)
     }
   }
 
@@ -246,12 +255,13 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 function needsInterop(
   id: string,
   entry: string,
+  exportsData: ExportsData,
   outputs: Record<string, any>
 ): boolean {
   if (KNOWN_INTEROP_IDS.has(id)) {
     return true
   }
-  const [imports, exports] = parse(fs.readFileSync(entry, 'utf-8'))
+  const [imports, exports] = exportsData
   // entry has no ESM syntax - likely CJS or UMD
   if (!exports.length && !imports.length) {
     return true
