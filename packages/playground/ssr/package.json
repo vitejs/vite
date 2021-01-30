@@ -7,7 +7,7 @@
     "build": "yarn build:client && yarn build:server",
     "build:client": "vite build --ssrManifest --outDir dist/client",
     "build:server": "vite build --ssr src/entry-server.ts --outDir dist/server",
-    "serve": "NODE_ENV=production node server",
+    "serve": "cross-env NODE_ENV=production node server",
     "debug": "node --inspect-brk server"
   },
   "dependencies": {
