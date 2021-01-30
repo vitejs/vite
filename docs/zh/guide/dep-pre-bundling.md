@@ -28,28 +28,12 @@ Pre-bundling them to speed up dev server page load...（将预构建它们以提
 
    通过预构建 `lodash-es` 成为一个模块，我们就只需要一个 HTTP 请求了！
 
-## 预构建条件
+## 自动依赖搜寻
 
-只有当依赖项列在 `package.json` 的 `dependencies` 中时，才会检查它是否预绑定。如果以下任何一个是正确的，它将有资格进行预捆绑:
+如果没有找到存在的缓存，Vite 将抓取你的源代码，并自动发现依赖项导入（即
+"裸引入"，期望从 `node_modules` 解析），并使用这些发现的导入作为预构建包的入口点。预绑定是用 `esbuild` 执行的，所以它通常非常快。
 
-- 该依赖项没有包含有效的 ES 模块导出（被视为 CommonJS）
-- 依赖项包含其他模块或依赖项（多个内部模块）的导入
-
-这也意味着你应该避免将不需要导入源代码的依赖项放在 `dependencies` 下（应该将它们移到 `devDependencies`)。
-
-## 深层导入
-
-预构建的依赖最终会被打包成一个独立的模块，因此你应该更喜欢从主入口使用动态导入而不是使用具体模块的深层路径导入。例如：
-
-```js
-// 👎 不好，将导致重复的模块实例。
-// Vite 将会抛出警告
-import debounce from 'lodash-es/debounce'
-// 👌 好
-import { debounce } from 'lodash-es'
-```
-
-但有些依赖可能就是设计为需要按路径导入的，例如 `firebase` 都是在 `firebase/*` 中暴露其子模块的。对于这类的依赖，可以给 Vite 配置 [`optimizeDeps.include` 选项](/zh/config/#optimizedeps-include) 来显式包含这些深层导入路径。 如果您从未使用过默认导出，建议将其从预构建中排除。
+在服务器已经启动之后，如果在缓存中没有遇到新的依赖项导入，Vite 将重新运行依赖构建进程并重新加载页面。
 
 ## 依赖兼容性
 
@@ -63,7 +47,11 @@ import { debounce } from 'lodash-es'
 
 ## 自定义行为
 
-默认启发式的预构建行为可能并不总是可取的。如果您想要显式地从列表中包含/排除依赖项，请使用[`optimizeDeps` 配置项](/zh/config/#dep-optimization-options)。
+默认的依赖项发现为启发式可能并不总是可取的。在您想要显式地从列表中包含/排除依赖项的情况下, 使用 [`optimizeDeps` 配置项](/zh/config/#依赖优化选项)。
+
+一个典型的用例对 `optimizeDeps.include` 或 `optimizeDeps.exclude` 是当您有一个不能直接在源代码中发现的导入时。例如，导入可能是插件转换的结果。这意味着 Vite 无法在初始扫描时发现导入 —— 它只能在浏览器请求文件并进行转换后发现它。这将导致服务器在启动后立即重新打包。
+
+`include` 和 `exclude` 都可以用来处理这个问题。如果依赖项很大（包含很多内部模块）或者是 CommonJS，那么你应该包含它；如果依赖项很小，并且已经是有效的 ESM，则可以排除它，让浏览器直接加载它。
 
 ## 缓存
 
@@ -71,7 +59,7 @@ Vite 会将预构建的依赖缓存到 `node_modules/.vite`。它根据几个源
 
 - `package.json` 中的 `dependencies` 列表
 - 包管理器的 lockfile，例如 `package-lock.json`, `yarn.lock`，或者 `pnpm-lock.yaml`
-- 可能存在的 `vite.config.js`
+- 可能在 `vite.config.js` 相关字段中配置过的
 
 只有当上面的一个步骤发生变化时，才需要重新运行预构建步骤。
 

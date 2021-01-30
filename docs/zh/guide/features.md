@@ -106,7 +106,7 @@ import classes from './example.module.css'
 document.getElementById('foo').className = classes.red
 ```
 
-请注意 CSS modules `localsConvention` 默认是 `cameCaesOnly` - 例如一个名为 `.foo-bar` 的类会被暴露为 `classes.fooBar`。CSS modules 行为可以通过 [`css.modules` option](/config/#css-modules) 选项配置。
+请注意 CSS modules `localsConvention` 默认是 `cameCaseOnly` - 例如一个名为 `.foo-bar` 的类会被暴露为 `classes.fooBar`。CSS modules 行为可以通过 [`css.modules` option](/config/#css-modules) 选项配置。
 
 ### CSS 预处理器
 
@@ -170,6 +170,8 @@ document.getElementById('hero-img').src = imgUrl
 - ...或者您只是不想为了获取 URL 而首先导入该资源
 
 那么你可以将该资源放在一个特别的 `public` 目录中，它应位于你的项目根目录。该目录中的资源应该在开发时能直接通过 `/` 根路径访问到，并且打包时会被完整复制到目标目录的根目录下。
+
+目录默认是 `<root>/public`，但可以通过 [`publicDir` 选项](/zh/config/#publicdir) 来配置。
 
 请注意：
 

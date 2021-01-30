@@ -88,9 +88,16 @@ export default ({ command, mode }) => {
 - **类型：** `string`
 - **默认：** `process.cwd()`
 
-  项目根目录。可以是一个绝对路径，或者一个相对于该配置文件本身的路径。
+  项目根目录（`index.html` 文件所在的位置）。可以是一个绝对路径，或者一个相对于该配置文件本身的路径。
 
   更多细节请见 [项目根目录](/zh/guide/#项目根目录)。
+
+  ### publicDir
+
+- **类型：** `string`
+- **默认：** `"public"`
+
+  作为静态资源服务的文件夹。这个目录中的文件会再开发中被服务于 `/`，在构建时，会被拷贝到 `outDir` 根目录，并没有转换，永远只是复制到这里。该值可以是文件系统的绝对路径，也可以是相对于项目根的路径。
 
 ### base
 
@@ -416,7 +423,7 @@ export default ({ command, mode }) => {
 
 - **类型：** [`RollupCommonJSOptions`](https://github.com/rollup/plugins/tree/master/packages/commonjs#options)
 
-  传递给 [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs) 插件的选项。这也会应用在预构建的依赖上。
+  传递给 [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs) 插件的选项。
 
 ### build.lib
 
