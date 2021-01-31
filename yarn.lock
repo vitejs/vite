@@ -2665,6 +2665,18 @@ delegate@^3.1.2:
   resolved "https://registry.yarnpkg.com/delegate/-/delegate-3.2.0.tgz#b66b71c3158522e8ab5744f720d8ca0c2af59166"
   integrity sha512-IofjkYBZaZivn0V8nnsMJGBr4jVLxHDheKSW88PyxS5QC4Vo9ZbZVvhzlSxY87fVq3STR6r+4cGepyHkcWOQSw==
 
+"dep-cjs-named-only@link:./packages/playground/optimize-deps/dep-cjs-named-only":
+  version "0.0.0"
+  uid ""
+
+"dep-linked-include@link:./packages/playground/optimize-deps/dep-linked-include":
+  version "0.0.0"
+  uid ""
+
+"dep-linked@link:./packages/playground/optimize-deps/dep-linked":
+  version "0.0.0"
+  uid ""
+
 depd@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/depd/-/depd-1.1.2.tgz#9bcd52e14c097763e749b274c4346ed2e560b5a9"

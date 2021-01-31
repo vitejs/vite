@@ -7,7 +7,7 @@ module.exports = {
   dedupe: ['react'],
 
   optimizeDeps: {
-    include: ['optimize-deps-linked-include'],
+    include: ['dep-linked-include'],
     plugins: [vue()]
   },
 

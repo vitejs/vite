@@ -34,14 +34,14 @@
   // test dep detection in globbed files
   const globbed = import.meta.globEager('./glob/*.js')
 
-  import { camelCase } from 'optimize-deps-linked'
+  import { camelCase } from 'dep-linked'
   document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')
 
-  import { msg, VueSFC } from 'optimize-deps-linked-include'
+  import { msg, VueSFC } from 'dep-linked-include'
   document.querySelector('.force-include').textContent = msg
   document.querySelector('.plugin').textContent = VueSFC.render()
 
-  import * as linked from 'optimize-deps-linked-include'
+  import * as linked from 'dep-linked-include'
   const keys = Object.keys(linked)
   if (keys.length) {
     document.querySelector('.import-star').textContent = `[success] ${keys.join(
