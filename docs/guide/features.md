@@ -172,6 +172,13 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 - Assets smaller in bytes than the [`assetsInlineLimit` option](/config/#assetsinlinelimit) will be inlined as base64 data URLs.
 
+- Assets that are not included in the internal list or in `assetsInclude`, can be manually imported as an URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://houdini.how/usage).
+
+```js
+import workletURL from "extra-scalloped-border/worklet.js?url";
+CSS.paintWorklet.addModule(workletURL);
+```
+
 ### The `public` Directory
 
 If you have assets that are:
