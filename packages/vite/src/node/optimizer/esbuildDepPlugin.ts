@@ -1,6 +1,6 @@
 import path from 'path'
 import { Loader, Plugin } from 'esbuild'
-import { knownAssetTypes } from '../constants'
+import { KNOWN_ASSET_TYPES } from '../constants'
 import { ResolvedConfig } from '..'
 import { isRunningWithYarnPnp, flattenId, normalizePath } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
@@ -18,7 +18,7 @@ const externalTypes = [
   // known SFC types
   'vue',
   'svelte',
-  ...knownAssetTypes
+  ...KNOWN_ASSET_TYPES
 ]
 
 export function esbuildDepPlugin(

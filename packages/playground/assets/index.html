@@ -83,6 +83,9 @@
 <h2>?raw import</h2>
 <code class="raw"></code>
 
+<h2>?url import</h2>
+<code class="url"></code>
+
 <script type="module">
   import './css/fonts.css'
   import './css/css-url.css'
@@ -105,6 +108,9 @@
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
+
+  import fooUrl from './foo.js?url'
+  text('.url', fooUrl)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

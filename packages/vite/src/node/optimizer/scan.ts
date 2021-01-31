@@ -3,7 +3,7 @@ import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { Loader, Plugin } from 'esbuild'
-import { knownAssetTypes } from '../constants'
+import { KNOWN_ASSET_TYPES, SPECIAL_QUERY_RE } from '../constants'
 import {
   createDebugger,
   emptyDir,
@@ -264,13 +264,13 @@ function esbuildScanPlugin(
       // known asset types
       build.onResolve(
         {
-          filter: new RegExp(`\\.(${knownAssetTypes.join('|')})$`)
+          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`)
         },
         externalUnlessEntry
       )
 
       // known vite query types: ?worker, ?raw
-      build.onResolve({ filter: /\?(worker|raw)\b/ }, ({ path }) => ({
+      build.onResolve({ filter: SPECIAL_QUERY_RE }, ({ path }) => ({
         path,
         external: true
       }))

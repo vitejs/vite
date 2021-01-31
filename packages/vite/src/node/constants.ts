@@ -2,6 +2,8 @@ import path from 'path'
 
 export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
 
+export const SPECIAL_QUERY_RE = /[\?&](worker|raw|url)\b/
+
 export const DEP_CACHE_DIR = `.vite`
 
 /**
@@ -26,7 +28,7 @@ export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
-export const knownAssetTypes = [
+export const KNOWN_ASSET_TYPES = [
   // images
   'png',
   'jpe?g',
@@ -56,7 +58,7 @@ export const knownAssetTypes = [
 ]
 
 export const DEFAULT_ASSETS_RE = new RegExp(
-  `\\.(` + knownAssetTypes.join('|') + `)(\\?.*)?$`
+  `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`
 )
 
 export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/

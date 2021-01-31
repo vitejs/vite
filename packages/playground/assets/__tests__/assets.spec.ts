@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { findAssetFile, getBg, getColor, isBuild } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -120,4 +121,15 @@ describe('svg fragments', () => {
 
 test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
+})
+
+test('?url import', async () => {
+  const src = `console.log('hi')`
+  expect(await page.textContent('.url')).toMatch(
+    isBuild
+      ? `data:application/javascript;base64,${Buffer.from(src).toString(
+          'base64'
+        )}`
+      : `/foo/foo.js`
+  )
 })

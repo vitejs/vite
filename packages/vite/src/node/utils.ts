@@ -101,11 +101,12 @@ export const isJSRequest = (url: string) => {
   return false
 }
 
-const importQueryRE = /(\?|&)import(&|$)/
+const importQueryRE = /(\?|&)import(?:&|$)/
+const trailingSeparatorRE = /[\?&]$/
 export const isImportRequest = (url: string) => importQueryRE.test(url)
 
 export function removeImportQuery(url: string) {
-  return url.replace(importQueryRE, '$1').replace(/\?$/, '')
+  return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 export function injectQuery(url: string, queryToInject: string) {
@@ -115,8 +116,9 @@ export function injectQuery(url: string, queryToInject: string) {
   }`
 }
 
+const timestampRE = /\bt=\d{13}&?\b/
 export function removeTimestampQuery(url: string) {
-  return url.replace(/\bt=\d{13}&?\b/, '').replace(/\?$/, '')
+  return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
 export async function asyncReplace(

@@ -15,6 +15,9 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?/g
 // a different regex
 const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?"/g
 
+const rawRE = /(\?|&)raw(?:&|$)/
+const urlRE = /(\?|&)url(?:&|$)/
+
 export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
 /**
@@ -37,12 +40,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      if (!config.assetsInclude(cleanUrl(id))) {
-        return
-      }
-
       // raw requests, read from disk
-      if (/(\?|&)raw\b/.test(id)) {
+      if (rawRE.test(id)) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
         // raw query, read file and return as string
         return `export default ${JSON.stringify(
@@ -50,6 +49,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         )}`
       }
 
+      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+        return
+      }
+
+      id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
       const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },
