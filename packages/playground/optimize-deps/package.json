@@ -10,8 +10,9 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "optimize-deps-linked": "0.0.0",
-    "optimize-deps-linked-include": "0.0.0",
+    "dep-linked": "link:./dep-linked",
+    "dep-linked-include": "link:./dep-linked-include",
+    "dep-cjs-named-only": "link:./dep-cjs-named-only",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "resolve-linked": "0.0.0",
