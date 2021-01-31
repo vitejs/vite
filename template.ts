@@ -1,8 +1,9 @@
-import { SFCBlock, compileTemplate } from '@vue/component-compiler-utils'
+import { SFCBlock } from '@vue/component-compiler-utils'
 import * as vueTemplateCompiler from 'vue-template-compiler'
 import { TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from './index'
 import { createRollupError } from './utils/error'
+import { compileTemplate } from './template/compileTemplate'
 
 export function compileSFCTemplate(
   source: string,
@@ -16,7 +17,9 @@ export function compileSFCTemplate(
     filename,
     compiler: vueTemplateCompiler as any,
     transformAssetUrls: true,
-    transformAssetUrlsOptions: {},
+    transformAssetUrlsOptions: {
+      forceRequire: true,
+    },
     isProduction,
     isFunctional: !!block.attrs.functional,
     optimizeSSR: false,
