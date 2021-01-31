@@ -30,8 +30,7 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import { resolve, relative, sep, posix, join } from 'path'
-import { createHash } from 'crypto'
+import { resolve, join } from 'path'
 import { Plugin } from '../plugin'
 import {
   InputOptions,
@@ -81,7 +80,6 @@ export interface PluginContainer {
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
   watchChange(id: string, event?: ChangeEvent): void
-  resolveImportMeta(id: string, property: string): void
   resolveId(
     id: string,
     importer?: string,
@@ -95,7 +93,6 @@ export interface PluginContainer {
     ssr?: boolean
   ): Promise<SourceDescription | null>
   load(id: string, ssr?: boolean): Promise<LoadResult | null>
-  resolveFileUrl(referenceId: string): string | null
   close(): Promise<void>
 }
 
@@ -136,11 +133,7 @@ export async function createPluginContainer(
 
   // ---------------------------------------------------------------------------
 
-  // counter for generating unique emitted asset IDs
-  let ids = 0
-
   const MODULES = new Map()
-  const files = new Map<string, EmittedFile>()
   const watchFiles = new Set<string>()
 
   // get rollup version
@@ -151,6 +144,17 @@ export async function createPluginContainer(
         .version,
       watchMode: true
     }
+  }
+
+  function warnIncompatibleMethod(method: string, plugin: string) {
+    logger.warn(
+      chalk.cyan(`[plugin:${plugin}] `) +
+        chalk.yellow(
+          `context method ${chalk.bold(
+            `${method}()`
+          )} is not supported in serve mode. This plugin is likely not vite-compatible.`
+        )
+    )
   }
 
   // we should create a new context for each async hook pipeline so that the
@@ -214,41 +218,17 @@ export async function createPluginContainer(
     }
 
     emitFile(assetOrFile: EmittedFile) {
-      const { type, name, fileName } = assetOrFile
-      const source = assetOrFile.type === 'asset' && assetOrFile.source
-      const id = String(++ids)
-      const filename =
-        fileName || generateFilename(type, name!, source, fileName)
-      files.set(id, { type, id, name, fileName: filename })
-      if (source) {
-        if (type === 'chunk') {
-          throw Error(`emitFile({ type:"chunk" }) cannot include a source`)
-        }
-        // TODO
-        // if (opts.writeFile) opts.writeFile(filename, source)
-        // else fs.writeFile(filename, source)
-      }
-      return id
+      warnIncompatibleMethod(`emitFile`, this._activePlugin!.name)
+      return ''
     }
 
-    setAssetSource(assetId: string, source: string | Uint8Array) {
-      const asset = files.get(String(assetId))
-      if (!asset) {
-        throw new Error(
-          `setAssetSource() called on non-existent asset with id ${assetId}`
-        )
-      }
-      if (asset.type === 'chunk') {
-        throw Error(`setAssetSource() called on a chunk`)
-      }
-      asset.source = source
-      // TODO
-      // if (opts.writeFile) opts.writeFile(asset.fileName!, source)
-      // else fs.writeFile(asset.fileName!, source)
+    setAssetSource() {
+      warnIncompatibleMethod(`setAssetSource`, this._activePlugin!.name)
     }
 
-    getFileName(referenceId: string) {
-      return container.resolveFileUrl(referenceId)!
+    getFileName() {
+      warnIncompatibleMethod(`getFileName`, this._activePlugin!.name)
+      return ''
     }
 
     warn(
@@ -562,53 +542,6 @@ export async function createPluginContainer(
       }
     },
 
-    resolveImportMeta(id, property) {
-      const ctx = new Context()
-      for (const plugin of plugins) {
-        if (!plugin.resolveImportMeta) continue
-        ctx._activePlugin = plugin
-        const result = plugin.resolveImportMeta.call(ctx as any, property, {
-          chunkId: '',
-          moduleId: id,
-          format: 'es'
-        })
-        if (result) return result
-      }
-
-      // handle file URLs by default
-      const matches = property.match(/^ROLLUP_FILE_URL_(\d+)$/)
-      if (matches) {
-        const referenceId = matches[1]
-        const result = container.resolveFileUrl(referenceId)
-        if (result) return result
-      }
-    },
-
-    resolveFileUrl(referenceId) {
-      referenceId = String(referenceId)
-      const file = files.get(referenceId)
-      if (file == null) return null
-      const out = resolve(root || '.', outputOptions.dir || '.')
-      const fileName = relative(out, file.fileName!)
-      const assetInfo = {
-        referenceId,
-        fileName,
-        // @TODO: this should be relative to the module that imported the asset
-        relativePath: fileName
-      }
-      const ctx = new Context()
-      for (const plugin of plugins) {
-        if (!plugin.resolveFileUrl) continue
-        ctx._activePlugin = plugin
-        // @ts-ignore
-        const result = plugin.resolveFileUrl.call(ctx, assetInfo)
-        if (result != null) {
-          return result
-        }
-      }
-      return JSON.stringify('/' + fileName.split(sep).join(posix.sep))
-    },
-
     async close() {
       if (closed) return
       const ctx = new Context()
@@ -621,8 +554,6 @@ export async function createPluginContainer(
       closed = true
     }
   }
-
-  const toPosixPath = (path: string) => path.split(sep).join(posix.sep)
 
   function popIndex(array: any[], index: number) {
     const tail = array.pop()
@@ -650,39 +581,6 @@ export async function createPluginContainer(
       const i = skips.indexOf(key)
       if (i !== -1) popIndex(skips, i)
     }
-  }
-
-  const outputOptions = Array.isArray(rollupOptions.output)
-    ? rollupOptions.output[0]
-    : rollupOptions.output || {}
-
-  function generateFilename(
-    type: 'entry' | 'asset' | 'chunk',
-    name: string,
-    source: string | false | undefined | Uint8Array,
-    fileName: string | undefined
-  ) {
-    const posixName = toPosixPath(name)
-    if (!fileName) {
-      fileName = ((type === 'entry' && outputOptions.file) ||
-        // @ts-ignore
-        outputOptions[`${type}FileNames`] ||
-        '[name][extname]') as string
-      fileName = fileName.replace('[hash]', () =>
-        createHash('md5').update(String(source)).digest('hex').substring(0, 5)
-      )
-      fileName = fileName.replace('[extname]', posix.extname(posixName))
-      fileName = fileName.replace(
-        '[ext]',
-        posix.extname(posixName).substring(1)
-      )
-      fileName = fileName.replace(
-        '[name]',
-        posix.basename(posixName).replace(/\.[a-z0-9]+$/g, '')
-      )
-    }
-    const result = resolve(root || '.', outputOptions.dir || '.', fileName)
-    return result
   }
 
   return container
