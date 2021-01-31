@@ -11,11 +11,8 @@ import {
   isObject,
   cleanUrl,
   externalRE,
-  dataUrlRE,
-  isExternalUrl,
-  isDataUrl
+  dataUrlRE
 } from '../utils'
-import { browserExternalId } from '../plugins/resolve'
 import {
   createPluginContainer,
   PluginContainer
@@ -345,20 +342,16 @@ async function transformGlob(source: string, importer: string) {
 }
 
 export function shouldExternalizeDep(resolvedId: string, rawId?: string) {
+  // not a valid file path
+  if (!path.isAbsolute(resolvedId)) {
+    return true
+  }
   // virtual id
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // browser external
-  if (resolvedId.startsWith(browserExternalId)) {
-    return true
-  }
   // resovled is not a js type
   if (!jsTypesRE.test(resolvedId)) {
-    return true
-  }
-  // external or data url
-  if (isExternalUrl(resolvedId) || isDataUrl(resolvedId)) {
     return true
   }
 }
