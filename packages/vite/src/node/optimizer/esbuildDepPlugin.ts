@@ -130,7 +130,9 @@ export function esbuildDepPlugin(
         const [imports, exports] = exportsData[id]
         if (!imports.length && !exports.length) {
           // cjs
-          contents += `import d from "${relativePath}";export default d;`
+          contents +=
+            `import d from "${relativePath}";export default d;` +
+            `\nexport * from "${relativePath}"`
         } else {
           if (exports.includes('default')) {
             contents += `import d from "${relativePath}";export default d;`
