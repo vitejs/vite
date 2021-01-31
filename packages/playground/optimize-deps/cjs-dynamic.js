@@ -6,6 +6,16 @@
   const React = (await import('react')).default
   const ReactDOM = await import('react-dom')
 
+  const clip = await import('clipboard')
+  if (typeof clip.default === 'function') {
+    document.querySelector('.cjs-dynamic-clipboard').textContent = 'ok'
+  }
+
+  const { Socket } = await import('phoenix')
+  if (typeof Socket === 'function') {
+    document.querySelector('.cjs-dynamic-phoenix').textContent = 'ok'
+  }
+
   function App() {
     const [count, setCount] = useState(0)
 

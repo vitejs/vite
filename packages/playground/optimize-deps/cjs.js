@@ -3,6 +3,16 @@
 // are not statically detectable by @rollup/plugin-commonjs.
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
+import { Socket } from 'phoenix'
+import clip from 'clipboard'
+
+if (typeof clip === 'function') {
+  document.querySelector('.cjs-clipboard').textContent = 'ok'
+}
+
+if (typeof Socket === 'function') {
+  document.querySelector('.cjs-phoenix').textContent = 'ok'
+}
 
 function App() {
   const [count, setCount] = useState(0)
