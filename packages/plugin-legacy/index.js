@@ -208,6 +208,13 @@ function viteLegacyPlugin(options = {}) {
         sourceMaps,
         inputSourceMap: sourceMaps && chunk.map,
         presets: [
+          // forcing our plugin to run before preset-env by wrapping it in a
+          // preset so we can catch the injected import statements...
+          [
+            () => ({
+              plugins: [recordAndRemovePolyfillBabelPlugin(legacyPolyfills)]
+            })
+          ],
           [
             'env',
             {
@@ -225,20 +232,6 @@ function viteLegacyPlugin(options = {}) {
           ]
         ]
       })
-
-      if (needPolyfills) {
-        // detect and remove polyfill imports. Since the legacy bundle uses
-        // format: 'system', any import declarations are polyfill imports injected
-        // by @babel/preset-env.
-        for (const node of ast.program.body) {
-          if (node.type === 'ImportDeclaration') {
-            legacyPolyfills.add(node.source.value)
-          }
-        }
-        // remove import declarations, perserve line positions so we don't need
-        // to generate a source map again.
-        code = code.replace(/^import ".*";/gm, '//')
-      }
 
       return { code, map }
     },
@@ -474,6 +467,27 @@ function isLegacyOutput(options) {
     typeof options.entryFileNames === 'string' &&
     options.entryFileNames.includes('-legacy')
   )
+}
+
+/**
+ * @param {Set<string>} polyfills
+ */
+function recordAndRemovePolyfillBabelPlugin(polyfills) {
+  return ({ types: t }) => ({
+    name: 'vite-remove-polyfill-import',
+    visitor: {
+      Program: {
+        exit(path) {
+          path.get('body').forEach((p) => {
+            if (t.isImportDeclaration(p)) {
+              polyfills.add(p.node.source.value)
+              p.remove()
+            }
+          })
+        }
+      }
+    }
+  })
 }
 
 module.exports = viteLegacyPlugin
