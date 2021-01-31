@@ -32,7 +32,7 @@ npm init @vitejs/app my-vue-app --template vue
 npm init @vitejs/app my-vue-app -- --template vue
 
 # yarn
-yarn create @vutejs/app my-vue-app --template vue
+yarn create @vitejs/app my-vue-app --template vue
 ```
 
 Supported template presets include:
