@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import chalk from 'chalk'
-import { FS_PREFIX, SUPPORTED_EXTS } from '../constants'
+import { FS_PREFIX, SPECIAL_QUERY_RE, SUPPORTED_EXTS } from '../constants'
 import {
   isBuiltin,
   bareImportRE,
@@ -359,7 +359,8 @@ export function tryNodeResolve(
       exclude?.includes(id) ||
       isCSSRequest(resolved) ||
       server.config.assetsInclude(resolved) ||
-      /\.json$|\?(worker|raw)/.test(resolved)
+      resolved.endsWith('.json') ||
+      SPECIAL_QUERY_RE.test(resolved)
     ) {
       // excluded from optimization
       // Inject a version query to npm deps so that the browser
