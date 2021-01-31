@@ -204,6 +204,7 @@ function viteLegacyPlugin(options = {}) {
       let { code, ast, map } = loadBabel().transform(raw, {
         ast: true,
         configFile: false,
+        compact: true,
         sourceMaps,
         inputSourceMap: sourceMaps && chunk.map,
         presets: [
