@@ -165,6 +165,16 @@ export interface BuildOptions {
    * directives in production.
    */
   ssrManifest?: boolean
+  /**
+   * Set to false to disable brotli compressed size reporting for build.
+   * Can slightly improve build speed.
+   */
+  brotliSize?: boolean
+  /**
+   * Adjust chunk size warning limit (in kbs).
+   * @default 500
+   */
+  chunkSizeWarningLimit?: number
 }
 
 export interface LibraryOptions {
@@ -201,6 +211,8 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     lib: false,
     ssr: false,
     ssrManifest: false,
+    brotliSize: true,
+    chunkSizeWarningLimit: 500,
     ...raw
   }
 
@@ -245,9 +257,7 @@ export function resolveBuildPlugins(
         : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-      ...(!config.logLevel || config.logLevel === 'info'
-        ? [buildReporterPlugin(config)]
-        : [])
+      buildReporterPlugin(config)
     ]
   }
 }
