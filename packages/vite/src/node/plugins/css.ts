@@ -888,8 +888,10 @@ function createViteLessPlugin(
   if (!ViteLessManager) {
     ViteLessManager = class ViteManager extends less.FileManager {
       resolvers
-      constructor(resolvers: CSSResolvers) {
+      rootFile
+      constructor(rootFile: string, resolvers: CSSResolvers) {
         super()
+        this.rootFile = rootFile
         this.resolvers = resolvers
       }
       supports() {
@@ -909,7 +911,7 @@ function createViteLessPlugin(
           path.join(dir, '*')
         )
         if (resolved) {
-          const result = await rebaseUrls(resolved, rootFile)
+          const result = await rebaseUrls(resolved, this.rootFile)
           let contents
           if (result && 'contents' in result) {
             contents = result.contents
@@ -929,7 +931,7 @@ function createViteLessPlugin(
 
   return {
     install(_, pluginManager) {
-      pluginManager.addFileManager(new ViteLessManager(resolvers))
+      pluginManager.addFileManager(new ViteLessManager(rootFile, resolvers))
     },
     minVersion: [3, 0, 0]
   }
