@@ -1,3 +1,16 @@
+# [2.0.0-beta.61](https://github.com/vitejs/vite/compare/v2.0.0-beta.60...v2.0.0-beta.61) (2021-02-01)
+
+
+### Bug Fixes
+
+* **less:** fix less [@import](https://github.com/import) url rebasing ([41783fa](https://github.com/vitejs/vite/commit/41783fade0604adb98e468d4a4f8b50c9624899a)), closes [#1834](https://github.com/vitejs/vite/issues/1834)
+* **manifest:** include assets referenced via CSS in manifest entries ([34894a2](https://github.com/vitejs/vite/commit/34894a2c41871a08a86fb9a1852563bc698d9c00)), closes [#1827](https://github.com/vitejs/vite/issues/1827)
+* yarn pnp resolveDir ([9c6edef](https://github.com/vitejs/vite/commit/9c6edefd45634becbd51c1bf25b735770aeb752a))
+* **optimizer:** fix cjs export interop for webpacked output ([4b6ebc3](https://github.com/vitejs/vite/commit/4b6ebc3f3b117cbe45aff55746dd5f588dfe1587)), closes [#1830](https://github.com/vitejs/vite/issues/1830)
+* **ssr:** do not inject hmr timestamp when transforming for ssr ([#1825](https://github.com/vitejs/vite/issues/1825)) ([8ace645](https://github.com/vitejs/vite/commit/8ace6456b682a9ae7d550225817f3270524d96a3))
+
+
+
 # [2.0.0-beta.60](https://github.com/vitejs/vite/compare/v2.0.0-beta.59...v2.0.0-beta.60) (2021-01-31)
 
 
