@@ -1,5 +1,12 @@
 import { createHash } from 'crypto'
-import { findAssetFile, getBg, getColor, isBuild } from '../../testUtils'
+import {
+  findAssetFile,
+  getBg,
+  getColor,
+  isBuild,
+  listAssets,
+  readManifest
+} from '../../testUtils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
@@ -133,3 +140,18 @@ test('?url import', async () => {
       : `/foo/foo.js`
   )
 })
+
+if (isBuild) {
+  test('manifest', async () => {
+    const manifest = readManifest('foo')
+    const entry = manifest['index.html']
+
+    for (const file of listAssets('foo')) {
+      if (file.endsWith('.css')) {
+        expect(entry.css).toContain(`assets/${file}`)
+      } else if (!file.endsWith('.js')) {
+        expect(entry.assets).toContain(`assets/${file}`)
+      }
+    }
+  })
+}
