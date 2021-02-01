@@ -18,7 +18,7 @@ export interface LogOptions {
   timestamp?: boolean
 }
 
-const LogLevels: Record<LogLevel, number> = {
+export const LogLevels: Record<LogLevel, number> = {
   silent: 0,
   error: 1,
   warn: 2,
@@ -41,7 +41,10 @@ export function createLogger(
   allowClearScreen = true
 ): Logger {
   const thresh = LogLevels[level]
-  const clear = allowClearScreen && !process.env.CI ? clearScreen : () => {}
+  const clear =
+    allowClearScreen && process.stdout.isTTY && !process.env.CI
+      ? clearScreen
+      : () => {}
 
   function output(type: LogType, msg: string, options: LogOptions = {}) {
     if (thresh >= LogLevels[type]) {
