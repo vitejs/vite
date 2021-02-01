@@ -59,18 +59,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk) {
-      let emitted = chunkToEmittedAssetsMap.get(chunk)
       let match
       let s
       while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
         const [full, fileHandle, postfix = ''] = match
         const file = this.getFileName(fileHandle)
-        if (!emitted) {
-          emitted = new Set()
-          chunkToEmittedAssetsMap.set(chunk, emitted)
-        }
-        emitted.add(file)
+        registerAssetToChunk(chunk, file)
         const outputFilepath = config.base + file + postfix
         s.overwrite(
           match.index,
@@ -102,6 +97,15 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
+}
+
+export function registerAssetToChunk(chunk: RenderedChunk, file: string) {
+  let emitted = chunkToEmittedAssetsMap.get(chunk)
+  if (!emitted) {
+    emitted = new Set()
+    chunkToEmittedAssetsMap.set(chunk, emitted)
+  }
+  emitted.add(cleanUrl(file))
 }
 
 export function checkPublicFile(
@@ -178,7 +182,6 @@ async function fileToBuiltUrl(
   const file = cleanUrl(id)
   const { search, hash } = parseUrl(id)
   const postfix = (search || '') + (hash || '')
-  // TODO preserve fragment hash or queries
   const content = await fsp.readFile(file)
 
   let url

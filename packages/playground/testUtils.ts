@@ -75,6 +75,11 @@ export function removeFile(filename: string) {
   fs.unlinkSync(path.resolve(testDir, filename))
 }
 
+export function listAssets(base = '') {
+  const assetsDir = path.join(testDir, 'dist', base, 'assets')
+  return fs.readdirSync(assetsDir)
+}
+
 export function findAssetFile(match: string | RegExp, base = '') {
   const assetsDir = path.join(testDir, 'dist', base, 'assets')
   const files = fs.readdirSync(assetsDir)
@@ -82,6 +87,12 @@ export function findAssetFile(match: string | RegExp, base = '') {
     return file.match(match)
   })
   return file ? fs.readFileSync(path.resolve(assetsDir, file), 'utf-8') : ''
+}
+
+export function readManifest(base = '') {
+  return JSON.parse(
+    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8')
+  )
 }
 
 /**

@@ -16,7 +16,6 @@ import postcssrc from 'postcss-load-config'
 import {
   NormalizedOutputOptions,
   OutputChunk,
-  PluginContext,
   RenderedChunk,
   RollupError,
   SourceMap
@@ -31,7 +30,12 @@ import {
   PluginCreator
 } from 'postcss'
 import { ResolveFn, ViteDevServer } from '../'
-import { assetUrlRE, fileToDevUrl, urlToBuiltUrl } from './asset'
+import {
+  assetUrlRE,
+  fileToDevUrl,
+  registerAssetToChunk,
+  urlToBuiltUrl
+} from './asset'
 import MagicString from 'magic-string'
 import type {
   ImporterReturnType,
@@ -255,13 +259,45 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      // resolve asset URL placeholders to their built file URLs and perform
+      // minification if necessary
+      const process = async (
+        css: string,
+        {
+          inlined,
+          minify
+        }: {
+          inlined: boolean
+          minify: boolean
+        }
+      ) => {
+        // replace asset url references with resolved url.
+        const isRelativeBase = config.base === '' || config.base.startsWith('.')
+        css = css.replace(assetUrlRE, (_, fileId, postfix = '') => {
+          const filename = this.getFileName(fileId) + postfix
+          registerAssetToChunk(chunk, filename)
+          if (!isRelativeBase || inlined) {
+            // absoulte base or relative base but inlined (injected as style tag into
+            // index.html) use the base as-is
+            return config.base + filename
+          } else {
+            // relative base + extracted CSS - asset file will be in the same dir
+            return `./${path.posix.basename(filename)}`
+          }
+        })
+        if (minify && config.build.minify) {
+          css = await minifyCSS(css, config)
+        }
+        return css
+      }
+
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
         if (opts.format === 'es') {
-          chunkCSS = await processChunkCSS(chunkCSS, config, this, false)
+          chunkCSS = await process(chunkCSS, { inlined: false, minify: true })
           // emit corresponding css file
           const fileHandle = this.emitFile({
             name: chunk.name + '.css',
@@ -274,7 +310,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
         } else if (!config.build.ssr) {
           // legacy build, inline css
-          chunkCSS = await processChunkCSS(chunkCSS, config, this, true)
+          chunkCSS = await process(chunkCSS, { inlined: true, minify: true })
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
@@ -292,7 +328,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
       } else {
-        chunkCSS = await processChunkCSS(chunkCSS, config, this, false, false)
+        // non-split extracted CSS will be minified togethter
+        chunkCSS = await process(chunkCSS, { inlined: false, minify: false })
         outputToExtractedCSSMap.set(
           opts,
           (outputToExtractedCSSMap.get(opts) || '') + chunkCSS
@@ -661,32 +698,6 @@ function rewriteCssUrls(
     }
     return `url(${wrap}${await replacer(rawUrl)}${wrap})`
   })
-}
-
-async function processChunkCSS(
-  css: string,
-  config: ResolvedConfig,
-  pluginCtx: PluginContext,
-  isInlined: boolean,
-  minify = true
-): Promise<string> {
-  // replace asset url references with resolved url.
-  const isRelativeBase = config.base === '' || config.base.startsWith('.')
-  css = css.replace(assetUrlRE, (_, fileId, postfix = '') => {
-    const filename = pluginCtx.getFileName(fileId) + postfix
-    if (!isRelativeBase || isInlined) {
-      // absoulte base or relative base but inlined (injected as style tag into
-      // index.html) use the base as-is
-      return config.base + filename
-    } else {
-      // relative base + extracted CSS - asset file will be in the same dir
-      return `./${path.posix.basename(filename)}`
-    }
-  })
-  if (minify && config.build.minify) {
-    css = await minifyCSS(css, config)
-  }
-  return css
 }
 
 let CleanCSS: any
