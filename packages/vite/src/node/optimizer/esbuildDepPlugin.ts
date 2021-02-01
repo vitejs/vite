@@ -145,7 +145,7 @@ export function esbuildDepPlugin(
         return {
           loader: ext as Loader,
           contents,
-          resolveDir: isRunningWithYarnPnp ? undefined : root
+          resolveDir: root
         }
       })
 
