@@ -23,7 +23,7 @@ import {
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
-import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../constants'
+import { CLIENT_PUBLIC_PATH } from '../constants'
 import {
   ProcessOptions,
   Result,
@@ -31,7 +31,7 @@ import {
   PluginCreator
 } from 'postcss'
 import { ResolveFn, ViteDevServer } from '../'
-import { assetUrlRE, urlToBuiltUrl } from './asset'
+import { assetUrlRE, fileToDevUrl, urlToBuiltUrl } from './asset'
 import MagicString from 'magic-string'
 import type {
   ImporterReturnType,
@@ -114,18 +114,14 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = server
         ? (url, importer) => {
-            let replaced: string
             if (url.startsWith('/')) {
-              replaced = url
+              return config.base + url.slice(1)
             } else {
               const filePath = normalizePath(
                 path.resolve(path.dirname(importer || id), url)
               )
-              replaced = filePath.startsWith(config.root)
-                ? filePath.slice(config.root.length)
-                : `${FS_PREFIX}${filePath}`
+              return fileToDevUrl(filePath, config)
             }
-            return path.posix.join(config.base, replaced)
           }
         : (url, importer) => {
             return urlToBuiltUrl(url, importer || id, config, this)
