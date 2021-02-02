@@ -21,7 +21,7 @@ Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/
 
 ## Public Base Path
 
-- Related: [Asset Handling](./features#asset-handling)
+- Related: [Asset Handling](./assets)
 
 If you are deploying your project under a nested public path, simply specify the [`base` config option](/config/#base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
 

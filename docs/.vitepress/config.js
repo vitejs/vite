@@ -66,6 +66,10 @@ module.exports = {
               link: '/guide/dep-pre-bundling'
             },
             {
+              text: 'Static Asset Handling',
+              link: '/guide/assets'
+            },
+            {
               text: 'Building for Production',
               link: '/guide/build'
             },
