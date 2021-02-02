@@ -8,6 +8,7 @@ import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
 import { PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
+import { createHash } from 'crypto'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?/g
 
@@ -63,8 +64,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let s
       while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
-        const [full, fileHandle, postfix = ''] = match
-        const file = this.getFileName(fileHandle)
+        const [full, hash, postfix = ''] = match
+        // some internal plugins may still need to emit chunks (e.g. worker) so
+        // fallback to this.getFileName for that.
+        const file = getAssetFilename(hash, config) || this.getFileName(hash)
         registerAssetToChunk(chunk, file)
         const outputFilepath = config.base + file + postfix
         s.overwrite(
@@ -155,6 +158,15 @@ export function fileToDevUrl(id: string, config: ResolvedConfig) {
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
+const assetHashToFilenameMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, string>
+>()
+
+export function getAssetFilename(hash: string, config: ResolvedConfig) {
+  return assetHashToFilenameMap.get(config)?.get(hash)
+}
+
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
@@ -196,18 +208,41 @@ async function fileToBuiltUrl(
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
     // that uses runtime url sniffing and it can be verbose when targeting
-    // non-module format. For consistency, generate a marker here and replace
-    // with resolved url strings in renderChunk.
-    const fileId = pluginContext.emitFile({
-      name: path.basename(file),
-      type: 'asset',
-      source: content
-    })
-    url = `__VITE_ASSET__${fileId}__${postfix ? `${postfix}__` : ``}`
+    // non-module format. It also fails to cascade the asset content change
+    // into the chunk's hash, so we have to do our own content hashing here.
+    // https://bundlers.tooling.report/hashing/asset-cascade/
+    // https://github.com/rollup/rollup/issues/3415
+    let map = assetHashToFilenameMap.get(config)
+    if (!map) {
+      map = new Map()
+      assetHashToFilenameMap.set(config, map)
+    }
+
+    const contentHash = getAssetHash(content)
+    if (!map.has(contentHash)) {
+      const basename = path.basename(file)
+      const ext = path.extname(basename)
+      const fileName = path.posix.join(
+        config.build.assetsDir,
+        `${basename.slice(0, -ext.length)}.${contentHash}${ext}`
+      )
+      map.set(contentHash, fileName)
+      pluginContext.emitFile({
+        fileName,
+        type: 'asset',
+        source: content
+      })
+    }
+
+    url = `__VITE_ASSET__${contentHash}__${postfix ? `${postfix}__` : ``}`
   }
 
   cache.set(id, url)
   return url
+}
+
+function getAssetHash(content: Buffer) {
+  return createHash('sha256').update(content).digest('hex').slice(0, 8)
 }
 
 export async function urlToBuiltUrl(

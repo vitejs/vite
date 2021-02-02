@@ -31,6 +31,7 @@ import {
 } from 'postcss'
 import { ResolveFn, ViteDevServer } from '../'
 import {
+  getAssetFilename,
   assetUrlRE,
   fileToDevUrl,
   registerAssetToChunk,
@@ -273,8 +274,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ) => {
         // replace asset url references with resolved url.
         const isRelativeBase = config.base === '' || config.base.startsWith('.')
-        css = css.replace(assetUrlRE, (_, fileId, postfix = '') => {
-          const filename = this.getFileName(fileId) + postfix
+        css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+          const filename = getAssetFilename(fileHash, config) + postfix
           registerAssetToChunk(chunk, filename)
           if (!isRelativeBase || inlined) {
             // absoulte base or relative base but inlined (injected as style tag into

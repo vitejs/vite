@@ -7,7 +7,12 @@ import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
 import { ResolvedConfig } from '../config'
 import slash from 'slash'
 import MagicString from 'magic-string'
-import { checkPublicFile, assetUrlRE, urlToBuiltUrl } from './asset'
+import {
+  checkPublicFile,
+  assetUrlRE,
+  urlToBuiltUrl,
+  getAssetFilename
+} from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { polyfillId } from './dynamicImportPolyfill'
 import {
@@ -280,8 +285,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       for (const [id, html] of processedHtml) {
         // resolve asset url references
-        let result = html.replace(assetUrlRE, (_, fileId, postfix = '') => {
-          return config.base + this.getFileName(fileId) + postfix
+        let result = html.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+          return config.base + getAssetFilename(fileHash, config) + postfix
         })
 
         // find corresponding entry chunk
