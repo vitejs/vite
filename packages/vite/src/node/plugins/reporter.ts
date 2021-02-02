@@ -26,7 +26,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const chunkLimit = config.build.chunkSizeWarningLimit
 
   async function getCompressedSize(code: string | Uint8Array): Promise<string> {
-    if (config.build.ssr) {
+    if (config.build.ssr || !config.build.brotliSize) {
       return ''
     }
     return ` / brotli: ${(
