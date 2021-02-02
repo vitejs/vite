@@ -222,7 +222,7 @@ export default ({ command, mode }) => {
 ### assetsInclude
 
 - **Type:** `string | RegExp | (string | RegExp)[]`
-- **Related:** [Asset Handling](/guide/features#asset-handling)
+- **Related:** [Static Asset Handling](/guide/assets)
 
   Specify additional file types to be treated as static assets so that:
 
