@@ -234,7 +234,7 @@ export async function optimizeDeps(
     data.optimized[id] = {
       file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
       src: entry,
-      needsInterop: needsInterop(id, entry, idToExports[id], meta.outputs)
+      needsInterop: needsInterop(id, idToExports[id], meta.outputs)
     }
   }
 
@@ -254,7 +254,6 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 
 function needsInterop(
   id: string,
-  entry: string,
   exportsData: ExportsData,
   outputs: Record<string, any>
 ): boolean {
@@ -273,8 +272,9 @@ function needsInterop(
   const flatId = flattenId(id) + '.js'
   let generatedExports: string[] | undefined
   for (const output in outputs) {
-    if (normalizePath(output).endsWith(flatId)) {
+    if (normalizePath(output).endsWith('.vite/' + flatId)) {
       generatedExports = outputs[output].exports
+      break
     }
   }
 
