@@ -97,7 +97,7 @@ module.exports = function reactRefreshPlugin() {
 
   if (!window.__vite_plugin_react_preamble_installed__) {
     throw new Error(
-      "vite-plugin-react can't detect preamble. Something is wrong" +
+      "vite-plugin-react can't detect preamble. Something is wrong. " +
       "See https://github.com/vitejs/vite-plugin-react/pull/11#discussion_r430879201"
     );
   }
