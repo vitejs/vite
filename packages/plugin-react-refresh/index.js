@@ -32,9 +32,9 @@ window.__vite_plugin_react_preamble_installed__ = true
 /**
  * Transform plugin for transforming and injecting per-file refresh code.
  *
- * @returns {import('vite').Plugin}
+ * @type {import('.').default}
  */
-module.exports = function reactRefreshPlugin() {
+function reactRefreshPlugin(opts) {
   let shouldSkip = false
   let base = '/'
 
@@ -75,6 +75,11 @@ module.exports = function reactRefreshPlugin() {
 
       const isReasonReact = id.endsWith('.bs.js')
       const result = transformSync(code, {
+        parserOpts: {
+          sourceType: 'module',
+          allowAwaitOutsideFunction: true,
+          plugins: opts && opts.parserPlugins
+        },
         plugins: [
           require('@babel/plugin-syntax-import-meta'),
           [require('react-refresh/babel'), { skipEnvCheck: true }]
@@ -97,7 +102,7 @@ module.exports = function reactRefreshPlugin() {
 
   if (!window.__vite_plugin_react_preamble_installed__) {
     throw new Error(
-      "vite-plugin-react can't detect preamble. Something is wrong" +
+      "vite-plugin-react can't detect preamble. Something is wrong. " +
       "See https://github.com/vitejs/vite-plugin-react/pull/11#discussion_r430879201"
     );
   }
@@ -151,8 +156,6 @@ module.exports = function reactRefreshPlugin() {
   }
 }
 
-module.exports.preambleCode = preambleCode
-
 /**
  * @param {import('@babel/core').BabelFileResult['ast']} ast
  */
@@ -181,3 +184,7 @@ function isRefreshBoundary(ast) {
 function isComponentishName(name) {
   return typeof name === 'string' && name[0] >= 'A' && name[0] <= 'Z'
 }
+
+module.exports = reactRefreshPlugin
+reactRefreshPlugin['default'] = reactRefreshPlugin
+reactRefreshPlugin.preambleCode = preambleCode

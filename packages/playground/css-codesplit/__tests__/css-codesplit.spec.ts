@@ -1,6 +1,4 @@
-import fs from 'fs'
-import path from 'path'
-import { findAssetFile, getColor, isBuild, testDir } from '../../testUtils'
+import { findAssetFile, getColor, isBuild, readManifest } from '../../testUtils'
 
 test('should load both stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
@@ -15,9 +13,7 @@ if (isBuild) {
   })
 
   test('should generate correct manifest', async () => {
-    const manifest = JSON.parse(
-      fs.readFileSync(path.join(testDir, 'dist', 'manifest.json'), 'utf-8')
-    )
+    const manifest = readManifest()
     expect(manifest['index.html'].css.length).toBe(2)
     expect(manifest['other.js'].css.length).toBe(1)
   })

@@ -1,5 +1,5 @@
 {
-  "name": "optimize-deps-linked",
+  "name": "dep-linked",
   "version": "0.0.0",
   "main": "index.js",
   "dependencies": {

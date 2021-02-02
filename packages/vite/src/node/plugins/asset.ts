@@ -8,12 +8,16 @@ import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
 import { PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
+import { createHash } from 'crypto'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?/g
 
 // urls in JS must be quoted as strings, so when replacing them we need
 // a different regex
 const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?"/g
+
+const rawRE = /(\?|&)raw(?:&|$)/
+const urlRE = /(\?|&)url(?:&|$)/
 
 export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
@@ -37,12 +41,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      if (!config.assetsInclude(cleanUrl(id))) {
-        return
-      }
-
       // raw requests, read from disk
-      if (/(\?|&)raw\b/.test(id)) {
+      if (rawRE.test(id)) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
         // raw query, read file and return as string
         return `export default ${JSON.stringify(
@@ -50,23 +50,25 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         )}`
       }
 
+      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+        return
+      }
+
+      id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
       const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },
 
     renderChunk(code, chunk) {
-      let emitted = chunkToEmittedAssetsMap.get(chunk)
       let match
       let s
       while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
-        const [full, fileHandle, postfix = ''] = match
-        const file = this.getFileName(fileHandle)
-        if (!emitted) {
-          emitted = new Set()
-          chunkToEmittedAssetsMap.set(chunk, emitted)
-        }
-        emitted.add(file)
+        const [full, hash, postfix = ''] = match
+        // some internal plugins may still need to emit chunks (e.g. worker) so
+        // fallback to this.getFileName for that.
+        const file = getAssetFilename(hash, config) || this.getFileName(hash)
+        registerAssetToChunk(chunk, file)
         const outputFilepath = config.base + file + postfix
         s.overwrite(
           match.index,
@@ -100,6 +102,15 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
+export function registerAssetToChunk(chunk: RenderedChunk, file: string) {
+  let emitted = chunkToEmittedAssetsMap.get(chunk)
+  if (!emitted) {
+    emitted = new Set()
+    chunkToEmittedAssetsMap.set(chunk, emitted)
+  }
+  emitted.add(cleanUrl(file))
+}
+
 export function checkPublicFile(
   url: string,
   { publicDir }: ResolvedConfig
@@ -129,7 +140,7 @@ export function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, config: ResolvedConfig) {
+export function fileToDevUrl(id: string, config: ResolvedConfig) {
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir, keep the url as-is
@@ -146,6 +157,15 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
 }
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+
+const assetHashToFilenameMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, string>
+>()
+
+export function getAssetFilename(hash: string, config: ResolvedConfig) {
+  return assetHashToFilenameMap.get(config)?.get(hash)
+}
 
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
@@ -174,7 +194,6 @@ async function fileToBuiltUrl(
   const file = cleanUrl(id)
   const { search, hash } = parseUrl(id)
   const postfix = (search || '') + (hash || '')
-  // TODO preserve fragment hash or queries
   const content = await fsp.readFile(file)
 
   let url
@@ -189,18 +208,41 @@ async function fileToBuiltUrl(
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
     // that uses runtime url sniffing and it can be verbose when targeting
-    // non-module format. For consistency, generate a marker here and replace
-    // with resolved url strings in renderChunk.
-    const fileId = pluginContext.emitFile({
-      name: path.basename(file),
-      type: 'asset',
-      source: content
-    })
-    url = `__VITE_ASSET__${fileId}__${postfix ? `${postfix}__` : ``}`
+    // non-module format. It also fails to cascade the asset content change
+    // into the chunk's hash, so we have to do our own content hashing here.
+    // https://bundlers.tooling.report/hashing/asset-cascade/
+    // https://github.com/rollup/rollup/issues/3415
+    let map = assetHashToFilenameMap.get(config)
+    if (!map) {
+      map = new Map()
+      assetHashToFilenameMap.set(config, map)
+    }
+
+    const contentHash = getAssetHash(content)
+    if (!map.has(contentHash)) {
+      const basename = path.basename(file)
+      const ext = path.extname(basename)
+      const fileName = path.posix.join(
+        config.build.assetsDir,
+        `${basename.slice(0, -ext.length)}.${contentHash}${ext}`
+      )
+      map.set(contentHash, fileName)
+      pluginContext.emitFile({
+        fileName,
+        type: 'asset',
+        source: content
+      })
+    }
+
+    url = `__VITE_ASSET__${contentHash}__${postfix ? `${postfix}__` : ``}`
   }
 
   cache.set(id, url)
   return url
+}
+
+function getAssetHash(content: Buffer) {
+  return createHash('sha256').update(content).digest('hex').slice(0, 8)
 }
 
 export async function urlToBuiltUrl(

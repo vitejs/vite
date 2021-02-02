@@ -1,4 +1,12 @@
-import { findAssetFile, getBg, getColor, isBuild } from '../../testUtils'
+import { createHash } from 'crypto'
+import {
+  findAssetFile,
+  getBg,
+  getColor,
+  isBuild,
+  listAssets,
+  readManifest
+} from '../../testUtils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
@@ -121,3 +129,29 @@ describe('svg fragments', () => {
 test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
+
+test('?url import', async () => {
+  const src = `console.log('hi')\n`
+  expect(await page.textContent('.url')).toMatch(
+    isBuild
+      ? `data:application/javascript;base64,${Buffer.from(src).toString(
+          'base64'
+        )}`
+      : `/foo/foo.js`
+  )
+})
+
+if (isBuild) {
+  test('manifest', async () => {
+    const manifest = readManifest('foo')
+    const entry = manifest['index.html']
+
+    for (const file of listAssets('foo')) {
+      if (file.endsWith('.css')) {
+        expect(entry.css).toContain(`assets/${file}`)
+      } else if (!file.endsWith('.js')) {
+        expect(entry.assets).toContain(`assets/${file}`)
+      }
+    }
+  })
+}

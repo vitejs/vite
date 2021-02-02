@@ -1,3 +1,5 @@
+import { editFile, getColor, untilUpdated } from '../../testUtils'
+
 test('fs', async () => {
   expect(await page.textContent('.fs')).toMatch('[success] alias to fs path')
 })
@@ -18,8 +20,16 @@ test('dependency', async () => {
   expect(await page.textContent('.dep')).toMatch('[success] out of root')
 })
 
-test('from html', async () => {
-  expect(await page.textContent('.from-html')).toMatch('[success] from html')
+test('js via script src', async () => {
+  expect(await page.textContent('.from-script-src')).toMatch(
+    '[success] from script src'
+  )
+})
+
+test('css via link', async () => {
+  expect(await getColor('body')).toBe('grey')
+  editFile('dir/test.css', (code) => code.replace('grey', 'red'))
+  await untilUpdated(() => getColor('body'), 'red')
 })
 
 test('optimized dep', async () => {

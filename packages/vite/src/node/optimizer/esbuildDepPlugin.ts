@@ -1,6 +1,6 @@
 import path from 'path'
 import { Loader, Plugin } from 'esbuild'
-import { knownAssetTypes } from '../constants'
+import { KNOWN_ASSET_TYPES } from '../constants'
 import { ResolvedConfig } from '..'
 import { isRunningWithYarnPnp, flattenId, normalizePath } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
@@ -18,7 +18,7 @@ const externalTypes = [
   // known SFC types
   'vue',
   'svelte',
-  ...knownAssetTypes
+  ...KNOWN_ASSET_TYPES
 ]
 
 export function esbuildDepPlugin(
@@ -30,11 +30,19 @@ export function esbuildDepPlugin(
 
   const resolve = (
     id: string,
-    importer: string
+    importer: string,
+    resolveDir?: string
   ): Promise<string | undefined> => {
-    // map importer ids to file paths for correct resolution
-    importer = importer in qualified ? qualified[importer] : importer
-    return _resolve(id, importer)
+    let _importer
+    // explicit resolveDir - this is passed only during yarn pnp resolve for
+    // entries
+    if (resolveDir) {
+      _importer = normalizePath(path.join(resolveDir, '*'))
+    } else {
+      // map importer ids to file paths for correct resolution
+      _importer = importer in qualified ? qualified[importer] : importer
+    }
+    return _resolve(id, _importer)
   }
 
   return {
@@ -122,7 +130,7 @@ export function esbuildDepPlugin(
         const [imports, exports] = exportsData[id]
         if (!imports.length && !exports.length) {
           // cjs
-          contents += `import d from "${relativePath}";export default d;`
+          contents += `export default require("${relativePath}");`
         } else {
           if (exports.includes('default')) {
             contents += `import d from "${relativePath}";export default d;`
@@ -158,9 +166,13 @@ export function esbuildDepPlugin(
 
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
-        build.onResolve({ filter: /.*/ }, async ({ path, importer }) => ({
-          path: await resolve(path, importer)
-        }))
+        build.onResolve(
+          { filter: /.*/ },
+          async ({ path, importer, resolveDir }) => ({
+            // pass along resolveDir for entries
+            path: await resolve(path, importer, resolveDir)
+          })
+        )
         build.onLoad({ filter: /.*/ }, async (args) => ({
           contents: await require('fs').promises.readFile(args.path),
           loader: 'default'

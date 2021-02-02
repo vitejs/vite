@@ -349,7 +349,9 @@ async function linkSrcToDescriptor(
 ) {
   const srcFile =
     (await pluginContext.resolve(src, descriptor.filename))?.id || src
-  setDescriptor(srcFile, descriptor)
+  // #1812 if the src points to a dep file, the resolved id may contain a
+  // version query.
+  setDescriptor(srcFile.replace(/\?.*$/, ''), descriptor)
 }
 
 // these are built-in query parameters so should be ignored

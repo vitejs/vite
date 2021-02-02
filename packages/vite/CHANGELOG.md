@@ -1,3 +1,33 @@
+# [2.0.0-beta.61](https://github.com/vitejs/vite/compare/v2.0.0-beta.60...v2.0.0-beta.61) (2021-02-01)
+
+
+### Bug Fixes
+
+* **less:** fix less [@import](https://github.com/import) url rebasing ([41783fa](https://github.com/vitejs/vite/commit/41783fade0604adb98e468d4a4f8b50c9624899a)), closes [#1834](https://github.com/vitejs/vite/issues/1834)
+* **manifest:** include assets referenced via CSS in manifest entries ([34894a2](https://github.com/vitejs/vite/commit/34894a2c41871a08a86fb9a1852563bc698d9c00)), closes [#1827](https://github.com/vitejs/vite/issues/1827)
+* yarn pnp resolveDir ([9c6edef](https://github.com/vitejs/vite/commit/9c6edefd45634becbd51c1bf25b735770aeb752a))
+* **optimizer:** fix cjs export interop for webpacked output ([4b6ebc3](https://github.com/vitejs/vite/commit/4b6ebc3f3b117cbe45aff55746dd5f588dfe1587)), closes [#1830](https://github.com/vitejs/vite/issues/1830)
+* **ssr:** do not inject hmr timestamp when transforming for ssr ([#1825](https://github.com/vitejs/vite/issues/1825)) ([8ace645](https://github.com/vitejs/vite/commit/8ace6456b682a9ae7d550225817f3270524d96a3))
+
+
+
+# [2.0.0-beta.60](https://github.com/vitejs/vite/compare/v2.0.0-beta.59...v2.0.0-beta.60) (2021-01-31)
+
+
+### Bug Fixes
+
+* **hmr:** do not update on file unlink when there are no affected modules ([#1818](https://github.com/vitejs/vite/issues/1818)) ([59fe913](https://github.com/vitejs/vite/commit/59fe913f122696ed94ac3f78655576fe7eef98d6))
+* **optimizer:** entry resolving for yarn pnp ([febff7b](https://github.com/vitejs/vite/commit/febff7b837a09eec64bfe8a7cf380dd8001bba67)), closes [#1813](https://github.com/vitejs/vite/issues/1813)
+* **optimizer:** fix cjs interop for packages that cannot be ([3b85296](https://github.com/vitejs/vite/commit/3b852964344e4b7e3b45b3af30f27baa89660261)), closes [#1821](https://github.com/vitejs/vite/issues/1821)
+* **scan:** skip non-absolute resolved paths during scan ([f635971](https://github.com/vitejs/vite/commit/f6359716ae9f3b206cca1e63b6c1240d3bbc74fa))
+
+
+### Features
+
+* support ?url special query ([0006e89](https://github.com/vitejs/vite/commit/0006e89af419472a3c4c3f0f5328242aade2939a))
+
+
+
 # [2.0.0-beta.59](https://github.com/vitejs/vite/compare/v2.0.0-beta.58...v2.0.0-beta.59) (2021-01-30)
 
 

@@ -5,6 +5,10 @@ import { untilUpdated, isBuild, testDir } from '../../testUtils'
 test('normal', async () => {
   await page.click('.ping')
   await untilUpdated(() => page.textContent('.pong'), 'pong')
+  await untilUpdated(
+    () => page.textContent('.mode'),
+    isBuild ? 'production' : 'development'
+  )
 })
 
 test('inlined', async () => {

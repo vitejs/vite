@@ -3,7 +3,7 @@ import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { Loader, Plugin } from 'esbuild'
-import { knownAssetTypes } from '../constants'
+import { KNOWN_ASSET_TYPES, SPECIAL_QUERY_RE } from '../constants'
 import {
   createDebugger,
   emptyDir,
@@ -11,11 +11,8 @@ import {
   isObject,
   cleanUrl,
   externalRE,
-  dataUrlRE,
-  isExternalUrl,
-  isDataUrl
+  dataUrlRE
 } from '../utils'
-import { browserExternalId } from '../plugins/resolve'
 import {
   createPluginContainer,
   PluginContainer
@@ -189,8 +186,8 @@ function esbuildScanPlugin(
           const langMatch = openTag.match(langRE)
           const lang =
             langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
-          if (lang === 'ts') {
-            loader = 'ts'
+          if (lang === 'ts' || lang === 'tsx') {
+            loader = lang
           }
           if (srcMatch) {
             const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
@@ -267,13 +264,13 @@ function esbuildScanPlugin(
       // known asset types
       build.onResolve(
         {
-          filter: new RegExp(`\\.(${knownAssetTypes.join('|')})$`)
+          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`)
         },
         externalUnlessEntry
       )
 
       // known vite query types: ?worker, ?raw
-      build.onResolve({ filter: /\?(worker|raw)\b/ }, ({ path }) => ({
+      build.onResolve({ filter: SPECIAL_QUERY_RE }, ({ path }) => ({
         path,
         external: true
       }))
@@ -345,20 +342,16 @@ async function transformGlob(source: string, importer: string) {
 }
 
 export function shouldExternalizeDep(resolvedId: string, rawId?: string) {
+  // not a valid file path
+  if (!path.isAbsolute(resolvedId)) {
+    return true
+  }
   // virtual id
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // browser external
-  if (resolvedId.startsWith(browserExternalId)) {
-    return true
-  }
   // resovled is not a js type
   if (!jsTypesRE.test(resolvedId)) {
-    return true
-  }
-  // external or data url
-  if (isExternalUrl(resolvedId) || isDataUrl(resolvedId)) {
     return true
   }
 }

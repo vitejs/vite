@@ -16,14 +16,13 @@ import postcssrc from 'postcss-load-config'
 import {
   NormalizedOutputOptions,
   OutputChunk,
-  PluginContext,
   RenderedChunk,
   RollupError,
   SourceMap
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
-import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../constants'
+import { CLIENT_PUBLIC_PATH } from '../constants'
 import {
   ProcessOptions,
   Result,
@@ -31,7 +30,13 @@ import {
   PluginCreator
 } from 'postcss'
 import { ResolveFn, ViteDevServer } from '../'
-import { assetUrlRE, urlToBuiltUrl } from './asset'
+import {
+  getAssetFilename,
+  assetUrlRE,
+  fileToDevUrl,
+  registerAssetToChunk,
+  urlToBuiltUrl
+} from './asset'
 import MagicString from 'magic-string'
 import type {
   ImporterReturnType,
@@ -114,18 +119,14 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = server
         ? (url, importer) => {
-            let replaced: string
             if (url.startsWith('/')) {
-              replaced = url
+              return config.base + url.slice(1)
             } else {
               const filePath = normalizePath(
                 path.resolve(path.dirname(importer || id), url)
               )
-              replaced = filePath.startsWith(config.root)
-                ? filePath.slice(config.root.length)
-                : `${FS_PREFIX}${filePath}`
+              return fileToDevUrl(filePath, config)
             }
-            return path.posix.join(config.base, replaced)
           }
         : (url, importer) => {
             return urlToBuiltUrl(url, importer || id, config, this)
@@ -259,13 +260,45 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      // resolve asset URL placeholders to their built file URLs and perform
+      // minification if necessary
+      const process = async (
+        css: string,
+        {
+          inlined,
+          minify
+        }: {
+          inlined: boolean
+          minify: boolean
+        }
+      ) => {
+        // replace asset url references with resolved url.
+        const isRelativeBase = config.base === '' || config.base.startsWith('.')
+        css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+          const filename = getAssetFilename(fileHash, config) + postfix
+          registerAssetToChunk(chunk, filename)
+          if (!isRelativeBase || inlined) {
+            // absoulte base or relative base but inlined (injected as style tag into
+            // index.html) use the base as-is
+            return config.base + filename
+          } else {
+            // relative base + extracted CSS - asset file will be in the same dir
+            return `./${path.posix.basename(filename)}`
+          }
+        })
+        if (minify && config.build.minify) {
+          css = await minifyCSS(css, config)
+        }
+        return css
+      }
+
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
         if (opts.format === 'es') {
-          chunkCSS = await processChunkCSS(chunkCSS, config, this, false)
+          chunkCSS = await process(chunkCSS, { inlined: false, minify: true })
           // emit corresponding css file
           const fileHandle = this.emitFile({
             name: chunk.name + '.css',
@@ -278,7 +311,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
         } else if (!config.build.ssr) {
           // legacy build, inline css
-          chunkCSS = await processChunkCSS(chunkCSS, config, this, true)
+          chunkCSS = await process(chunkCSS, { inlined: true, minify: true })
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
@@ -296,7 +329,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
       } else {
-        chunkCSS = await processChunkCSS(chunkCSS, config, this, false, false)
+        // non-split extracted CSS will be minified togethter
+        chunkCSS = await process(chunkCSS, { inlined: false, minify: false })
         outputToExtractedCSSMap.set(
           opts,
           (outputToExtractedCSSMap.get(opts) || '') + chunkCSS
@@ -667,32 +701,6 @@ function rewriteCssUrls(
   })
 }
 
-async function processChunkCSS(
-  css: string,
-  config: ResolvedConfig,
-  pluginCtx: PluginContext,
-  isInlined: boolean,
-  minify = true
-): Promise<string> {
-  // replace asset url references with resolved url.
-  const isRelativeBase = config.base === '' || config.base.startsWith('.')
-  css = css.replace(assetUrlRE, (_, fileId, postfix = '') => {
-    const filename = pluginCtx.getFileName(fileId) + postfix
-    if (!isRelativeBase || isInlined) {
-      // absoulte base or relative base but inlined (injected as style tag into
-      // index.html) use the base as-is
-      return config.base + filename
-    } else {
-      // relative base + extracted CSS - asset file will be in the same dir
-      return `./${path.posix.basename(filename)}`
-    }
-  })
-  if (minify && config.build.minify) {
-    css = await minifyCSS(css, config)
-  }
-  return css
-}
-
 let CleanCSS: any
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
@@ -704,13 +712,16 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
 
   if (res.errors && res.errors.length) {
     config.logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
-    // TODO format this
     throw res.errors[0]
   }
 
-  if (res.warnings && res.warnings.length) {
+  // do not warn on remote @imports
+  const warnings =
+    res.warnings &&
+    res.warnings.filter((m: string) => !m.includes('remote @import'))
+  if (warnings && warnings.length) {
     config.logger.warn(
-      chalk.yellow(`warnings when minifying css:\n${res.warnings}`)
+      chalk.yellow(`warnings when minifying css:\n${warnings.join('\n')}`)
     )
   }
 
@@ -881,8 +892,10 @@ function createViteLessPlugin(
   if (!ViteLessManager) {
     ViteLessManager = class ViteManager extends less.FileManager {
       resolvers
-      constructor(resolvers: CSSResolvers) {
+      rootFile
+      constructor(rootFile: string, resolvers: CSSResolvers) {
         super()
+        this.rootFile = rootFile
         this.resolvers = resolvers
       }
       supports() {
@@ -902,7 +915,7 @@ function createViteLessPlugin(
           path.join(dir, '*')
         )
         if (resolved) {
-          const result = await rebaseUrls(resolved, rootFile)
+          const result = await rebaseUrls(resolved, this.rootFile)
           let contents
           if (result && 'contents' in result) {
             contents = result.contents
@@ -922,7 +935,7 @@ function createViteLessPlugin(
 
   return {
     install(_, pluginManager) {
-      pluginManager.addFileManager(new ViteLessManager(resolvers))
+      pluginManager.addFileManager(new ViteLessManager(rootFile, resolvers))
     },
     minVersion: [3, 0, 0]
   }
