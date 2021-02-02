@@ -1,7 +1,7 @@
-import { msg } from './workerImport'
+import { msg, mode } from './workerImport'
 
 self.onmessage = (e) => {
   if (e.data === 'ping') {
-    self.postMessage(msg)
+    self.postMessage({ msg, mode })
   }
 }

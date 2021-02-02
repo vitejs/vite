@@ -1,36 +1,14 @@
 import { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import { ErrorOverlay, overlayId } from './overlay'
-
+import './env'
 // injected by the hmr plugin when served
 declare const __ROOT__: string
 declare const __BASE__: string
-declare const __MODE__: string
-declare const __DEFINES__: Record<string, any>
 declare const __HMR_PROTOCOL__: string
 declare const __HMR_HOSTNAME__: string
 declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
-
-  // shim process
-;(window as any).process = (window as any).process || {}
-;(window as any).process.env = (window as any).process.env || {}
-;(window as any).process.env.NODE_ENV = __MODE__
-
-// assign defines
-const defines = __DEFINES__
-Object.keys(defines).forEach((key) => {
-  const segs = key.split('.')
-  let target = window as any
-  for (let i = 0; i < segs.length; i++) {
-    const seg = segs[i]
-    if (i === segs.length - 1) {
-      target[seg] = defines[key]
-    } else {
-      target = target[seg] || (target[seg] = {})
-    }
-  }
-})
 
 console.log('[vite] connecting...')
 

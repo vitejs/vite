@@ -1,7 +1,7 @@
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
-import { CLIENT_ENTRY } from '../constants'
+import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
 import { normalizePath } from '../utils'
 
 // ids in transform are normalized to unix style
@@ -15,7 +15,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:client-inject',
     transform(code, id) {
-      if (id === normalizedClientEntry) {
+      if (id === normalizedClientEntry || normalizePath(ENV_ENTRY)) {
         let options = config.server.hmr
         options = options && typeof options !== 'boolean' ? options : {}
         const host = options.host || null
