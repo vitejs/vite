@@ -14,8 +14,29 @@ import chalk from 'chalk'
 /**
  * @type { import('rollup').RollupOptions }
  */
+const envConfig = {
+  input: path.resolve(__dirname, 'src/client/env.ts'),
+  plugins: [
+    typescript({
+      target: 'es2018',
+      include: ['src/client/env.ts'],
+      baseUrl: path.resolve(__dirname, 'src/env'),
+      paths: {
+        'types/*': ['../../types/*']
+      }
+    })
+  ],
+  output: {
+    dir: path.resolve(__dirname, 'dist/client')
+  }
+}
+
+/**
+ * @type { import('rollup').RollupOptions }
+ */
 const clientConfig = {
   input: path.resolve(__dirname, 'src/client/client.ts'),
+  external: ['./env'],
   plugins: [
     typescript({
       target: 'es2018',
@@ -318,4 +339,4 @@ function licensePlugin() {
   })
 }
 
-export default [clientConfig, nodeConfig, terserConfig]
+export default [envConfig, clientConfig, nodeConfig, terserConfig]

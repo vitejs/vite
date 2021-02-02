@@ -3,17 +3,19 @@ import { Plugin } from '../plugin'
 import { parse as parseUrl } from 'url'
 import qs, { ParsedUrlQuery } from 'querystring'
 import { fileToUrl } from './asset'
-import { cleanUrl } from '../utils'
+import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
+import { ENV_PUBLIC_PATH } from '../constants'
 
-function isWorkerRequest(id: string): ParsedUrlQuery | false {
+function parseWorkerRequest(id: string): ParsedUrlQuery | null {
   const { search } = parseUrl(id)
   if (!search) {
-    return false
+    return null
   }
-  const query = qs.parse(search.slice(1))
-  return query.worker != null ? query : false
+  return qs.parse(search.slice(1))
 }
+
+const WorkerFileId = 'worker_file'
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -22,20 +24,26 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker',
 
     load(id) {
-      if (isBuild && isWorkerRequest(id)) {
+      if (isBuild && parseWorkerRequest(id)?.worker != null) {
         return ''
       }
     },
 
     async transform(_, id) {
-      const query = isWorkerRequest(id)
-      if (!query) {
+      const query = parseWorkerRequest(id)
+      if (query && query[WorkerFileId] != null) {
+        return {
+          code: `import '${ENV_PUBLIC_PATH}'\n` + _
+        }
+      }
+      if (query == null || (query && query.worker == null)) {
         return
       }
 
       let url: string
       if (config.command === 'serve') {
         url = await fileToUrl(cleanUrl(id), config, this)
+        url = injectQuery(url, WorkerFileId)
       } else {
         if (query.inline != null) {
           // bundle the file as entry to support imports and inline as base64
