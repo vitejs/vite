@@ -70,8 +70,9 @@ In a project where Vite is installed, you can use the `vite` binary in your npm 
 ```json
 {
   "scripts": {
-    "dev": "vite",
-    "build": "vite build"
+    "dev": "vite",          // start dev server
+    "build": "vite build",  // build for production
+    "serve": "vite preview" // locally preview production build
   }
 }
 ```
