@@ -1,3 +1,12 @@
+## [1.2.1](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.2.0...plugin-react-refresh@1.2.1) (2021-02-02)
+
+
+### Bug Fixes
+
+* **plugin-react-refresh:** avoid using optional chaining for Node 12 compat ([9d9fa17](https://github.com/vitejs/vite/commit/9d9fa1787558f3dcb1866644c0ebbfaa3f208e5d)), closes [#1851](https://github.com/vitejs/vite/issues/1851)
+
+
+
 # [1.2.0](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.1.3...plugin-react-refresh@1.2.0) (2021-02-02)
 
 
