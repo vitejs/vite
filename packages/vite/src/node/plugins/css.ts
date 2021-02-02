@@ -711,13 +711,16 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
 
   if (res.errors && res.errors.length) {
     config.logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
-    // TODO format this
     throw res.errors[0]
   }
 
-  if (res.warnings && res.warnings.length) {
+  // do not warn on remote @imports
+  const warnings =
+    res.warnings &&
+    res.warnings.filter((m: string) => !m.includes('remote @import'))
+  if (warnings && warnings.length) {
     config.logger.warn(
-      chalk.yellow(`warnings when minifying css:\n${res.warnings}`)
+      chalk.yellow(`warnings when minifying css:\n${warnings.join('\n')}`)
     )
   }
 
