@@ -1,14 +1,8 @@
 # Features
 
-At the very basic level, developing using Vite is not that much different from using a static file server. However, Vite provides many enhancements over native ESM imports to support
+At the very basic level, developing using Vite is not that much different from using a static file server. However, Vite provides many enhancements over native ESM imports to support various features that are typically seen in bundler-based setups.
 
-## Hot Module Replacement
-
-Vite provides an [HMR API](./api-hmr) over native ESM. Frameworks with HMR capabilities can leverage the API to provide instant, precise updates without reloading the page or blowing away application state. Vite provides first-party HMR integrations for [Vue Single File Components](https://github.com/vitejs/vite/tree/main/packages/plugin-vue) and [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh). There are also official integrations for Preact via [@prefresh/vite](https://github.com/JoviDeCroock/prefresh/tree/main/packages/vite).
-
-Note you don't need to manually set these up - when you [create an app via `@vitejs/create-app`](./), the selected templates would have these pre-configured for you already.
-
-## NPM Dependency Resolving
+## NPM Dependency Resolving and Pre-Bundling
 
 Native ES imports do not support bare module imports like the following:
 
@@ -16,11 +10,21 @@ Native ES imports do not support bare module imports like the following:
 import { someMethod } from 'my-dep'
 ```
 
-The above will throw an error in the browser. Vite detects such bare module imports in all served `.js` files and rewrites them to resolved paths like `/node_modules/my-dep/dist/my-dep.js?v=1.0.0` so that the browser can handle them properly.
+The above will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
 
-**Dependency Caching**
+1. [Pre-bundle](./dep-rep-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](http://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
 
-Resolved dependency requests are strongly cached with headers `max-age=31536000,immutable` to improve page reload performance during dev. Once cached, these requests will never hit the dev server again. They are auto invalidated by the appended version query if a different version is installed. If you made manual local edits to your dependencies, you can temporarily disable cache via your browser devtools and reload the page.
+2. Rewrite the imports to valid URLs like `/node_modules/.vite/my-dep.js?v=f3sf2ebd` so that the browser can import them properly.
+
+**Dependencies are Strongly Cached**
+
+Vite caches dependency requests via HTTP headers, so if you wish to locally edit/debug a dependency, follow the steps [here](./dep-pre-bundling#browser-cache).
+
+## Hot Module Replacement
+
+Vite provides an [HMR API](./api-hmr) over native ESM. Frameworks with HMR capabilities can leverage the API to provide instant, precise updates without reloading the page or blowing away application state. Vite provides first-party HMR integrations for [Vue Single File Components](https://github.com/vitejs/vite/tree/main/packages/plugin-vue) and [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh). There are also official integrations for Preact via [@prefresh/vite](https://github.com/JoviDeCroock/prefresh/tree/main/packages/vite).
+
+Note you don't need to manually set these up - when you [create an app via `@vitejs/create-app`](./), the selected templates would have these pre-configured for you already.
 
 ## TypeScript
 
@@ -174,10 +178,10 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 - Assets that are not included in the internal list or in `assetsInclude`, can be manually imported as an URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://houdini.how/usage).
 
-```js
-import workletURL from "extra-scalloped-border/worklet.js?url";
-CSS.paintWorklet.addModule(workletURL);
-```
+    ```js
+    import workletURL from 'extra-scalloped-border/worklet.js?url'
+    CSS.paintWorklet.addModule(workletURL)
+    ```
 
 ### The `public` Directory
 
@@ -208,8 +212,6 @@ import { field } from './example.json'
 ```
 
 ## Glob Import
-
-> Requires ^2.0.0-beta.17
 
 Vite supports importing multiple modules from the file system via the special `import.meta.glob` function:
 
