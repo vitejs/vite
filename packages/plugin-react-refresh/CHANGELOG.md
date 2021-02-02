@@ -1,3 +1,12 @@
+# [1.2.0](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.1.3...plugin-react-refresh@1.2.0) (2021-02-02)
+
+
+### Features
+
+* **plugin-react-refresh:** allow specifying additional parser plugins ([435da60](https://github.com/vitejs/vite/commit/435da60785aac2d1336cf62e3c5335523606fd7a))
+
+
+
 ## [1.1.3](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.1.2...plugin-react-refresh@1.1.3) (2021-01-29)
 
 
