@@ -78,7 +78,7 @@ function reactRefreshPlugin(opts) {
         parserOpts: {
           sourceType: 'module',
           allowAwaitOutsideFunction: true,
-          plugins: opts?.parserPlugins
+          plugins: opts && opts.parserPlugins
         },
         plugins: [
           require('@babel/plugin-syntax-import-meta'),
