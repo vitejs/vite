@@ -1,3 +1,26 @@
+# [2.0.0-beta.63](https://github.com/vitejs/vite/compare/v2.0.0-beta.62...v2.0.0-beta.63) (2021-02-03)
+
+
+### Bug Fixes
+
+* **css:** hoist external [@import](https://github.com/import) in concatenated css ([000ee62](https://github.com/vitejs/vite/commit/000ee62ef41e4964d1002ab7862303cec0419c47)), closes [#1845](https://github.com/vitejs/vite/issues/1845)
+* **css:** respect sass partial import convention ([cb7b6be](https://github.com/vitejs/vite/commit/cb7b6becd0a566c58aca6cc47ae785ac2c4b4482))
+* **vite:** close server and exit if stdin ends ([#1857](https://github.com/vitejs/vite/issues/1857)) ([b065ede](https://github.com/vitejs/vite/commit/b065ede3cca3bc72d3bb3e6f9cd945d1b36ccb42))
+* consistently use mode for NODE_ENV in deps ([cd13ef0](https://github.com/vitejs/vite/commit/cd13ef009abd23d2676dda470638c81895034a91))
+* do not shim process with actual object ([8ad7ecd](https://github.com/vitejs/vite/commit/8ad7ecd1029bdc0b47e55877db10ac630829c7e5))
+* make ssr external behavior consistent between dev/build ([e089eff](https://github.com/vitejs/vite/commit/e089eff8f8108fa5463e2e42e16244f7edfd5a1e))
+* only close if http server has listened ([94a8042](https://github.com/vitejs/vite/commit/94a804233682581c0f920ed5c0d42aa85ea3f163)), closes [#1855](https://github.com/vitejs/vite/issues/1855)
+* **scan:** handle import glob in jsx/tsx files ([24695fe](https://github.com/vitejs/vite/commit/24695fe47727b7b4e3ac85bb389477f673c57c18))
+* **ssr:** improve ssr external heuristics ([928fc33](https://github.com/vitejs/vite/commit/928fc33b6fffb3bb22c2daa4b478ead7715a2c5f)), closes [#1854](https://github.com/vitejs/vite/issues/1854)
+* respect config.build.brotliSize in reporter ([1d5437d](https://github.com/vitejs/vite/commit/1d5437d56bb0974c21561c1cdf5ad1588baefea3))
+
+
+### Features
+
+* **ssr:** graduate ssr method types ([0fe2634](https://github.com/vitejs/vite/commit/0fe2634756b6311f0489613460eeadc6c8280192))
+
+
+
 # [2.0.0-beta.62](https://github.com/vitejs/vite/compare/v2.0.0-beta.61...v2.0.0-beta.62) (2021-02-02)
 
 
