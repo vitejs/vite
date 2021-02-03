@@ -86,12 +86,20 @@ module.exports = {
               link: '/zh/guide/dep-pre-bundling'
             },
             {
+              text: '静态资源处理',
+              link: '/zh/guide/assets'
+            },
+            {
               text: '构建生产版本',
               link: '/zh/guide/build'
             },
             {
               text: '环境变量与模式',
               link: '/zh/guide/env-and-mode'
+            },
+            {
+              text: '服务端渲染（SSR）',
+              link: '/zh/guide/ssr'
             },
             {
               text: '后端集成',

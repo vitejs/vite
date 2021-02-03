@@ -27,40 +27,6 @@ const { createServer } = require('vite')
 }
 ```
 
-### 将 Vite 服务器作为中间件使用
-
-Vite 可以被用做一个 Node.js http 服务器的中间件，或者是其他兼容 `(req, res, next) => {}` 风格中间件的框架。例如对于 `express`：
-
-```js
-const vite = require('vite')
-const express = require('express')
-;(async () => {
-  const app = express()
-  // 下面是以中间件模式创建 vite 开发服务器
-  // 如此 vite 将会创建自己的 HMR websocket 服务器。
-  // 这个 ws 服务器会默认监听 24678 端口，这个端口号可以通过 server.hmr.port 配置
-  const viteServer = await vite.createServer({
-    server: {
-      middlewareMode: true
-    }
-  })
-  // 将 vite 的连接实例作为中间件使用
-  app.use(viteServer.app)
-
-  app.use('*', (req, res) => {
-    // serve custom index.html
-  })
-
-  app.listen(3000)
-})()
-```
-
-请注意在中间件模式下，Vite 不会对 `index.html` 提供服务 - 现在这是父服务器的职责。在提供 HTML 时，请确保在 Vite 的开发客户端中提供引入一个链接：
-
-```html
-<script type="module" src="/@vite/client"></script>
-```
-
 ## `InlineConfig`
 
 `InlineConfig` 接口扩展了 `UserConfig` 并添加了以下属性：

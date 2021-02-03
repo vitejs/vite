@@ -104,13 +104,13 @@ export default ({ command, mode }) => {
 - **类型：** `string`
 - **默认：** `/`
 
-  开发或生产环境服务的 public base 路径。合法的值包括以下几种：
+  开发或生产环境服务的 公共基础路径。合法的值包括以下几种：
 
   - 绝对 URL 路径名，例如 `/foo/`
   - 完整的 URL，例如 `https://foo.com/`
   - 空字符串或 `./`（用于开发环境）
 
-  更多信息详见 [Public Base 路径](/guide/build#public-base-路径)。
+  更多信息详见 [公共基础路径](/guide/build#公共基础路径)。
 
 ### mode
 
@@ -224,7 +224,7 @@ export default ({ command, mode }) => {
 ### assetsInclude
 
 - **类型：** `string | RegExp | (string | RegExp)[]`
-- **相关内容：** [Asset Handling](/zh/guide/features#asset-handling)
+- **相关内容：** [静态资源处理](/zh/guide/asset)
 
   指定其他文件类型作为静态资源处理（这样导入它们就会返回解析后的 URL）
 
@@ -467,33 +467,56 @@ export default ({ command, mode }) => {
 
   默认情况下，若 `outDir` 在 `root` 目录下，则 Vite 会在构建时清空该目录。若 `outDir` 在根目录之外则会抛出一个警告避免意外删除掉重要的文件。可以设置该选项来关闭这个警告。该功能也可以通过命令行参数 `--emptyOutDir` 来使用。
 
+### build.brotliSize
+
+- **类型：** `boolean`
+- **默认：** `true`
+
+  启用/禁用 brotli 压缩大小报告。压缩大型输出文件可能会很慢，因此禁用该功能可能会提高大型项目的构建性能。
+
+### build.chunkSizeWarningLimit
+
+- **类型：** `number`
+- **默认：** `500`
+
+  chunk 大小警告的限制（以 kbs 为单位）。
+
 ## 依赖优化选项
 
 - **相关内容：** [依赖预构建](/zh/guide/dep-pre-bundling)
+
+### optimizeDeps.entries
+
+- **类型：** `string | string[]`
+
+  默认情况下，Vite 会抓取你的 index.html 来检测需要预构建的依赖项。如果指定了 `build.rollupOptions.input`，Vite 将转而去抓取这些入口点。
+
+  如果这两者都不适合您的需要，则可以使用此选项指定自定义条目 - 该值需要遵循 [fast-glob 模式](https://github.com/mrmlnc/fast-glob#basic-syntax) ，或者是相对于 vite 项目根的模式数组。这将覆盖掉默认条目推断。
+
+### optimizeDeps.exclude
+
+- **类型：** `string[]`
+
+  在预构建中强制排除的依赖项。
 
 ### optimizeDeps.include
 
 - **类型：** `string[]`
 
-  在预构建中强制包含的依赖项。
+  默认情况下，不在 `node_modules` 中的，链接的包不会被预构建。使用此选项可强制预构建链接的包。
 
-### optimizeDeps.exclude
+## SSR 选项
 
-- **类型：** `string | RegExp | (string | RegExp)[]`
+- **相关：** [SSR 启发式外部化](/zh/guide/ssr#启发式外部化)
 
-  在预构建中强制排除的依赖项。
-
-### optimizeDeps.link
+### ssr.external
 
 - **类型：** `string[]`
 
-  一个视为 “已链接” 的包列表。已链接的包不会被预构建 - Vite 会分析并预构建它们的依赖。
+  列出的是要为 SSR 强制外部化的依赖。
 
-  请注意，您还需要在主 `plugins` 选项中引入这些插件，以便在生产构建过程中支持相应的文件类型。请注意，如果您通过包管理器工作区使用 monorepo，并且在您的 Vite 入口包中将包列为依赖项，Vite 会自动将它们视为已链接（通过检查它是否在 `node_modules` 中）。若你的 Vite 应用正在导入某个作为 Node 解析依赖而又还未链接的包，你只需要为这种不寻常的情况配置此设置项。
+### ssr.noExternal
 
-### optimizeDeps.auto
+- **类型：** `string[]`
 
-- **类型：** `boolean`
-- **默认：** `true`
-
-  服务器启动时自动运行依赖预构建。若设置为 `false` 则禁用。
+  列出的是防止被 SSR 外部化依赖项。

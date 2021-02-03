@@ -19,7 +19,7 @@
 
 传统浏览器可以通过插件 [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) 来支持，它将自动生成传统版本的 chunk 和其相应 ES 语言特性方面的 polyfill。兼容版的 chunk 只会在不支持原生 ESM 的浏览器中有按需加载。
 
-## public base 路径
+## 公共基础路径
 
 - 相关内容：[资源处理](./features#asset-handling)
 
@@ -27,7 +27,7 @@
 
 由 JS 导入的资源路径，CSS 中的 `url()` 引用，和 `.html` 文件中的资源引用在构建过程中都会自动调整以适配此选项。
 
-例外情况是需要动态连接 url。在这种情况下，你可以使用全局注入的 `import.meta.env.BASE_URL` 变量，它将是 public base 路径。注意这个变量在构建中是被静态替换的所以它必须是原本的样子（例如 `import.meta.env['BASE_URL']` 是无效的）
+例外情况是需要动态连接 url。在这种情况下，你可以使用全局注入的 `import.meta.env.BASE_URL` 变量，它将是 公共基础路径。注意这个变量在构建中是被静态替换的所以它必须是原本的样子（例如 `import.meta.env['BASE_URL']` 是无效的）
 
 ## 自定义构建
 

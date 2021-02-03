@@ -1,14 +1,8 @@
 # 功能
 
-对非常基础的使用来说，使用 Vite 开发和使用一个静态文件服务器并没有太大区别。然而，Vite 还通过原生 ESM 导入提供了许多增强功能。
+对非常基础的使用来说，使用 Vite 开发和使用一个静态文件服务器并没有太大区别。然而，Vite 还通过原生 ESM 导入提供了许多主要用于打包场景的增强功能。
 
-## 模块热重载
-
-Vite 提供了一套原生 ESM 的 [HMR API](./api-hmr)。 具有 HMR 功能的框架可以利用该 API 提供即时、准确的更新，而无需重新加载页面或删除应用程序状态。Vite 提供了第一优先级的 HMR 集成给 [Vue 单文件组件（SFC）](https://github.com/vitejs/vite/tree/main/packages/plugin-vue) 和 [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh)。也有对 Preact 的集成 [@prefresh/vite](https://github.com/JoviDeCroock/prefresh/tree/main/packages/vite).
-
-注意，你不需要手动设置这些 —— 当你 [create an app via `@vitejs/create-app`](./) 创建应用程序时，所选模板已经为你预先配置了这些。
-
-## NPM 依赖解析
+## NPM 依赖解析和预构建
 
 原生 ES 引入不支持下面这样的裸模块导入：
 
@@ -16,11 +10,21 @@ Vite 提供了一套原生 ESM 的 [HMR API](./api-hmr)。 具有 HMR 功能的�
 import { someMethod } from 'my-dep'
 ```
 
-这在浏览器中将抛出一个错误。而 Vite 却可以侦测到这些模块导入的 `.js` 文件并改写他们的路径，例如 `/node_modules/my-dep/dist/my-dep.js?v=1.0.0`，使得浏览器可以正确处理它们。
+上面的操作将在浏览器中抛出一个错误。Vite 将在服务的所有源文件中检测此类裸模块导入，并执行以下操作:
 
-**依赖缓存**
+1. [预构建](./dep-rep-bundling) 他们以提升页面重载速度，并将 CommonJS / UMD 转换为 ESM 格式。预构建这一步由 [esbuild](http://esbuild.github.io/) 执行，这使得 Vite 的冷启动时间比任何基于 javascript 的打包程序都要快得多。
 
-解析后的依赖请求会通过设置 `max-age=31536000,immutable` 进行强缓存，以提高在开发期间的页面重载性能。一旦被缓存，这些请求将永远不会再发到开发服务器。如果安装了该依赖的不同的版本，则附加的版本 query 将使它们自动失效。如果您对依赖项进行了手动本地编辑，您可以通过浏览器 devtools 暂时禁用缓存并重新加载页面。
+2. 重写导入为合法的 URL，例如 `/node_modules/.vite/my-dep.js?v=f3sf2ebd` 以便浏览器能够正确导入它们。
+
+**依赖是强缓存的**
+
+Vite 通过 HTTP 头来缓存请求得到的依赖，所以如果你想要 编辑/调试 一个依赖，晴跟随 [这里](./dep-pre-bundling#浏览器缓存) 的步骤。
+
+## 模块热重载
+
+Vite 提供了一套原生 ESM 的 [HMR API](./api-hmr)。 具有 HMR 功能的框架可以利用该 API 提供即时、准确的更新，而无需重新加载页面或删除应用程序状态。Vite 提供了第一优先级的 HMR 集成给 [Vue 单文件组件（SFC）](https://github.com/vitejs/vite/tree/main/packages/plugin-vue) 和 [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh)。也有对 Preact 的集成 [@prefresh/vite](https://github.com/JoviDeCroock/prefresh/tree/main/packages/vite).
+
+注意，你不需要手动设置这些 —— 当你 [create an app via `@vitejs/create-app`](./) 创建应用程序时，所选模板已经为你预先配置了这些。
 
 ## TypeScript
 
@@ -137,7 +141,7 @@ Vite 为 Sass 和 Less 改进了 `@import` 解析，因而 Vite 别名也同样�
 
 ## 静态资源处理
 
-- 相关文档：[public base 路径](./build#public-base-路径)
+- 相关文档：[公共基础路径](./build#public-base-路径)
 - 相关文档：[`assetsInclude` 配置项](/zh/config/#assetsinclude)
 
 ### URL 导入
@@ -149,41 +153,7 @@ import imgUrl from './img.png'
 document.getElementById('hero-img').src = imgUrl
 ```
 
-该行为类似于 webpack 的 `file-loader`。区别在于这个导入可以使用公共路径（基于开发时项目的根目录），也可以使用相对路径。
-
-- `url()` 在 CSS 中的引用也以同样方式处理
-
-- 如果使用 Vue 插件，Vue 单文件组件模板中的资源引用会自动转换其导入。
-
-- 常见的图片，媒体和字体文件格式将会自动被识别为静态资源。你可以使用 [`assetsInclude` 选项](/zh/config/#assetsinclude) 来扩展这个列表。
-
-- 引用的资源作为构建资产图的一部分包括在内，将得到散列文件名，并可以由插件处理以进行优化。
-
-- 较小的资源体积小于 [`assetsInlineLimit` 选项值](/zh/config/#assetsinlinelimit) 则会被内联为 base64 data URL。
-
-- 没有被包含在 internal 列表或 `assetsInclude` 中的资源，可以使用 `?url` 前缀作为一个 URL 引入。这非常有用，例如，要导入 [Houdini Paint Worklets](https://houdini.how/usage).
-
-```js
-import workletURL from 'extra-scalloped-border/worklet.js?url'
-CSS.paintWorklet.addModule(workletURL)
-```
-
-### `public` 目录
-
-如果你有下列这些资源：
-
-- 不会被源代码引用（例如 `robots.txt`）
-- 必须保持原有文件名（没有经过 hash）
-- ...或者您只是不想为了获取 URL 而首先导入该资源
-
-那么你可以将该资源放在一个特别的 `public` 目录中，它应位于你的项目根目录。该目录中的资源应该在开发时能直接通过 `/` 根路径访问到，并且打包时会被完整复制到目标目录的根目录下。
-
-目录默认是 `<root>/public`，但可以通过 [`publicDir` 选项](/zh/config/#publicdir) 来配置。
-
-请注意：
-
-- 引入 `public` 中的资源永远应该使用根绝对路径 - 举个例子，`public/icon.png` 应该在源代码中被引用为 `/icon.png`。
-- `public` 中的资源不应该被 JavaScript 文件引用。
+更多细节请见 [静态资源处理](./assets)。
 
 ## JSON
 
@@ -197,8 +167,6 @@ import { field } from './example.json'
 ```
 
 ## Glob 导入
-
-> Requires ^2.0.0-beta.17
 
 Vite 支持使用特殊的 `import.meta.glob` 函数从文件系统导入多个模块：
 

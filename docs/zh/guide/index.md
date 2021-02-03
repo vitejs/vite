@@ -70,8 +70,9 @@ Vite 也支持多个 `.html` 作入口点的 [多页面应用模式](./build#多
 ```json
 {
   "scripts": {
-    "dev": "vite",
-    "build": "vite build"
+    "dev": "vite", // 启动开发服务器
+    "build": "vite build", // 为生产环境构建
+    "serve": "vite preview" // 本地预览生产构建产物
   }
 }
 ```
