@@ -53,7 +53,7 @@ async function createServer(
     )
   }
 
-  app.use('*', async (req, res, next) => {
+  app.use('*', async (req, res) => {
     try {
       const url = req.originalUrl
       let template = getIndexTemplate()
@@ -64,20 +64,19 @@ async function createServer(
       const { render } = isProd
         ? // @ts-ignore
           require('./dist/server/entry-server.js')
-        : await vite.ssrLoadModule('/src/entry-server.ts')
+        : await vite.ssrLoadModule('/src/entry-server.js')
 
       const [appHtml, preloadLinks] = await render(url, manifest)
 
-      const html = `
-      ${preloadLinks}
-      ${template.replace(`<!--ssr-outlet-->`, appHtml)}
-      `
+      const html = template
+        .replace(`<!--preload-links-->`, preloadLinks)
+        .replace(`<!--app-html-->`, appHtml)
 
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
     } catch (e) {
       !isProd && vite.ssrFixStacktrace(e)
       console.log(e.stack)
-      next(e)
+      res.status(500).end(e.stack)
     }
   })
 
