@@ -488,14 +488,22 @@ export default ({ command, mode }) => {
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
 
+### optimizeDeps.entries
+
+- **Type:** `string | string[]`
+
+  By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
+
+  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from vite project root. This will overwrite default entries inference.
+
 ### optimizeDeps.exclude
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string[]`
 
   Dependencies to exclude from pre-bundling.
 
 ### optimizeDeps.include
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string[]`
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
