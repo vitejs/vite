@@ -222,7 +222,7 @@ export async function optimizeDeps(
     treeShaking: 'ignore-annotations',
     metafile: esbuildMetaPath,
     define: {
-      'process.env.NODE_ENV': '"development"'
+      'process.env.NODE_ENV': JSON.stringify(config.mode)
     },
     plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
   })
