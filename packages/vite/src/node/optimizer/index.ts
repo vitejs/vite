@@ -184,7 +184,7 @@ export async function optimizeDeps(
       )
     }
   } else {
-    logger.info(chalk.greenBright(`Optimizing dependencies:\n${depsString}`))
+    logger.info(chalk.greenBright(`Optimizing dependencies:\n  ${depsString}`))
   }
 
   const esbuildMetaPath = path.join(cacheDir, '_esbuild.json')
