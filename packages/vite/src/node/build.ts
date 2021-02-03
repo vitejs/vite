@@ -30,7 +30,7 @@ import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
-import { resolveSSRExternal } from './ssr/ssrExternal'
+import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
 
@@ -576,10 +576,7 @@ function resolveExternal(
   user: ExternalOption | undefined
 ): ExternalOption {
   return ((id, parentId, isResolved) => {
-    if (
-      ssrExternals.includes(id) ||
-      ssrExternals.some((e) => id.startsWith(e + '/'))
-    ) {
+    if (shouldExternalizeForSSR(id, ssrExternals)) {
       return true
     }
     if (user) {
