@@ -600,6 +600,7 @@ function createSeverCloseFn(server: http.Server | null) {
     return () => {}
   }
 
+  let hasListened = false
   const openSockets = new Set<net.Socket>()
 
   server.on('connection', (socket) => {
@@ -609,15 +610,23 @@ function createSeverCloseFn(server: http.Server | null) {
     })
   })
 
+  server.once('listening', () => {
+    hasListened = true
+  })
+
   return () =>
     new Promise<void>((resolve, reject) => {
       openSockets.forEach((s) => s.destroy())
-      server.close((err) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
+      if (hasListened) {
+        server.close((err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+      } else {
+        resolve()
+      }
     })
 }
