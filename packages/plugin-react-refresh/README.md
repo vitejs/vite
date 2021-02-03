@@ -35,3 +35,24 @@ export default {
 - This option only enables the plugin to parse these syntax - it does not perform any transpilation since this plugin is dev-only.
 
 - If you wish to transpile the syntax for production, you will need to configure the transform separately using [@rollup/plugin-babel](https://github.com/rollup/plugins/tree/master/packages/babel) as a build-only plugin.
+
+## Middleware Mode Notes
+
+When Vite is launched in **Middleware Mode**, you need to make sure your entry `index.html` file is transformed with `ViteDevServer.transformIndexHtml`. Otherwise, you may get an error prompting `Uncaught Error: vite-plugin-react can't detect preamble. Something is wrong.`
+
+To mitigate this issue, you can explicitly transform your `index.html` like this when configuring your express server:
+
+```ts
+app.get('/', async (req, res, next) => {
+  try {
+    let html = fs.readFileSync(
+      path.resolve(root, 'index.html'),
+      'utf-8'
+    );
+    html = await viteServer.transformIndexHtml(req.url, html);
+    res.send(html);
+  } catch (e) {
+    return next(e);
+  }
+});
+```

@@ -75,6 +75,7 @@ function reactRefreshPlugin(opts) {
 
       const isReasonReact = id.endsWith('.bs.js')
       const result = transformSync(code, {
+        configFile: false,
         parserOpts: {
           sourceType: 'module',
           allowAwaitOutsideFunction: true,

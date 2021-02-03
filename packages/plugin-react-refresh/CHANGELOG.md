@@ -1,3 +1,12 @@
+## [1.2.2](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.2.1...plugin-react-refresh@1.2.2) (2021-02-02)
+
+
+### Bug Fixes
+
+* **plugin-react-refresh:** do not pick up config file in react-refresh plugin ([9d560d8](https://github.com/vitejs/vite/commit/9d560d8ed23d02c8ce4ec8c4cfa2aab8d30e89f0))
+
+
+
 ## [1.2.1](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.2.0...plugin-react-refresh@1.2.1) (2021-02-02)
 
 

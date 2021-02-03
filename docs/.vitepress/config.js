@@ -151,12 +151,20 @@ module.exports = {
               link: '/guide/dep-pre-bundling'
             },
             {
+              text: 'Static Asset Handling',
+              link: '/guide/assets'
+            },
+            {
               text: 'Building for Production',
               link: '/guide/build'
             },
             {
               text: 'Env Variables and Modes',
               link: '/guide/env-and-mode'
+            },
+            {
+              text: 'Server-Side Rendering (SSR)',
+              link: '/guide/ssr'
             },
             {
               text: 'Backend Integration',

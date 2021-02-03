@@ -208,7 +208,6 @@ export interface ViteDevServer {
   ): Promise<ESBuildTransformResult>
   /**
    * Load a given URL as an instantiated module for SSR.
-   * @alpha
    */
   ssrLoadModule(
     url: string,
@@ -216,7 +215,6 @@ export interface ViteDevServer {
   ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace
-   * @alpha
    */
   ssrFixStacktrace(e: Error): void
   /**
@@ -602,6 +600,7 @@ function createSeverCloseFn(server: http.Server | null) {
     return () => {}
   }
 
+  let hasListened = false
   const openSockets = new Set<net.Socket>()
 
   server.on('connection', (socket) => {
@@ -611,15 +610,23 @@ function createSeverCloseFn(server: http.Server | null) {
     })
   })
 
+  server.once('listening', () => {
+    hasListened = true
+  })
+
   return () =>
     new Promise<void>((resolve, reject) => {
       openSockets.forEach((s) => s.destroy())
-      server.close((err) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
+      if (hasListened) {
+        server.close((err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+      } else {
+        resolve()
+      }
     })
 }

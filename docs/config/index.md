@@ -222,7 +222,7 @@ export default ({ command, mode }) => {
 ### assetsInclude
 
 - **Type:** `string | RegExp | (string | RegExp)[]`
-- **Related:** [Asset Handling](/guide/features#asset-handling)
+- **Related:** [Static Asset Handling](/guide/assets)
 
   Specify additional file types to be treated as static assets so that:
 
@@ -484,18 +484,56 @@ export default ({ command, mode }) => {
 
   By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentially removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
+### build.brotliSize
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Enable/disable brotli-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
+
+### build.chunkSizeWarningLimit
+
+- **Type:** `number`
+- **Default:** `500`
+
+  Limit for chunk size warnings (in kbs).
+
 ## Dep Optimization Options
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
 
+### optimizeDeps.entries
+
+- **Type:** `string | string[]`
+
+  By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
+
+  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from vite project root. This will overwrite default entries inference.
+
 ### optimizeDeps.exclude
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string[]`
 
   Dependencies to exclude from pre-bundling.
 
 ### optimizeDeps.include
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string[]`
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
+
+## SSR Options
+
+- **Related:** [SSR Externals Heuristics](/guide/ssr#externals-heuristics)
+
+### ssr.external
+
+- **Type:** `string[]`
+
+  Force externalize dependencies for SSR.
+
+### ssr.noExternal
+
+- **Type:** `string[]`
+
+  Prevent listed dependencies from being externalized for SSR.

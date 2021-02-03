@@ -38,6 +38,7 @@ import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { transformImportGlob } from '../importGlob'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
+import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 
 const isDebug = !!process.env.DEBUG
 const debugRewrite = createDebugger('vite:rewrite')
@@ -323,9 +324,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // skip ssr external
           if (ssr) {
             if (
-              server._ssrExternals?.some((id) => {
-                return url === id || url.startsWith(id + '/')
-              })
+              server._ssrExternals &&
+              shouldExternalizeForSSR(url, server._ssrExternals)
             ) {
               continue
             }

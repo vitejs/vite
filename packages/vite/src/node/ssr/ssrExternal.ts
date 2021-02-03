@@ -29,11 +29,13 @@ export function resolveSSRExternal(
   }
 
   for (const id of deps) {
-    const entry = tryNodeResolve(id, undefined, root, false)?.id
+    let entry
     let requireEntry
     try {
+      entry = tryNodeResolve(id, undefined, root, false)?.id
       requireEntry = require.resolve(id, { paths: [root] })
     } catch (e) {
+      // resolve failed, assume include
       continue
     }
     if (!entry) {
@@ -80,4 +82,21 @@ export function resolveSSRExternal(
     externals = externals.filter((id) => !config.ssr!.noExternal!.includes(id))
   }
   return externals
+}
+
+export function shouldExternalizeForSSR(
+  id: string,
+  externals: string[]
+): boolean {
+  const should = externals.some((e) => {
+    if (id === e) {
+      return true
+    }
+    // deep imports, check ext before externalizing - only externalize
+    // extension-less imports and explicit .js imports
+    if (id.startsWith(e + '/') && (!path.extname(id) || id.endsWith('.js'))) {
+      return true
+    }
+  })
+  return should
 }
