@@ -7,7 +7,7 @@
   </p>
 
   <p>
-    Recommended setup:
+    Recommended IDE setup:
     <a href="https://code.visualstudio.com/" target="_blank">VSCode</a>
     +
     <a
@@ -21,12 +21,20 @@
     >Vue DX</a>
   </p>
   <p>
-    Make sure to use workspace version of TypeScript to get improved support via
+    If using &lt;script setup&gt;: use
     <a
-      href="https://github.com/znck/vue-developer-experience"
+      href="https://github.com/johnsoncodehk/volar"
       target="_blank"
-    >@vuedx</a>.
-    <br />Note @vuedx is still experimental and this setup is provided for early feedback.
+    >Volar</a> instead (and disable Vetur)
+  </p>
+  <p>
+    <b style="color:red">Make sure to use workspace version of TypeScript!!!</b>
+    <br />This leverages the
+    <code>@vuex/typescript-plugin-vue</code> to provide types for `*.vue` imports.
+    <br />1. Open
+    <code>src/main.ts</code> in VSCode
+    <br />2. Open VSCode command input
+    <br />3. Search and run "Select TypeScript version" -> "Use workspace version"
   </p>
   <button @click="count++">count is: {{ count }}</button>
   <p>
