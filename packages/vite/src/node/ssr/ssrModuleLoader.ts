@@ -128,9 +128,7 @@ export async function ssrLoadModule(
 }
 
 function nodeRequire(id: string, importer: string | null) {
-  const mod = importer
-    ? require(resolveFrom(id, path.dirname(importer), true))
-    : require(id)
+  const mod = importer ? require(resolve(id, importer)) : require(id)
   const defaultExport = mod.__esModule ? mod.default : mod
   // rollup-style default import interop for cjs
   return new Proxy(mod, {
@@ -139,4 +137,18 @@ function nodeRequire(id: string, importer: string | null) {
       return mod[prop]
     }
   })
+}
+
+const resolveCache = new Map<string, string>()
+
+function resolve(id: string, importer: string) {
+  const dir = path.dirname(importer)
+  const key = id + dir
+  const cached = resolveCache.get(key)
+  if (cached) {
+    return cached
+  }
+  const resolved = resolveFrom(id, dir, true)
+  resolveCache.set(key, resolved)
+  return resolved
 }
