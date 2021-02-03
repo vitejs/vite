@@ -433,7 +433,8 @@ function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
         sassResolve ||
         (sassResolve = config.createResolver({
           extensions: ['.scss', '.sass', '.css'],
-          tryIndex: '_index',
+          tryIndex: true,
+          tryPrefix: '_',
           relativeFirst: true
         }))
       )

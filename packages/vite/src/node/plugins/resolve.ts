@@ -61,7 +61,8 @@ interface ResolveOptions {
    * - resolving bare imports from optimized deps
    */
   asSrc: boolean
-  tryIndex?: boolean | string
+  tryIndex?: boolean
+  tryPrefix?: string
   relativeFirst?: boolean
   extensions?: string[]
   dedupe?: string[]
@@ -74,6 +75,7 @@ export function resolvePlugin({
   asSrc,
   dedupe,
   tryIndex = true,
+  tryPrefix,
   relativeFirst = false,
   extensions = SUPPORTED_EXTS
 }: ResolveOptions): Plugin {
@@ -81,7 +83,7 @@ export function resolvePlugin({
 
   // curried fs resovle
   const fsResolve = (fsPath: string) =>
-    tryFsResolve(fsPath, isProduction, tryIndex, extensions)
+    tryFsResolve(fsPath, isProduction, tryIndex, tryPrefix, extensions)
 
   return {
     name: 'vite:resolve',
@@ -235,16 +237,27 @@ export function resolvePlugin({
   }
 }
 
+// resolve extensions
 export function tryFsResolve(
   fsPath: string,
   isProduction: boolean,
   tryIndex: boolean | string = true,
+  tryPrefix: string | undefined = undefined,
   extensions = SUPPORTED_EXTS
 ): string | undefined {
   const [file, q] = fsPath.split(`?`, 2)
   const query = q ? `?${q}` : ``
   let res: string | undefined
-  if ((res = tryResolveFile(file, query, isProduction, tryIndex, extensions))) {
+  if (
+    (res = tryResolveFile(
+      file,
+      query,
+      isProduction,
+      tryIndex,
+      tryPrefix,
+      extensions
+    ))
+  ) {
     return res
   }
   for (const ext of extensions) {
@@ -253,7 +266,8 @@ export function tryFsResolve(
         file + ext,
         query,
         isProduction,
-        tryIndex,
+        false,
+        tryPrefix,
         extensions
       ))
     ) {
@@ -267,6 +281,7 @@ function tryResolveFile(
   query: string,
   isProduction: boolean,
   tryIndex: boolean | string,
+  tryPrefix: string | undefined,
   extensions: string[]
 ): string | undefined {
   if (fs.existsSync(file)) {
@@ -279,18 +294,29 @@ function tryResolveFile(
         return resolvePackageEntry(file, pkg, isProduction)
       }
       if (tryIndex) {
-        const append = typeof tryIndex === 'string' ? `/${tryIndex}` : `/index`
         const index = tryFsResolve(
-          file + append,
+          file + '/index',
           isProduction,
           false,
+          tryPrefix,
           extensions
         )
-        if (index) return normalizePath(index) + query
+        if (index) return index + query
       }
     } else {
       return normalizePath(ensureVolumeInPath(file)) + query
     }
+  }
+  if (tryPrefix) {
+    const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
+    return tryResolveFile(
+      prefixed,
+      query,
+      isProduction,
+      tryIndex,
+      undefined,
+      extensions
+    )
   }
 }
 

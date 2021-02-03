@@ -1,4 +1,5 @@
 @import '@/nested'; // alias + custom index resolving -> /nested/_index.scss
+@import '@/nested/partial'; // sass convention: omitting leading _ for partials
 
 .sass {
   /* injected via vite.config.js */
