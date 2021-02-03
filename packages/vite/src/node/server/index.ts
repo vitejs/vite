@@ -349,7 +349,6 @@ export async function createServer(
 
   if (!process.stdin.isTTY) {
     process.stdin.on('end', exitProcess)
-    process.stdin.resume()
   }
 
   watcher.on('change', async (file) => {
