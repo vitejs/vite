@@ -172,7 +172,12 @@ export function resolvePlugin({
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        if (asSrc && server && (res = tryOptimizedResolve(id, server))) {
+        if (
+          asSrc &&
+          server &&
+          !ssr &&
+          (res = tryOptimizedResolve(id, server))
+        ) {
           return res
         }
 
