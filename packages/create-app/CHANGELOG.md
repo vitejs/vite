@@ -1,3 +1,12 @@
+## [1.5.2](https://github.com/vitejs/vite/compare/create-app@1.5.1...create-app@1.5.2) (2021-02-03)
+
+
+### Features
+
+* **create-app:** more detailed instructions for vue-ts template ([79dd32c](https://github.com/vitejs/vite/commit/79dd32cbb61b2aeedfd6b1081867a98cc7c73a68))
+
+
+
 ## [1.5.1](https://github.com/vitejs/vite/compare/create-app@1.5.0...create-app@1.5.1) (2021-01-27)
 
 
