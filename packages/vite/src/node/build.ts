@@ -571,18 +571,35 @@ export function onRollupWarning(
   }
 }
 
-export function resolveExternal(
-  existing: string[],
+function resolveExternal(
+  ssrExternals: string[],
   user: ExternalOption | undefined
 ): ExternalOption {
-  if (!user) return existing
-  if (typeof user !== 'function') {
-    return existing.concat(user as any[])
-  }
   return ((id, parentId, isResolved) => {
-    if (existing.includes(id)) return true
-    return user(id, parentId, isResolved)
+    if (
+      ssrExternals.includes(id) ||
+      ssrExternals.some((e) => id.startsWith(e + '/'))
+    ) {
+      return true
+    }
+    if (user) {
+      if (typeof user === 'function') {
+        return user(id, parentId, isResolved)
+      } else if (Array.isArray(user)) {
+        return user.some((test) => isExternal(id, test))
+      } else {
+        return isExternal(id, user)
+      }
+    }
   }) as ExternalOption
+}
+
+function isExternal(id: string, test: string | RegExp) {
+  if (typeof test === 'string') {
+    return id === test
+  } else {
+    return test.test(id)
+  }
 }
 
 function injectSsrFlagToHooks(p: Plugin): Plugin {
