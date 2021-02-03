@@ -6,6 +6,7 @@ import { normalizePath } from '../utils'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
+const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 
 /**
  * some values used by the client needs to be dynamically injected by the server
@@ -15,7 +16,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:client-inject',
     transform(code, id) {
-      if (id === normalizedClientEntry || normalizePath(ENV_ENTRY)) {
+      if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         let options = config.server.hmr
         options = options && typeof options !== 'boolean' ? options : {}
         const host = options.host || null
@@ -49,6 +50,12 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_PORT__`, JSON.stringify(port))
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
+      } else if (code.includes('process.env.NODE_ENV')) {
+        // replace process.env.NODE_ENV
+        return code.replace(
+          /\bprocess\.env\.NODE_ENV\b/g,
+          JSON.stringify(config.mode)
+        )
       }
     }
   }

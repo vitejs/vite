@@ -1,10 +1,7 @@
 declare const __MODE__: string
 declare const __DEFINES__: Record<string, any>
+
 const that = new Function('return this')()
-// shim process
-;(that as any).process = (that as any).process || {}
-;(that as any).process.env = (that as any).process.env || {}
-;(that as any).process.env.NODE_ENV = __MODE__
 
 // assign defines
 const defines = __DEFINES__
