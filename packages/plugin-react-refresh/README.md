@@ -28,6 +28,27 @@ export default {
 
 [Full list of Babel parser plugins](https://babeljs.io/docs/en/babel-parser#ecmascript-proposalshttpsgithubcombabelproposals).
 
+## Middleware Mode Notes
+
+When Vite is launched in **Middleware Mode**, you need to make sure your entry `index.html` file is transformed with `ViteDevServer.transformIndexHtml`. Otherwise, you may get an error prompting `Uncaught Error: vite-plugin-react can't detect preamble. Something is wrong.`
+
+To mitigate this issue, you can explicitly transform your `index.html` like this when configuring your express server:
+
+```ts
+app.get('/', async (req, res, next) => {
+  try {
+    let html = fs.readFileSync(
+      path.resolve(root, 'index.html'),
+      'utf-8'
+    );
+    html = await viteServer.transformIndexHtml(req.url, html);
+    res.send(html);
+  } catch (e) {
+    return next(e);
+  }
+});
+```
+
 **Notes**
 
 - If using TSX, any TS-supported syntax will already be transpiled away so you won't need to specify them here.
