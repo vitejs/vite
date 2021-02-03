@@ -524,7 +524,11 @@ export default ({ command, mode }) => {
 
 ## SSR Options
 
-- **Related:** [SSR Externals Heuristics](/guide/ssr#externals-heuristics)
+:::warning Experimental
+SSR options may be adjusted in minor releases.
+:::
+
+- **Related:** [SSR Externals](/guide/ssr#ssr-externals)
 
 ### ssr.external
 
