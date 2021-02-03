@@ -201,7 +201,7 @@ function esbuildScanPlugin(
         }
 
         if (js.includes('import.meta.glob')) {
-          return transformGlob(js, path).then((contents) => ({
+          return transformGlob(js, path, loader).then((contents) => ({
             loader,
             contents
           }))
@@ -304,12 +304,19 @@ function esbuildScanPlugin(
       build.onLoad({ filter: jsTypesRE }, ({ path: id }) => {
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
-        const contents = fs.readFileSync(id, 'utf-8')
+
+        let contents = fs.readFileSync(id, 'utf-8')
+        if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
+          contents = config.esbuild.jsxInject + `\n` + contents
+        }
+
         if (contents.includes('import.meta.glob')) {
-          return transformGlob(contents, id).then((contents) => ({
-            loader: ext as Loader,
-            contents
-          }))
+          return transformGlob(contents, id, ext as Loader).then(
+            (contents) => ({
+              loader: ext as Loader,
+              contents
+            })
+          )
         }
         return {
           loader: ext as Loader,
@@ -320,7 +327,12 @@ function esbuildScanPlugin(
   }
 }
 
-async function transformGlob(source: string, importer: string) {
+async function transformGlob(source: string, importer: string, loader: Loader) {
+  // transform the content first since es-module-lexer can't handle non-js
+  if (loader !== 'js') {
+    source = (await (await ensureService()).transform(source, { loader })).code
+  }
+
   await init
   const imports = parse(source)[0]
   const s = new MagicString(source)
