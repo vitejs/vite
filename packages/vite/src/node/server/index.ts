@@ -337,13 +337,20 @@ export async function createServer(
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
-  process.once('SIGTERM', async () => {
+  const exitProcess = async () => {
     try {
       await server.close()
     } finally {
       process.exit(0)
     }
-  })
+  }
+
+  process.once('SIGTERM', exitProcess)
+
+  if (!process.stdin.isTTY) {
+    process.stdin.on('end', exitProcess)
+    process.stdin.resume()
+  }
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
