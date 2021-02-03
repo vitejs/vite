@@ -128,7 +128,7 @@ function esbuildScanPlugin(
   const seen = new Map<string, string | undefined>()
 
   const resolve = async (id: string, importer?: string) => {
-    const key = id + importer
+    const key = id + (importer && path.dirname(importer))
     if (seen.has(key)) {
       return seen.get(key)
     }
