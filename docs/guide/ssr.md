@@ -52,11 +52,11 @@ This is statically replaced during build so it will allow tree-shaking of unused
 
 ## Setting Up the Dev Server
 
-When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/):
+When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It is therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/):
 
 **server.js**
 
-```js{18-20}
+```js{17-19}
 const fs = require('fs')
 const path = require('path')
 const express = require('express')
@@ -190,11 +190,11 @@ const html = await vueServerRenderer.renderToString(app, ctx)
 // ctx.modules is now a Set of module IDs that were used during the render
 ```
 
-We need to now read and pass the manifest to the `render` function exported by `src/entry-server.js`, and now we have enough information to render preload directives for files used by async routes! See [demo source](https://github.com/vitejs/vite/blob/main/packages/playground/ssr-vue/src/entry-server.js) for full example.
+In the production branch of `server.js` we need to read and pass the manifest to the `render` function exported by `src/entry-server.js`. This would provide us with enough information to render preload directives for files used by async routes! See [demo source](https://github.com/vitejs/vite/blob/main/packages/playground/ssr-vue/src/entry-server.js) for full example.
 
 ## Pre-Rendering / SSG
 
-If the routes and the data needed for certain routes are known ahead of time, we can pre-render these routes into static HTML using the same logic as production SSR. This is also known as Static-Site Generation (SSG). See [demo pre-render script](https://github.com/vitejs/vite/blob/main/packages/playground/ssr-vue/prerender.js) for working example.
+If the routes and the data needed for certain routes are known ahead of time, we can pre-render these routes into static HTML using the same logic as production SSR. This can also be considered a form of Static-Site Generation (SSG). See [demo pre-render script](https://github.com/vitejs/vite/blob/main/packages/playground/ssr-vue/prerender.js) for working example.
 
 ## SSR Externals
 
@@ -208,7 +208,7 @@ Vite performs automated SSR externalization based on the following heuristics:
 
 If this heuristics leads to errors, you can manually adjust SSR externals using `ssr.external` and `ssr.noExternal` config options.
 
-In the future, this heuristics will likely improve to also externalize dependencies that ship Node-compatible ESM builds (and `import()` them during SSR module load).
+In the future, this heuristics will likely improve to detect if the project has `type: "module"` enabled, so that Vite can also externalize dependencies that ship Node-compatible ESM builds by importing them via dynamic `import()` during SSR.
 
 :::warning Working with Aliases
 If you have configured alises that redirects one package to another, you may want to alias the actual `node_modules` packages instead in order to make it work for SSR externalized dependencies. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
