@@ -56,10 +56,12 @@ test('postcss config', async () => {
 test('sass', async () => {
   const imported = await page.$('.sass')
   const atImport = await page.$('.sass-at-import')
+  const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
   expect(await getColor(atImport)).toBe('olive')
   expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getColor(partialImport)).toBe('orchid')
 
   editFile('sass.scss', (code) =>
     code.replace('color: $injectedColor', 'color: red')
@@ -70,6 +72,11 @@ test('sass', async () => {
     code.replace('color: olive', 'color: blue')
   )
   await untilUpdated(() => getColor(atImport), 'blue')
+
+  editFile('nested/_partial.scss', (code) =>
+    code.replace('color: orchid', 'color: green')
+  )
+  await untilUpdated(() => getColor(partialImport), 'green')
 })
 
 test('less', async () => {

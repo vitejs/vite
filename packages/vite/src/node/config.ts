@@ -168,7 +168,8 @@ export type ResolvedConfig = Readonly<
     logger: Logger
     createResolver: (options?: {
       asSrc?: boolean
-      tryIndex?: boolean | string
+      tryIndex?: boolean
+      tryPrefix?: string
       extensions?: string[]
       relativeFirst?: boolean
     }) => ResolveFn
@@ -333,6 +334,7 @@ export async function resolveConfig(
                 asSrc: options?.asSrc ?? true,
                 relativeFirst: options?.relativeFirst ?? false,
                 tryIndex: options?.tryIndex ?? true,
+                tryPrefix: options?.tryPrefix,
                 extensions: options?.extensions
               })
             ]
