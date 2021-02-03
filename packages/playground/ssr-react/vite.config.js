@@ -1,12 +1,13 @@
-// @ts-check
-const vuePlugin = require('@vitejs/plugin-vue').default
 const reactRefresh = require('@vitejs/plugin-react-refresh')
 
 /**
  * @type {import('vite').UserConfig}
  */
 module.exports = {
-  plugins: [vuePlugin(), reactRefresh()],
+  plugins: [reactRefresh()],
+  esbuild: {
+    jsxInject: `import React from 'react';`
+  },
   build: {
     minify: false
   }

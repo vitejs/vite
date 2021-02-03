@@ -1,0 +1,27 @@
+{
+  "name": "test-ssr-react",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "node server",
+    "build": "yarn build:client && yarn build:server",
+    "build:client": "vite build --outDir dist/client",
+    "build:server": "vite build --ssr src/entry-server.jsx --outDir dist/server",
+    "generate": "vite build --outDir dist/static && yarn build:server && node prerender",
+    "serve": "cross-env NODE_ENV=production node server",
+    "debug": "node --inspect-brk server"
+  },
+  "dependencies": {
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-router": "^5.2.0",
+    "react-router-dom": "^5.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react-refresh": "^1.0.0",
+    "compression": "^1.7.4",
+    "cross-env": "^7.0.3",
+    "express": "^4.17.1",
+    "serve-static": "^1.14.1"
+  }
+}

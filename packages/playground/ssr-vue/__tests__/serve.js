@@ -31,7 +31,7 @@ exports.serve = async function serve(root, isProd) {
       logLevel: 'error',
       build: {
         target: 'esnext',
-        ssr: 'src/entry-server.ts',
+        ssr: 'src/entry-server.js',
         outDir: 'dist/server'
       }
     })
