@@ -78,6 +78,10 @@ module.exports = {
               link: '/guide/env-and-mode'
             },
             {
+              text: 'Server-Side Rendering (SSR)',
+              link: '/guide/ssr'
+            },
+            {
               text: 'Backend Integration',
               link: '/guide/backend-integration'
             },

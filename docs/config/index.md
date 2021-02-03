@@ -484,6 +484,20 @@ export default ({ command, mode }) => {
 
   By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentially removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
+### build.brotliSize
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Enable/disable brotli-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
+
+### build.chunkSizeWarningLimit
+
+- **Type:** `number`
+- **Default:** `500`
+
+  Limit for chunk size warnings (in kbs).
+
 ## Dep Optimization Options
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
@@ -507,3 +521,19 @@ export default ({ command, mode }) => {
 - **Type:** `string[]`
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
+
+## SSR Options
+
+- **Related:** [SSR Externals Heuristics](/guide/ssr#externals-heuristics)
+
+### ssr.external
+
+- **Type:** `string[]`
+
+  Force externalize dependencies for SSR.
+
+### ssr.noExternal
+
+- **Type:** `string[]`
+
+  Prevent listed dependencies from being externalized for SSR.
