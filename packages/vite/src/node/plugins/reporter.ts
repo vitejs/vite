@@ -92,13 +92,15 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     buildEnd() {
-      if (tty) {
-        process.stdout.clearLine(0)
-        process.stdout.cursorTo(0)
+      if (shouldLogInfo) {
+        if (tty) {
+          process.stdout.clearLine(0)
+          process.stdout.cursorTo(0)
+        }
+        config.logger.info(
+          `${chalk.green(`✓`)} ${transformedCount} modules transformed.`
+        )
       }
-      config.logger.info(
-        `${chalk.green(`✓`)} ${transformedCount} modules transformed.`
-      )
     },
 
     renderStart() {
@@ -121,7 +123,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle() {
-      if (tty) {
+      if (shouldLogInfo && tty) {
         process.stdout.clearLine(0)
         process.stdout.cursorTo(0)
       }
