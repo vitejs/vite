@@ -28,44 +28,6 @@ const { createServer } = require('vite')
 })()
 ```
 
-### Using the Vite Server as a Middleware
-
-Vite can be used as a middleware in an existing raw Node.js http server or frameworks that are comaptible with the `(req, res, next) => {}` style middlewares. For example with `express`:
-
-```js
-const vite = require('vite')
-const express = require('express')
-
-;(async () => {
-  const app = express()
-
-  // create vite dev server in middleware mode
-  // so vite creates the hmr websocket server on its own.
-  // the ws server will be listening at port 24678 by default, and can be
-  // configured via server.hmr.port
-  const viteServer = await vite.createServer({
-    server: {
-      middlewareMode: true
-    }
-  })
-
-  // use vite's connect instance as middleware
-  app.use(viteServer.app)
-
-  app.use('*', (req, res) => {
-    // serve custom index.html
-  })
-
-  app.listen(3000)
-})()
-```
-
-Note that in middleware mode, Vite will not be serving `index.html` - that is now the responsibility of the parent server. When serving the HTML, make sure to include a link to Vite's dev client:
-
-```html
-<script type="module" src="/@vite/client"></script>
-```
-
 ## `InlineConfig`
 
 The `InlineConfig` interface extends `UserConfig` with additional properties:
@@ -124,6 +86,31 @@ interface ViteDevServer {
     options?: EsbuildTransformOptions,
     inMap?: object
   ): Promise<EsbuildTransformResult>
+  /**
+   * Apply vite built-in HTML transforms and any plugin HTML transforms.
+   */
+  transformIndexHtml(url: string, html: string): Promise<string>
+  /**
+   * Util for transforming a file with esbuild.
+   * Can be useful for certain plugins.
+   */
+  transformWithEsbuild(
+    code: string,
+    filename: string,
+    options?: EsbuildTransformOptions,
+    inMap?: object
+  ): Promise<ESBuildTransformResult>
+  /**
+   * Load a given URL as an instantiated module for SSR.
+   */
+  ssrLoadModule(
+    url: string,
+    options?: { isolated?: boolean }
+  ): Promise<Record<string, any>>
+  /**
+   * Fix ssr error stacktrace
+   */
+  ssrFixStacktrace(e: Error): void
   /**
    * Start the server.
    */
