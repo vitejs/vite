@@ -131,10 +131,11 @@ function nodeRequire(id: string, importer: string | null) {
   const mod = importer
     ? require(resolveFrom(id, path.dirname(importer), true))
     : require(id)
+  const defaultExport = mod.__esModule ? mod.default : mod
   // rollup-style default import interop for cjs
   return new Proxy(mod, {
     get(mod, prop) {
-      if (prop === 'default') return mod
+      if (prop === 'default') return defaultExport
       return mod[prop]
     }
   })
