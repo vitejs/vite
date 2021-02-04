@@ -4,34 +4,36 @@ import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
 
-/**
- * Build only.
- * Server define is injected as runtime variables by clientInjection plugin
- * to avoid transform cost during dev.
- */
-export function buildDefinePlugin(config: ResolvedConfig): Plugin {
+export function definePlugin(config: ResolvedConfig): Plugin {
+  const isBuild = config.command === 'build'
+
   const userDefine: Record<string, string> = {}
   for (const key in config.define) {
     userDefine[key] = JSON.stringify(config.define[key])
   }
 
-  const individualEnvKeys: Record<string, string> = {}
-  const env: Record<string, any> = {
-    ...config.env,
-    SSR: !!config.build.ssr
-  }
-  for (const key in env) {
-    individualEnvKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
+  // during dev, import.meta properties are handled by importAnalysis plugin
+  const importMetaKeys: Record<string, string> = {}
+  if (isBuild) {
+    const env: Record<string, any> = {
+      ...config.env,
+      SSR: !!config.build.ssr
+    }
+    for (const key in env) {
+      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
+    }
+    Object.assign(importMetaKeys, {
+      'import.meta.env.': `({}).`,
+      'import.meta.env': JSON.stringify(config.env),
+      'import.meta.hot': `false`
+    })
   }
 
   const replacements: Record<string, string | undefined> = {
     'process.env.NODE_ENV': JSON.stringify(config.mode),
     'process.env.': `({}).`,
     ...userDefine,
-    ...individualEnvKeys,
-    'import.meta.env.': `({}).`,
-    'import.meta.env': JSON.stringify(config.env),
-    'import.meta.hot': `false`
+    ...importMetaKeys
   }
 
   const pattern = new RegExp(
@@ -47,13 +49,26 @@ export function buildDefinePlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:define',
-    transform(code, id) {
+    transform(code, id, ssr) {
+      if (!ssr && !isBuild) {
+        // for dev we inject actual global defines in the vite client to
+        // avoid the transform cost.
+        return
+      }
+
       if (
         // exclude css and static assets for performance
         isCSSRequest(id) ||
         config.assetsInclude(id)
       ) {
         return
+      }
+
+      if (ssr && !isBuild) {
+        // ssr + dev, simple replace
+        return code.replace(pattern, (_, match) => {
+          return '' + replacements[match]
+        })
       }
 
       const s = new MagicString(code)

@@ -13,6 +13,7 @@ import { wasmPlugin } from './wasm'
 import { webWorkerPlugin } from './worker'
 import { dynamicImportPolyfillPlugin } from './dynamicImportPolyfill'
 import { preAliasPlugin } from './preAlias'
+import { definePlugin } from './define'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -54,6 +55,7 @@ export async function resolvePlugins(
     webWorkerPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
+    definePlugin(config),
     cssPostPlugin(config),
     ...buildPlugins.pre,
     ...postPlugins,
