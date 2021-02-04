@@ -125,6 +125,14 @@ test('css modules w/ sass', async () => {
   await untilUpdated(() => getColor(imported), 'blue')
 })
 
+test('@import dependency w/ style entry', async () => {
+  expect(await getColor('.css-dep')).toBe('purple')
+})
+
+test('@import dependency w/ sass entry', async () => {
+  expect(await getColor('.css-dep-sass')).toBe('orange')
+})
+
 test('async chunk', async () => {
   const el = await page.$('.async')
   expect(await getColor(el)).toBe('teal')

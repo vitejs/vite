@@ -15,6 +15,8 @@ import sassMod from './mod.module.scss'
 document.querySelector('.modules-sass').classList.add(sassMod.applyColor)
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
 
+import './dep.css'
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
