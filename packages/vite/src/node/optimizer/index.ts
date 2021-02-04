@@ -208,6 +208,13 @@ export async function optimizeDeps(
     flatIdToExports[flatId] = exportsData
   }
 
+  const define: Record<string, string> = {
+    'process.env.NODE_ENV': JSON.stringify(config.mode)
+  }
+  for (const key in config.define) {
+    define[key] = JSON.stringify(config.define[key])
+  }
+
   const start = Date.now()
   const esbuildService = await ensureService()
   await esbuildService.build({
@@ -221,9 +228,7 @@ export async function optimizeDeps(
     outdir: cacheDir,
     treeShaking: 'ignore-annotations',
     metafile: esbuildMetaPath,
-    define: {
-      'process.env.NODE_ENV': JSON.stringify(config.mode)
-    },
+    define,
     plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
   })
 

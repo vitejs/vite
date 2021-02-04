@@ -15,7 +15,6 @@ import Rollup, {
   GetModuleInfo
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
-import { buildDefinePlugin } from './plugins/define'
 import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
@@ -242,7 +241,6 @@ export function resolveBuildPlugins(
       buildHtmlPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
-      buildDefinePlugin(config),
       dynamicImportVars({
         warnOnError: true,
         exclude: [/node_modules/]
