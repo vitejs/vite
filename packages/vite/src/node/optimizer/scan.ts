@@ -3,7 +3,7 @@ import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { Loader, Plugin } from 'esbuild'
-import { KNOWN_ASSET_TYPES, SPECIAL_QUERY_RE } from '../constants'
+import { KNOWN_ASSET_TYPES, JS_TYPES_RE, SPECIAL_QUERY_RE } from '../constants'
 import {
   createDebugger,
   emptyDir,
@@ -25,7 +25,6 @@ import { ensureService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
-const jsTypesRE = /\.(j|t)sx?$|\.mjs$/
 const htmlTypesRE = /\.(html|vue|svelte)$/
 
 export async function scanImports(
@@ -301,7 +300,7 @@ function esbuildScanPlugin(
       // for jsx/tsx, we need to access the content and check for
       // presence of import.meta.glob, since it results in import relationships
       // but isn't crawled by esbuild.
-      build.onLoad({ filter: jsTypesRE }, ({ path: id }) => {
+      build.onLoad({ filter: JS_TYPES_RE }, ({ path: id }) => {
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
@@ -363,7 +362,7 @@ export function shouldExternalizeDep(resolvedId: string, rawId?: string) {
     return true
   }
   // resovled is not a js type
-  if (!jsTypesRE.test(resolvedId)) {
+  if (!JS_TYPES_RE.test(resolvedId)) {
     return true
   }
 }
