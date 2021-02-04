@@ -4,7 +4,7 @@
  * @type {import('vitepress').UserConfig}
  */
 module.exports = {
-  title: 'Vite⚡',
+  title: 'Vite',
   description: 'Next Generation Frontend Tooling',
   head: [
     [
