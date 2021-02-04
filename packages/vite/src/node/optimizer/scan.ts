@@ -200,10 +200,12 @@ function esbuildScanPlugin(
         }
 
         if (js.includes('import.meta.glob')) {
-          return transformGlob(js, path, loader).then((contents) => ({
-            loader,
-            contents
-          }))
+          return transformGlob(js, path, config.root, loader).then(
+            (contents) => ({
+              loader,
+              contents
+            })
+          )
         }
 
         return {
@@ -310,7 +312,7 @@ function esbuildScanPlugin(
         }
 
         if (contents.includes('import.meta.glob')) {
-          return transformGlob(contents, id, ext as Loader).then(
+          return transformGlob(contents, id, config.root, ext as Loader).then(
             (contents) => ({
               loader: ext as Loader,
               contents
@@ -326,7 +328,12 @@ function esbuildScanPlugin(
   }
 }
 
-async function transformGlob(source: string, importer: string, loader: Loader) {
+async function transformGlob(
+  source: string,
+  importer: string,
+  root: string,
+  loader: Loader
+) {
   // transform the content first since es-module-lexer can't handle non-js
   if (loader !== 'js') {
     source = (await (await ensureService()).transform(source, { loader })).code
@@ -344,7 +351,8 @@ async function transformGlob(source: string, importer: string, loader: Loader) {
       source,
       start,
       normalizePath(importer),
-      index
+      index,
+      root
     )
     s.prepend(importsString)
     s.overwrite(expStart, endIndex, exp)

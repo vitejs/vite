@@ -132,7 +132,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             exp,
             endIndex,
             isEager
-          } = await transformImportGlob(source, start, importer, index)
+          } = await transformImportGlob(
+            source,
+            start,
+            importer,
+            index,
+            config.root
+          )
           str().prepend(importsString)
           str().overwrite(expStart, endIndex, exp)
           if (!isEager) {
