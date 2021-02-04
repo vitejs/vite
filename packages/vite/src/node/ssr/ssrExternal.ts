@@ -81,7 +81,7 @@ export function resolveSSRExternal(
   if (config.ssr?.noExternal) {
     externals = externals.filter((id) => !config.ssr!.noExternal!.includes(id))
   }
-  return externals
+  return externals.filter((id) => id !== 'vite')
 }
 
 export function shouldExternalizeForSSR(
