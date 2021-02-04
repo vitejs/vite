@@ -21,6 +21,9 @@
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
+<h2>Resolve dir and file of the same name (should prioritize file)</h2>
+<p class="dir-vs-file">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -78,6 +81,10 @@
   // implicit index resolving
   import { foo } from './util'
   text('.index', foo())
+
+  // implicit dir index vs. file
+  import { file } from './dir'
+  text('.dir-vs-file', file)
 
   // filename with dot
   import { bar } from './util/bar.util'

@@ -34,8 +34,12 @@ test('Respect production/development conditionals', async () => {
   )
 })
 
-test('omitted index/*', async () => {
+test('implicit dir/index.js', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
+})
+
+test('implicit dir/index.js vs explicit file', async () => {
+  expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
 })
 
 test('filename with dot', async () => {
