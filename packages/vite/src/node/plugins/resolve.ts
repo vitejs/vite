@@ -2,7 +2,12 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import chalk from 'chalk'
-import { FS_PREFIX, SPECIAL_QUERY_RE, SUPPORTED_EXTS } from '../constants'
+import {
+  FS_PREFIX,
+  JS_TYPES_RE,
+  SPECIAL_QUERY_RE,
+  SUPPORTED_EXTS
+} from '../constants'
 import {
   isBuiltin,
   bareImportRE,
@@ -23,7 +28,6 @@ import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
-import { isCSSRequest } from './css'
 
 const altMainFields = [
   'module',
@@ -381,21 +385,22 @@ export function tryNodeResolve(
       return { id: resolved }
     }
     // if we reach here, it's a valid dep import that hasn't been optimzied.
+    const isJsType = JS_TYPES_RE.test(resolved)
     const exclude = server.config.optimizeDeps?.exclude
     if (
+      !isJsType ||
       importer?.includes('node_modules') ||
       exclude?.includes(pkgId) ||
       exclude?.includes(id) ||
-      isCSSRequest(resolved) ||
-      server.config.assetsInclude(resolved) ||
-      resolved.endsWith('.json') ||
       SPECIAL_QUERY_RE.test(resolved)
     ) {
       // excluded from optimization
       // Inject a version query to npm deps so that the browser
-      // can cache it without revalidation.
+      // can cache it without revalidation, but only do so for known js types.
+      // otherwise we may introduce duplicated modules for externalized files
+      // from pre-bundled deps.
       const versionHash = server._optimizeDepsMetadata?.browserHash
-      if (versionHash) {
+      if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
     } else {

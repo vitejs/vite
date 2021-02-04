@@ -2,6 +2,8 @@ import path from 'path'
 
 export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
 
+export const JS_TYPES_RE = /\.(j|t)sx?$|\.mjs$/
+
 export const SPECIAL_QUERY_RE = /[\?&](worker|raw|url)\b/
 
 export const DEP_CACHE_DIR = `.vite`
