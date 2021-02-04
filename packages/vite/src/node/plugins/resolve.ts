@@ -246,25 +246,13 @@ export function resolvePlugin({
 export function tryFsResolve(
   fsPath: string,
   isProduction: boolean,
-  tryIndex: boolean | string = true,
+  tryIndex: boolean = true,
   tryPrefix: string | undefined = undefined,
   extensions = SUPPORTED_EXTS
 ): string | undefined {
   const [file, q] = fsPath.split(`?`, 2)
   const query = q ? `?${q}` : ``
   let res: string | undefined
-  if (
-    (res = tryResolveFile(
-      file,
-      query,
-      isProduction,
-      tryIndex,
-      tryPrefix,
-      extensions
-    ))
-  ) {
-    return res
-  }
   for (const ext of extensions) {
     if (
       (res = tryResolveFile(
@@ -279,35 +267,45 @@ export function tryFsResolve(
       return res
     }
   }
+  if (
+    (res = tryResolveFile(
+      file,
+      query,
+      isProduction,
+      tryIndex,
+      tryPrefix,
+      extensions
+    ))
+  ) {
+    return res
+  }
 }
 
 function tryResolveFile(
   file: string,
   query: string,
   isProduction: boolean,
-  tryIndex: boolean | string,
+  tryIndex: boolean,
   tryPrefix: string | undefined,
   extensions: string[]
 ): string | undefined {
   if (fs.existsSync(file)) {
     const isDir = fs.statSync(file).isDirectory()
-    if (isDir) {
+    if (isDir && tryIndex) {
       const pkgPath = file + '/package.json'
       if (fs.existsSync(pkgPath)) {
         // path points to a node package
         const pkg = loadPackageData(pkgPath)
         return resolvePackageEntry(file, pkg, isProduction)
       }
-      if (tryIndex) {
-        const index = tryFsResolve(
-          file + '/index',
-          isProduction,
-          false,
-          tryPrefix,
-          extensions
-        )
-        if (index) return index + query
-      }
+      const index = tryFsResolve(
+        file + '/index',
+        isProduction,
+        false,
+        tryPrefix,
+        extensions
+      )
+      if (index) return index + query
     } else {
       return normalizePath(ensureVolumeInPath(file)) + query
     }
