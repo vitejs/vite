@@ -2398,6 +2398,10 @@ css-color-names@^1.0.1:
   resolved "https://registry.yarnpkg.com/css-color-names/-/css-color-names-1.0.1.tgz#6ff7ee81a823ad46e020fa2fd6ab40a887e2ba67"
   integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
 
+"css-dep@link:./packages/playground/css/css-dep":
+  version "0.0.0"
+  uid ""
+
 cssesc@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/cssesc/-/cssesc-3.0.0.tgz#37741919903b868565e1c09ea747445cd18983ee"

@@ -19,7 +19,7 @@ import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR, DEFAULT_ASSETS_RE, DEP_CACHE_DIR } from './constants'
-import { resolvePlugin } from './plugins/resolve'
+import { ResolveOptions, resolvePlugin } from './plugins/resolve'
 import { createLogger, Logger, LogLevel } from './logger'
 import { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
@@ -166,15 +166,11 @@ export type ResolvedConfig = Readonly<
     build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
-    createResolver: (options?: {
-      asSrc?: boolean
-      tryIndex?: boolean
-      tryPrefix?: string
-      extensions?: string[]
-      relativeFirst?: boolean
-    }) => ResolveFn
+    createResolver: (options?: Partial<ResolveOptions>) => ResolveFn
   }
 >
+
+export { ResolveOptions }
 
 export type ResolveFn = (
   id: string,
@@ -331,11 +327,10 @@ export async function resolveConfig(
                 dedupe: resolved.dedupe,
                 isProduction,
                 isBuild: command === 'build',
-                asSrc: options?.asSrc ?? true,
-                relativeFirst: options?.relativeFirst ?? false,
-                tryIndex: options?.tryIndex ?? true,
-                tryPrefix: options?.tryPrefix,
-                extensions: options?.extensions
+                asSrc: true,
+                relativeFirst: false,
+                tryIndex: true,
+                ...options
               })
             ]
           }))

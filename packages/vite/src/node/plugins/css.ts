@@ -422,6 +422,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
         cssResolve ||
         (cssResolve = config.createResolver({
           extensions: ['.css'],
+          mainFields: ['style'],
           tryIndex: false,
           relativeFirst: true
         }))
@@ -433,6 +434,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
         sassResolve ||
         (sassResolve = config.createResolver({
           extensions: ['.scss', '.sass', '.css'],
+          mainFields: ['sass', 'style'],
           tryIndex: true,
           tryPrefix: '_',
           relativeFirst: true
@@ -445,6 +447,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
         lessResolve ||
         (lessResolve = config.createResolver({
           extensions: ['.less', '.css'],
+          mainFields: ['less', 'style'],
           tryIndex: false,
           relativeFirst: true
         }))

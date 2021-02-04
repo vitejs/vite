@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { tryNodeResolve } from '../plugins/resolve'
+import { tryNodeResolve, ResolveOptions } from '../plugins/resolve'
 import { lookupFile, resolveFrom } from '../utils'
 import { ResolvedConfig } from '..'
 
@@ -28,11 +28,17 @@ export function resolveSSRExternal(
     ssrExternals.add(id)
   }
 
+  const resolveOptions: ResolveOptions = {
+    root,
+    isProduction: false,
+    isBuild: true
+  }
+
   for (const id of deps) {
     let entry
     let requireEntry
     try {
-      entry = tryNodeResolve(id, undefined, root, false)?.id
+      entry = tryNodeResolve(id, undefined, resolveOptions)?.id
       requireEntry = require.resolve(id, { paths: [root] })
     } catch (e) {
       // resolve failed, assume include
