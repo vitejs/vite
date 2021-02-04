@@ -2,7 +2,7 @@
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
-  const modules = import.meta.glob('./dir/**')
+  const modules = import.meta.glob('/dir/**')
 
   for (const path in modules) {
     modules[path]().then((mod) => {

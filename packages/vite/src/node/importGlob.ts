@@ -13,6 +13,7 @@ export async function transformImportGlob(
   pos: number,
   importer: string,
   importIndex: number,
+  root: string,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>
 ): Promise<{
   importsString: string
@@ -35,18 +36,25 @@ export async function transformImportGlob(
   const importerBasename = path.basename(importer)
 
   let [pattern, endIndex] = lexGlobPattern(source, pos)
-  if (!pattern.startsWith('.')) {
-    throw err(`pattern must start with "."`)
+  if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
+    throw err(`pattern must start with "." or "/" (relative to project root)`)
   }
-  let base = path.dirname(importer)
+  let base
   let parentDepth = 0
-  while (pattern.startsWith('../')) {
-    pattern = pattern.slice(3)
-    base = path.resolve(base, '../')
-    parentDepth++
-  }
-  if (pattern.startsWith('./')) {
-    pattern = pattern.slice(2)
+  let isAbsolute = pattern.startsWith('/')
+  if (isAbsolute) {
+    base = path.resolve(root)
+    pattern = pattern.slice(1)
+  } else {
+    base = path.dirname(importer)
+    while (pattern.startsWith('../')) {
+      pattern = pattern.slice(3)
+      base = path.resolve(base, '../')
+      parentDepth++
+    }
+    if (pattern.startsWith('./')) {
+      pattern = pattern.slice(2)
+    }
   }
   const files = glob.sync(pattern, { cwd: base })
   const imports: string[] = []
@@ -55,7 +63,9 @@ export async function transformImportGlob(
   for (let i = 0; i < files.length; i++) {
     // skip importer itself
     if (files[i] === importerBasename) continue
-    const file = parentDepth
+    const file = isAbsolute
+      ? `/${files[i]}`
+      : parentDepth
       ? `${'../'.repeat(parentDepth)}${files[i]}`
       : `./${files[i]}`
     let importee = file

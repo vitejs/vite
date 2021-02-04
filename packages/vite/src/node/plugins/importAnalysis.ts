@@ -85,7 +85,9 @@ function markExplicitImport(url: string) {
  *     ```
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
-  const clientPublicPath = path.posix.join(config.base, CLIENT_PUBLIC_PATH)
+  const { root, base } = config
+  const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
+
   let server: ViteDevServer
 
   return {
@@ -96,7 +98,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer, ssr) {
-      const prettyImporter = prettifyUrl(importer, config.root)
+      const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
         isDebug && debugRewrite(chalk.dim(`[skipped] ${prettyImporter}`))
@@ -162,8 +164,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<[string, string]> => {
-        if (config.base !== '/' && url.startsWith(config.base)) {
-          url = url.replace(config.base, '/')
+        if (base !== '/' && url.startsWith(base)) {
+          url = url.replace(base, '/')
         }
 
         const resolved = await this.resolve(url, importer)
@@ -179,9 +181,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
-        if (resolved.id.startsWith(config.root + '/')) {
+        if (resolved.id.startsWith(root + '/')) {
           // in root: infer short absolute path from root
-          url = resolved.id.slice(config.root.length)
+          url = resolved.id.slice(root.length)
         } else if (fs.existsSync(cleanUrl(resolved.id))) {
           // exists but out of root: rewrite to absolute /@fs/ paths
           url = path.posix.join(FS_PREFIX + resolved.id)
@@ -234,7 +236,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         // prepend base (dev base is guaranteed to have ending slash)
-        url = config.base + url.replace(/^\//, '')
+        url = base + url.replace(/^\//, '')
         return [url, resolved.id]
       }
 
@@ -284,13 +286,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               start,
               importer,
               index,
+              root,
               normalizeUrl
             )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
-            imports.forEach((url) =>
-              importedUrls.add(url.replace(config.base, '/'))
-            )
+            imports.forEach((url) => importedUrls.add(url.replace(base, '/')))
             server._globImporters[importerModule.file!] = {
               module: importerModule,
               base,
@@ -386,7 +387,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           // make sure to normalize away base
-          importedUrls.add(url.replace(config.base, '/'))
+          importedUrls.add(url.replace(base, '/'))
         } else if (!importer.startsWith(clientDir) && !ssr) {
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
