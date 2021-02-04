@@ -26,17 +26,17 @@ A typical SSR application will have the following source file structure:
 - src/
   - main.js          # exports env-agnostic (universal) app code
   - entry-client.js  # mounts the app to a DOM element
-  - entry-server.js  # renders the app using framework's SSR API
+  - entry-server.js  # renders the app using the framework's SSR API
 ```
 
 The `index.html` will need to reference `entry-client.js` and include a placeholder where the server-rendered markup should be injected:
 
 ```html
-<div id="app"><!--app-html--></div>
+<div id="app"><!--ssr-outlet--></div>
 <script type="module" src="/src/entry-client.js"></script>
 ```
 
-You can use any placeholder you prefer instead of `<!--app-html-->`, as long as it can be precisely replaced.
+You can use any placeholder you prefer instead of `<!--ssr-outlet-->`, as long as it can be precisely replaced.
 
 ## Conditional Logic
 
@@ -66,7 +66,7 @@ async function createServer() {
   const app = express()
 
   // Create vite server in middleware mode. This disables Vite's own HTML
-  // serving logic and let's the parent server take control.
+  // serving logic and let the parent server take control.
   const vite = await createViteServer({
     server: { middlewareMode: true }
   })
@@ -160,7 +160,7 @@ Note the `--ssr` flag which indicates this is an SSR build. It should also speci
 
 Then, in `server.js` we need to add some production specific logic by checking `process.env.NODE_ENV`:
 
-- Instead of reading the root `index.html`, use the `dist/client/index.html` as template instead, since it contains the correct asset links to the client build.
+- Instead of reading the root `index.html`, use the `dist/client/index.html` as the template instead, since it contains the correct asset links to the client build.
 
 - Instead of `await vite.ssrLoadModule('/src/entry-server.js')`, use `require('./dist/server/entry-server.js')` instead (this file is the result of the SSR build).
 
@@ -211,7 +211,7 @@ If this heuristics leads to errors, you can manually adjust SSR externals using 
 In the future, this heuristics will likely improve to detect if the project has `type: "module"` enabled, so that Vite can also externalize dependencies that ship Node-compatible ESM builds by importing them via dynamic `import()` during SSR.
 
 :::warning Working with Aliases
-If you have configured alises that redirects one package to another, you may want to alias the actual `node_modules` packages instead in order to make it work for SSR externalized dependencies. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
+If you have configured aliases that redirects one package to another, you may want to alias the actual `node_modules` packages instead to make it work for SSR externalized dependencies. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
 :::
 
 ## SSR-specific Plugin Logic
