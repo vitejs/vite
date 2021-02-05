@@ -1,23 +1,20 @@
 <template>
   <h1>{{ msg }}</h1>
 
-  <p>
-    <a href="https://vitejs.dev/guide/features.html" target="_blank">Vite Documentation</a> |
-    <a href="https://v3.vuejs.org/" target="_blank">Vue 3 Documentation</a>
-  </p>
-
   <label>
-    <input type="checkbox" v-model="toggle_1" /> use &lt;script setup&gt;
+    <input type="checkbox" v-model="useScriptSetup" /> Use
+    <code>&lt;script setup&gt</code>
   </label>
   <label>
-    <input type="checkbox" v-model="toggle_2" /> provide types for `*.vue` imports
+    <input type="checkbox" v-model="useTsPlugin" /> Provide types for
+    <code>*.vue</code> imports
   </label>
 
   <p>
     Recommended IDE setup:
     <a href="https://code.visualstudio.com/" target="_blank">VSCode</a>
     +
-    <template v-if="!toggle_1">
+    <template v-if="!useScriptSetup">
       <a
         href="https://marketplace.visualstudio.com/items?itemName=octref.vetur"
         target="_blank"
@@ -32,9 +29,9 @@
       <a href="https://github.com/johnsoncodehk/volar" target="_blank">Volar</a>
     </template>
   </p>
-  <p v-if="toggle_2">
+  <p v-if="useTsPlugin">
     tsconfig setup:
-    <br />1. Add
+    <br />1. Install and add
     <code>@vuex/typescript-plugin-vue</code> to tsconfig plugins
     <br />2. Delete shims-vue.d.ts
     <br />3. Open
@@ -47,11 +44,15 @@
     Edit
     <code>components/HelloWorld.vue</code> to test hot module replacement.
   </p>
+
+  <p>
+    <a href="https://vitejs.dev/guide/features.html" target="_blank">Vite Docs</a> |
+    <a href="https://v3.vuejs.org/" target="_blank">Vue 3 Docs</a>
+  </p>
 </template>
 
 <script lang="ts">
 import { ref, defineComponent } from 'vue'
-
 export default defineComponent({
   name: 'HelloWorld',
   props: {
@@ -62,9 +63,9 @@ export default defineComponent({
   },
   setup: () => {
     const count = ref(0)
-    const toggle_1 = ref(false);
-    const toggle_2 = ref(false);
-    return { count, toggle_1, toggle_2 }
+    const useScriptSetup = ref(false);
+    const useTsPlugin = ref(false);
+    return { count, useScriptSetup, useTsPlugin }
   }
 })
 </script>
@@ -72,5 +73,17 @@ export default defineComponent({
 <style scoped>
 a {
   color: #42b983;
+}
+
+label {
+  margin: 0 0.5em;
+  font-weight: bold;
+}
+
+code {
+  background-color: #eee;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #304455;
 }
 </style>
