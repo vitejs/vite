@@ -2,6 +2,7 @@ import Theme from 'vitepress/theme'
 import { h } from 'vue'
 import sponsors from './sponsors.json'
 import './sponsors.css'
+import './custom.css'
 
 export default {
   ...Theme,
