@@ -12,7 +12,7 @@ import { someMethod } from 'my-dep'
 
 The above will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
 
-1. [Pre-bundle](./dep-rep-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](http://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
+1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](http://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
 
 2. Rewrite the imports to valid URLs like `/node_modules/.vite/my-dep.js?v=f3sf2ebd` so that the browser can import them properly.
 
@@ -123,7 +123,15 @@ import classes from './example.module.css'
 document.getElementById('foo').className = classes.red
 ```
 
-Note that the CSS modules `localsConvention` defaults to `camelCaseOnly` - i.e. a class named `.foo-bar` will be exposed as `classes.fooBar`. CSS modules behavior can be configured via the [`css.modules` option](/config/#css-modules).
+CSS modules behavior can be configured via the [`css.modules` option](/config/#css-modules).
+
+If `css.modules.localsConvention` is set to enable camelCase locals (e.g. `localsConvention: 'camelCaseOnly'`), you can also use named imports:
+
+```js
+// .apply-color -> applyColor
+import { applyColor } from './example.module.css'
+document.getElementById('foo').className = applyColor
+```
 
 ### CSS Pre-processors
 

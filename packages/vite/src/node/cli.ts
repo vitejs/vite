@@ -111,7 +111,7 @@ cli
     `[number] static asset base64 inline threshold in bytes (default: 4096)`
   )
   .option(
-    '--ssr <entry>',
+    '--ssr [entry]',
     `[string] build specified entry for server-side rendering`
   )
   .option(
