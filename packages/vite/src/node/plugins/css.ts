@@ -59,9 +59,14 @@ export interface CSSModulesOptions {
     | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
-   * default: 'camelCaseOnly'
+   * default: 'camelCase'
    */
-  localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
+  localsConvention?:
+    | 'camelCase'
+    | 'camelCaseOnly'
+    | 'dashes'
+    | 'dashesOnly'
+    | null
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
@@ -560,7 +565,6 @@ async function compileCSS(
   if (isModule) {
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
-        localsConvention: 'camelCaseOnly',
         ...modulesOptions,
         getJSON(_: string, _modules: Record<string, string>) {
           modules = _modules
