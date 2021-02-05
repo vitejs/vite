@@ -8,11 +8,11 @@ import less from './less.less'
 text('.imported-less', less)
 
 import mod from './mod.module.css'
-document.querySelector('.modules').classList.add(mod.applyColor)
+document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
 
 import sassMod from './mod.module.scss'
-document.querySelector('.modules-sass').classList.add(sassMod.applyColor)
+document.querySelector('.modules-sass').classList.add(sassMod['apply-color'])
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
 
 import './dep.css'

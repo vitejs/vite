@@ -123,7 +123,15 @@ import classes from './example.module.css'
 document.getElementById('foo').className = classes.red
 ```
 
-Note that the CSS modules `localsConvention` defaults to `camelCaseOnly` - i.e. a class named `.foo-bar` will be exposed as `classes.fooBar`. CSS modules behavior can be configured via the [`css.modules` option](/config/#css-modules).
+CSS modules behavior can be configured via the [`css.modules` option](/config/#css-modules).
+
+If `css.modules.localsConvention` is set to enable camelCase locals (e.g. `localsConvention: 'camelCaseOnly'`), you can also use named imports:
+
+```js
+// .apply-color -> applyColor
+import { applyColor } from './example.module.css'
+document.getElementById('foo').className = applyColor
+```
 
 ### CSS Pre-processors
 
