@@ -11,5 +11,10 @@ export default defineConfig({
   build: {
     // to make tests faster
     minify: false
+  },
+  css: {
+    modules: {
+      localsConvention: 'camelCaseOnly'
+    }
   }
 })
