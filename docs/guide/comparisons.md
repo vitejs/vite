@@ -4,11 +4,11 @@
 
 [Snowpack](https://www.snowpack.dev/) is also a no-bundle native ESM dev server that is very similar in scope to Vite. Aside from different implementation details, the two projects share a lot in terms of technical advantages over traditional tooling. Vite's dependency pre-bundling is also inspired by Snowpack v1 (now [`esinstall`](https://github.com/snowpackjs/snowpack/tree/main/esinstall)). Some of the main differences between the two projects are:
 
-**Production Build Handling**
+**Production Build**
 
-Snowpack's default build output is unbundled: it transforms each file into separate built modules, which can then be fed into different "optimizers" that perform the actual bundling. The benefit of this is that you can choose between different end-bundlers (e.g. webpack, Rollup, or even ESbuild), the downside is that it's a bit of a fragmented experience - for example, the `esbuild` optimizer is still unstable, the Rollup optimizer is not officially maintained, and different optimizers have different output and configurations.
+Snowpack's default build output is unbundled: it transforms each file into separate built modules, which can then be fed into different "optimizers" that perform the actual bundling. The benefit of this is that you can choose between different end-bundlers to fit specific needs (e.g. webpack, Rollup, or even esbuild), the downside is that it's a bit of a fragmented experience - for example, the esbuild optimizer is still unstable, the Rollup optimizer is not officially maintained, and different optimizers have different output and configurations.
 
-Vite opts to have a deeper integration with one single bundler (Rollup) in order to provide a more streamlined experience. The reason for going with Rollup is because we believe for the foreseeable future, Rollup offers the best balance between maturity, extensibility, build speed, and output bundle size. It also allows Vite to support a [Universal Plugin API](./api-plugin) that works for both dev and build.
+Vite opts to have a deeper integration with one single bundler (Rollup) in order to provide a more streamlined experience. It also allows Vite to support a [Universal Plugin API](./api-plugin) that works for both dev and build.
 
 Due to a more integrated build process, Vite supports a wide range of features that are currently not available in Snowpack build optimizers:
 
@@ -18,6 +18,10 @@ Due to a more integrated build process, Vite supports a wide range of features t
 - [Optimized async chunk loading](./features#async-chunk-loading-optimization)
 - [Automatic dynamic import polyfill](./features#dynamic-import-polyfill)
 - Official [legacy mode plugin](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) that generates dual modern/legacy bundles and auto delivers the right bundle based on browser support.
+
+**Faster Dependency Pre-Bundling**
+
+Vite uses [esbuild](https://esbuild.github.io/) instead of Rollup for dependency pre-bundling. This results in significant performance improvements in terms of cold server start and re-bundling on dependency invalidations.
 
 **Monorepo Support**
 
@@ -37,6 +41,6 @@ WMR is mainly designed for [Preact](https://preactjs.com/) projects, and offers 
 
 [@web/dev-server](https://modern-web.dev/docs/dev-server/overview/) (previously `es-dev-server`) is a great project and Vite 1.0's Koa-based server setup was inspired by it.
 
-`@web/dev-server` is a bit lower-level in terms of scope. It does not provide out-of-the-box framework integrations, and requires manually setting up a Rollup configuration for the production build. However, its parent project does provide a collection of excellent Rollup plugins.
+`@web/dev-server` is a bit lower-level in terms of scope. It does not provide official framework integrations, and requires manually setting up a Rollup configuration for the production build.
 
-Overall, Vite is a more opinionated / higher-level tool that aims to provide a more streamlined workflow compared to `@web/dev-server`. That said, the `@web` umbrella project contains many other excellent tools that may benefit Vite users as well.
+Overall, Vite is a more opinionated / higher-level tool that aims to provide a more out-of-the-box workflow. That said, the `@web` umbrella project contains many other excellent tools that may benefit Vite users as well.
