@@ -167,6 +167,28 @@ import imgUrl from './img.png'
 document.getElementById('hero-img').src = imgUrl
 ```
 
+Special queries can modify how assets are loaded:
+
+```js
+// Explicitly load assets as URL
+import assetAsURL from './asset.js?url'
+```
+
+```js
+// Load assets as strings
+import assetAsString from './shader.glsl?raw'
+```
+
+```js
+// Load Web Workers
+import Worker from './worker.js?worker'
+```
+
+```js
+// Web Workers inlined as base64 strings at build time
+import InlineWorker from './worker.js?worker&inline'
+```
+
 More details in [Static Asset Handling](./assets).
 
 ## JSON
