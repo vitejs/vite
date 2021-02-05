@@ -224,8 +224,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // references the post-build location.
         for (const attr of assetUrls) {
           const value = attr.value!
-          const url = await urlToBuiltUrl(value.content, id, config, this)
-          s.overwrite(value.loc.start.offset, value.loc.end.offset, `"${url}"`)
+          try {
+            const url = await urlToBuiltUrl(value.content, id, config, this)
+            s.overwrite(
+              value.loc.start.offset,
+              value.loc.end.offset,
+              `"${url}"`
+            )
+          } catch (e) {
+            // #1885 preload may be pointing to urls that do not exist
+            // locally on disk
+          }
         }
 
         processedHtml.set(id, s.toString())
