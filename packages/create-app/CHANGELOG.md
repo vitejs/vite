@@ -1,3 +1,17 @@
+# [1.6.0](https://github.com/vitejs/vite/compare/create-app@1.5.2...create-app@1.6.0) (2021-02-05)
+
+
+### Bug Fixes
+
+* **create-app:** add resolveJsonModule to tsconfig.json for vue-ts template ([#1879](https://github.com/vitejs/vite/issues/1879)) ([2c914a5](https://github.com/vitejs/vite/commit/2c914a5b728d0c130f1e5b73c7b0ab0eedc1cda5))
+
+
+### Features
+
+* **create-app:** clearer vue-ts setup recommend ([#1896](https://github.com/vitejs/vite/issues/1896)) [skip ci] ([d6bf066](https://github.com/vitejs/vite/commit/d6bf066e3a18b749bed1a7fc622dd2551404e29f))
+
+
+
 ## [1.5.2](https://github.com/vitejs/vite/compare/create-app@1.5.1...create-app@1.5.2) (2021-02-03)
 
 
