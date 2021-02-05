@@ -3,7 +3,7 @@
 
   <label>
     <input type="checkbox" v-model="useScriptSetup" /> Use
-    <code>&lt;script setup&gt</code>
+    <code>&lt;script setup&gt;</code>
   </label>
   <label>
     <input type="checkbox" v-model="useTsPlugin" /> Provide types for
