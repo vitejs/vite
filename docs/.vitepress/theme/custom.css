@@ -8,6 +8,10 @@
   margin-right: 2px;
 }
 
+.content img {
+  border-radius: 10px;
+}
+
 :root {
   --c-brand: #646cff;
   --c-brand-light: #747bff;
