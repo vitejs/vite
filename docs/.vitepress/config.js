@@ -7,6 +7,7 @@ module.exports = {
   title: 'Vite',
   description: 'Next Generation Frontend Tooling',
   head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     [
       'style',
       {},
@@ -15,6 +16,7 @@ module.exports = {
   ],
   themeConfig: {
     repo: 'vitejs/vite',
+    logo: '/logo.svg',
     docsDir: 'docs',
     docsBranch: 'main',
     editLinks: true,
