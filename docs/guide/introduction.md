@@ -59,3 +59,7 @@ Ensuring optimal output and behavioral consistency between the dev server and th
 - Vite requires [native ESM dynamic import support](https://caniuse.com/es6-module-dynamic-import) during development.
 
 - The production build assumes a baseline support for [native ESM via script tags](https://caniuse.com/es6-module). Vite does **not** perform any compatibility transpilation by default. Legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) - see the [Building for Production](./build) section for more details.
+
+## How is Vite Different from X?
+
+You can check out the [Comparisons](./comparisons) section for more details on how Vite differs from other similar tools.
