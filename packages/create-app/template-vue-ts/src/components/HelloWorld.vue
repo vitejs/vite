@@ -6,35 +6,41 @@
     <a href="https://v3.vuejs.org/" target="_blank">Vue 3 Documentation</a>
   </p>
 
+  <label>
+    <input type="checkbox" v-model="toggle_1" /> use &lt;script setup&gt;
+  </label>
+  <label>
+    <input type="checkbox" v-model="toggle_2" /> provide types for `*.vue` imports
+  </label>
+
   <p>
     Recommended IDE setup:
     <a href="https://code.visualstudio.com/" target="_blank">VSCode</a>
     +
-    <a
-      href="https://marketplace.visualstudio.com/items?itemName=octref.vetur"
-      target="_blank"
-    >Vetur</a>
-    +
-    <a
-      href="https://marketplace.visualstudio.com/items?itemName=znck.vue-language-features"
-      target="_blank"
-    >Vue DX</a>
+    <template v-if="!toggle_1">
+      <a
+        href="https://marketplace.visualstudio.com/items?itemName=octref.vetur"
+        target="_blank"
+      >Vetur</a>
+      +
+      <a
+        href="https://marketplace.visualstudio.com/items?itemName=znck.vue-language-features"
+        target="_blank"
+      >Vue DX</a>
+    </template>
+    <template v-else>
+      <a href="https://github.com/johnsoncodehk/volar" target="_blank">Volar</a>
+    </template>
   </p>
-  <p>
-    If using &lt;script setup&gt;: use
-    <a
-      href="https://github.com/johnsoncodehk/volar"
-      target="_blank"
-    >Volar</a> instead (and disable Vetur)
-  </p>
-  <p>
-    <b style="color:red">Make sure to use workspace version of TypeScript!!!</b>
-    <br />This leverages the
-    <code>@vuex/typescript-plugin-vue</code> to provide types for `*.vue` imports.
-    <br />1. Open
+  <p v-if="toggle_2">
+    tsconfig setup:
+    <br />1. Add
+    <code>@vuex/typescript-plugin-vue</code> to tsconfig plugins
+    <br />2. Delete shims-vue.d.ts
+    <br />3. Open
     <code>src/main.ts</code> in VSCode
-    <br />2. Open VSCode command input
-    <br />3. Search and run "Select TypeScript version" -> "Use workspace version"
+    <br />4. Open VSCode command input
+    <br />5. Search and run "Select TypeScript version" -> "Use workspace version"
   </p>
   <button @click="count++">count is: {{ count }}</button>
   <p>
@@ -56,7 +62,9 @@ export default defineComponent({
   },
   setup: () => {
     const count = ref(0)
-    return { count }
+    const toggle_1 = ref(false);
+    const toggle_2 = ref(false);
+    return { count, toggle_1, toggle_2 }
   }
 })
 </script>
