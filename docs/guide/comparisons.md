@@ -27,6 +27,10 @@ Vite uses [esbuild](https://esbuild.github.io/) instead of Rollup for dependency
 
 Vite is designed to handle monorepo setups and we have users successfully using it with Yarn, Yarn 2, and PNPM based monorepos.
 
+**CSS Pre-Processor Support**
+
+Vite provides more refined support for Sass and Less, including improved `@import` resolution (aliases and npm dependencies) and [automatic `url()` rebasing for inlined files](./features#import-inlining-and-rebasing).
+
 **First Class Vue Support**
 
 Vite was initially created to serve as the future foundation of [Vue.js](https://vuejs.org/) tooling. Although as of 2.0 Vite is now fully framework-agnostic, the official Vue plugin still provides first-class support for Vue's Single File Component format, covering all advanced features such as template asset reference resolving, `<script setup>`, `<style module>`, custom blocks and more. In addition, Vite provides fine-grained HMR for Vue SFCs. For example, updating the `<template>` or `<style>` of an SFC will perform hot updates without resetting its state.
