@@ -234,6 +234,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           } catch (e) {
             // #1885 preload may be pointing to urls that do not exist
             // locally on disk
+            if (e.code !== 'ENOENT') {
+              throw e
+            }
           }
         }
 
