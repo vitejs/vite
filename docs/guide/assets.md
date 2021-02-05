@@ -28,12 +28,37 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 ### Explicit URL Imports
 
-Assets that are not included in the internal list or in `assetsInclude`, can be manually imported as an URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://houdini.how/usage).
+Assets that are not included in the internal list or in `assetsInclude`, can be explicitly imported as an URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://houdini.how/usage).
 
 ```js
 import workletURL from 'extra-scalloped-border/worklet.js?url'
 CSS.paintWorklet.addModule(workletURL)
 ```
+
+### Importing Asset as String
+
+Assets can be imported as strings using the `?raw` suffix.
+
+```js
+import shaderString from './shader.glsl?raw'
+```
+
+### Importing Script as a Worker
+
+Scripts can be imported as web workers with the `?worker` suffix. 
+
+```js
+// Separate chunk in the production build
+import Worker from './shader.js?worker'
+const worker = new Worker()
+```
+
+```js
+// Inlined as base64 strings
+import InlineWorker from './shader.js?worker&inline'
+```
+
+Check out the [Web Worker section](./features.md#web-workers) for more details.
 
 ## The `public` Directory
 
