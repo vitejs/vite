@@ -413,7 +413,7 @@ async function readModifiedFile(file: string): Promise<string> {
 async function restartServer(server: ViteDevServer) {
   await server.close()
   ;(global as any).__vite_start_time = Date.now()
-  const newServer = await createServer(server.config.inlineConfig)
+  const newServer = await createServer(server.config.inlineConfig, true)
   for (const key in newServer) {
     if (key !== 'app') {
       // @ts-ignore

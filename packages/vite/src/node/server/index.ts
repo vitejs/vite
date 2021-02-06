@@ -260,7 +260,8 @@ export interface ViteDevServer {
 }
 
 export async function createServer(
-  inlineConfig: InlineConfig = {}
+  inlineConfig: InlineConfig = {},
+  isRestart: boolean = false
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
@@ -317,7 +318,7 @@ export async function createServer(
       }
     },
     listen(port?: number) {
-      return startServer(server, port)
+      return startServer(server, port, isRestart)
     },
     async close() {
       await Promise.all([
@@ -502,7 +503,8 @@ export async function createServer(
 
 async function startServer(
   server: ViteDevServer,
-  inlinePort?: number
+  inlinePort?: number,
+  isRestart?: boolean
 ): Promise<ViteDevServer> {
   const httpServer = server.httpServer
   if (!httpServer) {
@@ -587,7 +589,7 @@ async function startServer(
         })
       }
 
-      if (options.open) {
+      if (options.open && !isRestart) {
         const path = typeof options.open === 'string' ? options.open : base
         openBrowser(
           `${protocol}://${hostname}:${port}${path}`,
