@@ -32,7 +32,7 @@
   <p v-if="useTsPlugin">
     tsconfig setup:
     <br />1. Install and add
-    <code>@vuex/typescript-plugin-vue</code> to tsconfig plugins
+    <code>@vuedx/typescript-plugin-vue</code> to tsconfig plugins
     <br />2. Delete shims-vue.d.ts
     <br />3. Open
     <code>src/main.ts</code> in VSCode
