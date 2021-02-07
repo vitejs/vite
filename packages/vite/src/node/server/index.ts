@@ -537,7 +537,7 @@ async function startServer(
     httpServer.listen(port, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n  ⚡Vite dev server running at:\n`, {
+      info(`\n ⚡ Vite dev server running at:\n`, {
         clear: !server.config.logger.hasWarned
       })
       const interfaces = os.networkInterfaces()
