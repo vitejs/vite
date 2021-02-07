@@ -6,6 +6,7 @@ export interface VueQuery {
   type?: 'script' | 'template' | 'style' | 'custom'
   index?: number
   lang?: string
+  raw?: boolean
 }
 
 export function parseVueRequest(id: string) {
@@ -19,6 +20,9 @@ export function parseVueRequest(id: string) {
   }
   if (query.index != null) {
     query.index = Number(query.index)
+  }
+  if (query.raw != null) {
+    query.raw = true
   }
   return {
     filename,
