@@ -47,10 +47,10 @@
     "esbuild": "^0.8.34",
     "postcss": "^8.2.1",
     "resolve": "^1.19.0",
-    "rollup": "^2.35.1"
+    "rollup": "^2.38.5"
   },
   "optionalDependencies": {
-    "fsevents": "~2.1.2"
+    "fsevents": "~2.3.1"
   },
   "devDependencies": {
     "@rollup/plugin-alias": "^3.1.1",
@@ -81,7 +81,7 @@
     "builtin-modules": "^3.2.0",
     "cac": "^6.6.1",
     "chalk": "^4.1.0",
-    "chokidar": "^3.4.3",
+    "chokidar": "^3.5.1",
     "clean-css": "^4.2.3",
     "compression": "^1.7.4",
     "connect": "^3.7.0",
