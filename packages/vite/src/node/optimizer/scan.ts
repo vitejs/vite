@@ -20,7 +20,6 @@ import {
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
-import { isCSSRequest } from '../plugins/css'
 import { ensureService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
@@ -57,9 +56,9 @@ export async function scanImports(
     entries = await globEntries('**/*.html', config)
   }
 
-  // CSS/Asset entrypoints should not be scanned for dependencies.
+  // Non-supported entry file types should not be scanned for dependencies.
   entries = entries.filter(
-    (entry) => !(isCSSRequest(entry) || config.assetsInclude(entry))
+    (entry) => JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)
   )
 
   if (!entries.length) {
