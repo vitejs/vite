@@ -83,7 +83,7 @@ export interface PluginContainer {
   resolveId(
     id: string,
     importer?: string,
-    skip?: Plugin[],
+    skip?: Set<Plugin>,
     ssr?: boolean
   ): Promise<PartialResolvedId | null>
   transform(
@@ -166,6 +166,7 @@ export async function createPluginContainer(
     _activePlugin: Plugin | null
     _activeId: string | null = null
     _activeCode: string | null = null
+    _resolveSkips?: Set<Plugin>
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
@@ -185,9 +186,12 @@ export async function createPluginContainer(
       importer?: string,
       options?: { skipSelf?: boolean }
     ) {
-      const skip = []
-      if (options?.skipSelf && this._activePlugin) skip.push(this._activePlugin)
-      let out = await container.resolveId(id, importer, skip, this.ssr)
+      let skips: Set<Plugin> | undefined
+      if (options?.skipSelf && this._activePlugin) {
+        skips = new Set(this._resolveSkips)
+        skips.add(this._activePlugin)
+      }
+      let out = await container.resolveId(id, importer, skips, this.ssr)
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -361,7 +365,6 @@ export async function createPluginContainer(
     }
   }
 
-  let nestedResolveCall = 0
   let closed = false
 
   const container: PluginContainer = {
@@ -401,43 +404,28 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(rawId, importer = join(root, 'index.html'), _skip, ssr) {
+    async resolveId(rawId, importer = join(root, 'index.html'), skips, ssr) {
       const ctx = new Context()
-      const resolveSkips = _skip ? new ResolveSkip() : null
       ctx.ssr = !!ssr
-      const key =
-        `${rawId}\n${importer}` +
-        (_skip ? _skip.map((p) => p.name).join('\n') : ``)
-
-      nestedResolveCall++
+      ctx._resolveSkips = skips
       const resolveStart = isDebug ? Date.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of plugins) {
         if (!plugin.resolveId) continue
-
-        if (_skip) {
-          if (_skip.includes(plugin)) continue
-          if (resolveSkips!.has(plugin, key)) continue
-          resolveSkips!.add(plugin, key)
-        }
+        if (skips?.has(plugin)) continue
 
         ctx._activePlugin = plugin
 
-        let result
         const pluginResolveStart = isDebug ? Date.now() : 0
-        try {
-          result = await plugin.resolveId.call(
-            ctx as any,
-            rawId,
-            importer,
-            {},
-            ssr
-          )
-        } finally {
-          if (_skip) resolveSkips!.delete(plugin, key)
-        }
+        const result = await plugin.resolveId.call(
+          ctx as any,
+          rawId,
+          importer,
+          {},
+          ssr
+        )
         if (!result) continue
 
         if (typeof result === 'string') {
@@ -458,13 +446,7 @@ export async function createPluginContainer(
         break
       }
 
-      nestedResolveCall--
-      if (
-        isDebug &&
-        !nestedResolveCall &&
-        rawId !== id &&
-        !rawId.startsWith('/@fs/')
-      ) {
+      if (isDebug && rawId !== id && !rawId.startsWith('/@fs/')) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {
@@ -557,31 +539,4 @@ export async function createPluginContainer(
   }
 
   return container
-}
-
-class ResolveSkip {
-  skip: Map<Plugin, string[]> = new Map()
-
-  has(plugin: Plugin, key: string) {
-    const skips = this.skip.get(plugin)
-    return skips ? skips.includes(key) : false
-  }
-
-  add(plugin: Plugin, key: string) {
-    const skips = this.skip.get(plugin)
-    if (skips) skips.push(key)
-    else this.skip.set(plugin, [key])
-  }
-
-  delete(plugin: Plugin, key: string) {
-    const skips = this.skip.get(plugin)
-    if (!skips) return
-    const i = skips.indexOf(key)
-    if (i !== -1) popIndex(skips, i)
-  }
-}
-
-function popIndex(array: any[], index: number) {
-  const tail = array.pop()
-  if (index !== array.length) array[index] = tail
 }
