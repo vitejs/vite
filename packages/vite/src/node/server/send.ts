@@ -32,7 +32,10 @@ export function send(
   // inject source map reference
   if (map && map.mappings) {
     if (isDebug) {
-      content += `\n/*${JSON.stringify(map, null, 2)}*/\n`
+      content += `\n/*${JSON.stringify(map, null, 2).replace(
+        /\*\//g,
+        '*\\/'
+      )}*/\n`
     }
     content += genSourceMapString(map)
   }

@@ -13,6 +13,7 @@ export interface Options {
    * default: true
    */
   polyfills?: boolean | string[]
+  additionalLegacyPolyfills?: string[]
   /**
    * default: false
    */

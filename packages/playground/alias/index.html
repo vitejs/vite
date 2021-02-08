@@ -4,7 +4,9 @@
 <p class="fs-dir"></p>
 <p class="regex"></p>
 <p class="dep"></p>
-<p class="from-html"></p>
+<p class="from-script-src"></p>
+
+<div class="optimized"></div>
 
 <script type="module">
   import { msg as fsMsg } from 'fs'
@@ -20,6 +22,20 @@
   text('.fs-dir', fsDirMsg)
   text('.regex', regexMsg + ' via regex')
   text('.dep', depMsg)
+
+  import { createApp } from 'vue'
+  import { ref } from 'foo'
+  // vue is aliased to the full browser build AND optimized.
+  // should resolve as expected
+  createApp({
+    template: '[{{ msg }}] alias optimized dep',
+    setup() {
+      return {
+        msg: ref('success')
+      }
+    }
+  }).mount('.optimized')
 </script>
 
-<script type="module" src="/@/from-html.js"></script>
+<script type="module" src="/@/from-script-src.js"></script>
+<link rel="stylesheet" href="/@/test.css" />

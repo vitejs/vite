@@ -87,6 +87,31 @@ interface ViteDevServer {
     inMap?: object
   ): Promise<EsbuildTransformResult>
   /**
+   * Apply vite built-in HTML transforms and any plugin HTML transforms.
+   */
+  transformIndexHtml(url: string, html: string): Promise<string>
+  /**
+   * Util for transforming a file with esbuild.
+   * Can be useful for certain plugins.
+   */
+  transformWithEsbuild(
+    code: string,
+    filename: string,
+    options?: EsbuildTransformOptions,
+    inMap?: object
+  ): Promise<ESBuildTransformResult>
+  /**
+   * Load a given URL as an instantiated module for SSR.
+   */
+  ssrLoadModule(
+    url: string,
+    options?: { isolated?: boolean }
+  ): Promise<Record<string, any>>
+  /**
+   * Fix ssr error stacktrace
+   */
+  ssrFixStacktrace(e: Error): void
+  /**
    * Start the server.
    */
   listen(port?: number): Promise<ViteDevServer>

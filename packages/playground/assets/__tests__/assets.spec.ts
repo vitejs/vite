@@ -1,22 +1,46 @@
-import fs from 'fs'
-import path from 'path'
+import { createHash } from 'crypto'
 import {
   findAssetFile,
   getBg,
   getColor,
   isBuild,
-  testDir
+  listAssets,
+  readManifest
 } from '../../testUtils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
-  : '/nested/asset.png'
+  : '/foo/nested/asset.png'
 
-const iconMatch = isBuild ? `/foo/icon.png` : `icon.png`
+const iconMatch = `/foo/icon.png`
 
 test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
+  })
+})
+
+describe('injected scripts', () => {
+  test('@vite/client', async () => {
+    const hasClient = await page.$(
+      'script[type="module"][src="/foo/@vite/client"]'
+    )
+    if (isBuild) {
+      expect(hasClient).toBeFalsy()
+    } else {
+      expect(hasClient).toBeTruthy()
+    }
+  })
+
+  test('html-proxy', async () => {
+    const hasHtmlProxy = await page.$(
+      'script[type="module"][src="/foo/index.html?html-proxy&index=0.js"]'
+    )
+    if (isBuild) {
+      expect(hasHtmlProxy).toBeFalsy()
+    } else {
+      expect(hasHtmlProxy).toBeTruthy()
+    }
   })
 })
 
@@ -57,6 +81,10 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-relative')).toMatch(assetMatch)
   })
 
+  test('relative in @import', async () => {
+    expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
+  })
+
   test('absolute', async () => {
     expect(await getBg('.css-url-absolute')).toMatch(assetMatch)
   })
@@ -66,7 +94,7 @@ describe('css url() references', () => {
   })
 
   test('base64 inline', async () => {
-    const match = isBuild ? `data:image/png;base64` : `/icon.png`
+    const match = isBuild ? `data:image/png;base64` : `/foo/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
   })
@@ -97,3 +125,33 @@ describe('svg fragments', () => {
     expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
   })
 })
+
+test('?raw import', async () => {
+  expect(await page.textContent('.raw')).toMatch('SVG')
+})
+
+test('?url import', async () => {
+  const src = `console.log('hi')\n`
+  expect(await page.textContent('.url')).toMatch(
+    isBuild
+      ? `data:application/javascript;base64,${Buffer.from(src).toString(
+          'base64'
+        )}`
+      : `/foo/foo.js`
+  )
+})
+
+if (isBuild) {
+  test('manifest', async () => {
+    const manifest = readManifest('foo')
+    const entry = manifest['index.html']
+
+    for (const file of listAssets('foo')) {
+      if (file.endsWith('.css')) {
+        expect(entry.css).toContain(`assets/${file}`)
+      } else if (!file.endsWith('.js')) {
+        expect(entry.assets).toContain(`assets/${file}`)
+      }
+    }
+  })
+}

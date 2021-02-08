@@ -1,3 +1,58 @@
+# [1.6.0](https://github.com/vitejs/vite/compare/create-app@1.5.2...create-app@1.6.0) (2021-02-05)
+
+
+### Bug Fixes
+
+* **create-app:** add resolveJsonModule to tsconfig.json for vue-ts template ([#1879](https://github.com/vitejs/vite/issues/1879)) ([2c914a5](https://github.com/vitejs/vite/commit/2c914a5b728d0c130f1e5b73c7b0ab0eedc1cda5))
+
+
+### Features
+
+* **create-app:** clearer vue-ts setup recommend ([#1896](https://github.com/vitejs/vite/issues/1896)) [skip ci] ([d6bf066](https://github.com/vitejs/vite/commit/d6bf066e3a18b749bed1a7fc622dd2551404e29f))
+
+
+
+## [1.5.2](https://github.com/vitejs/vite/compare/create-app@1.5.1...create-app@1.5.2) (2021-02-03)
+
+
+### Features
+
+* **create-app:** more detailed instructions for vue-ts template ([79dd32c](https://github.com/vitejs/vite/commit/79dd32cbb61b2aeedfd6b1081867a98cc7c73a68))
+
+
+
+## [1.5.1](https://github.com/vitejs/vite/compare/create-app@1.5.0...create-app@1.5.1) (2021-01-27)
+
+
+### Features
+
+* add link to config docs ([ce71d71](https://github.com/vitejs/vite/commit/ce71d71e83785a1072204bf8117a61ab7e4e772c))
+
+
+
+# [1.5.0](https://github.com/vitejs/vite/compare/create-app@1.4.0...create-app@1.5.0) (2021-01-25)
+
+
+### Features
+
+* bump vuedx versions ([fa1229a](https://github.com/vitejs/vite/commit/fa1229abc5602f14cf88470b7337e085164a989e))
+* lit-element templates ([830f3d3](https://github.com/vitejs/vite/commit/830f3d34f58cfa7680e1b2d753a023bcb1018ba2)), closes [#1684](https://github.com/vitejs/vite/issues/1684)
+
+
+
+# [1.4.0](https://github.com/vitejs/vite/compare/create-app@1.3.0...create-app@1.4.0) (2021-01-24)
+
+
+
+# [1.3.0](https://github.com/vitejs/vite/compare/create-app@1.1.0...create-app@1.3.0) (2021-01-23)
+
+
+### Features
+
+* add colors to create-app options ([cf7e43f](https://github.com/vitejs/vite/commit/cf7e43f8484e21ebd3efb3c86899eadb4f949848))
+
+
+
 # [1.2.0](https://github.com/vitejs/vite/compare/create-app@1.1.0...create-app@1.2.0) (2021-01-08)
 
 

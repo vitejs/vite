@@ -24,13 +24,17 @@ export type {
   HtmlTagDescriptor
 } from './plugins/html'
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
-export type { ESBuildOptions, EsbuildTransformResult } from './plugins/esbuild'
+export type { JsonOptions } from './plugins/json'
+export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { PackageData } from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode } from './server/moduleGraph'
 export type { ProxyOptions } from './server/middlewares/proxy'
-export type { TransformResult } from './server/transformRequest'
+export type {
+  TransformOptions,
+  TransformResult
+} from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
 export type {
   HMRPayload,
@@ -47,3 +51,4 @@ export type { HttpProxy } from 'types/http-proxy'
 export type { FSWatcher, WatchOptions } from 'types/chokidar'
 export type { Terser } from 'types/terser'
 export type { CleanCSS } from 'types/clean-css'
+export type { RollupCommonJSOptions } from 'types/commonjs'

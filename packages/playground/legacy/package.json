@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build --debug legacy",
-    "debug": "node --inspect-brk ../../vite/bin/vite"
+    "debug": "node --inspect-brk ../../vite/bin/vite",
+    "serve": "vite preview"
   },
   "devDependencies": {
     "@vitejs/plugin-legacy": "^1.0.0"

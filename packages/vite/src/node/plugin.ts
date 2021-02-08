@@ -1,5 +1,13 @@
 import { UserConfig } from './config'
-import { Plugin as RollupPlugin } from 'rollup'
+import {
+  CustomPluginOptions,
+  LoadResult,
+  Plugin as RollupPlugin,
+  PluginContext,
+  ResolveIdResult,
+  TransformPluginContext,
+  TransformResult
+} from 'rollup'
 import { ServerHook } from './server'
 import { IndexHtmlTransform } from './plugins/html'
 import { ModuleNode } from './server/moduleGraph'
@@ -99,7 +107,29 @@ export interface Plugin extends RollupPlugin {
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.
    */
-  handleHotUpdate?: (
+  handleHotUpdate?(
     ctx: HmrContext
-  ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  ): Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+
+  /**
+   * extend hooks with ssr flag
+   */
+  resolveId?(
+    this: PluginContext,
+    source: string,
+    importer: string | undefined,
+    options: { custom?: CustomPluginOptions },
+    ssr?: boolean
+  ): Promise<ResolveIdResult> | ResolveIdResult
+  load?(
+    this: PluginContext,
+    id: string,
+    ssr?: boolean
+  ): Promise<LoadResult> | LoadResult
+  transform?(
+    this: TransformPluginContext,
+    code: string,
+    id: string,
+    ssr?: boolean
+  ): Promise<TransformResult> | TransformResult
 }

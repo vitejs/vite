@@ -5,14 +5,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "debug": "node --inspect-brk ../../vite/bin/vite"
+    "debug": "node --inspect-brk ../../vite/bin/vite",
+    "serve": "vite preview"
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "clipboard": "^2.0.6",
+    "dep-cjs-named-only": "link:./dep-cjs-named-only",
+    "dep-linked": "link:./dep-linked",
+    "dep-linked-include": "link:./dep-linked-include",
+    "phoenix": "^1.5.7",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "resolve-linked": "0.0.0",
-    "optimize-deps-linked": "0.0.0",
-    "optimize-deps-linked-include": "0.0.0"
+    "vue": "^3.0.5",
+    "vuex": "^4.0.0-rc.2"
   }
 }

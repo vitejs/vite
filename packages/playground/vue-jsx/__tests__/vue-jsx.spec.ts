@@ -1,4 +1,4 @@
-import { editFile, isBuild, untilUpdated } from '../../testUtils'
+import { editFile, isBuild, untilUpdated } from 'testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('.named')).toMatch('0')
@@ -25,9 +25,10 @@ if (!isBuild) {
     )
     await untilUpdated(() => page.textContent('.named'), 'named updated 0')
 
-    // should not affect other components on the page
-    expect(await page.textContent('.named-specifier')).toMatch('2')
-    expect(await page.textContent('.default')).toMatch('3')
+    // affect all components in same file
+    expect(await page.textContent('.named-specifier')).toMatch('1')
+    expect(await page.textContent('.default')).toMatch('2')
+    // should not affect other components from different file
     expect(await page.textContent('.default-tsx')).toMatch('4')
   })
 
@@ -40,8 +41,9 @@ if (!isBuild) {
       'named specifier updated 1'
     )
 
+    // affect all components in same file
+    expect(await page.textContent('.default')).toMatch('2')
     // should not affect other components on the page
-    expect(await page.textContent('.default')).toMatch('3')
     expect(await page.textContent('.default-tsx')).toMatch('4')
   })
 

@@ -94,9 +94,29 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `process.cwd()`
 
-  Project root directory. Can be an absolute path, or a path relative from the location of the config file itself.
+  Project root directory (where `index.html` is located). Can be an absolute path, or a path relative from the location of the config file itself.
 
   See [Project Root](/guide/#project-root) for more details.
+
+### base
+
+- **Type:** `string`
+- **Default:** `/`
+
+  Base public path when served in development or production. Valid values include:
+
+  - Absolute URL pathname, e.g. `/foo/`
+  - Full URL, e.g. `https://foo.com/`
+  - Empty string or `./` (for embedded deployment)
+
+  See [Public Base Path](/guide/build#public-base-path) for more details.
+
+### publicDir
+
+- **Type:** `string`
+- **Default:** `"public"`
+
+  Directory to serve as plain static assets. Files in this directory are served at `/` during dev and copied to the root of `outDir` during build, and are always served or copied as-is without transform. The value can be either an absolute file system path or a path relative to project root.
 
 ### mode
 
@@ -128,6 +148,14 @@ export default ({ command, mode }) => {
 
   Configure CSS modules behavior. The options are passed on to [postcss-modules](https://github.com/css-modules/postcss-modules).
 
+### css.postcss
+
+- **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
+
+  Inline PostCSS config (expects the same format as `postcss.config.js`), or a custom path to search PostCSS config from (default is project root). The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config).
+
+  Note if an inline config is provided, Vite will not search for other PostCSS config sources.
+
 ### css.preprocessorOptions
 
 - **Type:** `Record<string, object>`
@@ -145,6 +173,22 @@ export default ({ command, mode }) => {
     }
   }
   ```
+
+### json.namedExports
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Whether to support named imports from `.json` files.
+
+### json.stringify
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, espeically when the JSON file is large.
+
+  Enabling this disables named imports.
 
 ### esbuild
 
@@ -178,7 +222,7 @@ export default ({ command, mode }) => {
 ### assetsInclude
 
 - **Type:** `string | RegExp | (string | RegExp)[]`
-- **Related:** [Asset Handling](/guide/features#asset-handling)
+- **Related:** [Static Asset Handling](/guide/assets)
 
   Specify additional file types to be treated as static assets so that:
 
@@ -201,6 +245,13 @@ export default ({ command, mode }) => {
 
   Adjust console output verbosity. Default is `'info'`.
 
+### clearScreen
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Set to `false` to prevent Vite from clearing the terminal screen when logging certain messages. Via command line, use `--clearScreen false`.
+
 ## Server Options
 
 ### server.host
@@ -215,6 +266,12 @@ export default ({ command, mode }) => {
 
   Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
 
+### server.strictPort
+
+- **Type:** `boolean`
+
+  Set to `true` to exit if port is already in use, instead of automatically try the next available port.
+
 ### server.https
 
 - **Type:** `boolean | https.ServerOptions`
@@ -225,15 +282,27 @@ export default ({ command, mode }) => {
 
 ### server.open
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 
-  Automatically open the app in the browser on server start.
+  Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname.
+
+  **Example:**
+
+  ```js
+  export default {
+    server: {
+      open: '/docs/index.html'
+    }
+  }
+  ```
 
 ### server.proxy
 
 - **Type:** `Record<string, string | ProxyOptions>`
 
-  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
+  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`.
+
+  Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
   **Example:**
 
@@ -248,6 +317,12 @@ export default ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
+        }
+        // with RegEx
+        '^/fallback/.*': {
+          target: 'http://jsonplaceholder.typicode.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/fallback/, '')
         }
       }
     }
@@ -282,13 +357,6 @@ export default ({ command, mode }) => {
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
 ## Build Options
-
-### build.base
-
-- **Type:** `string`
-- **Default:** `/`
-
-  Base public path when served in production. Note the path should start and end with `/`. See [Public Base Path](/guide/build#public-base-path) for more details.
 
 ### build.target
 
@@ -362,6 +430,12 @@ export default ({ command, mode }) => {
 
   Directly customize the underlying Rollup bundle. This is the same as options that can be exported from a Rollup config file and will be merged with Vite's internal Rollup options. See [Rollup options docs](https://rollupjs.org/guide/en/#big-list-of-options) for more details.
 
+### build.commonjsOptions
+
+- **Type:** [`RollupCommonJSOptions`](https://github.com/rollup/plugins/tree/master/packages/commonjs#options)
+
+  Options to pass on to [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs).
+
 ### build.lib
 
 - **Type:** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[] }`
@@ -403,37 +477,67 @@ export default ({ command, mode }) => {
 
   Set to `false` to disable writing the bundle to disk. This is mostly used in [programmatic `build()` calls](/guide/api-javascript#build) where further post processing of the bundle is needed before writing to disk.
 
+### build.emptyOutDir
+
+- **Type:** `boolean`
+- **Default:** `true` if `outDir` is inside `root`
+
+  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentially removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
+
+### build.brotliSize
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Enable/disable brotli-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
+
+### build.chunkSizeWarningLimit
+
+- **Type:** `number`
+- **Default:** `500`
+
+  Limit for chunk size warnings (in kbs).
+
 ## Dep Optimization Options
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
 
-### optimizeDeps.include
+### optimizeDeps.entries
 
-- **Type:** `string[]`
+- **Type:** `string | string[]`
 
-  Dependencies to force include in pre-bundling.
+  By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
+
+  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from vite project root. This will overwrite default entries inference.
 
 ### optimizeDeps.exclude
 
 - **Type:** `string[]`
 
-  Dependencies to force exclude in pre-bundling.
+  Dependencies to exclude from pre-bundling.
 
-### optimizeDeps.link
-
-- **Type:** `string[]`
-
-  Dependencies to be explicitly treated as linked source in pre-bundling. Note Vite 2.0 automatically detects linked packages (deps whose resolved path is not inside `node_modules`) so this should only be needed in rare cases.
-
-### optimizeDeps.allowNodeBuiltins
+### optimizeDeps.include
 
 - **Type:** `string[]`
 
-  A list of dependencies that imports Node built-ins, but do not actually use them in browsers. Suppresses related warnings.
+  By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
 
-### optimizeDeps.auto
+## SSR Options
 
-- **Type:** `boolean`
-- **Default:** `true`
+:::warning Experimental
+SSR options may be adjusted in minor releases.
+:::
 
-  Automatically run dep pre-bundling on server start? Set to `false` to disable.
+- **Related:** [SSR Externals](/guide/ssr#ssr-externals)
+
+### ssr.external
+
+- **Type:** `string[]`
+
+  Force externalize dependencies for SSR.
+
+### ssr.noExternal
+
+- **Type:** `string[]`
+
+  Prevent listed dependencies from being externalized for SSR.

@@ -1,5 +1,12 @@
 import { Plugin } from 'vite'
+import { ParserOptions } from '@babel/core'
 
-declare function createPlugin(): Plugin
+type PluginFactory = (options?: Options) => Plugin
 
-export = createPlugin
+declare const createPlugin: PluginFactory & { preambleCode: string }
+
+export interface Options {
+  parserPlugins: ParserOptions['plugins']
+}
+
+export default createPlugin

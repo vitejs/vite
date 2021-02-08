@@ -2,8 +2,10 @@
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  base: '/foo/',
+  publicDir: 'static',
   build: {
-    base: '/foo/',
-    outDir: 'dist/foo'
+    outDir: 'dist/foo',
+    manifest: true
   }
 }

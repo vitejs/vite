@@ -5,18 +5,32 @@ import Rollup from 'rollup'
 import { BuildOptions, resolveBuildOptions } from './build'
 import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
-import { createDebugger, isObject, lookupFile, normalizePath } from './utils'
+import {
+  createDebugger,
+  isExternalUrl,
+  isObject,
+  lookupFile,
+  normalizePath
+} from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import { ESBuildOptions, esbuildPlugin } from './plugins/esbuild'
+import { ESBuildOptions, esbuildPlugin, stopService } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR, DEFAULT_ASSETS_RE, DEP_CACHE_DIR } from './constants'
-import { resolvePlugin } from './plugins/resolve'
+import { ResolveOptions, resolvePlugin } from './plugins/resolve'
 import { createLogger, Logger, LogLevel } from './logger'
 import { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
+import { ResolvedBuildOptions } from '.'
+import { parse as parseUrl } from 'url'
+import { JsonOptions } from './plugins/json'
+import {
+  createPluginContainer,
+  PluginContainer
+} from './server/pluginContainer'
+import aliasPlugin from '@rollup/plugin-alias'
 
 const debug = createDebugger('vite:config')
 
@@ -46,6 +60,18 @@ export interface UserConfig {
    */
   root?: string
   /**
+   * Base public path when served in development or production.
+   * @default '/'
+   */
+  base?: string
+  /**
+   * Directory to serve as plain static assets. Files in this directory are
+   * served and copied to build dist dir as-is without transform. The value
+   * can be either an absolute file system path or a path relative to <root>.
+   * @default 'public'
+   */
+  publicDir?: string
+  /**
    * Explicitly set a mode to run in. This will override the default mode for
    * each command, and can be overridden by the command line --mode option.
    */
@@ -68,6 +94,10 @@ export interface UserConfig {
    */
   css?: CSSOptions
   /**
+   * JSON loading options
+   */
+  json?: JsonOptions
+  /**
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
    */
@@ -89,6 +119,11 @@ export interface UserConfig {
    */
   optimizeDeps?: DepOptimizationOptions
   /**
+   * SSR specific options
+   * @alpha
+   */
+  ssr?: SSROptions
+  /**
    * Force Vite to always resolve listed dependencies to the same copy (from
    * project root).
    */
@@ -98,6 +133,15 @@ export interface UserConfig {
    * Default: 'info'
    */
   logLevel?: LogLevel
+  /**
+   * Default: true
+   */
+  clearScreen?: boolean
+}
+
+export interface SSROptions {
+  external?: string[]
+  noExternal?: string[]
 }
 
 export interface InlineConfig extends UserConfig {
@@ -109,6 +153,8 @@ export type ResolvedConfig = Readonly<
     configFile: string | undefined
     inlineConfig: UserConfig
     root: string
+    base: string
+    publicDir: string
     command: 'build' | 'serve'
     mode: string
     isProduction: boolean
@@ -117,11 +163,20 @@ export type ResolvedConfig = Readonly<
     alias: Alias[]
     plugins: readonly Plugin[]
     server: ServerOptions
-    build: Required<BuildOptions>
+    build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
+    createResolver: (options?: Partial<ResolveOptions>) => ResolveFn
   }
 >
+
+export { ResolveOptions }
+
+export type ResolveFn = (
+  id: string,
+  importer?: string,
+  aliasOnly?: boolean
+) => Promise<string | undefined>
 
 export async function resolveConfig(
   inlineConfig: InlineConfig,
@@ -130,6 +185,7 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let mode = inlineConfig.mode || defaultMode
+  const logger = createLogger(config.logLevel, config.clearScreen)
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
   // production-specific behavior, so set it here even though we haven't
@@ -161,7 +217,7 @@ export async function resolveConfig(
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
     return !p.apply || p.apply === command
   })
-  const [prePlugins, postPlugins, normalPlugins] = sortUserPlugins(
+  const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(
     rawUserPlugins
   )
 
@@ -183,7 +239,11 @@ export async function resolveConfig(
 
   // resolve alias with internal client alias
   const resolvedAlias = mergeAlias(
-    [{ find: /^\/@vite\//, replacement: CLIENT_DIR + '/' }],
+    // #1732 the CLIENT_DIR may contain $$ which cannot be used as direct
+    // replacement string.
+    // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
+    // replacement, but its implementation does work with function values.
+    [{ find: /^\/@vite\//, replacement: () => CLIENT_DIR + '/' }],
     config.alias || []
   )
 
@@ -199,7 +259,34 @@ export async function resolveConfig(
     process.env.NODE_ENV = 'production'
   }
 
+  // resolve public base url
+  // TODO remove when out of beta
+  if (config.build?.base) {
+    logger.warn(
+      chalk.yellow.bold(
+        `(!) "build.base" config option is deprecated. ` +
+          `"base" is now a root-level config option.`
+      )
+    )
+    config.base = config.build.base
+  }
+
+  const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
   const resolvedBuildOptions = resolveBuildOptions(config.build)
+
+  // TODO remove when out of beta
+  Object.defineProperty(resolvedBuildOptions, 'base', {
+    get() {
+      logger.warn(
+        chalk.yellow.bold(
+          `(!) "build.base" config option is deprecated. ` +
+            `"base" is now a root-level config option.\n` +
+            new Error().stack
+        )
+      )
+      return config.base
+    }
+  })
 
   // resolve optimizer cache directory
   const pkgPath = lookupFile(
@@ -214,11 +301,51 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
-  const resolved = {
+  // create an internal resolver to be used in special scenarios, e.g.
+  // optimizer & handling css @imports
+  const createResolver: ResolvedConfig['createResolver'] = (options) => {
+    let aliasContainer: PluginContainer | undefined
+    let resolverContainer: PluginContainer | undefined
+    return async (id, importer, aliasOnly) => {
+      let container: PluginContainer
+      if (aliasOnly) {
+        container =
+          aliasContainer ||
+          (aliasContainer = await createPluginContainer({
+            ...resolved,
+            plugins: [aliasPlugin({ entries: resolved.alias })]
+          }))
+      } else {
+        container =
+          resolverContainer ||
+          (resolverContainer = await createPluginContainer({
+            ...resolved,
+            plugins: [
+              aliasPlugin({ entries: resolved.alias }),
+              resolvePlugin({
+                root: resolvedRoot,
+                dedupe: resolved.dedupe,
+                isProduction,
+                isBuild: command === 'build',
+                asSrc: true,
+                relativeFirst: false,
+                tryIndex: true,
+                ...options
+              })
+            ]
+          }))
+      }
+      return (await container.resolveId(id, importer))?.id
+    }
+  }
+
+  const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
     inlineConfig,
     root: resolvedRoot,
+    base: BASE_URL,
+    publicDir: path.resolve(resolvedRoot, config.publicDir || 'public'),
     command,
     mode,
     isProduction,
@@ -229,7 +356,7 @@ export async function resolveConfig(
     build: resolvedBuildOptions,
     env: {
       ...userEnv,
-      BASE_URL: command === 'build' ? resolvedBuildOptions.base : '/',
+      BASE_URL,
       MODE: mode,
       DEV: !isProduction,
       PROD: isProduction
@@ -237,10 +364,11 @@ export async function resolveConfig(
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
-    logger: createLogger(config.logLevel)
+    logger,
+    createResolver
   }
 
-  resolved.plugins = await resolvePlugins(
+  ;(resolved as any).plugins = await resolvePlugins(
     resolved,
     prePlugins,
     normalPlugins,
@@ -261,6 +389,55 @@ export async function resolveConfig(
     })
   }
   return resolved
+}
+
+/**
+ * Resolve base. Note that some users use Vite to build for non-web targets like
+ * electron or expects to deploy
+ */
+function resolveBaseUrl(
+  base: UserConfig['base'] = '/',
+  isBuild: boolean,
+  logger: Logger
+): string {
+  // #1669 special treatment for empty for same dir relative base
+  if (base === '' || base === './') {
+    return isBuild ? base : '/'
+  }
+  if (base.startsWith('.')) {
+    logger.warn(
+      chalk.yellow.bold(
+        `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
+          `URL, ./, or an empty string.`
+      )
+    )
+    base = '/'
+  }
+
+  // external URL
+  if (isExternalUrl(base)) {
+    if (!isBuild) {
+      // get base from full url during dev
+      const parsed = parseUrl(base)
+      base = parsed.pathname || '/'
+    }
+  } else {
+    // ensure leading slash
+    if (!base.startsWith('/')) {
+      logger.warn(
+        chalk.yellow.bold(`(!) "base" option should start with a slash.`)
+      )
+      base = '/' + base
+    }
+  }
+
+  // ensure ending slash
+  if (!base.endsWith('/')) {
+    logger.warn(chalk.yellow.bold(`(!) "base" option should end with a slash.`))
+    base += '/'
+  }
+
+  return base
 }
 
 export function mergeConfig(
@@ -345,7 +522,7 @@ export function sortUserPlugins(
     })
   }
 
-  return [prePlugins, postPlugins, normalPlugins]
+  return [prePlugins, normalPlugins, postPlugins]
 }
 
 export async function loadConfigFromFile(
@@ -360,27 +537,23 @@ export async function loadConfigFromFile(
   let isTS = false
   let isMjs = false
 
-  function checkMjs() {
-    // check package.json for type: "module" and set `isMjs` to true
-    try {
-      const pkg = lookupFile(configRoot, ['package.json'])
-      if (pkg && JSON.parse(pkg).type === 'module') {
-        isMjs = true
-      }
-    } catch (e) {}
-  }
+  // check package.json for type: "module" and set `isMjs` to true
+  try {
+    const pkg = lookupFile(configRoot, ['package.json'])
+    if (pkg && JSON.parse(pkg).type === 'module') {
+      isMjs = true
+    }
+  } catch (e) {}
 
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
-    if (configFile.endsWith('.js')) checkMjs()
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
     const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
     if (fs.existsSync(jsconfigFile)) {
       resolvedPath = jsconfigFile
-      checkMjs()
     }
 
     if (!resolvedPath) {
@@ -409,23 +582,47 @@ export async function loadConfigFromFile(
     let userConfig: UserConfigExport | undefined
 
     if (isMjs) {
-      // using eval to avoid this from being compiled away by TS/Rollup
-      // append a query so that we force reload fresh config in case of
-      // server restart
-      userConfig = (await eval(`import(resolvedPath + '?t=${Date.now()}')`))
-        .default
-      debug(`native esm config loaded in ${Date.now() - start}ms`)
+      const fileUrl = require('url').pathToFileURL(resolvedPath)
+      if (isTS) {
+        // before we can register loaders without requiring users to run node
+        // with --experimental-loader themselves, we have to do a hack here:
+        // bundle the config file w/ ts transforms first, write it to disk,
+        // load it with native Node ESM, then delete the file.
+        const code = await bundleConfigFile(resolvedPath, true)
+        fs.writeFileSync(resolvedPath + '.js', code)
+        userConfig = (await eval(`import(fileUrl + '.js?t=${Date.now()}')`))
+          .default
+        fs.unlinkSync(resolvedPath + '.js')
+        debug(
+          `TS + native esm config loaded in ${Date.now() - start}ms`,
+          fileUrl
+        )
+      } else {
+        // using eval to avoid this from being compiled away by TS/Rollup
+        // append a query so that we force reload fresh config in case of
+        // server restart
+        userConfig = (await eval(`import(fileUrl + '?t=${Date.now()}')`))
+          .default
+        debug(`native esm config loaded in ${Date.now() - start}ms`, fileUrl)
+      }
     }
 
     if (!userConfig && !isTS && !isMjs) {
       // 1. try to directly require the module (assuming commonjs)
       try {
         // clear cache in case of server restart
-        delete require.cache[resolvedPath]
+        delete require.cache[require.resolve(resolvedPath)]
         userConfig = require(resolvedPath)
         debug(`cjs config loaded in ${Date.now() - start}ms`)
       } catch (e) {
-        const ignored = /Cannot use import statement|Unexpected token 'export'|Must use import to load ES Module/
+        const ignored = new RegExp(
+          [
+            `Cannot use import statement`,
+            `Unexpected token 'export'`,
+            `Must use import to load ES Module`,
+            `Unexpected identifier` // #1635 Node <= 12.4 has no esm detection
+          ].join('|')
+        )
         if (!ignored.test(e.message)) {
           throw e
         }
@@ -437,32 +634,7 @@ export async function loadConfigFromFile(
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
       // lazy require rollup (it's actually in dependencies)
-      const rollup = require('rollup') as typeof Rollup
-      // node-resolve must be imported since it's bundled
-      const bundle = await rollup.rollup({
-        external: (id: string) =>
-          (id[0] !== '.' && !path.isAbsolute(id)) ||
-          id.slice(-5, id.length) === '.json',
-        input: resolvedPath,
-        treeshake: false,
-        plugins: [
-          // use esbuild + node-resolve to support .ts files
-          esbuildPlugin({ target: 'es2019' }),
-          resolvePlugin({
-            root: path.dirname(resolvedPath),
-            isBuild: true,
-            asSrc: false
-          })
-        ]
-      })
-
-      const {
-        output: [{ code }]
-      } = await bundle.generate({
-        exports: 'named',
-        format: 'cjs'
-      })
-
+      const code = await bundleConfigFile(resolvedPath)
       userConfig = await loadConfigFromBundledFile(resolvedPath, code)
       debug(`bundled config file loaded in ${Date.now() - start}ms`)
     }
@@ -473,7 +645,7 @@ export async function loadConfigFromFile(
       throw new Error(`config must export or return an object.`)
     }
     return {
-      path: resolvedPath,
+      path: normalizePath(resolvedPath),
       config
     }
   } catch (e) {
@@ -481,7 +653,52 @@ export async function loadConfigFromFile(
       chalk.red(`failed to load config from ${resolvedPath}`)
     )
     throw e
+  } finally {
+    await stopService()
   }
+}
+
+async function bundleConfigFile(
+  fileName: string,
+  mjs = false
+): Promise<string> {
+  const rollup = require('rollup') as typeof Rollup
+  // node-resolve must be imported since it's bundled
+  const bundle = await rollup.rollup({
+    external: (id: string) =>
+      (id[0] !== '.' && !path.isAbsolute(id)) ||
+      id.slice(-5, id.length) === '.json',
+    input: fileName,
+    treeshake: false,
+    plugins: [
+      // use esbuild + node-resolve to support .ts files
+      esbuildPlugin({ target: 'esnext' }),
+      resolvePlugin({
+        root: path.dirname(fileName),
+        isBuild: true,
+        asSrc: false,
+        isProduction: false
+      }),
+      {
+        name: 'replace-import-meta',
+        transform(code, id) {
+          return code.replace(
+            /\bimport\.meta\.url\b/g,
+            JSON.stringify(`file://${id}`)
+          )
+        }
+      }
+    ]
+  })
+
+  const {
+    output: [{ code }]
+  } = await bundle.generate({
+    exports: mjs ? 'auto' : 'named',
+    format: mjs ? 'es' : 'cjs'
+  })
+
+  return code
 }
 
 interface NodeModuleWithCompile extends NodeModule {
@@ -501,7 +718,8 @@ async function loadConfigFromBundledFile(
       defaultLoader(module, filename)
     }
   }
-  delete require.cache[fileName]
+  // clear cache in case of server restart
+  delete require.cache[require.resolve(fileName)]
   const raw = require(fileName)
   const config = raw.__esModule ? raw.default : raw
   require.extensions[extension] = defaultLoader

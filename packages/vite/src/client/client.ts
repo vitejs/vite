@@ -1,35 +1,14 @@
 import { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import { ErrorOverlay, overlayId } from './overlay'
-
+import './env'
 // injected by the hmr plugin when served
 declare const __ROOT__: string
-declare const __MODE__: string
-declare const __DEFINES__: Record<string, any>
+declare const __BASE__: string
 declare const __HMR_PROTOCOL__: string
 declare const __HMR_HOSTNAME__: string
 declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
-
-  // shim process
-;(window as any).process = (window as any).process || {}
-;(window as any).process.env = (window as any).process.env || {}
-;(window as any).process.env.NODE_ENV = __MODE__
-
-// assign defines
-const defines = __DEFINES__
-Object.keys(defines).forEach((key) => {
-  const segs = key.split('.')
-  let target = window as any
-  for (let i = 0; i < segs.length; i++) {
-    const seg = segs[i]
-    if (i === segs.length - 1) {
-      target[seg] = defines[key]
-    } else {
-      target = target[seg] || (target[seg] = {})
-    }
-  }
-})
 
 console.log('[vite] connecting...')
 
@@ -38,6 +17,7 @@ const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
 const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
+const base = __BASE__ || '/'
 
 function warnFailedFetch(err: Error, path: string | string[]) {
   if (!err.message.match('fetch')) {
@@ -85,12 +65,17 @@ async function handleMessage(payload: HMRPayload) {
           // this is only sent when a css file referenced with <link> is updated
           let { path, timestamp } = update
           path = path.replace(/\?.*/, '')
-          const el = document.querySelector(`link[href*='${path}']`)
+          // can't use querySelector with `[href*=]` here since the link may be
+          // using relative paths so we need to use link.href to grab the full
+          // URL for the include check.
+          const el = ([].slice.call(
+            document.querySelectorAll(`link`)
+          ) as HTMLLinkElement[]).find((e) => e.href.includes(path))
           if (el) {
-            el.setAttribute(
-              'href',
-              `${path}${path.includes('?') ? '&' : '?'}t=${timestamp}`
-            )
+            const newPath = `${path}${
+              path.includes('?') ? '&' : '?'
+            }t=${timestamp}`
+            el.href = new URL(newPath, el.href).href
           }
           console.log(`[vite] css hot updated: ${path}`)
         }
@@ -107,9 +92,10 @@ async function handleMessage(payload: HMRPayload) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
         const pagePath = location.pathname
+        const payloadPath = base + payload.path.slice(1)
         if (
-          pagePath === payload.path ||
-          (pagePath.endsWith('/') && pagePath + 'index.html' === payload.path)
+          pagePath === payloadPath ||
+          (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
           location.reload()
         }
@@ -183,7 +169,8 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
 }
 
 // ping server
-socket.addEventListener('close', () => {
+socket.addEventListener('close', ({ wasClean }) => {
+  if (wasClean) return
   console.log(`[vite] server connection lost. polling for restart...`)
   setInterval(() => {
     fetch('/')
@@ -299,7 +286,9 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       try {
         const newMod = await import(
           /* @vite-ignore */
-          path + `?import&t=${timestamp}${query ? `&${query}` : ''}`
+          base +
+            path.slice(1) +
+            `?import&t=${timestamp}${query ? `&${query}` : ''}`
         )
         moduleMap.set(dep, newMod)
       } catch (e) {
@@ -438,7 +427,9 @@ export const createHotContext = (ownerPath: string) => {
 }
 
 export function injectQuery(url: string, queryToInject: string) {
-  const { pathname, search, hash } = new URL(url, 'http://vitejs.dev')
+  // can't use pathname from URL since it may be relative like ../
+  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
+  const { search, hash } = new URL(url, 'http://vitejs.dev')
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`

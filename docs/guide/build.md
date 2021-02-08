@@ -21,9 +21,9 @@ Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/
 
 ## Public Base Path
 
-- Related: [Asset Handling](./features#asset-handling)
+- Related: [Asset Handling](./assets)
 
-If you are deploying your project under a nested public path, simply specify the [`build.base` config option](/config/#build-base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
+If you are deploying your project under a nested public path, simply specify the [`base` config option](/config/#base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
 
 JS-imported asset URLs, CSS `url()` references, and asset references in your `.html` files are all automatically adjusted to respect this option during build.
 
@@ -84,7 +84,7 @@ module.exports = {
 
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
 
-When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib):
+When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
 ```js
 // vite.config.js
@@ -95,6 +95,18 @@ module.exports = {
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
       name: 'MyLib'
+    },
+    rollupOptions: {
+      // make sure to externalize deps that shouldn't be bundled
+      // into your library
+      external: ['vue'],
+      output: {
+        // Provide global variables to use in the UMD build
+        // for externalized deps
+        globals: {
+          vue: 'Vue'
+        }
+      }
     }
   }
 }
@@ -117,6 +129,11 @@ Recommended `package.json` for your lib:
   "files": ["dist"],
   "main": "./dist/my-lib.umd.js",
   "module": "./dist/my-lib.es.js",
-  "exports": "./dist/my-lib.es.js"
+  "exports": {
+    ".": {
+      "import": "./dist/my-lib.es.js",
+      "require": "./dist/my-lib.umd.js"
+    }
+  }
 }
 ```

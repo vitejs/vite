@@ -10,8 +10,11 @@ import {
   cleanUrl,
   prettifyUrl,
   removeTimestampQuery,
-  timeFrom
+  timeFrom,
+  ensureWatchedFile
 } from '../utils'
+import { checkPublicFile } from '../plugins/asset'
+import { ssrTransform } from '../ssr/ssrTransform'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -21,18 +24,28 @@ const isDebug = !!process.env.DEBUG
 export interface TransformResult {
   code: string
   map: SourceMap | null
-  etag: string
+  etag?: string
+  deps?: string[]
+}
+
+export interface TransformOptions {
+  ssr?: boolean
 }
 
 export async function transformRequest(
   url: string,
-  { config: { root }, pluginContainer, moduleGraph, watcher }: ViteDevServer
+  { config, pluginContainer, moduleGraph, watcher }: ViteDevServer,
+  options: TransformOptions = {}
 ): Promise<TransformResult | null> {
   url = removeTimestampQuery(url)
+  const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
+  const ssr = !!options.ssr
 
   // check if we have a fresh cache
-  const cached = (await moduleGraph.getModuleByUrl(url))?.transformResult
+  const module = await moduleGraph.getModuleByUrl(url)
+  const cached =
+    module && (ssr ? module.ssrTransformResult : module.transformResult)
   if (cached) {
     isDebug && debugCache(`[memory] ${prettyUrl}`)
     return cached
@@ -42,12 +55,12 @@ export async function transformRequest(
   const id = (await pluginContainer.resolveId(url))?.id || url
   const file = cleanUrl(id)
 
-  let code = null
+  let code: string | null = null
   let map: SourceDescription['map'] = null
 
   // load
-  const loadStart = Date.now()
-  const loadResult = await pluginContainer.load(id)
+  const loadStart = isDebug ? Date.now() : 0
+  const loadResult = await pluginContainer.load(id, ssr)
   if (loadResult == null) {
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
@@ -61,10 +74,16 @@ export async function transformRequest(
       }
     }
     if (code) {
-      map = (
-        convertSourceMap.fromSource(code) ||
-        convertSourceMap.fromMapFileSource(code, path.dirname(file))
-      )?.toObject()
+      try {
+        map = (
+          convertSourceMap.fromSource(code) ||
+          convertSourceMap.fromMapFileSource(code, path.dirname(file))
+        )?.toObject()
+      } catch (e) {
+        logger.warn(`Failed to load source map for ${url}.`, {
+          timestamp: true
+        })
+      }
     }
   } else {
     isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
@@ -76,21 +95,25 @@ export async function transformRequest(
     }
   }
   if (code == null) {
-    throw new Error(
-      `Failed to load url ${url} (resolved id: ${id}). Does the file exist?`
-    )
+    if (checkPublicFile(url, config)) {
+      throw new Error(
+        `Failed to load url ${url} (resolved id: ${id}). ` +
+          `This file is in /public and will be copied as-is during build without ` +
+          `going through the plugin transforms, and therefore should not be ` +
+          `imported from source code. It can only be referenced via HTML tags.`
+      )
+    } else {
+      return null
+    }
   }
 
   // ensure module in graph after successful load
   const mod = await moduleGraph.ensureEntryFromUrl(url)
-  // file is out of root, add it to the watch list
-  if (mod.file && !mod.file.startsWith(root + '/')) {
-    watcher.add(mod.file)
-  }
+  ensureWatchedFile(watcher, mod.file, root)
 
   // transform
-  const transformStart = Date.now()
-  const transformResult = await pluginContainer.transform(code, id, map)
+  const transformStart = isDebug ? Date.now() : 0
+  const transformResult = await pluginContainer.transform(code, id, map, ssr)
   if (
     transformResult == null ||
     (typeof transformResult === 'object' && transformResult.code == null)
@@ -102,17 +125,17 @@ export async function transformRequest(
       )
   } else {
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
-    if (typeof transformResult === 'object') {
-      code = transformResult.code!
-      map = transformResult.map
-    } else {
-      code = transformResult
-    }
+    code = transformResult.code!
+    map = transformResult.map
   }
 
-  return (mod.transformResult = {
-    code,
-    map,
-    etag: getEtag(code, { weak: true })
-  } as TransformResult)
+  if (ssr) {
+    return (mod.ssrTransformResult = await ssrTransform(code, map as SourceMap))
+  } else {
+    return (mod.transformResult = {
+      code,
+      map,
+      etag: getEtag(code, { weak: true })
+    } as TransformResult)
+  }
 }

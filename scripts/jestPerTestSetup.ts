@@ -1,6 +1,6 @@
 import fs from 'fs-extra'
 import * as http from 'http'
-import { resolve } from 'path'
+import { resolve, dirname } from 'path'
 import slash from 'slash'
 import sirv from 'sirv'
 import { createServer, build, ViteDevServer, UserConfig } from 'vite'
@@ -9,7 +9,14 @@ import { Page } from 'playwright-chromium'
 const isBuildTest = !!process.env.VITE_TEST_BUILD
 
 // injected by the test env
-declare const page: Page
+declare global {
+  namespace NodeJS {
+    interface Global {
+      page?: Page
+      viteTestUrl?: string
+    }
+  }
+}
 
 let server: ViteDevServer | http.Server
 let tempDir: string
@@ -21,6 +28,10 @@ const onConsole = (msg) => {
 }
 
 beforeAll(async () => {
+  const page = global.page
+  if (!page) {
+    return
+  }
   try {
     page.on('console', onConsole)
 
@@ -45,6 +56,14 @@ beforeAll(async () => {
         }
       })
 
+      const testCustomServe = resolve(dirname(testPath), 'serve.js')
+      if (fs.existsSync(testCustomServe)) {
+        // test has custom server configuration.
+        const { serve } = require(testCustomServe)
+        server = await serve(tempDir, isBuildTest)
+        return
+      }
+
       const options: UserConfig = {
         root: tempDir,
         logLevel: 'error',
@@ -66,13 +85,14 @@ beforeAll(async () => {
       if (!isBuildTest) {
         process.env.VITE_INLINE = 'inline-serve'
         server = await (await createServer(options)).listen()
-        // use resolved port from server
-        const url = ((global as any).viteTestUrl = `http://localhost:${server.config.server.port}`)
+        // use resolved port/base from server
+        const base = server.config.base === '/' ? '' : server.config.base
+        const url = (global.viteTestUrl = `http://localhost:${server.config.server.port}${base}`)
         await page.goto(url)
       } else {
         process.env.VITE_INLINE = 'inline-build'
         await build(options)
-        const url = ((global as any).viteTestUrl = await startStaticServer())
+        const url = (global.viteTestUrl = await startStaticServer())
         await page.goto(url)
       }
     }
@@ -84,7 +104,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  page.off('console', onConsole)
+  global.page && global.page.off('console', onConsole)
   if (server) {
     await server.close()
   }
@@ -100,7 +120,7 @@ function startStaticServer(): Promise<string> {
   try {
     config = require(configFile)
   } catch (e) {}
-  const base = config?.build?.base || ''
+  const base = (config?.base || '/') === '/' ? '' : config.base
 
   // @ts-ignore
   if (config && config.__test__) {

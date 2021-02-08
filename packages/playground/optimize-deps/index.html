@@ -2,10 +2,20 @@
 
 <h2>CommonJS w/ named imports (react)</h2>
 <div class="cjs"></div>
+<h2>CommonJS w/ named imports (phoenix)</h2>
+<div class="cjs-phoenix">fail</div>
+<h2>CommonJS w/ default export (clipboard)</h2>
+<div class="cjs-clipboard">fail</div>
+
 <script type="module" src="./cjs.js"></script>
 
-<h2>CommonJS dynamic import (react)</h2>
+<h2>CommonJS dynamic import default + named (react)</h2>
 <div class="cjs-dynamic"></div>
+<h2>CommonJS dynamic import named (phoenix)</h2>
+<div class="cjs-dynamic-phoenix"></div>
+<h2>CommonJS dynamic import default (clipboard)</h2>
+<div class="cjs-dynamic-clipboard"></div>
+
 <script type="module" src="./cjs-dynamic.js"></script>
 
 <h2>Dedupe (dep in linked & optimized package)</h2>
@@ -13,7 +23,7 @@
 <script type="module" src="./dedupe.js"></script>
 
 <h2>CommonJS w/ browser field mapping (axios)</h2>
-<div>This should show ping: <span class="cjs-browser-field"></span></div>
+<div>This should show pong: <span class="cjs-browser-field"></span></div>
 
 <h2>Detecting linked src package and optimizing its deps (lodash-es)</h2>
 <div>This should show fooBarBaz: <span class="deps-linked"></span></div>
@@ -21,16 +31,37 @@
 <h2>Optimizing force included dep even when it's linked</h2>
 <div class="force-include"></div>
 
+<h2>import * as ...</h2>
+<div class="import-star"></div>
+
+<h2>Dep w/ special file format supported via plugins</h2>
+<div class="plugin"></div>
+
+<h2>Vue & Vuex</h2>
+<div class="vue"></div>
+
 <script type="module">
-import axios from 'axios'
+  // test dep detection in globbed files
+  const globbed = import.meta.globEager('./glob/*.js')
 
-axios.get('/ping').then(res => {
-  document.querySelector('.cjs-browser-field').textContent = res.data
-})
+  import { camelCase } from 'dep-linked'
+  document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')
 
-import { camelCase } from 'optimize-deps-linked'
-document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')
+  import { msg, VueSFC } from 'dep-linked-include'
+  document.querySelector('.force-include').textContent = msg
+  document.querySelector('.plugin').textContent = VueSFC.render()
 
-import { msg } from 'optimize-deps-linked-include'
-document.querySelector('.force-include').textContent = msg
+  import * as linked from 'dep-linked-include'
+  const keys = Object.keys(linked)
+  if (keys.length) {
+    document.querySelector('.import-star').textContent = `[success] ${keys.join(
+      ', '
+    )}`
+  }
+
+  import { createApp } from 'vue'
+  import { createStore } from 'vuex'
+  if (typeof createApp === 'function' && typeof createStore === 'function') {
+    document.querySelector('.vue').textContent = '[success]'
+  }
 </script>

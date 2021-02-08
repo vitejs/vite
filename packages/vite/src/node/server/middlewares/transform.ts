@@ -1,6 +1,5 @@
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
-import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 import {
   cleanUrl,
   createDebugger,
@@ -16,11 +15,13 @@ import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import chalk from 'chalk'
 import {
+  CLIENT_PUBLIC_PATH,
   DEP_CACHE_DIR,
   DEP_VERSION_RE,
-  FS_PREFIX,
+  NULL_BYTE_PLACEHOLDER,
   VALID_ID_PREFIX
 } from '../../constants'
+import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -44,25 +45,34 @@ export function transformMiddleware(
       return next()
     }
 
-    let url = decodeURI(removeTimestampQuery(req.url!))
+    if (
+      server._pendingReload &&
+      // always allow vite client requests so that it can trigger page reload
+      !req.url?.startsWith(CLIENT_PUBLIC_PATH) &&
+      !req.url?.includes('vite/dist/client')
+    ) {
+      // missing dep pending reload, hold request until reload happens
+      server._pendingReload.then(() => res.end())
+      return
+    }
+
+    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
+      NULL_BYTE_PLACEHOLDER,
+      '\0'
+    )
     const withoutQuery = cleanUrl(url)
 
     try {
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        // #1323 - browser may remove // when fetching source maps
-        if (url.startsWith(FS_PREFIX)) {
-          url = FS_PREFIX + url.split(FS_PREFIX)[1].replace(/^\/?/, '/')
-        }
         const originalUrl = url.replace(/\.map($|\?)/, '$1')
         const map = (await moduleGraph.getModuleByUrl(originalUrl))
           ?.transformResult?.map
         if (map) {
           return send(req, res, JSON.stringify(map), 'json')
         } else {
-          res.statusCode = 404
-          return res.end()
+          return next()
         }
       }
 

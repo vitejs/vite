@@ -21,19 +21,29 @@ exports.performReactRefresh = debounce(exports.performReactRefresh, 16)
 export default exports
 `
 
+const preambleCode = `
+import RefreshRuntime from "__BASE__${runtimePublicPath.slice(1)}"
+RefreshRuntime.injectIntoGlobalHook(window)
+window.$RefreshReg$ = () => {}
+window.$RefreshSig$ = () => (type) => type
+window.__vite_plugin_react_preamble_installed__ = true
+`
+
 /**
  * Transform plugin for transforming and injecting per-file refresh code.
  *
- * @returns {import('vite').Plugin}
+ * @type {import('.').default}
  */
-module.exports = function reactRefreshPlugin() {
+function reactRefreshPlugin(opts) {
   let shouldSkip = false
+  let base = '/'
 
   return {
     name: 'react-refresh',
 
     configResolved(config) {
       shouldSkip = config.command === 'build' || config.isProduction
+      base = config.base
     },
 
     resolveId(id) {
@@ -48,8 +58,8 @@ module.exports = function reactRefreshPlugin() {
       }
     },
 
-    transform(code, id) {
-      if (shouldSkip) {
+    transform(code, id, ssr) {
+      if (shouldSkip || ssr) {
         return
       }
 
@@ -65,6 +75,12 @@ module.exports = function reactRefreshPlugin() {
 
       const isReasonReact = id.endsWith('.bs.js')
       const result = transformSync(code, {
+        configFile: false,
+        parserOpts: {
+          sourceType: 'module',
+          allowAwaitOutsideFunction: true,
+          plugins: opts && opts.parserPlugins
+        },
         plugins: [
           require('@babel/plugin-syntax-import-meta'),
           [require('react-refresh/babel'), { skipEnvCheck: true }]
@@ -87,7 +103,7 @@ module.exports = function reactRefreshPlugin() {
 
   if (!window.__vite_plugin_react_preamble_installed__) {
     throw new Error(
-      "vite-plugin-react can't detect preamble. Something is wrong" +
+      "vite-plugin-react can't detect preamble. Something is wrong. " +
       "See https://github.com/vitejs/vite-plugin-react/pull/11#discussion_r430879201"
     );
   }
@@ -134,13 +150,7 @@ module.exports = function reactRefreshPlugin() {
         {
           tag: 'script',
           attrs: { type: 'module' },
-          children: `
-  import RefreshRuntime from "${runtimePublicPath}"
-  RefreshRuntime.injectIntoGlobalHook(window)
-  window.$RefreshReg$ = () => {}
-  window.$RefreshSig$ = () => (type) => type
-  window.__vite_plugin_react_preamble_installed__ = true
-        `
+          children: preambleCode.replace(`__BASE__`, base)
         }
       ]
     }
@@ -175,3 +185,7 @@ function isRefreshBoundary(ast) {
 function isComponentishName(name) {
   return typeof name === 'string' && name[0] >= 'A' && name[0] <= 'Z'
 }
+
+module.exports = reactRefreshPlugin
+reactRefreshPlugin['default'] = reactRefreshPlugin
+reactRefreshPlugin.preambleCode = preambleCode

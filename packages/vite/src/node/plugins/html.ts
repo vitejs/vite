@@ -7,17 +7,28 @@ import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
 import { ResolvedConfig } from '../config'
 import slash from 'slash'
 import MagicString from 'magic-string'
-import { checkPublicFile, assetUrlRE, urlToBuiltUrl } from './asset'
+import {
+  checkPublicFile,
+  assetUrlRE,
+  urlToBuiltUrl,
+  getAssetFilename
+} from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { polyfillId } from './dynamicImportPolyfill'
-import { AttributeNode, NodeTransform, NodeTypes } from '@vue/compiler-dom'
+import {
+  AttributeNode,
+  NodeTransform,
+  NodeTypes,
+  ElementNode
+} from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
-export const htmlCommentRE = /<!--[\s\S]*?-->/g
-export const scriptRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)([\s\S]*?)<\/script>/gm
 
-export function htmlPlugin(): Plugin {
+const htmlCommentRE = /<!--[\s\S]*?-->/g
+const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
+
+export function htmlInlineScriptProxyPlugin(): Plugin {
   return {
     name: 'vite:html',
 
@@ -34,9 +45,9 @@ export function htmlPlugin(): Plugin {
         const file = cleanUrl(id)
         const html = fs.readFileSync(file, 'utf-8').replace(htmlCommentRE, '')
         let match
-        scriptRE.lastIndex = 0
+        scriptModuleRE.lastIndex = 0
         for (let i = 0; i <= index; i++) {
-          match = scriptRE.exec(html)
+          match = scriptModuleRE.exec(html)
         }
         if (match) {
           return match[2]
@@ -49,13 +60,68 @@ export function htmlPlugin(): Plugin {
 }
 
 // this extends the config in @vue/compiler-sfc with <link href>
-const assetAttrsConfig: Record<string, string[]> = {
+export const assetAttrsConfig: Record<string, string[]> = {
   link: ['href'],
   video: ['src', 'poster'],
   source: ['src'],
   img: ['src'],
   image: ['xlink:href', 'href'],
   use: ['xlink:href', 'href']
+}
+
+export async function traverseHtml(
+  html: string,
+  filePath: string,
+  visitor: NodeTransform
+) {
+  // lazy load compiler
+  const { parse, transform } = await import('@vue/compiler-dom')
+  // @vue/compiler-core doesn't like lowercase doctypes
+  html = html.replace(/<!doctype\s/i, '<!DOCTYPE ')
+  try {
+    const ast = parse(html, { comments: true })
+    transform(ast, {
+      nodeTransforms: [visitor]
+    })
+  } catch (e) {
+    const parseError = {
+      loc: filePath,
+      frame: '',
+      ...formatParseError(e, filePath, html)
+    }
+    throw new Error(
+      `Unable to parse ${JSON.stringify(parseError.loc)}\n${parseError.frame}`
+    )
+  }
+}
+
+export function getScriptInfo(node: ElementNode) {
+  let src: AttributeNode | undefined
+  let isModule = false
+  for (let i = 0; i < node.props.length; i++) {
+    const p = node.props[i]
+    if (p.type === NodeTypes.ATTRIBUTE) {
+      if (p.name === 'src') {
+        src = p
+      } else if (p.name === 'type' && p.value && p.value.content === 'module') {
+        isModule = true
+      }
+    }
+  }
+  return { src, isModule }
+}
+
+function formatParseError(e: any, id: string, html: string): Error {
+  // normalize the error to rollup format
+  if (e.loc) {
+    e.frame = generateCodeFrame(html, e.loc.start.offset)
+    e.loc = {
+      file: id,
+      line: e.loc.start.line,
+      column: e.loc.start.column
+    }
+  }
+  return e
 }
 
 /**
@@ -65,7 +131,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config.root)
+    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config)
 
   return {
     name: 'vite:build-html',
@@ -76,35 +142,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // pre-transform
         html = await applyHtmlTransforms(html, publicPath, id, preHooks)
 
-        function formatError(e: any): Error {
-          // normalize the error to rollup format
-          if (e.loc) {
-            e.frame = generateCodeFrame(html, e.loc.start.offset)
-            e.loc = {
-              file: id,
-              line: e.loc.start.line,
-              column: e.loc.start.column
-            }
-          }
-          return e
-        }
-
-        // lazy load compiler-dom
-        const { parse, transform } = await import('@vue/compiler-dom')
-        // @vue/compiler-core doesn't like lowercase doctypes
-        html = html.replace(/<!doctype\s/i, '<!DOCTYPE ')
-        let ast
-        try {
-          ast = parse(html, { comments: true })
-        } catch (e) {
-          this.error(formatError(e))
-        }
-
         let js = ''
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
         let inlineModuleIndex = -1
-        const viteHtmlTransform: NodeTransform = (node) => {
+
+        await traverseHtml(html, id, (node) => {
           if (node.type !== NodeTypes.ELEMENT) {
             return
           }
@@ -113,26 +156,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // script tags
           if (node.tag === 'script') {
-            const srcAttr = node.props.find(
-              (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'src'
-            ) as AttributeNode
-            const typeAttr = node.props.find(
-              (p) => p.type === NodeTypes.ATTRIBUTE && p.name === 'type'
-            ) as AttributeNode
-            const isJsModule =
-              typeAttr && typeAttr.value && typeAttr.value.content === 'module'
+            const { src, isModule } = getScriptInfo(node)
 
-            const url = srcAttr && srcAttr.value && srcAttr.value.content
-            if (url && checkPublicFile(url, config.root)) {
+            const url = src && src.value && src.value.content
+            if (url && checkPublicFile(url, config)) {
               // referencing public dir url, prefix with base
               s.overwrite(
-                srcAttr.value!.loc.start.offset,
-                srcAttr.value!.loc.end.offset,
-                config.build.base + url.slice(1)
+                src!.value!.loc.start.offset,
+                src!.value!.loc.end.offset,
+                `"${config.base + url.slice(1)}"`
               )
             }
 
-            if (isJsModule) {
+            if (isModule) {
               inlineModuleIndex++
               if (url && !isExcludedUrl(url)) {
                 // <script type="module" src="..."/>
@@ -166,11 +202,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   } else {
                     assetUrls.push(p)
                   }
-                } else if (checkPublicFile(url, config.root)) {
+                } else if (checkPublicFile(url, config)) {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
-                    config.build.base + url.slice(1)
+                    `"${config.base + url.slice(1)}"`
                   )
                 }
               }
@@ -182,26 +218,26 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             // ones in the end.
             s.remove(node.loc.start.offset, node.loc.end.offset)
           }
-        }
-
-        try {
-          transform(ast, {
-            nodeTransforms: [viteHtmlTransform]
-          })
-        } catch (e) {
-          this.error(formatError(e))
-        }
+        })
 
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location.
         for (const attr of assetUrls) {
           const value = attr.value!
-          const url = await urlToBuiltUrl(value.content, id, config, this)
-          s.overwrite(
-            value.loc.start.offset,
-            value.loc.end.offset,
-            JSON.stringify(url)
-          )
+          try {
+            const url = await urlToBuiltUrl(value.content, id, config, this)
+            s.overwrite(
+              value.loc.start.offset,
+              value.loc.end.offset,
+              `"${url}"`
+            )
+          } catch (e) {
+            // #1885 preload may be pointing to urls that do not exist
+            // locally on disk
+            if (e.code !== 'ENOENT') {
+              throw e
+            }
+          }
         }
 
         processedHtml.set(id, s.toString())
@@ -238,10 +274,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       const getCssTagsForChunk = (chunk: OutputChunk): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
-        const cssFileHandle = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFileHandle) {
-          const file = this.getFileName(cssFileHandle)
-          if (file) {
+        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+        if (cssFiles) {
+          cssFiles.forEach((file) => {
             tags.push({
               tag: 'link',
               attrs: {
@@ -249,7 +284,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 href: toPublicPath(file, config)
               }
             })
-          }
+          })
         }
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
@@ -262,8 +297,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       for (const [id, html] of processedHtml) {
         // resolve asset url references
-        let result = html.replace(assetUrlRE, (_, fileId, postfix = '') => {
-          return config.build.base + this.getFileName(fileId) + postfix
+        let result = html.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+          return config.base + getAssetFilename(fileHash, config) + postfix
         })
 
         // find corresponding entry chunk
@@ -282,6 +317,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               tag: 'script',
               attrs: {
                 type: 'module',
+                crossorigin: true,
                 src: toPublicPath(chunk.fileName, config)
               }
             },
@@ -334,7 +370,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
 export interface HtmlTagDescriptor {
   tag: string
-  attrs?: Record<string, string | boolean>
+  attrs?: Record<string, string | boolean | undefined>
   children?: string | HtmlTagDescriptor[]
   /**
    * default: 'head-prepend'
@@ -465,7 +501,7 @@ export async function applyHtmlTransforms(
 }
 
 function toPublicPath(filename: string, config: ResolvedConfig) {
-  return isExternalUrl(filename) ? filename : config.build.base + filename
+  return isExternalUrl(filename) ? filename : config.base + filename
 }
 
 const headInjectRE = /<\/head>/
