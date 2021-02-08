@@ -24,7 +24,7 @@ Vite aims to address these issues by leveraging new advancements in the ecosyste
 
 When cold-starting the dev server, a bundler-based build setup has to eagerly crawl and build your entire application before it can be served.
 
-Vite improves the dev server start time by first deviding the modules in an application into two categories: **dependencies** and **source code**.
+Vite improves the dev server start time by first dividing the modules in an application into two categories: **dependencies** and **source code**.
 
 - **Dependencies** are mostly plain JavaScript that do not change often during development. Some large dependencies (e.g. component libraries with hundreds of modules) are also quite expensive to process. Dependencies may also be shipped in various module formats (e.g. ESM or CommonJS).
 
