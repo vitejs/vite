@@ -173,7 +173,7 @@ socket.addEventListener('close', ({ wasClean }) => {
   if (wasClean) return
   console.log(`[vite] server connection lost. polling for restart...`)
   setInterval(() => {
-    fetch('/')
+    fetch(`${base}__vite_ping`)
       .then(() => {
         location.reload()
       })
