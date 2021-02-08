@@ -1,3 +1,12 @@
+## [1.0.3](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.2...plugin-vue-jsx@1.0.3) (2021-02-08)
+
+
+### Bug Fixes
+
+* **plugin-vue-jsx:** support ssr ([30e92a1](https://github.com/vitejs/vite/commit/30e92a150e060e8bedcb6f0c477dcaa87e7996d6)), closes [#1939](https://github.com/vitejs/vite/issues/1939)
+
+
+
 ## [1.0.2](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.1...plugin-vue-jsx@1.0.2) (2021-01-12)
 
 
