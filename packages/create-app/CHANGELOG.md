@@ -1,3 +1,12 @@
+# [1.7.0](https://github.com/vitejs/vite/compare/create-app@1.6.0...create-app@1.7.0) (2021-02-08)
+
+
+### Features
+
+* **create-app:** add favicons for all templates that are missing one ([#1935](https://github.com/vitejs/vite/issues/1935)) ([3fa1d39](https://github.com/vitejs/vite/commit/3fa1d398080372bddc5dab0b4021ac1670a644b9))
+
+
+
 # [1.6.0](https://github.com/vitejs/vite/compare/create-app@1.5.2...create-app@1.6.0) (2021-02-05)
 
 
