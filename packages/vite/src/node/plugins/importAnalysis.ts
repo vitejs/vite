@@ -309,7 +309,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(url)
           // #998 remove comment
           url = url.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '').trim()
-          const literalIdMatch = url.match(/^'([^']+)'|"([^"]+)"$/)
+          const literalIdMatch = url.match(/^(?:'([^']+)'|"([^"]+)")$/)
           if (literalIdMatch) {
             isLiteralDynamicId = true
             url = literalIdMatch[1] || literalIdMatch[2]
