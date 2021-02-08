@@ -48,7 +48,7 @@ async function init() {
   }
 
   const root = path.join(cwd, targetDir)
-  console.log(`Scaffolding project in ${root}...`)
+  console.log(`\nScaffolding project in ${root}...`)
 
   if (!fs.existsSync(root)) {
     fs.mkdirSync(root, { recursive: true })
