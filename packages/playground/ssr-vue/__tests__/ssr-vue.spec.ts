@@ -80,6 +80,10 @@ test('asset', async () => {
   )
 })
 
+test('jsx', async () => {
+  expect(await page.textContent('.jsx')).toMatch('from JSX')
+})
+
 test('hydration', async () => {
   expect(await page.textContent('button')).toMatch('0')
   await page.click('button')
