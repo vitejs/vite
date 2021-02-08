@@ -5,7 +5,7 @@ const importMeta = require('@babel/plugin-syntax-import-meta')
 const hash = require('hash-sum')
 
 /**
- * @param {import('.').Options} options
+ * @param {import('@vue/babel-plugin-jsx').VueJSXPluginOptions} options
  * @returns {import('vite').Plugin}
  */
 function vueJsxPlugin(options = {}) {
@@ -35,7 +35,7 @@ function vueJsxPlugin(options = {}) {
       needSourceMap = config.command === 'serve' || !!config.build.sourcemap
     },
 
-    transform(code, id) {
+    transform(code, id, ssr) {
       if (/\.[jt]sx$/.test(id)) {
         const plugins = [importMeta, [jsx, options]]
         if (id.endsWith('.tsx')) {
@@ -53,7 +53,7 @@ function vueJsxPlugin(options = {}) {
           sourceFileName: id
         })
 
-        if (!needHmr) {
+        if (ssr || !needHmr) {
           return {
             code: result.code,
             map: result.map
