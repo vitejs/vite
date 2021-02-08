@@ -1,3 +1,18 @@
+# [2.0.0-beta.66](https://github.com/vitejs/vite/compare/v2.0.0-beta.65...v2.0.0-beta.66) (2021-02-08)
+
+
+### Bug Fixes
+
+* **import-analysis:** fix literal dynamic id false positive ([6a6508e](https://github.com/vitejs/vite/commit/6a6508edb9b31a4ea8bbc54b841f5227ba2b562a)), closes [#1902](https://github.com/vitejs/vite/issues/1902)
+* **resolve:** avoid race condition in resolve skip check ([85f1e7b](https://github.com/vitejs/vite/commit/85f1e7bdcb9d454bd17b96ef98e2dc0cad58776b)), closes [#1937](https://github.com/vitejs/vite/issues/1937)
+* **resolve:** pass down resolve skip via context ([9066f27](https://github.com/vitejs/vite/commit/9066f27c591b356107239e9cef36c1cad73864c0)), closes [#1937](https://github.com/vitejs/vite/issues/1937)
+* **scan:** only scan supported entry file types ([a93e61d](https://github.com/vitejs/vite/commit/a93e61d02405728278ac905a9539450927dc7364))
+* use dedicated endpoint for hmr reconnect ping ([b433607](https://github.com/vitejs/vite/commit/b433607aca0986c6e1592c3f64adb2ef30689c5e)), closes [#1904](https://github.com/vitejs/vite/issues/1904)
+* **ssr:** ssr external should take scannd imports into account ([92934d4](https://github.com/vitejs/vite/commit/92934d4c18329cc51879aca5016a408b467c1fa0)), closes [#1916](https://github.com/vitejs/vite/issues/1916)
+* brotli skipped is printed when build.brotliSize is false ([#1912](https://github.com/vitejs/vite/issues/1912)) ([db3c324](https://github.com/vitejs/vite/commit/db3c324134db2bf371700cc4d838a49ac6148045))
+
+
+
 # [2.0.0-beta.65](https://github.com/vitejs/vite/compare/v2.0.0-beta.64...v2.0.0-beta.65) (2021-02-05)
 
 
