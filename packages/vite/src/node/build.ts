@@ -32,6 +32,8 @@ import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
+import { DepOptimizationMetadata } from './optimizer'
+import { scanImports } from './optimizer/scan'
 
 export interface BuildOptions {
   /**
@@ -323,9 +325,28 @@ async function doBuild(
 
   // inject ssrExternal if present
   const userExternal = options.rollupOptions?.external
-  const external = ssr
-    ? resolveExternal(resolveSSRExternal(config), userExternal)
-    : userExternal
+  let external = userExternal
+  if (ssr) {
+    // see if we have cached deps data available
+    let knownImports: string[] | undefined
+    if (config.optimizeCacheDir) {
+      const dataPath = path.join(config.optimizeCacheDir, '_metadata.json')
+      try {
+        const data = JSON.parse(
+          fs.readFileSync(dataPath, 'utf-8')
+        ) as DepOptimizationMetadata
+        knownImports = Object.keys(data.optimized)
+      } catch (e) {}
+    }
+    if (!knownImports) {
+      // no dev deps optimization data, do a fresh scan
+      knownImports = Object.keys((await scanImports(config)).deps)
+    }
+    external = resolveExternal(
+      resolveSSRExternal(config, knownImports),
+      userExternal
+    )
+  }
 
   const rollup = require('rollup') as typeof Rollup
 

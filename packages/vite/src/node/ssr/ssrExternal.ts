@@ -13,6 +13,7 @@ import { ResolvedConfig } from '..'
  */
 export function resolveSSRExternal(
   config: ResolvedConfig,
+  knownImports: string[],
   ssrExternals: Set<string> = new Set()
 ): string[] {
   const { root } = config
@@ -22,7 +23,7 @@ export function resolveSSRExternal(
   }
   const pkg = JSON.parse(pkgContent)
   const devDeps = Object.keys(pkg.devDependencies || {})
-  const deps = Object.keys(pkg.dependencies || {})
+  const deps = [...knownImports, ...Object.keys(pkg.dependencies || {})]
 
   for (const id of devDeps) {
     ssrExternals.add(id)
@@ -63,6 +64,7 @@ export function resolveSSRExternal(
           ...config,
           root: depRoot
         },
+        knownImports,
         ssrExternals
       )
       continue
