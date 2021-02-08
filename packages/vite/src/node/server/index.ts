@@ -415,6 +415,9 @@ export async function createServer(
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
+  // hmr reconnect ping
+  middlewares.use('/__vite_ping', (_, res) => res.end('pong'))
+
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
