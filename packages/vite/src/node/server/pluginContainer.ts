@@ -403,6 +403,7 @@ export async function createPluginContainer(
 
     async resolveId(rawId, importer = join(root, 'index.html'), _skip, ssr) {
       const ctx = new Context()
+      const resolveSkips = _skip ? new ResolveSkip() : null
       ctx.ssr = !!ssr
       const key =
         `${rawId}\n${importer}` +
@@ -418,8 +419,8 @@ export async function createPluginContainer(
 
         if (_skip) {
           if (_skip.includes(plugin)) continue
-          if (resolveSkips.has(plugin, key)) continue
-          resolveSkips.add(plugin, key)
+          if (resolveSkips!.has(plugin, key)) continue
+          resolveSkips!.add(plugin, key)
         }
 
         ctx._activePlugin = plugin
@@ -435,7 +436,7 @@ export async function createPluginContainer(
             ssr
           )
         } finally {
-          if (_skip) resolveSkips.delete(plugin, key)
+          if (_skip) resolveSkips!.delete(plugin, key)
         }
         if (!result) continue
 
@@ -555,33 +556,32 @@ export async function createPluginContainer(
     }
   }
 
-  function popIndex(array: any[], index: number) {
-    const tail = array.pop()
-    if (index !== array.length) array[index] = tail
-  }
-
-  // Tracks recursive resolveId calls
-  const resolveSkips = {
-    skip: new Map<Plugin, string[]>(),
-
-    has(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      return skips ? skips.includes(key) : false
-    },
-
-    add(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      if (skips) skips.push(key)
-      else this.skip.set(plugin, [key])
-    },
-
-    delete(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      if (!skips) return
-      const i = skips.indexOf(key)
-      if (i !== -1) popIndex(skips, i)
-    }
-  }
-
   return container
+}
+
+class ResolveSkip {
+  skip: Map<Plugin, string[]> = new Map()
+
+  has(plugin: Plugin, key: string) {
+    const skips = this.skip.get(plugin)
+    return skips ? skips.includes(key) : false
+  }
+
+  add(plugin: Plugin, key: string) {
+    const skips = this.skip.get(plugin)
+    if (skips) skips.push(key)
+    else this.skip.set(plugin, [key])
+  }
+
+  delete(plugin: Plugin, key: string) {
+    const skips = this.skip.get(plugin)
+    if (!skips) return
+    const i = skips.indexOf(key)
+    if (i !== -1) popIndex(skips, i)
+  }
+}
+
+function popIndex(array: any[], index: number) {
+  const tail = array.pop()
+  if (index !== array.length) array[index] = tail
 }
