@@ -123,7 +123,7 @@ const nodeConfig = {
         src: `require.resolve('terser'`,
         replacement: `require.resolve('vite/dist/node/terser'`
       },
-      // chokidar -> fs-events
+      // chokidar -> fsevents
       'fsevents-handler.js': {
         src: `require('fsevents')`,
         replacement: `eval('require')('fsevents')`
