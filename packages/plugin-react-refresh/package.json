@@ -27,6 +27,8 @@
   "dependencies": {
     "@babel/core": "^7.12.10",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
+    "@babel/plugin-transform-react-jsx-self": "^7.12.10",
+    "@babel/plugin-transform-react-jsx-source": "^7.12.10",
     "react-refresh": "^0.9.0"
   }
 }

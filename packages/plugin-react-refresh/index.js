@@ -1,6 +1,6 @@
 // @ts-check
 const fs = require('fs')
-const { transformSync } = require('@babel/core')
+const { transformSync, ParserOptions } = require('@babel/core')
 
 const runtimePublicPath = '/@react-refresh'
 const runtimeFilePath = require.resolve(
@@ -41,6 +41,8 @@ function reactRefreshPlugin(opts) {
   return {
     name: 'react-refresh',
 
+    enforce: 'pre',
+
     configResolved(config) {
       shouldSkip = config.command === 'build' || config.isProduction
       base = config.base
@@ -73,15 +75,30 @@ function reactRefreshPlugin(opts) {
         return
       }
 
+      /**
+       * @type ParserOptions["plugins"]
+       */
+      const parserPlugins = ['jsx']
+      if (/\.tsx?$/.test(id)) {
+        // it's a typescript file
+        parserPlugins.push('typescript')
+      }
+      if (opts && opts.parserPlugins) {
+        parserPlugins.push(...opts.parserPlugins)
+      }
+
       const isReasonReact = id.endsWith('.bs.js')
       const result = transformSync(code, {
         configFile: false,
+        filename: id,
         parserOpts: {
           sourceType: 'module',
           allowAwaitOutsideFunction: true,
-          plugins: opts && opts.parserPlugins
+          plugins: parserPlugins
         },
         plugins: [
+          require('@babel/plugin-transform-react-jsx-self'),
+          require('@babel/plugin-transform-react-jsx-source'),
           require('@babel/plugin-syntax-import-meta'),
           [require('react-refresh/babel'), { skipEnvCheck: true }]
         ],
