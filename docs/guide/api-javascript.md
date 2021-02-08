@@ -77,16 +77,6 @@ interface ViteDevServer {
    */
   transformRequest(url: string): Promise<TransformResult | null>
   /**
-   * Util for transforming a file with esbuild.
-   * Can be useful for certain plugins.
-   */
-  transformWithEsbuild(
-    code: string,
-    filename: string,
-    options?: EsbuildTransformOptions,
-    inMap?: object
-  ): Promise<EsbuildTransformResult>
-  /**
    * Apply vite built-in HTML transforms and any plugin HTML transforms.
    */
   transformIndexHtml(url: string, html: string): Promise<string>
