@@ -1,3 +1,12 @@
+# [1.3.0](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.2.2...plugin-react-refresh@1.3.0) (2021-02-08)
+
+
+### Features
+
+* **plugin-react-refresh:** add jsx metadata ([#1933](https://github.com/vitejs/vite/issues/1933)) ([4037c55](https://github.com/vitejs/vite/commit/4037c55015e74d5e19176bd6ae6bb1c4df157802))
+
+
+
 ## [1.2.2](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.2.1...plugin-react-refresh@1.2.2) (2021-02-02)
 
 
