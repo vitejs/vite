@@ -29,7 +29,7 @@ Since Vite ships with TypeScript typings, you can leverage your IDE's intellisen
 
 ```js
 /**
- * type {import('vite').UserConfig}
+ * @type {import('vite').UserConfig}
  */
 export default {
   // ...
