@@ -220,7 +220,7 @@ export interface ViteDevServer {
   /**
    * Start the server.
    */
-  listen(port?: number): Promise<ViteDevServer>
+  listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
   /**
    * Stop the server.
    */
@@ -321,8 +321,8 @@ export async function createServer(
         e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
       }
     },
-    listen(port?: number) {
-      return startServer(server, port)
+    listen(port?: number, isRestart?: boolean) {
+      return startServer(server, port, isRestart)
     },
     async close() {
       await Promise.all([
@@ -510,7 +510,8 @@ export async function createServer(
 
 async function startServer(
   server: ViteDevServer,
-  inlinePort?: number
+  inlinePort?: number,
+  isRestart: boolean = false
 ): Promise<ViteDevServer> {
   const httpServer = server.httpServer
   if (!httpServer) {
@@ -595,7 +596,7 @@ async function startServer(
         })
       }
 
-      if (options.open) {
+      if (options.open && !isRestart) {
         const path = typeof options.open === 'string' ? options.open : base
         openBrowser(
           `${protocol}://${hostname}:${port}${path}`,
