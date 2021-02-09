@@ -20,8 +20,7 @@ jobs:
           labels: 'bug: pending triage, need reproduction'
 
       - name: remove pending
-        if: github.event.label.name == 'enhancement' || github.event.label.name == 'bug: upstream' || github.event.label.name == 'bug: hmr' || github.event.label.name == 'bug'
-        uses: actions-cool/issues-helper@v2.1.1
+        if: github.event.label.name == 'enhancement' || github.event.label.name == 'bug' || (contains(github.event.label.name, 'pending triage') == false && startsWith(github.event.label.name, 'bug:') == true)
         with:
           actions: 'remove-labels'
           token: ${{ secrets.GITHUB_TOKEN }}
