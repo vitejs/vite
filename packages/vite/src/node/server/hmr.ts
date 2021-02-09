@@ -421,7 +421,7 @@ async function restartServer(server: ViteDevServer) {
     }
   }
   if (!server.config.server.middlewareMode) {
-    await server.listen()
+    await server.listen(undefined, true)
   } else {
     server.config.logger.info('server restarted.', { timestamp: true })
   }
