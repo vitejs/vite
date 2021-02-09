@@ -69,9 +69,9 @@ function reactRefreshPlugin(opts) {
         return
       }
 
-      // plain js/ts files can't use React without importing it, so skip
+      // plain .ts files can't use React without importing it, so skip
       // them whenever possible
-      if (!id.endsWith('x') && !code.includes('react')) {
+      if (id.endsWith('.ts') || !code.includes('react')) {
         return
       }
 
