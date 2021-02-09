@@ -1,6 +1,7 @@
+import fs from 'fs'
 import path from 'path'
 import { ViteDevServer } from '..'
-import { resolveFrom } from '../utils'
+import { cleanUrl, resolveFrom } from '../utils'
 import { ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -69,7 +70,7 @@ export async function ssrLoadModule(
 
   const ssrImport = (dep: string) => {
     if (isExternal(dep)) {
-      return nodeRequire(dep, mod.file)
+      return nodeRequire(dep, mod.file, server.config.root)
     } else {
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     }
@@ -77,7 +78,7 @@ export async function ssrLoadModule(
 
   const ssrDynamicImport = (dep: string) => {
     if (isExternal(dep)) {
-      return Promise.resolve(nodeRequire(dep, mod.file))
+      return Promise.resolve(nodeRequire(dep, mod.file, server.config.root))
     } else {
       return ssrLoadModule(dep, server, isolated, context, urlStack.concat(url))
     }
@@ -127,8 +128,8 @@ export async function ssrLoadModule(
   return ssrModule
 }
 
-function nodeRequire(id: string, importer: string | null) {
-  const mod = importer ? require(resolve(id, importer)) : require(id)
+function nodeRequire(id: string, importer: string | null, root: string) {
+  const mod = require(resolve(id, importer, root))
   const defaultExport = mod.__esModule ? mod.default : mod
   // rollup-style default import interop for cjs
   return new Proxy(mod, {
@@ -141,14 +142,17 @@ function nodeRequire(id: string, importer: string | null) {
 
 const resolveCache = new Map<string, string>()
 
-function resolve(id: string, importer: string) {
-  const dir = path.dirname(importer)
-  const key = id + dir
+function resolve(id: string, importer: string | null, root: string) {
+  const key = id + importer + root
   const cached = resolveCache.get(key)
   if (cached) {
     return cached
   }
-  const resolved = resolveFrom(id, dir, true)
+  const resolveDir =
+    importer && fs.existsSync(cleanUrl(importer))
+      ? path.dirname(importer)
+      : root
+  const resolved = resolveFrom(id, resolveDir, true)
   resolveCache.set(key, resolved)
   return resolved
 }
