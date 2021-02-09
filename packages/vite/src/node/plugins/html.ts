@@ -253,12 +253,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(_, bundle) {
       const getPreloadLinksForChunk = (
-        chunk: OutputChunk
+        chunk: OutputChunk,
+        seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
-          if (importee && importee.type === 'chunk') {
+          if (importee && importee.type === 'chunk' && !seen.has(file)) {
+            seen.add(file)
             tags.push({
               tag: 'link',
               attrs: {
@@ -266,30 +268,36 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 href: toPublicPath(file, config)
               }
             })
-            tags.push(...getPreloadLinksForChunk(importee))
+            tags.push(...getPreloadLinksForChunk(importee, seen))
           }
         })
         return tags
       }
 
-      const getCssTagsForChunk = (chunk: OutputChunk): HtmlTagDescriptor[] => {
+      const getCssTagsForChunk = (
+        chunk: OutputChunk,
+        seen: Set<string> = new Set()
+      ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
         const cssFiles = chunkToEmittedCssFileMap.get(chunk)
         if (cssFiles) {
           cssFiles.forEach((file) => {
-            tags.push({
-              tag: 'link',
-              attrs: {
-                rel: 'stylesheet',
-                href: toPublicPath(file, config)
-              }
-            })
+            if (!seen.has(file)) {
+              seen.add(file)
+              tags.push({
+                tag: 'link',
+                attrs: {
+                  rel: 'stylesheet',
+                  href: toPublicPath(file, config)
+                }
+              })
+            }
           })
         }
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
           if (importee && importee.type === 'chunk') {
-            tags.push(...getCssTagsForChunk(importee))
+            tags.push(...getCssTagsForChunk(importee, seen))
           }
         })
         return tags
