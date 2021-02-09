@@ -1,7 +1,6 @@
 // @ts-check
 import fs from 'fs'
 import path from 'path'
-import slash from 'slash'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -188,7 +187,7 @@ function shimDepsPlugin(deps) {
     name: 'shim-deps',
     transform(code, id) {
       for (const file in deps) {
-        if (slash(id).endsWith(file)) {
+        if (id.replace(/\\/g, '/').endsWith(file)) {
           const { src, replacement, pattern } = deps[file]
 
           const magicString = new MagicString(code)

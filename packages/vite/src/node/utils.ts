@@ -4,11 +4,14 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { parse as parseUrl } from 'url'
-import slash from 'slash'
 import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
+
+export function slash(p: string): string {
+  return p.replace(/\\/g, '/')
+}
 
 export const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
 

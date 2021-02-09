@@ -1,10 +1,9 @@
 import fs from 'fs'
 import path from 'path'
+import chalk from 'chalk'
 import { createServer, ViteDevServer } from '..'
 import { createDebugger, normalizePath } from '../utils'
 import { ModuleNode } from './moduleGraph'
-import chalk from 'chalk'
-import slash from 'slash'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
@@ -96,7 +95,7 @@ export async function handleHMRUpdate(
         type: 'full-reload',
         path: config.server.middlewareMode
           ? '*'
-          : '/' + slash(path.relative(config.root, file))
+          : '/' + normalizePath(path.relative(config.root, file))
       })
     } else {
       // loaded but not in the module graph, probably not js

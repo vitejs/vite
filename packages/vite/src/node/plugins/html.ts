@@ -3,9 +3,14 @@ import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
 import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
-import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
+import {
+  slash,
+  cleanUrl,
+  isExternalUrl,
+  isDataUrl,
+  generateCodeFrame
+} from '../utils'
 import { ResolvedConfig } from '../config'
-import slash from 'slash'
 import MagicString from 'magic-string'
 import {
   checkPublicFile,

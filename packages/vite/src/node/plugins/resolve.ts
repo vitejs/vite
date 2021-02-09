@@ -21,10 +21,10 @@ import {
   ensureVolumeInPath,
   resolveFrom,
   isDataUrl,
-  cleanUrl
+  cleanUrl,
+  slash
 } from '../utils'
 import { ViteDevServer } from '..'
-import slash from 'slash'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
