@@ -1,3 +1,12 @@
+# [1.1.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.3...plugin-vue-jsx@1.1.0) (2021-02-09)
+
+
+### Features
+
+* **plugin-vue-jsx:** register jsx module during ssr ([7a6aa2a](https://github.com/vitejs/vite/commit/7a6aa2ad2689bf8221389924a608876866db7b0a))
+
+
+
 ## [1.0.3](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.2...plugin-vue-jsx@1.0.3) (2021-02-08)
 
 
