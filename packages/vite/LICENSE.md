@@ -1243,7 +1243,7 @@ Repository: https://github.com/mathiasbynens/cssesc.git
 
 ## debug
 License: MIT
-By: TJ Holowaychuk, Nathan Rajlich, Andrew Rhyne
+By: TJ Holowaychuk, Nathan Rajlich, Andrew Rhyne, Josh Junon
 Repository: git://github.com/visionmedia/debug.git
 
 > (The MIT License)

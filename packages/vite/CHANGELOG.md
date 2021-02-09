@@ -1,3 +1,14 @@
+# [2.0.0-beta.67](https://github.com/vitejs/vite/compare/v2.0.0-beta.66...v2.0.0-beta.67) (2021-02-09)
+
+
+### Bug Fixes
+
+* **html:** avoid duplicate preload link injection ([6e71596](https://github.com/vitejs/vite/commit/6e7159675c55f46bcc030f9c6fd35dee9a92cfca)), closes [#1957](https://github.com/vitejs/vite/issues/1957)
+* **ssr:** fix ssr node require for virtual modules ([fa2d7d6](https://github.com/vitejs/vite/commit/fa2d7d66c16c2156354b6888a2f0bd4b47262ca2))
+* do not open browser when restarting server ([#1952](https://github.com/vitejs/vite/issues/1952)) ([9af1517](https://github.com/vitejs/vite/commit/9af1517e47f66bb793447d998cf1a4d2fa3ef758))
+
+
+
 # [2.0.0-beta.66](https://github.com/vitejs/vite/compare/v2.0.0-beta.65...v2.0.0-beta.66) (2021-02-08)
 
 
