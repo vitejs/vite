@@ -1,13 +1,30 @@
-export * from './server'
-export * from './build'
-export * from './optimizer'
 export * from './config'
+export { createServer } from './server'
+export { build } from './build'
+export { optimizeDeps } from './optimizer'
 export { send } from './server/send'
 export { createLogger } from './logger'
 export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
 export { normalizePath } from './utils'
 
 // additional types
+export type {
+  ViteDevServer,
+  ServerOptions,
+  CorsOptions,
+  CorsOrigin,
+  ServerHook
+} from './server'
+export type {
+  BuildOptions,
+  LibraryOptions,
+  LibraryFormats,
+  ResolvedBuildOptions
+} from './build'
+export type {
+  DepOptimizationMetadata,
+  DepOptimizationOptions
+} from './optimizer'
 export type { Plugin } from './plugin'
 export type { Logger, LogOptions, LogLevel, LogType } from './logger'
 export type {
