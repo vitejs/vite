@@ -32,7 +32,6 @@ const { createServer } = require('vite')
 
 The `InlineConfig` interface extends `UserConfig` with additional properties:
 
-- `mode`: override default mode (`'development'` for server)
 - `configFile`: specify config file to use. If not set, Vite will try to automatically resolve one from project root. Set to `false` to disable auto resolving.
 
 ## `ViteDevServer`
@@ -44,15 +43,19 @@ interface ViteDevServer {
    */
   config: ResolvedConfig
   /**
-   * connect app instance
-   * This can also be used as the handler function of a custom http server
+   * A connect app instance
+   * - Can be used to attach custom middlewares to the dev server.
+   * - Can also be used as the handler function of a custom http server
+   *   or as a middleware in any connect-style Node.js frameworks
+   *
    * https://github.com/senchalabs/connect#use-middleware
    */
-  app: Connect.Server
+  middlewares: Connect.Server
   /**
    * native Node http server instance
+   * will be null in middleware mode
    */
-  httpServer: http.Server
+  httpServer: http.Server | null
   /**
    * chokidar watcher instance
    * https://github.com/paulmillr/chokidar#api
@@ -75,7 +78,10 @@ interface ViteDevServer {
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
-  transformRequest(url: string): Promise<TransformResult | null>
+  transformRequest(
+    url: string,
+    options?: TransformOptions
+  ): Promise<TransformResult | null>
   /**
    * Apply vite built-in HTML transforms and any plugin HTML transforms.
    */
@@ -104,7 +110,7 @@ interface ViteDevServer {
   /**
    * Start the server.
    */
-  listen(port?: number): Promise<ViteDevServer>
+  listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
   /**
    * Stop the server.
    */
@@ -148,6 +154,7 @@ const { build } = require('vite')
 ```ts
 async function resolveConfig(
   inlineConfig: InlineConfig,
-  command: 'build' | 'serve'
+  command: 'build' | 'serve',
+  defaultMode?: string
 ): Promise<ResolvedConfig>
 ```
