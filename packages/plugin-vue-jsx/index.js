@@ -5,7 +5,7 @@ const importMeta = require('@babel/plugin-syntax-import-meta')
 const hash = require('hash-sum')
 
 /**
- * @param {import('.').Options} options
+ * @param {import('@vue/babel-plugin-jsx').VueJSXPluginOptions} options
  * @returns {import('vite').Plugin}
  */
 function vueJsxPlugin(options = {}) {
@@ -40,6 +40,7 @@ function vueJsxPlugin(options = {}) {
         const plugins = [importMeta, [jsx, options]]
         if (id.endsWith('.tsx')) {
           plugins.push([
+            // @ts-ignore
             require('@babel/plugin-transform-typescript'),
             // @ts-ignore
             { isTSX: true, allowExtensions: true }
