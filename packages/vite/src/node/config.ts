@@ -184,8 +184,6 @@ export type ResolvedConfig = Readonly<
   }
 >
 
-export { ResolveOptions }
-
 export type ResolveFn = (
   id: string,
   importer?: string,

@@ -43,7 +43,11 @@ export type {
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
-export type { PackageData } from './plugins/resolve'
+export type {
+  PackageData,
+  ResolveOptions,
+  InternalResolveOptions
+} from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode } from './server/moduleGraph'
