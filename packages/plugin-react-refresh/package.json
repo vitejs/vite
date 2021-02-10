@@ -25,10 +25,9 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh#readme",
   "dependencies": {
-    "@babel/core": "^7.12.10",
-    "@babel/plugin-syntax-import-meta": "^7.10.4",
-    "@babel/plugin-transform-react-jsx-self": "^7.12.10",
-    "@babel/plugin-transform-react-jsx-source": "^7.12.10",
+    "@babel/core": "^7.12.13",
+    "@babel/plugin-transform-react-jsx-self": "^7.12.13",
+    "@babel/plugin-transform-react-jsx-source": "^7.12.13",
     "react-refresh": "^0.9.0"
   }
 }
