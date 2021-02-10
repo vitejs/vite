@@ -66,29 +66,6 @@ export default ({ command, mode }) => {
 
 ## Shared Options
 
-### alias
-
-- **Type:**
-  `Record<string, string> | Array<{ find: string | RegExp, replacement: string }>`
-
-  Will be passed to `@rollup/plugin-alias` as its [entries option](https://github.com/rollup/plugins/tree/master/packages/alias#entries). Can either be an object, or an array of `{ find, replacement }` pairs.
-
-  When aliasing to file system paths, always use absolute paths. Relative alias values will be used as-is and will not be resolved into file system paths.
-
-  More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
-
-### define
-
-- **Type:** `Record<string, string>`
-
-  Define global variable replacements. Entries will be defined as globals during dev and statically replaced during build.
-
-### plugins
-
-- **Type:** ` (Plugin | Plugin[])[]`
-
-  Array of plugins to use. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
-
 ### root
 
 - **Type:** `string`
@@ -111,6 +88,27 @@ export default ({ command, mode }) => {
 
   See [Public Base Path](/guide/build#public-base-path) for more details.
 
+### mode
+
+- **Type:** `string`
+- **Default:** `'development'` for serve, `'production'` for build
+
+  Specifying this in config will override the default mode for **both serve and build**. This value can also be overridden via the command line `--mode` option.
+
+  See [Env Variables and Modes](/guide/env-and-mode) for more details.
+
+### define
+
+- **Type:** `Record<string, string>`
+
+  Define global variable replacements. Entries will be defined as globals during dev and statically replaced during build. Replacements are performed only when the match is surrounded by word boundaries (`\b`).
+
+### plugins
+
+- **Type:** ` (Plugin | Plugin[])[]`
+
+  Array of plugins to use. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
+
 ### publicDir
 
 - **Type:** `string`
@@ -118,14 +116,62 @@ export default ({ command, mode }) => {
 
   Directory to serve as plain static assets. Files in this directory are served at `/` during dev and copied to the root of `outDir` during build, and are always served or copied as-is without transform. The value can be either an absolute file system path or a path relative to project root.
 
-### mode
+  See [The `public` Directory](/guide/assets#the-public-directory) for more details.
 
-- **Type:** `string`
-- **Default:** `'development'` for serve, `'production'` for build
+### resolve.alias
 
-  Specifying this in config will override the default mode for both serve and build. This value can also be overridden via the command line `--mode` option.
+- **Type:**
+  `Record<string, string> | Array<{ find: string | RegExp, replacement: string }>`
 
-  See [Env Variables and Modes](/guide/env-and-mode) for more details.
+  Will be passed to `@rollup/plugin-alias` as its [entries option](https://github.com/rollup/plugins/tree/master/packages/alias#entries). Can either be an object, or an array of `{ find, replacement }` pairs.
+
+  When aliasing to file system paths, always use absolute paths. Relative alias values will be used as-is and will not be resolved into file system paths.
+
+  More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
+
+### resolve.dedupe
+
+- **Type:** `string[]`
+
+  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
+  project root).
+
+### resolve.conditions
+
+- **Type:** `string[]`
+
+  Additional allowed conditions when resolving [Conditional Exports](https://nodejs.org/api/packages.html#packages_conditional_exports) from a package.
+
+  A package with conditional exports may have the following `exports` field in its `package.json`:
+
+  ```json
+  {
+    "exports": {
+      ".": {
+        "import": "./index.esm.js",
+        "require": "./index.cjs.js"
+      }
+    }
+  }
+  ```
+
+  Here, `import` and `require` are "conditions". Conditions can be nested and should be specified from most specific to least specific.
+
+  Vite has a list of "allowed conditions" and will match the first condition that is in the allowed list. The default allowed conditions are: `import`, `module`, `browser`, `default`, and `production/development` based on current mode. The `resolve.conditions` config option allows specifying additional allowed conditions.
+
+### resolve.mainFields
+
+- **Type:** `string[]`
+- **Default:**: `['module', 'jsnext:main', 'jsnext']`
+
+  List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
+
+### resolve.extensions
+
+- **Type:** `string[]`
+- **Default:**: `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+
+  List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
 ### css.modules
 
@@ -231,13 +277,6 @@ export default ({ command, mode }) => {
   - Importing them from JS will return their resolved URL string (this can be overwritten if you have a `enforce: 'pre'` plugin to handle the asset type differently).
 
   The built-in asset type list can be found [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts).
-
-### dedupe
-
-- **Type:** `string[]`
-
-  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
-  project root).
 
 ### logLevel
 

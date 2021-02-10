@@ -65,3 +65,15 @@ test('plugin resolved virutal file', async () => {
 test('resolve inline package', async () => {
   expect(await page.textContent('.inline-pkg')).toMatch('[success]')
 })
+
+test('resolve.extensions', async () => {
+  expect(await page.textContent('.custom-ext')).toMatch('[success]')
+})
+
+test('resolve.mainFields', async () => {
+  expect(await page.textContent('.custom-main-fields')).toMatch('[success]')
+})
+
+test('resolve.conditions', async () => {
+  expect(await page.textContent('.custom-condition')).toMatch('[success]')
+})

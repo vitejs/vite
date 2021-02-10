@@ -41,7 +41,7 @@ export function serveStaticMiddleware(
 
     // apply aliases to static requests as well
     let redirected: string | undefined
-    for (const { find, replacement } of config.alias) {
+    for (const { find, replacement } of config.resolve.alias) {
       const matches =
         typeof find === 'string' ? url.startsWith(find) : find.test(url)
       if (matches) {

@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { tryNodeResolve, ResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import { lookupFile, resolveFrom } from '../utils'
 import { ResolvedConfig } from '..'
 
@@ -29,7 +29,7 @@ export function resolveSSRExternal(
     ssrExternals.add(id)
   }
 
-  const resolveOptions: ResolveOptions = {
+  const resolveOptions: InternalResolveOptions = {
     root,
     isProduction: false,
     isBuild: true

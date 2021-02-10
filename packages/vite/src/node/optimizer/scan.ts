@@ -368,8 +368,8 @@ export function shouldExternalizeDep(resolvedId: string, rawId?: string) {
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // resovled is not a js type
-  if (!JS_TYPES_RE.test(resolvedId)) {
+  // resovled is not a scannable type
+  if (!JS_TYPES_RE.test(resolvedId) && !htmlTypesRE.test(resolvedId)) {
     return true
   }
 }

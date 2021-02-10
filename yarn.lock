@@ -6644,6 +6644,14 @@ requires-port@^1.0.0:
   version "0.0.0"
   uid ""
 
+"resolve-custom-condition@link:./packages/playground/resolve/custom-condition":
+  version "0.0.0"
+  uid ""
+
+"resolve-custom-main-field@link:./packages/playground/resolve/custom-main-field":
+  version "0.0.0"
+  uid ""
+
 resolve-cwd@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/resolve-cwd/-/resolve-cwd-3.0.0.tgz#0f0075f1bb2544766cf73ba6a6e2adfebcb13f2d"

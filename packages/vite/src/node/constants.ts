@@ -1,6 +1,19 @@
 import path from 'path'
 
-export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+export const DEFAULT_MAIN_FIELDS = [
+  'module',
+  'jsnext:main', // moment still uses this...
+  'jsnext'
+]
+
+export const DEFAULT_EXTENSIONS = [
+  '.mjs',
+  '.js',
+  '.ts',
+  '.jsx',
+  '.tsx',
+  '.json'
+]
 
 export const JS_TYPES_RE = /\.(j|t)sx?$|\.mjs$/
 

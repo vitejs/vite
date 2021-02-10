@@ -29,14 +29,14 @@ export async function resolvePlugins(
 
   return [
     isBuild ? null : preAliasPlugin(),
-    aliasPlugin({ entries: config.alias }),
+    aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
     config.build.polyfillDynamicImport
       ? dynamicImportPolyfillPlugin(config)
       : null,
     resolvePlugin({
+      ...config.resolve,
       root: config.root,
-      dedupe: config.dedupe,
       isProduction: config.isProduction,
       isBuild,
       asSrc: true

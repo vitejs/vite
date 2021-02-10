@@ -429,7 +429,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
           extensions: ['.css'],
           mainFields: ['style'],
           tryIndex: false,
-          relativeFirst: true
+          preferRelative: true
         }))
       )
     },
@@ -442,7 +442,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
           mainFields: ['sass', 'style'],
           tryIndex: true,
           tryPrefix: '_',
-          relativeFirst: true
+          preferRelative: true
         }))
       )
     },
@@ -454,7 +454,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
           extensions: ['.less', '.css'],
           mainFields: ['less', 'style'],
           tryIndex: false,
-          relativeFirst: true
+          preferRelative: true
         }))
       )
     }
