@@ -1,3 +1,12 @@
+## [1.3.1](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.0...plugin-react-refresh@1.3.1) (2021-02-10)
+
+
+### Bug Fixes
+
+* **plugin-react-refresh:** enable parsing for stage 3 and decorators syntax ([565bcb4](https://github.com/vitejs/vite/commit/565bcb4121e678310c26bb249b119da504d13ada)), closes [#1970](https://github.com/vitejs/vite/issues/1970)
+
+
+
 # [1.3.0](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.2.2...plugin-react-refresh@1.3.0) (2021-02-08)
 
 
