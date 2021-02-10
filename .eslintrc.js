@@ -72,6 +72,13 @@ module.exports = {
       rules: {
         'node/no-missing-import': 'off'
       }
+    },
+    {
+      files: ['scripts/**', 'packages/create-app/**'],
+      rules: {
+        'node/no-extraneous-require': 'off',
+        'node/no-restricted-require': 'off'
+      }
     }
   ]
 }
