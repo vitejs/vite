@@ -78,10 +78,23 @@ function reactRefreshPlugin(opts) {
       /**
        * @type ParserOptions["plugins"]
        */
-      const parserPlugins = ['jsx']
+      const parserPlugins = [
+        'jsx',
+        'importMeta',
+        // since the plugin now applies before esbuild transforms the code,
+        // we need to enable some stage 3 syntax since they are supported in
+        // TS and some environments already.
+        'topLevelAwait',
+        'classProperties',
+        'classPrivateProperties',
+        'classPrivateMethods'
+      ]
       if (/\.tsx?$/.test(id)) {
         // it's a typescript file
-        parserPlugins.push('typescript')
+        // TODO: maybe we need to read tsconfig to determine parser plugins to
+        // enable here, but allowing decorators by default since it's very
+        // commonly used with TS.
+        parserPlugins.push('typescript', 'decorators-legacy')
       }
       if (opts && opts.parserPlugins) {
         parserPlugins.push(...opts.parserPlugins)
@@ -99,7 +112,6 @@ function reactRefreshPlugin(opts) {
         plugins: [
           require('@babel/plugin-transform-react-jsx-self'),
           require('@babel/plugin-transform-react-jsx-source'),
-          require('@babel/plugin-syntax-import-meta'),
           [require('react-refresh/babel'), { skipEnvCheck: true }]
         ],
         ast: !isReasonReact,
