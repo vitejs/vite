@@ -4,7 +4,9 @@ const vue = require('@vitejs/plugin-vue')
  * @type {import('vite').UserConfig}
  */
 module.exports = {
-  dedupe: ['react'],
+  resolve: {
+    dedupe: ['react']
+  },
 
   optimizeDeps: {
     include: ['dep-linked-include'],

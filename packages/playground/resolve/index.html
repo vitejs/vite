@@ -42,6 +42,15 @@
 <h2>Inline package</h2>
 <p class="inline-pkg"></p>
 
+<h2>resolve.extensions</h2>
+<p class="custom-ext"></p>
+
+<h2>resolve.mainFields</h2>
+<p class="custom-main-fields"></p>
+
+<h2>resolve.conditions</h2>
+<p class="custom-condition"></p>
+
 <script type="module">
   function text(selector, text) {
     document.querySelector(selector).textContent = text
@@ -93,6 +102,15 @@
   // browser field
   import value from 'resolve-browser-field'
   text('.browser', value)
+
+  import { msg as customExtMsg } from './custom-ext'
+  text('.custom-ext', customExtMsg)
+
+  import { msg as customMainMsg } from 'resolve-custom-main-field'
+  text('.custom-main-fields', customMainMsg)
+
+  import { msg as customConditionMsg } from 'resolve-custom-condition'
+  text('.custom-condition', customConditionMsg)
 
   // should be ok to import a file marked with browser: false
   import 'resolve-browser-field/not-browser'

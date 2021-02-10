@@ -6,7 +6,8 @@ import {
   FS_PREFIX,
   JS_TYPES_RE,
   SPECIAL_QUERY_RE,
-  SUPPORTED_EXTS
+  DEFAULT_EXTENSIONS,
+  DEFAULT_MAIN_FIELDS
 } from '../constants'
 import {
   isBuiltin,
@@ -29,23 +30,6 @@ import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
 
-const MAIN_FIELDS = [
-  'module',
-  'jsnext:main', // moment still uses this...
-  'jsnext'
-]
-
-function resolveExports(
-  pkg: PackageData['data'],
-  key: string,
-  isProduction: boolean
-) {
-  return _resolveExports(pkg, key, {
-    browser: true,
-    conditions: ['module', isProduction ? 'production' : 'development']
-  })
-}
-
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
 export const browserExternalId = '__vite-browser-external'
@@ -56,6 +40,13 @@ const debug = createDebugger('vite:resolve-details', {
 })
 
 export interface ResolveOptions {
+  mainFields?: string[]
+  conditions?: string[]
+  extensions?: string[]
+  dedupe?: string[]
+}
+
+export interface InternalResolveOptions extends ResolveOptions {
   root: string
   isBuild: boolean
   isProduction: boolean
@@ -67,14 +58,11 @@ export interface ResolveOptions {
   asSrc?: boolean
   tryIndex?: boolean
   tryPrefix?: string
-  relativeFirst?: boolean
-  mainFields?: string[]
-  extensions?: string[]
-  dedupe?: string[]
+  preferRelative?: boolean
 }
 
-export function resolvePlugin(options: ResolveOptions): Plugin {
-  const { root, isProduction, asSrc, relativeFirst = false } = options
+export function resolvePlugin(options: InternalResolveOptions): Plugin {
+  const { root, isProduction, asSrc, preferRelative = false } = options
   let server: ViteDevServer | undefined
 
   return {
@@ -117,7 +105,7 @@ export function resolvePlugin(options: ResolveOptions): Plugin {
       }
 
       // relative
-      if (id.startsWith('.') || (relativeFirst && /^\w/.test(id))) {
+      if (id.startsWith('.') || (preferRelative && /^\w/.test(id))) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         let fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
@@ -222,13 +210,13 @@ export function resolvePlugin(options: ResolveOptions): Plugin {
 
 function tryFsResolve(
   fsPath: string,
-  options: ResolveOptions,
+  options: InternalResolveOptions,
   tryIndex = true
 ): string | undefined {
   const [file, q] = fsPath.split(`?`, 2)
   const query = q ? `?${q}` : ``
   let res: string | undefined
-  for (const ext of options.extensions || SUPPORTED_EXTS) {
+  for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
       (res = tryResolveFile(
         file + ext,
@@ -251,7 +239,7 @@ function tryFsResolve(
 function tryResolveFile(
   file: string,
   query: string,
-  options: ResolveOptions,
+  options: InternalResolveOptions,
   tryIndex: boolean,
   tryPrefix?: string
 ): string | undefined {
@@ -281,7 +269,7 @@ export const idToPkgMap = new Map<string, PackageData>()
 export function tryNodeResolve(
   id: string,
   importer: string | undefined,
-  options: ResolveOptions,
+  options: InternalResolveOptions,
   server?: ViteDevServer
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild } = options
@@ -437,7 +425,7 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
 export function resolvePackageEntry(
   id: string,
   { resolvedImports, dir, data }: PackageData,
-  options: ResolveOptions
+  options: InternalResolveOptions
 ): string | undefined {
   if (resolvedImports['.']) {
     return resolvedImports['.']
@@ -448,7 +436,7 @@ export function resolvePackageEntry(
   // resolve exports field with highest priority
   // using https://github.com/lukeed/resolve.exports
   if (data.exports) {
-    entryPoint = resolveExports(data, '.', options.isProduction)
+    entryPoint = resolveExports(data, '.', options)
   }
 
   // if exports resolved to .mjs, still resolve other fields.
@@ -493,7 +481,7 @@ export function resolvePackageEntry(
   }
 
   if (!entryPoint || entryPoint.endsWith('.mjs')) {
-    for (const field of options.mainFields || MAIN_FIELDS) {
+    for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
       if (typeof data[field] === 'string') {
         entryPoint = data[field]
         break
@@ -527,10 +515,28 @@ export function resolvePackageEntry(
   }
 }
 
+function resolveExports(
+  pkg: PackageData['data'],
+  key: string,
+  options: InternalResolveOptions
+) {
+  const conditions = [
+    'module',
+    options.isProduction ? 'production' : 'development'
+  ]
+  if (options.conditions) {
+    conditions.push(...options.conditions)
+  }
+  return _resolveExports(pkg, key, {
+    browser: true,
+    conditions
+  })
+}
+
 function resolveDeepImport(
   id: string,
   { resolvedImports, dir, data }: PackageData,
-  options: ResolveOptions
+  options: InternalResolveOptions
 ): string | undefined {
   id = '.' + id.slice(data.name.length)
   if (resolvedImports[id]) {
@@ -543,7 +549,7 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(data, relativeId, options.isProduction)
+      relativeId = resolveExports(data, relativeId, options)
     } else {
       // not exposed
       relativeId = undefined
@@ -580,7 +586,7 @@ function resolveDeepImport(
 function tryResolveBrowserMapping(
   id: string,
   importer: string | undefined,
-  options: ResolveOptions,
+  options: InternalResolveOptions,
   isFilePath: boolean
 ) {
   let res: string | undefined

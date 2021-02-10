@@ -4,7 +4,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { parse as parseUrl } from 'url'
-import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
+import { FS_PREFIX, DEFAULT_EXTENSIONS } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
@@ -32,7 +32,7 @@ const ssrExtensions = ['.js', '.json', '.node']
 export function resolveFrom(id: string, basedir: string, ssr = false) {
   return resolve.sync(id, {
     basedir,
-    extensions: ssr ? ssrExtensions : SUPPORTED_EXTS,
+    extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
     preserveSymlinks: isRunningWithYarnPnp || false
   })
