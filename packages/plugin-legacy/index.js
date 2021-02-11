@@ -178,13 +178,12 @@ function viteLegacyPlugin(options = {}) {
     renderChunk(raw, chunk, opts) {
       if (!isLegacyOutput(opts)) {
         if (
-          !options.modernPolyfills ||
-          Array.isArray(options.modernPolyfills)
+          options.modernPolyfills &&
+          !Array.isArray(options.modernPolyfills)
         ) {
-          return null
+          // analyze and record modern polyfills
+          detectPolyfills(raw, { esmodules: true }, modernPolyfills)
         }
-        // analyze and record modern polyfills
-        detectPolyfills(raw, { esmodules: true }, modernPolyfills)
         return null
       }
 
@@ -201,8 +200,7 @@ function viteLegacyPlugin(options = {}) {
 
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
-      let { code, ast, map } = loadBabel().transform(raw, {
-        ast: true,
+      const { code, map } = loadBabel().transform(raw, {
         configFile: false,
         compact: true,
         sourceMaps,
