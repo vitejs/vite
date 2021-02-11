@@ -1,6 +1,16 @@
 <template>
-  <h1>About</h1>
+  <h1>{{ msg }}</h1>
 </template>
+
+<script>
+export default {
+  async setup() {
+    return {
+      msg: 'About'
+    }
+  }
+}
+</script>
 
 <style scoped>
 h1 {
