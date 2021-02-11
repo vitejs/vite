@@ -2,8 +2,10 @@
  * @type {import('vite').UserConfig}
  */
 module.exports = {
-  alias: {
-    '@': __dirname
+  resolve: {
+    alias: {
+      '@': __dirname
+    }
   },
   css: {
     modules: {
