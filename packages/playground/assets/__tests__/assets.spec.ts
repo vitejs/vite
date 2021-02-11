@@ -99,6 +99,12 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
   })
 
+  test('multiple urls on the same line', async () => {
+    const bg = await getBg('.css-url-same-line')
+    expect(bg).toMatch(assetMatch)
+    expect(bg).toMatch(iconMatch)
+  })
+
   if (isBuild) {
     test('preserve postfix query/hash', () => {
       expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2?#iefix`)
