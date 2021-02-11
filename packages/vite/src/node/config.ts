@@ -269,6 +269,15 @@ export async function resolveConfig(
 
   // load .env files
   const userEnv = loadEnv(mode, resolvedRoot)
+  // check if user defined any import.meta.env variables
+  if (config.define) {
+    const prefix = `import.meta.env.`
+    for (const key in config.define) {
+      if (key.startsWith(prefix)) {
+        userEnv[key.slice(prefix.length)] = config.define[key]
+      }
+    }
+  }
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
