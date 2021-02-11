@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { ViteDevServer } from '..'
-import { cleanUrl, resolveFrom } from '../utils'
+import { cleanUrl, resolveFrom, unwrapId } from '../utils'
 import { ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -23,6 +23,8 @@ export async function ssrLoadModule(
   context: SSRContext = { global: isolated ? Object.create(global) : global },
   urlStack: string[] = []
 ): Promise<Record<string, any>> {
+  url = unwrapId(url)
+
   if (urlStack.includes(url)) {
     server.config.logger.warn(
       `Circular dependency: ${urlStack.join(' -> ')} -> ${url}`
@@ -72,7 +74,7 @@ export async function ssrLoadModule(
     if (isExternal(dep)) {
       return nodeRequire(dep, mod.file, server.config.root)
     } else {
-      return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
+      return moduleGraph.urlToModuleMap.get(unwrapId(dep))?.ssrModule
     }
   }
 

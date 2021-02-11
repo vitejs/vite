@@ -5,9 +5,11 @@
   </p>
   <button @click="state.count++">count is: {{ state.count }}</button>
   <Foo />
+  <p class="virtual">msg from virtual module: {{ foo.msg }}</p>
 </template>
 
 <script setup>
+import foo from '@foo'
 import { reactive, defineAsyncComponent } from 'vue'
 const Foo = defineAsyncComponent(() => import('../components/Foo').then(mod => mod.Foo))
 

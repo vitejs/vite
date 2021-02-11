@@ -203,25 +203,24 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             VALID_ID_PREFIX + resolved.id.replace('\0', NULL_BYTE_PLACEHOLDER)
         }
 
-        // mark non-js/css imports with `?import`
+        // make the URL browser-valid if not SSR
         if (!ssr) {
+          // mark non-js/css imports with `?import`
           url = markExplicitImport(url)
-        }
 
-        // for relative js/css imports, inherit importer's version query
-        // do not do this for unknown type imports, otherwise the appended
-        // query can break 3rd party plugin's extension checks.
-        if (isRelative && !/[\?&]import\b/.test(url)) {
-          const versionMatch = importer.match(DEP_VERSION_RE)
-          if (versionMatch) {
-            url = injectQuery(url, versionMatch[1])
+          // for relative js/css imports, inherit importer's version query
+          // do not do this for unknown type imports, otherwise the appended
+          // query can break 3rd party plugin's extension checks.
+          if (isRelative && !/[\?&]import\b/.test(url)) {
+            const versionMatch = importer.match(DEP_VERSION_RE)
+            if (versionMatch) {
+              url = injectQuery(url, versionMatch[1])
+            }
           }
-        }
 
-        // check if the dep has been hmr updated. If yes, we need to attach
-        // its last updated timestamp to force the browser to fetch the most
-        // up-to-date version of this module.
-        if (!ssr) {
+          // check if the dep has been hmr updated. If yes, we need to attach
+          // its last updated timestamp to force the browser to fetch the most
+          // up-to-date version of this module.
           try {
             const depModule = await moduleGraph.ensureEntryFromUrl(url)
             if (depModule.lastHMRTimestamp > 0) {

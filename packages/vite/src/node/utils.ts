@@ -4,13 +4,19 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { parse as parseUrl } from 'url'
-import { FS_PREFIX, DEFAULT_EXTENSIONS } from './constants'
+import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
+}
+
+// Strip valid id prefix. This is preprended to resolved Ids that are
+// not valid browser import specifiers by the importAnalysis plugin.
+export function unwrapId(id: string): string {
+  return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
 }
 
 export const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
