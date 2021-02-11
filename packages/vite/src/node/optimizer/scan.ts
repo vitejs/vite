@@ -184,7 +184,7 @@ function esbuildScanPlugin(
           const langMatch = openTag.match(langRE)
           const lang =
             langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
-          if (lang === 'ts' || lang === 'tsx') {
+          if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
             loader = lang
           }
           if (srcMatch) {
