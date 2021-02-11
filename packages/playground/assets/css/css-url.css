@@ -29,6 +29,11 @@
   background: url('../nested/icon.png');
   background-size: 10px;
 }
+
+.css-url-same-line {
+  background: url('/nested/asset.png') top right / 10px no-repeat, url('/icon.png') bottom right / 10px no-repeat;
+}
+
 /*
 urls inside comments should be ignored
 

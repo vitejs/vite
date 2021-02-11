@@ -10,11 +10,11 @@ import { PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
 
-export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?/g
+export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
 // urls in JS must be quoted as strings, so when replacing them we need
 // a different regex
-const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:(.*?)__)?"/g
+const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?"/g
 
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
@@ -234,7 +234,7 @@ async function fileToBuiltUrl(
       })
     }
 
-    url = `__VITE_ASSET__${contentHash}__${postfix ? `${postfix}__` : ``}`
+    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
   }
 
   cache.set(id, url)
