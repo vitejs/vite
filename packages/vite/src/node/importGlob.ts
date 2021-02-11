@@ -56,7 +56,10 @@ export async function transformImportGlob(
       pattern = pattern.slice(2)
     }
   }
-  const files = glob.sync(pattern, { cwd: base })
+  const files = glob.sync(pattern, {
+    cwd: base,
+    ignore: ['**/node_modules/**']
+  })
   const imports: string[] = []
   let importsString = ``
   let entries = ``
