@@ -1,3 +1,25 @@
+# [2.0.0-beta.68](https://github.com/vitejs/vite/compare/v2.0.0-beta.67...v2.0.0-beta.68) (2021-02-11)
+
+
+### Bug Fixes
+
+* **css/assets:** properly replace multiple css asset urls on the same line ([1d805a6](https://github.com/vitejs/vite/commit/1d805a6beb212f1812b1b13460c910c848ca3772)), closes [#1975](https://github.com/vitejs/vite/issues/1975)
+* **scan:** handle lang=jsx in sfcs ([2f9549c](https://github.com/vitejs/vite/commit/2f9549c910b954b0ed4257a7a3a2e0ae6004c701)), closes [#1972](https://github.com/vitejs/vite/issues/1972)
+* fix path normalization for windows paths w/ non ascii chars ([03b323d](https://github.com/vitejs/vite/commit/03b323d39cafe2baabef74e6051a9640add82590)), closes [#1384](https://github.com/vitejs/vite/issues/1384)
+
+
+### Features
+
+* support --open for `vite preview` command ([#1968](https://github.com/vitejs/vite/issues/1968)) ([446b815](https://github.com/vitejs/vite/commit/446b815d8911440f178f7b36aadc9a5a3cf46fe0))
+* **resolve:** expose full resolve options via config ([0318c64](https://github.com/vitejs/vite/commit/0318c64cc3efe970a5cd3ef6624fe3625af06012)), closes [#1951](https://github.com/vitejs/vite/issues/1951)
+
+
+### Performance Improvements
+
+* ignore node_modules when globbing import.meta.glob ([8b3d0ea](https://github.com/vitejs/vite/commit/8b3d0ea41265870b9b0741bde3a31bde81078277)), closes [#1974](https://github.com/vitejs/vite/issues/1974)
+
+
+
 # [2.0.0-beta.67](https://github.com/vitejs/vite/compare/v2.0.0-beta.66...v2.0.0-beta.67) (2021-02-09)
 
 
