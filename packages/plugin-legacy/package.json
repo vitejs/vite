@@ -27,6 +27,7 @@
   "dependencies": {
     "@babel/standalone": "^7.12.12",
     "core-js": "^3.8.2",
+    "magic-string": "^0.25.7",
     "regenerator-runtime": "^0.13.7",
     "systemjs": "^6.8.3"
   },

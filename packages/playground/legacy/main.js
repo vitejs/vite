@@ -4,3 +4,7 @@ async function run() {
 }
 
 run()
+
+document.getElementById('env').textContent = `is legacy: ${
+  import.meta.env.LEGACY
+}`
