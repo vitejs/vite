@@ -111,10 +111,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `config`
 
-- **Type:** `(config: UserConfig) => UserConfig | null | void`
+- **Type:** `(config: UserConfig, env: { mode: string, command: string }) => UserConfig | null | void`
 - **Kind:** `sync`, `sequential`
 
-  Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file). It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
+  Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file) and the current config env which exposes the `mode` and `command` being used. It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
 
   **Example**
 
@@ -132,8 +132,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   // mutate the config directly (use only when merging doesn't work)
   const mutateConfigPlugin = () => ({
     name: 'mutate-config',
-    config(config) {
-      config.root = __dirname
+    config(config, { command }) {
+      if (command === 'build') {
+        config.root = __dirname
+      }
     }
   })
   ```
@@ -410,8 +412,8 @@ Vite normalizes paths while resolving ids to use POSIX separators ( / ) while pr
 So, for Vite plugins, when comparing paths against resolved ids it is important to first normalize the paths to use POSIX separators. An equivalent `normalizePath` utility function is exported from the `vite` module.
 
 ```js
-import { normalizePath } from 'vite';
+import { normalizePath } from 'vite'
 
-normalizePath('foo\\bar'); // 'foo/bar'
-normalizePath('foo/bar'); // 'foo/bar'
+normalizePath('foo\\bar') // 'foo/bar'
+normalizePath('foo/bar') // 'foo/bar'
 ```

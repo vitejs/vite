@@ -206,13 +206,15 @@ export async function resolveConfig(
     process.env.NODE_ENV = 'production'
   }
 
+  const configEnv = {
+    mode,
+    command
+  }
+
   let { configFile } = config
   if (configFile !== false) {
     const loadResult = await loadConfigFromFile(
-      {
-        mode,
-        command
-      },
+      configEnv,
       configFile,
       config.root,
       config.logLevel
@@ -237,7 +239,7 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   userPlugins.forEach((p) => {
     if (p.config) {
-      const res = p.config(config)
+      const res = p.config(config, configEnv)
       if (res) {
         config = mergeConfig(config, res)
       }
