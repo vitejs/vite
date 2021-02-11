@@ -7,6 +7,7 @@ import compression from 'compression'
 import { ResolvedConfig } from '.'
 import { Connect } from 'types/connect'
 import { resolveHttpServer } from './server/http'
+import { openBrowser } from './server/openBrowser'
 
 export async function serve(config: ResolvedConfig, port = 5000) {
   const app = connect() as Connect.Server
@@ -27,11 +28,11 @@ export async function serve(config: ResolvedConfig, port = 5000) {
   const options = config.server || {}
   const hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
-  const info = config.logger.info
+  const logger = config.logger
   const base = config.base
 
   server.listen(port, () => {
-    info(`\n  Build preview server running at:\n`)
+    logger.info(`\n  Build preview server running at:\n`)
     const interfaces = os.networkInterfaces()
     Object.keys(interfaces).forEach((key) =>
       (interfaces[key] || [])
@@ -46,8 +47,13 @@ export async function serve(config: ResolvedConfig, port = 5000) {
         })
         .forEach(({ type, host }) => {
           const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-          info(`  > ${type} ${chalk.cyan(url)}`)
+          logger.info(`  > ${type} ${chalk.cyan(url)}`)
         })
     )
+
+    if (options.open) {
+      const path = typeof options.open === 'string' ? options.open : base
+      openBrowser(`${protocol}://${hostname}:${port}${path}`, true, logger)
+    }
   })
 }
