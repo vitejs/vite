@@ -1,3 +1,21 @@
+# [2.0.0-beta.69](https://github.com/vitejs/vite/compare/v2.0.0-beta.68...v2.0.0-beta.69) (2021-02-11)
+
+
+### Bug Fixes
+
+* fix out of root static file serving on windows ([4d34a73](https://github.com/vitejs/vite/commit/4d34a7362e57ba8b04e8fee0e0f2f74ce05f13eb)), closes [#1982](https://github.com/vitejs/vite/issues/1982)
+* Remove negative count in stdout with 0 rows ([#1983](https://github.com/vitejs/vite/issues/1983)) ([09b13ed](https://github.com/vitejs/vite/commit/09b13eddd98810fef82858bab7997ea895ab3289)), closes [#1981](https://github.com/vitejs/vite/issues/1981)
+* **ssr:** handle virtual modules during ssr ([108be94](https://github.com/vitejs/vite/commit/108be949cd814ec8fc6214c6cdfa440c0dfd7e13)), closes [#1980](https://github.com/vitejs/vite/issues/1980)
+* prevent crash on malformed URI ([#1977](https://github.com/vitejs/vite/issues/1977)) ([f1b0bc9](https://github.com/vitejs/vite/commit/f1b0bc9b9bf25d206e3db93c242d5a25af0c15d6))
+* user define on import.meta.env should apply during dev ([603d57e](https://github.com/vitejs/vite/commit/603d57ebc61970902ed9a275dd2e74a6c3eabe65))
+
+
+### Features
+
+* pass config env to plugin config hook ([19f3503](https://github.com/vitejs/vite/commit/19f35033045582b05c50ecad10bf2b75a0425383))
+
+
+
 # [2.0.0-beta.68](https://github.com/vitejs/vite/compare/v2.0.0-beta.67...v2.0.0-beta.68) (2021-02-11)
 
 
