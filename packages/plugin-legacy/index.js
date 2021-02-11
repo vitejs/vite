@@ -2,6 +2,7 @@
 const path = require('path')
 const { createHash } = require('crypto')
 const { build } = require('vite')
+const MagicString = require('magic-string').default
 
 // lazy load babel since it's not used during dev
 let babel
@@ -16,6 +17,8 @@ const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("scrip
 
 const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
+
+const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 /**
  * @param {import('.').Options} options
@@ -184,6 +187,28 @@ function viteLegacyPlugin(options = {}) {
           // analyze and record modern polyfills
           detectPolyfills(raw, { esmodules: true }, modernPolyfills)
         }
+
+        if (raw.includes(legacyEnvVarMarker)) {
+          const re = new RegExp(`"${legacyEnvVarMarker}"`, 'g')
+          if (config.build.sourcemap) {
+            const s = new MagicString(raw)
+            let match
+            while ((match = re.exec(raw))) {
+              s.overwrite(
+                match.index,
+                match.index + legacyEnvVarMarker.length + 2,
+                `false`
+              )
+            }
+            return {
+              code: s.toString(),
+              map: s.generateMap({ hires: true })
+            }
+          } else {
+            return raw.replace(re, `false`)
+          }
+        }
+
         return null
       }
 
@@ -210,7 +235,10 @@ function viteLegacyPlugin(options = {}) {
           // preset so we can catch the injected import statements...
           [
             () => ({
-              plugins: [recordAndRemovePolyfillBabelPlugin(legacyPolyfills)]
+              plugins: [
+                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                replaceLegacyEnvBabelPlugin()
+              ]
             })
           ],
           [
@@ -339,7 +367,37 @@ function viteLegacyPlugin(options = {}) {
     }
   }
 
-  return [legacyGenerateBundlePlugin, legacyPostPlugin]
+  let envInjectionFaled = false
+  /**
+   * @type {import('vite').Plugin}
+   */
+  const legacyEnvPlugin = {
+    name: 'legacy-env',
+
+    config(_, env) {
+      if (env) {
+        return {
+          define: {
+            'import.meta.env.LEGACY':
+              env.command === 'serve' ? false : legacyEnvVarMarker
+          }
+        }
+      } else {
+        envInjectionFaled = true
+      }
+    },
+
+    configResolved(config) {
+      if (envInjectionFaled) {
+        config.logger.warn(
+          `[@vitejs/plugin-legacy] import.meta.env.LEGACY was not injected due ` +
+            `to incompatible vite version (requires vite@^2.0.0-beta.69).`
+        )
+      }
+    }
+  }
+
+  return [legacyGenerateBundlePlugin, legacyPostPlugin, legacyEnvPlugin]
 }
 
 /**
@@ -482,6 +540,19 @@ function recordAndRemovePolyfillBabelPlugin(polyfills) {
               p.remove()
             }
           })
+        }
+      }
+    }
+  })
+}
+
+function replaceLegacyEnvBabelPlugin() {
+  return ({ types: t }) => ({
+    name: 'vite-replace-env-legacy',
+    visitor: {
+      StringLiteral(path) {
+        if (path.node.value === legacyEnvVarMarker) {
+          path.replaceWith(t.booleanLiteral(true))
         }
       }
     }

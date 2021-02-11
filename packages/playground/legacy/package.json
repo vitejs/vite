@@ -10,6 +10,5 @@
   },
   "devDependencies": {
     "@vitejs/plugin-legacy": "^1.0.0"
-  },
-  "dependencies": {}
+  }
 }
