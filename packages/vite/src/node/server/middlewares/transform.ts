@@ -8,7 +8,8 @@ import {
   isJSRequest,
   prettifyUrl,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
+  unwrapId
 } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
@@ -18,8 +19,7 @@ import {
   CLIENT_PUBLIC_PATH,
   DEP_CACHE_DIR,
   DEP_VERSION_RE,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
+  NULL_BYTE_PLACEHOLDER
 } from '../../constants'
 import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
@@ -111,12 +111,9 @@ export function transformMiddleware(
       ) {
         // strip ?import
         url = removeImportQuery(url)
-
         // Strip valid id prefix. This is preprended to resolved Ids that are
         // not valid browser import specifiers by the importAnalysis plugin.
-        if (url.startsWith(VALID_ID_PREFIX)) {
-          url = url.slice(VALID_ID_PREFIX.length)
-        }
+        url = unwrapId(url)
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports
