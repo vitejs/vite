@@ -1,8 +1,7 @@
-/**
- * https://vitejs.dev/config/
- * @type {import('vite').UserConfig}
- */
-export default {
+import { defineConfig } from 'vite'
+
+// https://vitejs.dev/config/
+export default defineConfig({
   build: {
     lib: {
       entry: 'src/my-element.js',
@@ -12,4 +11,4 @@ export default {
       external: /^lit-element/
     }
   }
-}
+})
