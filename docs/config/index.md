@@ -31,20 +31,24 @@ Since Vite ships with TypeScript typings, you can leverage your IDE's intellisen
 /**
  * @type {import('vite').UserConfig}
  */
-export default {
+const config = {
   // ...
 }
+
+export default config
 ```
 
-Vite also directly supports TS config files. You can use `vite.config.ts` instead:
+Alternatively you can use the `defineConfig` helper which should provide intellisense without the need for jsdoc annotations:
 
-```ts
+```js
 import { defineConfig } from 'vite'
 
 export default defineConfig({
   // ...
 })
 ```
+
+Vite also directly supports TS config files. You can use `vite.config.ts` with the `defineConfig` helper as well.
 
 ### Conditional Config
 

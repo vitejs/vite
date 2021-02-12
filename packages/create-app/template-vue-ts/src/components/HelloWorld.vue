@@ -33,7 +33,7 @@
     tsconfig setup:
     <br />1. Install and add
     <code>@vuedx/typescript-plugin-vue</code> to tsconfig plugins
-    <br />2. Delete shims-vue.d.ts
+    <br />2. Delete <code>src/shims-vue.d.ts</code>
     <br />3. Open
     <code>src/main.ts</code> in VSCode
     <br />4. Open VSCode command input
