@@ -1,0 +1,39 @@
+name: Issue Labeled
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  reply-labeled:
+    runs-on: ubuntu-latest
+    steps:
+      - name: contribution welcome
+        if: github.event.label.name == 'contribution welcome' || github.event.label.name == 'help wanted'
+        uses: actions-cool/issues-helper@v2.1.1
+        with:
+          actions: 'create-comment, remove-labels'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Hello @${{ github.event.issue.user.login }}. We totally like your proposal/feedback, welcome to send us a Pull Request for it. Please provide changelog/TypeScript/documentation/test cases if needed and make sure CI passed, we will review it soon. We appreciate your effort in advance and looking forward to your contribution!
+          labels: 'bug: pending triage, need reproduction'
+
+      - name: remove pending
+        if: github.event.label.name == 'enhancement' || github.event.label.name == 'bug' || (contains(github.event.label.name, 'pending triage') == false && startsWith(github.event.label.name, 'bug:') == true)
+        with:
+          actions: 'remove-labels'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: 'bug: pending triage'
+
+      - name: need reproduction
+        if: github.event.label.name == 'need reproduction'
+        uses: actions-cool/issues-helper@v2.1.1
+        with:
+          actions: 'create-comment, remove-labels'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Hello @${{ github.event.issue.user.login }}. Please provide a online reproduction by [codesandbox](https://codesandbox.io/) or a minimal GitHub repository. Issues labeled by `need reproduction` will be closed if no activities in 3 days.
+          labels: 'bug: pending triage'
