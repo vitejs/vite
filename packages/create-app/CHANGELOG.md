@@ -1,3 +1,13 @@
+## [1.7.1](https://github.com/vitejs/vite/compare/create-app@1.7.0...create-app@1.7.1) (2021-02-12)
+
+
+### Bug Fixes
+
+* ensure intellisense for all create-app templates ([589b295](https://github.com/vitejs/vite/commit/589b29596e8046122b1ad8b69c4c70aa40cd4165))
+* **create-app:** Adds a newline before "Scaffolding project in..." ([#1945](https://github.com/vitejs/vite/issues/1945)) ([8a1c602](https://github.com/vitejs/vite/commit/8a1c602b29413b297c811577a9f6690bef88e01c))
+
+
+
 # [1.7.0](https://github.com/vitejs/vite/compare/create-app@1.6.0...create-app@1.7.0) (2021-02-08)
 
 
