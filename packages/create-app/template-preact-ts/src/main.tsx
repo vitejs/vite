@@ -1,4 +1,4 @@
-import { render, h } from 'preact'
+import { render } from 'preact'
 import { App } from './app'
 import './index.css'
 

@@ -1,4 +1,3 @@
-import { h, Fragment } from 'preact'
 import { Logo } from './logo'
 
 export function App() {
