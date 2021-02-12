@@ -5,7 +5,8 @@ import preactRefresh from '@prefresh/vite'
 export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
-    jsxFragment: 'Fragment'
+    jsxFragment: 'Fragment',
+    jsxInject: `import { h, Fragment } from 'preact'`
   },
   plugins: [preactRefresh()]
 })
