@@ -367,7 +367,7 @@ function viteLegacyPlugin(options = {}) {
     }
   }
 
-  let envInjectionFaled = false
+  let envInjectionFailed = false
   /**
    * @type {import('vite').Plugin}
    */
@@ -383,12 +383,12 @@ function viteLegacyPlugin(options = {}) {
           }
         }
       } else {
-        envInjectionFaled = true
+        envInjectionFailed = true
       }
     },
 
     configResolved(config) {
-      if (envInjectionFaled) {
+      if (envInjectionFailed) {
         config.logger.warn(
           `[@vitejs/plugin-legacy] import.meta.env.LEGACY was not injected due ` +
             `to incompatible vite version (requires vite@^2.0.0-beta.69).`
