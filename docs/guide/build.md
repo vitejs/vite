@@ -51,7 +51,7 @@ For example, you can specify multiple Rollup outputs with plugins that are only 
 Suppose you have the following source code structure:
 
 ```
-|-package.json
+├── package.json
 |-vite.config.js
 |-index.html
 |-main.js
