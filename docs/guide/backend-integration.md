@@ -55,7 +55,7 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
        "src": "main.js",
        "isEntry": true,
        "dynamicImports": ["views/foo.js"],
-       "css": "assets/main.b82dbe22.css",
+       "css": ["assets/main.b82dbe22.css"],
        "assets": ["assets/asset.0ab0f9cd.png"]
      },
      "views/foo.js": {
