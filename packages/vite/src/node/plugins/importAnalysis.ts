@@ -411,12 +411,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (hasEnv) {
         // inject import.meta.env
-        str().prepend(
-          `import.meta.env = ${JSON.stringify({
-            ...config.env,
-            SSR: !!ssr
-          })};`
-        )
+        let env = `import.meta.env = ${JSON.stringify({
+          ...config.env,
+          SSR: !!ssr
+        })};`
+        // account for user env defines
+        for (const key in config.define) {
+          if (key.startsWith(`import.meta.env.`)) {
+            const val = config.define[key]
+            env += `${key} = ${
+              typeof val === 'string' ? val : JSON.stringify(val)
+            };`
+          }
+        }
+        str().prepend(env)
       }
 
       if (hasHMR && !ssr) {
