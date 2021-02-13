@@ -232,10 +232,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             e.pos = pos
             throw e
           }
+
+          // prepend base (dev base is guaranteed to have ending slash)
+          url = base + url.replace(/^\//, '')
         }
 
-        // prepend base (dev base is guaranteed to have ending slash)
-        url = base + url.replace(/^\//, '')
         return [url, resolved.id]
       }
 
