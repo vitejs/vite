@@ -52,12 +52,12 @@ Suppose you have the following source code structure:
 
 ```
 ├── package.json
-|-vite.config.js
-|-index.html
-|-main.js
-|-nested/
-|---index.html
-|---nested.js
+├── vite.config.js
+├── index.html
+├── main.js
+└── nested
+    ├── index.html
+    └── nested.js
 ```
 
 During dev, simply navigate or link to `/nested/` - it works as expected, just like for a normal static file server.
