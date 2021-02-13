@@ -409,7 +409,7 @@ export default ({ command, mode }) => {
 
   Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets [browsers with native ES module support](https://caniuse.com/es6-module).
 
-  Another special value is 'esnext' - which only performs minimal trasnpiling (for minification compat) and assumes native dynamic imports support.
+  Another special value is 'esnext' - which only performs minimal transpiling (for minification compat) and assumes native dynamic imports support.
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
