@@ -3,6 +3,7 @@
     "module": "esnext",
     "lib": ["es2017", "dom", "dom.iterable"],
     "types": ["vite/client"],
+    "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "./types",
     "rootDir": "./src",
