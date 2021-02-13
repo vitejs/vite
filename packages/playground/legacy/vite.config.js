@@ -15,13 +15,13 @@ module.exports = {
   },
 
   // special test only hook
-  // for tests, remove `<script type="module">` tags and remove `nomodule`
+  // for tests, disable `<script type="module">` tags and remove `nomodule`
   // attrs so that we run the legacy bundle instead.
   __test__() {
     const indexPath = path.resolve(__dirname, './dist/index.html')
     let index = fs.readFileSync(indexPath, 'utf-8')
     index = index
-      .replace(/<script type="module".*?<\/script>/g, '')
+      .replace(/<script type="module"/g, '<script type="module-disabled"')
       .replace(/<script nomodule/g, '<script')
     fs.writeFileSync(indexPath, index)
   }

@@ -18,7 +18,12 @@ const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("scrip
 const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 
-const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
+// use array instead of string to prevent esbuild constant folding, which would turn
+// `if (legacyEnvVarMarker)` into `if (true)` even before the marker is replaced (#1999)
+const legacyEnvVarMarker = ['__VITE_IS_LEGACY__']
+const legacyEnvVarMarkerString = JSON.stringify(legacyEnvVarMarker)
+
+const escapeRegExp = (str) => str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
 
 /**
  * @param {import('.').Options} options
@@ -188,15 +193,15 @@ function viteLegacyPlugin(options = {}) {
           detectPolyfills(raw, { esmodules: true }, modernPolyfills)
         }
 
-        if (raw.includes(legacyEnvVarMarker)) {
-          const re = new RegExp(`"${legacyEnvVarMarker}"`, 'g')
+        if (raw.includes(legacyEnvVarMarkerString)) {
+          const re = new RegExp(escapeRegExp(legacyEnvVarMarkerString), 'g')
           if (config.build.sourcemap) {
             const s = new MagicString(raw)
             let match
             while ((match = re.exec(raw))) {
               s.overwrite(
                 match.index,
-                match.index + legacyEnvVarMarker.length + 2,
+                match.index + legacyEnvVarMarkerString.length,
                 `false`
               )
             }
@@ -367,7 +372,7 @@ function viteLegacyPlugin(options = {}) {
     }
   }
 
-  let envInjectionFaled = false
+  let envInjectionFailed = false
   /**
    * @type {import('vite').Plugin}
    */
@@ -383,12 +388,12 @@ function viteLegacyPlugin(options = {}) {
           }
         }
       } else {
-        envInjectionFaled = true
+        envInjectionFailed = true
       }
     },
 
     configResolved(config) {
-      if (envInjectionFaled) {
+      if (envInjectionFailed) {
         config.logger.warn(
           `[@vitejs/plugin-legacy] import.meta.env.LEGACY was not injected due ` +
             `to incompatible vite version (requires vite@^2.0.0-beta.69).`
@@ -550,10 +555,13 @@ function replaceLegacyEnvBabelPlugin() {
   return ({ types: t }) => ({
     name: 'vite-replace-env-legacy',
     visitor: {
-      StringLiteral(path) {
-        if (path.node.value === legacyEnvVarMarker) {
-          path.replaceWith(t.booleanLiteral(true))
-        }
+      ArrayExpression(path) {
+        const firstChild = path.node.elements[0]
+
+        if (!firstChild || !t.isStringLiteral(firstChild)) return
+        if (firstChild.value !== legacyEnvVarMarker[0]) return
+
+        path.replaceWith(t.booleanLiteral(true))
       }
     }
   })
