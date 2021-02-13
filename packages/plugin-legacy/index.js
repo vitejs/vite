@@ -189,7 +189,7 @@ function viteLegacyPlugin(options = {}) {
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
-          const re = new RegExp(`"${legacyEnvVarMarker}"`, 'g')
+          const re = new RegExp(legacyEnvVarMarker, 'g')
           if (config.build.sourcemap) {
             const s = new MagicString(raw)
             let match
@@ -550,8 +550,8 @@ function replaceLegacyEnvBabelPlugin() {
   return ({ types: t }) => ({
     name: 'vite-replace-env-legacy',
     visitor: {
-      StringLiteral(path) {
-        if (path.node.value === legacyEnvVarMarker) {
+      Identifier(path) {
+        if (path.node.name === legacyEnvVarMarker) {
           path.replaceWith(t.booleanLiteral(true))
         }
       }
