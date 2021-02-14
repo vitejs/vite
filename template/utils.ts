@@ -16,7 +16,7 @@ export function urlToRequire(
   transformAssetUrlsOption: TransformAssetUrlsOptions = {}
 ): string {
   const returnValue = `"${url}"`
-  if (isExternalUrl(url) || isDataUrl(url)) {
+  if (isExternalUrl(url) || isDataUrl(url) || isHashUrl(url)) {
     return returnValue
   }
   // same logic as in transform-require.js
@@ -45,6 +45,10 @@ export function urlToRequire(
     }
   }
   return returnValue
+}
+
+export function isHashUrl(url: string): boolean {
+  return url.startsWith('#')
 }
 
 const externalRE = /^https?:\/\//
