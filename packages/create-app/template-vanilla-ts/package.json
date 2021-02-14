@@ -1,14 +1,11 @@
 {
-  "name": "ts-boilerplate",
-  "version": "1.0.0",
-  "description": "",
+  "name": "vite-typescript-starter",
+  "version": "0.0.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "vite": "^2.0.0-beta.69"
   }
