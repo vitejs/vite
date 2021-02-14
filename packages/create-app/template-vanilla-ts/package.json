@@ -1,0 +1,15 @@
+{
+  "name": "ts-boilerplate",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^2.0.0-beta.69"
+  }
+}
