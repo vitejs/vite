@@ -257,6 +257,10 @@ export interface ViteDevServer {
    * @internal
    */
   _pendingReload: Promise<void> | null
+  /**
+   * @internal
+   */
+  _version: string
 }
 
 export async function createServer(
@@ -337,7 +341,8 @@ export async function createServer(
     _globImporters: {},
     _isRunningOptimizer: false,
     _registerMissingImport: null,
-    _pendingReload: null
+    _pendingReload: null,
+    _version: `v${require('../../../package.json').version}`
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -546,7 +551,7 @@ async function startServer(
     httpServer.listen(port, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n ⚡ Vite dev server running at:\n`, {
+      info(`\n ⚡ Vite dev server ${server._version} running at:\n`, {
         clear: !server.config.logger.hasWarned
       })
       const interfaces = os.networkInterfaces()
