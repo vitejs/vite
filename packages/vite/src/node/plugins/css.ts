@@ -526,7 +526,12 @@ async function compileCSS(
     }
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)
-    const preprocessResult = await preProcessor(code, opts, resolvers)
+    const preprocessResult = await preProcessor(
+      code,
+      config.root,
+      opts,
+      resolvers
+    )
     if (preprocessResult.errors.length) {
       throw preprocessResult.errors[0]
     }
@@ -784,6 +789,7 @@ type PreprocessLang = 'less' | 'sass' | 'scss' | 'styl' | 'stylus'
 
 type StylePreprocessor = (
   source: string,
+  root: string,
   options: {
     [key: string]: any
     additionalData?: string | ((source: string, filename: string) => string)
@@ -799,9 +805,15 @@ export interface StylePreprocessorResults {
   deps: string[]
 }
 
-function loadPreprocessor(lang: PreprocessLang) {
+const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
+
+function loadPreprocessor(lang: PreprocessLang, root: string) {
+  if (lang in loadedPreprocessors) {
+    return loadedPreprocessors[lang]
+  }
   try {
-    return require(lang)
+    const resolved = require.resolve(lang, { paths: [root] })
+    return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
     throw new Error(
       `Preprocessor dependency "${lang}" not found. Did you install it?`
@@ -810,8 +822,8 @@ function loadPreprocessor(lang: PreprocessLang) {
 }
 
 // .scss/.sass processor
-const scss: StylePreprocessor = async (source, options, resolvers) => {
-  const render = loadPreprocessor('sass').render as typeof Sass.render
+const scss: StylePreprocessor = async (source, root, options, resolvers) => {
+  const render = loadPreprocessor('sass', root).render as typeof Sass.render
   const finalOptions: Sass.Options = {
     ...options,
     data: getSource(source, options.filename, options.additionalData),
@@ -853,9 +865,10 @@ const scss: StylePreprocessor = async (source, options, resolvers) => {
   }
 }
 
-const sass: StylePreprocessor = (source, options, aliasResolver) =>
+const sass: StylePreprocessor = (source, root, options, aliasResolver) =>
   scss(
     source,
+    root,
     {
       ...options,
       indentedSyntax: true
@@ -896,8 +909,8 @@ async function rebaseUrls(
 }
 
 // .less
-const less: StylePreprocessor = async (source, options, resolvers) => {
-  const nodeLess = loadPreprocessor('less') as typeof Less
+const less: StylePreprocessor = async (source, root, options, resolvers) => {
+  const nodeLess = loadPreprocessor('less', root) as typeof Less
   const viteResolverPlugin = createViteLessPlugin(
     nodeLess,
     options.filename,
@@ -992,8 +1005,8 @@ function createViteLessPlugin(
 }
 
 // .styl
-const styl: StylePreprocessor = (source, options) => {
-  const nodeStylus = loadPreprocessor('stylus')
+const styl: StylePreprocessor = (source, root, options) => {
+  const nodeStylus = loadPreprocessor('stylus', root)
   try {
     const ref = nodeStylus(source)
     Object.keys(options).forEach((key) => ref.set(key, options[key]))
