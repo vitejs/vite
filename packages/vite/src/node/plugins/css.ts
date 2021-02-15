@@ -787,12 +787,16 @@ AtImportHoistPlugin.postcss = true
 
 type PreprocessLang = 'less' | 'sass' | 'scss' | 'styl' | 'stylus'
 
+type PreprocessorAdditionalData =
+  | string
+  | ((source: string, filename: string) => string | Promise<string>)
+
 type StylePreprocessor = (
   source: string,
   root: string,
   options: {
     [key: string]: any
-    additionalData?: string | ((source: string, filename: string) => string)
+    additionalData?: PreprocessorAdditionalData
     filename: string
   },
   resolvers: CSSResolvers
@@ -826,7 +830,7 @@ const scss: StylePreprocessor = async (source, root, options, resolvers) => {
   const render = loadPreprocessor('sass', root).render as typeof Sass.render
   const finalOptions: Sass.Options = {
     ...options,
-    data: getSource(source, options.filename, options.additionalData),
+    data: await getSource(source, options.filename, options.additionalData),
     file: options.filename,
     outFile: options.filename,
     importer(url, importer, done) {
@@ -916,7 +920,7 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     options.filename,
     resolvers
   )
-  source = getSource(source, options.filename, options.additionalData)
+  source = await getSource(source, options.filename, options.additionalData)
 
   let result: Less.RenderOutput | undefined
   try {
@@ -1024,8 +1028,8 @@ const styl: StylePreprocessor = (source, root, options) => {
 function getSource(
   source: string,
   filename: string,
-  additionalData?: string | ((source: string, filename: string) => string)
-): string {
+  additionalData?: PreprocessorAdditionalData
+): string | Promise<string> {
   if (!additionalData) return source
   if (typeof additionalData === 'function') {
     return additionalData(source, filename)
