@@ -62,6 +62,8 @@ Vite provides first-class Vue support:
 - Vue 3 JSX support via [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite/tree/main/packages/plugin-vue-jsx)
 - Vue 2 support via [underfin/vite-plugin-vue2](https://github.com/underfin/vite-plugin-vue2)
 
+Note that not all IDEs fully support Typescript in single-file components. The [Vue DX Typescript plugin](https://www.npmjs.com/package/@vuedx/typescript-plugin-vue) is recommended for additional Typescript support.
+
 ## JSX
 
 `.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via [ESBuild](https://esbuild.github.io), and defaults to the React 16 flavor. React 17 style JSX support in ESBuild is tracked [here](https://github.com/evanw/esbuild/issues/334).
