@@ -52,6 +52,11 @@ export interface CSSOptions {
 }
 
 export interface CSSModulesOptions {
+  getJSON?: (
+    cssFileName: string,
+    json: Record<string, string>,
+    outputFileName: string
+  ) => void
   scopeBehaviour?: 'global' | 'local'
   globalModulePaths?: string[]
   generateScopedName?:
@@ -566,8 +571,15 @@ async function compileCSS(
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
-        getJSON(_: string, _modules: Record<string, string>) {
+        getJSON(
+          cssFileName: string,
+          _modules: Record<string, string>,
+          outputFileName: string
+        ) {
           modules = _modules
+          if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
+            modulesOptions.getJSON(cssFileName, _modules, outputFileName)
+          }
         }
       })
     )
