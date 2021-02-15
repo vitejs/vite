@@ -1,3 +1,17 @@
+# [1.8.0](https://github.com/vitejs/vite/compare/create-app@1.7.1...create-app@1.8.0) (2021-02-15)
+
+
+### Bug Fixes
+
+* **create-app:** add declaration tsconfig option ([7b3da03](https://github.com/vitejs/vite/commit/7b3da0320e9d43816e467d7ac8daef3fcdd1dc1e)), closes [#2010](https://github.com/vitejs/vite/issues/2010)
+
+
+### Features
+
+* **create-app:** closer parity on preact typescript template to preact template ([#1996](https://github.com/vitejs/vite/issues/1996)) ([c2622de](https://github.com/vitejs/vite/commit/c2622defe13a888f398df44d993cd40e0ee07f11))
+
+
+
 ## [1.7.1](https://github.com/vitejs/vite/compare/create-app@1.7.0...create-app@1.7.1) (2021-02-12)
 
 
