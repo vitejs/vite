@@ -65,8 +65,9 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
       // @ts-ignore
       document.head.appendChild(link)
       if (isCss) {
-        return new Promise((res) => {
+        return new Promise((res, rej) => {
           link.addEventListener('load', res)
+          link.addEventListener('error', rej)
         })
       }
     })
