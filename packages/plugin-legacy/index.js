@@ -196,7 +196,7 @@ function viteLegacyPlugin(options = {}) {
             while ((match = re.exec(raw))) {
               s.overwrite(
                 match.index,
-                match.index + legacyEnvVarMarker.length + 2,
+                match.index + legacyEnvVarMarker.length,
                 `false`
               )
             }
