@@ -209,10 +209,7 @@ export interface ViteDevServer {
   /**
    * Load a given URL as an instantiated module for SSR.
    */
-  ssrLoadModule(
-    url: string,
-    options?: { isolated?: boolean }
-  ): Promise<Record<string, any>>
+  ssrLoadModule(url: string): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace
    */
@@ -305,7 +302,7 @@ export async function createServer(
       return transformRequest(url, server, options)
     },
     transformIndexHtml: null as any,
-    ssrLoadModule(url, options) {
+    ssrLoadModule(url) {
       if (!server._ssrExternals) {
         server._ssrExternals = resolveSSRExternal(
           config,
@@ -314,7 +311,7 @@ export async function createServer(
             : []
         )
       }
-      return ssrLoadModule(url, server, !!options?.isolated)
+      return ssrLoadModule(url, server)
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
@@ -521,6 +518,7 @@ async function startServer(
   const options = server.config.server || {}
   let port = inlinePort || options.port || 3000
   let hostname = options.host || 'localhost'
+  if (hostname === '0.0.0.0') hostname = 'localhost'
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
   const base = server.config.base
