@@ -4,7 +4,7 @@ import {
   isModernFlag,
   preloadMethod,
   preloadMarker
-} from './plugins/importAnaysisBuild'
+} from './plugins/importAnalysisBuild'
 import { cleanUrl } from './utils'
 import { RollupError } from 'rollup'
 

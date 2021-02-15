@@ -1,6 +1,6 @@
 import { ResolvedConfig } from '..'
 import { Plugin } from '../plugin'
-import { isModernFlag } from './importAnaysisBuild'
+import { isModernFlag } from './importAnalysisBuild'
 import path from 'path'
 
 export const polyfillId = 'vite/dynamic-import-polyfill'
