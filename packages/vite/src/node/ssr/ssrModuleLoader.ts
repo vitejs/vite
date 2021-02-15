@@ -19,8 +19,7 @@ interface SSRContext {
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
-  isolated: boolean,
-  context: SSRContext = { global: isolated ? Object.create(global) : global },
+  context: SSRContext = { global },
   urlStack: string[] = []
 ): Promise<Record<string, any>> {
   url = unwrapId(url)
@@ -35,7 +34,7 @@ export async function ssrLoadModule(
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url)
 
-  if (!isolated && mod.ssrModule) {
+  if (mod.ssrModule) {
     return mod.ssrModule
   }
 
@@ -52,13 +51,7 @@ export async function ssrLoadModule(
   await Promise.all(
     result.deps!.map((dep) => {
       if (!isExternal(dep)) {
-        return ssrLoadModule(
-          dep,
-          server,
-          isolated,
-          context,
-          urlStack.concat(url)
-        )
+        return ssrLoadModule(dep, server, context, urlStack.concat(url))
       }
     })
   )
@@ -82,7 +75,7 @@ export async function ssrLoadModule(
     if (isExternal(dep)) {
       return Promise.resolve(nodeRequire(dep, mod.file, server.config.root))
     } else {
-      return ssrLoadModule(dep, server, isolated, context, urlStack.concat(url))
+      return ssrLoadModule(dep, server, context, urlStack.concat(url))
     }
   }
 
