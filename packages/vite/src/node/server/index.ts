@@ -543,7 +543,7 @@ async function startServer(
 
     httpServer.on('error', onError)
 
-    httpServer.listen(port, () => {
+    httpServer.listen(port, options.host, () => {
       httpServer.removeListener('error', onError)
 
       info(`\n ⚡ Vite dev server running at:\n`, {
