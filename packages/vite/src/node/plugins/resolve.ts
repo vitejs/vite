@@ -213,14 +213,24 @@ function tryFsResolve(
   options: InternalResolveOptions,
   tryIndex = true
 ): string | undefined {
-  const [file, q] = fsPath.split(`?`, 2)
-  const query = q ? `?${q}` : ``
+  let file = fsPath
+  let postfix = ''
+
+  let postfixIndex = fsPath.indexOf('?')
+  if (postfixIndex < 0) {
+    postfixIndex = fsPath.indexOf('#')
+  }
+  if (postfixIndex > 0) {
+    file = fsPath.slice(0, postfixIndex)
+    postfix = fsPath.slice(postfixIndex)
+  }
+
   let res: string | undefined
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
       (res = tryResolveFile(
         file + ext,
-        query,
+        postfix,
         options,
         false,
         options.tryPrefix
@@ -229,8 +239,9 @@ function tryFsResolve(
       return res
     }
   }
+
   if (
-    (res = tryResolveFile(file, query, options, tryIndex, options.tryPrefix))
+    (res = tryResolveFile(file, postfix, options, tryIndex, options.tryPrefix))
   ) {
     return res
   }
@@ -238,7 +249,7 @@ function tryFsResolve(
 
 function tryResolveFile(
   file: string,
-  query: string,
+  postfix: string,
   options: InternalResolveOptions,
   tryIndex: boolean,
   tryPrefix?: string
@@ -253,14 +264,14 @@ function tryResolveFile(
         return resolvePackageEntry(file, pkg, options)
       }
       const index = tryFsResolve(file + '/index', options)
-      if (index) return index + query
+      if (index) return index + postfix
     } else {
-      return normalizePath(ensureVolumeInPath(file)) + query
+      return normalizePath(ensureVolumeInPath(file)) + postfix
     }
   }
   if (tryPrefix) {
     const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
-    return tryResolveFile(prefixed, query, options, tryIndex)
+    return tryResolveFile(prefixed, postfix, options, tryIndex)
   }
 }
 
