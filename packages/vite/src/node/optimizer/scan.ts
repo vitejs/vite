@@ -56,9 +56,12 @@ export async function scanImports(
     entries = await globEntries('**/*.html', config)
   }
 
-  // Non-supported entry file types should not be scanned for dependencies.
+  // Non-supported entry file types and virtual files should not be scanned for
+  // dependencies.
   entries = entries.filter(
-    (entry) => JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)
+    (entry) =>
+      (JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)) &&
+      fs.existsSync(entry)
   )
 
   if (!entries.length) {
