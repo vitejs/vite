@@ -194,9 +194,6 @@ function esbuildScanPlugin(
             js += content + '\n'
           }
         }
-        if (!js.includes(`export default`)) {
-          js += `export default {}`
-        }
 
         if (js.includes('import.meta.glob')) {
           return transformGlob(js, path, config.root, loader).then(
@@ -205,6 +202,16 @@ function esbuildScanPlugin(
               contents
             })
           )
+        }
+
+        // <script setup> may contain TLA which is not true TLA but esbuild
+        // will error on it, so replace it with another operator.
+        if (js.includes('await')) {
+          js = js.replace(/\bawait\b/g, 'void')
+        }
+
+        if (!js.includes(`export default`)) {
+          js += `export default {}`
         }
 
         return {
