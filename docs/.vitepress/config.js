@@ -30,9 +30,30 @@ module.exports = {
       { text: 'Config', link: '/config/' },
       { text: 'Plugins', link: '/plugins/' },
       {
-        text: 'Changelog',
-        link:
-          'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+        text: 'Links',
+        items: [
+          {
+            text: 'Twitter',
+            link: 'https://twitter.com/vite_js'
+          },
+          {
+            text: 'Discord Chat',
+            link: 'https://chat.vitejs.dev'
+          },
+          {
+            text: 'Awesome Vite',
+            link: 'https://github.com/vitejs/awesome-vite'
+          },
+          {
+            text: 'Rollup Plugins Compat',
+            link: 'https://vite-rollup-plugins.patak.dev/'
+          },
+          {
+            text: 'Changelog',
+            link:
+              'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+          }
+        ]
       }
     ],
 
