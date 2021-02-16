@@ -1,3 +1,12 @@
+# [2.0.0](https://github.com/vitejs/vite/compare/create-app@1.8.0...create-app@2.0.0) (2021-02-16)
+
+
+### Features
+
+* **create-app:** bump to vite 2.0 ([81c72bb](https://github.com/vitejs/vite/commit/81c72bbdb112e3a6a48c026d4bc18410ec42a53a))
+
+
+
 # [1.8.0](https://github.com/vitejs/vite/compare/create-app@1.7.1...create-app@1.8.0) (2021-02-15)
 
 
