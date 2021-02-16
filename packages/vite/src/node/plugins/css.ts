@@ -27,9 +27,9 @@ import { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
   assetUrlRE,
-  fileToDevUrl,
   registerAssetToChunk,
-  urlToBuiltUrl
+  fileToUrl,
+  checkPublicFile
 } from './asset'
 import MagicString from 'magic-string'
 import * as Postcss from 'postcss'
@@ -103,7 +103,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   const moduleCache = new Map<string, Record<string, string>>()
   cssModulesCache.set(config, moduleCache)
 
-  const resolvers = createCSSResolvers(config)
+  const resolveUrl = config.createResolver({
+    preferRelative: true,
+    tryIndex: false,
+    extensions: []
+  })
+  const atImportResolvers = createCSSResolvers(config)
 
   return {
     name: 'vite:css',
@@ -117,27 +122,38 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const urlReplacer: CssUrlReplacer = server
-        ? (url, importer) => {
-            if (url.startsWith('/')) {
-              return config.base + url.slice(1)
-            } else {
-              const filePath = normalizePath(
-                path.resolve(path.dirname(importer || id), url)
-              )
-              return fileToDevUrl(filePath, config)
-            }
-          }
-        : (url, importer) => {
-            return urlToBuiltUrl(url, importer || id, config, this)
-          }
+      const urlReplacer: CssUrlReplacer = async (url, importer) => {
+        if (checkPublicFile(url, config)) {
+          return config.base + url.slice(1)
+        }
+        const resolved = await resolveUrl(url, importer)
+        if (resolved) {
+          return fileToUrl(resolved, config, this)
+        }
+        return url
+      }
+
+      // const urlReplacer: CssUrlReplacer = server
+      //   ? (url, importer) => {
+      //       if (url.startsWith('/')) {
+      //         return config.base + url.slice(1)
+      //       } else {
+      //         const filePath = normalizePath(
+      //           path.resolve(path.dirname(importer || id), url)
+      //         )
+      //         return fileToDevUrl(filePath, config)
+      //       }
+      //     }
+      //   : (url, importer) => {
+      //       return urlToBuiltUrl(url, importer || id, config, this)
+      //     }
 
       const { code: css, modules, deps } = await compileCSS(
         id,
         raw,
         config,
         urlReplacer,
-        resolvers
+        atImportResolvers
       )
       if (modules) {
         moduleCache.set(id, modules)
@@ -416,13 +432,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-interface CSSResolvers {
+interface CSSAtImportResolvers {
   css: ResolveFn
   sass: ResolveFn
   less: ResolveFn
 }
 
-function createCSSResolvers(config: ResolvedConfig): CSSResolvers {
+function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
   let cssResolve: ResolveFn | undefined
   let sassResolve: ResolveFn | undefined
   let lessResolve: ResolveFn | undefined
@@ -471,7 +487,7 @@ async function compileCSS(
   code: string,
   config: ResolvedConfig,
   urlReplacer: CssUrlReplacer,
-  resolvers: CSSResolvers
+  atImportResolvers: CSSAtImportResolvers
 ): Promise<{
   code: string
   map?: SourceMap
@@ -530,7 +546,7 @@ async function compileCSS(
       code,
       config.root,
       opts,
-      resolvers
+      atImportResolvers
     )
     if (preprocessResult.errors.length) {
       throw preprocessResult.errors[0]
@@ -557,7 +573,10 @@ async function compileCSS(
     postcssPlugins.unshift(
       (await import('postcss-import')).default({
         async resolve(id, basedir) {
-          const resolved = await resolvers.css(id, path.join(basedir, '*'))
+          const resolved = await atImportResolvers.css(
+            id,
+            path.join(basedir, '*')
+          )
           if (resolved) {
             return path.resolve(resolved)
           }
@@ -799,7 +818,7 @@ type StylePreprocessor = (
     additionalData?: PreprocessorAdditionalData
     filename: string
   },
-  resolvers: CSSResolvers
+  resolvers: CSSAtImportResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
 export interface StylePreprocessorResults {
@@ -954,13 +973,13 @@ let ViteLessManager: any
 function createViteLessPlugin(
   less: typeof Less,
   rootFile: string,
-  resolvers: CSSResolvers
+  resolvers: CSSAtImportResolvers
 ): Less.Plugin {
   if (!ViteLessManager) {
     ViteLessManager = class ViteManager extends less.FileManager {
       resolvers
       rootFile
-      constructor(rootFile: string, resolvers: CSSResolvers) {
+      constructor(rootFile: string, resolvers: CSSAtImportResolvers) {
         super()
         this.rootFile = rootFile
         this.resolvers = resolvers
