@@ -31,7 +31,13 @@
 }
 
 .css-url-same-line {
-  background: url('/nested/asset.png') top right / 10px no-repeat, url('/icon.png') bottom right / 10px no-repeat;
+  background: url('/nested/asset.png') top right / 10px no-repeat,
+    url('/icon.png') bottom right / 10px no-repeat;
+}
+
+.css-url-aliased {
+  background: url('@/asset.png');
+  background-size: 10px;
 }
 
 /*

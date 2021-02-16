@@ -105,6 +105,11 @@ describe('css url() references', () => {
     expect(bg).toMatch(iconMatch)
   })
 
+  test('aliased', async () => {
+    const bg = await getBg('.css-url-aliased')
+    expect(bg).toMatch(assetMatch)
+  })
+
   if (isBuild) {
     test('preserve postfix query/hash', () => {
       expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2?#iefix`)
