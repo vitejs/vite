@@ -324,7 +324,7 @@ Vite automatically generates `<link rel="modulepreload">` directives for entry c
 
 In real world applications, Rollup often generates "common" chunks - code that is shared between two or more other chunks. Combined with dynamic imports, it is quite common to have the following scenario:
 
-![graph](/graph.png)
+![graph](/images/graph.png)
 
 In the non-optimized scenarios, when async chunk `A` is imported, the browser will have to request and parse `A` before it can figure out that it also needs the common chunk `C`. This results in an extra network roundtrip:
 
