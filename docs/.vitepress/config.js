@@ -66,8 +66,8 @@ module.exports = {
           text: 'Guide',
           children: [
             {
-              text: 'Introduction',
-              link: '/guide/introduction'
+              text: 'Why Vite',
+              link: '/guide/why'
             },
             {
               text: 'Getting Started',

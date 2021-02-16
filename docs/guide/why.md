@@ -1,16 +1,6 @@
-# Introduction
+# Why Vite
 
-## Overview
-
-Vite (French word for "fast", pronounced `/vit/`) is a new breed of frontend build tool that significantly improves the frontend development experience. It consists of two major parts:
-
-- A dev server that provides [rich feature enhancements](./features) over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), for example extremely fast [Hot Module Replacement (HMR)](./features#hot-module-replacement).
-
-- An opinionated [build command](./build) that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
-
-In addition, Vite is highly extensible via its [Plugin API](./api-plugin) and [JavaScript API](./api-javascript) with full typing support.
-
-## The Problem
+## The Problems
 
 Before ES modules were available in browsers, developers had no native mechanism for authoring JavaScript in a modularized fashion. This is why we are all familiar with the concept of "bundling": using tools that crawl, process and concatenate our source modules into files that can run in the browser.
 
@@ -40,7 +30,9 @@ Vite improves the dev server start time by first dividing the modules in an appl
 
 ### Slow Updates
 
-When a file is edited in a bundler-based build setup, in addition to re-building the file itself, the bundler also needs to invalidate part of its module graph and re-construct the entire bundle. Reconstructing the bundle can be expensive, and reloading the page blows away the current state of the application. This is why some bundlers support Hot Module Replacment (HMR): allowing a module to "hot replace" itself without affecting the rest of the page. This greatly improves DX - however, in practice we've found that even HMR update speed deteriorates significantly as the size of the application grows.
+When a file is edited in a bundler-based build setup, it is inefficient to rebuild the whole bundle for obvious reasons: the update speed will degrade linearly with the size of the app.
+
+Some bundler dev server runs the bundling in memory so that it only needs to invalidate part of its module graph when a file changes, but it still needs to re-construct the entire bundle and reload the web page. Reconstructing the bundle can be expensive, and reloading the page blows away the current state of the application. This is why some bundlers support Hot Module Replacment (HMR): allowing a module to "hot replace" itself without affecting the rest of the page. This greatly improves DX - however, in practice we've found that even HMR update speed deteriorates significantly as the size of the application grows.
 
 In Vite, HMR is performed over native ESM. When a file is edited, Vite only needs to precisely invalidate the chain between the edited module and its closesest HMR boundary (most of the time only the module itself), making HMR updates consistently fast regardless of the size of your application.
 
@@ -54,15 +46,9 @@ Even though native ESM is now widely supported, shipping unbundled ESM in produc
 
 Ensuring optimal output and behavioral consistency between the dev server and the production build isn't easy. This is why Vite ships with a pre-configured [build command](./build) that bakes in many [performance optimizations](./features#build-optimizations) out of the box.
 
-### Why Not Bundle with esbuild?
+## Why Not Bundle with esbuild?
 
-While `esbuild` is blazing fast and is already a very capable bundler for libraries, some of the important features needed for bundling _applications_ are still work in progress - in particular code-splitting and CSS handling. For the time being, Rollup is more mature and flexible for application bundling. That said, we won't rule out the possibility of using `esbuild` for production build when it stabilizes these features in the future.
-
-## Browser Support
-
-- Vite requires [native ESM dynamic import support](https://caniuse.com/es6-module-dynamic-import) during development.
-
-- The production build assumes a baseline support for [native ESM via script tags](https://caniuse.com/es6-module). Vite does **not** perform any compatibility transpilation by default. Legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) - see the [Building for Production](./build) section for more details.
+While `esbuild` is blazing fast and is already a very capable bundler for libraries, some of the important features needed for bundling _applications_ are still work in progress - in particular code-splitting and CSS handling. For the time being, Rollup is more mature and flexible in these regards. That said, we won't rule out the possibility of using `esbuild` for production build when it stabilizes these features in the future.
 
 ## How is Vite Different from X?
 
