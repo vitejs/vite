@@ -18,7 +18,7 @@
     "lit-element": "^2.4.0"
   },
   "devDependencies": {
-    "vite": "^2.0.0-beta.70",
+    "vite": "^2.0.0",
     "typescript": "^4.1.3"
   }
 }

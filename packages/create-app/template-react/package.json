@@ -12,6 +12,6 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react-refresh": "^1.1.0",
-    "vite": "^2.0.0-beta.70"
+    "vite": "^2.0.0"
   }
 }
