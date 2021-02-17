@@ -45,6 +45,10 @@ module.exports = {
             link: 'https://github.com/vitejs/awesome-vite'
           },
           {
+            text: 'DEV Community',
+            link: 'https://dev.to/t/vite'
+          },
+          {
             text: 'Rollup Plugins Compat',
             link: 'https://vite-rollup-plugins.patak.dev/'
           },
