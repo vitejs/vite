@@ -32,20 +32,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   const replacements: Record<string, string | undefined> = {
     'process.env.NODE_ENV': JSON.stringify(config.mode),
-    'process.env.': `({}).`,
     ...userDefine,
-    ...importMetaKeys
+    ...importMetaKeys,
+    'process.env.': `({}).`
   }
 
-  // sort and reverse to make a more clear replacement matches first
-  // for example:
-  // ['process.env.', 'process.env.var'] should be ordered as
-  // ['process.env.var', 'process.env.'] to make the longer key be replaced earlier
   const pattern = new RegExp(
     '\\b(' +
       Object.keys(replacements)
-        .sort()
-        .reverse()
         .map((str) => {
           return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
         })
