@@ -678,9 +678,11 @@ export async function loadConfigFromFile(
         const ignored = new RegExp(
           [
             `Cannot use import statement`,
-            `Unexpected token 'export'`,
             `Must use import to load ES Module`,
-            `Unexpected identifier` // #1635 Node <= 12.4 has no esm detection
+            // #1635, #2050 some Node 12.x versions don't have esm detection
+            // so it throws normal syntax errors when encountering esm syntax
+            `Unexpected token`,
+            `Unexpected identifier`
           ].join('|')
         )
         if (!ignored.test(e.message)) {
