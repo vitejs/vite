@@ -5,6 +5,7 @@
 <p>Number <code class="number"></code></p>
 <p>Boolean <code class="boolean"></code></p>
 <p>Object <span class="pre object"></span></p>
+<p>Env Var <code class="env-var"></code></p>
 
 <script type="module">
   text('.exp', __EXP__)
@@ -12,6 +13,7 @@
   text('.number', __NUMBER__)
   text('.boolean', __BOOLEAN__)
   text('.object', JSON.stringify(__OBJ__, null, 2))
+  text('.env-var', process.env.SOMEVAR)
 
   function text(el, text) {
     document.querySelector(el).textContent = text
