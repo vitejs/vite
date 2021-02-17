@@ -254,9 +254,18 @@ function tryResolveFile(
   tryIndex: boolean,
   tryPrefix?: string
 ): string | undefined {
-  if (fs.existsSync(file)) {
-    const isDir = fs.statSync(file).isDirectory()
-    if (isDir && tryIndex) {
+  let isReadable = false
+  try {
+    // #2051 if we don't have read permission on a directory, existsSync() still
+    // works and will result in massively slow subsequent checks (which are
+    // unnecessary in the first place)
+    fs.accessSync(file, fs.constants.R_OK)
+    isReadable = true
+  } catch (e) {}
+  if (isReadable) {
+    if (!fs.statSync(file).isDirectory()) {
+      return normalizePath(ensureVolumeInPath(file)) + postfix
+    } else if (tryIndex) {
       const pkgPath = file + '/package.json'
       if (fs.existsSync(pkgPath)) {
         // path points to a node package
