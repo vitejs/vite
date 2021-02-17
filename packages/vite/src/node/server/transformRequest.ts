@@ -30,6 +30,7 @@ export interface TransformResult {
 
 export interface TransformOptions {
   ssr?: boolean
+  html?: boolean
 }
 
 export async function transformRequest(
@@ -69,6 +70,11 @@ export async function transformRequest(
       code = await fs.readFile(file, 'utf-8')
       isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
     } catch (e) {
+      // if this is an html request and there is no load result, skip ahead to
+      // SPA fallback.
+      if (options.html) {
+        return null
+      }
       if (e.code !== 'ENOENT') {
         throw e
       }

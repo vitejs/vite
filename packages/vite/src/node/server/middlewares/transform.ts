@@ -130,7 +130,9 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(url, server)
+        const result = await transformRequest(url, server, {
+          html: req.headers.accept?.includes('text/html')
+        })
         if (result) {
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
