@@ -114,9 +114,10 @@ export async function ssrLoadModule(
       `Error when evaluating SSR module ${url}:\n${e.stack}`,
       {
         timestamp: true,
-        clear: true
+        clear: server.config.clearScreen
       }
     )
+    throw e
   }
 
   mod.ssrModule = ssrModule
