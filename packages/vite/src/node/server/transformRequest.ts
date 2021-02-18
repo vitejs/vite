@@ -63,6 +63,11 @@ export async function transformRequest(
   const loadStart = isDebug ? Date.now() : 0
   const loadResult = await pluginContainer.load(id, ssr)
   if (loadResult == null) {
+    // if this is an html request and there is no load result, skip ahead to
+    // SPA fallback.
+    if (options.html && !id.endsWith('.html')) {
+      return null
+    }
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
@@ -70,11 +75,6 @@ export async function transformRequest(
       code = await fs.readFile(file, 'utf-8')
       isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
     } catch (e) {
-      // if this is an html request and there is no load result, skip ahead to
-      // SPA fallback.
-      if (options.html) {
-        return null
-      }
       if (e.code !== 'ENOENT') {
         throw e
       }
