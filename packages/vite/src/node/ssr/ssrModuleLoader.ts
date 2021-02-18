@@ -100,7 +100,7 @@ export async function ssrLoadModule(
       ssrDynamicImportKey,
       ssrExportAllKey,
       `with(global) {  
-        return (function(){                                               
+        return (function(){
           ${result.code}\n
           //# sourceURL=${mod.url}
         })();
