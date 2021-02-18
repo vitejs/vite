@@ -40,7 +40,8 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
    ```html
    <script type="module">
      import RefreshRuntime from "http://localhost:3000/@react-refresh"
-     RefreshRuntime.injectIntoGlobalHook(window) window.$RefreshReg$ = () => {}
+     RefreshRuntime.injectIntoGlobalHook(window) 
+     window.$RefreshReg$ = () => {}
      window.$RefreshSig$ = () => (type) => type
      window.__vite_plugin_react_preamble_installed__ = true
    </script>
