@@ -99,7 +99,12 @@ export async function ssrLoadModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      result.code + `\n//# sourceURL=${mod.url}`
+      `with(global) {  
+        return (function(){                                               
+          ${result.code}\n
+          //# sourceURL=${mod.url}
+        })();
+      }`  
     )(
       context.global,
       ssrModule,
