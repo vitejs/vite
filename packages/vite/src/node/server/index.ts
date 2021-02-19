@@ -217,7 +217,7 @@ export interface ViteDevServer {
   /**
    * Start the server.
    */
-  listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
+  listen(port?: number, isRestart?: boolean): Promise<ViteDevServer> | void
   /**
    * Stop the server.
    */
@@ -319,7 +319,9 @@ export async function createServer(
       }
     },
     listen(port?: number, isRestart?: boolean) {
-      return startServer(server, port, isRestart)
+      if (!middlewareMode) {
+        return startServer(server, port, isRestart)
+      }
     },
     async close() {
       await Promise.all([
