@@ -1,6 +1,6 @@
 >center
 	>img.logo
-		#src = /assets/logo.png
+		#src = /logo.png
 		#alt = logo
 	-hello
 	>p.links
