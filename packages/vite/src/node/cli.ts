@@ -1,10 +1,10 @@
 import { cac } from 'cac'
 import chalk from 'chalk'
+import { InlineConfig, resolveConfig } from '.'
 import { BuildOptions } from './build'
-import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
-import { resolveConfig } from '.'
 import { serve } from './serve'
+import { ServerOptions } from './server'
 
 const cli = cac('vite')
 
@@ -78,17 +78,24 @@ cli
     // output structure is preserved even after bundling so require()
     // is ok here
     const { createServer } = await import('./server')
+    const inlineConfig: InlineConfig = {
+      root,
+      base: options.base,
+      mode: options.mode,
+      configFile: options.config,
+      logLevel: options.logLevel,
+      clearScreen: options.clearScreen,
+      server: cleanOptions(options) as ServerOptions
+    }
+
+    const config = await resolveConfig(inlineConfig, 'serve')
+    
     try {
-      const server = await createServer({
-        root,
-        base: options.base,
-        mode: options.mode,
-        configFile: options.config,
-        logLevel: options.logLevel,
-        clearScreen: options.clearScreen,
-        server: cleanOptions(options) as ServerOptions
-      })
-      await server.listen()
+      const server = await createServer(inlineConfig)
+
+      if (config.server.middlewareMode !== true) {
+        await server.listen()
+      }
     } catch (e) {
       createLogger(options.logLevel).error(
         chalk.red(`error when starting dev server:\n${e.stack}`)
