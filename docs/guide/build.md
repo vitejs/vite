@@ -82,18 +82,35 @@ module.exports = {
 
 ## Library Mode
 
-When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
+When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `src` folder for that purpose and create a `lib` folder for your library specific code. You can structure your files like this:
+
+```
+├── package.json
+├── vite.config.js
+├── index.html
+├── src
+│   ├── components
+│   ├── App.vue
+│   └── main.js
+└── lib
+    ├── main.js
+    └── components
+        ├── MyLibraryComponent.vue
+        └── MyOtherLibraryComponent.vue
+```
 
 When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
 ```js
-// vite.config.js
-const path = require('path')
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+import { resolve } from 'path';
 
-module.exports = {
+export default defineConfig({
+  plugins: [vue()],
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'lib/main.js'),
+      entry: resolve(__dirname, 'lib/main.js'),
       name: 'MyLib'
     },
     rollupOptions: {
@@ -109,7 +126,7 @@ module.exports = {
       }
     }
   }
-}
+})
 ```
 
 Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats: `es` and `umd` (configurable via `build.lib`):
