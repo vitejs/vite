@@ -10,3 +10,4 @@ explorations
 *.local
 /packages/vite/LICENSE
 *.cpuprofile
+.vscode/
