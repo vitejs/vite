@@ -544,9 +544,13 @@ async function startServer(
     httpServer.listen(port, options.host, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n ⚡ Vite dev server running at:\n`, {
-        clear: !server.config.logger.hasWarned
-      })
+      info(
+        chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+          chalk.green(` dev server running at:\n`),
+        {
+          clear: !server.config.logger.hasWarned
+        }
+      )
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>
         (interfaces[key] || [])

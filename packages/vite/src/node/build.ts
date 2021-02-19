@@ -299,7 +299,11 @@ async function doBuild(
   const libOptions = options.lib
 
   config.logger.info(
-    chalk.cyan(`building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`)
+    chalk.cyan(
+      `vite v${require('vite/package.json').version} ${chalk.green(
+        `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`
+      )}`
+    )
   )
 
   const resolve = (p: string) => path.resolve(config.root, p)

@@ -32,7 +32,10 @@ export async function serve(config: ResolvedConfig, port = 5000) {
   const base = config.base
 
   server.listen(port, () => {
-    logger.info(`\n  Build preview server running at:\n`)
+    logger.info(
+      chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+        chalk.green(` build preview server running at:\n`)
+    )
     const interfaces = os.networkInterfaces()
     Object.keys(interfaces).forEach((key) =>
       (interfaces[key] || [])
