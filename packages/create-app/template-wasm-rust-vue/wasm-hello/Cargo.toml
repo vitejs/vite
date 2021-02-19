@@ -1,0 +1,21 @@
+[package]
+name = "wasm-hello"
+version = "0.1.0"
+authors = ["username <your_email@example.com>"]
+edition = "2018"
+
+# https://github.com/rustwasm/wasm-pack/issues/886
+# https://developers.google.com/web/updates/2019/02/hotpath-with-wasm
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+lto = true
+opt-level = "s"
+
+[dependencies]
+wasm-bindgen = "0.2.70"

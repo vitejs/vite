@@ -36,3 +36,5 @@ Currently supported template presets include:
 - `preact-ts`
 - `lit-element`
 - `lit-element-ts`
+- `wasm-rust-react`
+- `wasm-rust-vue`
