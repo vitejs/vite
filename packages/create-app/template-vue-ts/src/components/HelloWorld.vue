@@ -2,12 +2,23 @@
   <h1>{{ msg }}</h1>
 
   <label>
-    <input type="checkbox" v-model="useScriptSetup" /> Use
+    <input
+      type="checkbox"
+      v-model="useScriptSetup"
+      :true-value="true"
+      :false-value="false"
+    />
+    Use
     <code>&lt;script setup&gt;</code>
   </label>
   <label>
-    <input type="checkbox" v-model="useTsPlugin" /> Provide types for
-    <code>*.vue</code> imports
+    <input
+      type="checkbox"
+      v-model="useTsPlugin"
+      :true-value="true"
+      :false-value="false"
+    />
+    Provide types for <code>*.vue</code> imports
   </label>
 
   <p>
