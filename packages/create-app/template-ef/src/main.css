@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css?family=Blinker&display=swap');
+
+html {
+	font-family: 'Blinker', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+	color: #ffb200;
+}
+
+.logo {
+	height: 420px;
+	width: 420px;
+	filter: drop-shadow(0px 3px 10px #BBB);
+}
+
+.title {
+	text-shadow: 0px 2px 3px #BBB;
+	position: relative;
+}
+
+.version {
+	font-size: 30%;
+	padding: 0px 5px;
+	position: absolute;
+	bottom: 0px;
+	opacity: 0.8;
+}
+
+.desc {
+	color: #333;
+}
+
+.links {
+	color: #444;
+	font-size: 80%;
+}
+
+.copyright {
+	color: #666;
+	font-size: 90%;
+}

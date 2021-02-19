@@ -1,0 +1,17 @@
+{
+  "name": "vite-ef-starter",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "ef-core": "^0.13.4"
+  },
+  "devDependencies": {
+    "vite": "^2.0.0",
+    "eft-parser": "^0.13.3",
+    "rollup-plugin-eft": "^0.13.4"
+  }
+}

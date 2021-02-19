@@ -1,0 +1,2 @@
+>div.copyright
+	.Copyright &u00a9 {{year}} {{author}}

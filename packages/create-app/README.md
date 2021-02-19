@@ -36,3 +36,4 @@ Currently supported template presets include:
 - `preact-ts`
 - `lit-element`
 - `lit-element-ts`
+- `ef`

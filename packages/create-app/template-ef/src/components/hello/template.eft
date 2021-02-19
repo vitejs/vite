@@ -1,0 +1,6 @@
+>h1.title
+	.ef.js
+	>span.version
+		.v{{version}}
+>p.desc
+	.Welcome to the wonderland of ef.js + Vite!
