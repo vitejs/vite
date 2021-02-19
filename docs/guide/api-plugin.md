@@ -189,7 +189,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   const myPlugin = () => ({
     name: 'configure-server',
     configureServer(server) {
-      server.app.use((req, res, next) => {
+      server.middlewares.use((req, res, next) => {
         // custom handle request...
       })
     }
@@ -207,7 +207,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       // return a post hook that is called after internal middlewares are
       // installed
       return () => {
-        server.app.use((req, res, next) => {
+        server.middlewares.use((req, res, next) => {
           // custom handle request...
         })
       }
