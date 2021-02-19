@@ -199,6 +199,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 assetAttrs.includes(p.name)
               ) {
                 const url = p.value.content
+                if (url === '#') {
+                  continue
+                }
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
