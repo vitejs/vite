@@ -76,12 +76,17 @@ async function init() {
 
   // determine template
   let template = argv.t || argv.template
+  let message = 'Select a template:'
+  let isValidTemplate
 
-  const availableTemplates = TEMPLATES.map((template) => stripColors(template))
-  const isValidTemplate = availableTemplates.includes(template)
-  const message = isValidTemplate
-    ? `Select a template:`
-    : `${template} isn't a valid template. Please choose from below: `
+  // --template expects a value
+  if (template && typeof template === 'string') {
+    const availableTemplates = TEMPLATES.map((template) =>
+      stripColors(template)
+    )
+    isValidTemplate = availableTemplates.includes(template)
+    message = `${template} isn't a valid template. Please choose from below:`
+  }
 
   if (!template || !isValidTemplate) {
     /**
