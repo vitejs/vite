@@ -12,7 +12,7 @@
     or
     <a href="https://github.com/johnsoncodehk/volar" target="_blank">Volar</a>
     (if using
-    <code>&ltscript setup&gt;</code>)
+    <code>&lt;script setup&gt;</code>)
   </p>
 
   <p>See <code>README.md</code> for more information.</p>
