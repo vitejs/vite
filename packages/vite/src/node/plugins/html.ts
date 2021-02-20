@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
 import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
@@ -334,8 +335,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             ])
           }
         }
-
-        const shortEmitName = path.posix.relative(config.root, id)
+        const isWindows = os.platform() === 'win32'
+        const shortEmitName = path[isWindows ? 'win32' : 'posix'].relative(config.root, id)
         result = await applyHtmlTransforms(
           result,
           '/' + shortEmitName,

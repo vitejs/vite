@@ -22,7 +22,7 @@ export function createDescriptor(
   const normalizedPath = slash(path.normalize(path.relative(root, filename)))
   descriptor.id = hash(normalizedPath + (isProduction ? source : ''))
 
-  cache.set(filename, descriptor)
+  cache.set(slash(filename), descriptor)
   return { descriptor, errors }
 }
 
