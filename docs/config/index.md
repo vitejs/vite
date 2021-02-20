@@ -299,6 +299,13 @@ export default ({ command, mode }) => {
 
   Set to `false` to prevent Vite from clearing the terminal screen when logging certain messages. Via command line, use `--clearScreen false`.
 
+### envDir
+
+- **Type:** `string`
+- **Default:** `root`
+
+  Environment files directory. Can be an absolute path, or a path relative from the location of the config file itself.
+
 ## Server Options
 
 ### server.host
