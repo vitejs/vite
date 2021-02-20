@@ -78,6 +78,7 @@ const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
+const commjsProxyRE = /\?commonjs-proxy/
 
 export const isCSSRequest = (request: string) =>
   cssLangRE.test(request) && !directRequestRE.test(request)
@@ -118,7 +119,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      if (!cssLangRE.test(id)) {
+      if (!cssLangRE.test(id) || commjsProxyRE.test(id)) {
         return
       }
 
@@ -215,7 +216,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css-post',
 
     transform(css, id, ssr) {
-      if (!cssLangRE.test(id)) {
+      if (!cssLangRE.test(id) || commjsProxyRE.test(id)) {
         return
       }
 
@@ -264,7 +265,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (!isCSSRequest(id) || cssModuleRE.test(id)) {
+        if (
+          !isCSSRequest(id) ||
+          cssModuleRE.test(id) ||
+          commjsProxyRE.test(id)
+        ) {
           isPureCssChunk = false
         }
         if (styles.has(id)) {
