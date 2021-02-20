@@ -1,3 +1,13 @@
+## [2.0.1](https://github.com/vitejs/vite/compare/create-app@2.0.0...create-app@2.0.1) (2021-02-20)
+
+
+### Bug Fixes
+
+* **create-app:** prompt the user on supplying an invalid template ([#2072](https://github.com/vitejs/vite/issues/2072)) ([ea31690](https://github.com/vitejs/vite/commit/ea31690580d4966b60e2aa8e14ae78dee955935f))
+* **create-app:** update prompt message based on user input ([#2103](https://github.com/vitejs/vite/issues/2103)) ([038f786](https://github.com/vitejs/vite/commit/038f78660042454935ef343bce240a5220328760))
+
+
+
 # [2.0.0](https://github.com/vitejs/vite/compare/create-app@1.8.0...create-app@2.0.0) (2021-02-16)
 
 
