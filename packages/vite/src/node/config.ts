@@ -139,6 +139,12 @@ export interface UserConfig {
    */
   clearScreen?: boolean
   /**
+   * Environment files directory. Can be an absolute path, or a path relative from
+   * the location of the config file itself.
+   * @default root
+   */
+  envDir?: string
+  /**
    * Import aliases
    * @deprecated use `resolve.alias` instead
    */
@@ -268,7 +274,10 @@ export async function resolveConfig(
   }
 
   // load .env files
-  const userEnv = loadEnv(mode, resolvedRoot)
+  const envDir = config.envDir
+    ? normalizePath(path.resolve(config.envDir))
+    : resolvedRoot
+  const userEnv = loadEnv(mode, envDir)
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
@@ -788,7 +797,7 @@ async function loadConfigFromBundledFile(
   return config
 }
 
-export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
+export function loadEnv(mode: string, envDir: string, prefix = 'VITE_') {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -813,7 +822,7 @@ export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
   }
 
   for (const file of envFiles) {
-    const path = lookupFile(root, [file], true)
+    const path = lookupFile(envDir, [file], true)
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
         debug: !!process.env.DEBUG || undefined
