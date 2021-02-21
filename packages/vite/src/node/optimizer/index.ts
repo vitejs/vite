@@ -33,7 +33,7 @@ export interface DepOptimizationOptions {
    */
   entries?: string | string[]
   /**
-   * Force optimize listed dependencies (must be resolvalble import paths,
+   * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
    */
   include?: string[]
@@ -47,7 +47,7 @@ export interface DepOptimizationOptions {
 export interface DepOptimizationMetadata {
   /**
    * The main hash is determined by user config and dependency lockfiles.
-   * This is checked on server startup to avoid unncessary re-bundles.
+   * This is checked on server startup to avoid unnecessary re-bundles.
    */
   hash: string
   /**
