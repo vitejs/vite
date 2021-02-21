@@ -9,7 +9,7 @@ import { resolveSSRExternal } from '../ssr/ssrExternal'
  */
 const debounceMs = 100
 
-export function createMissingImpoterRegisterFn(server: ViteDevServer) {
+export function createMissingImporterRegisterFn(server: ViteDevServer) {
   const { logger } = server.config
   let knownOptimized = server._optimizeDepsMetadata!.optimized
   let currentMissing: Record<string, string> = {}
