@@ -5,7 +5,8 @@ import { ResolvedOptions } from '.'
 import {
   createDescriptor,
   getPrevDescriptor,
-  setDescriptor
+  setDescriptor,
+  isEqualBlock
 } from './utils/descriptorCache'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { resolveScript } from './script'
@@ -71,11 +72,23 @@ export async function transformMain(
     ))
   }
 
-  const renderReplace = hasTemplateImport
-    ? ssr
+  let renderReplace = ''
+  if (hasTemplateImport) {
+    renderReplace = ssr
       ? `_sfc_main.ssrRender = _sfc_ssrRender`
       : `_sfc_main.render = _sfc_render`
-    : ''
+  } else {
+    // #2128
+    // User may empty the template but we didn't provide rerender function before
+    if (
+      prevDescriptor &&
+      !isEqualBlock(descriptor.template, prevDescriptor.template)
+    ) {
+      renderReplace = ssr
+        ? `_sfc_main.ssrRender = () => {}`
+        : `_sfc_main.render = () => {}`
+    }
+  }
 
   // styles
   const stylesCode = await genStyleCode(descriptor, pluginContext)

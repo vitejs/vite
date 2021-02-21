@@ -1,9 +1,10 @@
 import _debug from 'debug'
-import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
+import { SFCDescriptor } from '@vue/compiler-sfc'
 import {
   createDescriptor,
   getDescriptor,
-  setPrevDescriptor
+  setPrevDescriptor,
+  isEqualBlock
 } from './utils/descriptorCache'
 import { getResolvedScript, setResolvedScript } from './script'
 import { ModuleNode, HmrContext } from 'vite'
@@ -142,20 +143,6 @@ export async function handleHotUpdate({
     debug(`[vue:update(${updateType.join('&')})] ${file}`)
   }
   return [...affectedModules].filter(Boolean) as ModuleNode[]
-}
-
-function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
-  if (!a && !b) return true
-  if (!a || !b) return false
-  // src imports will trigger their own updates
-  if (a.src && b.src && a.src === b.src) return true
-  if (a.content !== b.content) return false
-  const keysA = Object.keys(a.attrs)
-  const keysB = Object.keys(b.attrs)
-  if (keysA.length !== keysB.length) {
-    return false
-  }
-  return keysA.every((key) => a.attrs[key] === b.attrs[key])
 }
 
 export function isOnlyTemplateChanged(

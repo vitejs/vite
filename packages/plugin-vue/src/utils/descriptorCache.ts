@@ -1,7 +1,7 @@
 import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
-import { parse, SFCDescriptor } from '@vue/compiler-sfc'
+import { parse, SFCDescriptor, SFCBlock } from '@vue/compiler-sfc'
 
 const cache = new Map<string, SFCDescriptor>()
 const prevCache = new Map<string, SFCDescriptor | undefined>()
@@ -48,4 +48,18 @@ export function getDescriptor(filename: string, errorOnMissing = true) {
 
 export function setDescriptor(filename: string, entry: SFCDescriptor) {
   cache.set(filename, entry)
+}
+
+export function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
+  if (!a && !b) return true
+  if (!a || !b) return false
+  // src imports will trigger their own updates
+  if (a.src && b.src && a.src === b.src) return true
+  if (a.content !== b.content) return false
+  const keysA = Object.keys(a.attrs)
+  const keysB = Object.keys(b.attrs)
+  if (keysA.length !== keysB.length) {
+    return false
+  }
+  return keysA.every((key) => a.attrs[key] === b.attrs[key])
 }
