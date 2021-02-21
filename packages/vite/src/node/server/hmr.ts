@@ -42,7 +42,7 @@ export async function handleHMRUpdate(
   const shortFile = getShortName(file, config.root)
 
   if (file === config.configFile || file.endsWith('.env')) {
-    // TODO auto restart server
+    // auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
     config.logger.info(
       chalk.green('config or .env file changed, restarting server...'),
