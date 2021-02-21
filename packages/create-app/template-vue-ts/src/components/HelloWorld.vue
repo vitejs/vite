@@ -16,8 +16,7 @@
     +
     <template v-if="!useScriptSetup">
       <a href="https://marketplace.visualstudio.com/items?itemName=octref.vetur" target="_blank">Vetur</a>
-      +
-      <a href="https://marketplace.visualstudio.com/items?itemName=znck.vue-language-features" target="_blank">Vue DX</a>
+      + <a href="https://marketplace.visualstudio.com/items?itemName=znck.vue-language-features" target="_blank">Vue DX</a>
     </template>
     <template v-else>
       <a href="https://github.com/johnsoncodehk/volar" target="_blank">Volar</a>
