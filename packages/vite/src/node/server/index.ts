@@ -49,7 +49,7 @@ import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
-import { createMissingImpoterRegisterFn } from '../optimizer/registerMissing'
+import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 
 export interface ServerOptions {
   host?: string
@@ -227,7 +227,7 @@ export interface ViteDevServer {
    */
   _optimizeDepsMetadata: DepOptimizationMetadata | null
   /**
-   * Deps that are extenralized
+   * Deps that are externalized
    * @internal
    */
   _ssrExternals: string[] | null
@@ -476,7 +476,7 @@ export async function createServer(
       } finally {
         server._isRunningOptimizer = false
       }
-      server._registerMissingImport = createMissingImpoterRegisterFn(server)
+      server._registerMissingImport = createMissingImporterRegisterFn(server)
     }
   }
 
