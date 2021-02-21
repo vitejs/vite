@@ -62,7 +62,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       if (src) {
         const url = src.value?.content || ''
-        if (url.startsWith('/')) {
+        if (/^\/(?!\/)/.test(url)) {
           // prefix with base
           s.overwrite(
             src.value!.loc.start.offset,
