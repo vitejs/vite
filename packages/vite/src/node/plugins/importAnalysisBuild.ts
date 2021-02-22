@@ -138,7 +138,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             start,
             importer,
             index,
-            config.root
+            config.root,
+            undefined,
+            ssr
           )
           str().prepend(importsString)
           str().overwrite(expStart, endIndex, exp)
