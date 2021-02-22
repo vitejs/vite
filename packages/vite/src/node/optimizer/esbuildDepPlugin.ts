@@ -12,7 +12,7 @@ const externalTypes = [
   'less',
   'sass',
   'scss',
-  'style',
+  'styl',
   'stylus',
   'postcss',
   // known SFC types
