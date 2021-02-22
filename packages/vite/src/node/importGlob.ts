@@ -14,7 +14,8 @@ export async function transformImportGlob(
   importer: string,
   importIndex: number,
   root: string,
-  normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>
+  normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
+  ssr = false
 ): Promise<{
   importsString: string
   imports: string[]
@@ -84,7 +85,7 @@ export async function transformImportGlob(
       entries += ` ${JSON.stringify(file)}: ${identifier},`
     } else {
       let imp = `import(${JSON.stringify(importee)})`
-      if (!normalizeUrl) {
+      if (!normalizeUrl && !ssr) {
         imp =
           `(${isModernFlag}` +
           `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
