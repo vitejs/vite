@@ -298,8 +298,12 @@ function esbuildScanPlugin(
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
             }
+
+            const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
+
             return {
-              path: path.resolve(cleanUrl(resolved))
+              path: path.resolve(cleanUrl(resolved)),
+              namespace
             }
           } else {
             // resolve failed... probably usupported type
