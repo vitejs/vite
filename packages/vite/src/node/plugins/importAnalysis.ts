@@ -249,7 +249,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex
         } = imports[index]
 
-        const rawUrl = source.slice(start, end)
+        // #2083 User may use unicode path,
+        // so use imports[index].n to get the correct escape sequences
+        const rawUrl = imports[index].n ?? source.slice(start, end)
         let url = rawUrl
 
         // check import.meta usage
