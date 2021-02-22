@@ -65,6 +65,7 @@ import {
   prettifyUrl,
   timeFrom
 } from '../utils'
+import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
@@ -446,7 +447,7 @@ export async function createPluginContainer(
         break
       }
 
-      if (isDebug && rawId !== id && !rawId.startsWith('/@fs/')) {
+      if (isDebug && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {
