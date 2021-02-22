@@ -136,7 +136,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config)
+    url.startsWith('#') ||
+    isExternalUrl(url) ||
+    isDataUrl(url) ||
+    checkPublicFile(url, config)
 
   return {
     name: 'vite:build-html',
@@ -199,9 +202,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 assetAttrs.includes(p.name)
               ) {
                 const url = p.value.content
-                if (url === '#') {
-                  continue
-                }
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
