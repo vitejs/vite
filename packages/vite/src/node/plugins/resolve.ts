@@ -584,7 +584,7 @@ function resolveDeepImport(
     const mapped = mapWithBrowserField(relativeId, browserField)
     if (mapped) {
       relativeId = mapped
-    } else {
+    } else if (mapped === false) {
       return (resolvedImports[id] = browserExternalId)
     }
   }
@@ -625,7 +625,7 @@ function tryResolveBrowserMapping(
           moduleSideEffects: pkg.hasSideEffects(res)
         }
       }
-    } else {
+    } else if (browserMappedPath === false) {
       return browserExternalId
     }
   }
@@ -635,19 +635,20 @@ function tryResolveBrowserMapping(
  * given a relative path in pkg dir,
  * return a relative path in pkg dir,
  * mapped with the "map" object
+ *
+ * - Returning `undefined` means there is no browser mapping for this id
+ * - Returning `false` means this id is explicitly externalized for browser
  */
 function mapWithBrowserField(
   relativePathInPkgDir: string,
   map: Record<string, string | false>
-) {
+): string | false | undefined {
   const normalized = normalize(relativePathInPkgDir)
-  const foundEntry = Object.entries(map).find(
-    ([from]) => normalize(from) === normalized
-  )
-  if (!foundEntry) {
-    return relativePathInPkgDir
+  for (const key in map) {
+    if (normalize(key) === normalized) {
+      return map[key]
+    }
   }
-  return foundEntry[1]
 }
 
 function normalize(file: string) {
