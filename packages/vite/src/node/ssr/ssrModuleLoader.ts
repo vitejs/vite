@@ -16,12 +16,16 @@ interface SSRContext {
   global: NodeJS.Global
 }
 
+type SSRModule = Record<string, any>
+
+const pendingModules = new Map<string, Promise<SSRModule>>()
+
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
   urlStack: string[] = []
-): Promise<Record<string, any>> {
+): Promise<SSRModule> {
   url = unwrapId(url)
 
   if (urlStack.includes(url)) {
@@ -31,6 +35,27 @@ export async function ssrLoadModule(
     return {}
   }
 
+  // when we instantiate multiple dependency modules in parallel, they may
+  // point to shared modules. We need to avoid duplicate instantiation attempts
+  // by register every module as pending synchronously so that all subsequent
+  // request to that module are simply waiting on the same promise.
+  const pending = pendingModules.get(url)
+  if (pending) {
+    return pending
+  }
+
+  const modulePromise = instantiateModule(url, server, context, urlStack)
+  pendingModules.set(url, modulePromise)
+  modulePromise.then(() => pendingModules.delete(url))
+  return modulePromise
+}
+
+async function instantiateModule(
+  url: string,
+  server: ViteDevServer,
+  context: SSRContext = { global },
+  urlStack: string[] = []
+): Promise<SSRModule> {
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url)
 
@@ -46,6 +71,11 @@ export async function ssrLoadModule(
     throw new Error(`failed to load module for ssr: ${url}`)
   }
 
+  const ssrModule = {
+    [Symbol.toStringTag]: 'Module'
+  }
+  Object.defineProperty(ssrModule, '__esModule', { value: true })
+
   const isExternal = (dep: string) => dep[0] !== '.' && dep[0] !== '/'
 
   await Promise.all(
@@ -55,11 +85,6 @@ export async function ssrLoadModule(
       }
     })
   )
-
-  const ssrModule = {
-    [Symbol.toStringTag]: 'Module'
-  }
-  Object.defineProperty(ssrModule, '__esModule', { value: true })
 
   const ssrImportMeta = { url }
 
