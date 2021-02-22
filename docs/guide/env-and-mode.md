@@ -53,7 +53,7 @@ Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your 
 
 ## Modes
 
-By default, the dev server (`serve` command) runs in `development` mode, and the `build` command runs in `production` mode.
+By default, the dev server (`dev` command) runs in `development` mode, and the `build` command runs in `production` mode.
 
 This means when running `vite build`, it will load the env variables from `.env.production` if there is one:
 
