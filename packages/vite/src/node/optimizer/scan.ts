@@ -3,7 +3,12 @@ import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { Loader, Plugin } from 'esbuild'
-import { KNOWN_ASSET_TYPES, JS_TYPES_RE, SPECIAL_QUERY_RE } from '../constants'
+import {
+  KNOWN_ASSET_TYPES,
+  JS_TYPES_RE,
+  SPECIAL_QUERY_RE,
+  OPTIMIZABLE_ENTRY_RE
+} from '../constants'
 import {
   createDebugger,
   emptyDir,
@@ -243,7 +248,9 @@ function esbuildScanPlugin(
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
               // dep or fordce included, externalize and stop crawling
-              depImports[id] = resolved
+              if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
+                depImports[id] = resolved
+              }
               return externalUnlessEntry({ path: id })
             } else {
               // linked package, keep crawling
@@ -373,7 +380,7 @@ async function transformGlob(
   return s.toString()
 }
 
-export function shouldExternalizeDep(resolvedId: string, rawId?: string) {
+export function shouldExternalizeDep(resolvedId: string, rawId: string) {
   // not a valid file path
   if (!path.isAbsolute(resolvedId)) {
     return true
