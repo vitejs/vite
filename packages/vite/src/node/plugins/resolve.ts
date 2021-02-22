@@ -4,10 +4,10 @@ import { Plugin } from '../plugin'
 import chalk from 'chalk'
 import {
   FS_PREFIX,
-  JS_TYPES_RE,
   SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
-  DEFAULT_MAIN_FIELDS
+  DEFAULT_MAIN_FIELDS,
+  OPTIMIZABLE_ENTRY_RE
 } from '../constants'
 import {
   isBuiltin,
@@ -340,7 +340,7 @@ export function tryNodeResolve(
       return { id: resolved }
     }
     // if we reach here, it's a valid dep import that hasn't been optimzied.
-    const isJsType = JS_TYPES_RE.test(resolved)
+    const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
     const exclude = server.config.optimizeDeps?.exclude
     if (
       !isJsType ||
