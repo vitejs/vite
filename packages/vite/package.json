@@ -104,7 +104,7 @@
     "mime": "^2.4.7",
     "minimatch": "^3.0.4",
     "okie": "^1.0.1",
-    "open": "^7.3.0",
+    "open": "^7.4.2",
     "open-in-editor": "^2.2.0",
     "periscopic": "^2.0.3",
     "postcss-import": "^13.0.0",
