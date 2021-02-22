@@ -52,7 +52,7 @@ export async function ssrTransform(
   function defineExport(name: string, local = name) {
     s.append(
       `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
-        `{ get(){ return ${local} }})`
+        `{ enumerable: true, get(){ return ${local} }})`
     )
   }
 

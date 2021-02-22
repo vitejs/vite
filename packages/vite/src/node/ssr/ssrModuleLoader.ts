@@ -108,6 +108,7 @@ async function instantiateModule(
     for (const key in sourceModule) {
       if (key !== 'default') {
         Object.defineProperty(ssrModule, key, {
+          enumerable: true,
           get() {
             return sourceModule[key]
           }
@@ -145,7 +146,7 @@ async function instantiateModule(
     throw e
   }
 
-  mod.ssrModule = ssrModule
+  mod.ssrModule = Object.freeze(ssrModule)
   return ssrModule
 }
 
