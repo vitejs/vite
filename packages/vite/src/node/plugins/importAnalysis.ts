@@ -251,6 +251,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // #2083 User may use unicode path,
         // so use imports[index].n to get the correct escape sequences
+        // @ts-ignore
         const rawUrl = imports[index].n ?? source.slice(start, end)
         let url = rawUrl
 

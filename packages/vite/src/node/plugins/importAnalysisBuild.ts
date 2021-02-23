@@ -122,6 +122,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           index
         ]
 
+        // @ts-ignore
         const url = imports[index].n ?? source.slice(start, end)
         const isGlob =
           url === 'import.meta' && source.slice(end, end + 5) === '.glob'
@@ -224,6 +225,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
               }
               // check the chunk being imported
+              // @ts-ignore
               const url = imports[index].n ?? code.slice(start, end)
               const deps: Set<string> = new Set()
 
