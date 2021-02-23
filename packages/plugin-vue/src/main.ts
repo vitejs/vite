@@ -5,13 +5,12 @@ import { ResolvedOptions } from '.'
 import {
   createDescriptor,
   getPrevDescriptor,
-  setDescriptor,
-  isEqualBlock
+  setDescriptor
 } from './utils/descriptorCache'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
-import { isOnlyTemplateChanged } from './handleHotUpdate'
+import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 
