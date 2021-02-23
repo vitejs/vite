@@ -399,7 +399,12 @@ async function doBuild(
     const buildOuputOptions = (output: OutputOptions = {}): OutputOptions => {
       return {
         dir: outDir,
-        format: ssr ? 'cjs' : 'es',
+        format:
+          ssr &&
+          JSON.parse(fs.readFileSync(resolve('package.json'), 'utf-8')).type !=
+            'module'
+            ? 'cjs'
+            : 'es',
         exports: ssr ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
