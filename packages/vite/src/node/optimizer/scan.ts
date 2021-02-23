@@ -353,8 +353,7 @@ async function transformGlob(
   const s = new MagicString(source)
   for (let index = 0; index < imports.length; index++) {
     const { s: start, e: end, ss: expStart } = imports[index]
-    // @ts-ignore
-    const url = imports[index].n ?? source.slice(start, end)
+    const url = source.slice(start, end)
     if (url !== 'import.meta') continue
     if (source.slice(end, end + 5) !== '.glob') continue
     const { importsString, exp, endIndex } = await transformImportGlob(
