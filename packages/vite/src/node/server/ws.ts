@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import { Server } from 'http'
 import WebSocket from 'ws'
 import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
-import { Logger } from '../logger'
+import { ResolvedConfig } from '..'
 
 export const HMR_HEADER = 'vite-hmr'
 
@@ -12,18 +12,28 @@ export interface WebSocketServer {
 }
 
 export function createWebSocketServer(
-  server: Server,
-  logger: Logger
+  server: Server | null,
+  config: ResolvedConfig
 ): WebSocketServer {
-  const wss = new WebSocket.Server({ noServer: true })
+  let wss: WebSocket.Server
 
-  server.on('upgrade', (req, socket, head) => {
-    if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
-      wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit('connection', ws, req)
-      })
-    }
-  })
+  if (server) {
+    wss = new WebSocket.Server({ noServer: true })
+    server.on('upgrade', (req, socket, head) => {
+      if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
+        wss.handleUpgrade(req, socket, head, (ws) => {
+          wss.emit('connection', ws, req)
+        })
+      }
+    })
+  } else {
+    // vite dev server in middleware mode
+    wss = new WebSocket.Server({
+      port:
+        (typeof config.server.hmr === 'object' && config.server.hmr.port) ||
+        24678
+    })
+  }
 
   wss.on('connection', (socket) => {
     socket.send(JSON.stringify({ type: 'connected' }))
@@ -35,7 +45,7 @@ export function createWebSocketServer(
 
   wss.on('error', (e: Error & { code: string }) => {
     if (e.code !== 'EADDRINUSE') {
-      logger.error(
+      config.logger.error(
         chalk.red(`WebSocket server error:\n${e.stack || e.message}`)
       )
     }

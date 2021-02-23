@@ -1,0 +1,6 @@
+{
+  "name": "resolve-custom-main-field",
+  "version": "1.0.0",
+  "main": "index.js",
+  "custom": "index.custom.js"
+}

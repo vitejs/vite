@@ -40,7 +40,7 @@ export function proxyMiddleware({
   Object.keys(options).forEach((context) => {
     let opts = options[context]
     if (typeof opts === 'string') {
-      opts = { target: opts } as ProxyOptions
+      opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
@@ -57,35 +57,45 @@ export function proxyMiddleware({
     proxies[context] = [proxy, { ...opts }]
   })
 
-  httpServer.on('upgrade', (req, socket, head) => {
-    const url = req.url!
-    for (const context in proxies) {
-      if (url.startsWith(context)) {
-        const [proxy, opts] = proxies[context]
-        if (
-          (opts.ws || opts.target?.toString().startsWith('ws:')) &&
-          req.headers['sec-websocket-protocol'] !== HMR_HEADER
-        ) {
-          if (opts.rewrite) {
-            req.url = opts.rewrite(url)
+  if (httpServer) {
+    httpServer.on('upgrade', (req, socket, head) => {
+      const url = req.url!
+      for (const context in proxies) {
+        if (url.startsWith(context)) {
+          const [proxy, opts] = proxies[context]
+          if (
+            (opts.ws || opts.target?.toString().startsWith('ws:')) &&
+            req.headers['sec-websocket-protocol'] !== HMR_HEADER
+          ) {
+            if (opts.rewrite) {
+              req.url = opts.rewrite(url)
+            }
+            proxy.ws(req, socket, head)
           }
-          proxy.ws(req, socket, head)
         }
       }
-    }
-  })
+    })
+  }
 
   return (req, res, next) => {
     const url = req.url!
     for (const context in proxies) {
-      if (url.startsWith(context)) {
+      if (
+        (context.startsWith('^') && new RegExp(context).test(url)) ||
+        url.startsWith(context)
+      ) {
         const [proxy, opts] = proxies[context]
+        const options: HttpProxy.ServerOptions = {}
 
         if (opts.bypass) {
           const bypassResult = opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
             debug(`bypass: ${req.url} -> ${bypassResult}`)
+            return next()
+          } else if (typeof bypassResult === 'object') {
+            Object.assign(options, bypassResult)
+            debug(`bypass: ${req.url} use modified opitions: %O`, options)
             return next()
           } else if (bypassResult === false) {
             debug(`bypass: ${req.url} -> 404`)
@@ -97,7 +107,7 @@ export function proxyMiddleware({
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }
-        proxy.web(req, res)
+        proxy.web(req, res, options)
         return
       }
     }

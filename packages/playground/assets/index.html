@@ -6,18 +6,20 @@
 
 <p class="base"></p>
 
-<h2>Raw References from /public</h2>
+<h2>Raw References from publicDir</h2>
 <ul>
   <li class="raw-js"></li>
   <script src="/raw.js"></script>
-  <li class="raw-css">Raw CSS from /public should load (this should be red)</li>
+  <li class="raw-css">
+    Raw CSS from publicDir should load (this should be red)
+  </li>
 </ul>
 
 <h2>Asset Imports from JS</h2>
 <ul>
   <li>Relative: <code class="asset-import-relative"></code></li>
   <li>Absolute: <code class="asset-import-absolute"></code></li>
-  <li>From /public: <code class="public-import"></code></li>
+  <li>From publicDir: <code class="public-import"></code></li>
 </ul>
 
 <h2>CSS url references</h2>
@@ -27,6 +29,11 @@
 </div>
 <div class="css-url-relative">
   <span style="background: #fff">CSS background (relative)</span>
+</div>
+<div class="css-url-relative-at-imported">
+  <span style="background: #fff"
+    >CSS background (relative from @imported file in different dir)</span
+  >
 </div>
 <div class="css-url-public">
   <span style="background: #fff">CSS background (public)</span>
@@ -39,6 +46,14 @@
 </div>
 <div class="css-url-quotes-base64-inline">
   <span style="background: #fff">CSS background (base64 inline in prod)</span>
+</div>
+<div class="css-url-same-line">
+  <span style="background: #fff"
+    >CSS background (multiple urls on same line)</span
+  >
+</div>
+<div class="css-url-aliased">
+  <span style="background: #fff">CSS background (aliased)</span>
 </div>
 
 <h2>SVG Fragments</h2>
@@ -73,6 +88,12 @@
   <img class="svg-frag-import" alt="" />
 </div>
 
+<h2>?raw import</h2>
+<code class="raw"></code>
+
+<h2>?url import</h2>
+<code class="url"></code>
+
 <script type="module">
   import './css/fonts.css'
   import './css/css-url.css'
@@ -92,6 +113,12 @@
   import svgFrag from './nested/fragment.svg'
   text('.svg-frag-import-path', svgFrag)
   document.querySelector('.svg-frag-import').src = svgFrag + '#icon-heart-view'
+
+  import rawSvg from './nested/fragment.svg?raw'
+  text('.raw', rawSvg)
+
+  import fooUrl from './foo.js?url'
+  text('.url', fooUrl)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

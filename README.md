@@ -1,9 +1,19 @@
-# vite ⚡
+<p align="center">
+  <a href="https://vitejs.dev" target="_blank" rel="noopener noreferrer">
+    <img width="180" src="https://vitejs.dev/logo.svg" alt="Vite logo">
+  </a>
+</p>
+<br/>
+<p align="center">
+  <a href="https://npmjs.com/package/vite"><img src="https://img.shields.io/npm/v/vite.svg" alt="npm package"></a>
+  <a href="https://nodejs.org/en/about/releases/"><img src="https://img.shields.io/node/v/vite.svg" alt="node compatility"></a>
+  <a href="https://app.circleci.com/pipelines/github/vitejs/vite?branch=main"><img src="https://circleci.com/gh/vitejs/vite/tree/main.svg?style=shield" alt="unix build status"></a>
+  <a href="https://ci.appveyor.com/project/yyx990803/vite/branch/main"><img src="https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/main?svg=true" alt="windows build status"></a>
+  <a href="https://chat.vitejs.dev"><img src="https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord" alt="discord chat"></a>
+</p>
+<br/>
 
-[![npm][npm-img]][npm-url]
-[![node][node-img]][node-url]
-[![unix CI status][unix-ci-img]][unix-ci-url]
-[![windows CI status][windows-ci-img]][windows-ci-url]
+# Vite ⚡
 
 > Next Generation Frontend Tooling
 
@@ -26,7 +36,18 @@ In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/g
 
 ## Migrating from 1.x
 
-Vite is now in 2.0 beta. Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you are upgrading from 1.x.
+Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you are upgrading from 1.x.
+
+## Packages
+
+| Package                                                       | Version (click for changelogs)                                                                                                                         |
+| ------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [vite](packages/vite)                                         | [![vite version](https://img.shields.io/npm/v/vite.svg?label=%20)](packages/vite/CHANGELOG.md)                                                         |
+| [@vitejs/plugin-vue](packages/plugin-vue)                     | [![plugin-vue version](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg?label=%20)](packages/plugin-vue/CHANGELOG.md)                               |
+| [@vitejs/plugin-vue-jsx](packages/plugin-vue-jsx)             | [![plugin-vue-jsx version](https://img.shields.io/npm/v/@vitejs/plugin-vue-jsx.svg?label=%20)](packages/plugin-vue-jsx/CHANGELOG.md)                   |
+| [@vitejs/plugin-react-refresh](packages/plugin-react-refresh) | [![plugin-react-refresh version](https://img.shields.io/npm/v/@vitejs/plugin-react-refresh.svg?label=%20)](packages/plugin-react-refresh/CHANGELOG.md) |
+| [@vitejs/plugin-legacy](packages/plugin-legacy)               | [![plugin-legacy version](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg?label=%20)](packages/plugin-legacy/CHANGELOG.md)                      |
+| [@vitejs/create-app](packages/create-app)                     | [![create-app version](https://img.shields.io/npm/v/@vitejs/create-app.svg?label=%20)](packages/create-app/CHANGELOG.md)                               |
 
 ## Contribution
 
@@ -44,3 +65,5 @@ MIT
 [unix-ci-url]: https://app.circleci.com/pipelines/github/vitejs/vite?branch=main
 [windows-ci-img]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/main?svg=true
 [windows-ci-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/main
+[discord-img]: https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord
+[discord-url]: https://chat.vitejs.dev

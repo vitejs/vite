@@ -4,30 +4,60 @@
  * @type {import('vitepress').UserConfig}
  */
 module.exports = {
-  title: 'Vite⚡',
+  title: 'Vite',
   description: 'Next Generation Frontend Tooling',
-  head: [
-    [
-      'style',
-      {},
-      'img { border-radius: 10px }' + 'h1.title { margin-left: 0.5em }'
-    ]
-  ],
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]],
   themeConfig: {
     repo: 'vitejs/vite',
+    logo: '/logo.svg',
     docsDir: 'docs',
     docsBranch: 'main',
     editLinks: true,
     editLinkText: 'Suggest changes to this page',
 
+    algolia: {
+      apiKey: 'b573aa848fd57fb47d693b531297403c',
+      indexName: 'vitejs'
+    },
+
+    carbonAds: {
+      carbon: 'CEBIEK3N',
+      placement: 'vitejsdev'
+    },
+
     nav: [
-      { text: 'Guide & APIs', link: '/guide/' },
-      { text: 'Config Reference', link: '/config/' },
+      { text: 'Guide', link: '/guide/' },
+      { text: 'Config', link: '/config/' },
       { text: 'Plugins', link: '/plugins/' },
       {
-        text: 'Changelog',
-        link:
-          'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+        text: 'Links',
+        items: [
+          {
+            text: 'Twitter',
+            link: 'https://twitter.com/vite_js'
+          },
+          {
+            text: 'Discord Chat',
+            link: 'https://chat.vitejs.dev'
+          },
+          {
+            text: 'Awesome Vite',
+            link: 'https://github.com/vitejs/awesome-vite'
+          },
+          {
+            text: 'DEV Community',
+            link: 'https://dev.to/t/vite'
+          },
+          {
+            text: 'Rollup Plugins Compat',
+            link: 'https://vite-rollup-plugins.patak.dev/'
+          },
+          {
+            text: 'Changelog',
+            link:
+              'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+          }
+        ]
       }
     ],
 
@@ -40,8 +70,8 @@ module.exports = {
           text: 'Guide',
           children: [
             {
-              text: 'Introduction',
-              link: '/guide/introduction'
+              text: 'Why Vite',
+              link: '/guide/why'
             },
             {
               text: 'Getting Started',
@@ -56,12 +86,20 @@ module.exports = {
               link: '/guide/dep-pre-bundling'
             },
             {
+              text: 'Static Asset Handling',
+              link: '/guide/assets'
+            },
+            {
               text: 'Building for Production',
               link: '/guide/build'
             },
             {
               text: 'Env Variables and Modes',
               link: '/guide/env-and-mode'
+            },
+            {
+              text: 'Server-Side Rendering (SSR)',
+              link: '/guide/ssr'
             },
             {
               text: 'Backend Integration',
@@ -91,6 +129,10 @@ module.exports = {
             {
               text: 'JavaScript API',
               link: '/guide/api-javascript'
+            },
+            {
+              text: 'Config Reference',
+              link: '/config/'
             }
           ]
         }

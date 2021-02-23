@@ -13,7 +13,7 @@ Pre-bundling them to speed up dev server page load...
 
 This is Vite performing what we call "dependency pre-bundling". This process serves two purposes:
 
-1. **CommonJS and UMD comaptibility:** During development, Vite's dev serves all code as native ESM. Therefore, Vite must convert dependencies that are shipped as CommonJS or UMD into ESM first.
+1. **CommonJS and UMD compatibility:** During development, Vite's dev serves all code as native ESM. Therefore, Vite must convert dependencies that are shipped as CommonJS or UMD into ESM first.
 
    When converting CommonJS dependencies, Vite performs smart import analysis so that named imports to CommonJS modules will work as expected even if the exports are dynamically assigned (e.g. React):
 
@@ -28,35 +28,11 @@ This is Vite performing what we call "dependency pre-bundling". This process ser
 
    By pre-bundling `lodash-es` into a single module, we now only need one HTTP request instead!
 
-## Pre-Bundle Criteria
+## Automatic Dependency Discovery
 
-Dependencies are only checked for pre-bundling if it is listed in `dependencies` of your `package.json`. It will be eligible for pre-bundling if one of the following is true:
+If an existing cache is not found, Vite will crawl your source code and automatically discover dependency imports (i.e. "bare imports" that expect to be resolved from `node_modules`) and use these found imports as entry points for the pre-bundle. The pre-bundling is performed with `esbuild` so it's typically very fast.
 
-- The dependency's entry contains no valid ES module export (treated as CommonJS);
-- The dependency's entry contains ES imports to other modules or dependencies (multiple internal modules).
-
-This also means you should avoid placing dependencies that are not meant to be imported in your source code under `dependencies` (move them to `devDependencies` instead).
-
-## Deep Imports
-
-Pre-bundled dependencies are bundled into a single, separate module, therefore you should prefer using named exports from the main entry point instead of deep imports to individual modules. For example:
-
-```js
-// Bad, will lead to duplicated module instances.
-// Vite will complain about it.
-import debounce from 'lodash-es/debounce'
-
-// Good
-import { debounce } from 'lodash-es'
-```
-
-Some dependencies may be designed to be used via deep imports, e.g. `firebase` exposes sub modules via `firebase/*` deep imports. For such dependencies, you can instruct Vite to explicitly include these deep import paths via the [`optimizeDeps.include` option](/config/#optimizedeps-include). If you never use the main entry, it is also a good idea to exclude it from pre-bundling.
-
-## Dependency Compatibility
-
-While Vite tries its best to accomodate non-ESM dependencies, there are going to be some dependencies that won't work out of the box. The most common types are those that import Node.js built-in modules (e.g. `os` or `path`) and expect the bundler to automatically shim them. These packages are typically written assuming all users will be consuming it with `webpack`, but such usage does not make sense when targeting browser environments.
-
-When using Vite, it is strongly recommended to always prefer dependencies that provide ESM formats. This will make your build faster, and results in smaller production bundles due to more efficient tree-shaking.
+After the server has already started, if a new dependency import is encountered that isn't already in the cache, Vite will re-run the dep bundling process and reload the page.
 
 ## Monorepos and Linked Dependencies
 
@@ -64,16 +40,30 @@ In a monorepo setup, a dependency may be a linked package from the same repo. Vi
 
 ## Customizing the Behavior
 
-The default pre-bundling heuristics may not always be desirable. In cases where you want to explicitly include/exclude dependencies from the list, use the [`optimizeDeps` config options](/config/#dep-optimization-options).
+The default dependency discovery heuristics may not always be desirable. In cases where you want to explicitly include/exclude dependencies from the list, use the [`optimizeDeps` config options](/config/#dep-optimization-options).
+
+A typical use case for `optimizeDeps.include` or `optimizeDeps.exclude` is when you have an import that is not directly discoverable in the source code. For example, maybe the import is created as a result of a plugin transform. This means Vite won't be able to discover the import on the initial scan - it can only discover it after the file is requested by the browser and transformed. This will cause the server to immediately re-bundle after server start.
+
+Both `include` and `exclude` can be used to deal with this. If the dependency is large (with many internal modules) or is CommonJS, then you should include it; If the dependency is small and is already valid ESM, you can exclude it and let the browser load it directly.
 
 ## Caching
+
+### File System Cache
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
 - The `dependencies` list in your `package.json`
 - Package manager lockfiles, e.g. `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
-- Your `vite.config.js`, if present.
+- Relevant fields in your `vite.config.js`, if present.
 
 The pre-bundling step will only need to be re-run when one of the above has changed.
 
 If for some reason you want to force Vite to re-bundle deps, you can either start the dev server with the `--force` command line option, or manually delete the `node_modules/.vite` cache directory.
+
+### Browser Cache
+
+Resolved dependency requests are strongly cached with HTTP headers `max-age=31536000,immutable` to improve page reload performance during dev. Once cached, these requests will never hit the dev server again. They are auto invalidated by the appended version query if a different version is installed (as reflected in your package manager lockfile). If you want to debug your dependencies by making local edits, you can:
+
+1. Temporarily disable cache via the Network tab of your browser devtools;
+2. Restart Vite dev server with the `--force` flag to re-bundle the deps;
+3. Reload the page.

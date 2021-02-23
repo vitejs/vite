@@ -1,6 +1,5 @@
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
-import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 import {
   cleanUrl,
   createDebugger,
@@ -9,19 +8,20 @@ import {
   isJSRequest,
   prettifyUrl,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
+  unwrapId
 } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import chalk from 'chalk'
 import {
+  CLIENT_PUBLIC_PATH,
   DEP_CACHE_DIR,
   DEP_VERSION_RE,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
+  NULL_BYTE_PLACEHOLDER
 } from '../../constants'
+import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -37,36 +37,53 @@ export function transformMiddleware(
   } = server
 
   return async (req, res, next) => {
-    if (
-      req.method !== 'GET' ||
-      req.headers.accept?.includes('text/html') ||
-      knownIgnoreList.has(req.url!)
-    ) {
+    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }
 
-    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
-      NULL_BYTE_PLACEHOLDER,
-      '\0'
-    )
+    if (
+      server._pendingReload &&
+      // always allow vite client requests so that it can trigger page reload
+      !req.url?.startsWith(CLIENT_PUBLIC_PATH) &&
+      !req.url?.includes('vite/dist/client')
+    ) {
+      // missing dep pending reload, hold request until reload happens
+      server._pendingReload.then(() => res.end())
+      return
+    }
+
+    let url
+    try {
+      url = decodeURI(removeTimestampQuery(req.url!)).replace(
+        NULL_BYTE_PLACEHOLDER,
+        '\0'
+      )
+    } catch (err) {
+      // if it starts with %PUBLIC%, someone's migrating from something
+      // like create-react-app
+      let errorMessage
+      if (req.url?.startsWith('/%PUBLIC')) {
+        errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
+      } else {
+        errorMessage = `Vite encountered a suspiciously malformed request ${req.url}`
+      }
+      next(new Error(errorMessage))
+      return
+    }
+
     const withoutQuery = cleanUrl(url)
 
     try {
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        // #1323 - browser may remove // when fetching source maps
-        if (url.startsWith(FS_PREFIX)) {
-          url = FS_PREFIX + url.split(FS_PREFIX)[1].replace(/^\/?/, '/')
-        }
         const originalUrl = url.replace(/\.map($|\?)/, '$1')
         const map = (await moduleGraph.getModuleByUrl(originalUrl))
           ?.transformResult?.map
         if (map) {
           return send(req, res, JSON.stringify(map), 'json')
         } else {
-          res.statusCode = 404
-          return res.end()
+          return next()
         }
       }
 
@@ -90,12 +107,9 @@ export function transformMiddleware(
       ) {
         // strip ?import
         url = removeImportQuery(url)
-
         // Strip valid id prefix. This is preprended to resolved Ids that are
         // not valid browser import specifiers by the importAnalysis plugin.
-        if (url.startsWith(VALID_ID_PREFIX)) {
-          url = url.slice(VALID_ID_PREFIX.length)
-        }
+        url = unwrapId(url)
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports
@@ -116,7 +130,9 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(url, server)
+        const result = await transformRequest(url, server, {
+          html: req.headers.accept?.includes('text/html')
+        })
         if (result) {
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =

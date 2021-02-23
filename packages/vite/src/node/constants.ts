@@ -1,6 +1,25 @@
 import path from 'path'
 
-export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx']
+export const DEFAULT_MAIN_FIELDS = [
+  'module',
+  'jsnext:main', // moment still uses this...
+  'jsnext'
+]
+
+export const DEFAULT_EXTENSIONS = [
+  '.mjs',
+  '.js',
+  '.ts',
+  '.jsx',
+  '.tsx',
+  '.json'
+]
+
+export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
+
+export const OPTIMIZABLE_ENTRY_RE = /\.(?:m?js|ts)$/
+
+export const SPECIAL_QUERY_RE = /[\?&](?:worker|raw|url)\b/
 
 export const DEP_CACHE_DIR = `.vite`
 
@@ -13,6 +32,7 @@ export const FS_PREFIX = `/@fs/`
  * Prefix for resolved Ids that are not valid browser import specifiers
  */
 export const VALID_ID_PREFIX = `/@id/`
+
 /**
  * Some Rollup plugins use ids that starts with the null byte \0 to avoid
  * collisions, but it is not permitted in import URLs so we have to replace
@@ -21,11 +41,14 @@ export const VALID_ID_PREFIX = `/@id/`
 export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
+export const ENV_PUBLIC_PATH = `/@vite/env`
 // eslint-disable-next-line
 export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
+// eslint-disable-next-line
+export const ENV_ENTRY = require.resolve('vite/dist/client/env.js')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
-const knownAssetTypes = [
+export const KNOWN_ASSET_TYPES = [
   // images
   'png',
   'jpe?g',
@@ -55,7 +78,7 @@ const knownAssetTypes = [
 ]
 
 export const DEFAULT_ASSETS_RE = new RegExp(
-  `\\.(` + knownAssetTypes.join('|') + `)(\\?.*)?$`
+  `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`
 )
 
 export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/

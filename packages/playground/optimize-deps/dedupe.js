@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom'
 // #1302: The linked package has a different version of React in its deps
 // and is itself optimized. Without `dedupe`, the linked package is optimized
 // with a separate copy of React included, and results in runtime errors.
-import { useCount } from 'optimize-deps-linked-include'
+import { useCount } from 'dep-linked-include/index.mjs'
 
 function App() {
   const [count, setCount] = useCount()

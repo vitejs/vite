@@ -6,14 +6,20 @@ import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { PluginContext } from 'rollup'
+import { PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
+import { createHash } from 'crypto'
 
-export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)(?:__(.*)__)?/g
+export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
 // urls in JS must be quoted as strings, so when replacing them we need
 // a different regex
-const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]+)(?:__(.*)__)?"/g
+const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?"/g
+
+const rawRE = /(\?|&)raw(?:&|$)/
+const urlRE = /(\?|&)url(?:&|$)/
+
+export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
@@ -28,38 +34,42 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
       // imports to absolute urls pointing to files in /public
       // will fail to resolve in the main resolver. handle them here.
-      const publicFile = checkPublicFile(id, config.root)
+      const publicFile = checkPublicFile(id, config)
       if (publicFile) {
         return id
       }
     },
 
     async load(id) {
-      if (!config.assetsInclude(cleanUrl(id))) {
-        return
-      }
-
       // raw requests, read from disk
-      if (/(\?|&)raw\b/.test(id)) {
-        const file = checkPublicFile(id, config.root) || cleanUrl(id)
+      if (rawRE.test(id)) {
+        const file = checkPublicFile(id, config) || cleanUrl(id)
         // raw query, read file and return as string
         return `export default ${JSON.stringify(
           await fsp.readFile(file, 'utf-8')
         )}`
       }
 
+      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+        return
+      }
+
+      id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
       const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },
 
-    renderChunk(code) {
+    renderChunk(code, chunk) {
       let match
       let s
       while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
-        const [full, fileHandle, postfix = ''] = match
-        const outputFilepath =
-          config.build.base + this.getFileName(fileHandle) + postfix
+        const [full, hash, postfix = ''] = match
+        // some internal plugins may still need to emit chunks (e.g. worker) so
+        // fallback to this.getFileName for that.
+        const file = getAssetFilename(hash, config) || this.getFileName(hash)
+        registerAssetToChunk(chunk, file)
+        const outputFilepath = config.base + file + postfix
         s.overwrite(
           match.index,
           match.index + full.length,
@@ -74,17 +84,43 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       } else {
         return null
       }
+    },
+
+    generateBundle(_, bundle) {
+      // do not emit assets for SSR build
+      if (config.command === 'build' && config.build.ssr) {
+        for (const file in bundle) {
+          if (
+            bundle[file].type === 'asset' &&
+            !file.includes('ssr-manifest.json')
+          ) {
+            delete bundle[file]
+          }
+        }
+      }
     }
   }
 }
 
-export function checkPublicFile(url: string, root: string): string | undefined {
+export function registerAssetToChunk(chunk: RenderedChunk, file: string) {
+  let emitted = chunkToEmittedAssetsMap.get(chunk)
+  if (!emitted) {
+    emitted = new Set()
+    chunkToEmittedAssetsMap.set(chunk, emitted)
+  }
+  emitted.add(cleanUrl(file))
+}
+
+export function checkPublicFile(
+  url: string,
+  { publicDir }: ResolvedConfig
+): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
   if (!url.startsWith('/')) {
     return
   }
-  const publicFile = path.posix.join(root, 'public', cleanUrl(url))
+  const publicFile = path.join(publicDir, cleanUrl(url))
   if (fs.existsSync(publicFile)) {
     return publicFile
   } else {
@@ -104,21 +140,32 @@ export function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, { root }: ResolvedConfig) {
-  if (checkPublicFile(id, root)) {
+function fileToDevUrl(id: string, config: ResolvedConfig) {
+  let rtn: string
+  if (checkPublicFile(id, config)) {
     // in public dir, keep the url as-is
-    return id
-  }
-  if (id.startsWith(root)) {
+    rtn = id
+  } else if (id.startsWith(config.root)) {
     // in project root, infer short public path
-    return '/' + path.posix.relative(root, id)
+    rtn = '/' + path.posix.relative(config.root, id)
+  } else {
+    // outside of project root, use absolute fs path
+    // (this is special handled by the serve static middleware
+    rtn = path.posix.join(FS_PREFIX + id)
   }
-  // outside of project root, use absolute fs path
-  // (this is special handled by the serve static middleware
-  return FS_PREFIX + id
+  return config.base + rtn.replace(/^\//, '')
 }
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+
+const assetHashToFilenameMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, string>
+>()
+
+export function getAssetFilename(hash: string, config: ResolvedConfig) {
+  return assetHashToFilenameMap.get(config)?.get(hash)
+}
 
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
@@ -130,8 +177,8 @@ async function fileToBuiltUrl(
   pluginContext: PluginContext,
   skipPublicCheck = false
 ): Promise<string> {
-  if (!skipPublicCheck && checkPublicFile(id, config.root)) {
-    return config.build.base + id.slice(1)
+  if (!skipPublicCheck && checkPublicFile(id, config)) {
+    return config.base + id.slice(1)
   }
 
   let cache = assetCache.get(config)
@@ -147,7 +194,6 @@ async function fileToBuiltUrl(
   const file = cleanUrl(id)
   const { search, hash } = parseUrl(id)
   const postfix = (search || '') + (hash || '')
-  // TODO preserve fragment hash or queries
   const content = await fsp.readFile(file)
 
   let url
@@ -162,18 +208,41 @@ async function fileToBuiltUrl(
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
     // that uses runtime url sniffing and it can be verbose when targeting
-    // non-module format. For consistency, generate a marker here and replace
-    // with resolved url strings in renderChunk.
-    const fileId = pluginContext.emitFile({
-      name: path.basename(file),
-      type: 'asset',
-      source: content
-    })
-    url = `__VITE_ASSET__${fileId}${postfix ? `__${postfix}__` : ``}`
+    // non-module format. It also fails to cascade the asset content change
+    // into the chunk's hash, so we have to do our own content hashing here.
+    // https://bundlers.tooling.report/hashing/asset-cascade/
+    // https://github.com/rollup/rollup/issues/3415
+    let map = assetHashToFilenameMap.get(config)
+    if (!map) {
+      map = new Map()
+      assetHashToFilenameMap.set(config, map)
+    }
+
+    const contentHash = getAssetHash(content)
+    if (!map.has(contentHash)) {
+      const basename = path.basename(file)
+      const ext = path.extname(basename)
+      const fileName = path.posix.join(
+        config.build.assetsDir,
+        `${basename.slice(0, -ext.length)}.${contentHash}${ext}`
+      )
+      map.set(contentHash, fileName)
+      pluginContext.emitFile({
+        fileName,
+        type: 'asset',
+        source: content
+      })
+    }
+
+    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
   }
 
   cache.set(id, url)
   return url
+}
+
+function getAssetHash(content: Buffer) {
+  return createHash('sha256').update(content).digest('hex').slice(0, 8)
 }
 
 export async function urlToBuiltUrl(
@@ -182,8 +251,8 @@ export async function urlToBuiltUrl(
   config: ResolvedConfig,
   pluginContext: PluginContext
 ): Promise<string> {
-  if (checkPublicFile(url, config.root)) {
-    return config.build.base + url.slice(1)
+  if (checkPublicFile(url, config)) {
+    return config.base + url.slice(1)
   }
   const file = url.startsWith('/')
     ? path.join(config.root, url)

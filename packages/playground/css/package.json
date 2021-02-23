@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "debug": "node --inspect-brk ../../vite/bin/vite"
+    "debug": "node --inspect-brk ../../vite/bin/vite",
+    "serve": "vite preview"
   },
   "devDependencies": {
-    "postcss-nested": "^5.0.3"
+    "less": "^4.1.0",
+    "postcss-nested": "^5.0.3",
+    "sass": "^1.32.5",
+    "css-dep": "link:./css-dep"
   }
 }

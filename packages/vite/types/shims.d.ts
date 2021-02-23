@@ -22,6 +22,16 @@ declare module 'acorn-class-fields' {
   export = plugin
 }
 
+declare module 'acorn-static-class-features' {
+  const plugin: any
+  export default plugin
+}
+
+declare module 'acorn-numeric-separator' {
+  const plugin: any
+  export default plugin
+}
+
 declare module 'connect-history-api-fallback' {
   const plugin: any
   export = plugin
@@ -50,7 +60,13 @@ declare module 'postcss-load-config' {
 
 declare module 'postcss-import' {
   import { Plugin } from 'postcss'
-  const plugin: () => Plugin
+  const plugin: (options: {
+    resolve: (
+      id: string,
+      basedir: string,
+      importOptions: any
+    ) => string | string[] | Promise<string | string[]>
+  }) => Plugin
   export = plugin
 }
 
@@ -88,7 +104,16 @@ declare module 'rollup-plugin-web-worker-loader' {
   export default p
 }
 
-declare module 'isbuiltin' {
-  function isBuiltin(moduleName: string): boolean
-  export default isBuiltin
+declare module 'minimatch' {
+  function match(path: string, pattern: string): boolean
+  export default match
 }
+
+declare module 'compression' {
+  function compression(): any
+  export default compression
+}
+
+// LESS' types somewhat references this which doesn't make sense in Node,
+// so we have to shim it
+declare interface HTMLLinkElement {}

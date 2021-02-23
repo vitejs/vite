@@ -1,9 +1,19 @@
 #!/usr/bin/env node
+
+if (!__dirname.includes('node_modules')) {
+  try {
+    // only available as dev dependency
+    require('source-map-support').install()
+  } catch (e) {}
+}
+
 global.__vite_start_time = Date.now()
 
 // check debug mode first before requiring the CLI.
-const debugIndex = process.argv.indexOf('--debug')
-const filterIndex = process.argv.indexOf('--filter')
+const debugIndex = process.argv.findIndex((arg) => /^(?:-d|--debug)$/.test(arg))
+const filterIndex = process.argv.findIndex((arg) =>
+  /^(?:-f|--filter)$/.test(arg)
+)
 const profileIndex = process.argv.indexOf('--profile')
 
 if (debugIndex > 0) {
@@ -25,11 +35,6 @@ if (debugIndex > 0) {
       process.env.VITE_DEBUG_FILTER = filter
     }
   }
-
-  try {
-    // only available as dev dependency
-    require('source-map-support').install()
-  } catch (e) {}
 }
 
 function start() {

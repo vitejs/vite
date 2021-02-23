@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discord Chat
+    url: https://chat.vitejs.dev
+    about: Ask questions and discuss with other Vite users in real time.
+  - name: Questions & Discussions
+    url: https://github.com/vitejs/vite/discussions
+    about: Use GitHub discussions for message-board style questions and discussions.

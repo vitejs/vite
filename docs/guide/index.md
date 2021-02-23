@@ -1,6 +1,22 @@
 # Getting Started
 
-If you are interested to learn more about Vite before trying it, check out the [Introduction](./introduction) section.
+## Overview
+
+Vite (French word for "fast", pronounced `/vit/`) is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
+
+- A dev server that provides [rich feature enhancements](./features) over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), for example extremely fast [Hot Module Replacement (HMR)](./features#hot-module-replacement).
+
+- A build command that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
+
+Vite is opinionated and comes with sensible defaults out of the box, but is also highly extensible via its [Plugin API](./api-plugin) and [JavaScript API](./api-javascript) with full typing support.
+
+You can learn more about the rationale behind the project in the [Why Vite](./why) section.
+
+## Browser Support
+
+- For development: [native ESM dynamic import support](https://caniuse.com/es6-module-dynamic-import) is required.
+
+- For production: the default build targets browsers that support [native ESM via script tags](https://caniuse.com/es6-module). Legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) - see the [Building for Production](./build) section for more details.
 
 ## Scaffolding Your First Vite Project
 
@@ -25,7 +41,14 @@ Then follow the prompts!
 You can also directly specify the project name and the template you want to use via additional command line options. For example, to scaffold a Vite + Vue project, run:
 
 ```bash
+# npm 6.x
 npm init @vitejs/app my-vue-app --template vue
+
+# npm 7+, extra double-dash is needed:
+npm init @vitejs/app my-vue-app -- --template vue
+
+# yarn
+yarn create @vitejs/app my-vue-app --template vue
 ```
 
 Supported template presets include:
@@ -37,8 +60,24 @@ Supported template presets include:
 - `react-ts`
 - `preact`
 - `preact-ts`
+- `lit-element`
+- `lit-element-ts`
 
 See [@vitejs/create-app](https://github.com/vitejs/vite/tree/main/packages/create-app) for more details on each template.
+
+## `index.html` and Project Root
+
+One thing you may have noticed is that in a Vite project, `index.html` is front-and-central instead of being tucked away inside `public`. This is intentional: during development Vite is a server, and `index.html` is the entry point to your application.
+
+Vite treats `index.html` as source code and part of the module graph. It resolves `<script type="module" src="...">` that references your JavaScript source code. Even inline `<script type="module">` and CSS referenced via `<link href>` also enjoy Vite-specific features. In addition, URLs inside `index.html` are automatically rebased so there's no need for special `%PUBLIC_URL%` placeholders.
+
+Similar to static http servers, Vite has the concept of a "root directory" from which your files are served from. You will see it referenced as `<root>` throughout the rest of the docs. Absolute URLs in your source code will be resolved using the project root as base, so you can write code as if you are working with a normal static file server (except way more powerful!). Vite is also capable of handling dependencies that resolve to out-of-root file system locations, which makes it usable even in a monorepo-based setup.
+
+Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.html` entry points.
+
+#### Specifying Alternative Root
+
+Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
 
 ## Command Line Interface
 
@@ -47,25 +86,14 @@ In a project where Vite is installed, you can use the `vite` binary in your npm 
 ```json
 {
   "scripts": {
-    "dev": "vite",
-    "build": "vite build"
+    "dev": "vite", // start dev server
+    "build": "vite build", // build for production
+    "serve": "vite preview" // locally preview production build
   }
 }
 ```
 
 You can specify additional CLI options like `--port` or `--https`. For a full list of CLI options, run `npx vite --help` in your project.
-
-## Project Root
-
-Since Vite is a dev server, it has the concept of a "root directory" from which your files are served from, similar to a static file server (although much more powerful).
-
-Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
-
-Vite will serve **`<root>/index.html`** when you open the server's local address. It is also used as the default build entry point. Unlike some bundlers that treat HTML as an afterthought, Vite treats HTML files as part of the application graph (similar to Parcel). Therefore you should treat `index.html` as part of your source code instead of a static file. Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.html` entry points.
-
-Vite will automatically pick up **`<root>/vite.config.js`** if there is one. You can also explicitly specify a config file to use via the `--config <file>` CLI option.
-
-Unlike a static file server, Vite can actually resolve and serve dependencies located anywhere on your file system, even if they are out of the project root. This allows Vite to work properly inside a sub package of a monorepo.
 
 ## Using Unreleased Commits
 

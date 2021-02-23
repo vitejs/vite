@@ -30,8 +30,7 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import { resolve, relative, sep, posix, join } from 'path'
-import { createHash } from 'crypto'
+import { resolve, join } from 'path'
 import { Plugin } from '../plugin'
 import {
   InputOptions,
@@ -51,17 +50,22 @@ import {
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
+import acornNumericSeparator from 'acorn-numeric-separator'
+import acornStaticClassFeatures from 'acorn-static-class-features'
 import merge from 'merge-source-map'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import {
   createDebugger,
+  ensureWatchedFile,
   generateCodeFrame,
+  isExternalUrl,
   normalizePath,
   numberToPos,
   prettifyUrl,
   timeFrom
 } from '../utils'
+import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
@@ -77,19 +81,19 @@ export interface PluginContainer {
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
   watchChange(id: string, event?: ChangeEvent): void
-  resolveImportMeta(id: string, property: string): void
   resolveId(
     id: string,
     importer?: string,
-    skip?: Plugin[]
+    skip?: Set<Plugin>,
+    ssr?: boolean
   ): Promise<PartialResolvedId | null>
   transform(
     code: string,
     id: string,
-    inMap?: SourceDescription['map']
+    inMap?: SourceDescription['map'],
+    ssr?: boolean
   ): Promise<SourceDescription | null>
-  load(id: string): Promise<LoadResult | null>
-  resolveFileUrl(referenceId: string): string | null
+  load(id: string, ssr?: boolean): Promise<LoadResult | null>
   close(): Promise<void>
 }
 
@@ -106,6 +110,12 @@ type PluginContext = Omit<
   | 'moduleIds'
   | 'resolveId'
 >
+
+export let parser = acorn.Parser.extend(
+  acornClassFields,
+  acornStaticClassFeatures,
+  acornNumericSeparator
+)
 
 export async function createPluginContainer(
   { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
@@ -124,12 +134,7 @@ export async function createPluginContainer(
 
   // ---------------------------------------------------------------------------
 
-  // counter for generating unique emitted asset IDs
-  let ids = 0
-  let parser = acorn.Parser
-
   const MODULES = new Map()
-  const files = new Map<string, EmittedFile>()
   const watchFiles = new Set<string>()
 
   // get rollup version
@@ -142,14 +147,27 @@ export async function createPluginContainer(
     }
   }
 
+  function warnIncompatibleMethod(method: string, plugin: string) {
+    logger.warn(
+      chalk.cyan(`[plugin:${plugin}] `) +
+        chalk.yellow(
+          `context method ${chalk.bold(
+            `${method}()`
+          )} is not supported in serve mode. This plugin is likely not vite-compatible.`
+        )
+    )
+  }
+
   // we should create a new context for each async hook pipeline so that the
   // active plugin in that pipeline can be tracked in a concurrency-safe manner.
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
     meta = minimalContext.meta
+    ssr = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
     _activeCode: string | null = null
+    _resolveSkips?: Set<Plugin>
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
@@ -160,7 +178,6 @@ export async function createPluginContainer(
         sourceType: 'module',
         ecmaVersion: 2020,
         locations: true,
-        onComment: [],
         ...opts
       })
     }
@@ -170,9 +187,12 @@ export async function createPluginContainer(
       importer?: string,
       options?: { skipSelf?: boolean }
     ) {
-      const skip = []
-      if (options?.skipSelf && this._activePlugin) skip.push(this._activePlugin)
-      let out = await container.resolveId(id, importer, skip)
+      let skips: Set<Plugin> | undefined
+      if (options?.skipSelf && this._activePlugin) {
+        skips = new Set(this._resolveSkips)
+        skips.add(this._activePlugin)
+      }
+      let out = await container.resolveId(id, importer, skips, this.ssr)
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -195,10 +215,7 @@ export async function createPluginContainer(
 
     addWatchFile(id: string) {
       watchFiles.add(id)
-      // only need to add it if file is out of root.
-      if (watcher && !id.startsWith(root)) {
-        watcher.add(id)
-      }
+      if (watcher) ensureWatchedFile(watcher, id, root)
     }
 
     getWatchFiles() {
@@ -206,41 +223,17 @@ export async function createPluginContainer(
     }
 
     emitFile(assetOrFile: EmittedFile) {
-      const { type, name, fileName } = assetOrFile
-      const source = assetOrFile.type === 'asset' && assetOrFile.source
-      const id = String(++ids)
-      const filename =
-        fileName || generateFilename(type, name!, source, fileName)
-      files.set(id, { type, id, name, fileName: filename })
-      if (source) {
-        if (type === 'chunk') {
-          throw Error(`emitFile({ type:"chunk" }) cannot include a source`)
-        }
-        // TODO
-        // if (opts.writeFile) opts.writeFile(filename, source)
-        // else fs.writeFile(filename, source)
-      }
-      return id
+      warnIncompatibleMethod(`emitFile`, this._activePlugin!.name)
+      return ''
     }
 
-    setAssetSource(assetId: string, source: string | Uint8Array) {
-      const asset = files.get(String(assetId))
-      if (!asset) {
-        throw new Error(
-          `setAssetSource() called on non-existent asset with id ${assetId}`
-        )
-      }
-      if (asset.type === 'chunk') {
-        throw Error(`setAssetSource() called on a chunk`)
-      }
-      asset.source = source
-      // TODO
-      // if (opts.writeFile) opts.writeFile(asset.fileName!, source)
-      // else fs.writeFile(asset.fileName!, source)
+    setAssetSource() {
+      warnIncompatibleMethod(`setAssetSource`, this._activePlugin!.name)
     }
 
-    getFileName(referenceId: string) {
-      return container.resolveFileUrl(referenceId)!
+    getFileName() {
+      warnIncompatibleMethod(`getFileName`, this._activePlugin!.name)
+      return ''
     }
 
     warn(
@@ -248,9 +241,11 @@ export async function createPluginContainer(
       position?: number | { column: number; line: number }
     ) {
       const err = formatError(e, position, this)
-      const msg = buildErrorMessage(err, [
-        chalk.yellow(`warning: ${err.message}`)
-      ])
+      const msg = buildErrorMessage(
+        err,
+        [chalk.yellow(`warning: ${err.message}`)],
+        false
+      )
       logger.warn(msg, {
         clear: true,
         timestamp: true
@@ -290,14 +285,22 @@ export async function createPluginContainer(
           ...numberToPos(ctx._activeCode, pos)
         }
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
+      } else if (err.loc) {
+        // css preprocessors may report errors in an included file
+        if (!err.frame) {
+          let code = ctx._activeCode
+          if (err.loc.file) {
+            err.id = normalizePath(err.loc.file)
+            code = fs.readFileSync(err.loc.file, 'utf-8')
+          }
+          err.frame = generateCodeFrame(code, err.loc)
+        }
       } else if ((err as any).line && (err as any).column) {
         err.loc = {
           file: err.id,
           line: (err as any).line,
           column: (err as any).column
         }
-        err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
-      } else if (err.loc) {
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
       }
     }
@@ -324,6 +327,12 @@ export async function createPluginContainer(
       let combinedMap = this.combinedMap
       for (let m of this.sourcemapChain) {
         if (typeof m === 'string') m = JSON.parse(m)
+        if (!('version' in (m as SourceMap))) {
+          // empty, nullified source map
+          combinedMap = this.combinedMap = null
+          this.sourcemapChain.length = 0
+          break
+        }
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
@@ -357,7 +366,7 @@ export async function createPluginContainer(
     }
   }
 
-  let nestedResolveCall = 0
+  let closed = false
 
   const container: PluginContainer = {
     options: await (async () => {
@@ -369,7 +378,11 @@ export async function createPluginContainer(
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
-          ...[acornClassFields].concat(options.acornInjectPlugins)
+          ...[
+            acornClassFields,
+            acornStaticClassFeatures,
+            acornNumericSeparator
+          ].concat(options.acornInjectPlugins)
         )
       }
       return {
@@ -392,35 +405,28 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(rawId, importer = join(root, 'index.html'), _skip) {
+    async resolveId(rawId, importer = join(root, 'index.html'), skips, ssr) {
       const ctx = new Context()
-      const key =
-        `${rawId}\n${importer}` +
-        (_skip ? _skip.map((p) => p.name).join('\n') : ``)
-
-      nestedResolveCall++
-      const resolveStart = Date.now()
+      ctx.ssr = !!ssr
+      ctx._resolveSkips = skips
+      const resolveStart = isDebug ? Date.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of plugins) {
         if (!plugin.resolveId) continue
-
-        if (_skip) {
-          if (_skip.includes(plugin)) continue
-          if (resolveSkips.has(plugin, key)) continue
-          resolveSkips.add(plugin, key)
-        }
+        if (skips?.has(plugin)) continue
 
         ctx._activePlugin = plugin
 
-        let result
-        const pluginResolveStart = Date.now()
-        try {
-          result = await plugin.resolveId.call(ctx as any, rawId, importer, {})
-        } finally {
-          if (_skip) resolveSkips.delete(plugin, key)
-        }
+        const pluginResolveStart = isDebug ? Date.now() : 0
+        const result = await plugin.resolveId.call(
+          ctx as any,
+          rawId,
+          importer,
+          {},
+          ssr
+        )
         if (!result) continue
 
         if (typeof result === 'string') {
@@ -441,13 +447,7 @@ export async function createPluginContainer(
         break
       }
 
-      nestedResolveCall--
-      if (
-        isDebug &&
-        !nestedResolveCall &&
-        rawId !== id &&
-        !rawId.startsWith('/@fs/')
-      ) {
+      if (isDebug && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {
@@ -459,19 +459,20 @@ export async function createPluginContainer(
       }
 
       if (id) {
-        partial.id = normalizePath(id)
+        partial.id = isExternalUrl(id) ? id : normalizePath(id)
         return partial as PartialResolvedId
       } else {
         return null
       }
     },
 
-    async load(id) {
+    async load(id, ssr) {
       const ctx = new Context()
+      ctx.ssr = !!ssr
       for (const plugin of plugins) {
         if (!plugin.load) continue
         ctx._activePlugin = plugin
-        const result = await plugin.load.call(ctx as any, id)
+        const result = await plugin.load.call(ctx as any, id, ssr)
         if (result != null) {
           return result
         }
@@ -479,17 +480,18 @@ export async function createPluginContainer(
       return null
     },
 
-    async transform(code, id, inMap) {
+    async transform(code, id, inMap, ssr) {
       const ctx = new TransformContext(id, code, inMap as SourceMap)
+      ctx.ssr = !!ssr
       for (const plugin of plugins) {
         if (!plugin.transform) continue
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
-        const start = Date.now()
+        const start = isDebug ? Date.now() : 0
         let result
         try {
-          result = await plugin.transform.call(ctx as any, code, id)
+          result = await plugin.transform.call(ctx as any, code, id, ssr)
         } catch (e) {
           ctx.error(e)
         }
@@ -524,54 +526,8 @@ export async function createPluginContainer(
       }
     },
 
-    resolveImportMeta(id, property) {
-      const ctx = new Context()
-      for (const plugin of plugins) {
-        if (!plugin.resolveImportMeta) continue
-        ctx._activePlugin = plugin
-        const result = plugin.resolveImportMeta.call(ctx as any, property, {
-          chunkId: '',
-          moduleId: id,
-          format: 'es'
-        })
-        if (result) return result
-      }
-
-      // handle file URLs by default
-      const matches = property.match(/^ROLLUP_FILE_URL_(\d+)$/)
-      if (matches) {
-        const referenceId = matches[1]
-        const result = container.resolveFileUrl(referenceId)
-        if (result) return result
-      }
-    },
-
-    resolveFileUrl(referenceId) {
-      referenceId = String(referenceId)
-      const file = files.get(referenceId)
-      if (file == null) return null
-      const out = resolve(root || '.', outputOptions.dir || '.')
-      const fileName = relative(out, file.fileName!)
-      const assetInfo = {
-        referenceId,
-        fileName,
-        // @TODO: this should be relative to the module that imported the asset
-        relativePath: fileName
-      }
-      const ctx = new Context()
-      for (const plugin of plugins) {
-        if (!plugin.resolveFileUrl) continue
-        ctx._activePlugin = plugin
-        // @ts-ignore
-        const result = plugin.resolveFileUrl.call(ctx, assetInfo)
-        if (result != null) {
-          return result
-        }
-      }
-      return JSON.stringify('/' + fileName.split(sep).join(posix.sep))
-    },
-
     async close() {
+      if (closed) return
       const ctx = new Context()
       await Promise.all(
         plugins.map((p) => p.buildEnd && p.buildEnd.call(ctx as any))
@@ -579,70 +535,8 @@ export async function createPluginContainer(
       await Promise.all(
         plugins.map((p) => p.closeBundle && p.closeBundle.call(ctx as any))
       )
+      closed = true
     }
-  }
-
-  const toPosixPath = (path: string) => path.split(sep).join(posix.sep)
-
-  function popIndex(array: any[], index: number) {
-    const tail = array.pop()
-    if (index !== array.length) array[index] = tail
-  }
-
-  // Tracks recursive resolveId calls
-  const resolveSkips = {
-    skip: new Map<Plugin, string[]>(),
-
-    has(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      return skips ? skips.includes(key) : false
-    },
-
-    add(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      if (skips) skips.push(key)
-      else this.skip.set(plugin, [key])
-    },
-
-    delete(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      if (!skips) return
-      const i = skips.indexOf(key)
-      if (i !== -1) popIndex(skips, i)
-    }
-  }
-
-  const outputOptions = Array.isArray(rollupOptions.output)
-    ? rollupOptions.output[0]
-    : rollupOptions.output || {}
-
-  function generateFilename(
-    type: 'entry' | 'asset' | 'chunk',
-    name: string,
-    source: string | false | undefined | Uint8Array,
-    fileName: string | undefined
-  ) {
-    const posixName = toPosixPath(name)
-    if (!fileName) {
-      fileName = ((type === 'entry' && outputOptions.file) ||
-        // @ts-ignore
-        outputOptions[`${type}FileNames`] ||
-        '[name][extname]') as string
-      fileName = fileName.replace('[hash]', () =>
-        createHash('md5').update(String(source)).digest('hex').substring(0, 5)
-      )
-      fileName = fileName.replace('[extname]', posix.extname(posixName))
-      fileName = fileName.replace(
-        '[ext]',
-        posix.extname(posixName).substring(1)
-      )
-      fileName = fileName.replace(
-        '[name]',
-        posix.basename(posixName).replace(/\.[a-z0-9]+$/g, '')
-      )
-    }
-    const result = resolve(root || '.', outputOptions.dir || '.', fileName)
-    return result
   }
 
   return container
