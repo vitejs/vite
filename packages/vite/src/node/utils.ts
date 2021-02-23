@@ -352,3 +352,38 @@ export function ensureWatchedFile(
     watcher.add(path.resolve(file))
   }
 }
+
+interface ImageCandidate {
+  url: string
+  descriptor: string
+}
+const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
+export async function processSrcSet(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => Promise<string>
+) {
+  const imageCandidates: ImageCandidate[] = srcs.split(',').map((s) => {
+    const [url, descriptor] = s
+      .replace(escapedSpaceCharacters, ' ')
+      .trim()
+      .split(' ', 2)
+    return { url, descriptor }
+  })
+
+  const ret = await Promise.all(
+    imageCandidates.map(async ({ url, descriptor }) => {
+      return {
+        url: await replacer({ url, descriptor }),
+        descriptor
+      }
+    })
+  )
+
+  const url = ret.reduce((prev, { url, descriptor }, index) => {
+    descriptor = descriptor || ''
+    return (prev +=
+      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
+  }, '')
+
+  return url
+}

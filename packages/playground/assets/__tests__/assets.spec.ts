@@ -117,6 +117,20 @@ describe('css url() references', () => {
   }
 })
 
+describe('image', () => {
+  test('srcset', async () => {
+    const img = await page.$('.img-src-set')
+    const srcset = await img.getAttribute('srcset')
+    srcset.split(', ').forEach((s) => {
+      expect(s).toMatch(
+        isBuild
+          ? /\/foo\/assets\/asset\.\w{8}\.png \d{1}x/
+          : /\.\/nested\/asset\.png \d{1}x/
+      )
+    })
+  })
+})
+
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
   test('img url', async () => {
