@@ -81,6 +81,26 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-relative')).toMatch(assetMatch)
   })
 
+  test('image-set relative', async () => {
+    let imageSet = await getBg('.css-image-set-relative')
+    imageSet = imageSet.replace(/^-webkit-image-set\(/, '')
+    imageSet = imageSet.slice(0, -1)
+
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  test('image-set without the url() call', async () => {
+    let imageSet = await getBg('.css-image-set-without-url-call')
+    imageSet = imageSet.replace(/^-webkit-image-set\(/, '')
+    imageSet = imageSet.slice(0, -1)
+
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
   })

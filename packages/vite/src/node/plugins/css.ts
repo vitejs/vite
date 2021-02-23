@@ -742,7 +742,7 @@ function rewriteCssUrls(
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
     let [matched, rawUrl] = match
-    return `url(${await doUrlReplace(rawUrl, matched, replacer)})`
+    return await doUrlReplace(rawUrl, matched, replacer)
   })
 }
 
@@ -773,7 +773,7 @@ async function doUrlReplace(
     return matched
   }
 
-  return `${wrap}${await replacer(rawUrl)}${wrap}`
+  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
 let CleanCSS: any
