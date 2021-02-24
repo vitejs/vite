@@ -1,3 +1,20 @@
+## [2.0.3](https://github.com/vitejs/vite/compare/v2.0.2...v2.0.3) (2021-02-24)
+
+
+### Bug Fixes
+
+* **resolve:** compat for babel 7.13 helper resolution ([39820b9](https://github.com/vitejs/vite/commit/39820b96cec2c672e849e160b92b42c979b85285))
+* **ssr:** fix ssr external check for mjs entries ([5095e04](https://github.com/vitejs/vite/commit/5095e041deaced2db8fc3c3af504367bc57bb93f)), closes [#2161](https://github.com/vitejs/vite/issues/2161)
+* do not prepend base to double slash urls during dev ([#2143](https://github.com/vitejs/vite/issues/2143)) ([7a1b5c6](https://github.com/vitejs/vite/commit/7a1b5c670e2088a65f9866ecfe1b98f041980683))
+* handle escape sequences in import specifiers ([#2162](https://github.com/vitejs/vite/issues/2162)) ([bbda31e](https://github.com/vitejs/vite/commit/bbda31ef695d3f9b89160435f73fcb948c3b07f1)), closes [#2083](https://github.com/vitejs/vite/issues/2083)
+* should transform the img tag's srcset arrtibute and css' image-set property ([#2188](https://github.com/vitejs/vite/issues/2188)) ([0f17a74](https://github.com/vitejs/vite/commit/0f17a74c64a6664c68f23c92d572c22d1a4de059)), closes [#2177](https://github.com/vitejs/vite/issues/2177)
+* treat the watcher path as literal name ([#2211](https://github.com/vitejs/vite/issues/2211)) ([58bed16](https://github.com/vitejs/vite/commit/58bed165e996cf8131ba3439ef6d8bf8d33598af)), closes [#2179](https://github.com/vitejs/vite/issues/2179)
+* use proper esbuild loader for .cjs and .mjs files ([#2215](https://github.com/vitejs/vite/issues/2215)) ([a0d922e](https://github.com/vitejs/vite/commit/a0d922e7d9790f998c246f8122bc339717b6088f))
+* **optimizer:** let esbuild resolve transitive deps ([0138ef3](https://github.com/vitejs/vite/commit/0138ef3eeec4bda73204ae68d5d068175335f38c)), closes [#2199](https://github.com/vitejs/vite/issues/2199)
+* **scan:** avoid replacing await in import specifiers ([94e5b9a](https://github.com/vitejs/vite/commit/94e5b9a06f764d576eeeb7f35cae6bdc03b878be)), closes [#2210](https://github.com/vitejs/vite/issues/2210)
+
+
+
 ## [2.0.2](https://github.com/vitejs/vite/compare/v2.0.1...v2.0.2) (2021-02-22)
 
 
