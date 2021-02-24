@@ -85,7 +85,8 @@ function vueJsxPlugin(options = {}) {
           ast: true,
           plugins,
           sourceMaps: needSourceMap,
-          sourceFileName: id
+          sourceFileName: id,
+          configFile: false
         })
 
         if (!ssr && !needHmr) {
