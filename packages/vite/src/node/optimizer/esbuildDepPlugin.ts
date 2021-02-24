@@ -2,12 +2,7 @@ import path from 'path'
 import { Loader, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import { ResolvedConfig } from '..'
-import {
-  isRunningWithYarnPnp,
-  flattenId,
-  normalizePath,
-  isBuiltin
-} from '../utils'
+import { isRunningWithYarnPnp, flattenId, normalizePath } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import { ExportsData } from '.'
 
@@ -102,14 +97,27 @@ export function esbuildDepPlugin(
             return entry
           }
 
-          // externalize node built-ins
-          if (isBuiltin(id)) {
-            const resolved = await resolve(id, importer)
-            if (resolved && resolved.startsWith(browserExternalId)) {
+          // #2199 @babel/runtime 7.13 now has mjs fallback for non-esm helpers
+          // it can break if we use Vite's resolver here since we don't know if
+          // the user is importing or requiring it. Fallback to esbuild resolver
+          // here.
+          // Hopefully esbuild will expose that information in the future
+          // https://github.com/evanw/esbuild/issues/879
+          if (id.startsWith('@babel/runtime')) {
+            return
+          }
+
+          // use vite's own resolver
+          const resolved = await resolve(id, importer)
+          if (resolved) {
+            if (resolved.startsWith(browserExternalId)) {
               return {
                 path: id,
                 namespace: 'browser-external'
               }
+            }
+            return {
+              path: path.resolve(resolved)
             }
           }
         }

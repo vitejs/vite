@@ -59,10 +59,15 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryIndex?: boolean
   tryPrefix?: string
   preferRelative?: boolean
+  isRequire?: boolean
 }
 
-export function resolvePlugin(options: InternalResolveOptions): Plugin {
-  const { root, isProduction, asSrc, preferRelative = false } = options
+export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
+  const { root, isProduction, asSrc, preferRelative = false } = baseOptions
+  const requireOptions: InternalResolveOptions = {
+    ...baseOptions,
+    isRequire: true
+  }
   let server: ViteDevServer | undefined
 
   return {
@@ -72,7 +77,7 @@ export function resolvePlugin(options: InternalResolveOptions): Plugin {
       server = _server
     },
 
-    resolveId(id, importer, _, ssr) {
+    resolveId(id, importer, resolveOpts, ssr) {
       if (id.startsWith(browserExternalId)) {
         return id
       }
@@ -81,6 +86,15 @@ export function resolvePlugin(options: InternalResolveOptions): Plugin {
       if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
         return
       }
+
+      // this is passed by @rollup/plugin-commonjs
+      const isRequire =
+        resolveOpts &&
+        resolveOpts.custom &&
+        resolveOpts.custom['node-resolve'] &&
+        resolveOpts.custom['node-resolve'].isRequire
+
+      const options = isRequire ? requireOptions : baseOptions
 
       let res
 
@@ -540,15 +554,16 @@ function resolveExports(
   key: string,
   options: InternalResolveOptions
 ) {
-  const conditions = [
-    'module',
-    options.isProduction ? 'production' : 'development'
-  ]
+  const conditions = [options.isProduction ? 'production' : 'development']
+  if (!options.isRequire) {
+    conditions.push('module')
+  }
   if (options.conditions) {
     conditions.push(...options.conditions)
   }
   return _resolveExports(pkg, key, {
     browser: true,
+    require: options.isRequire,
     conditions
   })
 }
