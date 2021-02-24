@@ -58,7 +58,7 @@ export async function transformWithEsbuild(
   )
   
   let loader = ext.slice(1) as Loader
-  if (/^(c|m)js$/.test(loader)) {
+  if (loader === 'cjs' || loader === 'mjs') {
     loader = 'js'
   }
   
