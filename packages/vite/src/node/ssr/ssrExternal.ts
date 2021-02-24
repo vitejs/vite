@@ -50,11 +50,6 @@ export function resolveSSRExternal(
       ssrExternals.add(id)
       continue
     }
-    // node resolve and esm resolve resolves to the same file
-    if (path.extname(entry) !== '.js') {
-      // entry is not js, cannot externalize
-      continue
-    }
     if (!entry.includes('node_modules')) {
       // entry is not a node dep, possibly linked - don't externalize
       // instead, trace its dependencies.
@@ -74,6 +69,10 @@ export function resolveSSRExternal(
       ssrExternals.add(id)
     } else {
       // node resolve and esm resolve resolves to the same file.
+      if (!/\.m?js$/.test(entry)) {
+        // entry is not js, cannot externalize
+        continue
+      }
       // check if the entry is cjs
       const content = fs.readFileSync(entry, 'utf-8')
       if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
