@@ -8,7 +8,8 @@ import {
   cleanUrl,
   isExternalUrl,
   isDataUrl,
-  generateCodeFrame
+  generateCodeFrame,
+  processSrcSet
 } from '../utils'
 import { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
@@ -69,7 +70,7 @@ export const assetAttrsConfig: Record<string, string[]> = {
   link: ['href'],
   video: ['src', 'poster'],
   source: ['src'],
-  img: ['src'],
+  img: ['src', 'srcset'],
   image: ['xlink:href', 'href'],
   use: ['xlink:href', 'href']
 }
@@ -233,7 +234,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         for (const attr of assetUrls) {
           const value = attr.value!
           try {
-            const url = await urlToBuiltUrl(value.content, id, config, this)
+            const url =
+              attr.name === 'srcset'
+                ? await processSrcSet(value.content, ({ url }) =>
+                    urlToBuiltUrl(url, id, config, this)
+                  )
+                : await urlToBuiltUrl(value.content, id, config, this)
+
             s.overwrite(
               value.loc.start.offset,
               value.loc.end.offset,
