@@ -110,7 +110,7 @@ app.use('*', async (req, res) => {
 
     // 4. render the app HTML. This assumes entry-server.js's exported `render`
     //    function calls appropriate framework SSR APIs,
-    //    e.g. ReacDOMServer.renderToString()
+    //    e.g. ReactDOMServer.renderToString()
     const appHtml = await render(url)
 
     // 5. Inject the app-rendered HTML into the template.
