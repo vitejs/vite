@@ -2,7 +2,9 @@
   <div class="comments"><!--hello--></div>
   <h1>Vue SFCs</h1>
   <pre>{{ time }}</pre>
-  <Hmr />
+  <div class="hmr-block">
+    <Hmr />
+  </div>
   <Syntax />
   <PreProcessors />
   <CssModules />

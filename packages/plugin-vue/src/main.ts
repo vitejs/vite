@@ -10,7 +10,7 @@ import {
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
-import { isOnlyTemplateChanged } from './handleHotUpdate'
+import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 
@@ -71,11 +71,23 @@ export async function transformMain(
     ))
   }
 
-  const renderReplace = hasTemplateImport
-    ? ssr
+  let renderReplace = ''
+  if (hasTemplateImport) {
+    renderReplace = ssr
       ? `_sfc_main.ssrRender = _sfc_ssrRender`
       : `_sfc_main.render = _sfc_render`
-    : ''
+  } else {
+    // #2128
+    // User may empty the template but we didn't provide rerender function before
+    if (
+      prevDescriptor &&
+      !isEqualBlock(descriptor.template, prevDescriptor.template)
+    ) {
+      renderReplace = ssr
+        ? `_sfc_main.ssrRender = () => {}`
+        : `_sfc_main.render = () => {}`
+    }
+  }
 
   // styles
   const stylesCode = await genStyleCode(descriptor, pluginContext)
