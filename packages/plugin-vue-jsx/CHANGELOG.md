@@ -1,3 +1,12 @@
+## [1.1.1](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.0...plugin-vue-jsx@1.1.1) (2021-02-24)
+
+
+### Bug Fixes
+
+* **plugin-vue-jsx:** do not read babel configuration ([#2181](https://github.com/vitejs/vite/issues/2181)) ([8f0dc25](https://github.com/vitejs/vite/commit/8f0dc25e943ff490eefa0ed3663205a14e8eed9e))
+
+
+
 # [1.1.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.3...plugin-vue-jsx@1.1.0) (2021-02-09)
 
 
