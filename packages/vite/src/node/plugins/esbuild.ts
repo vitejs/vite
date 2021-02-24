@@ -56,8 +56,14 @@ export async function transformWithEsbuild(
   const ext = path.extname(
     /\.\w+$/.test(filename) ? filename : cleanUrl(filename)
   )
+  
+  let loader = ext.slice(1)
+  if (loader === 'cjs' || loader === 'mjs') {
+    loader = 'js'
+  }
+  
   const resolvedOptions = {
-    loader: ext.slice(1) as Loader,
+    loader: loader as Loader,
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
