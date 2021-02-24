@@ -133,6 +133,11 @@ describe('hmr', () => {
     )
     await untilUpdated(() => page.textContent('.hmr-inc'), 'count is 100')
   })
+
+  test('should re-render when template is emptied', async () => {
+    editFile('Hmr.vue', () => '')
+    await untilUpdated(() => page.innerHTML('.hmr-block'), '<!---->')
+  })
 })
 
 describe('src imports', () => {
