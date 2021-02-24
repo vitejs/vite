@@ -250,7 +250,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
           // @ts-ignore
-          n: unescapedName
+          n: specifier
         } = imports[index]
 
         const rawUrl = source.slice(start, end)
@@ -307,40 +307,40 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const isDynamicImport = dynamicIndex >= 0
 
         // static import or valid string in dynamic import
-        const isLiteralId = !!unescapedName
+        const isLiteralId = !!specifier
 
         // If resolvable, let's resolve it
         if (isLiteralId) {
           // skip external / data uri
-          if (isExternalUrl(unescapedName) || isDataUrl(unescapedName)) {
+          if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
           }
           // skip ssr external
           if (ssr) {
             if (
               server._ssrExternals &&
-              shouldExternalizeForSSR(unescapedName, server._ssrExternals)
+              shouldExternalizeForSSR(specifier, server._ssrExternals)
             ) {
               continue
             }
-            if (isBuiltin(unescapedName)) {
+            if (isBuiltin(specifier)) {
               continue
             }
           }
           // skip client
-          if (unescapedName === clientPublicPath) {
+          if (specifier === clientPublicPath) {
             continue
           }
 
           // warn imports to non-asset /public files
           if (
-            unescapedName.startsWith('/') &&
-            !config.assetsInclude(cleanUrl(unescapedName)) &&
-            !unescapedName.endsWith('.json') &&
-            checkPublicFile(unescapedName, config)
+            specifier.startsWith('/') &&
+            !config.assetsInclude(cleanUrl(specifier)) &&
+            !specifier.endsWith('.json') &&
+            checkPublicFile(specifier, config)
           ) {
             throw new Error(
-              `Cannot import non-asset file ${unescapedName} which is inside /public.` +
+              `Cannot import non-asset file ${specifier} which is inside /public.` +
                 `JS/CSS files inside /public are copied as-is on build and ` +
                 `can only be referenced via <script src> or <link href> in html.`
             )
@@ -348,13 +348,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // normalize
           const [normalizedUrl, resolvedId] = await normalizeUrl(
-            unescapedName,
+            specifier,
             start
           )
           let url = normalizedUrl
 
           // rewrite
-          if (url !== unescapedName) {
+          if (url !== specifier) {
             // for optimized cjs deps, support named imports by rewriting named
             // imports to const assignments.
             if (resolvedId.endsWith(`&es-interop`)) {
