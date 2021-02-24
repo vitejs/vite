@@ -12,6 +12,9 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
 
   return (req, res, next) => {
+    // #2195
+    req.url = decodeURI(req.url!)
+
     // skip import request
     if (isImportRequest(req.url!)) {
       return next()
