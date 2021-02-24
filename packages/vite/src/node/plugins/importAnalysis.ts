@@ -246,14 +246,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           e: end,
           ss: expStart,
           se: expEnd,
-          d: dynamicIndex
+          d: dynamicIndex,
+          // #2083 User may use escape path,
+          // so use imports[index].n to get the unescaped string
+          // @ts-ignore
+          n: specifier
         } = imports[index]
 
         const rawUrl = source.slice(start, end)
-        let url = rawUrl
 
         // check import.meta usage
-        if (url === 'import.meta') {
+        if (rawUrl === 'import.meta') {
           const prop = source.slice(end, end + 4)
           if (prop === '.hot') {
             hasHMR = true
@@ -301,69 +304,62 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        // For dynamic id, check if it's a literal that we can resolve
-        let hasViteIgnore = false
-        let isLiteralDynamicId = false
-        if (dynamicIndex >= 0) {
-          // check @vite-ignore which suppresses dynamic import warning
-          hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(url)
-          // #998 remove comment
-          url = url.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '').trim()
-          const literalIdMatch = url.match(/^(?:'([^']+)'|"([^"]+)")$/)
-          if (literalIdMatch) {
-            isLiteralDynamicId = true
-            url = literalIdMatch[1] || literalIdMatch[2]
-          }
-        }
+        const isDynamicImport = dynamicIndex >= 0
+
+        // static import or valid string in dynamic import
+        const isLiteralId = !!specifier
 
         // If resolvable, let's resolve it
-        if (dynamicIndex === -1 || isLiteralDynamicId) {
+        if (isLiteralId) {
           // skip external / data uri
-          if (isExternalUrl(url) || isDataUrl(url)) {
+          if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
           }
           // skip ssr external
           if (ssr) {
             if (
               server._ssrExternals &&
-              shouldExternalizeForSSR(url, server._ssrExternals)
+              shouldExternalizeForSSR(specifier, server._ssrExternals)
             ) {
               continue
             }
-            if (isBuiltin(url)) {
+            if (isBuiltin(specifier)) {
               continue
             }
           }
           // skip client
-          if (url === clientPublicPath) {
+          if (specifier === clientPublicPath) {
             continue
           }
 
           // warn imports to non-asset /public files
           if (
-            url.startsWith('/') &&
-            !config.assetsInclude(cleanUrl(url)) &&
-            !url.endsWith('.json') &&
-            checkPublicFile(url, config)
+            specifier.startsWith('/') &&
+            !config.assetsInclude(cleanUrl(specifier)) &&
+            !specifier.endsWith('.json') &&
+            checkPublicFile(specifier, config)
           ) {
             throw new Error(
-              `Cannot import non-asset file ${url} which is inside /public.` +
+              `Cannot import non-asset file ${specifier} which is inside /public.` +
                 `JS/CSS files inside /public are copied as-is on build and ` +
                 `can only be referenced via <script src> or <link href> in html.`
             )
           }
 
           // normalize
-          const [normalizedUrl, resolvedId] = await normalizeUrl(url, start)
-          url = normalizedUrl
+          const [normalizedUrl, resolvedId] = await normalizeUrl(
+            specifier,
+            start
+          )
+          let url = normalizedUrl
 
           // rewrite
-          if (url !== rawUrl) {
+          if (url !== specifier) {
             // for optimized cjs deps, support named imports by rewriting named
             // imports to const assignments.
             if (resolvedId.endsWith(`&es-interop`)) {
               url = url.slice(0, -11)
-              if (isLiteralDynamicId) {
+              if (isDynamicImport) {
                 // rewrite `import('package')` to expose the default directly
                 str().overwrite(
                   dynamicIndex,
@@ -381,7 +377,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
               }
             } else {
-              str().overwrite(start, end, isLiteralDynamicId ? `'${url}'` : url)
+              str().overwrite(start, end, isDynamicImport ? `'${url}'` : url)
             }
           }
 
@@ -389,6 +385,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // make sure to normalize away base
           importedUrls.add(url.replace(base, '/'))
         } else if (!importer.startsWith(clientDir) && !ssr) {
+          // check @vite-ignore which suppresses dynamic import warning
+          const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(rawUrl)
+
+          const url = rawUrl
+            .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
+            .trim()
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
               `\n` +

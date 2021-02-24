@@ -92,7 +92,7 @@
     "dotenv": "^8.2.0",
     "dotenv-expand": "^5.1.0",
     "enquirer": "^2.3.6",
-    "es-module-lexer": "^0.3.26",
+    "es-module-lexer": "^0.4.0",
     "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
     "execa": "^5.0.0",
