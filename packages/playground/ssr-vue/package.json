@@ -12,13 +12,13 @@
     "debug": "node --inspect-brk server"
   },
   "dependencies": {
-    "vue": "^3.0.5",
+    "vue": "^3.0.6",
     "vue-router": "^4.0.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^1.0.0",
-    "@vue/compiler-sfc": "^3.0.5",
-    "@vue/server-renderer": "^3.0.5",
+    "@vue/compiler-sfc": "^3.0.6",
+    "@vue/server-renderer": "^3.0.6",
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
     "express": "^4.17.1",
