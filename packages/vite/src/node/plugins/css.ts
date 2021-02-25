@@ -534,7 +534,7 @@ async function compileCSS(
   const deps = new Set<string>()
 
   // 2. pre-processors: sass etc.
-  if (lang && isPreProcessors(lang)) {
+  if (lang && isPreProcessor(lang)) {
     const preProcessor = preProcessors[lang]
     let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
     // support @import from node dependencies by default
@@ -1109,6 +1109,6 @@ const preProcessors = {
   [PreprocessLang.Stylus]: styl
 }
 
-function isPreProcessors(lang: any): lang is PreprocessLang {
+function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang in preProcessors
 }
