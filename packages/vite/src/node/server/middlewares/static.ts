@@ -12,9 +12,6 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
 
   return (req, res, next) => {
-    // #2195
-    req.url = decodeURI(req.url!)
-
     // skip import request
     if (isImportRequest(req.url!)) {
       return next()
@@ -38,9 +35,6 @@ export function serveStaticMiddleware(
     if (path.extname(cleanUrl(url)) === '.html') {
       return next()
     }
-
-    // #1426
-    url = req.url = decodeURI(url)
 
     // apply aliases to static requests as well
     let redirected: string | undefined
@@ -77,7 +71,6 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
     if (url.startsWith(FS_PREFIX)) {
       url = url.slice(FS_PREFIX.length)
       if (isWin) url = url.replace(/^[A-Z]:/i, '')
-      req.url = decodeURI(url)
       serveFromRoot(req, res, next)
     } else {
       next()
