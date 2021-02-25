@@ -46,7 +46,7 @@ export async function ssrLoadModule(
 
   const modulePromise = instantiateModule(url, server, context, urlStack)
   pendingModules.set(url, modulePromise)
-  modulePromise.then(() => pendingModules.delete(url))
+  modulePromise.catch(() => {}).then(() => pendingModules.delete(url))
   return modulePromise
 }
 
