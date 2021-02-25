@@ -121,6 +121,20 @@ test('import.meta', async () => {
   ).toMatchInlineSnapshot(`"console.log(__vite_ssr_import_meta__.url)"`)
 })
 
+test('do not rewrite method definition', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `import { fn } from 'vue';class A { fn() { fn() } }`,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"vue\\")
+    class A { fn() { __vite_ssr_import_0__.fn() } }"
+  `)
+})
+
 test('dynamic import', async () => {
   expect(
     (await ssrTransform(`export const i = () => import('./foo')`, null)).code

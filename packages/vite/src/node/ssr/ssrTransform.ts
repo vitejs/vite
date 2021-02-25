@@ -143,6 +143,9 @@ export async function ssrTransform(
       if (!binding) {
         return
       }
+      if (parent && parent.type === 'MethodDefinition') {
+        return
+      }
       if (isStaticProperty(parent) && parent.shorthand) {
         // let binding used in a property shorthand
         // { foo } -> { foo: __import_x__.foo }
