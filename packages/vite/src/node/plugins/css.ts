@@ -93,7 +93,7 @@ const enum PureCssLang {
 type CssLang = PureCssLang | PreprocessLang
 
 export const isCSSRequest = (request: string) =>
-  cssLangRE.test(request) && directRequestRE.test(request)
+  cssLangRE.test(request) && !directRequestRE.test(request)
 
 export const isDirectCSSRequest = (request: string) =>
   cssLangRE.test(request) && directRequestRE.test(request)
