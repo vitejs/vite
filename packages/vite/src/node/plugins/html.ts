@@ -335,8 +335,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             ])
           }
         }
-        const isWindows = os.platform() === 'win32'
-        const shortEmitName = path[isWindows ? 'win32' : 'posix'].relative(config.root, id)
+        const shortEmitName = path.posix.relative(config.root, slash(path.resolve(id)))
         result = await applyHtmlTransforms(
           result,
           '/' + shortEmitName,
