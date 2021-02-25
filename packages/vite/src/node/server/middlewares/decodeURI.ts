@@ -8,12 +8,11 @@ export function decodeURIMiddleware(): Connect.NextHandleFunction {
     // `sirv` middleware uses the req._parsedUrl values to find the file,
     // so decode it all together.
     // @ts-ignore
-    Object.keys(req._parsedUrl).forEach((key) => {
-      // @ts-ignore
-      if (req._parsedUrl[key]) {
-        // @ts-ignore
-        req._parsedUrl[key] = decodeURI(req._parsedUrl[key])
-      }
+    const parsedUrl = req._parsedUrl
+    Object.keys(parsedUrl).forEach((key) => {
+      parsedUrl[key] = parsedUrl[key]
+        ? decodeURI(parsedUrl[key])
+        : parsedUrl[key]
     })
     next()
   }
