@@ -80,16 +80,28 @@ const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
+const enum PreprocessLang {
+  Less = 'less',
+  Sass = 'sass',
+  Scss = 'scss',
+  Styl = 'styl',
+  Stylus = 'stylus'
+}
+type CssLang = PreprocessLang | 'css'
+
+function isCssLang(lang: string): lang is CssLang {
+  return cssLangRE.test(lang)
+}
 
 export const isCSSRequest = (request: string) =>
-  cssLangRE.test(request) && !directRequestRE.test(request)
+  isCssLang(request) && !directRequestRE.test(request)
 
 export const isDirectCSSRequest = (request: string) =>
-  cssLangRE.test(request) && directRequestRE.test(request)
+  isCssLang(request) && directRequestRE.test(request)
 
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
-  Map<string, Record<string, string>>
+  Map<CssLang, Record<string, string>>
 >()
 
 export const chunkToEmittedCssFileMap = new WeakMap<
@@ -102,7 +114,7 @@ export const chunkToEmittedCssFileMap = new WeakMap<
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
-  const moduleCache = new Map<string, Record<string, string>>()
+  const moduleCache = new Map<CssLang, Record<string, string>>()
   cssModulesCache.set(config, moduleCache)
 
   const resolveUrl = config.createResolver({
@@ -120,7 +132,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      if (!cssLangRE.test(id)) {
+      if (!isCssLang(id)) {
         return
       }
 
@@ -217,7 +229,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css-post',
 
     transform(css, id, ssr) {
-      if (!cssLangRE.test(id)) {
+      if (!isCssLang(id)) {
         return
       }
 
@@ -485,7 +497,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
 }
 
 async function compileCSS(
-  id: string,
+  id: CssLang,
   code: string,
   config: ResolvedConfig,
   urlReplacer: CssUrlReplacer,
@@ -504,7 +516,7 @@ async function compileCSS(
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const postcssConfig = await resolvePostcssConfig(config)
-  const lang = id.match(cssLangRE)?.[1] as PreprocessLang | 'css' | undefined
+  const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
 
   // 1. plain css that needs no processing
   if (
@@ -522,7 +534,7 @@ async function compileCSS(
   const deps = new Set<string>()
 
   // 2. pre-processors: sass etc.
-  if (lang && assertIsPreProcessors(lang)) {
+  if (lang && isPreProcessors(lang)) {
     const preProcessor = preProcessors[lang]
     let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
     // support @import from node dependencies by default
@@ -831,14 +843,6 @@ AtImportHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 
-const enum PreprocessLang {
-  Less = 'less',
-  Sass = 'sass',
-  Scss = 'scss',
-  Styl = 'styl',
-  Stylus = 'stylus'
-}
-
 type PreprocessorAdditionalData =
   | string
   | ((source: string, filename: string) => string | Promise<string>)
@@ -1105,6 +1109,6 @@ const preProcessors = {
   [PreprocessLang.Stylus]: styl
 }
 
-function assertIsPreProcessors(lang: any): lang is PreprocessLang {
+function isPreProcessors(lang: any): lang is PreprocessLang {
   return lang in preProcessors
 }
