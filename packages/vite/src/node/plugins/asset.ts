@@ -153,7 +153,7 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX + id)
   }
-  return config.base + rtn.replace(/^\//, '')
+  return (process.env.VITE_BASE || '') + config.base + rtn.replace(/^\//, '')
 }
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
