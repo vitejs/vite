@@ -81,16 +81,16 @@ const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const enum PreprocessLang {
-  Less = 'less',
-  Sass = 'sass',
-  Scss = 'scss',
-  Styl = 'styl',
-  Stylus = 'stylus'
+  less = 'less',
+  sass = 'sass',
+  scss = 'scss',
+  styl = 'styl',
+  stylus = 'stylus'
 }
 const enum PureCssLang {
-  Css = 'css'
+  css = 'css'
 }
-type CssLang = PureCssLang | PreprocessLang
+type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
 
 export const isCSSRequest = (request: string) =>
   cssLangRE.test(request) && !directRequestRE.test(request)
@@ -538,16 +538,16 @@ async function compileCSS(
     let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
     // support @import from node dependencies by default
     switch (lang) {
-      case PreprocessLang.Scss:
-      case PreprocessLang.Sass:
+      case PreprocessLang.scss:
+      case PreprocessLang.sass:
         opts = {
           includePaths: ['node_modules'],
           ...opts
         }
         break
-      case PreprocessLang.Less:
-      case PreprocessLang.Styl:
-      case PreprocessLang.Stylus:
+      case PreprocessLang.less:
+      case PreprocessLang.styl:
+      case PreprocessLang.stylus:
         opts = {
           paths: ['node_modules'],
           ...opts
@@ -866,11 +866,11 @@ export interface StylePreprocessorResults {
 
 const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
 
-function loadPreprocessor(lang: PreprocessLang.Scss, root: string): typeof Sass
-function loadPreprocessor(lang: PreprocessLang.Sass, root: string): typeof Sass
-function loadPreprocessor(lang: PreprocessLang.Less, root: string): typeof Less
+function loadPreprocessor(lang: PreprocessLang.scss, root: string): typeof Sass
+function loadPreprocessor(lang: PreprocessLang.sass, root: string): typeof Sass
+function loadPreprocessor(lang: PreprocessLang.less, root: string): typeof Less
 function loadPreprocessor(
-  lang: PreprocessLang.Stylus,
+  lang: PreprocessLang.stylus,
   root: string
 ): typeof Stylus
 function loadPreprocessor(lang: PreprocessLang, root: string): any {
@@ -889,7 +889,7 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
 
 // .scss/.sass processor
 const scss: StylePreprocessor = async (source, root, options, resolvers) => {
-  const render = loadPreprocessor(PreprocessLang.Sass, root).render
+  const render = loadPreprocessor(PreprocessLang.sass, root).render
   const finalOptions: Sass.Options = {
     ...options,
     data: await getSource(source, options.filename, options.additionalData),
@@ -976,7 +976,7 @@ async function rebaseUrls(
 
 // .less
 const less: StylePreprocessor = async (source, root, options, resolvers) => {
-  const nodeLess = loadPreprocessor(PreprocessLang.Less, root)
+  const nodeLess = loadPreprocessor(PreprocessLang.less, root)
   const viteResolverPlugin = createViteLessPlugin(
     nodeLess,
     options.filename,
@@ -1072,7 +1072,7 @@ function createViteLessPlugin(
 
 // .styl
 const styl: StylePreprocessor = (source, root, options) => {
-  const nodeStylus = loadPreprocessor(PreprocessLang.Stylus, root)
+  const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   try {
     const ref = nodeStylus(source)
 
@@ -1101,11 +1101,11 @@ function getSource(
 }
 
 const preProcessors = {
-  [PreprocessLang.Less]: less,
-  [PreprocessLang.Sass]: sass,
-  [PreprocessLang.Scss]: scss,
-  [PreprocessLang.Styl]: styl,
-  [PreprocessLang.Stylus]: styl
+  [PreprocessLang.less]: less,
+  [PreprocessLang.sass]: sass,
+  [PreprocessLang.scss]: scss,
+  [PreprocessLang.styl]: styl,
+  [PreprocessLang.stylus]: styl
 }
 
 function isPreProcessor(lang: any): lang is PreprocessLang {
