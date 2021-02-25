@@ -87,7 +87,10 @@ const enum PreprocessLang {
   Styl = 'styl',
   Stylus = 'stylus'
 }
-type CssLang = PreprocessLang | 'css'
+const enum PureCssLang {
+  Css = 'css'
+}
+type CssLang = PureCssLang | PreprocessLang
 
 function isCssLang(lang: string): lang is CssLang {
   return cssLangRE.test(lang)
