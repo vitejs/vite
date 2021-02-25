@@ -92,19 +92,15 @@ const enum PureCssLang {
 }
 type CssLang = PureCssLang | PreprocessLang
 
-function isCssLang(lang: string): lang is CssLang {
-  return cssLangRE.test(lang)
-}
-
 export const isCSSRequest = (request: string) =>
-  isCssLang(request) && !directRequestRE.test(request)
+  cssLangRE.test(request) && directRequestRE.test(request)
 
 export const isDirectCSSRequest = (request: string) =>
-  isCssLang(request) && directRequestRE.test(request)
+  cssLangRE.test(request) && directRequestRE.test(request)
 
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
-  Map<CssLang, Record<string, string>>
+  Map<string, Record<string, string>>
 >()
 
 export const chunkToEmittedCssFileMap = new WeakMap<
@@ -117,7 +113,7 @@ export const chunkToEmittedCssFileMap = new WeakMap<
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
-  const moduleCache = new Map<CssLang, Record<string, string>>()
+  const moduleCache = new Map<string, Record<string, string>>()
   cssModulesCache.set(config, moduleCache)
 
   const resolveUrl = config.createResolver({
@@ -135,7 +131,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      if (!isCssLang(id)) {
+      if (!cssLangRE.test(id)) {
         return
       }
 
@@ -232,7 +228,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css-post',
 
     transform(css, id, ssr) {
-      if (!isCssLang(id)) {
+      if (!cssLangRE.test(id)) {
         return
       }
 
@@ -500,7 +496,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
 }
 
 async function compileCSS(
-  id: CssLang,
+  id: string,
   code: string,
   config: ResolvedConfig,
   urlReplacer: CssUrlReplacer,
