@@ -34,7 +34,8 @@ import {
 } from './asset'
 import MagicString from 'magic-string'
 import * as Postcss from 'postcss'
-import * as Sass from 'sass'
+import type Sass from 'sass'
+import type Stylus from 'types/stylus'
 import type Less from 'less'
 
 // const debug = createDebugger('vite:css')
@@ -503,7 +504,7 @@ async function compileCSS(
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const postcssConfig = await resolvePostcssConfig(config)
-  const lang = id.match(cssLangRE)?.[1]
+  const lang = id.match(cssLangRE)?.[1] as PreprocessLang | 'css' | undefined
 
   // 1. plain css that needs no processing
   if (
@@ -521,21 +522,21 @@ async function compileCSS(
   const deps = new Set<string>()
 
   // 2. pre-processors: sass etc.
-  if (lang && lang in preProcessors) {
-    const preProcessor = preProcessors[lang as PreprocessLang]
+  if (lang && assertIsPreProcessors(lang)) {
+    const preProcessor = preProcessors[lang]
     let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
     // support @import from node dependencies by default
     switch (lang) {
-      case 'scss':
-      case 'sass':
+      case PreprocessLang.Scss:
+      case PreprocessLang.Sass:
         opts = {
           includePaths: ['node_modules'],
           ...opts
         }
         break
-      case 'less':
-      case 'styl':
-      case 'stylus':
+      case PreprocessLang.Less:
+      case PreprocessLang.Styl:
+      case PreprocessLang.Stylus:
         opts = {
           paths: ['node_modules'],
           ...opts
@@ -830,7 +831,13 @@ AtImportHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 
-type PreprocessLang = 'less' | 'sass' | 'scss' | 'styl' | 'stylus'
+const enum PreprocessLang {
+  Less = 'less',
+  Sass = 'sass',
+  Scss = 'scss',
+  Styl = 'styl',
+  Stylus = 'stylus'
+}
 
 type PreprocessorAdditionalData =
   | string
@@ -856,7 +863,14 @@ export interface StylePreprocessorResults {
 
 const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
 
-function loadPreprocessor(lang: PreprocessLang, root: string) {
+function loadPreprocessor(lang: PreprocessLang.Scss, root: string): typeof Sass
+function loadPreprocessor(lang: PreprocessLang.Sass, root: string): typeof Sass
+function loadPreprocessor(lang: PreprocessLang.Less, root: string): typeof Less
+function loadPreprocessor(
+  lang: PreprocessLang.Stylus,
+  root: string
+): typeof Stylus
+function loadPreprocessor(lang: PreprocessLang, root: string): any {
   if (lang in loadedPreprocessors) {
     return loadedPreprocessors[lang]
   }
@@ -872,7 +886,7 @@ function loadPreprocessor(lang: PreprocessLang, root: string) {
 
 // .scss/.sass processor
 const scss: StylePreprocessor = async (source, root, options, resolvers) => {
-  const render = loadPreprocessor('sass', root).render as typeof Sass.render
+  const render = loadPreprocessor(PreprocessLang.Sass, root).render
   const finalOptions: Sass.Options = {
     ...options,
     data: await getSource(source, options.filename, options.additionalData),
@@ -959,7 +973,7 @@ async function rebaseUrls(
 
 // .less
 const less: StylePreprocessor = async (source, root, options, resolvers) => {
-  const nodeLess = loadPreprocessor('less', root) as typeof Less
+  const nodeLess = loadPreprocessor(PreprocessLang.Less, root)
   const viteResolverPlugin = createViteLessPlugin(
     nodeLess,
     options.filename,
@@ -1055,9 +1069,10 @@ function createViteLessPlugin(
 
 // .styl
 const styl: StylePreprocessor = (source, root, options) => {
-  const nodeStylus = loadPreprocessor('stylus', root)
+  const nodeStylus = loadPreprocessor(PreprocessLang.Stylus, root)
   try {
     const ref = nodeStylus(source)
+
     Object.keys(options).forEach((key) => ref.set(key, options[key]))
     // if (map) ref.set('sourcemap', { inline: false, comment: false })
 
@@ -1083,9 +1098,13 @@ function getSource(
 }
 
 const preProcessors = {
-  less,
-  sass,
-  scss,
-  styl,
-  stylus: styl
+  [PreprocessLang.Less]: less,
+  [PreprocessLang.Sass]: sass,
+  [PreprocessLang.Scss]: scss,
+  [PreprocessLang.Styl]: styl,
+  [PreprocessLang.Stylus]: styl
+}
+
+function assertIsPreProcessors(lang: any): lang is PreprocessLang {
+  return lang in preProcessors
 }
