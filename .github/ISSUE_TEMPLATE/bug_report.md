@@ -10,11 +10,10 @@ assignees: ''
 中文用户请注意：请仔细阅读以下模版，如果不遵循模版，issue 将会被直接关闭。
 -->
 
-**⚠️ IMPORTANT ⚠️ Please check the following list before proceeding. If you ignore this issue template, your issue will be directly closed.**
+**⚠️ IMPORTANT ⚠️ Please do not ignore this template. If you do, your issue will be closed immediately.**
 
 - [ ] Read [the docs](https://vitejs.dev/guide/).
-- [ ] Use Vite >=2.0. (1.x is no longer supported)
-- [ ] If the issue is related to 1.x -> 2.0 upgrade, read the [Migration Guide](https://vitejs.dev/guide/migration.html) first.
+- [ ] Make sure this is a Vite issue and not a framework-specific issue. For example, if it's a Vue SFC related bug, it should likely be reported to https://github.com/vuejs/vue-next instead.
 
 ## Describe the bug
 
@@ -24,7 +23,7 @@ A clear and concise description of what the bug is.
 
 Please provide a link to a repo that can reproduce the problem you ran into.
 
-A reproduction is **required** unless you are absolutely sure that the the problem is obvious and the information you provided is enough for us to understand what the problem is. **If a report has only vague description (e.g. just a generic error message) and has no reproduction, it will be closed immediately.**
+A reproduction is **required** unless you are absolutely sure that the the problem is obvious and the information you provided is enough for us to understand what the problem is. If a report has only vague description (e.g. just a generic error message) and has no reproduction, it will receive "need reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
 
 ## System Info
 
