@@ -189,7 +189,7 @@ test('should declare variable for imported super class', async () => {
     const Foo = __vite_ssr_import_0__.Foo;
     __vite_ssr_exports__.default = class A extends Foo {}
     class B extends Foo {}
-    Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, get(){ return B }})"
+    Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }})"
   `)
 })
 
