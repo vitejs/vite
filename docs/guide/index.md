@@ -65,6 +65,24 @@ Supported template presets include:
 
 See [@vitejs/create-app](https://github.com/vitejs/vite/tree/main/packages/create-app) for more details on each template.
 
+## Community Templates
+
+@vitejs/create-app is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks. You can use a tool like [degit](https://github.com/Rich-Harris/degit) to scaffold your project with one of the templates.
+
+```bash
+npx degit user/project my-project
+cd my-project
+
+npm install
+npm run dev
+```
+
+If the project uses `main` as the default branch, suffix the project repo with `#main`
+
+```bash
+npx degit user/project#main my-project
+```
+
 ## `index.html` and Project Root
 
 One thing you may have noticed is that in a Vite project, `index.html` is front-and-central instead of being tucked away inside `public`. This is intentional: during development Vite is a server, and `index.html` is the entry point to your application.

@@ -54,10 +54,7 @@ export function transformMiddleware(
 
     let url
     try {
-      url = decodeURI(removeTimestampQuery(req.url!)).replace(
-        NULL_BYTE_PLACEHOLDER,
-        '\0'
-      )
+      url = removeTimestampQuery(req.url!).replace(NULL_BYTE_PLACEHOLDER, '\0')
     } catch (err) {
       // if it starts with %PUBLIC%, someone's migrating from something
       // like create-react-app

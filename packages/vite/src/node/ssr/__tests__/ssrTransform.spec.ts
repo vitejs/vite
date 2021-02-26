@@ -141,6 +141,58 @@ test('dynamic import', async () => {
   `)
 })
 
+test('do not rewrite method definition', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `import { fn } from 'vue';class A { fn() { fn() } }`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"vue\\")
+    class A { fn() { __vite_ssr_import_0__.fn() } }"
+  `)
+})
+
+// #2221
+test('should declare variable for imported super class', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `import { Foo } from './dep';` + `class A extends Foo {}`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dep\\")
+    const Foo = __vite_ssr_import_0__.Foo;
+    class A extends Foo {}"
+  `)
+
+  // exported classes: should prepend the declaration at root level, before the
+  // first class that uses the binding
+  expect(
+    (
+      await ssrTransform(
+        `import { Foo } from './dep';` +
+          `export default class A extends Foo {}\n` +
+          `export class B extends Foo {}`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dep\\")
+    const Foo = __vite_ssr_import_0__.Foo;
+    __vite_ssr_exports__.default = class A extends Foo {}
+    class B extends Foo {}
+    Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, get(){ return B }})"
+  `)
+})
+
 test('sourcemap source', async () => {
   expect(
     (await ssrTransform(`export const a = 1`, null, 'input.js')).map.sources

@@ -2,7 +2,12 @@ import path from 'path'
 import { Loader, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import { ResolvedConfig } from '..'
-import { isRunningWithYarnPnp, flattenId, normalizePath } from '../utils'
+import {
+  isRunningWithYarnPnp,
+  flattenId,
+  normalizePath,
+  isExternalUrl
+} from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import { ExportsData } from '.'
 
@@ -116,6 +121,12 @@ export function esbuildDepPlugin(
                 namespace: 'browser-external'
               }
             }
+            if (isExternalUrl(resolved)) {
+              return {
+                path: resolved,
+                external: true
+              }
+            }
             return {
               path: path.resolve(resolved)
             }
@@ -141,7 +152,8 @@ export function esbuildDepPlugin(
         }
 
         let contents = ''
-        const [imports, exports] = exportsData[id]
+        const data = exportsData[id]
+        const [imports, exports] = data
         if (!imports.length && !exports.length) {
           // cjs
           contents += `export default require("${relativePath}");`
@@ -149,7 +161,11 @@ export function esbuildDepPlugin(
           if (exports.includes('default')) {
             contents += `import d from "${relativePath}";export default d;`
           }
-          if (exports.length > 1 || exports[0] !== 'default') {
+          if (
+            data.hasReExports ||
+            exports.length > 1 ||
+            exports[0] !== 'default'
+          ) {
             contents += `\nexport * from "${relativePath}"`
           }
         }
