@@ -17,6 +17,7 @@ For Vite only plugins
 
 - Vite Plugins should have a clear name with `vite-plugin-` prefix.
 - Include `vite-plugin` keyword in package.json.
+- Include a section in the plugin docs detailing why it is a Vite only plugin (for example, it uses Vite specific plugin hooks).
 
 If your plugin is only going to work for a particular framework, its name should be included as part of the prefix
 
