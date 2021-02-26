@@ -9,11 +9,10 @@ export function decodeURIMiddleware(): Connect.NextHandleFunction {
     // so decode it all together.
     // @ts-ignore
     const parsedUrl = req._parsedUrl
-    Object.keys(parsedUrl).forEach((key) => {
-      parsedUrl[key] = parsedUrl[key]
-        ? decodeURI(parsedUrl[key])
-        : parsedUrl[key]
-    })
+    for (const key of Object.keys(parsedUrl)) {
+      const val = parsedUrl[key]
+      if (val) parsedUrl[key] = decodeURI(val)
+    }
     next()
   }
 }
