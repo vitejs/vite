@@ -109,6 +109,7 @@ async function instantiateModule(
       if (key !== 'default') {
         Object.defineProperty(ssrModule, key, {
           enumerable: true,
+          configurable: true,
           get() {
             return sourceModule[key]
           }
