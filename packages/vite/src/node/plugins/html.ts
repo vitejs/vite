@@ -294,6 +294,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
+        chunk.imports.forEach((file) => {
+          const importee = bundle[file]
+          if (importee && importee.type === 'chunk') {
+            tags.push(...getCssTagsForChunk(importee, seen))
+          }
+        })
         const cssFiles = chunkToEmittedCssFileMap.get(chunk)
         if (cssFiles) {
           cssFiles.forEach((file) => {
@@ -309,12 +315,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             }
           })
         }
-        chunk.imports.forEach((file) => {
-          const importee = bundle[file]
-          if (importee && importee.type === 'chunk') {
-            tags.push(...getCssTagsForChunk(importee, seen))
-          }
-        })
         return tags
       }
 
