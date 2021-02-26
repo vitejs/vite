@@ -1,3 +1,14 @@
+## [1.1.5](https://github.com/vitejs/vite/compare/plugin-vue@1.1.4...plugin-vue@1.1.5) (2021-02-26)
+
+
+### Bug Fixes
+
+* **plugin-vue:** fix hmr when emptying sfc file ([#2142](https://github.com/vitejs/vite/issues/2142)) ([493b942](https://github.com/vitejs/vite/commit/493b94259d6a499e03684d6001fea1a96d56810c)), closes [#2128](https://github.com/vitejs/vite/issues/2128)
+* **plugin-vue:** handle default rewrite edge case for commented class ([2900a9a](https://github.com/vitejs/vite/commit/2900a9a6a501628588b31f7453e2fe5a71fe45ce)), closes [#2277](https://github.com/vitejs/vite/issues/2277)
+* **plugin-vue:** import vue file as raw correctly ([#1923](https://github.com/vitejs/vite/issues/1923)) ([5b56d70](https://github.com/vitejs/vite/commit/5b56d70c1d173d4c5e3d9532f9c3bc6f8bfc020c))
+
+
+
 ## [1.1.4](https://github.com/vitejs/vite/compare/plugin-vue@1.1.3...plugin-vue@1.1.4) (2021-01-30)
 
 
