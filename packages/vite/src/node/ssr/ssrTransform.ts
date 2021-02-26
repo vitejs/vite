@@ -25,7 +25,8 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
 export async function ssrTransform(
   code: string,
-  inMap: SourceMap | null
+  inMap: SourceMap | null,
+  url: string
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
@@ -183,6 +184,9 @@ export async function ssrTransform(
       sources: inMap.sources,
       sourcesContent: inMap.sourcesContent
     }) as SourceMap
+  } else {
+    map.sources = [url]
+    map.sourcesContent = [code]
   }
 
   return {

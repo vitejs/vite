@@ -136,7 +136,11 @@ export async function transformRequest(
   }
 
   if (ssr) {
-    return (mod.ssrTransformResult = await ssrTransform(code, map as SourceMap))
+    return (mod.ssrTransformResult = await ssrTransform(
+      code,
+      map as SourceMap,
+      url
+    ))
   } else {
     return (mod.transformResult = {
       code,
