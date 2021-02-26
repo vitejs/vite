@@ -38,6 +38,7 @@ export async function ssrTransform(
   let uid = 0
   const deps = new Set<string>()
   const idToImportMap = new Map<string, string>()
+  const declaredConst = new Set<string>()
 
   function defineImport(node: Node, source: string) {
     deps.add(source)
@@ -153,6 +154,16 @@ export async function ssrTransform(
         ) {
           s.appendLeft(id.end, `: ${binding}`)
         }
+      } else if (
+        parent.type === 'ClassDeclaration' &&
+        id === parent.superClass
+      ) {
+        if (!declaredConst.has(id.name)) {
+          declaredConst.add(id.name)
+          // locate the top-most node containing the class declaration
+          const topNode = parentStack[1]
+          s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
+        }
       } else {
         s.overwrite(id.start, id.end, binding)
       }
@@ -208,11 +219,11 @@ function walk(
 
   ;(eswalk as any)(root, {
     enter(node: Node, parent: Node | null) {
-      parent && parentStack.push(parent)
-
       if (node.type === 'ImportDeclaration') {
         return this.skip()
       }
+
+      parent && parentStack.push(parent)
 
       if (node.type === 'MetaProperty' && node.meta.name === 'import') {
         onImportMeta(node)
@@ -302,7 +313,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
       return false
     }
   }
-  
+
   // class method name
   if (parent.type === 'MethodDefinition') {
     return false
