@@ -18,7 +18,11 @@ import { ensureService, stopService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
-export type ExportsData = [ImportSpecifier[], string[]]
+export type ExportsData = [ImportSpecifier[], string[]] & {
+  // es-module-lexer has a facade detection but isn't always accurate for our
+  // use case when the module has default export
+  hasReExports?: true
+}
 
 export interface DepOptimizationOptions {
   /**
@@ -203,7 +207,14 @@ export async function optimizeDeps(
   for (const id in deps) {
     const flatId = flattenId(id)
     flatIdDeps[flatId] = deps[id]
-    const exportsData = parse(fs.readFileSync(deps[id], 'utf-8'))
+    const entryContent = fs.readFileSync(deps[id], 'utf-8')
+    const exportsData = parse(entryContent) as ExportsData
+    for (const { ss, se } of exportsData[0]) {
+      const exp = entryContent.slice(ss, se)
+      if (/export\s+\*\s+from/.test(exp)) {
+        exportsData.hasReExports = true
+      }
+    }
     idToExports[id] = exportsData
     flatIdToExports[flatId] = exportsData
   }
