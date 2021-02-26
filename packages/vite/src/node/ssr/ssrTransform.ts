@@ -143,9 +143,6 @@ export async function ssrTransform(
       if (!binding) {
         return
       }
-      if (parent && parent.type === 'MethodDefinition') {
-        return
-      }
       if (isStaticProperty(parent) && parent.shorthand) {
         // let binding used in a property shorthand
         // { foo } -> { foo: __import_x__.foo }
@@ -304,6 +301,11 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
     if (parent.params.includes(id)) {
       return false
     }
+  }
+  
+  // class method name
+  if (parent.type === 'MethodDefinition') {
+    return false
   }
 
   // property key
