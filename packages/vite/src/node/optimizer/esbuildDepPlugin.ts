@@ -152,7 +152,8 @@ export function esbuildDepPlugin(
         }
 
         let contents = ''
-        const [imports, exports] = exportsData[id]
+        const data = exportsData[id]
+        const [imports, exports] = data
         if (!imports.length && !exports.length) {
           // cjs
           contents += `export default require("${relativePath}");`
@@ -160,7 +161,11 @@ export function esbuildDepPlugin(
           if (exports.includes('default')) {
             contents += `import d from "${relativePath}";export default d;`
           }
-          if (exports.length > 1 || exports[0] !== 'default') {
+          if (
+            data.hasReExports ||
+            exports.length > 1 ||
+            exports[0] !== 'default'
+          ) {
             contents += `\nexport * from "${relativePath}"`
           }
         }
