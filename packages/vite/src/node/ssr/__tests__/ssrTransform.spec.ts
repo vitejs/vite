@@ -76,7 +76,7 @@ test('export named', async () => {
     (await ssrTransform(`const a = 1, b = 2; export { a, b as c }`, null, null))
       .code
   ).toMatchInlineSnapshot(`
-    "const a = 1, b = 2;
+    "const a = 1, b = 2; 
     Object.defineProperty(__vite_ssr_exports__, \\"a\\", { enumerable: true, get(){ return a }})
     Object.defineProperty(__vite_ssr_exports__, \\"c\\", { enumerable: true, get(){ return b }})"
   `)
