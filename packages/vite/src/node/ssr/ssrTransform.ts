@@ -302,6 +302,11 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
       return false
     }
   }
+  
+  // class method name
+  if (parent.type === 'MethodDefinition') {
+    return false
+  }
 
   // property key
   // this also covers object destructure pattern
