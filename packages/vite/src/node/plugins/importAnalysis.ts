@@ -576,6 +576,6 @@ function transformCjsImport(
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
-    return lines.join('\n')
+    return lines.join('; ')
   }
 }
