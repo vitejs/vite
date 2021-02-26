@@ -1,5 +1,5 @@
 import path from 'path'
-import { Loader, Plugin } from 'esbuild'
+import { Loader, Plugin, ResolveKind } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import { ResolvedConfig } from '..'
 import {
@@ -35,11 +35,19 @@ export function esbuildDepPlugin(
   exportsData: Record<string, ExportsData>,
   config: ResolvedConfig
 ): Plugin {
+  // default resovler which prefers ESM
   const _resolve = config.createResolver({ asSrc: false })
+
+  // cjs resolver that prefers Node
+  const _resolveRequire = config.createResolver({
+    asSrc: false,
+    isRequire: true
+  })
 
   const resolve = (
     id: string,
     importer: string,
+    kind: ResolveKind,
     resolveDir?: string
   ): Promise<string | undefined> => {
     let _importer
@@ -51,7 +59,8 @@ export function esbuildDepPlugin(
       // map importer ids to file paths for correct resolution
       _importer = importer in qualified ? qualified[importer] : importer
     }
-    return _resolve(id, _importer)
+    const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
+    return resolver(id, _importer)
   }
 
   return {
@@ -62,8 +71,8 @@ export function esbuildDepPlugin(
         {
           filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
         },
-        async ({ path: id, importer }) => {
-          const resolved = await resolve(id, importer)
+        async ({ path: id, importer, kind }) => {
+          const resolved = await resolve(id, importer, kind)
           if (resolved) {
             return {
               path: resolved,
@@ -89,7 +98,7 @@ export function esbuildDepPlugin(
 
       build.onResolve(
         { filter: /^[\w@][^:]/ },
-        async ({ path: id, importer }) => {
+        async ({ path: id, importer, kind }) => {
           const isEntry = !importer
           // ensure esbuild uses our resolved entires
           let entry
@@ -102,18 +111,8 @@ export function esbuildDepPlugin(
             return entry
           }
 
-          // #2199 @babel/runtime 7.13 now has mjs fallback for non-esm helpers
-          // it can break if we use Vite's resolver here since we don't know if
-          // the user is importing or requiring it. Fallback to esbuild resolver
-          // here.
-          // Hopefully esbuild will expose that information in the future
-          // https://github.com/evanw/esbuild/issues/879
-          if (id.startsWith('@babel/runtime')) {
-            return
-          }
-
           // use vite's own resolver
-          const resolved = await resolve(id, importer)
+          const resolved = await resolve(id, importer, kind)
           if (resolved) {
             if (resolved.startsWith(browserExternalId)) {
               return {
@@ -198,9 +197,9 @@ export function esbuildDepPlugin(
       if (isRunningWithYarnPnp) {
         build.onResolve(
           { filter: /.*/ },
-          async ({ path, importer, resolveDir }) => ({
+          async ({ path, importer, kind, resolveDir }) => ({
             // pass along resolveDir for entries
-            path: await resolve(path, importer, resolveDir)
+            path: await resolve(path, importer, kind, resolveDir)
           })
         )
         build.onLoad({ filter: /.*/ }, async (args) => ({
