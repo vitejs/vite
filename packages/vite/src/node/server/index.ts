@@ -25,6 +25,7 @@ import {
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
+import { decodeURIMiddleware } from './middlewares/decodeURI'
 import {
   serveRawFsMiddleware,
   servePublicMiddleware,
@@ -415,6 +416,9 @@ export async function createServer(
 
   // hmr reconnect ping
   middlewares.use('/__vite_ping', (_, res) => res.end('pong'))
+
+  //decode request url
+  middlewares.use(decodeURIMiddleware())
 
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
