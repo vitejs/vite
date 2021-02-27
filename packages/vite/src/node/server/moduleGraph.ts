@@ -6,6 +6,7 @@ import {
   removeImportQuery,
   removeTimestampQuery
 } from '../utils'
+import { FS_PREFIX } from '../constants'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
 import { parse as parseUrl } from 'url'
@@ -162,7 +163,7 @@ export class ModuleGraph {
   // hmr in the importing css file.
   createFileOnlyEntry(file: string) {
     file = normalizePath(file)
-    const url = `/@fs/${file}`
+    const url = `${FS_PREFIX}${file}`
     let fileMappedModules = this.fileToModulesMap.get(file)
     if (!fileMappedModules) {
       fileMappedModules = new Set()

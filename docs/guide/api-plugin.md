@@ -17,6 +17,7 @@ For Vite only plugins
 
 - Vite Plugins should have a clear name with `vite-plugin-` prefix.
 - Include `vite-plugin` keyword in package.json.
+- Include a section in the plugin docs detailing why it is a Vite only plugin (for example, it uses Vite specific plugin hooks).
 
 If your plugin is only going to work for a particular framework, its name should be included as part of the prefix
 
@@ -189,7 +190,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   const myPlugin = () => ({
     name: 'configure-server',
     configureServer(server) {
-      server.app.use((req, res, next) => {
+      server.middlewares.use((req, res, next) => {
         // custom handle request...
       })
     }
@@ -207,7 +208,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       // return a post hook that is called after internal middlewares are
       // installed
       return () => {
-        server.app.use((req, res, next) => {
+        server.middlewares.use((req, res, next) => {
           // custom handle request...
         })
       }

@@ -81,6 +81,20 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-relative')).toMatch(assetMatch)
   })
 
+  test('image-set relative', async () => {
+    let imageSet = await getBg('.css-image-set-relative')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  test('image-set without the url() call', async () => {
+    let imageSet = await getBg('.css-image-set-without-url-call')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
   })
@@ -115,6 +129,20 @@ describe('css url() references', () => {
       expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2?#iefix`)
     })
   }
+})
+
+describe('image', () => {
+  test('srcset', async () => {
+    const img = await page.$('.img-src-set')
+    const srcset = await img.getAttribute('srcset')
+    srcset.split(', ').forEach((s) => {
+      expect(s).toMatch(
+        isBuild
+          ? /\/foo\/assets\/asset\.\w{8}\.png \d{1}x/
+          : /\.\/nested\/asset\.png \d{1}x/
+      )
+    })
+  })
 })
 
 describe('svg fragments', () => {

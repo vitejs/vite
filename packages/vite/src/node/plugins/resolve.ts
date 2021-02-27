@@ -4,10 +4,10 @@ import { Plugin } from '../plugin'
 import chalk from 'chalk'
 import {
   FS_PREFIX,
-  JS_TYPES_RE,
   SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
-  DEFAULT_MAIN_FIELDS
+  DEFAULT_MAIN_FIELDS,
+  OPTIMIZABLE_ENTRY_RE
 } from '../constants'
 import {
   isBuiltin,
@@ -59,10 +59,15 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryIndex?: boolean
   tryPrefix?: string
   preferRelative?: boolean
+  isRequire?: boolean
 }
 
-export function resolvePlugin(options: InternalResolveOptions): Plugin {
-  const { root, isProduction, asSrc, preferRelative = false } = options
+export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
+  const { root, isProduction, asSrc, preferRelative = false } = baseOptions
+  const requireOptions: InternalResolveOptions = {
+    ...baseOptions,
+    isRequire: true
+  }
   let server: ViteDevServer | undefined
 
   return {
@@ -72,7 +77,7 @@ export function resolvePlugin(options: InternalResolveOptions): Plugin {
       server = _server
     },
 
-    resolveId(id, importer, _, ssr) {
+    resolveId(id, importer, resolveOpts, ssr) {
       if (id.startsWith(browserExternalId)) {
         return id
       }
@@ -81,6 +86,15 @@ export function resolvePlugin(options: InternalResolveOptions): Plugin {
       if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
         return
       }
+
+      // this is passed by @rollup/plugin-commonjs
+      const isRequire =
+        resolveOpts &&
+        resolveOpts.custom &&
+        resolveOpts.custom['node-resolve'] &&
+        resolveOpts.custom['node-resolve'].isRequire
+
+      const options = isRequire ? requireOptions : baseOptions
 
       let res
 
@@ -340,7 +354,7 @@ export function tryNodeResolve(
       return { id: resolved }
     }
     // if we reach here, it's a valid dep import that hasn't been optimzied.
-    const isJsType = JS_TYPES_RE.test(resolved)
+    const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
     const exclude = server.config.optimizeDeps?.exclude
     if (
       !isJsType ||
@@ -540,15 +554,16 @@ function resolveExports(
   key: string,
   options: InternalResolveOptions
 ) {
-  const conditions = [
-    'module',
-    options.isProduction ? 'production' : 'development'
-  ]
+  const conditions = [options.isProduction ? 'production' : 'development']
+  if (!options.isRequire) {
+    conditions.push('module')
+  }
   if (options.conditions) {
     conditions.push(...options.conditions)
   }
   return _resolveExports(pkg, key, {
     browser: true,
+    require: options.isRequire,
     conditions
   })
 }
@@ -584,7 +599,7 @@ function resolveDeepImport(
     const mapped = mapWithBrowserField(relativeId, browserField)
     if (mapped) {
       relativeId = mapped
-    } else {
+    } else if (mapped === false) {
       return (resolvedImports[id] = browserExternalId)
     }
   }
@@ -625,7 +640,7 @@ function tryResolveBrowserMapping(
           moduleSideEffects: pkg.hasSideEffects(res)
         }
       }
-    } else {
+    } else if (browserMappedPath === false) {
       return browserExternalId
     }
   }
@@ -635,19 +650,20 @@ function tryResolveBrowserMapping(
  * given a relative path in pkg dir,
  * return a relative path in pkg dir,
  * mapped with the "map" object
+ *
+ * - Returning `undefined` means there is no browser mapping for this id
+ * - Returning `false` means this id is explicitly externalized for browser
  */
 function mapWithBrowserField(
   relativePathInPkgDir: string,
   map: Record<string, string | false>
-) {
+): string | false | undefined {
   const normalized = normalize(relativePathInPkgDir)
-  const foundEntry = Object.entries(map).find(
-    ([from]) => normalize(from) === normalized
-  )
-  if (!foundEntry) {
-    return relativePathInPkgDir
+  for (const key in map) {
+    if (normalize(key) === normalized) {
+      return map[key]
+    }
   }
-  return foundEntry[1]
 }
 
 function normalize(file: string) {

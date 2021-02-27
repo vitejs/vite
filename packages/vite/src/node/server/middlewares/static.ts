@@ -36,9 +36,6 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    // #1426
-    url = req.url = decodeURI(url)
-
     // apply aliases to static requests as well
     let redirected: string | undefined
     for (const { find, replacement } of config.resolve.alias) {
@@ -74,7 +71,6 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
     if (url.startsWith(FS_PREFIX)) {
       url = url.slice(FS_PREFIX.length)
       if (isWin) url = url.replace(/^[A-Z]:/i, '')
-      req.url = decodeURI(url)
       serveFromRoot(req, res, next)
     } else {
       next()

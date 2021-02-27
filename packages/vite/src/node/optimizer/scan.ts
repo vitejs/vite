@@ -3,7 +3,12 @@ import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
 import { Loader, Plugin } from 'esbuild'
-import { KNOWN_ASSET_TYPES, JS_TYPES_RE, SPECIAL_QUERY_RE } from '../constants'
+import {
+  KNOWN_ASSET_TYPES,
+  JS_TYPES_RE,
+  SPECIAL_QUERY_RE,
+  OPTIMIZABLE_ENTRY_RE
+} from '../constants'
 import {
   createDebugger,
   emptyDir,
@@ -210,7 +215,7 @@ function esbuildScanPlugin(
         // <script setup> may contain TLA which is not true TLA but esbuild
         // will error on it, so replace it with another operator.
         if (js.includes('await')) {
-          js = js.replace(/\bawait\b/g, 'void')
+          js = js.replace(/\bawait\s/g, 'void ')
         }
 
         if (!js.includes(`export default`)) {
@@ -243,7 +248,9 @@ function esbuildScanPlugin(
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
               // dep or fordce included, externalize and stop crawling
-              depImports[id] = resolved
+              if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
+                depImports[id] = resolved
+              }
               return externalUnlessEntry({ path: id })
             } else {
               // linked package, keep crawling
@@ -298,8 +305,12 @@ function esbuildScanPlugin(
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
             }
+
+            const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
+
             return {
-              path: path.resolve(cleanUrl(resolved))
+              path: path.resolve(cleanUrl(resolved)),
+              namespace
             }
           } else {
             // resolve failed... probably usupported type
@@ -369,7 +380,7 @@ async function transformGlob(
   return s.toString()
 }
 
-export function shouldExternalizeDep(resolvedId: string, rawId?: string) {
+export function shouldExternalizeDep(resolvedId: string, rawId: string) {
   // not a valid file path
   if (!path.isAbsolute(resolvedId)) {
     return true

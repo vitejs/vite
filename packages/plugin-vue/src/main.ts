@@ -10,7 +10,7 @@ import {
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
-import { isOnlyTemplateChanged } from './handleHotUpdate'
+import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 
@@ -71,11 +71,23 @@ export async function transformMain(
     ))
   }
 
-  const renderReplace = hasTemplateImport
-    ? ssr
+  let renderReplace = ''
+  if (hasTemplateImport) {
+    renderReplace = ssr
       ? `_sfc_main.ssrRender = _sfc_ssrRender`
       : `_sfc_main.render = _sfc_render`
-    : ''
+  } else {
+    // #2128
+    // User may empty the template but we didn't provide rerender function before
+    if (
+      prevDescriptor &&
+      !isEqualBlock(descriptor.template, prevDescriptor.template)
+    ) {
+      renderReplace = ssr
+        ? `_sfc_main.ssrRender = () => {}`
+        : `_sfc_main.render = () => {}`
+    }
+  }
 
   // styles
   const stylesCode = await genStyleCode(descriptor, pluginContext)
@@ -207,7 +219,7 @@ async function genTemplateCode(
   }
 }
 
-const exportDefaultClassRE = /export\s+default\s+class\s+([\w$]+)/
+const exportDefaultClassRE = /(?:(?:^|\n|;)\s*)export\s+default\s+class\s+([\w$]+)/
 
 async function genScriptCode(
   descriptor: SFCDescriptor,
@@ -228,11 +240,16 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
+      // TODO remove the class check logic after upgrading @vue/compiler-sfc
       const classMatch = script.content.match(exportDefaultClassRE)
       if (classMatch) {
         scriptCode =
           script.content.replace(exportDefaultClassRE, `class $1`) +
           `\nconst _sfc_main = ${classMatch[1]}`
+        if (/export\s+default/.test(scriptCode)) {
+          // fallback if there are still export default
+          scriptCode = rewriteDefault(script.content, `_sfc_main`)
+        }
       } else {
         scriptCode = rewriteDefault(script.content, `_sfc_main`)
       }

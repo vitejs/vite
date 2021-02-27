@@ -38,6 +38,7 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   }
 }
 
+const startsWithSingleSlashRE = /^\/(?!\/)/
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, server }
@@ -62,7 +63,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       if (src) {
         const url = src.value?.content || ''
-        if (url.startsWith('/')) {
+        if (startsWithSingleSlashRE.test(url)) {
           // prefix with base
           s.overwrite(
             src.value!.loc.start.offset,
@@ -92,7 +93,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           assetAttrs.includes(p.name)
         ) {
           const url = p.value.content || ''
-          if (url.startsWith('/')) {
+          if (startsWithSingleSlashRE.test(url)) {
             s.overwrite(
               p.value.loc.start.offset,
               p.value.loc.end.offset,

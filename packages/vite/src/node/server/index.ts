@@ -14,7 +14,7 @@ import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { Connect } from 'types/connect'
 import { InlineConfig, resolveConfig, ResolvedConfig } from '../config'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
-import { createMissingImpoterRegisterFn } from '../optimizer/registerMissing'
+import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import {
   ESBuildTransformResult,
   transformWithEsbuild
@@ -214,7 +214,7 @@ export interface ViteDevServer {
    */
   _optimizeDepsMetadata: DepOptimizationMetadata | null
   /**
-   * Deps that are extenralized
+   * Deps that are externalized
    * @internal
    */
   _ssrExternals: string[] | null
@@ -263,6 +263,7 @@ export async function createServer(
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
     ignoreInitial: true,
     ignorePermissionErrors: true,
+    disableGlobbing: true,
     ...watchOptions
   }) as FSWatcher
 
@@ -389,7 +390,7 @@ export async function createServer(
       } finally {
         server._isRunningOptimizer = false
       }
-      server._registerMissingImport = createMissingImpoterRegisterFn(server)
+      server._registerMissingImport = createMissingImporterRegisterFn(server)
     }
   }
 
@@ -457,9 +458,13 @@ async function startServer(
     httpServer.listen(port, options.host, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n ⚡ Vite dev server running at:\n`, {
-        clear: !server.config.logger.hasWarned
-      })
+      info(
+        chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+          chalk.green(` dev server running at:\n`),
+        {
+          clear: !server.config.logger.hasWarned
+        }
+      )
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>
         (interfaces[key] || [])

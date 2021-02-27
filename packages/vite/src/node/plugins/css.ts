@@ -8,7 +8,8 @@ import {
   generateCodeFrame,
   isDataUrl,
   isObject,
-  normalizePath
+  normalizePath,
+  processSrcSet
 } from '../utils'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
@@ -78,6 +79,7 @@ const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
+const commjsProxyRE = /\?commonjs-proxy/
 
 export const isCSSRequest = (request: string) =>
   cssLangRE.test(request) && !directRequestRE.test(request)
@@ -118,7 +120,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      if (!cssLangRE.test(id)) {
+      if (!cssLangRE.test(id) || commjsProxyRE.test(id)) {
         return
       }
 
@@ -215,7 +217,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css-post',
 
     transform(css, id, ssr) {
-      if (!cssLangRE.test(id)) {
+      if (!cssLangRE.test(id) || commjsProxyRE.test(id)) {
         return
       }
 
@@ -264,7 +266,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (!isCSSRequest(id) || cssModuleRE.test(id)) {
+        if (
+          !isCSSRequest(id) ||
+          cssModuleRE.test(id) ||
+          commjsProxyRE.test(id)
+        ) {
           isPureCssChunk = false
         }
         if (styles.has(id)) {
@@ -500,7 +506,7 @@ async function compileCSS(
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
-  const hasUrl = cssUrlRE.test(code)
+  const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const postcssConfig = await resolvePostcssConfig(config)
   const lang = id.match(cssLangRE)?.[1]
 
@@ -698,6 +704,7 @@ type CssUrlReplacer = (
   importer?: string
 ) => string | Promise<string>
 const cssUrlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
   replacer: CssUrlReplacer
@@ -711,13 +718,16 @@ const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
     Once(root) {
       const promises: Promise<void>[] = []
       root.walkDecls((decl) => {
-        if (cssUrlRE.test(decl.value)) {
+        const isCssUrl = cssUrlRE.test(decl.value)
+        const isCssImageSet = cssImageSetRE.test(decl.value)
+        if (isCssUrl || isCssImageSet) {
           const replacerForDecl = (rawUrl: string) => {
             const importer = decl.source?.input.file
             return opts.replacer(rawUrl, importer)
           }
+          const rewriterToUse = isCssUrl ? rewriteCssUrls : rewriteCssImageSet
           promises.push(
-            rewriteCssUrls(decl.value, replacerForDecl).then((url) => {
+            rewriterToUse(decl.value, replacerForDecl).then((url) => {
               decl.value = url
             })
           )
@@ -737,17 +747,38 @@ function rewriteCssUrls(
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
     let [matched, rawUrl] = match
-    let wrap = ''
-    const first = rawUrl[0]
-    if (first === `"` || first === `'`) {
-      wrap = first
-      rawUrl = rawUrl.slice(1, -1)
-    }
-    if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
-      return matched
-    }
-    return `url(${wrap}${await replacer(rawUrl)}${wrap})`
+    return await doUrlReplace(rawUrl, matched, replacer)
   })
+}
+
+function rewriteCssImageSet(
+  css: string,
+  replacer: CssUrlReplacer
+): Promise<string> {
+  return asyncReplace(css, cssImageSetRE, async (match) => {
+    let [matched, rawUrl] = match
+    const url = await processSrcSet(rawUrl, ({ url }) =>
+      doUrlReplace(url, matched, replacer)
+    )
+    return `image-set(${url})`
+  })
+}
+async function doUrlReplace(
+  rawUrl: string,
+  matched: string,
+  replacer: CssUrlReplacer
+) {
+  let wrap = ''
+  const first = rawUrl[0]
+  if (first === `"` || first === `'`) {
+    wrap = first
+    rawUrl = rawUrl.slice(1, -1)
+  }
+  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
+    return matched
+  }
+
+  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
 let CleanCSS: any

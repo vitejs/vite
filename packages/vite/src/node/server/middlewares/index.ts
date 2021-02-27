@@ -11,6 +11,7 @@ import { ViteDevServer } from '..'
 import { ResolvedConfig } from '../..'
 import { createDebugger } from '../../utils'
 import { baseMiddleware } from './base'
+import { decodeURIMiddleware } from './decodeURI'
 import { errorMiddleware } from './error'
 import { indexHtmlMiddleware } from './indexHtml'
 import { proxyMiddleware } from './proxy'
@@ -28,6 +29,9 @@ export function createCommonMiddlewares(
   middlewares: Connect.Server
 ): void {
   const serverConfig = config.server || {}
+
+  //decode request url
+  middlewares.use(decodeURIMiddleware())
 
   // request timer
   if (process.env.DEBUG) {
