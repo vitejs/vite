@@ -1,55 +1,42 @@
-import os from 'os'
+import chalk from 'chalk'
+import chokidar from 'chokidar'
+import connect from 'connect'
+import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import fs from 'fs'
-import path from 'path'
-import * as net from 'net'
 import * as http from 'http'
 import * as https from 'https'
-import connect from 'connect'
-import corsMiddleware from 'cors'
-import chalk from 'chalk'
+import * as net from 'net'
 import { AddressInfo } from 'net'
-import chokidar from 'chokidar'
-import { resolveHttpServer } from './http'
-import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
+import os from 'os'
+import path from 'path'
+import { TransformResult } from 'rollup'
+import { FSWatcher, WatchOptions } from 'types/chokidar'
+import { Connect } from 'types/connect'
+import { InlineConfig, resolveConfig, ResolvedConfig } from '../config'
+import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
+import { createMissingImpoterRegisterFn } from '../optimizer/registerMissing'
+import {
+  ESBuildTransformResult,
+  transformWithEsbuild
+} from '../plugins/esbuild'
 import {
   createPluginContainer,
   PluginContainer
 } from '../server/pluginContainer'
-import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { createWebSocketServer, WebSocketServer } from '../server/ws'
-import { baseMiddleware } from './middlewares/base'
-import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
-import { transformMiddleware } from './middlewares/transform'
-import {
-  createDevHtmlTransformFn,
-  indexHtmlMiddleware
-} from './middlewares/indexHtml'
-import history from 'connect-history-api-fallback'
-import {
-  serveRawFsMiddleware,
-  servePublicMiddleware,
-  serveStaticMiddleware
-} from './middlewares/static'
-import { timeMiddleware } from './middlewares/time'
-import { ModuleGraph, ModuleNode } from './moduleGraph'
-import { Connect } from 'types/connect'
-import { createDebugger, normalizePath } from '../utils'
-import { errorMiddleware, prepareError } from './middlewares/error'
-import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
-import { openBrowser } from './openBrowser'
-import launchEditorMiddleware from 'launch-editor-middleware'
-import { TransformResult } from 'rollup'
-import { TransformOptions, transformRequest } from './transformRequest'
-import {
-  transformWithEsbuild,
-  ESBuildTransformResult
-} from '../plugins/esbuild'
-import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
-import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
+import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
-import { createMissingImpoterRegisterFn } from '../optimizer/registerMissing'
+import { normalizePath } from '../utils'
+import { handleFileAddUnlink, handleHMRUpdate, HmrOptions } from './hmr'
+import { resolveHttpServer } from './http'
+import { createDevMiddlewares } from './middlewares'
+import { prepareError } from './middlewares/error'
+import { createDevHtmlTransformFn } from './middlewares/indexHtml'
+import { ProxyOptions } from './middlewares/proxy'
+import { ModuleGraph, ModuleNode } from './moduleGraph'
+import { openBrowser } from './openBrowser'
+import { TransformOptions, transformRequest } from './transformRequest'
 
 export interface ServerOptions {
   host?: string
@@ -265,6 +252,7 @@ export async function createServer(
   const middlewareMode = !!serverConfig.middlewareMode
 
   const middlewares = connect() as Connect.Server
+
   const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, middlewares)
@@ -337,6 +325,9 @@ export async function createServer(
     _pendingReload: null
   }
 
+  // config middlewares for dev server
+  createDevMiddlewares(server, config, middlewares)
+
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
   const exitProcess = async () => {
@@ -385,88 +376,10 @@ export async function createServer(
     }
   }
 
-  // Internal middlewares ------------------------------------------------------
-
-  // request timer
-  if (process.env.DEBUG) {
-    middlewares.use(timeMiddleware(root))
-  }
-
-  // cors (enabled by default)
-  const { cors } = serverConfig
-  if (cors !== false) {
-    middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
-  }
-
-  // proxy
-  const { proxy } = serverConfig
-  if (proxy) {
-    middlewares.use(proxyMiddleware(server))
-  }
-
-  // base
-  if (config.base !== '/') {
-    middlewares.use(baseMiddleware(server))
-  }
-
-  // open in editor support
-  middlewares.use('/__open-in-editor', launchEditorMiddleware())
-
-  // hmr reconnect ping
-  middlewares.use('/__vite_ping', (_, res) => res.end('pong'))
-
-  // serve static files under /public
-  // this applies before the transform middleware so that these files are served
-  // as-is without transforms.
-  middlewares.use(servePublicMiddleware(config.publicDir))
-
-  // main transform middleware
-  middlewares.use(transformMiddleware(server))
-
-  // serve static files
-  middlewares.use(serveRawFsMiddleware())
-  middlewares.use(serveStaticMiddleware(root, config))
-
-  // spa fallback
-  if (!middlewareMode) {
-    middlewares.use(
-      history({
-        logger: createDebugger('vite:spa-fallback'),
-        // support /dir/ without explicit index.html
-        rewrites: [
-          {
-            from: /\/$/,
-            to({ parsedUrl }: any) {
-              const rewritten = parsedUrl.pathname + 'index.html'
-              if (fs.existsSync(path.join(root, rewritten))) {
-                return rewritten
-              } else {
-                return `/index.html`
-              }
-            }
-          }
-        ]
-      })
-    )
-  }
-
   // run post config hooks
   // This is applied before the html middleware so that user middleware can
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
-
-  if (!middlewareMode) {
-    // transform index.html
-    middlewares.use(indexHtmlMiddleware(server))
-    // handle 404s
-    middlewares.use((_, res) => {
-      res.statusCode = 404
-      res.end()
-    })
-  }
-
-  // error handler
-  middlewares.use(errorMiddleware(server, middlewareMode))
 
   const runOptimize = async () => {
     if (config.optimizeCacheDir) {

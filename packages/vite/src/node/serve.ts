@@ -1,29 +1,17 @@
-import os from 'os'
-import path from 'path'
-import sirv from 'sirv'
 import chalk from 'chalk'
 import connect from 'connect'
-import compression from 'compression'
-import { ResolvedConfig } from '.'
+import os from 'os'
 import { Connect } from 'types/connect'
+import { ResolvedConfig } from '.'
 import { resolveHttpServer } from './server/http'
+import { createServeMiddlewares } from './server/middlewares'
 import { openBrowser } from './server/openBrowser'
 
 export async function serve(config: ResolvedConfig, port = 5000) {
   const app = connect() as Connect.Server
-
-  app.use(compression())
-
-  const distDir = path.resolve(config.root, config.build.outDir)
-  app.use(
-    config.base,
-    sirv(distDir, {
-      etag: true,
-      single: true
-    })
-  )
-
   const server = await resolveHttpServer(config.server, app)
+
+  createServeMiddlewares(server, config, app)
 
   const options = config.server || {}
   const hostname = options.host || 'localhost'
