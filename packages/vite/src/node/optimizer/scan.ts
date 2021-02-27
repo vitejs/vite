@@ -96,8 +96,8 @@ export async function scanImports(
     )
   )
 
+  emptyDir(tempDir)
   if (fs.existsSync(tempDir)) {
-    emptyDir(tempDir)
     fs.rmdirSync(tempDir)
   }
 
