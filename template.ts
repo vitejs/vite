@@ -24,6 +24,7 @@ export function compileSFCTemplate(
     isFunctional: !!block.attrs.functional,
     optimizeSSR: false,
     prettify: false,
+    preprocessLang: block.lang,
     ...vueTemplateOptions,
   })
 
