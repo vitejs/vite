@@ -96,8 +96,10 @@ export async function scanImports(
     )
   )
 
-  emptyDir(tempDir)
-  fs.rmdirSync(tempDir)
+  if (fs.existsSync(tempDir)) {
+    emptyDir(tempDir)
+    fs.rmdirSync(tempDir)
+  }
 
   debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 
