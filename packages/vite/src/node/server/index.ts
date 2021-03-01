@@ -326,9 +326,6 @@ export async function createServer(
     _pendingReload: null
   }
 
-  // config middlewares for dev server
-  createDevMiddlewares(server, config, middlewares)
-
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
   const exitProcess = async () => {
@@ -376,6 +373,9 @@ export async function createServer(
       postHooks.push(await plugin.configureServer(server))
     }
   }
+
+  // config middlewares for dev server
+  createDevMiddlewares(server, config, middlewares)
 
   // run post config hooks
   // This is applied before the html middleware so that user middleware can

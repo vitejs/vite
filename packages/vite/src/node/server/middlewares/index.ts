@@ -30,9 +30,6 @@ export function createCommonMiddlewares(
 ): void {
   const serverConfig = config.server || {}
 
-  //decode request url
-  middlewares.use(decodeURIMiddleware())
-
   // request timer
   if (process.env.DEBUG) {
     middlewares.use(timeMiddleware(config.root))
@@ -49,6 +46,14 @@ export function createCommonMiddlewares(
   if (proxy) {
     middlewares.use(proxyMiddleware(server, config))
   }
+
+  // base
+  if (config.base !== '/') {
+    middlewares.use(baseMiddleware(config.base))
+  }
+
+  //decode request url
+  middlewares.use(decodeURIMiddleware())
 }
 
 export function createServeMiddlewares(
@@ -79,11 +84,6 @@ export function createDevMiddlewares(
 
   const serverConfig = config.server || {}
   const middlewareMode = !!serverConfig.middlewareMode
-
-  // base
-  if (config.base !== '/') {
-    middlewares.use(baseMiddleware(server))
-  }
 
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())

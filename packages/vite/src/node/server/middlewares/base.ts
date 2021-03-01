@@ -1,14 +1,9 @@
-import { parse as parseUrl } from 'url'
-import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
+import { parse as parseUrl } from 'url'
 
 // this middleware is only active when (config.base !== '/')
 
-export function baseMiddleware({
-  config
-}: ViteDevServer): Connect.NextHandleFunction {
-  const base = config.base
-
+export function baseMiddleware(base: string): Connect.NextHandleFunction {
   return (req, res, next) => {
     const url = req.url!
     const parsed = parseUrl(url)
