@@ -172,9 +172,10 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
 socket.addEventListener('close', ({ wasClean }) => {
   if (wasClean) return
   console.log(`[vite] server connection lost. polling for restart...`)
-  setInterval(() => {
+  const interval = setInterval(() => {
     fetch(`${base}__vite_ping`)
       .then(() => {
+        clearInterval(interval)
         location.reload()
       })
       .catch((e) => {
