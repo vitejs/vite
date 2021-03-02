@@ -94,6 +94,10 @@ module.exports = {
               link: '/guide/build'
             },
             {
+              text: 'Deploying a Static Site',
+              link: '/guide/static-deploy'
+            },
+            {
               text: 'Env Variables and Modes',
               link: '/guide/env-and-mode'
             },
