@@ -4,15 +4,18 @@ The following guides are based on some shared assumptions:
 
 - You are using the default build output location (`dist`). This location [can be changed using `build.outDir`](https://vitejs.dev/config/#build-outdir), and you can extrapolate instructions from these guides in that case.
 - Vite is installed as a local dev dependency in your project, and you have setup the following npm scripts:
+- You are using npm. You can use equivalent commands to run the scripts if you are using Yarn or other package managers.
 
 ```json
 {
   "scripts": {
     "build": "vite build",
-    "serve": "vite serve"
+    "preview": "vite preview"
   }
 }
 ```
+
+It is important to note that `vite preview` is intended for previewing the build locally and not meant as a production server.
 
 ::: tip NOTE
 These guides provide instructions for performing a static deployment of your Vite site. Vite also has experimental support for Server Side Rendering. SSR refers to front-end frameworks that support running the same application in Node.js, pre-rendering it to HTML, and finally hydrating it on the client. Check out the [SSR Guide](./ssr) to learn about this feature. On the other hand, if you are looking for integration with traditional server-side frameworks, check out the [Backend Integration guide](./backend-integration) instead.
@@ -20,36 +23,36 @@ These guides provide instructions for performing a static deployment of your Vit
 
 ## Building The App
 
-You may run `yarn build` command to build the app.
+You may run `npm run build` command to build the app.
 
 ```bash
-$ yarn build
+$ npm run build
 ```
 
 By default, the build output will be placed at `dist`. You may deploy this `dist` folder to any of your preferred platforms.
 
 ### Testing The App Locally
 
-Once you've built the app, you may test it locally by running `yarn serve` command.
+Once you've built the app, you may test it locally by running `npm run preview` command.
 
 ```bash
-$ yarn build
-$ yarn serve
+$ npm run build
+$ npm run preview
 ```
 
-The `serve` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
+The `preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
 
 You may configure the port of the server py passing `--port` flag as an argument.
 
 ```json
 {
   "scripts": {
-    "serve": "vite serve --port 8080"
+    "preview": "vite preview --port 8080"
   }
 }
 ```
 
-Now the `serve` method will launch the server at http://localhost:8080.
+Now the `preview` method will launch the server at http://localhost:8080.
 
 ## GitHub Pages
 
@@ -103,7 +106,7 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
 2. Create a file named `.travis.yml` in the root of your project.
 
-3. Run `yarn` or `npm install` locally and commit the generated lockfile (that is `yarn.lock` or `package-lock.json`).
+3. Run `npm install` locally and commit the generated lockfile (`package-lock.json`).
 
 4. Use the GitHub Pages deploy provider template, and follow the [Travis CI documentation](https://docs.travis-ci.com/user/deployment/pages/).
 
@@ -112,9 +115,9 @@ language: node_js
 node_js:
   - lts/*
 install:
-  - yarn install # npm ci
+  - npm ci
 script:
-  - yarn build # npm run build
+  - npm run build
 deploy:
   provider: pages
   skip_cleanup: true
@@ -146,8 +149,8 @@ pages:
     paths:
       - node_modules/
   script:
-    - yarn install # npm install
-    - yarn build # npm run build
+    - npm install
+    - npm run build
   artifacts:
     paths:
       - public
@@ -159,7 +162,7 @@ pages:
 
 1. On [Netlify](https://netlify.com), setup up a new project from GitHub with the following settings:
 
-- **Build Command:** `vite build` or `yarn build` or `npm run build`
+- **Build Command:** `vite build` or `npm run build`
 - **Publish directory:** `dist`
 
 2. Hit the deploy button.
@@ -191,13 +194,13 @@ pages:
   }
   ```
 
-3. After running `yarn build` or `npm run build`, deploy using the command `firebase deploy`.
+3. After running `npm run build`, deploy using the command `firebase deploy`.
 
 ## Surge
 
 1. First install [surge](https://www.npmjs.com/package/surge), if you haven’t already.
 
-2. Run `yarn build` or `npm run build`.
+2. Run `npm run build`.
 
 3. Deploy to surge by typing `surge dist`.
 
@@ -256,7 +259,7 @@ $ heroku open
 
 To deploy your Vite app with a [Vercel for Git](https://vercel.com/docs/git), make sure it has been pushed to a Git repository.
 
-Go to https://vercel.com/import/git and import the project into Vercel using your Git of choice (GitHub, GitLab or BitBucket). Follow the wizard to select the project root with the project's `package.json` and override the build step using `yarn build` or `npm run build` and the output dir to be `./dist`
+Go to https://vercel.com/import/git and import the project into Vercel using your Git of choice (GitHub, GitLab or BitBucket). Follow the wizard to select the project root with the project's `package.json` and override the build step using `npm run build` and the output dir to be `./dist`
 
 ![Override Vercel Configuration](../images/vercel-configuration.png)
 
