@@ -10,8 +10,8 @@
     "vue": "^3.0.5"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^1.1.4",
+    "@vitejs/plugin-vue": "^1.1.5",
     "@vue/compiler-sfc": "^3.0.5",
-    "vite": "^2.0.1"
+    "vite": "^2.0.5"
   }
 }
