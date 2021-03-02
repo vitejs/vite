@@ -96,8 +96,14 @@ export async function scanImports(
     )
   )
 
-  emptyDir(tempDir)
-  fs.rmdirSync(tempDir)
+  try {
+    emptyDir(tempDir)
+    fs.rmdirSync(tempDir)
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err
+    }
+  }
 
   debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 
