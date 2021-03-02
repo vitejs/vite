@@ -65,7 +65,7 @@ export interface CSSModulesOptions {
     | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
-   * default: 'camelCase'
+   * default: null
    */
   localsConvention?:
     | 'camelCase'
