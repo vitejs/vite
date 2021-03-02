@@ -284,7 +284,7 @@ export async function build(
   } finally {
     parallelCallCounts--
     if (parallelCallCounts <= 0) {
-      paralellBuilds.forEach((bundle) => bundle.close())
+      await Promise.all(paralellBuilds.map((bundle) => bundle.close()))
       paralellBuilds.length = 0
     }
   }
