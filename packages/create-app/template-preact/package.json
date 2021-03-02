@@ -11,6 +11,6 @@
   },
   "devDependencies": {
     "@prefresh/vite": "^2.0.0",
-    "vite": "^2.0.1"
+    "vite": "^2.0.5"
   }
 }

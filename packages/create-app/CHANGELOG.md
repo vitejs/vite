@@ -1,3 +1,13 @@
+## [2.0.2](https://github.com/vitejs/vite/compare/create-app@2.0.1...create-app@2.0.2) (2021-03-02)
+
+
+### Bug Fixes
+
+* **create-app:** add missing import meta types in preact ts template ([#2298](https://github.com/vitejs/vite/issues/2298)) ([ee86d2c](https://github.com/vitejs/vite/commit/ee86d2c3a7e967626da5e1d8ed104102df563980))
+* typo ([#2127](https://github.com/vitejs/vite/issues/2127)) ([ea95a1d](https://github.com/vitejs/vite/commit/ea95a1d44ab6f1a66701ae43c48f10b2047cb141))
+
+
+
 ## [2.0.1](https://github.com/vitejs/vite/compare/create-app@2.0.0...create-app@2.0.1) (2021-02-20)
 
 
