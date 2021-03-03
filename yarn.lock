@@ -291,10 +291,15 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@babel/parser@^7.1.0", "@babel/parser@^7.12.0", "@babel/parser@^7.12.13", "@babel/parser@^7.13.0", "@babel/parser@^7.6.0", "@babel/parser@^7.9.6":
+"@babel/parser@^7.1.0", "@babel/parser@^7.12.0", "@babel/parser@^7.12.13", "@babel/parser@^7.13.0":
   version "7.13.4"
   resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.13.4.tgz#340211b0da94a351a6f10e63671fa727333d13ab"
   integrity sha512-uvoOulWHhI+0+1f9L4BoozY7U5cIkZ9PgJqvb041d6vypgUmtVPG4vmGm4pSggjl8BELzvHyUeJSUyEMY6b+qA==
+
+"@babel/parser@^7.6.0", "@babel/parser@^7.9.6":
+  version "7.13.9"
+  resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.13.9.tgz#ca34cb95e1c2dd126863a84465ae8ef66114be99"
+  integrity sha512-nEUfRiARCcaVo3ny3ZQjURjHQZUo/JkEw7rLlSZy/psWGnvwXFtPcr6jb7Yb41DVW5LTe6KRq9LGleRNsg1Frw==
 
 "@babel/plugin-syntax-async-generators@^7.8.4":
   version "7.8.4"
@@ -2454,8 +2459,7 @@ css-color-names@^1.0.1:
   integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
 
 "css-dep@link:./packages/playground/css/css-dep":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 cssesc@^3.0.0:
   version "3.0.0"
@@ -2624,15 +2628,16 @@ delegate@^3.1.2:
 
 "dep-cjs-named-only@link:./packages/playground/optimize-deps/dep-cjs-named-only":
   version "0.0.0"
-  uid ""
 
 "dep-linked-include@link:./packages/playground/optimize-deps/dep-linked-include":
   version "0.0.0"
-  uid ""
+  dependencies:
+    react "17.0.0"
 
 "dep-linked@link:./packages/playground/optimize-deps/dep-linked":
   version "0.0.0"
-  uid ""
+  dependencies:
+    lodash-es "^4.17.20"
 
 depd@~1.1.2:
   version "1.1.2"
@@ -6210,9 +6215,9 @@ pug-attrs@^3.0.0:
     pug-runtime "^3.0.0"
 
 pug-code-gen@^3.0.0:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/pug-code-gen/-/pug-code-gen-3.0.1.tgz#ff3b337b100c494ea63ef766091d27f7d73acb7e"
-  integrity sha512-xJIGvmXTQlkJllq6hqxxjRWcay2F9CU69TuAuiVZgHK0afOhG5txrQOcZyaPHBvSWCU/QQOqEp5XCH94rRZpBQ==
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/pug-code-gen/-/pug-code-gen-3.0.2.tgz#ad190f4943133bf186b60b80de483100e132e2ce"
+  integrity sha512-nJMhW16MbiGRiyR4miDTQMRWDgKplnHyeLvioEJYbk1RsPI3FuA3saEP8uwnTb2nTJEKBU90NFVWJBk4OU5qyg==
   dependencies:
     constantinople "^4.0.1"
     doctypes "^1.1.0"
@@ -6273,9 +6278,9 @@ pug-parser@^6.0.0:
     token-stream "1.0.0"
 
 pug-runtime@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/pug-runtime/-/pug-runtime-3.0.0.tgz#d523025fdc0a1efe70929d1fd3a2d24121ffffb6"
-  integrity sha512-GoEPcmQNnaTsePEdVA05bDpY+Op5VLHKayg08AQiqJBWU/yIaywEYv7TetC5dEQS3fzBBoyb2InDcZEg3mPTIA==
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/pug-runtime/-/pug-runtime-3.0.1.tgz#f636976204723f35a8c5f6fad6acda2a191b83d7"
+  integrity sha512-L50zbvrQ35TkpHwv0G6aLSuueDRwc/97XdY8kL3tOT0FmhgG7UypU3VztfV/LATAvmUfYi4wNxSajhSAeNN+Kg==
 
 pug-strip-comments@^2.0.0:
   version "2.0.0"
@@ -6640,16 +6645,13 @@ requires-port@^1.0.0:
   integrity sha1-kl0mAdOaxIXgkc8NpcbmlNw9yv8=
 
 "resolve-browser-field@link:./packages/playground/resolve/browser-field":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-custom-condition@link:./packages/playground/resolve/custom-condition":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-custom-main-field@link:./packages/playground/resolve/custom-main-field":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 resolve-cwd@^3.0.0:
   version "3.0.0"
@@ -6659,12 +6661,10 @@ resolve-cwd@^3.0.0:
     resolve-from "^5.0.0"
 
 "resolve-exports-env@link:./packages/playground/resolve/exports-env":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-exports-path@link:./packages/playground/resolve/exports-path":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -7714,7 +7714,6 @@ typedarray-to-buffer@^3.1.5:
 
 "types@link:./packages/vite/types":
   version "0.0.0"
-  uid ""
 
 typescript@^4.1.2:
   version "4.2.2"
