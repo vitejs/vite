@@ -2,6 +2,7 @@ import { extname } from 'path'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
+  parseUrl,
   normalizePath,
   removeImportQuery,
   removeTimestampQuery
@@ -9,7 +10,6 @@ import {
 import { FS_PREFIX } from '../constants'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
-import { parse as parseUrl } from 'url'
 
 export class ModuleNode {
   /**

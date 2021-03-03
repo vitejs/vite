@@ -440,3 +440,7 @@ export function combineSourcemaps(
 
   return map as RawSourceMap
 }
+
+export function parseUrl(url: string) {
+  return new URL(url, 'http://localhost')
+}

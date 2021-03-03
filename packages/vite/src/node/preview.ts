@@ -61,7 +61,10 @@ export async function preview(config: ResolvedConfig, port = 5000) {
           }
         })
         .forEach(({ type, host }) => {
-          const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+          const url = `${protocol}://${host}:${chalk.bold(port)}${base.slice(
+            0,
+            -1
+          )}`
           logger.info(`  > ${type} ${chalk.cyan(url)}`)
         })
     )

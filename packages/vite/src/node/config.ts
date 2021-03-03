@@ -27,7 +27,7 @@ import { createLogger, Logger, LogLevel } from './logger'
 import { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
 import { ResolvedBuildOptions } from '.'
-import { parse as parseUrl } from 'url'
+import { parseUrl } from './utils'
 import { JsonOptions } from './plugins/json'
 import {
   createPluginContainer,

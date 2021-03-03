@@ -1,9 +1,8 @@
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
-import { parse as parseUrl } from 'url'
 import qs, { ParsedUrlQuery } from 'querystring'
 import { fileToUrl } from './asset'
-import { cleanUrl, injectQuery } from '../utils'
+import { cleanUrl, injectQuery, parseUrl } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 

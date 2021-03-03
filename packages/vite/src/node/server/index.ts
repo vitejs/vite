@@ -569,7 +569,10 @@ async function startServer(
             }
           })
           .forEach(({ type, host }) => {
-            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+            const url = `${protocol}://${host}:${chalk.bold(port)}${base.slice(
+              0,
+              -1
+            )}`
             info(`  > ${type} ${chalk.cyan(url)}`)
           })
       )
