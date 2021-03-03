@@ -1,4 +1,4 @@
-import { parse as parseUrl } from 'url'
+import { parseUrl } from '../../utils'
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 
@@ -7,7 +7,7 @@ import { Connect } from 'types/connect'
 export function baseMiddleware({
   config
 }: ViteDevServer): Connect.NextHandleFunction {
-  const base = config.base
+  const base = config.base.slice(0, -1)
 
   return (req, res, next) => {
     const url = req.url!
@@ -17,7 +17,7 @@ export function baseMiddleware({
     if (path.startsWith(base)) {
       // rewrite url to remove base.. this ensures that other middleware does
       // not need to consider base being prepended or not
-      req.url = url.replace(base, '/')
+      req.url = url.replace(new RegExp(`^${base}/?`), '/')
     } else if (path === '/' || path === '/index.html') {
       // redirect root visit to based url
       res.writeHead(302, {
