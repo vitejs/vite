@@ -14,7 +14,7 @@ const assetMatch = isBuild
 
 const outerAssetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
-  : /\/foo\/@fs\/[\w\\\/\:]+\/css\/nested\/asset\.png/
+  : /\/foo\/@fs\/.+?\/css\/nested\/asset\.png/
 
 const iconMatch = `/foo/icon.png`
 
