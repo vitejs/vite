@@ -136,7 +136,7 @@ describe('css url() references', () => {
 
   if (isBuild) {
     test('preserve postfix query/hash', () => {
-      expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2?#iefix`)
+      expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2#iefix`)
     })
   }
 })
