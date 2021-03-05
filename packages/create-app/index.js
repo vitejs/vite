@@ -31,6 +31,7 @@ const TEMPLATES = [
 const renameFiles = {
   _gitignore: '.gitignore'
 }
+const projectNameRE = /^[A-Za-z0-9_-]*$/
 
 async function init() {
   let targetDir = argv._[0]
@@ -44,6 +45,12 @@ async function init() {
       message: `Project name:`,
       initial: 'vite-project'
     })
+    if (!projectNameRE.test(name)) {
+      console.error(
+        `Project name "${name}" should only contain letters, numbers, underscores and dashs.`
+      )
+      process.exit(1)
+    }
     targetDir = name
   }
 
