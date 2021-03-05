@@ -1,6 +1,6 @@
 /**
  * This file is refactored into TypeScript based on
- * https://github.com/preactjs/wmr/blob/master/src/lib/rollup-plugin-container.js
+ * https://github.com/preactjs/wmr/blob/main/packages/wmr/src/lib/rollup-plugin-container.js
  */
 
 /**
