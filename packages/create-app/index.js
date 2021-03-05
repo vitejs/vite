@@ -47,7 +47,7 @@ async function init() {
     })
     if (!projectNameRE.test(name)) {
       console.error(
-        `Project name "${name}" should only contain letters, numbers, underscores and dashs.`
+        `Project name "${name}" should only contain letters, numbers, underscores and dashes.`
       )
       process.exit(1)
     }
