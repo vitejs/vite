@@ -58,9 +58,14 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (chunk.imports.length) {
-          manifestChunk.imports = chunk.imports.map((file) =>
-            getChunkName(bundle[file] as OutputChunk)
-          )
+          const imports = []
+          for (const file of chunk.imports) {
+            const importItem = bundle[file]
+            importItem && imports.push(getChunkName(importItem as OutputChunk))
+          }
+          if (imports.length > 0) {
+            manifestChunk.imports = imports
+          }
         }
 
         if (chunk.dynamicImports.length) {
