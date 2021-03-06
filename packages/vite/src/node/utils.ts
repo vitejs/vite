@@ -166,10 +166,7 @@ export function prettifyUrl(url: string, root: string) {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    let file = path.relative(
-      root,
-      isAbsoluteFile ? url : url.slice(FS_PREFIX.length)
-    )
+    let file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
     const seg = file.split('/')
     const npmIndex = seg.indexOf(`node_modules`)
     const isSourceMap = file.endsWith('.map')
