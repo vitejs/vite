@@ -12,6 +12,7 @@
     "debug": "node --inspect-brk server"
   },
   "dependencies": {
+    "fastify-plugin": "^3.0.0",
     "vue": "^3.0.6",
     "vue-router": "^4.0.3"
   },
@@ -21,14 +22,11 @@
     "@vitejs/plugin-vue-jsx": "^1.1.2",
     "@vue/compiler-sfc": "^3.0.6",
     "@vue/server-renderer": "^3.0.6",
-    "compression": "^1.7.4",
     "cross-env": "^7.0.3",
-    "express": "^4.17.1",
     "fastify": "^3.13.0",
     "fastify-compress": "^3.4.2",
     "fastify-static": "^4.0.1",
     "middie": "^5.2.0",
-    "serve-static": "^1.14.1",
     "vite": "^2.0.5"
   }
 }
