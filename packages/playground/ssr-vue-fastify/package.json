@@ -16,18 +16,19 @@
     "vue-router": "^4.0.3"
   },
   "devDependencies": {
+    "@nuxt/devalue": "^1.2.5",
     "@vitejs/plugin-vue": "^1.0.0",
     "@vitejs/plugin-vue-jsx": "^1.1.2",
     "@vue/compiler-sfc": "^3.0.6",
     "@vue/server-renderer": "^3.0.6",
-    "@nuxt/devalue": "^1.2.5",
-    "middie": "^5.2.0",
-    "fastify": "^3.13.0",
-    "fastify-compress": "^3.4.2",
-    "fastify-static": "^4.0.1",
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
     "express": "^4.17.1",
-    "serve-static": "^1.14.1"
+    "fastify": "^3.13.0",
+    "fastify-compress": "^3.4.2",
+    "fastify-static": "^4.0.1",
+    "middie": "^5.2.0",
+    "serve-static": "^1.14.1",
+    "vite": "^2.0.5"
   }
 }
