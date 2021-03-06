@@ -8,16 +8,15 @@ function getHandler (options, getTemplate, viteDevServer) {
     try {
       const url = req.raw.url
       const { source, render } = await getTemplate(url, viteDevServer)
-      const [ appHTML, preloadLinks ] = await render(req, url, options.distManifest)
+      const [ appHTML, preloadLinks ] = await render(req, url, options.distManifest, options.ssrDataKey)
 
       let html = source
         .replace('<!--preload-links-->', preloadLinks)
         .replace('<!--app-html-->', appHTML)
 
-      console.log('options.ssrDataKey', options.ssrDataKey)
       const ssrData = req[options.ssrDataKey]
       if (ssrData) {
-        html.replace(
+        html = html.replace(
           '<!--ssr-data-->',
           `<script>window.$ssrData = ${devalue(ssrData)}</script>`
         )
