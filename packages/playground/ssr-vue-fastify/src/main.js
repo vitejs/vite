@@ -1,3 +1,4 @@
+import { getCurrentInstance } from 'vue'
 import App from './App.vue'
 import { createSSRApp } from 'vue'
 import { createRouter } from './router'
@@ -10,4 +11,8 @@ export function createApp() {
   const router = createRouter()
   app.use(router)
   return { app, router }
+}
+
+export function getSSRData () {
+  return getCurrentInstance().appContext.app.config.globalProperties.$ssrData
 }
