@@ -13,6 +13,7 @@ const {
   lightRed,
   stripColors
 } = require('kolorist')
+const validatePackageName = require('validate-npm-package-name')
 
 const cwd = process.cwd()
 
@@ -45,9 +46,11 @@ async function init() {
       message: `Project name:`,
       initial: 'vite-project'
     })
-    if (!projectNameRE.test(name)) {
+    const validateResult = validatePackageName(name)
+    if (!validateResult.validForNewPackages) {
       console.error(
-        `Project name "${name}" should only contain letters, numbers, underscores and dashes.`
+        // Only one name to be validated, so there will be only one error
+        validateResult.errors.length && validateResult.errors[0]
       )
       process.exit(1)
     }
