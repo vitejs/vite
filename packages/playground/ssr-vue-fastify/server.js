@@ -17,6 +17,13 @@ async function createServer(
     srcDir: resolve(__dirname, 'src'),
   })
 
+  fastify.vite.get('/with-data', {
+    ssrData (req) {
+      return { message: `Hello from ${req.raw.url}` }
+    }
+  })
+  fastify.get('/*', fastify.vite.handler)
+
   return { fastify, vite: fastify.$vite }
 }
 
