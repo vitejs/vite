@@ -19,7 +19,7 @@ async function createServer(
 
   fastify.vite.get('/with-data', {
     ssrData (req) {
-      return { message: `Hello from ${req.raw.url}` }
+      return { message: `Hello from ${req.raw.url} - ${Math.random()}` }
     }
   })
   fastify.get('/*', fastify.vite.handler)

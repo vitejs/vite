@@ -12,7 +12,7 @@
 <script setup>
 import { getSSRData } from '../main'
 import foo from '@foo'
-import { reactive, defineAsyncComponent } from 'vue'
+import { ref, reactive, defineAsyncComponent } from 'vue'
 
 const ssrData = getSSRData()
 const Foo = defineAsyncComponent(() => import('../components/Foo').then(mod => mod.Foo))
