@@ -34,6 +34,8 @@ module.exports = async function (fastify, options) {
     const getTemplate = getTemplateGetter(options)
     const handler = getHandler(options, getTemplate, viteApp)
     fastify.get('/*', handler)
+    // For testing only
+    fastify.decorate('$vite', viteApp)
   } else {
     fastify.register(FastifyCompress)
     fastify.register(FastifyStatic, {

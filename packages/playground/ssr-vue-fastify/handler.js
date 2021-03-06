@@ -33,6 +33,7 @@ function getTemplateGetter (options) {
   const indexPath = resolve(rootDir, 'index.html')
   if (options.dev) {
     return async (req, url, viteApp) => {
+      console.log('1')
       req.$viteSSRData = req.$viteSSRData || {foobar: 'foobar'}
       let source = readFileSync(indexPath, 'utf-8')
       source = source.replace(
