@@ -569,14 +569,6 @@ export default ({ command, mode }) => {
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
 
-### optimizeDeps.keepNames
-
-- **Type:** `boolean`
-
-  The bundler sometimes needs to rename symbols to avoid collisions.
-  Set this to `true` to keep the `name` property on functions and classes.
-  See [`keepNames`](https://esbuild.github.io/api/#keep-names).
-
 ## SSR Options
 
 :::warning Experimental
