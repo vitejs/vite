@@ -35,6 +35,10 @@ export interface VueViteOptions {
    * @default false
    */
   jsx?: boolean
+  /**
+   * The options for `@vue/babel-preset-jsx`
+   */
+  jsxOptions?: Record<string, any>
 }
 
 export interface ResolvedOptions extends VueViteOptions {
@@ -127,7 +131,7 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
       const { filename, query } = parseVueRequest(id)
 
       if (/\.(tsx|jsx)$/.test(id)) {
-        return transformVueJsx(code, id)
+        return transformVueJsx(code, id, options.jsxOptions)
       }
 
       if (!query.vue && !filter(filename)) {
