@@ -231,6 +231,7 @@ export async function optimizeDeps(
   await esbuildService.build({
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
+    keepNames: true,
     format: 'esm',
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
