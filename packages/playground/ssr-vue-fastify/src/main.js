@@ -1,5 +1,5 @@
 import { getCurrentInstance } from 'vue'
-import App from './App.vue'
+import base from './base.vue'
 import { createSSRApp } from 'vue'
 import { createRouter } from './router'
 
@@ -7,7 +7,7 @@ import { createRouter } from './router'
 // that creates a fresh app instance. If using Vuex, we'd also be creating a
 // fresh store here.
 export function createApp (req) {
-  const app = createSSRApp(App)
+  const app = createSSRApp(base)
   const ctx = { req }
   const router = createRouter()
   app.use(router)

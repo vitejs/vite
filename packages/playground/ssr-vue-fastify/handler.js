@@ -3,17 +3,18 @@ const { resolve } = require('path')
 const vite = require('vite')
 const devalue = require('@nuxt/devalue')
 
-function getHandler (options, getTemplate, viteApp) {
+function getHandler (options, getTemplate, viteDevServer) {
   return async function (req, reply) {
     try {
       const url = req.raw.url
-      const { source, render } = await getTemplate(url, viteApp)
+      const { source, render } = await getTemplate(url, viteDevServer)
       const [ appHTML, preloadLinks ] = await render(req, url, options.distManifest)
 
       let html = source
         .replace('<!--preload-links-->', preloadLinks)
         .replace('<!--app-html-->', appHTML)
 
+      console.log('options.ssrDataKey', options.ssrDataKey)
       const ssrData = req[options.ssrDataKey]
       if (ssrData) {
         html.replace(
@@ -39,10 +40,10 @@ function getHandler (options, getTemplate, viteApp) {
 function getTemplateGetter ({ dev, rootDir, srcDir, distDir, distIndex }) {
   const indexPath = resolve(rootDir, 'index.html')
   if (dev) {
-    return async (url, viteApp) => {
+    return async (url, viteDevServer) => {
       // Reload template source every time in dev
-      const source = await viteApp.transformIndexHtml(url, readFileSync(indexPath, 'utf-8'))
-      const { render } = await viteApp.ssrLoadModule(resolve(srcDir, 'entry/server.js'))
+      const source = await viteDevServer.transformIndexHtml(url, readFileSync(indexPath, 'utf-8'))
+      const { render } = await viteDevServer.ssrLoadModule(resolve(srcDir, 'entry/server.js'))
       return { source, render }
     }
   } else {

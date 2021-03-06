@@ -1,15 +1,16 @@
-const { resolve } = require('path')
-const vite = require('vite')
+const { resolve, vite, middie, static, fp } = require('./deps')
+const { getHandler, getTemplateGetter, assign } = require('./handler')
 
-const Middie = require('middie')
-const FastifyStatic = require('fastify-static')
-const FastifyCompress = require('fastify-compress')
-
-const { getHandler, getTemplateGetter } = require('./handler')
-
-module.exports = async function (fastify, options) {
+async function fastifyVite (fastify, options) {
+  // Set option defaults
+  if (!options.ssrDataKey) {
+    options.ssrDataKey = '$ssrData'
+  }
+  if (!options.rootDir) {
+    options.rootDir = __dirname
+  }
   if (!options.srcDir) {
-    throw new FastifyViteError('srcDir required')
+    options.srcDir = options.rootDir
   }
   if (!options.dev) {
     options.distDir = resolve(options.rootDir, 'dist')
@@ -17,35 +18,49 @@ module.exports = async function (fastify, options) {
   } else {
     options.distManifest = []
   }
-  if (options.decorate) {
-    for (const [decorator, value] of Object.entries(options.decorate)) {
-      fastify.decorate(decorator, value)
-    }
-  }
+
+  // Setup appropriate Vite route handler
+  // For dev you get more detailed logging and sautoreload 
   if (options.dev) {
-    const viteApp = await vite.createServer({
+    const viteDevServer = await vite.createServer({
       root: options.rootDir,
-      logLevel: options.dev ? 'error' : 'info',
+      logLevel: 'error',
       server: { middlewareMode: true },
     })
-    await fastify.register(Middie)
-    fastify.use(viteApp.middlewares)
+    await fastify.register(middie)
+    fastify.use(viteDevServer.middlewares)
     
     const getTemplate = getTemplateGetter(options)
-    const handler = getHandler(options, getTemplate, viteApp)
-    fastify.get('/*', handler)
-    // For testing only
-    fastify.decorate('$vite', viteApp)
+    handler = getHandler(options, getTemplate, viteDevServer)
+    fastify.decorate('viteDevServer', viteDevServer)
   } else {
-    fastify.register(FastifyCompress)
-    fastify.register(FastifyStatic, {
+    fastify.register(static, {
       root: resolve(options.distDir, 'client'),
       prefix: options.publicPath || '/static/', // fixme
     })
     const getTemplate = getTemplateGetter(options)
-    const handler = getHandler(options, getTemplate, viteApp)
-    fastify.get('/*', handler)
+    handler = getHandler(options, getTemplate, viteApp)
   }
+
+  // Sets fastify.vite.get() helper which uses
+  // a wrapper for setting a route with a ssrData handler
+  fastify.decorate('vite', {
+    handler,
+    get (url, { ssrData, ...routeOptions }) {
+      const preHandler = ssrData && async function (req) {
+        req[options.ssrDataKey] = await ssrData.call(this, req, reply)
+      }
+      fastify.route({
+        method: 'GET',
+        url,
+        preHandler,
+        handler,
+        ...routeOptions,
+      })
+    },
+  })
 }
 
 class FastifyViteError extends Error {}
+
+module.exports = fp(fastifyVite)
