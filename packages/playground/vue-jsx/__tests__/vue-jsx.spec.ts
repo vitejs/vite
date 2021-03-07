@@ -5,6 +5,7 @@ test('should render', async () => {
   expect(await page.textContent('.named-specifier')).toMatch('1')
   expect(await page.textContent('.default')).toMatch('2')
   expect(await page.textContent('.default-tsx')).toMatch('3')
+  expect(await page.textContent('.other-ext')).toMatch('Other Ext')
 })
 
 test('should update', async () => {
