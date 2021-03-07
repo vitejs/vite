@@ -15,6 +15,15 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
    */
   rewrite?: (path: string) => string
   /**
+   * router
+   */
+  router?:
+    | { [hostOrPath: string]: HttpProxy.ServerOptions['target'] }
+    | ((req: http.IncomingMessage) => HttpProxy.ServerOptions['target'])
+    | ((
+        req: http.IncomingMessage
+      ) => Promise<HttpProxy.ServerOptions['target']>)
+  /**
    * configure the proxy server (e.g. listen to events)
    */
   configure?: (proxy: HttpProxy.Server, options: ProxyOptions) => void
@@ -77,7 +86,7 @@ export function proxyMiddleware({
     })
   }
 
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const url = req.url!
     for (const context in proxies) {
       if (
@@ -85,17 +94,12 @@ export function proxyMiddleware({
         url.startsWith(context)
       ) {
         const [proxy, opts] = proxies[context]
-        const options: HttpProxy.ServerOptions = {}
 
         if (opts.bypass) {
           const bypassResult = opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
             debug(`bypass: ${req.url} -> ${bypassResult}`)
-            return next()
-          } else if (typeof bypassResult === 'object') {
-            Object.assign(options, bypassResult)
-            debug(`bypass: ${req.url} use modified opitions: %O`, options)
             return next()
           } else if (bypassResult === false) {
             debug(`bypass: ${req.url} -> 404`)
@@ -104,13 +108,79 @@ export function proxyMiddleware({
         }
 
         debug(`${req.url} -> ${opts.target || opts.forward}`)
-        if (opts.rewrite) {
-          req.url = opts.rewrite(req.url!)
-        }
-        proxy.web(req, res, options)
+        const activeProxyOptions = await prepareProxyRequest(req, opts)
+        proxy.web(req, res, activeProxyOptions)
         return
       }
     }
     next()
   }
+}
+
+async function prepareProxyRequest(
+  req: http.IncomingMessage,
+  opts: ProxyOptions
+) {
+  // req.url = req.originalUrl || req.url
+  const newProxyOptions = Object.assign({}, opts)
+
+  if (opts.router) {
+    let newTarget = await getTarget(req, opts)
+    if (newTarget) {
+      debug('[proxy] Router new target: %s -> "%s"', opts.target, newTarget)
+      newProxyOptions.target = newTarget
+    }
+  }
+  if (opts.rewrite) {
+    req.url = opts.rewrite(req.url!)
+  }
+
+  return newProxyOptions
+}
+
+async function getTarget(req: http.IncomingMessage, config: ProxyOptions) {
+  let newTarget
+  const router = config.router
+
+  switch (typeof router) {
+    case 'function':
+      newTarget = await router(req)
+      break
+    case 'object':
+      newTarget = getTargetFromProxyTable(req, router)
+      break
+  }
+
+  return newTarget
+}
+
+function getTargetFromProxyTable(
+  req: http.IncomingMessage,
+  table: { [hostOrPath: string]: HttpProxy.ServerOptions['target'] }
+) {
+  let result
+  const host = req.headers.host as string
+  const path = req.url
+
+  const hostAndPath = host + path
+
+  Object.keys(table).forEach((key) => {
+    if (key.indexOf('/') > -1) {
+      if (hostAndPath.indexOf(key) > -1) {
+        // match 'localhost:3000/api'
+        result = table[key]
+        debug('[proxy] Router table match: "%s"', key)
+        return false
+      }
+    } else {
+      if (key === host) {
+        // match 'localhost:3000'
+        result = table[key]
+        debug('[proxy] Router table match: "%s"', host)
+        return false
+      }
+    }
+  })
+
+  return result
 }
