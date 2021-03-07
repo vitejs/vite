@@ -46,12 +46,12 @@ async function init() {
       message: `Project name:`,
       initial: 'vite-project'
     })
-    const validateResult = validatePackageName(name)
-    if (!validateResult.validForNewPackages) {
-      console.error(
-        // Only one name to be validated, so there will be only one error
-        validateResult.errors.length && validateResult.errors[0]
-      )
+    const { errors } = validatePackageName(name)
+    if (errors) {
+      errors.unshift(`Invalid package name: "${name}"`)
+      // Multiple errors may be returned even for one name.
+      // For example the "foobar "
+      console.error(errors.join('\n  - '))
       process.exit(1)
     }
     targetDir = name
