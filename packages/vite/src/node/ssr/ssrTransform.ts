@@ -145,15 +145,20 @@ export async function ssrTransform(
       if (!binding) {
         return
       }
-      if (isStaticProperty(parent) && parent.shorthand) {
-        // let binding used in a property shorthand
-        // { foo } -> { foo: __import_x__.foo }
+      if (isStaticProperty(parent)) {
         // skip for destructure patterns
         if (
-          !(parent as any).inPattern ||
+          (parent as any).inPattern ||
           isInDestructureAssignment(parent, parentStack)
         ) {
+          return
+        }
+        // let binding used in a property shorthand
+        // { foo } -> { foo: __import_x__.foo }
+        if (parent.shorthand) {
           s.appendLeft(id.end, `: ${binding}`)
+        } else {
+          s.overwrite(id.start, id.end, binding)
         }
       } else if (
         parent.type === 'ClassDeclaration' &&

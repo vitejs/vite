@@ -198,3 +198,26 @@ test('sourcemap source', async () => {
     (await ssrTransform(`export const a = 1`, null, 'input.js')).map.sources
   ).toStrictEqual(['input.js'])
 })
+
+test('overwrite bindings', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `import { inject } from 'vue';` +
+          `const a = { inject }\n` +
+          `const b = { test: inject }\n` +
+          `function c() { const { test: inject } = { test: true } }\n` +
+          `function d() { const { inject } = { inject: true } }\n`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"vue\\")
+    const a = { inject: __vite_ssr_import_0__.inject }
+    const b = { test: __vite_ssr_import_0__.inject }
+    function c() { const { test: inject } = { test: true } }
+    function d() { const { inject } = { inject: true } }
+    "
+  `)
+})
