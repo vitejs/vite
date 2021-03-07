@@ -466,7 +466,7 @@ export default ({ command, mode }) => {
 
 ### build.sourcemap
 
-- **Type:** `boolean`
+- **Type:** `boolean | 'inline'`
 - **Default:** `false`
 
   Generate production source maps.
