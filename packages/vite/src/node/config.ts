@@ -135,6 +135,10 @@ export interface UserConfig {
    */
   logLevel?: LogLevel
   /**
+   * Custom logger.
+   */
+  logger?: Logger
+  /**
    * Default: true
    */
   clearScreen?: boolean
@@ -225,7 +229,11 @@ export async function resolveConfig(
   }
 
   // Define logger
-  const logger = createLogger(config.logLevel, config.clearScreen)
+  const logger = createLogger(
+    config.logLevel,
+    config.clearScreen,
+    config.logger
+  )
 
   // user config may provide an alternative mode
   mode = config.mode || mode
