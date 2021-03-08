@@ -353,7 +353,7 @@ export function tryNodeResolve(
     ) {
       return { id: resolved }
     }
-    // if we reach here, it's a valid dep import that hasn't been optimzied.
+    // if we reach here, it's a valid dep import that hasn't been optimized.
     const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
     const exclude = server.config.optimizeDeps?.exclude
     if (
