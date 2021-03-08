@@ -54,6 +54,7 @@ declare module 'postcss-load-config' {
   ): Promise<{
     options: ProcessOptions
     plugins: Plugin[]
+    file: string
   }>
   export = load
 }

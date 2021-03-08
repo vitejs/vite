@@ -75,7 +75,7 @@ export interface CSSModulesOptions {
     | null
 }
 
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
+const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss|sss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
@@ -507,7 +507,7 @@ async function compileCSS(
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
-  const postcssConfig = await resolvePostcssConfig(config)
+  const postcssConfig = await resolvePostcssConfig(id, config)
   const lang = id.match(cssLangRE)?.[1]
 
   // 1. plain css that needs no processing
@@ -666,13 +666,16 @@ interface PostCSSConfigResult {
   plugins: Postcss.Plugin[]
 }
 
-let cachedPostcssConfig: PostCSSConfigResult | null | undefined
+let cachedPostcssConfigs: Map<string, PostCSSConfigResult | null> = new Map()
+let cachedPostcssConfigPath: string | undefined
 
 async function resolvePostcssConfig(
+  file: string,
   config: ResolvedConfig
 ): Promise<PostCSSConfigResult | null> {
-  if (cachedPostcssConfig !== undefined) {
-    return cachedPostcssConfig
+  const cached = cachedPostcssConfigs.get(file)
+  if (cached !== undefined) {
+    return cached
   }
 
   // inline postcss config via vite config
@@ -683,19 +686,30 @@ async function resolvePostcssConfig(
       plugins: inlineOptions.plugins || []
     }
     delete result.options.plugins
-    return (cachedPostcssConfig = result)
+    cachedPostcssConfigs.set(file, result)
+
+    return result
   }
 
   try {
     const searchPath =
-      typeof inlineOptions === 'string' ? inlineOptions : config.root
-    // @ts-ignore
-    return (cachedPostcssConfig = await postcssrc({}, searchPath))
+      cachedPostcssConfigPath ??
+      (typeof inlineOptions === 'string' ? inlineOptions : config.root)
+
+    const result = (await postcssrc(
+      { file } as any,
+      searchPath
+    )) as PostCSSConfigResult & { file: string }
+    cachedPostcssConfigPath = result.file
+    cachedPostcssConfigs.set(file, result)
+
+    return result
   } catch (e) {
     if (!/No PostCSS Config found/.test(e.message)) {
       throw e
     }
-    return (cachedPostcssConfig = null)
+    cachedPostcssConfigs.set(file, null)
+    return null
   }
 }
 
