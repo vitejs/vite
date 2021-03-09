@@ -206,8 +206,10 @@ test('overwrite bindings', async () => {
         `import { inject } from 'vue';` +
           `const a = { inject }\n` +
           `const b = { test: inject }\n` +
-          `function c() { const { test: inject } = { test: true } }\n` +
-          `function d() { const { inject } = { inject: true } }\n`,
+          `function c() { const { test: inject } = { test: true }; console.log(inject) }\n` +
+          `const d = inject \n` +
+          `function f() {  console.log(inject) }\n` +
+          `function e() { const { inject } = { inject: true } }\n`,
         null,
         null
       )
@@ -216,8 +218,10 @@ test('overwrite bindings', async () => {
     "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"vue\\")
     const a = { inject: __vite_ssr_import_0__.inject }
     const b = { test: __vite_ssr_import_0__.inject }
-    function c() { const { test: inject } = { test: true } }
-    function d() { const { inject } = { inject: true } }
+    function c() { const { test: inject } = { test: true }; console.log(inject) }
+    const d = __vite_ssr_import_0__.inject 
+    function f() {  console.log(__vite_ssr_import_0__.inject) }
+    function e() { const { inject } = { inject: true } }
     "
   `)
 })
