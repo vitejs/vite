@@ -664,31 +664,30 @@ async function compileCSS(
 interface PostCSSConfigResult {
   options: Postcss.ProcessOptions
   plugins: Postcss.Plugin[]
+  file?: string
 }
 
-let cachedPostcssConfigs: Map<string, PostCSSConfigResult | null> = new Map()
-let cachedPostcssConfigPath: string | undefined
+let cachedPostcssConfigPath: string | undefined | null
 
 async function resolvePostcssConfig(
   file: string,
   config: ResolvedConfig
 ): Promise<PostCSSConfigResult | null> {
-  const cached = cachedPostcssConfigs.get(file)
-  if (cached !== undefined) {
-    return cached
-  }
-
   // inline postcss config via vite config
   const inlineOptions = config.css?.postcss
+
   if (isObject(inlineOptions)) {
     const result = {
       options: { ...inlineOptions },
       plugins: inlineOptions.plugins || []
     }
     delete result.options.plugins
-    cachedPostcssConfigs.set(file, result)
 
     return result
+  }
+
+  if (cachedPostcssConfigPath === null) {
+    return null
   }
 
   try {
@@ -696,20 +695,16 @@ async function resolvePostcssConfig(
       cachedPostcssConfigPath ??
       (typeof inlineOptions === 'string' ? inlineOptions : config.root)
 
-    const result = (await postcssrc(
-      { file } as any,
-      searchPath
-    )) as PostCSSConfigResult & { file: string }
+    const ctx = { file, env: config.mode }
+    const result = (await postcssrc(ctx, searchPath)) as PostCSSConfigResult
     cachedPostcssConfigPath = result.file
-    cachedPostcssConfigs.set(file, result)
 
     return result
   } catch (e) {
     if (!/No PostCSS Config found/.test(e.message)) {
       throw e
     }
-    cachedPostcssConfigs.set(file, null)
-    return null
+    return (cachedPostcssConfigPath = null)
   }
 }
 
