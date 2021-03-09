@@ -170,14 +170,14 @@ export default ({ command, mode }) => {
 ### resolve.mainFields
 
 - **Type:** `string[]`
-- **Default:**: `['module', 'jsnext:main', 'jsnext']`
+- **Default:** `['module', 'jsnext:main', 'jsnext']`
 
   List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
 
 ### resolve.extensions
 
 - **Type:** `string[]`
-- **Default:**: `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+- **Default:** `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
 
   List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
