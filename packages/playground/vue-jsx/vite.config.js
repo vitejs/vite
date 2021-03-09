@@ -6,7 +6,7 @@ const vueJsxPlugin = require('@vitejs/plugin-vue-jsx')
 module.exports = {
   plugins: [
     vueJsxPlugin({
-      include: ['**/*.tesx']
+      include: [/\.tesx$/, /\.[jt]sx$/]
     })
   ],
   build: {

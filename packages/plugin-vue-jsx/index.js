@@ -78,19 +78,9 @@ function vueJsxPlugin(options = {}) {
     },
 
     transform(code, id, ssr) {
-      /**
-       * @type Array<string | RegExp>
-       */
-      const defaultInclude = ['**/*.jsx', '**/*.tsx']
       const { include, exclude, ...babelPluginOptions } = options
 
-      if (Array.isArray(include)) {
-        defaultInclude.push(...include)
-      } else if (include) {
-        defaultInclude.push(include)
-      }
-
-      const filter = createFilter(defaultInclude, exclude)
+      const filter = createFilter(include || /\.[jt]sx$/, exclude)
 
       if (filter(id)) {
         const plugins = [importMeta, [jsx, babelPluginOptions]]
