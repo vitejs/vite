@@ -45,6 +45,7 @@ export interface CSSOptions {
    */
   modules?: CSSModulesOptions | false
   preprocessorOptions?: Record<string, any>
+  postcssImplementation?: typeof Postcss
   postcss?:
     | string
     | (Postcss.ProcessOptions & {
@@ -501,7 +502,11 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  const { modules: modulesOptions, preprocessorOptions } = config.css || {}
+  const {
+    modules: modulesOptions,
+    preprocessorOptions,
+    postcssImplementation
+  } = config.css || {}
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -623,7 +628,8 @@ async function compileCSS(
   }
 
   // postcss is an unbundled dep and should be lazy imported
-  const postcssResult = await (await import('postcss'))
+  const postcssFactory = postcssImplementation || (await import('postcss'))
+  const postcssResult = await postcssFactory
     .default(postcssPlugins)
     .process(code, {
       ...postcssOptions,
