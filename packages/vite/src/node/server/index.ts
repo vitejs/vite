@@ -270,7 +270,7 @@ export async function createServer(
     ? null
     : await resolveHttpServer(serverConfig, middlewares)
   const ws =
-    config.server.hmr === false
+    config.server.hmr !== false
       ? createWebSocketServer(httpServer, config)
       : undefined
 
