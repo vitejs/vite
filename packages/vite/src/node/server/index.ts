@@ -175,7 +175,7 @@ export interface ViteDevServer {
   /**
    * web socket server with `send(payload)` method
    */
-  ws: WebSocketServer
+  ws?: WebSocketServer
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
@@ -269,7 +269,10 @@ export async function createServer(
   const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, middlewares)
-  const ws = createWebSocketServer(httpServer, config)
+  const ws =
+    config.server.hmr === false
+      ? createWebSocketServer(httpServer, config)
+      : undefined
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
@@ -326,7 +329,7 @@ export async function createServer(
     async close() {
       await Promise.all([
         watcher.close(),
-        ws.close(),
+        ws?.close(),
         container.close(),
         closeHttpServer()
       ])
@@ -363,7 +366,7 @@ export async function createServer(
       try {
         await handleHMRUpdate(file, server)
       } catch (err) {
-        ws.send({
+        ws?.send({
           type: 'error',
           err: prepareError(err)
         })
