@@ -136,6 +136,7 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
+    mod.ssrModule = null
     e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
     server.config.logger.error(
       `Error when evaluating SSR module ${url}:\n${e.stack}`,
