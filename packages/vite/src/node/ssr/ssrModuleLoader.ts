@@ -29,10 +29,9 @@ export async function ssrLoadModule(
   url = unwrapId(url)
 
   if (urlStack.includes(url)) {
-    server.config.logger.warn(
-      `Circular dependency: ${urlStack.join(' -> ')} -> ${url}`
-    )
-    return {}
+    const { moduleGraph } = server
+    const mod = await moduleGraph.ensureEntryFromUrl(url)
+    return mod.ssrModule as SSRModule
   }
 
   // when we instantiate multiple dependency modules in parallel, they may
@@ -76,6 +75,8 @@ async function instantiateModule(
   }
   Object.defineProperty(ssrModule, '__esModule', { value: true })
 
+  mod.ssrModule = ssrModule
+
   const isExternal = (dep: string) => dep[0] !== '.' && dep[0] !== '/'
 
   await Promise.all(
@@ -117,7 +118,6 @@ async function instantiateModule(
       }
     }
   }
-
   try {
     new Function(
       `global`,
@@ -147,7 +147,7 @@ async function instantiateModule(
     throw e
   }
 
-  mod.ssrModule = Object.freeze(ssrModule)
+  Object.freeze(ssrModule)
   return ssrModule
 }
 
