@@ -52,7 +52,6 @@ import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
 import acornNumericSeparator from 'acorn-numeric-separator'
 import acornStaticClassFeatures from 'acorn-static-class-features'
-// eslint-disable-next-line node/no-missing-import
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'

@@ -9,7 +9,6 @@ import {
   TransformResult
 } from 'esbuild'
 import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
-// eslint-disable-next-line node/no-missing-import
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'

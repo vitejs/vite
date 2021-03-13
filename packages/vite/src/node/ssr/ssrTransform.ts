@@ -11,7 +11,6 @@ import {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import { combineSourcemaps } from '../utils'
-// eslint-disable-next-line node/no-missing-import
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 
 type Node = _Node & {

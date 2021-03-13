@@ -12,7 +12,6 @@ import remapping from '@ampproject/remapping'
 import {
   DecodedSourceMap,
   RawSourceMap
-  // eslint-disable-next-line node/no-missing-import
 } from '@ampproject/remapping/dist/types/types'
 
 export function slash(p: string): string {
