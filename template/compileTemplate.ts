@@ -69,7 +69,13 @@ function preprocess(
   options: TemplateCompileOptions,
   preprocessor: any
 ): string {
-  const { source, filename, preprocessOptions } = options
+  let { source, filename, preprocessOptions } = options
+  if (options.preprocessLang === 'pug') {
+    preprocessOptions = {
+      doctype: 'html',
+      ...preprocessOptions,
+    }
+  }
 
   const finalPreprocessOptions = Object.assign(
     {
@@ -92,6 +98,7 @@ function preprocess(
     }
   )
 
+  console.log(res)
   if (err) throw err
   return res
 }
