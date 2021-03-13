@@ -44,10 +44,24 @@ const allResult = {
     msg: 'bar'
   }
 }
+const resultWithIgnoring = {
+  '/dir/foo.js': {
+    msg: 'foo'
+  },
+  '/dir/index.js': {
+    modules: filteredResult
+  }
+}
 
 test('should work', async () => {
   expect(await page.textContent('.result')).toBe(
     JSON.stringify(allResult, null, 2)
+  )
+})
+
+test('option `ignore` should work', async () => {
+  expect(await page.textContent('.result-option-ignore')).toBe(
+    JSON.stringify(resultWithIgnoring, null, 2)
   )
 })
 
