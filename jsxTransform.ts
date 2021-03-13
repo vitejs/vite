@@ -9,13 +9,13 @@ export function transformVueJsx(
   const plugins = []
   if (/\.tsx$/.test(filename)) {
     plugins.push([
-      require('@babel/plugin-transform-typescript'),
+      require.resolve('@babel/plugin-transform-typescript'),
       { isTSX: true, allowExtensions: true },
     ])
   }
 
   const result = transform(code, {
-    presets: [[require('@vue/babel-preset-jsx'), jsxOptions]],
+    presets: [[require.resolve('@vue/babel-preset-jsx'), jsxOptions]],
     filename,
     sourceMaps: true,
     plugins,
