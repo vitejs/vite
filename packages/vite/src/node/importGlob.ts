@@ -23,6 +23,7 @@ export async function transformImportGlob(
   endIndex: number
   isEager: boolean
   pattern: string
+  ignore?: string
   base: string
 }> {
   const isEager = source.slice(pos, pos + 21) === 'import.meta.globEager'
@@ -102,6 +103,7 @@ export async function transformImportGlob(
     endIndex,
     isEager,
     pattern,
+    ignore,
     base
   }
 }

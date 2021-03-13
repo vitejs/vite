@@ -283,7 +283,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               exp,
               endIndex,
               base,
-              pattern
+              pattern,
+              ignore
             } = await transformImportGlob(
               source,
               start,
@@ -298,7 +299,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             server._globImporters[importerModule.file!] = {
               module: importerModule,
               base,
-              pattern
+              pattern,
+              ignore
             }
           }
           continue
