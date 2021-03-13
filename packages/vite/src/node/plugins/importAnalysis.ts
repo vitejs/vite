@@ -172,7 +172,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (!resolved) {
           this.error(
-            `Failed to resolve import "${url}". Does the file exist?`,
+            `Failed to resolve import "${url}" from "${path.relative(
+              process.cwd(),
+              importer
+            )}". Does the file exist?`,
             pos
           )
         }
