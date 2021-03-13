@@ -6,6 +6,7 @@ import { fileToUrl } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
+import path from 'path'
 
 function parseWorkerRequest(id: string): ParsedUrlQuery | null {
   const { search } = parseUrl(id)
@@ -51,20 +52,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        if (query.inline != null) {
-          // bundle the file as entry to support imports and inline as blob
-          // data url
-          const rollup = require('rollup') as typeof Rollup
-          const bundle = await rollup.rollup({
-            input: cleanUrl(id),
-            plugins: config.plugins as Plugin[]
+        // bundle the file as entry to support imports
+        const rollup = require('rollup') as typeof Rollup
+        const bundle = await rollup.rollup({
+          input: cleanUrl(id),
+          plugins: config.plugins as Plugin[]
+        })
+        try {
+          const { output } = await bundle.generate({
+            format: 'iife',
+            sourcemap: config.build.sourcemap
           })
-          try {
-            const { output } = await bundle.generate({
-              format: 'es',
-              sourcemap: config.build.sourcemap
-            })
-            
+          if (query.inline != null) {
+            // inline as base64 data url
             return `const blob = new Blob([atob(\"${Buffer.from(output[0].code).toString('base64')}\")], { type: 'text/javascript;charset=utf-8' });
             export default function WorkerWrapper() {
               const objURL = (window.URL || window.webkitURL).createObjectURL(blob);
@@ -74,15 +74,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
             }`
-          } finally {
-            await bundle.close()
+          } else {
+            const fileName = path.parse(cleanUrl(id)).name
+            url = `__VITE_ASSET__${this.emitFile({
+              type: 'asset',
+              name: `${fileName}.js`,
+              source: output[0].code
+            })}__`
           }
-        } else {
-          // emit as separate chunk
-          url = `__VITE_ASSET__${this.emitFile({
-            type: 'chunk',
-            id: cleanUrl(id)
-          })}__`
+        } finally {
+          await bundle.close()
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
