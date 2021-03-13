@@ -1,5 +1,5 @@
 import { SFCBlock, SFCDescriptor } from '@vue/component-compiler-utils'
-import { rewriteDefault } from '@vue/compiler-sfc'
+import { rewriteDefault } from './utils/rewriteDefault'
 import { vueHotReload, vueComponentNormalizer, ResolvedOptions } from './index'
 import qs from 'querystring'
 import { createDescriptor, setDescriptor } from './utils/descriptorCache'
