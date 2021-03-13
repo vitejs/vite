@@ -4,7 +4,7 @@
 
 ### Config File Resolving
 
-When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#project-root).
+When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root).
 
 The most basic config file looks like this:
 
@@ -439,7 +439,7 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `dist`
 
-  Specify the output directory (relative to [project root](/guide/#project-root)).
+  Specify the output directory (relative to [project root](/guide/#index-html-and-project-root)).
 
 ### build.assetsDir
 
