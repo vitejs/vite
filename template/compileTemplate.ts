@@ -98,7 +98,6 @@ function preprocess(
     }
   )
 
-  console.log(res)
   if (err) throw err
   return res
 }
