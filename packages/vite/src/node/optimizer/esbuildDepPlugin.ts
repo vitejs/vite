@@ -1,5 +1,5 @@
 import path from 'path'
-import { Loader, Plugin, ResolveKind } from 'esbuild'
+import { Loader, Plugin, ImportKind } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import { ResolvedConfig } from '..'
 import {
@@ -47,7 +47,7 @@ export function esbuildDepPlugin(
   const resolve = (
     id: string,
     importer: string,
-    kind: ResolveKind,
+    kind: ImportKind,
     resolveDir?: string
   ): Promise<string | undefined> => {
     let _importer
