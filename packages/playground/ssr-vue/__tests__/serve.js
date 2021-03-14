@@ -11,7 +11,6 @@ const port = (exports.port = 9527)
  * @param {boolean} isProd
  */
 exports.serve = async function serve(root, isProd) {
-  console.log('serve111')
   if (isProd) {
     // build first
     const { build } = require('vite')

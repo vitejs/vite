@@ -1,13 +1,4 @@
 module.exports = {
-  plugins: [
-    {
-      name: 'proxy',
-      config: async () => {
-        const { createServer } = require('./server')
-        await createServer()
-      }
-    }
-  ],
   server: {
     port: 3000,
     proxy: {

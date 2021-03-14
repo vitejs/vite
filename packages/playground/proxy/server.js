@@ -1,21 +1,14 @@
-const http = require('http')
+const express = require('express')
 
-async function createServer(root, isProd) {
-  http
-    .createServer((req, res) => {
-      res.end()
-    })
-    .listen(8081, () => {
-      console.log('http://localhos:8081/')
-    })
-  http
-    .createServer((req, res) => {
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ key: 'router' }))
-    })
-    .listen(8080, () => {
-      console.log('http://localhos:8080/')
-    })
+async function createHostServer(root, isProd) {
+  const app = express()
+
+  app.use('*', async (req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ key: 'router' }))
+  })
+
+  return app
 }
 
-exports.createServer = createServer
+exports.createHostServer = createHostServer
