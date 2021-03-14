@@ -29,6 +29,9 @@ const json = isBuild
     }
 
 const allResult = {
+  '/dir/_ignored.js': {
+    msg: 'ignored'
+  },
   // JSON file should be properly transformed
   '/dir/baz.json': json,
   '/dir/foo.js': {
@@ -44,14 +47,6 @@ const allResult = {
     msg: 'bar'
   }
 }
-const resultWithIgnoring = {
-  '/dir/foo.js': {
-    msg: 'foo'
-  },
-  '/dir/index.js': {
-    modules: filteredResult
-  }
-}
 
 test('should work', async () => {
   expect(await page.textContent('.result')).toBe(
@@ -59,20 +54,14 @@ test('should work', async () => {
   )
 })
 
-test('option `ignore` should work', async () => {
-  expect(await page.textContent('.result-option-ignore')).toBe(
-    JSON.stringify(resultWithIgnoring, null, 2)
-  )
-})
-
 if (!isBuild) {
   test('hmr for adding/removing files', async () => {
-    addFile('dir/a.js', '')
+    addFile('dir/+a.js', '')
     await untilUpdated(
       () => page.textContent('.result'),
       JSON.stringify(
         {
-          '/dir/a.js': {},
+          '/dir/+a.js': {},
           ...allResult
         },
         null,
@@ -81,12 +70,12 @@ if (!isBuild) {
     )
 
     // edit the added file
-    editFile('dir/a.js', () => 'export const msg ="a"')
+    editFile('dir/+a.js', () => 'export const msg ="a"')
     await untilUpdated(
       () => page.textContent('.result'),
       JSON.stringify(
         {
-          '/dir/a.js': {
+          '/dir/+a.js': {
             msg: 'a'
           },
           ...allResult
@@ -96,7 +85,43 @@ if (!isBuild) {
       )
     )
 
-    removeFile('dir/a.js')
+    removeFile('dir/+a.js')
+    await untilUpdated(
+      () => page.textContent('.result'),
+      JSON.stringify(allResult, null, 2)
+    )
+  })
+  test('hmr for adding/removing files with ignore option', async () => {
+    addFile('dir/_a.js', '')
+    await untilUpdated(
+      () => page.textContent('.result'),
+      JSON.stringify(
+        {
+          '/dir/_a.js': {},
+          ...allResult
+        },
+        null,
+        2
+      )
+    )
+
+    // edit the added file
+    editFile('dir/_a.js', () => 'export const msg ="a"')
+    await untilUpdated(
+      () => page.textContent('.result'),
+      JSON.stringify(
+        {
+          '/dir/_a.js': {
+            msg: 'a'
+          },
+          ...allResult
+        },
+        null,
+        2
+      )
+    )
+
+    removeFile('dir/_a.js')
     await untilUpdated(
       () => page.textContent('.result'),
       JSON.stringify(allResult, null, 2)
