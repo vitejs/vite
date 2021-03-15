@@ -10,7 +10,8 @@ import {
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
-import merge from 'merge-source-map'
+import { combineSourcemaps } from '../utils'
+import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 
 type Node = _Node & {
   start: number
@@ -138,7 +139,7 @@ export async function ssrTransform(
     }
   }
 
-  // 2. convert references to import bindings & import.meta references
+  // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
       const binding = idToImportMap.get(id.name)
@@ -178,12 +179,15 @@ export async function ssrTransform(
   })
 
   let map = s.generateMap({ hires: true })
-  if (inMap && inMap.mappings) {
-    map = merge(inMap, {
-      ...map,
-      sources: inMap.sources,
-      sourcesContent: inMap.sourcesContent
-    }) as SourceMap
+  if (inMap && inMap.mappings && inMap.sources.length > 0) {
+    map = combineSourcemaps(url, [
+      {
+        ...map,
+        sources: inMap.sources,
+        sourcesContent: inMap.sourcesContent
+      } as RawSourceMap,
+      inMap as RawSourceMap
+    ]) as SourceMap
   } else {
     map.sources = [url]
     map.sourcesContent = [code]

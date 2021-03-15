@@ -53,6 +53,7 @@
     "fsevents": "~2.3.1"
   },
   "devDependencies": {
+    "@ampproject/remapping": "^1.0.1",
     "@rollup/plugin-alias": "^3.1.1",
     "@rollup/plugin-commonjs": "^17.0.0",
     "@rollup/plugin-dynamic-import-vars": "^1.1.1",
@@ -100,7 +101,6 @@
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.2.1",
     "magic-string": "^0.25.7",
-    "merge-source-map": "^1.1.0",
     "mime": "^2.4.7",
     "minimatch": "^3.0.4",
     "okie": "^1.0.1",

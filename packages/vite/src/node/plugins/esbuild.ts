@@ -9,10 +9,11 @@ import {
   TransformResult
 } from 'esbuild'
 import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
-import merge from 'merge-source-map'
+import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
+import { combineSourcemaps } from '../utils'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -59,12 +60,13 @@ export async function transformWithEsbuild(
     const result = await transform(code, resolvedOptions)
     if (inMap) {
       const nextMap = JSON.parse(result.map)
-      // merge-source-map will overwrite original sources if newMap also has
-      // sourcesContent
       nextMap.sourcesContent = []
       return {
         ...result,
-        map: merge(inMap, nextMap) as SourceMap
+        map: combineSourcemaps(filename, [
+          nextMap as RawSourceMap,
+          inMap as RawSourceMap
+        ]) as SourceMap
       }
     } else {
       return {

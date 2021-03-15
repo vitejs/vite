@@ -12,7 +12,7 @@ module.exports = {
       'error',
       {
         allowModules: ['types', 'estree', 'testUtils'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx']
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
     'node/no-missing-require': [
@@ -20,7 +20,7 @@ module.exports = {
       {
         // for try-catching yarn pnp
         allowModules: ['pnpapi'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx']
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
     'node/no-restricted-require': [
