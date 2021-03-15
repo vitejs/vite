@@ -611,6 +611,7 @@ export async function loadConfigFromFile(
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
+    isTS = configFile.endsWith('.ts')
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
