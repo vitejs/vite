@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { parse as parseUrl } from 'url'
+import { pathToFileURL, URL } from 'url'
 import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
@@ -119,7 +119,14 @@ export function removeImportQuery(url: string) {
 }
 
 export function injectQuery(url: string, queryToInject: string) {
-  const { pathname, search, hash } = parseUrl(url)
+  let resolvedUrl = new URL(url, 'relative:///')
+  if (resolvedUrl.protocol !== 'relative:') {
+    resolvedUrl = pathToFileURL(url)
+  }
+  let { protocol, pathname, search, hash } = resolvedUrl
+  if (protocol === 'file:') {
+    pathname = pathname.slice(1)
+  }
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
