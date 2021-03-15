@@ -9,6 +9,7 @@ import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
 import { prepareError } from './middlewares/error'
 import match from 'minimatch'
+import { Server } from 'http'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -21,6 +22,7 @@ export interface HmrOptions {
   path?: string
   timeout?: number
   overlay?: boolean
+  server?: Server
 }
 
 export interface HmrContext {

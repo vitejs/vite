@@ -17,9 +17,12 @@ export function createWebSocketServer(
 ): WebSocketServer {
   let wss: WebSocket.Server
 
-  if (server) {
+  const hmr = typeof config.server.hmr === 'object' && config.server.hmr
+  const wsServer = (hmr && hmr.server) || server
+
+  if (wsServer) {
     wss = new WebSocket.Server({ noServer: true })
-    server.on('upgrade', (req, socket, head) => {
+    wsServer.on('upgrade', (req, socket, head) => {
       if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
         wss.handleUpgrade(req, socket, head, (ws) => {
           wss.emit('connection', ws, req)
@@ -29,9 +32,7 @@ export function createWebSocketServer(
   } else {
     // vite dev server in middleware mode
     wss = new WebSocket.Server({
-      port:
-        (typeof config.server.hmr === 'object' && config.server.hmr.port) ||
-        24678
+      port: (hmr && hmr.port) || 24678
     })
   }
 
