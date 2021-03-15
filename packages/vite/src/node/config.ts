@@ -197,7 +197,6 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let mode = inlineConfig.mode || defaultMode
-  const logger = createLogger(config.logLevel, config.clearScreen)
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
   // production-specific behavior, so set it here even though we haven't
@@ -224,6 +223,10 @@ export async function resolveConfig(
       configFile = loadResult.path
     }
   }
+
+  // Define logger
+  const logger = createLogger(config.logLevel, config.clearScreen)
+
   // user config may provide an alternative mode
   mode = config.mode || mode
 
