@@ -14,7 +14,7 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import { ESBuildOptions, esbuildPlugin, stopService } from './plugins/esbuild'
+import { ESBuildOptions, esbuildPlugin } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
@@ -718,8 +718,6 @@ export async function loadConfigFromFile(
       chalk.red(`failed to load config from ${resolvedPath}`)
     )
     throw e
-  } finally {
-    await stopService()
   }
 }
 
