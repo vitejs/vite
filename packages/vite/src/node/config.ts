@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import { Plugin } from './plugin'
-import Rollup from 'rollup'
 import { BuildOptions, resolveBuildOptions } from './build'
 import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
@@ -14,7 +13,7 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import { ESBuildOptions, esbuildPlugin } from './plugins/esbuild'
+import { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
@@ -35,6 +34,7 @@ import {
   PluginContainer
 } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
+import { build } from 'esbuild'
 
 const debug = createDebugger('vite:config')
 
@@ -726,43 +726,49 @@ async function bundleConfigFile(
   fileName: string,
   mjs = false
 ): Promise<string> {
-  const rollup = require('rollup') as typeof Rollup
-  // node-resolve must be imported since it's bundled
-  const bundle = await rollup.rollup({
-    external: (id: string) =>
-      (id[0] !== '.' && !path.isAbsolute(id)) ||
-      id.slice(-5, id.length) === '.json',
-    input: fileName,
-    treeshake: false,
+  const result = await build({
+    entryPoints: [fileName],
+    outfile: 'out.js',
+    write: false,
+    platform: 'node',
+    bundle: true,
+    format: mjs ? 'esm' : 'cjs',
     plugins: [
-      // use esbuild + node-resolve to support .ts files
-      esbuildPlugin({ target: 'esnext' }),
-      resolvePlugin({
-        root: path.dirname(fileName),
-        isBuild: true,
-        asSrc: false,
-        isProduction: false
-      }),
+      {
+        name: 'externalize-deps',
+        setup(build) {
+          build.onResolve({ filter: /.*/ }, (args) => {
+            const id = args.path
+            if (
+              (id[0] !== '.' && !path.isAbsolute(id)) ||
+              id.slice(-5, id.length) === '.json'
+            ) {
+              return {
+                external: true
+              }
+            }
+          })
+        }
+      },
       {
         name: 'replace-import-meta',
-        transform(code, id) {
-          return code.replace(
-            /\bimport\.meta\.url\b/g,
-            JSON.stringify(`file://${id}`)
-          )
+        setup(build) {
+          build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
+            const contents = await fs.promises.readFile(args.path, 'utf8')
+            return {
+              loader: args.path.endsWith('.ts') ? 'ts' : 'js',
+              contents: contents.replace(
+                /\bimport\.meta\.url\b/g,
+                JSON.stringify(`file://${args.path}`)
+              )
+            }
+          })
         }
       }
     ]
   })
-
-  const {
-    output: [{ code }]
-  } = await bundle.generate({
-    exports: mjs ? 'auto' : 'named',
-    format: mjs ? 'es' : 'cjs'
-  })
-
-  return code
+  const { text } = result.outputFiles[0]
+  return text
 }
 
 interface NodeModuleWithCompile extends NodeModule {
