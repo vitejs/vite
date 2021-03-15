@@ -403,7 +403,7 @@ export async function createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    middlewares.use(proxyMiddleware(server))
+    middlewares.use(proxyMiddleware(httpServer, config))
   }
 
   // base
