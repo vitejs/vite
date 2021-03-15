@@ -283,7 +283,7 @@ export async function createServer(
   const plugins = config.plugins
   const container = await createPluginContainer(config, watcher)
   const moduleGraph = new ModuleGraph(container)
-  const closeHttpServer = createSeverCloseFn(httpServer)
+  const closeHttpServer = createServerCloseFn(httpServer)
 
   const server: ViteDevServer = {
     config: config,
@@ -617,7 +617,7 @@ async function startServer(
   })
 }
 
-function createSeverCloseFn(server: http.Server | null) {
+function createServerCloseFn(server: http.Server | null) {
   if (!server) {
     return () => {}
   }
