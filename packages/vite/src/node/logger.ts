@@ -39,8 +39,13 @@ function clearScreen() {
 
 export function createLogger(
   level: LogLevel = 'info',
-  allowClearScreen = true
+  allowClearScreen = true,
+  customLogger?: Logger
 ): Logger {
+  if (customLogger) {
+    return customLogger
+  }
+  
   const thresh = LogLevels[level]
   const clear =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
