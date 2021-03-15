@@ -225,6 +225,23 @@ function walk(
   const scope: Record<string, number> = Object.create(null)
   const scopeMap = new WeakMap<_Node, Set<string>>()
 
+  const setScope = (node: FunctionNode, name: string) => {
+    let scopeIds = scopeMap.get(node)
+    if (scopeIds && scopeIds.has(name)) {
+      return
+    }
+    if (name in scope) {
+      scope[name]++
+    } else {
+      scope[name] = 1
+    }
+    if (!scopeIds) {
+      scopeIds = new Set()
+      scopeMap.set(node, scopeIds)
+    }
+    scopeIds.add(name)
+  }
+
   ;(eswalk as any)(root, {
     enter(node: Node, parent: Node | null) {
       if (node.type === 'ImportDeclaration') {
@@ -261,21 +278,7 @@ function walk(
                   parent.right === child
                 )
               ) {
-                const { name } = child
-                let scopeIds = scopeMap.get(node)
-                if (scopeIds && scopeIds.has(name)) {
-                  return
-                }
-                if (name in scope) {
-                  scope[name]++
-                } else {
-                  scope[name] = 1
-                }
-                if (!scopeIds) {
-                  scopeIds = new Set()
-                  scopeMap.set(node, scopeIds)
-                }
-                scopeIds.add(name)
+                setScope(node, child.name)
               }
             }
           })
@@ -283,6 +286,21 @@ function walk(
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
         // mark property in destructure pattern
         ;(node as any).inPattern = true
+      } else if (node.type === 'VariableDeclarator') {
+        const parentFunction = findParentFunction(parentStack)
+        if (parentFunction) {
+          if (node.id.type === 'ObjectPattern') {
+            node.id.properties.forEach((property) => {
+              if (property.type === 'RestElement') {
+                setScope(parentFunction, (property.argument as Identifier).name)
+              } else {
+                setScope(parentFunction, (property.value as Identifier).name)
+              }
+            })
+          } else {
+            setScope(parentFunction, (node.id as Identifier).name)
+          }
+        }
       }
     },
 
@@ -329,7 +347,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
 
   // property key
   // this also covers object destructure pattern
-  if (isStaticPropertyKey(id, parent)) {
+  if (isStaticPropertyKey(id, parent) || (parent as any).inPattern) {
     return false
   }
 
@@ -370,6 +388,14 @@ const isStaticPropertyKey = (node: _Node, parent: _Node) =>
 
 function isFunction(node: _Node): node is FunctionNode {
   return /Function(?:Expression|Declaration)$|Method$/.test(node.type)
+}
+
+function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
+  for (const node of parentStack) {
+    if (isFunction(node)) {
+      return node
+    }
+  }
 }
 
 function isInDestructureAssignment(
