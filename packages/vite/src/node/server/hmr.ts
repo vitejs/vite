@@ -7,7 +7,9 @@ import { ModuleNode } from './moduleGraph'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
+import { prepareError } from './middlewares/error'
 import match from 'minimatch'
+import { Server } from 'http'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -20,6 +22,7 @@ export interface HmrOptions {
   path?: string
   timeout?: number
   overlay?: boolean
+  server?: Server
 }
 
 export interface HmrContext {
@@ -410,9 +413,20 @@ async function readModifiedFile(file: string): Promise<string> {
 }
 
 async function restartServer(server: ViteDevServer) {
+  // @ts-ignore
+  global.__vite_start_time = Date.now()
+  let newServer = null
+  try {
+    newServer = await createServer(server.config.inlineConfig)
+  } catch (err) {
+    server.ws.send({
+      type: 'error',
+      err: prepareError(err)
+    })
+    return
+  }
+
   await server.close()
-  ;(global as any).__vite_start_time = Date.now()
-  const newServer = await createServer(server.config.inlineConfig)
   for (const key in newServer) {
     if (key !== 'app') {
       // @ts-ignore
