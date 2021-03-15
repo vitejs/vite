@@ -724,7 +724,7 @@ async function bundleConfigFile(
 ): Promise<string> {
   const result = await build({
     entryPoints: [fileName],
-    outfile: '/out.js',
+    outfile: 'out.js',
     write: false,
     platform: 'node',
     bundle: true,
@@ -763,7 +763,7 @@ async function bundleConfigFile(
       }
     ]
   })
-  const { text } = result.outputFiles.find((file) => file.path === '/out.js')!
+  const { text } = result.outputFiles[0]
   return text
 }
 
