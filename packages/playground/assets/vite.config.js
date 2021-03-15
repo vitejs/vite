@@ -1,10 +1,5 @@
 const path = require('path')
 
-const execRoot = process.cwd()
-const playgroundDir = execRoot.includes('playground')
-  ? path.resolve(__dirname, '..') // Allow running vite locally inside the folder.
-  : path.resolve(execRoot, 'packages/playground')
-
 /**
  * @type {import('vite').UserConfig}
  */
@@ -13,7 +8,7 @@ module.exports = {
   publicDir: 'static',
   resolve: {
     alias: {
-      '@playground': playgroundDir,
+      '@playground': path.resolve(__dirname, '..'),
       '@': path.resolve(__dirname, 'nested')
     }
   },
