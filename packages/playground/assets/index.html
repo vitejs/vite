@@ -14,7 +14,12 @@
     Raw CSS from publicDir should load (this should be red)
   </li>
   <li>
+    Filename with whitespace
     <img src="/white space.png" />
+  </li>
+  <li>
+    Outer file using @fs
+    <img class="asset-outer-img" alt="img" />
   </li>
 </ul>
 
@@ -22,6 +27,7 @@
 <ul>
   <li>Relative: <code class="asset-import-relative"></code></li>
   <li>Absolute: <code class="asset-import-absolute"></code></li>
+  <li>Outer (@fs): <code class="asset-import-outer"></code></li>
   <li>From publicDir: <code class="public-import"></code></li>
 </ul>
 
@@ -130,6 +136,10 @@
   import absoluteUrl from '/nested/asset.png'
   text('.asset-import-absolute', absoluteUrl)
 
+  import outerUrl from '@playground/css/nested/asset.png'
+  text('.asset-import-outer', outerUrl)
+  src('.asset-outer-img', outerUrl)
+
   import publicUrl from '/icon.png'
   text('.public-import', publicUrl)
 
@@ -145,5 +155,9 @@
 
   function text(el, text) {
     document.querySelector(el).textContent = text
+  }
+
+  function src(el, src) {
+    document.querySelector(el).src = src
   }
 </script>
