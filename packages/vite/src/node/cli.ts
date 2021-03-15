@@ -4,7 +4,7 @@ import { BuildOptions } from './build'
 import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
-import { serve } from './serve'
+import { preview } from './preview'
 
 const cli = cac('vite')
 
@@ -206,7 +206,7 @@ cli
           'serve',
           'development'
         )
-        await serve(config, options.port)
+        await preview(config, options.port)
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`)

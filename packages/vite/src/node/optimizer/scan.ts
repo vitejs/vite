@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
-import { Loader, Plugin } from 'esbuild'
+import { Loader, Plugin, build, transform } from 'esbuild'
 import {
   KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
@@ -25,7 +25,6 @@ import {
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
-import { ensureService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
@@ -82,10 +81,9 @@ export async function scanImports(
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
-  const esbuildService = await ensureService()
   await Promise.all(
     entries.map((entry) =>
-      esbuildService.build({
+      build({
         entryPoints: [entry],
         bundle: true,
         format: 'esm',
@@ -362,7 +360,7 @@ async function transformGlob(
 ) {
   // transform the content first since es-module-lexer can't handle non-js
   if (loader !== 'js') {
-    source = (await (await ensureService()).transform(source, { loader })).code
+    source = (await transform(source, { loader })).code
   }
 
   await init

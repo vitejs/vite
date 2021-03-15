@@ -2,10 +2,10 @@ import * as http from 'http'
 import { createDebugger } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
-import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import { HttpProxy } from 'types/http-proxy'
 import chalk from 'chalk'
+import { ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
 
@@ -28,10 +28,10 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   ) => void | null | undefined | false | string
 }
 
-export function proxyMiddleware({
-  httpServer,
-  config
-}: ViteDevServer): Connect.NextHandleFunction {
+export function proxyMiddleware(
+  httpServer: http.Server | null,
+  config: ResolvedConfig
+): Connect.NextHandleFunction {
   const options = config.server.proxy!
 
   // lazy require only when proxy is used

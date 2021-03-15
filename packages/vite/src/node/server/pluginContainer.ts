@@ -52,7 +52,8 @@ import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
 import acornNumericSeparator from 'acorn-numeric-separator'
 import acornStaticClassFeatures from 'acorn-static-class-features'
-import merge from 'merge-source-map'
+import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import {
@@ -336,13 +337,13 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          // merge-source-map will overwrite original sources if newMap also has
-          // sourcesContent
-          // @ts-ignore
-          combinedMap = merge(combinedMap, {
-            ...(m as SourceMap),
-            sourcesContent: combinedMap.sourcesContent
-          })
+          combinedMap = combineSourcemaps(this.filename, [
+            {
+              ...(m as RawSourceMap),
+              sourcesContent: combinedMap.sourcesContent
+            },
+            combinedMap as RawSourceMap
+          ]) as SourceMap
         }
       }
       if (!combinedMap) {
