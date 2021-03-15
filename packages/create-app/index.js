@@ -118,7 +118,15 @@ async function init() {
   }
 
   const pkg = require(path.join(templateDir, `package.json`))
-  pkg.name = path.basename(root)
+
+  pkg.name = path
+    .basename(root)
+    // #2360 ensure packgae.json name is valid
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/^[._]/, '')
+    .replace(/[~)('!*]+/g, '-')
+
   write('package.json', JSON.stringify(pkg, null, 2))
 
   const pkgManager = /yarn/.test(process.env.npm_execpath) ? 'yarn' : 'npm'
