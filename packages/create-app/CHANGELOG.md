@@ -1,3 +1,12 @@
+# [2.2.0](https://github.com/vitejs/vite/compare/create-app@2.1.0...create-app@2.2.0) (2021-03-16)
+
+
+### Features
+
+* **create-app:** add 'svelte' and 'svelte-ts' options ([#2537](https://github.com/vitejs/vite/issues/2537)) ([e441f23](https://github.com/vitejs/vite/commit/e441f23e187eec0834704949da492515cd25f8cd))
+
+
+
 # [2.1.0](https://github.com/vitejs/vite/compare/create-app@2.0.2...create-app@2.1.0) (2021-03-15)
 
 
