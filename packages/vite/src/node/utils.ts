@@ -434,6 +434,10 @@ export function combineSourcemaps(
       true
     )
   }
+
+  // #2524
+  map.sources = map.sources.map((source) => source && decodeURI(source))
+
   if (!map.file) {
     delete map.file
   }
