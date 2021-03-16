@@ -68,10 +68,15 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        if (chunk.dynamicImports.length) {
-          manifestChunk.dynamicImports = chunk.dynamicImports.map((file) =>
-            getChunkName(bundle[file] as OutputChunk)
-          )
+        if (chunk.dynamicImports.length) {          
+          const imports = []
+          for (const file of chunk.dynamicImports) {
+            const importItem = bundle[file]
+            importItem && imports.push(getChunkName(importItem as OutputChunk))
+          }
+          if (imports.length > 0) {
+            manifestChunk.dynamicImports = imports
+          }
         }
 
         const cssFiles = chunkToEmittedCssFileMap.get(chunk)
