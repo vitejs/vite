@@ -1,3 +1,14 @@
+## [2.1.1](https://github.com/vitejs/vite/compare/v2.1.0...v2.1.1) (2021-03-16)
+
+
+### Bug Fixes
+
+* decode path before reading sourcemap source content ([73b80d5](https://github.com/vitejs/vite/commit/73b80d5da99bbf35afe95c588d30c5b38655e225)), closes [#2524](https://github.com/vitejs/vite/issues/2524)
+* **scan:** handle await replacement edge case ([cbfc3e9](https://github.com/vitejs/vite/commit/cbfc3e9dbabc4b4863a7f659b59d2e5115a81481)), closes [#2528](https://github.com/vitejs/vite/issues/2528)
+* enable latest syntax when parsing for ssr ([407ce3b](https://github.com/vitejs/vite/commit/407ce3b7c5c07a51b5e20e97bc2fff2f173c74c0)), closes [#2526](https://github.com/vitejs/vite/issues/2526)
+
+
+
 # [2.1.0](https://github.com/vitejs/vite/compare/v2.0.5...v2.1.0) (2021-03-15)
 
 
