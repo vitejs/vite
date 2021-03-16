@@ -168,20 +168,23 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
   }
 }
 
+async function waitForSuccessfulPing(ms = 1000) {
+  while (true) {
+    try {
+      await fetch(`${base}__vite_ping`)
+      break
+    } catch (e) {
+      await new Promise(resolve => setTimeout(resolve, ms))
+    }
+  }
+}
+
 // ping server
-socket.addEventListener('close', ({ wasClean }) => {
+socket.addEventListener('close', async ({ wasClean }) => {
   if (wasClean) return
   console.log(`[vite] server connection lost. polling for restart...`)
-  const interval = setInterval(() => {
-    fetch(`${base}__vite_ping`)
-      .then(() => {
-        clearInterval(interval)
-        location.reload()
-      })
-      .catch((e) => {
-        /* ignore */
-      })
-  }, 1000)
+  await waitForSuccessfulPing()
+  location.reload()
 })
 
 // https://wicg.github.io/construct-stylesheets
