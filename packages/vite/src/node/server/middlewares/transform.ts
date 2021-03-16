@@ -23,6 +23,8 @@ import {
 } from '../../constants'
 import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
+const NEW_DEPENDENCY_BUILD_TIMEOUT = 5000
+
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
 
@@ -48,7 +50,11 @@ export function transformMiddleware(
       !req.url?.includes('vite/dist/client')
     ) {
       // missing dep pending reload, hold request until reload happens
-      server._pendingReload.then(() => res.end())
+      server._pendingReload.then(() =>
+        setTimeout(() => {
+          res.end()
+        }, NEW_DEPENDENCY_BUILD_TIMEOUT)
+      )
       return
     }
 
