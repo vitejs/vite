@@ -11,6 +11,7 @@ const {
   cyan,
   magenta,
   lightRed,
+  red,
   stripColors
 } = require('kolorist')
 
@@ -25,7 +26,9 @@ const TEMPLATES = [
   magenta('preact'),
   magenta('preact-ts'),
   lightRed('lit-element'),
-  lightRed('lit-element-ts')
+  lightRed('lit-element-ts'),
+  red('svelte'),
+  red('svelte-ts')
 ]
 
 const renameFiles = {

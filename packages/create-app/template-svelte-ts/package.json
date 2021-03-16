@@ -1,0 +1,16 @@
+{
+  "name": "vite-svelte-ts-starter",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "devDependencies": {
+    "@svitejs/vite-plugin-svelte": "^0.11.1",
+    "svelte": "^3.35.0",
+    "svelte-preprocess": "^4.6.9",
+    "typescript": "^4.2.3",
+    "vite": "^2.1.0"
+  }
+}
