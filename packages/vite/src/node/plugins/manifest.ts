@@ -42,6 +42,20 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      function getInternalImports(imports: string[]): string[] {
+        const filteredImports: string[] = []
+
+        for (const file of imports) {
+          if (bundle[file] === undefined) {
+            continue
+          }
+
+          filteredImports.push(getChunkName(bundle[file] as OutputChunk))
+        }
+
+        return filteredImports
+      }
+
       function createChunk(chunk: OutputChunk): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: chunk.fileName
@@ -58,24 +72,16 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (chunk.imports.length) {
-          const imports = []
-          for (const file of chunk.imports) {
-            const importItem = bundle[file]
-            importItem && imports.push(getChunkName(importItem as OutputChunk))
-          }
-          if (imports.length > 0) {
-            manifestChunk.imports = imports
+          const internalImports = getInternalImports(chunk.imports)
+          if (internalImports.length > 0) {
+            manifestChunk.imports = internalImports
           }
         }
 
-        if (chunk.dynamicImports.length) {          
-          const imports = []
-          for (const file of chunk.dynamicImports) {
-            const importItem = bundle[file]
-            importItem && imports.push(getChunkName(importItem as OutputChunk))
-          }
-          if (imports.length > 0) {
-            manifestChunk.dynamicImports = imports
+        if (chunk.dynamicImports.length) {
+          const internalImports = getInternalImports(chunk.dynamicImports)
+          if (internalImports.length > 0) {
+            manifestChunk.dynamicImports = internalImports
           }
         }
 
