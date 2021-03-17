@@ -1,3 +1,13 @@
+## [2.1.2](https://github.com/vitejs/vite/compare/v2.1.1...v2.1.2) (2021-03-17)
+
+
+### Bug Fixes
+
+* update esbuild target to allow destructuring ([#2566](https://github.com/vitejs/vite/issues/2566)) ([da49782](https://github.com/vitejs/vite/commit/da497823e249aaf4d3a7da80e2211501f6159e1e))
+* **manifest:** do not fail when using rollupOtions.external ([#2532](https://github.com/vitejs/vite/issues/2532)) ([e44cc11](https://github.com/vitejs/vite/commit/e44cc11bcf265d0bc4eaf5679c3b84d4b31d10ad))
+
+
+
 ## [2.1.1](https://github.com/vitejs/vite/compare/v2.1.0...v2.1.1) (2021-03-16)
 
 
