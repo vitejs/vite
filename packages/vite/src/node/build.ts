@@ -447,7 +447,7 @@ async function doBuild(
       }
       return res
     } else {
-      return generate(outputs)
+      return await generate(outputs)
     }
   } catch (e) {
     config.logger.error(
