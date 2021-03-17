@@ -220,7 +220,9 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   // handle special build targets
   if (resolved.target === 'modules') {
     // https://caniuse.com/es6-module
-    resolved.target = ['es2019', 'edge16', 'firefox60', 'chrome61', 'safari11']
+    // edge18 according to js-table (destructuring is not supported in edge16)
+    // https://github.com/evanw/esbuild/blob/d943e89e50696647d6c89ae623ddfdf564ad3cfc/internal/compat/js_table.go#L84
+    resolved.target = ['es2019', 'edge18', 'firefox60', 'chrome61', 'safari11']
   } else if (resolved.target === 'esnext' && resolved.minify !== 'esbuild') {
     // esnext + terser: limit to es2019 so it can be minified by terser
     resolved.target = 'es2019'
@@ -445,7 +447,7 @@ async function doBuild(
       }
       return res
     } else {
-      return generate(outputs)
+      return await generate(outputs)
     }
   } catch (e) {
     config.logger.error(
