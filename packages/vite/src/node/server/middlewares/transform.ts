@@ -55,10 +55,9 @@ export function transformMiddleware(
     ) {
       // missing dep pending reload, hold request until reload happens
       server._pendingReload.then(() =>
-        // Wait for the refresh to happen. If the refresh
-        // has not happened after timeout. Vite considers
-        // something unexpected has happened. In this case,
-        // Vite returns an empty response that will error.
+        // If the refresh has not happened after timeout. Vite considers
+        // something unexpected has happened. In this case, Vite
+        // returns an empty response that will error.
         setTimeout(() => {
           res.end()
         }, NEW_DEPENDENCY_BUILD_TIMEOUT)
