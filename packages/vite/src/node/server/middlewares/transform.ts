@@ -23,6 +23,10 @@ import {
 } from '../../constants'
 import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
+/**
+ * Time (ms) Vite has to full-reload the page before returning
+ * an empty response.
+ */
 const NEW_DEPENDENCY_BUILD_TIMEOUT = 5000
 
 const debugCache = createDebugger('vite:cache')
@@ -51,6 +55,10 @@ export function transformMiddleware(
     ) {
       // missing dep pending reload, hold request until reload happens
       server._pendingReload.then(() =>
+        // Wait for the refresh to happen. If the refresh
+        // has not happened after timeout. Vite considers
+        // something unexpected has happened. In this case,
+        // Vite returns an empty response that will error.
         setTimeout(() => {
           res.end()
         }, NEW_DEPENDENCY_BUILD_TIMEOUT)
