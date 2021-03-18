@@ -13,7 +13,9 @@ import Rollup, {
   WatcherOptions,
   ExternalOption,
   GetManualChunk,
-  GetModuleInfo
+  GetModuleInfo,
+  RollupWatcher,
+  RollupError
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
@@ -286,7 +288,7 @@ const paralellBuilds: RollupBuild[] = []
  */
 export async function build(
   inlineConfig: InlineConfig = {}
-): Promise<RollupOutput | RollupOutput[] | undefined> {
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   parallelCallCounts++
   try {
     return await doBuild(inlineConfig)
@@ -301,7 +303,7 @@ export async function build(
 
 async function doBuild(
   inlineConfig: InlineConfig = {}
-): Promise<RollupOutput | RollupOutput[] | undefined> {
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
   const ssr = !!options.ssr
@@ -374,6 +376,19 @@ async function doBuild(
     external,
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
+    }
+  }
+
+  const outputBuildError = (e: RollupError) => {
+    config.logger.error(
+      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ``}${e.message}`)
+    )
+    if (e.id) {
+      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ``
+      config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
+    }
+    if (e.frame) {
+      config.logger.error(chalk.yellow(e.frame))
     }
   }
 
@@ -464,13 +479,15 @@ async function doBuild(
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
           config.logger.info(chalk.cyanBright(`built in ${event.duration}ms.`))
+        } else if (event.code === 'ERROR') {
+          outputBuildError(event.error)
         }
       })
 
       // stop watching
       watcher.close()
 
-      return
+      return watcher
     }
 
     // write or generate files with rollup
@@ -508,13 +525,6 @@ async function doBuild(
       }
     }
 
-    // // resolve lib mode outputs
-    // const outputs = resolveBuildOutputs(
-    //   options.rollupOptions?.output,
-    //   libOptions,
-    //   config.logger
-    // )
-
     if (Array.isArray(outputs)) {
       const res = []
       for (const output of outputs) {
@@ -525,16 +535,7 @@ async function doBuild(
       return await generate(outputs)
     }
   } catch (e) {
-    config.logger.error(
-      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ``}${e.message}`)
-    )
-    if (e.id) {
-      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ``
-      config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
-    }
-    if (e.frame) {
-      config.logger.error(chalk.yellow(e.frame))
-    }
+    outputBuildError(e)
     throw e
   }
 }
