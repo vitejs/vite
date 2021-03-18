@@ -604,7 +604,11 @@ async function startServer(
       }
 
       if (options.open && options.open !== 'false' && !isRestart) {
-        const path = typeof options.open === 'string' ? options.open : base
+        const path =
+          typeof options.open === 'string' && options.open !== 'true'
+            ? options.open
+            : base
+
         openBrowser(
           `${protocol}://${hostname}:${port}${path}`,
           true,
