@@ -61,7 +61,12 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
 
     config(config) {
       if (options.jsx) {
-        return { esbuild: false }
+        return {
+          esbuild: {
+            include: /\.ts$/,
+            exclude: /\.(tsx|jsx)$/,
+          },
+        }
       }
     },
 
