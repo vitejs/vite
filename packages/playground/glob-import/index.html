@@ -15,7 +15,7 @@
   Promise.all(keys.map((key) => modules[key]())).then((mods) => {
     const res = {}
     mods.forEach((m, i) => {
-      res[keys[i]] = m
+      res[keys[i]] = typeof m === 'object' ? sortObjectDeep(m) : m
     })
     document.querySelector('.result').textContent = JSON.stringify(res, null, 2)
   })
