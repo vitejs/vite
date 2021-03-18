@@ -16,7 +16,8 @@ import {
   isObject,
   cleanUrl,
   externalRE,
-  dataUrlRE
+  dataUrlRE,
+  injectCode
 } from '../utils'
 import {
   createPluginContainer,
@@ -332,7 +333,7 @@ function esbuildScanPlugin(
 
         let contents = fs.readFileSync(id, 'utf-8')
         if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
-          contents = config.esbuild.jsxInject + `\n` + contents
+          contents = injectCode(contents, config.esbuild.jsxInject)
         }
 
         if (contents.includes('import.meta.glob')) {

@@ -440,3 +440,29 @@ export function combineSourcemaps(
 
   return map as RawSourceMap
 }
+
+export function injectCode(
+  sourceContent: string,
+  injectedCode: string
+): string {
+  // Match something like `import React`, extract `React`
+  const [, defaultName] = injectedCode.match(/import\s*([^*\s]+)/) || []
+  // Match something like `import * as React`, extract `React`
+  const [, namespace] = injectedCode.match(/import\s*\*\s*as\s*([^*\s]+)/) || []
+  const moduleName = defaultName || namespace
+  // Creat two RegExps to check if it has been imported.
+  // for example, the name `React` will try to find two pattern of import:
+  // `import React` and `import * as React`
+  const regExpOfDefaultImport = new RegExp(`import\\s*${moduleName}`)
+  const regExpOfNamespaceImport = new RegExp(
+    `import\\s*\\*\\s*as\\s*${moduleName}`
+  )
+  // If the source content has imported this then skip it
+  if (
+    regExpOfDefaultImport.test(sourceContent) ||
+    regExpOfNamespaceImport.test(sourceContent)
+  ) {
+    return sourceContent
+  }
+  return injectedCode + '\n' + sourceContent
+}

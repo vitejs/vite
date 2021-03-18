@@ -8,7 +8,12 @@ import {
   TransformOptions,
   TransformResult
 } from 'esbuild'
-import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
+import {
+  cleanUrl,
+  createDebugger,
+  generateCodeFrame,
+  injectCode
+} from '../utils'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
@@ -105,7 +110,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
           })
         }
         if (options.jsxInject && /\.(?:j|t)sx\b/.test(id)) {
-          result.code = options.jsxInject + ';' + result.code
+          result.code = injectCode(result.code, options.jsxInject)
         }
         return {
           code: result.code,
