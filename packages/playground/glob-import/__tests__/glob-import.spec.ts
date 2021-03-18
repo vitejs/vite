@@ -3,7 +3,8 @@ import {
   editFile,
   isBuild,
   removeFile,
-  untilUpdated
+  untilUpdated,
+  sortObjectDeep
 } from '../../testUtils'
 
 const filteredResult = {
@@ -14,21 +15,14 @@ const filteredResult = {
 
 // json exports key order is altered during build, but it doesn't matter in
 // terms of behavior since module exports are not ordered anyway
-const json = isBuild
-  ? {
-      msg: 'baz',
-      default: {
-        msg: 'baz'
-      }
-    }
-  : {
-      default: {
-        msg: 'baz'
-      },
-      msg: 'baz'
-    }
+const json = {
+  msg: 'baz',
+  default: {
+    msg: 'baz'
+  }
+}
 
-const allResult = {
+const allResult = sortObjectDeep({
   '/dir/_ignored.js': {
     msg: 'ignored'
   },
@@ -46,7 +40,7 @@ const allResult = {
     },
     msg: 'bar'
   }
-}
+})
 
 test('should work', async () => {
   expect(await page.textContent('.result')).toBe(
@@ -60,10 +54,10 @@ if (!isBuild) {
     await untilUpdated(
       () => page.textContent('.result'),
       JSON.stringify(
-        {
+        sortObjectDeep({
           '/dir/+a.js': {},
           ...allResult
-        },
+        }),
         null,
         2
       )
@@ -74,12 +68,12 @@ if (!isBuild) {
     await untilUpdated(
       () => page.textContent('.result'),
       JSON.stringify(
-        {
+        sortObjectDeep({
           '/dir/+a.js': {
             msg: 'a'
           },
           ...allResult
-        },
+        }),
         null,
         2
       )
@@ -96,10 +90,10 @@ if (!isBuild) {
     await untilUpdated(
       () => page.textContent('.result'),
       JSON.stringify(
-        {
+        sortObjectDeep({
           '/dir/_a.js': {},
           ...allResult
-        },
+        }),
         null,
         2
       )
@@ -110,12 +104,12 @@ if (!isBuild) {
     await untilUpdated(
       () => page.textContent('.result'),
       JSON.stringify(
-        {
+        sortObjectDeep({
           '/dir/_a.js': {
             msg: 'a'
           },
           ...allResult
-        },
+        }),
         null,
         2
       )
