@@ -2,10 +2,10 @@ import * as http from 'http'
 import { createDebugger } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
-import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import { HttpProxy } from 'types/http-proxy'
 import chalk from 'chalk'
+import { ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
 
@@ -28,10 +28,10 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   ) => void | null | undefined | false | string
 }
 
-export function proxyMiddleware({
-  httpServer,
-  config
-}: ViteDevServer): Connect.NextHandleFunction {
+export function proxyMiddleware(
+  httpServer: http.Server | null,
+  config: ResolvedConfig
+): Connect.NextHandleFunction {
   const options = config.server.proxy!
 
   // lazy require only when proxy is used
@@ -40,7 +40,7 @@ export function proxyMiddleware({
   Object.keys(options).forEach((context) => {
     let opts = options[context]
     if (typeof opts === 'string') {
-      opts = { target: opts } as ProxyOptions
+      opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
@@ -85,12 +85,17 @@ export function proxyMiddleware({
         url.startsWith(context)
       ) {
         const [proxy, opts] = proxies[context]
+        const options: HttpProxy.ServerOptions = {}
 
         if (opts.bypass) {
           const bypassResult = opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
             debug(`bypass: ${req.url} -> ${bypassResult}`)
+            return next()
+          } else if (typeof bypassResult === 'object') {
+            Object.assign(options, bypassResult)
+            debug(`bypass: ${req.url} use modified opitions: %O`, options)
             return next()
           } else if (bypassResult === false) {
             debug(`bypass: ${req.url} -> 404`)
@@ -102,7 +107,7 @@ export function proxyMiddleware({
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }
-        proxy.web(req, res)
+        proxy.web(req, res, options)
         return
       }
     }

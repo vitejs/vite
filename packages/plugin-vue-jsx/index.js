@@ -4,8 +4,31 @@ const jsx = require('@vue/babel-plugin-jsx')
 const importMeta = require('@babel/plugin-syntax-import-meta')
 const hash = require('hash-sum')
 
+const ssrRegisterHelperId = '/__vue-jsx-ssr-register-helper'
+const ssrRegisterHelperCode =
+  `import { useSSRContext } from "vue"\n` +
+  `export ${ssrRegisterHelper.toString()}`
+
 /**
- * @param {import('.').Options} options
+ * This function is serialized with toString() and evaluated as a virtual
+ * module during SSR
+ * @param {import('vue').ComponentOptions} comp
+ * @param {string} filename
+ */
+function ssrRegisterHelper(comp, filename) {
+  const setup = comp.setup
+  comp.setup = (props, ctx) => {
+    // @ts-ignore
+    const ssrContext = useSSRContext()
+    ;(ssrContext.modules || (ssrContext.modules = new Set())).add(filename)
+    if (setup) {
+      return setup(props, ctx)
+    }
+  }
+}
+
+/**
+ * @param {import('@vue/babel-plugin-jsx').VueJSXPluginOptions} options
  * @returns {import('vite').Plugin}
  */
 function vueJsxPlugin(options = {}) {
@@ -35,7 +58,19 @@ function vueJsxPlugin(options = {}) {
       needSourceMap = config.command === 'serve' || !!config.build.sourcemap
     },
 
-    transform(code, id) {
+    resolveId(id) {
+      if (id === ssrRegisterHelperId) {
+        return id
+      }
+    },
+
+    load(id) {
+      if (id === ssrRegisterHelperId) {
+        return ssrRegisterHelperCode
+      }
+    },
+
+    transform(code, id, ssr) {
       if (/\.[jt]sx$/.test(id)) {
         const plugins = [importMeta, [jsx, options]]
         if (id.endsWith('.tsx')) {
@@ -50,10 +85,11 @@ function vueJsxPlugin(options = {}) {
           ast: true,
           plugins,
           sourceMaps: needSourceMap,
-          sourceFileName: id
+          sourceFileName: id,
+          configFile: false
         })
 
-        if (!needHmr) {
+        if (!ssr && !needHmr) {
           return {
             code: result.code,
             map: result.map
@@ -143,28 +179,40 @@ function vueJsxPlugin(options = {}) {
         }
 
         if (hotComponents.length) {
-          let code = result.code
-          if (hasDefault) {
-            code =
-              code.replace(
-                /export default defineComponent/g,
-                `const __default__ = defineComponent`
-              ) + `\nexport default __default__`
+          if (needHmr && !ssr) {
+            let code = result.code
+            if (hasDefault) {
+              code =
+                code.replace(
+                  /export default defineComponent/g,
+                  `const __default__ = defineComponent`
+                ) + `\nexport default __default__`
+            }
+
+            let callbackCode = ``
+            for (const { local, exported, id } of hotComponents) {
+              code +=
+                `\n${local}.__hmrId = "${id}"` +
+                `\n__VUE_HMR_RUNTIME__.createRecord("${id}", ${local})`
+              callbackCode += `\n__VUE_HMR_RUNTIME__.reload("${id}", __${exported})`
+            }
+
+            code += `\nimport.meta.hot.accept(({${hotComponents
+              .map((c) => `${c.exported}: __${c.exported}`)
+              .join(',')}}) => {${callbackCode}\n})`
+
+            result.code = code
           }
 
-          let callbackCode = ``
-          for (const { local, exported, id } of hotComponents) {
-            code +=
-              `\n${local}.__hmrId = "${id}"` +
-              `\n__VUE_HMR_RUNTIME__.createRecord("${id}", ${local})`
-            callbackCode += `\n__VUE_HMR_RUNTIME__.reload("${id}", __${exported})`
+          if (ssr) {
+            let ssrInjectCode =
+              `\nimport { ssrRegisterHelper } from "${ssrRegisterHelperId}"` +
+              `\nconst __moduleId = ${JSON.stringify(id)}`
+            for (const { local } of hotComponents) {
+              ssrInjectCode += `\nssrRegisterHelper(${local}, __moduleId)`
+            }
+            result.code += ssrInjectCode
           }
-
-          code += `\nimport.meta.hot.accept(({${hotComponents
-            .map((c) => `${c.exported}: __${c.exported}`)
-            .join(',')}}) => {${callbackCode}\n})`
-
-          result.code = code
         }
 
         return {

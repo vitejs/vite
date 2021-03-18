@@ -10,7 +10,7 @@ import {
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
-import { isOnlyTemplateChanged } from './handleHotUpdate'
+import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 
@@ -18,9 +18,10 @@ export async function transformMain(
   code: string,
   filename: string,
   options: ResolvedOptions,
-  pluginContext: TransformPluginContext
+  pluginContext: TransformPluginContext,
+  ssr: boolean
 ) {
-  const { root, devServer, isProduction, ssr } = options
+  const { root, devServer, isProduction } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
@@ -45,7 +46,8 @@ export async function transformMain(
   const { code: scriptCode, map } = await genScriptCode(
     descriptor,
     options,
-    pluginContext
+    pluginContext,
+    ssr
   )
 
   // template
@@ -64,15 +66,28 @@ export async function transformMain(
     ;({ code: templateCode, map: templateMap } = await genTemplateCode(
       descriptor,
       options,
-      pluginContext
+      pluginContext,
+      ssr
     ))
   }
 
-  const renderReplace = hasTemplateImport
-    ? ssr
+  let renderReplace = ''
+  if (hasTemplateImport) {
+    renderReplace = ssr
       ? `_sfc_main.ssrRender = _sfc_ssrRender`
       : `_sfc_main.render = _sfc_render`
-    : ''
+  } else {
+    // #2128
+    // User may empty the template but we didn't provide rerender function before
+    if (
+      prevDescriptor &&
+      !isEqualBlock(descriptor.template, prevDescriptor.template)
+    ) {
+      renderReplace = ssr
+        ? `_sfc_main.ssrRender = () => {}`
+        : `_sfc_main.render = () => {}`
+    }
+  }
 
   // styles
   const stylesCode = await genStyleCode(descriptor, pluginContext)
@@ -92,17 +107,18 @@ export async function transformMain(
       `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
     )
   }
-  if (devServer) {
+  if (devServer && !isProduction) {
     // expose filename during serve for devtools to pickup
     output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }
   output.push('export default _sfc_main')
 
   // HMR
-  if (devServer && !isProduction) {
+  if (devServer && !ssr && !isProduction) {
     output.push(`_sfc_main.__hmrId = ${JSON.stringify(descriptor.id)}`)
     output.push(
-      `__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)`
+      `typeof __VUE_HMR_RUNTIME__ !== 'undefined' && ` +
+        `__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)`
     )
     // check if the template is the only thing that changed
     if (prevDescriptor && isOnlyTemplateChanged(prevDescriptor, descriptor)) {
@@ -116,6 +132,21 @@ export async function transformMain(
       `    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)`,
       `  }`,
       `})`
+    )
+  }
+
+  // SSR module registration by wrapping user setup
+  if (ssr) {
+    output.push(
+      `import { useSSRContext } from 'vue'`,
+      `const _sfc_setup = _sfc_main.setup`,
+      `_sfc_main.setup = (props, ctx) => {`,
+      `  const ssrContext = useSSRContext()`,
+      `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
+        filename
+      )})`,
+      `  return _sfc_setup ? _sfc_setup(props, ctx) : undefined`,
+      `}`
     )
   }
 
@@ -155,7 +186,8 @@ export async function transformMain(
 async function genTemplateCode(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
-  pluginContext: PluginContext
+  pluginContext: PluginContext,
+  ssr: boolean
 ) {
   const template = descriptor.template!
 
@@ -167,7 +199,8 @@ async function genTemplateCode(
       template.content,
       descriptor,
       options,
-      pluginContext
+      pluginContext,
+      ssr
     )
   } else {
     if (template.src) {
@@ -178,7 +211,7 @@ async function genTemplateCode(
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
-    const renderFnName = options.ssr ? 'ssrRender' : 'render'
+    const renderFnName = ssr ? 'ssrRender' : 'render'
     return {
       code: `import { ${renderFnName} as _sfc_${renderFnName} } from ${request}`,
       map: undefined
@@ -186,17 +219,20 @@ async function genTemplateCode(
   }
 }
 
+const exportDefaultClassRE = /(?:(?:^|\n|;)\s*)export\s+default\s+class\s+([\w$]+)/
+
 async function genScriptCode(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
-  pluginContext: PluginContext
+  pluginContext: PluginContext,
+  ssr: boolean
 ): Promise<{
   code: string
   map: RawSourceMap
 }> {
   let scriptCode = `const _sfc_main = {}`
   let map
-  const script = resolveScript(descriptor, options)
+  const script = resolveScript(descriptor, options, ssr)
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
@@ -204,7 +240,19 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
-      scriptCode = rewriteDefault(script.content, `_sfc_main`)
+      // TODO remove the class check logic after upgrading @vue/compiler-sfc
+      const classMatch = script.content.match(exportDefaultClassRE)
+      if (classMatch) {
+        scriptCode =
+          script.content.replace(exportDefaultClassRE, `class $1`) +
+          `\nconst _sfc_main = ${classMatch[1]}`
+        if (/export\s+default/.test(scriptCode)) {
+          // fallback if there are still export default
+          scriptCode = rewriteDefault(script.content, `_sfc_main`)
+        }
+      } else {
+        scriptCode = rewriteDefault(script.content, `_sfc_main`)
+      }
       map = script.map
       if (script.lang === 'ts') {
         const result = await options.devServer!.transformWithEsbuild(
@@ -318,7 +366,9 @@ async function linkSrcToDescriptor(
 ) {
   const srcFile =
     (await pluginContext.resolve(src, descriptor.filename))?.id || src
-  setDescriptor(srcFile, descriptor)
+  // #1812 if the src points to a dep file, the resolved id may contain a
+  // version query.
+  setDescriptor(srcFile.replace(/\?.*$/, ''), descriptor)
 }
 
 // these are built-in query parameters so should be ignored

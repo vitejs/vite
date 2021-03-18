@@ -10,6 +10,7 @@ export interface Logger {
   warn(msg: string, options?: LogOptions): void
   error(msg: string, options?: LogOptions): void
   clearScreen(type: LogType): void
+  hasWarned: boolean
 }
 
 export interface LogOptions {
@@ -17,7 +18,7 @@ export interface LogOptions {
   timestamp?: boolean
 }
 
-const LogLevels: Record<LogLevel, number> = {
+export const LogLevels: Record<LogLevel, number> = {
   silent: 0,
   error: 1,
   warn: 2,
@@ -29,7 +30,8 @@ let lastMsg: string | undefined
 let sameCount = 0
 
 function clearScreen() {
-  const blank = '\n'.repeat(process.stdout.rows - 2)
+  const repeatCount = process.stdout.rows - 2
+  const blank = repeatCount > 0 ? '\n'.repeat(repeatCount) : ''
   console.log(blank)
   readline.cursorTo(process.stdout, 0, 0)
   readline.clearScreenDown(process.stdout)
@@ -40,7 +42,10 @@ export function createLogger(
   allowClearScreen = true
 ): Logger {
   const thresh = LogLevels[level]
-  const clear = allowClearScreen ? clearScreen : () => {}
+  const clear =
+    allowClearScreen && process.stdout.isTTY && !process.env.CI
+      ? clearScreen
+      : () => {}
 
   function output(type: LogType, msg: string, options: LogOptions = {}) {
     if (thresh >= LogLevels[type]) {
@@ -74,14 +79,17 @@ export function createLogger(
     }
   }
 
-  return {
+  const logger: Logger = {
+    hasWarned: false,
     info(msg, opts) {
       output('info', msg, opts)
     },
     warn(msg, opts) {
+      logger.hasWarned = true
       output('warn', msg, opts)
     },
     error(msg, opts) {
+      logger.hasWarned = true
       output('error', msg, opts)
     },
     clearScreen(type) {
@@ -90,4 +98,6 @@ export function createLogger(
       }
     }
   }
+
+  return logger
 }

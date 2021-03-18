@@ -28,39 +28,10 @@ const { createServer } = require('vite')
 })()
 ```
 
-### Using the Vite Server as a Middleware
-
-Vite can be used as a middleware in an existing raw Node.js http server or frameworks that are comaptible with the `(req, res, next) => {}` style middlewares. For example with `express`:
-
-```js
-const vite = require('vite')
-const express = require('express')
-
-;(async () => {
-  const app = express()
-
-  // create vite dev server in middleware mode
-  // so vite creates the hmr websocket server on its own.
-  // the ws server will be listening at port 24678 by default, and can be
-  // configured via server.hmr.port
-  const viteServer = await vite.createServer({
-    server: {
-      middlewareMode: true
-    }
-  })
-
-  // use vite's connect instance as middleware
-  app.use(viteServer.app)
-
-  app.listen(3000)
-})()
-```
-
 ## `InlineConfig`
 
 The `InlineConfig` interface extends `UserConfig` with additional properties:
 
-- `mode`: override default mode (`'development'` for server)
 - `configFile`: specify config file to use. If not set, Vite will try to automatically resolve one from project root. Set to `false` to disable auto resolving.
 
 ## `ViteDevServer`
@@ -72,15 +43,19 @@ interface ViteDevServer {
    */
   config: ResolvedConfig
   /**
-   * connect app instance
-   * This can also be used as the handler function of a custom http server
+   * A connect app instance
+   * - Can be used to attach custom middlewares to the dev server.
+   * - Can also be used as the handler function of a custom http server
+   *   or as a middleware in any connect-style Node.js frameworks
+   *
    * https://github.com/senchalabs/connect#use-middleware
    */
-  app: Connect.Server
+  middlewares: Connect.Server
   /**
    * native Node http server instance
+   * will be null in middleware mode
    */
-  httpServer: http.Server
+  httpServer: http.Server | null
   /**
    * chokidar watcher instance
    * https://github.com/paulmillr/chokidar#api
@@ -103,7 +78,14 @@ interface ViteDevServer {
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
-  transformRequest(url: string): Promise<TransformResult | null>
+  transformRequest(
+    url: string,
+    options?: TransformOptions
+  ): Promise<TransformResult | null>
+  /**
+   * Apply vite built-in HTML transforms and any plugin HTML transforms.
+   */
+  transformIndexHtml(url: string, html: string): Promise<string>
   /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
@@ -113,11 +95,22 @@ interface ViteDevServer {
     filename: string,
     options?: EsbuildTransformOptions,
     inMap?: object
-  ): Promise<EsbuildTransformResult>
+  ): Promise<ESBuildTransformResult>
+  /**
+   * Load a given URL as an instantiated module for SSR.
+   */
+  ssrLoadModule(
+    url: string,
+    options?: { isolated?: boolean }
+  ): Promise<Record<string, any>>
+  /**
+   * Fix ssr error stacktrace
+   */
+  ssrFixStacktrace(e: Error): void
   /**
    * Start the server.
    */
-  listen(port?: number): Promise<ViteDevServer>
+  listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
   /**
    * Stop the server.
    */
@@ -161,6 +154,7 @@ const { build } = require('vite')
 ```ts
 async function resolveConfig(
   inlineConfig: InlineConfig,
-  command: 'build' | 'serve'
+  command: 'build' | 'serve',
+  defaultMode?: string
 ): Promise<ResolvedConfig>
 ```

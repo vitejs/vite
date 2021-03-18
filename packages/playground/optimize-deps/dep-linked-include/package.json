@@ -1,0 +1,8 @@
+{
+  "name": "dep-linked-include",
+  "version": "0.0.0",
+  "main": "index.mjs",
+  "dependencies": {
+    "react": "17.0.0"
+  }
+}

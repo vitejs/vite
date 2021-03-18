@@ -1,16 +1,7 @@
-// @ts-check
-import preactRefresh from '@prefresh/vite'
+import { defineConfig } from 'vite'
+import preact from '@preact/preset-vite'
 
-/**
- * @type { import('vite').UserConfig }
- */
-const config = {
-  esbuild: {
-    jsxFactory: 'h',
-    jsxFragment: 'Fragment',
-    jsxInject: `import { h, Fragment } from 'preact'`
-  },
-  plugins: [preactRefresh()]
-}
-
-export default config
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [preact()]
+})

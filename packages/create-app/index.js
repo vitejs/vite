@@ -5,7 +5,15 @@ const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 const { prompt } = require('enquirer')
-const { yellow, green, cyan, magenta, stripColors } = require('kolorist')
+const {
+  yellow,
+  green,
+  cyan,
+  magenta,
+  lightRed,
+  red,
+  stripColors
+} = require('kolorist')
 
 const cwd = process.cwd()
 
@@ -16,7 +24,11 @@ const TEMPLATES = [
   cyan('react'),
   cyan('react-ts'),
   magenta('preact'),
-  magenta('preact-ts')
+  magenta('preact-ts'),
+  lightRed('lit-element'),
+  lightRed('lit-element-ts'),
+  red('svelte'),
+  red('svelte-ts')
 ]
 
 const renameFiles = {
@@ -39,7 +51,7 @@ async function init() {
   }
 
   const root = path.join(cwd, targetDir)
-  console.log(`Scaffolding project in ${root}...`)
+  console.log(`\nScaffolding project in ${root}...`)
 
   if (!fs.existsSync(root)) {
     fs.mkdirSync(root, { recursive: true })
@@ -67,14 +79,24 @@ async function init() {
 
   // determine template
   let template = argv.t || argv.template
-  if (!template) {
+  let message = 'Select a template:'
+  let isValidTemplate = false
+
+  // --template expects a value
+  if (typeof template === 'string') {
+    const availableTemplates = TEMPLATES.map(stripColors)
+    isValidTemplate = availableTemplates.includes(template)
+    message = `${template} isn't a valid template. Please choose from below:`
+  }
+
+  if (!template || !isValidTemplate) {
     /**
      * @type {{ t: string }}
      */
     const { t } = await prompt({
       type: 'select',
       name: 't',
-      message: `Select a template:`,
+      message,
       choices: TEMPLATES
     })
     template = stripColors(t)
@@ -99,15 +121,25 @@ async function init() {
   }
 
   const pkg = require(path.join(templateDir, `package.json`))
-  pkg.name = path.basename(root)
+
+  pkg.name = path
+    .basename(root)
+    // #2360 ensure packgae.json name is valid
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/^[._]/, '')
+    .replace(/[~)('!*]+/g, '-')
+
   write('package.json', JSON.stringify(pkg, null, 2))
+
+  const pkgManager = /yarn/.test(process.env.npm_execpath) ? 'yarn' : 'npm'
 
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
     console.log(`  cd ${path.relative(cwd, root)}`)
   }
-  console.log(`  npm install (or \`yarn\`)`)
-  console.log(`  npm run dev (or \`yarn dev\`)`)
+  console.log(`  ${pkgManager === 'yarn' ? `yarn` : `npm install`}`)
+  console.log(`  ${pkgManager === 'yarn' ? `yarn dev` : `npm run dev`}`)
   console.log()
 }
 

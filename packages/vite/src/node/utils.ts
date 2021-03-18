@@ -3,23 +3,47 @@ import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { parse as parseUrl } from 'url'
-import slash from 'slash'
-import { FS_PREFIX, SUPPORTED_EXTS } from './constants'
+import { pathToFileURL, URL } from 'url'
+import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
 import resolve from 'resolve'
+import builtins from 'builtin-modules'
+import { FSWatcher } from 'chokidar'
+import remapping from '@ampproject/remapping'
+import {
+  DecodedSourceMap,
+  RawSourceMap
+} from '@ampproject/remapping/dist/types/types'
 
-export const bareImportRE = /^[\w@]/
+export function slash(p: string): string {
+  return p.replace(/\\/g, '/')
+}
+
+// Strip valid id prefix. This is preprended to resolved Ids that are
+// not valid browser import specifiers by the importAnalysis plugin.
+export function unwrapId(id: string): string {
+  return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
+}
+
+export const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
+
+export function isBuiltin(id: string): boolean {
+  return builtins.includes(id)
+}
+
+export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-let isRunningWithYarnPnp: boolean
+export let isRunningWithYarnPnp: boolean
 try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-export function resolveFrom(id: string, basedir: string) {
+const ssrExtensions = ['.js', '.json', '.node']
+
+export function resolveFrom(id: string, basedir: string, ssr = false) {
   return resolve.sync(id, {
     basedir,
-    extensions: SUPPORTED_EXTS,
+    extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
     preserveSymlinks: isRunningWithYarnPnp || false
   })
@@ -53,15 +77,18 @@ const isWindows = os.platform() === 'win32'
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
-  if (isWindows) {
-    return path.posix.normalize(slash(id.replace(VOLUME_RE, '')))
-  }
-  return path.posix.normalize(id)
+  return path.posix.normalize(isWindows ? slash(id) : id)
 }
 
 export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(id.slice(FS_PREFIX.length))
-  return fsPath.startsWith('/') ? fsPath : `/${fsPath}`
+  return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
+    ? fsPath
+    : `/${fsPath}`
+}
+
+export function ensureVolumeInPath(file: string): string {
+  return isWindows ? path.resolve(file) : file
 }
 
 export const queryRE = /\?.*$/
@@ -70,10 +97,10 @@ export const hashRE = /#.*$/
 export const cleanUrl = (url: string) =>
   url.replace(hashRE, '').replace(queryRE, '')
 
-const externalRE = /^(https?:)?\/\//
+export const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string) => externalRE.test(url)
 
-const dataUrlRE = /^\s*data:/i
+export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string) => dataUrlRE.test(url)
 
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue)($|\?)/
@@ -88,22 +115,31 @@ export const isJSRequest = (url: string) => {
   return false
 }
 
-const importQueryRE = /(\?|&)import(&|$)/
+const importQueryRE = /(\?|&)import(?:&|$)/
+const trailingSeparatorRE = /[\?&]$/
 export const isImportRequest = (url: string) => importQueryRE.test(url)
 
 export function removeImportQuery(url: string) {
-  return url.replace(importQueryRE, '$1').replace(/\?$/, '')
+  return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 export function injectQuery(url: string, queryToInject: string) {
-  const { pathname, search, hash } = parseUrl(url)
+  let resolvedUrl = new URL(url, 'relative:///')
+  if (resolvedUrl.protocol !== 'relative:') {
+    resolvedUrl = pathToFileURL(url)
+  }
+  let { protocol, pathname, search, hash } = resolvedUrl
+  if (protocol === 'file:') {
+    pathname = pathname.slice(1)
+  }
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
 }
 
+const timestampRE = /\bt=\d{13}&?\b/
 export function removeTimestampQuery(url: string) {
-  return url.replace(/\bt=\d{13}&?\b/, '').replace(/\?$/, '')
+  return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
 export async function asyncReplace(
@@ -142,10 +178,7 @@ export function prettifyUrl(url: string, root: string) {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    let file = path.relative(
-      root,
-      isAbsoluteFile ? url : url.slice(FS_PREFIX.length)
-    )
+    let file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
     const seg = file.split('/')
     const npmIndex = seg.indexOf(`node_modules`)
     const isSourceMap = file.endsWith('.map')
@@ -201,7 +234,7 @@ export function posToNumber(
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1; i++) {
-    start += lines[i].length
+    start += lines[i].length + 1
   }
   return start + column
 }
@@ -309,4 +342,101 @@ export function copyDir(srcDir: string, destDir: string) {
       fs.copyFileSync(srcFile, destFile)
     }
   }
+}
+
+export function ensureWatchedFile(
+  watcher: FSWatcher,
+  file: string | null,
+  root: string
+) {
+  if (
+    file &&
+    // only need to watch if out of root
+    !file.startsWith(root + '/') &&
+    // some rollup plugins use null bytes for private resolved Ids
+    !file.includes('\0') &&
+    fs.existsSync(file)
+  ) {
+    // resolve file to normalized system path
+    watcher.add(path.resolve(file))
+  }
+}
+
+interface ImageCandidate {
+  url: string
+  descriptor: string
+}
+const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
+export async function processSrcSet(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => Promise<string>
+) {
+  const imageCandidates: ImageCandidate[] = srcs.split(',').map((s) => {
+    const [url, descriptor] = s
+      .replace(escapedSpaceCharacters, ' ')
+      .trim()
+      .split(' ', 2)
+    return { url, descriptor }
+  })
+
+  const ret = await Promise.all(
+    imageCandidates.map(async ({ url, descriptor }) => {
+      return {
+        url: await replacer({ url, descriptor }),
+        descriptor
+      }
+    })
+  )
+
+  const url = ret.reduce((prev, { url, descriptor }, index) => {
+    descriptor = descriptor || ''
+    return (prev +=
+      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
+  }, '')
+
+  return url
+}
+
+// based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221
+const nullSourceMap: RawSourceMap = {
+  names: [],
+  sources: [],
+  mappings: '',
+  version: 3
+}
+export function combineSourcemaps(
+  filename: string,
+  sourcemapList: Array<DecodedSourceMap | RawSourceMap>
+): RawSourceMap {
+  if (
+    sourcemapList.length === 0 ||
+    sourcemapList.every((m) => m.sources.length === 0)
+  ) {
+    return { ...nullSourceMap }
+  }
+
+  let map
+  let mapIndex = 1
+  const useArrayInterface =
+    sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
+  if (useArrayInterface) {
+    map = remapping(sourcemapList, () => null, true)
+  } else {
+    map = remapping(
+      sourcemapList[0],
+      function loader(sourcefile) {
+        if (sourcefile === filename && sourcemapList[mapIndex]) {
+          return sourcemapList[mapIndex++]
+        } else {
+          return { ...nullSourceMap }
+        }
+      },
+      true
+    )
+  }
+  if (!map.file) {
+    delete map.file
+  }
+
+  return map as RawSourceMap
 }

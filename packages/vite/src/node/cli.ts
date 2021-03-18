@@ -4,6 +4,7 @@ import { BuildOptions } from './build'
 import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
+import { preview } from './preview'
 
 const cli = cac('vite')
 
@@ -17,6 +18,7 @@ interface GlobalCLIOptions {
   config?: string
   c?: boolean | string
   root?: string
+  base?: string
   r?: string
   mode?: string
   m?: string
@@ -38,6 +40,7 @@ function cleanOptions(options: GlobalCLIOptions) {
   delete ret.config
   delete ret.c
   delete ret.root
+  delete ret.base
   delete ret.r
   delete ret.mode
   delete ret.m
@@ -50,6 +53,7 @@ function cleanOptions(options: GlobalCLIOptions) {
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
   .option('-r, --root <path>', `[string] use specified root directory`)
+  .option('--base <path>', `[string] public base path (default: /)`)
   .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
@@ -62,7 +66,7 @@ cli
   .option('--host <host>', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
-  .option('--open [browser]', `[boolean | string] open browser on startup`)
+  .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('-m, --mode <mode>', `[string] set env mode`)
@@ -77,6 +81,7 @@ cli
     try {
       const server = await createServer({
         root,
+        base: options.base,
         mode: options.mode,
         configFile: options.config,
         logLevel: options.logLevel,
@@ -95,7 +100,6 @@ cli
 // build
 cli
   .command('build [root]')
-  .option('--base <path>', `[string] public base path (default: /)`)
   .option('--target <target>', `[string] transpile target (default: 'modules')`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
@@ -106,7 +110,10 @@ cli
     '--assetsInlineLimit <number>',
     `[number] static asset base64 inline threshold in bytes (default: 4096)`
   )
-  .option('--ssr', `[boolean] build for server-side rendering`)
+  .option(
+    '--ssr [entry]',
+    `[string] build specified entry for server-side rendering`
+  )
   .option(
     '--sourcemap',
     `[boolean] output source maps for build (default: false)`
@@ -118,6 +125,7 @@ cli
   )
   .option('--manifest', `[boolean] emit build manifest json`)
   .option('--watch', `[boolean] rebuilds when modules have changed on disk.`)
+  .option('--ssrManifest', `[boolean] emit ssr manifest json`)
   .option(
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`
@@ -125,14 +133,17 @@ cli
   .option('-m, --mode <mode>', `[string] set env mode`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
+    const buildOptions = cleanOptions(options) as BuildOptions
+
     try {
       await build({
         root,
+        base: options.base,
         mode: options.mode,
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        build: cleanOptions(options) as BuildOptions
+        build: buildOptions
       })
     } catch (e) {
       createLogger(options.logLevel).error(
@@ -156,6 +167,7 @@ cli
         const config = await resolveConfig(
           {
             root,
+            base: options.base,
             configFile: options.config,
             logLevel: options.logLevel
           },
@@ -166,6 +178,39 @@ cli
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when optimizing deps:\n${e.stack}`)
+        )
+        process.exit(1)
+      }
+    }
+  )
+
+cli
+  .command('preview [root]')
+  .option('--port <port>', `[number] specify port`)
+  .option('--open [path]', `[boolean | string] open browser on startup`)
+  .action(
+    async (
+      root: string,
+      options: { port?: number; open?: boolean | string } & GlobalCLIOptions
+    ) => {
+      try {
+        const config = await resolveConfig(
+          {
+            root,
+            base: options.base,
+            configFile: options.config,
+            logLevel: options.logLevel,
+            server: {
+              open: options.open
+            }
+          },
+          'serve',
+          'development'
+        )
+        await preview(config, options.port)
+      } catch (e) {
+        createLogger(options.logLevel).error(
+          chalk.red(`error when starting preview server:\n${e.stack}`)
         )
         process.exit(1)
       }

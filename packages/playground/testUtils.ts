@@ -67,6 +67,19 @@ export function editFile(filename: string, replacer: (str: string) => string) {
   fs.writeFileSync(filename, modified)
 }
 
+export function addFile(filename: string, content: string) {
+  fs.writeFileSync(path.resolve(testDir, filename), content)
+}
+
+export function removeFile(filename: string) {
+  fs.unlinkSync(path.resolve(testDir, filename))
+}
+
+export function listAssets(base = '') {
+  const assetsDir = path.join(testDir, 'dist', base, 'assets')
+  return fs.readdirSync(assetsDir)
+}
+
 export function findAssetFile(match: string | RegExp, base = '') {
   const assetsDir = path.join(testDir, 'dist', base, 'assets')
   const files = fs.readdirSync(assetsDir)
@@ -74,6 +87,12 @@ export function findAssetFile(match: string | RegExp, base = '') {
     return file.match(match)
   })
   return file ? fs.readFileSync(path.resolve(assetsDir, file), 'utf-8') : ''
+}
+
+export function readManifest(base = '') {
+  return JSON.parse(
+    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8')
+  )
 }
 
 /**
@@ -84,7 +103,7 @@ export async function untilUpdated(
   expected: string
 ) {
   if (isBuild) return
-  const maxTries = process.env.CI ? 100 : 20
+  const maxTries = process.env.CI ? 100 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) || ''
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {

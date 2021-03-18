@@ -12,7 +12,7 @@ module.exports = {
       'error',
       {
         allowModules: ['types', 'estree', 'testUtils'],
-        tryExtensions: ['.ts', '.js']
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
     'node/no-missing-require': [
@@ -20,7 +20,7 @@ module.exports = {
       {
         // for try-catching yarn pnp
         allowModules: ['pnpapi'],
-        tryExtensions: ['.ts', '.js']
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
     'node/no-restricted-require': [
@@ -38,7 +38,7 @@ module.exports = {
     'node/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite']
+        allowModules: ['vite', 'less', 'sass']
       }
     ],
     'node/no-extraneous-require': [

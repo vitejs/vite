@@ -1,3 +1,34 @@
+## [1.1.2](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.1...plugin-vue-jsx@1.1.2) (2021-02-24)
+
+
+
+## [1.1.1](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.0...plugin-vue-jsx@1.1.1) (2021-02-24)
+
+
+### Bug Fixes
+
+* **plugin-vue-jsx:** do not read babel configuration ([#2181](https://github.com/vitejs/vite/issues/2181)) ([8f0dc25](https://github.com/vitejs/vite/commit/8f0dc25e943ff490eefa0ed3663205a14e8eed9e))
+
+
+
+# [1.1.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.3...plugin-vue-jsx@1.1.0) (2021-02-09)
+
+
+### Features
+
+* **plugin-vue-jsx:** register jsx module during ssr ([7a6aa2a](https://github.com/vitejs/vite/commit/7a6aa2ad2689bf8221389924a608876866db7b0a))
+
+
+
+## [1.0.3](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.2...plugin-vue-jsx@1.0.3) (2021-02-08)
+
+
+### Bug Fixes
+
+* **plugin-vue-jsx:** support ssr ([30e92a1](https://github.com/vitejs/vite/commit/30e92a150e060e8bedcb6f0c477dcaa87e7996d6)), closes [#1939](https://github.com/vitejs/vite/issues/1939)
+
+
+
 ## [1.0.2](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.0.1...plugin-vue-jsx@1.0.2) (2021-01-12)
 
 

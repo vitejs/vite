@@ -204,3 +204,13 @@ declare module '*?worker&inline' {
   }
   export default workerConstructor
 }
+
+declare module '*?raw' {
+  const src: string
+  export default src
+}
+
+declare module '*?url' {
+  const src: string
+  export default src
+}

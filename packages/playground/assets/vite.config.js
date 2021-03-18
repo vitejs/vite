@@ -1,9 +1,19 @@
+const path = require('path')
+
 /**
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  base: '/foo/',
+  publicDir: 'static',
+  resolve: {
+    alias: {
+      '@playground': path.resolve(__dirname, '..'),
+      '@': path.resolve(__dirname, 'nested')
+    }
+  },
   build: {
-    base: '/foo/',
-    outDir: 'dist/foo'
+    outDir: 'dist/foo',
+    manifest: true
   }
 }

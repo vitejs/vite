@@ -37,6 +37,7 @@
     "jest": "^26.6.3",
     "lint-staged": "^10.5.3",
     "minimist": "^1.2.5",
+    "node-fetch": "^2.6.1",
     "npm-run-all": "^4.1.5",
     "playwright-chromium": "^1.7.0",
     "prettier": "^2.2.1",
@@ -46,7 +47,7 @@
     "slash": "^3.0.0",
     "ts-jest": "^26.4.4",
     "typescript": "^4.1.2",
-    "vitepress": "^0.11.1",
+    "vitepress": "^0.12.2",
     "yorkie": "^2.0.0"
   },
   "gitHooks": {
@@ -60,6 +61,9 @@
     "*.ts": [
       "eslint",
       "prettier --parser=typescript --write"
+    ],
+    "*.html": [
+      "prettier --write"
     ]
   }
 }

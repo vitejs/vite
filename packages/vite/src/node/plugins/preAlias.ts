@@ -13,8 +13,8 @@ export function preAliasPlugin(): Plugin {
     configureServer(_server) {
       server = _server
     },
-    resolveId(id) {
-      if (bareImportRE.test(id)) {
+    resolveId(id, _, __, ssr) {
+      if (!ssr && bareImportRE.test(id)) {
         return tryOptimizedResolve(id, server)
       }
     }

@@ -3,6 +3,7 @@ import path from 'path'
 import {
   editFile,
   findAssetFile,
+  getBg,
   getColor,
   isBuild,
   testDir,
@@ -55,17 +56,42 @@ test('postcss config', async () => {
 test('sass', async () => {
   const imported = await page.$('.sass')
   const atImport = await page.$('.sass-at-import')
+  const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
   expect(await getColor(atImport)).toBe('olive')
+  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getColor(partialImport)).toBe('orchid')
 
   editFile('sass.scss', (code) =>
     code.replace('color: $injectedColor', 'color: red')
   )
   await untilUpdated(() => getColor(imported), 'red')
 
-  editFile('sass-at-import.scss', (code) =>
+  editFile('nested/_index.scss', (code) =>
     code.replace('color: olive', 'color: blue')
+  )
+  await untilUpdated(() => getColor(atImport), 'blue')
+
+  editFile('nested/_partial.scss', (code) =>
+    code.replace('color: orchid', 'color: green')
+  )
+  await untilUpdated(() => getColor(partialImport), 'green')
+})
+
+test('less', async () => {
+  const imported = await page.$('.less')
+  const atImport = await page.$('.less-at-import')
+
+  expect(await getColor(imported)).toBe('blue')
+  expect(await getColor(atImport)).toBe('darkslateblue')
+  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+
+  editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
+  await untilUpdated(() => getColor(imported), 'red')
+
+  editFile('nested/nested.less', (code) =>
+    code.replace('color: darkslateblue', 'color: blue')
   )
   await untilUpdated(() => getColor(atImport), 'blue')
 })
@@ -97,6 +123,14 @@ test('css modules w/ sass', async () => {
     code.replace('color: orangered', 'color: blue')
   )
   await untilUpdated(() => getColor(imported), 'blue')
+})
+
+test('@import dependency w/ style entry', async () => {
+  expect(await getColor('.css-dep')).toBe('purple')
+})
+
+test('@import dependency w/ sass entry', async () => {
+  expect(await getColor('.css-dep-sass')).toBe('orange')
 })
 
 test('async chunk', async () => {

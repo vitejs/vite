@@ -8,11 +8,12 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { htmlPlugin } from './html'
+import { htmlInlineScriptProxyPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { webWorkerPlugin } from './worker'
 import { dynamicImportPolyfillPlugin } from './dynamicImportPolyfill'
 import { preAliasPlugin } from './preAlias'
+import { definePlugin } from './define'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -28,31 +29,33 @@ export async function resolvePlugins(
 
   return [
     isBuild ? null : preAliasPlugin(),
-    aliasPlugin({ entries: config.alias }),
+    aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
     config.build.polyfillDynamicImport
       ? dynamicImportPolyfillPlugin(config)
       : null,
-    resolvePlugin(
-      {
-        root: config.root,
-        dedupe: config.dedupe,
-        isBuild,
-        asSrc: true
-      },
-      config
-    ),
-    htmlPlugin(),
+    resolvePlugin({
+      ...config.resolve,
+      root: config.root,
+      isProduction: config.isProduction,
+      isBuild,
+      asSrc: true
+    }),
+    htmlInlineScriptProxyPlugin(),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
-    jsonPlugin({
-      preferConst: true,
-      namedExports: true
-    }),
+    jsonPlugin(
+      {
+        namedExports: true,
+        ...config.json
+      },
+      isBuild
+    ),
     wasmPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
+    definePlugin(config),
     cssPostPlugin(config),
     ...buildPlugins.pre,
     ...postPlugins,

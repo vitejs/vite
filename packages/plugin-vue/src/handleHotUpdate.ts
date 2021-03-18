@@ -55,7 +55,11 @@ export async function handleHotUpdate({
     // metadata will not be available since the script part isn't loaded.
     // in this case, reuse the compiled script from previous descriptor.
     if (mainModule && !affectedModules.has(mainModule)) {
-      setResolvedScript(descriptor, getResolvedScript(prevDescriptor)!)
+      setResolvedScript(
+        descriptor,
+        getResolvedScript(prevDescriptor, false)!,
+        false
+      )
     }
     affectedModules.add(templateModule)
     needRerender = true
@@ -140,7 +144,7 @@ export async function handleHotUpdate({
   return [...affectedModules].filter(Boolean) as ModuleNode[]
 }
 
-function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
+export function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
   if (!a && !b) return true
   if (!a || !b) return false
   // src imports will trigger their own updates

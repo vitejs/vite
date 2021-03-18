@@ -1,10 +1,11 @@
 {
-  "name": "my-lib",
+  "name": "@example/my-lib",
   "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "debug": "node --inspect-brk ../../vite/bin/vite"
+    "debug": "node --inspect-brk ../../vite/bin/vite",
+    "serve": "vite preview"
   }
 }
