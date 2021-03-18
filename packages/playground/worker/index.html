@@ -7,9 +7,8 @@
 <div>Response from inline worker: <span class="pong-inline"></span></div>
 
 <script type="module">
-  import Worker from './my-worker?worker'
-  import InlineWorker from './my-worker?worker&inline'
-
+  import Worker from './my-worker?worker&type=module&name=test&credentials=same-origin'
+  import InlineWorker from './my-worker?worker&inline&type=module&name=test&credentials=same-origin'
   const worker = new Worker()
   worker.addEventListener('message', (e) => {
     document.querySelector('.pong').textContent = e.data.msg

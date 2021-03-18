@@ -292,7 +292,23 @@ import MyWorker from './worker?worker'
 const worker = new MyWorker()
 ```
 
-The worker script can also use `import` statements instead of `importScripts()` - note during dev this relies on browser native support and currently only works in Chrome, but for the production build it is compiled away.
+Worker options are supported using url query. avalable options are
+```ts
+type RequestCredentials  = "omit" | "same-origin" | "include"
+type WorkerType  = "classic" | "module"
+
+interface WorkerOptions {
+  credentials?: RequestCredentials;
+  name?: string;
+  type?: WorkerType;
+}
+```
+example url query
+```js
+import MyWorker from './worker?worker&type=module&name=test&credentials=same-origin'
+```
+
+The worker script can also use `import` statements instead of `importScripts()` (only in module type worker) - note during dev this relies on browser native support and currently only works in Chrome, but for the production build it is compiled away.
 
 By default, the worker script will be emitted as a separate chunk in the production build. If you wish to inline the worker as base64 strings, add the `inline` query:
 

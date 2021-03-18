@@ -7,12 +7,37 @@ import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 
+type RequestCredentials = 'omit' | 'same-origin' | 'include'
+type WorkerType = 'classic' | 'module'
+
+interface WorkerOptions {
+  credentials?: RequestCredentials
+  name?: string
+  type?: WorkerType
+}
 function parseWorkerRequest(id: string): ParsedUrlQuery | null {
   const { search } = parseUrl(id)
   if (!search) {
     return null
   }
   return qs.parse(search.slice(1))
+}
+
+function buildWorkerOptions(query: ParsedUrlQuery) {
+  let options: WorkerOptions = {}
+  const allowCredentials = ['omit', 'same-origin', 'include']
+  const allowWorkerType = ['classic', 'module']
+  let credentials = query.credentials as RequestCredentials
+  let name = query.name as string
+  let type = query.type as WorkerType
+  if (allowCredentials.includes(credentials)) {
+    options.credentials = credentials
+  }
+  if (allowWorkerType.includes(type)) {
+    options.type = type
+  }
+  if (name) options.name = name
+  return options
 }
 
 const WorkerFileId = 'worker_file'
@@ -72,9 +97,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           })}__`
         }
       }
-
+      let WorkerOptions = buildWorkerOptions(query)
+      let optionString = ''
+      if (Object.keys(WorkerOptions).length > 0) {
+        optionString = ',' + JSON.stringify(WorkerOptions)
+      }
       return `export default function WorkerWrapper() {
-        return new Worker(${JSON.stringify(url)}, { type: 'module' })
+        return new Worker(${JSON.stringify(url)}${optionString})
       }`
     }
   }
