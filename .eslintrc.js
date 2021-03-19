@@ -6,6 +6,7 @@ module.exports = {
     sourceType: 'module',
     ecmaVersion: 2020
   },
+  plugins: ['spellcheck'],
   rules: {
     'no-debugger': ['error'],
     'node/no-missing-import': [
@@ -51,7 +52,9 @@ module.exports = {
     'node/no-unpublished-import': 'off',
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
-    'no-process-exit': 'off'
+    'no-process-exit': 'off',
+
+    'spellcheck/spell-checker': ['warn', { minLength: 4 }]
   },
   overrides: [
     {

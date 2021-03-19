@@ -2880,6 +2880,15 @@ eslint-plugin-node@^11.1.0:
     resolve "^1.10.1"
     semver "^6.1.0"
 
+eslint-plugin-spellcheck@^0.0.17:
+  version "0.0.17"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-spellcheck/-/eslint-plugin-spellcheck-0.0.17.tgz#ea3d27fa0fb443d3d821245d4d00137c788796ca"
+  integrity sha512-SjEPsqHgAODWgCusCXxzYqTkJHe8krun7UjekzhWkFlGM3ZTPto66ED+kQHBrOB3Mrqkx3oD0qf0sDmxyeCRCA==
+  dependencies:
+    globals "^13.0.0"
+    hunspell-spellchecker "^1.0.2"
+    lodash "^4.17.15"
+
 eslint-scope@^5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/eslint-scope/-/eslint-scope-5.1.1.tgz#e786e59a66cb92b3f6c1fb0d508aab174848f48c"
@@ -3805,6 +3814,11 @@ human-signals@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/human-signals/-/human-signals-2.1.0.tgz#dc91fcba42e4d06e4abaed33b3e7a3c02f514ea0"
   integrity sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==
+
+hunspell-spellchecker@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/hunspell-spellchecker/-/hunspell-spellchecker-1.0.2.tgz#a10b0bd2fa00a65ab62a4c6b734ce496d318910e"
+  integrity sha1-oQsL0voAplq2Kkxrc0zkltMYkQ4=
 
 iconv-lite@0.4.24, iconv-lite@^0.4.4:
   version "0.4.24"

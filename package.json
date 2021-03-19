@@ -32,6 +32,7 @@
     "enquirer": "^2.3.6",
     "eslint": "^7.15.0",
     "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-spellcheck": "^0.0.17",
     "execa": "^5.0.0",
     "fs-extra": "^9.0.1",
     "jest": "^26.6.3",
