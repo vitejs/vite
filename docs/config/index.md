@@ -271,6 +271,8 @@ export default ({ command, mode }) => {
   }
   ```
 
+  If a file has imported this module with the same name (e.g. `import React, { useState } from React` or `import * as React from React`), `jsxInject` will skip this file, so feel free to use it.
+
   Set to `false` to disable ESbuild transforms.
 
 ### assetsInclude
