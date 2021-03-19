@@ -312,7 +312,7 @@ interface HotModule {
 }
 
 interface HotCallback {
-  // the deps must be fetchable paths
+  // the dependencies must be fetchable paths
   deps: string[]
   fn: (modules: object[]) => void
 }
