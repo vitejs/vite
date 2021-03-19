@@ -19,6 +19,7 @@ export function transformVueJsx(
     sourceFileName: id,
     sourceMaps: true,
     plugins,
+    babelrc: false,
   })!
 
   return {
