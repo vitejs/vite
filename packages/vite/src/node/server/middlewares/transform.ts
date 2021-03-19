@@ -59,7 +59,12 @@ export function transformMiddleware(
         // something unexpected has happened. In this case, Vite
         // returns an empty response that will error.
         setTimeout(() => {
-          res.end()
+          // status code request timeout
+          res.statusCode = 408
+          res.end(
+            `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
+              `<p>The current page should have reloaded by now</p>`
+          )
         }, NEW_DEPENDENCY_BUILD_TIMEOUT)
       )
       return
