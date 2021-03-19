@@ -70,6 +70,16 @@ Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available 
 
 > The following section is mostly for maintainers who have commit access, but it's helpful to go through if you intend to make non-trivial contributions to the codebase.
 
+### Issue Triaging Workflow
+
+![issue-workflow](./issue-workflow.png)
+
+### Pull Request Review Workflow
+
+![issue-workflow](./pr-workflow.png)
+
+## Notes on Dependencies
+
 Vite aims to be lightweight, and this includes being aware of the number of npm dependencies and their size.
 
 We use rollup to pre-bundle most dependencies before publishing! Therefore most dependencies, even used in src code, should be added under `devDependencies` by default. This also creates a number of constraints that we need to be aware of in the codebase:
