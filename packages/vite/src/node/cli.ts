@@ -124,13 +124,13 @@ cli
       `or specify minifier to use (default: terser)`
   )
   .option('--manifest', `[boolean] emit build manifest json`)
-  .option('--watch', `[boolean] rebuilds when modules have changed on disk.`)
   .option('--ssrManifest', `[boolean] emit ssr manifest json`)
   .option(
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`
   )
   .option('-m, --mode <mode>', `[string] set env mode`)
+  .option('--watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     const buildOptions = cleanOptions(options) as BuildOptions

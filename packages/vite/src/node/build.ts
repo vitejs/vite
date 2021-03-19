@@ -10,10 +10,10 @@ import Rollup, {
   WarningHandler,
   OutputOptions,
   RollupOutput,
-  WatcherOptions,
   ExternalOption,
   GetManualChunk,
   GetModuleInfo,
+  WatcherOptions,
   RollupWatcher,
   RollupError
 } from 'rollup'
@@ -160,11 +160,6 @@ export interface BuildOptions {
    */
   lib?: LibraryOptions | false
   /**
-   * Rollup watch options
-   * https://rollupjs.org/guide/en/#watchoptions
-   */
-  watch?: WatcherOptions | null
-  /**
    * Produce SSR oriented build. Note this requires specifying SSR entry via
    * `rollupOptions.input`.
    */
@@ -184,6 +179,11 @@ export interface BuildOptions {
    * @default 500
    */
   chunkSizeWarningLimit?: number
+  /**
+   * Rollup watch options
+   * https://rollupjs.org/guide/en/#watchoptions
+   */
+  watch?: WatcherOptions | null
 }
 
 export interface LibraryOptions {
@@ -219,10 +219,10 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     manifest: false,
     lib: false,
     ssr: false,
-    watch: null,
     ssrManifest: false,
     brotliSize: true,
     chunkSizeWarningLimit: 500,
+    watch: null,
     ...raw
   }
 
@@ -381,10 +381,10 @@ async function doBuild(
 
   const outputBuildError = (e: RollupError) => {
     config.logger.error(
-      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ``}${e.message}`)
+      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ''}${e.message}`)
     )
     if (e.id) {
-      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ``
+      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ''
       config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
     }
     if (e.frame) {
