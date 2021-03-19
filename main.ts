@@ -95,7 +95,10 @@ function injectStyles (context) {
   }
 
   result += `\nexport default component.exports`
-  return result
+  return {
+    code: result,
+    map: descriptor.script?.map,
+  }
 }
 
 const exportDefaultClassRE = /export\s+default\s+class\s+([\w$]+)/

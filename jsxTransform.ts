@@ -3,11 +3,11 @@ import { transform } from '@babel/core'
 // todo hmr
 export function transformVueJsx(
   code: string,
-  filename: string,
+  id: string,
   jsxOptions?: Record<string, any>
 ) {
   const plugins = []
-  if (/\.tsx$/.test(filename)) {
+  if (/\.tsx$/.test(id)) {
     plugins.push([
       require.resolve('@babel/plugin-transform-typescript'),
       { isTSX: true, allowExtensions: true },
@@ -16,7 +16,7 @@ export function transformVueJsx(
 
   const result = transform(code, {
     presets: [[require.resolve('@vue/babel-preset-jsx'), jsxOptions]],
-    filename,
+    sourceFileName: id,
     sourceMaps: true,
     plugins,
   })!
