@@ -203,7 +203,6 @@ export async function createPluginContainer(
       if (mod) return mod.info
       mod = {
         /** @type {import('rollup').ModuleInfo} */
-        // @ts-ignore-next
         info: {}
       }
       MODULES.set(id, mod)

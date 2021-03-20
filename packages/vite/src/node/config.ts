@@ -260,7 +260,7 @@ export async function resolveConfig(
   const resolvedAlias = mergeAlias(
     // #1732 the CLIENT_DIR may contain $$ which cannot be used as direct
     // replacement string.
-    // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
+    // @ts-expect-error: because @rollup/plugin-alias' type doesn't allow function
     // replacement, but its implementation does work with function values.
     [{ find: /^\/@vite\//, replacement: () => CLIENT_DIR + '/' }],
     config.resolve?.alias || config.alias || []

@@ -692,7 +692,6 @@ async function resolvePostcssConfig(
   try {
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
-    // @ts-ignore
     return (cachedPostcssConfig = await postcssrc({}, searchPath))
   } catch (e) {
     if (!/No PostCSS Config found/.test(e.message)) {
@@ -751,7 +750,7 @@ function rewriteCssUrls(
   replacer: CssUrlReplacer
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
-    let [matched, rawUrl] = match
+    const [matched, rawUrl] = match
     return await doUrlReplace(rawUrl, matched, replacer)
   })
 }
@@ -761,7 +760,7 @@ function rewriteCssImageSet(
   replacer: CssUrlReplacer
 ): Promise<string> {
   return asyncReplace(css, cssImageSetRE, async (match) => {
-    let [matched, rawUrl] = match
+    const [matched, rawUrl] = match
     const url = await processSrcSet(rawUrl, ({ url }) =>
       doUrlReplace(url, matched, replacer)
     )
@@ -860,7 +859,7 @@ type StylePreprocessor = (
 
 export interface StylePreprocessorResults {
   code: string
-  map?: object
+  map?: SourceMap
   errors: RollupError[]
   deps: string[]
 }

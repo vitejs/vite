@@ -9,7 +9,7 @@ export function timeMiddleware(root: string): Connect.NextHandleFunction {
     const end = res.end
     res.end = (...args: any[]) => {
       logTime(`${timeFrom(start)} ${prettifyUrl(req.url!, root)}`)
-      // @ts-ignore
+      // @ts-expect-error: Assume that multiple args are passed
       return end.call(res, ...args)
     }
     next()

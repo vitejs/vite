@@ -7,7 +7,7 @@ export function decodeURIMiddleware(): Connect.NextHandleFunction {
 
     // `sirv` middleware uses the req._parsedUrl values to find the file,
     // so decode it all together.
-    // @ts-ignore
+    // @ts-expect-error: Assume that `_parsedUrl` exists
     const parsedUrl = req._parsedUrl
     for (const key of Object.keys(parsedUrl)) {
       const val = parsedUrl[key]

@@ -634,7 +634,7 @@ function injectSsrFlagToHooks(p: Plugin): Plugin {
   }
 }
 
-function wrapSsrHook(fn: Function | undefined) {
+function wrapSsrHook(fn: ((...args: any[]) => any) | undefined) {
   if (!fn) return
   return function (this: any, ...args: any[]) {
     return fn.call(this, ...args, true)

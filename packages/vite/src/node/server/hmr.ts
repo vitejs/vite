@@ -417,7 +417,7 @@ async function readModifiedFile(file: string): Promise<string> {
 }
 
 async function restartServer(server: ViteDevServer) {
-  // @ts-ignore
+  // @ts-expect-error: Assume that `__vite_start_time` exists
   global.__vite_start_time = Date.now()
   let newServer = null
   try {
@@ -433,7 +433,7 @@ async function restartServer(server: ViteDevServer) {
   await server.close()
   for (const key in newServer) {
     if (key !== 'app') {
-      // @ts-ignore
+      // @ts-expect-error: Just copy over the value
       server[key] = newServer[key]
     }
   }

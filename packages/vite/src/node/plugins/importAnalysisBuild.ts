@@ -24,17 +24,17 @@ const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
  * Helper for preloading CSS and direct imports of async chunks in parallel to
  * the async chunk itself.
  */
-function preload(baseModule: () => Promise<{}>, deps?: string[]) {
-  // @ts-ignore
+function preload(baseModule: () => Promise<unknown>, deps?: string[]) {
+  // @ts-expect-error: Assume that `__VITE_IS_MODERN__` exists
   if (!__VITE_IS_MODERN__ || !deps) {
     return baseModule()
   }
 
-  // @ts-ignore
+  // @ts-expect-error: Assume that `scriptRel` exists
   if (scriptRel === undefined) {
-    // @ts-ignore
+    // @ts-expect-error: Assume that `document` exists
     const relList = document.createElement('link').relList
-    // @ts-ignore
+    // @ts-expect-error: Assume that `scriptRel` exists
     scriptRel =
       relList && relList.supports && relList.supports('modulepreload')
         ? 'modulepreload'
@@ -43,26 +43,26 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 
   return Promise.all(
     deps.map((dep) => {
-      // @ts-ignore
+      // @ts-expect-error: Assume that `seen` exists
       if (dep in seen) return
-      // @ts-ignore
+      // @ts-expect-error: Assume that `seen` exists
       seen[dep] = true
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-      // @ts-ignore check if the file is already preloaded by SSR markup
+      // @ts-expect-error: check if the file is already preloaded by SSR markup
       if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
         return
       }
-      // @ts-ignore
+      // @ts-expect-error: Assume that `document` exists
       const link = document.createElement('link')
-      // @ts-ignore
+      // @ts-expect-error: Assume that `scriptRel` exists
       link.rel = isCss ? 'stylesheet' : scriptRel
       if (!isCss) {
         link.as = 'script'
         link.crossOrigin = ''
       }
       link.href = dep
-      // @ts-ignore
+      // @ts-expect-error: Assume that `document` exists
       document.head.appendChild(link)
       if (isCss) {
         return new Promise((res, rej) => {

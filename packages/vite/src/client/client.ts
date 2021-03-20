@@ -81,12 +81,13 @@ async function handleMessage(payload: HMRPayload) {
         }
       })
       break
-    case 'custom':
+    case 'custom': {
       const cbs = customListenersMap.get(payload.event)
       if (cbs) {
         cbs.forEach((cb) => cb(payload.data))
       }
       break
+    }
     case 'full-reload':
       if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
@@ -116,7 +117,7 @@ async function handleMessage(payload: HMRPayload) {
         }
       })
       break
-    case 'error':
+    case 'error': {
       const err = payload.err
       if (enableOverlay) {
         createErrorOverlay(err)
@@ -124,9 +125,11 @@ async function handleMessage(payload: HMRPayload) {
         console.error(`[vite] Internal Server Error\n${err.stack}`)
       }
       break
-    default:
+    }
+    default: {
       const check: never = payload
       return check
+    }
   }
 }
 
@@ -205,7 +208,7 @@ export function updateStyle(id: string, content: string) {
     if (!style) {
       style = new CSSStyleSheet()
       style.replaceSync(content)
-      // @ts-ignore
+      // @ts-expect-error: Assume that `adoptedStyleSheets` exists
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
     } else {
       style.replaceSync(content)
@@ -229,12 +232,12 @@ export function updateStyle(id: string, content: string) {
 }
 
 export function removeStyle(id: string) {
-  let style = sheetsMap.get(id)
+  const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
-      // @ts-ignore
+      // @ts-expect-error: Assume that `adoptedStyleSheets` exists
       const index = document.adoptedStyleSheets.indexOf(style)
-      // @ts-ignore
+      // @ts-expect-error: Assume that `adoptedStyleSheets` exists
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
         (s: CSSStyleSheet) => s !== style
       )
@@ -314,7 +317,7 @@ interface HotModule {
 interface HotCallback {
   // the dependencies must be fetchable paths
   deps: string[]
-  fn: (modules: object[]) => void
+  fn: (modules: Record<string, unknown>[]) => void
 }
 
 const hotModulesMap = new Map<string, HotModule>()

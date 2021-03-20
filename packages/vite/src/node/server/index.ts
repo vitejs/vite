@@ -205,7 +205,7 @@ export interface ViteDevServer {
     code: string,
     filename: string,
     options?: EsbuildTransformOptions,
-    inMap?: object
+    inMap?: Record<string, unknown>
   ): Promise<ESBuildTransformResult>
   /**
    * Load a given URL as an instantiated module for SSR.
@@ -582,17 +582,17 @@ async function startServer(
           })
       )
 
-      // @ts-ignore
+      // @ts-expect-error: Assume that `__vite_start_time` exists
       if (global.__vite_start_time) {
         info(
           chalk.cyan(
-            // @ts-ignore
+            // @ts-expect-error: Assume that `__vite_start_time` exists
             `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
           )
         )
       }
 
-      // @ts-ignore
+      // @ts-expect-error: Assume that `__vite_profile_session` exists
       const profileSession = global.__vite_profile_session
       if (profileSession) {
         profileSession.post('Profiler.stop', (err: any, { profile }: any) => {

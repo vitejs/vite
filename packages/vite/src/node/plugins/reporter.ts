@@ -228,7 +228,7 @@ function writeLine(output: string) {
   }
 }
 
-function throttle(fn: Function) {
+function throttle(fn: (...args: any[]) => void) {
   let timerHandle: NodeJS.Timeout | null = null
   return (...args: any[]) => {
     if (timerHandle) return
