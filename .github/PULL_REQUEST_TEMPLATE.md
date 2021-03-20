@@ -4,7 +4,7 @@
 
 - [ ] Read the [contributing guidelines](https://github.com/vitejs/vite/blob/main/.github/contributing.md).
 - [ ] Check that there isn't already a PR that solves the problem the same way to avoid creating a duplicate.
-- [ ] Provide a description in this PR that addresses **what** the PR is solving, or reference the issue that it solves (e.g. fixes #123).
+- [ ] Provide a description in this PR that addresses **what** the PR is solving, or reference the issue that it solves (e.g. `fixes #123`).
 - [ ] Ideally, include relevant tests that fail without this PR but pass with it.
 
 ### What is the purpose of this pull request? <!-- (put an "X" next to an item) -->
