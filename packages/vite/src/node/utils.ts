@@ -124,7 +124,7 @@ export function removeImportQuery(url: string) {
 }
 
 export function injectQuery(url: string, queryToInject: string) {
-  let resolvedUrl = new URL(url, 'relative:///')
+  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
   if (resolvedUrl.protocol !== 'relative:') {
     resolvedUrl = pathToFileURL(url)
   }
@@ -132,6 +132,7 @@ export function injectQuery(url: string, queryToInject: string) {
   if (protocol === 'file:') {
     pathname = pathname.slice(1)
   }
+  pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
