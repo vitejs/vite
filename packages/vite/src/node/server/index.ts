@@ -1,3 +1,4 @@
+import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
@@ -205,7 +206,7 @@ export interface ViteDevServer {
     code: string,
     filename: string,
     options?: EsbuildTransformOptions,
-    inMap?: Record<string, unknown>
+    inMap?: RawSourceMap
   ): Promise<ESBuildTransformResult>
   /**
    * Load a given URL as an instantiated module for SSR.
