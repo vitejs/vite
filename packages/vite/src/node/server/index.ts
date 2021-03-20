@@ -1,4 +1,4 @@
-import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap as AmpRawSourceMap } from '@ampproject/remapping/dist/types/types'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
@@ -10,6 +10,7 @@ import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
+import type { RawSourceMap } from 'source-map'
 import { resolveHttpServer } from './http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import {
@@ -206,7 +207,7 @@ export interface ViteDevServer {
     code: string,
     filename: string,
     options?: EsbuildTransformOptions,
-    inMap?: RawSourceMap
+    inMap?: RawSourceMap | AmpRawSourceMap
   ): Promise<ESBuildTransformResult>
   /**
    * Load a given URL as an instantiated module for SSR.

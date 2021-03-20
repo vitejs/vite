@@ -9,8 +9,9 @@ import {
   TransformResult
 } from 'esbuild'
 import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import { RawSourceMap as AmpRawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
+import { RawSourceMap } from 'source-map'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { combineSourcemaps } from '../utils'
@@ -31,7 +32,7 @@ export async function transformWithEsbuild(
   code: string,
   filename: string,
   options?: TransformOptions,
-  inMap?: RawSourceMap
+  inMap?: RawSourceMap | AmpRawSourceMap
 ): Promise<ESBuildTransformResult> {
   // if the id ends with a valid ext, use it (e.g. vue blocks)
   // otherwise, cleanup the query before checking the ext
@@ -63,10 +64,7 @@ export async function transformWithEsbuild(
       nextMap.sourcesContent = []
       return {
         ...result,
-        map: combineSourcemaps(filename, [
-          nextMap as RawSourceMap,
-          inMap as RawSourceMap
-        ]) as SourceMap
+        map: combineSourcemaps(filename, [nextMap, inMap]) as SourceMap
       }
     } else {
       return {
