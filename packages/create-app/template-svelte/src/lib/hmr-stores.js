@@ -1,5 +1,4 @@
-// Customized HMR-safe stores
-// Based off https://github.com/svitejs/svite/blob/ddec6b9/packages/playground/hmr/src/stores/hmr-stores.js
+// Use external stores to retain value even after HMR
 import { writable } from 'svelte/store'
 
 /**
@@ -15,15 +14,4 @@ let stores = {}
  */
 export function getStore(id, initialValue) {
   return stores[id] || (stores[id] = writable(initialValue))
-}
-
-// preserve the store across HMR updates
-if (import.meta.hot) {
-  if (import.meta.hot.data.stores) {
-    stores = import.meta.hot.data.stores
-  }
-  import.meta.hot.accept()
-  import.meta.hot.dispose(() => {
-    import.meta.hot.data.stores = stores
-  })
 }
