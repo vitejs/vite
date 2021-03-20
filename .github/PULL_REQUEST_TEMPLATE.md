@@ -2,11 +2,10 @@
 
 ### Before submitting the PR, please make sure you do the following
 
-- [ ] I have read the [contributing guidelines](https://github.com/vitejs/vite/blob/main/.github/contributing.md).
-- [ ] I have checked if there is already an issue, pr or discussion, so I don't create a duplicate.
-- [ ] I provided a helpful description in this PR that addresses especially the **what** this PR is solving.
-      _Alternatively I referenced the issue with e.g. `fixes #123`_.
-- [ ] Ideally, I have included a test that fails without this PR but passes with it.
+- [ ] Read the [contributing guidelines](https://github.com/vitejs/vite/blob/main/.github/contributing.md).
+- [ ] Check that there isn't already a PR that solves the problem the same way to avoid creating a duplicate.
+- [ ] Provide a description in this PR that addresses **what** the PR is solving, or reference the issue that it solves (e.g. fixes #123).
+- [ ] Ideally, include relevant tests that fail without this PR but pass with it.
 
 ### What is the purpose of this pull request? <!-- (put an "X" next to an item) -->
 
