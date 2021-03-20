@@ -8,13 +8,15 @@
       _Alternatively I referenced the issue with e.g. `fixes #123`_.
 - [ ] Ideally, I include also test that fails without this PR but passes with it.
 
-### What is the purpose of this pull request? (put an "X" next to an item)
+### What is the purpose of this pull request? <!-- (put an "X" next to an item) -->
 
 - [ ] Documentation update
 - [ ] Bug fix
 - [ ] Add a CLI option
 - [ ] Add a new feature
 - [ ] Add something else
+
+---
 
 ### Description
 
