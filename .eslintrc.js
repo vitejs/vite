@@ -12,6 +12,7 @@ module.exports = {
   },
   rules: {
     'no-debugger': ['error'],
+
     'node/no-missing-import': [
       'error',
       {
@@ -55,7 +56,21 @@ module.exports = {
     'node/no-unpublished-import': 'off',
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
-    'no-process-exit': 'off'
+
+    'no-process-exit': 'off',
+
+    'no-empty': 'warn',
+    'no-useless-escape': 'warn',
+    'prefer-const': [
+      'error',
+      {
+        destructuring: 'all'
+      }
+    ],
+
+    '@typescript-eslint/no-empty-function': 'off',
+    '@typescript-eslint/no-inferrable-types': 'warn',
+    '@typescript-eslint/no-var-requires': 'off'
   },
   overrides: [
     {
