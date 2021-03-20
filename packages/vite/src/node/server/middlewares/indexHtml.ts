@@ -43,6 +43,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, server }
 ) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
   const config = server?.config!
   const base = config.base || '/'
 
