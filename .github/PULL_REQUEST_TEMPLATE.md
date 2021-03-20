@@ -10,11 +10,10 @@
 
 ### What is the purpose of this pull request? <!-- (put an "X" next to an item) -->
 
-- [ ] Documentation update
 - [ ] Bug fix
-- [ ] Add a CLI option
-- [ ] Add a new feature
-- [ ] Add something else
+- [ ] New Feature
+- [ ] Documentation update
+- [ ] Other
 
 ---
 
