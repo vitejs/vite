@@ -69,6 +69,7 @@ module.exports = {
     ],
 
     '@typescript-eslint/no-empty-function': 'off',
+    '@typescript-eslint/no-extra-semi': 'off', // Conflicts with prettier
     '@typescript-eslint/no-inferrable-types': 'warn',
     '@typescript-eslint/no-var-requires': 'off'
   },
