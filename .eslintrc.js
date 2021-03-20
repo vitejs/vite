@@ -1,6 +1,10 @@
 module.exports = {
   root: true,
-  extends: ['plugin:node/recommended'],
+  extends: [
+    'eslint:recommended',
+    'plugin:node/recommended',
+    'plugin:@typescript-eslint/recommended'
+  ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
