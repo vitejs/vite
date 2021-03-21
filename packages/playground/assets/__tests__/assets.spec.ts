@@ -179,14 +179,17 @@ test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
 
+function toBase64(src: string) {
+  return `data:application/javascript;base64,${Buffer.from(src).toString(
+    'base64'
+  )}`
+}
+
 test('?url import', async () => {
+  // Use startsWith instead of direct match because of Windows line break
   const src = `console.log('hi')\n`
   expect(await page.textContent('.url')).toMatch(
-    isBuild
-      ? `data:application/javascript;base64,${Buffer.from(src).toString(
-          'base64'
-        )}`
-      : `/foo/foo.js`
+    isBuild ? new RegExp(`^${toBase64(src)}`) : `/foo/foo.js`
   )
 })
 
