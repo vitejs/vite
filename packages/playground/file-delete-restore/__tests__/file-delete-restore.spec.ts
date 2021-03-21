@@ -54,4 +54,8 @@ if (!isBuild) {
 
     await untilUpdated(() => page.textContent('p'), 'Child state 1')
   })
+} else {
+  test('dummy test to make jest happy', async () => {
+    // Your test suite must contain at least one test.
+  })
 }
