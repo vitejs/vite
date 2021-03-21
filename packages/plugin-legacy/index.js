@@ -3,6 +3,7 @@ const path = require('path')
 const { createHash } = require('crypto')
 const { build } = require('vite')
 const MagicString = require('magic-string').default
+const fs = require('fs')
 
 // lazy load babel since it's not used during dev
 let babel
@@ -20,6 +21,8 @@ const systemJSInlineCode = `System.import(document.getElementById('${legacyEntry
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
+const defaultTargets = 'defaults'
+
 /**
  * @param {import('.').Options} options
  * @returns {import('vite').Plugin[]}
@@ -29,7 +32,8 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').ResolvedConfig}
    */
   let config
-  const targets = options.targets || 'defaults'
+  const targets =
+    options.targets || getDefaultTargets(options.ignoreBrowserslistConfig)
   const genLegacy = options.renderLegacyChunks !== false
 
   const debugFlag = process.env.DEBUG
@@ -557,6 +561,41 @@ function replaceLegacyEnvBabelPlugin() {
       }
     }
   })
+}
+
+/**
+ * @param {boolean} ignoreBrowserslistConfig
+ * @returns {'defaults'|undefined}
+ */
+function getDefaultTargets(ignoreBrowserslistConfig) {
+  if (ignoreBrowserslistConfig) {
+    return defaultTargets
+  }
+
+  try {
+    // fix https://github.com/vitejs/vite/issues/2476
+    // @babel/preset-env automatically detects browserslist config sources:
+    // browserslist field in package.json
+    // .browserslistrc file in cwd.
+
+    const getRealPath = (dir) => path.posix.join(process.cwd(), dir)
+    const pkgStr = fs.readFileSync(getRealPath('package.json'), 'utf8')
+    const pkgJson = JSON.parse(pkgStr)
+
+    // if the browserslist field in package.json
+    if (pkgJson.browserslist) {
+      return null
+    }
+
+    // if the .browserslistrc file in cwd.
+    const content = fs.readFileSync(getRealPath('.browserslistrc'), 'utf8')
+    if (content) {
+      return null
+    }
+    return defaultTargets
+  } catch (error) {
+    return defaultTargets
+  }
 }
 
 module.exports = viteLegacyPlugin
