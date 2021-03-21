@@ -165,10 +165,11 @@ export async function handleFileAddUnlink(
   server: ViteDevServer,
   isUnlink = false
 ) {
+  const mods = server.moduleGraph.getModulesByFile(file) ?? []
+  const modules = [...mods]
   if (isUnlink && file in server._globImporters) {
     delete server._globImporters[file]
   } else {
-    const modules = []
     for (const i in server._globImporters) {
       const { module, base, pattern } = server._globImporters[i]
       const relative = path.relative(base, file)
@@ -176,14 +177,14 @@ export async function handleFileAddUnlink(
         modules.push(module)
       }
     }
-    if (modules.length > 0) {
-      updateModules(
-        getShortName(file, server.config.root),
-        modules,
-        Date.now(),
-        server
-      )
-    }
+  }
+  if (modules.length > 0) {
+    updateModules(
+      getShortName(file, server.config.root),
+      modules,
+      Date.now(),
+      server
+    )
   }
 }
 
