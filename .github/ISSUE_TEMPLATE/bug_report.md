@@ -20,11 +20,11 @@ assignees: ''
 
 ---
 
-## Describe the bug
+### Describe the bug
 
 <!-- A clear and concise description of what the bug is. -->
 
-## Reproduction
+### Reproduction
 
 <!--
   Please provide a link to a repo that can reproduce the problem you ran into.
@@ -32,14 +32,14 @@ assignees: ''
   A reproduction is required unless you are absolutely sure that the problem is obvious and the information you provided is enough for us to understand what the problem is. If a report has only vague description (e.g. just a generic error message) and has no reproduction, it will receive "need reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
 -->
 
-## System Info
+### System Info
 
 - `vite` version:
 - Operating System:
 - Node version:
 - Package manager (npm/yarn/pnpm) and version:
 
-## Logs <!-- (Optional if provided reproduction) -->
+### Logs <!-- (Optional if provided reproduction) -->
 
 <!--
   Please try not to insert an image but copy paste the log text.
