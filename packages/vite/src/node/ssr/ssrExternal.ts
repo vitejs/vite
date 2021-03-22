@@ -59,7 +59,7 @@ export function resolveSSRExternal(
           ...config,
           root: depRoot
         },
-        knownImports,
+        knownImports.filter((item) => item !== id),
         ssrExternals
       )
       continue
