@@ -166,7 +166,7 @@ function viteLegacyPlugin(options = {}) {
         if (typeof fileNames === 'function') {
           throw new Error(
             `@vitejs/plugin-legacy rollupOptions.output.entryFileNames and rollupOptions.output.chunkFileNames` +
-              ` does not currently support the function format.`
+              ` does not support the function format.`
           )
         }
 
@@ -176,7 +176,7 @@ function viteLegacyPlugin(options = {}) {
           fileName = fileNames.replace(/\[name\]/, '[name]-legacy')
         }
 
-        return path.posix.join(config.build.assetsDir, fileName)
+        return fileName
       }
 
       /**
