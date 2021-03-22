@@ -451,19 +451,21 @@ export function injectCode(
   const [, namespace] =
     injectedCode.match(/import\s*\*\s*as\s*([^*\s]+)\s/) || []
   const moduleName = defaultName || namespace
-  // Creat two RegExps to check if it has been imported.
-  // for example, the name `React` will try to find two pattern of import:
-  // `import React` and `import * as React`
-  const regExpOfDefaultImport = new RegExp(`import\\s*${moduleName}[,\\s]`)
-  const regExpOfNamespaceImport = new RegExp(
-    `import\\s*\\*\\s*as\\s*${moduleName}\\s`
-  )
-  // If the source content has imported this then skip it
-  if (
-    regExpOfDefaultImport.test(sourceContent) ||
-    regExpOfNamespaceImport.test(sourceContent)
-  ) {
-    return sourceContent
+  if (moduleName) {
+    // Creat two RegExps to check if it has been imported.
+    // for example, the name `React` will try to find two pattern of import:
+    // `import React` and `import * as React`
+    const regExpOfDefaultImport = new RegExp(`import\\s*${moduleName}[,\\s]`)
+    const regExpOfNamespaceImport = new RegExp(
+      `import\\s*\\*\\s*as\\s*${moduleName}\\s`
+    )
+    // If the source content has imported this then skip it
+    if (
+      regExpOfDefaultImport.test(sourceContent) ||
+      regExpOfNamespaceImport.test(sourceContent)
+    ) {
+      return sourceContent
+    }
   }
   return injectedCode + '\n' + sourceContent
 }
