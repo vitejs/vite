@@ -35,6 +35,8 @@ export function resolveSSRExternal(
     isBuild: true
   }
 
+  const depsToTrace = new Set<string>()
+
   for (const id of deps) {
     let entry
     let requireEntry
@@ -53,15 +55,7 @@ export function resolveSSRExternal(
     if (!entry.includes('node_modules')) {
       // entry is not a node dep, possibly linked - don't externalize
       // instead, trace its dependencies.
-      const depRoot = path.dirname(resolveFrom(`${id}/package.json`, root))
-      resolveSSRExternal(
-        {
-          ...config,
-          root: depRoot
-        },
-        knownImports.filter((item) => item !== id),
-        ssrExternals
-      )
+      depsToTrace.add(id)
       continue
     }
     if (entry !== requireEntry) {
@@ -78,6 +72,23 @@ export function resolveSSRExternal(
       if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
         ssrExternals.add(id)
       }
+    }
+  }
+
+  if (depsToTrace.size) {
+    const filteredKnownImports = knownImports.filter(
+      (item) => !depsToTrace.has(item)
+    )
+    for (const id of depsToTrace) {
+      const depRoot = path.dirname(resolveFrom(`${id}/package.json`, root))
+      resolveSSRExternal(
+        {
+          ...config,
+          root: depRoot
+        },
+        filteredKnownImports,
+        ssrExternals
+      )
     }
   }
 
