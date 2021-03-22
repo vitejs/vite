@@ -5,7 +5,8 @@ import {
   getColor,
   isBuild,
   listAssets,
-  readManifest
+  readManifest,
+  readFile
 } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -179,17 +180,15 @@ test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
 
-function toBase64(src: string) {
-  return `data:application/javascript;base64,${Buffer.from(src).toString(
-    'base64'
-  )}`
-}
-
 test('?url import', async () => {
-  // Use startsWith instead of direct match because of Windows line break
-  const src = `console.log('hi')\n`
+  // Use startsWith regex to match because of line break diff in Windows
+  const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? new RegExp(`^${toBase64(src)}`) : `/foo/foo.js`
+    isBuild
+      ? `data:application/javascript;base64,${Buffer.from(src).toString(
+          'base64'
+        )}`
+      : `/foo/foo.js`
   )
 })
 
