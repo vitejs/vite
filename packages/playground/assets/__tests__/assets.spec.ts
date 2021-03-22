@@ -181,7 +181,6 @@ test('?raw import', async () => {
 })
 
 test('?url import', async () => {
-  // Use startsWith regex to match because of line break diff in Windows
   const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(
     isBuild
