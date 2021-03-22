@@ -1,5 +1,5 @@
 ---
-name: "\U0001F41E  Bug report"
+name: "\U0001F41E Bug report"
 about: Report an issue with Vite
 title: ''
 labels: 'bug: pending triage'
@@ -12,6 +12,8 @@ assignees: ''
 ### Describe the bug
 
 <!-- A clear and concise description of what the bug is. -->
+
+<!-- If you intend to submit a PR for this issue, tell us in the description. Thanks! -->
 
 ### Reproduction
 
@@ -53,4 +55,3 @@ assignees: ''
 - [ ] Provide a description in this issue that describes the bug.
 - [ ] Make sure this is a Vite issue and not a framework-specific issue. For example, if it's a Vue SFC related bug, it should likely be reported to https://github.com/vuejs/vue-next instead.
 - [ ] This is a concrete bug. For Q&A open a [GitHub Discussion](https://github.com/vitejs/vite/discussions) or join our [Discord Chat Server](https://chat.vitejs.dev/).
-- [ ] Are you willing to submit a pull request to fix this bug?
