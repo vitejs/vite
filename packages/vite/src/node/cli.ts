@@ -67,6 +67,7 @@ cli
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
+  .option('--no-open', `[boolean] prevents browser opening on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('-m, --mode <mode>', `[string] set env mode`)
