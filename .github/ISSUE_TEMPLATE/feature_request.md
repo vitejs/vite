@@ -2,7 +2,7 @@
 name: "\U0001F680 New feature proposal"
 about: Propose a new feature to be added to Vite
 title: ''
-labels: ''
+labels: 'feature: pending triage'
 assignees: ''
 ---
 
