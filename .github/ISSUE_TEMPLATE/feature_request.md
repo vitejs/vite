@@ -1,6 +1,6 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: "\U0001F680 New rule proposal"
+about: Propose a new feature to be added to Vite
 title: ''
 labels: ''
 assignees: ''
