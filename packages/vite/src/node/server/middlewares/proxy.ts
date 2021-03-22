@@ -125,7 +125,7 @@ async function prepareProxyRequest(
   const newProxyOptions = Object.assign({}, opts)
 
   if (opts.router) {
-    let newTarget = await getTarget(req, opts)
+    const newTarget = await getTarget(req, opts)
     if (newTarget) {
       debug('[proxy] Router new target: %s -> "%s"', opts.target, newTarget)
       newProxyOptions.target = newTarget
@@ -164,23 +164,23 @@ function getTargetFromProxyTable(
 
   const hostAndPath = host + path
 
-  Object.keys(table).forEach((key) => {
+  for (const [key, value] of Object.entries(table)) {
     if (key.indexOf('/') > -1) {
       if (hostAndPath.indexOf(key) > -1) {
         // match 'localhost:3000/api'
-        result = table[key]
+        result = value
         debug('[proxy] Router table match: "%s"', key)
-        return false
+        continue
       }
     } else {
       if (key === host) {
         // match 'localhost:3000'
-        result = table[key]
+        result = value
         debug('[proxy] Router table match: "%s"', host)
-        return false
+        continue
       }
     }
-  })
+  }
 
   return result
 }
