@@ -28,10 +28,13 @@ assignees: ''
 
 ### System Info
 
-- `vite` version:
-- Operating System:
-- Node version:
-- Package manager (npm/yarn/pnpm) and version:
+Output of `npx envinfo --system --npmPackages vite,@vitejs/plugin-vue --binaries --browsers`:
+
+```node
+
+```
+
+Used package manager: <!-- npm | yarn | pnpm -->
 
 ### Logs <!-- (Optional if provided reproduction) -->
 
