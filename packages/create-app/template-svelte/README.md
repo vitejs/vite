@@ -36,11 +36,15 @@ Other templates indirectly recommend extensions via the README, but this file al
 
 It is likely that most cases of changing variable types in runtime are likely to be accidental, rather than deliberate. This provides advanced typechecking out of the box. Should you like to take advantage of the dynamically-typed nature of JavaScript, it is trivial to change the configuration.
 
-**What's the @hmr:keep comment?**
+**Why is HMR not preserving my local component state?**
 
-This comment directive tells `svelte-hmr` to preserve the state of that specific variable even when `Counter.svelte` is updated. Other directives include:
+HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
 
-- `@hmr:keep-all` retains all local state for the component
-- `@hmr:reset` resets all local state for the component
+If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
 
-Note that HMR state preservation comes with a number of gotchas! You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
+```js
+// store.js
+// An extremely simple external store
+import { writable } from 'svelte/store'
+export default writable(0)
+```

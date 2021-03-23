@@ -1,8 +1,4 @@
 <script>
-  // tell svelte-hmr to preserve this variable
-  // across HMR
-
-  // @hmr:keep
   let count = 0
   const increment = () => {
     count += 1

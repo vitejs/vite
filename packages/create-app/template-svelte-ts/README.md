@@ -36,11 +36,15 @@ Other templates indirectly recommend extensions via the README, but this file al
 
 While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
 
-**What's the @hmr:keep comment?**
+**Why is HMR not preserving my local component state?**
 
-This comment directive tells `svelte-hmr` to preserve the state of that specific variable even when `Counter.svelte` is updated. Other directives include:
+HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
 
-- `@hmr:keep-all` retains all local state for the component
-- `@hmr:reset` resets all local state for the component
+If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
 
-Note that HMR state preservation comes with a number of gotchas! You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
+```ts
+// store.ts
+// An extremely simple external store
+import { writable } from 'svelte/store'
+export default writable(0)
+```
