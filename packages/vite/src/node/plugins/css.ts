@@ -1102,13 +1102,13 @@ function getSource(
   return additionalData + source
 }
 
-const preProcessors = {
+const preProcessors = Object.freeze({
   [PreprocessLang.less]: less,
   [PreprocessLang.sass]: sass,
   [PreprocessLang.scss]: scss,
   [PreprocessLang.styl]: styl,
   [PreprocessLang.stylus]: styl
-}
+})
 
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && lang in preProcessors
