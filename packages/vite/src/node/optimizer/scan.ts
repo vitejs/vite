@@ -349,13 +349,13 @@ function esbuildScanPlugin(
         if (contents.includes('import.meta.glob')) {
           return transformGlob(contents, id, config.root, loader).then(
             (contents) => ({
-              loader: loader,
+              loader,
               contents
             })
           )
         }
         return {
-          loader: loader,
+          loader,
           contents
         }
       })
