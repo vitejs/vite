@@ -15,6 +15,7 @@ interface WorkerOptions {
   name?: string
   type?: WorkerType
 }
+
 function parseWorkerRequest(id: string): ParsedUrlQuery | null {
   const { search } = parseUrl(id)
   if (!search) {
@@ -24,12 +25,12 @@ function parseWorkerRequest(id: string): ParsedUrlQuery | null {
 }
 
 function buildWorkerOptions(query: ParsedUrlQuery) {
-  let options: WorkerOptions = {}
+  const options: WorkerOptions = {}
   const allowCredentials = ['omit', 'same-origin', 'include']
   const allowWorkerType = ['classic', 'module']
-  let credentials = query.credentials as RequestCredentials
-  let name = query.name as string
-  let type = query.type as WorkerType
+  const credentials = query.credentials as RequestCredentials
+  const name = query.name as string
+  const type = query.type as WorkerType
   if (allowCredentials.includes(credentials)) {
     options.credentials = credentials
   }
@@ -97,10 +98,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           })}__`
         }
       }
-      let WorkerOptions = buildWorkerOptions(query)
+      const workerOptions = buildWorkerOptions(query)
       let optionString = ''
-      if (Object.keys(WorkerOptions).length > 0) {
-        optionString = ',' + JSON.stringify(WorkerOptions)
+      if (Object.keys(workerOptions).length > 0) {
+        optionString = ',' + JSON.stringify(workerOptions)
       }
       return `export default function WorkerWrapper() {
         return new Worker(${JSON.stringify(url)}${optionString})

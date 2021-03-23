@@ -293,9 +293,10 @@ const worker = new MyWorker()
 ```
 
 Worker options are supported using url query. avalable options are
+
 ```ts
-type RequestCredentials  = "omit" | "same-origin" | "include"
-type WorkerType  = "classic" | "module"
+type RequestCredentials  = 'omit' | 'same-origin' | 'include'
+type WorkerType  = 'classic' | 'module'
 
 interface WorkerOptions {
   credentials?: RequestCredentials;
@@ -303,7 +304,9 @@ interface WorkerOptions {
   type?: WorkerType;
 }
 ```
-example url query
+
+example url query:
+
 ```js
 import MyWorker from './worker?worker&type=module&name=test&credentials=same-origin'
 ```
