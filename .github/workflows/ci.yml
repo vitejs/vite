@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set node version to ${{ matrix.node }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture }}
@@ -36,19 +36,11 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      # - name: Check outdated dependencies
-      #   if: github.ref == 'refs/heads/main'
-      #   run: yarn outdated
-
       - name: Build vite
         run: yarn build-vite
 
       - name: Build plugin-vue
         run: yarn build-plugin-vue
-
-      - name: Lint
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '14.x'
-        run: yarn lint
 
       - name: Test serve
         run: yarn test-serve --runInBand
@@ -56,8 +48,20 @@ jobs:
       - name: Test build
         run: yarn test-build --runInBand
 
-      # - name: Audit dependencies
-      #   run: yarn audit --groups dependencies
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-      # - name: Audit peerDependencies
-      #   run: yarn audit --groups peerDependencies
+      - name: Set node version to 14
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint
