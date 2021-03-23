@@ -60,8 +60,11 @@ jobs:
         with:
           node-version: 14
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Prepare
+        run: |
+          yarn install --frozen-lockfile
+          yarn build-vite
+          yarn build-plugin-vue
 
       - name: Lint
         run: yarn lint
