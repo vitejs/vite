@@ -1094,7 +1094,7 @@
 
 "@types/stylus@^0.48.33":
   version "0.48.33"
-  resolved "https://registry.yarnpkg.com/@types%2fstylus/-/stylus-0.48.33.tgz#5dde23178bc3eddf1522fe85340942803e4a7fd0"
+  resolved "https://registry.yarnpkg.com/@types/stylus/-/stylus-0.48.33.tgz#5dde23178bc3eddf1522fe85340942803e4a7fd0"
   integrity sha1-Xd4jF4vD7d8VIv6FNAlCgD5Kf9A=
   dependencies:
     "@types/node" "*"
