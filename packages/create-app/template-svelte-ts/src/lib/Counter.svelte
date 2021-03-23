@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { getStore } from './hmr-stores'
-  export let id: string
+  // tell svelte-hmr to preserve this variable
+  // across HMR
 
-  const count = getStore(id, 0)
+  // @hmr:keep
+  let count: number = 0
   const increment = () => {
-    $count += 1
+    count += 1
   }
 </script>
 
-<button {id} on:click={increment}>
-  Clicks: {$count}
+<button on:click={increment}>
+  Clicks: {count}
 </button>
 
 <style>
