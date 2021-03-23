@@ -330,21 +330,32 @@ function esbuildScanPlugin(
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
+        let loader = ext as Loader
+
+        // Use the user given loader if it is explicitly set
+        if (config.esbuild && config.esbuild.loader) {
+          loader = config.esbuild.loader
+        }
+
         let contents = fs.readFileSync(id, 'utf-8')
-        if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
-          contents = config.esbuild.jsxInject + `\n` + contents
+        if (
+          loader.endsWith('x') &&
+          config.esbuild &&
+          config.esbuild.jsxInject
+        ) {
+          contents = `${config.esbuild.jsxInject}\n${contents}`
         }
 
         if (contents.includes('import.meta.glob')) {
-          return transformGlob(contents, id, config.root, ext as Loader).then(
+          return transformGlob(contents, id, config.root, loader).then(
             (contents) => ({
-              loader: ext as Loader,
+              loader: loader,
               contents
             })
           )
         }
         return {
-          loader: ext as Loader,
+          loader: loader,
           contents
         }
       })
