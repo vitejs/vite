@@ -35,7 +35,7 @@ import {
 import MagicString from 'magic-string'
 import * as Postcss from 'postcss'
 import type Sass from 'sass'
-import type Stylus from 'types/stylus'
+import type Stylus from 'stylus'
 import type Less from 'less'
 
 // const debug = createDebugger('vite:css')
@@ -1080,6 +1080,8 @@ const styl: StylePreprocessor = (source, root, options) => {
     // if (map) ref.set('sourcemap', { inline: false, comment: false })
 
     const result = ref.render()
+
+    // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
     const deps = ref.deps()
 
     return { code: result, errors: [], deps }
