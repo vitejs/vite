@@ -13,6 +13,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node: [12.x, 14.x, 15.x]
+        architecture: [x64]
+        include:
+          - os: windows-2016
+            node_version: 12
+            architecture: x86
       fail-fast: false
 
     steps:
@@ -23,6 +28,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.architecture }}
 
       - name: Versions
         run: yarn versions
