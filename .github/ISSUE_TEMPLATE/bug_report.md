@@ -60,4 +60,4 @@ Used package manager: <!-- npm | yarn | pnpm -->
 - [ ] Check that there isn't already an issue that reports the same bug to avoid creating a duplicate.
 - [ ] Provide a description in this issue that describes the bug.
 - [ ] Make sure this is a Vite issue and not a framework-specific issue. For example, if it's a Vue SFC related bug, it should likely be reported to https://github.com/vuejs/vue-next instead.
-- [ ] Check this is a concrete bug. For Q&A open a [GitHub Discussion](https://github.com/vitejs/vite/discussions) or join our [Discord Chat Server](https://chat.vitejs.dev/).
+- [ ] Check that this is a concrete bug. For Q&A open a [GitHub Discussion](https://github.com/vitejs/vite/discussions) or join our [Discord Chat Server](https://chat.vitejs.dev/).
