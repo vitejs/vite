@@ -23,6 +23,12 @@ import {
 } from '../../constants'
 import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
+/**
+ * Time (ms) Vite has to full-reload the page before returning
+ * an empty response.
+ */
+const NEW_DEPENDENCY_BUILD_TIMEOUT = 5000
+
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
 
@@ -48,7 +54,19 @@ export function transformMiddleware(
       !req.url?.includes('vite/dist/client')
     ) {
       // missing dep pending reload, hold request until reload happens
-      server._pendingReload.then(() => res.end())
+      server._pendingReload.then(() =>
+        // If the refresh has not happened after timeout, Vite considers
+        // something unexpected has happened. In this case, Vite
+        // returns an empty response that will error.
+        setTimeout(() => {
+          // status code request timeout
+          res.statusCode = 408
+          res.end(
+            `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
+              `<p>The current page should have reloaded by now</p>`
+          )
+        }, NEW_DEPENDENCY_BUILD_TIMEOUT)
+      )
       return
     }
 
