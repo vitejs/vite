@@ -658,14 +658,25 @@ function mapWithBrowserField(
   relativePathInPkgDir: string,
   map: Record<string, string | false>
 ): string | false | undefined {
-  const normalized = normalize(relativePathInPkgDir)
+  const normalizedPath = path.posix.normalize(relativePathInPkgDir)
+
   for (const key in map) {
-    if (normalize(key) === normalized) {
+    const normalizedKey = path.posix.normalize(key)
+    const isJsExt = normalizedKey.endsWith('.js')
+    const isIndexJs = normalizedKey.endsWith('/index.js')
+
+    const substitutions: string[] = [normalizedKey]
+
+    if (isJsExt) {
+      substitutions.push(normalizedKey.slice(0, -'.js'.length))
+    }
+
+    if (isIndexJs) {
+      substitutions.push(normalizedKey.slice(0, -'/index.js'.length))
+    }
+
+    if (substitutions.includes(normalizedPath)) {
       return map[key]
     }
   }
-}
-
-function normalize(file: string) {
-  return path.posix.normalize(path.extname(file) ? file : file + '.js')
 }
