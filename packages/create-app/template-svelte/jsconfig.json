@@ -26,8 +26,8 @@
     "checkJs": true
   },
   /**
-   * Use globals.d.ts instead of compilerOptions.types
+   * Use global.d.ts instead of compilerOptions.types
    * to avoid limiting type declarations.
    */
-  "include": ["globals.d.ts", "src/**/*.js", "src/**/*.svelte"]
+  "include": ["src/**/*.d.ts", "src/**/*.js", "src/**/*.svelte"]
 }
