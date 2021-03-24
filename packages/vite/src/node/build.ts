@@ -181,6 +181,7 @@ export interface BuildOptions {
 export interface LibraryOptions {
   entry: string
   name?: string
+  fileName?: string
   formats?: LibraryFormats[]
 }
 
@@ -386,7 +387,7 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? `${pkgName}.${output.format || `es`}.js`
+          ? `${libOptions.fileName || pkgName}.${output.format || `es`}.js`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
