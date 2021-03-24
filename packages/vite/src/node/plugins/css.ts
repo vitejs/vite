@@ -36,6 +36,7 @@ import MagicString from 'magic-string'
 import * as Postcss from 'postcss'
 import * as Sass from 'sass'
 import type Less from 'less'
+import { Alias } from 'types/alias'
 
 // const debug = createDebugger('vite:css')
 
@@ -535,6 +536,7 @@ async function compileCSS(
       case 'sass':
         opts = {
           includePaths: ['node_modules'],
+          alias: config.resolve.alias,
           ...opts
         }
         break
@@ -543,6 +545,7 @@ async function compileCSS(
       case 'stylus':
         opts = {
           paths: ['node_modules'],
+          alias: config.resolve.alias,
           ...opts
         }
     }
@@ -848,6 +851,7 @@ type StylePreprocessor = (
     [key: string]: any
     additionalData?: PreprocessorAdditionalData
     filename: string
+    alias: Alias[]
   },
   resolvers: CSSAtImportResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
@@ -886,7 +890,7 @@ const scss: StylePreprocessor = async (source, root, options, resolvers) => {
     importer(url, importer, done) {
       resolvers.sass(url, importer).then((resolved) => {
         if (resolved) {
-          rebaseUrls(resolved, options.filename).then(done)
+          rebaseUrls(resolved, options.filename, options.alias).then(done)
         } else {
           done(null)
         }
@@ -936,7 +940,8 @@ const sass: StylePreprocessor = (source, root, options, aliasResolver) =>
  */
 async function rebaseUrls(
   file: string,
-  rootFile: string
+  rootFile: string,
+  alias: Alias[]
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -952,6 +957,14 @@ async function rebaseUrls(
   }
   const rebased = await rewriteCssUrls(content, (url) => {
     if (url.startsWith('/')) return url
+    // match alias, no need to rewrite
+    for (const { find } of alias) {
+      const matches =
+        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+      if (matches) {
+        return url
+      }
+    }
     const absolute = path.resolve(fileDir, url)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
@@ -968,6 +981,7 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
   const viteResolverPlugin = createViteLessPlugin(
     nodeLess,
     options.filename,
+    options.alias,
     resolvers
   )
   source = await getSource(source, options.filename, options.additionalData)
@@ -1004,16 +1018,23 @@ let ViteLessManager: any
 function createViteLessPlugin(
   less: typeof Less,
   rootFile: string,
+  alias: Alias[],
   resolvers: CSSAtImportResolvers
 ): Less.Plugin {
   if (!ViteLessManager) {
     ViteLessManager = class ViteManager extends less.FileManager {
       resolvers
       rootFile
-      constructor(rootFile: string, resolvers: CSSAtImportResolvers) {
+      alias
+      constructor(
+        rootFile: string,
+        resolvers: CSSAtImportResolvers,
+        alias: Alias[]
+      ) {
         super()
         this.rootFile = rootFile
         this.resolvers = resolvers
+        this.alias = alias
       }
       supports() {
         return true
@@ -1032,7 +1053,7 @@ function createViteLessPlugin(
           path.join(dir, '*')
         )
         if (resolved) {
-          const result = await rebaseUrls(resolved, this.rootFile)
+          const result = await rebaseUrls(resolved, this.rootFile, this.alias)
           let contents
           if (result && 'contents' in result) {
             contents = result.contents
@@ -1052,7 +1073,9 @@ function createViteLessPlugin(
 
   return {
     install(_, pluginManager) {
-      pluginManager.addFileManager(new ViteLessManager(rootFile, resolvers))
+      pluginManager.addFileManager(
+        new ViteLessManager(rootFile, resolvers, alias)
+      )
     },
     minVersion: [3, 0, 0]
   }
