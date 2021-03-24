@@ -10,6 +10,42 @@ declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
+let supportsDynamicImport = false
+const importScriptScriptMap = new Map()
+
+try {
+  new Function("return import('data:text/javascript;base64,Cg==')")()
+  supportsDynamicImport = true
+} catch (e) {
+  console.warn('[vite] native ESM dynamic import is not supported')
+  ;(window as any).$$ImportScriptMap = importScriptScriptMap
+}
+
+function polyfilledImport(path: string) {
+  if (supportsDynamicImport) {
+    return new Function(`return import('${path}')`)()
+  }
+  let entry = importScriptScriptMap.get(path)
+  if (!entry) {
+    const escape = path.replace(`'`, `\\'`)
+    const script = Object.assign(document.createElement('script'), {
+      type: 'module',
+      textContent: `
+        import * as x from '${escape}'
+        $$ImportScriptMap.get('${escape}').resolve(x)
+      `
+    })
+    entry = {}
+    entry.promise = new Promise((resolve, reject) => {
+      entry.resolve = resolve
+      script.onerror = reject
+    })
+    importScriptScriptMap.set(path, entry)
+    document.head.appendChild(script)
+    script.remove()
+  }
+  return entry.promise
+}
 console.log('[vite] connecting...')
 
 // use server configuration, then fallback to inference
@@ -284,7 +320,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       if (disposer) await disposer(dataMap.get(dep))
       const [path, query] = dep.split(`?`)
       try {
-        const newMod = await import(
+        const newMod = await polyfilledImport(
           /* @vite-ignore */
           base +
             path.slice(1) +
