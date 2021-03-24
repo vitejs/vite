@@ -1,15 +1,12 @@
 <script lang="ts">
-  import { getStore } from './hmr-stores'
-  export let id: string
-
-  const count = getStore(id, 0)
+  let count: number = 0
   const increment = () => {
-    $count += 1
+    count += 1
   }
 </script>
 
-<button {id} on:click={increment}>
-  Clicks: {$count}
+<button on:click={increment}>
+  Clicks: {count}
 </button>
 
 <style>
@@ -24,6 +21,7 @@
     outline: none;
     width: 200px;
     font-variant-numeric: tabular-nums;
+    cursor: pointer;
   }
 
   button:focus {
