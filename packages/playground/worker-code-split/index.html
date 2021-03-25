@@ -1,0 +1,31 @@
+<button class="ping">Ping</button>
+<div>
+  Response from worker: <span class="pong"></span><span class="mode"></span>
+</div>
+
+<button class="ping-inline">Ping Inline Worker</button>
+<div>Response from inline worker: <span class="pong-inline"></span></div>
+
+<script type="module">
+  import Worker1 from './my-worker-1?worker'
+  import Worker2 from './my-worker-2?worker'
+
+  const worker1 = new Worker1()
+  worker1.addEventListener('message', (e) => {
+    document.querySelector('.pong').textContent = e.data.msg
+    document.querySelector('.mode').textContent = e.data.mode
+  })
+
+  document.querySelector('.ping').addEventListener('click', () => {
+    worker1.postMessage('ping')
+  })
+
+  const worker2 = new Worker2()
+  worker2.addEventListener('message', (e) => {
+    document.querySelector('.pong-inline').textContent = e.data.msg
+  })
+
+  document.querySelector('.ping-inline').addEventListener('click', () => {
+    worker2.postMessage('ping')
+  })
+</script>

@@ -47,7 +47,7 @@ if (isBuild) {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 2 worker chunk
+    // should have worker chunk for module and legacy
     expect(files.length).toBe(3)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')

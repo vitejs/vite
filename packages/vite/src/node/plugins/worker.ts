@@ -1,8 +1,10 @@
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
+import { resolvePlugins } from '../plugins'
 import { parse as parseUrl } from 'url'
+import path from 'path'
 import qs, { ParsedUrlQuery } from 'querystring'
-import { fileToUrl } from './asset'
+import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
@@ -39,13 +41,9 @@ function buildWorkerConstructor(query: ParsedUrlQuery | null) {
     return null
   }
 
-  return (urlVariable: string, options?: object) => {
-    if (options) {
-      return `new ${workerConstructor}(${urlVariable}, ${JSON.stringify(
-        options,
-        null,
-        2
-      )})`
+  return (urlVariable: string, optionsVariable?: string) => {
+    if (optionsVariable) {
+      return `new ${workerConstructor}(${urlVariable}, ${optionsVariable})`
     } else {
       return `new ${workerConstructor}(${urlVariable})`
     }
@@ -82,43 +80,80 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        if (query.inline != null) {
-          // bundle the file as entry to support imports and inline as blob
-          // data url
-          const rollup = require('rollup') as typeof Rollup
-          const bundle = await rollup.rollup({
-            input: cleanUrl(id),
-            plugins: config.plugins as Plugin[]
-          })
-          try {
-            const { output } = await bundle.generate({
-              format: 'es',
-              sourcemap: config.build.sourcemap
-            })
+        // bundle an inline script version of the worker
+        const { rollup } = require('rollup') as typeof Rollup
+        const bundle = await rollup({
+          input: cleanUrl(id),
+          plugins: await resolvePlugins({ ...config }, [], [], [])
+        })
 
-            return `const blob = new Blob([atob(\"${Buffer.from(
-              output[0].code
-            ).toString(
-              'base64'
-            )}\")], { type: 'text/javascript;charset=utf-8' });
-            const URL = window.URL || window.webkitURL;
-            export default function WorkerWrapper() {
-              const objURL = URL.createObjectURL(blob);
-              try {
-                return ${workerConstructor('objUrl')};
-              } finally {
-                URL.revokeObjectURL(objURL);
-              }
-            }`
-          } finally {
-            await bundle.close()
-          }
+        let code: string
+        try {
+          const { output } = await bundle.generate({
+            format: 'iife',
+            sourcemap: config.build.sourcemap
+          })
+
+          code = output[0].code
+        } finally {
+          await bundle.close()
+        }
+        const content = Buffer.from(code)
+
+        if (query.inline != null) {
+          // inline as blob data url
+          return `const blob = new Blob([atob(\"${content.toString(
+            'base64'
+          )}\")], { type: 'text/javascript;charset=utf-8' });
+          const URL = window.URL || window.webkitURL;
+          export default function WorkerWrapper() {
+            const objURL = URL.createObjectURL(blob);
+            try {
+              return ${workerConstructor('objUrl')};
+            } finally {
+              URL.revokeObjectURL(objURL);
+            }
+          }`
         } else {
-          // emit as separate chunk
+          // emit as separate chunk (type module)
           url = `__VITE_ASSET__${this.emitFile({
             type: 'chunk',
             id: cleanUrl(id)
           })}__`
+
+          // emit separate bundled chunk (type script)
+          const { name } = path.parse(cleanUrl(id))
+          const contentHash = getAssetHash(content)
+          const fileName = path.posix.join(
+            config.build.assetsDir,
+            `${name}.${contentHash}.js`
+          )
+          const legacyUrl = `__VITE_ASSET__${this.emitFile({
+            fileName: fileName,
+            type: 'asset',
+            source: code
+          })}__`
+
+          // create wrapper that tries to build a worker module,
+          // and falls back to legacy script module
+          return `export default function WorkerWrapper() {
+            let supportsModuleWorker = false;
+            const options = {
+              get type() {
+                supportsModuleWorker = true;
+                return 'module';
+              }
+            };
+            const modWorker = ${workerConstructor(
+              JSON.stringify(url),
+              'options'
+            )};
+            if (supportsModuleWorker) {
+              return modWorker;
+            } else {
+              return ${workerConstructor(JSON.stringify(legacyUrl))};
+            }
+          }`
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
@@ -126,7 +161,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       const workerUrl = JSON.stringify(url)
-      const workerOptions = { type: 'module' }
+      const workerOptions = JSON.stringify({ type: 'module' }, null, 2)
 
       return `export default function WorkerWrapper() {
         return ${workerConstructor(workerUrl, workerOptions)};
