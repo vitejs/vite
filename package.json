@@ -31,6 +31,7 @@
     "cross-env": "^7.0.3",
     "enquirer": "^2.3.6",
     "eslint": "^7.15.0",
+    "eslint-define-config": "^1.0.3",
     "eslint-plugin-node": "^11.1.0",
     "execa": "^5.0.0",
     "fs-extra": "^9.0.1",
