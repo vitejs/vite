@@ -1,3 +1,12 @@
+# [1.2.0](https://github.com/vitejs/vite/compare/plugin-vue@1.1.5...plugin-vue@1.2.0) (2021-03-26)
+
+
+### Features
+
+* **plugin-vue:** enable :slotted usage detection ([c40c49f](https://github.com/vitejs/vite/commit/c40c49f6fa806406364f4982fe45a69db15c204f))
+
+
+
 ## [1.1.5](https://github.com/vitejs/vite/compare/plugin-vue@1.1.4...plugin-vue@1.1.5) (2021-02-26)
 
 
