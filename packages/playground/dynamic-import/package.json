@@ -7,8 +7,5 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "serve": "vite preview"
-  },
-  "dependencies": {
-    "lodash": "4.17.21"
   }
 }
