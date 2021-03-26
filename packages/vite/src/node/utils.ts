@@ -452,3 +452,7 @@ export function combineSourcemaps(
 
   return map as RawSourceMap
 }
+
+export function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
+}
