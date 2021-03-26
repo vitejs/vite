@@ -152,6 +152,7 @@ export function resolveTemplateCompilerOptions(
     id,
     filename,
     scoped: hasScoped,
+    slotted: descriptor.slotted,
     isProd: options.isProduction,
     inMap: block.src ? undefined : block.map,
     ssr,
