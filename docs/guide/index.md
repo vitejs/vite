@@ -2,7 +2,7 @@
 
 ## Overview
 
-Vite (French word for "fast", pronounced `/vit/`) is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
+Vite (French word for "fast", pronounced `/veet/`) is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
 
 - A dev server that provides [rich feature enhancements](./features) over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), for example extremely fast [Hot Module Replacement (HMR)](./features#hot-module-replacement).
 
