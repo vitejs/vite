@@ -568,7 +568,7 @@ async function compileCSS(
     opts.filename = cleanUrl(id)
     const preprocessResult = await preProcessor(
       code,
-      config.root,
+      [config.root, config.configFile || ''],
       opts,
       atImportResolvers
     )
@@ -861,7 +861,7 @@ type PreprocessorAdditionalData =
 
 type StylePreprocessor = (
   source: string,
-  root: string,
+  root: string[],
   options: {
     [key: string]: any
     additionalData?: PreprocessorAdditionalData
@@ -880,19 +880,19 @@ export interface StylePreprocessorResults {
 
 const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
 
-function loadPreprocessor(lang: PreprocessLang.scss, root: string): typeof Sass
-function loadPreprocessor(lang: PreprocessLang.sass, root: string): typeof Sass
-function loadPreprocessor(lang: PreprocessLang.less, root: string): typeof Less
+function loadPreprocessor(lang: PreprocessLang.scss, root: string[]): typeof Sass
+function loadPreprocessor(lang: PreprocessLang.sass, root: string[]): typeof Sass
+function loadPreprocessor(lang: PreprocessLang.less, root: string[]): typeof Less
 function loadPreprocessor(
   lang: PreprocessLang.stylus,
-  root: string
+  root: string[]
 ): typeof Stylus
-function loadPreprocessor(lang: PreprocessLang, root: string): any {
+function loadPreprocessor(lang: PreprocessLang, root: string[]): any {
   if (lang in loadedPreprocessors) {
     return loadedPreprocessors[lang]
   }
   try {
-    const resolved = require.resolve(lang, { paths: [root] })
+    const resolved = require.resolve(lang, { paths: root })
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
     throw new Error(
