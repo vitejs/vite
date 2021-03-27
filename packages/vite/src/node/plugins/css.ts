@@ -82,10 +82,10 @@ const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 
-export const isCSSRequest = (request: string) =>
+export const isCSSRequest = (request: string): boolean =>
   cssLangRE.test(request) && !directRequestRE.test(request)
 
-export const isDirectCSSRequest = (request: string) =>
+export const isDirectCSSRequest = (request: string): boolean =>
   cssLangRE.test(request) && directRequestRE.test(request)
 
 const cssModulesCache = new WeakMap<

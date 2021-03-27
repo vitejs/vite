@@ -26,15 +26,21 @@ export function createDescriptor(
   return { descriptor, errors }
 }
 
-export function getPrevDescriptor(filename: string) {
+export function getPrevDescriptor(filename: string): SFCDescriptor | undefined {
   return prevCache.get(filename)
 }
 
-export function setPrevDescriptor(filename: string, entry: SFCDescriptor) {
+export function setPrevDescriptor(
+  filename: string,
+  entry: SFCDescriptor
+): void {
   prevCache.set(filename, entry)
 }
 
-export function getDescriptor(filename: string, errorOnMissing = true) {
+export function getDescriptor(
+  filename: string,
+  errorOnMissing = true
+): SFCDescriptor | undefined {
   if (cache.has(filename)) {
     return cache.get(filename)!
   }
@@ -46,6 +52,6 @@ export function getDescriptor(filename: string, errorOnMissing = true) {
   }
 }
 
-export function setDescriptor(filename: string, entry: SFCDescriptor) {
+export function setDescriptor(filename: string, entry: SFCDescriptor): void {
   cache.set(filename, entry)
 }

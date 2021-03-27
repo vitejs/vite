@@ -197,7 +197,7 @@ const supportsConstructedSheet = (() => {
 
 const sheetsMap = new Map()
 
-export function updateStyle(id: string, content: string) {
+export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
   if (supportsConstructedSheet && !content.includes('@import')) {
     if (style && !(style instanceof CSSStyleSheet)) {
@@ -231,7 +231,7 @@ export function updateStyle(id: string, content: string) {
   sheetsMap.set(id, style)
 }
 
-export function removeStyle(id: string) {
+export function removeStyle(id: string): void {
   let style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
@@ -429,7 +429,7 @@ export const createHotContext = (ownerPath: string) => {
   return hot
 }
 
-export function injectQuery(url: string, queryToInject: string) {
+export function injectQuery(url: string, queryToInject: string): string {
   // can't use pathname from URL since it may be relative like ../
   const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')

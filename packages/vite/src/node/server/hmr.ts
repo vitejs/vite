@@ -164,7 +164,7 @@ export async function handleFileAddUnlink(
   file: string,
   server: ViteDevServer,
   isUnlink = false
-) {
+): Promise<void> {
   if (isUnlink && file in server._globImporters) {
     delete server._globImporters[file]
   } else {
@@ -247,7 +247,7 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
 export function handlePrunedModules(
   mods: Set<ModuleNode>,
   { ws }: ViteDevServer
-) {
+): void {
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
   // and without the timestamp the browser will not re-import it!

@@ -102,7 +102,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function registerAssetToChunk(chunk: RenderedChunk, file: string) {
+export function registerAssetToChunk(chunk: RenderedChunk, file: string): void {
   let emitted = chunkToEmittedAssetsMap.get(chunk)
   if (!emitted) {
     emitted = new Set()
@@ -132,7 +132,7 @@ export function fileToUrl(
   id: string,
   config: ResolvedConfig,
   ctx: PluginContext
-) {
+): string | Promise<string> {
   if (config.command === 'serve') {
     return fileToDevUrl(id, config)
   } else {
@@ -163,7 +163,10 @@ const assetHashToFilenameMap = new WeakMap<
   Map<string, string>
 >()
 
-export function getAssetFilename(hash: string, config: ResolvedConfig) {
+export function getAssetFilename(
+  hash: string,
+  config: ResolvedConfig
+): string | undefined {
   return assetHashToFilenameMap.get(config)?.get(hash)
 }
 
