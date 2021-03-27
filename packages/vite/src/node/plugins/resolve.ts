@@ -662,21 +662,16 @@ function mapWithBrowserField(
 
   for (const key in map) {
     const normalizedKey = path.posix.normalize(key)
-    const isJsExt = normalizedKey.endsWith('.js')
-    const isIndexJs = normalizedKey.endsWith('/index.js')
-
-    const substitutions: string[] = [normalizedKey]
-
-    if (isJsExt) {
-      substitutions.push(normalizedKey.slice(0, -'.js'.length))
-    }
-
-    if (isIndexJs) {
-      substitutions.push(normalizedKey.slice(0, -'/index.js'.length))
-    }
-
-    if (substitutions.includes(normalizedPath)) {
+    if (
+      normalizedPath === normalizedKey ||
+      equalWithoutSuffix(normalizedPath, normalizedKey, '.js') ||
+      equalWithoutSuffix(normalizedPath, normalizedKey, '/index.js')
+    ) {
       return map[key]
     }
   }
+}
+
+function equalWithoutSuffix(path: string, key: string, suffix: string) {
+  return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
 }
