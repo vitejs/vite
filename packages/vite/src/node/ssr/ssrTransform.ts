@@ -96,8 +96,8 @@ export async function ssrTransform(
           defineExport(node.declaration.id!.name)
         } else {
           // export const foo = 1, bar = 2
-          for (const decl of node.declaration.declarations) {
-            const names = extractNames(decl.id as any)
+          for (const declaration of node.declaration.declarations) {
+            const names = extractNames(declaration.id as any)
             for (const name of names) {
               defineExport(name)
             }
@@ -149,10 +149,10 @@ export async function ssrTransform(
       if (isStaticProperty(parent) && parent.shorthand) {
         // let binding used in a property shorthand
         // { foo } -> { foo: __import_x__.foo }
-        // skip for destructure patterns
+        // skip for destructuring patterns
         if (
           !(parent as any).inPattern ||
-          isInDestructureAssignment(parent, parentStack)
+          isInDestructuringAssignment(parent, parentStack)
         ) {
           s.appendLeft(id.end, `: ${binding}`)
         }
@@ -268,10 +268,10 @@ function walk(
             enter(child: Node, parent: Node) {
               if (
                 child.type === 'Identifier' &&
-                // do not record as scope variable if is a destructured key
+                // do not record as scope variable if is a destructuring key
                 !isStaticPropertyKey(child, parent) &&
                 // do not record if this is a default value
-                // assignment of a destructured variable
+                // assignment of a destructuring variable
                 !(
                   parent &&
                   parent.type === 'AssignmentPattern' &&
@@ -284,7 +284,7 @@ function walk(
           })
         )
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
-        // mark property in destructure pattern
+        // mark property in destructuring pattern
         ;(node as any).inPattern = true
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentFunction(parentStack)
@@ -330,7 +330,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   if (isFunction(parent)) {
-    // function decalration/expression id
+    // function declaration/expression id
     if ((parent as any).id === id) {
       return false
     }
@@ -346,15 +346,15 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // property key
-  // this also covers object destructure pattern
+  // this also covers object destructuring pattern
   if (isStaticPropertyKey(id, parent) || (parent as any).inPattern) {
     return false
   }
 
-  // non-assignment array destructure pattern
+  // non-assignment array destructuring pattern
   if (
     parent.type === 'ArrayPattern' &&
-    !isInDestructureAssignment(parent, parentStack)
+    !isInDestructuringAssignment(parent, parentStack)
   ) {
     return false
   }
@@ -398,7 +398,7 @@ function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
   }
 }
 
-function isInDestructureAssignment(
+function isInDestructuringAssignment(
   parent: _Node,
   parentStack: _Node[]
 ): boolean {

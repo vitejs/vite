@@ -4,7 +4,7 @@ import { ViteDevServer } from '..'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 
 /**
- * The amount to wait for requests to register newfound deps before triggering
+ * The amount to wait for requests to register newly found dependencies before triggering
  * a re-bundle + page reload
  */
 const debounceMs = 100

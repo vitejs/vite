@@ -301,7 +301,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const filename = getAssetFilename(fileHash, config) + postfix
           registerAssetToChunk(chunk, filename)
           if (!isRelativeBase || inlined) {
-            // absoulte base or relative base but inlined (injected as style tag into
+            // absolute base or relative base but inlined (injected as style tag into
             // index.html) use the base as-is
             return config.base + filename
           } else {
@@ -363,7 +363,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
       } else {
-        // non-split extracted CSS will be minified togethter
+        // non-split extracted CSS will be minified together
         chunkCSS = await processChunkCSS(chunkCSS, {
           inlined: false,
           minify: false
@@ -720,19 +720,21 @@ const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
     postcssPlugin: 'vite-url-rewrite',
     Once(root) {
       const promises: Promise<void>[] = []
-      root.walkDecls((decl) => {
-        const isCssUrl = cssUrlRE.test(decl.value)
-        const isCssImageSet = cssImageSetRE.test(decl.value)
+      root.walkDecls((declaration) => {
+        const isCssUrl = cssUrlRE.test(declaration.value)
+        const isCssImageSet = cssImageSetRE.test(declaration.value)
         if (isCssUrl || isCssImageSet) {
-          const replacerForDecl = (rawUrl: string) => {
-            const importer = decl.source?.input.file
+          const replacerForDeclaration = (rawUrl: string) => {
+            const importer = declaration.source?.input.file
             return opts.replacer(rawUrl, importer)
           }
           const rewriterToUse = isCssUrl ? rewriteCssUrls : rewriteCssImageSet
           promises.push(
-            rewriterToUse(decl.value, replacerForDecl).then((url) => {
-              decl.value = url
-            })
+            rewriterToUse(declaration.value, replacerForDeclaration).then(
+              (url) => {
+                declaration.value = url
+              }
+            )
           )
         }
       })

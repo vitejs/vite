@@ -9,7 +9,7 @@ import { transformImportGlob } from '../importGlob'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
- * target is not native es - so that injected helper logic can be conditinally
+ * target is not native es - so that injected helper logic can be conditionally
  * dropped.
  */
 export const isModernFlag = `__VITE_IS_MODERN__`

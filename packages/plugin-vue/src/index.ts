@@ -101,7 +101,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     async resolveId(id, importer) {
-      // serve subpart requests (*?vue) as virtual modules
+      // serve sub-part requests (*?vue) as virtual modules
       if (parseVueRequest(id).query.vue) {
         return id
       }
@@ -109,7 +109,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     load(id, ssr = !!options.ssr) {
       const { filename, query } = parseVueRequest(id)
-      // select corresponding block for subpart virtual modules
+      // select corresponding block for sub-part virtual modules
       if (query.vue) {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')

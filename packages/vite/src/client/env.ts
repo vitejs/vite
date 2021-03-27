@@ -16,14 +16,14 @@ const context = (() => {
 // assign defines
 const defines = __DEFINES__
 Object.keys(defines).forEach((key) => {
-  const segs = key.split('.')
+  const segments = key.split('.')
   let target = context
-  for (let i = 0; i < segs.length; i++) {
-    const seg = segs[i]
-    if (i === segs.length - 1) {
-      target[seg] = defines[key]
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i]
+    if (i === segments.length - 1) {
+      target[segment] = defines[key]
     } else {
-      target = target[seg] || (target[seg] = {})
+      target = target[segment] || (target[segment] = {})
     }
   }
 })
