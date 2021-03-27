@@ -81,12 +81,13 @@ async function handleMessage(payload: HMRPayload) {
         }
       })
       break
-    case 'custom':
+    case 'custom': {
       const cbs = customListenersMap.get(payload.event)
       if (cbs) {
         cbs.forEach((cb) => cb(payload.data))
       }
       break
+    }
     case 'full-reload':
       if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
@@ -116,7 +117,7 @@ async function handleMessage(payload: HMRPayload) {
         }
       })
       break
-    case 'error':
+    case 'error': {
       const err = payload.err
       if (enableOverlay) {
         createErrorOverlay(err)
@@ -124,9 +125,11 @@ async function handleMessage(payload: HMRPayload) {
         console.error(`[vite] Internal Server Error\n${err.stack}`)
       }
       break
-    default:
+    }
+    default: {
       const check: never = payload
       return check
+    }
   }
 }
 
