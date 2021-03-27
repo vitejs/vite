@@ -165,8 +165,7 @@ export async function handleFileAddUnlink(
   server: ViteDevServer,
   isUnlink = false
 ) {
-  const mods = server.moduleGraph.getModulesByFile(file) ?? []
-  const modules = [...mods]
+  const modules = [...(server.moduleGraph.getModulesByFile(file) ?? [])]
   if (isUnlink && file in server._globImporters) {
     delete server._globImporters[file]
   } else {
