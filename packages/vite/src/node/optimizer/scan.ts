@@ -251,7 +251,7 @@ function esbuildScanPlugin(
               return externalUnlessEntry({ path: id })
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
-              // dep or fordce included, externalize and stop crawling
+              // dependency or forced included, externalize and stop crawling
               if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
                 depImports[id] = resolved
               }
@@ -270,7 +270,7 @@ function esbuildScanPlugin(
 
       // Externalized file types -----------------------------------------------
       // these are done on raw ids using esbuild's native regex filter so it
-      // snould be faster than doing it in the catch-all via js
+      // should be faster than doing it in the catch-all via js
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
@@ -317,7 +317,7 @@ function esbuildScanPlugin(
               namespace
             }
           } else {
-            // resolve failed... probably usupported type
+            // resolve failed... probably unsupported type
             return externalUnlessEntry({ path: id })
           }
         }
@@ -393,7 +393,7 @@ export function shouldExternalizeDep(resolvedId: string, rawId: string) {
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // resovled is not a scannable type
+  // resolved is not a scannable type
   if (!JS_TYPES_RE.test(resolvedId) && !htmlTypesRE.test(resolvedId)) {
     return true
   }

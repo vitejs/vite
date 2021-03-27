@@ -18,7 +18,7 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-// Strip valid id prefix. This is preprended to resolved Ids that are
+// Strip valid id prefix. This is prepended to resolved Ids that are
 // not valid browser import specifiers by the importAnalysis plugin.
 export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id

@@ -71,7 +71,7 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
     if (url.startsWith(FS_PREFIX)) {
       url = url.slice(FS_PREFIX.length)
       if (isWin) url = url.replace(/^[A-Z]:/i, '')
-      
+
       req.url = url
       serveFromRoot(req, res, next)
     } else {

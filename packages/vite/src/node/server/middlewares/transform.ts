@@ -122,7 +122,7 @@ export function transformMiddleware(
       ) {
         // strip ?import
         url = removeImportQuery(url)
-        // Strip valid id prefix. This is preprended to resolved Ids that are
+        // Strip valid id prefix. This is prepended to resolved Ids that are
         // not valid browser import specifiers by the importAnalysis plugin.
         url = unwrapId(url)
 
