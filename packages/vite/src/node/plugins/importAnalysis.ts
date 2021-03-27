@@ -107,7 +107,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const rewriteStart = Date.now()
       await init
-      let imports: ImportSpecifier[] = []
+      let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
       } catch (e) {
@@ -310,10 +310,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const isDynamicImport = dynamicIndex >= 0
 
         // static import or valid string in dynamic import
-        const isLiteralId = !!specifier
-
         // If resolvable, let's resolve it
-        if (isLiteralId) {
+        if (!!specifier) {
           // skip external / data uri
           if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
