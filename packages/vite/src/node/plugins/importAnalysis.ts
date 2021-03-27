@@ -252,7 +252,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex,
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
-          // @ts-expect-error: Just define `n`
           n: specifier
         } = imports[index]
 
@@ -311,7 +310,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
-        if (!!specifier) {
+        if (specifier) {
           // skip external / data uri
           if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
