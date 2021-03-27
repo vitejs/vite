@@ -1,4 +1,8 @@
-import { compileStyleAsync, SFCDescriptor } from '@vue/compiler-sfc'
+import {
+  compileStyleAsync,
+  SFCDescriptor,
+  SFCStyleCompileResults
+} from '@vue/compiler-sfc'
 import { TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
 
@@ -8,7 +12,7 @@ export async function transformStyle(
   index: number,
   options: ResolvedOptions,
   pluginContext: TransformPluginContext
-) {
+): Promise<Pick<SFCStyleCompileResults, 'code' | 'map'> | null> {
   const block = descriptor.styles[index]
   // vite already handles pre-processors and CSS module so this is only
   // applying SFC-specific transforms like scoped mode and CSS vars rewrite (v-bind(var))

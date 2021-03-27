@@ -7,7 +7,7 @@ import {
   getPrevDescriptor,
   setDescriptor
 } from './utils/descriptorCache'
-import { PluginContext, TransformPluginContext } from 'rollup'
+import { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
@@ -20,7 +20,10 @@ export async function transformMain(
   options: ResolvedOptions,
   pluginContext: TransformPluginContext,
   ssr: boolean
-) {
+): Promise<{
+  code: string
+  map: RawSourceMap | SourceMap | { mappings: string }
+} | null> {
   const { root, devServer, isProduction } = options
 
   // prev descriptor is only set and used for hmr
@@ -155,7 +158,7 @@ export async function transformMain(
   let resolvedMap = map
   if (map && templateMap) {
     const generator = SourceMapGenerator.fromSourceMap(
-      new SourceMapConsumer(map)
+      new SourceMapConsumer(map as RawSourceMap)
     )
     const offset = scriptCode.match(/\r?\n/g)?.length || 1
     const templateMapConsumer = new SourceMapConsumer(templateMap)
@@ -172,7 +175,7 @@ export async function transformMain(
     resolvedMap = (generator as any).toJSON()
     // if this is a template only update, we will be reusing a cached version
     // of the main module compile result, which has outdated sourcesContent.
-    resolvedMap.sourcesContent = templateMap.sourcesContent
+    resolvedMap!.sourcesContent = templateMap.sourcesContent
   }
 
   return {
@@ -228,10 +231,10 @@ async function genScriptCode(
   ssr: boolean
 ): Promise<{
   code: string
-  map: RawSourceMap
+  map: RawSourceMap | SourceMap | undefined
 }> {
   let scriptCode = `const _sfc_main = {}`
-  let map
+  let map: RawSourceMap | SourceMap | undefined
   const script = resolveScript(descriptor, options, ssr)
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
@@ -280,7 +283,7 @@ async function genScriptCode(
   }
   return {
     code: scriptCode,
-    map: map as any
+    map
   }
 }
 

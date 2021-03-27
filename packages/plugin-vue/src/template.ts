@@ -3,7 +3,8 @@ import slash from 'slash'
 import {
   compileTemplate,
   SFCDescriptor,
-  SFCTemplateCompileOptions
+  SFCTemplateCompileOptions,
+  SFCTemplateCompileResults
 } from '@vue/compiler-sfc'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
@@ -16,7 +17,7 @@ export function transformTemplateAsModule(
   options: ResolvedOptions,
   pluginContext: TransformPluginContext,
   ssr: boolean
-) {
+): Pick<SFCTemplateCompileResults, 'code' | 'map'> {
   const result = compile(code, descriptor, options, pluginContext, ssr)
 
   let returnCode = result.code
@@ -28,7 +29,7 @@ export function transformTemplateAsModule(
 
   return {
     code: returnCode,
-    map: result.map as any
+    map: result.map
   }
 }
 
@@ -41,7 +42,7 @@ export function transformTemplateInMain(
   options: ResolvedOptions,
   pluginContext: PluginContext,
   ssr: boolean
-) {
+): SFCTemplateCompileResults {
   const result = compile(code, descriptor, options, pluginContext, ssr)
   return {
     ...result,
@@ -58,7 +59,7 @@ export function compile(
   options: ResolvedOptions,
   pluginContext: PluginContext,
   ssr: boolean
-) {
+): SFCTemplateCompileResults {
   const filename = descriptor.filename
   const result = compileTemplate({
     ...resolveTemplateCompilerOptions(descriptor, options, ssr)!,
