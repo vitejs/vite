@@ -102,7 +102,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       await init
 
-      let imports: ImportSpecifier[] = []
+      let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
       } catch (e) {
