@@ -1,7 +1,13 @@
 import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
-import { parse, SFCDescriptor } from '@vue/compiler-sfc'
+import { CompilerError, parse, SFCDescriptor } from '@vue/compiler-sfc'
+
+// node_modules/@vue/compiler-sfc/dist/compiler-sfc.d.ts SFCParseResult should be exported so it can be re-used
+export interface SFCParseResult {
+  descriptor: SFCDescriptor
+  errors: Array<CompilerError | SyntaxError>
+}
 
 const cache = new Map<string, SFCDescriptor>()
 const prevCache = new Map<string, SFCDescriptor | undefined>()
@@ -11,7 +17,7 @@ export function createDescriptor(
   source: string,
   root: string,
   isProduction: boolean | undefined
-) {
+): SFCParseResult {
   const { descriptor, errors } = parse(source, {
     filename,
     sourceMap: true

@@ -58,7 +58,10 @@ interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
 }
 
-export function createDebugger(ns: string, options: DebuggerOptions = {}) {
+export function createDebugger(
+  ns: string,
+  options: DebuggerOptions = {}
+): debug.Debugger['log'] {
   const log = debug(ns)
   const { onlyWhenFocused } = options
   const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns

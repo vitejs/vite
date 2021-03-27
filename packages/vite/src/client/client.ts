@@ -330,6 +330,8 @@ const ctxToListenersMap = new Map<
   Map<string, ((customData: any) => void)[]>
 >()
 
+// Just infer the return type for now
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const createHotContext = (ownerPath: string) => {
   if (!dataMap.has(ownerPath)) {
     dataMap.set(ownerPath, {})
