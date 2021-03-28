@@ -35,7 +35,7 @@ export function esbuildDepPlugin(
   exportsData: Record<string, ExportsData>,
   config: ResolvedConfig
 ): Plugin {
-  // default resovler which prefers ESM
+  // default resolver which prefers ESM
   const _resolve = config.createResolver({ asSrc: false })
 
   // cjs resolver that prefers Node
@@ -100,7 +100,7 @@ export function esbuildDepPlugin(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
           const isEntry = !importer
-          // ensure esbuild uses our resolved entires
+          // ensure esbuild uses our resolved entries
           let entry
           // if this is an entry, return entry namespace resolve result
           if ((entry = resolveEntry(id, isEntry))) return entry

@@ -278,8 +278,8 @@ function needsInterop(
     return true
   }
 
-  // if a peer dep used require() on a ESM dep, esbuild turns the
-  // ESM dep's entry chunk into a single default export... detect
+  // if a peer dependency used require() on a ESM dependency, esbuild turns the
+  // ESM dependency's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
   const flatId = flattenId(id) + '.js'
   let generatedExports: string[] | undefined

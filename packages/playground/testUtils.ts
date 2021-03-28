@@ -100,9 +100,10 @@ export function readManifest(base = '') {
  */
 export async function untilUpdated(
   poll: () => string | Promise<string>,
-  expected: string
+  expected: string,
+  runInBuild = false
 ) {
-  if (isBuild) return
+  if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 100 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) || ''

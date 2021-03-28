@@ -365,7 +365,7 @@ export function tryNodeResolve(
     ) {
       // excluded from optimization
       // Inject a version query to npm deps so that the browser
-      // can cache it without revalidation, but only do so for known js types.
+      // can cache it without re-validation, but only do so for known js types.
       // otherwise we may introduce duplicated modules for externalized files
       // from pre-bundled deps.
       const versionHash = server._optimizeDepsMetadata?.browserHash
@@ -532,15 +532,15 @@ export function resolvePackageEntry(
   }
 
   entryPoint = path.join(dir, entryPoint)
-  const resolvedEntryPont = tryFsResolve(entryPoint, options)
+  const resolvedEntryPoint = tryFsResolve(entryPoint, options)
 
-  if (resolvedEntryPont) {
+  if (resolvedEntryPoint) {
     isDebug &&
       debug(
-        `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPont)}`
+        `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPoint)}`
       )
-    resolvedImports['.'] = resolvedEntryPont
-    return resolvedEntryPont
+    resolvedImports['.'] = resolvedEntryPoint
+    return resolvedEntryPoint
   } else {
     throw new Error(
       `Failed to resolve entry for package "${id}". ` +
