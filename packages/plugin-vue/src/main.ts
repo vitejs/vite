@@ -219,7 +219,7 @@ async function genTemplateCode(
   }
 }
 
-const exportDefaultClassRE = /export\s+default\s+class\s+([\w$]+)/
+const exportDefaultClassRE = /(?:(?:^|\n|;)\s*)export\s+default\s+class\s+([\w$]+)/
 
 async function genScriptCode(
   descriptor: SFCDescriptor,
@@ -240,11 +240,16 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
+      // TODO remove the class check logic after upgrading @vue/compiler-sfc
       const classMatch = script.content.match(exportDefaultClassRE)
       if (classMatch) {
         scriptCode =
           script.content.replace(exportDefaultClassRE, `class $1`) +
           `\nconst _sfc_main = ${classMatch[1]}`
+        if (/export\s+default/.test(scriptCode)) {
+          // fallback if there are still export default
+          scriptCode = rewriteDefault(script.content, `_sfc_main`)
+        }
       } else {
         scriptCode = rewriteDefault(script.content, `_sfc_main`)
       }

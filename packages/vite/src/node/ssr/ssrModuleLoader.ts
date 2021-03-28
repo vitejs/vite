@@ -46,7 +46,7 @@ export async function ssrLoadModule(
 
   const modulePromise = instantiateModule(url, server, context, urlStack)
   pendingModules.set(url, modulePromise)
-  modulePromise.then(() => pendingModules.delete(url))
+  modulePromise.catch(() => {}).then(() => pendingModules.delete(url))
   return modulePromise
 }
 
@@ -109,6 +109,7 @@ async function instantiateModule(
       if (key !== 'default') {
         Object.defineProperty(ssrModule, key, {
           enumerable: true,
+          configurable: true,
           get() {
             return sourceModule[key]
           }

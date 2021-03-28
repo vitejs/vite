@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
-import { Loader, Plugin } from 'esbuild'
+import { Loader, Plugin, build, transform } from 'esbuild'
 import {
   KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
@@ -25,7 +25,6 @@ import {
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
-import { ensureService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
@@ -82,10 +81,9 @@ export async function scanImports(
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
-  const esbuildService = await ensureService()
   await Promise.all(
     entries.map((entry) =>
-      esbuildService.build({
+      build({
         entryPoints: [entry],
         bundle: true,
         format: 'esm',
@@ -96,8 +94,14 @@ export async function scanImports(
     )
   )
 
-  emptyDir(tempDir)
-  fs.rmdirSync(tempDir)
+  try {
+    emptyDir(tempDir)
+    fs.rmdirSync(tempDir)
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err
+    }
+  }
 
   debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 
@@ -215,7 +219,7 @@ function esbuildScanPlugin(
         // <script setup> may contain TLA which is not true TLA but esbuild
         // will error on it, so replace it with another operator.
         if (js.includes('await')) {
-          js = js.replace(/\bawait\s/g, 'void ')
+          js = js.replace(/\bawait(\s)/g, 'void$1')
         }
 
         if (!js.includes(`export default`)) {
@@ -247,7 +251,7 @@ function esbuildScanPlugin(
               return externalUnlessEntry({ path: id })
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
-              // dep or fordce included, externalize and stop crawling
+              // dependency or forced included, externalize and stop crawling
               if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
                 depImports[id] = resolved
               }
@@ -266,7 +270,7 @@ function esbuildScanPlugin(
 
       // Externalized file types -----------------------------------------------
       // these are done on raw ids using esbuild's native regex filter so it
-      // snould be faster than doing it in the catch-all via js
+      // should be faster than doing it in the catch-all via js
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
@@ -313,7 +317,7 @@ function esbuildScanPlugin(
               namespace
             }
           } else {
-            // resolve failed... probably usupported type
+            // resolve failed... probably unsupported type
             return externalUnlessEntry({ path: id })
           }
         }
@@ -356,7 +360,7 @@ async function transformGlob(
 ) {
   // transform the content first since es-module-lexer can't handle non-js
   if (loader !== 'js') {
-    source = (await (await ensureService()).transform(source, { loader })).code
+    source = (await transform(source, { loader })).code
   }
 
   await init
@@ -389,7 +393,7 @@ export function shouldExternalizeDep(resolvedId: string, rawId: string) {
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // resovled is not a scannable type
+  // resolved is not a scannable type
   if (!JS_TYPES_RE.test(resolvedId) && !htmlTypesRE.test(resolvedId)) {
     return true
   }

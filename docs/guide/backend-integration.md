@@ -1,6 +1,8 @@
 # Backend Integration
 
-If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, here's what you can do:
+If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, check for existing integrations listed in [Awesome Vite](https://github.com/vitejs/awesome-vite#integrations-with-backends).
+
+Or you can follow these steps to configure it manually:
 
 1. In your Vite config, configure the entry and enable build manifest:
 
@@ -83,3 +85,4 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
    <link rel="stylesheet" href="/assets/{{ manifest['main.js'].css }}" />
    <script type="module" src="/assets/{{ manifest['main.js'].file }}"></script>
    ```
+   

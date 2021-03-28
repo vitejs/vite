@@ -12,7 +12,7 @@ module.exports = {
       'error',
       {
         allowModules: ['types', 'estree', 'testUtils', 'stylus'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx']
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
     'node/no-missing-require': [
@@ -20,7 +20,7 @@ module.exports = {
       {
         // for try-catching yarn pnp
         allowModules: ['pnpapi'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx']
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
     'node/no-restricted-require': [
@@ -31,7 +31,7 @@ module.exports = {
           message:
             `devDependencies can only be imported using ESM syntax so ` +
             `that they are included in the rollup bundle. If you are trying to ` +
-            `lazy load a dep, use (await import('dep')).default instead.`
+            `lazy load a dependency, use (await import('dependency')).default instead.`
         })
       )
     ],

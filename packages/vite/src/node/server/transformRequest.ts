@@ -15,6 +15,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
+import { injectSourcesContent } from './sourcemap'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -135,8 +136,19 @@ export async function transformRequest(
     map = transformResult.map
   }
 
+  if (map && mod.file) {
+    map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
+    if (map.mappings && !map.sourcesContent) {
+      await injectSourcesContent(map, mod.file)
+    }
+  }
+
   if (ssr) {
-    return (mod.ssrTransformResult = await ssrTransform(code, map as SourceMap))
+    return (mod.ssrTransformResult = await ssrTransform(
+      code,
+      map as SourceMap,
+      url
+    ))
   } else {
     return (mod.transformResult = {
       code,

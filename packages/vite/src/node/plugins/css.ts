@@ -37,6 +37,7 @@ import * as Postcss from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
+import { Alias } from 'types/alias'
 
 // const debug = createDebugger('vite:css')
 
@@ -66,7 +67,7 @@ export interface CSSModulesOptions {
     | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
-   * default: 'camelCase'
+   * default: null
    */
   localsConvention?:
     | 'camelCase'
@@ -80,6 +81,8 @@ const cssLangs = `\\.(css|less|sass|scss|styl|stylus|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
+const commonjsProxyRE = /\?commonjs-proxy/
+
 const enum PreprocessLang {
   less = 'less',
   sass = 'sass',
@@ -131,7 +134,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      if (!cssLangRE.test(id)) {
+      if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
         return
       }
 
@@ -228,7 +231,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css-post',
 
     transform(css, id, ssr) {
-      if (!cssLangRE.test(id)) {
+      if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
         return
       }
 
@@ -277,7 +280,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (!isCSSRequest(id) || cssModuleRE.test(id)) {
+        if (
+          !isCSSRequest(id) ||
+          cssModuleRE.test(id) ||
+          commonjsProxyRE.test(id)
+        ) {
           isPureCssChunk = false
         }
         if (styles.has(id)) {
@@ -307,7 +314,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const filename = getAssetFilename(fileHash, config) + postfix
           registerAssetToChunk(chunk, filename)
           if (!isRelativeBase || inlined) {
-            // absoulte base or relative base but inlined (injected as style tag into
+            // absolute base or relative base but inlined (injected as style tag into
             // index.html) use the base as-is
             return config.base + filename
           } else {
@@ -369,7 +376,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
       } else {
-        // non-split extracted CSS will be minified togethter
+        // non-split extracted CSS will be minified together
         chunkCSS = await processChunkCSS(chunkCSS, {
           inlined: false,
           minify: false
@@ -542,6 +549,7 @@ async function compileCSS(
       case PreprocessLang.sass:
         opts = {
           includePaths: ['node_modules'],
+          alias: config.resolve.alias,
           ...opts
         }
         break
@@ -550,6 +558,7 @@ async function compileCSS(
       case PreprocessLang.stylus:
         opts = {
           paths: ['node_modules'],
+          alias: config.resolve.alias,
           ...opts
         }
     }
@@ -724,19 +733,21 @@ const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
     postcssPlugin: 'vite-url-rewrite',
     Once(root) {
       const promises: Promise<void>[] = []
-      root.walkDecls((decl) => {
-        const isCssUrl = cssUrlRE.test(decl.value)
-        const isCssImageSet = cssImageSetRE.test(decl.value)
+      root.walkDecls((declaration) => {
+        const isCssUrl = cssUrlRE.test(declaration.value)
+        const isCssImageSet = cssImageSetRE.test(declaration.value)
         if (isCssUrl || isCssImageSet) {
-          const replacerForDecl = (rawUrl: string) => {
-            const importer = decl.source?.input.file
+          const replacerForDeclaration = (rawUrl: string) => {
+            const importer = declaration.source?.input.file
             return opts.replacer(rawUrl, importer)
           }
           const rewriterToUse = isCssUrl ? rewriteCssUrls : rewriteCssImageSet
           promises.push(
-            rewriterToUse(decl.value, replacerForDecl).then((url) => {
-              decl.value = url
-            })
+            rewriterToUse(declaration.value, replacerForDeclaration).then(
+              (url) => {
+                declaration.value = url
+              }
+            )
           )
         }
       })
@@ -853,6 +864,7 @@ type StylePreprocessor = (
     [key: string]: any
     additionalData?: PreprocessorAdditionalData
     filename: string
+    alias: Alias[]
   },
   resolvers: CSSAtImportResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
@@ -898,7 +910,7 @@ const scss: StylePreprocessor = async (source, root, options, resolvers) => {
     importer(url, importer, done) {
       resolvers.sass(url, importer).then((resolved) => {
         if (resolved) {
-          rebaseUrls(resolved, options.filename).then(done)
+          rebaseUrls(resolved, options.filename, options.alias).then(done)
         } else {
           done(null)
         }
@@ -948,7 +960,8 @@ const sass: StylePreprocessor = (source, root, options, aliasResolver) =>
  */
 async function rebaseUrls(
   file: string,
-  rootFile: string
+  rootFile: string,
+  alias: Alias[]
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -964,6 +977,14 @@ async function rebaseUrls(
   }
   const rebased = await rewriteCssUrls(content, (url) => {
     if (url.startsWith('/')) return url
+    // match alias, no need to rewrite
+    for (const { find } of alias) {
+      const matches =
+        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+      if (matches) {
+        return url
+      }
+    }
     const absolute = path.resolve(fileDir, url)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
@@ -980,6 +1001,7 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
   const viteResolverPlugin = createViteLessPlugin(
     nodeLess,
     options.filename,
+    options.alias,
     resolvers
   )
   source = await getSource(source, options.filename, options.additionalData)
@@ -1016,16 +1038,23 @@ let ViteLessManager: any
 function createViteLessPlugin(
   less: typeof Less,
   rootFile: string,
+  alias: Alias[],
   resolvers: CSSAtImportResolvers
 ): Less.Plugin {
   if (!ViteLessManager) {
     ViteLessManager = class ViteManager extends less.FileManager {
       resolvers
       rootFile
-      constructor(rootFile: string, resolvers: CSSAtImportResolvers) {
+      alias
+      constructor(
+        rootFile: string,
+        resolvers: CSSAtImportResolvers,
+        alias: Alias[]
+      ) {
         super()
         this.rootFile = rootFile
         this.resolvers = resolvers
+        this.alias = alias
       }
       supports() {
         return true
@@ -1044,7 +1073,7 @@ function createViteLessPlugin(
           path.join(dir, '*')
         )
         if (resolved) {
-          const result = await rebaseUrls(resolved, this.rootFile)
+          const result = await rebaseUrls(resolved, this.rootFile, this.alias)
           let contents
           if (result && 'contents' in result) {
             contents = result.contents
@@ -1064,7 +1093,9 @@ function createViteLessPlugin(
 
   return {
     install(_, pluginManager) {
-      pluginManager.addFileManager(new ViteLessManager(rootFile, resolvers))
+      pluginManager.addFileManager(
+        new ViteLessManager(rootFile, resolvers, alias)
+      )
     },
     minVersion: [3, 0, 0]
   }

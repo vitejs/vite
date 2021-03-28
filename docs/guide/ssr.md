@@ -10,6 +10,10 @@ SSR specifically refers to front-end frameworks (for example React, Preact, Vue,
 The following guide also assumes prior experience working with SSR in your framework of choice, and will only focus on Vite-specific integration details.
 :::
 
+:::tip Help
+If you have questions, the community is usually helpful at [Vite Discord's #ssr channel](https://discord.gg/PkbxgzPhJv).
+:::
+
 ## Example Projects
 
 Vite provides built-in support for server-side rendering (SSR). The Vite playground contains example SSR setups for Vue 3 and React, which can be used as references for this guide:
