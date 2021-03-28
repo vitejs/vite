@@ -59,7 +59,7 @@ export default {
 }
 ```
 
-Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information,  and look out for the `enforce` label and usage instructions for popular Plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) compatibility listing.
+Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information, and look out for the `enforce` label and usage instructions for popular Plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) compatibility listing.
 
 ## Conditional Application
 
