@@ -35,7 +35,7 @@ Vite aims to provide out-of-the-box support for common web development patterns.
 
 Check out the [Plugins section](../plugins) for information about official plugins. Community Plugins are listed in [awesome-vite](https://github.com/vitejs/awesome-vite#plugins). For Compatible Rollup Plugins, check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official rollup plugins with usage instructions or the [Rollup Plugin Compatibility section](../guide/api-plugin#rollup-plugin-compatibility) in case it is not listed there.
 
-You can also find plugins that follow the [recommended conventions](./api-plugin.md#conventions) using a [npm search fro vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Vite Plugins or a [npm search for rollup-plugin](https://www.npmjs.com/search?q=rollup-plugin&ranking=popularity) or a [npm search fro vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Rollup Plugins.
+You can also find plugins that follow the [recommended conventions](./api-plugin.md#conventions) using a [npm search for vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Vite Plugins or a [npm search for rollup-plugin](https://www.npmjs.com/search?q=rollup-plugin&ranking=popularity) or a [npm search fro vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Rollup Plugins.
 
 ## Enforcing Plugin Ordering
 
@@ -47,8 +47,8 @@ For compatibility with some Rollup Plugins, it may be needed to enforce the orde
 
 ```js
 // vite.config.js
-import image from "@rollup/plugin-image"
-          
+import image from '@rollup/plugin-image'
+
 export default {
   plugins: [
     {
@@ -59,7 +59,7 @@ export default {
 }
 ```
 
-Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information,  and look out for the `enforce` label and usage instructions for popular Plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev/) compatibility listing.
+Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information,  and look out for the `enforce` label and usage instructions for popular Plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) compatibility listing.
 
 ## Conditional Application
 
@@ -67,8 +67,8 @@ By default, plugins are invoked for both serve and build. In cases where a plugi
 
 ```js
 // vite.config.js
-import typescript2 from "rollup-plugin-typescript2"
-          
+import typescript2 from 'rollup-plugin-typescript2'
+
 export default {
   plugins: [
     {

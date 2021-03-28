@@ -45,12 +45,12 @@ Falsy plugins will be ignored, which can be used to easily activate or deactivat
 
 ```js
 // framework-plugin
-import frameworkRefresh from "vite-plugin-framework-refresh";
-import frameworkDevtools from "vite-plugin-framework-devtools";
+import frameworkRefresh from 'vite-plugin-framework-refresh'
+import frameworkDevtools from 'vite-plugin-framework-devtools'
 
 export default function framework(config) {
-  return [ 
-    frameworkRefresh(config), 
+  return [
+    frameworkRefresh(config),
     frameworkDevTools(config)
   ]
 }
