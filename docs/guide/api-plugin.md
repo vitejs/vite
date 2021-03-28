@@ -25,6 +25,48 @@ If your plugin is only going to work for a particular framework, its name should
 - `vite-plugin-react-` prefix for React Plugins
 - `vite-plugin-svelte-` prefix for Svelte Plugins
 
+## Plugins config
+
+Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
+
+```js
+// vite.config.js
+import vitePlugin from 'vite-plugin-feature'
+import rollupPlugin from 'rollup-plugin-feature'
+
+export default {
+  plugins: [ vitePlugin(), rollupPlugin() ]
+}
+```
+
+Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins. 
+
+`plugins` also accept presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
+
+```js
+// framework-plugin
+import frameworkRefresh from "vite-plugin-framework-refresh";
+import frameworkDevtools from "vite-plugin-framework-devtools";
+
+export default function framework(config) {
+  return [ 
+    frameworkRefresh(config), 
+    frameworkDevTools(config)
+  ]
+}
+```
+
+```js
+// vite.config.js
+import framework from 'vite-plugin-framework'
+
+export default {
+  plugins: [
+    framework()
+  ]
+}
+```
+
 ## Simple Examples
 
 :::tip
@@ -365,13 +407,13 @@ A Vite plugin can additionally specify an `enforce` property (similar to webpack
 
 ## Conditional Application
 
-By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property:
+By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property to only invoke them during `'build'` or `'serve'`:
 
 ```js
 function myPlugin() {
   return {
     name: 'build-only',
-    apply: 'build'
+    apply: 'build' // or 'serve'
   }
 }
 ```
