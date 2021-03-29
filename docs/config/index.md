@@ -68,6 +68,19 @@ export default ({ command, mode }) => {
 }
 ```
 
+### Async Config
+
+If the config needs to call async function, it can export a async function instead:
+
+```js
+export default async ({ command, mode }) => {
+  const data = await asyncFunction();
+  return {
+    // build specific config
+  } 
+}
+```
+
 ## Shared Options
 
 ### root
