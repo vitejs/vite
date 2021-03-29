@@ -34,7 +34,8 @@ import {
 } from './asset'
 import MagicString from 'magic-string'
 import * as Postcss from 'postcss'
-import * as Sass from 'sass'
+import type Sass from 'sass'
+import type Stylus from 'stylus'
 import type Less from 'less'
 import { Alias } from 'types/alias'
 
@@ -81,6 +82,18 @@ const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const commonjsProxyRE = /\?commonjs-proxy/
+
+const enum PreprocessLang {
+  less = 'less',
+  sass = 'sass',
+  scss = 'scss',
+  styl = 'styl',
+  stylus = 'stylus'
+}
+const enum PureCssLang {
+  css = 'css'
+}
+type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
 
 export const isCSSRequest = (request: string) =>
   cssLangRE.test(request) && !directRequestRE.test(request)
@@ -509,7 +522,7 @@ async function compileCSS(
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const postcssConfig = await resolvePostcssConfig(config)
-  const lang = id.match(cssLangRE)?.[1]
+  const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
 
   // 1. plain css that needs no processing
   if (
@@ -527,22 +540,22 @@ async function compileCSS(
   const deps = new Set<string>()
 
   // 2. pre-processors: sass etc.
-  if (lang && lang in preProcessors) {
-    const preProcessor = preProcessors[lang as PreprocessLang]
+  if (isPreProcessor(lang)) {
+    const preProcessor = preProcessors[lang]
     let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
     // support @import from node dependencies by default
     switch (lang) {
-      case 'scss':
-      case 'sass':
+      case PreprocessLang.scss:
+      case PreprocessLang.sass:
         opts = {
           includePaths: ['node_modules'],
           alias: config.resolve.alias,
           ...opts
         }
         break
-      case 'less':
-      case 'styl':
-      case 'stylus':
+      case PreprocessLang.less:
+      case PreprocessLang.styl:
+      case PreprocessLang.stylus:
         opts = {
           paths: ['node_modules'],
           alias: config.resolve.alias,
@@ -840,8 +853,6 @@ AtImportHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 
-type PreprocessLang = 'less' | 'sass' | 'scss' | 'styl' | 'stylus'
-
 type PreprocessorAdditionalData =
   | string
   | ((source: string, filename: string) => string | Promise<string>)
@@ -867,7 +878,14 @@ export interface StylePreprocessorResults {
 
 const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
 
-function loadPreprocessor(lang: PreprocessLang, root: string) {
+function loadPreprocessor(lang: PreprocessLang.scss, root: string): typeof Sass
+function loadPreprocessor(lang: PreprocessLang.sass, root: string): typeof Sass
+function loadPreprocessor(lang: PreprocessLang.less, root: string): typeof Less
+function loadPreprocessor(
+  lang: PreprocessLang.stylus,
+  root: string
+): typeof Stylus
+function loadPreprocessor(lang: PreprocessLang, root: string): any {
   if (lang in loadedPreprocessors) {
     return loadedPreprocessors[lang]
   }
@@ -883,7 +901,7 @@ function loadPreprocessor(lang: PreprocessLang, root: string) {
 
 // .scss/.sass processor
 const scss: StylePreprocessor = async (source, root, options, resolvers) => {
-  const render = loadPreprocessor('sass', root).render as typeof Sass.render
+  const render = loadPreprocessor(PreprocessLang.sass, root).render
   const finalOptions: Sass.Options = {
     ...options,
     data: await getSource(source, options.filename, options.additionalData),
@@ -979,7 +997,7 @@ async function rebaseUrls(
 
 // .less
 const less: StylePreprocessor = async (source, root, options, resolvers) => {
-  const nodeLess = loadPreprocessor('less', root) as typeof Less
+  const nodeLess = loadPreprocessor(PreprocessLang.less, root)
   const viteResolverPlugin = createViteLessPlugin(
     nodeLess,
     options.filename,
@@ -1085,13 +1103,16 @@ function createViteLessPlugin(
 
 // .styl
 const styl: StylePreprocessor = (source, root, options) => {
-  const nodeStylus = loadPreprocessor('stylus', root)
+  const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   try {
     const ref = nodeStylus(source)
+
     Object.keys(options).forEach((key) => ref.set(key, options[key]))
     // if (map) ref.set('sourcemap', { inline: false, comment: false })
 
     const result = ref.render()
+
+    // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
     const deps = ref.deps()
 
     return { code: result, errors: [], deps }
@@ -1112,10 +1133,14 @@ function getSource(
   return additionalData + source
 }
 
-const preProcessors = {
-  less,
-  sass,
-  scss,
-  styl,
-  stylus: styl
+const preProcessors = Object.freeze({
+  [PreprocessLang.less]: less,
+  [PreprocessLang.sass]: sass,
+  [PreprocessLang.scss]: scss,
+  [PreprocessLang.styl]: styl,
+  [PreprocessLang.stylus]: styl
+})
+
+function isPreProcessor(lang: any): lang is PreprocessLang {
+  return lang && lang in preProcessors
 }
