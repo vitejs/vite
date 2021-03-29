@@ -29,6 +29,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       'import.meta.hot': `false`
     })
   }
+
   const replacements: Record<string, string | undefined> = {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
     ...userDefine,
