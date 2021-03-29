@@ -21,7 +21,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git"
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/plugin-vue"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
