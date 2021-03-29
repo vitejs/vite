@@ -240,6 +240,12 @@ function tryFsResolve(
   }
 
   let res: string | undefined
+  if (
+    (res = tryResolveFile(file, postfix, options, false, options.tryPrefix))
+  ) {
+    return res
+  }
+
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
       (res = tryResolveFile(
@@ -288,8 +294,6 @@ function tryResolveFile(
       }
       const index = tryFsResolve(file + '/index', options)
       if (index) return index + postfix
-    } else {
-      return normalizePath(ensureVolumeInPath(file)) + postfix
     }
   }
   if (tryPrefix) {

@@ -24,6 +24,12 @@
 <h2>Resolve dir and file of the same name (should prioritize file)</h2>
 <p class="dir-vs-file">fail</p>
 
+<h2>Resolve to non-duplicated file extension</h2>
+<p class="exact-extension">fail</p>
+
+<h2>Don't add extensions to directory names</h2>
+<p class="dir-with-ext">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -94,6 +100,14 @@
   // implicit dir index vs. file
   import { file } from './dir'
   text('.dir-vs-file', file)
+
+  // // exact extension vs. duplicated (.js.js)
+  import { file as exactExtMsg } from './exact-extension/file.js'
+  text('.exact-extension', exactExtMsg)
+
+  // don't add extensions to dir name (./dir-with-ext.js/index.js)
+  import { file as dirWithExtMsg } from './dir-with-ext'
+  text('.dir-with-ext', dirWithExtMsg)
 
   // filename with dot
   import { bar } from './util/bar.util'
