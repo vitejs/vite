@@ -5,7 +5,12 @@
   "main": "out/cjs.node.js",
   "browser": {
     "./out/cjs.node.js": "./out/esm.browser.js",
+    "./no-ext": "./out/esm.browser.js",
+    "./ext.js": "./out/esm.browser.js",
+    "./ext-index/index.js": "./out/esm.browser.js",
+    "./no-ext-index": "./out/esm.browser.js",
     "./not-browser.js": false,
+    "./multiple.dot.path.js": false,
     "jsdom": false
   }
 }

@@ -114,8 +114,27 @@
   text('.dot', bar())
 
   // browser field
-  import value from 'resolve-browser-field'
-  text('.browser', value)
+  import main from 'resolve-browser-field'
+
+  import a from 'resolve-browser-field/no-ext'
+  import b from 'resolve-browser-field/no-ext.js' // no substitution
+  import c from 'resolve-browser-field/ext'
+  import d from 'resolve-browser-field/ext.js'
+  import e from 'resolve-browser-field/ext-index/index.js'
+  import f from 'resolve-browser-field/ext-index'
+  import g from 'resolve-browser-field/no-ext-index/index.js' // no substitution
+
+  import { ra, rb, rc, rd, re, rf, rg } from 'resolve-browser-field/relative'
+
+  const success = [main, a, c, d, e, f, ra, rc, rd, re, rf]
+  const noSuccess = [b, g, rb, rg]
+
+  if (
+    [...success, ...noSuccess].filter((text) => text.includes('[success]'))
+      .length === success.length
+  ) {
+    text('.browser', main)
+  }
 
   import { msg as customExtMsg } from './custom-ext'
   text('.custom-ext', customExtMsg)
@@ -128,6 +147,7 @@
 
   // should be ok to import a file marked with browser: false
   import 'resolve-browser-field/not-browser'
+  import 'resolve-browser-field/multiple.dot.path'
 
   // css entry
   import css from 'normalize.css'

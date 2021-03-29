@@ -66,7 +66,7 @@ test('monorepo linked dep', async () => {
   expect(await page.textContent('.monorepo')).toMatch('[success]')
 })
 
-test('plugin resolved virutal file', async () => {
+test('plugin resolved virtual file', async () => {
   expect(await page.textContent('.virtual')).toMatch('[success]')
 })
 
