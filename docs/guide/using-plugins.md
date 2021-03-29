@@ -1,10 +1,10 @@
 # Using Plugins
 
-Vite can be extended using plugins, which are based on Rollup's well-designed plugin interface with a few extra vite-specific options. This means that Vite users can rely on the mature ecosystem of rollup plugins, while also being able to extend the dev server and SSR functionality as needed.
+Vite can be extended using plugins, which are based on Rollup's well-designed plugin interface with a few extra Vite-specific options. This means that Vite users can rely on the mature ecosystem of Rollup plugins, while also being able to extend the dev server and SSR functionality as needed.
 
 ## Adding a Plugin
 
-To use a Plugin, it needs to be added to the `devDependencies` of the project and included in the `plugins` array in the `vite.config.js` config file. For example, to provide support for legacy browsers, the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) can be used:
+To use a plugin, it needs to be added to the `devDependencies` of the project and included in the `plugins` array in the `vite.config.js` config file. For example, to provide support for legacy browsers, the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) can be used:
 
 ```
 $ npm i -D @vitejs/plugin-legacy
@@ -30,16 +30,16 @@ Falsy plugins will be ignored, which can be used to easily activate or deactivat
 ## Finding Plugins
 
 :::tip NOTE
-Vite aims to provide out-of-the-box support for common web development patterns. Before searching for a Vite or Compatible Rollup plugin, check out the [Features Guide](../guide/features.md). A lot of the cases where a plugin would be needed in a Rollup project are already covered in Vite.
+Vite aims to provide out-of-the-box support for common web development patterns. Before searching for a Vite or compatible Rollup plugin, check out the [Features Guide](../guide/features.md). A lot of the cases where a plugin would be needed in a Rollup project are already covered in Vite.
 :::
 
-Check out the [Plugins section](../plugins) for information about official plugins. Community Plugins are listed in [awesome-vite](https://github.com/vitejs/awesome-vite#plugins). For Compatible Rollup Plugins, check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official rollup plugins with usage instructions or the [Rollup Plugin Compatibility section](../guide/api-plugin#rollup-plugin-compatibility) in case it is not listed there.
+Check out the [Plugins section](../plugins) for information about official plugins. Community plugins are listed in [awesome-vite](https://github.com/vitejs/awesome-vite#plugins). For compatible Rollup plugins, check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions or the [Rollup Plugin Compatibility section](../guide/api-plugin#rollup-plugin-compatibility) in case it is not listed there.
 
-You can also find plugins that follow the [recommended conventions](./api-plugin.md#conventions) using a [npm search for vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Vite Plugins or a [npm search for rollup-plugin](https://www.npmjs.com/search?q=rollup-plugin&ranking=popularity) or a [npm search fro vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Rollup Plugins.
+You can also find plugins that follow the [recommended conventions](./api-plugin.md#conventions) using a [npm search for vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Vite plugins or a [npm search for rollup-plugin](https://www.npmjs.com/search?q=rollup-plugin&ranking=popularity) or a [npm search for vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Rollup plugins.
 
 ## Enforcing Plugin Ordering
 
-For compatibility with some Rollup Plugins, it may be needed to enforce the order of the plugin or only apply at build time. This should be an implementation detail for Vite Plugins. You can enforce the position of a Plugin with the `enforce` modifier:
+For compatibility with some Rollup plugins, it may be needed to enforce the order of the plugin or only apply at build time. This should be an implementation detail for Vite plugins. You can enforce the position of a plugin with the `enforce` modifier:
 
 - `pre`: invoke plugin before Vite core plugins
 - default: invoke plugin after Vite core plugins
@@ -59,7 +59,7 @@ export default {
 }
 ```
 
-Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information, and look out for the `enforce` label and usage instructions for popular Plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) compatibility listing.
+Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information, and look out for the `enforce` label and usage instructions for popular plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) compatibility listing.
 
 ## Conditional Application
 

@@ -1,6 +1,6 @@
 # Plugin API
 
-Vite plugins extends Rollup's well-designed plugin interface with a few extra vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
+Vite plugins extends Rollup's well-designed plugin interface with a few extra Vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
 
 **It is recommended to go through [Rollup's plugin documentation](https://rollupjs.org/guide/en/#plugin-development) first before reading the sections below.**
 
@@ -422,7 +422,7 @@ function myPlugin() {
 
 A fair number of Rollup plugins will work directly as a Vite plugin (e.g. `@rollup/plugin-alias` or `@rollup/plugin-json`), but not all of them, since some plugin hooks do not make sense in an unbundled dev server context.
 
-In general, as long as a rollup plugin fits the following criterias then it should just work as a Vite plugin:
+In general, as long as a Rollup plugin fits the following criterias then it should just work as a Vite plugin:
 
 - It doesn't use the [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) hook.
 - It doesn't have strong coupling between bundle-phase hooks and output-phase hooks.
@@ -446,7 +446,7 @@ export default {
 }
 ```
 
-Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official rollup plugins with usage instructions.
+Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions.
 
 ## Path normalization
 
