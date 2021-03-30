@@ -49,34 +49,7 @@ async function init() {
     })
     targetDir = projectName
   }
-  let packageName
-  const packageNameRegExp = /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
-  if (packageNameRegExp.test(targetDir)) {
-    packageName = targetDir
-  } else {
-    const suggestPkgName = targetDir
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/^[._]/, '')
-      .replace(/[^a-z0-9-~]+/g, '-')
-
-    /**
-     * @type {{ inputPackageName: string }}
-     */
-    const { inputPackageName } = await prompt({
-      type: 'input',
-      name: 'inputPackageName',
-      message: `Name for package.json:`,
-      initial: suggestPkgName,
-      validate: (input) =>
-        packageNameRegExp.test(input)
-          ? true
-          : 'Name contains illegal characters'
-    })
-    packageName = inputPackageName
-  }
-
+  const packageName = await getValidPackageName(targetDir)
   const root = path.join(cwd, targetDir)
   console.log(`\nScaffolding project in ${root}...`)
 
@@ -170,6 +143,33 @@ function copy(src, dest) {
     copyDir(src, dest)
   } else {
     fs.copyFileSync(src, dest)
+  }
+}
+
+async function getValidPackageName(projectName) {
+  const packageNameRegExp = /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+  if (packageNameRegExp.test(projectName)) {
+    return projectName
+  } else {
+    const suggestPkgName = projectName
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/^[._]/, '')
+      .replace(/[^a-z0-9-~]+/g, '-')
+
+    /**
+     * @type {{ inputPackageName: string }}
+     */
+    const { inputPackageName } = await prompt({
+      type: 'input',
+      name: 'inputPackageName',
+      message: `Package name:`,
+      initial: suggestPkgName,
+      validate: (input) =>
+        packageNameRegExp.test(input) ? true : 'Invalid package.json name'
+    })
+    return inputPackageName
   }
 }
 
