@@ -1,3 +1,23 @@
+## [2.1.4](https://github.com/vitejs/vite/compare/v2.1.3...v2.1.4) (2021-03-30)
+
+
+### Bug Fixes
+
+* **scan:** properly crawl imports in lang=ts blocks in vue/svelte files ([8f527fd](https://github.com/vitejs/vite/commit/8f527fd09c494fd23121aded0b836ff60a62835c))
+* invalidate module cache on unlinked ([#2629](https://github.com/vitejs/vite/issues/2629)), fix [#2630](https://github.com/vitejs/vite/issues/2630) ([57f2a69](https://github.com/vitejs/vite/commit/57f2a698dcce47e11510bbff4c4716aac49a202b))
+* reload only once on socket reconnect ([#2340](https://github.com/vitejs/vite/issues/2340)) ([d73c1fa](https://github.com/vitejs/vite/commit/d73c1fa6824397515adaf42ec29732013c8c54de))
+* **client:** don't inject queries for data URLs ([#2703](https://github.com/vitejs/vite/issues/2703)), fix [#2658](https://github.com/vitejs/vite/issues/2658) ([86753d6](https://github.com/vitejs/vite/commit/86753d6e3d2be88f2f885c27fef8245c5d4b3b1b))
+* **resolve:** fix resolver not following node resolve algorithm ([#2718](https://github.com/vitejs/vite/issues/2718)), fix [#2695](https://github.com/vitejs/vite/issues/2695) ([669c591](https://github.com/vitejs/vite/commit/669c591696788df844e7b26e600df86ffc70792c))
+* **resolve:** improve browser filed substitutions ([#2701](https://github.com/vitejs/vite/issues/2701)), fix [#2598](https://github.com/vitejs/vite/issues/2598) ([cc213c6](https://github.com/vitejs/vite/commit/cc213c68d54db338ce0e6cf8fafe1b05a414fa6a))
+* fix types errors ([#2726](https://github.com/vitejs/vite/issues/2726)) ([9716582](https://github.com/vitejs/vite/commit/97165828ecbcea867e927c62033002359d83a0db))
+
+
+### Features
+
+* **dev:** support keepNames option for optimizeDependencies config ([#2742](https://github.com/vitejs/vite/issues/2742)) ([130bf5a](https://github.com/vitejs/vite/commit/130bf5a03af2733dff9a34ef74450740d7cdb991))
+
+
+
 ## [2.1.3](https://github.com/vitejs/vite/compare/v2.1.2...v2.1.3) (2021-03-25)
 
 
