@@ -66,7 +66,7 @@ async function init() {
      */
     const { inputPackageName } = await prompt({
       type: 'input',
-      name: 'packageName',
+      name: 'inputPackageName',
       message: `Name for package.json:`,
       initial: suggestPkgName,
       validate: (input) =>
