@@ -417,7 +417,7 @@ export default ({ command, mode }) => {
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
-  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuid docs](https://esbuild.github.io/content-types/#javascript) for more details.
+  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
 ### build.polyfillDynamicImport
 
@@ -568,6 +568,15 @@ export default ({ command, mode }) => {
 - **Type:** `string[]`
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
+
+### optimizeDeps.keepNames
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  The bundler sometimes needs to rename symbols to avoid collisions.
+  Set this to `true` to keep the `name` property on functions and classes.
+  See [`keepNames`](https://esbuild.github.io/api/#keep-names).
 
 ## SSR Options
 

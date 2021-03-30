@@ -46,6 +46,12 @@ export interface DepOptimizationOptions {
    * cannot be globs).
    */
   exclude?: string[]
+  /**
+   * The bundler sometimes needs to rename symbols to avoid collisions.
+   * Set this to `true` to keep the `name` property on functions and classes.
+   * https://esbuild.github.io/api/#keep-names
+   */
+  keepNames?: boolean
 }
 
 export interface DepOptimizationMetadata {
@@ -229,7 +235,7 @@ export async function optimizeDeps(
   const result = await build({
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    keepNames: true,
+    keepNames: config.optimizeDeps?.keepNames,
     format: 'esm',
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
@@ -278,8 +284,8 @@ function needsInterop(
     return true
   }
 
-  // if a peer dep used require() on a ESM dep, esbuild turns the
-  // ESM dep's entry chunk into a single default export... detect
+  // if a peer dependency used require() on a ESM dependency, esbuild turns the
+  // ESM dependency's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
   const flatId = flattenId(id) + '.js'
   let generatedExports: string[] | undefined

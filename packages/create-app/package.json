@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/create-app",
-  "version": "2.2.0",
+  "version": "2.2.2",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
@@ -21,7 +21,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git"
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/create-app"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"

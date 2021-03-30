@@ -18,7 +18,7 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-// Strip valid id prefix. This is preprended to resolved Ids that are
+// Strip valid id prefix. This is prepended to resolved Ids that are
 // not valid browser import specifiers by the importAnalysis plugin.
 export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
@@ -124,7 +124,9 @@ export function removeImportQuery(url: string) {
 }
 
 export function injectQuery(url: string, queryToInject: string) {
-  let resolvedUrl = new URL(url, 'relative:///')
+  // encode percents for consistent behavior with pathToFileURL
+  // see #2614 for details
+  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
   if (resolvedUrl.protocol !== 'relative:') {
     resolvedUrl = pathToFileURL(url)
   }
@@ -132,6 +134,7 @@ export function injectQuery(url: string, queryToInject: string) {
   if (protocol === 'file:') {
     pathname = pathname.slice(1)
   }
+  pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
