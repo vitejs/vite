@@ -27,7 +27,7 @@ import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
  * Time (ms) Vite has to full-reload the page before returning
  * an empty response.
  */
-const NEW_DEPENDENCY_BUILD_TIMEOUT = 5000
+const NEW_DEPENDENCY_BUILD_TIMEOUT = 1000
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
