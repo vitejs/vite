@@ -756,10 +756,16 @@ async function bundleConfigFile(
             const contents = await fs.promises.readFile(args.path, 'utf8')
             return {
               loader: args.path.endsWith('.ts') ? 'ts' : 'js',
-              contents: contents.replace(
-                /\bimport\.meta\.url\b/g,
-                JSON.stringify(`file://${args.path}`)
-              )
+              contents: contents
+                .replace(
+                  /\bimport\.meta\.url\b/g,
+                  JSON.stringify(`file://${args.path}`)
+                )
+                .replace(
+                  /\b__dirname\b/g,
+                  JSON.stringify(path.dirname(args.path))
+                )
+                .replace(/\b__filename\b/g, JSON.stringify(args.path))
             }
           })
         }
