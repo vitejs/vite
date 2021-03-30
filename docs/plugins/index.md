@@ -24,7 +24,7 @@ Vite aims to provide out-of-the-box support for common web development patterns.
 
 ## Community Plugins
 
-Check out [awesome-vite](https://github.com/vitejs/awesome-vite) - you can also submit a PR to list your plugins there.
+Check out [awesome-vite](https://github.com/vitejs/awesome-vite#plugins) - you can also submit a PR to list your plugins there.
 
 ## Rollup Plugins
 

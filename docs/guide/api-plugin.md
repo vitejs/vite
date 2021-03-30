@@ -1,6 +1,6 @@
 # Plugin API
 
-Vite plugins extends Rollup's well-designed plugin interface with a few extra vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
+Vite plugins extends Rollup's well-designed plugin interface with a few extra Vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
 
 **It is recommended to go through [Rollup's plugin documentation](https://rollupjs.org/guide/en/#plugin-development) first before reading the sections below.**
 
@@ -24,6 +24,48 @@ If your plugin is only going to work for a particular framework, its name should
 - `vite-plugin-vue-` prefix for Vue Plugins
 - `vite-plugin-react-` prefix for React Plugins
 - `vite-plugin-svelte-` prefix for Svelte Plugins
+
+## Plugins config
+
+Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
+
+```js
+// vite.config.js
+import vitePlugin from 'vite-plugin-feature'
+import rollupPlugin from 'rollup-plugin-feature'
+
+export default {
+  plugins: [ vitePlugin(), rollupPlugin() ]
+}
+```
+
+Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins. 
+
+`plugins` also accept presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
+
+```js
+// framework-plugin
+import frameworkRefresh from 'vite-plugin-framework-refresh'
+import frameworkDevtools from 'vite-plugin-framework-devtools'
+
+export default function framework(config) {
+  return [
+    frameworkRefresh(config),
+    frameworkDevTools(config)
+  ]
+}
+```
+
+```js
+// vite.config.js
+import framework from 'vite-plugin-framework'
+
+export default {
+  plugins: [
+    framework()
+  ]
+}
+```
 
 ## Simple Examples
 
@@ -365,13 +407,13 @@ A Vite plugin can additionally specify an `enforce` property (similar to webpack
 
 ## Conditional Application
 
-By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property:
+By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property to only invoke them during `'build'` or `'serve'`:
 
 ```js
 function myPlugin() {
   return {
     name: 'build-only',
-    apply: 'build'
+    apply: 'build' // or 'serve'
   }
 }
 ```
@@ -380,7 +422,7 @@ function myPlugin() {
 
 A fair number of Rollup plugins will work directly as a Vite plugin (e.g. `@rollup/plugin-alias` or `@rollup/plugin-json`), but not all of them, since some plugin hooks do not make sense in an unbundled dev server context.
 
-In general, as long as a rollup plugin fits the following criterias then it should just work as a Vite plugin:
+In general, as long as a Rollup plugin fits the following criterias then it should just work as a Vite plugin:
 
 - It doesn't use the [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) hook.
 - It doesn't have strong coupling between bundle-phase hooks and output-phase hooks.
@@ -404,7 +446,7 @@ export default {
 }
 ```
 
-Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official rollup plugins with usage instructions.
+Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions.
 
 ## Path normalization
 
