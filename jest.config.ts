@@ -1,4 +1,7 @@
-module.exports = {
+// eslint-disable-next-line node/no-extraneous-import
+import type { Config } from '@jest/types'
+
+const config: Config.InitialOptions = {
   preset: 'ts-jest',
   testMatch: process.env.VITE_TEST_BUILD
     ? ['**/playground/**/*.spec.[jt]s?(x)']
@@ -18,3 +21,5 @@ module.exports = {
     }
   }
 }
+
+export default config
