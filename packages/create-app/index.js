@@ -151,7 +151,7 @@ async function getValidPackageName(projectName) {
   if (packageNameRegExp.test(projectName)) {
     return projectName
   } else {
-    const suggestPkgName = projectName
+    const suggestedPackageName = projectName
       .trim()
       .toLowerCase()
       .replace(/\s+/g, '-')
@@ -165,7 +165,7 @@ async function getValidPackageName(projectName) {
       type: 'input',
       name: 'inputPackageName',
       message: `Package name:`,
-      initial: suggestPkgName,
+      initial: suggestedPackageName,
       validate: (input) =>
         packageNameRegExp.test(input) ? true : 'Invalid package.json name'
     })
