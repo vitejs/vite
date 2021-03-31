@@ -21,8 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git",
-    "directory": "packages/create-app"
+    "url": "git+https://github.com/vitejs/vite.git"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"

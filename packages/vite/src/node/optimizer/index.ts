@@ -46,12 +46,6 @@ export interface DepOptimizationOptions {
    * cannot be globs).
    */
   exclude?: string[]
-  /**
-   * The bundler sometimes needs to rename symbols to avoid collisions.
-   * Set this to `true` to keep the `name` property on functions and classes.
-   * https://esbuild.github.io/api/#keep-names
-   */
-  keepNames?: boolean
 }
 
 export interface DepOptimizationMetadata {
@@ -235,7 +229,7 @@ export async function optimizeDeps(
   const result = await build({
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    keepNames: config.optimizeDeps?.keepNames,
+    keepNames: true,
     format: 'esm',
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',

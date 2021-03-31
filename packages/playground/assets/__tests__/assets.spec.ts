@@ -5,8 +5,7 @@ import {
   getColor,
   isBuild,
   listAssets,
-  readManifest,
-  readFile
+  readManifest
 } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -181,7 +180,7 @@ test('?raw import', async () => {
 })
 
 test('?url import', async () => {
-  const src = readFile('foo.js')
+  const src = `console.log('hi')\n`
   expect(await page.textContent('.url')).toMatch(
     isBuild
       ? `data:application/javascript;base64,${Buffer.from(src).toString(

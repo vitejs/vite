@@ -240,12 +240,6 @@ function tryFsResolve(
   }
 
   let res: string | undefined
-  if (
-    (res = tryResolveFile(file, postfix, options, false, options.tryPrefix))
-  ) {
-    return res
-  }
-
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
       (res = tryResolveFile(
@@ -294,6 +288,8 @@ function tryResolveFile(
       }
       const index = tryFsResolve(file + '/index', options)
       if (index) return index + postfix
+    } else {
+      return normalizePath(ensureVolumeInPath(file)) + postfix
     }
   }
   if (tryPrefix) {
@@ -662,20 +658,14 @@ function mapWithBrowserField(
   relativePathInPkgDir: string,
   map: Record<string, string | false>
 ): string | false | undefined {
-  const normalizedPath = path.posix.normalize(relativePathInPkgDir)
-
+  const normalized = normalize(relativePathInPkgDir)
   for (const key in map) {
-    const normalizedKey = path.posix.normalize(key)
-    if (
-      normalizedPath === normalizedKey ||
-      equalWithoutSuffix(normalizedPath, normalizedKey, '.js') ||
-      equalWithoutSuffix(normalizedPath, normalizedKey, '/index.js')
-    ) {
+    if (normalize(key) === normalized) {
       return map[key]
     }
   }
 }
 
-function equalWithoutSuffix(path: string, key: string, suffix: string) {
-  return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
+function normalize(file: string) {
+  return path.posix.normalize(path.extname(file) ? file : file + '.js')
 }
