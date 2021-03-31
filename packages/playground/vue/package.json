@@ -9,6 +9,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "lodash-es": "^4.17.20",
     "vue": "^3.0.8"
   },
   "devDependencies": {

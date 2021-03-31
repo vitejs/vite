@@ -11,7 +11,7 @@ module.exports = {
     'node/no-missing-import': [
       'error',
       {
-        allowModules: ['types', 'estree', 'testUtils'],
+        allowModules: ['types', 'estree', 'testUtils', 'stylus'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
