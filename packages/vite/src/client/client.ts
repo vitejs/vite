@@ -177,7 +177,7 @@ async function waitForSuccessfulPing(ms = 1000) {
       await fetch(`${base}__vite_ping`)
       break
     } catch (e) {
-      await new Promise(resolve => setTimeout(resolve, ms))
+      await new Promise((resolve) => setTimeout(resolve, ms))
     }
   }
 }
@@ -433,15 +433,18 @@ export const createHotContext = (ownerPath: string) => {
   return hot
 }
 
+/**
+ * urls here are dynamic import() urls that couldn't be statically analyzed
+ */
 export function injectQuery(url: string, queryToInject: string) {
-  // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
-  const { search, hash, protocol } = new URL(url, 'http://vitejs.dev')
-
-  // data URLs shouldn't be appended queries, #2658
-  if (protocol === 'blob:' || protocol === 'data:') {
+  // skip urls that won't be handled by vite
+  if (!url.startsWith('.') && !url.startsWith('/')) {
     return url
   }
+
+  // can't use pathname from URL since it may be relative like ../
+  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
+  const { search, hash } = new URL(url, 'http://vitejs.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
