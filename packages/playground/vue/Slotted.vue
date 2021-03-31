@@ -3,7 +3,7 @@
     <h2>:slotted</h2>
     <slot></slot>
   </div>
-</template>>
+</template>
 
 <style scoped>
 :slotted(div) {

@@ -20,7 +20,7 @@
     SVG Fragment reference
     <img
       class="svg-frag"
-      style="width:32px;height:32px;"
+      style="width: 32px; height: 32px"
       src="./assets/fragment.svg#icon-heart-view"
       alt=""
     />

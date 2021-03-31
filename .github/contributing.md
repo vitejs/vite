@@ -12,8 +12,8 @@ To development and test the core `vite` package:
 
 2. Run `yarn link` in `packages/vite`. This links `vite` globally so that you can:
 
-    - Run `yarn link vite` in another Vite project to use the locally built Vite;
-    - Use the `vite` binary anywhere.
+   - Run `yarn link vite` in another Vite project to use the locally built Vite;
+   - Use the `vite` binary anywhere.
 
 ## Running Tests
 

@@ -34,7 +34,7 @@ const time = ref('loading...')
 
 window.addEventListener('load', () => {
   setTimeout(() => {
-    const [entry] = performance.getEntriesByType("navigation")
+    const [entry] = performance.getEntriesByType('navigation')
     time.value = `loaded in ${entry.duration.toFixed(2)}ms.`
   }, 0)
 })
