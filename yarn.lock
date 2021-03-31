@@ -2882,6 +2882,11 @@ escodegen@^2.0.0:
   optionalDependencies:
     source-map "~0.6.1"
 
+eslint-define-config@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/eslint-define-config/-/eslint-define-config-1.0.3.tgz#26efbf9124d3855c8ff49233e6d3e3e3be939f60"
+  integrity sha512-GlfTqk2lysLHRx4YH3xuliY06t/p4WMZc3GABLqZ84RcxJxwRVMp0qF9cQSL42gf0pO7IY+dyUsxMrv2b6rZTQ==
+
 eslint-plugin-es@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/eslint-plugin-es/-/eslint-plugin-es-3.0.1.tgz#75a7cdfdccddc0589934aeeb384175f221c57893"
