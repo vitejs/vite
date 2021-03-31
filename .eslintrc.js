@@ -1,4 +1,7 @@
-module.exports = {
+// @ts-check
+const { defineConfig } = require('eslint-define-config')
+
+module.exports = defineConfig({
   root: true,
   extends: ['plugin:node/recommended'],
   parser: '@typescript-eslint/parser',
@@ -80,4 +83,4 @@ module.exports = {
       }
     }
   ]
-}
+})
