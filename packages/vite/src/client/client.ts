@@ -236,7 +236,7 @@ export function updateStyle(id: string, content: string) {
 }
 
 export function removeStyle(id: string) {
-  let style = sheetsMap.get(id)
+  const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
       // @ts-ignore

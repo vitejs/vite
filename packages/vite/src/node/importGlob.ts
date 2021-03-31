@@ -42,7 +42,7 @@ export async function transformImportGlob(
   }
   let base
   let parentDepth = 0
-  let isAbsolute = pattern.startsWith('/')
+  const isAbsolute = pattern.startsWith('/')
   if (isAbsolute) {
     base = path.resolve(root)
     pattern = pattern.slice(1)

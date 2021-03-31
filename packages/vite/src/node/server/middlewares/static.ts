@@ -41,7 +41,7 @@ export function serveStaticMiddleware(
   const serve = sirv(dir, sirvOptions)
 
   return (req, res, next) => {
-    let url = req.url!
+    const url = req.url!
 
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
