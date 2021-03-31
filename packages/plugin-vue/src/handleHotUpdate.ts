@@ -127,7 +127,7 @@ export async function handleHotUpdate({
     }
   }
 
-  let updateType = []
+  const updateType = []
   if (needRerender) {
     updateType.push(`template`)
     // template is inlined into main, add main module instead

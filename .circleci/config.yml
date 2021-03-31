@@ -7,8 +7,8 @@ defaults: &defaults
 step_restore_cache: &restore_cache
   restore_cache:
     keys:
-    - v1-dependencies-{{ checksum "yarn.lock" }}-1
-    - v1-dependencies-
+      - v1-dependencies-{{ checksum "yarn.lock" }}-1
+      - v1-dependencies-
 
 step_install_deps: &install_deps
   run:
