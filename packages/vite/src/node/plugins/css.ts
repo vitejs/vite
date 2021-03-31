@@ -764,7 +764,7 @@ function rewriteCssUrls(
   replacer: CssUrlReplacer
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
-    let [matched, rawUrl] = match
+    const [matched, rawUrl] = match
     return await doUrlReplace(rawUrl, matched, replacer)
   })
 }
@@ -774,7 +774,7 @@ function rewriteCssImageSet(
   replacer: CssUrlReplacer
 ): Promise<string> {
   return asyncReplace(css, cssImageSetRE, async (match) => {
-    let [matched, rawUrl] = match
+    const [matched, rawUrl] = match
     const url = await processSrcSet(rawUrl, ({ url }) =>
       doUrlReplace(url, matched, replacer)
     )
