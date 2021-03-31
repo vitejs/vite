@@ -230,15 +230,7 @@ function tryFsResolve(
   let file = fsPath
   let postfix = ''
 
-  let postfixIndex = fsPath.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = fsPath.indexOf('#')
-  }
-  if (postfixIndex > 0 && !fs.existsSync(fsPath.slice(0, postfixIndex + 1))) {
-    file = fsPath.slice(0, postfixIndex)
-    postfix = fsPath.slice(postfixIndex)
-  }
-
+  // 1、Try resolving without removing postfixes first
   let res: string | undefined
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
@@ -252,6 +244,22 @@ function tryFsResolve(
     ) {
       return res
     }
+  }
+
+  if (
+    (res = tryResolveFile(file, postfix, options, tryIndex, options.tryPrefix))
+  ) {
+    return res
+  }
+
+  // 2、If that didn't work, treat ? and # as postfixes, remove them and try resolving again.
+  let postfixIndex = fsPath.indexOf('?')
+  if (postfixIndex < 0) {
+    postfixIndex = fsPath.indexOf('#')
+  }
+  if (postfixIndex > 0 && !fs.existsSync(fsPath.slice(0, postfixIndex + 1))) {
+    file = fsPath.slice(0, postfixIndex)
+    postfix = fsPath.slice(postfixIndex)
   }
 
   if (
