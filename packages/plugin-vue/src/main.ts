@@ -114,7 +114,12 @@ export async function transformMain(
   output.push('export default _sfc_main')
 
   // HMR
-  if (devServer && !ssr && !isProduction) {
+  if (
+    devServer &&
+    devServer.config.server.hmr !== false &&
+    !ssr &&
+    !isProduction
+  ) {
     output.push(`_sfc_main.__hmrId = ${JSON.stringify(descriptor.id)}`)
     output.push(
       `typeof __VUE_HMR_RUNTIME__ !== 'undefined' && ` +
