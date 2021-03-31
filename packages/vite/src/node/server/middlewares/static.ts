@@ -1,12 +1,26 @@
 import os from 'os'
 import path from 'path'
-import sirv from 'sirv'
+import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { cleanUrl, isImportRequest } from '../../utils'
 
-const sirvOptions = { dev: true, etag: true, extensions: [] }
+const sirvOptions: Options = {
+  dev: true,
+  etag: true,
+  extensions: [],
+  setHeaders(res, pathname) {
+    // Matches js, jsx, ts, tsx.
+    // The reason this is done, is that the .ts file extension is reserved
+    // for the MIME type video/mp2t. In almost all cases, we can expect
+    // these files to be TypeScript files, and for Vite to serve them with
+    // this Content-Type.
+    if (/\.[tj]sx?$/.test(pathname)) {
+      res.setHeader('Content-Type', 'application/javascript')
+    }
+  }
+}
 
 export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
