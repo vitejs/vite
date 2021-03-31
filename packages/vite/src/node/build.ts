@@ -181,7 +181,7 @@ export interface BuildOptions {
 export interface LibraryOptions {
   entry: string
   name?: string
-  formats?: LibraryFormats[],
+  formats?: LibraryFormats[]
   fileName?: string
 }
 
