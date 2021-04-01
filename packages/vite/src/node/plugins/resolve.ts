@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
@@ -228,7 +227,7 @@ function tryResolve(
   postfix: string,
   options: InternalResolveOptions,
   tryIndex = true
-) {
+): string | undefined {
   let res: string | undefined
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
