@@ -4,7 +4,7 @@
 
 ### Config File Resolving
 
-When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#project-root).
+When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root).
 
 The most basic config file looks like this:
 
@@ -68,6 +68,19 @@ export default ({ command, mode }) => {
 }
 ```
 
+### Async Config
+
+If the config needs to call async function, it can export a async function instead:
+
+```js
+export default async ({ command, mode }) => {
+  const data = await asyncFunction();
+  return {
+    // build specific config
+  } 
+}
+```
+
 ## Shared Options
 
 ### root
@@ -77,7 +90,7 @@ export default ({ command, mode }) => {
 
   Project root directory (where `index.html` is located). Can be an absolute path, or a path relative from the location of the config file itself.
 
-  See [Project Root](/guide/#project-root) for more details.
+  See [Project Root](/guide/#index-html-and-project-root) for more details.
 
 ### base
 
@@ -115,7 +128,7 @@ export default ({ command, mode }) => {
 
 - **Type:** ` (Plugin | Plugin[])[]`
 
-  Array of plugins to use. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
+  Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
 ### publicDir
 
@@ -417,7 +430,7 @@ export default ({ command, mode }) => {
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
-  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuid docs](https://esbuild.github.io/content-types/#javascript) for more details.
+  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
 ### build.polyfillDynamicImport
 
@@ -439,7 +452,7 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `dist`
 
-  Specify the output directory (relative to [project root](/guide/#project-root)).
+  Specify the output directory (relative to [project root](/guide/#index-html-and-project-root)).
 
 ### build.assetsDir
 
@@ -568,6 +581,15 @@ export default ({ command, mode }) => {
 - **Type:** `string[]`
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
+
+### optimizeDeps.keepNames
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  The bundler sometimes needs to rename symbols to avoid collisions.
+  Set this to `true` to keep the `name` property on functions and classes.
+  See [`keepNames`](https://esbuild.github.io/api/#keep-names).
 
 ## SSR Options
 

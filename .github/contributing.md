@@ -12,8 +12,8 @@ To development and test the core `vite` package:
 
 2. Run `yarn link` in `packages/vite`. This links `vite` globally so that you can:
 
-    - Run `yarn link vite` in another Vite project to use the locally built Vite;
-    - Use the `vite` binary anywhere.
+   - Run `yarn link vite` in another Vite project to use the locally built Vite;
+   - Use the `vite` binary anywhere.
 
 ## Running Tests
 
@@ -54,7 +54,7 @@ Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available 
 
 - If fixing bug:
 
-  - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log, e.g. `update entities encoding/decoding (fix #3899)`.
+  - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log, e.g. `fix: update entities encoding/decoding (fix #3899)`.
   - Provide a detailed description of the bug in the PR. Live demo preferred.
   - Add appropriate test coverage if applicable. You can check the coverage of your code addition by running `yarn test --coverage`.
 
@@ -69,6 +69,16 @@ Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available 
 ## Maintenance Guidelines
 
 > The following section is mostly for maintainers who have commit access, but it's helpful to go through if you intend to make non-trivial contributions to the codebase.
+
+### Issue Triaging Workflow
+
+![issue-workflow](./issue-workflow.png)
+
+### Pull Request Review Workflow
+
+![issue-workflow](./pr-workflow.png)
+
+## Notes on Dependencies
 
 Vite aims to be lightweight, and this includes being aware of the number of npm dependencies and their size.
 

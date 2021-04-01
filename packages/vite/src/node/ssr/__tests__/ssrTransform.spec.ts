@@ -46,7 +46,7 @@ test('namespace import', async () => {
   `)
 })
 
-test('export function decl', async () => {
+test('export function declaration', async () => {
   expect((await ssrTransform(`export function foo() {}`, null, null)).code)
     .toMatchInlineSnapshot(`
     "function foo() {}
@@ -54,7 +54,7 @@ test('export function decl', async () => {
   `)
 })
 
-test('export class decl', async () => {
+test('export class declaration', async () => {
   expect((await ssrTransform(`export class foo {}`, null, null)).code)
     .toMatchInlineSnapshot(`
     "class foo {}
@@ -62,7 +62,7 @@ test('export class decl', async () => {
   `)
 })
 
-test('export var decl', async () => {
+test('export var declaration', async () => {
   expect((await ssrTransform(`export const a = 1, b = 2`, null, null)).code)
     .toMatchInlineSnapshot(`
     "const a = 1, b = 2
@@ -161,13 +161,13 @@ test('should declare variable for imported super class', async () => {
   expect(
     (
       await ssrTransform(
-        `import { Foo } from './dep';` + `class A extends Foo {}`,
+        `import { Foo } from './dependency';` + `class A extends Foo {}`,
         null,
         null
       )
     ).code
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dep\\")
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dependency\\")
     const Foo = __vite_ssr_import_0__.Foo;
     class A extends Foo {}"
   `)
@@ -177,7 +177,7 @@ test('should declare variable for imported super class', async () => {
   expect(
     (
       await ssrTransform(
-        `import { Foo } from './dep';` +
+        `import { Foo } from './dependency';` +
           `export default class A extends Foo {}\n` +
           `export class B extends Foo {}`,
         null,
@@ -185,7 +185,7 @@ test('should declare variable for imported super class', async () => {
       )
     ).code
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dep\\")
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dependency\\")
     const Foo = __vite_ssr_import_0__.Foo;
     __vite_ssr_exports__.default = class A extends Foo {}
     class B extends Foo {}
@@ -197,4 +197,31 @@ test('sourcemap source', async () => {
   expect(
     (await ssrTransform(`export const a = 1`, null, 'input.js')).map.sources
   ).toStrictEqual(['input.js'])
+})
+
+test('overwrite bindings', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `import { inject } from 'vue';` +
+          `const a = { inject }\n` +
+          `const b = { test: inject }\n` +
+          `function c() { const { test: inject } = { test: true }; console.log(inject) }\n` +
+          `const d = inject \n` +
+          `function f() {  console.log(inject) }\n` +
+          `function e() { const { inject } = { inject: true } }\n`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"vue\\")
+    const a = { inject: __vite_ssr_import_0__.inject }
+    const b = { test: __vite_ssr_import_0__.inject }
+    function c() { const { test: inject } = { test: true }; console.log(inject) }
+    const d = __vite_ssr_import_0__.inject 
+    function f() {  console.log(__vite_ssr_import_0__.inject) }
+    function e() { const { inject } = { inject: true } }
+    "
+  `)
 })

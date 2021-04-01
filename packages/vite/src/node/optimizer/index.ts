@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { createHash } from 'crypto'
+import { build } from 'esbuild'
 import { ResolvedConfig } from '../config'
 import {
   createDebugger,
@@ -14,7 +15,6 @@ import {
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { ImportSpecifier, init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
-import { ensureService, stopService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
@@ -46,6 +46,12 @@ export interface DepOptimizationOptions {
    * cannot be globs).
    */
   exclude?: string[]
+  /**
+   * The bundler sometimes needs to rename symbols to avoid collisions.
+   * Set this to `true` to keep the `name` property on functions and classes.
+   * https://esbuild.github.io/api/#keep-names
+   */
+  keepNames?: boolean
 }
 
 export interface DepOptimizationMetadata {
@@ -191,8 +197,6 @@ export async function optimizeDeps(
     logger.info(chalk.greenBright(`Optimizing dependencies:\n  ${depsString}`))
   }
 
-  const esbuildMetaPath = path.join(cacheDir, '_esbuild.json')
-
   // esbuild generates nested directory output with lowest common ancestor base
   // this is unpredictable and makes it difficult to analyze entry / output
   // mapping. So what we do here is:
@@ -227,11 +231,11 @@ export async function optimizeDeps(
   }
 
   const start = Date.now()
-  const esbuildService = await ensureService()
-  await esbuildService.build({
+
+  const result = await build({
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    keepNames: true,
+    keepNames: config.optimizeDeps?.keepNames,
     format: 'esm',
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
@@ -239,12 +243,12 @@ export async function optimizeDeps(
     sourcemap: true,
     outdir: cacheDir,
     treeShaking: 'ignore-annotations',
-    metafile: esbuildMetaPath,
+    metafile: true,
     define,
     plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
   })
 
-  const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
+  const meta = result.metafile!
 
   for (const id in deps) {
     const entry = deps[id]
@@ -256,9 +260,6 @@ export async function optimizeDeps(
   }
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
-  if (asCommand) {
-    await stopService()
-  }
 
   debug(`deps bundled in ${Date.now() - start}ms`)
   return data
@@ -283,8 +284,8 @@ function needsInterop(
     return true
   }
 
-  // if a peer dep used require() on a ESM dep, esbuild turns the
-  // ESM dep's entry chunk into a single default export... detect
+  // if a peer dependency used require() on a ESM dependency, esbuild turns the
+  // ESM dependency's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
   const flatId = flattenId(id) + '.js'
   let generatedExports: string[] | undefined

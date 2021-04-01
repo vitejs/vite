@@ -12,7 +12,7 @@ export async function injectSourcesContent(
   await Promise.all(
     map.sources.map(async (sourcePath, i) => {
       map.sourcesContent![i] = await fs.readFile(
-        path.resolve(sourceRoot, sourcePath),
+        path.resolve(sourceRoot, decodeURI(sourcePath)),
         'utf-8'
       )
     })

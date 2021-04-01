@@ -10,7 +10,8 @@ import {
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
-import merge from 'merge-source-map'
+import { combineSourcemaps } from '../utils'
+import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 
 type Node = _Node & {
   start: number
@@ -32,7 +33,7 @@ export async function ssrTransform(
 
   const ast = parser.parse(code, {
     sourceType: 'module',
-    ecmaVersion: 2020,
+    ecmaVersion: 2021,
     locations: true
   }) as any
 
@@ -95,8 +96,8 @@ export async function ssrTransform(
           defineExport(node.declaration.id!.name)
         } else {
           // export const foo = 1, bar = 2
-          for (const decl of node.declaration.declarations) {
-            const names = extractNames(decl.id as any)
+          for (const declaration of node.declaration.declarations) {
+            const names = extractNames(declaration.id as any)
             for (const name of names) {
               defineExport(name)
             }
@@ -138,7 +139,7 @@ export async function ssrTransform(
     }
   }
 
-  // 2. convert references to import bindings & import.meta references
+  // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
       const binding = idToImportMap.get(id.name)
@@ -148,10 +149,10 @@ export async function ssrTransform(
       if (isStaticProperty(parent) && parent.shorthand) {
         // let binding used in a property shorthand
         // { foo } -> { foo: __import_x__.foo }
-        // skip for destructure patterns
+        // skip for destructuring patterns
         if (
           !(parent as any).inPattern ||
-          isInDestructureAssignment(parent, parentStack)
+          isInDestructuringAssignment(parent, parentStack)
         ) {
           s.appendLeft(id.end, `: ${binding}`)
         }
@@ -178,12 +179,15 @@ export async function ssrTransform(
   })
 
   let map = s.generateMap({ hires: true })
-  if (inMap && inMap.mappings) {
-    map = merge(inMap, {
-      ...map,
-      sources: inMap.sources,
-      sourcesContent: inMap.sourcesContent
-    }) as SourceMap
+  if (inMap && inMap.mappings && inMap.sources.length > 0) {
+    map = combineSourcemaps(url, [
+      {
+        ...map,
+        sources: inMap.sources,
+        sourcesContent: inMap.sourcesContent
+      } as RawSourceMap,
+      inMap as RawSourceMap
+    ]) as SourceMap
   } else {
     map.sources = [url]
     map.sourcesContent = [code]
@@ -221,6 +225,23 @@ function walk(
   const scope: Record<string, number> = Object.create(null)
   const scopeMap = new WeakMap<_Node, Set<string>>()
 
+  const setScope = (node: FunctionNode, name: string) => {
+    let scopeIds = scopeMap.get(node)
+    if (scopeIds && scopeIds.has(name)) {
+      return
+    }
+    if (name in scope) {
+      scope[name]++
+    } else {
+      scope[name] = 1
+    }
+    if (!scopeIds) {
+      scopeIds = new Set()
+      scopeMap.set(node, scopeIds)
+    }
+    scopeIds.add(name)
+  }
+
   ;(eswalk as any)(root, {
     enter(node: Node, parent: Node | null) {
       if (node.type === 'ImportDeclaration') {
@@ -247,38 +268,39 @@ function walk(
             enter(child: Node, parent: Node) {
               if (
                 child.type === 'Identifier' &&
-                // do not record as scope variable if is a destructured key
+                // do not record as scope variable if is a destructuring key
                 !isStaticPropertyKey(child, parent) &&
                 // do not record if this is a default value
-                // assignment of a destructured variable
+                // assignment of a destructuring variable
                 !(
                   parent &&
                   parent.type === 'AssignmentPattern' &&
                   parent.right === child
                 )
               ) {
-                const { name } = child
-                let scopeIds = scopeMap.get(node)
-                if (scopeIds && scopeIds.has(name)) {
-                  return
-                }
-                if (name in scope) {
-                  scope[name]++
-                } else {
-                  scope[name] = 1
-                }
-                if (!scopeIds) {
-                  scopeIds = new Set()
-                  scopeMap.set(node, scopeIds)
-                }
-                scopeIds.add(name)
+                setScope(node, child.name)
               }
             }
           })
         )
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
-        // mark property in destructure pattern
+        // mark property in destructuring pattern
         ;(node as any).inPattern = true
+      } else if (node.type === 'VariableDeclarator') {
+        const parentFunction = findParentFunction(parentStack)
+        if (parentFunction) {
+          if (node.id.type === 'ObjectPattern') {
+            node.id.properties.forEach((property) => {
+              if (property.type === 'RestElement') {
+                setScope(parentFunction, (property.argument as Identifier).name)
+              } else {
+                setScope(parentFunction, (property.value as Identifier).name)
+              }
+            })
+          } else {
+            setScope(parentFunction, (node.id as Identifier).name)
+          }
+        }
       }
     },
 
@@ -308,7 +330,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   if (isFunction(parent)) {
-    // function decalration/expression id
+    // function declaration/expression id
     if ((parent as any).id === id) {
       return false
     }
@@ -324,15 +346,15 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // property key
-  // this also covers object destructure pattern
-  if (isStaticPropertyKey(id, parent)) {
+  // this also covers object destructuring pattern
+  if (isStaticPropertyKey(id, parent) || (parent as any).inPattern) {
     return false
   }
 
-  // non-assignment array destructure pattern
+  // non-assignment array destructuring pattern
   if (
     parent.type === 'ArrayPattern' &&
-    !isInDestructureAssignment(parent, parentStack)
+    !isInDestructuringAssignment(parent, parentStack)
   ) {
     return false
   }
@@ -368,7 +390,15 @@ function isFunction(node: _Node): node is FunctionNode {
   return /Function(?:Expression|Declaration)$|Method$/.test(node.type)
 }
 
-function isInDestructureAssignment(
+function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
+  for (const node of parentStack) {
+    if (isFunction(node)) {
+      return node
+    }
+  }
+}
+
+function isInDestructuringAssignment(
   parent: _Node,
   parentStack: _Node[]
 ): boolean {
