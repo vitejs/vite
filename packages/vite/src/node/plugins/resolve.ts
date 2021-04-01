@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
@@ -222,15 +223,12 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
 }
 
-function tryFsResolve(
-  fsPath: string,
+function tryResolve(
+  file: string,
+  postfix: string,
   options: InternalResolveOptions,
   tryIndex = true
-): string | undefined {
-  let file = fsPath
-  let postfix = ''
-
-  // 1、Try resolving without removing postfixes first
+) {
   let res: string | undefined
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
@@ -251,6 +249,21 @@ function tryFsResolve(
   ) {
     return res
   }
+}
+
+function tryFsResolve(
+  fsPath: string,
+  options: InternalResolveOptions,
+  tryIndex = true
+): string | undefined {
+  let file = fsPath
+  let postfix = ''
+  let res: string | undefined
+
+  // 1、Try resolving without removing postfixes first
+  if ((res = tryResolve(file, postfix, options, tryIndex))) {
+    return res
+  }
 
   // 2、If that didn't work, treat ? and # as postfixes, remove them and try resolving again.
   let postfixIndex = fsPath.indexOf('?')
@@ -262,9 +275,7 @@ function tryFsResolve(
     postfix = fsPath.slice(postfixIndex)
   }
 
-  if (
-    (res = tryResolveFile(file, postfix, options, tryIndex, options.tryPrefix))
-  ) {
+  if ((res = tryResolve(file, postfix, options, tryIndex))) {
     return res
   }
 }
