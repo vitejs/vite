@@ -16,7 +16,11 @@ import {
   PluginContainer
 } from '../server/pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
-import { createWebSocketServer, WebSocketServer } from '../server/ws'
+import {
+  createMockWebSocketServer,
+  createWebSocketServer,
+  WebSocketServer
+} from '../server/ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
@@ -175,7 +179,7 @@ export interface ViteDevServer {
   /**
    * web socket server with `send(payload)` method
    */
-  ws?: WebSocketServer
+  ws: WebSocketServer
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
@@ -270,9 +274,9 @@ export async function createServer(
     ? null
     : await resolveHttpServer(serverConfig, middlewares)
   const ws =
-    config.server.hmr !== false
-      ? createWebSocketServer(httpServer, config)
-      : undefined
+    config.server.hmr === false
+      ? createMockWebSocketServer()
+      : createWebSocketServer(httpServer, config)
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
@@ -329,7 +333,7 @@ export async function createServer(
     async close() {
       await Promise.all([
         watcher.close(),
-        ws?.close(),
+        ws.close(),
         container.close(),
         closeHttpServer()
       ])
@@ -366,7 +370,7 @@ export async function createServer(
       try {
         await handleHMRUpdate(file, server)
       } catch (err) {
-        ws?.send({
+        ws.send({
           type: 'error',
           err: prepareError(err)
         })

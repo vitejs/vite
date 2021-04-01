@@ -54,7 +54,7 @@ export function errorMiddleware(
       timestamp: true
     })
 
-    server.ws?.send({
+    server.ws.send({
       type: 'error',
       err: prepareError(err)
     })

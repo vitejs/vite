@@ -85,3 +85,21 @@ export function createWebSocketServer(
     }
   }
 }
+
+export function createMockWebSocketServer() {
+  return {
+    send(payload: HMRPayload) {
+      if (payload.type === 'error') {
+        // eslint-disable-next-line
+        console.info('[ws mock] Buffering error', payload)
+      }
+
+      // eslint-disable-next-line
+      console.info('[ws mock] Sending payload', payload)
+    },
+
+    close() {
+      return Promise.resolve()
+    }
+  }
+}

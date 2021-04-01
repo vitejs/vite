@@ -76,7 +76,7 @@ export function createMissingImporterRegisterFn(server: ViteDevServer) {
     // reloaded.
     server.moduleGraph.invalidateAll()
 
-    server.ws?.send({
+    server.ws.send({
       type: 'full-reload',
       path: '*'
     })
