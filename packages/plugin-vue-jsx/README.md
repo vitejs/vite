@@ -18,6 +18,7 @@ export default {
 ## Options
 
 See [@vue/babel-plugin-jsx](https://github.com/vuejs/jsx-next).
+
 ## HMR Detection
 
 This plugin supports HMR of Vue JSX components. The detection requirements are:

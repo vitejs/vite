@@ -1,4 +1,7 @@
-module.exports = {
+// @ts-check
+const { defineConfig } = require('eslint-define-config')
+
+module.exports = defineConfig({
   root: true,
   extends: [
     'eslint:recommended',
@@ -16,7 +19,7 @@ module.exports = {
     'node/no-missing-import': [
       'error',
       {
-        allowModules: ['types', 'estree', 'testUtils'],
+        allowModules: ['types', 'estree', 'testUtils', 'stylus'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
@@ -62,7 +65,7 @@ module.exports = {
     'no-empty': 'warn',
     'no-useless-escape': 'warn',
     'prefer-const': [
-      'error',
+      'warn',
       {
         destructuring: 'all'
       }
@@ -94,4 +97,4 @@ module.exports = {
       }
     }
   ]
-}
+})

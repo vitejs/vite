@@ -45,8 +45,8 @@ export interface ConfigEnv {
   mode: string
 }
 
-export type UserConfigFn = (env: ConfigEnv) => UserConfig
-export type UserConfigExport = UserConfig | UserConfigFn
+export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
+export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -707,8 +707,9 @@ export async function loadConfigFromFile(
       debug(`bundled config file loaded in ${Date.now() - start}ms`)
     }
 
-    const config =
-      typeof userConfig === 'function' ? userConfig(configEnv) : userConfig
+    const config = await (typeof userConfig === 'function'
+      ? userConfig(configEnv)
+      : userConfig)
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
     }
@@ -756,10 +757,16 @@ async function bundleConfigFile(
             const contents = await fs.promises.readFile(args.path, 'utf8')
             return {
               loader: args.path.endsWith('.ts') ? 'ts' : 'js',
-              contents: contents.replace(
-                /\bimport\.meta\.url\b/g,
-                JSON.stringify(`file://${args.path}`)
-              )
+              contents: contents
+                .replace(
+                  /\bimport\.meta\.url\b/g,
+                  JSON.stringify(`file://${args.path}`)
+                )
+                .replace(
+                  /\b__dirname\b/g,
+                  JSON.stringify(path.dirname(args.path))
+                )
+                .replace(/\b__filename\b/g, JSON.stringify(args.path))
             }
           })
         }

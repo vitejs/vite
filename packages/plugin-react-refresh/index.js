@@ -102,6 +102,7 @@ function reactRefreshPlugin(opts) {
 
       const isReasonReact = id.endsWith('.bs.js')
       const result = transformSync(code, {
+        babelrc: false,
         configFile: false,
         filename: id,
         parserOpts: {

@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-vue",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -21,7 +21,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git"
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/plugin-vue"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"

@@ -58,6 +58,19 @@ module.exports = {
               'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
           }
         ]
+      },
+      {
+        text: 'Languages',
+        items: [
+          {
+            text: 'English',
+            link: 'https://vitejs.dev'
+          },
+          {
+            text: '简体中文',
+            link: 'https://cn.vitejs.dev'
+          }
+        ]
       }
     ],
 
@@ -80,6 +93,10 @@ module.exports = {
             {
               text: 'Features',
               link: '/guide/features'
+            },
+            {
+              text: 'Using Plugins',
+              link: '/guide/using-plugins'
             },
             {
               text: 'Dependency Pre-Bundling',

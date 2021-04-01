@@ -20,7 +20,7 @@ Object.keys(colors).forEach((color) => {
 })
 
 function componentToHex(c: number): string {
-  var hex = c.toString(16)
+  const hex = c.toString(16)
   return hex.length == 1 ? '0' + hex : hex
 }
 
@@ -57,6 +57,10 @@ export async function getColor(el: string | ElementHandle) {
 export async function getBg(el: string | ElementHandle) {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
+}
+
+export function readFile(filename: string) {
+  return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
 }
 
 export function editFile(filename: string, replacer: (str: string) => string) {
