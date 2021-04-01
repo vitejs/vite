@@ -100,7 +100,7 @@ export function createMockWebSocketServer(
       } else {
         const formattedPayload = JSON.stringify(payload, undefined, 2)
         config.logger.info(
-          chalk.dim(`WebSocket server [mock] payload: ${formattedPayload}`)
+          chalk.dim(`WebSocket server [mock] payload:\n${formattedPayload}`)
         )
       }
     },
