@@ -275,7 +275,7 @@ export async function createServer(
     : await resolveHttpServer(serverConfig, middlewares)
   const ws =
     config.server.hmr === false
-      ? createMockWebSocketServer()
+      ? createMockWebSocketServer(httpServer, config)
       : createWebSocketServer(httpServer, config)
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}

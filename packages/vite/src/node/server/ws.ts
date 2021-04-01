@@ -87,16 +87,22 @@ export function createWebSocketServer(
   }
 }
 
-export function createMockWebSocketServer() {
+export function createMockWebSocketServer(
+  _server: Server | null,
+  config: ResolvedConfig
+) {
   return {
     send(payload: HMRPayload) {
       if (payload.type === 'error') {
-        // eslint-disable-next-line
-        console.info('[ws mock] Buffering error', payload)
+        config.logger.info(
+          chalk.red(`WebSocket server [mock] error:\n${payload.err.message}`)
+        )
+      } else {
+        const formattedPayload = JSON.stringify(payload, undefined, 2)
+        config.logger.info(
+          chalk.dim(`WebSocket server [mock] payload: ${formattedPayload}`)
+        )
       }
-
-      // eslint-disable-next-line
-      console.info('[ws mock] Sending payload', payload)
     },
 
     close() {
