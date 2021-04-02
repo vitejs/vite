@@ -18,6 +18,14 @@ test('should remove comments in prod', async () => {
   expect(await page.innerHTML('.comments')).toBe(isBuild ? `` : `<!--hello-->`)
 })
 
+test(':slotted', async () => {
+  expect(await getColor('.slotted')).toBe('red')
+})
+
+test('scan deps from <script setup lang="ts">', async () => {
+  expect(await page.textContent('.scan')).toBe('ok')
+})
+
 describe('pre-processors', () => {
   test('pug', async () => {
     expect(await page.textContent('p.pug')).toMatch(

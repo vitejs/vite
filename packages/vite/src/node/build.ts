@@ -52,7 +52,7 @@ export interface BuildOptions {
    * injects a light-weight dynamic import polyfill.
    * https://caniuse.com/es6-module
    *
-   * Another special value is 'esnext' - which only performs minimal trasnpiling
+   * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat) and assumes native dynamic imports support.
    *
    * For custom targets, see https://esbuild.github.io/api/#target and
@@ -220,7 +220,9 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   // handle special build targets
   if (resolved.target === 'modules') {
     // https://caniuse.com/es6-module
-    resolved.target = ['es2019', 'edge16', 'firefox60', 'chrome61', 'safari11']
+    // edge18 according to js-table (destructuring is not supported in edge16)
+    // https://github.com/evanw/esbuild/blob/d943e89e50696647d6c89ae623ddfdf564ad3cfc/internal/compat/js_table.go#L84
+    resolved.target = ['es2019', 'edge18', 'firefox60', 'chrome61', 'safari11']
   } else if (resolved.target === 'esnext' && resolved.minify !== 'esbuild') {
     // esnext + terser: limit to es2019 so it can be minified by terser
     resolved.target = 'es2019'
@@ -269,7 +271,7 @@ export function resolveBuildPlugins(
 let parallelCallCounts = 0
 // we use a separate counter to track since the call may error before the
 // bundle is even pushed.
-const paralellBuilds: RollupBuild[] = []
+const parallelBuilds: RollupBuild[] = []
 
 /**
  * Bundles the app for production.
@@ -284,8 +286,8 @@ export async function build(
   } finally {
     parallelCallCounts--
     if (parallelCallCounts <= 0) {
-      await Promise.all(paralellBuilds.map((bundle) => bundle.close()))
-      paralellBuilds.length = 0
+      await Promise.all(parallelBuilds.map((bundle) => bundle.close()))
+      parallelBuilds.length = 0
     }
   }
 }
@@ -370,7 +372,7 @@ async function doBuild(
       }
     })
 
-    paralellBuilds.push(bundle)
+    parallelBuilds.push(bundle)
 
     const pkgName = libOptions && getPkgName(config.root)
 
@@ -445,7 +447,7 @@ async function doBuild(
       }
       return res
     } else {
-      return generate(outputs)
+      return await generate(outputs)
     }
   } catch (e) {
     config.logger.error(

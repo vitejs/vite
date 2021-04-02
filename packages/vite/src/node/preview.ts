@@ -8,9 +8,23 @@ import { ResolvedConfig } from '.'
 import { Connect } from 'types/connect'
 import { resolveHttpServer } from './server/http'
 import { openBrowser } from './server/openBrowser'
+import corsMiddleware from 'cors'
+import { proxyMiddleware } from './server/middlewares/proxy'
 
-export async function serve(config: ResolvedConfig, port = 5000) {
+export async function preview(config: ResolvedConfig, port = 5000) {
   const app = connect() as Connect.Server
+  const httpServer = await resolveHttpServer(config.server, app)
+
+  // cors
+  const { cors } = config.server
+  if (cors !== false) {
+    app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  }
+
+  // proxy
+  if (config.server.proxy) {
+    app.use(proxyMiddleware(httpServer, config))
+  }
 
   app.use(compression())
 
@@ -23,15 +37,13 @@ export async function serve(config: ResolvedConfig, port = 5000) {
     })
   )
 
-  const server = await resolveHttpServer(config.server, app)
-
   const options = config.server || {}
   const hostname = options.host || 'localhost'
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
 
-  server.listen(port, () => {
+  httpServer.listen(port, () => {
     logger.info(
       chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
         chalk.green(` build preview server running at:\n`)

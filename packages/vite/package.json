@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.0.5",
+  "version": "2.1.5",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -19,7 +19,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git"
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/vite"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
@@ -44,7 +45,7 @@
   },
   "//": "READ .github/contributing.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.8.52",
+    "esbuild": "^0.9.3",
     "postcss": "^8.2.1",
     "resolve": "^1.19.0",
     "rollup": "^2.38.5"
@@ -53,6 +54,7 @@
     "fsevents": "~2.3.1"
   },
   "devDependencies": {
+    "@ampproject/remapping": "^1.0.1",
     "@rollup/plugin-alias": "^3.1.1",
     "@rollup/plugin-commonjs": "^17.0.0",
     "@rollup/plugin-dynamic-import-vars": "^1.1.1",
@@ -71,6 +73,7 @@
     "@types/node": "^14.14.10",
     "@types/resolve": "^1.17.1",
     "@types/sass": "^1.16.0",
+    "@types/stylus": "^0.48.33",
     "@types/ws": "^7.4.0",
     "@vue/compiler-dom": "^3.0.4",
     "acorn": "^8.0.4",
@@ -100,7 +103,6 @@
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.2.1",
     "magic-string": "^0.25.7",
-    "merge-source-map": "^1.1.0",
     "mime": "^2.4.7",
     "minimatch": "^3.0.4",
     "okie": "^1.0.1",

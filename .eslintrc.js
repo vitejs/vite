@@ -1,4 +1,7 @@
-module.exports = {
+// @ts-check
+const { defineConfig } = require('eslint-define-config')
+
+module.exports = defineConfig({
   root: true,
   extends: ['plugin:node/recommended'],
   parser: '@typescript-eslint/parser',
@@ -11,8 +14,8 @@ module.exports = {
     'node/no-missing-import': [
       'error',
       {
-        allowModules: ['types', 'estree', 'testUtils'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx']
+        allowModules: ['types', 'estree', 'testUtils', 'stylus'],
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
     'node/no-missing-require': [
@@ -20,7 +23,7 @@ module.exports = {
       {
         // for try-catching yarn pnp
         allowModules: ['pnpapi'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx']
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
     'node/no-restricted-require': [
@@ -31,7 +34,7 @@ module.exports = {
           message:
             `devDependencies can only be imported using ESM syntax so ` +
             `that they are included in the rollup bundle. If you are trying to ` +
-            `lazy load a dep, use (await import('dep')).default instead.`
+            `lazy load a dependency, use (await import('dependency')).default instead.`
         })
       )
     ],
@@ -51,7 +54,13 @@ module.exports = {
     'node/no-unpublished-import': 'off',
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
-    'no-process-exit': 'off'
+    'no-process-exit': 'off',
+    'prefer-const': [
+      'warn',
+      {
+        destructuring: 'all'
+      }
+    ]
   },
   overrides: [
     {
@@ -74,4 +83,4 @@ module.exports = {
       }
     }
   ]
-}
+})

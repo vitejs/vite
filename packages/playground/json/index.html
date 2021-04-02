@@ -10,8 +10,14 @@
 <pre class="dynamic"></pre>
 <pre class="dynamic-named"></pre>
 
-<h2>Raw fetch</h2>
+<h2>fetch</h2>
 <pre class="fetch"></pre>
+
+<h2>Importing as URL</h2>
+<pre class="url"></pre>
+
+<h2>Raw Import</h2>
+<pre class="raw"></pre>
 
 <script type="module">
   import json, { hello } from './test.json'
@@ -33,6 +39,12 @@
     .then((data) => {
       text('.fetch', JSON.stringify(data))
     })
+
+  import url from './test.json?url'
+  text('.url', url)
+
+  import raw from './test.json?raw'
+  text('.raw', raw)
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text
