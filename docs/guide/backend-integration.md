@@ -1,6 +1,8 @@
 # Backend Integration
 
-If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, here's what you can do:
+If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, check for existing integrations listed in [Awesome Vite](https://github.com/vitejs/awesome-vite#integrations-with-backends).
+
+Or you can follow these steps to configure it manually:
 
 1. In your Vite config, configure the entry and enable build manifest:
 
@@ -39,8 +41,8 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
 
    ```html
    <script type="module">
-     import RefreshRuntime from "http://localhost:3000/@react-refresh"
-     RefreshRuntime.injectIntoGlobalHook(window) 
+     import RefreshRuntime from 'http://localhost:3000/@react-refresh'
+     RefreshRuntime.injectIntoGlobalHook(window)
      window.$RefreshReg$ = () => {}
      window.$RefreshSig$ = () => (type) => type
      window.__vite_plugin_react_preamble_installed__ = true

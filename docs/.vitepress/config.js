@@ -58,6 +58,19 @@ module.exports = {
               'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
           }
         ]
+      },
+      {
+        text: 'Languages',
+        items: [
+          {
+            text: 'English',
+            link: 'https://vitejs.dev'
+          },
+          {
+            text: '简体中文',
+            link: 'https://cn.vitejs.dev'
+          }
+        ]
       }
     ],
 
@@ -82,6 +95,10 @@ module.exports = {
               link: '/guide/features'
             },
             {
+              text: 'Using Plugins',
+              link: '/guide/using-plugins'
+            },
+            {
               text: 'Dependency Pre-Bundling',
               link: '/guide/dep-pre-bundling'
             },
@@ -92,6 +109,10 @@ module.exports = {
             {
               text: 'Building for Production',
               link: '/guide/build'
+            },
+            {
+              text: 'Deploying a Static Site',
+              link: '/guide/static-deploy'
             },
             {
               text: 'Env Variables and Modes',

@@ -1,5 +1,5 @@
 import path from 'path'
-import { Loader, Plugin, ResolveKind } from 'esbuild'
+import { Loader, Plugin, ImportKind } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import { ResolvedConfig } from '..'
 import {
@@ -35,7 +35,7 @@ export function esbuildDepPlugin(
   exportsData: Record<string, ExportsData>,
   config: ResolvedConfig
 ): Plugin {
-  // default resovler which prefers ESM
+  // default resolver which prefers ESM
   const _resolve = config.createResolver({ asSrc: false })
 
   // cjs resolver that prefers Node
@@ -47,7 +47,7 @@ export function esbuildDepPlugin(
   const resolve = (
     id: string,
     importer: string,
-    kind: ResolveKind,
+    kind: ImportKind,
     resolveDir?: string
   ): Promise<string | undefined> => {
     let _importer
@@ -100,7 +100,7 @@ export function esbuildDepPlugin(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
           const isEntry = !importer
-          // ensure esbuild uses our resolved entires
+          // ensure esbuild uses our resolved entries
           let entry
           // if this is an entry, return entry namespace resolve result
           if ((entry = resolveEntry(id, isEntry))) return entry

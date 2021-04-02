@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
 import { ResolvedConfig } from '..'
-import { Loader, Plugin } from 'esbuild'
+import { Loader, Plugin, build, transform } from 'esbuild'
 import {
   KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
@@ -25,11 +25,20 @@ import {
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
-import { ensureService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte)$/
+
+// A simple regex to detect import sources. This is only used on
+// <script lang="ts"> blocks in vue (setup only) or svelte files, since
+// seemingly unused imports are dropped by esbuild when transpiling TS which
+// prevents it from crawling further.
+// We can't use es-module-lexer because it can't handle TS, and don't want to
+// use Acorn because it's slow. Luckily this doesn't have to be bullet proof
+// since even missed imports can be caught at runtime, and false positives will
+// simply be ignored.
+const importsRE = /\bimport(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')/gm
 
 export async function scanImports(
   config: ResolvedConfig
@@ -82,10 +91,9 @@ export async function scanImports(
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
-  const esbuildService = await ensureService()
   await Promise.all(
     entries.map((entry) =>
-      esbuildService.build({
+      build({
         entryPoints: [entry],
         bundle: true,
         format: 'esm',
@@ -185,54 +193,77 @@ function esbuildScanPlugin(
       })
 
       // extract scripts inside HTML-like files and treat it as a js module
-      build.onLoad({ filter: htmlTypesRE, namespace: 'html' }, ({ path }) => {
-        const raw = fs.readFileSync(path, 'utf-8')
-        const regex = path.endsWith('.html') ? scriptModuleRE : scriptRE
-        regex.lastIndex = 0
-        let js = ''
-        let loader: Loader = 'js'
-        let match
-        while ((match = regex.exec(raw))) {
-          const [, openTag, content] = match
-          const srcMatch = openTag.match(srcRE)
-          const langMatch = openTag.match(langRE)
-          const lang =
-            langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
-          if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
-            loader = lang
+      build.onLoad(
+        { filter: htmlTypesRE, namespace: 'html' },
+        async ({ path }) => {
+          const raw = fs.readFileSync(path, 'utf-8')
+          const regex = path.endsWith('.html') ? scriptModuleRE : scriptRE
+          regex.lastIndex = 0
+          let js = ''
+          let loader: Loader = 'js'
+          let match
+          while ((match = regex.exec(raw))) {
+            const [, openTag, content] = match
+            const srcMatch = openTag.match(srcRE)
+            const langMatch = openTag.match(langRE)
+            const lang =
+              langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
+            if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
+              loader = lang
+            }
+            if (srcMatch) {
+              const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
+              js += `import ${JSON.stringify(src)}\n`
+            } else if (content.trim()) {
+              js += content + '\n'
+            }
           }
-          if (srcMatch) {
-            const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
-            js += `import ${JSON.stringify(src)}\n`
-          } else if (content.trim()) {
-            js += content + '\n'
+
+          // <script setup> may contain TLA which is not true TLA but esbuild
+          // will error on it, so replace it with another operator.
+          if (js.includes('await')) {
+            js = js.replace(/\bawait(\s)/g, 'void$1')
+          }
+
+          if (
+            loader.startsWith('ts') &&
+            (path.endsWith('.svelte') ||
+              (path.endsWith('.vue') && /<script\s+setup/.test(raw)))
+          ) {
+            // when using TS + (Vue + <script setup>) or Svelte, imports may seem
+            // unused to esbuild and dropped in the build output, which prevents
+            // esbuild from crawling further.
+            // the solution is to add `import 'x'` for every source to force
+            // esbuild to keep crawling due to potential side effects.
+            let m
+            const original = js
+            while ((m = importsRE.exec(original)) !== null) {
+              // This is necessary to avoid infinite loops with zero-width matches
+              if (m.index === importsRE.lastIndex) {
+                importsRE.lastIndex++
+              }
+              js += `\nimport ${m[1]}`
+            }
+          }
+
+          if (!js.includes(`export default`)) {
+            js += `\nexport default {}`
+          }
+
+          if (js.includes('import.meta.glob')) {
+            return {
+              // transformGlob already transforms to js
+              loader: 'js',
+              contents: await transformGlob(js, path, config.root, loader)
+            }
+          }
+
+          return {
+            loader,
+            contents: js
           }
         }
-
-        if (js.includes('import.meta.glob')) {
-          return transformGlob(js, path, config.root, loader).then(
-            (contents) => ({
-              loader,
-              contents
-            })
-          )
-        }
-
-        // <script setup> may contain TLA which is not true TLA but esbuild
-        // will error on it, so replace it with another operator.
-        if (js.includes('await')) {
-          js = js.replace(/\bawait\s/g, 'void ')
-        }
-
-        if (!js.includes(`export default`)) {
-          js += `export default {}`
-        }
-
-        return {
-          loader,
-          contents: js
-        }
-      })
+      )
 
       // bare imports: record and externalize ----------------------------------
       build.onResolve(
@@ -253,7 +284,7 @@ function esbuildScanPlugin(
               return externalUnlessEntry({ path: id })
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
-              // dep or fordce included, externalize and stop crawling
+              // dependency or forced included, externalize and stop crawling
               if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
                 depImports[id] = resolved
               }
@@ -272,7 +303,7 @@ function esbuildScanPlugin(
 
       // Externalized file types -----------------------------------------------
       // these are done on raw ids using esbuild's native regex filter so it
-      // snould be faster than doing it in the catch-all via js
+      // should be faster than doing it in the catch-all via js
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
@@ -319,7 +350,7 @@ function esbuildScanPlugin(
               namespace
             }
           } else {
-            // resolve failed... probably usupported type
+            // resolve failed... probably unsupported type
             return externalUnlessEntry({ path: id })
           }
         }
@@ -362,7 +393,7 @@ async function transformGlob(
 ) {
   // transform the content first since es-module-lexer can't handle non-js
   if (loader !== 'js') {
-    source = (await (await ensureService()).transform(source, { loader })).code
+    source = (await transform(source, { loader })).code
   }
 
   await init
@@ -395,7 +426,7 @@ export function shouldExternalizeDep(resolvedId: string, rawId: string) {
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // resovled is not a scannable type
+  // resolved is not a scannable type
   if (!JS_TYPES_RE.test(resolvedId) && !htmlTypesRE.test(resolvedId)) {
     return true
   }

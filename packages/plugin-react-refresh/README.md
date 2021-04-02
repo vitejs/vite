@@ -45,14 +45,11 @@ To mitigate this issue, you can explicitly transform your `index.html` like this
 ```ts
 app.get('/', async (req, res, next) => {
   try {
-    let html = fs.readFileSync(
-      path.resolve(root, 'index.html'),
-      'utf-8'
-    );
-    html = await viteServer.transformIndexHtml(req.url, html);
-    res.send(html);
+    let html = fs.readFileSync(path.resolve(root, 'index.html'), 'utf-8')
+    html = await viteServer.transformIndexHtml(req.url, html)
+    res.send(html)
   } catch (e) {
-    return next(e);
+    return next(e)
   }
-});
+})
 ```

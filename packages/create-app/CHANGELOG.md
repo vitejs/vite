@@ -1,3 +1,43 @@
+## [2.2.3](https://github.com/vitejs/vite/compare/create-app@2.2.2...create-app@2.2.3) (2021-03-31)
+
+
+### Features
+
+* **create-app:** improved package name validation ([#2772](https://github.com/vitejs/vite/issues/2772)) ([9fa282e](https://github.com/vitejs/vite/commit/9fa282e9209185c70ac80e2fe1fbe4b7e92dae07))
+
+
+
+## [2.2.2](https://github.com/vitejs/vite/compare/create-app@2.2.1...create-app@2.2.2) (2021-03-25)
+
+
+
+## [2.2.1](https://github.com/vitejs/vite/compare/create-app@2.2.0...create-app@2.2.1) (2021-03-25)
+
+
+
+# [2.2.0](https://github.com/vitejs/vite/compare/create-app@2.1.0...create-app@2.2.0) (2021-03-16)
+
+
+### Features
+
+* **create-app:** add 'svelte' and 'svelte-ts' options ([#2537](https://github.com/vitejs/vite/issues/2537)) ([e441f23](https://github.com/vitejs/vite/commit/e441f23e187eec0834704949da492515cd25f8cd))
+
+
+
+# [2.1.0](https://github.com/vitejs/vite/compare/create-app@2.0.2...create-app@2.1.0) (2021-03-15)
+
+
+### Bug Fixes
+
+* **create-app:** ensure valid package name when creating project ([1dbf246](https://github.com/vitejs/vite/commit/1dbf24627d0fed4d6936f53fb84bc94b79372652)), closes [#2360](https://github.com/vitejs/vite/issues/2360)
+
+
+### Features
+
+* **create-app:** add `vue-tsc` for vue-ts template ([#2498](https://github.com/vitejs/vite/issues/2498)) ([b3b3c01](https://github.com/vitejs/vite/commit/b3b3c017d90ac86ba8d02deb93dec443a4fa4bad))
+
+
+
 ## [2.0.2](https://github.com/vitejs/vite/compare/create-app@2.0.1...create-app@2.0.2) (2021-03-02)
 
 
