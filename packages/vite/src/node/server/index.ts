@@ -285,6 +285,9 @@ export async function createServer(
   const moduleGraph = new ModuleGraph(container)
   const closeHttpServer = createServerCloseFn(httpServer)
 
+  // eslint-disable-next-line prefer-const
+  let exitProcess: () => void
+
   const server: ViteDevServer = {
     config: config,
     middlewares,
@@ -324,6 +327,12 @@ export async function createServer(
       return startServer(server, port, isRestart)
     },
     async close() {
+      process.off('SIGTERM', exitProcess)
+
+      if (!process.stdin.isTTY) {
+        process.stdin.off('end', exitProcess)
+      }
+
       await Promise.all([
         watcher.close(),
         ws.close(),
@@ -341,7 +350,7 @@ export async function createServer(
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
-  const exitProcess = async () => {
+  exitProcess = async () => {
     try {
       await server.close()
     } finally {

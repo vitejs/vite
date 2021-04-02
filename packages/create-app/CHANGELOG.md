@@ -1,3 +1,20 @@
+## [2.2.3](https://github.com/vitejs/vite/compare/create-app@2.2.2...create-app@2.2.3) (2021-03-31)
+
+
+### Features
+
+* **create-app:** improved package name validation ([#2772](https://github.com/vitejs/vite/issues/2772)) ([9fa282e](https://github.com/vitejs/vite/commit/9fa282e9209185c70ac80e2fe1fbe4b7e92dae07))
+
+
+
+## [2.2.2](https://github.com/vitejs/vite/compare/create-app@2.2.1...create-app@2.2.2) (2021-03-25)
+
+
+
+## [2.2.1](https://github.com/vitejs/vite/compare/create-app@2.2.0...create-app@2.2.1) (2021-03-25)
+
+
+
 # [2.2.0](https://github.com/vitejs/vite/compare/create-app@2.1.0...create-app@2.2.0) (2021-03-16)
 
 

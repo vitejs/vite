@@ -121,7 +121,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       // relative
       if (id.startsWith('.') || (preferRelative && /^\w/.test(id))) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
-        let fsPath = path.resolve(basedir, id)
+        const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
         if ((res = tryResolveBrowserMapping(fsPath, importer, options, true))) {
@@ -240,6 +240,12 @@ function tryFsResolve(
   }
 
   let res: string | undefined
+  if (
+    (res = tryResolveFile(file, postfix, options, false, options.tryPrefix))
+  ) {
+    return res
+  }
+
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
       (res = tryResolveFile(
@@ -288,8 +294,6 @@ function tryResolveFile(
       }
       const index = tryFsResolve(file + '/index', options)
       if (index) return index + postfix
-    } else {
-      return normalizePath(ensureVolumeInPath(file)) + postfix
     }
   }
   if (tryPrefix) {
@@ -365,7 +369,7 @@ export function tryNodeResolve(
     ) {
       // excluded from optimization
       // Inject a version query to npm deps so that the browser
-      // can cache it without revalidation, but only do so for known js types.
+      // can cache it without re-validation, but only do so for known js types.
       // otherwise we may introduce duplicated modules for externalized files
       // from pre-bundled deps.
       const versionHash = server._optimizeDepsMetadata?.browserHash
@@ -532,15 +536,15 @@ export function resolvePackageEntry(
   }
 
   entryPoint = path.join(dir, entryPoint)
-  const resolvedEntryPont = tryFsResolve(entryPoint, options)
+  const resolvedEntryPoint = tryFsResolve(entryPoint, options)
 
-  if (resolvedEntryPont) {
+  if (resolvedEntryPoint) {
     isDebug &&
       debug(
-        `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPont)}`
+        `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPoint)}`
       )
-    resolvedImports['.'] = resolvedEntryPont
-    return resolvedEntryPont
+    resolvedImports['.'] = resolvedEntryPoint
+    return resolvedEntryPoint
   } else {
     throw new Error(
       `Failed to resolve entry for package "${id}". ` +
@@ -658,14 +662,20 @@ function mapWithBrowserField(
   relativePathInPkgDir: string,
   map: Record<string, string | false>
 ): string | false | undefined {
-  const normalized = normalize(relativePathInPkgDir)
+  const normalizedPath = path.posix.normalize(relativePathInPkgDir)
+
   for (const key in map) {
-    if (normalize(key) === normalized) {
+    const normalizedKey = path.posix.normalize(key)
+    if (
+      normalizedPath === normalizedKey ||
+      equalWithoutSuffix(normalizedPath, normalizedKey, '.js') ||
+      equalWithoutSuffix(normalizedPath, normalizedKey, '/index.js')
+    ) {
       return map[key]
     }
   }
 }
 
-function normalize(file: string) {
-  return path.posix.normalize(path.extname(file) ? file : file + '.js')
+function equalWithoutSuffix(path: string, key: string, suffix: string) {
+  return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
 }

@@ -55,7 +55,7 @@ export interface BuildOptions {
    * injects a light-weight dynamic import polyfill.
    * https://caniuse.com/es6-module
    *
-   * Another special value is 'esnext' - which only performs minimal trasnpiling
+   * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat) and assumes native dynamic imports support.
    *
    * For custom targets, see https://esbuild.github.io/api/#target and
@@ -280,7 +280,7 @@ export function resolveBuildPlugins(
 let parallelCallCounts = 0
 // we use a separate counter to track since the call may error before the
 // bundle is even pushed.
-const paralellBuilds: RollupBuild[] = []
+const parallelBuilds: RollupBuild[] = []
 
 /**
  * Bundles the app for production.
@@ -295,8 +295,8 @@ export async function build(
   } finally {
     parallelCallCounts--
     if (parallelCallCounts <= 0) {
-      await Promise.all(paralellBuilds.map((bundle) => bundle.close()))
-      paralellBuilds.length = 0
+      await Promise.all(parallelBuilds.map((bundle) => bundle.close()))
+      parallelBuilds.length = 0
     }
   }
 }
@@ -492,7 +492,7 @@ async function doBuild(
 
     // write or generate files with rollup
     const bundle = await rollup.rollup(rollupOptions)
-    paralellBuilds.push(bundle)
+    parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate'](

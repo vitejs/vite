@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.1.2",
+  "version": "2.1.5",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -19,7 +19,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git"
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/vite"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
@@ -72,6 +73,7 @@
     "@types/node": "^14.14.10",
     "@types/resolve": "^1.17.1",
     "@types/sass": "^1.16.0",
+    "@types/stylus": "^0.48.33",
     "@types/ws": "^7.4.0",
     "@vue/compiler-dom": "^3.0.4",
     "acorn": "^8.0.4",

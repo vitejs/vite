@@ -25,7 +25,7 @@ export default {
 
 <i18n lang="yaml">
 en:
-  hello: "hello,vite!"
+  hello: 'hello,vite!'
 ja:
-  hello: "こんにちは、vite！"
+  hello: 'こんにちは、vite！'
 </i18n>
