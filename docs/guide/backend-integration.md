@@ -20,13 +20,6 @@ Or you can follow these steps to configure it manually:
    }
    ```
 
-   Also remember to add the [dynamic import polyfill](/config/#build-polyfilldynamicimport) to your entry, since it will no longer be auto-injected:
-
-   ```js
-   // add the beginning of your app entry
-   import 'vite/dynamic-import-polyfill'
-   ```
-
 2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
 
    ```html
