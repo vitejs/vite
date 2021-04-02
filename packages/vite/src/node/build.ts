@@ -437,7 +437,7 @@ async function doBuild(
 
     // watch file changes with rollup
     if (config.build.watch) {
-      config.logger.info(chalk.cyanBright(`watching for file changes...`))
+      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
 
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
@@ -469,6 +469,8 @@ async function doBuild(
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
+          config.logger.info(chalk.cyanBright(`\nbuild started...`))
+
           // clean previous files
           if (options.write) {
             emptyDir(outDir)

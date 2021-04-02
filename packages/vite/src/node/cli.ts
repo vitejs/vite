@@ -130,7 +130,7 @@ cli
     `[boolean] force empty outDir when it's outside of root`
   )
   .option('-m, --mode <mode>', `[string] set env mode`)
-  .option('--watch', `[boolean] rebuilds when modules have changed on disk`)
+  .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     const buildOptions = cleanOptions(options) as BuildOptions
