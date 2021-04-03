@@ -527,12 +527,12 @@ export function mergeConfig(
       continue
     }
 
-    // root fields that require special handling
-    if (existing != null && isRoot) {
-      if (key === 'alias') {
+    // fields that require special handling
+    if (existing != null) {
+      if (key === 'alias' && !isRoot) {
         merged[key] = mergeAlias(existing, value)
         continue
-      } else if (key === 'assetsInclude') {
+      } else if (key === 'assetsInclude' && isRoot) {
         merged[key] = [].concat(existing, value)
         continue
       }
