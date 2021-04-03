@@ -26,7 +26,8 @@ const envConfig = {
     })
   ],
   output: {
-    dir: path.resolve(__dirname, 'dist/client')
+    dir: path.resolve(__dirname, 'dist/client'),
+    sourcemap: true
   }
 }
 
@@ -47,7 +48,8 @@ const clientConfig = {
     })
   ],
   output: {
-    dir: path.resolve(__dirname, 'dist/client')
+    dir: path.resolve(__dirname, 'dist/client'),
+    sourcemap: true
   }
 }
 
@@ -67,7 +69,8 @@ const sharedNodeOptions = {
     exports: 'named',
     format: 'cjs',
     externalLiveBindings: false,
-    freeze: false
+    freeze: false,
+    sourcemap: true
   },
   onwarn(warning, warn) {
     // node-resolve complains a lot about this but seems to still work?
