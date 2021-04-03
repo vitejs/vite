@@ -118,11 +118,15 @@ export default async ({ command, mode }) => {
 
 - **Type:** `Record<string, string>`
 
-  Define global variable replacements. Entries will be defined as globals during dev and statically replaced during build.
+  Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
   - Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
 
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
+
+  Because it's implemented as straightforward text replacements without any syntax analyzation, we recommend using `define` for CONSTANTS only.
+
+  For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
 
 ### plugins
 
