@@ -124,21 +124,31 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
-        if ((res = tryResolveBrowserMapping(fsPath, importer, options, true))) {
-          return res
-        }
-
-        if ((res = tryFsResolve(fsPath, options))) {
-          isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-          const pkg = importer != null && idToPkgMap.get(importer)
-          if (pkg) {
-            idToPkgMap.set(res, pkg)
-            return {
-              id: res,
-              moduleSideEffects: pkg.hasSideEffects(res)
-            }
+        const pathFromBasedir = normalizePath(fsPath).slice(basedir.length)
+        if (pathFromBasedir.startsWith('/node_modules/')) {
+          // normalize direct imports from node_modules to bare imports, so the
+          // hashing logic is shared and we avoid duplicated modules #2503
+          id = pathFromBasedir.slice('/node_modules/'.length)
+        } else {
+          if (
+            (res = tryResolveBrowserMapping(fsPath, importer, options, true))
+          ) {
+            return res
           }
-          return res
+
+          if ((res = tryFsResolve(fsPath, options))) {
+            isDebug &&
+              debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+            const pkg = importer != null && idToPkgMap.get(importer)
+            if (pkg) {
+              idToPkgMap.set(res, pkg)
+              return {
+                id: res,
+                moduleSideEffects: pkg.hasSideEffects(res)
+              }
+            }
+            return res
+          }
         }
       }
 
