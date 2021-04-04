@@ -60,7 +60,7 @@
     "@rollup/plugin-dynamic-import-vars": "^1.1.1",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^11.0.1",
-    "@rollup/plugin-typescript": "^8.0.0",
+    "@rollup/plugin-typescript": "^8.2.1",
     "@rollup/pluginutils": "^4.1.0",
     "@types/clean-css": "^4.2.3",
     "@types/convert-source-map": "^1.5.1",
