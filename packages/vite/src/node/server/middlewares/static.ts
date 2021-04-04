@@ -77,7 +77,10 @@ export function serveRawFsMiddleware(
 ): Connect.NextHandleFunction {
   const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
-  const root = config.server?.fsServeRoot || config.root
+  const root = path.resolve(
+    config.root,
+    config.server?.fsServeRoot || config.root
+  )
 
   return (req, res, next) => {
     let url = req.url!

@@ -420,6 +420,14 @@ export default async ({ command, mode }) => {
 
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
+### server.fsServeRoot
+
+- **Type:** `string`
+
+  Restrict files that could be served via `/@fs/`. Acessing files outside this directory will result a 403.
+  
+  Default to [project root](/guide/#index-html-and-project-root).
+
 ## Build Options
 
 ### build.target
