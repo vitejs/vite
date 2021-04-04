@@ -381,7 +381,7 @@ export default async ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
-        }
+        },
         // with RegEx
         '^/fallback/.*': {
           target: 'http://jsonplaceholder.typicode.com',
