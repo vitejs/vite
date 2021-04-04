@@ -41,7 +41,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       let url: string
-      if (config.command === 'serve') {
+      if (!isBuild) {
         url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, WorkerFileId)
       } else {
