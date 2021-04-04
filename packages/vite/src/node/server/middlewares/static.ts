@@ -72,9 +72,12 @@ export function serveStaticMiddleware(
   }
 }
 
-export function serveRawFsMiddleware(): Connect.NextHandleFunction {
+export function serveRawFsMiddleware(
+  config: ResolvedConfig
+): Connect.NextHandleFunction {
   const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
+  const root = config.server?.fsServeRoot || config.root
 
   return (req, res, next) => {
     let url = req.url!
@@ -84,6 +87,18 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       url = url.slice(FS_PREFIX.length)
+
+      // restrict files out side of `fsServeRoot`
+      if (
+        path
+          .relative(root, path.isAbsolute(url) ? url : `/${url}`)
+          .startsWith('../')
+      ) {
+        res.statusCode = 403
+        res.end()
+        return
+      }
+
       if (isWin) url = url.replace(/^[A-Z]:/i, '')
 
       req.url = url

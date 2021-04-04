@@ -120,6 +120,13 @@ export interface ServerOptions {
    * Should start and end with the `/` character
    */
   base?: string
+  /**
+   * Restrict files that can be served by the '/@fs/' plugin.
+   *
+   * Default to workspace root that contains `.git`, `package.json` with `workspace` field,
+   * `pnpm-workspace.yml` or the current project root.
+   */
+  fsServeRoot?: string
 }
 
 /**
@@ -438,7 +445,7 @@ export async function createServer(
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(serveRawFsMiddleware())
+  middlewares.use(serveRawFsMiddleware(config))
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
