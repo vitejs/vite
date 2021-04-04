@@ -424,7 +424,7 @@ export default async ({ command, mode }) => {
 
 - **Type:** `string`
 
-  Restrict files that could be served via `/@fs/`. Acessing files outside this directory will result a 403.
+  Restrict files that could be served via `/@fs/`. Accessing files outside this directory will result in a 403.
   
   Default to [project root](/guide/#index-html-and-project-root).
 

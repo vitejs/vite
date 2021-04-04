@@ -122,7 +122,7 @@ export interface ServerOptions {
   base?: string
   /**
    * Restrict files that could be served via '/\@fs/'.
-   * Acessing files outside this directory will result a 403.
+   * Accessing files outside this directory will result in a 403.
    *
    * Accepts absolute path or a path relative to project root.
    * Default to the project root.
