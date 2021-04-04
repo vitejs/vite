@@ -124,31 +124,35 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
-        const pathFromBasedir = normalizePath(fsPath).slice(basedir.length)
+        const normalizedFsPath = normalizePath(fsPath)
+        const pathFromBasedir = normalizedFsPath.slice(basedir.length)
         if (pathFromBasedir.startsWith('/node_modules/')) {
           // normalize direct imports from node_modules to bare imports, so the
           // hashing logic is shared and we avoid duplicated modules #2503
-          id = pathFromBasedir.slice('/node_modules/'.length)
-        } else {
+          const bareImport = pathFromBasedir.slice('/node_modules/'.length)
           if (
-            (res = tryResolveBrowserMapping(fsPath, importer, options, true))
+            (res = tryNodeResolve(bareImport, importer, options, server)) &&
+            res.id.startsWith(normalizedFsPath)
           ) {
             return res
           }
+        }
 
-          if ((res = tryFsResolve(fsPath, options))) {
-            isDebug &&
-              debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
-            const pkg = importer != null && idToPkgMap.get(importer)
-            if (pkg) {
-              idToPkgMap.set(res, pkg)
-              return {
-                id: res,
-                moduleSideEffects: pkg.hasSideEffects(res)
-              }
+        if ((res = tryResolveBrowserMapping(fsPath, importer, options, true))) {
+          return res
+        }
+
+        if ((res = tryFsResolve(fsPath, options))) {
+          isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+          const pkg = importer != null && idToPkgMap.get(importer)
+          if (pkg) {
+            idToPkgMap.set(res, pkg)
+            return {
+              id: res,
+              moduleSideEffects: pkg.hasSideEffects(res)
             }
-            return res
           }
+          return res
         }
       }
 
