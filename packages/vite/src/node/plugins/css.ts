@@ -1107,9 +1107,8 @@ function createViteLessPlugin(
 const styl: StylePreprocessor = (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   try {
-    const ref = nodeStylus(source)
+    const ref = nodeStylus(source, options)
 
-    Object.keys(options).forEach((key) => ref.set(key, options[key]))
     // if (map) ref.set('sourcemap', { inline: false, comment: false })
 
     const result = ref.render()
