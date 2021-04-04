@@ -88,7 +88,7 @@ export function serveRawFsMiddleware(
     if (url.startsWith(FS_PREFIX)) {
       url = url.slice(FS_PREFIX.length)
 
-      // restrict files out side of `fsServeRoot`
+      // restrict files outside of `fsServeRoot`
       if (
         path
           .relative(root, path.isAbsolute(url) ? url : `/${url}`)
