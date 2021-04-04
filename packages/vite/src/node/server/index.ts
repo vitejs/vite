@@ -121,10 +121,9 @@ export interface ServerOptions {
    */
   base?: string
   /**
-   * Restrict files that can be served by the '/@fs/' plugin.
+   * Restrict files that could be served via '/\@fs/'.
    *
-   * Default to workspace root that contains `.git`, `package.json` with `workspace` field,
-   * `pnpm-workspace.yml` or the current project root.
+   * Default to the project root (`config.root`).
    */
   fsServeRoot?: string
 }
