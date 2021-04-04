@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-react-refresh",
-  "version": "1.2.2",
+  "version": "1.3.2",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -18,15 +18,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git"
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/plugin-react-refresh"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh#readme",
   "dependencies": {
-    "@babel/core": "^7.12.10",
-    "@babel/plugin-syntax-import-meta": "^7.10.4",
+    "@babel/core": "^7.12.13",
+    "@babel/plugin-transform-react-jsx-self": "^7.12.13",
+    "@babel/plugin-transform-react-jsx-source": "^7.12.13",
     "react-refresh": "^0.9.0"
   }
 }

@@ -1,10 +1,25 @@
 import path from 'path'
 
-export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+export const DEFAULT_MAIN_FIELDS = [
+  'module',
+  'jsnext:main', // moment still uses this...
+  'jsnext'
+]
 
-export const JS_TYPES_RE = /\.(j|t)sx?$|\.mjs$/
+export const DEFAULT_EXTENSIONS = [
+  '.mjs',
+  '.js',
+  '.ts',
+  '.jsx',
+  '.tsx',
+  '.json'
+]
 
-export const SPECIAL_QUERY_RE = /[\?&](worker|raw|url)\b/
+export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
+
+export const OPTIMIZABLE_ENTRY_RE = /\.(?:m?js|ts)$/
+
+export const SPECIAL_QUERY_RE = /[\?&](?:worker|raw|url)\b/
 
 export const DEP_CACHE_DIR = `.vite`
 

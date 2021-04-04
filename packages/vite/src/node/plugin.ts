@@ -11,7 +11,7 @@ import {
 import { ServerHook } from './server'
 import { IndexHtmlTransform } from './plugins/html'
 import { ModuleNode } from './server/moduleGraph'
-import { ResolvedConfig } from './'
+import { ConfigEnv, ResolvedConfig } from './'
 import { HmrContext } from './server/hmr'
 
 /**
@@ -61,7 +61,7 @@ export interface Plugin extends RollupPlugin {
    * Note: User plugins are resolved before running this hook so injecting other
    * plugins inside  the `config` hook will have no effect.
    */
-  config?: (config: UserConfig) => UserConfig | null | void
+  config?: (config: UserConfig, env: ConfigEnv) => UserConfig | null | void
   /**
    * Use this hook to read and store the final resolved vite config.
    */

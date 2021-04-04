@@ -1,6 +1,6 @@
 // @ts-check
 const fs = require('fs')
-const { transformSync } = require('@babel/core')
+const { transformSync, ParserOptions } = require('@babel/core')
 
 const runtimePublicPath = '/@react-refresh'
 const runtimeFilePath = require.resolve(
@@ -41,6 +41,8 @@ function reactRefreshPlugin(opts) {
   return {
     name: 'react-refresh',
 
+    enforce: 'pre',
+
     configResolved(config) {
       shouldSkip = config.command === 'build' || config.isProduction
       base = config.base
@@ -73,16 +75,44 @@ function reactRefreshPlugin(opts) {
         return
       }
 
+      /**
+       * @type ParserOptions["plugins"]
+       */
+      const parserPlugins = [
+        'jsx',
+        'importMeta',
+        // since the plugin now applies before esbuild transforms the code,
+        // we need to enable some stage 3 syntax since they are supported in
+        // TS and some environments already.
+        'topLevelAwait',
+        'classProperties',
+        'classPrivateProperties',
+        'classPrivateMethods'
+      ]
+      if (/\.tsx?$/.test(id)) {
+        // it's a typescript file
+        // TODO: maybe we need to read tsconfig to determine parser plugins to
+        // enable here, but allowing decorators by default since it's very
+        // commonly used with TS.
+        parserPlugins.push('typescript', 'decorators-legacy')
+      }
+      if (opts && opts.parserPlugins) {
+        parserPlugins.push(...opts.parserPlugins)
+      }
+
       const isReasonReact = id.endsWith('.bs.js')
       const result = transformSync(code, {
+        babelrc: false,
         configFile: false,
+        filename: id,
         parserOpts: {
           sourceType: 'module',
           allowAwaitOutsideFunction: true,
-          plugins: opts && opts.parserPlugins
+          plugins: parserPlugins
         },
         plugins: [
-          require('@babel/plugin-syntax-import-meta'),
+          require('@babel/plugin-transform-react-jsx-self'),
+          require('@babel/plugin-transform-react-jsx-source'),
           [require('react-refresh/babel'), { skipEnvCheck: true }]
         ],
         ast: !isReasonReact,

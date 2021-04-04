@@ -76,11 +76,12 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       return handleHotUpdate(ctx)
     },
 
-    config() {
+    config(config) {
       return {
         define: {
           __VUE_OPTIONS_API__: true,
-          __VUE_PROD_DEVTOOLS__: false
+          __VUE_PROD_DEVTOOLS__: false,
+          ...config.define
         },
         ssr: {
           external: ['vue', '@vue/server-renderer']
@@ -101,7 +102,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     async resolveId(id, importer) {
-      // serve subpart requests (*?vue) as virtual modules
+      // serve sub-part requests (*?vue) as virtual modules
       if (parseVueRequest(id).query.vue) {
         return id
       }
@@ -109,7 +110,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     load(id, ssr = !!options.ssr) {
       const { filename, query } = parseVueRequest(id)
-      // select corresponding block for subpart virtual modules
+      // select corresponding block for sub-part virtual modules
       if (query.vue) {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')
@@ -137,7 +138,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     transform(code, id, ssr = !!options.ssr) {
       const { filename, query } = parseVueRequest(id)
-      if (!query.vue && !filter(filename)) {
+      if ((!query.vue && !filter(filename)) || query.raw) {
         return
       }
 

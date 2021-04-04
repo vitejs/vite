@@ -8,7 +8,8 @@ import {
   isJSRequest,
   prettifyUrl,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
+  unwrapId
 } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
@@ -18,10 +19,15 @@ import {
   CLIENT_PUBLIC_PATH,
   DEP_CACHE_DIR,
   DEP_VERSION_RE,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
+  NULL_BYTE_PLACEHOLDER
 } from '../../constants'
 import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
+
+/**
+ * Time (ms) Vite has to full-reload the page before returning
+ * an empty response.
+ */
+const NEW_DEPENDENCY_BUILD_TIMEOUT = 1000
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -37,11 +43,7 @@ export function transformMiddleware(
   } = server
 
   return async (req, res, next) => {
-    if (
-      req.method !== 'GET' ||
-      req.headers.accept?.includes('text/html') ||
-      knownIgnoreList.has(req.url!)
-    ) {
+    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }
 
@@ -52,14 +54,38 @@ export function transformMiddleware(
       !req.url?.includes('vite/dist/client')
     ) {
       // missing dep pending reload, hold request until reload happens
-      server._pendingReload.then(() => res.end())
+      server._pendingReload.then(() =>
+        // If the refresh has not happened after timeout, Vite considers
+        // something unexpected has happened. In this case, Vite
+        // returns an empty response that will error.
+        setTimeout(() => {
+          // status code request timeout
+          res.statusCode = 408
+          res.end(
+            `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
+              `<p>The current page should have reloaded by now</p>`
+          )
+        }, NEW_DEPENDENCY_BUILD_TIMEOUT)
+      )
       return
     }
 
-    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
-      NULL_BYTE_PLACEHOLDER,
-      '\0'
-    )
+    let url
+    try {
+      url = removeTimestampQuery(req.url!).replace(NULL_BYTE_PLACEHOLDER, '\0')
+    } catch (err) {
+      // if it starts with %PUBLIC%, someone's migrating from something
+      // like create-react-app
+      let errorMessage
+      if (req.url?.startsWith('/%PUBLIC')) {
+        errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
+      } else {
+        errorMessage = `Vite encountered a suspiciously malformed request ${req.url}`
+      }
+      next(new Error(errorMessage))
+      return
+    }
+
     const withoutQuery = cleanUrl(url)
 
     try {
@@ -96,12 +122,9 @@ export function transformMiddleware(
       ) {
         // strip ?import
         url = removeImportQuery(url)
-
-        // Strip valid id prefix. This is preprended to resolved Ids that are
+        // Strip valid id prefix. This is prepended to resolved Ids that are
         // not valid browser import specifiers by the importAnalysis plugin.
-        if (url.startsWith(VALID_ID_PREFIX)) {
-          url = url.slice(VALID_ID_PREFIX.length)
-        }
+        url = unwrapId(url)
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports
@@ -122,7 +145,9 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(url, server)
+        const result = await transformRequest(url, server, {
+          html: req.headers.accept?.includes('text/html')
+        })
         if (result) {
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =

@@ -1,3 +1,30 @@
+## [1.3.2](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.1...plugin-react-refresh@1.3.2) (2021-03-31)
+
+
+### Bug Fixes
+
+* ignore babelrc ([#2766](https://github.com/vitejs/vite/issues/2766)) ([23c4114](https://github.com/vitejs/vite/commit/23c41149ddf74261f7615d22e59b39a017b79509)), closes [#2722](https://github.com/vitejs/vite/issues/2722)
+
+
+
+## [1.3.1](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.0...plugin-react-refresh@1.3.1) (2021-02-10)
+
+
+### Bug Fixes
+
+* **plugin-react-refresh:** enable parsing for stage 3 and decorators syntax ([565bcb4](https://github.com/vitejs/vite/commit/565bcb4121e678310c26bb249b119da504d13ada)), closes [#1970](https://github.com/vitejs/vite/issues/1970)
+
+
+
+# [1.3.0](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.2.2...plugin-react-refresh@1.3.0) (2021-02-08)
+
+
+### Features
+
+* **plugin-react-refresh:** add jsx metadata ([#1933](https://github.com/vitejs/vite/issues/1933)) ([4037c55](https://github.com/vitejs/vite/commit/4037c55015e74d5e19176bd6ae6bb1c4df157802))
+
+
+
 ## [1.2.2](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.2.1...plugin-react-refresh@1.2.2) (2021-02-02)
 
 

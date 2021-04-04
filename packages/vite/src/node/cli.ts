@@ -4,7 +4,7 @@ import { BuildOptions } from './build'
 import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
-import { serve } from './serve'
+import { preview } from './preview'
 
 const cli = cac('vite')
 
@@ -66,7 +66,7 @@ cli
   .option('--host <host>', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
-  .option('--open [browser]', `[boolean | string] open browser on startup`)
+  .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('-m, --mode <mode>', `[string] set env mode`)
@@ -101,7 +101,7 @@ cli
 cli
   .command('build [root]')
   .option('--target <target>', `[string] transpile target (default: 'modules')`)
-  .option('--outDir <dir>', `[string] output directory (default: dist)`)
+  .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
     `[string] directory under outDir to place assets in (default: _assets)`
@@ -186,20 +186,27 @@ cli
 cli
   .command('preview [root]')
   .option('--port <port>', `[number] specify port`)
+  .option('--open [path]', `[boolean | string] open browser on startup`)
   .action(
-    async (root: string, options: { port?: number } & GlobalCLIOptions) => {
+    async (
+      root: string,
+      options: { port?: number; open?: boolean | string } & GlobalCLIOptions
+    ) => {
       try {
         const config = await resolveConfig(
           {
             root,
             base: options.base,
             configFile: options.config,
-            logLevel: options.logLevel
+            logLevel: options.logLevel,
+            server: {
+              open: options.open
+            }
           },
           'serve',
           'development'
         )
-        await serve(config, options.port)
+        await preview(config, options.port)
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`)

@@ -1,6 +1,6 @@
 # Building for Production
 
-When it is time to deploy your app for production, simply run the `vite build` command. By default, it uses `<root>/index.html` as the build entry point, and produces an application bundle that is suitable to be served over a static hosting service.
+When it is time to deploy your app for production, simply run the `vite build` command. By default, it uses `<root>/index.html` as the build entry point, and produces an application bundle that is suitable to be served over a static hosting service. Check out the [Deploying a Static Site](./static-deploy) for guides about popular services.
 
 ## Browser Compatibility
 
@@ -51,13 +51,13 @@ For example, you can specify multiple Rollup outputs with plugins that are only 
 Suppose you have the following source code structure:
 
 ```
-|-package.json
-|-vite.config.js
-|-index.html
-|-main.js
-|-nested/
-|---index.html
-|---nested.js
+├── package.json
+├── vite.config.js
+├── index.html
+├── main.js
+└── nested
+    ├── index.html
+    └── nested.js
 ```
 
 During dev, simply navigate or link to `/nested/` - it works as expected, just like for a normal static file server.

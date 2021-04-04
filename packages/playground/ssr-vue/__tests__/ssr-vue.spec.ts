@@ -50,6 +50,13 @@ test('/', async () => {
     expect(html).toMatch(
       /link rel="stylesheet".*?href="\/assets\/Home\.\w{8}\.css"/
     )
+    // JSX component preload registration
+    expect(html).toMatch(
+      /link rel="modulepreload".*?href="\/assets\/Foo\.\w{8}\.js"/
+    )
+    expect(html).toMatch(
+      /link rel="stylesheet".*?href="\/assets\/Foo\.\w{8}\.css"/
+    )
     expect(html).not.toMatch(
       /link rel="modulepreload".*?href="\/assets\/About\.\w{8}\.js"/
     )
@@ -62,10 +69,12 @@ test('/', async () => {
 test('css', async () => {
   if (isBuild) {
     expect(await getColor('h1')).toBe('green')
+    expect(await getColor('.jsx')).toBe('blue')
   } else {
     // During dev, the CSS is loaded from async chunk and we may have to wait
     // when the test runs concurrently.
     await untilUpdated(() => getColor('h1'), 'green')
+    await untilUpdated(() => getColor('.jsx'), 'blue')
   }
 })
 
@@ -78,6 +87,14 @@ test('asset', async () => {
   expect(await img.getAttribute('src')).toMatch(
     isBuild ? /\/assets\/logo\.\w{8}\.png/ : '/src/assets/logo.png'
   )
+})
+
+test('jsx', async () => {
+  expect(await page.textContent('.jsx')).toMatch('from JSX')
+})
+
+test('virtual module', async () => {
+  expect(await page.textContent('.virtual')).toMatch('hi')
 })
 
 test('hydration', async () => {

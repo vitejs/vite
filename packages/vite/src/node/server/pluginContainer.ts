@@ -1,6 +1,6 @@
 /**
  * This file is refactored into TypeScript based on
- * https://github.com/preactjs/wmr/blob/master/src/lib/rollup-plugin-container.js
+ * https://github.com/preactjs/wmr/blob/main/packages/wmr/src/lib/rollup-plugin-container.js
  */
 
 /**
@@ -52,7 +52,8 @@ import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
 import acornNumericSeparator from 'acorn-numeric-separator'
 import acornStaticClassFeatures from 'acorn-static-class-features'
-import merge from 'merge-source-map'
+import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import {
@@ -65,6 +66,7 @@ import {
   prettifyUrl,
   timeFrom
 } from '../utils'
+import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
@@ -83,7 +85,7 @@ export interface PluginContainer {
   resolveId(
     id: string,
     importer?: string,
-    skip?: Plugin[],
+    skip?: Set<Plugin>,
     ssr?: boolean
   ): Promise<PartialResolvedId | null>
   transform(
@@ -166,6 +168,7 @@ export async function createPluginContainer(
     _activePlugin: Plugin | null
     _activeId: string | null = null
     _activeCode: string | null = null
+    _resolveSkips?: Set<Plugin>
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
@@ -185,9 +188,12 @@ export async function createPluginContainer(
       importer?: string,
       options?: { skipSelf?: boolean }
     ) {
-      const skip = []
-      if (options?.skipSelf && this._activePlugin) skip.push(this._activePlugin)
-      let out = await container.resolveId(id, importer, skip, this.ssr)
+      let skips: Set<Plugin> | undefined
+      if (options?.skipSelf && this._activePlugin) {
+        skips = new Set(this._resolveSkips)
+        skips.add(this._activePlugin)
+      }
+      let out = await container.resolveId(id, importer, skips, this.ssr)
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -331,13 +337,13 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          // merge-source-map will overwrite original sources if newMap also has
-          // sourcesContent
-          // @ts-ignore
-          combinedMap = merge(combinedMap, {
-            ...(m as SourceMap),
-            sourcesContent: combinedMap.sourcesContent
-          })
+          combinedMap = combineSourcemaps(this.filename, [
+            {
+              ...(m as RawSourceMap),
+              sourcesContent: combinedMap.sourcesContent
+            },
+            combinedMap as RawSourceMap
+          ]) as SourceMap
         }
       }
       if (!combinedMap) {
@@ -361,7 +367,6 @@ export async function createPluginContainer(
     }
   }
 
-  let nestedResolveCall = 0
   let closed = false
 
   const container: PluginContainer = {
@@ -401,42 +406,28 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(rawId, importer = join(root, 'index.html'), _skip, ssr) {
+    async resolveId(rawId, importer = join(root, 'index.html'), skips, ssr) {
       const ctx = new Context()
       ctx.ssr = !!ssr
-      const key =
-        `${rawId}\n${importer}` +
-        (_skip ? _skip.map((p) => p.name).join('\n') : ``)
-
-      nestedResolveCall++
+      ctx._resolveSkips = skips
       const resolveStart = isDebug ? Date.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of plugins) {
         if (!plugin.resolveId) continue
-
-        if (_skip) {
-          if (_skip.includes(plugin)) continue
-          if (resolveSkips.has(plugin, key)) continue
-          resolveSkips.add(plugin, key)
-        }
+        if (skips?.has(plugin)) continue
 
         ctx._activePlugin = plugin
 
-        let result
         const pluginResolveStart = isDebug ? Date.now() : 0
-        try {
-          result = await plugin.resolveId.call(
-            ctx as any,
-            rawId,
-            importer,
-            {},
-            ssr
-          )
-        } finally {
-          if (_skip) resolveSkips.delete(plugin, key)
-        }
+        const result = await plugin.resolveId.call(
+          ctx as any,
+          rawId,
+          importer,
+          {},
+          ssr
+        )
         if (!result) continue
 
         if (typeof result === 'string') {
@@ -457,13 +448,7 @@ export async function createPluginContainer(
         break
       }
 
-      nestedResolveCall--
-      if (
-        isDebug &&
-        !nestedResolveCall &&
-        rawId !== id &&
-        !rawId.startsWith('/@fs/')
-      ) {
+      if (isDebug && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {
@@ -552,34 +537,6 @@ export async function createPluginContainer(
         plugins.map((p) => p.closeBundle && p.closeBundle.call(ctx as any))
       )
       closed = true
-    }
-  }
-
-  function popIndex(array: any[], index: number) {
-    const tail = array.pop()
-    if (index !== array.length) array[index] = tail
-  }
-
-  // Tracks recursive resolveId calls
-  const resolveSkips = {
-    skip: new Map<Plugin, string[]>(),
-
-    has(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      return skips ? skips.includes(key) : false
-    },
-
-    add(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      if (skips) skips.push(key)
-      else this.skip.set(plugin, [key])
-    },
-
-    delete(plugin: Plugin, key: string) {
-      const skips = this.skip.get(plugin)
-      if (!skips) return
-      const i = skips.indexOf(key)
-      if (i !== -1) popIndex(skips, i)
     }
   }
 

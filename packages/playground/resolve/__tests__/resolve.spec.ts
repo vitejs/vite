@@ -42,6 +42,14 @@ test('implicit dir/index.js vs explicit file', async () => {
   expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
 })
 
+test('exact extension vs. duplicated (.js.js)', async () => {
+  expect(await page.textContent('.exact-extension')).toMatch('[success]')
+})
+
+test('dont add extension to directory name (./dir-with-ext.js/index.js)', async () => {
+  expect(await page.textContent('.dir-with-ext')).toMatch('[success]')
+})
+
 test('filename with dot', async () => {
   expect(await page.textContent('.dot')).toMatch('[success]')
 })
@@ -58,10 +66,22 @@ test('monorepo linked dep', async () => {
   expect(await page.textContent('.monorepo')).toMatch('[success]')
 })
 
-test('plugin resolved virutal file', async () => {
+test('plugin resolved virtual file', async () => {
   expect(await page.textContent('.virtual')).toMatch('[success]')
 })
 
 test('resolve inline package', async () => {
   expect(await page.textContent('.inline-pkg')).toMatch('[success]')
+})
+
+test('resolve.extensions', async () => {
+  expect(await page.textContent('.custom-ext')).toMatch('[success]')
+})
+
+test('resolve.mainFields', async () => {
+  expect(await page.textContent('.custom-main-fields')).toMatch('[success]')
+})
+
+test('resolve.conditions', async () => {
+  expect(await page.textContent('.custom-condition')).toMatch('[success]')
 })

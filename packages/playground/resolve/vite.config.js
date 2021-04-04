@@ -1,6 +1,11 @@
 const virtualFile = '@virtual-file'
 
 module.exports = {
+  resolve: {
+    extensions: ['.mjs', '.js', '.es'],
+    mainFields: ['custom', 'module'],
+    conditions: ['custom']
+  },
   plugins: [
     {
       name: 'custom-resolve',

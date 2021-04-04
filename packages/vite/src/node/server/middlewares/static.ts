@@ -1,12 +1,26 @@
 import os from 'os'
 import path from 'path'
-import sirv from 'sirv'
+import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { cleanUrl, isImportRequest } from '../../utils'
 
-const sirvOptions = { dev: true, etag: true, extensions: [] }
+const sirvOptions: Options = {
+  dev: true,
+  etag: true,
+  extensions: [],
+  setHeaders(res, pathname) {
+    // Matches js, jsx, ts, tsx.
+    // The reason this is done, is that the .ts file extension is reserved
+    // for the MIME type video/mp2t. In almost all cases, we can expect
+    // these files to be TypeScript files, and for Vite to serve them with
+    // this Content-Type.
+    if (/\.[tj]sx?$/.test(pathname)) {
+      res.setHeader('Content-Type', 'application/javascript')
+    }
+  }
+}
 
 export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
@@ -27,7 +41,7 @@ export function serveStaticMiddleware(
   const serve = sirv(dir, sirvOptions)
 
   return (req, res, next) => {
-    let url = req.url!
+    const url = req.url!
 
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
@@ -36,12 +50,9 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    // #1426
-    url = req.url = decodeURI(url)
-
     // apply aliases to static requests as well
     let redirected: string | undefined
-    for (const { find, replacement } of config.alias) {
+    for (const { find, replacement } of config.resolve.alias) {
       const matches =
         typeof find === 'string' ? url.startsWith(find) : find.test(url)
       if (matches) {
@@ -62,18 +73,20 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(): Connect.NextHandleFunction {
-  const fsRoot =
-    os.platform() == 'win32' ? process.cwd().split(path.sep)[0] + '/' : '/'
-  const serveFromRoot = sirv(fsRoot, sirvOptions)
+  const isWin = os.platform() === 'win32'
+  const serveFromRoot = sirv('/', sirvOptions)
 
   return (req, res, next) => {
-    const url = req.url!
+    let url = req.url!
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      req.url = decodeURI(url.slice(FS_PREFIX.length))
+      url = url.slice(FS_PREFIX.length)
+      if (isWin) url = url.replace(/^[A-Z]:/i, '')
+
+      req.url = url
       serveFromRoot(req, res, next)
     } else {
       next()

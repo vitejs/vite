@@ -1,13 +1,19 @@
 <template>
   <h1>Home</h1>
   <p>
-    <img src="../assets/logo.png" alt="logo">
+    <img src="../assets/logo.png" alt="logo" />
   </p>
   <button @click="state.count++">count is: {{ state.count }}</button>
+  <Foo />
+  <p class="virtual">msg from virtual module: {{ foo.msg }}</p>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import foo from '@foo'
+import { reactive, defineAsyncComponent } from 'vue'
+const Foo = defineAsyncComponent(() =>
+  import('../components/Foo').then((mod) => mod.Foo)
+)
 
 const state = reactive({ count: 0 })
 </script>

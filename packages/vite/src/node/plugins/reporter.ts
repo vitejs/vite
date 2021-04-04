@@ -25,9 +25,17 @@ const writeColors = {
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const chunkLimit = config.build.chunkSizeWarningLimit
 
+  function isLarge(code: string | Uint8Array): boolean {
+    // bail out on particularly large chunks
+    return code.length / 1024 > chunkLimit
+  }
+
   async function getCompressedSize(code: string | Uint8Array): Promise<string> {
     if (config.build.ssr || !config.build.brotliSize) {
       return ''
+    }
+    if (isLarge(code)) {
+      return ' / brotli: skipped (large chunk)'
     }
     return ` / brotli: ${(
       (await size(typeof code === 'string' ? code : Buffer.from(code))) / 1024
@@ -147,17 +155,13 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           Object.keys(output).map(async (file) => {
             const chunk = output[file]
             if (chunk.type === 'chunk') {
-              // bail out on particularly large chunks
-              const isLarge = chunk.code.length / 1024 > chunkLimit
               const log = async () => {
                 printFileInfo(
                   chunk.fileName,
                   chunk.code,
                   WriteType.JS,
                   longest,
-                  isLarge
-                    ? ' / brotli: skipped (large chunk)'
-                    : await getCompressedSize(chunk.code)
+                  await getCompressedSize(chunk.code)
                 )
                 if (chunk.map) {
                   printFileInfo(
@@ -168,7 +172,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                   )
                 }
               }
-              if (isLarge) {
+              if (isLarge(chunk.code)) {
                 hasLargeChunks = true
                 deferredLogs.push(log)
               } else {

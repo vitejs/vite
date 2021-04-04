@@ -101,7 +101,7 @@ beforeAll(async () => {
     // https://github.com/facebook/jest/issues/2713
     err = e
   }
-})
+}, 30000)
 
 afterAll(async () => {
   global.page && global.page.off('console', onConsole)

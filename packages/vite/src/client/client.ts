@@ -81,12 +81,13 @@ async function handleMessage(payload: HMRPayload) {
         }
       })
       break
-    case 'custom':
+    case 'custom': {
       const cbs = customListenersMap.get(payload.event)
       if (cbs) {
         cbs.forEach((cb) => cb(payload.data))
       }
       break
+    }
     case 'full-reload':
       if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
@@ -116,7 +117,7 @@ async function handleMessage(payload: HMRPayload) {
         }
       })
       break
-    case 'error':
+    case 'error': {
       const err = payload.err
       if (enableOverlay) {
         createErrorOverlay(err)
@@ -124,9 +125,11 @@ async function handleMessage(payload: HMRPayload) {
         console.error(`[vite] Internal Server Error\n${err.stack}`)
       }
       break
-    default:
+    }
+    default: {
       const check: never = payload
       return check
+    }
   }
 }
 
@@ -168,19 +171,23 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
   }
 }
 
+async function waitForSuccessfulPing(ms = 1000) {
+  while (true) {
+    try {
+      await fetch(`${base}__vite_ping`)
+      break
+    } catch (e) {
+      await new Promise((resolve) => setTimeout(resolve, ms))
+    }
+  }
+}
+
 // ping server
-socket.addEventListener('close', ({ wasClean }) => {
+socket.addEventListener('close', async ({ wasClean }) => {
   if (wasClean) return
   console.log(`[vite] server connection lost. polling for restart...`)
-  setInterval(() => {
-    fetch('/')
-      .then(() => {
-        location.reload()
-      })
-      .catch((e) => {
-        /* ignore */
-      })
-  }, 1000)
+  await waitForSuccessfulPing()
+  location.reload()
 })
 
 // https://wicg.github.io/construct-stylesheets
@@ -229,7 +236,7 @@ export function updateStyle(id: string, content: string) {
 }
 
 export function removeStyle(id: string) {
-  let style = sheetsMap.get(id)
+  const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
       // @ts-ignore
@@ -312,7 +319,7 @@ interface HotModule {
 }
 
 interface HotCallback {
-  // the deps must be fetchable paths
+  // the dependencies must be fetchable paths
   deps: string[]
   fn: (modules: object[]) => void
 }
@@ -426,10 +433,19 @@ export const createHotContext = (ownerPath: string) => {
   return hot
 }
 
+/**
+ * urls here are dynamic import() urls that couldn't be statically analyzed
+ */
 export function injectQuery(url: string, queryToInject: string) {
+  // skip urls that won't be handled by vite
+  if (!url.startsWith('.') && !url.startsWith('/')) {
+    return url
+  }
+
   // can't use pathname from URL since it may be relative like ../
   const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
+
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`

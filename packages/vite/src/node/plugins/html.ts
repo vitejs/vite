@@ -3,9 +3,15 @@ import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
 import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
-import { cleanUrl, isExternalUrl, isDataUrl, generateCodeFrame } from '../utils'
+import {
+  slash,
+  cleanUrl,
+  isExternalUrl,
+  isDataUrl,
+  generateCodeFrame,
+  processSrcSet
+} from '../utils'
 import { ResolvedConfig } from '../config'
-import slash from 'slash'
 import MagicString from 'magic-string'
 import {
   checkPublicFile,
@@ -64,7 +70,7 @@ export const assetAttrsConfig: Record<string, string[]> = {
   link: ['href'],
   video: ['src', 'poster'],
   source: ['src'],
-  img: ['src'],
+  img: ['src', 'srcset'],
   image: ['xlink:href', 'href'],
   use: ['xlink:href', 'href']
 }
@@ -131,7 +137,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config)
+    url.startsWith('#') ||
+    isExternalUrl(url) ||
+    isDataUrl(url) ||
+    checkPublicFile(url, config)
 
   return {
     name: 'vite:build-html',
@@ -225,7 +234,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         for (const attr of assetUrls) {
           const value = attr.value!
           try {
-            const url = await urlToBuiltUrl(value.content, id, config, this)
+            const url =
+              attr.name === 'srcset'
+                ? await processSrcSet(value.content, ({ url }) =>
+                    urlToBuiltUrl(url, id, config, this)
+                  )
+                : await urlToBuiltUrl(value.content, id, config, this)
+
             s.overwrite(
               value.loc.start.offset,
               value.loc.end.offset,
@@ -253,12 +268,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(_, bundle) {
       const getPreloadLinksForChunk = (
-        chunk: OutputChunk
+        chunk: OutputChunk,
+        seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
-          if (importee && importee.type === 'chunk') {
+          if (importee && importee.type === 'chunk' && !seen.has(file)) {
+            seen.add(file)
             tags.push({
               tag: 'link',
               attrs: {
@@ -266,32 +283,38 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 href: toPublicPath(file, config)
               }
             })
-            tags.push(...getPreloadLinksForChunk(importee))
+            tags.push(...getPreloadLinksForChunk(importee, seen))
           }
         })
         return tags
       }
 
-      const getCssTagsForChunk = (chunk: OutputChunk): HtmlTagDescriptor[] => {
+      const getCssTagsForChunk = (
+        chunk: OutputChunk,
+        seen: Set<string> = new Set()
+      ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
-        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFiles) {
-          cssFiles.forEach((file) => {
-            tags.push({
-              tag: 'link',
-              attrs: {
-                rel: 'stylesheet',
-                href: toPublicPath(file, config)
-              }
-            })
-          })
-        }
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
           if (importee && importee.type === 'chunk') {
-            tags.push(...getCssTagsForChunk(importee))
+            tags.push(...getCssTagsForChunk(importee, seen))
           }
         })
+        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+        if (cssFiles) {
+          cssFiles.forEach((file) => {
+            if (!seen.has(file)) {
+              seen.add(file)
+              tags.push({
+                tag: 'link',
+                attrs: {
+                  rel: 'stylesheet',
+                  href: toPublicPath(file, config)
+                }
+              })
+            }
+          })
+        }
         return tags
       }
 

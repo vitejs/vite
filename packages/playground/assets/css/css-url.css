@@ -10,6 +10,22 @@
   background-size: 10px;
 }
 
+.css-image-set-relative {
+  background-image: -webkit-image-set(
+    url('../nested/asset.png') 1x,
+    url('../nested/asset.png') 2x
+  );
+  background-size: 10px;
+}
+
+.css-image-set-without-url-call {
+  background-image: -webkit-image-set(
+    '../nested/asset.png' 1x,
+    '../nested/asset.png' 2x
+  );
+  background-size: 10px;
+}
+
 .css-url-public {
   background: url('/icon.png');
   background-size: 10px;
@@ -29,6 +45,17 @@
   background: url('../nested/icon.png');
   background-size: 10px;
 }
+
+.css-url-same-line {
+  background: url('/nested/asset.png') top right / 10px no-repeat,
+    url('/icon.png') bottom right / 10px no-repeat;
+}
+
+.css-url-aliased {
+  background: url('@/asset.png');
+  background-size: 10px;
+}
+
 /*
 urls inside comments should be ignored
 

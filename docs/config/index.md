@@ -4,7 +4,7 @@
 
 ### Config File Resolving
 
-When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#project-root).
+When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root).
 
 The most basic config file looks like this:
 
@@ -29,22 +29,26 @@ Since Vite ships with TypeScript typings, you can leverage your IDE's intellisen
 
 ```js
 /**
- * type {import('vite').UserConfig}
+ * @type {import('vite').UserConfig}
  */
-export default {
+const config = {
   // ...
 }
+
+export default config
 ```
 
-Vite also directly supports TS config files. You can use `vite.config.ts` instead:
+Alternatively you can use the `defineConfig` helper which should provide intellisense without the need for jsdoc annotations:
 
-```ts
+```js
 import { defineConfig } from 'vite'
 
 export default defineConfig({
   // ...
 })
 ```
+
+Vite also directly supports TS config files. You can use `vite.config.ts` with the `defineConfig` helper as well.
 
 ### Conditional Config
 
@@ -64,30 +68,20 @@ export default ({ command, mode }) => {
 }
 ```
 
+### Async Config
+
+If the config needs to call async function, it can export a async function instead:
+
+```js
+export default async ({ command, mode }) => {
+  const data = await asyncFunction();
+  return {
+    // build specific config
+  } 
+}
+```
+
 ## Shared Options
-
-### alias
-
-- **Type:**
-  `Record<string, string> | Array<{ find: string | RegExp, replacement: string }>`
-
-  Will be passed to `@rollup/plugin-alias` as its [entries option](https://github.com/rollup/plugins/tree/master/packages/alias#entries). Can either be an object, or an array of `{ find, replacement }` pairs.
-
-  When aliasing to file system paths, always use absolute paths. Relative alias values will be used as-is and will not be resolved into file system paths.
-
-  More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
-
-### define
-
-- **Type:** `Record<string, string>`
-
-  Define global variable replacements. Entries will be defined as globals during dev and statically replaced during build.
-
-### plugins
-
-- **Type:** ` (Plugin | Plugin[])[]`
-
-  Array of plugins to use. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
 ### root
 
@@ -96,7 +90,7 @@ export default ({ command, mode }) => {
 
   Project root directory (where `index.html` is located). Can be an absolute path, or a path relative from the location of the config file itself.
 
-  See [Project Root](/guide/#project-root) for more details.
+  See [Project Root](/guide/#index-html-and-project-root) for more details.
 
 ### base
 
@@ -111,6 +105,35 @@ export default ({ command, mode }) => {
 
   See [Public Base Path](/guide/build#public-base-path) for more details.
 
+### mode
+
+- **Type:** `string`
+- **Default:** `'development'` for serve, `'production'` for build
+
+  Specifying this in config will override the default mode for **both serve and build**. This value can also be overridden via the command line `--mode` option.
+
+  See [Env Variables and Modes](/guide/env-and-mode) for more details.
+
+### define
+
+- **Type:** `Record<string, string>`
+
+  Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
+
+  - Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
+
+  - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
+
+  Because it's implemented as straightforward text replacements without any syntax analyzation, we recommend using `define` for CONSTANTS only.
+
+  For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
+
+### plugins
+
+- **Type:** ` (Plugin | Plugin[])[]`
+
+  Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
+
 ### publicDir
 
 - **Type:** `string`
@@ -118,14 +141,62 @@ export default ({ command, mode }) => {
 
   Directory to serve as plain static assets. Files in this directory are served at `/` during dev and copied to the root of `outDir` during build, and are always served or copied as-is without transform. The value can be either an absolute file system path or a path relative to project root.
 
-### mode
+  See [The `public` Directory](/guide/assets#the-public-directory) for more details.
 
-- **Type:** `string`
-- **Default:** `'development'` for serve, `'production'` for build
+### resolve.alias
 
-  Specifying this in config will override the default mode for both serve and build. This value can also be overridden via the command line `--mode` option.
+- **Type:**
+  `Record<string, string> | Array<{ find: string | RegExp, replacement: string }>`
 
-  See [Env Variables and Modes](/guide/env-and-mode) for more details.
+  Will be passed to `@rollup/plugin-alias` as its [entries option](https://github.com/rollup/plugins/tree/master/packages/alias#entries). Can either be an object, or an array of `{ find, replacement }` pairs.
+
+  When aliasing to file system paths, always use absolute paths. Relative alias values will be used as-is and will not be resolved into file system paths.
+
+  More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
+
+### resolve.dedupe
+
+- **Type:** `string[]`
+
+  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
+  project root).
+
+### resolve.conditions
+
+- **Type:** `string[]`
+
+  Additional allowed conditions when resolving [Conditional Exports](https://nodejs.org/api/packages.html#packages_conditional_exports) from a package.
+
+  A package with conditional exports may have the following `exports` field in its `package.json`:
+
+  ```json
+  {
+    "exports": {
+      ".": {
+        "import": "./index.esm.js",
+        "require": "./index.cjs.js"
+      }
+    }
+  }
+  ```
+
+  Here, `import` and `require` are "conditions". Conditions can be nested and should be specified from most specific to least specific.
+
+  Vite has a list of "allowed conditions" and will match the first condition that is in the allowed list. The default allowed conditions are: `import`, `module`, `browser`, `default`, and `production/development` based on current mode. The `resolve.conditions` config option allows specifying additional allowed conditions.
+
+### resolve.mainFields
+
+- **Type:** `string[]`
+- **Default:** `['module', 'jsnext:main', 'jsnext']`
+
+  List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
+
+### resolve.extensions
+
+- **Type:** `string[]`
+- **Default:** `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+
+  List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
 ### css.modules
 
@@ -186,7 +257,7 @@ export default ({ command, mode }) => {
 - **Type:** `boolean`
 - **Default:** `false`
 
-  If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, espeically when the JSON file is large.
+  If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, especially when the JSON file is large.
 
   Enabling this disables named imports.
 
@@ -231,13 +302,6 @@ export default ({ command, mode }) => {
   - Importing them from JS will return their resolved URL string (this can be overwritten if you have a `enforce: 'pre'` plugin to handle the asset type differently).
 
   The built-in asset type list can be found [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts).
-
-### dedupe
-
-- **Type:** `string[]`
-
-  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
-  project root).
 
 ### logLevel
 
@@ -366,11 +430,11 @@ export default ({ command, mode }) => {
 
   Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets [browsers with native ES module support](https://caniuse.com/es6-module).
 
-  Another special value is 'esnext' - which only performs minimal trasnpiling (for minification compat) and assumes native dynamic imports support.
+  Another special value is 'esnext' - which only performs minimal transpiling (for minification compat) and assumes native dynamic imports support.
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
-  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuid docs](https://esbuild.github.io/content-types/#javascript) for more details.
+  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
 ### build.polyfillDynamicImport
 
@@ -392,7 +456,7 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `dist`
 
-  Specify the output directory (relative to [project root](/guide/#project-root)).
+  Specify the output directory (relative to [project root](/guide/#index-html-and-project-root)).
 
 ### build.assetsDir
 
@@ -419,7 +483,7 @@ export default ({ command, mode }) => {
 
 ### build.sourcemap
 
-- **Type:** `boolean`
+- **Type:** `boolean | 'inline'`
 - **Default:** `false`
 
   Generate production source maps.
@@ -521,6 +585,15 @@ export default ({ command, mode }) => {
 - **Type:** `string[]`
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
+
+### optimizeDeps.keepNames
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  The bundler sometimes needs to rename symbols to avoid collisions.
+  Set this to `true` to keep the `name` property on functions and classes.
+  See [`keepNames`](https://esbuild.github.io/api/#keep-names).
 
 ## SSR Options
 

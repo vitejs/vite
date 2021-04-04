@@ -9,7 +9,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   const userDefine: Record<string, string> = {}
   for (const key in config.define) {
-    userDefine[key] = JSON.stringify(config.define[key])
+    const val = config.define[key]
+    userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
   }
 
   // during dev, import.meta properties are handled by importAnalysis plugin
@@ -30,10 +31,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   const replacements: Record<string, string | undefined> = {
-    'process.env.NODE_ENV': JSON.stringify(config.mode),
-    'process.env.': `({}).`,
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
     ...userDefine,
-    ...importMetaKeys
+    ...importMetaKeys,
+    'process.env.': `({}).`
   }
 
   const pattern = new RegExp(

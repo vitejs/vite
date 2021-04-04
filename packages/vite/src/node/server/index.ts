@@ -25,6 +25,7 @@ import {
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
+import { decodeURIMiddleware } from './middlewares/decodeURI'
 import {
   serveRawFsMiddleware,
   servePublicMiddleware,
@@ -49,7 +50,7 @@ import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
-import { createMissingImpoterRegisterFn } from '../optimizer/registerMissing'
+import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 
 export interface ServerOptions {
   host?: string
@@ -209,10 +210,7 @@ export interface ViteDevServer {
   /**
    * Load a given URL as an instantiated module for SSR.
    */
-  ssrLoadModule(
-    url: string,
-    options?: { isolated?: boolean }
-  ): Promise<Record<string, any>>
+  ssrLoadModule(url: string): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace
    */
@@ -220,7 +218,7 @@ export interface ViteDevServer {
   /**
    * Start the server.
    */
-  listen(port?: number): Promise<ViteDevServer>
+  listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
   /**
    * Stop the server.
    */
@@ -230,7 +228,7 @@ export interface ViteDevServer {
    */
   _optimizeDepsMetadata: DepOptimizationMetadata | null
   /**
-   * Deps that are extenralized
+   * Deps that are externalized
    * @internal
    */
   _ssrExternals: string[] | null
@@ -278,13 +276,17 @@ export async function createServer(
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
     ignoreInitial: true,
     ignorePermissionErrors: true,
+    disableGlobbing: true,
     ...watchOptions
   }) as FSWatcher
 
   const plugins = config.plugins
   const container = await createPluginContainer(config, watcher)
   const moduleGraph = new ModuleGraph(container)
-  const closeHttpServer = createSeverCloseFn(httpServer)
+  const closeHttpServer = createServerCloseFn(httpServer)
+
+  // eslint-disable-next-line prefer-const
+  let exitProcess: () => void
 
   const server: ViteDevServer = {
     config: config,
@@ -305,21 +307,32 @@ export async function createServer(
       return transformRequest(url, server, options)
     },
     transformIndexHtml: null as any,
-    ssrLoadModule(url, options) {
+    ssrLoadModule(url) {
       if (!server._ssrExternals) {
-        server._ssrExternals = resolveSSRExternal(config)
+        server._ssrExternals = resolveSSRExternal(
+          config,
+          server._optimizeDepsMetadata
+            ? Object.keys(server._optimizeDepsMetadata.optimized)
+            : []
+        )
       }
-      return ssrLoadModule(url, server, !!options?.isolated)
+      return ssrLoadModule(url, server)
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
         e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
       }
     },
-    listen(port?: number) {
-      return startServer(server, port)
+    listen(port?: number, isRestart?: boolean) {
+      return startServer(server, port, isRestart)
     },
     async close() {
+      process.off('SIGTERM', exitProcess)
+
+      if (!process.stdin.isTTY) {
+        process.stdin.off('end', exitProcess)
+      }
+
       await Promise.all([
         watcher.close(),
         ws.close(),
@@ -337,7 +350,7 @@ export async function createServer(
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
-  const exitProcess = async () => {
+  exitProcess = async () => {
     try {
       await server.close()
     } finally {
@@ -399,7 +412,7 @@ export async function createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    middlewares.use(proxyMiddleware(server))
+    middlewares.use(proxyMiddleware(httpServer, config))
   }
 
   // base
@@ -409,6 +422,12 @@ export async function createServer(
 
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
+
+  // hmr reconnect ping
+  middlewares.use('/__vite_ping', (_, res) => res.end('pong'))
+
+  //decode request url
+  middlewares.use(decodeURIMiddleware())
 
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
@@ -471,7 +490,7 @@ export async function createServer(
       } finally {
         server._isRunningOptimizer = false
       }
-      server._registerMissingImport = createMissingImpoterRegisterFn(server)
+      server._registerMissingImport = createMissingImporterRegisterFn(server)
     }
   }
 
@@ -502,7 +521,8 @@ export async function createServer(
 
 async function startServer(
   server: ViteDevServer,
-  inlinePort?: number
+  inlinePort?: number,
+  isRestart: boolean = false
 ): Promise<ViteDevServer> {
   const httpServer = server.httpServer
   if (!httpServer) {
@@ -512,6 +532,7 @@ async function startServer(
   const options = server.config.server || {}
   let port = inlinePort || options.port || 3000
   let hostname = options.host || 'localhost'
+  if (hostname === '0.0.0.0') hostname = 'localhost'
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
   const base = server.config.base
@@ -534,12 +555,16 @@ async function startServer(
 
     httpServer.on('error', onError)
 
-    httpServer.listen(port, () => {
+    httpServer.listen(port, options.host, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n  ⚡Vite dev server running at:\n`, {
-        clear: !server.config.logger.hasWarned
-      })
+      info(
+        chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+          chalk.green(` dev server running at:\n`),
+        {
+          clear: !server.config.logger.hasWarned
+        }
+      )
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>
         (interfaces[key] || [])
@@ -587,7 +612,7 @@ async function startServer(
         })
       }
 
-      if (options.open) {
+      if (options.open && !isRestart) {
         const path = typeof options.open === 'string' ? options.open : base
         openBrowser(
           `${protocol}://${hostname}:${port}${path}`,
@@ -601,7 +626,7 @@ async function startServer(
   })
 }
 
-function createSeverCloseFn(server: http.Server | null) {
+function createServerCloseFn(server: http.Server | null) {
   if (!server) {
     return () => {}
   }

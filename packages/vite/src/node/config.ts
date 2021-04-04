@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import { Plugin } from './plugin'
-import Rollup from 'rollup'
 import { BuildOptions, resolveBuildOptions } from './build'
 import { ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
@@ -14,12 +13,16 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import { ESBuildOptions, esbuildPlugin, stopService } from './plugins/esbuild'
+import { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_DIR, DEFAULT_ASSETS_RE, DEP_CACHE_DIR } from './constants'
-import { ResolveOptions, resolvePlugin } from './plugins/resolve'
+import {
+  InternalResolveOptions,
+  ResolveOptions,
+  resolvePlugin
+} from './plugins/resolve'
 import { createLogger, Logger, LogLevel } from './logger'
 import { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
@@ -31,16 +34,19 @@ import {
   PluginContainer
 } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
+import { build } from 'esbuild'
 
 const debug = createDebugger('vite:config')
 
+// NOTE: every export in this file is re-exported from ./index.ts so it will
+// be part of the public API.
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
 }
 
-export type UserConfigFn = (env: ConfigEnv) => UserConfig
-export type UserConfigExport = UserConfig | UserConfigFn
+export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
+export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -51,6 +57,8 @@ export type UserConfigExport = UserConfig | UserConfigFn
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
+
+export type PluginOption = Plugin | false | null | undefined
 
 export interface UserConfig {
   /**
@@ -77,10 +85,6 @@ export interface UserConfig {
    */
   mode?: string
   /**
-   * Import aliases
-   */
-  alias?: AliasOptions
-  /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
    */
@@ -88,7 +92,11 @@ export interface UserConfig {
   /**
    * Array of vite plugins to use.
    */
-  plugins?: (Plugin | Plugin[])[]
+  plugins?: (PluginOption | PluginOption[])[]
+  /**
+   * Configure resolver
+   */
+  resolve?: ResolveOptions & { alias?: AliasOptions }
   /**
    * CSS related options (preprocessors and CSS modules)
    */
@@ -124,11 +132,6 @@ export interface UserConfig {
    */
   ssr?: SSROptions
   /**
-   * Force Vite to always resolve listed dependencies to the same copy (from
-   * project root).
-   */
-  dedupe?: string[]
-  /**
    * Log level.
    * Default: 'info'
    */
@@ -137,6 +140,17 @@ export interface UserConfig {
    * Default: true
    */
   clearScreen?: boolean
+  /**
+   * Import aliases
+   * @deprecated use `resolve.alias` instead
+   */
+  alias?: AliasOptions
+  /**
+   * Force Vite to always resolve listed dependencies to the same copy (from
+   * project root).
+   * @deprecated use `resolve.dedupe` instead
+   */
+  dedupe?: string[]
 }
 
 export interface SSROptions {
@@ -149,7 +163,7 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'alias' | 'assetsInclude'> & {
+  Omit<UserConfig, 'plugins' | 'alias' | 'dedupe' | 'assetsInclude'> & {
     configFile: string | undefined
     inlineConfig: UserConfig
     root: string
@@ -160,17 +174,17 @@ export type ResolvedConfig = Readonly<
     isProduction: boolean
     optimizeCacheDir: string | undefined
     env: Record<string, any>
-    alias: Alias[]
+    resolve: ResolveOptions & {
+      alias: Alias[]
+    }
     plugins: readonly Plugin[]
     server: ServerOptions
     build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
-    createResolver: (options?: Partial<ResolveOptions>) => ResolveFn
+    createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
   }
 >
-
-export { ResolveOptions }
 
 export type ResolveFn = (
   id: string,
@@ -185,7 +199,6 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let mode = inlineConfig.mode || defaultMode
-  const logger = createLogger(config.logLevel, config.clearScreen)
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
   // production-specific behavior, so set it here even though we haven't
@@ -194,13 +207,15 @@ export async function resolveConfig(
     process.env.NODE_ENV = 'production'
   }
 
+  const configEnv = {
+    mode,
+    command
+  }
+
   let { configFile } = config
   if (configFile !== false) {
     const loadResult = await loadConfigFromFile(
-      {
-        mode,
-        command
-      },
+      configEnv,
       configFile,
       config.root,
       config.logLevel
@@ -210,13 +225,17 @@ export async function resolveConfig(
       configFile = loadResult.path
     }
   }
+
+  // Define logger
+  const logger = createLogger(config.logLevel, config.clearScreen)
+
   // user config may provide an alternative mode
   mode = config.mode || mode
 
   // resolve plugins
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
-    return !p.apply || p.apply === command
-  })
+    return p && (!p.apply || p.apply === command)
+  }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(
     rawUserPlugins
   )
@@ -225,7 +244,7 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   userPlugins.forEach((p) => {
     if (p.config) {
-      const res = p.config(config)
+      const res = p.config(config, configEnv)
       if (res) {
         config = mergeConfig(config, res)
       }
@@ -244,8 +263,14 @@ export async function resolveConfig(
     // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
     // replacement, but its implementation does work with function values.
     [{ find: /^\/@vite\//, replacement: () => CLIENT_DIR + '/' }],
-    config.alias || []
+    config.resolve?.alias || config.alias || []
   )
+
+  const resolveOptions: ResolvedConfig['resolve'] = {
+    dedupe: config.dedupe,
+    ...config.resolve,
+    alias: resolvedAlias
+  }
 
   // load .env files
   const userEnv = loadEnv(mode, resolvedRoot)
@@ -260,33 +285,8 @@ export async function resolveConfig(
   }
 
   // resolve public base url
-  // TODO remove when out of beta
-  if (config.build?.base) {
-    logger.warn(
-      chalk.yellow.bold(
-        `(!) "build.base" config option is deprecated. ` +
-          `"base" is now a root-level config option.`
-      )
-    )
-    config.base = config.build.base
-  }
-
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
   const resolvedBuildOptions = resolveBuildOptions(config.build)
-
-  // TODO remove when out of beta
-  Object.defineProperty(resolvedBuildOptions, 'base', {
-    get() {
-      logger.warn(
-        chalk.yellow.bold(
-          `(!) "build.base" config option is deprecated. ` +
-            `"base" is now a root-level config option.\n` +
-            new Error().stack
-        )
-      )
-      return config.base
-    }
-  })
 
   // resolve optimizer cache directory
   const pkgPath = lookupFile(
@@ -313,7 +313,7 @@ export async function resolveConfig(
           aliasContainer ||
           (aliasContainer = await createPluginContainer({
             ...resolved,
-            plugins: [aliasPlugin({ entries: resolved.alias })]
+            plugins: [aliasPlugin({ entries: resolved.resolve.alias })]
           }))
       } else {
         container =
@@ -321,14 +321,14 @@ export async function resolveConfig(
           (resolverContainer = await createPluginContainer({
             ...resolved,
             plugins: [
-              aliasPlugin({ entries: resolved.alias }),
+              aliasPlugin({ entries: resolved.resolve.alias }),
               resolvePlugin({
+                ...resolved.resolve,
                 root: resolvedRoot,
-                dedupe: resolved.dedupe,
                 isProduction,
                 isBuild: command === 'build',
                 asSrc: true,
-                relativeFirst: false,
+                preferRelative: false,
                 tryIndex: true,
                 ...options
               })
@@ -345,12 +345,12 @@ export async function resolveConfig(
     inlineConfig,
     root: resolvedRoot,
     base: BASE_URL,
+    resolve: resolveOptions,
     publicDir: path.resolve(resolvedRoot, config.publicDir || 'public'),
     command,
     mode,
     isProduction,
     optimizeCacheDir,
-    alias: resolvedAlias,
     plugins: userPlugins,
     server: config.server || {},
     build: resolvedBuildOptions,
@@ -388,6 +388,71 @@ export async function resolveConfig(
       plugins: resolved.plugins.map((p) => p.name)
     })
   }
+
+  // TODO Deprecation warnings - remove when out of beta
+  if (config.build?.base) {
+    logger.warn(
+      chalk.yellow.bold(
+        `(!) "build.base" config option is deprecated. ` +
+          `"base" is now a root-level config option.`
+      )
+    )
+    config.base = config.build.base
+  }
+  Object.defineProperty(resolvedBuildOptions, 'base', {
+    enumerable: false,
+    get() {
+      logger.warn(
+        chalk.yellow.bold(
+          `(!) "build.base" config option is deprecated. ` +
+            `"base" is now a root-level config option.\n` +
+            new Error().stack
+        )
+      )
+      return resolved.base
+    }
+  })
+
+  if (config.alias) {
+    logger.warn(
+      chalk.bold.yellow(
+        '(!) "alias" option is deprecated. Use "resolve.alias" instead.'
+      )
+    )
+  }
+  Object.defineProperty(resolved, 'alias', {
+    enumerable: false,
+    get() {
+      logger.warn(
+        chalk.yellow.bold(
+          `(!) "alias" config option is deprecated. Use "resolve.alias" instead.\n` +
+            new Error().stack
+        )
+      )
+      return resolved.resolve.alias
+    }
+  })
+
+  if (config.dedupe) {
+    logger.warn(
+      chalk.bold.yellow(
+        '(!) "dedupe" option is deprecated. Use "resolve.dedupe" instead.'
+      )
+    )
+  }
+  Object.defineProperty(resolved, 'dedupe', {
+    enumerable: false,
+    get() {
+      logger.warn(
+        chalk.yellow.bold(
+          `(!) "dedupe" config option is deprecated. Use "resolve.dedupe" instead.\n` +
+            new Error().stack
+        )
+      )
+      return resolved.resolve.dedupe
+    }
+  })
+
   return resolved
 }
 
@@ -548,6 +613,7 @@ export async function loadConfigFromFile(
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
+    isTS = configFile.endsWith('.ts')
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
@@ -618,9 +684,11 @@ export async function loadConfigFromFile(
         const ignored = new RegExp(
           [
             `Cannot use import statement`,
-            `Unexpected token 'export'`,
             `Must use import to load ES Module`,
-            `Unexpected identifier` // #1635 Node <= 12.4 has no esm detection
+            // #1635, #2050 some Node 12.x versions don't have esm detection
+            // so it throws normal syntax errors when encountering esm syntax
+            `Unexpected token`,
+            `Unexpected identifier`
           ].join('|')
         )
         if (!ignored.test(e.message)) {
@@ -639,8 +707,9 @@ export async function loadConfigFromFile(
       debug(`bundled config file loaded in ${Date.now() - start}ms`)
     }
 
-    const config =
-      typeof userConfig === 'function' ? userConfig(configEnv) : userConfig
+    const config = await (typeof userConfig === 'function'
+      ? userConfig(configEnv)
+      : userConfig)
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
     }
@@ -653,8 +722,6 @@ export async function loadConfigFromFile(
       chalk.red(`failed to load config from ${resolvedPath}`)
     )
     throw e
-  } finally {
-    await stopService()
   }
 }
 
@@ -662,43 +729,52 @@ async function bundleConfigFile(
   fileName: string,
   mjs = false
 ): Promise<string> {
-  const rollup = require('rollup') as typeof Rollup
-  // node-resolve must be imported since it's bundled
-  const bundle = await rollup.rollup({
-    external: (id: string) =>
-      (id[0] !== '.' && !path.isAbsolute(id)) ||
-      id.slice(-5, id.length) === '.json',
-    input: fileName,
-    treeshake: false,
+  const result = await build({
+    entryPoints: [fileName],
+    outfile: 'out.js',
+    write: false,
+    platform: 'node',
+    bundle: true,
+    format: mjs ? 'esm' : 'cjs',
     plugins: [
-      // use esbuild + node-resolve to support .ts files
-      esbuildPlugin({ target: 'esnext' }),
-      resolvePlugin({
-        root: path.dirname(fileName),
-        isBuild: true,
-        asSrc: false,
-        isProduction: false
-      }),
+      {
+        name: 'externalize-deps',
+        setup(build) {
+          build.onResolve({ filter: /.*/ }, (args) => {
+            const id = args.path
+            if (id[0] !== '.' && !path.isAbsolute(id)) {
+              return {
+                external: true
+              }
+            }
+          })
+        }
+      },
       {
         name: 'replace-import-meta',
-        transform(code, id) {
-          return code.replace(
-            /\bimport\.meta\.url\b/g,
-            JSON.stringify(`file://${id}`)
-          )
+        setup(build) {
+          build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
+            const contents = await fs.promises.readFile(args.path, 'utf8')
+            return {
+              loader: args.path.endsWith('.ts') ? 'ts' : 'js',
+              contents: contents
+                .replace(
+                  /\bimport\.meta\.url\b/g,
+                  JSON.stringify(`file://${args.path}`)
+                )
+                .replace(
+                  /\b__dirname\b/g,
+                  JSON.stringify(path.dirname(args.path))
+                )
+                .replace(/\b__filename\b/g, JSON.stringify(args.path))
+            }
+          })
         }
       }
     ]
   })
-
-  const {
-    output: [{ code }]
-  } = await bundle.generate({
-    exports: mjs ? 'auto' : 'named',
-    format: mjs ? 'es' : 'cjs'
-  })
-
-  return code
+  const { text } = result.outputFiles[0]
+  return text
 }
 
 interface NodeModuleWithCompile extends NodeModule {

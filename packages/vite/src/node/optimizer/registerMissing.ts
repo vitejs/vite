@@ -1,14 +1,15 @@
 import chalk from 'chalk'
 import { optimizeDeps } from '.'
 import { ViteDevServer } from '..'
+import { resolveSSRExternal } from '../ssr/ssrExternal'
 
 /**
- * The amount to wait for requests to register newfound deps before triggering
+ * The amount to wait for requests to register newly found dependencies before triggering
  * a re-bundle + page reload
  */
 const debounceMs = 100
 
-export function createMissingImpoterRegisterFn(server: ViteDevServer) {
+export function createMissingImporterRegisterFn(server: ViteDevServer) {
   const { logger } = server.config
   let knownOptimized = server._optimizeDepsMetadata!.optimized
   let currentMissing: Record<string, string> = {}
@@ -48,6 +49,13 @@ export function createMissingImpoterRegisterFn(server: ViteDevServer) {
         newDeps
       ))
       knownOptimized = newData!.optimized
+
+      // update ssr externals
+      server._ssrExternals = resolveSSRExternal(
+        server.config,
+        Object.keys(knownOptimized)
+      )
+
       logger.info(
         chalk.greenBright(`✨ dependencies updated, reloading page...`),
         { timestamp: true }
