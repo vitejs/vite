@@ -46,6 +46,21 @@ module.exports = {
 
 For example, you can specify multiple Rollup outputs with plugins that are only applied during build.
 
+## Rebuild on files changes
+
+You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/guide/en/#watch-options) via `build.watch`:
+
+```js
+// vite.config.js
+module.exports = {
+  build: {
+    watch: {
+      // https://rollupjs.org/guide/en/#watch-options
+    }
+  }
+}
+```
+
 ## Multi-Page App
 
 Suppose you have the following source code structure:

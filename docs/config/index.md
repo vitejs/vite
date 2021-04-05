@@ -561,6 +561,13 @@ export default async ({ command, mode }) => {
 - **Default:** `500`
 
   Limit for chunk size warnings (in kbs).
+  
+### build.watch
+
+- **Type:** [`WatcherOptions`](https://rollupjs.org/guide/en/#watch-options)`| null`
+- **Default:** `null`
+
+  Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
 
 ## Dep Optimization Options
 
