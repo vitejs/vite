@@ -8,7 +8,7 @@ import {
 import { port } from './serve'
 import fetch from 'node-fetch'
 
-const url = `http://localhost:${port}`
+const url = `http://127.0.0.1:${port}`
 
 test('/about', async () => {
   await page.goto(url + '/about')
