@@ -56,6 +56,12 @@ export interface ServerOptions {
   host?: string
   port?: number
   /**
+   * Listen to public interfaces
+   * true: the dev server will be available on public IP addresses
+   * false: the dev server will only be available on localhost
+   */
+  listenPublic?: boolean
+  /**
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
@@ -533,6 +539,7 @@ async function startServer(
   let port = inlinePort || options.port || 3000
   let hostname = options.host || 'localhost'
   if (hostname === '0.0.0.0') hostname = 'localhost'
+  const listenPublic = options.listenPublic || false
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
   const base = server.config.base
@@ -555,7 +562,10 @@ async function startServer(
 
     httpServer.on('error', onError)
 
-    httpServer.listen(port, options.host, () => {
+    const listenHostname = listenPublic
+      ? options.host || '0.0.0.0'
+      : '127.0.0.1'
+    httpServer.listen(port, listenHostname, () => {
       httpServer.removeListener('error', onError)
 
       info(
@@ -574,12 +584,17 @@ async function startServer(
               type: detail.address.includes('127.0.0.1')
                 ? 'Local:   '
                 : 'Network: ',
-              host: detail.address.replace('127.0.0.1', hostname)
+              host: detail.address.replace('127.0.0.1', hostname),
+              disabled: !listenPublic && !detail.address.includes('127.0.0.1')
             }
           })
-          .forEach(({ type, host }) => {
+          .forEach(({ type, host, disabled }) => {
             const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-            info(`  > ${type} ${chalk.cyan(url)}`)
+            info(
+              `  > ${type} ${chalk.cyan(url)}${
+                disabled ? chalk.red(' (disabled)') : ''
+              }`
+            )
           })
       )
 

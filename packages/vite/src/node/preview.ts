@@ -39,11 +39,13 @@ export async function preview(config: ResolvedConfig, port = 5000) {
 
   const options = config.server || {}
   const hostname = options.host || 'localhost'
+  const listenPublic = options.listenPublic || false
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
 
-  httpServer.listen(port, () => {
+  const listenHostname = listenPublic ? options.host || '0.0.0.0' : '127.0.0.1'
+  httpServer.listen(port, listenHostname, () => {
     logger.info(
       chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
         chalk.green(` build preview server running at:\n`)
@@ -57,12 +59,17 @@ export async function preview(config: ResolvedConfig, port = 5000) {
             type: detail.address.includes('127.0.0.1')
               ? 'Local:   '
               : 'Network: ',
-            host: detail.address.replace('127.0.0.1', hostname)
+            host: detail.address.replace('127.0.0.1', hostname),
+            disabled: !listenPublic && !detail.address.includes('127.0.0.1')
           }
         })
-        .forEach(({ type, host }) => {
+        .forEach(({ type, host, disabled }) => {
           const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-          logger.info(`  > ${type} ${chalk.cyan(url)}`)
+          logger.info(
+            `  > ${type} ${chalk.cyan(url)}${
+              disabled ? chalk.red(' (disabled)') : ''
+            }`
+          )
         })
     )
 

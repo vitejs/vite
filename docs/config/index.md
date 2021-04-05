@@ -336,6 +336,18 @@ export default async ({ command, mode }) => {
 
   Set to `true` to exit if port is already in use, instead of automatically try the next available port.
 
+### server.listenPublic
+
+- **Type:** `boolean`
+- **Default:** `false`
+  
+  If you set this to true, the server will listen not only on 127.0.0.1 (localhost), but
+  accept connections from your machine's public IP address. This means other machines on the same network
+  (or potentially the rest of the internet) may be able to access your dev server.
+  
+  This option can be practical for showcasing your work across devices, but has security implications, so
+  it is turned off by default. Make sure you understand the potential risks before you choose to turn it on!
+
 ### server.https
 
 - **Type:** `boolean | https.ServerOptions`

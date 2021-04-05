@@ -66,6 +66,7 @@ cli
   .option('--host <host>', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
+  .option('--listen-public', `[boolean] listen to public network interfaces`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
@@ -187,11 +188,16 @@ cli
 cli
   .command('preview [root]')
   .option('--port <port>', `[number] specify port`)
+  .option('--listen-public', `[boolean] listen to public network interfaces`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .action(
     async (
       root: string,
-      options: { port?: number; open?: boolean | string } & GlobalCLIOptions
+      options: {
+        port?: number
+        listenPublic?: boolean
+        open?: boolean | string
+      } & GlobalCLIOptions
     ) => {
       try {
         const config = await resolveConfig(
@@ -201,10 +207,12 @@ cli
             configFile: options.config,
             logLevel: options.logLevel,
             server: {
+              listenPublic: options.listenPublic,
               open: options.open
             }
           },
           'serve',
+
           'development'
         )
         await preview(config, options.port)
