@@ -441,8 +441,8 @@ async function doBuild(
 
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
-        for (const _output of outputs) {
-          output.push(buildOuputOptions(_output))
+        for (const resolvedOutput of outputs) {
+          output.push(buildOuputOptions(resolvedOutput))
         }
       } else {
         output.push(buildOuputOptions(outputs))
