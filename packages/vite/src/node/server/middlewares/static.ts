@@ -4,7 +4,12 @@ import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
-import { cleanUrl, isImportRequest } from '../../utils'
+import {
+  cleanUrl,
+  fsPathFromId,
+  isImportRequest,
+  normalizePath
+} from '../../utils'
 
 const sirvOptions: Options = {
   dev: true,
