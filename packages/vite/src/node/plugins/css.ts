@@ -338,7 +338,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
-        if (opts.format === 'es') {
+        if (opts.format === 'es' || opts.format === 'cjs') {
           chunkCSS = await processChunkCSS(chunkCSS, {
             inlined: false,
             minify: true
@@ -397,7 +397,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .join('|')
           .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
-          `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`,
+          opts.format === 'es'
+            ? `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`
+            : `\\brequire\\(\\s*"[^"]*(?:${emptyChunkFiles})"\\);\n?`,
           'g'
         )
         for (const file in bundle) {

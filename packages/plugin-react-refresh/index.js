@@ -110,6 +110,9 @@ function reactRefreshPlugin(opts) {
           allowAwaitOutsideFunction: true,
           plugins: parserPlugins
         },
+        generatorOpts: {
+          decoratorsBeforeExport: true
+        },
         plugins: [
           require('@babel/plugin-transform-react-jsx-self'),
           require('@babel/plugin-transform-react-jsx-source'),
