@@ -226,6 +226,7 @@ function viteLegacyPlugin(options = {}) {
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
       const { code, map } = loadBabel().transform(raw, {
+        babelrc: false,
         configFile: false,
         compact: true,
         sourceMaps,
@@ -408,6 +409,7 @@ function viteLegacyPlugin(options = {}) {
 function detectPolyfills(code, targets, list) {
   const { ast } = loadBabel().transform(code, {
     ast: true,
+    babelrc: false,
     configFile: false,
     presets: [
       [

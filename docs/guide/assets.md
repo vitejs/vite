@@ -45,7 +45,7 @@ import shaderString from './shader.glsl?raw'
 
 ### Importing Script as a Worker
 
-Scripts can be imported as web workers with the `?worker` suffix. 
+Scripts can be imported as web workers with the `?worker` suffix.
 
 ```js
 // Separate chunk in the production build
