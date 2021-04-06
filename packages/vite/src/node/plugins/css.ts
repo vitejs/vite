@@ -1084,8 +1084,9 @@ function createViteLessPlugin(
 }
 
 // .styl
-const styl: StylePreprocessor = (source, root, options) => {
+const styl: StylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor('stylus', root)
+  source = await getSource(source, options.filename, options.additionalData)
   try {
     const ref = nodeStylus(source)
     Object.keys(options).forEach((key) => ref.set(key, options[key]))
