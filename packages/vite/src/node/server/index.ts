@@ -57,8 +57,8 @@ export interface ServerOptions {
   port?: number
   /**
    * Listen to public interfaces
-   * true: the dev server will be available on public IP addresses
-   * false: the dev server will only be available on localhost
+   * - `true`: the dev server will be available on public IP addresses
+   * - `false`: the dev server will only be available on localhost
    */
   listenPublic?: boolean
   /**
