@@ -232,16 +232,6 @@ function viteLegacyPlugin(options = {}) {
         sourceMaps,
         inputSourceMap: sourceMaps && chunk.map,
         presets: [
-          // forcing our plugin to run before preset-env by wrapping it in a
-          // preset so we can catch the injected import statements...
-          [
-            () => ({
-              plugins: [
-                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
-                replaceLegacyEnvBabelPlugin()
-              ]
-            })
-          ],
           [
             'env',
             {
@@ -256,6 +246,16 @@ function viteLegacyPlugin(options = {}) {
               shippedProposals: true,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
             }
+          ],
+          // forcing our plugin to run first before preset-env by wrapping it in a
+          // preset so we can catch the injected import statements. Keep in mind that babel preset execution order is reversed-the last one always goes first.
+          [
+            () => ({
+              plugins: [
+                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                replaceLegacyEnvBabelPlugin()
+              ]
+            })
           ]
         ]
       })
