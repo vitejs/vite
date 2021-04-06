@@ -212,7 +212,6 @@ cli
             }
           },
           'serve',
-
           'development'
         )
         await preview(config, options.port)
