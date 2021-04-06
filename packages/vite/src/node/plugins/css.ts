@@ -1104,8 +1104,9 @@ function createViteLessPlugin(
 }
 
 // .styl
-const styl: StylePreprocessor = (source, root, options) => {
+const styl: StylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
+  source = await getSource(source, options.filename, options.additionalData)
   try {
     const ref = nodeStylus(source)
 
