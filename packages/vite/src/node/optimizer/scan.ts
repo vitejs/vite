@@ -99,7 +99,7 @@ export async function scanImports(
         format: 'esm',
         logLevel: 'error',
         outdir: tempDir,
-        plugins: [plugin]
+        plugins: [plugin, ...config.esbuildPlugins]
       })
     )
   )

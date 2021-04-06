@@ -34,7 +34,7 @@ import {
   PluginContainer
 } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
-import { build } from 'esbuild'
+import { Plugin as EsbuildPlugin, build } from 'esbuild'
 
 const debug = createDebugger('vite:config')
 
@@ -111,6 +111,10 @@ export interface UserConfig {
    */
   esbuild?: ESBuildOptions | false
   /**
+   * Array of esbuild plugins to use.
+   */
+  esbuildPlugins?: EsbuildPlugin[]
+  /**
    * Specify additional files to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
@@ -178,6 +182,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
+    esbuildPlugins: readonly EsbuildPlugin[]
     server: ServerOptions
     build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
@@ -352,6 +357,7 @@ export async function resolveConfig(
     isProduction,
     optimizeCacheDir,
     plugins: userPlugins,
+    esbuildPlugins: config.esbuildPlugins || [],
     server: config.server || {},
     build: resolvedBuildOptions,
     env: {

@@ -245,7 +245,10 @@ export async function optimizeDeps(
     treeShaking: 'ignore-annotations',
     metafile: true,
     define,
-    plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
+    plugins: [
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config),
+      ...config.esbuildPlugins
+    ]
   })
 
   const meta = result.metafile!
