@@ -294,8 +294,14 @@ export async function resolveConfig(
     [`package.json`],
     true /* pathOnly */
   )
-  const optimizeCacheDir =
-    pkgPath && path.join(path.dirname(pkgPath), `node_modules/${DEP_CACHE_DIR}`)
+  let optimizeCacheDir: ResolvedConfig['optimizeCacheDir']
+  if (config.optimizeDeps?.cacheDir) {
+    optimizeCacheDir = path.resolve(resolvedRoot, config.optimizeDeps?.cacheDir)
+  } else {
+    optimizeCacheDir =
+      pkgPath &&
+      path.join(path.dirname(pkgPath), `node_modules/${DEP_CACHE_DIR}`)
+  }
 
   const assetsFilter = config.assetsInclude
     ? createFilter(config.assetsInclude)

@@ -52,6 +52,12 @@ export interface DepOptimizationOptions {
    * https://esbuild.github.io/api/#keep-names
    */
   keepNames?: boolean
+  /**
+   * By default, vite will use 'node_modules/.vite' as the cache directory.
+   * You can specify this option to use another directory. Set it to an absolute
+   * path or a relative path relative to `root`.
+   */
+  cacheDir?: string
 }
 
 export interface DepOptimizationMetadata {
@@ -91,7 +97,7 @@ export async function optimizeDeps(
   const log = asCommand ? logger.info : debug
 
   if (!cacheDir) {
-    log(`No package.json. Skipping.`)
+    log(`No cache directory. Skipping.`)
     return null
   }
 

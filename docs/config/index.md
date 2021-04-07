@@ -602,6 +602,12 @@ export default async ({ command, mode }) => {
   Set this to `true` to keep the `name` property on functions and classes.
   See [`keepNames`](https://esbuild.github.io/api/#keep-names).
 
+### optimizeDeps.cacheDir
+
+- **Type:** `string`
+
+  By default, vite caches the pre-bundled dependencies in `node_modules/.vite`. If you want to specify the cache directory manually, set this to an absolute path or a relative path relative to `root`.
+
 ## SSR Options
 
 :::warning Experimental
