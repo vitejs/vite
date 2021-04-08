@@ -11,29 +11,30 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        node: [12, 14, 15]
-        architecture: [x64]
+        os: ubuntu-latest
+        node_version: [12, 14, 15]
+        architecture: x64
         include:
           - os: macos-latest
-            node: 14
+            node_version: 14
             architecture: x64
           - os: windows-latest
-            node: 14
+            node_version: 14
             architecture: x64
           - os: windows-2016
-            node: 14
+            node_version: 14
             architecture: x86
       fail-fast: false
 
+    name: 'Build and Test: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set node version to ${{ matrix.node }}
+      - name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
 
       - name: Versions
@@ -56,6 +57,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    name: 'Lint: Node 14 - x64 on ubuntu-latest'
     steps:
       - uses: actions/checkout@v2
         with:
