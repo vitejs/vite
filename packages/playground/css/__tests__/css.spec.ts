@@ -106,6 +106,35 @@ test('less', async () => {
   await untilUpdated(() => getColor(atImport), 'blue')
 })
 
+test('stylus', async () => {
+  const imported = await page.$('.stylus')
+  const additionalData = await page.$('.stylus-additional-data')
+  const relativeImport = await page.$('.stylus-import')
+  const relativeImportAlias = await page.$('.stylus-import-alias')
+  const optionsRelativeImport = await page.$('.stylus-options-relative-import')
+  const optionsAbsoluteImport = await page.$('.stylus-options-absolute-import')
+
+  expect(await getColor(imported)).toBe('blue')
+  expect(await getColor(additionalData)).toBe('orange')
+  expect(await getColor(relativeImport)).toBe('darkslateblue')
+  expect(await getColor(relativeImportAlias)).toBe('darkslateblue')
+  expect(await getBg(relativeImportAlias)).toMatch(
+    isBuild ? /base64/ : '/nested/icon.png'
+  )
+  expect(await getColor(optionsRelativeImport)).toBe('green')
+  expect(await getColor(optionsAbsoluteImport)).toBe('red')
+
+  editFile('stylus.styl', (code) =>
+    code.replace('$color ?= blue', '$color ?= red')
+  )
+  await untilUpdated(() => getColor(imported), 'red')
+
+  editFile('nested/nested.styl', (code) =>
+    code.replace('color: darkslateblue', 'color: blue')
+  )
+  await untilUpdated(() => getColor(relativeImport), 'blue')
+})
+
 test('css modules', async () => {
   const imported = await page.$('.modules')
   expect(await getColor(imported)).toBe('turquoise')
@@ -141,6 +170,10 @@ test('@import dependency w/ style entry', async () => {
 
 test('@import dependency w/ sass entry', async () => {
   expect(await getColor('.css-dep-sass')).toBe('orange')
+})
+
+test('@import dependency w/ stylus entry', async () => {
+  expect(await getColor('.css-dep-stylus')).toBe('red')
 })
 
 test('async chunk', async () => {
