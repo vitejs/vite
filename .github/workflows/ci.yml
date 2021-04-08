@@ -21,9 +21,6 @@ jobs:
           - os: windows-latest
             node_version: 14
             architecture: x64
-          - os: windows-2016
-            node_version: 14
-            architecture: x86
       fail-fast: false
 
     name: 'Build&Test: ${{ matrix.os }}(${{ matrix.architecture }}), node(${{ matrix.node_version }})'
@@ -51,8 +48,6 @@ jobs:
 
       - name: Test serve
         run: yarn test-serve --runInBand
-        env:
-          NODE_OPTIONS: '--max_old_space_size=4096'
 
       - name: Test build
         run: yarn test-build --runInBand
