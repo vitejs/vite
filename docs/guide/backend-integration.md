@@ -85,3 +85,51 @@ Or you can follow these steps to configure it manually:
    <link rel="stylesheet" href="/assets/{{ manifest['main.js'].css }}" />
    <script type="module" src="/assets/{{ manifest['main.js'].file }}"></script>
    ```
+   
+   Here are example macros in Twig for printing out both the main css files but also imports. This will render the same script and link tags as Vite renders in the intex.html file:
+   
+```twig rollup_manifest_js.html.twig
+{#
+Macros for outputting js and css. Separate macros as you might want to load the js at the end of the document and the css at the start.
+
+note: manifest: is the whole manifest.json file imported as a PHP array
+
+#}   
+   {% macro printJs(rootApp, manifest, root) %}
+    {% set entry = manifest[rootApp] %}
+    <script type="module" crossorigin src="{{ root }}{{ entry.file }}"></script>
+    {% for preloadJs in entry.imports %}
+
+        <link rel="modulepreload" href="{{ root }}{{ manifest[preloadJs].file }}"/>
+    {% endfor %}
+{% endmacro printJs %}
+
+{% macro printCss(rootApp, manifest, root) %}
+    {% set entry = manifest[rootApp] %}
+    {% for import in entry.imports %}
+        {% set importEntry = manifest[import] %}
+        {% if importEntry.css is defined %}
+            {% for importEntryCss in importEntry.css %}
+                <link rel="stylesheet" href="{{ root }}{{ importEntryCss }}" crossorigin="anonymous"/>
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+
+    {% for cssFile in entry.css %}
+        <link type="text/css" rel="stylesheet" href="{{ root }}{{ cssFile }}" crossorigin="anonymous"/>
+    {% endfor %}
+{% endmacro printCss %}
+
+```
+
+Sample usage:
+```
+{% from 'rollup_manifest_js.html.twig' import printCss, printJs %}
+
+{{ printCss('index.html', manifest, '/js/vite') }}
+
+{{ printJs('index.html', manifest, '/js/vite') }}
+```
+
+
+
