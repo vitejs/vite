@@ -43,6 +43,7 @@ export type {
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
+export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type {
   PackageData,
   ResolveOptions,
