@@ -1109,6 +1109,9 @@ const styl: StylePreprocessor = async (source, root, options) => {
   // Get source with preprocessor options.additionalData. Make sure a new line separator
   // is added to avoid any render error, as added stylus content may not have semi-colon separators
   source = await getSource(source, options.filename, options.additionalData, '\n')
+  // Get preprocessor options.imports dependencies as stylus
+  // does not return them with its builtin `.deps()` method
+  const importsDeps = (options.imports || []).map((dep: string) => path.resolve(dep))
   try {
     const ref = nodeStylus(source, options)
 
@@ -1117,7 +1120,8 @@ const styl: StylePreprocessor = async (source, root, options) => {
     const result = ref.render()
 
     // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
-    const deps = ref.deps()
+    // Concat imports deps with computed deps
+    const deps = [...ref.deps(), ...importsDeps]
 
     return { code: result, errors: [], deps }
   } catch (e) {
