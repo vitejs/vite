@@ -26,7 +26,7 @@ jobs:
             architecture: x86
       fail-fast: false
 
-    name: 'Build and Test: ${{ matrix.os }}(${{ matrix.architecture }}), node(${{ matrix.node_version }})'
+    name: 'Build&Test: ${{ matrix.os }}(${{ matrix.architecture }}), node(${{ matrix.node_version }})'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
