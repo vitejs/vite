@@ -26,7 +26,7 @@ jobs:
             architecture: x86
       fail-fast: false
 
-    name: 'Build and Test: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}'
+    name: 'Build and Test: ${{ matrix.os }}(${{ matrix.architecture }}), node(${{ matrix.node_version }})'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -57,7 +57,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    name: 'Lint: Node 14 - x64 on ubuntu-latest'
+    name: 'Lint: ubuntu-latest(x64), node(14)'
     steps:
       - uses: actions/checkout@v2
         with:
