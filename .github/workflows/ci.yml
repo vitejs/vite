@@ -22,7 +22,7 @@ jobs:
             node: 14
             architecture: x64
           - os: windows-2016
-            node: 12
+            node: 14
             architecture: x86
       fail-fast: false
 
