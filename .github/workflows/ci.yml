@@ -12,11 +12,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [12.x, 14.x, 15.x]
+        node: [12, 14, 15]
         architecture: [x64]
         include:
+          - os: macos-latest
+            node: 14
+          - os: windows-latest
+            node: 14
           - os: windows-2016
-            node_version: 12
+            node: 12
             architecture: x86
       fail-fast: false
 
