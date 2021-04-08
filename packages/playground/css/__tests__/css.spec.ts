@@ -56,11 +56,16 @@ test('postcss config', async () => {
 test('sass', async () => {
   const imported = await page.$('.sass')
   const atImport = await page.$('.sass-at-import')
+  const atImportAlias = await page.$('.sass-at-import-alias')
   const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
   expect(await getColor(atImport)).toBe('olive')
   expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getColor(atImportAlias)).toBe('olive')
+  expect(await getBg(atImportAlias)).toMatch(
+    isBuild ? /base64/ : '/nested/icon.png'
+  )
   expect(await getColor(partialImport)).toBe('orchid')
 
   editFile('sass.scss', (code) =>
@@ -82,10 +87,15 @@ test('sass', async () => {
 test('less', async () => {
   const imported = await page.$('.less')
   const atImport = await page.$('.less-at-import')
+  const atImportAlias = await page.$('.less-at-import-alias')
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
   expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getColor(atImportAlias)).toBe('darkslateblue')
+  expect(await getBg(atImportAlias)).toMatch(
+    isBuild ? /base64/ : '/nested/icon.png'
+  )
 
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
   await untilUpdated(() => getColor(imported), 'red')
