@@ -1125,13 +1125,14 @@ const styl: StylePreprocessor = (source, root, options) => {
 function getSource(
   source: string,
   filename: string,
-  additionalData?: PreprocessorAdditionalData
+  additionalData?: PreprocessorAdditionalData,
+  sep: string = ''
 ): string | Promise<string> {
   if (!additionalData) return source
   if (typeof additionalData === 'function') {
     return additionalData(source, filename)
   }
-  return additionalData + source
+  return additionalData + sep + source
 }
 
 const preProcessors = Object.freeze({
