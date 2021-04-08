@@ -51,6 +51,8 @@ jobs:
 
       - name: Test serve
         run: yarn test-serve --runInBand
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
 
       - name: Test build
         run: yarn test-build --runInBand
