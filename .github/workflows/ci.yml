@@ -17,8 +17,10 @@ jobs:
         include:
           - os: macos-latest
             node: 14
+            architecture: x64
           - os: windows-latest
             node: 14
+            architecture: x64
           - os: windows-2016
             node: 12
             architecture: x86
