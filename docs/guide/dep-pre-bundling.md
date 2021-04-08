@@ -50,7 +50,7 @@ Both `include` and `exclude` can be used to deal with this. If the dependency is
 
 ### File System Cache
 
-Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
+Vite caches the pre-bundled dependencies in `cacheDir`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
 - The `dependencies` list in your `package.json`
 - Package manager lockfiles, e.g. `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
@@ -58,7 +58,7 @@ Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines 
 
 The pre-bundling step will only need to be re-run when one of the above has changed.
 
-If for some reason you want to force Vite to re-bundle deps, you can either start the dev server with the `--force` command line option, or manually delete the `node_modules/.vite` cache directory.
+If for some reason you want to force Vite to re-bundle deps, you can either start the dev server with the `--force` command line option, or manually delete the `cacheDir` cache directory.
 
 ### Browser Cache
 

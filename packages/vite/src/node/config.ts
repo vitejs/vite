@@ -17,7 +17,7 @@ import { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
-import { CLIENT_DIR, DEFAULT_ASSETS_RE, DEP_CACHE_DIR } from './constants'
+import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
 import {
   InternalResolveOptions,
   ResolveOptions,
@@ -306,9 +306,7 @@ export async function resolveConfig(
   if (config.cacheDir) {
     cacheDir = path.resolve(resolvedRoot, config.cacheDir)
   } else {
-    cacheDir =
-      pkgPath &&
-      path.join(path.dirname(pkgPath), `node_modules/${DEP_CACHE_DIR}`)
+    cacheDir = pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite`)
   }
 
   const assetsFilter = config.assetsInclude
