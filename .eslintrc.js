@@ -1,4 +1,7 @@
-module.exports = {
+// @ts-check
+const { defineConfig } = require('eslint-define-config')
+
+module.exports = defineConfig({
   root: true,
   extends: ['plugin:node/recommended'],
   parser: '@typescript-eslint/parser',
@@ -51,7 +54,13 @@ module.exports = {
     'node/no-unpublished-import': 'off',
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
-    'no-process-exit': 'off'
+    'no-process-exit': 'off',
+    'prefer-const': [
+      'warn',
+      {
+        destructuring: 'all'
+      }
+    ]
   },
   overrides: [
     {
@@ -74,4 +83,4 @@ module.exports = {
       }
     }
   ]
-}
+})

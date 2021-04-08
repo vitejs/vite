@@ -1,3 +1,13 @@
+## [2.1.5](https://github.com/vitejs/vite/compare/v2.1.4...v2.1.5) (2021-03-31)
+
+
+### Bug Fixes
+
+* do not inject ?import query to external urls ([be3a4f5](https://github.com/vitejs/vite/commit/be3a4f5beb39a83bb62aef19f9e18177047618fa))
+* replace __dirname and __filename in config file, fix [#2728](https://github.com/vitejs/vite/issues/2728) ([#2780](https://github.com/vitejs/vite/issues/2780)) ([eb57ac6](https://github.com/vitejs/vite/commit/eb57ac6ab1aa1256cadcea2bf8d31881023a568c))
+
+
+
 ## [2.1.4](https://github.com/vitejs/vite/compare/v2.1.3...v2.1.4) (2021-03-30)
 
 
