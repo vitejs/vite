@@ -96,6 +96,8 @@ Now the `preview` method will launch the server at http://localhost:8080.
 You can also run the above script in your CI setup to enable automatic deployment on each push.
 :::
 
+Note: Github Pages will use Jekyll to build your site by default. You may want to add a `.nojekyll` file at the root of the project to avoid any unexpected behaviour in case your files/folders match the Jekyll directory structure. See [Static site generators](https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages#static-site-generators).
+
 ### GitHub Pages and Travis CI
 
 1. Set the correct `base` in `vite.config.js`.
