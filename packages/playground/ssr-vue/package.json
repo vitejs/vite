@@ -20,6 +20,7 @@
     "@vitejs/plugin-vue-jsx": "^1.1.2",
     "@vue/compiler-sfc": "^3.0.8",
     "@vue/server-renderer": "^3.0.6",
+    "dep-import-type": "link:./dep-import-type",
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
     "express": "^4.17.1",
