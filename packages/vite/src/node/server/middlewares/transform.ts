@@ -7,6 +7,7 @@ import {
   injectQuery,
   isImportRequest,
   isJSRequest,
+  normalizePath,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -43,15 +44,17 @@ export function transformMiddleware(
   } = server
 
   // determine the url prefix of files inside cache directory
-  // 1. if the cache directory is inside root, the url prefix would be something
-  // like '/node_modules/.vite'
-  // 2. if the cache directory is outside root, the url prefix would be something
-  // like '/@fs/absolute/path/to/node_modules/.vite'
-  let cacheDirPrefix = cacheDir
+  let cacheDirPrefix: string | undefined
   if (cacheDir) {
-    const cacheDirRelative = path.relative(root, cacheDir)
-    if (!cacheDirRelative.startsWith('../')) {
-      cacheDirPrefix = cacheDirRelative
+    const cacheDirRelative = normalizePath(path.relative(root, cacheDir))
+    if (cacheDirRelative.startsWith('../')) {
+      // if the cache directory is outside root, the url prefix would be something
+      // like '/@fs/absolute/path/to/node_modules/.vite'
+      cacheDirPrefix = `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
+    } else {
+      // if the cache directory is inside root, the url prefix would be something
+      // like '/node_modules/.vite'
+      cacheDirPrefix = `/${cacheDirRelative}`
     }
   }
 
@@ -165,7 +168,7 @@ export function transformMiddleware(
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) ||
-            (cacheDirPrefix && url.includes(cacheDirPrefix))
+            (cacheDirPrefix && url.startsWith(cacheDirPrefix))
           return send(
             req,
             res,

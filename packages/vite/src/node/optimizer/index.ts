@@ -300,9 +300,8 @@ function needsInterop(
   let generatedExports: string[] | undefined
   for (const output in outputs) {
     if (
-      normalizePath(output).endsWith(
-        normalizePath(path.join(cacheDirOutputPath, flatId))
-      )
+      normalizePath(output) ===
+      normalizePath(path.join(cacheDirOutputPath, flatId))
     ) {
       generatedExports = outputs[output].exports
       break
