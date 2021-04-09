@@ -15,7 +15,7 @@ console.log('[vite] connecting...')
 // use server configuration, then fallback to inference
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${location.port}`
+  const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__ || location.port}`
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
 
