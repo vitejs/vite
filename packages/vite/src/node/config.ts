@@ -296,18 +296,15 @@ export async function resolveConfig(
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
-  // resolve optimizer cache directory
+  // resolve cache directory
   const pkgPath = lookupFile(
     resolvedRoot,
     [`package.json`],
     true /* pathOnly */
   )
-  let cacheDir: ResolvedConfig['cacheDir']
-  if (config.cacheDir) {
-    cacheDir = path.resolve(resolvedRoot, config.cacheDir)
-  } else {
-    cacheDir = pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite`)
-  }
+  const cacheDir = config.cacheDir
+    ? path.resolve(resolvedRoot, config.cacheDir)
+    : pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite`)
 
   const assetsFilter = config.assetsInclude
     ? createFilter(config.assetsInclude)
