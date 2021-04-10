@@ -249,7 +249,7 @@ async function genScriptCode(
       const classMatch = script.content.match(exportDefaultClassRE)
       if (classMatch) {
         scriptCode =
-          script.content.replace(exportDefaultClassRE, `class $1`) +
+          script.content.replace(exportDefaultClassRE, `\nclass $1`) +
           `\nconst _sfc_main = ${classMatch[1]}`
         if (/export\s+default/.test(scriptCode)) {
           // fallback if there are still export default
