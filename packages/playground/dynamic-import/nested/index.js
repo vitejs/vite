@@ -1,3 +1,5 @@
+import mxd from '../mxd'
+
 async function setView(view) {
   const { msg } = await import(`../views/${view}.js`)
   text('.view', msg)
@@ -19,6 +21,14 @@ const view = `/${arr[0]}`
 document.querySelector('.qux').addEventListener('click', async () => {
   const { msg } = await import(/*@vite-ignore*/ view)
   text('.view', msg)
+})
+
+// mixed static and dynamic
+document.querySelector('.mxd').addEventListener('click', async () => {
+  const view = 'mxd'
+  const { default: mxd2 } = await import(`../${view}.js`)
+  mxd()
+  text('.view', mxd2())
 })
 
 // data URLs (`blob:`)

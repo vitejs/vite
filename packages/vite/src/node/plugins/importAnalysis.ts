@@ -408,7 +408,22 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           }
           needQueryInjectHelper = true
-          str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
+          if (
+            !/^('.*'|".*"|`.*`)$/.test(url) ||
+            (!isJSRequest(cleanUrl(url.slice(1, -1))) &&
+              !isCSSRequest(url.slice(1, -1)))
+          ) {
+            str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
+          } else {
+            const depModule = await moduleGraph.ensureEntryFromUrl(url)
+            if (depModule.lastHMRTimestamp > 0) {
+              str().overwrite(
+                start,
+                end,
+                `__vite__injectQuery(${url}, 't=${depModule.lastHMRTimestamp}')`
+              )
+            }
+          }
         }
       }
 
