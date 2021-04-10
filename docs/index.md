@@ -5,7 +5,7 @@ actionText: Get Started
 actionLink: /guide/
 
 altActionText: Learn More
-altActionLink: /guide/introduction
+altActionLink: /guide/why
 
 features:
   - title: 💡 Instant Server Start

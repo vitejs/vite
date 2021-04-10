@@ -4,12 +4,12 @@ import { ViteDevServer } from '..'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 
 /**
- * The amount to wait for requests to register newfound deps before triggering
+ * The amount to wait for requests to register newly found dependencies before triggering
  * a re-bundle + page reload
  */
 const debounceMs = 100
 
-export function createMissingImpoterRegisterFn(server: ViteDevServer) {
+export function createMissingImporterRegisterFn(server: ViteDevServer) {
   const { logger } = server.config
   let knownOptimized = server._optimizeDepsMetadata!.optimized
   let currentMissing: Record<string, string> = {}

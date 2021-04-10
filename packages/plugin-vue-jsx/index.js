@@ -82,10 +82,12 @@ function vueJsxPlugin(options = {}) {
         }
 
         const result = babel.transformSync(code, {
+          babelrc: false,
           ast: true,
           plugins,
           sourceMaps: needSourceMap,
-          sourceFileName: id
+          sourceFileName: id,
+          configFile: false
         })
 
         if (!ssr && !needHmr) {

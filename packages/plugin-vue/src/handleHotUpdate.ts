@@ -127,7 +127,7 @@ export async function handleHotUpdate({
     }
   }
 
-  let updateType = []
+  const updateType = []
   if (needRerender) {
     updateType.push(`template`)
     // template is inlined into main, add main module instead
@@ -144,7 +144,7 @@ export async function handleHotUpdate({
   return [...affectedModules].filter(Boolean) as ModuleNode[]
 }
 
-function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
+export function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
   if (!a && !b) return true
   if (!a || !b) return false
   // src imports will trigger their own updates

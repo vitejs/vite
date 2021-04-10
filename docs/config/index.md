@@ -4,7 +4,7 @@
 
 ### Config File Resolving
 
-When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#project-root).
+When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root).
 
 The most basic config file looks like this:
 
@@ -68,6 +68,19 @@ export default ({ command, mode }) => {
 }
 ```
 
+### Async Config
+
+If the config needs to call async function, it can export a async function instead:
+
+```js
+export default async ({ command, mode }) => {
+  const data = await asyncFunction();
+  return {
+    // build specific config
+  } 
+}
+```
+
 ## Shared Options
 
 ### root
@@ -77,7 +90,7 @@ export default ({ command, mode }) => {
 
   Project root directory (where `index.html` is located). Can be an absolute path, or a path relative from the location of the config file itself.
 
-  See [Project Root](/guide/#project-root) for more details.
+  See [Project Root](/guide/#index-html-and-project-root) for more details.
 
 ### base
 
@@ -105,17 +118,21 @@ export default ({ command, mode }) => {
 
 - **Type:** `Record<string, string>`
 
-  Define global variable replacements. Entries will be defined as globals during dev and statically replaced during build.
+  Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
   - Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
 
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
 
+  Because it's implemented as straightforward text replacements without any syntax analyzation, we recommend using `define` for CONSTANTS only.
+
+  For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
+
 ### plugins
 
 - **Type:** ` (Plugin | Plugin[])[]`
 
-  Array of plugins to use. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
+  Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
 ### publicDir
 
@@ -170,14 +187,14 @@ export default ({ command, mode }) => {
 ### resolve.mainFields
 
 - **Type:** `string[]`
-- **Default:**: `['module', 'jsnext:main', 'jsnext']`
+- **Default:** `['module', 'jsnext:main', 'jsnext']`
 
   List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
 
 ### resolve.extensions
 
 - **Type:** `string[]`
-- **Default:**: `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+- **Default:** `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
 
   List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
@@ -240,7 +257,7 @@ export default ({ command, mode }) => {
 - **Type:** `boolean`
 - **Default:** `false`
 
-  If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, espeically when the JSON file is large.
+  If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, especially when the JSON file is large.
 
   Enabling this disables named imports.
 
@@ -364,7 +381,7 @@ export default ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
-        }
+        },
         // with RegEx
         '^/fallback/.*': {
           target: 'http://jsonplaceholder.typicode.com',
@@ -417,7 +434,7 @@ export default ({ command, mode }) => {
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
-  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuid docs](https://esbuild.github.io/content-types/#javascript) for more details.
+  Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
 ### build.polyfillDynamicImport
 
@@ -439,7 +456,7 @@ export default ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `dist`
 
-  Specify the output directory (relative to [project root](/guide/#project-root)).
+  Specify the output directory (relative to [project root](/guide/#index-html-and-project-root)).
 
 ### build.assetsDir
 
@@ -466,7 +483,7 @@ export default ({ command, mode }) => {
 
 ### build.sourcemap
 
-- **Type:** `boolean`
+- **Type:** `boolean | 'inline'`
 - **Default:** `false`
 
   Generate production source maps.
@@ -544,6 +561,13 @@ export default ({ command, mode }) => {
 - **Default:** `500`
 
   Limit for chunk size warnings (in kbs).
+  
+### build.watch
+
+- **Type:** [`WatcherOptions`](https://rollupjs.org/guide/en/#watch-options)`| null`
+- **Default:** `null`
+
+  Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
 
 ## Dep Optimization Options
 
@@ -568,6 +592,15 @@ export default ({ command, mode }) => {
 - **Type:** `string[]`
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
+
+### optimizeDeps.keepNames
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  The bundler sometimes needs to rename symbols to avoid collisions.
+  Set this to `true` to keep the `name` property on functions and classes.
+  See [`keepNames`](https://esbuild.github.io/api/#keep-names).
 
 ## SSR Options
 

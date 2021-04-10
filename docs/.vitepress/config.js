@@ -30,9 +30,47 @@ module.exports = {
       { text: 'Config', link: '/config/' },
       { text: 'Plugins', link: '/plugins/' },
       {
-        text: 'Changelog',
-        link:
-          'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+        text: 'Links',
+        items: [
+          {
+            text: 'Twitter',
+            link: 'https://twitter.com/vite_js'
+          },
+          {
+            text: 'Discord Chat',
+            link: 'https://chat.vitejs.dev'
+          },
+          {
+            text: 'Awesome Vite',
+            link: 'https://github.com/vitejs/awesome-vite'
+          },
+          {
+            text: 'DEV Community',
+            link: 'https://dev.to/t/vite'
+          },
+          {
+            text: 'Rollup Plugins Compat',
+            link: 'https://vite-rollup-plugins.patak.dev/'
+          },
+          {
+            text: 'Changelog',
+            link:
+              'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+          }
+        ]
+      },
+      {
+        text: 'Languages',
+        items: [
+          {
+            text: 'English',
+            link: 'https://vitejs.dev'
+          },
+          {
+            text: '简体中文',
+            link: 'https://cn.vitejs.dev'
+          }
+        ]
       }
     ],
 
@@ -45,8 +83,8 @@ module.exports = {
           text: 'Guide',
           children: [
             {
-              text: 'Introduction',
-              link: '/guide/introduction'
+              text: 'Why Vite',
+              link: '/guide/why'
             },
             {
               text: 'Getting Started',
@@ -55,6 +93,10 @@ module.exports = {
             {
               text: 'Features',
               link: '/guide/features'
+            },
+            {
+              text: 'Using Plugins',
+              link: '/guide/using-plugins'
             },
             {
               text: 'Dependency Pre-Bundling',
@@ -67,6 +109,10 @@ module.exports = {
             {
               text: 'Building for Production',
               link: '/guide/build'
+            },
+            {
+              text: 'Deploying a Static Site',
+              link: '/guide/static-deploy'
             },
             {
               text: 'Env Variables and Modes',

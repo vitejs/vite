@@ -4,10 +4,10 @@ import { Plugin } from '../plugin'
 import chalk from 'chalk'
 import {
   FS_PREFIX,
-  JS_TYPES_RE,
   SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
-  DEFAULT_MAIN_FIELDS
+  DEFAULT_MAIN_FIELDS,
+  OPTIMIZABLE_ENTRY_RE
 } from '../constants'
 import {
   isBuiltin,
@@ -59,10 +59,15 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryIndex?: boolean
   tryPrefix?: string
   preferRelative?: boolean
+  isRequire?: boolean
 }
 
-export function resolvePlugin(options: InternalResolveOptions): Plugin {
-  const { root, isProduction, asSrc, preferRelative = false } = options
+export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
+  const { root, isProduction, asSrc, preferRelative = false } = baseOptions
+  const requireOptions: InternalResolveOptions = {
+    ...baseOptions,
+    isRequire: true
+  }
   let server: ViteDevServer | undefined
 
   return {
@@ -72,7 +77,7 @@ export function resolvePlugin(options: InternalResolveOptions): Plugin {
       server = _server
     },
 
-    resolveId(id, importer, _, ssr) {
+    resolveId(id, importer, resolveOpts, ssr) {
       if (id.startsWith(browserExternalId)) {
         return id
       }
@@ -81,6 +86,15 @@ export function resolvePlugin(options: InternalResolveOptions): Plugin {
       if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
         return
       }
+
+      // this is passed by @rollup/plugin-commonjs
+      const isRequire =
+        resolveOpts &&
+        resolveOpts.custom &&
+        resolveOpts.custom['node-resolve'] &&
+        resolveOpts.custom['node-resolve'].isRequire
+
+      const options = isRequire ? requireOptions : baseOptions
 
       let res
 
@@ -107,7 +121,7 @@ export function resolvePlugin(options: InternalResolveOptions): Plugin {
       // relative
       if (id.startsWith('.') || (preferRelative && /^\w/.test(id))) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
-        let fsPath = path.resolve(basedir, id)
+        const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
         if ((res = tryResolveBrowserMapping(fsPath, importer, options, true))) {
@@ -213,14 +227,30 @@ function tryFsResolve(
   options: InternalResolveOptions,
   tryIndex = true
 ): string | undefined {
-  const [file, q] = fsPath.split(`?`, 2)
-  const query = q ? `?${q}` : ``
+  let file = fsPath
+  let postfix = ''
+
+  let postfixIndex = fsPath.indexOf('?')
+  if (postfixIndex < 0) {
+    postfixIndex = fsPath.indexOf('#')
+  }
+  if (postfixIndex > 0) {
+    file = fsPath.slice(0, postfixIndex)
+    postfix = fsPath.slice(postfixIndex)
+  }
+
   let res: string | undefined
+  if (
+    (res = tryResolveFile(file, postfix, options, false, options.tryPrefix))
+  ) {
+    return res
+  }
+
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
       (res = tryResolveFile(
         file + ext,
-        query,
+        postfix,
         options,
         false,
         options.tryPrefix
@@ -229,8 +259,9 @@ function tryFsResolve(
       return res
     }
   }
+
   if (
-    (res = tryResolveFile(file, query, options, tryIndex, options.tryPrefix))
+    (res = tryResolveFile(file, postfix, options, tryIndex, options.tryPrefix))
   ) {
     return res
   }
@@ -238,14 +269,23 @@ function tryFsResolve(
 
 function tryResolveFile(
   file: string,
-  query: string,
+  postfix: string,
   options: InternalResolveOptions,
   tryIndex: boolean,
   tryPrefix?: string
 ): string | undefined {
-  if (fs.existsSync(file)) {
-    const isDir = fs.statSync(file).isDirectory()
-    if (isDir && tryIndex) {
+  let isReadable = false
+  try {
+    // #2051 if we don't have read permission on a directory, existsSync() still
+    // works and will result in massively slow subsequent checks (which are
+    // unnecessary in the first place)
+    fs.accessSync(file, fs.constants.R_OK)
+    isReadable = true
+  } catch (e) {}
+  if (isReadable) {
+    if (!fs.statSync(file).isDirectory()) {
+      return normalizePath(ensureVolumeInPath(file)) + postfix
+    } else if (tryIndex) {
       const pkgPath = file + '/package.json'
       if (fs.existsSync(pkgPath)) {
         // path points to a node package
@@ -253,14 +293,12 @@ function tryResolveFile(
         return resolvePackageEntry(file, pkg, options)
       }
       const index = tryFsResolve(file + '/index', options)
-      if (index) return index + query
-    } else {
-      return normalizePath(ensureVolumeInPath(file)) + query
+      if (index) return index + postfix
     }
   }
   if (tryPrefix) {
     const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
-    return tryResolveFile(prefixed, query, options, tryIndex)
+    return tryResolveFile(prefixed, postfix, options, tryIndex)
   }
 }
 
@@ -319,8 +357,8 @@ export function tryNodeResolve(
     ) {
       return { id: resolved }
     }
-    // if we reach here, it's a valid dep import that hasn't been optimzied.
-    const isJsType = JS_TYPES_RE.test(resolved)
+    // if we reach here, it's a valid dep import that hasn't been optimized.
+    const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
     const exclude = server.config.optimizeDeps?.exclude
     if (
       !isJsType ||
@@ -331,7 +369,7 @@ export function tryNodeResolve(
     ) {
       // excluded from optimization
       // Inject a version query to npm deps so that the browser
-      // can cache it without revalidation, but only do so for known js types.
+      // can cache it without re-validation, but only do so for known js types.
       // otherwise we may introduce duplicated modules for externalized files
       // from pre-bundled deps.
       const versionHash = server._optimizeDepsMetadata?.browserHash
@@ -498,15 +536,15 @@ export function resolvePackageEntry(
   }
 
   entryPoint = path.join(dir, entryPoint)
-  const resolvedEntryPont = tryFsResolve(entryPoint, options)
+  const resolvedEntryPoint = tryFsResolve(entryPoint, options)
 
-  if (resolvedEntryPont) {
+  if (resolvedEntryPoint) {
     isDebug &&
       debug(
-        `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPont)}`
+        `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPoint)}`
       )
-    resolvedImports['.'] = resolvedEntryPont
-    return resolvedEntryPont
+    resolvedImports['.'] = resolvedEntryPoint
+    return resolvedEntryPoint
   } else {
     throw new Error(
       `Failed to resolve entry for package "${id}". ` +
@@ -520,15 +558,16 @@ function resolveExports(
   key: string,
   options: InternalResolveOptions
 ) {
-  const conditions = [
-    'module',
-    options.isProduction ? 'production' : 'development'
-  ]
+  const conditions = [options.isProduction ? 'production' : 'development']
+  if (!options.isRequire) {
+    conditions.push('module')
+  }
   if (options.conditions) {
     conditions.push(...options.conditions)
   }
   return _resolveExports(pkg, key, {
     browser: true,
+    require: options.isRequire,
     conditions
   })
 }
@@ -564,7 +603,7 @@ function resolveDeepImport(
     const mapped = mapWithBrowserField(relativeId, browserField)
     if (mapped) {
       relativeId = mapped
-    } else {
+    } else if (mapped === false) {
       return (resolvedImports[id] = browserExternalId)
     }
   }
@@ -605,7 +644,7 @@ function tryResolveBrowserMapping(
           moduleSideEffects: pkg.hasSideEffects(res)
         }
       }
-    } else {
+    } else if (browserMappedPath === false) {
       return browserExternalId
     }
   }
@@ -615,21 +654,28 @@ function tryResolveBrowserMapping(
  * given a relative path in pkg dir,
  * return a relative path in pkg dir,
  * mapped with the "map" object
+ *
+ * - Returning `undefined` means there is no browser mapping for this id
+ * - Returning `false` means this id is explicitly externalized for browser
  */
 function mapWithBrowserField(
   relativePathInPkgDir: string,
   map: Record<string, string | false>
-) {
-  const normalized = normalize(relativePathInPkgDir)
-  const foundEntry = Object.entries(map).find(
-    ([from]) => normalize(from) === normalized
-  )
-  if (!foundEntry) {
-    return relativePathInPkgDir
+): string | false | undefined {
+  const normalizedPath = path.posix.normalize(relativePathInPkgDir)
+
+  for (const key in map) {
+    const normalizedKey = path.posix.normalize(key)
+    if (
+      normalizedPath === normalizedKey ||
+      equalWithoutSuffix(normalizedPath, normalizedKey, '.js') ||
+      equalWithoutSuffix(normalizedPath, normalizedKey, '/index.js')
+    ) {
+      return map[key]
+    }
   }
-  return foundEntry[1]
 }
 
-function normalize(file: string) {
-  return path.posix.normalize(path.extname(file) ? file : file + '.js')
+function equalWithoutSuffix(path: string, key: string, suffix: string) {
+  return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
 }

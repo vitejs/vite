@@ -1,3 +1,12 @@
+## [1.3.2](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.1...plugin-react-refresh@1.3.2) (2021-03-31)
+
+
+### Bug Fixes
+
+* ignore babelrc ([#2766](https://github.com/vitejs/vite/issues/2766)) ([23c4114](https://github.com/vitejs/vite/commit/23c41149ddf74261f7615d22e59b39a017b79509)), closes [#2722](https://github.com/vitejs/vite/issues/2722)
+
+
+
 ## [1.3.1](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.0...plugin-react-refresh@1.3.1) (2021-02-10)
 
 

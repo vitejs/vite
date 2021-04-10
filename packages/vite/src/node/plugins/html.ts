@@ -8,7 +8,8 @@ import {
   cleanUrl,
   isExternalUrl,
   isDataUrl,
-  generateCodeFrame
+  generateCodeFrame,
+  processSrcSet
 } from '../utils'
 import { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
@@ -69,7 +70,7 @@ export const assetAttrsConfig: Record<string, string[]> = {
   link: ['href'],
   video: ['src', 'poster'],
   source: ['src'],
-  img: ['src'],
+  img: ['src', 'srcset'],
   image: ['xlink:href', 'href'],
   use: ['xlink:href', 'href']
 }
@@ -136,7 +137,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    isExternalUrl(url) || isDataUrl(url) || checkPublicFile(url, config)
+    url.startsWith('#') ||
+    isExternalUrl(url) ||
+    isDataUrl(url) ||
+    checkPublicFile(url, config)
 
   return {
     name: 'vite:build-html',
@@ -230,7 +234,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         for (const attr of assetUrls) {
           const value = attr.value!
           try {
-            const url = await urlToBuiltUrl(value.content, id, config, this)
+            const url =
+              attr.name === 'srcset'
+                ? await processSrcSet(value.content, ({ url }) =>
+                    urlToBuiltUrl(url, id, config, this)
+                  )
+                : await urlToBuiltUrl(value.content, id, config, this)
+
             s.overwrite(
               value.loc.start.offset,
               value.loc.end.offset,
@@ -284,6 +294,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
+        chunk.imports.forEach((file) => {
+          const importee = bundle[file]
+          if (importee && importee.type === 'chunk') {
+            tags.push(...getCssTagsForChunk(importee, seen))
+          }
+        })
         const cssFiles = chunkToEmittedCssFileMap.get(chunk)
         if (cssFiles) {
           cssFiles.forEach((file) => {
@@ -299,12 +315,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             }
           })
         }
-        chunk.imports.forEach((file) => {
-          const importee = bundle[file]
-          if (importee && importee.type === 'chunk') {
-            tags.push(...getCssTagsForChunk(importee, seen))
-          }
-        })
         return tags
       }
 

@@ -9,7 +9,7 @@ import { transformImportGlob } from '../importGlob'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
- * target is not native es - so that injected helper logic can be conditinally
+ * target is not native es - so that injected helper logic can be conditionally
  * dropped.
  */
 export const isModernFlag = `__VITE_IS_MODERN__`
@@ -65,8 +65,9 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
       // @ts-ignore
       document.head.appendChild(link)
       if (isCss) {
-        return new Promise((res) => {
+        return new Promise((res, rej) => {
           link.addEventListener('load', res)
+          link.addEventListener('error', rej)
         })
       }
     })
@@ -101,7 +102,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       await init
 
-      let imports: ImportSpecifier[] = []
+      let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
       } catch (e) {
@@ -137,7 +138,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             start,
             importer,
             index,
-            config.root
+            config.root,
+            undefined,
+            ssr
           )
           str().prepend(importsString)
           str().overwrite(expStart, endIndex, exp)
@@ -215,6 +218,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (imports.length) {
             const s = new MagicString(code)
+            const analyzed: Set<string> = new Set<string>()
             for (let index = 0; index < imports.length; index++) {
               const { s: start, e: end, d: dynamicIndex } = imports[index]
               // if dynamic import polyfill is used, rewrite the import to
@@ -231,6 +235,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // literal import - trace direct imports and add to deps
                 const addDeps = (filename: string) => {
                   if (filename === ownerFilename) return
+                  if (analyzed.has(filename)) return
+                  analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     deps.add(config.base + chunk.fileName)

@@ -1,3 +1,86 @@
+## [2.2.3](https://github.com/vitejs/vite/compare/create-app@2.2.2...create-app@2.2.3) (2021-03-31)
+
+
+### Features
+
+* **create-app:** improved package name validation ([#2772](https://github.com/vitejs/vite/issues/2772)) ([9fa282e](https://github.com/vitejs/vite/commit/9fa282e9209185c70ac80e2fe1fbe4b7e92dae07))
+
+
+
+## [2.2.2](https://github.com/vitejs/vite/compare/create-app@2.2.1...create-app@2.2.2) (2021-03-25)
+
+
+
+## [2.2.1](https://github.com/vitejs/vite/compare/create-app@2.2.0...create-app@2.2.1) (2021-03-25)
+
+
+
+# [2.2.0](https://github.com/vitejs/vite/compare/create-app@2.1.0...create-app@2.2.0) (2021-03-16)
+
+
+### Features
+
+* **create-app:** add 'svelte' and 'svelte-ts' options ([#2537](https://github.com/vitejs/vite/issues/2537)) ([e441f23](https://github.com/vitejs/vite/commit/e441f23e187eec0834704949da492515cd25f8cd))
+
+
+
+# [2.1.0](https://github.com/vitejs/vite/compare/create-app@2.0.2...create-app@2.1.0) (2021-03-15)
+
+
+### Bug Fixes
+
+* **create-app:** ensure valid package name when creating project ([1dbf246](https://github.com/vitejs/vite/commit/1dbf24627d0fed4d6936f53fb84bc94b79372652)), closes [#2360](https://github.com/vitejs/vite/issues/2360)
+
+
+### Features
+
+* **create-app:** add `vue-tsc` for vue-ts template ([#2498](https://github.com/vitejs/vite/issues/2498)) ([b3b3c01](https://github.com/vitejs/vite/commit/b3b3c017d90ac86ba8d02deb93dec443a4fa4bad))
+
+
+
+## [2.0.2](https://github.com/vitejs/vite/compare/create-app@2.0.1...create-app@2.0.2) (2021-03-02)
+
+
+### Bug Fixes
+
+* **create-app:** add missing import meta types in preact ts template ([#2298](https://github.com/vitejs/vite/issues/2298)) ([ee86d2c](https://github.com/vitejs/vite/commit/ee86d2c3a7e967626da5e1d8ed104102df563980))
+* typo ([#2127](https://github.com/vitejs/vite/issues/2127)) ([ea95a1d](https://github.com/vitejs/vite/commit/ea95a1d44ab6f1a66701ae43c48f10b2047cb141))
+
+
+
+## [2.0.1](https://github.com/vitejs/vite/compare/create-app@2.0.0...create-app@2.0.1) (2021-02-20)
+
+
+### Bug Fixes
+
+* **create-app:** prompt the user on supplying an invalid template ([#2072](https://github.com/vitejs/vite/issues/2072)) ([ea31690](https://github.com/vitejs/vite/commit/ea31690580d4966b60e2aa8e14ae78dee955935f))
+* **create-app:** update prompt message based on user input ([#2103](https://github.com/vitejs/vite/issues/2103)) ([038f786](https://github.com/vitejs/vite/commit/038f78660042454935ef343bce240a5220328760))
+
+
+
+# [2.0.0](https://github.com/vitejs/vite/compare/create-app@1.8.0...create-app@2.0.0) (2021-02-16)
+
+
+### Features
+
+* **create-app:** bump to vite 2.0 ([81c72bb](https://github.com/vitejs/vite/commit/81c72bbdb112e3a6a48c026d4bc18410ec42a53a))
+
+
+
+# [1.8.0](https://github.com/vitejs/vite/compare/create-app@1.7.1...create-app@1.8.0) (2021-02-15)
+
+
+### Bug Fixes
+
+* **create-app:** add declaration tsconfig option ([7b3da03](https://github.com/vitejs/vite/commit/7b3da0320e9d43816e467d7ac8daef3fcdd1dc1e)), closes [#2010](https://github.com/vitejs/vite/issues/2010)
+
+
+### Features
+
+* **create-app:** closer parity on preact typescript template to preact template ([#1996](https://github.com/vitejs/vite/issues/1996)) ([c2622de](https://github.com/vitejs/vite/commit/c2622defe13a888f398df44d993cd40e0ee07f11))
+
+
+
 ## [1.7.1](https://github.com/vitejs/vite/compare/create-app@1.7.0...create-app@1.7.1) (2021-02-12)
 
 

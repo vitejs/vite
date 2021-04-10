@@ -1,12 +1,26 @@
 import os from 'os'
 import path from 'path'
-import sirv from 'sirv'
+import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { cleanUrl, isImportRequest } from '../../utils'
 
-const sirvOptions = { dev: true, etag: true, extensions: [] }
+const sirvOptions: Options = {
+  dev: true,
+  etag: true,
+  extensions: [],
+  setHeaders(res, pathname) {
+    // Matches js, jsx, ts, tsx.
+    // The reason this is done, is that the .ts file extension is reserved
+    // for the MIME type video/mp2t. In almost all cases, we can expect
+    // these files to be TypeScript files, and for Vite to serve them with
+    // this Content-Type.
+    if (/\.[tj]sx?$/.test(pathname)) {
+      res.setHeader('Content-Type', 'application/javascript')
+    }
+  }
+}
 
 export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
@@ -27,7 +41,7 @@ export function serveStaticMiddleware(
   const serve = sirv(dir, sirvOptions)
 
   return (req, res, next) => {
-    let url = req.url!
+    const url = req.url!
 
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
@@ -35,9 +49,6 @@ export function serveStaticMiddleware(
     if (path.extname(cleanUrl(url)) === '.html') {
       return next()
     }
-
-    // #1426
-    url = req.url = decodeURI(url)
 
     // apply aliases to static requests as well
     let redirected: string | undefined
@@ -74,7 +85,8 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
     if (url.startsWith(FS_PREFIX)) {
       url = url.slice(FS_PREFIX.length)
       if (isWin) url = url.replace(/^[A-Z]:/i, '')
-      req.url = decodeURI(url)
+
+      req.url = url
       serveFromRoot(req, res, next)
     } else {
       next()

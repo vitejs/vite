@@ -3,17 +3,22 @@ import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { parse as parseUrl } from 'url'
+import { pathToFileURL, URL } from 'url'
 import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
+import remapping from '@ampproject/remapping'
+import {
+  DecodedSourceMap,
+  RawSourceMap
+} from '@ampproject/remapping/dist/types/types'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-// Strip valid id prefix. This is preprended to resolved Ids that are
+// Strip valid id prefix. This is prepended to resolved Ids that are
 // not valid browser import specifiers by the importAnalysis plugin.
 export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
@@ -119,7 +124,17 @@ export function removeImportQuery(url: string) {
 }
 
 export function injectQuery(url: string, queryToInject: string) {
-  const { pathname, search, hash } = parseUrl(url)
+  // encode percents for consistent behavior with pathToFileURL
+  // see #2614 for details
+  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
+  if (resolvedUrl.protocol !== 'relative:') {
+    resolvedUrl = pathToFileURL(url)
+  }
+  let { protocol, pathname, search, hash } = resolvedUrl
+  if (protocol === 'file:') {
+    pathname = pathname.slice(1)
+  }
+  pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
@@ -166,10 +181,7 @@ export function prettifyUrl(url: string, root: string) {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    let file = path.relative(
-      root,
-      isAbsoluteFile ? url : url.slice(FS_PREFIX.length)
-    )
+    let file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
     const seg = file.split('/')
     const npmIndex = seg.indexOf(`node_modules`)
     const isSourceMap = file.endsWith('.map')
@@ -351,4 +363,83 @@ export function ensureWatchedFile(
     // resolve file to normalized system path
     watcher.add(path.resolve(file))
   }
+}
+
+interface ImageCandidate {
+  url: string
+  descriptor: string
+}
+const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
+export async function processSrcSet(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => Promise<string>
+) {
+  const imageCandidates: ImageCandidate[] = srcs.split(',').map((s) => {
+    const [url, descriptor] = s
+      .replace(escapedSpaceCharacters, ' ')
+      .trim()
+      .split(' ', 2)
+    return { url, descriptor }
+  })
+
+  const ret = await Promise.all(
+    imageCandidates.map(async ({ url, descriptor }) => {
+      return {
+        url: await replacer({ url, descriptor }),
+        descriptor
+      }
+    })
+  )
+
+  const url = ret.reduce((prev, { url, descriptor }, index) => {
+    descriptor = descriptor || ''
+    return (prev +=
+      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
+  }, '')
+
+  return url
+}
+
+// based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221
+const nullSourceMap: RawSourceMap = {
+  names: [],
+  sources: [],
+  mappings: '',
+  version: 3
+}
+export function combineSourcemaps(
+  filename: string,
+  sourcemapList: Array<DecodedSourceMap | RawSourceMap>
+): RawSourceMap {
+  if (
+    sourcemapList.length === 0 ||
+    sourcemapList.every((m) => m.sources.length === 0)
+  ) {
+    return { ...nullSourceMap }
+  }
+
+  let map
+  let mapIndex = 1
+  const useArrayInterface =
+    sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
+  if (useArrayInterface) {
+    map = remapping(sourcemapList, () => null, true)
+  } else {
+    map = remapping(
+      sourcemapList[0],
+      function loader(sourcefile) {
+        if (sourcefile === filename && sourcemapList[mapIndex]) {
+          return sourcemapList[mapIndex++]
+        } else {
+          return { ...nullSourceMap }
+        }
+      },
+      true
+    )
+  }
+  if (!map.file) {
+    delete map.file
+  }
+
+  return map as RawSourceMap
 }

@@ -12,7 +12,10 @@ import Rollup, {
   RollupOutput,
   ExternalOption,
   GetManualChunk,
-  GetModuleInfo
+  GetModuleInfo,
+  WatcherOptions,
+  RollupWatcher,
+  RollupError
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
@@ -28,7 +31,7 @@ import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
-import { buildImportAnalysisPlugin } from './plugins/importAnaysisBuild'
+import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
@@ -52,7 +55,7 @@ export interface BuildOptions {
    * injects a light-weight dynamic import polyfill.
    * https://caniuse.com/es6-module
    *
-   * Another special value is 'esnext' - which only performs minimal trasnpiling
+   * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat) and assumes native dynamic imports support.
    *
    * For custom targets, see https://esbuild.github.io/api/#target and
@@ -176,6 +179,11 @@ export interface BuildOptions {
    * @default 500
    */
   chunkSizeWarningLimit?: number
+  /**
+   * Rollup watch options
+   * https://rollupjs.org/guide/en/#watchoptions
+   */
+  watch?: WatcherOptions | null
 }
 
 export interface LibraryOptions {
@@ -214,13 +222,16 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     ssrManifest: false,
     brotliSize: true,
     chunkSizeWarningLimit: 500,
+    watch: null,
     ...raw
   }
 
   // handle special build targets
   if (resolved.target === 'modules') {
     // https://caniuse.com/es6-module
-    resolved.target = ['es2019', 'edge16', 'firefox60', 'chrome61', 'safari11']
+    // edge18 according to js-table (destructuring is not supported in edge16)
+    // https://github.com/evanw/esbuild/blob/d943e89e50696647d6c89ae623ddfdf564ad3cfc/internal/compat/js_table.go#L84
+    resolved.target = ['es2019', 'edge18', 'firefox60', 'chrome61', 'safari11']
   } else if (resolved.target === 'esnext' && resolved.minify !== 'esbuild') {
     // esnext + terser: limit to es2019 so it can be minified by terser
     resolved.target = 'es2019'
@@ -269,7 +280,7 @@ export function resolveBuildPlugins(
 let parallelCallCounts = 0
 // we use a separate counter to track since the call may error before the
 // bundle is even pushed.
-const paralellBuilds: RollupBuild[] = []
+const parallelBuilds: RollupBuild[] = []
 
 /**
  * Bundles the app for production.
@@ -277,29 +288,33 @@ const paralellBuilds: RollupBuild[] = []
  */
 export async function build(
   inlineConfig: InlineConfig = {}
-): Promise<RollupOutput | RollupOutput[]> {
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   parallelCallCounts++
   try {
     return await doBuild(inlineConfig)
   } finally {
     parallelCallCounts--
     if (parallelCallCounts <= 0) {
-      paralellBuilds.forEach((bundle) => bundle.close())
-      paralellBuilds.length = 0
+      await Promise.all(parallelBuilds.map((bundle) => bundle.close()))
+      parallelBuilds.length = 0
     }
   }
 }
 
 async function doBuild(
   inlineConfig: InlineConfig = {}
-): Promise<RollupOutput | RollupOutput[]> {
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
   const ssr = !!options.ssr
   const libOptions = options.lib
 
   config.logger.info(
-    chalk.cyan(`building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`)
+    chalk.cyan(
+      `vite v${require('vite/package.json').version} ${chalk.green(
+        `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`
+      )}`
+    )
   )
 
   const resolve = (p: string) => path.resolve(config.root, p)
@@ -349,29 +364,39 @@ async function doBuild(
   }
 
   const rollup = require('rollup') as typeof Rollup
+  const rollupOptions: RollupOptions = {
+    input,
+    preserveEntrySignatures: ssr
+      ? 'allow-extension'
+      : libOptions
+      ? 'strict'
+      : false,
+    ...options.rollupOptions,
+    plugins,
+    external,
+    onwarn(warning, warn) {
+      onRollupWarning(warning, warn, config)
+    }
+  }
+
+  const outputBuildError = (e: RollupError) => {
+    config.logger.error(
+      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ''}${e.message}`)
+    )
+    if (e.id) {
+      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ''
+      config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
+    }
+    if (e.frame) {
+      config.logger.error(chalk.yellow(e.frame))
+    }
+  }
 
   try {
-    const bundle = await rollup.rollup({
-      input,
-      preserveEntrySignatures: ssr
-        ? 'allow-extension'
-        : libOptions
-        ? 'strict'
-        : false,
-      ...options.rollupOptions,
-      plugins,
-      external,
-      onwarn(warning, warn) {
-        onRollupWarning(warning, warn, config)
-      }
-    })
-
-    paralellBuilds.push(bundle)
-
     const pkgName = libOptions && getPkgName(config.root)
 
-    const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate']({
+    const buildOuputOptions = (output: OutputOptions = {}): OutputOptions => {
+      return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
         exports: ssr ? 'named' : 'auto',
@@ -400,7 +425,81 @@ async function doBuild(
             ? createMoveToVendorChunkFn(config)
             : undefined,
         ...output
+      }
+    }
+
+    // resolve lib mode outputs
+    const outputs = resolveBuildOutputs(
+      options.rollupOptions?.output,
+      libOptions,
+      config.logger
+    )
+
+    // watch file changes with rollup
+    if (config.build.watch) {
+      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
+
+      const output: OutputOptions[] = []
+      if (Array.isArray(outputs)) {
+        for (const resolvedOutput of outputs) {
+          output.push(buildOuputOptions(resolvedOutput))
+        }
+      } else {
+        output.push(buildOuputOptions(outputs))
+      }
+
+      const watcherOptions = config.build.watch
+      const watcher = rollup.watch({
+        ...rollupOptions,
+        output,
+        watch: {
+          ...watcherOptions,
+          chokidar: {
+            ignored: [
+              '**/node_modules/**',
+              '**/.git/**',
+              ...(watcherOptions?.chokidar?.ignored || [])
+            ],
+            ignoreInitial: true,
+            ignorePermissionErrors: true,
+            ...watcherOptions.chokidar
+          }
+        }
       })
+
+      watcher.on('event', (event) => {
+        if (event.code === 'BUNDLE_START') {
+          config.logger.info(chalk.cyanBright(`\nbuild started...`))
+
+          // clean previous files
+          if (options.write) {
+            emptyDir(outDir)
+            if (fs.existsSync(config.publicDir)) {
+              copyDir(config.publicDir, outDir)
+            }
+          }
+        } else if (event.code === 'BUNDLE_END') {
+          event.result.close()
+          config.logger.info(chalk.cyanBright(`built in ${event.duration}ms.`))
+        } else if (event.code === 'ERROR') {
+          outputBuildError(event.error)
+        }
+      })
+
+      // stop watching
+      watcher.close()
+
+      return watcher
+    }
+
+    // write or generate files with rollup
+    const bundle = await rollup.rollup(rollupOptions)
+    parallelBuilds.push(bundle)
+
+    const generate = (output: OutputOptions = {}) => {
+      return bundle[options.write ? 'write' : 'generate'](
+        buildOuputOptions(output)
+      )
     }
 
     if (options.write) {
@@ -428,12 +527,6 @@ async function doBuild(
       }
     }
 
-    // resolve lib mode outputs
-    const outputs = resolveBuildOutputs(
-      options.rollupOptions?.output,
-      libOptions,
-      config.logger
-    )
     if (Array.isArray(outputs)) {
       const res = []
       for (const output of outputs) {
@@ -441,19 +534,10 @@ async function doBuild(
       }
       return res
     } else {
-      return generate(outputs)
+      return await generate(outputs)
     }
   } catch (e) {
-    config.logger.error(
-      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ``}${e.message}`)
-    )
-    if (e.id) {
-      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ``
-      config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
-    }
-    if (e.frame) {
-      config.logger.error(chalk.yellow(e.frame))
-    }
+    outputBuildError(e)
     throw e
   }
 }

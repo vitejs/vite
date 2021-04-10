@@ -140,7 +140,7 @@ export function fileToUrl(
   }
 }
 
-export function fileToDevUrl(id: string, config: ResolvedConfig) {
+function fileToDevUrl(id: string, config: ResolvedConfig) {
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir, keep the url as-is
