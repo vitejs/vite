@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node_version: [12, 14, 15]
+        include:
+          - os: macos-latest
+            node_version: 14
+          - os: windows-latest
+            node_version: 14
+      fail-fast: false
+
+    name: 'Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set node version to ${{ matrix.node_version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node_version }}
+
+      - name: Versions
+        run: yarn versions
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build vite
+        run: yarn build-vite
+
+      - name: Build plugin-vue
+        run: yarn build-plugin-vue
+
+      - name: Test serve
+        run: yarn test-serve --runInBand
+
+      - name: Test build
+        run: yarn test-build --runInBand
+
+  lint:
+    runs-on: ubuntu-latest
+    name: 'Lint: node-14, ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set node version to 14
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Prepare
+        run: |
+          yarn install --frozen-lockfile
+          yarn build-vite
+          yarn build-plugin-vue
+
+      - name: Lint
+        run: yarn lint
