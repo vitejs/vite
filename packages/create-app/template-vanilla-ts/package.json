@@ -3,10 +3,11 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "serve": "vite preview"
   },
   "devDependencies": {
-    "vite": "^2.0.0-beta.69"
+    "typescript": "^4.2.3",
+    "vite": "^2.1.5"
   }
 }
