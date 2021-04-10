@@ -227,7 +227,8 @@ export async function optimizeDeps(
     'process.env.NODE_ENV': JSON.stringify(config.mode)
   }
   for (const key in config.define) {
-    define[key] = JSON.stringify(config.define[key])
+    const value = config.define[key]
+    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
   }
 
   const start = Date.now()
