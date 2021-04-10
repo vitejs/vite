@@ -95,6 +95,41 @@ module.exports = {
 }
 ```
 
+If you use the ```root``` option, make sure that directory is included in the ```resolve``` arguments.
+
+If your directory structure looks like this:
+
+```
+├── package.json
+├── vite.config.js
+└── src
+    ├── index.html
+    ├── main.js
+    └── nested
+        ├── index.html
+        └── nested.js
+```
+
+You will need to make the following adjustments to your ```vite.config.js``` file:
+
+```js
+// vite.config.js
+const { resolve } = require('path')
+
+module.exports = {
+  root: 'src/',
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'src', 'index.html'),
+        nested: resolve(__dirname, 'src', 'nested/index.html')
+      }
+    }
+  }
+}
+```
+
+
 ## Library Mode
 
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
