@@ -38,10 +38,10 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.yarn-cache.outputs.dir }}
-          key: v1-dependencies-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          key: ${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            v1-dependencies-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-            v1-dependencies-${{ runner.os }}-
+            ${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('yarn.lock') }}
+            ${{ runner.os }}-${{ matrix.node_version }}-
 
       - name: Versions
         run: yarn versions
