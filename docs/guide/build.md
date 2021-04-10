@@ -95,7 +95,7 @@ module.exports = {
 }
 ```
 
-If you use the ```root``` option, make sure that directory is included in the ```resolve``` arguments.
+If you use the `root` option, make sure that directory is included in the `resolve` arguments.
 
 If your directory structure looks like this:
 
@@ -110,7 +110,7 @@ If your directory structure looks like this:
         └── nested.js
 ```
 
-You will need to make the following adjustments to your ```vite.config.js``` file:
+You will need to make the following adjustments to your `vite.config.js` file:
 
 ```js
 // vite.config.js
