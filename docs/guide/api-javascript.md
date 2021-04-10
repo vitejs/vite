@@ -39,34 +39,34 @@ The `InlineConfig` interface extends `UserConfig` with additional properties:
 ```ts
 interface ViteDevServer {
   /**
-   * The resolved vite config object
+   * The resolved vite config object.
    */
   config: ResolvedConfig
   /**
    * A connect app instance
    * - Can be used to attach custom middlewares to the dev server.
    * - Can also be used as the handler function of a custom http server
-   *   or as a middleware in any connect-style Node.js frameworks
+   *   or as a middleware in any connect-style Node.js frameworks.
    *
    * https://github.com/senchalabs/connect#use-middleware
    */
   middlewares: Connect.Server
   /**
-   * native Node http server instance
-   * will be null in middleware mode
+   * Native Node http server instance.
+   * Will be null in middleware mode.
    */
   httpServer: http.Server | null
   /**
-   * chokidar watcher instance
+   * Chokidar watcher instance.
    * https://github.com/paulmillr/chokidar#api
    */
   watcher: FSWatcher
   /**
-   * web socket server with `send(payload)` method
+   * Web socket server with `send(payload)` method.
    */
   ws: WebSocketServer
   /**
-   * Rollup plugin container that can run plugin hooks on a given file
+   * Rollup plugin container that can run plugin hooks on a given file.
    */
   pluginContainer: PluginContainer
   /**
@@ -104,7 +104,7 @@ interface ViteDevServer {
     options?: { isolated?: boolean }
   ): Promise<Record<string, any>>
   /**
-   * Fix ssr error stacktrace
+   * Fix ssr error stacktrace.
    */
   ssrFixStacktrace(e: Error): void
   /**
