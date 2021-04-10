@@ -260,6 +260,11 @@ export async function urlToBuiltUrl(
   const file = url.startsWith('/')
     ? path.join(config.root, url)
     : path.join(path.dirname(importer), url)
+  const stats = await fsp.stat(file)
+  if (stats.isDirectory()) {
+    return url
+  }
+
   return fileToBuiltUrl(
     file,
     config,

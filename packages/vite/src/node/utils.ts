@@ -389,7 +389,7 @@ export async function processSrcSet(
         .split(' ', 2)
       return { url, descriptor }
     })
-    .filter(({ url, descriptor }) => url && descriptor)
+    .filter(({ url }) => !!url)
 
   const ret = await Promise.all(
     imageCandidates.map(async ({ url, descriptor }) => {
