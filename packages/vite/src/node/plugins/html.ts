@@ -267,6 +267,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(_, bundle) {
+      const analyzedChunk: Map<OutputChunk, number> = new Map()
       const getPreloadLinksForChunk = (
         chunk: OutputChunk,
         seen: Set<string> = new Set()
@@ -274,7 +275,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const tags: HtmlTagDescriptor[] = []
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
-          if (importee && importee.type === 'chunk' && !seen.has(file)) {
+          if (importee?.type === 'chunk' && !seen.has(file)) {
             seen.add(file)
             tags.push({
               tag: 'link',
@@ -294,12 +295,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
-        chunk.imports.forEach((file) => {
-          const importee = bundle[file]
-          if (importee && importee.type === 'chunk') {
-            tags.push(...getCssTagsForChunk(importee, seen))
-          }
-        })
+        if (!analyzedChunk.has(chunk)) {
+          analyzedChunk.set(chunk, 1)
+          chunk.imports.forEach((file) => {
+            const importee = bundle[file]
+            if (importee?.type === 'chunk') {
+              tags.push(...getCssTagsForChunk(importee, seen))
+            }
+          })
+        }
+
         const cssFiles = chunkToEmittedCssFileMap.get(chunk)
         if (cssFiles) {
           cssFiles.forEach((file) => {
