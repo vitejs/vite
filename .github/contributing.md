@@ -139,4 +139,3 @@ We already have many config options, and we should avoid fixing an issue by addi
 - Whether the problem can be fixed with a smarter default
 - Whether the problem has workaround using existing options
 - Whether the problem can be addressed with a plugin instead
-
