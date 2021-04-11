@@ -1,4 +1,4 @@
-import { getColor, isBuild, untilUpdated } from '../../testUtils'
+import { getColor, isBuild, autoRetry } from '../../testUtils'
 import { port } from './serve'
 import fetch from 'node-fetch'
 
@@ -12,7 +12,9 @@ test('/', async () => {
   } else {
     // During dev, the CSS is loaded from async chunk and we may have to wait
     // when the test runs concurrently.
-    await untilUpdated(() => getColor('h1'), 'black')
+    await autoRetry(async () => {
+      expect(await getColor('h1')).toBe('black')
+    })
   }
 
   // is rendered to HTML
@@ -22,8 +24,11 @@ test('/', async () => {
 
 test('hydration', async () => {
   expect(await page.textContent('button')).toContain('0')
-  await page.click('button')
-  expect(await page.textContent('button')).toContain('1')
+  // Wait until browser-side code loads
+  await autoRetry(async () => {
+    await page.click('button')
+    expect(await page.textContent('button')).toContain('1')
+  })
 
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -39,7 +44,9 @@ test('/about', async () => {
   } else {
     // During dev, the CSS is loaded from async chunk and we may have to wait
     // when the test runs concurrently.
-    await untilUpdated(() => getColor('h1'), 'red')
+    await autoRetry(async () => {
+      expect(await getColor('h1')).toBe('red')
+    })
   }
 
   // is rendered to HTML
