@@ -4,6 +4,8 @@ import fetch from 'node-fetch'
 
 const url = `http://localhost:${port}`
 
+jest.setTimeout(60 * 1000)
+
 test('/', async () => {
   await page.goto(url)
   expect(await page.textContent('h1')).toBe('Home')
