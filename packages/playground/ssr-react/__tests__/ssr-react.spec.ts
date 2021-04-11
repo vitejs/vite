@@ -1,4 +1,10 @@
-import { editFile, getColor, isBuild, untilUpdated } from '../../testUtils'
+import {
+  editFile,
+  getColor,
+  isBuild,
+  untilUpdated,
+  autoRetry
+} from '../../testUtils'
 import { port } from './serve'
 import fetch from 'node-fetch'
 
@@ -39,8 +45,9 @@ test('hmr', async () => {
 
 test('client navigation', async () => {
   await page.click('a[href="/about"]')
-  await page.waitForTimeout(10)
-  expect(await page.textContent('h1')).toMatch('About')
+  await autoRetry(async () => {
+    expect(await page.textContent('h1')).toMatch('About')
+  })
   editFile('src/pages/About.jsx', (code) =>
     code.replace('<h1>About', '<h1>changed')
   )
