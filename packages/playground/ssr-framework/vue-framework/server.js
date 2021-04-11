@@ -16,7 +16,15 @@ async function startServer(root, port, isProduction) {
       ...getViteConfig(root),
       logLevel: 'warn',
       optimizeDeps: { entries: ['**/pages/*.vue'] },
-      server: { middlewareMode: true }
+      server: {
+        middlewareMode: true,
+        watch: {
+          // During tests we edit the files too fast and sometimes chokidar
+          // misses change events, so enforce polling for consistency
+          usePolling: true,
+          interval: 100
+        }
+      }
     })
     app.use(viteServer.middlewares)
   }
