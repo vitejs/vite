@@ -118,7 +118,7 @@ const FRAMEWORKS = [
 ]
 
 const TEMPLATES = FRAMEWORKS.map(
-  (i) => (i.variants && i.variants.map((v) => v.name)) || [i.name]
+  (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name]
 ).reduce((a, b) => a.concat(b), [])
 
 const renameFiles = {
