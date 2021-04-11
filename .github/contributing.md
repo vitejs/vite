@@ -59,7 +59,7 @@ import rawSvg from './nested/fragment.svg?raw'
 text('.raw', rawSvg)
 ```
 
-Where the `text` util is an util defined as:
+Where the `text` util is defined as:
 
 ```js
 function text(el, text) {
