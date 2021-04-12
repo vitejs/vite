@@ -197,13 +197,18 @@ function esbuildScanPlugin(
         { filter: htmlTypesRE, namespace: 'html' },
         async ({ path }) => {
           const raw = fs.readFileSync(path, 'utf-8')
-          const regex = path.endsWith('.html') ? scriptModuleRE : scriptRE
+          const isHtml = path.endsWith('.html')
+          const regex = isHtml ? scriptModuleRE : scriptRE
           regex.lastIndex = 0
           let js = ''
           let loader: Loader = 'js'
           let match
           while ((match = regex.exec(raw))) {
-            const [, openTag, , content] = match
+            const [, openTag, htmlContent, scriptContent] = match
+            let content = scriptContent
+            if (isHtml) {
+              content = htmlContent
+            }
             const srcMatch = openTag.match(srcRE)
             const langMatch = openTag.match(langRE)
             const lang =

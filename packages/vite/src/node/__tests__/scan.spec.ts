@@ -58,15 +58,4 @@ describe('optimizer-scan:script-test', () => {
     expect(tag1).toEqual('<script>')
     expect(content1).toEqual('var test = null')
   })
-
-  test('html script tag test', () => {
-    scriptRE.lastIndex = 0
-    const [, tag, , content] = scriptRE.exec(
-      `<body>
-          <script type="module" src="/src/main.ts"></script>
-      </body>`
-    )
-    expect(tag).toEqual('<script type="module" src="/src/main.ts">')
-    expect(content).toEqual('')
-  })
 })
