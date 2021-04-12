@@ -48,8 +48,11 @@ const clientDir = normalizePath(CLIENT_DIR)
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
 
+function isExplicitImportRequired(url: string) {
+  return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
+}
 function markExplicitImport(url: string) {
-  if (!isJSRequest(cleanUrl(url)) && !isCSSRequest(url)) {
+  if (isExplicitImportRequired(url)) {
     return injectQuery(url, 'import')
   }
   return url
@@ -407,22 +410,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
             )
           }
-          needQueryInjectHelper = true
           if (
-            !/^('.*'|".*"|`.*`)$/.test(url) ||
-            (!isJSRequest(cleanUrl(url.slice(1, -1))) &&
-              !isCSSRequest(url.slice(1, -1)))
+            /^('.*'|".*"|`.*`)$/.test(url) &&
+            isExplicitImportRequired(url.slice(1, -1))
           ) {
+            needQueryInjectHelper = true
             str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
-          } else {
-            const depModule = await moduleGraph.ensureEntryFromUrl(url)
-            if (depModule.lastHMRTimestamp > 0) {
-              str().overwrite(
-                start,
-                end,
-                `__vite__injectQuery(${url}, 't=${depModule.lastHMRTimestamp}')`
-              )
-            }
           }
         }
       }
