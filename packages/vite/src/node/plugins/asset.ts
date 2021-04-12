@@ -227,7 +227,7 @@ async function fileToBuiltUrl(
         `${basename.slice(0, -ext.length)}.${contentHash}${ext}`
       )
 
-      const { output } = config.build?.rollupOptions
+      const { output } = config.build?.rollupOptions ?? {}
       // Only the object format is currently considered here.
       if (output && !Array.isArray(output)) {
         const assetFileNames = output.assetFileNames
