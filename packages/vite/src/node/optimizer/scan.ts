@@ -134,7 +134,7 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
 }
 
 const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
-const scriptRE = /(<script\b\s[^>]*>)(.*?)<\/script>/gims
+const scriptRE = /(<script\b(\s[^>]*>|>))(.*?)<\/script>/gims
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 
@@ -203,7 +203,7 @@ function esbuildScanPlugin(
           let loader: Loader = 'js'
           let match
           while ((match = regex.exec(raw))) {
-            const [, openTag, content] = match
+            const [, openTag, , content] = match
             const srcMatch = openTag.match(srcRE)
             const langMatch = openTag.match(langRE)
             const lang =
