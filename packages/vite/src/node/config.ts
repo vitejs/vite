@@ -376,11 +376,9 @@ export async function resolveConfig(
   )
 
   // call configResolved hooks
-  for (const p of userPlugins) {
-    if (p.configResolved) {
-      await p.configResolved(resolved)
-    }
-  }
+  await Promise.all(
+    userPlugins.map((p) => p.configResolved && p.configResolved(resolved))
+  )
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {
