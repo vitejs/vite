@@ -41,33 +41,41 @@ export async function preview(
   )
 
   const options = config.server || {}
-  const hostname = options.host || 'localhost'
+  const hostname = options.host || '127.0.0.1'
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
 
-  httpServer.listen(port, () => {
+  httpServer.listen(port, hostname, () => {
     logger.info(
       chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
         chalk.green(` build preview server running at:\n`)
     )
-    const interfaces = os.networkInterfaces()
-    Object.keys(interfaces).forEach((key) =>
-      (interfaces[key] || [])
-        .filter((details) => details.family === 'IPv4')
-        .map((detail) => {
-          return {
-            type: detail.address.includes('127.0.0.1')
-              ? 'Local:   '
-              : 'Network: ',
-            host: detail.address.replace('127.0.0.1', hostname)
-          }
-        })
-        .forEach(({ type, host }) => {
-          const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-          logger.info(`  > ${type} ${chalk.cyan(url)}`)
-        })
-    )
+    if (hostname === '127.0.0.1') {
+      const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
+      logger.info(`  > ${chalk.cyan(url)}`)
+      logger.info(
+        `    (run Vite with paramater --host 0.0.0.0 to listen to all network interfaces)`
+      )
+    } else {
+      const interfaces = os.networkInterfaces()
+      Object.keys(interfaces).forEach((key) =>
+        (interfaces[key] || [])
+          .filter((details) => details.family === 'IPv4')
+          .map((detail) => {
+            return {
+              type: detail.address.includes('127.0.0.1')
+                ? 'Local:   '
+                : 'Network: ',
+              host: detail.address
+            }
+          })
+          .forEach(({ type, host }) => {
+            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+            logger.info(`  > ${type} ${chalk.cyan(url)}`)
+          })
+      )
+    }
 
     if (options.open) {
       const path = typeof options.open === 'string' ? options.open : base

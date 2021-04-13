@@ -531,8 +531,7 @@ async function startServer(
 
   const options = server.config.server || {}
   let port = inlinePort || options.port || 3000
-  let hostname = options.host || 'localhost'
-  if (hostname === '0.0.0.0') hostname = 'localhost'
+  const hostname = options.host || '127.0.0.1'
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
   const base = server.config.base
@@ -545,7 +544,7 @@ async function startServer(
           reject(new Error(`Port ${port} is already in use`))
         } else {
           info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port)
+          httpServer.listen(++port, hostname)
         }
       } else {
         httpServer.removeListener('error', onError)
@@ -555,7 +554,7 @@ async function startServer(
 
     httpServer.on('error', onError)
 
-    httpServer.listen(port, options.host, () => {
+    httpServer.listen(port, hostname, () => {
       httpServer.removeListener('error', onError)
 
       info(
@@ -565,23 +564,32 @@ async function startServer(
           clear: !server.config.logger.hasWarned
         }
       )
-      const interfaces = os.networkInterfaces()
-      Object.keys(interfaces).forEach((key) =>
-        (interfaces[key] || [])
-          .filter((details) => details.family === 'IPv4')
-          .map((detail) => {
-            return {
-              type: detail.address.includes('127.0.0.1')
-                ? 'Local:   '
-                : 'Network: ',
-              host: detail.address.replace('127.0.0.1', hostname)
-            }
-          })
-          .forEach(({ type, host }) => {
-            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-            info(`  > ${type} ${chalk.cyan(url)}`)
-          })
-      )
+
+      if (hostname === '127.0.0.1') {
+        const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
+        info(`  > ${chalk.cyan(url)}`)
+        info(
+          `    (run Vite with paramater --host 0.0.0.0 to listen to all network interfaces)`
+        )
+      } else {
+        const interfaces = os.networkInterfaces()
+        Object.keys(interfaces).forEach((key) =>
+          (interfaces[key] || [])
+            .filter((details) => details.family === 'IPv4')
+            .map((detail) => {
+              return {
+                type: detail.address.includes('127.0.0.1')
+                  ? 'Local:   '
+                  : 'Network: ',
+                host: detail.address
+              }
+            })
+            .forEach(({ type, host }) => {
+              const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+              info(`  > ${type} ${chalk.cyan(url)}`)
+            })
+        )
+      }
 
       // @ts-ignore
       if (global.__vite_start_time) {
