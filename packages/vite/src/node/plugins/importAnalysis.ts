@@ -51,6 +51,7 @@ const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
 function isExplicitImportRequired(url: string) {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
 }
+
 function markExplicitImport(url: string) {
   if (isExplicitImportRequired(url)) {
     return injectQuery(url, 'import')
