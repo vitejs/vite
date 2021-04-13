@@ -260,7 +260,7 @@ function viteLegacyPlugin(options = {}) {
         ]
       })
 
-      return { code, map }
+      return { code: `;(function(){${code}})();`, map }
     },
 
     transformIndexHtml(html, { chunk }) {
