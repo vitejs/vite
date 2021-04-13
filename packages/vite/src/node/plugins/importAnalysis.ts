@@ -48,8 +48,12 @@ const clientDir = normalizePath(CLIENT_DIR)
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
 
+function isExplicitImportRequired(url: string) {
+  return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
+}
+
 function markExplicitImport(url: string) {
-  if (!isJSRequest(cleanUrl(url)) && !isCSSRequest(url)) {
+  if (isExplicitImportRequired(url)) {
     return injectQuery(url, 'import')
   }
   return url
@@ -407,8 +411,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
             )
           }
-          needQueryInjectHelper = true
-          str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
+          if (
+            !/^('.*'|".*"|`.*`)$/.test(url) ||
+            isExplicitImportRequired(url.slice(1, -1))
+          ) {
+            needQueryInjectHelper = true
+            str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
+          }
         }
       }
 
