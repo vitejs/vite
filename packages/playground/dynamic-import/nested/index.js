@@ -1,4 +1,5 @@
-import mxd from '../mxd'
+import mxdStatic from '../mxd'
+import mxdStaticJSON from '../mxd.json'
 
 async function setView(view) {
   const { msg } = await import(`../views/${view}.js`)
@@ -26,9 +27,22 @@ document.querySelector('.qux').addEventListener('click', async () => {
 // mixed static and dynamic
 document.querySelector('.mxd').addEventListener('click', async () => {
   const view = 'mxd'
-  const { default: mxd2 } = await import(`../${view}.js`)
-  mxd()
-  text('.view', mxd2())
+  const { default: mxdDynamic } = await import(`../${view}.js`)
+  text('.view', mxdStatic === mxdDynamic)
+})
+
+document.querySelector('.mxd2').addEventListener('click', async () => {
+  const test = { jss: '../mxd.js' }
+  const ttest = test
+  const view = 'mxd'
+  const { default: mxdDynamic } = await import(test.jss)
+  text('.view', mxdStatic === mxdDynamic)
+})
+
+document.querySelector('.mxdjson').addEventListener('click', async () => {
+  const view = 'mxd'
+  const { default: mxdDynamicJSON } = await import(`../${view}.json`)
+  text('.view', mxdStaticJSON === mxdDynamicJSON)
 })
 
 // data URLs (`blob:`)
