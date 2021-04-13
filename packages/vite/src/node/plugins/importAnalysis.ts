@@ -411,8 +411,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           }
           if (
-            /^('.*'|".*"|`.*`)$/.test(url) &&
-            isExplicitImportRequired(url.slice(1, -1))
+            !/^('.*'|".*"|`.*`)$/.test(url) &&
+            !isExplicitImportRequired(url.slice(1, -1))
           ) {
             needQueryInjectHelper = true
             str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
