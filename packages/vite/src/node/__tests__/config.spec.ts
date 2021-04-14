@@ -59,4 +59,36 @@ describe('mergeConfig', () => {
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
+
+  test('not handles alias not under `resolve`', () => {
+    const baseConfig = {
+      custom: {
+        alias: {
+          bar: 'bar-value',
+          baz: 'baz-value'
+        }
+      }
+    }
+
+    const newConfig = {
+      custom: {
+        alias: {
+          bar: 'bar-value-2',
+          foo: 'foo-value'
+        }
+      }
+    }
+
+    const mergedConfig = {
+      custom: {
+        alias: {
+          bar: 'bar-value-2',
+          baz: 'baz-value',
+          foo: 'foo-value'
+        }
+      }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
 })
