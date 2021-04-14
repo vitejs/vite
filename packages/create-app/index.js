@@ -185,6 +185,12 @@ async function init() {
       type: 'select',
       name: 'framework',
       message,
+      format(name) {
+        const framework = FRAMEWORKS.find((v) => v.name === name)
+        return framework
+          ? framework.color(framework.display || framework.name)
+          : name
+      },
       choices: FRAMEWORKS.map((f) => ({
         name: f.name,
         value: f.name,
@@ -200,6 +206,10 @@ async function init() {
       const { name } = await prompt({
         type: 'select',
         name: 'name',
+        format(name) {
+          const variant = frameworkInfo.variants.find((v) => v.name === name)
+          return variant ? variant.color(variant.display || variant.name) : name
+        },
         message: 'Select a variant:',
         choices: frameworkInfo.variants.map((v) => ({
           name: v.name,
