@@ -160,12 +160,13 @@ export interface SSROptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
+  envFile?: false
 }
 
 export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins' | 'alias' | 'dedupe' | 'assetsInclude'> & {
     configFile: string | undefined
-    inlineConfig: UserConfig
+    inlineConfig: InlineConfig
     root: string
     base: string
     publicDir: string
@@ -273,7 +274,7 @@ export async function resolveConfig(
   }
 
   // load .env files
-  const userEnv = loadEnv(mode, resolvedRoot)
+  const userEnv = inlineConfig.envFile !== false && loadEnv(mode, resolvedRoot)
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
