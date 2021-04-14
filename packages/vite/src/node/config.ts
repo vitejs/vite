@@ -242,14 +242,14 @@ export async function resolveConfig(
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  userPlugins.forEach((p) => {
+  for (const p of userPlugins) {
     if (p.config) {
-      const res = p.config(config, configEnv)
+      const res = await p.config(config, configEnv)
       if (res) {
         config = mergeConfig(config, res)
       }
     }
-  })
+  }
 
   // resolve root
   const resolvedRoot = normalizePath(
@@ -376,11 +376,7 @@ export async function resolveConfig(
   )
 
   // call configResolved hooks
-  userPlugins.forEach((p) => {
-    if (p.configResolved) {
-      p.configResolved(resolved)
-    }
-  })
+  await Promise.all(userPlugins.map((p) => p.configResolved?.(resolved)))
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {

@@ -19,6 +19,7 @@ const cwd = process.cwd()
 
 const TEMPLATES = [
   yellow('vanilla'),
+  yellow('vanilla-ts'),
   green('vue'),
   green('vue-ts'),
   cyan('react'),

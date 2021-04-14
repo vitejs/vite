@@ -14,6 +14,6 @@
     "@vue/compiler-sfc": "^3.0.5",
     "typescript": "^4.1.3",
     "vite": "^2.1.5",
-    "vue-tsc": "^0.0.15"
+    "vue-tsc": "^0.0.23"
   }
 }
