@@ -35,7 +35,9 @@ import {
 import MagicString from 'magic-string'
 import * as Postcss from 'postcss'
 import type Sass from 'sass'
-import type Stylus from 'stylus'
+// We need to disable check of extraneous import which is buggy for stylus,
+// and causes the CI tests fail, see: https://github.com/vitejs/vite/pull/2860
+import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
 import type Less from 'less'
 import { Alias } from 'types/alias'
 
@@ -1104,18 +1106,31 @@ function createViteLessPlugin(
 }
 
 // .styl
-const styl: StylePreprocessor = (source, root, options) => {
+const styl: StylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
+  // Get source with preprocessor options.additionalData. Make sure a new line separator
+  // is added to avoid any render error, as added stylus content may not have semi-colon separators
+  source = await getSource(
+    source,
+    options.filename,
+    options.additionalData,
+    '\n'
+  )
+  // Get preprocessor options.imports dependencies as stylus
+  // does not return them with its builtin `.deps()` method
+  const importsDeps = (options.imports ?? []).map((dep: string) =>
+    path.resolve(dep)
+  )
   try {
-    const ref = nodeStylus(source)
+    const ref = nodeStylus(source, options)
 
-    Object.keys(options).forEach((key) => ref.set(key, options[key]))
     // if (map) ref.set('sourcemap', { inline: false, comment: false })
 
     const result = ref.render()
 
     // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
-    const deps = ref.deps()
+    // Concat imports deps with computed deps
+    const deps = [...ref.deps(), ...importsDeps]
 
     return { code: result, errors: [], deps }
   } catch (e) {
@@ -1126,13 +1141,14 @@ const styl: StylePreprocessor = (source, root, options) => {
 function getSource(
   source: string,
   filename: string,
-  additionalData?: PreprocessorAdditionalData
+  additionalData?: PreprocessorAdditionalData,
+  sep: string = ''
 ): string | Promise<string> {
   if (!additionalData) return source
   if (typeof additionalData === 'function') {
     return additionalData(source, filename)
   }
-  return additionalData + source
+  return additionalData + sep + source
 }
 
 const preProcessors = Object.freeze({
