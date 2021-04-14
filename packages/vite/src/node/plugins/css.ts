@@ -35,7 +35,9 @@ import {
 import MagicString from 'magic-string'
 import * as Postcss from 'postcss'
 import type Sass from 'sass'
-import type Stylus from 'stylus'
+// We need to disable check of extraneous import which is buggy for stylus,
+// and causes the CI tests fail, see: https://github.com/vitejs/vite/pull/2860
+import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
 import type Less from 'less'
 import { Alias } from 'types/alias'
 
@@ -1108,10 +1110,17 @@ const styl: StylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   // Get source with preprocessor options.additionalData. Make sure a new line separator
   // is added to avoid any render error, as added stylus content may not have semi-colon separators
-  source = await getSource(source, options.filename, options.additionalData, '\n')
+  source = await getSource(
+    source,
+    options.filename,
+    options.additionalData,
+    '\n'
+  )
   // Get preprocessor options.imports dependencies as stylus
   // does not return them with its builtin `.deps()` method
-  const importsDeps = (options.imports || []).map((dep: string) => path.resolve(dep))
+  const importsDeps = (options.imports || []).map((dep: string) =>
+    path.resolve(dep)
+  )
   try {
     const ref = nodeStylus(source, options)
 
