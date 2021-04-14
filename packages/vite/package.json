@@ -31,7 +31,7 @@
     "dev": "run-p dev-client dev-node",
     "dev-client": "tsc -w --incremental --p src/client",
     "dev-node": "tsc -w --incremental --p src/node",
-    "prebuild": "rimraf dist && yarn lint",
+    "prebuild": "rimraf dist",
     "build": "run-s build-bundle build-types",
     "build-bundle": "rollup -c",
     "build-types": "run-s build-temp-types patch-types roll-types",
