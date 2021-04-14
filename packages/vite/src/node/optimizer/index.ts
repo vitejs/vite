@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { createHash } from 'crypto'
-import { build } from 'esbuild'
+import { build, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { ResolvedConfig } from '../config'
 import {
   createDebugger,
@@ -42,14 +42,22 @@ export interface DepOptimizationOptions {
    */
   include?: string[]
   /**
+   * Options to pass to esbuild during the dep optimization
+   * Plugins will be merged with Vite's own dep plugin
+   * https://esbuild.github.io/api
+   */
+  esbuildOptions?: Omit<EsbuildBuildOptions, 'entryPoints' | 'define'>
+  /**
    * Do not optimize these dependencies (must be resolvable import paths,
    * cannot be globs).
+   * @deprecated Use esbuildOptions.external
    */
   exclude?: string[]
   /**
    * The bundler sometimes needs to rename symbols to avoid collisions.
    * Set this to `true` to keep the `name` property on functions and classes.
    * https://esbuild.github.io/api/#keep-names
+   * @deprecated Use esbuildOptions.keepNames
    */
   keepNames?: boolean
 }
@@ -233,12 +241,16 @@ export async function optimizeDeps(
 
   const start = Date.now()
 
+  // For legacy compatibility. In the future, keepNames and external should only be specified directly
+  const { plugins = [], keepNames, external, ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
   const result = await build({
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    keepNames: config.optimizeDeps?.keepNames,
+    keepNames: keepNames ?? config.optimizeDeps?.keepNames,
     format: 'esm',
-    external: config.optimizeDeps?.exclude,
+    external: external ?? config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
@@ -246,7 +258,11 @@ export async function optimizeDeps(
     treeShaking: 'ignore-annotations',
     metafile: true,
     define,
-    plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
+    plugins: [
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config),
+      ...plugins
+    ],
+    ...esbuildOptions
   })
 
   const meta = result.metafile!
