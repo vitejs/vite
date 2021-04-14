@@ -42,7 +42,7 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
-// eslint-disable-next-line
+
 export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
 // eslint-disable-next-line
 export const ENV_ENTRY = require.resolve('vite/dist/client/env.js')
