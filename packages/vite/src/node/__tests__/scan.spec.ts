@@ -1,6 +1,5 @@
+import { scriptRE, commentRE } from '../optimizer/scan'
 describe('optimizer-scan:script-test', () => {
-  const scriptRE = /(<script\b(\s[^>]*>|>))(.*?)<\/script>/gims
-
   const scriptContent = `import { defineComponent } from 'vue'
       import ScriptDevelopPane from './ScriptDevelopPane.vue';
       export default defineComponent({
@@ -23,6 +22,16 @@ describe('optimizer-scan:script-test', () => {
     )
     expect(openTag).toEqual('<script>')
     expect(content).toEqual(scriptContent)
+  })
+
+  test('include comments test', () => {
+    scriptRE.lastIndex = 0
+    const ret = scriptRE.exec(
+      `<template>
+        <!--  <script >var test = null</script> -->
+      </template>`.replace(commentRE, '')
+    )
+    expect(ret).toEqual(null)
   })
 
   test('components with script keyword test', () => {
