@@ -1118,7 +1118,7 @@ const styl: StylePreprocessor = async (source, root, options) => {
   )
   // Get preprocessor options.imports dependencies as stylus
   // does not return them with its builtin `.deps()` method
-  const importsDeps = (options.imports || []).map((dep: string) =>
+  const importsDeps = (options.imports ?? []).map((dep: string) =>
     path.resolve(dep)
   )
   try {
