@@ -97,10 +97,10 @@ const enum PureCssLang {
 }
 type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
 
-export const isCSSRequest = (request: string) =>
+export const isCSSRequest = (request: string): boolean =>
   cssLangRE.test(request) && !directRequestRE.test(request)
 
-export const isDirectCSSRequest = (request: string) =>
+export const isDirectCSSRequest = (request: string): boolean =>
   cssLangRE.test(request) && directRequestRE.test(request)
 
 const cssModulesCache = new WeakMap<

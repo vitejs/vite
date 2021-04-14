@@ -798,7 +798,11 @@ async function loadConfigFromBundledFile(
   return config
 }
 
-export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
+export function loadEnv(
+  mode: string,
+  root: string,
+  prefix = 'VITE_'
+): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +

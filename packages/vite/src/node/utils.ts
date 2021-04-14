@@ -24,7 +24,7 @@ export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
 }
 
-export const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
+export const flattenId = (id: string): string => id.replace(/[\/\.]/g, '_')
 
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
@@ -40,7 +40,7 @@ try {
 
 const ssrExtensions = ['.js', '.json', '.node']
 
-export function resolveFrom(id: string, basedir: string, ssr = false) {
+export function resolveFrom(id: string, basedir: string, ssr = false): string {
   return resolve.sync(id, {
     basedir,
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
@@ -58,7 +58,10 @@ interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
 }
 
-export function createDebugger(ns: string, options: DebuggerOptions = {}) {
+export function createDebugger(
+  ns: string,
+  options: DebuggerOptions = {}
+): debug.Debugger['log'] {
   const log = debug(ns)
   const { onlyWhenFocused } = options
   const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns
@@ -94,17 +97,17 @@ export function ensureVolumeInPath(file: string): string {
 export const queryRE = /\?.*$/
 export const hashRE = /#.*$/
 
-export const cleanUrl = (url: string) =>
+export const cleanUrl = (url: string): string =>
   url.replace(hashRE, '').replace(queryRE, '')
 
 export const externalRE = /^(https?:)?\/\//
-export const isExternalUrl = (url: string) => externalRE.test(url)
+export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
 export const dataUrlRE = /^\s*data:/i
-export const isDataUrl = (url: string) => dataUrlRE.test(url)
+export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue)($|\?)/
-export const isJSRequest = (url: string) => {
+export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
@@ -117,13 +120,13 @@ export const isJSRequest = (url: string) => {
 
 const importQueryRE = /(\?|&)import(?:&|$)/
 const trailingSeparatorRE = /[\?&]$/
-export const isImportRequest = (url: string) => importQueryRE.test(url)
+export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 
-export function removeImportQuery(url: string) {
+export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export function injectQuery(url: string, queryToInject: string) {
+export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
   let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
@@ -141,7 +144,7 @@ export function injectQuery(url: string, queryToInject: string) {
 }
 
 const timestampRE = /\bt=\d{13}&?\b/
-export function removeTimestampQuery(url: string) {
+export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
@@ -149,7 +152,7 @@ export async function asyncReplace(
   input: string,
   re: RegExp,
   replacer: (match: RegExpExecArray) => string | Promise<string>
-) {
+): Promise<string> {
   let match: RegExpExecArray | null
   let remaining = input
   let rewritten = ''
@@ -162,7 +165,7 @@ export async function asyncReplace(
   return rewritten
 }
 
-export function timeFrom(start: number, subtract = 0) {
+export function timeFrom(start: number, subtract = 0): string {
   const time: number | string = Date.now() - start - subtract
   const timeString = (time + `ms`).padEnd(5, ' ')
   if (time < 10) {
@@ -177,7 +180,7 @@ export function timeFrom(start: number, subtract = 0) {
 /**
  * pretty url for logging.
  */
-export function prettifyUrl(url: string, root: string) {
+export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
@@ -223,7 +226,7 @@ const splitRE = /\r?\n/
 
 const range: number = 2
 
-export function pad(source: string, n = 2) {
+export function pad(source: string, n = 2): string {
   const lines = source.split(splitRE)
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
@@ -245,7 +248,7 @@ export function posToNumber(
 export function numberToPos(
   source: string,
   offset: number | { line: number; column: number }
-) {
+): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
     throw new Error('offset is longer than source length!')
@@ -309,7 +312,10 @@ export function generateCodeFrame(
   return res.join('\n')
 }
 
-export function writeFile(filename: string, content: string | Uint8Array) {
+export function writeFile(
+  filename: string,
+  content: string | Uint8Array
+): void {
   const dir = path.dirname(filename)
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true })
@@ -317,7 +323,7 @@ export function writeFile(filename: string, content: string | Uint8Array) {
   fs.writeFileSync(filename, content)
 }
 
-export function emptyDir(dir: string) {
+export function emptyDir(dir: string): void {
   if (!fs.existsSync(dir)) {
     return
   }
@@ -333,7 +339,7 @@ export function emptyDir(dir: string) {
   }
 }
 
-export function copyDir(srcDir: string, destDir: string) {
+export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
@@ -351,7 +357,7 @@ export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,
   root: string
-) {
+): void {
   if (
     file &&
     // only need to watch if out of root
@@ -373,7 +379,7 @@ const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
-) {
+): Promise<string> {
   const imageCandidates: ImageCandidate[] = srcs.split(',').map((s) => {
     const [url, descriptor] = s
       .replace(escapedSpaceCharacters, ' ')

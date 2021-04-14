@@ -29,7 +29,7 @@ import {
 } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
-export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
+export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 const htmlCommentRE = /<!--[\s\S]*?-->/g
 const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
@@ -79,7 +79,7 @@ export async function traverseHtml(
   html: string,
   filePath: string,
   visitor: NodeTransform
-) {
+): Promise<void> {
   // lazy load compiler
   const { parse, transform } = await import('@vue/compiler-dom')
   // @vue/compiler-core doesn't like lowercase doctypes
@@ -101,7 +101,12 @@ export async function traverseHtml(
   }
 }
 
-export function getScriptInfo(node: ElementNode) {
+export function getScriptInfo(
+  node: ElementNode
+): {
+  src: AttributeNode | undefined
+  isModule: boolean
+} {
   let src: AttributeNode | undefined
   let isModule = false
   for (let i = 0; i < node.props.length; i++) {
@@ -440,7 +445,9 @@ export type IndexHtmlTransform =
       transform: IndexHtmlTransformHook
     }
 
-export function resolveHtmlTransforms(plugins: readonly Plugin[]) {
+export function resolveHtmlTransforms(
+  plugins: readonly Plugin[]
+): [IndexHtmlTransformHook[], IndexHtmlTransformHook[]] {
   const preHooks: IndexHtmlTransformHook[] = []
   const postHooks: IndexHtmlTransformHook[] = []
 

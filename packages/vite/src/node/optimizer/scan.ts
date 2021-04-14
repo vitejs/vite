@@ -417,7 +417,10 @@ async function transformGlob(
   return s.toString()
 }
 
-export function shouldExternalizeDep(resolvedId: string, rawId: string) {
+export function shouldExternalizeDep(
+  resolvedId: string,
+  rawId: string
+): boolean {
   // not a valid file path
   if (!path.isAbsolute(resolvedId)) {
     return true
@@ -430,4 +433,5 @@ export function shouldExternalizeDep(resolvedId: string, rawId: string) {
   if (!JS_TYPES_RE.test(resolvedId) && !htmlTypesRE.test(resolvedId)) {
     return true
   }
+  return false
 }
