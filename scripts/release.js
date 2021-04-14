@@ -125,6 +125,11 @@ async function main() {
   step('\nUpdating package version...')
   updateVersion(targetVersion)
 
+  if ('npm_package_scripts_lint' in process.env) {
+    step('\nLint package...')
+    await run('yarn', ['lint'])
+  }
+
   step('\nBuilding package...')
   if (!skipBuild && !isDryRun) {
     await run('yarn', ['build'])
