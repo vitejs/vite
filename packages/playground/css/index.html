@@ -40,6 +40,26 @@
   <p>Imported Less string:</p>
   <pre class="imported-less"></pre>
 
+  <p class="stylus">Stylus: This should be blue</p>
+  <p class="stylus-additional-data">
+    Stylus additionalData: This should be orange
+  </p>
+  <p class="stylus-import">@import from Stylus: This should be darkslateblue</p>
+  <p class="stylus-import-alias">
+    @import from Stylus: This should be darkslateblue and have bg image which
+    url contains alias
+  </p>
+  <p class="stylus-options-relative-import">
+    Stylus import (relative path) via vite config preprocessor options: This
+    should be green
+  </p>
+  <p class="stylus-options-absolute-import">
+    Stylus import (absolute path) via vite config preprocessor options: This
+    should be red
+  </p>
+  <p>Imported Stylus string:</p>
+  <pre class="imported-stylus"></pre>
+
   <p class="modules">CSS modules: this should be turquoise</p>
   <p>Imported CSS module:</p>
   <pre class="modules-code"></pre>
@@ -53,6 +73,9 @@
   </p>
   <p class="css-dep-sass">
     @import dependency w/ sass enrtrypoints: this should be orange
+  </p>
+  <p class="css-dep-stylus">
+    @import dependency w/ styl enrtrypoints: this should be red
   </p>
 </div>
 

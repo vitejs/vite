@@ -56,11 +56,16 @@ test('postcss config', async () => {
 test('sass', async () => {
   const imported = await page.$('.sass')
   const atImport = await page.$('.sass-at-import')
+  const atImportAlias = await page.$('.sass-at-import-alias')
   const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
   expect(await getColor(atImport)).toBe('olive')
   expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getColor(atImportAlias)).toBe('olive')
+  expect(await getBg(atImportAlias)).toMatch(
+    isBuild ? /base64/ : '/nested/icon.png'
+  )
   expect(await getColor(partialImport)).toBe('orchid')
 
   editFile('sass.scss', (code) =>
@@ -82,10 +87,15 @@ test('sass', async () => {
 test('less', async () => {
   const imported = await page.$('.less')
   const atImport = await page.$('.less-at-import')
+  const atImportAlias = await page.$('.less-at-import-alias')
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
   expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getColor(atImportAlias)).toBe('darkslateblue')
+  expect(await getBg(atImportAlias)).toMatch(
+    isBuild ? /base64/ : '/nested/icon.png'
+  )
 
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
   await untilUpdated(() => getColor(imported), 'red')
@@ -94,6 +104,35 @@ test('less', async () => {
     code.replace('color: darkslateblue', 'color: blue')
   )
   await untilUpdated(() => getColor(atImport), 'blue')
+})
+
+test('stylus', async () => {
+  const imported = await page.$('.stylus')
+  const additionalData = await page.$('.stylus-additional-data')
+  const relativeImport = await page.$('.stylus-import')
+  const relativeImportAlias = await page.$('.stylus-import-alias')
+  const optionsRelativeImport = await page.$('.stylus-options-relative-import')
+  const optionsAbsoluteImport = await page.$('.stylus-options-absolute-import')
+
+  expect(await getColor(imported)).toBe('blue')
+  expect(await getColor(additionalData)).toBe('orange')
+  expect(await getColor(relativeImport)).toBe('darkslateblue')
+  expect(await getColor(relativeImportAlias)).toBe('darkslateblue')
+  expect(await getBg(relativeImportAlias)).toMatch(
+    isBuild ? /base64/ : '/nested/icon.png'
+  )
+  expect(await getColor(optionsRelativeImport)).toBe('green')
+  expect(await getColor(optionsAbsoluteImport)).toBe('red')
+
+  editFile('stylus.styl', (code) =>
+    code.replace('$color ?= blue', '$color ?= red')
+  )
+  await untilUpdated(() => getColor(imported), 'red')
+
+  editFile('nested/nested.styl', (code) =>
+    code.replace('color: darkslateblue', 'color: blue')
+  )
+  await untilUpdated(() => getColor(relativeImport), 'blue')
 })
 
 test('css modules', async () => {
@@ -131,6 +170,10 @@ test('@import dependency w/ style entry', async () => {
 
 test('@import dependency w/ sass entry', async () => {
   expect(await getColor('.css-dep-sass')).toBe('orange')
+})
+
+test('@import dependency w/ stylus entry', async () => {
+  expect(await getColor('.css-dep-stylus')).toBe('red')
 })
 
 test('async chunk', async () => {
