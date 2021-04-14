@@ -144,7 +144,7 @@ export async function handleHotUpdate({
   return [...affectedModules].filter(Boolean) as ModuleNode[]
 }
 
-export function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
+export function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null): boolean {
   if (!a && !b) return true
   if (!a || !b) return false
   // src imports will trigger their own updates
@@ -161,7 +161,7 @@ export function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
 export function isOnlyTemplateChanged(
   prev: SFCDescriptor,
   next: SFCDescriptor
-) {
+): boolean {
   return (
     isEqualBlock(prev.script, next.script) &&
     isEqualBlock(prev.scriptSetup, next.scriptSetup) &&

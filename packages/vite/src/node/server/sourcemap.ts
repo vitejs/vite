@@ -4,7 +4,7 @@ import path from 'path'
 export async function injectSourcesContent(
   map: { sources: string[]; sourcesContent?: string[]; sourceRoot?: string },
   file: string
-) {
+): Promise<void> {
   const sourceRoot = await fs.realpath(
     path.resolve(path.dirname(file), map.sourceRoot || '')
   )

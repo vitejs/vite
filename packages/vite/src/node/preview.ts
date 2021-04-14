@@ -11,7 +11,10 @@ import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
 
-export async function preview(config: ResolvedConfig, port = 5000) {
+export async function preview(
+  config: ResolvedConfig,
+  port = 5000
+): Promise<void> {
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(config.server, app)
 

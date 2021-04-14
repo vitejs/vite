@@ -12,7 +12,10 @@ try {
   offset = match ? +match[1] - 1 : 0
 }
 
-export function ssrRewriteStacktrace(stack: string, moduleGraph: ModuleGraph) {
+export function ssrRewriteStacktrace(
+  stack: string,
+  moduleGraph: ModuleGraph
+): string {
   return stack
     .split('\n')
     .map((line) => {

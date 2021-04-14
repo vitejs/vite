@@ -24,7 +24,7 @@ export function buildErrorMessage(
   err: RollupError,
   args: string[] = [],
   includeStack = true
-) {
+): string {
   if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
   if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
   if (err.frame) args.push(chalk.yellow(pad(err.frame)))

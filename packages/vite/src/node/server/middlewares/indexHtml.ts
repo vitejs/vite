@@ -16,7 +16,9 @@ import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId } from '../../utils'
 import { assetAttrsConfig } from '../../plugins/html'
 
-export function createDevHtmlTransformFn(server: ViteDevServer) {
+export function createDevHtmlTransformFn(
+  server: ViteDevServer
+): (url: string, html: string) => Promise<string> {
   const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
 
   return (url: string, html: string): Promise<string> => {
