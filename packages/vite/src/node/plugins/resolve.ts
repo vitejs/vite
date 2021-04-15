@@ -124,7 +124,10 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
-        if ((res = tryResolveBrowserMapping(fsPath, importer, options, true))) {
+        if (
+          !ssr &&
+          (res = tryResolveBrowserMapping(fsPath, importer, options, true))
+        ) {
           return res
         }
 
