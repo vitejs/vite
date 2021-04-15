@@ -1,3 +1,19 @@
+## [2.2.4](https://github.com/vitejs/vite/compare/create-app@2.2.3...create-app@2.2.4) (2021-04-15)
+
+
+### Bug Fixes
+
+* **create-app:** change index.html templates' favicon.svg href to absolute URL ([#2620](https://github.com/vitejs/vite/issues/2620)) ([3816f6e](https://github.com/vitejs/vite/commit/3816f6edb67e6bdf94db98e82e8acff4029bfe48))
+* **create-app:** the node in the svelte template is incorrectly mounted ([#2947](https://github.com/vitejs/vite/issues/2947)) ([0825f7e](https://github.com/vitejs/vite/commit/0825f7ee3574ae3f28f566da27835fbf3b210fac))
+
+
+### Features
+
+* **create-app:** add template vanilla-ts ([#2023](https://github.com/vitejs/vite/issues/2023)) ([89898d3](https://github.com/vitejs/vite/commit/89898d36cbe03bce9b6a7ab80a1c45de9989e56e))
+* **create-app:** two-level prompt for framework and variants ([#2941](https://github.com/vitejs/vite/issues/2941)) ([176e55d](https://github.com/vitejs/vite/commit/176e55dd1bf0232f483697d35b95f6e29a47fd74))
+
+
+
 ## [2.2.3](https://github.com/vitejs/vite/compare/create-app@2.2.2...create-app@2.2.3) (2021-03-31)
 
 
