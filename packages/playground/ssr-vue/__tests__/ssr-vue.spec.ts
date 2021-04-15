@@ -30,10 +30,10 @@ test('/about', async () => {
       /link rel="stylesheet".*?href="\/assets\/About\.\w{8}\.css"/
     )
   }
+  await page.goto(url)
 })
 
 test('/', async () => {
-  await page.goto(url)
   expect(await page.textContent('h1')).toMatch('Home')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
