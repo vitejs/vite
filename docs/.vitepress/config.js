@@ -17,7 +17,10 @@ module.exports = {
 
     algolia: {
       apiKey: '***REMOVED***',
-      indexName: 'vitejs'
+      indexName: 'vitejs',
+      searchParameters: {
+        facetFilters: ['tags:en']
+      }
     },
 
     carbonAds: {
