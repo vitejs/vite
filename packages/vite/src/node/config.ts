@@ -160,12 +160,13 @@ export interface SSROptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
+  envFile?: false
 }
 
 export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins' | 'alias' | 'dedupe' | 'assetsInclude'> & {
     configFile: string | undefined
-    inlineConfig: UserConfig
+    inlineConfig: InlineConfig
     root: string
     base: string
     publicDir: string
@@ -242,14 +243,14 @@ export async function resolveConfig(
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  userPlugins.forEach((p) => {
+  for (const p of userPlugins) {
     if (p.config) {
-      const res = p.config(config, configEnv)
+      const res = await p.config(config, configEnv)
       if (res) {
         config = mergeConfig(config, res)
       }
     }
-  })
+  }
 
   // resolve root
   const resolvedRoot = normalizePath(
@@ -273,7 +274,7 @@ export async function resolveConfig(
   }
 
   // load .env files
-  const userEnv = loadEnv(mode, resolvedRoot)
+  const userEnv = inlineConfig.envFile !== false && loadEnv(mode, resolvedRoot)
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
@@ -376,11 +377,7 @@ export async function resolveConfig(
   )
 
   // call configResolved hooks
-  userPlugins.forEach((p) => {
-    if (p.configResolved) {
-      p.configResolved(resolved)
-    }
-  })
+  await Promise.all(userPlugins.map((p) => p.configResolved?.(resolved)))
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {
@@ -505,11 +502,11 @@ function resolveBaseUrl(
   return base
 }
 
-export function mergeConfig(
+function mergeConfigRecursively(
   a: Record<string, any>,
   b: Record<string, any>,
-  isRoot = true
-): Record<string, any> {
+  rootPath: string
+) {
   const merged: Record<string, any> = { ...a }
   for (const key in b) {
     const value = b[key]
@@ -523,16 +520,20 @@ export function mergeConfig(
       continue
     }
     if (isObject(existing) && isObject(value)) {
-      merged[key] = mergeConfig(existing, value, false)
+      merged[key] = mergeConfigRecursively(
+        existing,
+        value,
+        rootPath ? `${rootPath}.${key}` : key
+      )
       continue
     }
 
-    // root fields that require special handling
-    if (existing != null && isRoot) {
-      if (key === 'alias') {
+    // fields that require special handling
+    if (existing != null) {
+      if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
         merged[key] = mergeAlias(existing, value)
         continue
-      } else if (key === 'assetsInclude') {
+      } else if (key === 'assetsInclude' && rootPath === '') {
         merged[key] = [].concat(existing, value)
         continue
       }
@@ -541,6 +542,14 @@ export function mergeConfig(
     merged[key] = value
   }
   return merged
+}
+
+export function mergeConfig(
+  a: Record<string, any>,
+  b: Record<string, any>,
+  isRoot = true
+): Record<string, any> {
+  return mergeConfigRecursively(a, b, isRoot ? '' : '.')
 }
 
 function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
@@ -802,7 +811,11 @@ async function loadConfigFromBundledFile(
   return config
 }
 
-export function loadEnv(mode: string, root: string, prefix = 'VITE_') {
+export function loadEnv(
+  mode: string,
+  root: string,
+  prefix = 'VITE_'
+): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +

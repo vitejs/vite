@@ -322,9 +322,10 @@ function walk(
 function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   // declaration id
   if (
-    (parent.type === 'VariableDeclarator' ||
+    parent.type === 'CatchClause' ||
+    ((parent.type === 'VariableDeclarator' ||
       parent.type === 'ClassDeclaration') &&
-    parent.id === id
+      parent.id === id)
   ) {
     return false
   }

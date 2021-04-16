@@ -118,11 +118,15 @@ export default async ({ command, mode }) => {
 
 - **Type:** `Record<string, string>`
 
-  Define global variable replacements. Entries will be defined as globals during dev and statically replaced during build.
+  Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
   - Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
 
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
+
+  Because it's implemented as straightforward text replacements without any syntax analyzation, we recommend using `define` for CONSTANTS only.
+
+  For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
 
 ### plugins
 
@@ -377,7 +381,7 @@ export default async ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
-        }
+        },
         // with RegEx
         '^/fallback/.*': {
           target: 'http://jsonplaceholder.typicode.com',
@@ -498,10 +502,10 @@ export default async ({ command, mode }) => {
 
 ### build.lib
 
-- **Type:** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[] }`
+- **Type:** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string }`
 - **Related:** [Library Mode](/guide/build#library-mode)
 
-  Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`.
+  Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`. `fileName` is the name of the package file output, default `fileName` is the name option of package.json
 
 ### build.manifest
 
@@ -557,6 +561,13 @@ export default async ({ command, mode }) => {
 - **Default:** `500`
 
   Limit for chunk size warnings (in kbs).
+  
+### build.watch
+
+- **Type:** [`WatcherOptions`](https://rollupjs.org/guide/en/#watch-options)`| null`
+- **Default:** `null`
+
+  Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
 
 ## Dep Optimization Options
 

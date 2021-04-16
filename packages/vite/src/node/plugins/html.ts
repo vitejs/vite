@@ -29,7 +29,7 @@ import {
 } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
-export const isHTMLProxy = (id: string) => htmlProxyRE.test(id)
+export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 const htmlCommentRE = /<!--[\s\S]*?-->/g
 const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
@@ -79,7 +79,7 @@ export async function traverseHtml(
   html: string,
   filePath: string,
   visitor: NodeTransform
-) {
+): Promise<void> {
   // lazy load compiler
   const { parse, transform } = await import('@vue/compiler-dom')
   // @vue/compiler-core doesn't like lowercase doctypes
@@ -101,7 +101,12 @@ export async function traverseHtml(
   }
 }
 
-export function getScriptInfo(node: ElementNode) {
+export function getScriptInfo(
+  node: ElementNode
+): {
+  src: AttributeNode | undefined
+  isModule: boolean
+} {
   let src: AttributeNode | undefined
   let isModule = false
   for (let i = 0; i < node.props.length; i++) {
@@ -267,6 +272,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(_, bundle) {
+      const analyzedChunk: Map<OutputChunk, number> = new Map()
       const getPreloadLinksForChunk = (
         chunk: OutputChunk,
         seen: Set<string> = new Set()
@@ -274,7 +280,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const tags: HtmlTagDescriptor[] = []
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
-          if (importee && importee.type === 'chunk' && !seen.has(file)) {
+          if (importee?.type === 'chunk' && !seen.has(file)) {
             seen.add(file)
             tags.push({
               tag: 'link',
@@ -294,12 +300,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
-        chunk.imports.forEach((file) => {
-          const importee = bundle[file]
-          if (importee && importee.type === 'chunk') {
-            tags.push(...getCssTagsForChunk(importee, seen))
-          }
-        })
+        if (!analyzedChunk.has(chunk)) {
+          analyzedChunk.set(chunk, 1)
+          chunk.imports.forEach((file) => {
+            const importee = bundle[file]
+            if (importee?.type === 'chunk') {
+              tags.push(...getCssTagsForChunk(importee, seen))
+            }
+          })
+        }
+
         const cssFiles = chunkToEmittedCssFileMap.get(chunk)
         if (cssFiles) {
           cssFiles.forEach((file) => {
@@ -435,7 +445,9 @@ export type IndexHtmlTransform =
       transform: IndexHtmlTransformHook
     }
 
-export function resolveHtmlTransforms(plugins: readonly Plugin[]) {
+export function resolveHtmlTransforms(
+  plugins: readonly Plugin[]
+): [IndexHtmlTransformHook[], IndexHtmlTransformHook[]] {
   const preHooks: IndexHtmlTransformHook[] = []
   const postHooks: IndexHtmlTransformHook[] = []
 
