@@ -13,10 +13,6 @@ const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
   : '/foo/nested/asset.png'
 
-const outerAssetMatch = isBuild
-  ? /\/foo\/assets\/asset\.\w{8}\.png/
-  : /\/foo\/@fs\/.+?\/css\/nested\/asset\.png/
-
 const iconMatch = `/foo/icon.png`
 
 test('should have no 404s', () => {
@@ -66,12 +62,6 @@ describe('asset imports from js', () => {
 
   test('absolute', async () => {
     expect(await page.textContent('.asset-import-absolute')).toMatch(assetMatch)
-  })
-
-  test('outer', async () => {
-    expect(await page.textContent('.asset-import-outer')).toMatch(
-      outerAssetMatch
-    )
   })
 
   test('from /public', async () => {
