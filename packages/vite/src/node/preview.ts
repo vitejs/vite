@@ -53,10 +53,8 @@ export async function preview(
     )
     if (hostname === '127.0.0.1') {
       const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
-      logger.info(`  > ${chalk.cyan(url)}`)
-      logger.info(
-        `    (run Vite with paramater --host 0.0.0.0 to listen to all network interfaces)`
-      )
+      logger.info(`  > Local: ${chalk.cyan(url)}`)
+      logger.info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
     } else {
       const interfaces = os.networkInterfaces()
       Object.keys(interfaces).forEach((key) =>

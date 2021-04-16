@@ -567,10 +567,8 @@ async function startServer(
 
       if (hostname === '127.0.0.1') {
         const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
-        info(`  > ${chalk.cyan(url)}`)
-        info(
-          `    (run Vite with paramater --host 0.0.0.0 to listen to all network interfaces)`
-        )
+        info(`  > Local: ${chalk.cyan(url)}`)
+        info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
       } else {
         const interfaces = os.networkInterfaces()
         Object.keys(interfaces).forEach((key) =>
