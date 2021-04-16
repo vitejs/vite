@@ -69,7 +69,7 @@ export function htmlInlineScriptProxyPlugin(): Plugin {
 export const assetAttrsConfig: Record<string, string[]> = {
   link: ['href'],
   video: ['src', 'poster'],
-  source: ['src'],
+  source: ['src', 'srcset'],
   img: ['src', 'srcset'],
   image: ['xlink:href', 'href'],
   use: ['xlink:href', 'href']
