@@ -85,7 +85,7 @@ export async function scanImports(
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
   }
 
-  const tempDir = path.join(config.optimizeCacheDir!, 'temp')
+  const tempDir = path.join(config.cacheDir!, 'temp')
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
   const container = await createPluginContainer(config)

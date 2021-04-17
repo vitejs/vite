@@ -345,8 +345,8 @@ async function doBuild(
   if (ssr) {
     // see if we have cached deps data available
     let knownImports: string[] | undefined
-    if (config.optimizeCacheDir) {
-      const dataPath = path.join(config.optimizeCacheDir, '_metadata.json')
+    if (config.cacheDir) {
+      const dataPath = path.join(config.cacheDir, '_metadata.json')
       try {
         const data = JSON.parse(
           fs.readFileSync(dataPath, 'utf-8')
