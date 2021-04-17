@@ -82,7 +82,7 @@ export function esbuildDepPlugin(
         }
       )
 
-      function resolveEntry(id: string, isEntry: boolean) {
+      function resolveEntry(id: string, isEntry: boolean, resolveDir: string) {
         const flatId = flattenId(id)
         if (flatId in qualified) {
           return isEntry
@@ -91,23 +91,25 @@ export function esbuildDepPlugin(
                 namespace: 'dep'
               }
             : {
-                path: path.resolve(qualified[flatId])
+                path: require.resolve(flatId, {
+                  paths: [resolveDir]
+                })
               }
         }
       }
 
       build.onResolve(
         { filter: /^[\w@][^:]/ },
-        async ({ path: id, importer, kind }) => {
+        async ({ path: id, importer, kind, resolveDir }) => {
           const isEntry = !importer
           // ensure esbuild uses our resolved entries
           let entry
           // if this is an entry, return entry namespace resolve result
-          if ((entry = resolveEntry(id, isEntry))) return entry
+          if ((entry = resolveEntry(id, isEntry, resolveDir))) return entry
 
           // check if this is aliased to an entry - also return entry namespace
           const aliased = await _resolve(id, undefined, true)
-          if (aliased && (entry = resolveEntry(aliased, isEntry))) {
+          if (aliased && (entry = resolveEntry(aliased, isEntry, resolveDir))) {
             return entry
           }
 
