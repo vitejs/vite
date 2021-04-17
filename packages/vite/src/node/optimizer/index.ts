@@ -87,11 +87,11 @@ export async function optimizeDeps(
     command: 'build'
   }
 
-  const { root, logger, optimizeCacheDir: cacheDir } = config
+  const { root, logger, cacheDir } = config
   const log = asCommand ? logger.info : debug
 
   if (!cacheDir) {
-    log(`No package.json. Skipping.`)
+    log(`No cache directory. Skipping.`)
     return null
   }
 
@@ -250,12 +250,20 @@ export async function optimizeDeps(
 
   const meta = result.metafile!
 
+  // the paths in `meta.outputs` are relative to `process.cwd()`
+  const cacheDirOutputPath = path.relative(process.cwd(), cacheDir)
+
   for (const id in deps) {
     const entry = deps[id]
     data.optimized[id] = {
       file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
       src: entry,
-      needsInterop: needsInterop(id, idToExports[id], meta.outputs)
+      needsInterop: needsInterop(
+        id,
+        idToExports[id],
+        meta.outputs,
+        cacheDirOutputPath
+      )
     }
   }
 
@@ -273,7 +281,8 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 function needsInterop(
   id: string,
   exportsData: ExportsData,
-  outputs: Record<string, any>
+  outputs: Record<string, any>,
+  cacheDirOutputPath: string
 ): boolean {
   if (KNOWN_INTEROP_IDS.has(id)) {
     return true
@@ -290,7 +299,10 @@ function needsInterop(
   const flatId = flattenId(id) + '.js'
   let generatedExports: string[] | undefined
   for (const output in outputs) {
-    if (normalizePath(output).endsWith('.vite/' + flatId)) {
+    if (
+      normalizePath(output) ===
+      normalizePath(path.join(cacheDirOutputPath, flatId))
+    ) {
       generatedExports = outputs[output].exports
       break
     }

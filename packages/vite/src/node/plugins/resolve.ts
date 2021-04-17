@@ -392,7 +392,7 @@ export function tryOptimizedResolve(
   id: string,
   server: ViteDevServer
 ): string | undefined {
-  const cacheDir = server.config.optimizeCacheDir
+  const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
   if (cacheDir && depData) {
     const isOptimized = depData.optimized[id]
