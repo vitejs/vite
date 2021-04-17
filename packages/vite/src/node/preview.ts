@@ -41,7 +41,16 @@ export async function preview(
   )
 
   const options = config.server || {}
-  const hostname = options.host || '127.0.0.1'
+  let hostname: string
+  if (options.host === undefined) {
+    // Use a secure default
+    hostname = '127.0.0.1'
+  } else if (options.host === true) {
+    // The user probably passed --host in the CLI, without arguments
+    hostname = '0.0.0.0'
+  } else {
+    hostname = options.host as string
+  }
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base

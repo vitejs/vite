@@ -53,7 +53,7 @@ import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 
 export interface ServerOptions {
-  host?: string
+  host?: string | boolean
   port?: number
   /**
    * Enable TLS + HTTP/2.
@@ -531,7 +531,17 @@ async function startServer(
 
   const options = server.config.server || {}
   let port = inlinePort || options.port || 3000
-  const hostname = options.host || '127.0.0.1'
+  let hostname: string
+  if (options.host === undefined) {
+    // Use a secure default
+    hostname = '127.0.0.1'
+  } else if (options.host === true) {
+    // probably passed --host in the CLI, without arguments
+    hostname = '0.0.0.0'
+  } else {
+    hostname = options.host as string
+  }
+
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
   const base = server.config.base
