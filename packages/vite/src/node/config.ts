@@ -166,6 +166,7 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins' | 'alias' | 'dedupe' | 'assetsInclude'> & {
     configFile: string | undefined
+    configFileDependencies: string[]
     inlineConfig: InlineConfig
     root: string
     base: string
@@ -199,6 +200,7 @@ export async function resolveConfig(
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
+  let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
@@ -224,6 +226,7 @@ export async function resolveConfig(
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
       configFile = loadResult.path
+      configFileDependencies = loadResult.dependencies
     }
   }
 
@@ -343,6 +346,7 @@ export async function resolveConfig(
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
+    configFileDependencies,
     inlineConfig,
     root: resolvedRoot,
     base: BASE_URL,
@@ -604,12 +608,17 @@ export async function loadConfigFromFile(
   configFile?: string,
   configRoot: string = process.cwd(),
   logLevel?: LogLevel
-): Promise<{ path: string; config: UserConfig } | null> {
+): Promise<{
+  path: string
+  config: UserConfig
+  dependencies: string[]
+} | null> {
   const start = Date.now()
 
   let resolvedPath: string | undefined
   let isTS = false
   let isMjs = false
+  let dependencies: string[] = []
 
   // check package.json for type: "module" and set `isMjs` to true
   try {
@@ -663,8 +672,9 @@ export async function loadConfigFromFile(
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        const code = await bundleConfigFile(resolvedPath, true)
-        fs.writeFileSync(resolvedPath + '.js', code)
+        const bundled = await bundleConfigFile(resolvedPath, true)
+        dependencies = bundled.dependencies
+        fs.writeFileSync(resolvedPath + '.js', bundled.code)
         userConfig = (await eval(`import(fileUrl + '.js?t=${Date.now()}')`))
           .default
         fs.unlinkSync(resolvedPath + '.js')
@@ -711,8 +721,9 @@ export async function loadConfigFromFile(
       // the user has type: "module" in their package.json (#917)
       // transpile es import syntax to require syntax using rollup.
       // lazy require rollup (it's actually in dependencies)
-      const code = await bundleConfigFile(resolvedPath)
-      userConfig = await loadConfigFromBundledFile(resolvedPath, code)
+      const bundled = await bundleConfigFile(resolvedPath)
+      dependencies = bundled.dependencies
+      userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
       debug(`bundled config file loaded in ${Date.now() - start}ms`)
     }
 
@@ -724,7 +735,8 @@ export async function loadConfigFromFile(
     }
     return {
       path: normalizePath(resolvedPath),
-      config
+      config,
+      dependencies
     }
   } catch (e) {
     createLogger(logLevel).error(
@@ -737,7 +749,7 @@ export async function loadConfigFromFile(
 async function bundleConfigFile(
   fileName: string,
   mjs = false
-): Promise<string> {
+): Promise<{ code: string; dependencies: string[] }> {
   const result = await build({
     entryPoints: [fileName],
     outfile: 'out.js',
@@ -745,6 +757,7 @@ async function bundleConfigFile(
     platform: 'node',
     bundle: true,
     format: mjs ? 'esm' : 'cjs',
+    metafile: true,
     plugins: [
       {
         name: 'externalize-deps',
@@ -783,7 +796,10 @@ async function bundleConfigFile(
     ]
   })
   const { text } = result.outputFiles[0]
-  return text
+  return {
+    code: text,
+    dependencies: result.metafile ? Object.keys(result.metafile.inputs) : []
+  }
 }
 
 interface NodeModuleWithCompile extends NodeModule {

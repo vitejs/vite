@@ -45,13 +45,16 @@ export async function handleHMRUpdate(
   const shortFile = getShortName(file, config.root)
 
   const isConfig = file === config.configFile
+  const isConfigDependency = config.configFileDependencies.some(
+    (name) => file === path.resolve(name)
+  )
   const isEnv = config.inlineConfig.envFile !== false && file.endsWith('.env')
-  if (isConfig || isEnv) {
+  if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
     config.logger.info(
       chalk.green(
-        `${isConfig ? 'config' : '.env'} file changed, restarting server...`
+        `${path.relative(process.cwd(), file)} changed, restarting server...`
       ),
       { clear: true, timestamp: true }
     )
