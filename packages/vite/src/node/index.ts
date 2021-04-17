@@ -26,7 +26,13 @@ export type {
   DepOptimizationOptions
 } from './optimizer'
 export type { Plugin } from './plugin'
-export type { Logger, LogOptions, LogLevel, LogType } from './logger'
+export type {
+  Logger,
+  LogOptions,
+  LogLevel,
+  LogType,
+  LoggerOptions
+} from './logger'
 export type {
   AliasOptions,
   ResolverFunction,
