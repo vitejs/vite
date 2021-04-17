@@ -284,9 +284,19 @@ async function resolveBuiltUrl(
 ) {
   for (const { resolveBuiltUrl } of config.plugins) {
     if (resolveBuiltUrl) {
-      const result = await resolveBuiltUrl.call(ctx, url)
-      if (result) {
-        return result
+      const builtUrl = await resolveBuiltUrl.call(ctx, url)
+      if (builtUrl) {
+        const match = builtUrl.match(/^__VITE_ASSET__(.+?)__/)
+        if (match) {
+          let map = assetHashToFilenameMap.get(config)
+          if (!map) {
+            map = new Map()
+            assetHashToFilenameMap.set(config, map)
+          }
+          const contentHash = match[1]
+          map.set(contentHash, ctx.getFileName(contentHash))
+        }
+        return builtUrl
       }
     }
   }
