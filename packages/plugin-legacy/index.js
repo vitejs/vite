@@ -196,7 +196,7 @@ function viteLegacyPlugin(options = {}) {
             while ((match = re.exec(raw))) {
               s.overwrite(
                 match.index,
-                match.index + legacyEnvVarMarker.length + 2,
+                match.index + legacyEnvVarMarker.length,
                 `false`
               )
             }
@@ -226,6 +226,7 @@ function viteLegacyPlugin(options = {}) {
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
       const { code, map } = loadBabel().transform(raw, {
+        babelrc: false,
         configFile: false,
         compact: true,
         sourceMaps,
@@ -408,6 +409,7 @@ function viteLegacyPlugin(options = {}) {
 function detectPolyfills(code, targets, list) {
   const { ast } = loadBabel().transform(code, {
     ast: true,
+    babelrc: false,
     configFile: false,
     presets: [
       [
@@ -563,7 +565,7 @@ module.exports = viteLegacyPlugin
 
 viteLegacyPlugin.default = viteLegacyPlugin
 
-viteLegacyPlugin.cpsHashes = [
+viteLegacyPlugin.cspHashes = [
   createHash('sha256').update(safari10NoModuleFix).digest('base64'),
   createHash('sha256').update(systemJSInlineCode).digest('base64')
 ]

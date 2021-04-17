@@ -12,8 +12,8 @@ To development and test the core `vite` package:
 
 2. Run `yarn link` in `packages/vite`. This links `vite` globally so that you can:
 
-    - Run `yarn link vite` in another Vite project to use the locally built Vite;
-    - Use the `vite` binary anywhere.
+   - Run `yarn link vite` in another Vite project to use the locally built Vite;
+   - Use the `vite` binary anywhere.
 
 ## Running Tests
 
@@ -29,7 +29,7 @@ Each test can be run under either dev server mode or build mode.
 
 - You can also use `yarn test-serve [match]` or `yarn test-build [match]` to run tests in a specific playground package, e.g. `yarn test-serve css` will run tests for both `playground/css` and `playground/css-codesplit` under serve mode.
 
-  Note package matching is not aviable for the `yarn test` script, which always runs all tests.
+  Note package matching is not available for the `yarn test` script, which always runs all tests.
 
 ### Test Env and Helpers
 
@@ -43,6 +43,38 @@ test('should work', async () => {
 
 Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `packages/playground/testUtils.ts`.
 
+### Extending the Test Suite
+
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading are tested in the [assets playground](https://github.com/vitejs/vite/tree/main/packages/playground/assets). In this Vite App, there is a test for `?raw` imports, with [a section is defined in the `index.html` for it](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/index.html#L121):
+
+```html
+<h2>?raw import</h2>
+<code class="raw"></code>
+```
+
+This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/index.html#L151):
+
+```js
+import rawSvg from './nested/fragment.svg?raw'
+text('.raw', rawSvg)
+```
+
+Where the `text` util is defined as:
+
+```js
+function text(el, text) {
+  document.querySelector(el).textContent = text
+}
+```
+
+In the [spec tests](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/__tests__/assets.spec.ts#L180), the modifications to the DOM listed above are used to test this feature:
+
+```js
+test('?raw import', async () => {
+  expect(await page.textContent('.raw')).toMatch('SVG')
+})
+```
+
 ## Pull Request Guidelines
 
 - Checkout a topic branch from a base branch, e.g. `main`, and merge back against that branch.
@@ -54,7 +86,7 @@ Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available 
 
 - If fixing bug:
 
-  - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log, e.g. `update entities encoding/decoding (fix #3899)`.
+  - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log, e.g. `fix: update entities encoding/decoding (fix #3899)`.
   - Provide a detailed description of the bug in the PR. Live demo preferred.
   - Add appropriate test coverage if applicable. You can check the coverage of your code addition by running `yarn test --coverage`.
 
@@ -69,6 +101,16 @@ Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available 
 ## Maintenance Guidelines
 
 > The following section is mostly for maintainers who have commit access, but it's helpful to go through if you intend to make non-trivial contributions to the codebase.
+
+### Issue Triaging Workflow
+
+![issue-workflow](./issue-workflow.png)
+
+### Pull Request Review Workflow
+
+![issue-workflow](./pr-workflow.png)
+
+## Notes on Dependencies
 
 Vite aims to be lightweight, and this includes being aware of the number of npm dependencies and their size.
 

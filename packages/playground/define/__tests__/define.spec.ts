@@ -8,4 +8,7 @@ test('string', async () => {
   expect(await page.textContent('.object')).toBe(
     JSON.stringify(defines.__OBJ__, null, 2)
   )
+  expect(await page.textContent('.env-var')).toBe(
+    JSON.parse(defines['process.env.SOMEVAR'])
+  )
 })

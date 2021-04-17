@@ -2,42 +2,25 @@ import path from 'path'
 import chalk from 'chalk'
 import { Plugin } from '../plugin'
 import {
-  Service,
+  transform,
   Message,
   Loader,
   TransformOptions,
   TransformResult
 } from 'esbuild'
 import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
-import merge from 'merge-source-map'
+import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
+import { combineSourcemaps } from '../utils'
 
 const debug = createDebugger('vite:esbuild')
-
-// lazy start the service
-let _servicePromise: Promise<Service> | undefined
 
 export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
   exclude?: string | RegExp | string[] | RegExp[]
   jsxInject?: string
-}
-
-export async function ensureService() {
-  if (!_servicePromise) {
-    _servicePromise = require('esbuild').startService()
-  }
-  return _servicePromise!
-}
-
-export async function stopService() {
-  if (_servicePromise) {
-    const service = await _servicePromise
-    service.stop()
-    _servicePromise = undefined
-  }
 }
 
 export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
@@ -50,14 +33,19 @@ export async function transformWithEsbuild(
   options?: TransformOptions,
   inMap?: object
 ): Promise<ESBuildTransformResult> {
-  const service = await ensureService()
   // if the id ends with a valid ext, use it (e.g. vue blocks)
   // otherwise, cleanup the query before checking the ext
   const ext = path.extname(
     /\.\w+$/.test(filename) ? filename : cleanUrl(filename)
   )
+
+  let loader = ext.slice(1)
+  if (loader === 'cjs' || loader === 'mjs') {
+    loader = 'js'
+  }
+
   const resolvedOptions = {
-    loader: ext.slice(1) as Loader,
+    loader: loader as Loader,
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
@@ -69,15 +57,16 @@ export async function transformWithEsbuild(
   delete resolvedOptions.jsxInject
 
   try {
-    const result = await service.transform(code, resolvedOptions)
+    const result = await transform(code, resolvedOptions)
     if (inMap) {
       const nextMap = JSON.parse(result.map)
-      // merge-source-map will overwrite original sources if newMap also has
-      // sourcesContent
       nextMap.sourcesContent = []
       return {
         ...result,
-        map: merge(inMap, nextMap) as SourceMap
+        map: combineSourcemaps(filename, [
+          nextMap as RawSourceMap,
+          inMap as RawSourceMap
+        ]) as SourceMap
       }
     } else {
       return {
@@ -123,10 +112,6 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
           map: result.map
         }
       }
-    },
-
-    async closeBundle() {
-      await stopService()
     }
   }
 }
@@ -149,10 +134,6 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         target: target || undefined,
         minify
       })
-    },
-
-    async closeBundle() {
-      await stopService()
     }
   }
 }

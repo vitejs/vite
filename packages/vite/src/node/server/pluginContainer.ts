@@ -1,6 +1,6 @@
 /**
  * This file is refactored into TypeScript based on
- * https://github.com/preactjs/wmr/blob/master/src/lib/rollup-plugin-container.js
+ * https://github.com/preactjs/wmr/blob/main/packages/wmr/src/lib/rollup-plugin-container.js
  */
 
 /**
@@ -52,7 +52,8 @@ import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
 import acornNumericSeparator from 'acorn-numeric-separator'
 import acornStaticClassFeatures from 'acorn-static-class-features'
-import merge from 'merge-source-map'
+import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import {
@@ -65,6 +66,7 @@ import {
   prettifyUrl,
   timeFrom
 } from '../utils'
+import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
@@ -335,13 +337,13 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          // merge-source-map will overwrite original sources if newMap also has
-          // sourcesContent
-          // @ts-ignore
-          combinedMap = merge(combinedMap, {
-            ...(m as SourceMap),
-            sourcesContent: combinedMap.sourcesContent
-          })
+          combinedMap = combineSourcemaps(this.filename, [
+            {
+              ...(m as RawSourceMap),
+              sourcesContent: combinedMap.sourcesContent
+            },
+            combinedMap as RawSourceMap
+          ]) as SourceMap
         }
       }
       if (!combinedMap) {
@@ -446,7 +448,7 @@ export async function createPluginContainer(
         break
       }
 
-      if (isDebug && rawId !== id && !rawId.startsWith('/@fs/')) {
+      if (isDebug && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {

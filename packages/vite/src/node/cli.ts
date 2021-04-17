@@ -4,7 +4,7 @@ import { BuildOptions } from './build'
 import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
-import { serve } from './serve'
+import { preview } from './preview'
 
 const cli = cac('vite')
 
@@ -101,7 +101,7 @@ cli
 cli
   .command('build [root]')
   .option('--target <target>', `[string] transpile target (default: 'modules')`)
-  .option('--outDir <dir>', `[string] output directory (default: dist)`)
+  .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
     `[string] directory under outDir to place assets in (default: _assets)`
@@ -130,6 +130,7 @@ cli
     `[boolean] force empty outDir when it's outside of root`
   )
   .option('-m, --mode <mode>', `[string] set env mode`)
+  .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     const buildOptions = cleanOptions(options) as BuildOptions
@@ -206,7 +207,7 @@ cli
           'serve',
           'development'
         )
-        await serve(config, options.port)
+        await preview(config, options.port)
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`)

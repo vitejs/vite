@@ -19,7 +19,7 @@ export function send(
   etag = getEtag(content, { weak: true }),
   cacheControl = 'no-cache',
   map?: SourceMap | null
-) {
+): void {
   if (req.headers['if-none-match'] === etag) {
     res.statusCode = 304
     return res.end()

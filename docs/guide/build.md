@@ -1,6 +1,6 @@
 # Building for Production
 
-When it is time to deploy your app for production, simply run the `vite build` command. By default, it uses `<root>/index.html` as the build entry point, and produces an application bundle that is suitable to be served over a static hosting service.
+When it is time to deploy your app for production, simply run the `vite build` command. By default, it uses `<root>/index.html` as the build entry point, and produces an application bundle that is suitable to be served over a static hosting service. Check out the [Deploying a Static Site](./static-deploy) for guides about popular services.
 
 ## Browser Compatibility
 
@@ -46,6 +46,21 @@ module.exports = {
 
 For example, you can specify multiple Rollup outputs with plugins that are only applied during build.
 
+## Rebuild on files changes
+
+You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/guide/en/#watch-options) via `build.watch`:
+
+```js
+// vite.config.js
+module.exports = {
+  build: {
+    watch: {
+      // https://rollupjs.org/guide/en/#watch-options
+    }
+  }
+}
+```
+
 ## Multi-Page App
 
 Suppose you have the following source code structure:
@@ -79,6 +94,8 @@ module.exports = {
   }
 }
 ```
+
+If you specify a different root, remember that `__dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therfore, you will need to add your `root` entry to the arguments for `resolve`. 
 
 ## Library Mode
 

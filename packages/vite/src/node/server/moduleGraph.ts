@@ -6,6 +6,7 @@ import {
   removeImportQuery,
   removeTimestampQuery
 } from '../utils'
+import { FS_PREFIX } from '../constants'
 import { TransformResult } from './transformRequest'
 import { PluginContainer } from './pluginContainer'
 import { parse as parseUrl } from 'url'
@@ -55,20 +56,20 @@ export class ModuleGraph {
     this.container = container
   }
 
-  async getModuleByUrl(rawUrl: string) {
+  async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined> {
     const [url] = await this.resolveUrl(rawUrl)
     return this.urlToModuleMap.get(url)
   }
 
-  getModuleById(id: string) {
+  getModuleById(id: string): ModuleNode | undefined {
     return this.idToModuleMap.get(removeTimestampQuery(id))
   }
 
-  getModulesByFile(file: string) {
+  getModulesByFile(file: string): Set<ModuleNode> | undefined {
     return this.fileToModulesMap.get(file)
   }
 
-  onFileChange(file: string) {
+  onFileChange(file: string): void {
     const mods = this.getModulesByFile(file)
     if (mods) {
       const seen = new Set<ModuleNode>()
@@ -78,13 +79,13 @@ export class ModuleGraph {
     }
   }
 
-  invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()) {
+  invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()): void {
     mod.transformResult = null
     mod.ssrTransformResult = null
     invalidateSSRModule(mod, seen)
   }
 
-  invalidateAll() {
+  invalidateAll(): void {
     const seen = new Set<ModuleNode>()
     this.idToModuleMap.forEach((mod) => {
       this.invalidateModule(mod, seen)
@@ -137,7 +138,7 @@ export class ModuleGraph {
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(rawUrl: string) {
+  async ensureEntryFromUrl(rawUrl: string): Promise<ModuleNode> {
     const [url, resolvedId] = await this.resolveUrl(rawUrl)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
@@ -160,9 +161,9 @@ export class ModuleGraph {
   // url because they are inlined into the main css import. But they still
   // need to be represented in the module graph so that they can trigger
   // hmr in the importing css file.
-  createFileOnlyEntry(file: string) {
+  createFileOnlyEntry(file: string): ModuleNode {
     file = normalizePath(file)
-    const url = `/@fs/${file}`
+    const url = `${FS_PREFIX}${file}`
     let fileMappedModules = this.fileToModulesMap.get(file)
     if (!fileMappedModules) {
       fileMappedModules = new Set()
