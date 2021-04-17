@@ -231,6 +231,7 @@ async function fileToBuiltUrl(
       )
       map.set(contentHash, fileName)
       pluginContext.emitFile({
+        name: basename,
         fileName,
         type: 'asset',
         source: content
