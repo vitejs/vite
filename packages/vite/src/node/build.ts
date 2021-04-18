@@ -22,7 +22,7 @@ import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import { Terser } from 'types/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath, unique } from './utils'
+import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { RollupCommonJSOptions } from 'types/commonjs'
@@ -353,9 +353,6 @@ async function doBuild(
         ) as DepOptimizationMetadata
         knownImports = Object.keys(data.optimized)
       } catch (e) {}
-      if (knownImports) {
-        knownImports = unique(knownImports.map(getNpmPackageName))
-      }
     }
     if (!knownImports) {
       // no dev deps optimization data, do a fresh scan
@@ -720,14 +717,5 @@ function wrapSsrHook(fn: Function | undefined) {
   if (!fn) return
   return function (this: any, ...args: any[]) {
     return fn.call(this, ...args, true)
-  }
-}
-
-function getNpmPackageName(importPath: string) {
-  const parts = importPath.split('/')
-  if (parts[0].startsWith('@')) {
-    return `${parts[0]}/${parts[1]}`
-  } else {
-    return parts[0]
   }
 }
