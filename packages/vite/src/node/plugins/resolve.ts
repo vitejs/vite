@@ -176,11 +176,14 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           return res
         }
 
-        if ((res = tryResolveBrowserMapping(id, importer, options, false))) {
+        if (
+          !ssr &&
+          (res = tryResolveBrowserMapping(id, importer, options, false))
+        ) {
           return res
         }
 
-        if ((res = tryNodeResolve(id, importer, options, server))) {
+        if ((res = tryNodeResolve(id, importer, options, ssr, server))) {
           return res
         }
 
@@ -228,7 +231,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
-  tryIndex = true
+  tryIndex = true,
+  ssr?: boolean
 ): string | undefined {
   let file = fsPath
   let postfix = ''
@@ -244,7 +248,14 @@ function tryFsResolve(
 
   let res: string | undefined
   if (
-    (res = tryResolveFile(file, postfix, options, false, options.tryPrefix))
+    (res = tryResolveFile(
+      file,
+      postfix,
+      options,
+      false,
+      ssr,
+      options.tryPrefix
+    ))
   ) {
     return res
   }
@@ -256,6 +267,7 @@ function tryFsResolve(
         postfix,
         options,
         false,
+        ssr,
         options.tryPrefix
       ))
     ) {
@@ -264,7 +276,14 @@ function tryFsResolve(
   }
 
   if (
-    (res = tryResolveFile(file, postfix, options, tryIndex, options.tryPrefix))
+    (res = tryResolveFile(
+      file,
+      postfix,
+      options,
+      tryIndex,
+      ssr,
+      options.tryPrefix
+    ))
   ) {
     return res
   }
@@ -275,6 +294,7 @@ function tryResolveFile(
   postfix: string,
   options: InternalResolveOptions,
   tryIndex: boolean,
+  ssr?: boolean,
   tryPrefix?: string
 ): string | undefined {
   let isReadable = false
@@ -293,7 +313,7 @@ function tryResolveFile(
       if (fs.existsSync(pkgPath)) {
         // path points to a node package
         const pkg = loadPackageData(pkgPath)
-        return resolvePackageEntry(file, pkg, options)
+        return resolvePackageEntry(file, pkg, options, ssr)
       }
       const index = tryFsResolve(file + '/index', options)
       if (index) return index + postfix
@@ -301,7 +321,7 @@ function tryResolveFile(
   }
   if (tryPrefix) {
     const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
-    return tryResolveFile(prefixed, postfix, options, tryIndex)
+    return tryResolveFile(prefixed, postfix, options, tryIndex, ssr)
   }
 }
 
@@ -311,6 +331,7 @@ export function tryNodeResolve(
   id: string,
   importer: string | undefined,
   options: InternalResolveOptions,
+  ssr?: boolean,
   server?: ViteDevServer
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild } = options
@@ -338,7 +359,7 @@ export function tryNodeResolve(
 
   let resolved = deepMatch
     ? resolveDeepImport(id, pkg, options)
-    : resolvePackageEntry(id, pkg, options)
+    : resolvePackageEntry(id, pkg, options, ssr)
   if (!resolved) {
     return
   }
@@ -466,12 +487,12 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
 export function resolvePackageEntry(
   id: string,
   { resolvedImports, dir, data }: PackageData,
-  options: InternalResolveOptions
+  options: InternalResolveOptions,
+  ssr?: boolean
 ): string | undefined {
   if (resolvedImports['.']) {
     return resolvedImports['.']
   }
-
   let entryPoint: string | undefined | void
 
   // resolve exports field with highest priority
@@ -484,7 +505,7 @@ export function resolvePackageEntry(
   // This is because .mjs files can technically import .cjs files which would
   // make them invalid for pure ESM environments - so if other module/browser
   // fields are present, prioritize those instead.
-  if (!entryPoint || entryPoint.endsWith('.mjs')) {
+  if (!ssr && (!entryPoint || entryPoint.endsWith('.mjs'))) {
     // check browser field
     // https://github.com/defunctzombie/package-browser-field-spec
     const browserEntry =
@@ -534,7 +555,7 @@ export function resolvePackageEntry(
 
   // resolve object browser field in package.json
   const { browser: browserField } = data
-  if (isObject(browserField)) {
+  if (!ssr && isObject(browserField)) {
     entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
   }
 
