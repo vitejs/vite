@@ -471,13 +471,8 @@ async function doBuild(
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
           config.logger.info(chalk.cyanBright(`\nbuild started...`))
-
-          // clean previous files
           if (options.write) {
-            emptyDir(outDir)
-            if (fs.existsSync(config.publicDir)) {
-              copyDir(config.publicDir, outDir)
-            }
+            prepareOutDir(outDir, options.emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -504,28 +499,7 @@ async function doBuild(
     }
 
     if (options.write) {
-      // warn if outDir is outside of root
-      if (fs.existsSync(outDir)) {
-        const inferEmpty = options.emptyOutDir === null
-        if (
-          options.emptyOutDir ||
-          (inferEmpty && normalizePath(outDir).startsWith(config.root + '/'))
-        ) {
-          emptyDir(outDir)
-        } else if (inferEmpty) {
-          config.logger.warn(
-            chalk.yellow(
-              `\n${chalk.bold(`(!)`)} outDir ${chalk.white.dim(
-                outDir
-              )} is not inside project root and will not be emptied.\n` +
-                `Use --emptyOutDir to override.\n`
-            )
-          )
-        }
-      }
-      if (fs.existsSync(config.publicDir)) {
-        copyDir(config.publicDir, outDir)
-      }
+      prepareOutDir(outDir, options.emptyOutDir, config)
     }
 
     if (Array.isArray(outputs)) {
@@ -540,6 +514,34 @@ async function doBuild(
   } catch (e) {
     outputBuildError(e)
     throw e
+  }
+}
+
+function prepareOutDir(
+  outDir: string,
+  emptyOutDir: boolean | null,
+  config: ResolvedConfig
+) {
+  if (fs.existsSync(outDir)) {
+    if (
+      emptyOutDir == null &&
+      !normalizePath(outDir).startsWith(config.root + '/')
+    ) {
+      // warn if outDir is outside of root
+      config.logger.warn(
+        chalk.yellow(
+          `\n${chalk.bold(`(!)`)} outDir ${chalk.white.dim(
+            outDir
+          )} is not inside project root and will not be emptied.\n` +
+            `Use --emptyOutDir to override.\n`
+        )
+      )
+    } else if (emptyOutDir !== false) {
+      emptyDir(outDir, ['.git'])
+    }
+  }
+  if (fs.existsSync(config.publicDir)) {
+    copyDir(config.publicDir, outDir)
   }
 }
 
