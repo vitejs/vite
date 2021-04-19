@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { Named, NamedSpec, default as Default } from './Comps'
 import { default as TsxDefault } from './Comp'
+import OtherExt from './OtherExt.tesx'
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <NamedSpec />
       <Default />
       <TsxDefault />
+      <OtherExt />
     </>
   )
 }
