@@ -2,7 +2,7 @@ name: CI
 
 env:
    # 7 GiB by default on GitHub, setting to 6 GiB
-   # https://docs.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
+   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
    NODE_OPTIONS: --max-old-space-size=6144
 
 on:
