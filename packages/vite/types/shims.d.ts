@@ -79,7 +79,7 @@ declare module 'postcss-modules' {
 declare module '@rollup/plugin-dynamic-import-vars' {
   import { Plugin } from 'rollup'
 
-  interface Options {
+  export interface Options {
     include?: string | RegExp | (string | RegExp)[]
     exclude?: string | RegExp | (string | RegExp)[]
     warnOnError?: boolean
