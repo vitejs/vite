@@ -110,6 +110,9 @@ function reactRefreshPlugin(opts) {
           allowAwaitOutsideFunction: true,
           plugins: parserPlugins
         },
+        generatorOpts: {
+          decoratorsBeforeExport: true
+        },
         plugins: [
           require('@babel/plugin-transform-react-jsx-self'),
           require('@babel/plugin-transform-react-jsx-source'),
@@ -197,22 +200,33 @@ function isRefreshBoundary(ast) {
       return true
     }
     const { declaration, specifiers } = node
-    if (declaration && declaration.type === 'VariableDeclaration') {
-      return declaration.declarations.every(
-        ({ id }) => id.type === 'Identifier' && isComponentishName(id.name)
-      )
+    if (declaration) {
+      if (declaration.type === 'VariableDeclaration') {
+        return declaration.declarations.every(
+          (variable) => isComponentLikeIdentifier(variable.id)
+        )
+      }
+      if (declaration.type === 'FunctionDeclaration') {
+        return isComponentLikeIdentifier(declaration.id)
+      }
     }
-    return specifiers.every(
-      ({ exported }) =>
-        exported.type === 'Identifier' && isComponentishName(exported.name)
-    )
+    return specifiers.every((spec) => {
+      return isComponentLikeIdentifier(spec.exported)
+    })
   })
+}
+
+/**
+ * @param {import('@babel/types').Node} node
+ */
+function isComponentLikeIdentifier(node) {
+  return node.type === 'Identifier' && isComponentLikeName(node.name)
 }
 
 /**
  * @param {string} name
  */
-function isComponentishName(name) {
+function isComponentLikeName(name) {
   return typeof name === 'string' && name[0] >= 'A' && name[0] <= 'Z'
 }
 

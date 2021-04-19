@@ -96,7 +96,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (importer.includes('node_modules')) {
+      if (
+        importer.includes('node_modules') &&
+        !source.includes('import.meta.glob')
+      ) {
         return
       }
 
@@ -218,6 +221,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (imports.length) {
             const s = new MagicString(code)
+            const analyzed: Set<string> = new Set<string>()
             for (let index = 0; index < imports.length; index++) {
               const { s: start, e: end, d: dynamicIndex } = imports[index]
               // if dynamic import polyfill is used, rewrite the import to
@@ -234,6 +238,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // literal import - trace direct imports and add to deps
                 const addDeps = (filename: string) => {
                   if (filename === ownerFilename) return
+                  if (analyzed.has(filename)) return
+                  analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     deps.add(config.base + chunk.fileName)

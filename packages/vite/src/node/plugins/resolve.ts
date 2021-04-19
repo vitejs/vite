@@ -124,7 +124,10 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
-        if ((res = tryResolveBrowserMapping(fsPath, importer, options, true))) {
+        if (
+          !ssr &&
+          (res = tryResolveBrowserMapping(fsPath, importer, options, true))
+        ) {
           return res
         }
 
@@ -389,7 +392,7 @@ export function tryOptimizedResolve(
   id: string,
   server: ViteDevServer
 ): string | undefined {
-  const cacheDir = server.config.optimizeCacheDir
+  const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
   if (cacheDir && depData) {
     const isOptimized = depData.optimized[id]

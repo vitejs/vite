@@ -6,9 +6,9 @@ import { chunkToEmittedCssFileMap } from './css'
 import { chunkToEmittedAssetsMap } from './asset'
 import { normalizePath } from '../utils'
 
-type Manifest = Record<string, ManifestChunk>
+export type Manifest = Record<string, ManifestChunk>
 
-interface ManifestChunk {
+export interface ManifestChunk {
   src?: string
   file: string
   css?: string[]

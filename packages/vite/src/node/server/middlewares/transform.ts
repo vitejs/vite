@@ -1,3 +1,4 @@
+import path from 'path'
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import {
@@ -6,6 +7,7 @@ import {
   injectQuery,
   isImportRequest,
   isJSRequest,
+  normalizePath,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -17,7 +19,6 @@ import { isHTMLProxy } from '../../plugins/html'
 import chalk from 'chalk'
 import {
   CLIENT_PUBLIC_PATH,
-  DEP_CACHE_DIR,
   DEP_VERSION_RE,
   NULL_BYTE_PLACEHOLDER
 } from '../../constants'
@@ -38,9 +39,24 @@ export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   const {
-    config: { root, logger },
+    config: { root, logger, cacheDir },
     moduleGraph
   } = server
+
+  // determine the url prefix of files inside cache directory
+  let cacheDirPrefix: string | undefined
+  if (cacheDir) {
+    const cacheDirRelative = normalizePath(path.relative(root, cacheDir))
+    if (cacheDirRelative.startsWith('../')) {
+      // if the cache directory is outside root, the url prefix would be something
+      // like '/@fs/absolute/path/to/node_modules/.vite'
+      cacheDirPrefix = `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
+    } else {
+      // if the cache directory is inside root, the url prefix would be something
+      // like '/node_modules/.vite'
+      cacheDirPrefix = `/${cacheDirRelative}`
+    }
+  }
 
   return async (req, res, next) => {
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
@@ -152,7 +168,7 @@ export function transformMiddleware(
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) ||
-            url.includes(`node_modules/${DEP_CACHE_DIR}`)
+            (cacheDirPrefix && url.startsWith(cacheDirPrefix))
           return send(
             req,
             res,

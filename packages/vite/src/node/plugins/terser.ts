@@ -8,7 +8,7 @@ export function terserPlugin(options: Terser.MinifyOptions): Plugin {
       // when vite is linked, the worker thread won't share the same resolve
       // root with vite itself, so we have to pass in the basedir and resolve
       // terser first.
-      // eslint-disable-next-line
+      // eslint-disable-next-line node/no-restricted-require
       const terserPath = require.resolve('terser', {
         paths: [basedir]
       })
