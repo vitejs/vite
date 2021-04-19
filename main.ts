@@ -70,12 +70,12 @@ function injectStyles (context) {
 }\n`
 
   // custom block
-  code += genCustomBlockCode(filePath, descriptor)
+  result += await genCustomBlockCode(filePath, descriptor, pluginContext)
   // Expose filename. This is used by the devtools and Vue runtime warnings.
   if (options.isProduction) {
     // Expose the file's full path in development, so that it can be opened
     // from the devtools.
-    code += `\ncomponent.options.__file = ${JSON.stringify(
+    result += `\ncomponent.options.__file = ${JSON.stringify(
       path.relative(options.root, filePath).replace(/\\/g, '/')
     )}`
   }
@@ -194,20 +194,31 @@ async function genTemplateRequest(
   }
 }
 
-function genCustomBlockCode(filename: string, descriptor: SFCDescriptor) {
+async function genCustomBlockCode(
+  filename: string,
+  descriptor: SFCDescriptor,
+  pluginContext: TransformPluginContext
+) {
   let code = ''
-  descriptor.customBlocks.forEach((block, index) => {
-    // if (block.src) {
-    //   linkSrcToDescriptor(block.src, descriptor)
-    // }
-    const src = filename
-    const attrsQuery = attrsToQuery(block.attrs, block.type)
-    // const srcQuery = block.src ? `&src` : ``
-    const query = `?vue&type=${block.type}&index=${index}${attrsQuery}`
-    const request = JSON.stringify(src + query)
-    code += `import block${index} from ${request}\n`
-    code += `if (typeof block${index} === 'function') block${index}(component)\n`
-  })
+  await Promise.all(
+    descriptor.customBlocks.map(async (block, index) => {
+      const blockSrc =
+        typeof block.attrs.src === 'string' ? block.attrs.src : ''
+      if (blockSrc) {
+        await linkSrcToDescriptor(blockSrc, filename, descriptor, pluginContext)
+      }
+      const src = blockSrc || filename
+      const attrsQuery = attrsToQuery(
+        block.attrs,
+        path.extname(blockSrc) || block.type
+      )
+      const srcQuery = block.attrs.src ? `&src` : ``
+      const query = `?vue&type=${block.type}&index=${index}${srcQuery}${attrsQuery}`
+      const request = JSON.stringify(src + query)
+      code += `import block${index} from ${request}\n`
+      code += `if (typeof block${index} === 'function') block${index}(component)\n`
+    })
+  )
   return code
 }
 
