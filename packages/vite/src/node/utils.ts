@@ -380,13 +380,16 @@ export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
 ): Promise<string> {
-  const imageCandidates: ImageCandidate[] = srcs.split(',').map((s) => {
-    const [url, descriptor] = s
-      .replace(escapedSpaceCharacters, ' ')
-      .trim()
-      .split(' ', 2)
-    return { url, descriptor }
-  })
+  const imageCandidates: ImageCandidate[] = srcs
+    .split(',')
+    .map((s) => {
+      const [url, descriptor] = s
+        .replace(escapedSpaceCharacters, ' ')
+        .trim()
+        .split(' ', 2)
+      return { url, descriptor }
+    })
+    .filter(({ url }) => !!url)
 
   const ret = await Promise.all(
     imageCandidates.map(async ({ url, descriptor }) => {
