@@ -268,6 +268,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // preload when there are actual other deps.
                   deps.size > 1
                     ? `[${[...deps]
+                        // replace leading slashes to ensure a relative path. See https://github.com/vitejs/vite/pull/3061
                         .map((d) => JSON.stringify(d.replace(/^\//, './')))
                         .join(',')}]`
                     : `void 0`
