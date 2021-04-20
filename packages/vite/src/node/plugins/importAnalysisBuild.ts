@@ -267,7 +267,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // the dep list includes the main chunk, so only need to
                   // preload when there are actual other deps.
                   deps.size > 1
-                    ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
+                    ? `[${[...deps]
+                        .map((d) => JSON.stringify(d.replace(/^\//, './')))
+                        .join(',')}]`
                     : `void 0`
                 )
               }
