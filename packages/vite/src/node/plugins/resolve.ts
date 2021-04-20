@@ -358,7 +358,7 @@ export function tryNodeResolve(
   }
 
   let resolved = deepMatch
-    ? resolveDeepImport(id, pkg, options)
+    ? resolveDeepImport(id, pkg, options, ssr)
     : resolvePackageEntry(id, pkg, options, ssr)
   if (!resolved) {
     return
@@ -432,6 +432,9 @@ export interface PackageData {
   dir: string
   hasSideEffects: (id: string) => boolean
   resolvedImports: Record<string, string | undefined>
+  ssrResolvedImports: Record<string, string | undefined>
+  setResolvedCache: (key: string, entry: string, ssr?: boolean) => void
+  getResolvedCache: (key: string, ssr?: boolean) => string | undefined
   data: {
     [field: string]: any
     version: string
@@ -474,11 +477,26 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
     hasSideEffects = () => true
   }
 
-  const pkg = {
+  const pkg: PackageData = {
     dir: pkgDir,
     data,
     hasSideEffects,
-    resolvedImports: {}
+    resolvedImports: {},
+    ssrResolvedImports: {},
+    setResolvedCache(key: string, entry: string, ssr?: boolean) {
+      if (ssr) {
+        pkg.ssrResolvedImports[key] = entry
+      } else {
+        pkg.resolvedImports[key] = entry
+      }
+    },
+    getResolvedCache(key: string, ssr?: boolean) {
+      if (ssr) {
+        return pkg.ssrResolvedImports[key]
+      } else {
+        return pkg.resolvedImports[key]
+      }
+    }
   }
   packageCache.set(cacheKey, pkg)
   return pkg
@@ -486,12 +504,13 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
 
 export function resolvePackageEntry(
   id: string,
-  { resolvedImports, dir, data }: PackageData,
+  { dir, data, setResolvedCache, getResolvedCache }: PackageData,
   options: InternalResolveOptions,
   ssr?: boolean
 ): string | undefined {
-  if (resolvedImports['.']) {
-    return resolvedImports['.']
+  const cached = getResolvedCache('.', ssr)
+  if (cached) {
+    return cached
   }
   let entryPoint: string | undefined | void
 
@@ -567,7 +586,7 @@ export function resolvePackageEntry(
       debug(
         `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPoint)}`
       )
-    resolvedImports['.'] = resolvedEntryPoint
+    setResolvedCache('.', resolvedEntryPoint, ssr)
     return resolvedEntryPoint
   } else {
     throw new Error(
@@ -598,12 +617,20 @@ function resolveExports(
 
 function resolveDeepImport(
   id: string,
-  { resolvedImports, dir, data }: PackageData,
-  options: InternalResolveOptions
+  {
+    resolvedImports,
+    setResolvedCache,
+    getResolvedCache,
+    dir,
+    data
+  }: PackageData,
+  options: InternalResolveOptions,
+  ssr?: boolean
 ): string | undefined {
   id = '.' + id.slice(data.name.length)
-  if (resolvedImports[id]) {
-    return resolvedImports[id]
+  const cache = getResolvedCache(id, ssr)
+  if (cache) {
+    return cache
   }
 
   let relativeId: string | undefined | void = id
@@ -623,7 +650,7 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`
       )
     }
-  } else if (isObject(browserField)) {
+  } else if (!ssr && isObject(browserField)) {
     const mapped = mapWithBrowserField(relativeId, browserField)
     if (mapped) {
       relativeId = mapped
@@ -636,12 +663,14 @@ function resolveDeepImport(
     const resolved = tryFsResolve(
       path.join(dir, relativeId),
       options,
-      !exportsField // try index only if no exports field
+      !exportsField, // try index only if no exports field
+      ssr
     )
     if (resolved) {
       isDebug &&
         debug(`[node/deep-import] ${chalk.cyan(id)} -> ${chalk.dim(resolved)}`)
-      return (resolvedImports[id] = resolved)
+      setResolvedCache(id, resolved, ssr)
+      return resolved
     }
   }
 }
