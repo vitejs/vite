@@ -281,7 +281,7 @@ async function resolveBuiltUrl(
   url: string,
   config: ResolvedConfig,
   ctx: PluginContext
-) {
+): Promise<string | undefined> {
   for (const { resolveBuiltUrl } of config.plugins) {
     if (resolveBuiltUrl) {
       const builtUrl = await resolveBuiltUrl.call(ctx, url)
