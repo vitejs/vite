@@ -24,5 +24,9 @@ module.exports = {
       .replace(/<script type="module".*?<\/script>/g, '')
       .replace(/<script nomodule/g, '<script')
     fs.writeFileSync(indexPath, index)
+  },
+
+  server: {
+    host: '0.0.0.0'
   }
 }

@@ -11,5 +11,8 @@ module.exports = {
   },
   esbuild: {
     jsxInject: `import React from 'react'`
+  },
+  server: {
+    host: '0.0.0.0'
   }
 }

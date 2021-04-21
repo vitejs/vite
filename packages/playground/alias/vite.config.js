@@ -23,6 +23,9 @@ module.exports = {
   build: {
     minify: false
   },
+  server: {
+    host: '0.0.0.0'
+  },
   define: {
     __VUE_OPTIONS_API__: true,
     __VUE_PROD_DEVTOOLS__: true

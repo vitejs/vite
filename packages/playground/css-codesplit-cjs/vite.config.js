@@ -16,5 +16,8 @@ module.exports = {
         externalLiveBindings: false
       }
     }
+  },
+  server: {
+    host: '0.0.0.0'
   }
 }

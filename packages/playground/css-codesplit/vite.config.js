@@ -9,5 +9,8 @@ module.exports = {
         other: resolve(__dirname, './other.js')
       }
     }
+  },
+  server: {
+    host: '0.0.0.0'
   }
 }
