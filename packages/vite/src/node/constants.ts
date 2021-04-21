@@ -21,8 +21,6 @@ export const OPTIMIZABLE_ENTRY_RE = /\.(?:m?js|ts)$/
 
 export const SPECIAL_QUERY_RE = /[\?&](?:worker|raw|url)\b/
 
-export const DEP_CACHE_DIR = `.vite`
-
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
  */
@@ -42,9 +40,9 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
-// eslint-disable-next-line
+// eslint-disable-next-line node/no-missing-require
 export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
-// eslint-disable-next-line
+// eslint-disable-next-line node/no-missing-require
 export const ENV_ENTRY = require.resolve('vite/dist/client/env.js')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 

@@ -45,9 +45,13 @@ exports.serve = async function serve(root, isProd) {
       const server = app.listen(port, () => {
         resolve({
           // for test teardown
-          close() {
-            server.close()
-            return vite && vite.close()
+          async close() {
+            await new Promise((resolve) => {
+              server.close(resolve)
+            })
+            if (vite) {
+              await vite.close()
+            }
           }
         })
       })

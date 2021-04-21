@@ -29,7 +29,7 @@ Each test can be run under either dev server mode or build mode.
 
 - You can also use `yarn test-serve [match]` or `yarn test-build [match]` to run tests in a specific playground package, e.g. `yarn test-serve css` will run tests for both `playground/css` and `playground/css-codesplit` under serve mode.
 
-  Note package matching is not aviable for the `yarn test` script, which always runs all tests.
+  Note package matching is not available for the `yarn test` script, which always runs all tests.
 
 ### Test Env and Helpers
 
@@ -42,6 +42,38 @@ test('should work', async () => {
 ```
 
 Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `packages/playground/testUtils.ts`.
+
+### Extending the Test Suite
+
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading are tested in the [assets playground](https://github.com/vitejs/vite/tree/main/packages/playground/assets). In this Vite App, there is a test for `?raw` imports, with [a section is defined in the `index.html` for it](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/index.html#L121):
+
+```html
+<h2>?raw import</h2>
+<code class="raw"></code>
+```
+
+This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/index.html#L151):
+
+```js
+import rawSvg from './nested/fragment.svg?raw'
+text('.raw', rawSvg)
+```
+
+Where the `text` util is defined as:
+
+```js
+function text(el, text) {
+  document.querySelector(el).textContent = text
+}
+```
+
+In the [spec tests](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/__tests__/assets.spec.ts#L180), the modifications to the DOM listed above are used to test this feature:
+
+```js
+test('?raw import', async () => {
+  expect(await page.textContent('.raw')).toMatch('SVG')
+})
+```
 
 ## Pull Request Guidelines
 

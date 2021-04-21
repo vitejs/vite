@@ -189,8 +189,8 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `configResolved`
 
-- **Type:** `(config: ResolvedConfig) => void`
-- **Kind:** `sync`, `sequential`
+- **Type:** `(config: ResolvedConfig) => void | Promise<void>`
+- **Kind:** `async`, `parallel`
 
   Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based the command is being run.
 

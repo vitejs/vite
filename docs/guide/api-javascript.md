@@ -33,6 +33,7 @@ const { createServer } = require('vite')
 The `InlineConfig` interface extends `UserConfig` with additional properties:
 
 - `configFile`: specify config file to use. If not set, Vite will try to automatically resolve one from project root. Set to `false` to disable auto resolving.
+- `envFile`: Set to `false` to disable `.env` files.
 
 ## `ViteDevServer`
 

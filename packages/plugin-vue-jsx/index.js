@@ -2,6 +2,7 @@
 const babel = require('@babel/core')
 const jsx = require('@vue/babel-plugin-jsx')
 const importMeta = require('@babel/plugin-syntax-import-meta')
+const { createFilter } = require('@rollup/pluginutils')
 const hash = require('hash-sum')
 
 const ssrRegisterHelperId = '/__vue-jsx-ssr-register-helper'
@@ -28,7 +29,13 @@ function ssrRegisterHelper(comp, filename) {
 }
 
 /**
- * @param {import('@vue/babel-plugin-jsx').VueJSXPluginOptions} options
+ * @typedef { import('@rollup/pluginutils').FilterPattern} FilterPattern
+ * @typedef { { include?: FilterPattern, exclude?: FilterPattern } } CommonOtions
+ */
+
+/**
+ *
+ * @param {import('@vue/babel-plugin-jsx').VueJSXPluginOptions & CommonOtions} options
  * @returns {import('vite').Plugin}
  */
 function vueJsxPlugin(options = {}) {
@@ -71,8 +78,12 @@ function vueJsxPlugin(options = {}) {
     },
 
     transform(code, id, ssr) {
-      if (/\.[jt]sx$/.test(id)) {
-        const plugins = [importMeta, [jsx, options]]
+      const { include, exclude, ...babelPluginOptions } = options
+
+      const filter = createFilter(include || /\.[jt]sx$/, exclude)
+
+      if (filter(id)) {
+        const plugins = [importMeta, [jsx, babelPluginOptions]]
         if (id.endsWith('.tsx')) {
           plugins.push([
             require('@babel/plugin-transform-typescript'),
