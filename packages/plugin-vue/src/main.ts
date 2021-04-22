@@ -143,7 +143,7 @@ export async function transformMain(
   // SSR module registration by wrapping user setup
   if (ssr) {
     output.push(
-      `import { useSSRContext as __vite_useSSRContext} from 'vue'`,
+      `import { useSSRContext as __vite_useSSRContext } from 'vue'`,
       `const _sfc_setup = _sfc_main.setup`,
       `_sfc_main.setup = (props, ctx) => {`,
       `  const ssrContext = __vite_useSSRContext()`,
