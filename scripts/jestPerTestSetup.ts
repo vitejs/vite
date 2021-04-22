@@ -104,10 +104,9 @@ beforeAll(async () => {
 }, 30000)
 
 afterAll(async () => {
-  global.page && global.page.off('console', onConsole)
-  if (server) {
-    await server.close()
-  }
+  global.page?.off('console', onConsole)
+  await global.page?.close()
+  await server?.close()
   if (err) {
     throw err
   }
