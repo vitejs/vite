@@ -421,7 +421,7 @@ export default async ({ command, mode }) => {
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
 
-  Set `server.hmr.runtimePort` to any runtime code which interpreted as a port. e.g. `'window.location.port'` and `(() => window.location.port)()`
+  Set `server.hmr.runtimePort` to any runtime code which interpreted as a port. e.g. `'window.location.port'` and `(() => window.location.port)()`. If this is set, `server.hmr.port` will be ignored.
 
 ### server.watch
 
