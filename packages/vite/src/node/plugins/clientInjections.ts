@@ -24,20 +24,23 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const timeout = options.timeout || 30000
         const overlay = options.overlay !== false
         let port
-        if (config.server.middlewareMode) {
-          port = String(
-            (typeof config.server.hmr === 'object' && config.server.hmr.port) ||
-              24678
-          )
-        } else {
-          port = String(options.port || config.server.port!)
-        }
-        let hmrBase = config.base
-        if (options.path) {
-          hmrBase = path.posix.join(hmrBase, options.path)
-        }
-        if (hmrBase !== '/') {
-          port = path.posix.normalize(`${port}${hmrBase}`)
+        if (!options.runtimePort) {
+          if (config.server.middlewareMode) {
+            port = String(
+              (typeof config.server.hmr === 'object' &&
+                config.server.hmr.port) ||
+                24678
+            )
+          } else {
+            port = String(options.port || config.server.port!)
+          }
+          let hmrBase = config.base
+          if (options.path) {
+            hmrBase = path.posix.join(hmrBase, options.path)
+          }
+          if (hmrBase !== '/') {
+            port = path.posix.normalize(`${port}${hmrBase}`)
+          }
         }
 
         return code
@@ -47,7 +50,10 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__DEFINES__`, serializeDefine(config.define || {}))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
-          .replace(`__HMR_PORT__`, JSON.stringify(port))
+          .replace(
+            `__HMR_PORT__`,
+            options.runtimePort ? options.runtimePort : JSON.stringify(port)
+          )
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
       } else if (code.includes('process.env.NODE_ENV')) {

@@ -415,11 +415,13 @@ export default async ({ command, mode }) => {
 
 ### server.hmr
 
-- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean }`
+- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, runtimePort?: string }`
 
   Disable or configure HMR connection (in cases where the HMR websocket must use a different address from the http server).
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
+
+  Set `server.hmr.runtimePort` to any runtime code which interpreted as a port. e.g. `'window.location.port'` and `(() => window.location.port)()`
 
 ### server.watch
 

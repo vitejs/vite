@@ -23,6 +23,7 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   server?: Server
+  runtimePort?: string
 }
 
 export interface HmrContext {
