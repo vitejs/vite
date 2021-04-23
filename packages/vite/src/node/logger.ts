@@ -37,10 +37,17 @@ function clearScreen() {
   readline.clearScreenDown(process.stdout)
 }
 
+export interface LoggerOptions {
+  prefix?: string
+  allowClearScreen?: boolean
+}
+
 export function createLogger(
   level: LogLevel = 'info',
-  allowClearScreen = true
+  options: LoggerOptions = {}
 ): Logger {
+  const { prefix = '[vite]', allowClearScreen = true } = options
+
   const thresh = LogLevels[level]
   const clear =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
@@ -54,10 +61,10 @@ export function createLogger(
         if (options.timestamp) {
           const tag =
             type === 'info'
-              ? chalk.cyan.bold(`[vite]`)
+              ? chalk.cyan.bold(prefix)
               : type === 'warn'
-              ? chalk.yellow.bold(`[vite]`)
-              : chalk.red.bold(`[vite]`)
+              ? chalk.yellow.bold(prefix)
+              : chalk.red.bold(prefix)
           return `${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
         } else {
           return msg

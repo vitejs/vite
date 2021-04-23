@@ -30,7 +30,9 @@ export async function resolveHttpServer(
   }
 }
 
-export async function resolveHttpsConfig(httpsOption: HttpsServerOptions) {
+export async function resolveHttpsConfig(
+  httpsOption: HttpsServerOptions
+): Promise<HttpsServerOptions> {
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
     ca: readFileIfExists(ca),

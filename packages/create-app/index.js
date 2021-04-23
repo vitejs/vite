@@ -4,33 +4,122 @@
 const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
+// eslint-disable-next-line node/no-restricted-require
 const { prompt } = require('enquirer')
 const {
   yellow,
   green,
   cyan,
+  blue,
   magenta,
   lightRed,
-  red,
-  stripColors
+  red
 } = require('kolorist')
 
 const cwd = process.cwd()
 
-const TEMPLATES = [
-  yellow('vanilla'),
-  yellow('vanilla-ts'),
-  green('vue'),
-  green('vue-ts'),
-  cyan('react'),
-  cyan('react-ts'),
-  magenta('preact'),
-  magenta('preact-ts'),
-  lightRed('lit-element'),
-  lightRed('lit-element-ts'),
-  red('svelte'),
-  red('svelte-ts')
+const FRAMEWORKS = [
+  {
+    name: 'vanilla',
+    color: yellow,
+    variants: [
+      {
+        name: 'vanilla',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'vanilla-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'vue',
+    color: green,
+    variants: [
+      {
+        name: 'vue',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'vue-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'react',
+    color: cyan,
+    variants: [
+      {
+        name: 'react',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'react-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'preact',
+    color: magenta,
+    variants: [
+      {
+        name: 'preact',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'preact-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'lit-element',
+    color: lightRed,
+    variants: [
+      {
+        name: 'lit-element',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'lit-element-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'svelte',
+    color: red,
+    variants: [
+      {
+        name: 'svelte',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'svelte-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  }
 ]
+
+const TEMPLATES = FRAMEWORKS.map(
+  (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name]
+).reduce((a, b) => a.concat(b), [])
 
 const renameFiles = {
   _gitignore: '.gitignore'
@@ -52,7 +141,6 @@ async function init() {
   }
   const packageName = await getValidPackageName(targetDir)
   const root = path.join(cwd, targetDir)
-  console.log(`\nScaffolding project in ${root}...`)
 
   if (!fs.existsSync(root)) {
     fs.mkdirSync(root, { recursive: true })
@@ -80,28 +168,62 @@ async function init() {
 
   // determine template
   let template = argv.t || argv.template
-  let message = 'Select a template:'
+  let message = 'Select a framework:'
   let isValidTemplate = false
 
   // --template expects a value
   if (typeof template === 'string') {
-    const availableTemplates = TEMPLATES.map(stripColors)
-    isValidTemplate = availableTemplates.includes(template)
+    isValidTemplate = TEMPLATES.includes(template)
     message = `${template} isn't a valid template. Please choose from below:`
   }
 
   if (!template || !isValidTemplate) {
     /**
-     * @type {{ t: string }}
+     * @type {{ framework: string }}
      */
-    const { t } = await prompt({
+    const { framework } = await prompt({
       type: 'select',
-      name: 't',
+      name: 'framework',
       message,
-      choices: TEMPLATES
+      format(name) {
+        const framework = FRAMEWORKS.find((v) => v.name === name)
+        return framework
+          ? framework.color(framework.display || framework.name)
+          : name
+      },
+      choices: FRAMEWORKS.map((f) => ({
+        name: f.name,
+        value: f.name,
+        message: f.color(f.display || f.name)
+      }))
     })
-    template = stripColors(t)
+    const frameworkInfo = FRAMEWORKS.find((f) => f.name === framework)
+
+    if (frameworkInfo.variants) {
+      /**
+       * @type {{ name: string }}
+       */
+      const { name } = await prompt({
+        type: 'select',
+        name: 'name',
+        format(name) {
+          const variant = frameworkInfo.variants.find((v) => v.name === name)
+          return variant ? variant.color(variant.display || variant.name) : name
+        },
+        message: 'Select a variant:',
+        choices: frameworkInfo.variants.map((v) => ({
+          name: v.name,
+          value: v.name,
+          message: v.color(v.display || v.name)
+        }))
+      })
+      template = name
+    } else {
+      template = frameworkInfo.name
+    }
   }
+
+  console.log(`\nScaffolding project in ${root}...`)
 
   const templateDir = path.join(__dirname, `template-${template}`)
 

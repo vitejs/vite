@@ -3,6 +3,10 @@ version: 2
 defaults: &defaults
   docker:
     - image: vuejs/ci
+  environment:
+    # 4 GiB of RAM on the default medium class, so we set the max to 3.5 GiB
+    # https://circleci.com/docs/2.0/configuration-reference/#docker-executor
+    NODE_OPTIONS: --max-old-space-size=3584
 
 step_restore_cache: &restore_cache
   restore_cache:
