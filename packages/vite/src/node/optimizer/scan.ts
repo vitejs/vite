@@ -272,6 +272,7 @@ function esbuildScanPlugin(
           filter: /^[\w@][^:]/
         },
         async ({ path: id, importer }) => {
+          id = id.toLowerCase()
           if (exclude?.some((e) => e === id || id.startsWith(e + '/'))) {
             return externalUnlessEntry({ path: id })
           }
