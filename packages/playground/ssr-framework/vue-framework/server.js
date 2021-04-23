@@ -40,15 +40,17 @@ async function startServer(root, port, isProduction) {
   return new Promise((resolve, reject) => {
     try {
       const server = app.listen(port, () => {
-        const stopServer = async () => {
-          await new Promise((resolve) => {
-            server.close(resolve)
-          })
-          if (viteServer) {
-            await viteServer.close()
+        resolve({
+          // for test teardown
+          async close() {
+            await new Promise((resolve) => {
+              server.close(resolve)
+            })
+            if (viteServer) {
+              await viteServer.close()
+            }
           }
-        }
-        resolve(stopServer)
+        })
       })
     } catch (err) {
       reject(err)
