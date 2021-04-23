@@ -11,11 +11,5 @@ exports.serve = async function serve(_, isProduction) {
     process.env.NODE_ENV = 'production'
     await build(root, true)
   }
-  const stopServer = await startServer(root, port, isProduction)
-  return {
-    // for test teardown
-    close() {
-      return stopServer()
-    }
-  }
+  return await startServer(root, port, isProduction)
 }

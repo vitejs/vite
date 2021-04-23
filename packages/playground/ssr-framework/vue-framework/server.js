@@ -39,13 +39,21 @@ async function startServer(root, port, isProduction) {
     res.send(html)
   })
 
-  return new Promise((resolve) => {
-    const server = app.listen(port, () => {
-      const stopServer = async () => {
-        server.close()
-        if (viteServer) await viteServer.close()
-      }
-      resolve(stopServer)
-    })
+  return new Promise((resolve, reject) => {
+    try {
+      const server = app.listen(port, () => {
+        const stopServer = async () => {
+          await new Promise((resolve) => {
+            server.close(resolve)
+          })
+          if (viteServer) {
+            await viteServer.close()
+          }
+        }
+        resolve(stopServer)
+      })
+    } catch (err) {
+      reject(err)
+    }
   })
 }
