@@ -158,8 +158,8 @@ async function init() {
           (targetDir === '.'
             ? 'Current directory'
             : `Target directory ${targetDir}`) +
-          ` is not empty.\n` +
-          `Remove existing files and continue?`
+          ' is not empty.\n' +
+          'Remove existing files and continue?'
       })
       if (yes) {
         emptyDir(root)
