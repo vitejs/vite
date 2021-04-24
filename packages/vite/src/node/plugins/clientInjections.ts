@@ -50,10 +50,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__DEFINES__`, serializeDefine(config.define || {}))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
-          .replace(
-            `__HMR_PORT__`,
-            options.runtimePort ? options.runtimePort : JSON.stringify(port)
-          )
+          .replace(`__HMR_PORT__`, options.runtimePort ?? JSON.stringify(port))
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
       } else if (code.includes('process.env.NODE_ENV')) {
