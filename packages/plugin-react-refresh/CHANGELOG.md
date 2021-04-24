@@ -1,3 +1,13 @@
+## [1.3.3](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.2...plugin-react-refresh@1.3.3) (2021-04-24)
+
+
+### Bug Fixes
+
+* **plugin-react-refresh:**  ensure decorators before export, fix [#2776](https://github.com/vitejs/vite/issues/2776) ([#2855](https://github.com/vitejs/vite/issues/2855)) ([16412e3](https://github.com/vitejs/vite/commit/16412e3a9452cbb7d82f72dd3cebfbc822061f05))
+* **react-refresh:** check FunctionDeclaration nodes properly ([#2903](https://github.com/vitejs/vite/issues/2903)) ([2ee017c](https://github.com/vitejs/vite/commit/2ee017c2637a953aa8219571666e4934e78a195e))
+
+
+
 ## [1.3.2](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.1...plugin-react-refresh@1.3.2) (2021-03-31)
 
 
