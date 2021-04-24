@@ -235,7 +235,7 @@ async function fileToBuiltUrl(
         if (typeof assetFileNames === 'string') {
           fileName = assetFileNames
             .replace(/\[name\]/, basename.slice(0, -ext.length))
-            .replace(/\[ext\]/, ext)
+            .replace(/\[ext\]/, ext.trimLeft('.'))
             .replace(/\[hash\]/, getAssetHash(content))
           // e.g assetFileNames: () => name
         } else if (typeof assetFileNames === 'function') {
