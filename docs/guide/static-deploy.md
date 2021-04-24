@@ -3,8 +3,8 @@
 The following guides are based on some shared assumptions:
 
 - You are using the default build output location (`dist`). This location [can be changed using `build.outDir`](https://vitejs.dev/config/#build-outdir), and you can extrapolate instructions from these guides in that case.
-- Vite is installed as a local dev dependency in your project, and you have setup the following npm scripts:
 - You are using npm. You can use equivalent commands to run the scripts if you are using Yarn or other package managers.
+- Vite is installed as a local dev dependency in your project, and you have setup the following npm scripts:
 
 ```json
 {
