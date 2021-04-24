@@ -106,7 +106,7 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
