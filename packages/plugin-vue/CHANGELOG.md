@@ -1,3 +1,14 @@
+## [1.2.2](https://github.com/vitejs/vite/compare/plugin-vue@1.2.1...plugin-vue@1.2.2) (2021-04-24)
+
+
+### Bug Fixes
+
+* **plugin-vue:** add newline character before class components, fix [#2787](https://github.com/vitejs/vite/issues/2787) ([#2933](https://github.com/vitejs/vite/issues/2933)) ([8fe828e](https://github.com/vitejs/vite/commit/8fe828e9be9e9de67463af6f5dc35ebdbfdbda28))
+* **plugin-vue:** avoid duplicate import, fix [#2640](https://github.com/vitejs/vite/issues/2640) ([#2897](https://github.com/vitejs/vite/issues/2897)) ([011438d](https://github.com/vitejs/vite/commit/011438d16dc42408d5229b842d67dba28868566b))
+* **plugin-vue:** respect `hmr: false` server config, fix [#2790](https://github.com/vitejs/vite/issues/2790) ([#2797](https://github.com/vitejs/vite/issues/2797)) ([27e0c3f](https://github.com/vitejs/vite/commit/27e0c3fffd32a0ff90d06a909a5d5cc7d73f44b0))
+
+
+
 ## [1.2.1](https://github.com/vitejs/vite/compare/plugin-vue@1.2.0...plugin-vue@1.2.1) (2021-03-31)
 
 
