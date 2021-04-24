@@ -310,7 +310,7 @@ function esbuildScanPlugin(
       // css & json
       build.onResolve(
         {
-          filter: /\.(css|less|sass|scss|styl|stylus|postcss|json)$/
+          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json)$/
         },
         externalUnlessEntry
       )
