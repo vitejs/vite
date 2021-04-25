@@ -105,6 +105,11 @@ declare module '*.stylus' {
   export default css
 }
 
+declare module '*.pcss' {
+  const css: string
+  export default css
+}
+
 // Built-in asset types
 // see `src/constants.ts`
 

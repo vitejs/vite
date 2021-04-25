@@ -19,6 +19,7 @@ const externalTypes = [
   'scss',
   'styl',
   'stylus',
+  'pcss',
   'postcss',
   // known SFC types
   'vue',
