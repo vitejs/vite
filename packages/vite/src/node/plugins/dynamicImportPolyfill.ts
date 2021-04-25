@@ -13,11 +13,9 @@ export const polyfillId = 'vite/dynamic-import-polyfill'
 function resolveModulePath(config: ResolvedConfig) {
   const {
     base,
-    command,
     build: { assetsDir }
   } = config
-  const isBuild = command === 'build'
-  if (isBuild && /^(https?:)?(\/\/)/i.test(base)) {
+  if (/^(https?:)?(\/\/)/i.test(base)) {
     return `${base.replace(/\/$/, '')}/${assetsDir}/`
   }
   return path.posix.join(base, assetsDir, '/')
