@@ -13,11 +13,10 @@ import Rollup, {
   ExternalOption,
   GetManualChunk,
   GetModuleInfo,
-  WatcherOptions,
-  // RollupWatcher,
   RollupError
 } from 'rollup'
 import chokidar from 'chokidar'
+import { WatchOptions } from 'types/chokidar'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -181,10 +180,10 @@ export interface BuildOptions {
    */
   chunkSizeWarningLimit?: number
   /**
-   * Rollup watch options
-   * https://rollupjs.org/guide/en/#watchoptions
+   * Chokidar watch options
+   * https://github.com/paulmillr/chokidar
    */
-  watch?: WatcherOptions | null
+  watch?: WatchOptions | null
 }
 
 export interface LibraryOptions {
@@ -290,7 +289,7 @@ const parallelBuilds: RollupBuild[] = []
  */
 export async function watch(inlineConfig: InlineConfig = {}): Promise<void> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
-  const { ignored = [], ...watchOptions } = config.build.watch?.chokidar || {}
+  const { ignored = [], ...watchOptions } = config.build.watch || {}
   const watcher = chokidar.watch(path.resolve(config.root), {
     ignored: [
       '**/node_modules/**',
