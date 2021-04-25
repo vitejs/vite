@@ -14,6 +14,7 @@ import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
   code: string,
   filename: string,

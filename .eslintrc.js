@@ -3,7 +3,11 @@ const { defineConfig } = require('eslint-define-config')
 
 module.exports = defineConfig({
   root: true,
-  extends: ['plugin:node/recommended'],
+  extends: [
+    'eslint:recommended',
+    'plugin:node/recommended',
+    'plugin:@typescript-eslint/recommended'
+  ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
@@ -11,6 +15,16 @@ module.exports = defineConfig({
   },
   rules: {
     'no-debugger': ['error'],
+    'no-empty': ['warn', { allowEmptyCatch: true }],
+    'no-process-exit': 'off',
+    'no-useless-escape': 'off',
+    'prefer-const': [
+      'warn',
+      {
+        destructuring: 'all'
+      }
+    ],
+
     'node/no-missing-import': [
       'error',
       {
@@ -54,13 +68,19 @@ module.exports = defineConfig({
     'node/no-unpublished-import': 'off',
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
-    'no-process-exit': 'off',
-    'prefer-const': [
-      'warn',
-      {
-        destructuring: 'all'
-      }
-    ]
+
+    '@typescript-eslint/ban-ts-comment': 'off', // TODO: we should turn this on in a new PR
+    '@typescript-eslint/ban-types': 'off', // TODO: we should turn this on in a new PR
+    '@typescript-eslint/no-empty-function': [
+      'error',
+      { allow: ['arrowFunctions'] }
+    ],
+    '@typescript-eslint/no-explicit-any': 'off', // maybe we should turn this on in a new PR
+    '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
+    '@typescript-eslint/no-inferrable-types': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off', // maybe we should turn this on in a new PR
+    '@typescript-eslint/no-unused-vars': 'off', // maybe we should turn this on in a new PR
+    '@typescript-eslint/no-var-requires': 'off'
   },
   overrides: [
     {

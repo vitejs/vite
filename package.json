@@ -25,6 +25,7 @@
     "@types/jest": "^26.0.19",
     "@types/node": "^14.14.10",
     "@types/semver": "^7.3.4",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
     "chalk": "^4.1.0",
     "conventional-changelog-cli": "^2.1.1",
