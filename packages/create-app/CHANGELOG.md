@@ -1,3 +1,12 @@
+## [2.2.5](https://github.com/vitejs/vite/compare/create-app@2.2.4...create-app@2.2.5) (2021-04-25)
+
+
+### Features
+
+* **create-app:** improve non-empty message for current dir ([#3117](https://github.com/vitejs/vite/issues/3117)) ([c0a0a84](https://github.com/vitejs/vite/commit/c0a0a8427e61dc0f5774056aebd038c69492294a))
+
+
+
 ## [2.2.4](https://github.com/vitejs/vite/compare/create-app@2.2.3...create-app@2.2.4) (2021-04-15)
 
 
