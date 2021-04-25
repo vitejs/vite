@@ -557,14 +557,14 @@ function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
     if (
       id.includes('node_modules') &&
       !isCSSRequest(id) &&
-      !hasDynamicImporter(id, getModuleInfo, cache)
+      staticImportedByEntry(id, getModuleInfo, cache)
     ) {
       return 'vendor'
     }
   }
 }
 
-function hasDynamicImporter(
+function staticImportedByEntry(
   id: string,
   getModuleInfo: GetModuleInfo,
   cache: Map<string, boolean>,
@@ -583,15 +583,21 @@ function hasDynamicImporter(
     cache.set(id, false)
     return false
   }
-  if (mod.dynamicImporters.length) {
+
+  if (mod.isEntry) {
     cache.set(id, true)
     return true
   }
-  const someImporterHas = mod.importers.some((importer) =>
-    hasDynamicImporter(importer, getModuleInfo, cache, importStack.concat(id))
+  const someImporterIs = mod.importers.some((importer) =>
+    staticImportedByEntry(
+      importer,
+      getModuleInfo,
+      cache,
+      importStack.concat(id)
+    )
   )
-  cache.set(id, someImporterHas)
-  return someImporterHas
+  cache.set(id, someImporterIs)
+  return someImporterIs
 }
 
 function resolveBuildOutputs(
