@@ -14,9 +14,10 @@ import Rollup, {
   GetManualChunk,
   GetModuleInfo,
   WatcherOptions,
-  RollupWatcher,
+  // RollupWatcher,
   RollupError
 } from 'rollup'
+import chokidar from 'chokidar'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -284,12 +285,49 @@ let parallelCallCounts = 0
 const parallelBuilds: RollupBuild[] = []
 
 /**
+ * Watch for file changes with chokidar
+ * Build production bundle on changes
+ */
+export async function watch(inlineConfig: InlineConfig = {}): Promise<void> {
+  const config = await resolveConfig(inlineConfig, 'build', 'production')
+  const { ignored = [], ...watchOptions } = config.build.watch?.chokidar || {}
+  const watcher = chokidar.watch(path.resolve(config.root), {
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      `${path.resolve(config.root, config.build.outDir)}/**`,
+      ...ignored
+    ],
+    ignoreInitial: true,
+    ignorePermissionErrors: true,
+    ...watchOptions
+  })
+
+  // do initial build before watching for changes
+  config.logger.info(chalk.cyanBright(`\nwatch mode enabled\n`))
+  await build(inlineConfig)
+  config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
+
+  watcher.on('all', async () => {
+    if (parallelCallCounts > 0) {
+      // we can not cancel current build
+      // so we need to wait until it is finished
+      return
+    }
+
+    config.logger.info(chalk.cyanBright(`change detected, rebuilding...\n`))
+    await build(inlineConfig)
+    config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
+  })
+}
+
+/**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
  */
 export async function build(
   inlineConfig: InlineConfig = {}
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+): Promise<RollupOutput | RollupOutput[]> {
   parallelCallCounts++
   try {
     return await doBuild(inlineConfig)
@@ -304,7 +342,7 @@ export async function build(
 
 async function doBuild(
   inlineConfig: InlineConfig = {}
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+): Promise<RollupOutput | RollupOutput[]> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
   const ssr = !!options.ssr
@@ -435,63 +473,6 @@ async function doBuild(
       libOptions,
       config.logger
     )
-
-    // watch file changes with rollup
-    if (config.build.watch) {
-      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
-
-      const output: OutputOptions[] = []
-      if (Array.isArray(outputs)) {
-        for (const resolvedOutput of outputs) {
-          output.push(buildOuputOptions(resolvedOutput))
-        }
-      } else {
-        output.push(buildOuputOptions(outputs))
-      }
-
-      const watcherOptions = config.build.watch
-      const watcher = rollup.watch({
-        ...rollupOptions,
-        output,
-        watch: {
-          ...watcherOptions,
-          chokidar: {
-            ignored: [
-              '**/node_modules/**',
-              '**/.git/**',
-              ...(watcherOptions?.chokidar?.ignored || [])
-            ],
-            ignoreInitial: true,
-            ignorePermissionErrors: true,
-            ...watcherOptions.chokidar
-          }
-        }
-      })
-
-      watcher.on('event', (event) => {
-        if (event.code === 'BUNDLE_START') {
-          config.logger.info(chalk.cyanBright(`\nbuild started...`))
-
-          // clean previous files
-          if (options.write) {
-            emptyDir(outDir)
-            if (fs.existsSync(config.publicDir)) {
-              copyDir(config.publicDir, outDir)
-            }
-          }
-        } else if (event.code === 'BUNDLE_END') {
-          event.result.close()
-          config.logger.info(chalk.cyanBright(`built in ${event.duration}ms.`))
-        } else if (event.code === 'ERROR') {
-          outputBuildError(event.error)
-        }
-      })
-
-      // stop watching
-      watcher.close()
-
-      return watcher
-    }
 
     // write or generate files with rollup
     const bundle = await rollup.rollup(rollupOptions)

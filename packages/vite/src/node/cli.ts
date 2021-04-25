@@ -132,19 +132,32 @@ cli
   .option('-m, --mode <mode>', `[string] set env mode`)
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
-    const { build } = await import('./build')
     const buildOptions = cleanOptions(options) as BuildOptions
 
     try {
-      await build({
-        root,
-        base: options.base,
-        mode: options.mode,
-        configFile: options.config,
-        logLevel: options.logLevel,
-        clearScreen: options.clearScreen,
-        build: buildOptions
-      })
+      if (buildOptions.watch) {
+        const { watch } = await import('./build')
+        await watch({
+          root,
+          base: options.base,
+          mode: options.mode,
+          configFile: options.config,
+          logLevel: options.logLevel,
+          clearScreen: options.clearScreen,
+          build: buildOptions
+        })
+      } else {
+        const { build } = await import('./build')
+        await build({
+          root,
+          base: options.base,
+          mode: options.mode,
+          configFile: options.config,
+          logLevel: options.logLevel,
+          clearScreen: options.clearScreen,
+          build: buildOptions
+        })
+      }
     } catch (e) {
       createLogger(options.logLevel).error(
         chalk.red(`error during build:\n${e.stack}`)
