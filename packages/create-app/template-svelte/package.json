@@ -7,8 +7,8 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "next",
-    "svelte": "^3.35.0",
-    "vite": "^2.1.5"
+    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.7",
+    "svelte": "^3.37.0",
+    "vite": "^2.2.2"
   }
 }
