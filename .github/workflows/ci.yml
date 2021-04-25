@@ -1,9 +1,9 @@
 name: CI
 
 env:
-   # 7 GiB by default on GitHub, setting to 6 GiB
-   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-   NODE_OPTIONS: --max-old-space-size=6144
+  # 7 GiB by default on GitHub, setting to 6 GiB
+  # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+  NODE_OPTIONS: --max-old-space-size=6144
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [12, 14, 15]
+        node_version: [12, 14, 15, 16]
         include:
           - os: macos-latest
             node_version: 14
