@@ -5,16 +5,12 @@ import path from 'path'
 
 export const polyfillId = 'vite/dynamic-import-polyfill'
 
-/**
- * fix #2918
- * `path.posix.join` return a wrong path when config.base is a URL
- * @param config
- */
 function resolveModulePath(config: ResolvedConfig) {
   const {
     base,
     build: { assetsDir }
   } = config
+  // #2918 path.posix.join returns a wrong path when config.base is a URL
   if (/^(https?:)?(\/\/)/i.test(base)) {
     return `${base.replace(/\/$/, '')}/${assetsDir}/`
   }
