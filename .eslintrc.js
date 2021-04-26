@@ -24,6 +24,7 @@ module.exports = defineConfig({
         destructuring: 'all'
       }
     ],
+    quotes: ['warn', 'single', { avoidEscape: true }],
 
     'node/no-missing-import': [
       'error',
