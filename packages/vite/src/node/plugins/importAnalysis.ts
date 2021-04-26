@@ -119,16 +119,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const maybeJSX = !isVue && isJSRequest(importer)
 
         const msg = isVue
-          ? `Install @vitejs/plugin-vue to handle .vue files.`
+          ? 'Install @vitejs/plugin-vue to handle .vue files.'
           : maybeJSX
-          ? `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
+          ? 'If you are using JSX, make sure to name the file with the .jsx or .tsx extension.'
           : `You may need to install appropriate plugins to handle the ${path.extname(
               importer
             )} file format.`
 
         this.error(
-          `Failed to parse source for import analysis because the content ` +
-            `contains invalid JS syntax. ` +
+          'Failed to parse source for import analysis because the content ' +
+            'contains invalid JS syntax. ' +
             msg,
           e.idx
         )
@@ -346,8 +346,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           ) {
             throw new Error(
               `Cannot import non-asset file ${specifier} which is inside /public.` +
-                `JS/CSS files inside /public are copied as-is on build and ` +
-                `can only be referenced via <script src> or <link href> in html.`
+                'JS/CSS files inside /public are copied as-is on build and ' +
+                'can only be referenced via <script src> or <link href> in html.'
             )
           }
 
@@ -362,7 +362,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== specifier) {
             // for optimized cjs deps, support named imports by rewriting named
             // imports to const assignments.
-            if (resolvedId.endsWith(`&es-interop`)) {
+            if (resolvedId.endsWith('&es-interop')) {
               url = url.slice(0, -11)
               if (isDynamicImport) {
                 // rewrite `import('package')` to expose the default directly
@@ -398,17 +398,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             .trim()
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
-              `\n` +
+              '\n' +
                 chalk.cyan(importerModule.file) +
-                `\n` +
+                '\n' +
                 generateCodeFrame(source, start) +
-                `\nThe above dynamic import cannot be analyzed by vite.\n` +
+                '\nThe above dynamic import cannot be analyzed by vite.\n' +
                 `See ${chalk.blue(
-                  `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+                  'https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations'
                 )} ` +
-                `for supported dynamic import formats. ` +
-                `If this is intended to be left as-is, you can use the ` +
-                `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+                'for supported dynamic import formats. ' +
+                'If this is intended to be left as-is, you can use the ' +
+                '/* @vite-ignore */ comment inside the import() call to suppress this warning.\n'
             )
           }
           if (
@@ -429,7 +429,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         })};`
         // account for user env defines
         for (const key in config.define) {
-          if (key.startsWith(`import.meta.env.`)) {
+          if (key.startsWith('import.meta.env.')) {
             const val = config.define[key]
             env += `${key} = ${
               typeof val === 'string' ? val : JSON.stringify(val)
@@ -443,10 +443,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         debugHmr(
           `${
             isSelfAccepting
-              ? `[self-accepts]`
+              ? '[self-accepts]'
               : acceptedUrls.size
-              ? `[accepts-deps]`
-              : `[detected api usage]`
+              ? '[accepts-deps]'
+              : '[detected api usage]'
           } ${prettyImporter}`
         )
         // inject hot context

@@ -97,7 +97,7 @@ export async function handleHMRUpdate(
   if (!hmrContext.modules.length) {
     // html file cannot be hot updated
     if (file.endsWith('.html')) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+      config.logger.info(chalk.green('page reload ') + chalk.dim(shortFile), {
         clear: true,
         timestamp: true
       })
@@ -134,7 +134,7 @@ function updateModules(
     invalidate(mod, timestamp, invalidatedModules)
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
+      config.logger.info(chalk.green('page reload ') + chalk.dim(file), {
         clear: true,
         timestamp: true
       })
@@ -156,7 +156,7 @@ function updateModules(
 
   config.logger.info(
     updates
-      .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
+      .map(({ path }) => chalk.green('hmr update ') + chalk.dim(path))
       .join('\n'),
     { clear: true, timestamp: true }
   )
@@ -308,10 +308,10 @@ export function lexAcceptedHmrDeps(
     switch (state) {
       case LexerState.inCall:
       case LexerState.inArray:
-        if (char === `'`) {
+        if (char === "'") {
           prevState = state
           state = LexerState.inSingleQuoteString
-        } else if (char === `"`) {
+        } else if (char === '"') {
           prevState = state
           state = LexerState.inDoubleQuoteString
         } else if (char === '`') {
@@ -321,7 +321,7 @@ export function lexAcceptedHmrDeps(
           continue
         } else {
           if (state === LexerState.inCall) {
-            if (char === `[`) {
+            if (char === '[') {
               state = LexerState.inArray
             } else {
               // reaching here means the first arg is neither a string literal
@@ -330,7 +330,7 @@ export function lexAcceptedHmrDeps(
               return true // done
             }
           } else if (state === LexerState.inArray) {
-            if (char === `]`) {
+            if (char === ']') {
               return false // done
             } else if (char === ',') {
               continue
@@ -341,7 +341,7 @@ export function lexAcceptedHmrDeps(
         }
         break
       case LexerState.inSingleQuoteString:
-        if (char === `'`) {
+        if (char === "'") {
           addDep(i)
           if (prevState === LexerState.inCall) {
             // accept('foo', ...)
@@ -354,7 +354,7 @@ export function lexAcceptedHmrDeps(
         }
         break
       case LexerState.inDoubleQuoteString:
-        if (char === `"`) {
+        if (char === '"') {
           addDep(i)
           if (prevState === LexerState.inCall) {
             // accept('foo', ...)
@@ -390,8 +390,8 @@ export function lexAcceptedHmrDeps(
 
 function error(pos: number) {
   const err = new Error(
-    `import.meta.accept() can only accept string literals or an ` +
-      `Array of string literals.`
+    'import.meta.accept() can only accept string literals or an ' +
+      'Array of string literals.'
   ) as RollupError
   err.pos = pos
   throw err

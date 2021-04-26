@@ -5,7 +5,7 @@ test('default import', async () => {
   expect(
     (
       await ssrTransform(
-        `import foo from 'vue';console.log(foo.bar)`,
+        "import foo from 'vue';console.log(foo.bar)",
         null,
         null
       )
@@ -20,7 +20,7 @@ test('named import', async () => {
   expect(
     (
       await ssrTransform(
-        `import { ref } from 'vue';function foo() { return ref(0) }`,
+        "import { ref } from 'vue';function foo() { return ref(0) }",
         null,
         null
       )
@@ -35,7 +35,7 @@ test('namespace import', async () => {
   expect(
     (
       await ssrTransform(
-        `import * as vue from 'vue';function foo() { return vue.ref(0) }`,
+        "import * as vue from 'vue';function foo() { return vue.ref(0) }",
         null,
         null
       )
@@ -47,7 +47,7 @@ test('namespace import', async () => {
 })
 
 test('export function declaration', async () => {
-  expect((await ssrTransform(`export function foo() {}`, null, null)).code)
+  expect((await ssrTransform('export function foo() {}', null, null)).code)
     .toMatchInlineSnapshot(`
     "function foo() {}
     Object.defineProperty(__vite_ssr_exports__, \\"foo\\", { enumerable: true, configurable: true, get(){ return foo }})"
@@ -55,7 +55,7 @@ test('export function declaration', async () => {
 })
 
 test('export class declaration', async () => {
-  expect((await ssrTransform(`export class foo {}`, null, null)).code)
+  expect((await ssrTransform('export class foo {}', null, null)).code)
     .toMatchInlineSnapshot(`
     "class foo {}
     Object.defineProperty(__vite_ssr_exports__, \\"foo\\", { enumerable: true, configurable: true, get(){ return foo }})"
@@ -63,7 +63,7 @@ test('export class declaration', async () => {
 })
 
 test('export var declaration', async () => {
-  expect((await ssrTransform(`export const a = 1, b = 2`, null, null)).code)
+  expect((await ssrTransform('export const a = 1, b = 2', null, null)).code)
     .toMatchInlineSnapshot(`
     "const a = 1, b = 2
     Object.defineProperty(__vite_ssr_exports__, \\"a\\", { enumerable: true, configurable: true, get(){ return a }})
@@ -73,7 +73,7 @@ test('export var declaration', async () => {
 
 test('export named', async () => {
   expect(
-    (await ssrTransform(`const a = 1, b = 2; export { a, b as c }`, null, null))
+    (await ssrTransform('const a = 1, b = 2; export { a, b as c }', null, null))
       .code
   ).toMatchInlineSnapshot(`
     "const a = 1, b = 2; 
@@ -84,7 +84,7 @@ test('export named', async () => {
 
 test('export named from', async () => {
   expect(
-    (await ssrTransform(`export { ref, computed as c } from 'vue'`, null, null))
+    (await ssrTransform("export { ref, computed as c } from 'vue'", null, null))
       .code
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"vue\\")
@@ -98,7 +98,7 @@ test('named exports of imported binding', async () => {
   expect(
     (
       await ssrTransform(
-        `import {createApp} from 'vue';export {createApp}`,
+        "import {createApp} from 'vue';export {createApp}",
         null,
         null
       )
@@ -111,7 +111,7 @@ test('named exports of imported binding', async () => {
 })
 
 test('export * from', async () => {
-  expect((await ssrTransform(`export * from 'vue'`, null, null)).code)
+  expect((await ssrTransform("export * from 'vue'", null, null)).code)
     .toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"vue\\")
 
@@ -121,19 +121,19 @@ test('export * from', async () => {
 
 test('export default', async () => {
   expect(
-    (await ssrTransform(`export default {}`, null, null)).code
-  ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = {}"`)
+    (await ssrTransform('export default {}', null, null)).code
+  ).toMatchInlineSnapshot('"__vite_ssr_exports__.default = {}"')
 })
 
 test('import.meta', async () => {
   expect(
-    (await ssrTransform(`console.log(import.meta.url)`, null, null)).code
-  ).toMatchInlineSnapshot(`"console.log(__vite_ssr_import_meta__.url)"`)
+    (await ssrTransform('console.log(import.meta.url)', null, null)).code
+  ).toMatchInlineSnapshot('"console.log(__vite_ssr_import_meta__.url)"')
 })
 
 test('dynamic import', async () => {
   expect(
-    (await ssrTransform(`export const i = () => import('./foo')`, null, null))
+    (await ssrTransform("export const i = () => import('./foo')", null, null))
       .code
   ).toMatchInlineSnapshot(`
     "const i = () => __vite_ssr_dynamic_import__('./foo')
@@ -145,7 +145,7 @@ test('do not rewrite method definition', async () => {
   expect(
     (
       await ssrTransform(
-        `import { fn } from 'vue';class A { fn() { fn() } }`,
+        "import { fn } from 'vue';class A { fn() { fn() } }",
         null,
         null
       )
@@ -160,7 +160,7 @@ test('do not rewrite catch clause', async () => {
   expect(
     (
       await ssrTransform(
-        `import {error} from './dependency';try {} catch(error) {}`,
+        "import {error} from './dependency';try {} catch(error) {}",
         null,
         null
       )
@@ -176,7 +176,7 @@ test('should declare variable for imported super class', async () => {
   expect(
     (
       await ssrTransform(
-        `import { Foo } from './dependency';` + `class A extends Foo {}`,
+        "import { Foo } from './dependency';" + 'class A extends Foo {}',
         null,
         null
       )
@@ -192,9 +192,9 @@ test('should declare variable for imported super class', async () => {
   expect(
     (
       await ssrTransform(
-        `import { Foo } from './dependency';` +
-          `export default class A extends Foo {}\n` +
-          `export class B extends Foo {}`,
+        "import { Foo } from './dependency';" +
+          'export default class A extends Foo {}\n' +
+          'export class B extends Foo {}',
         null,
         null
       )
@@ -210,7 +210,7 @@ test('should declare variable for imported super class', async () => {
 
 test('sourcemap source', async () => {
   expect(
-    (await ssrTransform(`export const a = 1`, null, 'input.js')).map.sources
+    (await ssrTransform('export const a = 1', null, 'input.js')).map.sources
   ).toStrictEqual(['input.js'])
 })
 
@@ -218,13 +218,13 @@ test('overwrite bindings', async () => {
   expect(
     (
       await ssrTransform(
-        `import { inject } from 'vue';` +
-          `const a = { inject }\n` +
-          `const b = { test: inject }\n` +
-          `function c() { const { test: inject } = { test: true }; console.log(inject) }\n` +
-          `const d = inject \n` +
-          `function f() {  console.log(inject) }\n` +
-          `function e() { const { inject } = { inject: true } }\n`,
+        "import { inject } from 'vue';" +
+          'const a = { inject }\n' +
+          'const b = { test: inject }\n' +
+          'function c() { const { test: inject } = { test: true }; console.log(inject) }\n' +
+          'const d = inject \n' +
+          'function f() {  console.log(inject) }\n' +
+          'function e() { const { inject } = { inject: true } }\n',
         null,
         null
       )

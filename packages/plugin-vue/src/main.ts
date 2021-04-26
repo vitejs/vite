@@ -75,8 +75,8 @@ export async function transformMain(
   let renderReplace = ''
   if (hasTemplateImport) {
     renderReplace = ssr
-      ? `_sfc_main.ssrRender = _sfc_ssrRender`
-      : `_sfc_main.render = _sfc_render`
+      ? '_sfc_main.ssrRender = _sfc_ssrRender'
+      : '_sfc_main.render = _sfc_render'
   } else {
     // #2128
     // User may empty the template but we didn't provide rerender function before
@@ -85,8 +85,8 @@ export async function transformMain(
       !isEqualBlock(descriptor.template, prevDescriptor.template)
     ) {
       renderReplace = ssr
-        ? `_sfc_main.ssrRender = () => {}`
-        : `_sfc_main.render = () => {}`
+        ? '_sfc_main.ssrRender = () => {}'
+        : '_sfc_main.render = () => {}'
     }
   }
 
@@ -123,36 +123,36 @@ export async function transformMain(
   ) {
     output.push(`_sfc_main.__hmrId = ${JSON.stringify(descriptor.id)}`)
     output.push(
-      `typeof __VUE_HMR_RUNTIME__ !== 'undefined' && ` +
-        `__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)`
+      "typeof __VUE_HMR_RUNTIME__ !== 'undefined' && " +
+        '__VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)'
     )
     // check if the template is the only thing that changed
     if (prevDescriptor && isOnlyTemplateChanged(prevDescriptor, descriptor)) {
-      output.push(`export const _rerender_only = true`)
+      output.push('export const _rerender_only = true')
     }
     output.push(
-      `import.meta.hot.accept(({ default: updated, _rerender_only }) => {`,
-      `  if (_rerender_only) {`,
-      `    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render)`,
-      `  } else {`,
-      `    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)`,
-      `  }`,
-      `})`
+      'import.meta.hot.accept(({ default: updated, _rerender_only }) => {',
+      '  if (_rerender_only) {',
+      '    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render)',
+      '  } else {',
+      '    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)',
+      '  }',
+      '})'
     )
   }
 
   // SSR module registration by wrapping user setup
   if (ssr) {
     output.push(
-      `import { useSSRContext as __vite_useSSRContext } from 'vue'`,
-      `const _sfc_setup = _sfc_main.setup`,
-      `_sfc_main.setup = (props, ctx) => {`,
-      `  const ssrContext = __vite_useSSRContext()`,
+      "import { useSSRContext as __vite_useSSRContext } from 'vue'",
+      'const _sfc_setup = _sfc_main.setup',
+      '_sfc_main.setup = (props, ctx) => {',
+      '  const ssrContext = __vite_useSSRContext()',
       `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
         filename
       )})`,
-      `  return _sfc_setup ? _sfc_setup(props, ctx) : undefined`,
-      `}`
+      '  return _sfc_setup ? _sfc_setup(props, ctx) : undefined',
+      '}'
     )
   }
 
@@ -213,7 +213,7 @@ async function genTemplateCode(
       await linkSrcToDescriptor(template.src, descriptor, pluginContext)
     }
     const src = template.src || descriptor.filename
-    const srcQuery = template.src ? `&src` : ``
+    const srcQuery = template.src ? '&src' : ''
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
@@ -236,7 +236,7 @@ async function genScriptCode(
   code: string
   map: RawSourceMap
 }> {
-  let scriptCode = `const _sfc_main = {}`
+  let scriptCode = 'const _sfc_main = {}'
   let map
   const script = resolveScript(descriptor, options, ssr)
   if (script) {
@@ -250,14 +250,14 @@ async function genScriptCode(
       const classMatch = script.content.match(exportDefaultClassRE)
       if (classMatch) {
         scriptCode =
-          script.content.replace(exportDefaultClassRE, `\nclass $1`) +
+          script.content.replace(exportDefaultClassRE, '\nclass $1') +
           `\nconst _sfc_main = ${classMatch[1]}`
         if (/export\s+default/.test(scriptCode)) {
           // fallback if there are still export default
-          scriptCode = rewriteDefault(script.content, `_sfc_main`)
+          scriptCode = rewriteDefault(script.content, '_sfc_main')
         }
       } else {
-        scriptCode = rewriteDefault(script.content, `_sfc_main`)
+        scriptCode = rewriteDefault(script.content, '_sfc_main')
       }
       map = script.map
       if (script.lang === 'ts') {
@@ -277,7 +277,7 @@ async function genScriptCode(
       const src = script.src || descriptor.filename
       const langFallback = (script.src && path.extname(src).slice(1)) || 'js'
       const attrsQuery = attrsToQuery(script.attrs, langFallback)
-      const srcQuery = script.src ? `&src` : ``
+      const srcQuery = script.src ? '&src' : ''
       const query = `?vue&type=script${srcQuery}${attrsQuery}`
       const request = JSON.stringify(src + query)
       scriptCode =
@@ -294,7 +294,7 @@ async function genStyleCode(
   descriptor: SFCDescriptor,
   pluginContext: PluginContext
 ) {
-  let stylesCode = ``
+  let stylesCode = ''
   let hasCSSModules = false
   if (descriptor.styles.length) {
     for (let i = 0; i < descriptor.styles.length; i++) {
@@ -306,12 +306,12 @@ async function genStyleCode(
       // do not include module in default query, since we use it to indicate
       // that the module needs to export the modules json
       const attrsQuery = attrsToQuery(style.attrs, 'css')
-      const srcQuery = style.src ? `&src` : ``
+      const srcQuery = style.src ? '&src' : ''
       const query = `?vue&type=style&index=${i}${srcQuery}`
       const styleRequest = src + query + attrsQuery
       if (style.module) {
         if (!hasCSSModules) {
-          stylesCode += `\nconst cssModules = _sfc_main.__cssModules = {}`
+          stylesCode += '\nconst cssModules = _sfc_main.__cssModules = {}'
           hasCSSModules = true
         }
         stylesCode += genCSSModulesCode(i, styleRequest, style.module)
@@ -336,7 +336,7 @@ async function genCustomBlockCode(
     }
     const src = block.src || descriptor.filename
     const attrsQuery = attrsToQuery(block.attrs, block.type)
-    const srcQuery = block.src ? `&src` : ``
+    const srcQuery = block.src ? '&src' : ''
     const query = `?vue&type=${block.type}&index=${index}${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
     code += `import block${index} from ${request}\n`
@@ -386,18 +386,18 @@ function attrsToQuery(
   langFallback?: string,
   forceLangFallback = false
 ): string {
-  let query = ``
+  let query = ''
   for (const name in attrs) {
     const value = attrs[name]
     if (!ignoreList.includes(name)) {
       query += `&${qs.escape(name)}${
-        value ? `=${qs.escape(String(value))}` : ``
+        value ? `=${qs.escape(String(value))}` : ''
       }`
     }
   }
   if (langFallback || attrs.lang) {
     query +=
-      `lang` in attrs
+      'lang' in attrs
         ? forceLangFallback
           ? `&lang.${langFallback}`
           : `&lang.${attrs.lang}`

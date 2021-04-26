@@ -59,7 +59,7 @@ export function createMissingImporterRegisterFn(
       )
 
       logger.info(
-        chalk.greenBright(`✨ dependencies updated, reloading page...`),
+        chalk.greenBright('✨ dependencies updated, reloading page...'),
         { timestamp: true }
       )
     } catch (e) {

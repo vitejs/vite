@@ -120,7 +120,7 @@ async function instantiateModule(
 
   try {
     new Function(
-      `global`,
+      'global',
       ssrModuleExportsKey,
       ssrImportMetaKey,
       ssrImportKey,

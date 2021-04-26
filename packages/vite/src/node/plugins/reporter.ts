@@ -88,10 +88,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       if (shouldLogInfo) {
         if (!tty) {
           if (!hasTransformed) {
-            config.logger.info(`transforming...`)
+            config.logger.info('transforming...')
           }
         } else {
-          if (id.includes(`?`)) return
+          if (id.includes('?')) return
           logTransform(id)
         }
         hasTransformed = true
@@ -106,7 +106,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           process.stdout.cursorTo(0)
         }
         config.logger.info(
-          `${chalk.green(`✓`)} ${transformedCount} modules transformed.`
+          `${chalk.green('✓')} ${transformedCount} modules transformed.`
         )
       }
     },
@@ -208,9 +208,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         config.logger.warn(
           chalk.yellow(
             `\n(!) Some chunks are larger than ${chunkLimit}kb after minification. Consider:\n` +
-              `- Using dynamic import() to code-split the application\n` +
-              `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n` +
-              `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`
+              '- Using dynamic import() to code-split the application\n' +
+              '- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n' +
+              '- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.'
           )
         )
       }

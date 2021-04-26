@@ -79,7 +79,7 @@ export function transformMiddleware(
           res.statusCode = 408
           res.end(
             `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
-              `<p>The current page should have reloaded by now</p>`
+              '<p>The current page should have reloaded by now</p>'
           )
         }, NEW_DEPENDENCY_BUILD_TIMEOUT)
       )
@@ -94,7 +94,8 @@ export function transformMiddleware(
       // like create-react-app
       let errorMessage
       if (req.url?.startsWith('/%PUBLIC')) {
-        errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
+        errorMessage =
+          "index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information"
       } else {
         errorMessage = `Vite encountered a suspiciously malformed request ${req.url}`
       }
@@ -122,7 +123,7 @@ export function transformMiddleware(
       if (url.startsWith('/public/')) {
         logger.warn(
           chalk.yellow(
-            `files in the public directory are served at the root path.\n` +
+            'files in the public directory are served at the root path.\n' +
               `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
                 url.replace(/^\/public\//, '/')
               )}.`

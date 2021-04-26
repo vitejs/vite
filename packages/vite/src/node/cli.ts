@@ -51,28 +51,28 @@ function cleanOptions(options: GlobalCLIOptions) {
 }
 
 cli
-  .option('-c, --config <file>', `[string] use specified config file`)
-  .option('-r, --root <path>', `[string] use specified root directory`)
-  .option('--base <path>', `[string] public base path (default: /)`)
-  .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
-  .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
-  .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
-  .option('-f, --filter <filter>', `[string] filter debug logs`)
+  .option('-c, --config <file>', '[string] use specified config file')
+  .option('-r, --root <path>', '[string] use specified root directory')
+  .option('--base <path>', '[string] public base path (default: /)')
+  .option('-l, --logLevel <level>', '[string] silent | error | warn | all')
+  .option('--clearScreen', '[boolean] allow/disable clear screen when logging')
+  .option('-d, --debug [feat]', '[string | boolean] show debug logs')
+  .option('-f, --filter <filter>', '[string] filter debug logs')
 
 // dev
 cli
   .command('[root]') // default command
   .alias('serve')
-  .option('--host <host>', `[string] specify hostname`)
-  .option('--port <port>', `[number] specify port`)
-  .option('--https', `[boolean] use TLS + HTTP/2`)
-  .option('--open [path]', `[boolean | string] open browser on startup`)
-  .option('--cors', `[boolean] enable CORS`)
-  .option('--strictPort', `[boolean] exit if specified port is already in use`)
-  .option('-m, --mode <mode>', `[string] set env mode`)
+  .option('--host <host>', '[string] specify hostname')
+  .option('--port <port>', '[number] specify port')
+  .option('--https', '[boolean] use TLS + HTTP/2')
+  .option('--open [path]', '[boolean | string] open browser on startup')
+  .option('--cors', '[boolean] enable CORS')
+  .option('--strictPort', '[boolean] exit if specified port is already in use')
+  .option('-m, --mode <mode>', '[string] set env mode')
   .option(
     '--force',
-    `[boolean] force the optimizer to ignore the cache and re-bundle`
+    '[boolean] force the optimizer to ignore the cache and re-bundle'
   )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
     // output structure is preserved even after bundling so require()
@@ -100,37 +100,37 @@ cli
 // build
 cli
   .command('build [root]')
-  .option('--target <target>', `[string] transpile target (default: 'modules')`)
-  .option('--outDir <dir>', `[string] output directory (default: dist)`)
+  .option('--target <target>', "[string] transpile target (default: 'modules')")
+  .option('--outDir <dir>', '[string] output directory (default: dist)')
   .option(
     '--assetsDir <dir>',
-    `[string] directory under outDir to place assets in (default: _assets)`
+    '[string] directory under outDir to place assets in (default: _assets)'
   )
   .option(
     '--assetsInlineLimit <number>',
-    `[number] static asset base64 inline threshold in bytes (default: 4096)`
+    '[number] static asset base64 inline threshold in bytes (default: 4096)'
   )
   .option(
     '--ssr [entry]',
-    `[string] build specified entry for server-side rendering`
+    '[string] build specified entry for server-side rendering'
   )
   .option(
     '--sourcemap',
-    `[boolean] output source maps for build (default: false)`
+    '[boolean] output source maps for build (default: false)'
   )
   .option(
     '--minify [minifier]',
-    `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
-      `or specify minifier to use (default: terser)`
+    '[boolean | "terser" | "esbuild"] enable/disable minification, ' +
+      'or specify minifier to use (default: terser)'
   )
-  .option('--manifest', `[boolean] emit build manifest json`)
-  .option('--ssrManifest', `[boolean] emit ssr manifest json`)
+  .option('--manifest', '[boolean] emit build manifest json')
+  .option('--ssrManifest', '[boolean] emit ssr manifest json')
   .option(
     '--emptyOutDir',
-    `[boolean] force empty outDir when it's outside of root`
+    "[boolean] force empty outDir when it's outside of root"
   )
-  .option('-m, --mode <mode>', `[string] set env mode`)
-  .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
+  .option('-m, --mode <mode>', '[string] set env mode')
+  .option('-w, --watch', '[boolean] rebuilds when modules have changed on disk')
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     const buildOptions = cleanOptions(options) as BuildOptions
@@ -158,7 +158,7 @@ cli
   .command('optimize [root]')
   .option(
     '--force',
-    `[boolean] force the optimizer to ignore the cache and re-bundle`
+    '[boolean] force the optimizer to ignore the cache and re-bundle'
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
@@ -186,8 +186,8 @@ cli
 
 cli
   .command('preview [root]')
-  .option('--port <port>', `[number] specify port`)
-  .option('--open [path]', `[boolean | string] open browser on startup`)
+  .option('--port <port>', '[number] specify port')
+  .option('--open [path]', '[boolean | string] open browser on startup')
   .action(
     async (
       root: string,

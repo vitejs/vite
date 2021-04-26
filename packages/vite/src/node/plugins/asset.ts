@@ -237,7 +237,7 @@ async function fileToBuiltUrl(
       })
     }
 
-    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
+    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ''}`
   }
 
   cache.set(id, url)

@@ -34,11 +34,11 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           )
           if (format === 'system' && !chunk.name.includes('-legacy')) {
             const ext = path.extname(name)
-            name = name.slice(0, -ext.length) + `-legacy` + ext
+            name = name.slice(0, -ext.length) + '-legacy' + ext
           }
           return name
         } else {
-          return `_` + path.basename(chunk.fileName)
+          return '_' + path.basename(chunk.fileName)
         }
       }
 
@@ -108,7 +108,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       const outputLength = Array.isArray(output) ? output.length : 1
       if (outputCount >= outputLength) {
         this.emitFile({
-          fileName: `manifest.json`,
+          fileName: 'manifest.json',
           type: 'asset',
           source: JSON.stringify(manifest, null, 2)
         })

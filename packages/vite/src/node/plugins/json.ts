@@ -67,8 +67,8 @@ export function jsonPlugin(
         const position = errorMessageList && parseInt(errorMessageList[0], 10)
         const msg = position
           ? `, invalid JSON syntax found at line ${position}`
-          : `.`
-        this.error(`Failed to parse JSON file` + msg, e.idx)
+          : '.'
+        this.error('Failed to parse JSON file' + msg, e.idx)
       }
     }
   }

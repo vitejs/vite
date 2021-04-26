@@ -75,12 +75,12 @@ export async function transformWithEsbuild(
       }
     }
   } catch (e) {
-    debug(`esbuild error with options used: `, resolvedOptions)
+    debug('esbuild error with options used: ', resolvedOptions)
     // patch error information
     if (e.errors) {
       e.frame = ''
       e.errors.forEach((m: Message) => {
-        e.frame += `\n` + prettifyMessage(m, code)
+        e.frame += '\n' + prettifyMessage(m, code)
       })
       e.loc = e.errors[0].location
     }
@@ -149,7 +149,7 @@ function prettifyMessage(m: Message, code: string): string {
         .slice(0, line - 1)
         .map((l) => l.length)
         .reduce((total, l) => total + l + 1, 0) + column
-    res += `\n` + generateCodeFrame(code, offset, offset + 1)
+    res += '\n' + generateCodeFrame(code, offset, offset + 1)
   }
-  return res + `\n`
+  return res + '\n'
 }

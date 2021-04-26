@@ -12,9 +12,9 @@ import { transformImportGlob } from '../importGlob'
  * target is not native es - so that injected helper logic can be conditionally
  * dropped.
  */
-export const isModernFlag = `__VITE_IS_MODERN__`
-export const preloadMethod = `__vitePreload`
-export const preloadMarker = `__VITE_PRELOAD__`
+export const isModernFlag = '__VITE_IS_MODERN__'
+export const preloadMethod = '__vitePreload'
+export const preloadMarker = '__VITE_PRELOAD__'
 
 const preloadHelperId = 'vite/preload-helper'
 const preloadCode = `let scriptRel;const seen = {};export const ${preloadMethod} = ${preload.toString()}`
@@ -155,7 +155,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (dynamicIndex > -1 && !ssr) {
           needPreloadHelper = true
-          const dynamicEnd = source.indexOf(`)`, end) + 1
+          const dynamicEnd = source.indexOf(')', end) + 1
           const original = source.slice(dynamicIndex, dynamicEnd)
           const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
           str().overwrite(dynamicIndex, dynamicEnd, replacement)
@@ -226,13 +226,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               // if dynamic import polyfill is used, rewrite the import to
               // use the polyfilled function.
               if (isPolyfillEnabled) {
-                s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
+                s.overwrite(dynamicIndex, dynamicIndex + 6, '__import__')
               }
               // check the chunk being imported
               const url = code.slice(start, end)
               const deps: Set<string> = new Set()
 
-              if (url[0] === `"` && url[url.length - 1] === `"`) {
+              if (url[0] === '"' && url[url.length - 1] === '"') {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const addDeps = (filename: string) => {
@@ -265,7 +265,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // preload when there are actual other deps.
                   deps.size > 1
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                    : `void 0`
+                    : 'void 0'
                 )
               }
             }

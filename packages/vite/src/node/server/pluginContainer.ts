@@ -224,16 +224,16 @@ export async function createPluginContainer(
     }
 
     emitFile(assetOrFile: EmittedFile) {
-      warnIncompatibleMethod(`emitFile`, this._activePlugin!.name)
+      warnIncompatibleMethod('emitFile', this._activePlugin!.name)
       return ''
     }
 
     setAssetSource() {
-      warnIncompatibleMethod(`setAssetSource`, this._activePlugin!.name)
+      warnIncompatibleMethod('setAssetSource', this._activePlugin!.name)
     }
 
     getFileName() {
-      warnIncompatibleMethod(`getFileName`, this._activePlugin!.name)
+      warnIncompatibleMethod('getFileName', this._activePlugin!.name)
       return ''
     }
 

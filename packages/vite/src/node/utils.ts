@@ -138,7 +138,7 @@ export function injectQuery(url: string, queryToInject: string): string {
     pathname = pathname.slice(1)
   }
   pathname = decodeURIComponent(pathname)
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
+  return `${pathname}?${queryToInject}${search ? '&' + search.slice(1) : ''}${
     hash || ''
   }`
 }
@@ -167,7 +167,7 @@ export async function asyncReplace(
 
 export function timeFrom(start: number, subtract = 0): string {
   const time: number | string = Date.now() - start - subtract
-  const timeString = (time + `ms`).padEnd(5, ' ')
+  const timeString = (time + 'ms').padEnd(5, ' ')
   if (time < 10) {
     return chalk.green(timeString)
   } else if (time < 50) {
@@ -186,14 +186,14 @@ export function prettifyUrl(url: string, root: string): string {
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
     let file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
     const seg = file.split('/')
-    const npmIndex = seg.indexOf(`node_modules`)
+    const npmIndex = seg.indexOf('node_modules')
     const isSourceMap = file.endsWith('.map')
     if (npmIndex > 0) {
       file = seg[npmIndex + 1]
       if (file.startsWith('@')) {
         file = `${file}/${seg[npmIndex + 2]}`
       }
-      file = `npm: ${chalk.dim(file)}${isSourceMap ? ` (source map)` : ``}`
+      file = `npm: ${chalk.dim(file)}${isSourceMap ? ' (source map)' : ''}`
     }
     return chalk.dim(file)
   } else {
@@ -228,7 +228,7 @@ const range: number = 2
 
 export function pad(source: string, n = 2): string {
   const lines = source.split(splitRE)
-  return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
+  return lines.map((l) => ' '.repeat(n) + l).join('\n')
 }
 
 export function posToNumber(
@@ -297,11 +297,11 @@ export function generateCodeFrame(
             1,
             end > count ? lineLength - pad : end - start
           )
-          res.push(`   |  ` + ' '.repeat(pad) + '^'.repeat(length))
+          res.push('   |  ' + ' '.repeat(pad) + '^'.repeat(length))
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)
-            res.push(`   |  ` + '^'.repeat(length))
+            res.push('   |  ' + '^'.repeat(length))
           }
           count += lineLength + 1
         }

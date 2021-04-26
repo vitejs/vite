@@ -71,7 +71,7 @@ export function esbuildDepPlugin(
       // externalize assets and commonly known non-js file types
       build.onResolve(
         {
-          filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
+          filter: new RegExp('\\.(' + externalTypes.join('|') + ')(\\?.*)?$')
         },
         async ({ path: id, importer, kind }) => {
           const resolved = await resolve(id, importer, kind)

@@ -131,7 +131,7 @@ export class ErrorOverlay extends HTMLElement {
     }
     this.text('.message-body', message.trim())
 
-    const [file] = (err.loc?.file || err.id || 'unknown file').split(`?`)
+    const [file] = (err.loc?.file || err.id || 'unknown file').split('?')
     if (err.loc) {
       this.text('.file', `${file}:${err.loc.line}:${err.loc.column}`, true)
     } else if (err.id) {

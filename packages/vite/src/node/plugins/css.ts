@@ -79,7 +79,7 @@ export interface CSSModulesOptions {
     | null
 }
 
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
+const cssLangs = '\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)'
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
@@ -255,10 +255,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             )}`,
             `const id = ${JSON.stringify(id)}`,
             `const css = ${JSON.stringify(css)}`,
-            `updateStyle(id, css)`,
+            'updateStyle(id, css)',
             // css modules exports change on edit so it can't self accept
-            `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
-            `import.meta.hot.prune(() => removeStyle(id))`
+            `${modulesCode || 'import.meta.hot.accept()\nexport default css'}`,
+            'import.meta.hot.prune(() => removeStyle(id))'
           ].join('\n')
         }
       }
@@ -361,7 +361,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             inlined: true,
             minify: true
           })
-          const style = `__vite_style__`
+          const style = '__vite_style__'
           const injectCode =
             `var ${style} = document.createElement('style');` +
             `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
@@ -792,7 +792,7 @@ async function doUrlReplace(
 ) {
   let wrap = ''
   const first = rawUrl[0]
-  if (first === `"` || first === `'`) {
+  if (first === '"' || first === "'") {
     wrap = first
     rawUrl = rawUrl.slice(1, -1)
   }

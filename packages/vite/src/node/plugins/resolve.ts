@@ -215,7 +215,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
     load(id) {
       if (id.startsWith(browserExternalId)) {
         return isProduction
-          ? `export default {}`
+          ? 'export default {}'
           : `export default new Proxy({}, {
   get() {
     throw new Error('Module "${id.slice(
@@ -421,7 +421,7 @@ export function tryOptimizedResolve(
       return (
         isOptimized.file +
         `?v=${depData.browserHash}${
-          isOptimized.needsInterop ? `&es-interop` : ``
+          isOptimized.needsInterop ? '&es-interop' : ''
         }`
       )
     }
@@ -460,7 +460,7 @@ export function resolvePackageData(
     const pkgPath = resolveFrom(`${id}/package.json`, basedir)
     return loadPackageData(pkgPath, cacheKey)
   } catch (e) {
-    isDebug && debug(`${chalk.red(`[failed loading package.json]`)} ${id}`)
+    isDebug && debug(`${chalk.red('[failed loading package.json]')} ${id}`)
   }
 }
 
@@ -591,7 +591,7 @@ export function resolvePackageEntry(
   } else {
     throw new Error(
       `Failed to resolve entry for package "${id}". ` +
-        `The package may have incorrect main/module/exports specified in its package.json.`
+        'The package may have incorrect main/module/exports specified in its package.json.'
     )
   }
 }

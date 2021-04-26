@@ -49,7 +49,7 @@ export async function preview(
   httpServer.listen(port, () => {
     logger.info(
       chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-        chalk.green(` build preview server running at:\n`)
+        chalk.green(' build preview server running at:\n')
     )
     const interfaces = os.networkInterfaces()
     Object.keys(interfaces).forEach((key) =>

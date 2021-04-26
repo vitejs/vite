@@ -91,7 +91,7 @@ export async function optimizeDeps(
   const log = asCommand ? logger.info : debug
 
   if (!cacheDir) {
-    log(`No cache directory. Skipping.`)
+    log('No cache directory. Skipping.')
     return null
   }
 
@@ -145,7 +145,7 @@ export async function optimizeDeps(
               `(imported by ${missing[id]})`
             )}`
         )
-        .join(`\n  `)}\n\nAre they installed?`
+        .join('\n  ')}\n\nAre they installed?`
     )
   }
 
@@ -170,7 +170,7 @@ export async function optimizeDeps(
 
   if (!qualifiedIds.length) {
     writeFile(dataPath, JSON.stringify(data, null, 2))
-    log(`No dependencies to bundle. Skipping.\n\n\n`)
+    log('No dependencies to bundle. Skipping.\n\n\n')
     return data
   }
 
@@ -179,8 +179,8 @@ export async function optimizeDeps(
   const listed = Math.min(total, maxListed)
   const extra = Math.max(0, total - maxListed)
   const depsString = chalk.yellow(
-    qualifiedIds.slice(0, listed).join(`\n  `) +
-      (extra > 0 ? `\n  (...and ${extra} more)` : ``)
+    qualifiedIds.slice(0, listed).join('\n  ') +
+      (extra > 0 ? `\n  (...and ${extra} more)` : '')
   )
   if (!asCommand) {
     if (!newDeps) {
@@ -190,7 +190,7 @@ export async function optimizeDeps(
         chalk.greenBright(`Pre-bundling dependencies:\n  ${depsString}`)
       )
       logger.info(
-        `(this will be run only when your dependencies or config have changed)`
+        '(this will be run only when your dependencies or config have changed)'
       )
     }
   } else {

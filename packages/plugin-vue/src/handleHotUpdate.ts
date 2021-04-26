@@ -129,14 +129,14 @@ export async function handleHotUpdate({
 
   const updateType = []
   if (needRerender) {
-    updateType.push(`template`)
+    updateType.push('template')
     // template is inlined into main, add main module instead
     if (!templateModule) {
       affectedModules.add(mainModule)
     }
   }
   if (didUpdateStyle) {
-    updateType.push(`style`)
+    updateType.push('style')
   }
   if (updateType.length) {
     debug(`[vue:update(${updateType.join('&')})] ${file}`)

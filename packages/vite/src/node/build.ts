@@ -313,7 +313,7 @@ async function doBuild(
   config.logger.info(
     chalk.cyan(
       `vite v${require('vite/package.json').version} ${chalk.green(
-        `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`
+        `building ${ssr ? 'SSR bundle ' : ''}for ${config.mode}...`
       )}`
     )
   )
@@ -327,8 +327,8 @@ async function doBuild(
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
-      `rollupOptions.input should not be an html file when building for SSR. ` +
-        `Please specify a dedicated SSR entry.`
+      'rollupOptions.input should not be an html file when building for SSR. ' +
+        'Please specify a dedicated SSR entry.'
     )
   }
 
@@ -404,16 +404,16 @@ async function doBuild(
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         entryFileNames: ssr
-          ? `[name].js`
+          ? '[name].js'
           : libOptions
-          ? `${libOptions.fileName || pkgName}.${output.format || `es`}.js`
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          ? `${libOptions.fileName || pkgName}.${output.format || 'es'}.js`
+          : path.posix.join(options.assetsDir, '[name].[hash].js'),
         chunkFileNames: libOptions
-          ? `[name].js`
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          ? '[name].js'
+          : path.posix.join(options.assetsDir, '[name].[hash].js'),
         assetFileNames: libOptions
-          ? `[name].[ext]`
-          : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
+          ? '[name].[ext]'
+          : path.posix.join(options.assetsDir, '[name].[hash].[ext]'),
         // #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
@@ -438,7 +438,7 @@ async function doBuild(
 
     // watch file changes with rollup
     if (config.build.watch) {
-      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
+      config.logger.info(chalk.cyanBright('\nwatching for file changes...'))
 
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
@@ -470,7 +470,7 @@ async function doBuild(
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
-          config.logger.info(chalk.cyanBright(`\nbuild started...`))
+          config.logger.info(chalk.cyanBright('\nbuild started...'))
 
           // clean previous files
           if (options.write) {
@@ -515,10 +515,10 @@ async function doBuild(
         } else if (inferEmpty) {
           config.logger.warn(
             chalk.yellow(
-              `\n${chalk.bold(`(!)`)} outDir ${chalk.white.dim(
+              `\n${chalk.bold('(!)')} outDir ${chalk.white.dim(
                 outDir
               )} is not inside project root and will not be emptied.\n` +
-                `Use --emptyOutDir to override.\n`
+                'Use --emptyOutDir to override.\n'
             )
           )
         }
@@ -544,7 +544,7 @@ async function doBuild(
 }
 
 function getPkgName(root: string) {
-  const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+  const { name } = JSON.parse(lookupFile(root, ['package.json']) || '{}')
 
   if (!name) throw new Error('no name found in package.json')
 
@@ -612,8 +612,8 @@ function resolveBuildOutputs(
       !libOptions.name
     ) {
       throw new Error(
-        `Option "build.lib.name" is required when output formats ` +
-          `include "umd" or "iife".`
+        'Option "build.lib.name" is required when output formats ' +
+          'include "umd" or "iife".'
       )
     }
     if (!outputs) {
@@ -624,8 +624,8 @@ function resolveBuildOutputs(
       // user explicitly specifying own output array
       logger.warn(
         chalk.yellow(
-          `"build.lib.formats" will be ignored because ` +
-            `"build.rollupOptions.output" is already an array format`
+          '"build.lib.formats" will be ignored because ' +
+            '"build.rollupOptions.output" is already an array format'
         )
       )
     }
@@ -633,10 +633,10 @@ function resolveBuildOutputs(
   return outputs
 }
 
-const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
+const warningIgnoreList = ['CIRCULAR_DEPENDENCY', 'THIS_IS_UNDEFINED']
 const dynamicImportWarningIgnoreList = [
-  `Unsupported expression`,
-  `statically analyzed`
+  'Unsupported expression',
+  'statically analyzed'
 ]
 
 export function onRollupWarning(
@@ -651,9 +651,9 @@ export function onRollupWarning(
     if (!importer || !/\?commonjs-external$/.test(importer)) {
       throw new Error(
         `[vite]: Rollup failed to resolve import "${id}" from "${importer}".\n` +
-          `This is most likely unintended because it can break your application at runtime.\n` +
-          `If you do want to externalize this module explicitly add it to\n` +
-          `\`build.rollupOptions.external\``
+          'This is most likely unintended because it can break your application at runtime.\n' +
+          'If you do want to externalize this module explicitly add it to\n' +
+          '`build.rollupOptions.external`'
       )
     }
   }

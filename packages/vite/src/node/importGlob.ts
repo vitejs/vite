@@ -38,7 +38,7 @@ export async function transformImportGlob(
 
   let [pattern, endIndex] = lexGlobPattern(source, pos)
   if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
-    throw err(`pattern must start with "." or "/" (relative to project root)`)
+    throw err('pattern must start with "." or "/" (relative to project root)')
   }
   let base
   let parentDepth = 0
@@ -62,8 +62,8 @@ export async function transformImportGlob(
     ignore: ['**/node_modules/**']
   })
   const imports: string[] = []
-  let importsString = ``
-  let entries = ``
+  let importsString = ''
+  let entries = ''
   for (let i = 0; i < files.length; i++) {
     // skip importer itself
     if (files[i] === importerBasename) continue
@@ -117,14 +117,14 @@ function lexGlobPattern(code: string, pos: number): [string, number] {
   let state = LexerState.inCall
   let pattern = ''
 
-  let i = code.indexOf(`(`, pos) + 1
+  let i = code.indexOf('(', pos) + 1
   outer: for (; i < code.length; i++) {
     const char = code.charAt(i)
     switch (state) {
       case LexerState.inCall:
-        if (char === `'`) {
+        if (char === "'") {
           state = LexerState.inSingleQuoteString
-        } else if (char === `"`) {
+        } else if (char === '"') {
           state = LexerState.inDoubleQuoteString
         } else if (char === '`') {
           state = LexerState.inTemplateString
@@ -135,14 +135,14 @@ function lexGlobPattern(code: string, pos: number): [string, number] {
         }
         break
       case LexerState.inSingleQuoteString:
-        if (char === `'`) {
+        if (char === "'") {
           break outer
         } else {
           pattern += char
         }
         break
       case LexerState.inDoubleQuoteString:
-        if (char === `"`) {
+        if (char === '"') {
           break outer
         } else {
           pattern += char
@@ -159,12 +159,12 @@ function lexGlobPattern(code: string, pos: number): [string, number] {
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
-  return [pattern, code.indexOf(`)`, i) + 1]
+  return [pattern, code.indexOf(')', i) + 1]
 }
 
 function error(pos: number) {
   const err = new Error(
-    `import.meta.glob() can only accept string literals.`
+    'import.meta.glob() can only accept string literals.'
   ) as RollupError
   err.pos = pos
   throw err

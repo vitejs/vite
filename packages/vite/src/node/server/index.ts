@@ -293,7 +293,7 @@ export async function createServer(
     middlewares,
     get app() {
       config.logger.warn(
-        `ViteDevServer.app is deprecated. Use ViteDevServer.middlewares instead.`
+        'ViteDevServer.app is deprecated. Use ViteDevServer.middlewares instead.'
       )
       return middlewares
     },
@@ -455,7 +455,7 @@ export async function createServer(
               if (fs.existsSync(path.join(root, rewritten))) {
                 return rewritten
               } else {
-                return `/index.html`
+                return '/index.html'
               }
             }
           }
@@ -560,7 +560,7 @@ async function startServer(
 
       info(
         chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-          chalk.green(` dev server running at:\n`),
+          chalk.green(' dev server running at:\n'),
         {
           clear: !server.config.logger.hasWarned
         }

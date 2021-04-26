@@ -25,8 +25,8 @@ function warnFailedFetch(err: Error, path: string | string[]) {
   }
   console.error(
     `[hmr] Failed to reload ${path}. ` +
-      `This could be due to syntax errors or importing non-existent ` +
-      `modules. (see errors above)`
+      'This could be due to syntax errors or importing non-existent ' +
+      'modules. (see errors above)'
   )
 }
 
@@ -40,7 +40,7 @@ let isFirstUpdate = true
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
-      console.log(`[vite] connected.`)
+      console.log('[vite] connected.')
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
@@ -69,7 +69,7 @@ async function handleMessage(payload: HMRPayload) {
           // using relative paths so we need to use link.href to grab the full
           // URL for the include check.
           const el = ([].slice.call(
-            document.querySelectorAll(`link`)
+            document.querySelectorAll('link')
           ) as HTMLLinkElement[]).find((e) => e.href.includes(path))
           if (el) {
             const newPath = `${path}${
@@ -186,7 +186,7 @@ async function waitForSuccessfulPing(ms = 1000) {
 // ping server
 socket.addEventListener('close', async ({ wasClean }) => {
   if (wasClean) return
-  console.log(`[vite] server connection lost. polling for restart...`)
+  console.log('[vite] server connection lost. polling for restart...')
   await waitForSuccessfulPing()
   location.reload()
 })
@@ -290,7 +290,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
     Array.from(modulesToUpdate).map(async (dep) => {
       const disposer = disposeMap.get(dep)
       if (disposer) await disposer(dataMap.get(dep))
-      const [path, query] = dep.split(`?`)
+      const [path, query] = dep.split('?')
       try {
         const newMod = await import(
           /* @vite-ignore */
@@ -393,14 +393,14 @@ export const createHotContext = (ownerPath: string) => {
       } else if (Array.isArray(deps)) {
         acceptDeps(deps, callback)
       } else {
-        throw new Error(`invalid hot.accept() usage.`)
+        throw new Error('invalid hot.accept() usage.')
       }
     },
 
     acceptDeps() {
       throw new Error(
-        `hot.acceptDeps() is deprecated. ` +
-          `Use hot.accept() with the same signature instead.`
+        'hot.acceptDeps() is deprecated. ' +
+          'Use hot.accept() with the same signature instead.'
       )
     },
 
@@ -450,7 +450,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
 
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
+  return `${pathname}?${queryToInject}${search ? '&' + search.slice(1) : ''}${
     hash || ''
   }`
 }

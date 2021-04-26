@@ -561,7 +561,7 @@ function injectToHead(
     }
   }
   // if no <head> tag is present, just prepend
-  return tagsHtml + `\n` + html
+  return tagsHtml + '\n' + html
 }
 
 const bodyInjectRE = /<\/body>/
@@ -573,20 +573,20 @@ function injectToBody(
 ) {
   if (prepend) {
     // inject after body open
-    const tagsHtml = `\n` + serializeTags(tags)
+    const tagsHtml = '\n' + serializeTags(tags)
     if (bodyPrependInjectRE.test(html)) {
       return html.replace(bodyPrependInjectRE, `$&\n${tagsHtml}`)
     }
     // if no body, prepend
-    return tagsHtml + `\n` + html
+    return tagsHtml + '\n' + html
   } else {
     // inject before body close
-    const tagsHtml = `\n` + serializeTags(tags)
+    const tagsHtml = '\n' + serializeTags(tags)
     if (bodyInjectRE.test(html)) {
       return html.replace(bodyInjectRE, `${tagsHtml}\n$&`)
     }
     // if no body, append
-    return html + `\n` + tagsHtml
+    return html + '\n' + tagsHtml
   }
 }
 
@@ -604,7 +604,7 @@ function serializeTags(tags: HtmlTagDescriptor['children']): string {
   if (typeof tags === 'string') {
     return tags
   } else if (tags) {
-    return tags.map(serializeTag).join(`\n  `)
+    return tags.map(serializeTag).join('\n  ')
   }
   return ''
 }
@@ -613,7 +613,7 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
   let res = ''
   for (const key in attrs) {
     if (typeof attrs[key] === 'boolean') {
-      res += attrs[key] ? ` ${key}` : ``
+      res += attrs[key] ? ` ${key}` : ''
     } else {
       res += ` ${key}=${JSON.stringify(attrs[key])}`
     }

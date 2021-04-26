@@ -41,15 +41,15 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         }
 
         return code
-          .replace(`__MODE__`, JSON.stringify(config.mode))
-          .replace(`__BASE__`, JSON.stringify(config.base))
-          .replace(`__ROOT__`, JSON.stringify(config.root))
-          .replace(`__DEFINES__`, serializeDefine(config.define || {}))
-          .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
-          .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
-          .replace(`__HMR_PORT__`, JSON.stringify(port))
-          .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
-          .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
+          .replace('__MODE__', JSON.stringify(config.mode))
+          .replace('__BASE__', JSON.stringify(config.base))
+          .replace('__ROOT__', JSON.stringify(config.root))
+          .replace('__DEFINES__', serializeDefine(config.define || {}))
+          .replace('__HMR_PROTOCOL__', JSON.stringify(protocol))
+          .replace('__HMR_HOSTNAME__', JSON.stringify(host))
+          .replace('__HMR_PORT__', JSON.stringify(port))
+          .replace('__HMR_TIMEOUT__', JSON.stringify(timeout))
+          .replace('__HMR_ENABLE_OVERLAY__', JSON.stringify(overlay))
       } else if (code.includes('process.env.NODE_ENV')) {
         // replace process.env.NODE_ENV
         return code.replace(
@@ -62,12 +62,12 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 }
 
 function serializeDefine(define: Record<string, any>): string {
-  let res = `{`
+  let res = '{'
   for (const key in define) {
     const val = define[key]
     res += `${JSON.stringify(key)}: ${
       typeof val === 'string' ? `(${val})` : JSON.stringify(val)
     }, `
   }
-  return res + `}`
+  return res + '}'
 }

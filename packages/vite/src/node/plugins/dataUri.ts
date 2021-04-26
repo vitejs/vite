@@ -6,7 +6,7 @@ import { URL } from 'url'
 
 const dataUriRE = /^([^/]+\/[^;,]+)(;base64)?,([\s\S]*)$/
 
-const dataUriPrefix = `/@data-uri/`
+const dataUriPrefix = '/@data-uri/'
 
 /**
  * Build only, since importing from a data URI works natively.
@@ -36,7 +36,7 @@ export function dataURIPlugin(): Plugin {
       const [, mime, format, data] = match
       if (mime !== 'text/javascript') {
         throw new Error(
-          `data URI with non-JavaScript mime type is not supported.`
+          'data URI with non-JavaScript mime type is not supported.'
         )
       }
 

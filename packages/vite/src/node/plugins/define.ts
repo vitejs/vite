@@ -24,9 +24,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
     Object.assign(importMetaKeys, {
-      'import.meta.env.': `({}).`,
+      'import.meta.env.': '({}).',
       'import.meta.env': JSON.stringify(config.env),
-      'import.meta.hot': `false`
+      'import.meta.hot': 'false'
     })
   }
 
@@ -34,7 +34,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
     ...userDefine,
     ...importMetaKeys,
-    'process.env.': `({}).`
+    'process.env.': '({}).'
   }
 
   const pattern = new RegExp(

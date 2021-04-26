@@ -79,7 +79,7 @@ export async function scanImports(
   )
 
   if (!entries.length) {
-    debug(`No entry HTML files detected`)
+    debug('No entry HTML files detected')
     return { deps: {}, missing: {} }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
@@ -127,7 +127,7 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
     ignore: [
       '**/node_modules/**',
       `**/${config.build.outDir}/**`,
-      `**/__tests__/**`
+      '**/__tests__/**'
     ],
     absolute: true
   })
@@ -246,8 +246,8 @@ function esbuildScanPlugin(
             }
           }
 
-          if (!js.includes(`export default`)) {
-            js += `\nexport default {}`
+          if (!js.includes('export default')) {
+            js += '\nexport default {}'
           }
 
           if (js.includes('import.meta.glob')) {
@@ -365,7 +365,7 @@ function esbuildScanPlugin(
 
         let contents = fs.readFileSync(id, 'utf-8')
         if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
-          contents = config.esbuild.jsxInject + `\n` + contents
+          contents = config.esbuild.jsxInject + '\n' + contents
         }
 
         if (contents.includes('import.meta.glob')) {

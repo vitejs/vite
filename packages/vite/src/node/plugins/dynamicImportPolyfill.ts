@@ -49,10 +49,10 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
       }
       if (!polyfillLoaded) {
         throw new Error(
-          `Vite's dynamic import polyfill is enabled but was never imported. This ` +
-            `should only happen when using custom non-html rollup inputs. Make ` +
+          "Vite's dynamic import polyfill is enabled but was never imported. This " +
+            'should only happen when using custom non-html rollup inputs. Make ' +
             `sure to add \`import "${polyfillId}"\` as the first statement in ` +
-            `your custom entry.`
+            'your custom entry.'
         )
       }
       // we do not actually return anything here because rewriting here would
@@ -96,7 +96,7 @@ declare const Blob: any
 
 function polyfill(modulePath = '.', importFunctionName = '__import__') {
   try {
-    self[importFunctionName] = new Function('u', `return import(u)`)
+    self[importFunctionName] = new Function('u', 'return import(u)')
   } catch (error) {
     const baseURL = new URL(modulePath, location)
     const cleanup = (script: any) => {

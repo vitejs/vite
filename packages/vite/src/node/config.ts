@@ -305,12 +305,12 @@ export async function resolveConfig(
   // resolve cache directory
   const pkgPath = lookupFile(
     resolvedRoot,
-    [`package.json`],
+    ['package.json'],
     true /* pathOnly */
   )
   const cacheDir = config.cacheDir
     ? path.resolve(resolvedRoot, config.cacheDir)
-    : pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite`)
+    : pkgPath && path.join(path.dirname(pkgPath), 'node_modules/.vite')
 
   const assetsFilter = config.assetsInclude
     ? createFilter(config.assetsInclude)
@@ -395,7 +395,7 @@ export async function resolveConfig(
   await Promise.all(userPlugins.map((p) => p.configResolved?.(resolved)))
 
   if (process.env.DEBUG) {
-    debug(`using resolved config: %O`, {
+    debug('using resolved config: %O', {
       ...resolved,
       plugins: resolved.plugins.map((p) => p.name)
     })
@@ -405,8 +405,8 @@ export async function resolveConfig(
   if (config.build?.base) {
     logger.warn(
       chalk.yellow.bold(
-        `(!) "build.base" config option is deprecated. ` +
-          `"base" is now a root-level config option.`
+        '(!) "build.base" config option is deprecated. ' +
+          '"base" is now a root-level config option.'
       )
     )
     config.base = config.build.base
@@ -416,8 +416,8 @@ export async function resolveConfig(
     get() {
       logger.warn(
         chalk.yellow.bold(
-          `(!) "build.base" config option is deprecated. ` +
-            `"base" is now a root-level config option.\n` +
+          '(!) "build.base" config option is deprecated. ' +
+            '"base" is now a root-level config option.\n' +
             new Error().stack
         )
       )
@@ -437,7 +437,7 @@ export async function resolveConfig(
     get() {
       logger.warn(
         chalk.yellow.bold(
-          `(!) "alias" config option is deprecated. Use "resolve.alias" instead.\n` +
+          '(!) "alias" config option is deprecated. Use "resolve.alias" instead.\n' +
             new Error().stack
         )
       )
@@ -457,7 +457,7 @@ export async function resolveConfig(
     get() {
       logger.warn(
         chalk.yellow.bold(
-          `(!) "dedupe" config option is deprecated. Use "resolve.dedupe" instead.\n` +
+          '(!) "dedupe" config option is deprecated. Use "resolve.dedupe" instead.\n' +
             new Error().stack
         )
       )
@@ -485,7 +485,7 @@ function resolveBaseUrl(
     logger.warn(
       chalk.yellow.bold(
         `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
-          `URL, ./, or an empty string.`
+          'URL, ./, or an empty string.'
       )
     )
     base = '/'
@@ -502,7 +502,7 @@ function resolveBaseUrl(
     // ensure leading slash
     if (!base.startsWith('/')) {
       logger.warn(
-        chalk.yellow.bold(`(!) "base" option should start with a slash.`)
+        chalk.yellow.bold('(!) "base" option should start with a slash.')
       )
       base = '/' + base
     }
@@ -510,7 +510,7 @@ function resolveBaseUrl(
 
   // ensure ending slash
   if (!base.endsWith('/')) {
-    logger.warn(chalk.yellow.bold(`(!) "base" option should end with a slash.`))
+    logger.warn(chalk.yellow.bold('(!) "base" option should end with a slash.'))
     base += '/'
   }
 
@@ -713,12 +713,12 @@ export async function loadConfigFromFile(
       } catch (e) {
         const ignored = new RegExp(
           [
-            `Cannot use import statement`,
-            `Must use import to load ES Module`,
+            'Cannot use import statement',
+            'Must use import to load ES Module',
             // #1635, #2050 some Node 12.x versions don't have esm detection
             // so it throws normal syntax errors when encountering esm syntax
-            `Unexpected token`,
-            `Unexpected identifier`
+            'Unexpected token',
+            'Unexpected identifier'
           ].join('|')
         )
         if (!ignored.test(e.message)) {
@@ -742,7 +742,7 @@ export async function loadConfigFromFile(
       ? userConfig(configEnv)
       : userConfig)
     if (!isObject(config)) {
-      throw new Error(`config must export or return an object.`)
+      throw new Error('config must export or return an object.')
     }
     return {
       path: normalizePath(resolvedPath),
@@ -845,8 +845,8 @@ export function loadEnv(
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
-      `"local" cannot be used as a mode name because it conflicts with ` +
-        `the .local postfix for .env files.`
+      '"local" cannot be used as a mode name because it conflicts with ' +
+        'the .local postfix for .env files.'
     )
   }
 
@@ -854,8 +854,8 @@ export function loadEnv(
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
     /** mode file */ `.env.${mode}`,
-    /** local file */ `.env.local`,
-    /** default file */ `.env`
+    /** local file */ '.env.local',
+    /** default file */ '.env'
   ]
 
   // check if there are actual env variables starting with VITE_*

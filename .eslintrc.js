@@ -47,9 +47,9 @@ module.exports = defineConfig({
         (d) => ({
           name: d,
           message:
-            `devDependencies can only be imported using ESM syntax so ` +
-            `that they are included in the rollup bundle. If you are trying to ` +
-            `lazy load a dependency, use (await import('dependency')).default instead.`
+            'devDependencies can only be imported using ESM syntax so ' +
+            'that they are included in the rollup bundle. If you are trying to ' +
+            "lazy load a dependency, use (await import('dependency')).default instead."
         })
       )
     ],
