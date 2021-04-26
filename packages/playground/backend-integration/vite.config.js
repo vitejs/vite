@@ -7,8 +7,8 @@ const glob = require('fast-glob')
 function BackendIntegrationExample() {
   return {
     name: 'backend-integration',
-    config({ root: playgroundRoot }) {
-      const projectRoot = playgroundRoot
+    config() {
+      const projectRoot = __dirname
       const sourceCodeDir = path.join(projectRoot, 'frontend')
       const root = path.join(sourceCodeDir, 'entrypoints')
       const outDir = path.relative(root, path.join(projectRoot, 'dist/dev'))
