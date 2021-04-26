@@ -2,6 +2,7 @@ import { compileStyleAsync, SFCDescriptor } from '@vue/compiler-sfc'
 import { TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformStyle(
   code: string,
   descriptor: SFCDescriptor,

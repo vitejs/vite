@@ -59,7 +59,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               output[0].code
             ).toString('base64')}`
           } finally {
-            bundle.close()
+            await bundle.close()
           }
         } else {
           // emit as separate chunk
