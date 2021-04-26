@@ -162,9 +162,17 @@ export interface UserConfig {
   dedupe?: string[]
 }
 
+export type SSRTarget = 'node' | 'webworker'
+
 export interface SSROptions {
   external?: string[]
   noExternal?: string[]
+  /**
+   * Define the target for the ssr build. The browser field in package.json
+   * is ignored for node but used if webworker is the target
+   * Default: 'node'
+   */
+  target?: SSRTarget
 }
 
 export interface InlineConfig extends UserConfig {
@@ -342,6 +350,7 @@ export async function resolveConfig(
                 root: resolvedRoot,
                 isProduction,
                 isBuild: command === 'build',
+                ssrTarget: resolved.ssr?.target,
                 asSrc: true,
                 preferRelative: false,
                 tryIndex: true,
