@@ -120,9 +120,10 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       // relative
       if (id.startsWith('.') || (preferRelative && /^\w/.test(id))) {
-        const basedir = importer ? path.dirname(importer) : process.cwd()
+        const basedir = importer
+          ? path.dirname(fs.realpathSync.native(importer))
+          : process.cwd()
         const fsPath = path.resolve(basedir, id)
-        // handle browser field mapping for relative imports
 
         if (
           !ssr &&
