@@ -21,11 +21,11 @@ export function terserPlugin(options: Terser.MinifyOptions): Plugin {
 
     async renderChunk(code, _chunk, outputOptions) {
       const res = await worker.run(__dirname, code, {
+        safari10: true,
         ...options,
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
-        toplevel: outputOptions.format === 'cjs',
-        safari10: true
+        toplevel: outputOptions.format === 'cjs'
       })
       return {
         code: res.code!,
