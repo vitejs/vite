@@ -18,6 +18,14 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
+export async function usePromise<T>(arr: any, processFn: any) {
+  const stack = []
+  for (const item of arr) {
+    stack.push(processFn(item))
+  }
+  return Promise.all<T>(stack)
+}
+
 // Strip valid id prefix. This is prepended to resolved Ids that are
 // not valid browser import specifiers by the importAnalysis plugin.
 export function unwrapId(id: string): string {

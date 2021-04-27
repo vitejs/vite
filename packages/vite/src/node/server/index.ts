@@ -34,7 +34,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, normalizePath, usePromise } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -51,6 +51,7 @@ import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
+import { Plugin } from '../plugin'
 
 export interface ServerOptions {
   host?: string
@@ -389,12 +390,10 @@ export async function createServer(
   })
 
   // apply server configuration hooks from plugins
-  const postHooks: ((() => void) | void)[] = []
-  for (const plugin of plugins) {
-    if (plugin.configureServer) {
-      postHooks.push(await plugin.configureServer(server))
-    }
-  }
+  const postHooks = await usePromise<(() => void) | void>(
+    plugins,
+    (plugin: Plugin) => plugin.configureServer && plugin.configureServer(server)
+  )
 
   // Internal middlewares ------------------------------------------------------
 
