@@ -120,8 +120,10 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       // relative
       if (id.startsWith('.') || (preferRelative && /^\w/.test(id))) {
-        const basedir = importer
-          ? path.dirname(fs.realpathSync.native(importer))
+        const realImporter =
+          importer && fs.realpathSync.native(importer.replace(/[*?#].*$/g, ''))
+        const basedir = realImporter
+          ? path.dirname(realImporter)
           : process.cwd()
         const fsPath = path.resolve(basedir, id)
 
