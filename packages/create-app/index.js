@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 // eslint-disable-next-line node/no-restricted-require
-const prompts = require('prompts');
+const prompts = require('prompts')
 const {
   yellow,
   green,
@@ -127,7 +127,7 @@ const renameFiles = {
 
 async function init() {
   let targetDir = argv._[0]
-  const initialFrameworkIndex = FRAMEWORKS.findIndex(framework => [argv.t, argv.template].includes(framework.name));
+  const initialFrameworkIndex = FRAMEWORKS.findIndex(framework => [argv.t, argv.template].includes(framework.name))
   const result = await prompts([
     {
       type: 'text',
@@ -148,7 +148,7 @@ async function init() {
       message: 'Select a framework:',
       initial: initialFrameworkIndex > -1 ? initialFrameworkIndex : 0,
       choices: FRAMEWORKS.map(framework => {
-        const frameworkColor = framework.color;
+        const frameworkColor = framework.color
         return {
           title: frameworkColor(framework.name),
           value: framework
@@ -161,7 +161,7 @@ async function init() {
       message: 'Select a variant:',
       // @ts-ignore
       choices: framework => framework.variants.map(variant => {
-        const variantColor = variant.color;
+        const variantColor = variant.color
         return {
           title: variantColor(variant.name),
           value: variant.name
@@ -170,15 +170,15 @@ async function init() {
     }
   ], { onCancel: () => {
     throw new Error('Operation cancelled')
-  }});
+  }})
 
   const packageName = result.packageName
   const root = path.join(cwd, result.packageName)
 
   if (result.overwrite) {
     emptyDir(root)
-  } else {
-    fs.mkdirSync(root);
+  } else if (!fs.existsSync(root)) {
+    fs.mkdirSync(root)
   }
 
   // determine template
