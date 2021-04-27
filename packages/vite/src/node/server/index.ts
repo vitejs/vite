@@ -285,7 +285,7 @@ export async function createServer(
   const moduleGraph = new ModuleGraph(container)
   const closeHttpServer = createServerCloseFn(httpServer)
 
-  // _eslint-disable-next-line prefer-const
+  // eslint-disable-next-line prefer-const
   let exitProcess: () => void
 
   const server: ViteDevServer = {
