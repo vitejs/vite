@@ -17,7 +17,7 @@ exports.serve = async function serve(root, isProd) {
     // client build
     await build({
       root,
-      logLevel: 'error',
+      logLevel: 'silent', // exceptions are logged by Jest
       build: {
         target: 'esnext',
         minify: false,
@@ -28,7 +28,7 @@ exports.serve = async function serve(root, isProd) {
     // server build
     await build({
       root,
-      logLevel: 'error',
+      logLevel: 'silent',
       build: {
         target: 'esnext',
         ssr: 'src/entry-server.js',
