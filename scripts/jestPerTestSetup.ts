@@ -124,7 +124,7 @@ function startStaticServer(): Promise<string> {
   let config: UserConfig
   try {
     config = require(configFile)
-  } catch (e) { }
+  } catch (e) {}
   const base = (config?.base || '/') === '/' ? '' : config.base
 
   // @ts-ignore
