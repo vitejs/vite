@@ -356,6 +356,13 @@ export async function resolveConfig(
     }
   }
 
+  let publicDir = config.publicDir
+  if (typeof publicDir === 'boolean') {
+    publicDir = publicDir ? path.resolve(resolvedRoot, 'public') : ''
+  } else {
+    publicDir = path.resolve(resolvedRoot, publicDir || 'public')
+  }
+
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -364,10 +371,7 @@ export async function resolveConfig(
     root: resolvedRoot,
     base: BASE_URL,
     resolve: resolveOptions,
-    publicDir:
-      !!config.publicDir
-        ? path.resolve(resolvedRoot, config.publicDir || 'public')
-        : '',
+    publicDir,
     cacheDir,
     command,
     mode,
