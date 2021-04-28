@@ -22,7 +22,13 @@ import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import { Terser } from 'types/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import {
+  copyDir,
+  emptyDir,
+  lookupFile,
+  normalizePath,
+  usePromise
+} from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { RollupCommonJSOptions } from 'types/commonjs'
@@ -508,11 +514,9 @@ async function doBuild(
     }
 
     if (Array.isArray(outputs)) {
-      const res = []
-      for (const output of outputs) {
-        res.push(await generate(output))
-      }
-      return res
+      return await usePromise<OutputOptions, RollupOutput>(outputs, (output) =>
+        generate(output)
+      )
     } else {
       return await generate(outputs)
     }
