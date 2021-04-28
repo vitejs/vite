@@ -365,7 +365,7 @@ export async function resolveConfig(
     base: BASE_URL,
     resolve: resolveOptions,
     publicDir:
-      config.publicDir !== false
+      !!config.publicDir
         ? path.resolve(resolvedRoot, config.publicDir || 'public')
         : '',
     cacheDir,
