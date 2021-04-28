@@ -17,7 +17,11 @@ import { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
-import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
+import {
+  CLIENT_DIR,
+  DEFAULT_ASSETS_RE,
+  KNOWN_JS_SRC_EXTENSIONS
+} from './constants'
 import {
   InternalResolveOptions,
   ResolveOptions,
@@ -123,6 +127,13 @@ export interface UserConfig {
    * Specify additional files to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
+  /**
+   * Specifiy additional extensions to be treated as sources of js modules
+   * requires plugins to be installed that transform the extensions!
+   *
+   * Plugin authors should set this with the config hook
+   */
+  knownJsSrcExtensions?: string[]
   /**
    * Server specific options, e.g. host, port, https...
    */
@@ -264,6 +275,11 @@ export async function resolveConfig(
       }
     }
   }
+
+  // update known js src extensions
+  config.knownJsSrcExtensions?.forEach((ext) =>
+    KNOWN_JS_SRC_EXTENSIONS.add(ext.startsWith('.') ? ext : `.${ext}`)
+  )
 
   // resolve root
   const resolvedRoot = normalizePath(

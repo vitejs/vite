@@ -4,7 +4,12 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { pathToFileURL, URL } from 'url'
-import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
+import {
+  FS_PREFIX,
+  DEFAULT_EXTENSIONS,
+  VALID_ID_PREFIX,
+  KNOWN_JS_SRC_EXTENSIONS
+} from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
@@ -106,16 +111,12 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte)($|\?)/
 export const isJSRequest = (url: string): boolean => {
-  if (knownJsSrcRE.test(url)) {
-    return true
-  }
   url = cleanUrl(url)
-  if (!path.extname(url) && !url.endsWith('/')) {
-    return true
-  }
-  return false
+  const ext = path.extname(url)
+  return (
+    (ext && KNOWN_JS_SRC_EXTENSIONS.has(ext)) || (!ext && !url.endsWith('/'))
+  )
 }
 
 const importQueryRE = /(\?|&)import(?:&|$)/

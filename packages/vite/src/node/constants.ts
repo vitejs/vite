@@ -15,6 +15,18 @@ export const DEFAULT_EXTENSIONS = [
   '.json'
 ]
 
+// file extensions that will be transformed to js modules
+export const KNOWN_JS_SRC_EXTENSIONS = new Set([
+  '.js',
+  '.jsx',
+  '.ts',
+  '.tsx',
+  '.mjs',
+  '.vue',
+  '.marko',
+  '.svelte'
+])
+
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
 export const OPTIMIZABLE_ENTRY_RE = /\.(?:m?js|ts)$/
