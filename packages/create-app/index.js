@@ -128,12 +128,17 @@ const renameFiles = {
 async function init() {
   let targetDir = argv._[0]
   const initialFrameworkIndex = FRAMEWORKS.findIndex(framework => [argv.t, argv.template].includes(framework.name))
+  const defaultPackageName = !targetDir ? 'vite-project' : targetDir.trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/^[._]/, '')
+    .replace(/[^a-z0-9-~]+/g, '-')
   const result = await prompts([
     {
       type: 'text',
       name: 'packageName',
       message: 'Project name:',
-      initial: targetDir || 'vite-project',
+      initial: defaultPackageName,
       validate: dir => /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(dir) || 'Invalid package.json name',
     },
     {
