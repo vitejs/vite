@@ -173,7 +173,7 @@ async function init() {
   }})
 
   const packageName = result.packageName
-  const root = path.join(cwd, result.packageName)
+  const root = path.join(cwd, targetDir)
 
   if (result.overwrite) {
     emptyDir(root)
