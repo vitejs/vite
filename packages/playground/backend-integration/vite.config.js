@@ -1,5 +1,6 @@
 const path = require('path')
 const glob = require('fast-glob')
+const normalizePath = require('vite').normalizePath
 
 /**
  * @returns {import('vite').Plugin}
@@ -14,7 +15,7 @@ function BackendIntegrationExample() {
       const outDir = path.relative(root, path.join(projectRoot, 'dist/dev'))
 
       const entrypoints = glob
-        .sync(`${root}/**/*`, { onlyFiles: true })
+        .sync(`${normalizePath(root)}/**/*`, { onlyFiles: true })
         .map((filename) => [path.relative(root, filename), filename])
 
       return {
