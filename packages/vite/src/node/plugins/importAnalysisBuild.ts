@@ -221,7 +221,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (imports.length) {
             const s = new MagicString(code)
-            const analyzed: Set<string> = new Set<string>()
             for (let index = 0; index < imports.length; index++) {
               const { s: start, e: end, d: dynamicIndex } = imports[index]
               // if dynamic import polyfill is used, rewrite the import to
@@ -236,6 +235,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (url[0] === `"` && url[url.length - 1] === `"`) {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
+                const analyzed: Set<string> = new Set<string>()
                 const addDeps = (filename: string) => {
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return

@@ -5,14 +5,24 @@ import path from 'path'
 
 export const polyfillId = 'vite/dynamic-import-polyfill'
 
+function resolveModulePath(config: ResolvedConfig) {
+  const {
+    base,
+    build: { assetsDir }
+  } = config
+  // #2918 path.posix.join returns a wrong path when config.base is a URL
+  if (/^(https?:)?(\/\/)/i.test(base)) {
+    return `${base.replace(/\/$/, '')}/${assetsDir}/`
+  }
+  return path.posix.join(base, assetsDir, '/')
+}
+
 export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   const skip = config.command === 'serve' || config.build.ssr
   let polyfillLoaded = false
   const polyfillString =
     `const p = ${polyfill.toString()};` +
-    `${isModernFlag}&&p(${JSON.stringify(
-      path.posix.join(config.base, config.build.assetsDir, '/')
-    )});`
+    `${isModernFlag}&&p(${JSON.stringify(resolveModulePath(config))});`
 
   return {
     name: 'vite:dynamic-import-polyfill',
