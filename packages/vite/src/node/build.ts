@@ -27,7 +27,7 @@ import {
   emptyDir,
   lookupFile,
   normalizePath,
-  usePromise
+  usePromiseAll
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
@@ -514,8 +514,9 @@ async function doBuild(
     }
 
     if (Array.isArray(outputs)) {
-      return await usePromise<OutputOptions, RollupOutput>(outputs, (output) =>
-        generate(output)
+      return await usePromiseAll<OutputOptions, RollupOutput>(
+        outputs,
+        (output) => generate(output)
       )
     } else {
       return await generate(outputs)

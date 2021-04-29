@@ -18,7 +18,7 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-export async function usePromise<T, K>(
+export async function usePromiseAll<T, K>(
   arr: T[],
   processFn: (item: T) => Promise<K>
 ): Promise<K[]> {
