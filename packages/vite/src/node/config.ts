@@ -128,7 +128,7 @@ export interface UserConfig {
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
-   * Specifiy additional extensions to be treated as sources of js modules
+   * Specify additional extensions to be treated as sources of js modules
    * requires plugins to be installed that transform the extensions!
    *
    * Plugin authors should set this with the config hook
