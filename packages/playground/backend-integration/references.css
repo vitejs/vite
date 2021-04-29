@@ -1,0 +1,11 @@
+.asset-reference {
+  display: grid;
+  grid-template-areas:
+    "summary preview ."
+    "url url url";
+}
+
+.asset-url {
+  grid-area: url;
+  white-space: nowrap;
+}
