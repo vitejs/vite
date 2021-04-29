@@ -22,11 +22,7 @@ export async function usePromiseAll<T, K>(
   arr: T[],
   processFn: (item: T) => Promise<K>
 ): Promise<K[]> {
-  const queue = []
-  for (const item of arr) {
-    queue.push(processFn(item))
-  }
-  return Promise.all<K>(queue)
+  return Promise.all(arr.map((item) => processFn(item)))
 }
 
 // Strip valid id prefix. This is prepended to resolved Ids that are
