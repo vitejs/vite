@@ -20,7 +20,7 @@ module.exports = {
           name: 'replace-a-file',
           setup(build) {
             build.onLoad(
-              { filter: /dep-esbuild-plugin-transform\/index\.js$/ },
+              { filter: /dep-esbuild-plugin-transform(\\|\/)index\.js$/ },
               () => ({
                 contents: `export const hello = () => 'Hello from an esbuild plugin'`,
                 loader: 'js'
