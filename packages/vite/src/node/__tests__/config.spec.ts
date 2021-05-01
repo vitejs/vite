@@ -95,6 +95,15 @@ describe('mergeConfig', () => {
 })
 
 describe('resolveConfig', () => {
+  beforeAll(() => {
+    // silence deprecation warning
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterAll(() => {
+    jest.clearAllMocks()
+  })
+
   test('copies optimizeDeps.keepNames to esbuildOptions.keepNames', async () => {
     const config: InlineConfig = {
       optimizeDeps: {
