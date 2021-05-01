@@ -1,3 +1,3 @@
 // will be replaced by an esbuild plugin
 
-export const thisIsNotTheExportYoureLookingFor = 42
+export const hello = () => `Hello from a package`
