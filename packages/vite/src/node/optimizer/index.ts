@@ -49,9 +49,12 @@ export interface DepOptimizationOptions {
   /**
    * Options to pass to esbuild during the dep scanning and optimization
    *
+   * Certain options are omitted since changing them would not be compatible
+   * with Vite's dep optimization.
+   *
+   * - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
    * - `plugins` are merged with Vite's dep plugin
    * - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
-   * - `external` is omitted, use Vite's `optimizeDeps.exclude` option
    *
    * https://esbuild.github.io/api
    */
