@@ -89,18 +89,18 @@ export async function scanImports(
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
-  await Promise.all(
-    entries.map((entry) =>
-      build({
-        write: false,
-        entryPoints: [entry],
-        bundle: true,
-        format: 'esm',
-        logLevel: 'error',
-        plugins: [plugin]
-      })
-    )
-  )
+  const { entryPoints = [], plugins = [], ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
+  await build({
+    write: false,
+    entryPoints: [...entryPoints, ...entries],
+    bundle: true,
+    format: 'esm',
+    logLevel: 'error',
+    plugins: [...plugins, plugin],
+    ...esbuildOptions
+  })
 
   debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 
