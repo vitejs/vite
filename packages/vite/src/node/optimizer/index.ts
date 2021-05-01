@@ -51,7 +51,7 @@ export interface DepOptimizationOptions {
    *
    * - `plugins` are merged with Vite's dep plugin
    * - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
-   * - `external` is omitted, use Vite's optimizeDeps.exclude option
+   * - `external` is omitted, use Vite's `optimizeDeps.exclude` option
    *
    * https://esbuild.github.io/api
    */
@@ -69,7 +69,7 @@ export interface DepOptimizationOptions {
     | 'metafile'
   >
   /**
-   * @deprecated use esbuildOptions.keepNames
+   * @deprecated use `esbuildOptions.keepNames`
    */
   keepNames?: boolean
 }
