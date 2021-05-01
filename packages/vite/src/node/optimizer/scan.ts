@@ -92,15 +92,19 @@ export async function scanImports(
   const { entryPoints = [], plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  await build({
-    write: false,
-    entryPoints: [...entryPoints, ...entries],
-    bundle: true,
-    format: 'esm',
-    logLevel: 'error',
-    plugins: [...plugins, plugin],
-    ...esbuildOptions
-  })
+  await Promise.all(
+    [...entryPoints, ...entries].map((entry) =>
+      build({
+        write: false,
+        entryPoints: [entry],
+        bundle: true,
+        format: 'esm',
+        logLevel: 'error',
+        plugins: [...plugins, plugin],
+        ...esbuildOptions
+      })
+    )
+  )
 
   debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 
