@@ -196,7 +196,7 @@ export type ResolvedConfig = Readonly<
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
-    optimizeDeps: Omit<DepOptimizationOptions, 'external' | 'keepNames'>
+    optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
   }
 >
 
@@ -390,7 +390,6 @@ export async function resolveConfig(
       ...config.optimizeDeps,
       esbuildOptions: {
         keepNames: config.optimizeDeps?.keepNames,
-        external: config.optimizeDeps?.exclude,
         ...config.optimizeDeps?.esbuildOptions
       }
     }

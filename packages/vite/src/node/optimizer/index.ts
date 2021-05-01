@@ -49,10 +49,9 @@ export interface DepOptimizationOptions {
   /**
    * Options to pass to esbuild during the dep scanning and optimization
    *
-   * - `entryPoints` are merged
    * - `plugins` are merged with Vite's dep plugin
-   * - `external` takes precedence over `optimizeDeps.exclude`
    * - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
+   * - `external` is omitted, use Vite's optimizeDeps.exclude option
    *
    * https://esbuild.github.io/api
    */
@@ -60,6 +59,7 @@ export interface DepOptimizationOptions {
     EsbuildBuildOptions,
     | 'bundle'
     | 'entryPoints'
+    | 'external'
     | 'write'
     | 'watch'
     | 'outdir'
@@ -260,6 +260,7 @@ export async function optimizeDeps(
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
+    external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,

@@ -95,41 +95,6 @@ describe('mergeConfig', () => {
 })
 
 describe('resolveConfig', () => {
-  test('copies optimizeDeps.exclude to esbuildOptions.external', async () => {
-    const config: UserConfigExport = {
-      optimizeDeps: {
-        exclude: ['foo']
-      }
-    }
-
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
-      optimizeDeps: {
-        esbuildOptions: {
-          external: ['foo']
-        }
-      }
-    })
-  })
-
-  test('uses esbuildOptions.external if set', async () => {
-    const config: InlineConfig = {
-      optimizeDeps: {
-        exclude: ['foo'],
-        esbuildOptions: {
-          external: ['bar']
-        }
-      }
-    }
-
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
-      optimizeDeps: {
-        esbuildOptions: {
-          external: ['bar']
-        }
-      }
-    })
-  })
-
   test('copies optimizeDeps.keepNames to esbuildOptions.keepNames', async () => {
     const config: InlineConfig = {
       optimizeDeps: {
