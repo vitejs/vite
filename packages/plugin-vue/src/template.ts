@@ -10,6 +10,7 @@ import { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function transformTemplateAsModule(
   code: string,
   descriptor: SFCDescriptor,
@@ -40,6 +41,7 @@ export function transformTemplateAsModule(
 /**
  * transform the template directly in the main SFC module
  */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function transformTemplateInMain(
   code: string,
   descriptor: SFCDescriptor,
@@ -57,6 +59,7 @@ export function transformTemplateInMain(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function compile(
   code: string,
   descriptor: SFCDescriptor,

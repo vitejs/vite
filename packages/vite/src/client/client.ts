@@ -172,6 +172,7 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
 }
 
 async function waitForSuccessfulPing(ms = 1000) {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       await fetch(`${base}__vite_ping`)
@@ -335,7 +336,7 @@ const ctxToListenersMap = new Map<
 >()
 
 // Just infer the return type for now
-// _This would have to be activated when used `plugin:@typescript-eslint/recommended`_ eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const createHotContext = (ownerPath: string) => {
   if (!dataMap.has(ownerPath)) {
     dataMap.set(ownerPath, {})
@@ -412,6 +413,7 @@ export const createHotContext = (ownerPath: string) => {
     },
 
     // TODO
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     decline() {},
 
     invalidate() {

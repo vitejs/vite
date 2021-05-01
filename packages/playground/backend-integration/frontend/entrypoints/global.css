@@ -1,0 +1,28 @@
+@import '~/styles/background.css';
+@import '../../references.css';
+
+html, body {
+  font-family: sans-serif;
+  line-height: 2.4rem;
+}
+
+body {
+  margin: 4vh auto;
+  max-width: 800px;
+  padding: 0 4vw;
+}
+
+ul {
+  padding: 0 .4em;
+  margin: 0;
+}
+
+li {
+  display: flex;
+  align-items: center;
+}
+
+img {
+  height: 32px;
+  width: 32px;
+}
