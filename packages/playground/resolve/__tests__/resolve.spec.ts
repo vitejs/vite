@@ -1,5 +1,9 @@
 import { isBuild } from '../../testUtils'
 
+test('bom import', async () => {
+  expect(await page.textContent('.utf8-bom')).toMatch('[success]')
+})
+
 test('deep import', async () => {
   expect(await page.textContent('.deep-import')).toMatch('[2,4]')
 })
