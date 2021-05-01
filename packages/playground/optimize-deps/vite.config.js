@@ -21,13 +21,10 @@ module.exports = {
           setup(build) {
             build.onLoad(
               { filter: /dep-esbuild-plugin-transform\/index\.js$/ },
-              (args) => {
-                console.log('onLoad', args)
-                return {
-                  contents: `export const hello = () => 'Hello from an esbuild plugin'`,
-                  loader: 'js'
-                }
-              }
+              () => ({
+                contents: `export const hello = () => 'Hello from an esbuild plugin'`,
+                loader: 'js'
+              })
             )
           }
         }
