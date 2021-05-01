@@ -69,7 +69,6 @@ export interface DepOptimizationOptions {
   >
   /**
    * @deprecated use esbuildOptions.keepNames
-   * @see DepOptimizationOptions.esbuildOptions
    */
   keepNames?: boolean
 }
