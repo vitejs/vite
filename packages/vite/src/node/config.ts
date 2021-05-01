@@ -410,7 +410,7 @@ export async function resolveConfig(
   ) => {
     logger.warn(
       chalk.yellow.bold(
-        `(!) "${deprecatedOption}" option is deprecated. ${hint}"${
+        `(!) "${deprecatedOption}" option is deprecated. ${hint}${
           error ? `\n${error.stack}` : ''
         }`
       )
