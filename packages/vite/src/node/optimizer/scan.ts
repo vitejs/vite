@@ -89,11 +89,11 @@ export async function scanImports(
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
-  const { entryPoints = [], plugins = [], ...esbuildOptions } =
+  const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
   await Promise.all(
-    [...entryPoints, ...entries].map((entry) =>
+    entries.map((entry) =>
       build({
         write: false,
         entryPoints: [entry],

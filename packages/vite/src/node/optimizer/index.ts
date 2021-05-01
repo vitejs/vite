@@ -59,6 +59,7 @@ export interface DepOptimizationOptions {
   esbuildOptions?: Omit<
     EsbuildBuildOptions,
     | 'bundle'
+    | 'entryPoints'
     | 'write'
     | 'watch'
     | 'outdir'
@@ -252,11 +253,11 @@ export async function optimizeDeps(
 
   const start = Date.now()
 
-  const { entryPoints = [], plugins = [], ...esbuildOptions } =
+  const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
   const result = await build({
-    entryPoints: [...entryPoints, ...Object.keys(flatIdDeps)],
+    entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
     logLevel: 'error',
