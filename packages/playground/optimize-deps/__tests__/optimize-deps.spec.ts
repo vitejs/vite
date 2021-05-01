@@ -61,3 +61,9 @@ test('dep w/ non-js files handled via plugin', async () => {
 test('vue + vuex', async () => {
   expect(await page.textContent('.vue')).toMatch(`[success]`)
 })
+
+test('esbuild-plugin', async () => {
+  expect(await page.textContent('.esbuild-plugin')).toMatch(
+    `Hello from an esbuild plugin`
+  )
+})
