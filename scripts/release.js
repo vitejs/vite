@@ -14,7 +14,7 @@ const { prompt } = require('enquirer')
 const pkgDir = process.cwd()
 const pkgPath = path.resolve(pkgDir, 'package.json')
 /**
- * @type {{ name: string, version: string, scripts: Record<string, string> }}
+ * @type {{ name: string, version: string }}
  */
 const pkg = require(pkgPath)
 const pkgName = pkg.name.replace(/^@vitejs\//, '')
@@ -124,11 +124,6 @@ async function main() {
 
   step('\nUpdating package version...')
   updateVersion(targetVersion)
-
-  if (pkg.scripts.lint != null) {
-    step('\nLint package...')
-    await run('yarn', ['lint'])
-  }
 
   step('\nBuilding package...')
   if (!skipBuild && !isDryRun) {
