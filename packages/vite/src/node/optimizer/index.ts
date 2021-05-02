@@ -42,22 +42,34 @@ export interface DepOptimizationOptions {
    */
   include?: string[]
   /**
-   * Options to pass to esbuild during the dep optimization
-   * Plugins will be merged with Vite's own dep plugin
-   * https://esbuild.github.io/api
-   */
-  esbuildOptions?: Omit<EsbuildBuildOptions, 'entryPoints' | 'define'>
-  /**
    * Do not optimize these dependencies (must be resolvable import paths,
    * cannot be globs).
-   * @deprecated Use esbuildOptions.external
    */
   exclude?: string[]
   /**
-   * The bundler sometimes needs to rename symbols to avoid collisions.
-   * Set this to `true` to keep the `name` property on functions and classes.
-   * https://esbuild.github.io/api/#keep-names
-   * @deprecated Use esbuildOptions.keepNames
+   * Options to pass to esbuild during the dep scanning and optimization
+   *
+   * - `entryPoints` are merged
+   * - `plugins` are merged with Vite's dep plugin
+   * - `external` takes precedence over `optimizeDeps.exclude`
+   * - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
+   *
+   * https://esbuild.github.io/api
+   */
+  esbuildOptions?: Omit<
+    EsbuildBuildOptions,
+    | 'bundle'
+    | 'write'
+    | 'watch'
+    | 'outdir'
+    | 'outfile'
+    | 'outbase'
+    | 'outExtension'
+    | 'metafile'
+  >
+  /**
+   * @deprecated use esbuildOptions.keepNames
+   * @see DepOptimizationOptions.esbuildOptions
    */
   keepNames?: boolean
 }
@@ -241,16 +253,13 @@ export async function optimizeDeps(
 
   const start = Date.now()
 
-  // For legacy compatibility. In the future, keepNames and external should only be specified directly
-  const { plugins = [], keepNames, external, ...esbuildOptions } =
+  const { entryPoints = [], plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
   const result = await build({
-    entryPoints: Object.keys(flatIdDeps),
+    entryPoints: [...entryPoints, ...Object.keys(flatIdDeps)],
     bundle: true,
-    keepNames: keepNames ?? config.optimizeDeps?.keepNames,
     format: 'esm',
-    external: external ?? config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
@@ -259,8 +268,8 @@ export async function optimizeDeps(
     metafile: true,
     define,
     plugins: [
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config),
-      ...plugins
+      ...plugins,
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
     ],
     ...esbuildOptions
   })
