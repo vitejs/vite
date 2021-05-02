@@ -13,6 +13,6 @@ module.exports = {
     'process.env.SOMEVAR': '"SOMEVAR"'
   },
   server: {
-    host: '0.0.0.0'
+    host: '::'
   }
 }

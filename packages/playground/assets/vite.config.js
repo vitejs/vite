@@ -16,6 +16,6 @@ module.exports = {
     manifest: true
   },
   server: {
-    host: '0.0.0.0'
+    host: '::'
   }
 }

@@ -24,7 +24,7 @@ module.exports = {
     minify: false
   },
   server: {
-    host: '0.0.0.0'
+    host: '::'
   },
   define: {
     __VUE_OPTIONS_API__: true,
