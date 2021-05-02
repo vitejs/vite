@@ -242,11 +242,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    deps.add(config.base + chunk.fileName)
+                    // use a relative path https://github.com/vitejs/vite/pull/3061
+                    deps.add('./' + chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                     if (cssFiles) {
                       cssFiles.forEach((file) => {
-                        deps.add(config.base + file)
+                        // use a relative path https://github.com/vitejs/vite/pull/3061
+                        deps.add('./' + file)
                       })
                     }
                     chunk.imports.forEach(addDeps)
@@ -267,10 +269,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // the dep list includes the main chunk, so only need to
                   // preload when there are actual other deps.
                   deps.size > 1
-                    ? `[${[...deps]
-                        // replace leading slashes to ensure a relative path. See https://github.com/vitejs/vite/pull/3061
-                        .map((d) => JSON.stringify(d.replace(/^\//, './')))
-                        .join(',')}]`
+                    ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
                     : `void 0`
                 )
               }
