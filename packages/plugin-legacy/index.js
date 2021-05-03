@@ -458,7 +458,7 @@ async function buildPolyfillChunk(
     // so that everything is resolved from here
     root: __dirname,
     configFile: false,
-    logLevel: 'silent', // exceptions are logged by Jest
+    logLevel: 'error',
     plugins: [polyfillsPlugin(imports)],
     build: {
       write: false,
