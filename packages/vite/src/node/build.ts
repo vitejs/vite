@@ -287,9 +287,39 @@ const parallelBuilds: RollupBuild[] = []
 export async function build(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[] | void> {
-  return inlineConfig.build?.watch
-    ? watch(inlineConfig)
-    : enqueueBuild(inlineConfig)
+  const config = await resolveConfig(inlineConfig, 'build', 'production')
+
+  return config.build?.watch ? watch(inlineConfig) : enqueueBuild(inlineConfig)
+}
+
+function resolveChokidarOptions(config: ResolvedConfig) {
+  if (!config.build.watch) return {}
+
+  const rollupWatchOptions = [
+    'buildDelay',
+    'chokidar',
+    'clearScreen',
+    'exclude',
+    'include',
+    'skipWrite'
+  ]
+  const rollupWatchKeys = Object.keys(config.build.watch).filter((value) =>
+    rollupWatchOptions.includes(value)
+  )
+
+  if (rollupWatchKeys.length) {
+    config.logger.warn(
+      chalk.yellow(
+        `\n${chalk.bold(
+          `(!) build.watch as WatcherOptions is now deprecated. Use WatchOptions from chokidar now.`
+        )}`
+      )
+    )
+
+    return (config.build.watch as WatcherOptions).chokidar || {}
+  }
+
+  return (config.build.watch as WatchOptions) || {}
 }
 
 /**
@@ -299,22 +329,7 @@ export async function build(
 async function watch(inlineConfig: InlineConfig = {}): Promise<void> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
 
-  let chokidarOptions: WatchOptions = {}
-  if (config.build.watch as WatchOptions) {
-    chokidarOptions = (config.build.watch as WatchOptions) || {}
-  } else if (config.build.watch as WatcherOptions) {
-    chokidarOptions = (config.build.watch as WatcherOptions).chokidar || {}
-
-    config.logger.warn(
-      chalk.yellow(
-        `\n${chalk.bold(
-          `(!) build.watch as WatcherOptions is now deprecated. Use WatchOptions from chokidar now.`
-        )}`
-      )
-    )
-  }
-
-  const { ignored = [], ...watchOptions } = chokidarOptions
+  const { ignored = [], ...watchOptions } = resolveChokidarOptions(config)
   const watcher = chokidar.watch(path.resolve(config.root), {
     ignored: [
       '**/node_modules/**',
