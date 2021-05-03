@@ -165,6 +165,11 @@ export interface BuildOptions {
    */
   ssr?: boolean | string
   /**
+   * When present, overrides the module format for the project to instead output
+   * the SSR in another format.
+   */
+  ssrFormat?: 'cjs' | 'es' | null
+  /**
    * Generate SSR manifest for determining style links and asset preload
    * directives in production.
    */
@@ -220,6 +225,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     manifest: false,
     lib: false,
     ssr: false,
+    ssrFormat: null,
     ssrManifest: false,
     brotliSize: true,
     chunkSizeWarningLimit: 500,
@@ -332,6 +338,13 @@ async function doBuild(
     )
   }
 
+  const ssrFormat =
+    options.ssrFormat ||
+    (JSON.parse(fs.readFileSync(resolve('package.json'), 'utf-8')).type ===
+    'module'
+      ? 'es'
+      : 'cjs')
+
   const outDir = resolve(options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
@@ -399,12 +412,7 @@ async function doBuild(
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       return {
         dir: outDir,
-        format:
-          ssr &&
-          JSON.parse(fs.readFileSync(resolve('package.json'), 'utf-8')).type !=
-            'module'
-            ? 'cjs'
-            : 'es',
+        format: ssr ? ssrFormat : 'es',
         exports: ssr ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
