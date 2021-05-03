@@ -332,15 +332,24 @@ async function watch(inlineConfig: InlineConfig = {}): Promise<void> {
   await enqueueBuild(inlineConfig)
   config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
 
+  let buildQueued = false
   watcher.on('all', async () => {
+    buildQueued = true
+
     if (parallelCallCounts > 0) {
-      // we can not cancel current build
-      // so we need to wait until it is finished
+      config.logger.info(
+        chalk.cyanBright(`\nchange detected, rebuilding queued...\n`)
+      )
       return
     }
 
-    config.logger.info(chalk.cyanBright(`change detected, rebuilding...\n`))
-    await enqueueBuild(inlineConfig)
+    while (buildQueued) {
+      buildQueued = false
+
+      config.logger.info(chalk.cyanBright(`change detected, rebuilding...\n`))
+      await enqueueBuild(inlineConfig)
+    }
+
     config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
   })
 }
