@@ -13,7 +13,8 @@ import Rollup, {
   ExternalOption,
   GetManualChunk,
   GetModuleInfo,
-  RollupError
+  RollupError,
+  WatcherOptions
 } from 'rollup'
 import chokidar from 'chokidar'
 import { WatchOptions } from 'types/chokidar'
@@ -183,7 +184,7 @@ export interface BuildOptions {
    * Chokidar watch options
    * https://github.com/paulmillr/chokidar
    */
-  watch?: WatchOptions | null
+  watch?: WatcherOptions | WatchOptions | null // WatcherOptions is deprecated
 }
 
 export interface LibraryOptions {
@@ -283,13 +284,37 @@ let parallelCallCounts = 0
 // bundle is even pushed.
 const parallelBuilds: RollupBuild[] = []
 
+export async function build(
+  inlineConfig: InlineConfig = {}
+): Promise<RollupOutput | RollupOutput[] | void> {
+  return inlineConfig.build?.watch
+    ? watch(inlineConfig)
+    : enqueueBuild(inlineConfig)
+}
+
 /**
  * Watch for file changes with chokidar
  * Build production bundle on changes
  */
-export async function watch(inlineConfig: InlineConfig = {}): Promise<void> {
+async function watch(inlineConfig: InlineConfig = {}): Promise<void> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
-  const { ignored = [], ...watchOptions } = config.build.watch || {}
+
+  let chokidarOptions: WatchOptions = {}
+  if (config.build.watch as WatchOptions) {
+    chokidarOptions = (config.build.watch as WatchOptions) || {}
+  } else if (config.build.watch as WatcherOptions) {
+    chokidarOptions = (config.build.watch as WatcherOptions).chokidar || {}
+
+    config.logger.warn(
+      chalk.yellow(
+        `\n${chalk.bold(
+          `(!) build.watch as WatcherOptions is now deprecated. Use WatchOptions from chokidar now.`
+        )}`
+      )
+    )
+  }
+
+  const { ignored = [], ...watchOptions } = chokidarOptions
   const watcher = chokidar.watch(path.resolve(config.root), {
     ignored: [
       '**/node_modules/**',
@@ -304,7 +329,7 @@ export async function watch(inlineConfig: InlineConfig = {}): Promise<void> {
 
   // do initial build before watching for changes
   config.logger.info(chalk.cyanBright(`\nwatch mode enabled\n`))
-  await build(inlineConfig)
+  await enqueueBuild(inlineConfig)
   config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
 
   watcher.on('all', async () => {
@@ -315,16 +340,12 @@ export async function watch(inlineConfig: InlineConfig = {}): Promise<void> {
     }
 
     config.logger.info(chalk.cyanBright(`change detected, rebuilding...\n`))
-    await build(inlineConfig)
+    await enqueueBuild(inlineConfig)
     config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
   })
 }
 
-/**
- * Bundles the app for production.
- * Returns a Promise containing the build result.
- */
-export async function build(
+async function enqueueBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
   parallelCallCounts++
@@ -339,6 +360,10 @@ export async function build(
   }
 }
 
+/**
+ * Bundles the app for production.
+ * Returns a Promise containing the build result.
+ */
 async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[]> {
