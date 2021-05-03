@@ -330,13 +330,10 @@ export default async ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `'127.0.0.1'`
 
-  Specify server hostname, used to specify which IP addresses the server
-  will be available on.
-  In order to open the server for traffic from other machines, you can
-  set this to `'0.0.0.0'`.
+  Specify which IP addresses the server should listen on.
+  Set this to `0.0.0.0` to listen on all addresses, including LAN and public addresses.
   
-  It is also possible to set this from the CLI using `--host 0.0.0.0`
-  or just `--host`.
+  This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 ### server.port
 
