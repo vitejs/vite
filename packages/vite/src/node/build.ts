@@ -184,7 +184,7 @@ export interface BuildOptions {
    * Chokidar watch options
    * https://github.com/paulmillr/chokidar
    */
-  watch?: WatcherOptions | WatchOptions | null // WatcherOptions is deprecated
+  watch?: WatcherOptions | WatchOptions | boolean // WatcherOptions is deprecated
 }
 
 export interface LibraryOptions {
@@ -224,7 +224,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     ssrManifest: false,
     brotliSize: true,
     chunkSizeWarningLimit: 500,
-    watch: null,
+    watch: false,
     ...raw
   }
 
