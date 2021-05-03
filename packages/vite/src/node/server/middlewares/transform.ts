@@ -58,7 +58,7 @@ export function transformMiddleware(
     }
   }
 
-  return async (req, res, next) => {
+  return async function viteTransformMiddleware(req, res, next) {
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }

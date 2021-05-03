@@ -77,7 +77,7 @@ export function proxyMiddleware(
     })
   }
 
-  return (req, res, next) => {
+  return function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
       if (

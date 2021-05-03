@@ -130,7 +130,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 export function indexHtmlMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
-  return async (req, res, next) => {
+  return async function viteIndexHtmlMiddleware(req, res, next) {
     const url = req.url && cleanUrl(req.url)
     // spa-fallback always redirects to /index.html
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {

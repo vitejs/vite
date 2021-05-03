@@ -9,7 +9,7 @@ export function baseMiddleware({
 }: ViteDevServer): Connect.NextHandleFunction {
   const base = config.base
 
-  return (req, res, next) => {
+  return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
     const parsed = parseUrl(url)
     const path = parsed.pathname || '/'
