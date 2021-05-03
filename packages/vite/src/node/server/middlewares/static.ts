@@ -27,7 +27,7 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
 
   return (req, res, next) => {
     // skip import request
-    if (isImportRequest(req.url!)) {
+    if (isImportRequest(req.originalUrl!)) {
       return next()
     }
     serve(req, res, next)
@@ -41,7 +41,7 @@ export function serveStaticMiddleware(
   const serve = sirv(dir, sirvOptions)
 
   return (req, res, next) => {
-    const url = req.url!
+    const url = req.originalUrl!
 
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
@@ -77,7 +77,7 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
   const serveFromRoot = sirv('/', sirvOptions)
 
   return (req, res, next) => {
-    let url = req.url!
+    let url = req.originalUrl!
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by

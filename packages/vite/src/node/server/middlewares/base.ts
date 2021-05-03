@@ -10,7 +10,7 @@ export function baseMiddleware({
   const base = config.base
 
   return (req, res, next) => {
-    const url = req.url!
+    const url = req.originalUrl!
     const parsed = parseUrl(url)
     const path = parsed.pathname || '/'
 

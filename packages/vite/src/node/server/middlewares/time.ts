@@ -8,7 +8,7 @@ export function timeMiddleware(root: string): Connect.NextHandleFunction {
     const start = Date.now()
     const end = res.end
     res.end = (...args: any[]) => {
-      logTime(`${timeFrom(start)} ${prettifyUrl(req.url!, root)}`)
+      logTime(`${timeFrom(start)} ${prettifyUrl(req.originalUrl!, root)}`)
       // @ts-ignore
       return end.call(res, ...args)
     }

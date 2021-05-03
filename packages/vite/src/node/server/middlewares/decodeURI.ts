@@ -3,7 +3,7 @@ import { Connect } from 'types/connect'
 export function decodeURIMiddleware(): Connect.NextHandleFunction {
   return (req, _, next) => {
     // #2195
-    req.url = decodeURI(req.url!)
+    req.url = decodeURI(req.originalUrl!)
 
     // `sirv` middleware uses the req._parsedUrl values to find the file,
     // so decode it all together.

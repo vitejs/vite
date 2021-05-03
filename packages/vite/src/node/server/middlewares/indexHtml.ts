@@ -131,7 +131,7 @@ export function indexHtmlMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   return async (req, res, next) => {
-    const url = req.url && cleanUrl(req.url)
+    const url = req.originalUrl && cleanUrl(req.originalUrl)
     // spa-fallback always redirects to /index.html
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)

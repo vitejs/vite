@@ -59,15 +59,16 @@ export function transformMiddleware(
   }
 
   return async (req, res, next) => {
-    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
+    const { originalUrl } = req
+    if (req.method !== 'GET' || knownIgnoreList.has(originalUrl!)) {
       return next()
     }
 
     if (
       server._pendingReload &&
       // always allow vite client requests so that it can trigger page reload
-      !req.url?.startsWith(CLIENT_PUBLIC_PATH) &&
-      !req.url?.includes('vite/dist/client')
+      !originalUrl?.startsWith(CLIENT_PUBLIC_PATH) &&
+      !originalUrl?.includes('vite/dist/client')
     ) {
       // missing dep pending reload, hold request until reload happens
       server._pendingReload.then(() =>
@@ -78,7 +79,7 @@ export function transformMiddleware(
           // status code request timeout
           res.statusCode = 408
           res.end(
-            `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
+            `<h1>[vite] Something unexpected happened while optimizing "${originalUrl}"<h1>` +
               `<p>The current page should have reloaded by now</p>`
           )
         }, NEW_DEPENDENCY_BUILD_TIMEOUT)
@@ -88,15 +89,18 @@ export function transformMiddleware(
 
     let url
     try {
-      url = removeTimestampQuery(req.url!).replace(NULL_BYTE_PLACEHOLDER, '\0')
+      url = removeTimestampQuery(originalUrl!).replace(
+        NULL_BYTE_PLACEHOLDER,
+        '\0'
+      )
     } catch (err) {
       // if it starts with %PUBLIC%, someone's migrating from something
       // like create-react-app
       let errorMessage
-      if (req.url?.startsWith('/%PUBLIC')) {
+      if (originalUrl?.startsWith('/%PUBLIC')) {
         errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
       } else {
-        errorMessage = `Vite encountered a suspiciously malformed request ${req.url}`
+        errorMessage = `Vite encountered a suspiciously malformed request ${originalUrl}`
       }
       next(new Error(errorMessage))
       return

@@ -59,7 +59,7 @@ export function proxyMiddleware(
 
   if (httpServer) {
     httpServer.on('upgrade', (req, socket, head) => {
-      const url = req.url!
+      const url = req.originalUrl!
       for (const context in proxies) {
         if (url.startsWith(context)) {
           const [proxy, opts] = proxies[context]
@@ -78,7 +78,7 @@ export function proxyMiddleware(
   }
 
   return (req, res, next) => {
-    const url = req.url!
+    const url = req.originalUrl!
     for (const context in proxies) {
       if (
         (context.startsWith('^') && new RegExp(context).test(url)) ||
@@ -91,21 +91,21 @@ export function proxyMiddleware(
           const bypassResult = opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
-            debug(`bypass: ${req.url} -> ${bypassResult}`)
+            debug(`bypass: ${url} -> ${bypassResult}`)
             return next()
           } else if (typeof bypassResult === 'object') {
             Object.assign(options, bypassResult)
-            debug(`bypass: ${req.url} use modified options: %O`, options)
+            debug(`bypass: ${url} use modified options: %O`, options)
             return next()
           } else if (bypassResult === false) {
-            debug(`bypass: ${req.url} -> 404`)
+            debug(`bypass: ${url} -> 404`)
             return res.end(404)
           }
         }
 
-        debug(`${req.url} -> ${opts.target || opts.forward}`)
+        debug(`${url} -> ${opts.target || opts.forward}`)
         if (opts.rewrite) {
-          req.url = opts.rewrite(req.url!)
+          req.url = opts.rewrite(url!)
         }
         proxy.web(req, res, options)
         return
