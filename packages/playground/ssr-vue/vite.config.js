@@ -26,6 +26,6 @@ module.exports = {
     minify: false
   },
   server: {
-    host: '::'
+    host: '0.0.0.0'
   }
 }

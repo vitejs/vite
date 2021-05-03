@@ -13,6 +13,6 @@ module.exports = {
     jsxInject: `import React from 'react'`
   },
   server: {
-    host: '::'
+    host: '0.0.0.0'
   }
 }

@@ -141,6 +141,6 @@ module.exports = {
     }
   ],
   server: {
-    host: '::'
+    host: '0.0.0.0'
   }
 }
