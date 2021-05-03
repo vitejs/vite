@@ -173,7 +173,10 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'alias' | 'dedupe' | 'assetsInclude'> & {
+  Omit<
+    UserConfig,
+    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps'
+  > & {
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
@@ -193,6 +196,7 @@ export type ResolvedConfig = Readonly<
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
+    optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
   }
 >
 
@@ -381,10 +385,17 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
-    createResolver
+    createResolver,
+    optimizeDeps: {
+      ...config.optimizeDeps,
+      esbuildOptions: {
+        keepNames: config.optimizeDeps?.keepNames,
+        ...config.optimizeDeps?.esbuildOptions
+      }
+    }
   }
 
-  ;(resolved as any).plugins = await resolvePlugins(
+  ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
     normalPlugins,
@@ -463,6 +474,24 @@ export async function resolveConfig(
         new Error()
       )
       return resolved.resolve.dedupe
+    }
+  })
+
+  if (config.optimizeDeps?.keepNames) {
+    logDeprecationWarning(
+      'optimizeDeps.keepNames',
+      'Use "optimizeDeps.esbuildOptions.keepNames" instead.'
+    )
+  }
+  Object.defineProperty(resolved.optimizeDeps, 'keepNames', {
+    enumerable: false,
+    get() {
+      logDeprecationWarning(
+        'optimizeDeps.keepNames',
+        'Use "optimizeDeps.esbuildOptions.keepNames" instead.',
+        new Error()
+      )
+      return resolved.optimizeDeps.esbuildOptions?.keepNames
     }
   })
 

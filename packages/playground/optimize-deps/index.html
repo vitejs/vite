@@ -40,6 +40,9 @@
 <h2>Vue & Vuex</h2>
 <div class="vue"></div>
 
+<h2>Dep with changes from esbuild plugin</h2>
+<div>This should show a greeting: <span class="esbuild-plugin"></span></div>
+
 <script type="module">
   // test dep detection in globbed files
   const globbed = import.meta.globEager('./glob/*.js')
@@ -64,4 +67,7 @@
   if (typeof createApp === 'function' && typeof createStore === 'function') {
     document.querySelector('.vue').textContent = '[success]'
   }
+
+  import { hello } from 'dep-esbuild-plugin-transform'
+  document.querySelector('.esbuild-plugin').textContent = hello()
 </script>
