@@ -12,8 +12,5 @@ module.exports = {
   build: {
     // to make tests faster
     minify: false
-  },
-  server: {
-    host: '0.0.0.0'
   }
 }

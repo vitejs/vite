@@ -14,8 +14,5 @@ module.exports = {
   build: {
     outDir: 'dist/foo',
     manifest: true
-  },
-  server: {
-    host: '0.0.0.0'
   }
 }

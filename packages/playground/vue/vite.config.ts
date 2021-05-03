@@ -18,8 +18,5 @@ export default defineConfig({
     modules: {
       localsConvention: 'camelCaseOnly'
     }
-  },
-  server: {
-    host: '0.0.0.0'
   }
 })
