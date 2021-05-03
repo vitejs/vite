@@ -402,64 +402,65 @@ export async function resolveConfig(
   }
 
   // TODO Deprecation warnings - remove when out of beta
-  if (config.build?.base) {
+
+  const logDeprecationWarning = (
+    deprecatedOption: string,
+    hint: string,
+    error?: Error
+  ) => {
     logger.warn(
       chalk.yellow.bold(
-        `(!) "build.base" config option is deprecated. ` +
-          `"base" is now a root-level config option.`
+        `(!) "${deprecatedOption}" option is deprecated. ${hint}${
+          error ? `\n${error.stack}` : ''
+        }`
       )
+    )
+  }
+
+  if (config.build?.base) {
+    logDeprecationWarning(
+      'build.base',
+      '"base" is now a root-level config option.'
     )
     config.base = config.build.base
   }
   Object.defineProperty(resolvedBuildOptions, 'base', {
     enumerable: false,
     get() {
-      logger.warn(
-        chalk.yellow.bold(
-          `(!) "build.base" config option is deprecated. ` +
-            `"base" is now a root-level config option.\n` +
-            new Error().stack
-        )
+      logDeprecationWarning(
+        'build.base',
+        '"base" is now a root-level config option.',
+        new Error()
       )
       return resolved.base
     }
   })
 
   if (config.alias) {
-    logger.warn(
-      chalk.bold.yellow(
-        '(!) "alias" option is deprecated. Use "resolve.alias" instead.'
-      )
-    )
+    logDeprecationWarning('alias', 'Use "resolve.alias" instead.')
   }
   Object.defineProperty(resolved, 'alias', {
     enumerable: false,
     get() {
-      logger.warn(
-        chalk.yellow.bold(
-          `(!) "alias" config option is deprecated. Use "resolve.alias" instead.\n` +
-            new Error().stack
-        )
+      logDeprecationWarning(
+        'alias',
+        'Use "resolve.alias" instead.',
+        new Error()
       )
       return resolved.resolve.alias
     }
   })
 
   if (config.dedupe) {
-    logger.warn(
-      chalk.bold.yellow(
-        '(!) "dedupe" option is deprecated. Use "resolve.dedupe" instead.'
-      )
-    )
+    logDeprecationWarning('dedupe', 'Use "resolve.dedupe" instead.')
   }
   Object.defineProperty(resolved, 'dedupe', {
     enumerable: false,
     get() {
-      logger.warn(
-        chalk.yellow.bold(
-          `(!) "dedupe" config option is deprecated. Use "resolve.dedupe" instead.\n` +
-            new Error().stack
-        )
+      logDeprecationWarning(
+        'dedupe',
+        'Use "resolve.dedupe" instead.',
+        new Error()
       )
       return resolved.resolve.dedupe
     }
