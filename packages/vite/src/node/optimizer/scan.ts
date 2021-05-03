@@ -89,6 +89,9 @@ export async function scanImports(
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
+  const { plugins = [], ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
   await Promise.all(
     entries.map((entry) =>
       build({
@@ -97,7 +100,8 @@ export async function scanImports(
         bundle: true,
         format: 'esm',
         logLevel: 'error',
-        plugins: [plugin]
+        plugins: [...plugins, plugin],
+        ...esbuildOptions
       })
     )
   )

@@ -2707,6 +2707,10 @@ delegate@^3.1.2:
   version "0.0.0"
   uid ""
 
+"dep-esbuild-plugin-transform@link:./packages/playground/optimize-deps/dep-esbuild-plugin-transform":
+  version "0.0.0"
+  uid ""
+
 "dep-import-type@link:./packages/playground/ssr-vue/dep-import-type":
   version "0.0.0"
   uid ""
