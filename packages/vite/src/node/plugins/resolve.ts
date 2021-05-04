@@ -124,6 +124,26 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
+        const normalizedFsPath = normalizePath(fsPath)
+        const pathFromBasedir = normalizedFsPath.slice(basedir.length)
+        if (pathFromBasedir.startsWith('/node_modules/')) {
+          // normalize direct imports from node_modules to bare imports, so the
+          // hashing logic is shared and we avoid duplicated modules #2503
+          const bareImport = pathFromBasedir.slice('/node_modules/'.length)
+          if (
+            (res = tryNodeResolve(
+              bareImport,
+              importer,
+              options,
+              ssr,
+              server
+            )) &&
+            res.id.startsWith(normalizedFsPath)
+          ) {
+            return res
+          }
+        }
+
         if (
           !ssr &&
           (res = tryResolveBrowserMapping(fsPath, importer, options, true))
