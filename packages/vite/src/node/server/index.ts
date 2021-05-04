@@ -125,7 +125,7 @@ export interface ServerOptions {
    * Accessing files outside this directory will result in a 403.
    *
    * Accepts absolute path or a path relative to project root.
-   * Default to the project root.
+   * Will try to search up for workspace root by default.
    */
   fsServeRoot?: string
 }
