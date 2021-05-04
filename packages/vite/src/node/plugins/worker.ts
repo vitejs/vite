@@ -41,10 +41,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       let url: string
-      if (config.command === 'serve') {
-        url = await fileToUrl(cleanUrl(id), config, this)
-        url = injectQuery(url, WorkerFileId)
-      } else {
+      if (isBuild) {
         if (query.inline != null) {
           // bundle the file as entry to support imports and inline as base64
           // data url
@@ -62,7 +59,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               output[0].code
             ).toString('base64')}`
           } finally {
-            bundle.close()
+            await bundle.close()
           }
         } else {
           // emit as separate chunk
@@ -71,6 +68,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             id: cleanUrl(id)
           })}__`
         }
+      } else {
+        url = await fileToUrl(cleanUrl(id), config, this)
+        url = injectQuery(url, WorkerFileId)
       }
 
       return `export default function WorkerWrapper() {

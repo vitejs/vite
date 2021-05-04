@@ -14,6 +14,7 @@ import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
   code: string,
   filename: string,
@@ -143,10 +144,10 @@ export async function transformMain(
   // SSR module registration by wrapping user setup
   if (ssr) {
     output.push(
-      `import { useSSRContext } from 'vue'`,
+      `import { useSSRContext as __vite_useSSRContext } from 'vue'`,
       `const _sfc_setup = _sfc_main.setup`,
       `_sfc_main.setup = (props, ctx) => {`,
-      `  const ssrContext = useSSRContext()`,
+      `  const ssrContext = __vite_useSSRContext()`,
       `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
         filename
       )})`,
@@ -249,7 +250,7 @@ async function genScriptCode(
       const classMatch = script.content.match(exportDefaultClassRE)
       if (classMatch) {
         scriptCode =
-          script.content.replace(exportDefaultClassRE, `class $1`) +
+          script.content.replace(exportDefaultClassRE, `\nclass $1`) +
           `\nconst _sfc_main = ${classMatch[1]}`
         if (/export\s+default/.test(scriptCode)) {
           // fallback if there are still export default

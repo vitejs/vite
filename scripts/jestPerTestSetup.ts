@@ -66,7 +66,7 @@ beforeAll(async () => {
 
       const options: UserConfig = {
         root: tempDir,
-        logLevel: 'error',
+        logLevel: 'silent',
         server: {
           watch: {
             // During tests we edit the files too fast and sometimes chokidar
@@ -100,14 +100,19 @@ beforeAll(async () => {
     // jest doesn't exit if our setup has error here
     // https://github.com/facebook/jest/issues/2713
     err = e
+
+    // Closing the page since an error in the setup, for example a runtime error 
+    // when building the playground should skip further tests.
+    // If the page remains open, a command like `await page.click(...)` produces
+    // a timeout with an exception that hides the real error in the console.
+    await page.close()
   }
 }, 30000)
 
 afterAll(async () => {
-  global.page && global.page.off('console', onConsole)
-  if (server) {
-    await server.close()
-  }
+  global.page?.off('console', onConsole)
+  await global.page?.close()
+  await server?.close()
   if (err) {
     throw err
   }

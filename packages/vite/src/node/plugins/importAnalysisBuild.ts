@@ -96,7 +96,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (importer.includes('node_modules')) {
+      if (
+        importer.includes('node_modules') &&
+        !source.includes('import.meta.glob')
+      ) {
         return
       }
 
@@ -232,8 +235,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (url[0] === `"` && url[url.length - 1] === `"`) {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
+                const analyzed: Set<string> = new Set<string>()
                 const addDeps = (filename: string) => {
                   if (filename === ownerFilename) return
+                  if (analyzed.has(filename)) return
+                  analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     deps.add(config.base + chunk.fileName)
