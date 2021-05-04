@@ -131,7 +131,13 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           // hashing logic is shared and we avoid duplicated modules #2503
           const bareImport = pathFromBasedir.slice('/node_modules/'.length)
           if (
-            (res = tryNodeResolve(bareImport, importer, options, server)) &&
+            (res = tryNodeResolve(
+              bareImport,
+              importer,
+              options,
+              ssr,
+              server
+            )) &&
             res.id.startsWith(normalizedFsPath)
           ) {
             return res
