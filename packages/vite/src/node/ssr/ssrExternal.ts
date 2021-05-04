@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
-import { lookupFile, resolveFrom } from '../utils'
+import { isDefined, lookupFile, resolveFrom, unique } from '../utils'
 import { ResolvedConfig } from '..'
 
 /**
@@ -24,7 +24,8 @@ export function resolveSSRExternal(
   }
   const pkg = JSON.parse(pkgContent)
   const devDeps = Object.keys(pkg.devDependencies || {})
-  const deps = [...knownImports, ...Object.keys(pkg.dependencies || {})]
+  const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
+  const deps = unique([...importedDeps, ...Object.keys(pkg.dependencies || {})])
 
   for (const id of devDeps) {
     ssrExternals.add(id)
@@ -120,4 +121,14 @@ export function shouldExternalizeForSSR(
     }
   })
   return should
+}
+
+function getNpmPackageName(importPath: string): string | null {
+  const parts = importPath.split('/')
+  if (parts[0].startsWith('@')) {
+    if (!parts[1]) return null
+    return `${parts[0]}/${parts[1]}`
+  } else {
+    return parts[0]
+  }
 }
