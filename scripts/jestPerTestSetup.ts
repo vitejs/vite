@@ -74,7 +74,7 @@ beforeAll(async () => {
             usePolling: true,
             interval: 100
           },
-          host: '::'
+          host: true
         },
         build: {
           // skip transpilation and dynamic import polyfills during tests to

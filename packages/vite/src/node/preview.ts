@@ -41,13 +41,13 @@ export async function preview(
   )
 
   const options = config.server || {}
-  let hostname: string
+  let hostname: string | undefined
   if (options.host === undefined || options.host === 'localhost') {
     // Use a secure default
     hostname = '127.0.0.1'
   } else if (options.host === true) {
     // The user probably passed --host in the CLI, without arguments
-    hostname = '0.0.0.0'
+    hostname = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
   } else {
     hostname = options.host as string
   }

@@ -531,13 +531,13 @@ async function startServer(
 
   const options = server.config.server || {}
   let port = inlinePort || options.port || 3000
-  let hostname: string
-  if (options.host === undefined) {
+  let hostname: string | undefined
+  if (options.host === undefined || options.host === 'localhost') {
     // Use a secure default
     hostname = '127.0.0.1'
   } else if (options.host === true) {
     // probably passed --host in the CLI, without arguments
-    hostname = '0.0.0.0'
+    hostname = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
   } else {
     hostname = options.host as string
   }
