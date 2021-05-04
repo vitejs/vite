@@ -35,16 +35,14 @@ function hasRootFile(root: string): boolean {
 
 export function searchForWorkspaceRoot(
   current: string,
-  depth: number,
   root = current
 ): string {
-  if (depth <= 0) return root
   if (hasRootFile(current)) return current
   if (hasWorkspacePackageJSON(current)) return current
 
   const dir = dirname(current)
   // reach the fs root
-  if (dir === current) return root
+  if (!dir || dir === current) return root
 
-  return searchForWorkspaceRoot(dir, depth - 1, root)
+  return searchForWorkspaceRoot(dir, root)
 }

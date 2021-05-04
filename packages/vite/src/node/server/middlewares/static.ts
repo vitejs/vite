@@ -80,7 +80,7 @@ export function serveRawFsMiddleware(
   const serveFromRoot = sirv('/', sirvOptions)
   const serveRoot = path.resolve(
     config.root,
-    config.server?.fsServeRoot || searchForWorkspaceRoot(config.root, 5)
+    config.server?.fsServeRoot || searchForWorkspaceRoot(config.root)
   )
 
   return (req, res, next) => {
