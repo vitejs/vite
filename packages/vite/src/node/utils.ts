@@ -204,6 +204,7 @@ export function prettifyUrl(url: string, root: string): string {
 export function isObject(value: unknown): value is Record<string, any> {
   return Object.prototype.toString.call(value) === '[object Object]'
 }
+
 export function isDefined<T>(value: T | undefined | null): value is T {
   return value !== undefined && value !== null
 }
