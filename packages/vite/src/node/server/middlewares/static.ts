@@ -4,12 +4,7 @@ import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
-import {
-  cleanUrl,
-  fsPathFromId,
-  isImportRequest,
-  normalizePath
-} from '../../utils'
+import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
 
 const sirvOptions: Options = {
   dev: true,
@@ -95,10 +90,9 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fsServeRoot`
-      if (
-        normalizePath(path.relative(root, fsPathFromId(url))).startsWith('../')
-      ) {
+      if (!path.resolve(fsPathFromId(url)).startsWith(root + path.sep)) {
         res.statusCode = 403
+        res.write(renderFsRestrictedHTML())
         res.end()
         return
       }
@@ -112,4 +106,30 @@ export function serveRawFsMiddleware(
       next()
     }
   }
+}
+
+function renderFsRestrictedHTML() {
+  // to have syntax highlighting and autocompletion in IDE
+  const html = String.raw
+  return html`
+    <body>
+      <h1>403 Restricted</h1>
+      <p>
+        For security concern, accessing files outside of project root is
+        restricted since Vite v2.3.x
+      </p>
+      <p>
+        Refer to docs
+        <a href="https://vitejs.dev/config/#server-fsserveroot"
+          >https://vitejs.dev/config/#server-fsserveroot</a
+        >
+        for configurations and more details.
+      </p>
+      <style>
+        body {
+          padding: 1em 2em;
+        }
+      </style>
+    </body>
+  `
 }
