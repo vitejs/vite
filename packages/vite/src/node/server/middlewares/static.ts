@@ -5,6 +5,7 @@ import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
+import { searchForWorkspaceRoot } from '../searchRoot'
 
 const sirvOptions: Options = {
   dev: true,
@@ -77,9 +78,9 @@ export function serveRawFsMiddleware(
 ): Connect.NextHandleFunction {
   const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
-  const root = path.resolve(
+  const serveRoot = path.resolve(
     config.root,
-    config.server?.fsServeRoot || config.root
+    config.server?.fsServeRoot || searchForWorkspaceRoot(config.root, 5)
   )
 
   return (req, res, next) => {
@@ -90,9 +91,9 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fsServeRoot`
-      if (!path.resolve(fsPathFromId(url)).startsWith(root + path.sep)) {
+      if (!path.resolve(fsPathFromId(url)).startsWith(serveRoot + path.sep)) {
         res.statusCode = 403
-        res.write(renderFsRestrictedHTML())
+        res.write(renderFsRestrictedHTML(serveRoot))
         res.end()
         return
       }
@@ -108,15 +109,15 @@ export function serveRawFsMiddleware(
   }
 }
 
-function renderFsRestrictedHTML() {
+function renderFsRestrictedHTML(root: string) {
   // to have syntax highlighting and autocompletion in IDE
   const html = String.raw
   return html`
     <body>
       <h1>403 Restricted</h1>
       <p>
-        For security concern, accessing files outside of project root is
-        restricted since Vite v2.3.x
+        For security concern, accessing files outside of workspace root
+        (<code>${root}</code>) is restricted since Vite v2.3.x
       </p>
       <p>
         Refer to docs
