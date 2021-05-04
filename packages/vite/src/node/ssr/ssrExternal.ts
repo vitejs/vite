@@ -24,10 +24,8 @@ export function resolveSSRExternal(
   }
   const pkg = JSON.parse(pkgContent)
   const devDeps = Object.keys(pkg.devDependencies || {})
-  const importedDeps: string[] = unique(
-    knownImports.map(getNpmPackageName).filter(isDefined)
-  )
-  const deps = [...importedDeps, ...Object.keys(pkg.dependencies || {})]
+  const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
+  const deps = unique([...importedDeps, ...Object.keys(pkg.dependencies || {})])
 
   for (const id of devDeps) {
     ssrExternals.add(id)
