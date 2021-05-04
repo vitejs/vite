@@ -356,12 +356,9 @@ export async function resolveConfig(
     }
   }
 
-  let publicDir = config.publicDir
-  if (typeof publicDir === 'boolean') {
-    publicDir = publicDir ? path.resolve(resolvedRoot, 'public') : ''
-  } else {
-    publicDir = path.resolve(resolvedRoot, publicDir || 'public')
-  }
+  const { publicDir } = config
+  let resolvedPublicDir = publicDir === false || publicDir === '' ? '' : 
+    path.resolve(resolvedRoot, typeof publicDir === 'string' ? publicDir : 'public' )
 
   const resolved: ResolvedConfig = {
     ...config,
