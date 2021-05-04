@@ -438,7 +438,6 @@ export default async ({ command, mode }) => {
   - contains one of the following directory/file
     - `.git`
     - `pnpm-workspace.yaml`
-  - should not be more than 5 levels up than the [project root](/guide/#index-html-and-project-root).
 
 ## Build Options
 
