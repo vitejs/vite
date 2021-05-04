@@ -77,7 +77,7 @@ export interface UserConfig {
    * served and copied to build dist dir as-is without transform. The value
    * can be either an absolute file system path or a path relative to <root>.
    *
-   * Set to `false` to disable copied static assets to build dist dir.
+   * Set to `false` or an empty string to disable copied static assets to build dist dir.
    * @default 'public'
    */
   publicDir?: string | false
@@ -357,8 +357,13 @@ export async function resolveConfig(
   }
 
   const { publicDir } = config
-  let resolvedPublicDir = publicDir === false || publicDir === '' ? '' : 
-    path.resolve(resolvedRoot, typeof publicDir === 'string' ? publicDir : 'public' )
+  const resolvedPublicDir =
+    publicDir === false || publicDir === ''
+      ? ''
+      : path.resolve(
+          resolvedRoot,
+          typeof publicDir === 'string' ? publicDir : 'public'
+        )
 
   const resolved: ResolvedConfig = {
     ...config,
@@ -368,7 +373,7 @@ export async function resolveConfig(
     root: resolvedRoot,
     base: BASE_URL,
     resolve: resolveOptions,
-    publicDir,
+    publicDir: resolvedPublicDir,
     cacheDir,
     command,
     mode,
