@@ -156,6 +156,21 @@ test('do not rewrite method definition', async () => {
   `)
 })
 
+test('do not rewrite catch clause', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `import {error} from './dependency';try {} catch(error) {}`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dependency\\")
+    try {} catch(error) {}"
+  `)
+})
+
 // #2221
 test('should declare variable for imported super class', async () => {
   expect(

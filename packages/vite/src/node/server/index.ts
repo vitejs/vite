@@ -483,7 +483,7 @@ export async function createServer(
   middlewares.use(errorMiddleware(server, middlewareMode))
 
   const runOptimize = async () => {
-    if (config.optimizeCacheDir) {
+    if (config.cacheDir) {
       server._isRunningOptimizer = true
       try {
         server._optimizeDepsMetadata = await optimizeDeps(config)
@@ -513,6 +513,7 @@ export async function createServer(
       serverConfig.port = (httpServer.address() as AddressInfo).port
     })
   } else {
+    await container.buildStart({})
     await runOptimize()
   }
 

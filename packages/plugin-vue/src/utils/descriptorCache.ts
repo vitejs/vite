@@ -1,7 +1,13 @@
 import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
-import { parse, SFCDescriptor } from '@vue/compiler-sfc'
+import { CompilerError, parse, SFCDescriptor } from '@vue/compiler-sfc'
+
+// node_modules/@vue/compiler-sfc/dist/compiler-sfc.d.ts SFCParseResult should be exported so it can be re-used
+export interface SFCParseResult {
+  descriptor: SFCDescriptor
+  errors: Array<CompilerError | SyntaxError>
+}
 
 const cache = new Map<string, SFCDescriptor>()
 const prevCache = new Map<string, SFCDescriptor | undefined>()
@@ -11,7 +17,7 @@ export function createDescriptor(
   source: string,
   root: string,
   isProduction: boolean | undefined
-) {
+): SFCParseResult {
   const { descriptor, errors } = parse(source, {
     filename,
     sourceMap: true
@@ -26,15 +32,21 @@ export function createDescriptor(
   return { descriptor, errors }
 }
 
-export function getPrevDescriptor(filename: string) {
+export function getPrevDescriptor(filename: string): SFCDescriptor | undefined {
   return prevCache.get(filename)
 }
 
-export function setPrevDescriptor(filename: string, entry: SFCDescriptor) {
+export function setPrevDescriptor(
+  filename: string,
+  entry: SFCDescriptor
+): void {
   prevCache.set(filename, entry)
 }
 
-export function getDescriptor(filename: string, errorOnMissing = true) {
+export function getDescriptor(
+  filename: string,
+  errorOnMissing = true
+): SFCDescriptor | undefined {
   if (cache.has(filename)) {
     return cache.get(filename)!
   }
@@ -46,6 +58,6 @@ export function getDescriptor(filename: string, errorOnMissing = true) {
   }
 }
 
-export function setDescriptor(filename: string, entry: SFCDescriptor) {
+export function setDescriptor(filename: string, entry: SFCDescriptor): void {
   cache.set(filename, entry)
 }

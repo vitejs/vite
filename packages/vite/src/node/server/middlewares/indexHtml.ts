@@ -16,7 +16,9 @@ import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId } from '../../utils'
 import { assetAttrsConfig } from '../../plugins/html'
 
-export function createDevHtmlTransformFn(server: ViteDevServer) {
+export function createDevHtmlTransformFn(
+  server: ViteDevServer
+): (url: string, html: string) => Promise<string> {
   const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
 
   return (url: string, html: string): Promise<string> => {
@@ -43,6 +45,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, server }
 ) => {
+  // TODO: solve this design issue
+  // Optional chain expressions can return undefined by design
+  // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
   const config = server?.config!
   const base = config.base || '/'
 

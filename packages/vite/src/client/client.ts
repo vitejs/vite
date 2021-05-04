@@ -172,6 +172,7 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
 }
 
 async function waitForSuccessfulPing(ms = 1000) {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       await fetch(`${base}__vite_ping`)
@@ -201,7 +202,7 @@ const supportsConstructedSheet = (() => {
 
 const sheetsMap = new Map()
 
-export function updateStyle(id: string, content: string) {
+export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
   if (supportsConstructedSheet && !content.includes('@import')) {
     if (style && !(style instanceof CSSStyleSheet)) {
@@ -235,7 +236,7 @@ export function updateStyle(id: string, content: string) {
   sheetsMap.set(id, style)
 }
 
-export function removeStyle(id: string) {
+export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
@@ -334,6 +335,8 @@ const ctxToListenersMap = new Map<
   Map<string, ((customData: any) => void)[]>
 >()
 
+// Just infer the return type for now
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const createHotContext = (ownerPath: string) => {
   if (!dataMap.has(ownerPath)) {
     dataMap.set(ownerPath, {})
@@ -410,6 +413,7 @@ export const createHotContext = (ownerPath: string) => {
     },
 
     // TODO
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     decline() {},
 
     invalidate() {
@@ -436,7 +440,7 @@ export const createHotContext = (ownerPath: string) => {
 /**
  * urls here are dynamic import() urls that couldn't be statically analyzed
  */
-export function injectQuery(url: string, queryToInject: string) {
+export function injectQuery(url: string, queryToInject: string): string {
   // skip urls that won't be handled by vite
   if (!url.startsWith('.') && !url.startsWith('/')) {
     return url

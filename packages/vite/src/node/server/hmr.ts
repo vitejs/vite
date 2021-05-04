@@ -44,11 +44,18 @@ export async function handleHMRUpdate(
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
 
-  if (file === config.configFile || file.endsWith('.env')) {
+  const isConfig = file === config.configFile
+  const isConfigDependency = config.configFileDependencies.some(
+    (name) => file === path.resolve(name)
+  )
+  const isEnv = config.inlineConfig.envFile !== false && file.endsWith('.env')
+  if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
     config.logger.info(
-      chalk.green('config or .env file changed, restarting server...'),
+      chalk.green(
+        `${path.relative(process.cwd(), file)} changed, restarting server...`
+      ),
       { clear: true, timestamp: true }
     )
     await restartServer(server)
@@ -164,7 +171,7 @@ export async function handleFileAddUnlink(
   file: string,
   server: ViteDevServer,
   isUnlink = false
-) {
+): Promise<void> {
   const modules = [...(server.moduleGraph.getModulesByFile(file) ?? [])]
   if (isUnlink && file in server._globImporters) {
     delete server._globImporters[file]
@@ -247,7 +254,7 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
 export function handlePrunedModules(
   mods: Set<ModuleNode>,
   { ws }: ViteDevServer
-) {
+): void {
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
   // and without the timestamp the browser will not re-import it!
