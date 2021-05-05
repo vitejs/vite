@@ -36,6 +36,7 @@
     "build-bundle": "rollup -c",
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
+    "ci-build": "rimraf dist && yarn run-s build-bundle build-types",
     "patch-types": "node scripts/patchTypes",
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",

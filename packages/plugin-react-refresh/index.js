@@ -202,8 +202,8 @@ function isRefreshBoundary(ast) {
     const { declaration, specifiers } = node
     if (declaration) {
       if (declaration.type === 'VariableDeclaration') {
-        return declaration.declarations.every(
-          (variable) => isComponentLikeIdentifier(variable.id)
+        return declaration.declarations.every((variable) =>
+          isComponentLikeIdentifier(variable.id)
         )
       }
       if (declaration.type === 'FunctionDeclaration') {
