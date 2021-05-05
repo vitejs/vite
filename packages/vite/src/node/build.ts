@@ -51,9 +51,8 @@ export interface BuildOptions {
    * import)
    *
    * Default: 'modules' - Similar to `@babel/preset-env`'s targets.esmodules,
-   * transpile targeting browsers that natively support es module imports. Also
-   * injects a light-weight dynamic import polyfill.
-   * https://caniuse.com/es6-module
+   * transpile targeting browsers that natively support dynamic es module imports.
+   * https://caniuse.com/es6-module-dynamic-import
    *
    * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat) and assumes native dynamic imports support.
@@ -63,9 +62,9 @@ export interface BuildOptions {
    */
   target?: 'modules' | TransformOptions['target'] | false
   /**
-   * Whether to inject dynamic import polyfill. Defaults to `true`, unless
-   * `target` is `'esnext'`.
+   * whether to inject dynamic import polyfill.
    * Note: does not apply to library mode.
+   * @deprecated the dynamic import polyfill has been removed
    */
   polyfillDynamicImport?: boolean
   /**
@@ -195,12 +194,13 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<Omit<BuildOptions, 'base'>>
+export type ResolvedBuildOptions = Required<
+  Omit<BuildOptions, 'base' | 'polyfillDynamicImport'>
+>
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
-    polyfillDynamicImport: raw?.target !== 'esnext' && !raw?.lib,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -229,10 +229,15 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
 
   // handle special build targets
   if (resolved.target === 'modules') {
-    // https://caniuse.com/es6-module
-    // edge18 according to js-table (destructuring is not supported in edge16)
-    // https://github.com/evanw/esbuild/blob/d943e89e50696647d6c89ae623ddfdf564ad3cfc/internal/compat/js_table.go#L84
-    resolved.target = ['es2019', 'edge18', 'firefox60', 'chrome61', 'safari11']
+    // Support browserslist
+    // "defaults and supports es6-module and supports es6-module-dynamic-import",
+    resolved.target = [
+      'es2019',
+      'edge88',
+      'firefox78',
+      'chrome87',
+      'safari13.1'
+    ]
   } else if (resolved.target === 'esnext' && resolved.minify !== 'esbuild') {
     // esnext + terser: limit to es2019 so it can be minified by terser
     resolved.target = 'es2019'

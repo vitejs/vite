@@ -4,14 +4,11 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 ## Browser Compatibility
 
-The production bundle assumes a baseline support for modern JavaScript. By default, all code is transpiled targeting [browsers with native ESM script tag support](https://caniuse.com/es6-module):
+The production bundle assumes support for modern JavaScript. By default, vite targets browsers which support the [native ESM script tag](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import). As a reference, vite uses this [browserslist](https://github.com/browserslist/browserslist) query:
 
-- Chrome >=61
-- Firefox >=60
-- Safari >=11
-- Edge >=16
-
-A lightweight [dynamic import polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill) is also automatically injected.
+```
+defaults and supports es6-module and supports es6-module-dynamic-import, not opera > 0, not samsung > 0, not and_qq > 0
+```
 
 You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`.
 
