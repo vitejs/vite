@@ -9,7 +9,7 @@ import { resolveHttpServer } from './server/http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { logHostInfo } from './utils'
+import { printServerUrls } from './logger'
 
 export async function preview(
   config: ResolvedConfig,
@@ -61,7 +61,7 @@ export async function preview(
         chalk.green(` build preview server running at:\n`)
     )
 
-    logHostInfo(hostname, protocol, port, base, logger.info)
+    printServerUrls(hostname, protocol, port, base, logger.info)
 
     if (options.open) {
       const path = typeof options.open === 'string' ? options.open : base

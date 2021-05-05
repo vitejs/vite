@@ -33,7 +33,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, logHostInfo, normalizePath } from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -50,6 +50,7 @@ import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
+import { printServerUrls } from '../logger'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -575,7 +576,7 @@ async function startServer(
         }
       )
 
-      logHostInfo(hostname, protocol, port, base, info)
+      printServerUrls(hostname, protocol, port, base, info)
 
       // @ts-ignore
       if (global.__vite_start_time) {
