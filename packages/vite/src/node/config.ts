@@ -358,12 +358,12 @@ export async function resolveConfig(
 
   const { publicDir } = config
   const resolvedPublicDir =
-    publicDir === false || publicDir === ''
-      ? ''
-      : path.resolve(
+    publicDir !== false && publicDir !== ''
+      ? path.resolve(
           resolvedRoot,
           typeof publicDir === 'string' ? publicDir : 'public'
         )
+      : ''
 
   const resolved: ResolvedConfig = {
     ...config,
