@@ -1,4 +1,3 @@
-import os from 'os'
 import path from 'path'
 import sirv from 'sirv'
 import chalk from 'chalk'
@@ -10,6 +9,7 @@ import { resolveHttpServer } from './server/http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
+import { logHostInfo } from './utils'
 
 export async function preview(
   config: ResolvedConfig,
@@ -60,24 +60,8 @@ export async function preview(
       chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
         chalk.green(` build preview server running at:\n`)
     )
-    if (hostname === '127.0.0.1') {
-      const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
-      logger.info(`  > Local: ${chalk.cyan(url)}`)
-      logger.info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
-    } else {
-      Object.values(os.networkInterfaces())
-        .flatMap((nInterface) => nInterface ?? [])
-        .filter((detail) => detail.family === 'IPv4')
-        .map((detail) => {
-          const type = detail.address.includes('127.0.0.1')
-            ? 'Local:   '
-            : 'Network: '
-          const host = detail.address
-          const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-          return `  > ${type} ${chalk.cyan(url)}`
-        })
-        .forEach((msg) => logger.info(msg))
-    }
+
+    logHostInfo(hostname, protocol, port, base, logger.info)
 
     if (options.open) {
       const path = typeof options.open === 'string' ? options.open : base

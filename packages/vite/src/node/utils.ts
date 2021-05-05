@@ -13,6 +13,7 @@ import {
   DecodedSourceMap,
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'
+import { Logger } from './logger'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -463,4 +464,31 @@ export function combineSourcemaps(
 
 export function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr))
+}
+
+export function logHostInfo(
+  hostname: string | undefined,
+  protocol: string,
+  port: number,
+  base: string,
+  info: Logger['info']
+): void {
+  if (hostname === '127.0.0.1') {
+    const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
+    info(`  > Local: ${chalk.cyan(url)}`)
+    info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+  } else {
+    Object.values(os.networkInterfaces())
+      .flatMap((nInterface) => nInterface ?? [])
+      .filter((detail) => detail.family === 'IPv4')
+      .map((detail) => {
+        const type = detail.address.includes('127.0.0.1')
+          ? 'Local:   '
+          : 'Network: '
+        const host = detail.address
+        const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+        return `  > ${type} ${chalk.cyan(url)}`
+      })
+      .forEach((msg) => info(msg))
+  }
 }

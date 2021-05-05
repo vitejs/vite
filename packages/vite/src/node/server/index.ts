@@ -1,4 +1,3 @@
-import os from 'os'
 import fs from 'fs'
 import path from 'path'
 import * as net from 'net'
@@ -34,7 +33,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, logHostInfo, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -576,24 +575,7 @@ async function startServer(
         }
       )
 
-      if (hostname === '127.0.0.1') {
-        const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
-        info(`  > Local: ${chalk.cyan(url)}`)
-        info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
-      } else {
-        Object.values(os.networkInterfaces())
-          .flatMap((nInterface) => nInterface ?? [])
-          .filter((detail) => detail.family === 'IPv4')
-          .map((detail) => {
-            const type = detail.address.includes('127.0.0.1')
-              ? 'Local:   '
-              : 'Network: '
-            const host = detail.address
-            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-            return `  > ${type} ${chalk.cyan(url)}`
-          })
-          .forEach((msg) => info(msg))
-      }
+      logHostInfo(hostname, protocol, port, base, info)
 
       // @ts-ignore
       if (global.__vite_start_time) {
