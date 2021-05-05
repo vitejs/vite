@@ -23,7 +23,7 @@ function hasWorkspacePackageJSON(root: string): boolean {
   const path = join(root, 'package.json')
   try {
     fs.accessSync(path, fs.constants.R_OK)
-  } catch (e) {
+  } catch {
     return false
   }
   const content = JSON.parse(fs.readFileSync(path, 'utf-8')) || {}
