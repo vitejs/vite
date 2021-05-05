@@ -581,23 +581,18 @@ async function startServer(
         info(`  > Local: ${chalk.cyan(url)}`)
         info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
       } else {
-        const interfaces = os.networkInterfaces()
-        Object.keys(interfaces).forEach((key) =>
-          (interfaces[key] || [])
-            .filter((details) => details.family === 'IPv4')
-            .map((detail) => {
-              return {
-                type: detail.address.includes('127.0.0.1')
-                  ? 'Local:   '
-                  : 'Network: ',
-                host: detail.address
-              }
-            })
-            .forEach(({ type, host }) => {
-              const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-              info(`  > ${type} ${chalk.cyan(url)}`)
-            })
-        )
+        Object.values(os.networkInterfaces())
+          .flatMap((nInterface) => nInterface ?? [])
+          .filter((detail) => detail.family === 'IPv4')
+          .map((detail) => {
+            const type = detail.address.includes('127.0.0.1')
+              ? 'Local:   '
+              : 'Network: '
+            const host = detail.address
+            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+            return `  > ${type} ${chalk.cyan(url)}`
+          })
+          .forEach((msg) => info(msg))
       }
 
       // @ts-ignore
