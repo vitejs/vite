@@ -27,10 +27,7 @@ function hasWorkspacePackageJSON(root: string): boolean {
 }
 
 function hasRootFile(root: string): boolean {
-  for (const file of ROOT_FILES) {
-    if (fs.existsSync(join(root, file))) return true
-  }
-  return false
+  ROOT_FILES.some((file) => fs.existsSync(join(root, file)))
 }
 
 export function searchForWorkspaceRoot(
