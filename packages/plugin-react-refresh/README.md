@@ -20,7 +20,7 @@ export default {
   plugins: [reactRefresh({
     parserPlugins: [
       'classProperties',
-      'classPrivateProperties
+      'classPrivateProperties'
     ]
   })]
 }
@@ -28,7 +28,7 @@ export default {
 
 [Full list of Babel parser plugins](https://babeljs.io/docs/en/babel-parser#ecmascript-proposalshttpsgithubcombabelproposals).
 
-**Notes**
+### Notes
 
 - If using TSX, any TS-supported syntax will already be transpiled away so you won't need to specify them here.
 
@@ -38,11 +38,11 @@ export default {
 
 ## Middleware Mode Notes
 
-When Vite is launched in **Middleware Mode**, you need to make sure your entry `index.html` file is transformed with `ViteDevServer.transformIndexHtml`. Otherwise, you may get an error prompting `Uncaught Error: vite-plugin-react can't detect preamble. Something is wrong.`
+When Vite is launched in **Middleware Mode**, you need to make sure your entry `index.html` file is transformed with `ViteDevServer.transformIndexHtml`. Otherwise, you may get an error prompting `Uncaught Error: @vitejs/plugin-react-refresh can't detect preamble. Something is wrong.`
 
 To mitigate this issue, you can explicitly transform your `index.html` like this when configuring your express server:
 
-```ts
+```js
 app.get('/', async (req, res, next) => {
   try {
     let html = fs.readFileSync(path.resolve(root, 'index.html'), 'utf-8')
