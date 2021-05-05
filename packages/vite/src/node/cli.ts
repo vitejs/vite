@@ -63,7 +63,7 @@ cli
 cli
   .command('[root]') // default command
   .alias('serve')
-  .option('--host <host>', `[string] specify hostname`)
+  .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)

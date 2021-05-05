@@ -73,7 +73,8 @@ beforeAll(async () => {
             // misses change events, so enforce polling for consistency
             usePolling: true,
             interval: 100
-          }
+          },
+          host: true
         },
         build: {
           // skip transpilation and dynamic import polyfills during tests to
