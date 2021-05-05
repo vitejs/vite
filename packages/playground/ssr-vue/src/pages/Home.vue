@@ -18,7 +18,7 @@ const Foo = defineAsyncComponent(() =>
   import('../components/Foo').then((mod) => mod.Foo)
 )
 function load(file) {
-  return defineAsyncComponent(() =>import(`../components/${file}.vue`))
+  return defineAsyncComponent(() => import(`../components/${file}.vue`))
 }
 const state = reactive({ count: 0 })
 </script>
