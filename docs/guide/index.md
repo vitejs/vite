@@ -14,9 +14,7 @@ You can learn more about the rationale behind the project in the [Why Vite](./wh
 
 ## Browser Support
 
-- For development: [native ESM dynamic import support](https://caniuse.com/es6-module-dynamic-import) is required.
-
-- For production: the default build targets browsers that support [native ESM via script tags](https://caniuse.com/es6-module). Legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) - see the [Building for Production](./build) section for more details.
+- The default build targets browsers that support both [native ESM via script tags](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import). Legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) - see the [Building for Production](./build) section for more details.
 
 ## Scaffolding Your First Vite Project
 

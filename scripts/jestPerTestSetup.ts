@@ -78,8 +78,7 @@ beforeAll(async () => {
           host: true
         },
         build: {
-          // skip transpilation and dynamic import polyfills during tests to
-          // make it faster
+          // skip transpilation during tests to make it faster
           target: 'esnext'
         }
       }
