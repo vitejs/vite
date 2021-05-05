@@ -21,13 +21,17 @@ const ROOT_FILES = [
 // yarn: https://classic.yarnpkg.com/en/docs/workspaces/#toc-how-to-use-it
 function hasWorkspacePackageJSON(root: string): boolean {
   const path = join(root, 'package.json')
-  if (!fs.existsSync(path)) return false
+  try {
+    fs.accessSync(path, fs.constants.R_OK)
+  } catch (e) {
+    return false
+  }
   const content = JSON.parse(fs.readFileSync(path, 'utf-8')) || {}
   return !!content.workspaces
 }
 
 function hasRootFile(root: string): boolean {
-  ROOT_FILES.some((file) => fs.existsSync(join(root, file)))
+  return ROOT_FILES.some((file) => fs.existsSync(join(root, file)))
 }
 
 export function searchForWorkspaceRoot(
