@@ -137,7 +137,7 @@ function reactRefreshPlugin(opts) {
   if (!window.__vite_plugin_react_preamble_installed__) {
     throw new Error(
       "@vitejs/plugin-react-refresh can't detect preamble. Something is wrong. " +
-      "See https://github.com/vitejs/@vitejs/plugin-react-refresh/pull/11#discussion_r430879201"
+      "See https://github.com/vitejs/vite-plugin-react/pull/11#discussion_r430879201"
     );
   }
 
