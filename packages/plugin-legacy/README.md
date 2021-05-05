@@ -1,6 +1,6 @@
 # @vitejs/plugin-legacy [![npm](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg)](https://npmjs.com/package/@vitejs/plugin-legacy)
 
-**Note: this plugin requires `vite@^2.0.0-beta.12`**.
+**Note: this plugin requires `vite@^2.0.0`**.
 
 Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module). This plugin provides support for legacy browsers that do not support native ESM.
 
@@ -12,7 +12,7 @@ By default, this plugin will:
 
 - Inject `<script nomodule>` tags into generated HTML to conditionally load the polyfills and legacy bundle only in browsers without native ESM support.
 
-- Inject the `import.meta.env.LEGACY` env variable, which will only be `true` in the legacy production build, and `false` in all other cases. (requires `vite@^2.0.0-beta.69`)
+- Inject the `import.meta.env.LEGACY` env variable, which will only be `true` in the legacy production build, and `false` in all other cases.
 
 ## Usage
 
