@@ -328,8 +328,12 @@ export default async ({ command, mode }) => {
 ### server.host
 
 - **Type:** `string`
+- **Default:** `'127.0.0.1'`
 
-  Specify server hostname.
+  Specify which IP addresses the server should listen on.
+  Set this to `0.0.0.0` to listen on all addresses, including LAN and public addresses.
+  
+  This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 ### server.port
 
