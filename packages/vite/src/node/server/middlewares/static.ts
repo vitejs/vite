@@ -116,7 +116,7 @@ function renderFsRestrictedHTML(root: string) {
     <body>
       <h1>403 Restricted</h1>
       <p>
-        For security concern, accessing files outside of workspace root
+        For security concerns, accessing files outside of workspace root
         (<code>${root}</code>) is restricted since Vite v2.3.x
       </p>
       <p>
