@@ -121,9 +121,9 @@ function renderFsRestrictedHTML(root: string) {
       </p>
       <p>
         Refer to docs
-        <a href="https://vitejs.dev/config/#server-fsserveroot"
-          >https://vitejs.dev/config/#server-fsserveroot</a
-        >
+        <a href="https://vitejs.dev/config/#server-fsserveroot">
+          https://vitejs.dev/config/#server-fsserveroot
+        </a>
         for configurations and more details.
       </p>
       <style>
