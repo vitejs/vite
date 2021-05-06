@@ -25,6 +25,7 @@ const sirvOptions: Options = {
 export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
 
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
     // skip import request
     if (isImportRequest(req.url!)) {
@@ -40,6 +41,7 @@ export function serveStaticMiddleware(
 ): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
 
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
     const url = req.url!
 
@@ -76,6 +78,7 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
   const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
 
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
     let url = req.url!
     // In some cases (e.g. linked monorepos) files outside of root will

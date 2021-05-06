@@ -9,6 +9,7 @@ export function baseMiddleware({
 }: ViteDevServer): Connect.NextHandleFunction {
   const base = config.base
 
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
     const parsed = parseUrl(url)
