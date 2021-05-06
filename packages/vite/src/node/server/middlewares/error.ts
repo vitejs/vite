@@ -44,7 +44,8 @@ export function errorMiddleware(
   allowNext = false
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
-  return (err: RollupError, _req, res, next) => {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteErrorMiddleware(err: RollupError, _req, res, next) {
     const msg = buildErrorMessage(err, [
       chalk.red(`Internal server error: ${err.message}`)
     ])
