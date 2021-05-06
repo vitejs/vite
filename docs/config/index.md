@@ -165,8 +165,7 @@ export default async ({ command, mode }) => {
 
 - **Type:** `string[]`
 
-  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
-  project root).
+  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from project root).
 
 ### resolve.conditions
 
