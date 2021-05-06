@@ -424,7 +424,10 @@ export async function createServer(
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
   // hmr reconnect ping
-  middlewares.use('/__vite_ping', (_, res) => res.end('pong'))
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  middlewares.use('/__vite_ping', function viteHMRPingMiddleware(_, res) {
+    res.end('pong')
+  })
 
   //decode request url
   middlewares.use(decodeURIMiddleware())
@@ -473,7 +476,8 @@ export async function createServer(
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
     // handle 404s
-    middlewares.use((_, res) => {
+    // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+    middlewares.use(function vite404Middleware(_, res) {
       res.statusCode = 404
       res.end()
     })

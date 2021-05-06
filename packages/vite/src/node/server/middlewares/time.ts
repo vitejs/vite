@@ -4,7 +4,8 @@ import { createDebugger, prettifyUrl, timeFrom } from '../../utils'
 const logTime = createDebugger('vite:time')
 
 export function timeMiddleware(root: string): Connect.NextHandleFunction {
-  return (req, res, next) => {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteTimeMiddleware(req, res, next) {
     const start = Date.now()
     const end = res.end
     res.end = (...args: any[]) => {

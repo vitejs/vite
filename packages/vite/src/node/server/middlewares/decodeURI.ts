@@ -1,7 +1,8 @@
 import { Connect } from 'types/connect'
 
 export function decodeURIMiddleware(): Connect.NextHandleFunction {
-  return (req, _, next) => {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteDecoreURIMiddleware(req, _, next) {
     // #2195
     req.url = decodeURI(req.url!)
 
