@@ -41,33 +41,48 @@ export async function preview(
   )
 
   const options = config.server || {}
-  const hostname = options.host || 'localhost'
+  let hostname: string | undefined
+  if (options.host === undefined || options.host === 'localhost') {
+    // Use a secure default
+    hostname = '127.0.0.1'
+  } else if (options.host === true) {
+    // The user probably passed --host in the CLI, without arguments
+    hostname = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
+  } else {
+    hostname = options.host as string
+  }
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
 
-  httpServer.listen(port, () => {
+  httpServer.listen(port, hostname, () => {
     logger.info(
       chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
         chalk.green(` build preview server running at:\n`)
     )
-    const interfaces = os.networkInterfaces()
-    Object.keys(interfaces).forEach((key) =>
-      (interfaces[key] || [])
-        .filter((details) => details.family === 'IPv4')
-        .map((detail) => {
-          return {
-            type: detail.address.includes('127.0.0.1')
-              ? 'Local:   '
-              : 'Network: ',
-            host: detail.address.replace('127.0.0.1', hostname)
-          }
-        })
-        .forEach(({ type, host }) => {
-          const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-          logger.info(`  > ${type} ${chalk.cyan(url)}`)
-        })
-    )
+    if (hostname === '127.0.0.1') {
+      const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
+      logger.info(`  > Local: ${chalk.cyan(url)}`)
+      logger.info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+    } else {
+      const interfaces = os.networkInterfaces()
+      Object.keys(interfaces).forEach((key) =>
+        (interfaces[key] || [])
+          .filter((details) => details.family === 'IPv4')
+          .map((detail) => {
+            return {
+              type: detail.address.includes('127.0.0.1')
+                ? 'Local:   '
+                : 'Network: ',
+              host: detail.address
+            }
+          })
+          .forEach(({ type, host }) => {
+            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+            logger.info(`  > ${type} ${chalk.cyan(url)}`)
+          })
+      )
+    }
 
     if (options.open) {
       const path = typeof options.open === 'string' ? options.open : base

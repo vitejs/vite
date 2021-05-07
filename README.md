@@ -55,10 +55,3 @@ See [Contributing Guide](https://github.com/vitejs/vite/tree/main/.github/contri
 ## License
 
 MIT
-
-[npm-img]: https://img.shields.io/npm/v/vite.svg
-[npm-url]: https://npmjs.com/package/vite
-[node-img]: https://img.shields.io/node/v/vite.svg
-[node-url]: https://nodejs.org/en/about/releases/
-[discord-img]: https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord
-[discord-url]: https://chat.vitejs.dev

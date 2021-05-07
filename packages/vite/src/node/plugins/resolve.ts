@@ -25,7 +25,7 @@ import {
   cleanUrl,
   slash
 } from '../utils'
-import { ViteDevServer } from '..'
+import { ViteDevServer, SSRTarget } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
@@ -50,6 +50,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   root: string
   isBuild: boolean
   isProduction: boolean
+  ssrTarget?: SSRTarget
   /**
    * src code mode also attempts the following:
    * - resolving /xxx as URLs
@@ -63,7 +64,13 @@ export interface InternalResolveOptions extends ResolveOptions {
 }
 
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
-  const { root, isProduction, asSrc, preferRelative = false } = baseOptions
+  const {
+    root,
+    isProduction,
+    asSrc,
+    ssrTarget,
+    preferRelative = false
+  } = baseOptions
   const requireOptions: InternalResolveOptions = {
     ...baseOptions,
     isRequire: true
@@ -86,6 +93,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
         return
       }
+
+      const targetWeb = !ssr || ssrTarget === 'webworker'
 
       // this is passed by @rollup/plugin-commonjs
       const isRequire =
@@ -124,8 +133,28 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
+        const normalizedFsPath = normalizePath(fsPath)
+        const pathFromBasedir = normalizedFsPath.slice(basedir.length)
+        if (pathFromBasedir.startsWith('/node_modules/')) {
+          // normalize direct imports from node_modules to bare imports, so the
+          // hashing logic is shared and we avoid duplicated modules #2503
+          const bareImport = pathFromBasedir.slice('/node_modules/'.length)
+          if (
+            (res = tryNodeResolve(
+              bareImport,
+              importer,
+              options,
+              targetWeb,
+              server
+            )) &&
+            res.id.startsWith(normalizedFsPath)
+          ) {
+            return res
+          }
+        }
+
         if (
-          !ssr &&
+          targetWeb &&
           (res = tryResolveBrowserMapping(fsPath, importer, options, true))
         ) {
           return res
@@ -177,13 +206,13 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         }
 
         if (
-          !ssr &&
+          targetWeb &&
           (res = tryResolveBrowserMapping(id, importer, options, false))
         ) {
           return res
         }
 
-        if ((res = tryNodeResolve(id, importer, options, ssr, server))) {
+        if ((res = tryNodeResolve(id, importer, options, targetWeb, server))) {
           return res
         }
 
@@ -232,7 +261,7 @@ function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
-  ssr?: boolean
+  targetWeb = true
 ): string | undefined {
   let file = fsPath
   let postfix = ''
@@ -253,7 +282,7 @@ function tryFsResolve(
       postfix,
       options,
       false,
-      ssr,
+      targetWeb,
       options.tryPrefix
     ))
   ) {
@@ -267,7 +296,7 @@ function tryFsResolve(
         postfix,
         options,
         false,
-        ssr,
+        targetWeb,
         options.tryPrefix
       ))
     ) {
@@ -281,7 +310,7 @@ function tryFsResolve(
       postfix,
       options,
       tryIndex,
-      ssr,
+      targetWeb,
       options.tryPrefix
     ))
   ) {
@@ -294,7 +323,7 @@ function tryResolveFile(
   postfix: string,
   options: InternalResolveOptions,
   tryIndex: boolean,
-  ssr?: boolean,
+  targetWeb: boolean,
   tryPrefix?: string
 ): string | undefined {
   let isReadable = false
@@ -313,7 +342,7 @@ function tryResolveFile(
       if (fs.existsSync(pkgPath)) {
         // path points to a node package
         const pkg = loadPackageData(pkgPath)
-        return resolvePackageEntry(file, pkg, options, ssr)
+        return resolvePackageEntry(file, pkg, options, targetWeb)
       }
       const index = tryFsResolve(file + '/index', options)
       if (index) return index + postfix
@@ -321,7 +350,7 @@ function tryResolveFile(
   }
   if (tryPrefix) {
     const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
-    return tryResolveFile(prefixed, postfix, options, tryIndex, ssr)
+    return tryResolveFile(prefixed, postfix, options, tryIndex, targetWeb)
   }
 }
 
@@ -331,7 +360,7 @@ export function tryNodeResolve(
   id: string,
   importer: string | undefined,
   options: InternalResolveOptions,
-  ssr?: boolean,
+  targetWeb: boolean,
   server?: ViteDevServer
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild } = options
@@ -358,8 +387,8 @@ export function tryNodeResolve(
   }
 
   let resolved = deepMatch
-    ? resolveDeepImport(id, pkg, options, ssr)
-    : resolvePackageEntry(id, pkg, options, ssr)
+    ? resolveDeepImport(id, pkg, options, targetWeb)
+    : resolvePackageEntry(id, pkg, options, targetWeb)
   if (!resolved) {
     return
   }
@@ -431,10 +460,10 @@ export function tryOptimizedResolve(
 export interface PackageData {
   dir: string
   hasSideEffects: (id: string) => boolean
-  resolvedImports: Record<string, string | undefined>
-  ssrResolvedImports: Record<string, string | undefined>
-  setResolvedCache: (key: string, entry: string, ssr?: boolean) => void
-  getResolvedCache: (key: string, ssr?: boolean) => string | undefined
+  webResolvedImports: Record<string, string | undefined>
+  nodeResolvedImports: Record<string, string | undefined>
+  setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
+  getResolvedCache: (key: string, targetWeb: boolean) => string | undefined
   data: {
     [field: string]: any
     version: string
@@ -481,20 +510,20 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
     dir: pkgDir,
     data,
     hasSideEffects,
-    resolvedImports: {},
-    ssrResolvedImports: {},
-    setResolvedCache(key: string, entry: string, ssr?: boolean) {
-      if (ssr) {
-        pkg.ssrResolvedImports[key] = entry
+    webResolvedImports: {},
+    nodeResolvedImports: {},
+    setResolvedCache(key: string, entry: string, targetWeb: boolean) {
+      if (targetWeb) {
+        pkg.webResolvedImports[key] = entry
       } else {
-        pkg.resolvedImports[key] = entry
+        pkg.nodeResolvedImports[key] = entry
       }
     },
-    getResolvedCache(key: string, ssr?: boolean) {
-      if (ssr) {
-        return pkg.ssrResolvedImports[key]
+    getResolvedCache(key: string, targetWeb: boolean) {
+      if (targetWeb) {
+        return pkg.webResolvedImports[key]
       } else {
-        return pkg.resolvedImports[key]
+        return pkg.nodeResolvedImports[key]
       }
     }
   }
@@ -506,9 +535,9 @@ export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
   options: InternalResolveOptions,
-  ssr?: boolean
+  targetWeb: boolean
 ): string | undefined {
-  const cached = getResolvedCache('.', ssr)
+  const cached = getResolvedCache('.', targetWeb)
   if (cached) {
     return cached
   }
@@ -524,7 +553,7 @@ export function resolvePackageEntry(
   // This is because .mjs files can technically import .cjs files which would
   // make them invalid for pure ESM environments - so if other module/browser
   // fields are present, prioritize those instead.
-  if (!ssr && (!entryPoint || entryPoint.endsWith('.mjs'))) {
+  if (targetWeb && (!entryPoint || entryPoint.endsWith('.mjs'))) {
     // check browser field
     // https://github.com/defunctzombie/package-browser-field-spec
     const browserEntry =
@@ -574,7 +603,7 @@ export function resolvePackageEntry(
 
   // resolve object browser field in package.json
   const { browser: browserField } = data
-  if (!ssr && isObject(browserField)) {
+  if (targetWeb && isObject(browserField)) {
     entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
   }
 
@@ -586,7 +615,7 @@ export function resolvePackageEntry(
       debug(
         `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPoint)}`
       )
-    setResolvedCache('.', resolvedEntryPoint, ssr)
+    setResolvedCache('.', resolvedEntryPoint, targetWeb)
     return resolvedEntryPoint
   } else {
     throw new Error(
@@ -618,17 +647,17 @@ function resolveExports(
 function resolveDeepImport(
   id: string,
   {
-    resolvedImports,
+    webResolvedImports,
     setResolvedCache,
     getResolvedCache,
     dir,
     data
   }: PackageData,
   options: InternalResolveOptions,
-  ssr?: boolean
+  targetWeb: boolean
 ): string | undefined {
   id = '.' + id.slice(data.name.length)
-  const cache = getResolvedCache(id, ssr)
+  const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache
   }
@@ -650,12 +679,12 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`
       )
     }
-  } else if (!ssr && isObject(browserField)) {
+  } else if (targetWeb && isObject(browserField)) {
     const mapped = mapWithBrowserField(relativeId, browserField)
     if (mapped) {
       relativeId = mapped
     } else if (mapped === false) {
-      return (resolvedImports[id] = browserExternalId)
+      return (webResolvedImports[id] = browserExternalId)
     }
   }
 
@@ -664,12 +693,12 @@ function resolveDeepImport(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
-      ssr
+      targetWeb
     )
     if (resolved) {
       isDebug &&
         debug(`[node/deep-import] ${chalk.cyan(id)} -> ${chalk.dim(resolved)}`)
-      setResolvedCache(id, resolved, ssr)
+      setResolvedCache(id, resolved, targetWeb)
       return resolved
     }
   }

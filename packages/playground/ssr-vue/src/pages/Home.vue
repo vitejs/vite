@@ -13,11 +13,13 @@
 <script setup>
 import foo from '@foo'
 import { reactive, defineAsyncComponent } from 'vue'
-import ImportType from '../components/ImportType.vue'
+const ImportType = load('ImportType')
 const Foo = defineAsyncComponent(() =>
   import('../components/Foo').then((mod) => mod.Foo)
 )
-
+function load(file) {
+  return defineAsyncComponent(() => import(`../components/${file}.vue`))
+}
 const state = reactive({ count: 0 })
 </script>
 
