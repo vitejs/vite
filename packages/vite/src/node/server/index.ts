@@ -120,6 +120,20 @@ export interface ServerOptions {
    * Should start and end with the `/` character
    */
   base?: string
+  /**
+   * Options for files served via '/\@fs/'.
+   */
+  fsServe?: FileSystemServeOptions
+}
+
+export interface FileSystemServeOptions {
+  /**
+   * Restrict accessing files outside this directory will result in a 403.
+   *
+   * Accepts absolute path or a path relative to project root.
+   * Will try to search up for workspace root by default.
+   */
+  root?: string
 }
 
 /**
@@ -443,7 +457,7 @@ export async function createServer(
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(serveRawFsMiddleware())
+  middlewares.use(serveRawFsMiddleware(config))
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback

@@ -4,7 +4,8 @@ import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
-import { cleanUrl, isImportRequest } from '../../utils'
+import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
+import { searchForWorkspaceRoot } from '../searchRoot'
 
 const sirvOptions: Options = {
   dev: true,
@@ -74,9 +75,15 @@ export function serveStaticMiddleware(
   }
 }
 
-export function serveRawFsMiddleware(): Connect.NextHandleFunction {
+export function serveRawFsMiddleware(
+  config: ResolvedConfig
+): Connect.NextHandleFunction {
   const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
+  const serveRoot = path.resolve(
+    config.root,
+    config.server?.fsServe?.root || searchForWorkspaceRoot(config.root)
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
@@ -86,6 +93,14 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
+      // restrict files outside of `fsServe.root`
+      if (!path.resolve(fsPathFromId(url)).startsWith(serveRoot + path.sep)) {
+        res.statusCode = 403
+        res.write(renderFsRestrictedHTML(serveRoot))
+        res.end()
+        return
+      }
+
       url = url.slice(FS_PREFIX.length)
       if (isWin) url = url.replace(/^[A-Z]:/i, '')
 
@@ -95,4 +110,30 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
       next()
     }
   }
+}
+
+function renderFsRestrictedHTML(root: string) {
+  // to have syntax highlighting and autocompletion in IDE
+  const html = String.raw
+  return html`
+    <body>
+      <h1>403 Restricted</h1>
+      <p>
+        For security concerns, accessing files outside of workspace root
+        (<code>${root}</code>) is restricted since Vite v2.3.x
+      </p>
+      <p>
+        Refer to docs
+        <a href="https://vitejs.dev/config/#server-fsserveroot">
+          https://vitejs.dev/config/#server-fsserveroot
+        </a>
+        for configurations and more details.
+      </p>
+      <style>
+        body {
+          padding: 1em 2em;
+        }
+      </style>
+    </body>
+  `
 }
