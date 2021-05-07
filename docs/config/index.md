@@ -446,7 +446,7 @@ export default async ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `false`
 
-  Allow requests to dotfiles (files or directories beginning with a .).
+  Allow requests to dotfiles (files or directories beginning with a `.`).
 
 ## Build Options
 
