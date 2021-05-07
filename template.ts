@@ -26,6 +26,10 @@ export function compileSFCTemplate(
     prettify: false,
     preprocessLang: block.lang,
     ...vueTemplateOptions,
+    compilerOptions: {
+      whitespace: 'condense',
+      ...(vueTemplateOptions.compilerOptions || {})
+    }
   })
 
   if (tips) {
