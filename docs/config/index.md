@@ -448,7 +448,6 @@ export default async ({ command, mode }) => {
 
   Allow requests to dotfiles (files or directories beginning with a .).
 
-
 ## Build Options
 
 ### build.target
