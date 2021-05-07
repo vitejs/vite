@@ -136,7 +136,7 @@ export interface FileSystemServeOptions {
   root?: string
 
   /**
-   * Allow requests to dotfiles (files or directories beginning with a .)
+   * Allow requests to dotfiles (files or directories beginning with a `.`)
    *
    * @default false
    */
