@@ -80,6 +80,7 @@ export function serveRawFsMiddleware(
 ): Connect.NextHandleFunction {
   const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
+  const dotfiles = config.server?.fsServe?.dotfiles ?? false
   const serveRoot = path.resolve(
     config.root,
     config.server?.fsServe?.root || searchForWorkspaceRoot(config.root)
@@ -93,6 +94,15 @@ export function serveRawFsMiddleware(
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
+      // restrict dotfiles
+      // regex ported from sirv
+      // https://github.com/lukeed/sirv/blob/ede9189b6c586cd4697e0ffb16671515fdefecde/packages/sirv/index.js#L145
+      if (!dotfiles && /(^\.|[\\+|\/+]\.)/.test(url)) {
+        res.statusCode = 404
+        res.end()
+        return
+      }
+
       // restrict files outside of `fsServe.root`
       if (!path.resolve(fsPathFromId(url)).startsWith(serveRoot + path.sep)) {
         res.statusCode = 403

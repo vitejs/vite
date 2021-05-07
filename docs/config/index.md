@@ -441,6 +441,14 @@ export default async ({ command, mode }) => {
   - contains one of the following file
     - `pnpm-workspace.yaml`
 
+### server.fsServe.dotfiles
+
+- **Type:** `string`
+- **Default:** `false`
+
+  Allow requests to dotfiles (files or directories beginning with a .).
+
+
 ## Build Options
 
 ### build.target

@@ -134,6 +134,13 @@ export interface FileSystemServeOptions {
    * Will try to search up for workspace root by default.
    */
   root?: string
+
+  /**
+   * Allow requests to dotfiles (files or directories beginning with a .)
+   *
+   * @default false
+   */
+  dotfiles?: boolean
 }
 
 /**
