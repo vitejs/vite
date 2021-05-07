@@ -117,7 +117,7 @@ export function checkPublicFile(
 ): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
-  if (!url.startsWith('/')) {
+  if (!publicDir || !url.startsWith('/')) {
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
