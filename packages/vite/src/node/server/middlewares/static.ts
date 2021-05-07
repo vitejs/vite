@@ -98,8 +98,7 @@ export function serveRawFsMiddleware(
       // regex ported from sirv
       // https://github.com/lukeed/sirv/blob/ede9189b6c586cd4697e0ffb16671515fdefecde/packages/sirv/index.js#L145
       if (!dotfiles && /(^\.|[\\+|\/+]\.)/.test(url)) {
-        res.statusCode = 404
-        res.end()
+        next()
         return
       }
 
