@@ -545,7 +545,7 @@ function prepareOutDir(
       emptyDir(outDir, ['.git'])
     }
   }
-  if (fs.existsSync(config.publicDir)) {
+  if (config.publicDir && fs.existsSync(config.publicDir)) {
     copyDir(config.publicDir, outDir)
   }
 }
