@@ -80,7 +80,7 @@ export function serveRawFsMiddleware(
   const serveFromRoot = sirv('/', sirvOptions)
   const serveRoot = path.resolve(
     config.root,
-    config.server?.fsServeRoot || searchForWorkspaceRoot(config.root)
+    config.server?.fsServe?.root || searchForWorkspaceRoot(config.root)
   )
 
   return (req, res, next) => {
@@ -90,7 +90,7 @@ export function serveRawFsMiddleware(
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      // restrict files outside of `fsServeRoot`
+      // restrict files outside of `fsServe.root`
       if (!path.resolve(fsPathFromId(url)).startsWith(serveRoot + path.sep)) {
         res.statusCode = 403
         res.write(renderFsRestrictedHTML(serveRoot))

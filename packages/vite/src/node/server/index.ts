@@ -121,13 +121,19 @@ export interface ServerOptions {
    */
   base?: string
   /**
-   * Restrict files that could be served via '/\@fs/'.
-   * Accessing files outside this directory will result in a 403.
+   * Options for files served via '/\@fs/'.
+   */
+  fsServe?: FileSystemServeOptions
+}
+
+export interface FileSystemServeOptions {
+  /**
+   * Restrict accessing files outside this directory will result in a 403.
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
    */
-  fsServeRoot?: string
+  root?: string
 }
 
 /**

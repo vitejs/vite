@@ -427,7 +427,7 @@ export default async ({ command, mode }) => {
 
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
-### server.fsServeRoot
+### server.fsServe.root
 
 - **Type:** `string`
 
