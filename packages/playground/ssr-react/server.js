@@ -73,7 +73,6 @@ async function createServer(
 
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
     } catch (e) {
-      !isProd && vite.ssrFixStacktrace(e)
       console.log(e.stack)
       res.status(500).end(e.stack)
     }

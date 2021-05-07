@@ -20,7 +20,9 @@ export async function injectSourcesContent(
   )
 }
 
-export function genSourceMapString(map: SourceMap | string | undefined) {
+export function genSourceMapString(
+  map: SourceMap | string | undefined
+): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }

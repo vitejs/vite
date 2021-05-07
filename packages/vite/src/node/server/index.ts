@@ -247,6 +247,7 @@ export interface ViteDevServer {
   ssrLoadModule(url: string): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace
+   * @deprecated we now rely on source-map support for ssr.
    */
   ssrFixStacktrace(e: Error): void
   /**

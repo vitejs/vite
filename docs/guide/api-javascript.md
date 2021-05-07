@@ -105,10 +105,6 @@ interface ViteDevServer {
     options?: { isolated?: boolean }
   ): Promise<Record<string, any>>
   /**
-   * Fix ssr error stacktrace.
-   */
-  ssrFixStacktrace(e: Error): void
-  /**
    * Start the server.
    */
   listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
