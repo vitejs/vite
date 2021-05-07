@@ -173,7 +173,10 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'alias' | 'dedupe' | 'assetsInclude'> & {
+  Omit<
+    UserConfig,
+    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps'
+  > & {
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
@@ -193,6 +196,7 @@ export type ResolvedConfig = Readonly<
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
+    optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
   }
 >
 
@@ -381,10 +385,17 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
-    createResolver
+    createResolver,
+    optimizeDeps: {
+      ...config.optimizeDeps,
+      esbuildOptions: {
+        keepNames: config.optimizeDeps?.keepNames,
+        ...config.optimizeDeps?.esbuildOptions
+      }
+    }
   }
 
-  ;(resolved as any).plugins = await resolvePlugins(
+  ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
     normalPlugins,
@@ -402,66 +413,104 @@ export async function resolveConfig(
   }
 
   // TODO Deprecation warnings - remove when out of beta
-  if (config.build?.base) {
+
+  const logDeprecationWarning = (
+    deprecatedOption: string,
+    hint: string,
+    error?: Error
+  ) => {
     logger.warn(
       chalk.yellow.bold(
-        `(!) "build.base" config option is deprecated. ` +
-          `"base" is now a root-level config option.`
+        `(!) "${deprecatedOption}" option is deprecated. ${hint}${
+          error ? `\n${error.stack}` : ''
+        }`
       )
+    )
+  }
+
+  if (config.build?.base) {
+    logDeprecationWarning(
+      'build.base',
+      '"base" is now a root-level config option.'
     )
     config.base = config.build.base
   }
   Object.defineProperty(resolvedBuildOptions, 'base', {
     enumerable: false,
     get() {
-      logger.warn(
-        chalk.yellow.bold(
-          `(!) "build.base" config option is deprecated. ` +
-            `"base" is now a root-level config option.\n` +
-            new Error().stack
-        )
+      logDeprecationWarning(
+        'build.base',
+        '"base" is now a root-level config option.',
+        new Error()
       )
       return resolved.base
     }
   })
 
-  if (config.alias) {
-    logger.warn(
-      chalk.bold.yellow(
-        '(!) "alias" option is deprecated. Use "resolve.alias" instead.'
-      )
+  if (config.build?.polyfillDynamicImport) {
+    logDeprecationWarning(
+      'build.polyfillDynamicImport',
+      '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.'
     )
+  }
+
+  Object.defineProperty(resolvedBuildOptions, 'polyfillDynamicImport', {
+    enumerable: false,
+    get() {
+      logDeprecationWarning(
+        'build.polyfillDynamicImport',
+        '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.',
+        new Error()
+      )
+      return false
+    }
+  })
+
+  if (config.alias) {
+    logDeprecationWarning('alias', 'Use "resolve.alias" instead.')
   }
   Object.defineProperty(resolved, 'alias', {
     enumerable: false,
     get() {
-      logger.warn(
-        chalk.yellow.bold(
-          `(!) "alias" config option is deprecated. Use "resolve.alias" instead.\n` +
-            new Error().stack
-        )
+      logDeprecationWarning(
+        'alias',
+        'Use "resolve.alias" instead.',
+        new Error()
       )
       return resolved.resolve.alias
     }
   })
 
   if (config.dedupe) {
-    logger.warn(
-      chalk.bold.yellow(
-        '(!) "dedupe" option is deprecated. Use "resolve.dedupe" instead.'
-      )
-    )
+    logDeprecationWarning('dedupe', 'Use "resolve.dedupe" instead.')
   }
   Object.defineProperty(resolved, 'dedupe', {
     enumerable: false,
     get() {
-      logger.warn(
-        chalk.yellow.bold(
-          `(!) "dedupe" config option is deprecated. Use "resolve.dedupe" instead.\n` +
-            new Error().stack
-        )
+      logDeprecationWarning(
+        'dedupe',
+        'Use "resolve.dedupe" instead.',
+        new Error()
       )
       return resolved.resolve.dedupe
+    }
+  })
+
+  if (config.optimizeDeps?.keepNames) {
+    logDeprecationWarning(
+      'optimizeDeps.keepNames',
+      'Use "optimizeDeps.esbuildOptions.keepNames" instead.'
+    )
+  }
+  Object.defineProperty(resolved.optimizeDeps, 'keepNames', {
+    enumerable: false,
+    get() {
+      logDeprecationWarning(
+        'optimizeDeps.keepNames',
+        'Use "optimizeDeps.esbuildOptions.keepNames" instead.',
+        new Error()
+      )
+      return resolved.optimizeDeps.esbuildOptions?.keepNames
     }
   })
 

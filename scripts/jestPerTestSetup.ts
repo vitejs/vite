@@ -10,6 +10,7 @@ const isBuildTest = !!process.env.VITE_TEST_BUILD
 
 // injected by the test env
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface Global {
       page?: Page
@@ -73,11 +74,11 @@ beforeAll(async () => {
             // misses change events, so enforce polling for consistency
             usePolling: true,
             interval: 100
-          }
+          },
+          host: true
         },
         build: {
-          // skip transpilation and dynamic import polyfills during tests to
-          // make it faster
+          // skip transpilation during tests to make it faster
           target: 'esnext'
         }
       }
@@ -101,7 +102,7 @@ beforeAll(async () => {
     // https://github.com/facebook/jest/issues/2713
     err = e
 
-    // Closing the page since an error in the setup, for example a runtime error 
+    // Closing the page since an error in the setup, for example a runtime error
     // when building the playground should skip further tests.
     // If the page remains open, a command like `await page.click(...)` produces
     // a timeout with an exception that hides the real error in the console.

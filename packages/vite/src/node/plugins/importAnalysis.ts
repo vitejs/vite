@@ -112,6 +112,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const rewriteStart = Date.now()
       await init
       let imports: readonly ImportSpecifier[] = []
+      // strip UTF-8 BOM
+      if (source.charCodeAt(0) === 0xfeff) {
+        source = source.slice(1)
+      }
       try {
         imports = parseImports(source)[0]
       } catch (e) {

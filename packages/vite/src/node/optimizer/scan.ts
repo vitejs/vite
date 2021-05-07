@@ -11,7 +11,6 @@ import {
 } from '../constants'
 import {
   createDebugger,
-  emptyDir,
   normalizePath,
   isObject,
   cleanUrl,
@@ -85,33 +84,27 @@ export async function scanImports(
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
   }
 
-  const tempDir = path.join(config.cacheDir!, 'temp')
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
+  const { plugins = [], ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
   await Promise.all(
     entries.map((entry) =>
       build({
+        write: false,
         entryPoints: [entry],
         bundle: true,
         format: 'esm',
         logLevel: 'error',
-        outdir: tempDir,
-        plugins: [plugin]
+        plugins: [...plugins, plugin],
+        ...esbuildOptions
       })
     )
   )
-
-  try {
-    emptyDir(tempDir)
-    fs.rmdirSync(tempDir)
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      throw err
-    }
-  }
 
   debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 

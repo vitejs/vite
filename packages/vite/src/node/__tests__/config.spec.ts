@@ -1,4 +1,5 @@
-import { mergeConfig, UserConfigExport } from '../config'
+import { InlineConfig } from '..'
+import { mergeConfig, resolveConfig, UserConfigExport } from '../config'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -90,5 +91,51 @@ describe('mergeConfig', () => {
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+})
+
+describe('resolveConfig', () => {
+  beforeAll(() => {
+    // silence deprecation warning
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterAll(() => {
+    jest.clearAllMocks()
+  })
+
+  test('copies optimizeDeps.keepNames to esbuildOptions.keepNames', async () => {
+    const config: InlineConfig = {
+      optimizeDeps: {
+        keepNames: false
+      }
+    }
+
+    expect(await resolveConfig(config, 'serve')).toMatchObject({
+      optimizeDeps: {
+        esbuildOptions: {
+          keepNames: false
+        }
+      }
+    })
+  })
+
+  test('uses esbuildOptions.keepNames if set', async () => {
+    const config: InlineConfig = {
+      optimizeDeps: {
+        keepNames: true,
+        esbuildOptions: {
+          keepNames: false
+        }
+      }
+    }
+
+    expect(await resolveConfig(config, 'serve')).toMatchObject({
+      optimizeDeps: {
+        esbuildOptions: {
+          keepNames: false
+        }
+      }
+    })
   })
 })

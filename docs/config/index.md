@@ -165,8 +165,7 @@ export default async ({ command, mode }) => {
 
 - **Type:** `string[]`
 
-  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from
-  project root).
+  If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from project root).
 
 ### resolve.conditions
 
@@ -328,8 +327,12 @@ export default async ({ command, mode }) => {
 ### server.host
 
 - **Type:** `string`
+- **Default:** `'127.0.0.1'`
 
-  Specify server hostname.
+  Specify which IP addresses the server should listen on.
+  Set this to `0.0.0.0` to listen on all addresses, including LAN and public addresses.
+  
+  This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 ### server.port
 
@@ -442,21 +445,6 @@ export default async ({ command, mode }) => {
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
   Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
-
-### build.polyfillDynamicImport
-
-- **Type:** `boolean`
-- **Default:** `true` unless `build.target` is `'esnext'`
-
-  Whether to automatically inject [dynamic import polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill).
-
-  The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-html custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
-
-  ```js
-  import 'vite/dynamic-import-polyfill'
-  ```
-
-  Note: the polyfill does **not** apply to [Library Mode](/guide/build#library-mode). If you need to support browsers without native dynamic import, you should probably avoid using it in your library.
 
 ### build.outDir
 
