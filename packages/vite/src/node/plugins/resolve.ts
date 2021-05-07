@@ -144,7 +144,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
               bareImport,
               importer,
               options,
-              ssr,
+              targetWeb,
               server
             )) &&
             res.id.startsWith(normalizedFsPath)
