@@ -616,3 +616,10 @@ SSR options may be adjusted in minor releases.
 - **Type:** `string[]`
 
   Prevent listed dependencies from being externalized for SSR.
+
+### ssr.target
+
+- **Type:** `'node' | 'webworker'`
+- **Default:** `node`
+
+  Build target for the SSR server.
