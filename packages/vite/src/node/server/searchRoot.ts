@@ -4,7 +4,7 @@ import { join } from 'path'
 
 // https://github.com/vitejs/vite/issues/2820#issuecomment-812495079
 const ROOT_FILES = [
-  '.git',
+  // '.git',
 
   // https://pnpm.js.org/workspaces/
   'pnpm-workspace.yaml'

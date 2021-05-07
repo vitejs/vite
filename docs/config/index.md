@@ -435,8 +435,7 @@ export default async ({ command, mode }) => {
   
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
   - contains `workspaces` field in `package.json`
-  - contains one of the following directory/file
-    - `.git`
+  - contains one of the following file
     - `pnpm-workspace.yaml`
 
 ## Build Options
