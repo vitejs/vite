@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs'
 import path from 'path'
+import { SourceMap } from 'rollup'
 
 export async function injectSourcesContent(
   map: { sources: string[]; sourcesContent?: string[]; sourceRoot?: string },
@@ -17,4 +18,13 @@ export async function injectSourcesContent(
       )
     })
   )
+}
+
+export function genSourceMapString(map: SourceMap | string | undefined) {
+  if (typeof map !== 'string') {
+    map = JSON.stringify(map)
+  }
+  return `\n//# sourceMappingURL=data:application/json;base64,${Buffer.from(
+    map
+  ).toString('base64')}`
 }

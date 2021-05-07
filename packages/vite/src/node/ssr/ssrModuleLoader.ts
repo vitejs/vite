@@ -1,8 +1,8 @@
 import fs from 'fs'
+import vm from 'vm'
 import path from 'path'
 import { ViteDevServer } from '..'
 import { cleanUrl, resolveFrom, unwrapId } from '../utils'
-import { ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
   ssrModuleExportsKey,
@@ -11,6 +11,7 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
+import { genSourceMapString } from '../server/sourcemap'
 
 interface SSRContext {
   global: NodeJS.Global
@@ -123,34 +124,32 @@ async function instantiateModule(
     }
   }
 
-  try {
-    new Function(
-      `global`,
-      ssrModuleExportsKey,
-      ssrImportMetaKey,
-      ssrImportKey,
-      ssrDynamicImportKey,
-      ssrExportAllKey,
-      result.code + `\n//# sourceURL=${mod.url}`
-    )(
-      context.global,
-      ssrModule,
-      ssrImportMeta,
-      ssrImport,
-      ssrDynamicImport,
-      ssrExportAll
-    )
-  } catch (e) {
-    e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
-    server.config.logger.error(
-      `Error when evaluating SSR module ${url}:\n${e.stack}`,
-      {
-        timestamp: true,
-        clear: server.config.clearScreen
-      }
-    )
-    throw e
-  }
+  vm.runInNewContext(
+    result.code +
+      genSourceMapString(
+        result.map
+          ? mod.file
+            ? {
+                ...result.map,
+                // When we have a file, we can let node handle sourcesContent
+                sources: [mod.file],
+                sourcesContent: []
+              }
+            : result.map
+          : undefined
+      ),
+    {
+      global: context.global,
+      [ssrModuleExportsKey]: ssrModule,
+      [ssrImportMetaKey]: ssrImportMeta,
+      [ssrImportKey]: ssrImport,
+      [ssrDynamicImportKey]: ssrDynamicImport,
+      [ssrExportAllKey]: ssrExportAll
+    },
+    {
+      filename: mod.file || mod.url
+    }
+  )
 
   mod.ssrModule = Object.freeze(ssrModule)
   return ssrModule

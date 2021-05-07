@@ -48,7 +48,6 @@ import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
-import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
@@ -357,9 +356,9 @@ export async function createServer(
       return ssrLoadModule(url, server)
     },
     ssrFixStacktrace(e) {
-      if (e.stack) {
-        e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
-      }
+      this.config.logger.warn(
+        `ViteDevServer.ssrFixStacktrace is deprecated. Use "node --enable-source-maps" or "node -r source-map-support/register" instead.`
+      )
     },
     listen(port?: number, isRestart?: boolean) {
       return startServer(server, port, isRestart)

@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import getEtag from 'etag'
 import { SourceMap } from 'rollup'
+import { genSourceMapString } from './sourcemap'
 
 const isDebug = process.env.DEBUG
 
@@ -42,13 +43,4 @@ export function send(
 
   res.statusCode = 200
   return res.end(content)
-}
-
-function genSourceMapString(map: SourceMap | string | undefined) {
-  if (typeof map !== 'string') {
-    map = JSON.stringify(map)
-  }
-  return `\n//# sourceMappingURL=data:application/json;base64,${Buffer.from(
-    map
-  ).toString('base64')}`
 }
