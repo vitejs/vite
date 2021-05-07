@@ -139,7 +139,7 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
         return transformVueJsx(code, id, options.jsxOptions)
       }
 
-      if (!query.vue && !filter(filename)) {
+      if ((!query.vue && !filter(filename)) || query.raw) {
         return
       }
 
