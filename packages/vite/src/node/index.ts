@@ -12,6 +12,7 @@ export type {
   ViteDevServer,
   ServerOptions,
   CorsOptions,
+  FileSystemServeOptions,
   CorsOrigin,
   ServerHook
 } from './server'
