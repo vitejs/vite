@@ -144,7 +144,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
               bareImport,
               importer,
               options,
-              ssr,
+              ssrTarget === 'webworker',
               server
             )) &&
             res.id.startsWith(normalizedFsPath)
