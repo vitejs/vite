@@ -1,4 +1,3 @@
-import os from 'os'
 import fs from 'fs'
 import path from 'path'
 import * as net from 'net'
@@ -51,6 +50,7 @@ import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
+import { printServerUrls } from '../logger'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -596,29 +596,7 @@ async function startServer(
         }
       )
 
-      if (hostname === '127.0.0.1') {
-        const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
-        info(`  > Local: ${chalk.cyan(url)}`)
-        info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
-      } else {
-        const interfaces = os.networkInterfaces()
-        Object.keys(interfaces).forEach((key) =>
-          (interfaces[key] || [])
-            .filter((details) => details.family === 'IPv4')
-            .map((detail) => {
-              return {
-                type: detail.address.includes('127.0.0.1')
-                  ? 'Local:   '
-                  : 'Network: ',
-                host: detail.address
-              }
-            })
-            .forEach(({ type, host }) => {
-              const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-              info(`  > ${type} ${chalk.cyan(url)}`)
-            })
-        )
-      }
+      printServerUrls(hostname, protocol, port, base, info)
 
       // @ts-ignore
       if (global.__vite_start_time) {

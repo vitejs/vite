@@ -2,6 +2,7 @@
 
 import chalk from 'chalk'
 import readline from 'readline'
+import os from 'os'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -107,4 +108,31 @@ export function createLogger(
   }
 
   return logger
+}
+
+export function printServerUrls(
+  hostname: string | undefined,
+  protocol: string,
+  port: number,
+  base: string,
+  info: Logger['info']
+): void {
+  if (hostname === '127.0.0.1') {
+    const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
+    info(`  > Local: ${chalk.cyan(url)}`)
+    info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+  } else {
+    Object.values(os.networkInterfaces())
+      .flatMap((nInterface) => nInterface ?? [])
+      .filter((detail) => detail.family === 'IPv4')
+      .map((detail) => {
+        const type = detail.address.includes('127.0.0.1')
+          ? 'Local:   '
+          : 'Network: '
+        const host = detail.address
+        const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+        return `  > ${type} ${chalk.cyan(url)}`
+      })
+      .forEach((msg) => info(msg))
+  }
 }
