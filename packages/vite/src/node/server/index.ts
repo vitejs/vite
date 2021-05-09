@@ -126,6 +126,10 @@ export interface ServerOptions {
   fsServe?: FileSystemServeOptions
 }
 
+export interface ResolvedServerOptions extends ServerOptions {
+  fsServe: Required<FileSystemServeOptions>
+}
+
 export interface FileSystemServeOptions {
   /**
    * Restrict accessing files outside this directory will result in a 403.
@@ -276,7 +280,7 @@ export async function createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
-  const serverConfig = config.server || {}
+  const serverConfig = config.server
   const middlewareMode = !!serverConfig.middlewareMode
 
   const middlewares = connect() as Connect.Server
@@ -550,7 +554,7 @@ async function startServer(
     throw new Error('Cannot call server.listen in middleware mode.')
   }
 
-  const options = server.config.server || {}
+  const options = server.config.server
   let port = inlinePort || options.port || 3000
   let hostname: string | undefined
   if (options.host === undefined || options.host === 'localhost') {

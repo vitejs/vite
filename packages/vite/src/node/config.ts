@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from './plugin'
 import { BuildOptions, resolveBuildOptions } from './build'
-import { ServerOptions } from './server'
+import { ResolvedServerOptions, ServerOptions } from './server'
 import { CSSOptions } from './plugins/css'
 import {
   createDebugger,
@@ -35,6 +35,7 @@ import {
 } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
+import { searchForWorkspaceRoot } from './server/searchRoot'
 
 const debug = createDebugger('vite:config')
 
@@ -201,7 +202,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
-    server: ServerOptions
+    server: ResolvedServerOptions
     build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
@@ -369,6 +370,13 @@ export async function resolveConfig(
     }
   }
 
+  const server = config.server || {}
+  const serverRoot = path.resolve(
+    resolvedRoot,
+    server.fsServe?.root || searchForWorkspaceRoot(resolvedRoot)
+  )
+  server.fsServe = { root: serverRoot }
+
   const { publicDir } = config
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
@@ -392,7 +400,7 @@ export async function resolveConfig(
     mode,
     isProduction,
     plugins: userPlugins,
-    server: config.server || {},
+    server: server as ResolvedServerOptions,
     build: resolvedBuildOptions,
     env: {
       ...userEnv,
