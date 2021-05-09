@@ -371,7 +371,7 @@ export async function resolveConfig(
   }
 
   const server = config.server || {}
-  const serverRoot = path.resolve(
+  const serverRoot = path.posix.resolve(
     resolvedRoot,
     server.fsServe?.root || searchForWorkspaceRoot(resolvedRoot)
   )
