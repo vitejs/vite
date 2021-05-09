@@ -116,7 +116,8 @@ function reactRefreshPlugin(opts) {
         plugins: [
           require('@babel/plugin-transform-react-jsx-self'),
           require('@babel/plugin-transform-react-jsx-source'),
-          [require('react-refresh/babel'), { skipEnvCheck: true }]
+          [require('react-refresh/babel'), { skipEnvCheck: true }],
+          ...(opts.plugins || [])
         ],
         ast: !isReasonReact,
         sourceMaps: true,
