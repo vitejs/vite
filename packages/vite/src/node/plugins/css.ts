@@ -392,6 +392,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(opts, bundle) {
+      // @ts-ignore injected by @vitejs/plugin-legacy
+      if (opts.__vite_legacy) {
+        return
+      }
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
         const emptyChunkFiles = [...pureCssChunks]
