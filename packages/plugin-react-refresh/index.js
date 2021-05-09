@@ -102,12 +102,16 @@ function reactRefreshPlugin(opts) {
 
       const isReasonReact = id.endsWith('.bs.js')
       const result = transformSync(code, {
+        babelrc: false,
         configFile: false,
         filename: id,
         parserOpts: {
           sourceType: 'module',
           allowAwaitOutsideFunction: true,
           plugins: parserPlugins
+        },
+        generatorOpts: {
+          decoratorsBeforeExport: true
         },
         plugins: [
           require('@babel/plugin-transform-react-jsx-self'),
@@ -132,7 +136,7 @@ function reactRefreshPlugin(opts) {
 
   if (!window.__vite_plugin_react_preamble_installed__) {
     throw new Error(
-      "vite-plugin-react can't detect preamble. Something is wrong. " +
+      "@vitejs/plugin-react-refresh can't detect preamble. Something is wrong. " +
       "See https://github.com/vitejs/vite-plugin-react/pull/11#discussion_r430879201"
     );
   }
@@ -196,22 +200,33 @@ function isRefreshBoundary(ast) {
       return true
     }
     const { declaration, specifiers } = node
-    if (declaration && declaration.type === 'VariableDeclaration') {
-      return declaration.declarations.every(
-        ({ id }) => id.type === 'Identifier' && isComponentishName(id.name)
-      )
+    if (declaration) {
+      if (declaration.type === 'VariableDeclaration') {
+        return declaration.declarations.every((variable) =>
+          isComponentLikeIdentifier(variable.id)
+        )
+      }
+      if (declaration.type === 'FunctionDeclaration') {
+        return isComponentLikeIdentifier(declaration.id)
+      }
     }
-    return specifiers.every(
-      ({ exported }) =>
-        exported.type === 'Identifier' && isComponentishName(exported.name)
-    )
+    return specifiers.every((spec) => {
+      return isComponentLikeIdentifier(spec.exported)
+    })
   })
+}
+
+/**
+ * @param {import('@babel/types').Node} node
+ */
+function isComponentLikeIdentifier(node) {
+  return node.type === 'Identifier' && isComponentLikeName(node.name)
 }
 
 /**
  * @param {string} name
  */
-function isComponentishName(name) {
+function isComponentLikeName(name) {
   return typeof name === 'string' && name[0] >= 'A' && name[0] <= 'Z'
 }
 

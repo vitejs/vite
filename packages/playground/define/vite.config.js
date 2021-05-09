@@ -9,6 +9,7 @@ module.exports = {
       bar: {
         baz: 2
       }
-    }
+    },
+    'process.env.SOMEVAR': '"SOMEVAR"'
   }
 }

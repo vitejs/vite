@@ -3,23 +3,28 @@ import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { parse as parseUrl } from 'url'
+import { pathToFileURL, URL } from 'url'
 import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
+import remapping from '@ampproject/remapping'
+import {
+  DecodedSourceMap,
+  RawSourceMap
+} from '@ampproject/remapping/dist/types/types'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-// Strip valid id prefix. This is preprended to resolved Ids that are
+// Strip valid id prefix. This is prepended to resolved Ids that are
 // not valid browser import specifiers by the importAnalysis plugin.
 export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
 }
 
-export const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
+export const flattenId = (id: string): string => id.replace(/[\/\.]/g, '_')
 
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
@@ -35,7 +40,7 @@ try {
 
 const ssrExtensions = ['.js', '.json', '.node']
 
-export function resolveFrom(id: string, basedir: string, ssr = false) {
+export function resolveFrom(id: string, basedir: string, ssr = false): string {
   return resolve.sync(id, {
     basedir,
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
@@ -53,7 +58,10 @@ interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
 }
 
-export function createDebugger(ns: string, options: DebuggerOptions = {}) {
+export function createDebugger(
+  ns: string,
+  options: DebuggerOptions = {}
+): debug.Debugger['log'] {
   const log = debug(ns)
   const { onlyWhenFocused } = options
   const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns
@@ -89,17 +97,17 @@ export function ensureVolumeInPath(file: string): string {
 export const queryRE = /\?.*$/
 export const hashRE = /#.*$/
 
-export const cleanUrl = (url: string) =>
+export const cleanUrl = (url: string): string =>
   url.replace(hashRE, '').replace(queryRE, '')
 
 export const externalRE = /^(https?:)?\/\//
-export const isExternalUrl = (url: string) => externalRE.test(url)
+export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
 export const dataUrlRE = /^\s*data:/i
-export const isDataUrl = (url: string) => dataUrlRE.test(url)
+export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue)($|\?)/
-export const isJSRequest = (url: string) => {
+const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte)($|\?)/
+export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
@@ -112,21 +120,31 @@ export const isJSRequest = (url: string) => {
 
 const importQueryRE = /(\?|&)import(?:&|$)/
 const trailingSeparatorRE = /[\?&]$/
-export const isImportRequest = (url: string) => importQueryRE.test(url)
+export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 
-export function removeImportQuery(url: string) {
+export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export function injectQuery(url: string, queryToInject: string) {
-  const { pathname, search, hash } = parseUrl(url)
+export function injectQuery(url: string, queryToInject: string): string {
+  // encode percents for consistent behavior with pathToFileURL
+  // see #2614 for details
+  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
+  if (resolvedUrl.protocol !== 'relative:') {
+    resolvedUrl = pathToFileURL(url)
+  }
+  let { protocol, pathname, search, hash } = resolvedUrl
+  if (protocol === 'file:') {
+    pathname = pathname.slice(1)
+  }
+  pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
 }
 
 const timestampRE = /\bt=\d{13}&?\b/
-export function removeTimestampQuery(url: string) {
+export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
@@ -134,7 +152,7 @@ export async function asyncReplace(
   input: string,
   re: RegExp,
   replacer: (match: RegExpExecArray) => string | Promise<string>
-) {
+): Promise<string> {
   let match: RegExpExecArray | null
   let remaining = input
   let rewritten = ''
@@ -147,7 +165,7 @@ export async function asyncReplace(
   return rewritten
 }
 
-export function timeFrom(start: number, subtract = 0) {
+export function timeFrom(start: number, subtract = 0): string {
   const time: number | string = Date.now() - start - subtract
   const timeString = (time + `ms`).padEnd(5, ' ')
   if (time < 10) {
@@ -162,14 +180,11 @@ export function timeFrom(start: number, subtract = 0) {
 /**
  * pretty url for logging.
  */
-export function prettifyUrl(url: string, root: string) {
+export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    let file = path.relative(
-      root,
-      isAbsoluteFile ? url : url.slice(FS_PREFIX.length)
-    )
+    let file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
     const seg = file.split('/')
     const npmIndex = seg.indexOf(`node_modules`)
     const isSourceMap = file.endsWith('.map')
@@ -188,6 +203,10 @@ export function prettifyUrl(url: string, root: string) {
 
 export function isObject(value: unknown): value is Record<string, any> {
   return Object.prototype.toString.call(value) === '[object Object]'
+}
+
+export function isDefined<T>(value: T | undefined | null): value is T {
+  return value !== undefined && value !== null
 }
 
 export function lookupFile(
@@ -211,7 +230,7 @@ const splitRE = /\r?\n/
 
 const range: number = 2
 
-export function pad(source: string, n = 2) {
+export function pad(source: string, n = 2): string {
   const lines = source.split(splitRE)
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
@@ -233,7 +252,7 @@ export function posToNumber(
 export function numberToPos(
   source: string,
   offset: number | { line: number; column: number }
-) {
+): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
     throw new Error('offset is longer than source length!')
@@ -297,7 +316,10 @@ export function generateCodeFrame(
   return res.join('\n')
 }
 
-export function writeFile(filename: string, content: string | Uint8Array) {
+export function writeFile(
+  filename: string,
+  content: string | Uint8Array
+): void {
   const dir = path.dirname(filename)
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true })
@@ -305,11 +327,15 @@ export function writeFile(filename: string, content: string | Uint8Array) {
   fs.writeFileSync(filename, content)
 }
 
-export function emptyDir(dir: string) {
-  if (!fs.existsSync(dir)) {
-    return
-  }
+/**
+ * Delete every file and subdirectory. **The given directory must exist.**
+ * Pass an optional `skip` array to preserve files in the root directory.
+ */
+export function emptyDir(dir: string, skip?: string[]): void {
   for (const file of fs.readdirSync(dir)) {
+    if (skip?.includes(file)) {
+      continue
+    }
     const abs = path.resolve(dir, file)
     // baseline is Node 12 so can't use rmSync :(
     if (fs.lstatSync(abs).isDirectory()) {
@@ -321,7 +347,7 @@ export function emptyDir(dir: string) {
   }
 }
 
-export function copyDir(srcDir: string, destDir: string) {
+export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
@@ -339,7 +365,7 @@ export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,
   root: string
-) {
+): void {
   if (
     file &&
     // only need to watch if out of root
@@ -351,4 +377,90 @@ export function ensureWatchedFile(
     // resolve file to normalized system path
     watcher.add(path.resolve(file))
   }
+}
+
+interface ImageCandidate {
+  url: string
+  descriptor: string
+}
+const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
+export async function processSrcSet(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => Promise<string>
+): Promise<string> {
+  const imageCandidates: ImageCandidate[] = srcs
+    .split(',')
+    .map((s) => {
+      const [url, descriptor] = s
+        .replace(escapedSpaceCharacters, ' ')
+        .trim()
+        .split(' ', 2)
+      return { url, descriptor }
+    })
+    .filter(({ url }) => !!url)
+
+  const ret = await Promise.all(
+    imageCandidates.map(async ({ url, descriptor }) => {
+      return {
+        url: await replacer({ url, descriptor }),
+        descriptor
+      }
+    })
+  )
+
+  const url = ret.reduce((prev, { url, descriptor }, index) => {
+    descriptor = descriptor || ''
+    return (prev +=
+      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
+  }, '')
+
+  return url
+}
+
+// based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221
+const nullSourceMap: RawSourceMap = {
+  names: [],
+  sources: [],
+  mappings: '',
+  version: 3
+}
+export function combineSourcemaps(
+  filename: string,
+  sourcemapList: Array<DecodedSourceMap | RawSourceMap>
+): RawSourceMap {
+  if (
+    sourcemapList.length === 0 ||
+    sourcemapList.every((m) => m.sources.length === 0)
+  ) {
+    return { ...nullSourceMap }
+  }
+
+  let map
+  let mapIndex = 1
+  const useArrayInterface =
+    sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
+  if (useArrayInterface) {
+    map = remapping(sourcemapList, () => null, true)
+  } else {
+    map = remapping(
+      sourcemapList[0],
+      function loader(sourcefile) {
+        if (sourcefile === filename && sourcemapList[mapIndex]) {
+          return sourcemapList[mapIndex++]
+        } else {
+          return { ...nullSourceMap }
+        }
+      },
+      true
+    )
+  }
+  if (!map.file) {
+    delete map.file
+  }
+
+  return map as RawSourceMap
+}
+
+export function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
 }

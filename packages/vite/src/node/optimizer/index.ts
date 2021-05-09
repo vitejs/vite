@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { createHash } from 'crypto'
+import { build, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { ResolvedConfig } from '../config'
 import {
   createDebugger,
@@ -14,11 +15,14 @@ import {
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { ImportSpecifier, init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
-import { ensureService, stopService } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
-export type ExportsData = [ImportSpecifier[], string[]]
+export type ExportsData = [ImportSpecifier[], string[]] & {
+  // es-module-lexer has a facade detection but isn't always accurate for our
+  // use case when the module has default export
+  hasReExports?: true
+}
 
 export interface DepOptimizationOptions {
   /**
@@ -33,7 +37,7 @@ export interface DepOptimizationOptions {
    */
   entries?: string | string[]
   /**
-   * Force optimize listed dependencies (must be resolvalble import paths,
+   * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
    */
   include?: string[]
@@ -42,12 +46,41 @@ export interface DepOptimizationOptions {
    * cannot be globs).
    */
   exclude?: string[]
+  /**
+   * Options to pass to esbuild during the dep scanning and optimization
+   *
+   * Certain options are omitted since changing them would not be compatible
+   * with Vite's dep optimization.
+   *
+   * - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
+   * - `plugins` are merged with Vite's dep plugin
+   * - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
+   *
+   * https://esbuild.github.io/api
+   */
+  esbuildOptions?: Omit<
+    EsbuildBuildOptions,
+    | 'bundle'
+    | 'entryPoints'
+    | 'external'
+    | 'write'
+    | 'watch'
+    | 'outdir'
+    | 'outfile'
+    | 'outbase'
+    | 'outExtension'
+    | 'metafile'
+  >
+  /**
+   * @deprecated use `esbuildOptions.keepNames`
+   */
+  keepNames?: boolean
 }
 
 export interface DepOptimizationMetadata {
   /**
    * The main hash is determined by user config and dependency lockfiles.
-   * This is checked on server startup to avoid unncessary re-bundles.
+   * This is checked on server startup to avoid unnecessary re-bundles.
    */
   hash: string
   /**
@@ -77,11 +110,11 @@ export async function optimizeDeps(
     command: 'build'
   }
 
-  const { root, logger, optimizeCacheDir: cacheDir } = config
+  const { root, logger, cacheDir } = config
   const log = asCommand ? logger.info : debug
 
   if (!cacheDir) {
-    log(`No package.json. Skipping.`)
+    log(`No cache directory. Skipping.`)
     return null
   }
 
@@ -187,8 +220,6 @@ export async function optimizeDeps(
     logger.info(chalk.greenBright(`Optimizing dependencies:\n  ${depsString}`))
   }
 
-  const esbuildMetaPath = path.join(cacheDir, '_esbuild.json')
-
   // esbuild generates nested directory output with lowest common ancestor base
   // this is unpredictable and makes it difficult to analyze entry / output
   // mapping. So what we do here is:
@@ -203,7 +234,14 @@ export async function optimizeDeps(
   for (const id in deps) {
     const flatId = flattenId(id)
     flatIdDeps[flatId] = deps[id]
-    const exportsData = parse(fs.readFileSync(deps[id], 'utf-8'))
+    const entryContent = fs.readFileSync(deps[id], 'utf-8')
+    const exportsData = parse(entryContent) as ExportsData
+    for (const { ss, se } of exportsData[0]) {
+      const exp = entryContent.slice(ss, se)
+      if (/export\s+\*\s+from/.test(exp)) {
+        exportsData.hasReExports = true
+      }
+    }
     idToExports[id] = exportsData
     flatIdToExports[flatId] = exportsData
   }
@@ -212,12 +250,16 @@ export async function optimizeDeps(
     'process.env.NODE_ENV': JSON.stringify(config.mode)
   }
   for (const key in config.define) {
-    define[key] = JSON.stringify(config.define[key])
+    const value = config.define[key]
+    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
   }
 
   const start = Date.now()
-  const esbuildService = await ensureService()
-  await esbuildService.build({
+
+  const { plugins = [], ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
+  const result = await build({
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
@@ -227,26 +269,35 @@ export async function optimizeDeps(
     sourcemap: true,
     outdir: cacheDir,
     treeShaking: 'ignore-annotations',
-    metafile: esbuildMetaPath,
+    metafile: true,
     define,
-    plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
+    plugins: [
+      ...plugins,
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
+    ],
+    ...esbuildOptions
   })
 
-  const meta = JSON.parse(fs.readFileSync(esbuildMetaPath, 'utf-8'))
+  const meta = result.metafile!
+
+  // the paths in `meta.outputs` are relative to `process.cwd()`
+  const cacheDirOutputPath = path.relative(process.cwd(), cacheDir)
 
   for (const id in deps) {
     const entry = deps[id]
     data.optimized[id] = {
       file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
       src: entry,
-      needsInterop: needsInterop(id, idToExports[id], meta.outputs)
+      needsInterop: needsInterop(
+        id,
+        idToExports[id],
+        meta.outputs,
+        cacheDirOutputPath
+      )
     }
   }
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
-  if (asCommand) {
-    await stopService()
-  }
 
   debug(`deps bundled in ${Date.now() - start}ms`)
   return data
@@ -260,7 +311,8 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 function needsInterop(
   id: string,
   exportsData: ExportsData,
-  outputs: Record<string, any>
+  outputs: Record<string, any>,
+  cacheDirOutputPath: string
 ): boolean {
   if (KNOWN_INTEROP_IDS.has(id)) {
     return true
@@ -271,13 +323,16 @@ function needsInterop(
     return true
   }
 
-  // if a peer dep used require() on a ESM dep, esbuild turns the
-  // ESM dep's entry chunk into a single default export... detect
+  // if a peer dependency used require() on a ESM dependency, esbuild turns the
+  // ESM dependency's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
   const flatId = flattenId(id) + '.js'
   let generatedExports: string[] | undefined
   for (const output in outputs) {
-    if (normalizePath(output).endsWith('.vite/' + flatId)) {
+    if (
+      normalizePath(output) ===
+      normalizePath(path.join(cacheDirOutputPath, flatId))
+    ) {
       generatedExports = outputs[output].exports
       break
     }

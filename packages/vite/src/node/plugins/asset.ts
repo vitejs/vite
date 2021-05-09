@@ -102,7 +102,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function registerAssetToChunk(chunk: RenderedChunk, file: string) {
+export function registerAssetToChunk(chunk: RenderedChunk, file: string): void {
   let emitted = chunkToEmittedAssetsMap.get(chunk)
   if (!emitted) {
     emitted = new Set()
@@ -117,7 +117,7 @@ export function checkPublicFile(
 ): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
-  if (!url.startsWith('/')) {
+  if (!publicDir || !url.startsWith('/')) {
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
@@ -132,7 +132,7 @@ export function fileToUrl(
   id: string,
   config: ResolvedConfig,
   ctx: PluginContext
-) {
+): string | Promise<string> {
   if (config.command === 'serve') {
     return fileToDevUrl(id, config)
   } else {
@@ -140,7 +140,7 @@ export function fileToUrl(
   }
 }
 
-export function fileToDevUrl(id: string, config: ResolvedConfig) {
+function fileToDevUrl(id: string, config: ResolvedConfig) {
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir, keep the url as-is
@@ -163,7 +163,10 @@ const assetHashToFilenameMap = new WeakMap<
   Map<string, string>
 >()
 
-export function getAssetFilename(hash: string, config: ResolvedConfig) {
+export function getAssetFilename(
+  hash: string,
+  config: ResolvedConfig
+): string | undefined {
   return assetHashToFilenameMap.get(config)?.get(hash)
 }
 

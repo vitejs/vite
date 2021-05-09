@@ -16,7 +16,9 @@ import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId } from '../../utils'
 import { assetAttrsConfig } from '../../plugins/html'
 
-export function createDevHtmlTransformFn(server: ViteDevServer) {
+export function createDevHtmlTransformFn(
+  server: ViteDevServer
+): (url: string, html: string) => Promise<string> {
   const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
 
   return (url: string, html: string): Promise<string> => {
@@ -38,10 +40,14 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   }
 }
 
+const startsWithSingleSlashRE = /^\/(?!\/)/
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, server }
 ) => {
+  // TODO: solve this design issue
+  // Optional chain expressions can return undefined by design
+  // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
   const config = server?.config!
   const base = config.base || '/'
 
@@ -62,7 +68,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       if (src) {
         const url = src.value?.content || ''
-        if (url.startsWith('/')) {
+        if (startsWithSingleSlashRE.test(url)) {
           // prefix with base
           s.overwrite(
             src.value!.loc.start.offset,
@@ -92,7 +98,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           assetAttrs.includes(p.name)
         ) {
           const url = p.value.content || ''
-          if (url.startsWith('/')) {
+          if (startsWithSingleSlashRE.test(url)) {
             s.overwrite(
               p.value.loc.start.offset,
               p.value.loc.end.offset,
@@ -124,7 +130,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 export function indexHtmlMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
-  return async (req, res, next) => {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return async function viteIndexHtmlMiddleware(req, res, next) {
     const url = req.url && cleanUrl(req.url)
     // spa-fallback always redirects to /index.html
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {

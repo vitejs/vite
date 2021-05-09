@@ -6,9 +6,8 @@
 <br/>
 <p align="center">
   <a href="https://npmjs.com/package/vite"><img src="https://img.shields.io/npm/v/vite.svg" alt="npm package"></a>
-  <a href="https://nodejs.org/en/about/releases/"><img src="https://img.shields.io/node/v/vite.svg" alt="node compatility"></a>
-  <a href="https://app.circleci.com/pipelines/github/vitejs/vite?branch=main"><img src="https://circleci.com/gh/vitejs/vite/tree/main.svg?style=shield" alt="unix build status"></a>
-  <a href="https://ci.appveyor.com/project/yyx990803/vite/branch/main"><img src="https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/main?svg=true" alt="windows build status"></a>
+  <a href="https://nodejs.org/en/about/releases/"><img src="https://img.shields.io/node/v/vite.svg" alt="node compatibility"></a>
+  <a href="https://github.com/vitejs/vite/actions/workflows/ci.yml"><img src="https://github.com/vitejs/vite/actions/workflows/ci.yml/badge.svg?branch=main" alt="build status"></a>
   <a href="https://chat.vitejs.dev"><img src="https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord" alt="discord chat"></a>
 </p>
 <br/>
@@ -36,7 +35,7 @@ In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/g
 
 ## Migrating from 1.x
 
-Vite is now in 2.0 beta. Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you are upgrading from 1.x.
+Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you are upgrading from 1.x.
 
 ## Packages
 
@@ -56,14 +55,3 @@ See [Contributing Guide](https://github.com/vitejs/vite/tree/main/.github/contri
 ## License
 
 MIT
-
-[npm-img]: https://img.shields.io/npm/v/vite.svg
-[npm-url]: https://npmjs.com/package/vite
-[node-img]: https://img.shields.io/node/v/vite.svg
-[node-url]: https://nodejs.org/en/about/releases/
-[unix-ci-img]: https://circleci.com/gh/vitejs/vite/tree/main.svg?style=shield
-[unix-ci-url]: https://app.circleci.com/pipelines/github/vitejs/vite?branch=main
-[windows-ci-img]: https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/main?svg=true
-[windows-ci-url]: https://ci.appveyor.com/project/yyx990803/vite/branch/main
-[discord-img]: https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord
-[discord-url]: https://chat.vitejs.dev

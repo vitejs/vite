@@ -24,7 +24,7 @@ export function buildErrorMessage(
   err: RollupError,
   args: string[] = [],
   includeStack = true
-) {
+): string {
   if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
   if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
   if (err.frame) args.push(chalk.yellow(pad(err.frame)))
@@ -44,7 +44,8 @@ export function errorMiddleware(
   allowNext = false
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
-  return (err: RollupError, _req, res, next) => {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteErrorMiddleware(err: RollupError, _req, res, next) {
     const msg = buildErrorMessage(err, [
       chalk.red(`Internal server error: ${err.message}`)
     ])

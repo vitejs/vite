@@ -18,6 +18,14 @@ test('should remove comments in prod', async () => {
   expect(await page.innerHTML('.comments')).toBe(isBuild ? `` : `<!--hello-->`)
 })
 
+test(':slotted', async () => {
+  expect(await getColor('.slotted')).toBe('red')
+})
+
+test('scan deps from <script setup lang="ts">', async () => {
+  expect(await page.textContent('.scan')).toBe('ok')
+})
+
 describe('pre-processors', () => {
   test('pug', async () => {
     expect(await page.textContent('p.pug')).toMatch(
@@ -132,6 +140,11 @@ describe('hmr', () => {
       code.replace('let foo: number = 0', 'let foo: number = 100')
     )
     await untilUpdated(() => page.textContent('.hmr-inc'), 'count is 100')
+  })
+
+  test('should re-render when template is emptied', async () => {
+    editFile('Hmr.vue', () => '')
+    await untilUpdated(() => page.innerHTML('.hmr-block'), '<!---->')
   })
 })
 

@@ -2,6 +2,7 @@
 
 import chalk from 'chalk'
 import readline from 'readline'
+import os from 'os'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -37,10 +38,17 @@ function clearScreen() {
   readline.clearScreenDown(process.stdout)
 }
 
+export interface LoggerOptions {
+  prefix?: string
+  allowClearScreen?: boolean
+}
+
 export function createLogger(
   level: LogLevel = 'info',
-  allowClearScreen = true
+  options: LoggerOptions = {}
 ): Logger {
+  const { prefix = '[vite]', allowClearScreen = true } = options
+
   const thresh = LogLevels[level]
   const clear =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
@@ -54,10 +62,10 @@ export function createLogger(
         if (options.timestamp) {
           const tag =
             type === 'info'
-              ? chalk.cyan.bold(`[vite]`)
+              ? chalk.cyan.bold(prefix)
               : type === 'warn'
-              ? chalk.yellow.bold(`[vite]`)
-              : chalk.red.bold(`[vite]`)
+              ? chalk.yellow.bold(prefix)
+              : chalk.red.bold(prefix)
           return `${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
         } else {
           return msg
@@ -100,4 +108,31 @@ export function createLogger(
   }
 
   return logger
+}
+
+export function printServerUrls(
+  hostname: string | undefined,
+  protocol: string,
+  port: number,
+  base: string,
+  info: Logger['info']
+): void {
+  if (hostname === '127.0.0.1') {
+    const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
+    info(`  > Local: ${chalk.cyan(url)}`)
+    info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+  } else {
+    Object.values(os.networkInterfaces())
+      .flatMap((nInterface) => nInterface ?? [])
+      .filter((detail) => detail.family === 'IPv4')
+      .map((detail) => {
+        const type = detail.address.includes('127.0.0.1')
+          ? 'Local:   '
+          : 'Network: '
+        const host = detail.address
+        const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
+        return `  > ${type} ${chalk.cyan(url)}`
+      })
+      .forEach((msg) => info(msg))
+  }
 }

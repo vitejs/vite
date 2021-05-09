@@ -1,4 +1,3 @@
-import os from 'os'
 import fs from 'fs'
 import path from 'path'
 import * as net from 'net'
@@ -25,6 +24,7 @@ import {
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
+import { decodeURIMiddleware } from './middlewares/decodeURI'
 import {
   serveRawFsMiddleware,
   servePublicMiddleware,
@@ -49,10 +49,11 @@ import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
-import { createMissingImpoterRegisterFn } from '../optimizer/registerMissing'
+import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
+import { printServerUrls } from '../logger'
 
 export interface ServerOptions {
-  host?: string
+  host?: string | boolean
   port?: number
   /**
    * Enable TLS + HTTP/2.
@@ -119,6 +120,20 @@ export interface ServerOptions {
    * Should start and end with the `/` character
    */
   base?: string
+  /**
+   * Options for files served via '/\@fs/'.
+   */
+  fsServe?: FileSystemServeOptions
+}
+
+export interface FileSystemServeOptions {
+  /**
+   * Restrict accessing files outside this directory will result in a 403.
+   *
+   * Accepts absolute path or a path relative to project root.
+   * Will try to search up for workspace root by default.
+   */
+  root?: string
 }
 
 /**
@@ -227,7 +242,7 @@ export interface ViteDevServer {
    */
   _optimizeDepsMetadata: DepOptimizationMetadata | null
   /**
-   * Deps that are extenralized
+   * Deps that are externalized
    * @internal
    */
   _ssrExternals: string[] | null
@@ -275,13 +290,17 @@ export async function createServer(
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
     ignoreInitial: true,
     ignorePermissionErrors: true,
+    disableGlobbing: true,
     ...watchOptions
   }) as FSWatcher
 
   const plugins = config.plugins
   const container = await createPluginContainer(config, watcher)
   const moduleGraph = new ModuleGraph(container)
-  const closeHttpServer = createSeverCloseFn(httpServer)
+  const closeHttpServer = createServerCloseFn(httpServer)
+
+  // eslint-disable-next-line prefer-const
+  let exitProcess: () => void
 
   const server: ViteDevServer = {
     config: config,
@@ -322,6 +341,12 @@ export async function createServer(
       return startServer(server, port, isRestart)
     },
     async close() {
+      process.off('SIGTERM', exitProcess)
+
+      if (!process.stdin.isTTY) {
+        process.stdin.off('end', exitProcess)
+      }
+
       await Promise.all([
         watcher.close(),
         ws.close(),
@@ -339,7 +364,7 @@ export async function createServer(
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
-  const exitProcess = async () => {
+  exitProcess = async () => {
     try {
       await server.close()
     } finally {
@@ -401,7 +426,7 @@ export async function createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    middlewares.use(proxyMiddleware(server))
+    middlewares.use(proxyMiddleware(httpServer, config))
   }
 
   // base
@@ -413,18 +438,26 @@ export async function createServer(
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
   // hmr reconnect ping
-  middlewares.use('/__vite_ping', (_, res) => res.end('pong'))
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  middlewares.use('/__vite_ping', function viteHMRPingMiddleware(_, res) {
+    res.end('pong')
+  })
+
+  //decode request url
+  middlewares.use(decodeURIMiddleware())
 
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  middlewares.use(servePublicMiddleware(config.publicDir))
+  if (config.publicDir) {
+    middlewares.use(servePublicMiddleware(config.publicDir))
+  }
 
   // main transform middleware
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(serveRawFsMiddleware())
+  middlewares.use(serveRawFsMiddleware(config))
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
@@ -459,7 +492,8 @@ export async function createServer(
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
     // handle 404s
-    middlewares.use((_, res) => {
+    // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+    middlewares.use(function vite404Middleware(_, res) {
       res.statusCode = 404
       res.end()
     })
@@ -469,14 +503,14 @@ export async function createServer(
   middlewares.use(errorMiddleware(server, middlewareMode))
 
   const runOptimize = async () => {
-    if (config.optimizeCacheDir) {
+    if (config.cacheDir) {
       server._isRunningOptimizer = true
       try {
         server._optimizeDepsMetadata = await optimizeDeps(config)
       } finally {
         server._isRunningOptimizer = false
       }
-      server._registerMissingImport = createMissingImpoterRegisterFn(server)
+      server._registerMissingImport = createMissingImporterRegisterFn(server)
     }
   }
 
@@ -499,6 +533,7 @@ export async function createServer(
       serverConfig.port = (httpServer.address() as AddressInfo).port
     })
   } else {
+    await container.buildStart({})
     await runOptimize()
   }
 
@@ -517,8 +552,17 @@ async function startServer(
 
   const options = server.config.server || {}
   let port = inlinePort || options.port || 3000
-  let hostname = options.host || 'localhost'
-  if (hostname === '0.0.0.0') hostname = 'localhost'
+  let hostname: string | undefined
+  if (options.host === undefined || options.host === 'localhost') {
+    // Use a secure default
+    hostname = '127.0.0.1'
+  } else if (options.host === true) {
+    // probably passed --host in the CLI, without arguments
+    hostname = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
+  } else {
+    hostname = options.host as string
+  }
+
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
   const base = server.config.base
@@ -531,7 +575,7 @@ async function startServer(
           reject(new Error(`Port ${port} is already in use`))
         } else {
           info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port)
+          httpServer.listen(++port, hostname)
         }
       } else {
         httpServer.removeListener('error', onError)
@@ -541,29 +585,18 @@ async function startServer(
 
     httpServer.on('error', onError)
 
-    httpServer.listen(port, options.host, () => {
+    httpServer.listen(port, hostname, () => {
       httpServer.removeListener('error', onError)
 
-      info(`\n ⚡ Vite dev server running at:\n`, {
-        clear: !server.config.logger.hasWarned
-      })
-      const interfaces = os.networkInterfaces()
-      Object.keys(interfaces).forEach((key) =>
-        (interfaces[key] || [])
-          .filter((details) => details.family === 'IPv4')
-          .map((detail) => {
-            return {
-              type: detail.address.includes('127.0.0.1')
-                ? 'Local:   '
-                : 'Network: ',
-              host: detail.address.replace('127.0.0.1', hostname)
-            }
-          })
-          .forEach(({ type, host }) => {
-            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-            info(`  > ${type} ${chalk.cyan(url)}`)
-          })
+      info(
+        chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+          chalk.green(` dev server running at:\n`),
+        {
+          clear: !server.config.logger.hasWarned
+        }
       )
+
+      printServerUrls(hostname, protocol, port, base, info)
 
       // @ts-ignore
       if (global.__vite_start_time) {
@@ -608,7 +641,7 @@ async function startServer(
   })
 }
 
-function createSeverCloseFn(server: http.Server | null) {
+function createServerCloseFn(server: http.Server | null) {
   if (!server) {
     return () => {}
   }

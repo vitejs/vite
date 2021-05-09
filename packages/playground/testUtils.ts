@@ -59,6 +59,10 @@ export async function getBg(el: string | ElementHandle) {
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
+export function readFile(filename: string) {
+  return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
+}
+
 export function editFile(filename: string, replacer: (str: string) => string) {
   if (isBuild) return
   filename = path.resolve(testDir, filename)
@@ -100,9 +104,10 @@ export function readManifest(base = '') {
  */
 export async function untilUpdated(
   poll: () => string | Promise<string>,
-  expected: string
+  expected: string,
+  runInBuild = false
 ) {
-  if (isBuild) return
+  if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 100 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) || ''
