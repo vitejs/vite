@@ -1,0 +1,9 @@
+diff --git a/node_modules/vitepress/dist/client/app/index.js b/node_modules/vitepress/dist/client/app/index.js
+index 73ffa50..bf4e929 100644
+--- a/node_modules/vitepress/dist/client/app/index.js
++++ b/node_modules/vitepress/dist/client/app/index.js
+@@ -1,4 +1,3 @@
+-import 'vite/dynamic-import-polyfill';
+ import { createApp as createClientApp, createSSRApp, h } from 'vue';
+ import { inBrowser, pathToFile } from './utils';
+ import { RouterSymbol, createRouter } from './router';
