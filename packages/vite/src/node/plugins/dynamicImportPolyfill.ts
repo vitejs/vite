@@ -17,7 +17,7 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
     load(id) {
       if (id === polyfillId) {
         config.logger.warn(
-          `\nVite's dynamic import polyfill has been removed, stop importing 'vite/dynamic-import-polyfill'`
+          `\n'vite/dynamic-import-polyfill' is no longer needed, refer to https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#230-2021-05-10`
         )
         return ''
       }
