@@ -687,9 +687,8 @@ export function resolveServerOptions(
   raw?: ServerOptions
 ): ResolvedServerOptions {
   const server = raw || {}
-  const serverRoot = path.resolve(
-    root,
-    server.fsServe?.root || searchForWorkspaceRoot(root)
+  const serverRoot = normalizePath(
+    path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
   )
   server.fsServe = { root: serverRoot }
   return server as ResolvedServerOptions
