@@ -5,7 +5,7 @@ import connect from 'connect'
 import compression from 'compression'
 import { ResolvedConfig } from '.'
 import { Connect } from 'types/connect'
-import { resolveHttpServer } from './server/http'
+import { resolveHttpsConfig, resolveHttpServer } from './server/http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
@@ -16,7 +16,11 @@ export async function preview(
   port = 5000
 ): Promise<void> {
   const app = connect() as Connect.Server
-  const httpServer = await resolveHttpServer(config.server, app)
+  const httpServer = await resolveHttpServer(
+    config.server,
+    app,
+    await resolveHttpsConfig(config)
+  )
 
   // cors
   const { cors } = config.server
