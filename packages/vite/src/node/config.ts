@@ -39,7 +39,6 @@ import {
 } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
-import { searchForWorkspaceRoot } from './server/searchRoot'
 
 const debug = createDebugger('vite:config')
 
