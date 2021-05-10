@@ -2,7 +2,11 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from './plugin'
 import { BuildOptions, resolveBuildOptions } from './build'
-import { ServerOptions } from './server'
+import {
+  ResolvedServerOptions,
+  resolveServerOptions,
+  ServerOptions
+} from './server'
 import { CSSOptions } from './plugins/css'
 import {
   createDebugger,
@@ -201,7 +205,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
-    server: ServerOptions
+    server: ResolvedServerOptions
     build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
@@ -392,7 +396,7 @@ export async function resolveConfig(
     mode,
     isProduction,
     plugins: userPlugins,
-    server: config.server || {},
+    server: resolveServerOptions(resolvedRoot, config.server),
     build: resolvedBuildOptions,
     env: {
       ...userEnv,

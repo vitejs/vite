@@ -44,7 +44,7 @@ export async function preview(
     })
   )
 
-  const options = config.server || {}
+  const options = config.server
   let hostname: string | undefined
   if (options.host === undefined || options.host === 'localhost') {
     // Use a secure default
