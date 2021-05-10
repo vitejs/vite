@@ -16,7 +16,7 @@ import {
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { injectSourcesContent } from './sourcemap'
-import { checkFileOutSide } from './middlewares/static'
+import { ensureServingAccess } from './middlewares/static'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -75,7 +75,7 @@ export async function transformRequest(
     // as string
     try {
       if (!options.ssr) {
-        checkFileOutSide(file, config.server.fsServe.root)
+        ensureServingAccess(file, config.server.fsServe.root)
       }
       code = await fs.readFile(file, 'utf-8')
       isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)

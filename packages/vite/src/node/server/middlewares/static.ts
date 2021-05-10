@@ -5,7 +5,7 @@ import { Connect } from 'types/connect'
 import { ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
-import { FileOutSideError } from './error'
+import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
   dev: true,
@@ -90,7 +90,7 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fsServe.root`
-      checkFileOutSide(
+      ensureServingAccess(
         path.resolve(fsPathFromId(url)),
         config.server.fsServe.root
       )
@@ -106,9 +106,9 @@ export function serveRawFsMiddleware(
   }
 }
 
-export function checkFileOutSide(url: string, serveRoot: string): void {
+export function ensureServingAccess(url: string, serveRoot: string): void {
   if (!url.startsWith(serveRoot + path.sep)) {
-    throw new FileOutSideError(
+    throw new AccessRestrictedError(
       `The request url "${url}" is outside of vite dev server root "${serveRoot}". 
       For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
       Refer to docs https://vitejs.dev/config/#server-fsserveroot for configurations and more details.`,

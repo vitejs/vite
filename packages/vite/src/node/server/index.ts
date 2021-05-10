@@ -51,6 +51,7 @@ import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
+import { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -679,4 +680,17 @@ function createServerCloseFn(server: http.Server | null) {
         resolve()
       }
     })
+}
+
+export function resolveServerOptions(
+  root: string,
+  raw?: ServerOptions
+): ResolvedServerOptions {
+  const server = raw || {}
+  const serverRoot = path.resolve(
+    root,
+    server.fsServe?.root || searchForWorkspaceRoot(root)
+  )
+  server.fsServe = { root: serverRoot }
+  return server as ResolvedServerOptions
 }

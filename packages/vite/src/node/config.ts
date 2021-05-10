@@ -2,7 +2,11 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from './plugin'
 import { BuildOptions, resolveBuildOptions } from './build'
-import { ResolvedServerOptions, ServerOptions } from './server'
+import {
+  ResolvedServerOptions,
+  resolveServerOptions,
+  ServerOptions
+} from './server'
 import { CSSOptions } from './plugins/css'
 import {
   createDebugger,
@@ -370,13 +374,6 @@ export async function resolveConfig(
     }
   }
 
-  const server = config.server || {}
-  const serverRoot = path.posix.resolve(
-    resolvedRoot,
-    server.fsServe?.root || searchForWorkspaceRoot(resolvedRoot)
-  )
-  server.fsServe = { root: serverRoot }
-
   const { publicDir } = config
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
@@ -400,7 +397,7 @@ export async function resolveConfig(
     mode,
     isProduction,
     plugins: userPlugins,
-    server: server as ResolvedServerOptions,
+    server: resolveServerOptions(resolvedRoot, config.server),
     build: resolvedBuildOptions,
     env: {
       ...userEnv,

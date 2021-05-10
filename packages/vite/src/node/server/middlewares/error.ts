@@ -63,7 +63,7 @@ export function errorMiddleware(
     if (allowNext) {
       next()
     } else {
-      if (err instanceof FileOutSideError) {
+      if (err instanceof AccessRestrictedError) {
         res.statusCode = 403
         res.write(renderErrorHTML(err.message))
         res.end()
@@ -74,7 +74,7 @@ export function errorMiddleware(
   }
 }
 
-export class FileOutSideError extends Error {
+export class AccessRestrictedError extends Error {
   constructor(msg: string, public url: string, public serveRoot: string) {
     super(msg)
   }
