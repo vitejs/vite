@@ -8,7 +8,7 @@ import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import { resolveHttpServer } from './http'
+import { resolveHttpsConfig, resolveHttpServer } from './http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
@@ -278,12 +278,13 @@ export async function createServer(
   const root = config.root
   const serverConfig = config.server || {}
   const middlewareMode = !!serverConfig.middlewareMode
+  const httpsOptions = await resolveHttpsConfig(config)
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, middlewares)
-  const ws = createWebSocketServer(httpServer, config)
+    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+  const ws = createWebSocketServer(httpServer, config, httpsOptions)
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
