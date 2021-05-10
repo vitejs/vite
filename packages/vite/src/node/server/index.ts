@@ -210,7 +210,11 @@ export interface ViteDevServer {
   /**
    * Apply vite built-in HTML transforms and any plugin HTML transforms.
    */
-  transformIndexHtml(url: string, html: string): Promise<string>
+  transformIndexHtml(
+    url: string,
+    html: string,
+    originalUrl?: string
+  ): Promise<string>
   /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.

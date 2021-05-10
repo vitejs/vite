@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import { NodeTypes } from '@vue/compiler-dom'
+import { AttributeNode, NodeTypes } from '@vue/compiler-dom'
 import { Connect } from 'types/connect'
 import {
   applyHtmlTransforms,
@@ -10,7 +10,7 @@ import {
   resolveHtmlTransforms,
   traverseHtml
 } from '../../plugins/html'
-import { ViteDevServer } from '../..'
+import { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId } from '../../utils'
@@ -18,17 +18,16 @@ import { assetAttrsConfig } from '../../plugins/html'
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer
-): (url: string, html: string) => Promise<string> {
+): (url: string, html: string, originalUrl: string) => Promise<string> {
   const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
 
-  return (url: string, html: string): Promise<string> => {
-    return applyHtmlTransforms(
-      html,
-      url,
-      getHtmlFilename(url, server),
-      [...preHooks, devHtmlHook, ...postHooks],
-      server
-    )
+  return (url: string, html: string, originalUrl: string): Promise<string> => {
+    return applyHtmlTransforms(html, [...preHooks, devHtmlHook, ...postHooks], {
+      path: url,
+      filename: getHtmlFilename(url, server),
+      server,
+      originalUrl
+    })
   }
 }
 
@@ -41,9 +40,44 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
 }
 
 const startsWithSingleSlashRE = /^\/(?!\/)/
+const processNodeUrl = (
+  node: AttributeNode,
+  s: MagicString,
+  config: ResolvedConfig,
+  htmlPath: string,
+  originalUrl?: string
+) => {
+  const url = node.value?.content || ''
+  if (startsWithSingleSlashRE.test(url)) {
+    // prefix with base
+    s.overwrite(
+      node.value!.loc.start.offset,
+      node.value!.loc.end.offset,
+      `"${config.base + url.slice(1)}"`
+    )
+  } else if (
+    url.startsWith('.') &&
+    originalUrl &&
+    originalUrl !== '/' &&
+    htmlPath === '/index.html'
+  ) {
+    // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
+    // path will add `/a/` prefix, it will caused 404.
+    // rewrite before `./index.js` -> `localhost:3000/a/index.js`.
+    // rewrite after `../index.js` -> `localhost:3000/index.js`.
+    s.overwrite(
+      node.value!.loc.start.offset,
+      node.value!.loc.end.offset,
+      `"${path.posix.join(
+        path.posix.relative(originalUrl, '/'),
+        url.slice(1)
+      )}"`
+    )
+  }
+}
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
-  { path: htmlPath, server }
+  { path: htmlPath, server, originalUrl }
 ) => {
   // TODO: solve this design issue
   // Optional chain expressions can return undefined by design
@@ -67,15 +101,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
 
       if (src) {
-        const url = src.value?.content || ''
-        if (startsWithSingleSlashRE.test(url)) {
-          // prefix with base
-          s.overwrite(
-            src.value!.loc.start.offset,
-            src.value!.loc.end.offset,
-            `"${config.base + url.slice(1)}"`
-          )
-        }
+        processNodeUrl(src, s, config, htmlPath, originalUrl)
       } else if (isModule) {
         // inline js module. convert to src="proxy"
         s.overwrite(
@@ -97,14 +123,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           p.value &&
           assetAttrs.includes(p.name)
         ) {
-          const url = p.value.content || ''
-          if (startsWithSingleSlashRE.test(url)) {
-            s.overwrite(
-              p.value.loc.start.offset,
-              p.value.loc.end.offset,
-              `"${config.base + url.slice(1)}"`
-            )
-          }
+          processNodeUrl(p, s, config, htmlPath, originalUrl)
         }
       }
     }
@@ -139,7 +158,7 @@ export function indexHtmlMiddleware(
       if (fs.existsSync(filename)) {
         try {
           let html = fs.readFileSync(filename, 'utf-8')
-          html = await server.transformIndexHtml(url, html)
+          html = await server.transformIndexHtml(url, html, req.originalUrl)
           return send(req, res, html, 'html')
         } catch (e) {
           return next(e)
