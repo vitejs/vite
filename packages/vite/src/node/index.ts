@@ -14,7 +14,8 @@ export type {
   CorsOptions,
   FileSystemServeOptions,
   CorsOrigin,
-  ServerHook
+  ServerHook,
+  ResolvedServerOptions
 } from './server'
 export type {
   BuildOptions,

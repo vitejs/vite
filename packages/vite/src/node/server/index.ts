@@ -51,6 +51,7 @@ import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
+import { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -124,6 +125,10 @@ export interface ServerOptions {
    * Options for files served via '/\@fs/'.
    */
   fsServe?: FileSystemServeOptions
+}
+
+export interface ResolvedServerOptions extends ServerOptions {
+  fsServe: Required<FileSystemServeOptions>
 }
 
 export interface FileSystemServeOptions {
@@ -280,7 +285,7 @@ export async function createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
-  const serverConfig = config.server || {}
+  const serverConfig = config.server
   const middlewareMode = !!serverConfig.middlewareMode
   const httpsOptions = await resolveHttpsConfig(config)
 
@@ -555,7 +560,7 @@ async function startServer(
     throw new Error('Cannot call server.listen in middleware mode.')
   }
 
-  const options = server.config.server || {}
+  const options = server.config.server
   let port = inlinePort || options.port || 3000
   let hostname: string | undefined
   if (options.host === undefined || options.host === 'localhost') {
@@ -680,4 +685,16 @@ function createServerCloseFn(server: http.Server | null) {
         resolve()
       }
     })
+}
+
+export function resolveServerOptions(
+  root: string,
+  raw?: ServerOptions
+): ResolvedServerOptions {
+  const server = raw || {}
+  const serverRoot = normalizePath(
+    path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
+  )
+  server.fsServe = { root: serverRoot }
+  return server as ResolvedServerOptions
 }

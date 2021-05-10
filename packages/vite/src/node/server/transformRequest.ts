@@ -16,6 +16,7 @@ import {
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { injectSourcesContent } from './sourcemap'
+import { ensureServingAccess } from './middlewares/static'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -73,6 +74,9 @@ export async function transformRequest(
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
     try {
+      if (!options.ssr) {
+        ensureServingAccess(file, config.server.fsServe.root)
+      }
       code = await fs.readFile(file, 'utf-8')
       isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
     } catch (e) {
