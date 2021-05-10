@@ -65,6 +65,11 @@ document.querySelector('.issue-2658-2').addEventListener('click', async () => {
   text('.view', msg)
 })
 
+document.querySelector('.css').addEventListener('click', async () => {
+  const { default: cssStr } = await import('../css/index.css')
+  text('.view', cssStr)
+})
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }

@@ -285,7 +285,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (
           !isCSSRequest(id) ||
           cssModuleRE.test(id) ||
-          commonjsProxyRE.test(id)
+          commonjsProxyRE.test(id) ||
+          chunk.isDynamicEntry
         ) {
           isPureCssChunk = false
         }
