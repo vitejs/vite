@@ -1,8 +1,6 @@
 // @ts-check
 const fs = require('fs')
 const { transformSync, ParserOptions } = require('@babel/core')
-const { isArray } = require('util')
-
 const runtimePublicPath = '/@react-refresh'
 const runtimeFilePath = require.resolve(
   'react-refresh/cjs/react-refresh-runtime.development.js'
