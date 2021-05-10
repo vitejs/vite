@@ -533,17 +533,13 @@ function isLegacyOutput(options) {
 function recordAndRemovePolyfillBabelPlugin(polyfills) {
   return ({ types: t }) => ({
     name: 'vite-remove-polyfill-import',
-    visitor: {
-      Program: {
-        exit(path) {
-          path.get('body').forEach((p) => {
-            if (t.isImportDeclaration(p)) {
-              polyfills.add(p.node.source.value)
-              p.remove()
-            }
-          })
+    post({ path }) {
+      path.get('body').forEach((p) => {
+        if (t.isImportDeclaration(p)) {
+          polyfills.add(p.node.source.value)
+          p.remove()
         }
-      }
+      })
     }
   })
 }
