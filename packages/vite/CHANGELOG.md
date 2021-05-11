@@ -1,5 +1,31 @@
 # [2.3.0](https://github.com/vitejs/vite/compare/v2.2.4...v2.3.0) (2021-05-11)
 
+## BREAKING CHANGES
+
+- Browser default targets changed (PR [#2976](https://github.com/vitejs/vite/pull/2976))
+    - Default browser support range has changed. The minimum requirement is now [native dynamic import support](https://caniuse.com/es6-module-dynamic-import). Most notably, this means support for legacy Microsoft Edge (16-18) has been dropped.
+    - `vite/dynamic-import-polyfill` removed and no longer required in custom entries
+
+### Why are there breaking changes in a minor?
+
+- **Limited impact:** The affected target browsers are ones that natively support [ES6 modules](https://caniuse.com/es6-module) (92.83% of global usage) but do not support [native dynamic imports](https://caniuse.com/es6-module-dynamic-import) (92.34% of global usage). So this is a small range affecting only 0.49% of global usage.
+
+    This number should continue to decrease in the future as most modern browsers are evergreen. You are also not affected if you are already targeting legacy browsers using `@vitejs/plugin-legacy`.
+
+- **Easy migration:** if you do intend to support browsers that fall into this category, you can use [dynamic-import-polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill).
+
+    To make the polyfill work, you will also need to use a plugin with [`renderDynamicImport`](https://rollupjs.org/guide/en/#renderdynamicimport) to change the import calls to `__import__`. You can follow the installation guide in [this example](https://github.com/antfu/vite-dynamic-import-polyfill-example).
+
+- **Required for bug fixes:** This change is required for upgrading esbuild from v0.9 to [v0.11](https://github.com/evanw/esbuild/releases/tag/v0.11.0), which includes a lot of bug fixes and improvements. And it also allows us to remove the complexity of the dynamic import polyfill.
+
+## Security Fixes
+
+- Dev server only listens to localhost by default now (PR [#2977](https://github.com/vitejs/vite/pull/2977))
+    - Pass `--host 0.0.0.0` to change back to the previous behavior.
+- Dev server only serves files under workspace root by defualt (PR [#2850](https://github.com/vitejs/vite/pull/2850), [#3321](https://github.com/vitejs/vite/pull/3321))
+    - Accessing files outside of workspace root will result in a 403 response.
+    - Vite will try to search up for workspace root defined in `package.json` or `pnpm-workspace.yaml`
+    - To set the workspace root explicitly, see [configurations](https://vitejs.dev/config/#server-fsserve-root)
 
 ### Bug Fixes
 
