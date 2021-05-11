@@ -438,7 +438,7 @@ export default async ({ command, mode }) => {
   
   Because of [a bug](https://github.com/vitejs/vite/issues/3347) in vite, accessing any symbolic link while serving your project will currently fail.
   This includes any npm package installed from a local folder, because npm uses symbolic links to install them.
-  This bug systematically manifests when using a monorepo.
+  This bug systematically occurs when using a monorepo.
   Until this bug is fixed, this configuration option should be set to the common parent of all the directories you want to be able to serve. So if you have a dependency in `/home/you/common` and your project is in `/home/you/projects/myproject`, then you have no other choice than exposing the entire contents of `/home/you`, and your `vite.config.js` configuration file should look like this : 
 
 ```es6
