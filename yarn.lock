@@ -2511,8 +2511,7 @@ css-color-names@^1.0.1:
   integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
 
 "css-dep@link:./packages/playground/css/css-dep":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 css-parse@~2.0.0:
   version "2.0.0"
@@ -2705,23 +2704,22 @@ delegate@^3.1.2:
 
 "dep-cjs-named-only@link:./packages/playground/optimize-deps/dep-cjs-named-only":
   version "0.0.0"
-  uid ""
 
 "dep-esbuild-plugin-transform@link:./packages/playground/optimize-deps/dep-esbuild-plugin-transform":
   version "0.0.0"
-  uid ""
 
 "dep-import-type@link:./packages/playground/ssr-vue/dep-import-type":
   version "0.0.0"
-  uid ""
 
 "dep-linked-include@link:./packages/playground/optimize-deps/dep-linked-include":
   version "0.0.0"
-  uid ""
+  dependencies:
+    react "17.0.0"
 
 "dep-linked@link:./packages/playground/optimize-deps/dep-linked":
   version "0.0.0"
-  uid ""
+  dependencies:
+    lodash-es "^4.17.20"
 
 depd@~1.1.2:
   version "1.1.2"
@@ -5511,10 +5509,10 @@ ms@^2.1.1:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-nanoid@^3.1.20:
-  version "3.1.22"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.1.22.tgz#b35f8fb7d151990a8aebd5aa5015c03cf726f844"
-  integrity sha512-/2ZUaJX2ANuLtTvqTlgqBQNJoQO398KyJgZloL0PZkC0dpysjncRUPsFe3DUPzz/y3h+u7C46np8RMuvF3jsSQ==
+nanoid@^3.1.22:
+  version "3.1.23"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.1.23.tgz#f744086ce7c2bc47ee0a8472574d5c78e4183a81"
+  integrity sha512-FiB0kzdP0FFVGDKlRLEQ1BgDzU87dy5NnzjeW9YZNt+/c3+q82EQDUwniSAUxp/F0gFNI1ZhKU1FqYsMuqZVnw==
 
 nanomatch@^1.2.9:
   version "1.2.13"
@@ -6210,13 +6208,13 @@ postcss-value-parser@^4.0.0, postcss-value-parser@^4.1.0:
   resolved "https://registry.yarnpkg.com/postcss-value-parser/-/postcss-value-parser-4.1.0.tgz#443f6a20ced6481a2bda4fa8532a6e55d789a2cb"
   integrity sha512-97DXOFbQJhk71ne5/Mt6cOu6yxsSfM0QGQyl0L25Gca4yGWEGJaig7l7gbCX623VqTBNGLRLaVUCnNkcedlRSQ==
 
-postcss@^8.1.10, postcss@^8.2.1:
-  version "8.2.8"
-  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.2.8.tgz#0b90f9382efda424c4f0f69a2ead6f6830d08ece"
-  integrity sha512-1F0Xb2T21xET7oQV9eKuctbM9S7BC0fetoHCc4H13z0PT6haiRLP4T0ZY4XWh7iLP0usgqykT6p9B2RtOf4FPw==
+postcss@^8.1.10, postcss@^8.2.10:
+  version "8.2.10"
+  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.2.10.tgz#ca7a042aa8aff494b334d0ff3e9e77079f6f702b"
+  integrity sha512-b/h7CPV7QEdrqIxtAf2j31U5ef05uBDuvoXv6L51Q4rcS1jdlXAVKJv+atCFdUXYl9dyTHGyoMzIepwowRJjFw==
   dependencies:
     colorette "^1.2.2"
-    nanoid "^3.1.20"
+    nanoid "^3.1.22"
     source-map "^0.6.1"
 
 preact@^10.0.0:
@@ -6767,16 +6765,13 @@ requires-port@^1.0.0:
   integrity sha1-kl0mAdOaxIXgkc8NpcbmlNw9yv8=
 
 "resolve-browser-field@link:./packages/playground/resolve/browser-field":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-custom-condition@link:./packages/playground/resolve/custom-condition":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-custom-main-field@link:./packages/playground/resolve/custom-main-field":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 resolve-cwd@^3.0.0:
   version "3.0.0"
@@ -6786,12 +6781,10 @@ resolve-cwd@^3.0.0:
     resolve-from "^5.0.0"
 
 "resolve-exports-env@link:./packages/playground/resolve/exports-env":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-exports-path@link:./packages/playground/resolve/exports-path":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -7866,7 +7859,6 @@ typedarray-to-buffer@^3.1.5:
 
 "types@link:./packages/vite/types":
   version "0.0.0"
-  uid ""
 
 typescript@^4.1.2:
   version "4.2.3"
