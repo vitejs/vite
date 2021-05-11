@@ -107,6 +107,12 @@ export function serveRawFsMiddleware(
 }
 
 export function ensureServingAccess(url: string, serveRoot: string): void {
+  const isWin = os.platform() === 'win32';
+
+  if(isWin) {
+    url = url.split(path.sep).join(path.posix.sep);
+  }
+ 
   if (!url.startsWith(serveRoot + path.posix.sep)) {
     throw new AccessRestrictedError(
       `The request url "${url}" is outside of vite dev server root "${serveRoot}". 
