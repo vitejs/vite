@@ -478,9 +478,9 @@ export default async ({ command, mode }) => {
 
   Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
   
-  :::tip Note
-Assets will **always** be inlined, regardless of file size, and `build.assetsInlineLimit` will be ignored if you specify `build.lib`
-:::
+  ::: tip Note
+  Assets will **always** be inlined, regardless of file size, and `build.assetsInlineLimit` will be ignored if you specify `build.lib`
+  :::
 
 ### build.cssCodeSplit
 
