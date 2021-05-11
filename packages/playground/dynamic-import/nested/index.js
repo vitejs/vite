@@ -66,8 +66,8 @@ document.querySelector('.issue-2658-2').addEventListener('click', async () => {
 })
 
 document.querySelector('.css').addEventListener('click', async () => {
-  const { default: cssStr } = await import('../css/index.css')
-  text('.view', cssStr)
+  await import('../css/index.css')
+  text('.view', 'dynamic import css')
 })
 
 function text(el, text) {

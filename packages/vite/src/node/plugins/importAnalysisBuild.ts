@@ -4,7 +4,7 @@ import { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import { ImportSpecifier, init, parse as parseImports } from 'es-module-lexer'
 import { OutputChunk } from 'rollup'
-import { chunkToEmittedCssFileMap } from './css'
+import { chunkToEmittedCssFileMap, romovedPureCssFiles } from './css'
 import { transformImportGlob } from '../importGlob'
 
 /**
@@ -221,10 +221,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (imports.length) {
             const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
-              const { s: start, e: end } = imports[index]
+              const { s: start, e: end, d: dynamicIndex } = imports[index]
               // check the chunk being imported
               const url = code.slice(start, end)
               const deps: Set<string> = new Set()
+              let hasRomovedPureCssChunk = false
 
               if (url[0] === `"` && url[url.length - 1] === `"`) {
                 const ownerFilename = chunk.fileName
@@ -244,6 +245,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       })
                     }
                     chunk.imports.forEach(addDeps)
+                  } else {
+                    const chunk = romovedPureCssFiles.get(filename)
+                    if (chunk) {
+                      const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+                      if (cssFiles && cssFiles.size > 0) {
+                        cssFiles.forEach((file) => {
+                          deps.add(config.base + file)
+                        })
+                        hasRomovedPureCssChunk = true
+                      }
+
+                      s.overwrite(dynamicIndex, end + 1, 'Promise.resolve({})')
+                    }
                   }
                 }
                 const normalizedFile = path.posix.join(
@@ -260,7 +274,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   markPos + preloadMarker.length + 1,
                   // the dep list includes the main chunk, so only need to
                   // preload when there are actual other deps.
-                  deps.size > 1
+                  deps.size > 1 ||
+                    // main chunk is removed
+                    (hasRomovedPureCssChunk && deps.size > 0)
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
                     : `void 0`
                 )
