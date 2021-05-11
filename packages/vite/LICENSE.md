@@ -25,7 +25,7 @@ SOFTWARE.
 
 # Licenses of bundled dependencies
 The published Vite artifact additionally contains code with the following licenses:
-Apache-2.0, MIT, ISC, BSD-2-Clause, (BSD-3-Clause OR GPL-2.0), BSD-3-Clause, CC0-1.0
+Apache-2.0, MIT, ISC, BSD-2-Clause, (MIT), (BSD-3-Clause OR GPL-2.0), BSD-3-Clause, CC0-1.0
 
 # Bundled dependencies:
 ## @ampproject/remapping
@@ -1562,6 +1562,13 @@ By: motdotla
 > CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 > OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 > OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+---------------------------------------
+
+## duplexer
+License: (MIT)
+By: Raynos, Jake Verbaten
+Repository: git://github.com/Raynos/duplexer.git
 
 ---------------------------------------
 
