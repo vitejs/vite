@@ -436,6 +436,22 @@ export default async ({ command, mode }) => {
 
   Restrict files that could be served via `/@fs/`. Accessing files outside this directory will result in a 403.
   
+  Because of [a bug](https://github.com/vitejs/vite/issues/3347) in vite, accessing any symbolic link while serving your project will currently fail.
+  This includes any npm package installed from a local folder, because npm uses symbolic links to install them.
+  This bug systematically manifests when using a monorepo.
+  Until this bug is fixed, this configuration option should be set to the common parent of all the directories you want to be able to serve. So if you have a dependency in `/home/you/common` and your project is in `/home/you/projects/myproject`, then you have no other choice than exposing the entire contents of `/home/you`, and your `vite.config.js` configuration file should look like this : 
+
+```es6
+export default {
+  server: {
+    fsServe: {
+      // Allow serving all files starting from two levels above the current directory in the fs hierarchy 
+      root: '../../' 
+    }
+  }
+}
+```
+
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
   - contains `workspaces` field in `package.json`
   - contains one of the following file
