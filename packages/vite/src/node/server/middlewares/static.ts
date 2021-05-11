@@ -107,13 +107,13 @@ export function serveRawFsMiddleware(
 }
 
 export function ensureServingAccess(url: string, serveRoot: string): void {
-  const normalizeUrl = normalizePath(url)
-  if (!normalizeUrl.startsWith(serveRoot + path.posix.sep)) {
+  const normalizedUrl = normalizePath(url)
+  if (!normalizedUrl.startsWith(serveRoot + path.posix.sep)) {
     throw new AccessRestrictedError(
-      `The request url "${normalizeUrl}" is outside of vite dev server root "${serveRoot}". 
+      `The request url "${normalizedUrl}" is outside of vite dev server root "${serveRoot}". 
       For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
       Refer to docs https://vitejs.dev/config/#server-fsserveroot for configurations and more details.`,
-      normalizeUrl,
+      normalizedUrl,
       serveRoot
     )
   }
