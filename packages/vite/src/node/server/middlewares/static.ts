@@ -111,7 +111,7 @@ export function ensureServingAccess(url: string, serveRoot: string): void {
     throw new AccessRestrictedError(
       `The request url "${url}" is outside of vite dev server root "${serveRoot}". 
       For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
-      Refer to docs https://vitejs.dev/config/#server-fsserveroot for configurations and more details.`,
+      Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
       url,
       serveRoot
     )
