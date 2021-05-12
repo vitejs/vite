@@ -2,7 +2,7 @@ import os from 'os'
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
-import { ResolvedConfig } from '../..'
+import { normalizePath, ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
 import { AccessRestrictedError } from './error'
@@ -107,12 +107,13 @@ export function serveRawFsMiddleware(
 }
 
 export function ensureServingAccess(url: string, serveRoot: string): void {
-  if (!url.startsWith(serveRoot + path.posix.sep)) {
+  const normalizedUrl = normalizePath(url)
+  if (!normalizedUrl.startsWith(serveRoot + path.posix.sep)) {
     throw new AccessRestrictedError(
-      `The request url "${url}" is outside of vite dev server root "${serveRoot}". 
+      `The request url "${normalizedUrl}" is outside of vite dev server root "${serveRoot}". 
       For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
       Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
-      url,
+      normalizedUrl,
       serveRoot
     )
   }
