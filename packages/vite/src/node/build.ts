@@ -514,10 +514,14 @@ async function doBuild(
     }
 
     if (Array.isArray(outputs)) {
-      return await usePromiseAll<OutputOptions, RollupOutput>(
-        outputs,
-        (output) => generate(output)
-      )
+      // the first output is for legacy bundle which should be excuted first
+      return [
+        await generate(outputs[0]),
+        ...(await usePromiseAll<OutputOptions, RollupOutput>(
+          outputs.slice(1),
+          (output) => generate(output)
+        ))
+      ]
     } else {
       return await generate(outputs)
     }
