@@ -18,11 +18,11 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-export async function usePromiseAll<T, K>(
-  arr: T[],
-  processFn: (item: T) => Promise<K>
-): Promise<K[]> {
-  return Promise.all(arr.map((item) => processFn(item)))
+export async function usePromiseAll<Item, ResolvedItem>(
+  arr: Item[],
+  resolveFn: (item: Item) => Promise<ResolvedItem>
+): Promise<ResolvedItem[]> {
+  return Promise.all(arr.map((item) => resolveFn(item)))
 }
 
 // Strip valid id prefix. This is prepended to resolved Ids that are
