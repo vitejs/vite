@@ -464,3 +464,16 @@ export function combineSourcemaps(
 export function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr))
 }
+
+export function defaultHostname(host: string | undefined) {
+  if (
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host === '::' ||
+    host === undefined
+  ) {
+    return 'localhost'
+  } else {
+    return host
+  }
+}

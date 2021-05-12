@@ -10,6 +10,7 @@ import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { printServerUrls } from './logger'
+import { defaultHostname } from './utils'
 
 export async function preview(
   config: ResolvedConfig,
@@ -69,7 +70,11 @@ export async function preview(
 
     if (options.open) {
       const path = typeof options.open === 'string' ? options.open : base
-      openBrowser(`${protocol}://${hostname}:${port}${path}`, true, logger)
+      openBrowser(
+        `${protocol}://${defaultHostname(hostname)}:${port}${path}`,
+        true,
+        logger
+      )
     }
   })
 }

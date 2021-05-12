@@ -51,6 +51,7 @@ import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
+import { defaultHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions {
@@ -640,7 +641,7 @@ async function startServer(
       if (options.open && !isRestart) {
         const path = typeof options.open === 'string' ? options.open : base
         openBrowser(
-          `${protocol}://${hostname}:${port}${path}`,
+          `${protocol}://${defaultHostname(hostname)}:${port}${path}`,
           true,
           server.config.logger
         )

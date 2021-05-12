@@ -129,7 +129,7 @@ export function printServerUrls(
         const type = detail.address.includes('127.0.0.1')
           ? 'Local:   '
           : 'Network: '
-        const host = detail.address
+        const host = detail.address.replace('127.0.0.1', 'localhost')
         const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
         return `  > ${type} ${chalk.cyan(url)}`
       })
