@@ -10,7 +10,7 @@ import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { printServerUrls } from './logger'
-import { defaultHostname } from './utils'
+import { resolveHostname } from './utils'
 
 export async function preview(
   config: ResolvedConfig,
@@ -46,21 +46,12 @@ export async function preview(
   )
 
   const options = config.server
-  let hostname: string | undefined
-  if (options.host === undefined || options.host === 'localhost') {
-    // Use a secure default
-    hostname = '127.0.0.1'
-  } else if (options.host === true) {
-    // The user probably passed --host in the CLI, without arguments
-    hostname = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
-  } else {
-    hostname = options.host as string
-  }
+  let hostname = resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
 
-  httpServer.listen(port, hostname, () => {
+  httpServer.listen(port, hostname.host, () => {
     logger.info(
       chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
         chalk.green(` build preview server running at:\n`)
@@ -70,11 +61,7 @@ export async function preview(
 
     if (options.open) {
       const path = typeof options.open === 'string' ? options.open : base
-      openBrowser(
-        `${protocol}://${defaultHostname(hostname)}:${port}${path}`,
-        true,
-        logger
-      )
+      openBrowser(`${protocol}://${hostname.name}:${port}${path}`, true, logger)
     }
   })
 }
