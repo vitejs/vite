@@ -29,6 +29,22 @@ export default {
 }
 ```
 
+When targeting IE11, you also need `regenerator-runtime`:
+
+```js
+// vite.config.js
+import legacy from '@vitejs/plugin-legacy'
+
+export default {
+  plugins: [
+    legacy({
+      targets: ['ie >= 11'],
+      additionalLegacyPolyfills: ['regenerator-runtime/runtime']  
+    })
+  ]
+}
+```
+
 ## Options
 
 ### `targets`
@@ -57,7 +73,7 @@ export default {
 
   Add custom imports to the legacy polyfills chunk. Since the usage-based polyfill detection only covers ES language features, it may be necessary to manually specify additional DOM API polyfills using this option.
 
-  Note: if additional plyfills are needed for both the modern and legacy chunks, they can simply be imported in the application source code.
+  Note: if additional polyfills are needed for both the modern and legacy chunks, they can simply be imported in the application source code.
 
 ### `ignoreBrowserslistConfig`
 
