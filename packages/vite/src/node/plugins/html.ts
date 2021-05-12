@@ -31,7 +31,8 @@ const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 const htmlCommentRE = /<!--[\s\S]*?-->/g
-const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
+const scriptModuleRE =
+  /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
 
 export function htmlInlineScriptProxyPlugin(): Plugin {
   return {
@@ -100,9 +101,7 @@ export async function traverseHtml(
   }
 }
 
-export function getScriptInfo(
-  node: ElementNode
-): {
+export function getScriptInfo(node: ElementNode): {
   src: AttributeNode | undefined
   isModule: boolean
 } {

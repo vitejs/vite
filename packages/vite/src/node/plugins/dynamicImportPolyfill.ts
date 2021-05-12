@@ -4,7 +4,7 @@ import { Plugin } from '../plugin'
 export const polyfillId = 'vite/dynamic-import-polyfill'
 
 /**
- * @deprecated 
+ * @deprecated
  */
 export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
   return {
