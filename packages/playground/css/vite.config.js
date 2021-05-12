@@ -32,7 +32,10 @@ module.exports = {
     },
     preprocessorOptions: {
       scss: {
-        additionalData: `$injectedColor: orange;`
+        additionalData: `$injectedColor: orange;`,
+        importer(url) {
+          if (url === 'virtual-dep') return { contents: '' }
+        }
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,

@@ -904,20 +904,21 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
 // .scss/.sass processor
 const scss: StylePreprocessor = async (source, root, options, resolvers) => {
   const render = loadPreprocessor(PreprocessLang.sass, root).render
+  const internalImporter: Sass.Importer = (url, importer, done) => {
+    resolvers.sass(url, importer).then((resolved) => {
+      if (resolved) {
+        rebaseUrls(resolved, options.filename, options.alias).then(done)
+      } else {
+        done(null)
+      }
+    })
+  }
   const finalOptions: Sass.Options = {
     ...options,
     data: await getSource(source, options.filename, options.additionalData),
     file: options.filename,
     outFile: options.filename,
-    importer(url, importer, done) {
-      resolvers.sass(url, importer).then((resolved) => {
-        if (resolved) {
-          rebaseUrls(resolved, options.filename, options.alias).then(done)
-        } else {
-          done(null)
-        }
-      })
-    }
+    importer: [internalImporter].concat(options.importer)
   }
 
   try {
