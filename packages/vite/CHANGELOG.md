@@ -1,3 +1,13 @@
+## [2.3.2](https://github.com/vitejs/vite/compare/v2.3.1...v2.3.2) (2021-05-12)
+
+
+### Bug Fixes
+
+* **css:** fix sass importer error ([#3368](https://github.com/vitejs/vite/issues/3368)) ([3f04abf](https://github.com/vitejs/vite/commit/3f04abf0ff21c7b2969902c3d8d87f4b1b93740f))
+* **server:** hostname defaults to localhost, fix [#3355](https://github.com/vitejs/vite/issues/3355) ([#3383](https://github.com/vitejs/vite/issues/3383)) ([8b5a6a8](https://github.com/vitejs/vite/commit/8b5a6a855091e6f744cc7b886cf927d14dc74d50))
+
+
+
 ## [2.3.1](https://github.com/vitejs/vite/compare/v2.3.0...v2.3.1) (2021-05-12)
 
 ### Notable Changes
