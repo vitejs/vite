@@ -3,6 +3,7 @@
 import chalk from 'chalk'
 import readline from 'readline'
 import os from 'os'
+import { Hostname } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -120,16 +121,18 @@ export function createLogger(
 }
 
 export function printServerUrls(
-  hostname: string | undefined,
+  hostname: Hostname,
   protocol: string,
   port: number,
   base: string,
   info: Logger['info']
 ): void {
-  if (hostname === '127.0.0.1') {
-    const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
+  if (hostname.host === '127.0.0.1') {
+    const url = `${protocol}://${hostname.name}:${chalk.bold(port)}${base}`
     info(`  > Local: ${chalk.cyan(url)}`)
-    info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+    if (hostname.name !== '127.0.0.1') {
+      info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+    }
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
@@ -138,7 +141,7 @@ export function printServerUrls(
         const type = detail.address.includes('127.0.0.1')
           ? 'Local:   '
           : 'Network: '
-        const host = detail.address
+        const host = detail.address.replace('127.0.0.1', hostname.name)
         const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
         return `  > ${type} ${chalk.cyan(url)}`
       })

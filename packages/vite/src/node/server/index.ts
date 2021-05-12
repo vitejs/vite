@@ -51,6 +51,7 @@ import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
+import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions {
@@ -573,16 +574,7 @@ async function startServer(
 
   const options = server.config.server
   let port = inlinePort || options.port || 3000
-  let hostname: string | undefined
-  if (options.host === undefined || options.host === 'localhost') {
-    // Use a secure default
-    hostname = '127.0.0.1'
-  } else if (options.host === true) {
-    // probably passed --host in the CLI, without arguments
-    hostname = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
-  } else {
-    hostname = options.host as string
-  }
+  const hostname = resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
@@ -596,7 +588,7 @@ async function startServer(
           reject(new Error(`Port ${port} is already in use`))
         } else {
           info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, hostname)
+          httpServer.listen(++port, hostname.host)
         }
       } else {
         httpServer.removeListener('error', onError)
@@ -606,7 +598,7 @@ async function startServer(
 
     httpServer.on('error', onError)
 
-    httpServer.listen(port, hostname, () => {
+    httpServer.listen(port, hostname.host, () => {
       httpServer.removeListener('error', onError)
 
       info(
@@ -651,7 +643,7 @@ async function startServer(
       if (options.open && !isRestart) {
         const path = typeof options.open === 'string' ? options.open : base
         openBrowser(
-          `${protocol}://${hostname}:${port}${path}`,
+          `${protocol}://${hostname.name}:${port}${path}`,
           true,
           server.config.logger
         )
