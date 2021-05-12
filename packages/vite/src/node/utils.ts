@@ -490,7 +490,7 @@ export function resolveHostname(
     host = optionsHost as string
   }
 
-  // Set host name to localhost when possible if the user didn't explicitely asked for '127.0.0.1'
+  // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
   const name =
     (optionsHost !== '127.0.0.1' && host === '127.0.0.1') ||
     host === '0.0.0.0' ||
