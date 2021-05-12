@@ -2,8 +2,10 @@ import os from 'os'
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
+import { FileSystemServeOptions } from '..'
 import { normalizePath, ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
+import { Logger } from '../../logger'
 import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
 import { AccessRestrictedError } from './error'
 
@@ -92,7 +94,8 @@ export function serveRawFsMiddleware(
       // restrict files outside of `fsServe.root`
       ensureServingAccess(
         path.resolve(fsPathFromId(url)),
-        config.server.fsServe.root
+        config.server.fsServe,
+        config.logger
       )
 
       url = url.slice(FS_PREFIX.length)
@@ -106,15 +109,32 @@ export function serveRawFsMiddleware(
   }
 }
 
-export function ensureServingAccess(url: string, serveRoot: string): void {
+export function ensureServingAccess(
+  url: string,
+  { root, strict }: Required<FileSystemServeOptions>,
+  logger: Logger
+): void {
+  // TODO: early return, should remove once we polished the restriction logic
+  if (!strict) return
+
   const normalizedUrl = normalizePath(url)
-  if (!normalizedUrl.startsWith(serveRoot + path.posix.sep)) {
-    throw new AccessRestrictedError(
-      `The request url "${normalizedUrl}" is outside of vite dev server root "${serveRoot}". 
-      For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
-      Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
-      normalizedUrl,
-      serveRoot
-    )
+  if (!normalizedUrl.startsWith(root + path.posix.sep)) {
+    if (strict) {
+      throw new AccessRestrictedError(
+        `The request url "${normalizedUrl}" is outside of vite dev server root "${root}". 
+        For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
+        Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
+        normalizedUrl,
+        root
+      )
+    } else {
+      // TODO: warn for potential unrestricted access
+      logger.warnOnce(
+        `For security concerns, accessing files outside of workspace root will ` +
+          `be restricted by default in the future version of Vite. ` +
+          `Refer to [] for more`
+      )
+      logger.warnOnce(`Unrestricted file system access to "${normalizedUrl}"`)
+    }
   }
 }

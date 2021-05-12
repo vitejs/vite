@@ -133,10 +133,21 @@ export interface ResolvedServerOptions extends ServerOptions {
 
 export interface FileSystemServeOptions {
   /**
+   * Strictly restrict file accessing outside of allowing paths.
+   *
+   * Default to false at this moment, will enabled by default in the future versions.
+   * @expiremental
+   * @default false
+   */
+  strict?: boolean
+
+  /**
    * Restrict accessing files outside this directory will result in a 403.
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
+   *
+   * @expiremental
    */
   root?: string
 }
@@ -692,9 +703,14 @@ export function resolveServerOptions(
   raw?: ServerOptions
 ): ResolvedServerOptions {
   const server = raw || {}
-  const serverRoot = normalizePath(
+  const fsServeRoot = normalizePath(
     path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
   )
-  server.fsServe = { root: serverRoot }
+  // TODO: make strict by default
+  const fsServeStrict = server.fsServe?.strict ?? false
+  server.fsServe = {
+    root: fsServeRoot,
+    strict: fsServeStrict
+  }
   return server as ResolvedServerOptions
 }
