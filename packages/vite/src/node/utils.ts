@@ -487,7 +487,7 @@ export function resolveHostname(
     // If passed --host in the CLI without arguments
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
   } else {
-    host = optionsHost as string
+    host = optionsHost
   }
 
   // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
