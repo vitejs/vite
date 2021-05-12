@@ -14,7 +14,7 @@
   <Slotted>
     <div class="slotted">this should be red</div>
   </Slotted>
-  <ScanDep/>
+  <ScanDep />
 </template>
 
 <script setup lang="ts">

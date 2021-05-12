@@ -57,8 +57,7 @@ module.exports = {
           },
           {
             text: 'Changelog',
-            link:
-              'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
           }
         ]
       },

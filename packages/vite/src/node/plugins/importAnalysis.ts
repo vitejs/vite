@@ -288,21 +288,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           } else if (prop === '.glo' && source[end + 4] === 'b') {
             // transform import.meta.glob()
             // e.g. `import.meta.glob('glob:./dir/*.js')`
-            const {
-              imports,
-              importsString,
-              exp,
-              endIndex,
-              base,
-              pattern
-            } = await transformImportGlob(
-              source,
-              start,
-              importer,
-              index,
-              root,
-              normalizeUrl
-            )
+            const { imports, importsString, exp, endIndex, base, pattern } =
+              await transformImportGlob(
+                source,
+                start,
+                importer,
+                index,
+                root,
+                normalizeUrl
+              )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
             imports.forEach((url) => importedUrls.add(url.replace(base, '/')))
@@ -544,10 +538,12 @@ function transformCjsImport(
   rawUrl: string,
   importIndex: number
 ): string | undefined {
-  const node = (parseJS(importExp, {
-    ecmaVersion: 2020,
-    sourceType: 'module'
-  }) as any).body[0] as Node
+  const node = (
+    parseJS(importExp, {
+      ecmaVersion: 2020,
+      sourceType: 'module'
+    }) as any
+  ).body[0] as Node
 
   if (node.type === 'ImportDeclaration') {
     if (!node.specifiers.length) {

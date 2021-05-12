@@ -1,8 +1,8 @@
 .asset-reference {
   display: grid;
   grid-template-areas:
-    "summary preview ."
-    "url url url";
+    'summary preview .'
+    'url url url';
 }
 
 .asset-url {

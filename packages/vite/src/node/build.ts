@@ -251,9 +251,10 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   return resolved
 }
 
-export function resolveBuildPlugins(
-  config: ResolvedConfig
-): { pre: Plugin[]; post: Plugin[] } {
+export function resolveBuildPlugins(config: ResolvedConfig): {
+  pre: Plugin[]
+  post: Plugin[]
+} {
   const options = config.build
   return {
     pre: [
@@ -343,9 +344,9 @@ async function doBuild(
   const outDir = resolve(options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
-  const plugins = (ssr
-    ? config.plugins.map((p) => injectSsrFlagToHooks(p))
-    : config.plugins) as Plugin[]
+  const plugins = (
+    ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
+  ) as Plugin[]
 
   // inject ssrExternal if present
   const userExternal = options.rollupOptions?.external

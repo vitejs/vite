@@ -166,13 +166,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       //       return urlToBuiltUrl(url, importer || id, config, this)
       //     }
 
-      const { code: css, modules, deps } = await compileCSS(
-        id,
-        raw,
-        config,
-        urlReplacer,
-        atImportResolvers
-      )
+      const {
+        code: css,
+        modules,
+        deps
+      } = await compileCSS(id, raw, config, urlReplacer, atImportResolvers)
       if (modules) {
         moduleCache.set(id, modules)
       }

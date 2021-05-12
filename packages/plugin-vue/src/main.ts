@@ -225,7 +225,8 @@ async function genTemplateCode(
   }
 }
 
-const exportDefaultClassRE = /(?:(?:^|\n|;)\s*)export\s+default\s+class\s+([\w$]+)/
+const exportDefaultClassRE =
+  /(?:(?:^|\n|;)\s*)export\s+default\s+class\s+([\w$]+)/
 
 async function genScriptCode(
   descriptor: SFCDescriptor,

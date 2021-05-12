@@ -273,7 +273,8 @@ function copy(src, dest) {
 }
 
 async function getValidPackageName(projectName) {
-  const packageNameRegExp = /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+  const packageNameRegExp =
+    /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
   if (packageNameRegExp.test(projectName)) {
     return projectName
   } else {
