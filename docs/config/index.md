@@ -74,10 +74,10 @@ If the config needs to call async function, it can export a async function inste
 
 ```js
 export default async ({ command, mode }) => {
-  const data = await asyncFunction();
+  const data = await asyncFunction()
   return {
     // build specific config
-  } 
+  }
 }
 ```
 
@@ -331,7 +331,7 @@ export default async ({ command, mode }) => {
 
   Specify which IP addresses the server should listen on.
   Set this to `0.0.0.0` to listen on all addresses, including LAN and public addresses.
-  
+
   This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 ### server.port
@@ -444,8 +444,9 @@ export default async ({ command, mode }) => {
 - **Type:** `string`
 
   Restrict files that could be served via `/@fs/`. When `server.fsServe.strict` is set to `true`, accessing files outside this directory will result in a 403.
-  
+
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
+
   - contains `workspaces` field in `package.json`
   - contains one of the following file
     - `pnpm-workspace.yaml`
@@ -456,8 +457,8 @@ export default async ({ command, mode }) => {
   export default {
     server: {
       fsServe: {
-        // Allow serving files from one level up to the project root 
-        root: '..' 
+        // Allow serving files from one level up to the project root
+        root: '..'
       }
     }
   }
@@ -499,7 +500,7 @@ export default async ({ command, mode }) => {
 - **Default:** `4096` (4kb)
 
   Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
-  
+
   ::: tip Note
   Assets will **always** be inlined, regardless of file size, and `build.assetsInlineLimit` will be ignored if you specify `build.lib`
   :::
@@ -593,7 +594,7 @@ export default async ({ command, mode }) => {
 - **Default:** `500`
 
   Limit for chunk size warnings (in kbs).
-  
+
 ### build.watch
 
 - **Type:** [`WatcherOptions`](https://rollupjs.org/guide/en/#watch-options)`| null`
