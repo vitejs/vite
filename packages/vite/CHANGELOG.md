@@ -1,5 +1,21 @@
 ## [2.3.1](https://github.com/vitejs/vite/compare/v2.3.0...v2.3.1) (2021-05-12)
 
+### Notable Changes
+
+We introduced a security fix in v2.3.0 to restrict file access outside of the workspace root. We received reports of issues with symlinks and monorepo setups, so we are marking this feature as experimental and disabling it by default to avoid disruption in the ecosystem.
+
+A new experimental option `server.fsServe.strict` was added defaulting to `false`. This **disables the restrictions by default**. The `fsServe` restrictions are going to be enabled by default in a future version, once the issues are been resolved and the logic becomes more robust. You can opt-in to this security change using (experimental)
+
+```js
+// vite.config.js
+export default {
+  server: {
+    fsServe: {
+      strict: true
+    }
+  }
+}
+```
 
 ### Bug Fixes
 
