@@ -5,7 +5,7 @@ export { optimizeDeps } from './optimizer'
 export { send } from './server/send'
 export { createLogger } from './logger'
 export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
-export { normalizePath } from './utils'
+export * from './utils'
 
 // additional types
 export type {
