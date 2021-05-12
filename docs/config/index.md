@@ -432,6 +432,7 @@ export default async ({ command, mode }) => {
 
 ### server.fsServe.strict
 
+- **Experimental**
 - **Type:** `boolean`
 - **Default:** `false` (will change to `true` in future versions)
 
@@ -439,6 +440,7 @@ export default async ({ command, mode }) => {
 
 ### server.fsServe.root
 
+- **Experimental**
 - **Type:** `string`
 
   Restrict files that could be served via `/@fs/`. When `server.fsServe.strict` is set to `true`, accessing files outside this directory will result in a 403.
