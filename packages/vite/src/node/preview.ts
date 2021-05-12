@@ -46,7 +46,7 @@ export async function preview(
   )
 
   const options = config.server
-  let hostname = resolveHostname(options.host)
+  const hostname = resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
