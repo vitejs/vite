@@ -9,6 +9,7 @@ export type LogLevel = LogType | 'silent'
 export interface Logger {
   info(msg: string, options?: LogOptions): void
   warn(msg: string, options?: LogOptions): void
+  warnOnce(msg: string, options?: LogOptions): void
   error(msg: string, options?: LogOptions): void
   clearScreen(type: LogType): void
   hasWarned: boolean
@@ -87,6 +88,8 @@ export function createLogger(
     }
   }
 
+  const warnedMessages = new Set<string>()
+
   const logger: Logger = {
     hasWarned: false,
     info(msg, opts) {
@@ -95,6 +98,12 @@ export function createLogger(
     warn(msg, opts) {
       logger.hasWarned = true
       output('warn', msg, opts)
+    },
+    warnOnce(msg, opts) {
+      if (warnedMessages.has(msg)) return
+      logger.hasWarned = true
+      output('warn', msg, opts)
+      warnedMessages.add(msg)
     },
     error(msg, opts) {
       logger.hasWarned = true
