@@ -430,16 +430,38 @@ export default async ({ command, mode }) => {
 
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
+### server.fsServe.strict
+
+- **Experimental**
+- **Type:** `boolean`
+- **Default:** `false` (will change to `true` in future versions)
+
+  Restrict serving files outside of workspace root.
+
 ### server.fsServe.root
 
+- **Experimental**
 - **Type:** `string`
 
-  Restrict files that could be served via `/@fs/`. Accessing files outside this directory will result in a 403.
+  Restrict files that could be served via `/@fs/`. When `server.fsServe.strict` is set to `true`, accessing files outside this directory will result in a 403.
   
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
   - contains `workspaces` field in `package.json`
   - contains one of the following file
     - `pnpm-workspace.yaml`
+
+  Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example
+
+  ```js
+  export default {
+    server: {
+      fsServe: {
+        // Allow serving files from one level up to the project root 
+        root: '..' 
+      }
+    }
+  }
+  ```
 
 ## Build Options
 

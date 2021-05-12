@@ -75,7 +75,7 @@ export async function transformRequest(
     // as string
     try {
       if (!options.ssr) {
-        ensureServingAccess(file, config.server.fsServe.root)
+        ensureServingAccess(file, config.server.fsServe, config.logger)
       }
       code = await fs.readFile(file, 'utf-8')
       isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
