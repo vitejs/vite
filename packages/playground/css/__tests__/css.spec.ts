@@ -41,7 +41,7 @@ test('css import from js', async () => {
   editFile('imported-without-variable.css', (code) =>
     code.replace('color: magenta', 'color: cyan')
   )
-  await untilUpdated(() => getColor(imported), 'cyan')
+  await untilUpdated(() => getColor(importedNoVars), 'cyan')
 
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await untilUpdated(() => getColor(imported), 'red')
