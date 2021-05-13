@@ -245,7 +245,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else {
           // server only
           if (ssr) {
-            return modulesCode || `export default ${JSON.stringify(null)}`
+            return modulesCode || `export default null`
           }
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
@@ -267,7 +267,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       styles.set(id, css)
 
       return {
-        code: modulesCode || `export default ${JSON.stringify(null)}`,
+        code: modulesCode || `export default null`,
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
