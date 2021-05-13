@@ -859,15 +859,26 @@ type PreprocessorAdditionalData =
   | string
   | ((source: string, filename: string) => string | Promise<string>)
 
+type StylePreprocessorOptions = {
+  [key: string]: any
+  additionalData?: PreprocessorAdditionalData
+  filename: string
+  alias: Alias[]
+}
+
+type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
+
 type StylePreprocessor = (
   source: string,
   root: string,
-  options: {
-    [key: string]: any
-    additionalData?: PreprocessorAdditionalData
-    filename: string
-    alias: Alias[]
-  },
+  options: StylePreprocessorOptions,
+  resolvers: CSSAtImportResolvers
+) => StylePreprocessorResults | Promise<StylePreprocessorResults>
+
+type SassStylePreprocessor = (
+  source: string,
+  root: string,
+  options: SassStylePreprocessorOptions,
   resolvers: CSSAtImportResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
@@ -902,7 +913,12 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
 }
 
 // .scss/.sass processor
-const scss: StylePreprocessor = async (source, root, options, resolvers) => {
+const scss: SassStylePreprocessor = async (
+  source,
+  root,
+  options,
+  resolvers
+) => {
   const render = loadPreprocessor(PreprocessLang.sass, root).render
   const internalImporter: Sass.Importer = (url, importer, done) => {
     resolvers.sass(url, importer).then((resolved) => {
@@ -913,12 +929,19 @@ const scss: StylePreprocessor = async (source, root, options, resolvers) => {
       }
     })
   }
+  const importer = [internalImporter]
+  if (options.importer) {
+    Array.isArray(options.importer)
+      ? importer.concat(options.importer)
+      : importer.push(options.importer)
+  }
+
   const finalOptions: Sass.Options = {
     ...options,
     data: await getSource(source, options.filename, options.additionalData),
     file: options.filename,
     outFile: options.filename,
-    importer: [internalImporter].concat(options.importer)
+    importer
   }
 
   try {
@@ -946,7 +969,7 @@ const scss: StylePreprocessor = async (source, root, options, resolvers) => {
   }
 }
 
-const sass: StylePreprocessor = (source, root, options, aliasResolver) =>
+const sass: SassStylePreprocessor = (source, root, options, aliasResolver) =>
   scss(
     source,
     root,
