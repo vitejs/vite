@@ -248,7 +248,7 @@ function viteLegacyPlugin(options = {}) {
               targets,
               modules: false,
               bugfixes: true,
-              loose: true,
+              loose: false,
               useBuiltIns: needPolyfills ? 'usage' : false,
               corejs: needPolyfills
                 ? { version: 3, proposals: false }
