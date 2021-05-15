@@ -8,19 +8,19 @@
 With NPM:
 
 ```bash
-npm init @vitejs/app
+$ npm init @vitejs/app
 ```
 
 With Yarn:
 
 ```bash
-yarn create @vitejs/app
+$ yarn create @vitejs/app
 ```
 
 With PNPM:
 
 ```bash
-pnpx @vitejs/create-app
+$ pnpx @vitejs/create-app
 ```
 
 Then follow the prompts!
