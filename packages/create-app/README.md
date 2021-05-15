@@ -8,13 +8,19 @@
 With NPM:
 
 ```bash
-$ npm init @vitejs/app
+npm init @vitejs/app
 ```
 
 With Yarn:
 
 ```bash
-$ yarn create @vitejs/app
+yarn create @vitejs/app
+```
+
+With PNPM:
+
+```bash
+pnpx @vitejs/create-app
 ```
 
 Then follow the prompts!
@@ -30,6 +36,9 @@ npm init @vitejs/app my-vue-app -- --template vue
 
 # yarn
 yarn create @vitejs/app my-vue-app --template vue
+
+# pnpm
+pnpx @vitejs/create-app my-vue-app --template vue
 ```
 
 Currently supported template presets include:
