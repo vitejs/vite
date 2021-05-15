@@ -493,7 +493,7 @@ export default async ({ command, mode }) => {
   import 'vite/dynamic-import-polyfill'
   ```
 
-  When using [`@vite-js/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), the plugin sets this option to `true` automatically.
+  When using [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), the plugin sets this option to `true` automatically.
 
   Note: the polyfill does **not** apply to [Library Mode](/guide/build#library-mode). If you need to support browsers without native dynamic import, you should probably avoid using it in your library.
 
