@@ -68,6 +68,20 @@ function viteLegacyPlugin(options = {}) {
   /**
    * @type {import('vite').Plugin}
    */
+  const legacyConfigPlugin = {
+    name: 'legacy-config',
+
+    config(config) {
+      if (!config.build) {
+        config.build = {}
+      }
+      config.build.polyfillDynamicImport = true
+    }
+  }
+
+  /**
+   * @type {import('vite').Plugin}
+   */
   const legacyGenerateBundlePlugin = {
     name: 'legacy-generate-polyfill-chunk',
     apply: 'build',
@@ -398,7 +412,12 @@ function viteLegacyPlugin(options = {}) {
     }
   }
 
-  return [legacyGenerateBundlePlugin, legacyPostPlugin, legacyEnvPlugin]
+  return [
+    legacyConfigPlugin,
+    legacyGenerateBundlePlugin,
+    legacyPostPlugin,
+    legacyEnvPlugin
+  ]
 }
 
 /**

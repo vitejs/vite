@@ -20,6 +20,7 @@ import {
   getAssetFilename
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
+import { polyfillId } from './dynamicImportPolyfill'
 import {
   AttributeNode,
   NodeTransform,
@@ -262,6 +263,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         processedHtml.set(id, s.toString())
+
+        // inject dynamic import polyfill
+        if (config.build.polyfillDynamicImport) {
+          js = `import "${polyfillId}";\n${js}`
+        }
+
         return js
       }
     },
