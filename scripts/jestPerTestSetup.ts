@@ -75,7 +75,10 @@ beforeAll(async () => {
             usePolling: true,
             interval: 100
           },
-          host: true
+          host: true,
+          fsServe: {
+            strict: !isBuildTest
+          }
         },
         build: {
           // skip transpilation during tests to make it faster
