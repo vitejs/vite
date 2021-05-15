@@ -1,9 +1,9 @@
 {
-  "name": "my-vite-element",
+  "name": "vite-lit-element-starter",
   "version": "0.0.0",
-  "main": "dist/my-vite-element.es.js",
+  "main": "dist/my-element.es.js",
   "exports": {
-    ".": "./dist/my-vite-element.es.js"
+    ".": "./dist/my-element.es.js"
   },
   "files": [
     "dist"
