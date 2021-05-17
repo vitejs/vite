@@ -15,3 +15,9 @@ if (import.meta.env.LEGACY) {
 }
 
 document.getElementById('env').textContent = `is legacy: ${isLegacy}`
+
+// Iterators
+
+document.getElementById('iterators').textContent = [...new Set(['hello'])].join(
+  ''
+)
