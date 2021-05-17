@@ -31,6 +31,11 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
     },
     load(id) {
       if (id === polyfillId) {
+        if (!enabled && config.command === 'build') {
+          config.logger.warnOnce(
+            `\n'vite/dynamic-import-polyfill' is no longer needed if you target modern browsers`
+          )
+        }
         if (skip) {
           return ''
         }
