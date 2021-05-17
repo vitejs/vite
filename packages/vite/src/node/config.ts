@@ -113,6 +113,10 @@ export interface UserConfig {
    */
   resolve?: ResolveOptions & { alias?: AliasOptions }
   /**
+   * Change variable prefix for env keys
+   */
+  envPrefix?: string | boolean
+  /**
    * CSS related options (preprocessors and CSS modules)
    */
   css?: CSSOptions
@@ -201,6 +205,7 @@ export type ResolvedConfig = Readonly<
     mode: string
     isProduction: boolean
     env: Record<string, any>
+	envPrefix: string
     resolve: ResolveOptions & {
       alias: Alias[]
     }
@@ -304,7 +309,8 @@ export async function resolveConfig(
   }
 
   // load .env files
-  const userEnv = inlineConfig.envFile !== false && loadEnv(mode, resolvedRoot)
+  const prefix = typeof config.envPrefix === "boolean" ? (config.envPrefix ? "VITE_":""):(config.envPrefix || "VITE_");
+  const userEnv = inlineConfig.envFile !== false && loadEnv(mode, resolvedRoot, prefix)
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
