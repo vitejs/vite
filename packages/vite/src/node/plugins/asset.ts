@@ -207,8 +207,9 @@ async function fileToBuiltUrl(
 
   let url
   if (
-    config.build.lib ||
-    Buffer.byteLength(content) < config.build.assetsInlineLimit
+    (config.build.lib ||
+      Buffer.byteLength(content) < config.build.assetsInlineLimit) &&
+    hash == null
   ) {
     // svgs can be inlined without base64
     url = file.endsWith('.svg')

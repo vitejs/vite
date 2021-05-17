@@ -189,7 +189,7 @@ if (isBuild) {
     for (const file of listAssets('foo')) {
       if (file.endsWith('.css')) {
         expect(entry.css).toContain(`assets/${file}`)
-      } else if (!file.endsWith('.js')) {
+      } else if (!file.endsWith('.js') && !file.endsWith('.svg')) {
         expect(entry.assets).toContain(`assets/${file}`)
       }
     }
