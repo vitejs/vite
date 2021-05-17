@@ -109,16 +109,24 @@ export function serveRawFsMiddleware(
   }
 }
 
+export function isFileAccessAllowed(
+  url: string,
+  { root, strict }: Required<FileSystemServeOptions>
+): boolean {
+  return !strict || normalizePath(url).startsWith(root + path.posix.sep)
+}
+
 export function ensureServingAccess(
   url: string,
-  { root, strict }: Required<FileSystemServeOptions>,
+  serveOptions: Required<FileSystemServeOptions>,
   logger: Logger
 ): void {
+  const { strict, root } = serveOptions
   // TODO: early return, should remove once we polished the restriction logic
   if (!strict) return
 
-  const normalizedUrl = normalizePath(url)
-  if (!normalizedUrl.startsWith(root + path.posix.sep)) {
+  if (!isFileAccessAllowed(url, serveOptions)) {
+    const normalizedUrl = normalizePath(url)
     if (strict) {
       throw new AccessRestrictedError(
         `The request url "${normalizedUrl}" is outside of vite dev server root "${root}". 
