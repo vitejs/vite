@@ -64,7 +64,7 @@ export interface BuildOptions {
   /**
    * whether to inject dynamic import polyfill.
    * Note: does not apply to library mode.
-   * @deprecated the dynamic import polyfill has been removed
+   * @default false
    */
   polyfillDynamicImport?: boolean
   /**
@@ -194,13 +194,12 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<
-  Omit<BuildOptions, 'base' | 'polyfillDynamicImport'>
->
+export type ResolvedBuildOptions = Required<Omit<BuildOptions, 'base'>>
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
+    polyfillDynamicImport: false,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
