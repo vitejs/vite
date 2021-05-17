@@ -1,3 +1,12 @@
+## [2.3.1](https://github.com/vitejs/vite/compare/create-app@2.3.0...create-app@2.3.1) (2021-05-17)
+
+
+### Bug Fixes
+
+* **create-app:** lit-element templates package.json ([#3435](https://github.com/vitejs/vite/issues/3435)) ([74986d3](https://github.com/vitejs/vite/commit/74986d3d053aabe7ec3de20c987e9df309c684b2))
+
+
+
 # [2.3.0](https://github.com/vitejs/vite/compare/create-app@2.2.5...create-app@2.3.0) (2021-05-11)
 
 
