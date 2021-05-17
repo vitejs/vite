@@ -1,3 +1,16 @@
+## [2.3.3](https://github.com/vitejs/vite/compare/v2.3.2...v2.3.3) (2021-05-17)
+
+
+### Bug Fixes
+
+* ignore ids that start with \0 in plugin asset, fix [#3424](https://github.com/vitejs/vite/issues/3424) ([#3436](https://github.com/vitejs/vite/issues/3436)) ([f6cfe30](https://github.com/vitejs/vite/commit/f6cfe30abfc5179262aea807173d7591fd4dc876))
+* restore dynamic-import-polyfill ([#3434](https://github.com/vitejs/vite/issues/3434)) ([4112c5d](https://github.com/vitejs/vite/commit/4112c5d103673b83c50d446096086617dfaac5a3))
+* sass importer can't be undefined (fix: [#3390](https://github.com/vitejs/vite/issues/3390)) ([#3395](https://github.com/vitejs/vite/issues/3395)) ([30ff5a2](https://github.com/vitejs/vite/commit/30ff5a235d2a832cb45a761a03c5947460417b40))
+* skip fs fallback for out of root urls, fix [#3364](https://github.com/vitejs/vite/issues/3364) ([#3431](https://github.com/vitejs/vite/issues/3431)) ([19dae99](https://github.com/vitejs/vite/commit/19dae997f91607424af2d0e159ae2570463bbcb3))
+* warn about dynamic import polyfill only during build ([#3446](https://github.com/vitejs/vite/issues/3446)) ([5fe0550](https://github.com/vitejs/vite/commit/5fe05507dd28bbd863469628bc61b45a04f938bd))
+
+
+
 ## [2.3.2](https://github.com/vitejs/vite/compare/v2.3.1...v2.3.2) (2021-05-12)
 
 
