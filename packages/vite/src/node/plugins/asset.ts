@@ -8,6 +8,7 @@ import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
 import { PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
+import svgToTinyDataUri from 'mini-svg-data-uri'
 import { createHash } from 'crypto'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -213,7 +214,10 @@ async function fileToBuiltUrl(
   ) {
     // svgs can be inlined without base64
     url = file.endsWith('.svg')
-      ? `data:image/svg+xml;utf8,${uriEncodeSvg(content.toString('utf-8'))}`
+      ? // The only difference between the default method and `toSrcset` is that
+        // the latter encodes spaces as `%20`, so it's safer to always use it
+        // to support `srcset` use-case even when svg is imported into JavaScript
+        svgToTinyDataUri.toSrcset(content.toString())
       : // base64 inlined as a string
         `data:${mime.getType(file)};base64,${content.toString('base64')}`
   } else {
@@ -251,39 +255,6 @@ async function fileToBuiltUrl(
 
   cache.set(id, url)
   return url
-}
-
-function specialHexEncode(match: string) {
-  // Browsers tolerate these characters, and they're frequent
-  switch (match) {
-    case '%20':
-      return ' '
-    case '%3D':
-      return '='
-    case '%3A':
-      return ':'
-    case '%2F':
-      return '/'
-    default:
-      return match.toLowerCase() // compresses better
-  }
-}
-
-const doubleQuoteRE = /"/g
-const whitespaceRE = /\s+/g
-const urlHexPairsRE = /%[\dA-F]{2}/g
-
-// Adopted from https://github.com/tigt/mini-svg-data-uri
-function uriEncodeSvg(content: string) {
-  const normalizedContent = content
-    .trim()
-    .replace(whitespaceRE, ' ')
-    .replace(doubleQuoteRE, "'")
-
-  return encodeURIComponent(normalizedContent).replace(
-    urlHexPairsRE,
-    specialHexEncode
-  )
 }
 
 function getAssetHash(content: Buffer) {
