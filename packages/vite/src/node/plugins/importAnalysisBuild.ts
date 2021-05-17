@@ -121,9 +121,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needPreloadHelper = false
 
       for (let index = 0; index < imports.length; index++) {
-        const { s: start, e: end, ss: expStart, d: dynamicIndex } = imports[
-          index
-        ]
+        const {
+          s: start,
+          e: end,
+          ss: expStart,
+          d: dynamicIndex
+        } = imports[index]
 
         const isGlob =
           source.slice(start, end) === 'import.meta' &&
@@ -131,20 +134,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // import.meta.glob
         if (isGlob) {
-          const {
-            importsString,
-            exp,
-            endIndex,
-            isEager
-          } = await transformImportGlob(
-            source,
-            start,
-            importer,
-            index,
-            config.root,
-            undefined,
-            ssr
-          )
+          const { importsString, exp, endIndex, isEager } =
+            await transformImportGlob(
+              source,
+              start,
+              importer,
+              index,
+              config.root,
+              undefined,
+              ssr
+            )
           str().prepend(importsString)
           str().overwrite(expStart, endIndex, exp)
           if (!isEager) {
@@ -205,6 +204,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const isPolyfillEnabled = config.build.polyfillDynamicImport
       for (const file in bundle) {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
@@ -221,7 +221,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (imports.length) {
             const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
-              const { s: start, e: end } = imports[index]
+              const { s: start, e: end, d: dynamicIndex } = imports[index]
+              // if dynamic import polyfill is used, rewrite the import to
+              // use the polyfilled function.
+              if (isPolyfillEnabled) {
+                s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
+              }
               // check the chunk being imported
               const url = code.slice(start, end)
               const deps: Set<string> = new Set()

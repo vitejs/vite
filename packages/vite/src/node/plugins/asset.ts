@@ -41,6 +41,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
+      if (id.startsWith('\0')) {
+        // Rollup convention, this id should be handled by the
+        // plugin that marked it with \0
+        return
+      }
+
       // raw requests, read from disk
       if (rawRE.test(id)) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
@@ -117,7 +123,7 @@ export function checkPublicFile(
 ): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
-  if (!url.startsWith('/')) {
+  if (!publicDir || !url.startsWith('/')) {
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))

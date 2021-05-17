@@ -75,7 +75,10 @@ beforeAll(async () => {
             usePolling: true,
             interval: 100
           },
-          host: true
+          host: true,
+          fsServe: {
+            strict: !isBuildTest
+          }
         },
         build: {
           // skip transpilation during tests to make it faster
@@ -88,7 +91,8 @@ beforeAll(async () => {
         server = await (await createServer(options)).listen()
         // use resolved port/base from server
         const base = server.config.base === '/' ? '' : server.config.base
-        const url = (global.viteTestUrl = `http://localhost:${server.config.server.port}${base}`)
+        const url =
+          (global.viteTestUrl = `http://localhost:${server.config.server.port}${base}`)
         await page.goto(url)
       } else {
         process.env.VITE_INLINE = 'inline-build'

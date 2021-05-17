@@ -7,7 +7,7 @@
   <Foo />
   <p class="virtual">msg from virtual module: {{ foo.msg }}</p>
 
-  <ImportType/>
+  <ImportType />
 </template>
 
 <script setup>

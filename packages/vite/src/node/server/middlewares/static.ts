@@ -2,9 +2,12 @@ import os from 'os'
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
-import { ResolvedConfig } from '../..'
+import { FileSystemServeOptions } from '..'
+import { normalizePath, ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
-import { cleanUrl, isImportRequest } from '../../utils'
+import { Logger } from '../../logger'
+import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
+import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
   dev: true,
@@ -74,7 +77,9 @@ export function serveStaticMiddleware(
   }
 }
 
-export function serveRawFsMiddleware(): Connect.NextHandleFunction {
+export function serveRawFsMiddleware(
+  config: ResolvedConfig
+): Connect.NextHandleFunction {
   const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
 
@@ -86,6 +91,13 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
+      // restrict files outside of `fsServe.root`
+      ensureServingAccess(
+        path.resolve(fsPathFromId(url)),
+        config.server.fsServe,
+        config.logger
+      )
+
       url = url.slice(FS_PREFIX.length)
       if (isWin) url = url.replace(/^[A-Z]:/i, '')
 
@@ -93,6 +105,44 @@ export function serveRawFsMiddleware(): Connect.NextHandleFunction {
       serveFromRoot(req, res, next)
     } else {
       next()
+    }
+  }
+}
+
+export function isFileAccessAllowed(
+  url: string,
+  { root, strict }: Required<FileSystemServeOptions>
+): boolean {
+  return !strict || normalizePath(url).startsWith(root + path.posix.sep)
+}
+
+export function ensureServingAccess(
+  url: string,
+  serveOptions: Required<FileSystemServeOptions>,
+  logger: Logger
+): void {
+  const { strict, root } = serveOptions
+  // TODO: early return, should remove once we polished the restriction logic
+  if (!strict) return
+
+  if (!isFileAccessAllowed(url, serveOptions)) {
+    const normalizedUrl = normalizePath(url)
+    if (strict) {
+      throw new AccessRestrictedError(
+        `The request url "${normalizedUrl}" is outside of vite dev server root "${root}". 
+        For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
+        Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
+        normalizedUrl,
+        root
+      )
+    } else {
+      // TODO: warn for potential unrestricted access
+      logger.warnOnce(
+        `For security concerns, accessing files outside of workspace root will ` +
+          `be restricted by default in the future version of Vite. ` +
+          `Refer to [] for more`
+      )
+      logger.warnOnce(`Unrestricted file system access to "${normalizedUrl}"`)
     }
   }
 }

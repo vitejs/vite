@@ -64,7 +64,7 @@ export interface BuildOptions {
   /**
    * whether to inject dynamic import polyfill.
    * Note: does not apply to library mode.
-   * @deprecated the dynamic import polyfill has been removed
+   * @default false
    */
   polyfillDynamicImport?: boolean
   /**
@@ -194,13 +194,12 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<
-  Omit<BuildOptions, 'base' | 'polyfillDynamicImport'>
->
+export type ResolvedBuildOptions = Required<Omit<BuildOptions, 'base'>>
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
+    polyfillDynamicImport: false,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -251,14 +250,18 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   return resolved
 }
 
-export function resolveBuildPlugins(
-  config: ResolvedConfig
-): { pre: Plugin[]; post: Plugin[] } {
+export function resolveBuildPlugins(config: ResolvedConfig): {
+  pre: Plugin[]
+  post: Plugin[]
+} {
   const options = config.build
   return {
     pre: [
       buildHtmlPlugin(config),
-      commonjsPlugin(options.commonjsOptions),
+      commonjsPlugin({
+        ignoreDynamicRequires: true,
+        ...options.commonjsOptions
+      }),
       dataURIPlugin(),
       dynamicImportVars({
         warnOnError: true,
@@ -340,9 +343,9 @@ async function doBuild(
   const outDir = resolve(options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
-  const plugins = (ssr
-    ? config.plugins.map((p) => injectSsrFlagToHooks(p))
-    : config.plugins) as Plugin[]
+  const plugins = (
+    ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
+  ) as Plugin[]
 
   // inject ssrExternal if present
   const userExternal = options.rollupOptions?.external
@@ -545,7 +548,7 @@ function prepareOutDir(
       emptyDir(outDir, ['.git'])
     }
   }
-  if (fs.existsSync(config.publicDir)) {
+  if (config.publicDir && fs.existsSync(config.publicDir)) {
     copyDir(config.publicDir, outDir)
   }
 }

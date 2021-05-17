@@ -17,12 +17,11 @@ If you are using ES syntax that are still in proposal status (e.g. class propert
 
 ```js
 export default {
-  plugins: [reactRefresh({
-    parserPlugins: [
-      'classProperties',
-      'classPrivateProperties'
-    ]
-  })]
+  plugins: [
+    reactRefresh({
+      parserPlugins: ['classProperties', 'classPrivateProperties']
+    })
+  ]
 }
 ```
 

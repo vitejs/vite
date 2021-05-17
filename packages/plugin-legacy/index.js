@@ -68,6 +68,21 @@ function viteLegacyPlugin(options = {}) {
   /**
    * @type {import('vite').Plugin}
    */
+  const legacyConfigPlugin = {
+    name: 'legacy-config',
+
+    apply: 'build',
+    config(config) {
+      if (!config.build) {
+        config.build = {}
+      }
+      config.build.polyfillDynamicImport = true
+    }
+  }
+
+  /**
+   * @type {import('vite').Plugin}
+   */
   const legacyGenerateBundlePlugin = {
     name: 'legacy-generate-polyfill-chunk',
     apply: 'build',
@@ -398,7 +413,12 @@ function viteLegacyPlugin(options = {}) {
     }
   }
 
-  return [legacyGenerateBundlePlugin, legacyPostPlugin, legacyEnvPlugin]
+  return [
+    legacyConfigPlugin,
+    legacyGenerateBundlePlugin,
+    legacyPostPlugin,
+    legacyEnvPlugin
+  ]
 }
 
 /**
@@ -533,17 +553,13 @@ function isLegacyOutput(options) {
 function recordAndRemovePolyfillBabelPlugin(polyfills) {
   return ({ types: t }) => ({
     name: 'vite-remove-polyfill-import',
-    visitor: {
-      Program: {
-        exit(path) {
-          path.get('body').forEach((p) => {
-            if (t.isImportDeclaration(p)) {
-              polyfills.add(p.node.source.value)
-              p.remove()
-            }
-          })
+    post({ path }) {
+      path.get('body').forEach((p) => {
+        if (t.isImportDeclaration(p)) {
+          polyfills.add(p.node.source.value)
+          p.remove()
         }
-      }
+      })
     }
   })
 }

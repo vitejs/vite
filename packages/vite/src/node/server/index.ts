@@ -1,4 +1,3 @@
-import os from 'os'
 import fs from 'fs'
 import path from 'path'
 import * as net from 'net'
@@ -9,7 +8,7 @@ import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import { resolveHttpServer } from './http'
+import { resolveHttpsConfig, resolveHttpServer } from './http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import {
   createPluginContainer,
@@ -51,6 +50,9 @@ import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
+import { printServerUrls } from '../logger'
+import { resolveHostname } from '../utils'
+import { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -120,6 +122,35 @@ export interface ServerOptions {
    * Should start and end with the `/` character
    */
   base?: string
+  /**
+   * Options for files served via '/\@fs/'.
+   */
+  fsServe?: FileSystemServeOptions
+}
+
+export interface ResolvedServerOptions extends ServerOptions {
+  fsServe: Required<FileSystemServeOptions>
+}
+
+export interface FileSystemServeOptions {
+  /**
+   * Strictly restrict file accessing outside of allowing paths.
+   *
+   * Default to false at this moment, will enabled by default in the future versions.
+   * @expiremental
+   * @default false
+   */
+  strict?: boolean
+
+  /**
+   * Restrict accessing files outside this directory will result in a 403.
+   *
+   * Accepts absolute path or a path relative to project root.
+   * Will try to search up for workspace root by default.
+   *
+   * @expiremental
+   */
+  root?: string
 }
 
 /**
@@ -196,7 +227,11 @@ export interface ViteDevServer {
   /**
    * Apply vite built-in HTML transforms and any plugin HTML transforms.
    */
-  transformIndexHtml(url: string, html: string): Promise<string>
+  transformIndexHtml(
+    url: string,
+    html: string,
+    originalUrl?: string
+  ): Promise<string>
   /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
@@ -262,14 +297,15 @@ export async function createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
-  const serverConfig = config.server || {}
+  const serverConfig = config.server
   const middlewareMode = !!serverConfig.middlewareMode
+  const httpsOptions = await resolveHttpsConfig(config)
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, middlewares)
-  const ws = createWebSocketServer(httpServer, config)
+    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+  const ws = createWebSocketServer(httpServer, config, httpsOptions)
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
@@ -435,13 +471,15 @@ export async function createServer(
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  middlewares.use(servePublicMiddleware(config.publicDir))
+  if (config.publicDir) {
+    middlewares.use(servePublicMiddleware(config.publicDir))
+  }
 
   // main transform middleware
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(serveRawFsMiddleware())
+  middlewares.use(serveRawFsMiddleware(config))
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
@@ -534,18 +572,9 @@ async function startServer(
     throw new Error('Cannot call server.listen in middleware mode.')
   }
 
-  const options = server.config.server || {}
+  const options = server.config.server
   let port = inlinePort || options.port || 3000
-  let hostname: string | undefined
-  if (options.host === undefined || options.host === 'localhost') {
-    // Use a secure default
-    hostname = '127.0.0.1'
-  } else if (options.host === true) {
-    // probably passed --host in the CLI, without arguments
-    hostname = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
-  } else {
-    hostname = options.host as string
-  }
+  const hostname = resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
@@ -559,7 +588,7 @@ async function startServer(
           reject(new Error(`Port ${port} is already in use`))
         } else {
           info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, hostname)
+          httpServer.listen(++port, hostname.host)
         }
       } else {
         httpServer.removeListener('error', onError)
@@ -569,7 +598,7 @@ async function startServer(
 
     httpServer.on('error', onError)
 
-    httpServer.listen(port, hostname, () => {
+    httpServer.listen(port, hostname.host, () => {
       httpServer.removeListener('error', onError)
 
       info(
@@ -580,29 +609,7 @@ async function startServer(
         }
       )
 
-      if (hostname === '127.0.0.1') {
-        const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
-        info(`  > Local: ${chalk.cyan(url)}`)
-        info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
-      } else {
-        const interfaces = os.networkInterfaces()
-        Object.keys(interfaces).forEach((key) =>
-          (interfaces[key] || [])
-            .filter((details) => details.family === 'IPv4')
-            .map((detail) => {
-              return {
-                type: detail.address.includes('127.0.0.1')
-                  ? 'Local:   '
-                  : 'Network: ',
-                host: detail.address
-              }
-            })
-            .forEach(({ type, host }) => {
-              const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-              info(`  > ${type} ${chalk.cyan(url)}`)
-            })
-        )
-      }
+      printServerUrls(hostname, protocol, port, base, info)
 
       // @ts-ignore
       if (global.__vite_start_time) {
@@ -636,7 +643,7 @@ async function startServer(
       if (options.open && !isRestart) {
         const path = typeof options.open === 'string' ? options.open : base
         openBrowser(
-          `${protocol}://${hostname}:${port}${path}`,
+          `${protocol}://${hostname.name}:${port}${path}`,
           true,
           server.config.logger
         )
@@ -681,4 +688,21 @@ function createServerCloseFn(server: http.Server | null) {
         resolve()
       }
     })
+}
+
+export function resolveServerOptions(
+  root: string,
+  raw?: ServerOptions
+): ResolvedServerOptions {
+  const server = raw || {}
+  const fsServeRoot = normalizePath(
+    path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
+  )
+  // TODO: make strict by default
+  const fsServeStrict = server.fsServe?.strict ?? false
+  server.fsServe = {
+    root: fsServeRoot,
+    strict: fsServeStrict
+  }
+  return server as ResolvedServerOptions
 }

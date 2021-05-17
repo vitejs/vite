@@ -1,3 +1,94 @@
+## [2.3.2](https://github.com/vitejs/vite/compare/v2.3.1...v2.3.2) (2021-05-12)
+
+
+### Bug Fixes
+
+* **css:** fix sass importer error ([#3368](https://github.com/vitejs/vite/issues/3368)) ([3f04abf](https://github.com/vitejs/vite/commit/3f04abf0ff21c7b2969902c3d8d87f4b1b93740f))
+* **server:** hostname defaults to localhost, fix [#3355](https://github.com/vitejs/vite/issues/3355) ([#3383](https://github.com/vitejs/vite/issues/3383)) ([8b5a6a8](https://github.com/vitejs/vite/commit/8b5a6a855091e6f744cc7b886cf927d14dc74d50))
+
+
+
+## [2.3.1](https://github.com/vitejs/vite/compare/v2.3.0...v2.3.1) (2021-05-12)
+
+### Notable Changes
+
+We introduced a security fix in v2.3.0 to restrict file access outside of the workspace root. We received reports of issues with symlinks and monorepo setups, so we are marking this feature as experimental and disabling it by default to avoid disruption in the ecosystem.
+
+A new experimental option `server.fsServe.strict` was added defaulting to `false`. This **disables the restrictions by default**. The `fsServe` restrictions are going to be enabled by default in a future version, once the issues are been resolved and the logic becomes more robust. You can opt-in to this security change using (experimental)
+
+```js
+// vite.config.js
+export default {
+  server: {
+    fsServe: {
+      strict: true
+    }
+  }
+}
+```
+
+### Bug Fixes
+
+* bump @rollup/plugin-commonjs to v19, fix [#3312](https://github.com/vitejs/vite/issues/3312) ([#3353](https://github.com/vitejs/vite/issues/3353)) ([c6ef6d0](https://github.com/vitejs/vite/commit/c6ef6d084c2368f6c73e03cc18bcab05aea9cfa6))
+* disable fsServe restrictions by default ([#3377](https://github.com/vitejs/vite/issues/3377)) ([5433a65](https://github.com/vitejs/vite/commit/5433a655534cd4c716c2eba2f89f20bfa328e812))
+* normalize url in `ensureServingAccess` ([#3350](https://github.com/vitejs/vite/issues/3350)) ([deb465b](https://github.com/vitejs/vite/commit/deb465ba412312ccae2d5b767de327d6f8562e7e))
+* use the closest package.json as root when workspace not found fo… ([#3374](https://github.com/vitejs/vite/issues/3374)) ([42b35ac](https://github.com/vitejs/vite/commit/42b35ac567b02b8142a7a51df320d7deb2ec4ac1))
+
+
+
+# [2.3.0](https://github.com/vitejs/vite/compare/v2.2.4...v2.3.0) (2021-05-11)
+
+## BREAKING CHANGES
+
+- Browser default targets changed (PR [#2976](https://github.com/vitejs/vite/pull/2976))
+    - Default browser support range has changed. The minimum requirement is now [native dynamic import support](https://caniuse.com/es6-module-dynamic-import). Most notably, this means support for legacy Microsoft Edge (16-18) has been dropped.
+    - `vite/dynamic-import-polyfill` removed and no longer required in custom entries
+
+### Why are there breaking changes in a minor?
+
+- **Limited impact:** The affected target browsers are ones that natively support [ES6 modules](https://caniuse.com/es6-module) (92.83% of global usage) but do not support [native dynamic imports](https://caniuse.com/es6-module-dynamic-import) (92.34% of global usage). So this is a small range affecting only 0.49% of global usage.
+
+    This number should continue to decrease in the future as most modern browsers are evergreen. You are also not affected if you are already targeting legacy browsers using `@vitejs/plugin-legacy`.
+
+- **Easy migration:** if you do intend to support browsers that fall into this category, you can use [dynamic-import-polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill).
+
+    To make the polyfill work, you will also need to use a plugin with [`renderDynamicImport`](https://rollupjs.org/guide/en/#renderdynamicimport) to change the import calls to `__import__`. You can follow the installation guide in [this example](https://github.com/antfu/vite-dynamic-import-polyfill-example).
+
+- **Required for bug fixes:** This change is required for upgrading esbuild from v0.9 to [v0.11](https://github.com/evanw/esbuild/releases/tag/v0.11.0), which includes a lot of bug fixes and improvements. And it also allows us to remove the complexity of the dynamic import polyfill.
+
+## Security Fixes
+
+- Dev server only listens to localhost by default now (PR [#2977](https://github.com/vitejs/vite/pull/2977))
+    - Pass `--host 0.0.0.0` to change back to the previous behavior.
+- Dev server only serves files under workspace root by defualt (PR [#2850](https://github.com/vitejs/vite/pull/2850), [#3321](https://github.com/vitejs/vite/pull/3321))
+    - Accessing files outside of workspace root will result in a 403 response.
+    - Vite will try to search up for workspace root defined in `package.json` or `pnpm-workspace.yaml`
+    - To set the workspace root explicitly, see [configurations](https://vitejs.dev/config/#server-fsserve-root)
+
+### Bug Fixes
+
+* **dev:** rewrite importee path at html files at spa fallback ([#3239](https://github.com/vitejs/vite/issues/3239)) ([13d41d8](https://github.com/vitejs/vite/commit/13d41d864219bcc0e952f42f69adb97147e15520))
+* **hmr:** respect server https options when running as middleware ([#1992](https://github.com/vitejs/vite/issues/1992)) ([24178b0](https://github.com/vitejs/vite/commit/24178b05825245b9f36b5a8e4730996184cc7e8e))
+* **serve:** prevent serving unrestricted files ([#3321](https://github.com/vitejs/vite/issues/3321)) ([7231b5a](https://github.com/vitejs/vite/commit/7231b5a882a2db8dd2d9cb88a0f446edb5e2cf43))
+* only provide npm package names to resolveSSRExternal ([#2717](https://github.com/vitejs/vite/issues/2717)) ([6dde32a](https://github.com/vitejs/vite/commit/6dde32a1641e91470da73315272f14e62369b65b))
+* prevent serving unrestricted files (fix [#2820](https://github.com/vitejs/vite/issues/2820)) ([#2850](https://github.com/vitejs/vite/issues/2850)) ([792a6e1](https://github.com/vitejs/vite/commit/792a6e1ee8fa288ce8e641f7fa378fe8d76e52d4))
+* type error by [#3151](https://github.com/vitejs/vite/issues/3151) ([#3292](https://github.com/vitejs/vite/issues/3292)) ([fd4146b](https://github.com/vitejs/vite/commit/fd4146b8624100a609ae43b2d73681d260dfe131))
+* upgrade to esbuild@0.11.19 ([#3282](https://github.com/vitejs/vite/issues/3282)) ([b0dd69d](https://github.com/vitejs/vite/commit/b0dd69d305c268b2ea326ec4f344da7f7b989e69))
+* warning for vite/dynamic-import-polyfill ([#3328](https://github.com/vitejs/vite/issues/3328)) ([8b80512](https://github.com/vitejs/vite/commit/8b80512c03bc053e101b1047bfd142260a15e2ac))
+* **ci:** fix ci lint step ([#2988](https://github.com/vitejs/vite/issues/2988)) ([4e8ffd8](https://github.com/vitejs/vite/commit/4e8ffd8865e6303d19b5a5ea4501fc54bff4e180))
+* **resolve:** normalize node_modules and bare imports, fix [#2503](https://github.com/vitejs/vite/issues/2503) ([#2848](https://github.com/vitejs/vite/issues/2848)) ([0c97412](https://github.com/vitejs/vite/commit/0c9741222532b9fa7818e0a2ce9c918bda03c6a0))
+* **server:** Listen only to 127.0.0.1 by default ([#2977](https://github.com/vitejs/vite/issues/2977)) ([1e604d5](https://github.com/vitejs/vite/commit/1e604d5b60900098f201f90394445fea55642e74))
+* **ssr:** resolve dynamic import vars modules ([#3177](https://github.com/vitejs/vite/issues/3177)) ([b1e7395](https://github.com/vitejs/vite/commit/b1e73951ed402a64882fb771bf433938ad171e19))
+
+
+### Features
+
+* add optimizeDeps.esbuildOptions ([#2991](https://github.com/vitejs/vite/issues/2991)) ([77a882a](https://github.com/vitejs/vite/commit/77a882a385147957b3100b3ec21de7cb212887bf))
+* set publicDir to false to disable copied static assets to build dist dir ([#3152](https://github.com/vitejs/vite/issues/3152)) ([f4ab90a](https://github.com/vitejs/vite/commit/f4ab90a79f3ff56647631fa8891dc665081b45a2))
+* webworker ssr target ([#3151](https://github.com/vitejs/vite/issues/3151)) ([1c59ef1](https://github.com/vitejs/vite/commit/1c59ef14dec3b60c67e70800af9d88a2255a54ae))
+
+
+
 ## [2.2.4](https://github.com/vitejs/vite/compare/v2.2.3...v2.2.4) (2021-05-03)
 
 

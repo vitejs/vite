@@ -1,4 +1,3 @@
-import os from 'os'
 import path from 'path'
 import sirv from 'sirv'
 import chalk from 'chalk'
@@ -6,17 +5,23 @@ import connect from 'connect'
 import compression from 'compression'
 import { ResolvedConfig } from '.'
 import { Connect } from 'types/connect'
-import { resolveHttpServer } from './server/http'
+import { resolveHttpsConfig, resolveHttpServer } from './server/http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
+import { printServerUrls } from './logger'
+import { resolveHostname } from './utils'
 
 export async function preview(
   config: ResolvedConfig,
   port = 5000
 ): Promise<void> {
   const app = connect() as Connect.Server
-  const httpServer = await resolveHttpServer(config.server, app)
+  const httpServer = await resolveHttpServer(
+    config.server,
+    app,
+    await resolveHttpsConfig(config)
+  )
 
   // cors
   const { cors } = config.server
@@ -40,53 +45,23 @@ export async function preview(
     })
   )
 
-  const options = config.server || {}
-  let hostname: string | undefined
-  if (options.host === undefined || options.host === 'localhost') {
-    // Use a secure default
-    hostname = '127.0.0.1'
-  } else if (options.host === true) {
-    // The user probably passed --host in the CLI, without arguments
-    hostname = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
-  } else {
-    hostname = options.host as string
-  }
+  const options = config.server
+  const hostname = resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
 
-  httpServer.listen(port, hostname, () => {
+  httpServer.listen(port, hostname.host, () => {
     logger.info(
       chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
         chalk.green(` build preview server running at:\n`)
     )
-    if (hostname === '127.0.0.1') {
-      const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
-      logger.info(`  > Local: ${chalk.cyan(url)}`)
-      logger.info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
-    } else {
-      const interfaces = os.networkInterfaces()
-      Object.keys(interfaces).forEach((key) =>
-        (interfaces[key] || [])
-          .filter((details) => details.family === 'IPv4')
-          .map((detail) => {
-            return {
-              type: detail.address.includes('127.0.0.1')
-                ? 'Local:   '
-                : 'Network: ',
-              host: detail.address
-            }
-          })
-          .forEach(({ type, host }) => {
-            const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-            logger.info(`  > ${type} ${chalk.cyan(url)}`)
-          })
-      )
-    }
+
+    printServerUrls(hostname, protocol, port, base, logger.info)
 
     if (options.open) {
       const path = typeof options.open === 'string' ? options.open : base
-      openBrowser(`${protocol}://${hostname}:${port}${path}`, true, logger)
+      openBrowser(`${protocol}://${hostname.name}:${port}${path}`, true, logger)
     }
   })
 }
