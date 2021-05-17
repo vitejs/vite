@@ -41,6 +41,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
+      if (id.startsWith('\0')) {
+        // Rollup convention, this id should be handled by the
+        // plugin that marked it with \0
+        return
+      }
+
       // raw requests, read from disk
       if (rawRE.test(id)) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
