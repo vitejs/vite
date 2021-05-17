@@ -71,6 +71,7 @@ function viteLegacyPlugin(options = {}) {
   const legacyConfigPlugin = {
     name: 'legacy-config',
 
+    apply: 'build',
     config(config) {
       if (!config.build) {
         config.build = {}
