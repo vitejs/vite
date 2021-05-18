@@ -52,6 +52,7 @@ yarn create @vitejs/app my-vue-app --template vue
 Supported template presets include:
 
 - `vanilla`
+- `vanilla-ts`
 - `vue`
 - `vue-ts`
 - `react`
