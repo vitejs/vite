@@ -127,64 +127,84 @@ const renameFiles = {
 
 async function init() {
   let targetDir = argv._[0]
-  const initialFrameworkIndex = FRAMEWORKS.findIndex(framework => [argv.t, argv.template].includes(framework.name))
-  const defaultPackageName = !targetDir ? 'vite-project' : targetDir.trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/^[._]/, '')
-    .replace(/[^a-z0-9-~]+/g, '-')
-  let result = {};
+  const initialFrameworkIndex = FRAMEWORKS.findIndex((framework) =>
+    [argv.t, argv.template].includes(framework.name)
+  )
+  const defaultPackageName = !targetDir
+    ? 'vite-project'
+    : targetDir
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/^[._]/, '')
+        .replace(/[^a-z0-9-~]+/g, '-')
+  let result = {}
   try {
-    result = await prompts([
+    result = await prompts(
+      [
+        {
+          type: 'text',
+          name: 'packageName',
+          message: 'Project name:',
+          initial: defaultPackageName,
+          validate: (dir) =>
+            /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
+              dir
+            ) || 'Invalid package.json name'
+        },
+        {
+          type: (targetDir) =>
+            !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
+          name: 'overwrite',
+          message: (targetDir) =>
+            `Target directory ${targetDir} is not empty. Remove existing files and continue?`,
+          initial: false
+        },
+        {
+          type: FRAMEWORKS.find((framework) =>
+            [argv.t, argv.template].includes(framework.name)
+          )
+            ? null
+            : 'select',
+          name: 'framework',
+          message: 'Select a framework:',
+          initial: initialFrameworkIndex > -1 ? initialFrameworkIndex : 0,
+          choices: FRAMEWORKS.map((framework) => {
+            const frameworkColor = framework.color
+            return {
+              title: frameworkColor(framework.name),
+              value: framework
+            }
+          })
+        },
+        {
+          type: (framework) => (framework.variants ? 'select' : null),
+          name: 'variant',
+          message: 'Select a variant:',
+          // @ts-ignore
+          choices: (framework) =>
+            framework.variants.map((variant) => {
+              const variantColor = variant.color
+              return {
+                title: variantColor(variant.name),
+                value: variant.name
+              }
+            })
+        }
+      ],
       {
-        type: 'text',
-        name: 'packageName',
-        message: 'Project name:',
-        initial: defaultPackageName,
-        validate: dir => /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(dir) || 'Invalid package.json name',
-      },
-      {
-        type: targetDir => !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
-        name: 'overwrite',
-        message: targetDir => `Target directory ${targetDir} is not empty. Remove existing files and continue?`,
-        initial: false
-      },
-      {
-        type: FRAMEWORKS.find(framework => [argv.t, argv.template].includes(framework.name)) ? null : 'select',
-        name: 'framework',
-        message: 'Select a framework:',
-        initial: initialFrameworkIndex > -1 ? initialFrameworkIndex : 0,
-        choices: FRAMEWORKS.map(framework => {
-          const frameworkColor = framework.color
-          return {
-            title: frameworkColor(framework.name),
-            value: framework
-          }
-        })
-      },
-      {
-        type: framework => framework.variants ? 'select' : null,
-        name: 'variant',
-        message: 'Select a variant:',
-        // @ts-ignore
-        choices: framework => framework.variants.map(variant => {
-          const variantColor = variant.color
-          return {
-            title: variantColor(variant.name),
-            value: variant.name
-          }
-        })
+        onCancel: () => {
+          throw new Error(red('✖') + ' Operation cancelled')
+        }
       }
-    ], { onCancel: () => {
-      throw new Error(red('✖') + ' Operation cancelled')
-    }})
+    )
   } catch (cancelled) {
     console.log(cancelled.message)
-    return;
+    return
   }
 
   const packageName = result.packageName
-  const root = path.join(cwd, targetDir)
+  const root = path.join(cwd, packageName)
 
   if (result.overwrite) {
     emptyDir(root)
