@@ -119,7 +119,7 @@ export function transformMiddleware(
       }
 
       // warn explicit /public/ paths
-      if (url.startsWith('/public/')) {
+      if (url.startsWith('/public/') && !url.includes('.html')) {
         logger.warn(
           chalk.yellow(
             `files in the public directory are served at the root path.\n` +
