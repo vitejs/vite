@@ -10,6 +10,10 @@ SSR specifically refers to front-end frameworks (for example React, Preact, Vue,
 The following guide also assumes prior experience working with SSR in your framework of choice, and will only focus on Vite-specific integration details.
 :::
 
+:::warning Low-level API
+This is a low-level API meant for library and framework authors. If your goal is to create an application, you may want to have a look at these higher-level SSR tools at [Awesome Vite SSR](https://github.com/vitejs/awesome-vite#ssr) first. That said, many applications are successfully built directly on top of Vite's native low-level API &mdash; just make sure to check out these higher-level tools first.
+:::
+
 :::tip Help
 If you have questions, the community is usually helpful at [Vite Discord's #ssr channel](https://discord.gg/PkbxgzPhJv).
 :::
