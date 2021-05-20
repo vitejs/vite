@@ -175,6 +175,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         moduleCache.set(id, modules)
       }
 
+      if (config.command === 'build' && deps) {
+        deps.forEach(this.addWatchFile)
+      }
+
       // dev
       if (server) {
         // server only logic for handling CSS @import dependency hmr
