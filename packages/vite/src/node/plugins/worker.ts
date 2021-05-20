@@ -56,9 +56,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               sourcemap: config.build.sourcemap
             })
             
-            return `export default function WorkerWrapper() {
-              const blob = new Blob([atob(\"${Buffer.from(output[0].code).toString('base64')}\")], { type: 'text/javascript;charset=utf-8' });
-              return new Worker((window.URL || window.webkitURL).createObjectURL(blob));
+            return `const blob = new Blob([atob(\"${Buffer.from(output[0].code).toString('base64')}\")], { type: 'text/javascript;charset=utf-8' });
+            export default function WorkerWrapper() {
+              const objURL = (window.URL || window.webkitURL).createObjectURL(blob);
+              try {
+                return new Worker(objURL);
+              } finally {
+                (window.URL || window.webkitURL).revokeObjectURL(objURL);
+              }
             }`
           } finally {
             await bundle.close()
