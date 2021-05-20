@@ -195,8 +195,11 @@ async function fileToBuiltUrl(
     cache = new Map()
     assetCache.set(config, cache)
   }
+
+  // #3271
+  const isWatchMode = !!config.build.watch
   const cached = cache.get(id)
-  if (cached) {
+  if (cached && !isWatchMode) {
     return cached
   }
 
@@ -228,7 +231,7 @@ async function fileToBuiltUrl(
     }
 
     const contentHash = getAssetHash(content)
-    if (!map.has(contentHash)) {
+    if (!map.has(contentHash) || isWatchMode) {
       const basename = path.basename(file)
       const ext = path.extname(basename)
       const fileName = path.posix.join(
