@@ -175,7 +175,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         moduleCache.set(id, modules)
       }
 
-      if (config.command === 'build' && deps) {
+      // track deps for build watch mode
+      if (config.command === 'build' && config.build.watch && deps) {
         deps.forEach(this.addWatchFile)
       }
 
