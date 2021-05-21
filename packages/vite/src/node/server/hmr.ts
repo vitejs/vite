@@ -181,6 +181,9 @@ export async function handleFileAddUnlink(
       const relative = path.relative(base, file)
       if (match(relative, pattern)) {
         modules.push(module)
+        // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
+        // calls get fresh glob import results with(out) the newly added(/removed) `file`.
+        server.moduleGraph.onFileChange(module.file!)
       }
     }
   }
