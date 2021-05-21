@@ -300,11 +300,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
             imports.forEach((url) => importedUrls.add(url.replace(base, '/')))
-            server._globImporters[importerModule.file!] = {
-              module: importerModule,
+            if (!(importerModule.file! in server._globImporters)) {
+              server._globImporters[importerModule.file!] = {
+                module: importerModule,
+                importGlobs: []
+              }
+            }
+            server._globImporters[importerModule.file!].importGlobs.push({
               base,
               pattern
-            }
+            })
           }
           continue
         }

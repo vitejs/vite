@@ -177,13 +177,16 @@ export async function handleFileAddUnlink(
     delete server._globImporters[file]
   } else {
     for (const i in server._globImporters) {
-      const { module, base, pattern } = server._globImporters[i]
-      const relative = path.relative(base, file)
-      if (match(relative, pattern)) {
-        modules.push(module)
-        // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
-        // calls get fresh glob import results with(out) the newly added(/removed) `file`.
-        server.moduleGraph.onFileChange(module.file!)
+      const { module, importGlobs } = server._globImporters[i]
+      for (const { base, pattern } of importGlobs) {
+        const relative = path.relative(base, file)
+        if (match(relative, pattern)) {
+          modules.push(module)
+          // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
+          // calls get fresh glob import results with(out) the newly added(/removed) `file`.
+          server.moduleGraph.onFileChange(module.file!)
+          break
+        }
       }
     }
   }
