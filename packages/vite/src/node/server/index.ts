@@ -273,9 +273,11 @@ export interface ViteDevServer {
   _globImporters: Record<
     string,
     {
-      base: string
-      pattern: string
       module: ModuleNode
+      importGlobs: {
+        base: string
+        pattern: string
+      }[]
     }
   >
   /**
