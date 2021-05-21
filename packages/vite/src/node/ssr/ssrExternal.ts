@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
-import { lookupFile, resolveFrom } from '../utils'
+import { isDefined, lookupFile, resolveFrom, unique } from '../utils'
 import { ResolvedConfig } from '..'
 
 /**
@@ -14,7 +14,8 @@ import { ResolvedConfig } from '..'
 export function resolveSSRExternal(
   config: ResolvedConfig,
   knownImports: string[],
-  ssrExternals: Set<string> = new Set()
+  ssrExternals: Set<string> = new Set(),
+  seen: Set<string> = new Set()
 ): string[] {
   const { root } = config
   const pkgContent = lookupFile(root, ['package.json'])
@@ -23,10 +24,12 @@ export function resolveSSRExternal(
   }
   const pkg = JSON.parse(pkgContent)
   const devDeps = Object.keys(pkg.devDependencies || {})
-  const deps = [...knownImports, ...Object.keys(pkg.dependencies || {})]
+  const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
+  const deps = unique([...importedDeps, ...Object.keys(pkg.dependencies || {})])
 
   for (const id of devDeps) {
     ssrExternals.add(id)
+    seen.add(id)
   }
 
   const resolveOptions: InternalResolveOptions = {
@@ -35,11 +38,18 @@ export function resolveSSRExternal(
     isBuild: true
   }
 
+  const depsToTrace = new Set<string>()
+
   for (const id of deps) {
+    if (seen.has(id)) {
+      continue
+    }
+    seen.add(id)
+
     let entry
     let requireEntry
     try {
-      entry = tryNodeResolve(id, undefined, resolveOptions)?.id
+      entry = tryNodeResolve(id, undefined, resolveOptions, true)?.id
       requireEntry = require.resolve(id, { paths: [root] })
     } catch (e) {
       // resolve failed, assume include
@@ -53,15 +63,7 @@ export function resolveSSRExternal(
     if (!entry.includes('node_modules')) {
       // entry is not a node dep, possibly linked - don't externalize
       // instead, trace its dependencies.
-      const depRoot = path.dirname(resolveFrom(`${id}/package.json`, root))
-      resolveSSRExternal(
-        {
-          ...config,
-          root: depRoot
-        },
-        knownImports,
-        ssrExternals
-      )
+      depsToTrace.add(id)
       continue
     }
     if (entry !== requireEntry) {
@@ -79,6 +81,19 @@ export function resolveSSRExternal(
         ssrExternals.add(id)
       }
     }
+  }
+
+  for (const id of depsToTrace) {
+    const depRoot = path.dirname(resolveFrom(`${id}/package.json`, root))
+    resolveSSRExternal(
+      {
+        ...config,
+        root: depRoot
+      },
+      knownImports,
+      ssrExternals,
+      seen
+    )
   }
 
   if (config.ssr?.external) {
@@ -106,4 +121,14 @@ export function shouldExternalizeForSSR(
     }
   })
   return should
+}
+
+function getNpmPackageName(importPath: string): string | null {
+  const parts = importPath.split('/')
+  if (parts[0].startsWith('@')) {
+    if (!parts[1]) return null
+    return `${parts[0]}/${parts[1]}`
+  } else {
+    return parts[0]
+  }
 }

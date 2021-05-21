@@ -5,16 +5,13 @@ import {
   getColor,
   isBuild,
   listAssets,
-  readManifest
+  readManifest,
+  readFile
 } from '../../testUtils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
   : '/foo/nested/asset.png'
-
-const outerAssetMatch = isBuild
-  ? /\/foo\/assets\/asset\.\w{8}\.png/
-  : /\/foo\/@fs\/.+?\/css\/nested\/asset\.png/
 
 const iconMatch = `/foo/icon.png`
 
@@ -65,12 +62,6 @@ describe('asset imports from js', () => {
 
   test('absolute', async () => {
     expect(await page.textContent('.asset-import-absolute')).toMatch(assetMatch)
-  })
-
-  test('outer', async () => {
-    expect(await page.textContent('.asset-import-outer')).toMatch(
-      outerAssetMatch
-    )
   })
 
   test('from /public', async () => {
@@ -180,7 +171,7 @@ test('?raw import', async () => {
 })
 
 test('?url import', async () => {
-  const src = `console.log('hi')\n`
+  const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(
     isBuild
       ? `data:application/javascript;base64,${Buffer.from(src).toString(

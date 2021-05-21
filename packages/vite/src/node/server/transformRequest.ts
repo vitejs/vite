@@ -16,6 +16,7 @@ import {
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { injectSourcesContent } from './sourcemap'
+import { isFileAccessAllowed } from './middlewares/static'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -72,12 +73,16 @@ export async function transformRequest(
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
-    try {
-      code = await fs.readFile(file, 'utf-8')
-      isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
-    } catch (e) {
-      if (e.code !== 'ENOENT') {
-        throw e
+    // only try the fallback if access is allowed, skip for out of root url
+    // like /service-worker.js or /api/users
+    if (options.ssr || isFileAccessAllowed(file, config.server.fsServe)) {
+      try {
+        code = await fs.readFile(file, 'utf-8')
+        isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
+      } catch (e) {
+        if (e.code !== 'ENOENT') {
+          throw e
+        }
       }
     }
     if (code) {

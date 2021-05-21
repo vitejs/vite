@@ -14,6 +14,7 @@ import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
   code: string,
   filename: string,
@@ -114,7 +115,12 @@ export async function transformMain(
   output.push('export default _sfc_main')
 
   // HMR
-  if (devServer && !ssr && !isProduction) {
+  if (
+    devServer &&
+    devServer.config.server.hmr !== false &&
+    !ssr &&
+    !isProduction
+  ) {
     output.push(`_sfc_main.__hmrId = ${JSON.stringify(descriptor.id)}`)
     output.push(
       `typeof __VUE_HMR_RUNTIME__ !== 'undefined' && ` +
@@ -138,10 +144,10 @@ export async function transformMain(
   // SSR module registration by wrapping user setup
   if (ssr) {
     output.push(
-      `import { useSSRContext } from 'vue'`,
+      `import { useSSRContext as __vite_useSSRContext } from 'vue'`,
       `const _sfc_setup = _sfc_main.setup`,
       `_sfc_main.setup = (props, ctx) => {`,
-      `  const ssrContext = useSSRContext()`,
+      `  const ssrContext = __vite_useSSRContext()`,
       `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
         filename
       )})`,
@@ -219,7 +225,8 @@ async function genTemplateCode(
   }
 }
 
-const exportDefaultClassRE = /(?:(?:^|\n|;)\s*)export\s+default\s+class\s+([\w$]+)/
+const exportDefaultClassRE =
+  /(?:(?:^|\n|;)\s*)export\s+default\s+class\s+([\w$]+)/
 
 async function genScriptCode(
   descriptor: SFCDescriptor,
@@ -244,7 +251,7 @@ async function genScriptCode(
       const classMatch = script.content.match(exportDefaultClassRE)
       if (classMatch) {
         scriptCode =
-          script.content.replace(exportDefaultClassRE, `class $1`) +
+          script.content.replace(exportDefaultClassRE, `\nclass $1`) +
           `\nconst _sfc_main = ${classMatch[1]}`
         if (/export\s+default/.test(scriptCode)) {
           // fallback if there are still export default

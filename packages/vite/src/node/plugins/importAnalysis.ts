@@ -48,8 +48,12 @@ const clientDir = normalizePath(CLIENT_DIR)
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
 
+function isExplicitImportRequired(url: string) {
+  return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
+}
+
 function markExplicitImport(url: string) {
-  if (!isJSRequest(cleanUrl(url)) && !isCSSRequest(url)) {
+  if (isExplicitImportRequired(url)) {
     return injectQuery(url, 'import')
   }
   return url
@@ -107,7 +111,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const rewriteStart = Date.now()
       await init
-      let imports: ImportSpecifier[] = []
+      let imports: readonly ImportSpecifier[] = []
+      // strip UTF-8 BOM
+      if (source.charCodeAt(0) === 0xfeff) {
+        source = source.slice(1)
+      }
       try {
         imports = parseImports(source)[0]
       } catch (e) {
@@ -280,21 +288,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           } else if (prop === '.glo' && source[end + 4] === 'b') {
             // transform import.meta.glob()
             // e.g. `import.meta.glob('glob:./dir/*.js')`
-            const {
-              imports,
-              importsString,
-              exp,
-              endIndex,
-              base,
-              pattern
-            } = await transformImportGlob(
-              source,
-              start,
-              importer,
-              index,
-              root,
-              normalizeUrl
-            )
+            const { imports, importsString, exp, endIndex, base, pattern } =
+              await transformImportGlob(
+                source,
+                start,
+                importer,
+                index,
+                root,
+                normalizeUrl
+              )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
             imports.forEach((url) => importedUrls.add(url.replace(base, '/')))
@@ -310,10 +312,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const isDynamicImport = dynamicIndex >= 0
 
         // static import or valid string in dynamic import
-        const isLiteralId = !!specifier
-
         // If resolvable, let's resolve it
-        if (isLiteralId) {
+        if (specifier) {
           // skip external / data uri
           if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
@@ -409,8 +409,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
             )
           }
-          needQueryInjectHelper = true
-          str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
+          if (
+            !/^('.*'|".*"|`.*`)$/.test(url) ||
+            isExplicitImportRequired(url.slice(1, -1))
+          ) {
+            needQueryInjectHelper = true
+            str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
+          }
         }
       }
 
@@ -533,10 +538,12 @@ function transformCjsImport(
   rawUrl: string,
   importIndex: number
 ): string | undefined {
-  const node = (parseJS(importExp, {
-    ecmaVersion: 2020,
-    sourceType: 'module'
-  }) as any).body[0] as Node
+  const node = (
+    parseJS(importExp, {
+      ecmaVersion: 2020,
+      sourceType: 'module'
+    }) as any
+  ).body[0] as Node
 
   if (node.type === 'ImportDeclaration') {
     if (!node.specifiers.length) {

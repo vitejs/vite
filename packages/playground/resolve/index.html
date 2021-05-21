@@ -1,5 +1,8 @@
 <h1>Resolve</h1>
 
+<h2>Utf8-bom import</h2>
+<p class="utf8-bom">fail</p>
+
 <h2>Deep import</h2>
 <p>Should show [2,4]:<span class="pre deep-import">fail</span></p>
 
@@ -23,6 +26,12 @@
 
 <h2>Resolve dir and file of the same name (should prioritize file)</h2>
 <p class="dir-vs-file">fail</p>
+
+<h2>Resolve to non-duplicated file extension</h2>
+<p class="exact-extension">fail</p>
+
+<h2>Don't add extensions to directory names</h2>
+<p class="dir-with-ext">fail</p>
 
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
@@ -55,6 +64,10 @@
   function text(selector, text) {
     document.querySelector(selector).textContent = text
   }
+
+  // import from a utf-8 bom file
+  import { msg as bomMsg } from './utf8-bom/main.js'
+  text('.utf8-bom', bomMsg)
 
   // deep import
   import slicedToArray from '@babel/runtime/helpers/esm/slicedToArray'
@@ -95,13 +108,40 @@
   import { file } from './dir'
   text('.dir-vs-file', file)
 
+  // // exact extension vs. duplicated (.js.js)
+  import { file as exactExtMsg } from './exact-extension/file.js'
+  text('.exact-extension', exactExtMsg)
+
+  // don't add extensions to dir name (./dir-with-ext.js/index.js)
+  import { file as dirWithExtMsg } from './dir-with-ext'
+  text('.dir-with-ext', dirWithExtMsg)
+
   // filename with dot
   import { bar } from './util/bar.util'
   text('.dot', bar())
 
   // browser field
-  import value from 'resolve-browser-field'
-  text('.browser', value)
+  import main from 'resolve-browser-field'
+
+  import a from 'resolve-browser-field/no-ext'
+  import b from 'resolve-browser-field/no-ext.js' // no substitution
+  import c from 'resolve-browser-field/ext'
+  import d from 'resolve-browser-field/ext.js'
+  import e from 'resolve-browser-field/ext-index/index.js'
+  import f from 'resolve-browser-field/ext-index'
+  import g from 'resolve-browser-field/no-ext-index/index.js' // no substitution
+
+  import { ra, rb, rc, rd, re, rf, rg } from 'resolve-browser-field/relative'
+
+  const success = [main, a, c, d, e, f, ra, rc, rd, re, rf]
+  const noSuccess = [b, g, rb, rg]
+
+  if (
+    [...success, ...noSuccess].filter((text) => text.includes('[success]'))
+      .length === success.length
+  ) {
+    text('.browser', main)
+  }
 
   import { msg as customExtMsg } from './custom-ext'
   text('.custom-ext', customExtMsg)
@@ -114,6 +154,7 @@
 
   // should be ok to import a file marked with browser: false
   import 'resolve-browser-field/not-browser'
+  import 'resolve-browser-field/multiple.dot.path'
 
   // css entry
   import css from 'normalize.css'

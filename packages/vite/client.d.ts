@@ -25,18 +25,14 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob(
-    pattern: string
-  ): Record<
+  glob(pattern: string): Record<
     string,
     () => Promise<{
       [key: string]: any
     }>
   >
 
-  globEager(
-    pattern: string
-  ): Record<
+  globEager(pattern: string): Record<
     string,
     {
       [key: string]: any
@@ -101,6 +97,11 @@ declare module '*.styl' {
   export default css
 }
 declare module '*.stylus' {
+  const css: string
+  export default css
+}
+
+declare module '*.pcss' {
   const css: string
   export default css
 }

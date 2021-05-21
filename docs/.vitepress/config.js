@@ -17,7 +17,10 @@ module.exports = {
 
     algolia: {
       apiKey: 'b573aa848fd57fb47d693b531297403c',
-      indexName: 'vitejs'
+      indexName: 'vitejs',
+      searchParameters: {
+        facetFilters: ['tags:en']
+      }
     },
 
     carbonAds: {
@@ -54,8 +57,20 @@ module.exports = {
           },
           {
             text: 'Changelog',
-            link:
-              'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+          }
+        ]
+      },
+      {
+        text: 'Languages',
+        items: [
+          {
+            text: 'English',
+            link: 'https://vitejs.dev'
+          },
+          {
+            text: '简体中文',
+            link: 'https://cn.vitejs.dev'
           }
         ]
       }
@@ -80,6 +95,10 @@ module.exports = {
             {
               text: 'Features',
               link: '/guide/features'
+            },
+            {
+              text: 'Using Plugins',
+              link: '/guide/using-plugins'
             },
             {
               text: 'Dependency Pre-Bundling',

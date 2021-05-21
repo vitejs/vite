@@ -12,8 +12,10 @@ export type {
   ViteDevServer,
   ServerOptions,
   CorsOptions,
+  FileSystemServeOptions,
   CorsOrigin,
-  ServerHook
+  ServerHook,
+  ResolvedServerOptions
 } from './server'
 export type {
   BuildOptions,
@@ -26,7 +28,13 @@ export type {
   DepOptimizationOptions
 } from './optimizer'
 export type { Plugin } from './plugin'
-export type { Logger, LogOptions, LogLevel, LogType } from './logger'
+export type {
+  Logger,
+  LogOptions,
+  LogLevel,
+  LogType,
+  LoggerOptions
+} from './logger'
 export type {
   AliasOptions,
   ResolverFunction,
@@ -43,6 +51,7 @@ export type {
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
+export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type {
   PackageData,
   ResolveOptions,
