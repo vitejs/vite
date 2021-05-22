@@ -48,6 +48,12 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 }
 ```
 
+Also, you can add a `d.ts` declaration file:
+
+```typescript
+/// <reference types="vite/client" />
+```
+
 This will provide the following type shims:
 
 - Asset imports (e.g. importing an `.svg` file)
