@@ -5,7 +5,7 @@ import reactRefresh from '@vitejs/plugin-react-refresh'
 export default defineConfig({
   plugins: [reactRefresh()]
   // To automatically inject React you can uncomment the following lines
-  // (you also have to set "jsx" to true in tsconfig.json):
+  // (you also have to set "jsx" to "react-jsx" in tsconfig.json):
   // esbuild: {
   //   jsxInject: "import React from 'react';",
   // }
