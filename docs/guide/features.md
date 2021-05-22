@@ -38,7 +38,13 @@ Note that because `esbuild` only performs transpilation without type information
 
 ### Client Types
 
-Vite's default types are for its Node.js API. To shim the environment of client side code in a Vite application, add `vite/client` to `compilerOptions.types` of your `tsconfig`:
+Vite's default types are for its Node.js API. To shim the environment of client side code in a Vite application, add a `d.ts` declaration file:
+
+```typescript
+/// <reference types="vite/client" />
+```
+
+Also, you can add `vite/client` to `compilerOptions.types` of your `tsconfig`:
 
 ```json
 {
