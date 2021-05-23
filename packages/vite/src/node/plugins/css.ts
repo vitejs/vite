@@ -118,8 +118,7 @@ export const chunkToEmittedCssFileMap = new WeakMap<
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
-  const moduleCache = new Map<string, Record<string, string>>()
-  cssModulesCache.set(config, moduleCache)
+  let moduleCache: Map<string, Record<string, string>>
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -133,6 +132,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
     configureServer(_server) {
       server = _server
+    },
+
+    buildStart() {
+      // Ensure a new cache for every build (i.e. rebuilding in watch mode)
+      moduleCache = new Map<string, Record<string, string>>()
+      cssModulesCache.set(config, moduleCache)
     },
 
     async transform(raw, id) {
