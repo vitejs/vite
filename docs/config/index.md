@@ -430,6 +430,42 @@ export default async ({ command, mode }) => {
 
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
+### server.middlewareMode
+
+- **Type:** `'ssr' | 'html'`
+
+  Create Vite server in middleware mode. (without a HTTP server)
+
+  - `'ssr'` will disable Vite's own HTML serving logic so that you should serve `index.html` manually.
+  - `'html'` will enable Vite's own HTML serving logic.
+
+- **Related:** [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
+
+- **Example:**
+```js
+const express = require('express')
+const { createServer: createViteServer } = require('vite')
+
+async function createServer() {
+  const app = express()
+
+  // Create vite server in middleware mode.
+  const vite = await createViteServer({
+    server: { middlewareMode: 'ssr' }
+  })
+  // Use vite's connect instance as middleware
+  app.use(vite.middlewares)
+
+  app.use('*', async (req, res) => {
+    // If `middlewareMode` is `'ssr'`, should serve `index.html` here.
+    // If `middlewareMode` is `'html'`, there is no need to serve `index.html`
+    // because Vite will do that.
+  })
+}
+
+createServer()
+```
+
 ### server.fsServe.strict
 
 - **Experimental**

@@ -116,7 +116,7 @@ export interface ServerOptions {
   /**
    * Create Vite dev server to be used as a middleware in an existing server
    */
-  middlewareMode?: boolean
+  middlewareMode?: boolean | 'html' | 'ssr'
   /**
    * Prepend this folder to http requests, for use when proxying vite as a subfolder
    * Should start and end with the `/` character
@@ -300,8 +300,11 @@ export async function createServer(
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
   const serverConfig = config.server
-  const middlewareMode = !!serverConfig.middlewareMode
   const httpsOptions = await resolveHttpsConfig(config)
+  let { middlewareMode } = serverConfig
+  if (middlewareMode === true) {
+    middlewareMode = 'ssr'
+  }
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
@@ -485,7 +488,7 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
-  if (!middlewareMode) {
+  if (!middlewareMode || middlewareMode === 'html') {
     middlewares.use(
       history({
         logger: createDebugger('vite:spa-fallback'),
@@ -512,7 +515,7 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  if (!middlewareMode) {
+  if (!middlewareMode || middlewareMode === 'html') {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
     // handle 404s
@@ -524,7 +527,7 @@ export async function createServer(
   }
 
   // error handler
-  middlewares.use(errorMiddleware(server, middlewareMode))
+  middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   const runOptimize = async () => {
     if (config.cacheDir) {
