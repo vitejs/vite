@@ -28,6 +28,6 @@ if (isBuild) {
     // chunk
     expect(content).toMatch(`new Worker("/assets`)
     // inlined
-    expect(content).toMatch(`new Worker("data:application/javascript`)
+    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
   })
 }
