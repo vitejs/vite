@@ -41,6 +41,7 @@ export async function preview(
     config.base,
     sirv(distDir, {
       etag: true,
+      dev: !config.isProduction,
       single: true
     })
   )
