@@ -43,7 +43,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       let url: string
       if (isBuild) {
         if (query.inline != null) {
-          // bundle the file as entry to support imports and inline as base64
+          // bundle the file as entry to support imports and inline as blob
           // data url
           const rollup = require('rollup') as typeof Rollup
           const bundle = await rollup.rollup({
@@ -55,9 +55,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               format: 'es',
               sourcemap: config.build.sourcemap
             })
-            url = `data:application/javascript;base64,${Buffer.from(
-              output[0].code
-            ).toString('base64')}`
+            
+            return `const blob = new Blob([atob(\"${Buffer.from(output[0].code).toString('base64')}\")], { type: 'text/javascript;charset=utf-8' });
+            export default function WorkerWrapper() {
+              const objURL = (window.URL || window.webkitURL).createObjectURL(blob);
+              try {
+                return new Worker(objURL);
+              } finally {
+                (window.URL || window.webkitURL).revokeObjectURL(objURL);
+              }
+            }`
           } finally {
             await bundle.close()
           }
