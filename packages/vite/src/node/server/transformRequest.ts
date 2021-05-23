@@ -49,7 +49,7 @@ export async function transformRequest(
   const module = await moduleGraph.getModuleByUrl(url)
   const cached =
     module && (ssr ? module.ssrTransformResult : module.transformResult)
-  if (cached) {
+  if (cached && !options.html) {
     isDebug && debugCache(`[memory] ${prettyUrl}`)
     return cached
   }
