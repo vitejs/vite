@@ -186,12 +186,17 @@ cli
 
 cli
   .command('preview [root]')
+  .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .action(
     async (
       root: string,
-      options: { port?: number; open?: boolean | string } & GlobalCLIOptions
+      options: {
+        host?: string
+        port?: number
+        open?: boolean | string
+      } & GlobalCLIOptions
     ) => {
       try {
         const config = await resolveConfig(
@@ -207,7 +212,7 @@ cli
           'serve',
           'development'
         )
-        await preview(config, options.port)
+        await preview(config, { host: options.host, port: options.port })
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`)
