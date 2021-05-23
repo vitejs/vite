@@ -225,7 +225,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   const styles = new Map<string, string>()
   const pureCssChunks = new Set<string>()
-  const moduleCache = cssModulesCache.get(config)!
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -240,7 +239,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const modules = moduleCache.get(id)
+      const modules = cssModulesCache.get(config)!.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
