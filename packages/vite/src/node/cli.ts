@@ -188,6 +188,7 @@ cli
   .command('preview [root]')
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
+  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .action(
     async (
@@ -195,6 +196,7 @@ cli
       options: {
         host?: string
         port?: number
+        https?: boolean
         open?: boolean | string
       } & GlobalCLIOptions
     ) => {
@@ -212,7 +214,14 @@ cli
           'serve',
           'development'
         )
-        await preview(config, { host: options.host, port: options.port })
+        await preview(
+          config,
+          cleanOptions(options) as {
+            host?: string
+            port?: number
+            https?: boolean
+          }
+        )
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`)
