@@ -250,6 +250,8 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
   seen.add(mod)
   mod.lastHMRTimestamp = timestamp
   mod.transformResult = null
+  mod.ssrModule = null
+  mod.ssrTransformResult = null
   mod.importers.forEach((importer) => {
     if (!importer.acceptedHmrDeps.has(mod)) {
       invalidate(importer, timestamp, seen)
