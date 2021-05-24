@@ -223,16 +223,23 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  const styles = new Map<string, string>()
-  const pureCssChunks = new Set<string>()
+  let styles: Map<string, string>
+  let pureCssChunks: Set<string>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
-  const outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+  let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
 
   return {
     name: 'vite:css-post',
+
+    buildStart() {
+      // Ensure new caches for every build (i.e. rebuilding in watch mode)
+      styles = new Map<string, string>()
+      pureCssChunks = new Set<string>()
+      outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+    },
 
     transform(css, id, ssr) {
       if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
