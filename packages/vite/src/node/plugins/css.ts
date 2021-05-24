@@ -175,6 +175,13 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         moduleCache.set(id, modules)
       }
 
+      // track deps for build watch mode
+      if (config.command === 'build' && config.build.watch && deps) {
+        for (const file of deps) {
+          this.addWatchFile(file)
+        }
+      }
+
       // dev
       if (server) {
         // server only logic for handling CSS @import dependency hmr
