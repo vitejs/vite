@@ -177,7 +177,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       // track deps for build watch mode
       if (config.command === 'build' && config.build.watch && deps) {
-        deps.forEach(this.addWatchFile)
+        for (const file of deps) {
+          this.addWatchFile(file)
+        }
       }
 
       // dev
