@@ -91,8 +91,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
-      const { worker, inline, sharedworker, ...optionsFromQuery } = query
-      const workerOptions = { ...optionsFromQuery, type: 'module' }
+      const workerOptions = { type: 'module' }
 
       return `export default function WorkerWrapper() {
         return new ${workerConstructor}(${JSON.stringify(
