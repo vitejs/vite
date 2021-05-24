@@ -936,12 +936,7 @@ const scss: SassStylePreprocessor = async (
       }
     })
   }
-  const importer = [internalImporter]
-  if (options.importer) {
-    Array.isArray(options.importer)
-      ? importer.concat(options.importer)
-      : importer.push(options.importer)
-  }
+  const importer = [internalImporter].concat(options.importer!)
 
   const finalOptions: Sass.Options = {
     ...options,
