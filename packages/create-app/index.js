@@ -150,10 +150,11 @@ async function init() {
           validate: (dir) =>
             /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
               dir
-            ) || 'Invalid package.json name'
+            ) || 'Invalid package.json name',
+          onState: (state) => (targetDir = targetDir || state.value)
         },
         {
-          type: (targetDir) =>
+          type: () =>
             !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
           name: 'overwrite',
           message: (targetDir) =>
@@ -204,7 +205,7 @@ async function init() {
   }
 
   const packageName = result.packageName
-  const root = path.join(cwd, packageName)
+  const root = path.join(cwd, targetDir)
 
   if (result.overwrite) {
     emptyDir(root)
