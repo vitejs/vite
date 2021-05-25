@@ -1,3 +1,31 @@
+## [2.3.4](https://github.com/vitejs/vite/compare/v2.3.3...v2.3.4) (2021-05-25)
+
+
+### Bug Fixes
+
+* allow passing an array as sass / scss importer ([#3529](https://github.com/vitejs/vite/issues/3529)) ([e344cdd](https://github.com/vitejs/vite/commit/e344cdd28425e08b2481b1a6289b820764f25928))
+* avoid css leaking into emitted javascript ([#3402](https://github.com/vitejs/vite/issues/3402)) ([65d333d](https://github.com/vitejs/vite/commit/65d333d8eb95ea3ab3d611d9c21d05de9657f134))
+* clean manifest plugin state at build start ([#3530](https://github.com/vitejs/vite/issues/3530)) ([c9da635](https://github.com/vitejs/vite/commit/c9da635841cc20e65df6a51c3f0b7a7fb79a814f))
+* data-uri plugin cache reset at buildStart ([#3537](https://github.com/vitejs/vite/issues/3537)) ([9d97b6d](https://github.com/vitejs/vite/commit/9d97b6d0084a543b6e692890d8a095e4bee5dfac))
+* do not cache module while the file contains import.meta.glob ([#3005](https://github.com/vitejs/vite/issues/3005)) ([e7b8f41](https://github.com/vitejs/vite/commit/e7b8f41c45ea95cfd12801dfd22fa9be99de8ac8))
+* ensure new assets cache at build start, fix [#3271](https://github.com/vitejs/vite/issues/3271) ([#3512](https://github.com/vitejs/vite/issues/3512)) ([9484c0f](https://github.com/vitejs/vite/commit/9484c0f392407d71efad64b585b8656202c9b411))
+* ensure new CSS modules cache at build start ([#3516](https://github.com/vitejs/vite/issues/3516)) ([07ad2b4](https://github.com/vitejs/vite/commit/07ad2b494b14701f54376afe6ce49bf24a3e7cd9))
+* **preview:** [#3487](https://github.com/vitejs/vite/issues/3487) preview should serve latest content by default ([#3488](https://github.com/vitejs/vite/issues/3488)) ([9a4183d](https://github.com/vitejs/vite/commit/9a4183dbc0d4dcf278ac829b96230b3d2b24bd5e))
+* **preview:** allow to disable HTTPS ([#3514](https://github.com/vitejs/vite/issues/3514)) ([cf1632e](https://github.com/vitejs/vite/commit/cf1632ea525b4e3230afaee908ef42f0e7321fe8))
+* **preview:** support custom hostname ([#3506](https://github.com/vitejs/vite/issues/3506)) ([5979d0e](https://github.com/vitejs/vite/commit/5979d0e3b2c071ee15408aa67974af04f7bb1c3d))
+* **types:** add .module.pcss typings, fix [#3518](https://github.com/vitejs/vite/issues/3518) ([#3519](https://github.com/vitejs/vite/issues/3519)) ([3475351](https://github.com/vitejs/vite/commit/3475351a371df2e17689a99968fdee827b0b2d16))
+* handle HMR for files with more than one glob import ([#3497](https://github.com/vitejs/vite/issues/3497)) ([05bd96e](https://github.com/vitejs/vite/commit/05bd96e21ced682251378c4ad7ae0dee59195eae))
+* inline webworker safari support ([#3468](https://github.com/vitejs/vite/issues/3468)) ([2671546](https://github.com/vitejs/vite/commit/26715465f7430e6fd9a0cf2ae9e49fb099cced3a))
+* invalidate import globs upon new/removed files (fix [#3499](https://github.com/vitejs/vite/issues/3499)) ([#3500](https://github.com/vitejs/vite/issues/3500)) ([b31604e](https://github.com/vitejs/vite/commit/b31604e08c4333bed5a3c4cc6876d1eb337a100b))
+* track deps for css [@import](https://github.com/import) in build watch mode, fix [#3387](https://github.com/vitejs/vite/issues/3387) ([#3478](https://github.com/vitejs/vite/issues/3478)) ([13bda33](https://github.com/vitejs/vite/commit/13bda3368e73ade311f1c113894c2dcb329cef8d))
+
+
+### Features
+
+* support serving `index.html` in middleware mode ([#2871](https://github.com/vitejs/vite/issues/2871)) ([b1598ce](https://github.com/vitejs/vite/commit/b1598cec7ee185f796d8679f0a97d36b80fe1949))
+
+
+
 ## [2.3.3](https://github.com/vitejs/vite/compare/v2.3.2...v2.3.3) (2021-05-17)
 
 
