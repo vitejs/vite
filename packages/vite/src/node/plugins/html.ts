@@ -148,6 +148,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:build-html',
+
     async transform(html, id) {
       if (id.endsWith('.html')) {
         const publicPath = `/${slash(path.relative(config.root, id))}`
