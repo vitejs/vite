@@ -118,8 +118,7 @@ export const chunkToEmittedCssFileMap = new WeakMap<
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
-  const moduleCache = new Map<string, Record<string, string>>()
-  cssModulesCache.set(config, moduleCache)
+  let moduleCache: Map<string, Record<string, string>>
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -133,6 +132,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
     configureServer(_server) {
       server = _server
+    },
+
+    buildStart() {
+      // Ensure a new cache for every build (i.e. rebuilding in watch mode)
+      moduleCache = new Map<string, Record<string, string>>()
+      cssModulesCache.set(config, moduleCache)
     },
 
     async transform(raw, id) {
@@ -225,24 +230,30 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  const styles = new Map<string, string>()
-  const pureCssChunks = new Set<string>()
-  const moduleCache = cssModulesCache.get(config)!
+  let styles: Map<string, string>
+  let pureCssChunks: Set<string>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
-  const outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+  let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
 
   return {
     name: 'vite:css-post',
+
+    buildStart() {
+      // Ensure new caches for every build (i.e. rebuilding in watch mode)
+      styles = new Map<string, string>()
+      pureCssChunks = new Set<string>()
+      outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+    },
 
     transform(css, id, ssr) {
       if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
         return
       }
 
-      const modules = moduleCache.get(id)
+      const modules = cssModulesCache.get(config)!.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
