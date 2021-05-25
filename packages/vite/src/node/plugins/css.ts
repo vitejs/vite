@@ -140,7 +140,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
     },
 
-    async transform(raw, id) {
+    async transform(code, id) {
       if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
         return
       }
@@ -175,7 +175,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         code: css,
         modules,
         deps
-      } = await compileCSS(id, raw, config, urlReplacer, atImportResolvers)
+      } = await compileCSS(id, code, config, urlReplacer, atImportResolvers)
       if (modules) {
         moduleCache.set(id, modules)
       }
