@@ -139,7 +139,7 @@ function formatParseError(e: any, id: string, html: string): Error {
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
-  const processedHtml = new Map<string, string>()
+  let processedHtml: Map<string, string>
   const isExcludedUrl = (url: string) =>
     url.startsWith('#') ||
     isExternalUrl(url) ||
@@ -148,6 +148,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:build-html',
+
+    buildStart() {
+      processedHtml = new Map<string, string>()
+    },
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
