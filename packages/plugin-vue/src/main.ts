@@ -255,10 +255,18 @@ async function genScriptCode(
           `\nconst _sfc_main = ${classMatch[1]}`
         if (/export\s+default/.test(scriptCode)) {
           // fallback if there are still export default
-          scriptCode = rewriteDefault(script.content, `_sfc_main`)
+          scriptCode = rewriteDefault(
+            script.content,
+            `_sfc_main`,
+            script.lang === 'ts' ? ['typescript'] : undefined
+          )
         }
       } else {
-        scriptCode = rewriteDefault(script.content, `_sfc_main`)
+        scriptCode = rewriteDefault(
+          script.content,
+          `_sfc_main`,
+          script.lang === 'ts' ? ['typescript'] : undefined
+        )
       }
       map = script.map
       if (script.lang === 'ts') {
