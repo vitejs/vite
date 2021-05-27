@@ -22,7 +22,7 @@
     "ci-docs": "run-s build-vite build-plugin-vue build-docs"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.12.1",
+    "@microsoft/api-extractor": "^7.15.2",
     "@types/fs-extra": "^9.0.5",
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.10",
