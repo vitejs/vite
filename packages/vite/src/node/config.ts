@@ -262,7 +262,8 @@ export async function resolveConfig(
 
   // Define logger
   const logger = createLogger(config.logLevel, {
-    allowClearScreen: config.clearScreen, loggger: config.logger
+    allowClearScreen: config.clearScreen,
+    logger: config.logger
   })
 
   // user config may provide an alternative mode
