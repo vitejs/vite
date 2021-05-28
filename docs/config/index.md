@@ -327,7 +327,8 @@ export default async ({ command, mode }) => {
 - **Type:** `string`
 - **Default:** `root`
 
-  Environment files directory. Can be an absolute path, or a path relative from the location of the config file itself.
+  The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root.
+
   See [here](/guide/env-and-mode#env-files) for more about environment files.
 
 ## Server Options
