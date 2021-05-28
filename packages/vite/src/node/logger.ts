@@ -53,6 +53,7 @@ export function createLogger(
   if (options.logger) {
     return options.logger
   }
+  
   const { prefix = '[vite]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
   const clear =
