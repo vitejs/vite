@@ -23,6 +23,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const protocol = options.protocol || null
         const timeout = options.timeout || 30000
         const overlay = options.overlay !== false
+        const hmrPort = options.port
         let port
         if (config.server.middlewareMode) {
           port = String(
@@ -50,6 +51,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_PORT__`, JSON.stringify(port))
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
+          .replace(`__HMR_DEFAULT_PORT__`, JSON.stringify(String(hmrPort)))
       } else if (code.includes('process.env.NODE_ENV')) {
         // replace process.env.NODE_ENV
         return code.replace(

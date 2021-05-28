@@ -9,13 +9,16 @@ declare const __HMR_HOSTNAME__: string
 declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __HMR_DEFAULT_PORT__: string
 
 console.log('[vite] connecting...')
 
 // use server configuration, then fallback to inference
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
+const socketPort =
+  __HMR_DEFAULT_PORT__ === 'undefined' ? location.port : __HMR_PORT__
+const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${socketPort}`
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
 
