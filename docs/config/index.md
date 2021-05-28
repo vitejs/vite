@@ -322,6 +322,15 @@ export default async ({ command, mode }) => {
 
   Set to `false` to prevent Vite from clearing the terminal screen when logging certain messages. Via command line, use `--clearScreen false`.
 
+### envDir
+
+- **Type:** `string`
+- **Default:** `root`
+
+  The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root.
+
+  See [here](/guide/env-and-mode#env-files) for more about environment files.
+
 ## Server Options
 
 ### server.host
