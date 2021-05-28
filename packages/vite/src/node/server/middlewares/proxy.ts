@@ -77,7 +77,8 @@ export function proxyMiddleware(
     })
   }
 
-  return (req, res, next) => {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
       if (
@@ -95,7 +96,7 @@ export function proxyMiddleware(
             return next()
           } else if (typeof bypassResult === 'object') {
             Object.assign(options, bypassResult)
-            debug(`bypass: ${req.url} use modified opitions: %O`, options)
+            debug(`bypass: ${req.url} use modified options: %O`, options)
             return next()
           } else if (bypassResult === false) {
             debug(`bypass: ${req.url} -> 404`)

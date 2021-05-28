@@ -63,7 +63,7 @@ cli
 cli
   .command('[root]') // default command
   .alias('serve')
-  .option('--host <host>', `[string] specify hostname`)
+  .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
@@ -101,7 +101,7 @@ cli
 cli
   .command('build [root]')
   .option('--target <target>', `[string] transpile target (default: 'modules')`)
-  .option('--outDir <dir>', `[string] output directory (default: dist)`)
+  .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
     `[string] directory under outDir to place assets in (default: _assets)`
@@ -130,6 +130,7 @@ cli
     `[boolean] force empty outDir when it's outside of root`
   )
   .option('-m, --mode <mode>', `[string] set env mode`)
+  .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
     const buildOptions = cleanOptions(options) as BuildOptions
@@ -185,12 +186,19 @@ cli
 
 cli
   .command('preview [root]')
+  .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
+  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .action(
     async (
       root: string,
-      options: { port?: number; open?: boolean | string } & GlobalCLIOptions
+      options: {
+        host?: string
+        port?: number
+        https?: boolean
+        open?: boolean | string
+      } & GlobalCLIOptions
     ) => {
       try {
         const config = await resolveConfig(
@@ -206,7 +214,14 @@ cli
           'serve',
           'development'
         )
-        await preview(config, options.port)
+        await preview(
+          config,
+          cleanOptions(options) as {
+            host?: string
+            port?: number
+            https?: boolean
+          }
+        )
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`)

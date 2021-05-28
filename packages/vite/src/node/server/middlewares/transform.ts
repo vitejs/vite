@@ -1,3 +1,4 @@
+import path from 'path'
 import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import {
@@ -6,6 +7,7 @@ import {
   injectQuery,
   isImportRequest,
   isJSRequest,
+  normalizePath,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -17,11 +19,16 @@ import { isHTMLProxy } from '../../plugins/html'
 import chalk from 'chalk'
 import {
   CLIENT_PUBLIC_PATH,
-  DEP_CACHE_DIR,
   DEP_VERSION_RE,
   NULL_BYTE_PLACEHOLDER
 } from '../../constants'
 import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
+
+/**
+ * Time (ms) Vite has to full-reload the page before returning
+ * an empty response.
+ */
+const NEW_DEPENDENCY_BUILD_TIMEOUT = 1000
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -32,11 +39,27 @@ export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   const {
-    config: { root, logger },
+    config: { root, logger, cacheDir },
     moduleGraph
   } = server
 
-  return async (req, res, next) => {
+  // determine the url prefix of files inside cache directory
+  let cacheDirPrefix: string | undefined
+  if (cacheDir) {
+    const cacheDirRelative = normalizePath(path.relative(root, cacheDir))
+    if (cacheDirRelative.startsWith('../')) {
+      // if the cache directory is outside root, the url prefix would be something
+      // like '/@fs/absolute/path/to/node_modules/.vite'
+      cacheDirPrefix = `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
+    } else {
+      // if the cache directory is inside root, the url prefix would be something
+      // like '/node_modules/.vite'
+      cacheDirPrefix = `/${cacheDirRelative}`
+    }
+  }
+
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return async function viteTransformMiddleware(req, res, next) {
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }
@@ -48,7 +71,19 @@ export function transformMiddleware(
       !req.url?.includes('vite/dist/client')
     ) {
       // missing dep pending reload, hold request until reload happens
-      server._pendingReload.then(() => res.end())
+      server._pendingReload.then(() =>
+        // If the refresh has not happened after timeout, Vite considers
+        // something unexpected has happened. In this case, Vite
+        // returns an empty response that will error.
+        setTimeout(() => {
+          // status code request timeout
+          res.statusCode = 408
+          res.end(
+            `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
+              `<p>The current page should have reloaded by now</p>`
+          )
+        }, NEW_DEPENDENCY_BUILD_TIMEOUT)
+      )
       return
     }
 
@@ -104,7 +139,7 @@ export function transformMiddleware(
       ) {
         // strip ?import
         url = removeImportQuery(url)
-        // Strip valid id prefix. This is preprended to resolved Ids that are
+        // Strip valid id prefix. This is prepended to resolved Ids that are
         // not valid browser import specifiers by the importAnalysis plugin.
         url = unwrapId(url)
 
@@ -134,7 +169,7 @@ export function transformMiddleware(
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) ||
-            url.includes(`node_modules/${DEP_CACHE_DIR}`)
+            (cacheDirPrefix && url.startsWith(cacheDirPrefix))
           return send(
             req,
             res,

@@ -24,7 +24,7 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 - Referenced assets are included as part of the build assets graph, will get hashed file names, and can be processed by plugins for optimization.
 
-- Assets smaller in bytes than the [`assetsInlineLimit` option](/config/#assetsinlinelimit) will be inlined as base64 data URLs.
+- Assets smaller in bytes than the [`assetsInlineLimit` option](/config/#build-assetsinlinelimit) will be inlined as base64 data URLs.
 
 ### Explicit URL Imports
 
@@ -45,7 +45,7 @@ import shaderString from './shader.glsl?raw'
 
 ### Importing Script as a Worker
 
-Scripts can be imported as web workers with the `?worker` suffix. 
+Scripts can be imported as web workers with the `?worker` suffix.
 
 ```js
 // Separate chunk in the production build

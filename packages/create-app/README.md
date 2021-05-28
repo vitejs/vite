@@ -17,6 +17,12 @@ With Yarn:
 $ yarn create @vitejs/app
 ```
 
+With PNPM:
+
+```bash
+$ pnpx @vitejs/create-app
+```
+
 Then follow the prompts!
 
 You can also directly specify the project name and the template you want to use via additional command line options. For example, to scaffold a Vite + Vue project, run:
@@ -30,11 +36,15 @@ npm init @vitejs/app my-vue-app -- --template vue
 
 # yarn
 yarn create @vitejs/app my-vue-app --template vue
+
+# pnpm
+pnpx @vitejs/create-app my-vue-app --template vue
 ```
 
 Currently supported template presets include:
 
 - `vanilla`
+- `vanilla-ts`
 - `vue`
 - `vue-ts`
 - `react`
@@ -43,6 +53,8 @@ Currently supported template presets include:
 - `preact-ts`
 - `lit-element`
 - `lit-element-ts`
+- `svelte`
+- `svelte-ts`
 
 ## Community Templates
 

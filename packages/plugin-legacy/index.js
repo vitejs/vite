@@ -68,6 +68,21 @@ function viteLegacyPlugin(options = {}) {
   /**
    * @type {import('vite').Plugin}
    */
+  const legacyConfigPlugin = {
+    name: 'legacy-config',
+
+    apply: 'build',
+    config(config) {
+      if (!config.build) {
+        config.build = {}
+      }
+      config.build.polyfillDynamicImport = true
+    }
+  }
+
+  /**
+   * @type {import('vite').Plugin}
+   */
   const legacyGenerateBundlePlugin = {
     name: 'legacy-generate-polyfill-chunk',
     apply: 'build',
@@ -151,6 +166,35 @@ function viteLegacyPlugin(options = {}) {
       }
 
       /**
+       * @param {string|((chunkInfo: import('rollup').PreRenderedChunk)=>string)} fileNames
+       * @param {string?} defaultFileName
+       */
+      const getLegacyOutputFileName = (
+        fileNames,
+        defaultFileName = '[name]-legacy.[hash].js'
+      ) => {
+        if (!fileNames) {
+          return path.posix.join(config.build.assetsDir, defaultFileName)
+        }
+
+        // does not support custom functions.
+        if (typeof fileNames === 'function') {
+          throw new Error(
+            `@vitejs/plugin-legacy rollupOptions.output.entryFileNames and rollupOptions.output.chunkFileNames` +
+              ` does not support the function format.`
+          )
+        }
+
+        let fileName = defaultFileName
+        // Custom string file return format.
+        if (fileNames && typeof fileNames === 'string') {
+          fileName = fileNames.replace(/\[name\]/, '[name]-legacy')
+        }
+
+        return fileName
+      }
+
+      /**
        * @param {import('rollup').OutputOptions} options
        * @returns {import('rollup').OutputOptions}
        */
@@ -158,14 +202,8 @@ function viteLegacyPlugin(options = {}) {
         return {
           ...options,
           format: 'system',
-          entryFileNames: path.posix.join(
-            config.build.assetsDir,
-            `[name]-legacy.[hash].js`
-          ),
-          chunkFileNames: path.posix.join(
-            config.build.assetsDir,
-            `[name]-legacy.[hash].js`
-          )
+          entryFileNames: getLegacyOutputFileName(options.entryFileNames),
+          chunkFileNames: getLegacyOutputFileName(options.chunkFileNames)
         }
       }
 
@@ -226,6 +264,7 @@ function viteLegacyPlugin(options = {}) {
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
       const { code, map } = loadBabel().transform(raw, {
+        babelrc: false,
         configFile: false,
         compact: true,
         sourceMaps,
@@ -247,7 +286,7 @@ function viteLegacyPlugin(options = {}) {
               targets,
               modules: false,
               bugfixes: true,
-              loose: true,
+              loose: false,
               useBuiltIns: needPolyfills ? 'usage' : false,
               corejs: needPolyfills
                 ? { version: 3, proposals: false }
@@ -397,7 +436,12 @@ function viteLegacyPlugin(options = {}) {
     }
   }
 
-  return [legacyGenerateBundlePlugin, legacyPostPlugin, legacyEnvPlugin]
+  return [
+    legacyConfigPlugin,
+    legacyGenerateBundlePlugin,
+    legacyPostPlugin,
+    legacyEnvPlugin
+  ]
 }
 
 /**
@@ -408,6 +452,7 @@ function viteLegacyPlugin(options = {}) {
 function detectPolyfills(code, targets, list) {
   const { ast } = loadBabel().transform(code, {
     ast: true,
+    babelrc: false,
     configFile: false,
     presets: [
       [
@@ -531,17 +576,13 @@ function isLegacyOutput(options) {
 function recordAndRemovePolyfillBabelPlugin(polyfills) {
   return ({ types: t }) => ({
     name: 'vite-remove-polyfill-import',
-    visitor: {
-      Program: {
-        exit(path) {
-          path.get('body').forEach((p) => {
-            if (t.isImportDeclaration(p)) {
-              polyfills.add(p.node.source.value)
-              p.remove()
-            }
-          })
+    post({ path }) {
+      path.get('body').forEach((p) => {
+        if (t.isImportDeclaration(p)) {
+          polyfills.add(p.node.source.value)
+          p.remove()
         }
-      }
+      })
     }
   })
 }
@@ -563,7 +604,7 @@ module.exports = viteLegacyPlugin
 
 viteLegacyPlugin.default = viteLegacyPlugin
 
-viteLegacyPlugin.cpsHashes = [
+viteLegacyPlugin.cspHashes = [
   createHash('sha256').update(safari10NoModuleFix).digest('base64'),
   createHash('sha256').update(systemJSInlineCode).digest('base64')
 ]

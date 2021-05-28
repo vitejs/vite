@@ -31,7 +31,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   const replacements: Record<string, string | undefined> = {
-    'process.env.NODE_ENV': JSON.stringify(config.mode),
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
     ...userDefine,
     ...importMetaKeys,
     'process.env.': `({}).`

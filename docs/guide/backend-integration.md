@@ -20,7 +20,7 @@ Or you can follow these steps to configure it manually:
    }
    ```
 
-   Also remember to add the [dynamic import polyfill](/config/#build-polyfilldynamicimport) to your entry, since it will no longer be auto-injected:
+   If you use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) or manually enable the [`build.dynamicImportPolyfill` option](/config/#build-polyfilldynamicimport), remember to add the [dynamic import polyfill](/config/#build-polyfilldynamicimport) to your entry, since it will no longer be auto-injected:
 
    ```js
    // add the beginning of your app entry
@@ -41,8 +41,8 @@ Or you can follow these steps to configure it manually:
 
    ```html
    <script type="module">
-     import RefreshRuntime from "http://localhost:3000/@react-refresh"
-     RefreshRuntime.injectIntoGlobalHook(window) 
+     import RefreshRuntime from 'http://localhost:3000/@react-refresh'
+     RefreshRuntime.injectIntoGlobalHook(window)
      window.$RefreshReg$ = () => {}
      window.$RefreshSig$ = () => (type) => type
      window.__vite_plugin_react_preamble_installed__ = true
@@ -85,4 +85,3 @@ Or you can follow these steps to configure it manually:
    <link rel="stylesheet" href="/assets/{{ manifest['main.js'].css }}" />
    <script type="module" src="/assets/{{ manifest['main.js'].file }}"></script>
    ```
-   

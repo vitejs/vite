@@ -1,3 +1,5 @@
+import './imported-without-variable.css'
+
 import css from './imported.css'
 text('.imported-css', css)
 
@@ -6,6 +8,9 @@ text('.imported-sass', sass)
 
 import less from './less.less'
 text('.imported-less', less)
+
+import stylus from './stylus.styl'
+text('.imported-stylus', stylus)
 
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])

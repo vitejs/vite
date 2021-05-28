@@ -46,7 +46,7 @@ test('namespace import', async () => {
   `)
 })
 
-test('export function decl', async () => {
+test('export function declaration', async () => {
   expect((await ssrTransform(`export function foo() {}`, null, null)).code)
     .toMatchInlineSnapshot(`
     "function foo() {}
@@ -54,7 +54,7 @@ test('export function decl', async () => {
   `)
 })
 
-test('export class decl', async () => {
+test('export class declaration', async () => {
   expect((await ssrTransform(`export class foo {}`, null, null)).code)
     .toMatchInlineSnapshot(`
     "class foo {}
@@ -62,7 +62,7 @@ test('export class decl', async () => {
   `)
 })
 
-test('export var decl', async () => {
+test('export var declaration', async () => {
   expect((await ssrTransform(`export const a = 1, b = 2`, null, null)).code)
     .toMatchInlineSnapshot(`
     "const a = 1, b = 2
@@ -156,18 +156,33 @@ test('do not rewrite method definition', async () => {
   `)
 })
 
-// #2221
-test('should declare variable for imported super class', async () => {
+test('do not rewrite catch clause', async () => {
   expect(
     (
       await ssrTransform(
-        `import { Foo } from './dep';` + `class A extends Foo {}`,
+        `import {error} from './dependency';try {} catch(error) {}`,
         null,
         null
       )
     ).code
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dep\\")
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dependency\\")
+    try {} catch(error) {}"
+  `)
+})
+
+// #2221
+test('should declare variable for imported super class', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `import { Foo } from './dependency';` + `class A extends Foo {}`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dependency\\")
     const Foo = __vite_ssr_import_0__.Foo;
     class A extends Foo {}"
   `)
@@ -177,7 +192,7 @@ test('should declare variable for imported super class', async () => {
   expect(
     (
       await ssrTransform(
-        `import { Foo } from './dep';` +
+        `import { Foo } from './dependency';` +
           `export default class A extends Foo {}\n` +
           `export class B extends Foo {}`,
         null,
@@ -185,7 +200,7 @@ test('should declare variable for imported super class', async () => {
       )
     ).code
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dep\\")
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dependency\\")
     const Foo = __vite_ssr_import_0__.Foo;
     __vite_ssr_exports__.default = class A extends Foo {}
     class B extends Foo {}

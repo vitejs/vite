@@ -11,7 +11,6 @@ import {
 } from '../constants'
 import {
   createDebugger,
-  emptyDir,
   normalizePath,
   isObject,
   cleanUrl,
@@ -30,9 +29,18 @@ const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte)$/
 
-export async function scanImports(
-  config: ResolvedConfig
-): Promise<{
+// A simple regex to detect import sources. This is only used on
+// <script lang="ts"> blocks in vue (setup only) or svelte files, since
+// seemingly unused imports are dropped by esbuild when transpiling TS which
+// prevents it from crawling further.
+// We can't use es-module-lexer because it can't handle TS, and don't want to
+// use Acorn because it's slow. Luckily this doesn't have to be bullet proof
+// since even missed imports can be caught at runtime, and false positives will
+// simply be ignored.
+const importsRE =
+  /\bimport(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')/gm
+
+export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
   missing: Record<string, string>
 }> {
@@ -75,33 +83,27 @@ export async function scanImports(
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
   }
 
-  const tempDir = path.join(config.optimizeCacheDir!, 'temp')
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
+  const { plugins = [], ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
   await Promise.all(
     entries.map((entry) =>
       build({
+        write: false,
         entryPoints: [entry],
         bundle: true,
         format: 'esm',
         logLevel: 'error',
-        outdir: tempDir,
-        plugins: [plugin]
+        plugins: [...plugins, plugin],
+        ...esbuildOptions
       })
     )
   )
-
-  try {
-    emptyDir(tempDir)
-    fs.rmdirSync(tempDir)
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      throw err
-    }
-  }
 
   debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 
@@ -123,8 +125,10 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
   })
 }
 
-const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
-const scriptRE = /(<script\b[^>]*>)(.*?)<\/script>/gims
+const scriptModuleRE =
+  /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
+export const scriptRE = /(<script\b(\s[^>]*>|>))(.*?)<\/script>/gims
+export const commentRE = /<!--(.|[\r\n])*?-->/
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 
@@ -183,54 +187,81 @@ function esbuildScanPlugin(
       })
 
       // extract scripts inside HTML-like files and treat it as a js module
-      build.onLoad({ filter: htmlTypesRE, namespace: 'html' }, ({ path }) => {
-        const raw = fs.readFileSync(path, 'utf-8')
-        const regex = path.endsWith('.html') ? scriptModuleRE : scriptRE
-        regex.lastIndex = 0
-        let js = ''
-        let loader: Loader = 'js'
-        let match
-        while ((match = regex.exec(raw))) {
-          const [, openTag, content] = match
-          const srcMatch = openTag.match(srcRE)
-          const langMatch = openTag.match(langRE)
-          const lang =
-            langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
-          if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
-            loader = lang
+      build.onLoad(
+        { filter: htmlTypesRE, namespace: 'html' },
+        async ({ path }) => {
+          let raw = fs.readFileSync(path, 'utf-8')
+          // Avoid matching the content of the comment
+          raw = raw.replace(commentRE, '')
+          const isHtml = path.endsWith('.html')
+          const regex = isHtml ? scriptModuleRE : scriptRE
+          regex.lastIndex = 0
+          let js = ''
+          let loader: Loader = 'js'
+          let match
+          while ((match = regex.exec(raw))) {
+            const [, openTag, htmlContent, scriptContent] = match
+            const content = isHtml ? htmlContent : scriptContent
+            const srcMatch = openTag.match(srcRE)
+            const langMatch = openTag.match(langRE)
+            const lang =
+              langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
+            if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
+              loader = lang
+            }
+            if (srcMatch) {
+              const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
+              js += `import ${JSON.stringify(src)}\n`
+            } else if (content.trim()) {
+              js += content + '\n'
+            }
           }
-          if (srcMatch) {
-            const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
-            js += `import ${JSON.stringify(src)}\n`
-          } else if (content.trim()) {
-            js += content + '\n'
+
+          // <script setup> may contain TLA which is not true TLA but esbuild
+          // will error on it, so replace it with another operator.
+          if (js.includes('await')) {
+            js = js.replace(/\bawait(\s)/g, 'void$1')
+          }
+
+          if (
+            loader.startsWith('ts') &&
+            (path.endsWith('.svelte') ||
+              (path.endsWith('.vue') && /<script\s+setup/.test(raw)))
+          ) {
+            // when using TS + (Vue + <script setup>) or Svelte, imports may seem
+            // unused to esbuild and dropped in the build output, which prevents
+            // esbuild from crawling further.
+            // the solution is to add `import 'x'` for every source to force
+            // esbuild to keep crawling due to potential side effects.
+            let m
+            const original = js
+            while ((m = importsRE.exec(original)) !== null) {
+              // This is necessary to avoid infinite loops with zero-width matches
+              if (m.index === importsRE.lastIndex) {
+                importsRE.lastIndex++
+              }
+              js += `\nimport ${m[1]}`
+            }
+          }
+
+          if (!js.includes(`export default`)) {
+            js += `\nexport default {}`
+          }
+
+          if (js.includes('import.meta.glob')) {
+            return {
+              // transformGlob already transforms to js
+              loader: 'js',
+              contents: await transformGlob(js, path, config.root, loader)
+            }
+          }
+
+          return {
+            loader,
+            contents: js
           }
         }
-
-        if (js.includes('import.meta.glob')) {
-          return transformGlob(js, path, config.root, loader).then(
-            (contents) => ({
-              loader,
-              contents
-            })
-          )
-        }
-
-        // <script setup> may contain TLA which is not true TLA but esbuild
-        // will error on it, so replace it with another operator.
-        if (js.includes('await')) {
-          js = js.replace(/\bawait\s/g, 'void ')
-        }
-
-        if (!js.includes(`export default`)) {
-          js += `export default {}`
-        }
-
-        return {
-          loader,
-          contents: js
-        }
-      })
+      )
 
       // bare imports: record and externalize ----------------------------------
       build.onResolve(
@@ -251,7 +282,7 @@ function esbuildScanPlugin(
               return externalUnlessEntry({ path: id })
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
-              // dep or fordce included, externalize and stop crawling
+              // dependency or forced included, externalize and stop crawling
               if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
                 depImports[id] = resolved
               }
@@ -270,14 +301,14 @@ function esbuildScanPlugin(
 
       // Externalized file types -----------------------------------------------
       // these are done on raw ids using esbuild's native regex filter so it
-      // snould be faster than doing it in the catch-all via js
+      // should be faster than doing it in the catch-all via js
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
       // css & json
       build.onResolve(
         {
-          filter: /\.(css|less|sass|scss|styl|stylus|postcss|json)$/
+          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json)$/
         },
         externalUnlessEntry
       )
@@ -317,7 +348,7 @@ function esbuildScanPlugin(
               namespace
             }
           } else {
-            // resolve failed... probably usupported type
+            // resolve failed... probably unsupported type
             return externalUnlessEntry({ path: id })
           }
         }
@@ -384,7 +415,10 @@ async function transformGlob(
   return s.toString()
 }
 
-export function shouldExternalizeDep(resolvedId: string, rawId: string) {
+export function shouldExternalizeDep(
+  resolvedId: string,
+  rawId: string
+): boolean {
   // not a valid file path
   if (!path.isAbsolute(resolvedId)) {
     return true
@@ -393,8 +427,9 @@ export function shouldExternalizeDep(resolvedId: string, rawId: string) {
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // resovled is not a scannable type
+  // resolved is not a scannable type
   if (!JS_TYPES_RE.test(resolvedId) && !htmlTypesRE.test(resolvedId)) {
     return true
   }
+  return false
 }

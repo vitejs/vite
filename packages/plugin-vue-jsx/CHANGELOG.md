@@ -1,3 +1,21 @@
+## [1.1.4](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.3...plugin-vue-jsx@1.1.4) (2021-05-03)
+
+
+### Features
+
+* include/exclude options for vue-jsx plugin ([#1953](https://github.com/vitejs/vite/issues/1953)) ([fbecf1e](https://github.com/vitejs/vite/commit/fbecf1e5349ea5da8ff6f194efdcb152e2995398))
+
+
+
+## [1.1.3](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.2...plugin-vue-jsx@1.1.3) (2021-03-31)
+
+
+### Bug Fixes
+
+* ignore babelrc ([#2766](https://github.com/vitejs/vite/issues/2766)) ([23c4114](https://github.com/vitejs/vite/commit/23c41149ddf74261f7615d22e59b39a017b79509)), closes [#2722](https://github.com/vitejs/vite/issues/2722)
+
+
+
 ## [1.1.2](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.1...plugin-vue-jsx@1.1.2) (2021-02-24)
 
 

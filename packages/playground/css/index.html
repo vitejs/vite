@@ -6,6 +6,10 @@
   <p class="linked">&lt;link&gt;: This should be blue</p>
   <p class="linked-at-import">@import in &lt;link&gt;: This should be red</p>
 
+  <p class="imported-no-vars">
+    import from js, no vars: This should be magenta
+  </p>
+
   <p class="imported">import from js: This should be green</p>
   <p class="imported-at-import">
     @import in import from js: This should be purple
@@ -21,6 +25,10 @@
   <p class="sass-at-import">
     @import from SASS _index: This should be olive and have bg image
   </p>
+  <p class="sass-at-import-alias">
+    @import from SASS _index: This should be olive and have bg image which url
+    contains alias
+  </p>
   <p class="sass-partial">@import from SASS _partial: This should be orchid</p>
   <p>Imported SASS string:</p>
   <pre class="imported-sass"></pre>
@@ -29,8 +37,32 @@
   <p class="less-at-import">
     @import from Less: This should be darkslateblue and have bg image
   </p>
+  <p class="less-at-import-alias">
+    @import from Less: This should be darkslateblue and have bg image which url
+    contains alias
+  </p>
   <p>Imported Less string:</p>
   <pre class="imported-less"></pre>
+
+  <p class="stylus">Stylus: This should be blue</p>
+  <p class="stylus-additional-data">
+    Stylus additionalData: This should be orange
+  </p>
+  <p class="stylus-import">@import from Stylus: This should be darkslateblue</p>
+  <p class="stylus-import-alias">
+    @import from Stylus: This should be darkslateblue and have bg image which
+    url contains alias
+  </p>
+  <p class="stylus-options-relative-import">
+    Stylus import (relative path) via vite config preprocessor options: This
+    should be green
+  </p>
+  <p class="stylus-options-absolute-import">
+    Stylus import (absolute path) via vite config preprocessor options: This
+    should be red
+  </p>
+  <p>Imported Stylus string:</p>
+  <pre class="imported-stylus"></pre>
 
   <p class="modules">CSS modules: this should be turquoise</p>
   <p>Imported CSS module:</p>
@@ -45,6 +77,9 @@
   </p>
   <p class="css-dep-sass">
     @import dependency w/ sass enrtrypoints: this should be orange
+  </p>
+  <p class="css-dep-stylus">
+    @import dependency w/ styl enrtrypoints: this should be red
   </p>
 </div>
 

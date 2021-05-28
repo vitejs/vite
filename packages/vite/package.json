@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.1.0",
+  "version": "2.3.4",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -19,7 +19,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git"
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/vite"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
@@ -35,6 +36,7 @@
     "build-bundle": "rollup -c",
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
+    "ci-build": "rimraf dist && yarn run-s build-bundle build-types",
     "patch-types": "node scripts/patchTypes",
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",
@@ -44,8 +46,8 @@
   },
   "//": "READ .github/contributing.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.9.2",
-    "postcss": "^8.2.1",
+    "esbuild": "^0.11.23",
+    "postcss": "^8.2.10",
     "resolve": "^1.19.0",
     "rollup": "^2.38.5"
   },
@@ -55,11 +57,11 @@
   "devDependencies": {
     "@ampproject/remapping": "^1.0.1",
     "@rollup/plugin-alias": "^3.1.1",
-    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-commonjs": "^19.0.0",
     "@rollup/plugin-dynamic-import-vars": "^1.1.1",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^11.0.1",
-    "@rollup/plugin-typescript": "^8.0.0",
+    "@rollup/plugin-typescript": "^8.2.1",
     "@rollup/pluginutils": "^4.1.0",
     "@types/clean-css": "^4.2.3",
     "@types/convert-source-map": "^1.5.1",
@@ -72,6 +74,7 @@
     "@types/node": "^14.14.10",
     "@types/resolve": "^1.17.1",
     "@types/sass": "^1.16.0",
+    "@types/stylus": "^0.48.33",
     "@types/ws": "^7.4.0",
     "@vue/compiler-dom": "^3.0.4",
     "acorn": "^8.0.4",

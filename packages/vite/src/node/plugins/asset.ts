@@ -21,12 +21,24 @@ const urlRE = /(\?|&)url(?:&|$)/
 
 export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
+const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+
+const assetHashToFilenameMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, string>
+>()
+
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
 export function assetPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset',
+
+    buildStart() {
+      assetCache.set(config, new Map())
+      assetHashToFilenameMap.set(config, new Map())
+    },
 
     resolveId(id) {
       if (!config.assetsInclude(cleanUrl(id))) {
@@ -41,6 +53,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
+      if (id.startsWith('\0')) {
+        // Rollup convention, this id should be handled by the
+        // plugin that marked it with \0
+        return
+      }
+
       // raw requests, read from disk
       if (rawRE.test(id)) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
@@ -102,7 +120,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function registerAssetToChunk(chunk: RenderedChunk, file: string) {
+export function registerAssetToChunk(chunk: RenderedChunk, file: string): void {
   let emitted = chunkToEmittedAssetsMap.get(chunk)
   if (!emitted) {
     emitted = new Set()
@@ -117,7 +135,7 @@ export function checkPublicFile(
 ): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
-  if (!url.startsWith('/')) {
+  if (!publicDir || !url.startsWith('/')) {
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
@@ -132,7 +150,7 @@ export function fileToUrl(
   id: string,
   config: ResolvedConfig,
   ctx: PluginContext
-) {
+): string | Promise<string> {
   if (config.command === 'serve') {
     return fileToDevUrl(id, config)
   } else {
@@ -156,14 +174,10 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
   return config.base + rtn.replace(/^\//, '')
 }
 
-const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
-
-const assetHashToFilenameMap = new WeakMap<
-  ResolvedConfig,
-  Map<string, string>
->()
-
-export function getAssetFilename(hash: string, config: ResolvedConfig) {
+export function getAssetFilename(
+  hash: string,
+  config: ResolvedConfig
+): string | undefined {
   return assetHashToFilenameMap.get(config)?.get(hash)
 }
 
@@ -181,11 +195,7 @@ async function fileToBuiltUrl(
     return config.base + id.slice(1)
   }
 
-  let cache = assetCache.get(config)
-  if (!cache) {
-    cache = new Map()
-    assetCache.set(config, cache)
-  }
+  const cache = assetCache.get(config)!
   const cached = cache.get(id)
   if (cached) {
     return cached
@@ -212,11 +222,7 @@ async function fileToBuiltUrl(
     // into the chunk's hash, so we have to do our own content hashing here.
     // https://bundlers.tooling.report/hashing/asset-cascade/
     // https://github.com/rollup/rollup/issues/3415
-    let map = assetHashToFilenameMap.get(config)
-    if (!map) {
-      map = new Map()
-      assetHashToFilenameMap.set(config, map)
-    }
+    const map = assetHashToFilenameMap.get(config)!
 
     const contentHash = getAssetHash(content)
     if (!map.has(contentHash)) {

@@ -1,5 +1,9 @@
 import chalk from 'chalk'
-import { Server } from 'http'
+import { Server, STATUS_CODES } from 'http'
+import {
+  createServer as createHttpsServer,
+  ServerOptions as HttpsServerOptions
+} from 'https'
 import WebSocket from 'ws'
 import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import { ResolvedConfig } from '..'
@@ -13,9 +17,11 @@ export interface WebSocketServer {
 
 export function createWebSocketServer(
   server: Server | null,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  httpsOptions?: HttpsServerOptions
 ): WebSocketServer {
   let wss: WebSocket.Server
+  let httpsServer: Server | undefined = undefined
 
   const hmr = typeof config.server.hmr === 'object' && config.server.hmr
   const wsServer = (hmr && hmr.server) || server
@@ -30,10 +36,35 @@ export function createWebSocketServer(
       }
     })
   } else {
+    const websocketServerOptions: WebSocket.ServerOptions = {}
+    const port = (hmr && hmr.port) || 24678
+    if (httpsOptions) {
+      // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
+      // create an inline https server and mount the websocket server to it
+      httpsServer = createHttpsServer(httpsOptions, (req, res) => {
+        const statusCode = 426
+        const body = STATUS_CODES[statusCode]
+        if (!body)
+          throw new Error(
+            `No body text found for the ${statusCode} status code`
+          )
+
+        res.writeHead(statusCode, {
+          'Content-Length': body.length,
+          'Content-Type': 'text/plain'
+        })
+        res.end(body)
+      })
+
+      httpsServer.listen(port)
+      websocketServerOptions.server = httpsServer
+    } else {
+      // we don't need to serve over https, just let ws handle its own server
+      websocketServerOptions.port = port
+    }
+
     // vite dev server in middleware mode
-    wss = new WebSocket.Server({
-      port: (hmr && hmr.port) || 24678
-    })
+    wss = new WebSocket.Server(websocketServerOptions)
   }
 
   wss.on('connection', (socket) => {
@@ -79,7 +110,17 @@ export function createWebSocketServer(
           if (err) {
             reject(err)
           } else {
-            resolve()
+            if (httpsServer) {
+              httpsServer.close((err) => {
+                if (err) {
+                  reject(err)
+                } else {
+                  resolve()
+                }
+              })
+            } else {
+              resolve()
+            }
           }
         })
       })
