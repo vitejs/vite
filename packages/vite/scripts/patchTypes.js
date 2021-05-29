@@ -2,10 +2,8 @@
 const fs = require('fs')
 const path = require('path')
 const chalk = require('chalk')
-const slash = require('slash')
 const { parse } = require('@babel/parser')
 const MagicString = require('magic-string').default
-
 const tempDir = path.resolve(__dirname, '../temp/node')
 const typesDir = path.resolve(__dirname, '../types')
 
@@ -14,6 +12,10 @@ const typesDir = path.resolve(__dirname, '../types')
 // includes them in the rolled-up final d.ts file.
 walkDir(tempDir)
 console.log(chalk.green.bold(`patched types/* imports`))
+
+function slash(p) {
+  return p.replace(/\\/g, '/')
+}
 
 /**
  * @param {string} dir
