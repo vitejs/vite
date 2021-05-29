@@ -19,9 +19,10 @@
     "docs": "vitepress dev docs",
     "build-docs": "vitepress build docs",
     "serve-docs": "vitepress serve docs",
-    "build": "run-s build-vite build-plugin-vue",
+    "build": "run-s build-vite build-plugin-vue build-plugin-react",
     "build-vite": "cd packages/vite && yarn build",
     "build-plugin-vue": "cd packages/plugin-vue && yarn build",
+    "build-plugin-react": "cd packages/plugin-react && yarn build",
     "ci-build-vite": "cd packages/vite && yarn ci-build",
     "ci-docs": "run-s build-vite build-plugin-vue build-docs"
   },
