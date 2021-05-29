@@ -4,6 +4,7 @@ import { TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from './index'
 import { createRollupError } from './utils/error'
 import { compileTemplate } from './template/compileTemplate'
+import hash from 'hash-sum'
 
 export function compileSFCTemplate(
   source: string,
@@ -28,8 +29,8 @@ export function compileSFCTemplate(
     ...vueTemplateOptions,
     compilerOptions: {
       whitespace: 'condense',
-      ...(vueTemplateOptions.compilerOptions || {})
-    }
+      ...(vueTemplateOptions.compilerOptions || {}),
+    },
   })
 
   if (tips) {
@@ -75,10 +76,8 @@ export function transformRequireToImport(code: string): string {
     /require\(("(?:[^"\\]|\\.)+"|'(?:[^'\\]|\\.)+')\)/g,
     (_, name): any => {
       if (!(name in imports)) {
-        imports[name] = `__$_require_${name
-          .replace(/[^a-z0-9]/g, '_')
-          .replace(/_{2,}/g, '_')
-          .replace(/^_|_$/g, '')}__`
+        // #81 compat unicode assets name
+        imports[name] = `__$_require_${hash(name)}__`
         strImports += 'import ' + imports[name] + ' from ' + name + '\n'
       }
 
