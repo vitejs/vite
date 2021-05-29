@@ -6,7 +6,7 @@ import { createDescriptor, setDescriptor } from './utils/descriptorCache'
 import path from 'path'
 import fs from 'fs'
 import { TransformPluginContext } from 'rollup'
-import { RawSourceMap } from '@vue/component-compiler-utils/dist/types'
+import { RawSourceMap, SourceMapGenerator } from 'source-map'
 
 export async function transformMain(
   code: string,
@@ -94,10 +94,22 @@ function injectStyles (context) {
     )
   }
 
+  let map = descriptor.script?.map
+  // if script source map is undefined, generate an emty souce map so that
+  // rollup wont complain at build time when using sourceMap option
+  if (!map) {
+    const emptyMapGen = new SourceMapGenerator({
+      file: filePath.replace(/\\/g, '/'),
+      sourceRoot: options.root.replace(/\\/g, '/'),
+    })
+    emptyMapGen.setSourceContent(filePath, code)
+    map = JSON.parse(emptyMapGen.toString())
+  }
+
   result += `\nexport default component.exports`
   return {
     code: result,
-    map: descriptor.script?.map,
+    map,
   }
 }
 

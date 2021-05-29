@@ -160,7 +160,7 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
         )
       }
       if (query.type === 'style') {
-        return transformStyle(
+        return await transformStyle(
           code,
           filename,
           descriptor,

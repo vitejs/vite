@@ -12,7 +12,7 @@ export function compileSFCTemplate(
   filename: string,
   { root, isProduction, vueTemplateOptions = {}, devServer }: ResolvedOptions,
   pluginContext: TransformPluginContext
-): string {
+) {
   const { tips, errors, code } = compileTemplate({
     source,
     filename,
@@ -64,8 +64,13 @@ export function compileSFCTemplate(
       }
     })
   }
+
   // rewrite require calls to import on build
-  return transformRequireToImport(code) + `\nexport { render, staticRenderFns }`
+  return {
+    code:
+      transformRequireToImport(code) + `\nexport { render, staticRenderFns }`,
+    map: null,
+  }
 }
 
 export function transformRequireToImport(code: string): string {
