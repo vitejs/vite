@@ -108,10 +108,10 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte)($|\?)/
 export const isJSRequest = (url: string): boolean => {
+  url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  url = cleanUrl(url)
   if (!path.extname(url) && !url.endsWith('/')) {
     return true
   }
