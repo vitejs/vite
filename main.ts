@@ -27,7 +27,7 @@ export async function transformMain(
   )
   // script
   const scriptVar = 'script'
-  const { scriptCode } = await genScriptCode(
+  const { scriptCode, map: scriptMap } = await genScriptCode(
     scriptVar,
     descriptor,
     filePath,
@@ -94,7 +94,7 @@ function injectStyles (context) {
     )
   }
 
-  let map = descriptor.script?.map
+  let map = scriptMap
   // if script source map is undefined, generate an emty souce map so that
   // rollup wont complain at build time when using sourceMap option
   if (!map) {
