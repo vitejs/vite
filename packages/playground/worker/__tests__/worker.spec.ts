@@ -27,6 +27,7 @@ const waitSharedWorkerTick = (
     // test.concurrent sequential is not guaranteed
     // force page to wait to ensure two pages overlap in time
     resolvedSharedWorkerCount++
+    if (resolvedSharedWorkerCount < 2) return
 
     await untilUpdated(() => {
       return resolvedSharedWorkerCount === 2 ? 'all pages loaded' : ''
