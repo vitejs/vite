@@ -1,12 +1,15 @@
 import fs from 'fs-extra'
 import * as http from 'http'
 import { resolve, dirname } from 'path'
-import slash from 'slash'
 import sirv from 'sirv'
 import { createServer, build, ViteDevServer, UserConfig } from 'vite'
 import { Page } from 'playwright-chromium'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
+
+export function slash(p: string): string {
+  return p.replace(/\\/g, '/')
+}
 
 // injected by the test env
 declare global {
