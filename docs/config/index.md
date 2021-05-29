@@ -427,11 +427,13 @@ export default async ({ command, mode }) => {
 
 ### server.hmr
 
-- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean }`
+- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number }`
 
   Disable or configure HMR connection (in cases where the HMR websocket must use a different address from the http server).
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
+
+  `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
 ### server.watch
 
