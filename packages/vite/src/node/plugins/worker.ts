@@ -24,8 +24,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker',
 
     load(id) {
-      if (isBuild && parseWorkerRequest(id)?.worker != null) {
-        return ''
+      if (isBuild) {
+        const parsedQuery = parseWorkerRequest(id)
+        if (
+          parsedQuery &&
+          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
+        ) {
+          return ''
+        }
       }
     },
 
@@ -36,7 +42,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           code: `import '${ENV_PUBLIC_PATH}'\n` + _
         }
       }
-      if (query == null || (query && query.worker == null)) {
+      if (
+        query == null ||
+        (query && (query.worker ?? query.sharedworker) == null)
+      ) {
         return
       }
 
@@ -80,8 +89,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         url = injectQuery(url, WorkerFileId)
       }
 
+      const workerConstructor =
+        query.sharedworker != null ? 'SharedWorker' : 'Worker'
+      const workerOptions = { type: 'module' }
+
       return `export default function WorkerWrapper() {
-        return new Worker(${JSON.stringify(url)}, { type: 'module' })
+        return new ${workerConstructor}(${JSON.stringify(
+        url
+      )}, ${JSON.stringify(workerOptions, null, 2)})
       }`
     }
   }

@@ -290,7 +290,7 @@ In the production build, `.wasm` files smaller than `assetInlineLimit` will be i
 
 ## Web Workers
 
-A web worker script can be directly imported by appending `?worker` to the import request. The default export will be a custom worker constructor:
+A web worker script can be directly imported by appending `?worker` or `?sharedworker` to the import request. The default export will be a custom worker constructor:
 
 ```js
 import MyWorker from './worker?worker'
