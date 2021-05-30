@@ -53,8 +53,8 @@ export default {
   plugins: [
     {
       ...image(),
-      enforce: 'pre',
-    },
+      enforce: 'pre'
+    }
   ]
 }
 ```
@@ -73,8 +73,8 @@ export default {
   plugins: [
     {
       ...typescript2(),
-      apply: 'build',
-    },
+      apply: 'build'
+    }
   ]
 }
 ```

@@ -32,7 +32,8 @@ const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 const htmlCommentRE = /<!--[\s\S]*?-->/g
-const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
+const scriptModuleRE =
+  /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
 
 export function htmlInlineScriptProxyPlugin(): Plugin {
   return {
@@ -101,9 +102,7 @@ export async function traverseHtml(
   }
 }
 
-export function getScriptInfo(
-  node: ElementNode
-): {
+export function getScriptInfo(node: ElementNode): {
   src: AttributeNode | undefined
   isModule: boolean
 } {
@@ -154,7 +153,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       if (id.endsWith('.html')) {
         const publicPath = `/${slash(path.relative(config.root, id))}`
         // pre-transform
-        html = await applyHtmlTransforms(html, publicPath, id, preHooks)
+        html = await applyHtmlTransforms(html, preHooks, {
+          path: publicPath,
+          filename: id
+        })
 
         let js = ''
         const s = new MagicString(html)
@@ -381,15 +383,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         const shortEmitName = path.posix.relative(config.root, id)
-        result = await applyHtmlTransforms(
-          result,
-          '/' + shortEmitName,
-          id,
-          postHooks,
-          undefined,
+        result = await applyHtmlTransforms(result, postHooks, {
+          path: '/' + shortEmitName,
+          filename: id,
           bundle,
           chunk
-        )
+        })
 
         this.emitFile({
           type: 'asset',
@@ -431,6 +430,7 @@ export interface IndexHtmlTransformContext {
   server?: ViteDevServer
   bundle?: OutputBundle
   chunk?: OutputChunk
+  originalUrl?: string
 }
 
 export type IndexHtmlTransformHook = (
@@ -469,25 +469,13 @@ export function resolveHtmlTransforms(
 
 export async function applyHtmlTransforms(
   html: string,
-  path: string,
-  filename: string,
   hooks: IndexHtmlTransformHook[],
-  server?: ViteDevServer,
-  bundle?: OutputBundle,
-  chunk?: OutputChunk
+  ctx: IndexHtmlTransformContext
 ): Promise<string> {
   const headTags: HtmlTagDescriptor[] = []
   const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
   const bodyPrependTags: HtmlTagDescriptor[] = []
-
-  const ctx: IndexHtmlTransformContext = {
-    path,
-    filename,
-    server,
-    bundle,
-    chunk
-  }
 
   for (const hook of hooks) {
     const res = await hook(html, ctx)

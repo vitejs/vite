@@ -4,9 +4,12 @@
 
 import fs from 'fs'
 import path from 'path'
-import slash from 'slash'
 import colors from 'css-color-names'
 import { ElementHandle } from 'playwright-chromium'
+
+export function slash(p: string): string {
+  return p.replace(/\\/g, '/')
+}
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 
@@ -20,7 +23,7 @@ Object.keys(colors).forEach((color) => {
 })
 
 function componentToHex(c: number): string {
-  var hex = c.toString(16)
+  const hex = c.toString(16)
   return hex.length == 1 ? '0' + hex : hex
 }
 

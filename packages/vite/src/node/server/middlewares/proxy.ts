@@ -77,7 +77,8 @@ export function proxyMiddleware(
     })
   }
 
-  return (req, res, next) => {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
       if (

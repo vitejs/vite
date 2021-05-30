@@ -118,8 +118,7 @@ export const chunkToEmittedCssFileMap = new WeakMap<
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
-  const moduleCache = new Map<string, Record<string, string>>()
-  cssModulesCache.set(config, moduleCache)
+  let moduleCache: Map<string, Record<string, string>>
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -133,6 +132,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
     configureServer(_server) {
       server = _server
+    },
+
+    buildStart() {
+      // Ensure a new cache for every build (i.e. rebuilding in watch mode)
+      moduleCache = new Map<string, Record<string, string>>()
+      cssModulesCache.set(config, moduleCache)
     },
 
     async transform(raw, id) {
@@ -166,15 +171,20 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       //       return urlToBuiltUrl(url, importer || id, config, this)
       //     }
 
-      const { code: css, modules, deps } = await compileCSS(
-        id,
-        raw,
-        config,
-        urlReplacer,
-        atImportResolvers
-      )
+      const {
+        code: css,
+        modules,
+        deps
+      } = await compileCSS(id, raw, config, urlReplacer, atImportResolvers)
       if (modules) {
         moduleCache.set(id, modules)
+      }
+
+      // track deps for build watch mode
+      if (config.command === 'build' && config.build.watch && deps) {
+        for (const file of deps) {
+          this.addWatchFile(file)
+        }
       }
 
       // dev
@@ -220,24 +230,30 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  const styles = new Map<string, string>()
-  const pureCssChunks = new Set<string>()
-  const moduleCache = cssModulesCache.get(config)!
+  let styles: Map<string, string>
+  let pureCssChunks: Set<string>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
-  const outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+  let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
 
   return {
     name: 'vite:css-post',
+
+    buildStart() {
+      // Ensure new caches for every build (i.e. rebuilding in watch mode)
+      styles = new Map<string, string>()
+      pureCssChunks = new Set<string>()
+      outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+    },
 
     transform(css, id, ssr) {
       if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
         return
       }
 
-      const modules = moduleCache.get(id)
+      const modules = cssModulesCache.get(config)!.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
@@ -247,7 +263,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else {
           // server only
           if (ssr) {
-            return modulesCode || `export default ${JSON.stringify(css)}`
+            return modulesCode || `export default ''`
           }
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
@@ -269,7 +285,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       styles.set(id, css)
 
       return {
-        code: modulesCode || `export default ${JSON.stringify(css)}`,
+        code: modulesCode || `export default ''`,
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
@@ -861,15 +877,26 @@ type PreprocessorAdditionalData =
   | string
   | ((source: string, filename: string) => string | Promise<string>)
 
+type StylePreprocessorOptions = {
+  [key: string]: any
+  additionalData?: PreprocessorAdditionalData
+  filename: string
+  alias: Alias[]
+}
+
+type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
+
 type StylePreprocessor = (
   source: string,
   root: string,
-  options: {
-    [key: string]: any
-    additionalData?: PreprocessorAdditionalData
-    filename: string
-    alias: Alias[]
-  },
+  options: StylePreprocessorOptions,
+  resolvers: CSSAtImportResolvers
+) => StylePreprocessorResults | Promise<StylePreprocessorResults>
+
+type SassStylePreprocessor = (
+  source: string,
+  root: string,
+  options: SassStylePreprocessorOptions,
   resolvers: CSSAtImportResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
@@ -904,22 +931,35 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
 }
 
 // .scss/.sass processor
-const scss: StylePreprocessor = async (source, root, options, resolvers) => {
+const scss: SassStylePreprocessor = async (
+  source,
+  root,
+  options,
+  resolvers
+) => {
   const render = loadPreprocessor(PreprocessLang.sass, root).render
+  const internalImporter: Sass.Importer = (url, importer, done) => {
+    resolvers.sass(url, importer).then((resolved) => {
+      if (resolved) {
+        rebaseUrls(resolved, options.filename, options.alias).then(done)
+      } else {
+        done(null)
+      }
+    })
+  }
+  const importer = [internalImporter]
+  if (options.importer) {
+    Array.isArray(options.importer)
+      ? importer.push(...options.importer)
+      : importer.push(options.importer)
+  }
+
   const finalOptions: Sass.Options = {
     ...options,
     data: await getSource(source, options.filename, options.additionalData),
     file: options.filename,
     outFile: options.filename,
-    importer(url, importer, done) {
-      resolvers.sass(url, importer).then((resolved) => {
-        if (resolved) {
-          rebaseUrls(resolved, options.filename, options.alias).then(done)
-        } else {
-          done(null)
-        }
-      })
-    }
+    importer
   }
 
   try {
@@ -947,7 +987,7 @@ const scss: StylePreprocessor = async (source, root, options, resolvers) => {
   }
 }
 
-const sass: StylePreprocessor = (source, root, options, aliasResolver) =>
+const sass: SassStylePreprocessor = (source, root, options, aliasResolver) =>
   scss(
     source,
     root,

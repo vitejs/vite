@@ -2,20 +2,18 @@ import fs from 'fs'
 import path from 'path'
 import { Server as HttpServer } from 'http'
 import { ServerOptions as HttpsServerOptions } from 'https'
-import { ServerOptions } from '..'
+import { ResolvedConfig, ServerOptions } from '..'
 import { Connect } from 'types/connect'
 
 export async function resolveHttpServer(
-  { https = false, proxy }: ServerOptions,
-  app: Connect.Server
+  { proxy }: ServerOptions,
+  app: Connect.Server,
+  httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
-  if (!https) {
+  if (!httpsOptions) {
     return require('http').createServer(app)
   }
 
-  const httpsOptions = await resolveHttpsConfig(
-    typeof https === 'boolean' ? {} : https
-  )
   if (proxy) {
     // #484 fallback to http1 when proxy is needed.
     return require('https').createServer(httpsOptions, app)
@@ -31,8 +29,13 @@ export async function resolveHttpServer(
 }
 
 export async function resolveHttpsConfig(
-  httpsOption: HttpsServerOptions
-): Promise<HttpsServerOptions> {
+  config: ResolvedConfig
+): Promise<HttpsServerOptions | undefined> {
+  if (!config.server.https) return undefined
+
+  const httpsOption =
+    typeof config.server.https === 'object' ? config.server.https : {}
+
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
     ca: readFileIfExists(ca),

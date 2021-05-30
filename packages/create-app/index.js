@@ -262,6 +262,34 @@ function copy(src, dest) {
   }
 }
 
+async function getValidPackageName(projectName) {
+  const packageNameRegExp =
+    /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+  if (packageNameRegExp.test(projectName)) {
+    return projectName
+  } else {
+    const suggestedPackageName = projectName
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/^[._]/, '')
+      .replace(/[^a-z0-9-~]+/g, '-')
+
+    /**
+     * @type {{ inputPackageName: string }}
+     */
+    const { inputPackageName } = await prompt({
+      type: 'input',
+      name: 'inputPackageName',
+      message: `Package name:`,
+      initial: suggestedPackageName,
+      validate: (input) =>
+        packageNameRegExp.test(input) ? true : 'Invalid package.json name'
+    })
+    return inputPackageName
+  }
+}
+
 function copyDir(srcDir, destDir) {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {

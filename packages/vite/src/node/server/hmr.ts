@@ -19,6 +19,7 @@ export interface HmrOptions {
   protocol?: string
   host?: string
   port?: number
+  clientPort?: number
   path?: string
   timeout?: number
   overlay?: boolean
@@ -177,10 +178,16 @@ export async function handleFileAddUnlink(
     delete server._globImporters[file]
   } else {
     for (const i in server._globImporters) {
-      const { module, base, pattern } = server._globImporters[i]
-      const relative = path.relative(base, file)
-      if (match(relative, pattern)) {
-        modules.push(module)
+      const { module, importGlobs } = server._globImporters[i]
+      for (const { base, pattern } of importGlobs) {
+        const relative = path.relative(base, file)
+        if (match(relative, pattern)) {
+          modules.push(module)
+          // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
+          // calls get fresh glob import results with(out) the newly added(/removed) `file`.
+          server.moduleGraph.onFileChange(module.file!)
+          break
+        }
       }
     }
   }
@@ -244,6 +251,8 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
   seen.add(mod)
   mod.lastHMRTimestamp = timestamp
   mod.transformResult = null
+  mod.ssrModule = null
+  mod.ssrTransformResult = null
   mod.importers.forEach((importer) => {
     if (!importer.acceptedHmrDeps.has(mod)) {
       invalidate(importer, timestamp, seen)

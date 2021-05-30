@@ -44,7 +44,8 @@ export function errorMiddleware(
   allowNext = false
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
-  return (err: RollupError, _req, res, next) => {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteErrorMiddleware(err: RollupError, _req, res, next) {
     const msg = buildErrorMessage(err, [
       chalk.red(`Internal server error: ${err.message}`)
     ])
@@ -62,8 +63,35 @@ export function errorMiddleware(
     if (allowNext) {
       next()
     } else {
+      if (err instanceof AccessRestrictedError) {
+        res.statusCode = 403
+        res.write(renderErrorHTML(err.message))
+        res.end()
+      }
       res.statusCode = 500
       res.end()
     }
   }
+}
+
+export class AccessRestrictedError extends Error {
+  constructor(msg: string, public url: string, public serveRoot: string) {
+    super(msg)
+  }
+}
+
+export function renderErrorHTML(msg: string): string {
+  // to have syntax highlighting and autocompletion in IDE
+  const html = String.raw
+  return html`
+    <body>
+      <h1>403 Restricted</h1>
+      <p>${msg.replace(/\n/g, '<br/>')}</p>
+      <style>
+        body {
+          padding: 1em 2em;
+        }
+      </style>
+    </body>
+  `
 }
