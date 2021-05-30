@@ -247,7 +247,6 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
-      // TODO remove the class check logic after upgrading @vue/compiler-sfc
       scriptCode = script.content
       map = script.map
       if (script.lang === 'ts') {
@@ -260,18 +259,7 @@ async function genScriptCode(
         scriptCode = result.code
         map = result.map
       }
-      const classMatch = scriptCode.match(exportDefaultClassRE)
-      if (classMatch) {
-        scriptCode =
-          scriptCode.replace(exportDefaultClassRE, `\nclass $1`) +
-          `\nconst _sfc_main = ${classMatch[1]}`
-        if (/export\s+default/.test(scriptCode)) {
-          // fallback if there are still export default
-          scriptCode = rewriteDefault(scriptCode, `_sfc_main`)
-        }
-      } else {
-        scriptCode = rewriteDefault(scriptCode, `_sfc_main`)
-      }
+      scriptCode = rewriteDefault(scriptCode, `_sfc_main`)
     } else {
       if (script.src) {
         await linkSrcToDescriptor(script.src, descriptor, pluginContext)
