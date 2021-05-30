@@ -433,9 +433,10 @@ export default async ({ command, mode }) => {
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
 
-  When using `server.middlewareMode` and `server.https`, setting `server.hmr.server` to your HTTPS server will process HMR secure connection requests through your server.  This is of particular importance when using self-signed certificates.
-
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
+
+  When using `server.middlewareMode` and `server.https`, setting `server.hmr.server` to your HTTPS server will process HMR secure connection requests through your server. This can be helpful when using self-signed certificates.
+
 
 ### server.watch
 
