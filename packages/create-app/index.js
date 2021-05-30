@@ -129,14 +129,8 @@ async function init() {
   let targetDir = argv._[0]
   let template = argv.template || argv.t
 
-  const defaultPackageName = !targetDir
-    ? 'vite-project'
-    : targetDir
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/^[._]/, '')
-        .replace(/[^a-z0-9-~]+/g, '-')
+  const defaultProjectName = !targetDir ? 'vite-project' : targetDir
+
   let result = {}
 
   try {
@@ -144,23 +138,35 @@ async function init() {
       [
         {
           type: targetDir ? null : 'text',
-          name: 'packageName',
+          name: 'projectName',
           message: 'Project name:',
-          initial: defaultPackageName,
-          validate: (dir) =>
-            /^(?:@[a-z0-9*~][a-z0-9-*._~]*\/)?[a-z0-9~][a-z0-9-._~]*$/.test(
-              dir
-            ) || 'Invalid package.json name',
+          initial: defaultProjectName,
           onState: (state) =>
-            (targetDir = state.value.trim() || defaultPackageName)
+            (targetDir = state.value.trim() || defaultProjectName)
         },
         {
           type: () =>
             !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
           name: 'overwrite',
           message: () =>
-            `Target directory "${targetDir}" is not empty. Remove existing files and continue?`,
-          initial: false
+            (targetDir === '.'
+              ? 'Current directory'
+              : `Target directory ${targetDir}`) +
+            ` is not empty. Remove existing files and continue?`,
+          initial: false,
+          onState: (state) => {
+            if (!state.value) {
+              throw new Error(red('✖') + ' Operation cancelled')
+            }
+          }
+        },
+        {
+          type: () => (isValidPackageName(targetDir) ? null : 'text'),
+          name: 'packageName',
+          message: 'Package name:',
+          initial: () => toValidPackageName(targetDir),
+          validate: (dir) =>
+            isValidPackageName(dir) || 'Invalid package.json name'
         },
         {
           type: template && TEMPLATES.includes(template) ? null : 'select',
@@ -261,6 +267,21 @@ function copy(src, dest) {
   } else {
     fs.copyFileSync(src, dest)
   }
+}
+
+function isValidPackageName(projectName) {
+  return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
+    projectName
+  )
+}
+
+function toValidPackageName(projectName) {
+  return projectName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/^[._]/, '')
+    .replace(/[^a-z0-9-~]+/g, '-')
 }
 
 function copyDir(srcDir, destDir) {
