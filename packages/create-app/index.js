@@ -153,12 +153,16 @@ async function init() {
               ? 'Current directory'
               : `Target directory "${targetDir}"`) +
             ` is not empty. Remove existing files and continue?`,
-          initial: false,
-          onState: (state) => {
-            if (!state.value) {
-              // TODO: throw new Error(red('✖') + ' Operation cancelled')
+          initial: false
+        },
+        {
+          type: (overwrite) => {
+            if (!overwrite) {
+              throw new Error(red('✖') + ' Operation cancelled')
             }
-          }
+            return null
+          },
+          name: 'overwriteChecker'
         },
         {
           type: () => (isValidPackageName(targetDir) ? null : 'text'),
