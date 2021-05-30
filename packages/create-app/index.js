@@ -127,9 +127,8 @@ const renameFiles = {
 
 async function init() {
   let targetDir = argv._[0]
-  const initialFrameworkIndex = FRAMEWORKS.findIndex((framework) =>
-    [argv.t, argv.template].includes(framework.name)
-  )
+  let template = argv.template || argv.t
+
   const defaultPackageName = !targetDir
     ? 'vite-project'
     : targetDir
@@ -139,11 +138,12 @@ async function init() {
         .replace(/^[._]/, '')
         .replace(/[^a-z0-9-~]+/g, '-')
   let result = {}
+
   try {
     result = await prompts(
       [
         {
-          type: 'text',
+          type: targetDir ? null : 'text',
           name: 'packageName',
           message: 'Project name:',
           initial: defaultPackageName,
@@ -151,25 +151,25 @@ async function init() {
             /^(?:@[a-z0-9*~][a-z0-9-*._~]*\/)?[a-z0-9~][a-z0-9-._~]*$/.test(
               dir
             ) || 'Invalid package.json name',
-          onState: (state) => (targetDir = targetDir || state.value)
+          onState: (state) =>
+            (targetDir = state.value.trim() || defaultPackageName)
         },
         {
           type: () =>
             !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
           name: 'overwrite',
-          message: (targetDir) =>
-            `Target directory ${targetDir} is not empty. Remove existing files and continue?`,
+          message: () =>
+            `Target directory "${targetDir}" is not empty. Remove existing files and continue?`,
           initial: false
         },
         {
-          type: FRAMEWORKS.find((framework) =>
-            [argv.t, argv.template].includes(framework.name)
-          )
-            ? null
-            : 'select',
+          type: template && TEMPLATES.includes(template) ? null : 'select',
           name: 'framework',
-          message: 'Select a framework:',
-          initial: initialFrameworkIndex > -1 ? initialFrameworkIndex : 0,
+          message:
+            template && !TEMPLATES.includes(template)
+              ? `"${template}" isn't a valid template. Please choose from below: `
+              : 'Select a framework:',
+          initial: 0,
           choices: FRAMEWORKS.map((framework) => {
             const frameworkColor = framework.color
             return {
@@ -179,7 +179,7 @@ async function init() {
           })
         },
         {
-          type: (framework) => (framework.variants ? 'select' : null),
+          type: (framework) => (framework?.variants ? 'select' : null),
           name: 'variant',
           message: 'Select a variant:',
           // @ts-ignore
@@ -214,7 +214,7 @@ async function init() {
   }
 
   // determine template
-  const template = result.variant || result.framework
+  template = template || result.variant || result.framework
 
   console.log(`\nScaffolding project in ${root}...`)
 

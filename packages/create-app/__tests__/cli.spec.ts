@@ -47,20 +47,20 @@ test('prompts for the framework if none supplied', () => {
 test('prompts for the framework on supplying an invalid template', () => {
   const { stdout } = run([projectName, '--template', 'unknown'])
   expect(stdout).toContain(
-    `unknown isn't a valid template. Please choose from below:`
+    `"unknown" isn't a valid template. Please choose from below:`
   )
 })
 
 test('asks to overwrite non-empty target directory', () => {
   createNonEmptyDir()
   const { stdout } = run([projectName], { cwd: __dirname })
-  expect(stdout).toContain(`Target directory ${projectName} is not empty.`)
+  expect(stdout).toContain(`Target directory "${projectName}" is not empty.`)
 })
 
 test('asks to overwrite non-empty current directory', () => {
   createNonEmptyDir()
-  const { stdout } = run(['.'], { cwd: genPath, input: 'test-app\n' })
-  expect(stdout).toContain(`Current directory is not empty.`)
+  const { stdout } = run([], { input: 'test-app\n', cwd: __dirname })
+  expect(stdout).toContain(`Target directory "test-app" is not empty.`)
 })
 
 test('successfully scaffolds a project based on vue starter template', () => {
