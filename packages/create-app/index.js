@@ -148,7 +148,7 @@ async function init() {
           message: 'Project name:',
           initial: defaultPackageName,
           validate: (dir) =>
-            /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
+            /^(?:@[a-z0-9*~][a-z0-9-*._~]*\/)?[a-z0-9~][a-z0-9-._~]*$/.test(
               dir
             ) || 'Invalid package.json name',
           onState: (state) => (targetDir = targetDir || state.value)
@@ -259,34 +259,6 @@ function copy(src, dest) {
     copyDir(src, dest)
   } else {
     fs.copyFileSync(src, dest)
-  }
-}
-
-async function getValidPackageName(projectName) {
-  const packageNameRegExp =
-    /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
-  if (packageNameRegExp.test(projectName)) {
-    return projectName
-  } else {
-    const suggestedPackageName = projectName
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/^[._]/, '')
-      .replace(/[^a-z0-9-~]+/g, '-')
-
-    /**
-     * @type {{ inputPackageName: string }}
-     */
-    const { inputPackageName } = await prompt({
-      type: 'input',
-      name: 'inputPackageName',
-      message: `Package name:`,
-      initial: suggestedPackageName,
-      validate: (input) =>
-        packageNameRegExp.test(input) ? true : 'Invalid package.json name'
-    })
-    return inputPackageName
   }
 }
 
