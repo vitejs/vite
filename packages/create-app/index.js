@@ -179,7 +179,8 @@ async function init() {
           })
         },
         {
-          type: (framework) => (framework?.variants ? 'select' : null),
+          type: (framework) =>
+            framework && framework.variants ? 'select' : null,
           name: 'variant',
           message: 'Select a variant:',
           // @ts-ignore
