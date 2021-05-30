@@ -16,9 +16,7 @@ function useI18n(locale = 'en') {
   return { t }
 }
 
-/*
-export default
-*/
+// export default
 export default {
   setup() {
     return { ...useI18n('ja') }
