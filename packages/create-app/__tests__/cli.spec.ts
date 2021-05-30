@@ -59,8 +59,8 @@ test('asks to overwrite non-empty target directory', () => {
 
 test('asks to overwrite non-empty current directory', () => {
   createNonEmptyDir()
-  const { stdout } = run([], { input: 'test-app\n', cwd: __dirname })
-  expect(stdout).toContain(`Target directory "test-app" is not empty.`)
+  const { stdout } = run(['.'], { cwd: genPath, input: 'test-app\n' })
+  expect(stdout).toContain(`Current directory is not empty.`)
 })
 
 test('successfully scaffolds a project based on vue starter template', () => {

@@ -151,12 +151,12 @@ async function init() {
           message: () =>
             (targetDir === '.'
               ? 'Current directory'
-              : `Target directory ${targetDir}`) +
+              : `Target directory "${targetDir}"`) +
             ` is not empty. Remove existing files and continue?`,
           initial: false,
           onState: (state) => {
             if (!state.value) {
-              throw new Error(red('✖') + ' Operation cancelled')
+              // TODO: throw new Error(red('✖') + ' Operation cancelled')
             }
           }
         },
