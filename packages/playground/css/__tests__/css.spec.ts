@@ -30,11 +30,18 @@ test('linked css', async () => {
 })
 
 test('css import from js', async () => {
+  const importedNoVars = await page.$('.imported-no-vars')
   const imported = await page.$('.imported')
   const atImport = await page.$('.imported-at-import')
 
+  expect(await getColor(importedNoVars)).toBe('magenta')
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
+
+  editFile('imported-without-variable.css', (code) =>
+    code.replace('color: magenta', 'color: cyan')
+  )
+  await untilUpdated(() => getColor(importedNoVars), 'cyan')
 
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await untilUpdated(() => getColor(imported), 'red')

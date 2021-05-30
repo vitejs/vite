@@ -322,6 +322,15 @@ export default async ({ command, mode }) => {
 
   Set to `false` to prevent Vite from clearing the terminal screen when logging certain messages. Via command line, use `--clearScreen false`.
 
+### envDir
+
+- **Type:** `string`
+- **Default:** `root`
+
+  The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root.
+
+  See [here](/guide/env-and-mode#env-files) for more about environment files.
+
 ## Server Options
 
 ### server.host
@@ -418,17 +427,58 @@ export default async ({ command, mode }) => {
 
 ### server.hmr
 
-- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean }`
+- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
 
   Disable or configure HMR connection (in cases where the HMR websocket must use a different address from the http server).
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
+
+  `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
+
+  When using `server.middlewareMode` and `server.https`, setting `server.hmr.server` to your HTTPS server will process HMR secure connection requests through your server. This can be helpful when using self-signed certificates.
+
 
 ### server.watch
 
 - **Type:** `object`
 
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
+
+### server.middlewareMode
+
+- **Type:** `'ssr' | 'html'`
+
+  Create Vite server in middleware mode. (without a HTTP server)
+
+  - `'ssr'` will disable Vite's own HTML serving logic so that you should serve `index.html` manually.
+  - `'html'` will enable Vite's own HTML serving logic.
+
+- **Related:** [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
+
+- **Example:**
+```js
+const express = require('express')
+const { createServer: createViteServer } = require('vite')
+
+async function createServer() {
+  const app = express()
+
+  // Create vite server in middleware mode.
+  const vite = await createViteServer({
+    server: { middlewareMode: 'ssr' }
+  })
+  // Use vite's connect instance as middleware
+  app.use(vite.middlewares)
+
+  app.use('*', async (req, res) => {
+    // If `middlewareMode` is `'ssr'`, should serve `index.html` here.
+    // If `middlewareMode` is `'html'`, there is no need to serve `index.html`
+    // because Vite will do that.
+  })
+}
+
+createServer()
+```
 
 ### server.fsServe.strict
 

@@ -14,13 +14,13 @@ import { resolveHostname } from './utils'
 
 export async function preview(
   config: ResolvedConfig,
-  port = 5000
+  serverOptions: { host?: string; port?: number; https?: boolean }
 ): Promise<void> {
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.server,
     app,
-    await resolveHttpsConfig(config)
+    serverOptions.https === false ? undefined : await resolveHttpsConfig(config)
   )
 
   // cors
@@ -41,12 +41,14 @@ export async function preview(
     config.base,
     sirv(distDir, {
       etag: true,
+      dev: !config.isProduction,
       single: true
     })
   )
 
   const options = config.server
-  const hostname = resolveHostname(options.host)
+  const hostname = resolveHostname(serverOptions.host ?? options.host)
+  const port = serverOptions.port ?? 5000
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
