@@ -118,6 +118,10 @@ export interface ServerOptions {
    */
   middlewareMode?: boolean | 'html' | 'ssr'
   /**
+   * Time (ms) Vite has to optimise new dependencies before timing out.
+   */
+  pendingReloadTimeout?: number
+  /**
    * Prepend this folder to http requests, for use when proxying vite as a subfolder
    * Should start and end with the `/` character
    */

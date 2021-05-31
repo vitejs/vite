@@ -24,12 +24,6 @@ import {
 } from '../../constants'
 import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
 
-/**
- * Time (ms) Vite has to full-reload the page before returning
- * an empty response.
- */
-const NEW_DEPENDENCY_BUILD_TIMEOUT = 1000
-
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
 
@@ -82,7 +76,7 @@ export function transformMiddleware(
             `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
               `<p>The current page should have reloaded by now</p>`
           )
-        }, NEW_DEPENDENCY_BUILD_TIMEOUT)
+        }, server.config.server.pendingReloadTimeout || 1000)
       )
       return
     }
