@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 // eslint-disable-next-line node/no-restricted-require
-const { prompt } = require('enquirer')
+const prompts = require('prompts')
 const {
   yellow,
   green,
@@ -127,104 +127,104 @@ const renameFiles = {
 
 async function init() {
   let targetDir = argv._[0]
-  if (!targetDir) {
-    /**
-     * @type {{ projectName: string }}
-     */
-    const { projectName } = await prompt({
-      type: 'input',
-      name: 'projectName',
-      message: `Project name:`,
-      initial: 'vite-project'
-    })
-    targetDir = projectName
+  let template = argv.template || argv.t
+
+  const defaultProjectName = !targetDir ? 'vite-project' : targetDir
+
+  let result = {}
+
+  try {
+    result = await prompts(
+      [
+        {
+          type: targetDir ? null : 'text',
+          name: 'projectName',
+          message: 'Project name:',
+          initial: defaultProjectName,
+          onState: (state) =>
+            (targetDir = state.value.trim() || defaultProjectName)
+        },
+        {
+          type: () =>
+            !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
+          name: 'overwrite',
+          message: () =>
+            (targetDir === '.'
+              ? 'Current directory'
+              : `Target directory "${targetDir}"`) +
+            ` is not empty. Remove existing files and continue?`
+        },
+        {
+          type: (_, { overwrite } = {}) => {
+            if (overwrite == false) {
+              throw new Error(red('✖') + ' Operation cancelled')
+            }
+            return null
+          },
+          name: 'overwriteChecker'
+        },
+        {
+          type: () => (isValidPackageName(targetDir) ? null : 'text'),
+          name: 'packageName',
+          message: 'Package name:',
+          initial: () => toValidPackageName(targetDir),
+          validate: (dir) =>
+            isValidPackageName(dir) || 'Invalid package.json name'
+        },
+        {
+          type: template && TEMPLATES.includes(template) ? null : 'select',
+          name: 'framework',
+          message:
+            template && !TEMPLATES.includes(template)
+              ? `"${template}" isn't a valid template. Please choose from below: `
+              : 'Select a framework:',
+          initial: 0,
+          choices: FRAMEWORKS.map((framework) => {
+            const frameworkColor = framework.color
+            return {
+              title: frameworkColor(framework.name),
+              value: framework
+            }
+          })
+        },
+        {
+          type: (framework) =>
+            framework && framework.variants ? 'select' : null,
+          name: 'variant',
+          message: 'Select a variant:',
+          // @ts-ignore
+          choices: (framework) =>
+            framework.variants.map((variant) => {
+              const variantColor = variant.color
+              return {
+                title: variantColor(variant.name),
+                value: variant.name
+              }
+            })
+        }
+      ],
+      {
+        onCancel: () => {
+          throw new Error(red('✖') + ' Operation cancelled')
+        }
+      }
+    )
+  } catch (cancelled) {
+    console.log(cancelled.message)
+    return
   }
-  const packageName = await getValidPackageName(targetDir)
+
+  const packageName = result.packageName
   const root = path.join(cwd, targetDir)
 
-  if (!fs.existsSync(root)) {
-    fs.mkdirSync(root, { recursive: true })
-  } else {
-    const existing = fs.readdirSync(root)
-    if (existing.length) {
-      /**
-       * @type {{ yes: boolean }}
-       */
-      const { yes } = await prompt({
-        type: 'confirm',
-        name: 'yes',
-        initial: 'Y',
-        message:
-          (targetDir === '.'
-            ? 'Current directory'
-            : `Target directory ${targetDir}`) +
-          ' is not empty.\n' +
-          'Remove existing files and continue?'
-      })
-      if (yes) {
-        emptyDir(root)
-      } else {
-        return
-      }
-    }
+  if (result.overwrite) {
+    emptyDir(root)
+  } else if (!fs.existsSync(root)) {
+    fs.mkdirSync(root)
   }
 
   // determine template
-  let template = argv.t || argv.template
-  let message = 'Select a framework:'
-  let isValidTemplate = false
-
-  // --template expects a value
-  if (typeof template === 'string') {
-    isValidTemplate = TEMPLATES.includes(template)
-    message = `${template} isn't a valid template. Please choose from below:`
-  }
-
-  if (!template || !isValidTemplate) {
-    /**
-     * @type {{ framework: string }}
-     */
-    const { framework } = await prompt({
-      type: 'select',
-      name: 'framework',
-      message,
-      format(name) {
-        const framework = FRAMEWORKS.find((v) => v.name === name)
-        return framework
-          ? framework.color(framework.display || framework.name)
-          : name
-      },
-      choices: FRAMEWORKS.map((f) => ({
-        name: f.name,
-        value: f.name,
-        message: f.color(f.display || f.name)
-      }))
-    })
-    const frameworkInfo = FRAMEWORKS.find((f) => f.name === framework)
-
-    if (frameworkInfo.variants) {
-      /**
-       * @type {{ name: string }}
-       */
-      const { name } = await prompt({
-        type: 'select',
-        name: 'name',
-        format(name) {
-          const variant = frameworkInfo.variants.find((v) => v.name === name)
-          return variant ? variant.color(variant.display || variant.name) : name
-        },
-        message: 'Select a variant:',
-        choices: frameworkInfo.variants.map((v) => ({
-          name: v.name,
-          value: v.name,
-          message: v.color(v.display || v.name)
-        }))
-      })
-      template = name
-    } else {
-      template = frameworkInfo.name
-    }
-  }
+  template = template || result.variant || result.framework
 
   console.log(`\nScaffolding project in ${root}...`)
 
@@ -272,32 +272,19 @@ function copy(src, dest) {
   }
 }
 
-async function getValidPackageName(projectName) {
-  const packageNameRegExp =
-    /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
-  if (packageNameRegExp.test(projectName)) {
-    return projectName
-  } else {
-    const suggestedPackageName = projectName
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/^[._]/, '')
-      .replace(/[^a-z0-9-~]+/g, '-')
+function isValidPackageName(projectName) {
+  return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
+    projectName
+  )
+}
 
-    /**
-     * @type {{ inputPackageName: string }}
-     */
-    const { inputPackageName } = await prompt({
-      type: 'input',
-      name: 'inputPackageName',
-      message: `Package name:`,
-      initial: suggestedPackageName,
-      validate: (input) =>
-        packageNameRegExp.test(input) ? true : 'Invalid package.json name'
-    })
-    return inputPackageName
-  }
+function toValidPackageName(projectName) {
+  return projectName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/^[._]/, '')
+    .replace(/[^a-z0-9-~]+/g, '-')
 }
 
 function copyDir(srcDir, destDir) {
@@ -307,6 +294,10 @@ function copyDir(srcDir, destDir) {
     const destFile = path.resolve(destDir, file)
     copy(srcFile, destFile)
   }
+}
+
+function isEmpty(path) {
+  return fs.readdirSync(path).length === 0
 }
 
 function emptyDir(dir) {
