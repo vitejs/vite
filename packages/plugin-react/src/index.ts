@@ -150,6 +150,7 @@ export default function viteReact(opts: Options = {}): Plugin {
           : await babel.transformAsync(code, babelOpts)
 
         if (result) {
+          // @ts-expect-error: TODO: code can be null or undefined
           if (useFastRefresh && /\$RefreshReg\$\(/.test(result.code)) {
             const accept = isReasonReact || isRefreshBoundary(result.ast)
             result.code = addRefreshWrapper(result.code, id, accept)
@@ -232,6 +233,7 @@ export default function viteReact(opts: Options = {}): Plugin {
     }
   }
 
+  // @ts-expect-error: TODO: fix this
   return [
     viteBabel,
     viteReactRefresh,
