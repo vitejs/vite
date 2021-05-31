@@ -152,12 +152,11 @@ async function init() {
             (targetDir === '.'
               ? 'Current directory'
               : `Target directory "${targetDir}"`) +
-            ` is not empty. Remove existing files and continue?`,
-          initial: false
+            ` is not empty. Remove existing files and continue?`
         },
         {
-          type: (overwrite) => {
-            if (!overwrite) {
+          type: (_, { overwrite } = {}) => {
+            if (overwrite == false) {
               throw new Error(red('✖') + ' Operation cancelled')
             }
             return null
