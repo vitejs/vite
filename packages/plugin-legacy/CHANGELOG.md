@@ -1,3 +1,12 @@
+## [1.4.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.0...plugin-legacy@1.4.1) (2021-06-01)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** respect custom filenames formats, fix [#2356](https://github.com/vitejs/vite/issues/2356) ([#2641](https://github.com/vitejs/vite/issues/2641)) ([d852731](https://github.com/vitejs/vite/commit/d852731622a1c009d15a5172343fc166c4bb5cb7))
+
+
+
 # [1.4.0](https://github.com/vitejs/vite/compare/plugin-legacy@1.3.4...plugin-legacy@1.4.0) (2021-05-17)
 
 
