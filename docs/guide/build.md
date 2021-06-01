@@ -92,7 +92,7 @@ module.exports = {
 }
 ```
 
-If you specify a different root, remember that `__dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therfore, you will need to add your `root` entry to the arguments for `resolve`.
+If you specify a different root, remember that `__dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therefore, you will need to add your `root` entry to the arguments for `resolve`.
 
 ## Library Mode
 
