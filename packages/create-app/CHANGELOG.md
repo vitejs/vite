@@ -1,3 +1,7 @@
+# [2.4.0](https://github.com/vitejs/vite/compare/create-app@2.3.2...create-app@2.4.0) (2021-06-01)
+
+
+
 ## [2.3.2](https://github.com/vitejs/vite/compare/create-app@2.3.1...create-app@2.3.2) (2021-05-25)
 
 
