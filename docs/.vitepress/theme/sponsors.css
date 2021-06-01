@@ -9,7 +9,7 @@
 
 .sponsors img {
   max-width: 200px;
-  max-height: 40px;
+  height: 40px;
   display: block;
   margin: 1.25rem 0;
 }
@@ -28,4 +28,9 @@
   color: #999;
   font-size: 1.2rem;
   border: none;
+}
+
+/* special cases */
+#sponsor-mux {
+  padding: 5px 0;
 }

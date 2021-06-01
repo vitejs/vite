@@ -1,3 +1,25 @@
+## [2.4.1](https://github.com/vitejs/vite/compare/create-app@2.4.0...create-app@2.4.1) (2021-06-01)
+
+
+### Bug Fixes
+
+* **create-app:** handle invalid template ([#3615](https://github.com/vitejs/vite/issues/3615)) ([4578a8c](https://github.com/vitejs/vite/commit/4578a8cc2f0ab972d6dc6bdb9ac92d6fbbd6fb05))
+
+
+
+# [2.4.0](https://github.com/vitejs/vite/compare/create-app@2.3.2...create-app@2.4.0) (2021-06-01)
+
+
+
+## [2.3.2](https://github.com/vitejs/vite/compare/create-app@2.3.1...create-app@2.3.2) (2021-05-25)
+
+
+### Features
+
+* **create-app:** improve client types ([#3214](https://github.com/vitejs/vite/issues/3214)) ([ba8b7af](https://github.com/vitejs/vite/commit/ba8b7afa650277b7218e0bd53564b5fb45bf4549))
+
+
+
 ## [2.3.1](https://github.com/vitejs/vite/compare/create-app@2.3.0...create-app@2.3.1) (2021-05-17)
 
 
