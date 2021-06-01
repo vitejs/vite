@@ -214,17 +214,19 @@ async function init() {
     return
   }
 
-  const packageName = result.packageName
+  // user choice associated with prompts
+  const { framework, overwrite, packageName, variant } = result
+
   const root = path.join(cwd, targetDir)
 
-  if (result.overwrite) {
+  if (overwrite) {
     emptyDir(root)
   } else if (!fs.existsSync(root)) {
     fs.mkdirSync(root)
   }
 
   // determine template
-  template = template || result.variant || result.framework
+  template = variant || framework || template
 
   console.log(`\nScaffolding project in ${root}...`)
 
