@@ -1,3 +1,22 @@
+## [2.3.5](https://github.com/vitejs/vite/compare/v2.3.4...v2.3.5) (2021-06-01)
+
+
+### Bug Fixes
+
+* cannot recognize JS url correctly([#3568](https://github.com/vitejs/vite/issues/3568)) ([#3572](https://github.com/vitejs/vite/issues/3572)) ([ab08652](https://github.com/vitejs/vite/commit/ab0865223f2fd8c460ee9b5108dbe67b9ad534a1))
+* **tests:** fix tests run fail in the Chinese directory ([#3586](https://github.com/vitejs/vite/issues/3586)) ([3cab2c2](https://github.com/vitejs/vite/commit/3cab2c2202c2c7188b4f76d872c94a9f6acaf122))
+* update esbuild to 0.12 ([#3570](https://github.com/vitejs/vite/issues/3570)) ([421c530](https://github.com/vitejs/vite/commit/421c530eae668f0ddadd9b4ef6d366a58d74febc))
+
+
+### Features
+
+* **config:** add `envDir` option ([#3407](https://github.com/vitejs/vite/issues/3407)) ([472ba5d](https://github.com/vitejs/vite/commit/472ba5d7198e5db631ddafc1fd2adf78ce26003e))
+* **plugins/worker:** support SharedWorker (resolve [#2093](https://github.com/vitejs/vite/issues/2093)) ([#2505](https://github.com/vitejs/vite/issues/2505)) ([d78191c](https://github.com/vitejs/vite/commit/d78191c5ce5f9c0e5a2329c7b113fc25b27535b9))
+* **ssr:** include non-CSS assets in the manifest ([#3556](https://github.com/vitejs/vite/issues/3556)) ([adc7170](https://github.com/vitejs/vite/commit/adc7170dac0b08f3cffd49fa4844a6fa871067dc))
+* added clientPort to HmrOptions ([#3578](https://github.com/vitejs/vite/issues/3578)) ([7db69a3](https://github.com/vitejs/vite/commit/7db69a3c284d58ebb51f91c5f44da9890d056b19))
+
+
+
 ## [2.3.4](https://github.com/vitejs/vite/compare/v2.3.3...v2.3.4) (2021-05-25)
 
 
