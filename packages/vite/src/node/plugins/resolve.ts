@@ -609,11 +609,12 @@ export function resolvePackageEntry(
   entryPoint = entryPoint || data.main || 'index.js'
 
   // make sure we don't get scripts when looking for sass
-  if (options.mainFields && options.mainFields[0] == 'sass' && options.extensions) {
-    if (!options.extensions.includes(path.extname(entryPoint))) {
+  if (
+    options.mainFields?.[0] === 'sass' &&
+    !(options.extensions ?? []).includes(path.extname(entryPoint))
+  ) {
       entryPoint = '';
       options.skipPackage = true;
-    }
   }
 
   // resolve object browser field in package.json
