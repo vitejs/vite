@@ -59,6 +59,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   asSrc?: boolean
   tryIndex?: boolean
   tryPrefix?: string
+  skipPackage?: boolean
   preferRelative?: boolean
   isRequire?: boolean
 }
@@ -283,7 +284,8 @@ function tryFsResolve(
       options,
       false,
       targetWeb,
-      options.tryPrefix
+      options.tryPrefix,
+      options.skipPackage
     ))
   ) {
     return res
@@ -297,7 +299,8 @@ function tryFsResolve(
         options,
         false,
         targetWeb,
-        options.tryPrefix
+        options.tryPrefix,
+        options.skipPackage
       ))
     ) {
       return res
@@ -311,7 +314,8 @@ function tryFsResolve(
       options,
       tryIndex,
       targetWeb,
-      options.tryPrefix
+      options.tryPrefix,
+      options.skipPackage
     ))
   ) {
     return res
@@ -324,7 +328,8 @@ function tryResolveFile(
   options: InternalResolveOptions,
   tryIndex: boolean,
   targetWeb: boolean,
-  tryPrefix?: string
+  tryPrefix?: string,
+  skipPkg?: boolean
 ): string | undefined {
   let isReadable = false
   try {
@@ -338,11 +343,13 @@ function tryResolveFile(
     if (!fs.statSync(file).isDirectory()) {
       return normalizePath(ensureVolumeInPath(file)) + postfix
     } else if (tryIndex) {
-      const pkgPath = file + '/package.json'
-      if (fs.existsSync(pkgPath)) {
-        // path points to a node package
-        const pkg = loadPackageData(pkgPath)
-        return resolvePackageEntry(file, pkg, options, targetWeb)
+      if (!skipPkg) {
+        const pkgPath = file + '/package.json'
+        if (fs.existsSync(pkgPath)) {
+          // path points to a node package
+          const pkg = loadPackageData(pkgPath)
+          return resolvePackageEntry(file, pkg, options, targetWeb)
+        }
       }
       const index = tryFsResolve(file + '/index', options)
       if (index) return index + postfix
@@ -600,6 +607,14 @@ export function resolvePackageEntry(
   }
 
   entryPoint = entryPoint || data.main || 'index.js'
+
+  // make sure we don't get scripts when looking for sass
+  if (options.mainFields && options.mainFields[0] == 'sass' && options.extensions) {
+    if (!options.extensions.includes(path.extname(entryPoint))) {
+      entryPoint = '';
+      options.skipPackage = true;
+    }
+  }
 
   // resolve object browser field in package.json
   const { browser: browserField } = data
