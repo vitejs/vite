@@ -611,7 +611,7 @@ export function resolvePackageEntry(
   // make sure we don't get scripts when looking for sass
   if (
     options.mainFields?.[0] === 'sass' &&
-    !(options.extensions ?? []).includes(path.extname(entryPoint))
+    !options.extensions?.includes(path.extname(entryPoint))
   ) {
       entryPoint = '';
       options.skipPackage = true;
