@@ -44,7 +44,7 @@ const versionIncrements = [
 /**
  * @param {import('semver').ReleaseType} i
  */
-const inc = (i) => semver.inc(currentVersion, i)
+const inc = (i) => semver.inc(currentVersion, i, 'beta')
 
 /**
  * @param {string} bin
