@@ -44,7 +44,7 @@ const versionIncrements = [
 /**
  * @param {import('semver').ReleaseType} i
  */
-const inc = (i) => semver.inc(currentVersion, i, 'beta')
+const inc = (i) => semver.inc(currentVersion, i)
 
 /**
  * @param {string} bin
@@ -183,6 +183,8 @@ async function publishPackage(version, runIfNotDry) {
   ]
   if (args.tag) {
     publicArgs.push(`--tag`, args.tag)
+  } else if (version.includes('beta')) {
+    publicArgs.push(`--tag`, 'beta')
   }
   try {
     await runIfNotDry('yarn', publicArgs, {
