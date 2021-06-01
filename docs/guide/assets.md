@@ -54,6 +54,12 @@ const worker = new Worker()
 ```
 
 ```js
+// sharedworker
+import SharedWorker from './shader.js?sharedworker'
+const sharedWorker = new SharedWorker()
+```
+
+```js
 // Inlined as base64 strings
 import InlineWorker from './shader.js?worker&inline'
 ```
