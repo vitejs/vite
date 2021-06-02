@@ -1,3 +1,13 @@
+## [2.3.6](https://github.com/vitejs/vite/compare/v2.3.5...v2.3.6) (2021-06-02)
+
+
+### Bug Fixes
+
+* revert avoid css leaking into emitted javascript ([#3402](https://github.com/vitejs/vite/issues/3402)) ([#3630](https://github.com/vitejs/vite/issues/3630)) ([91eb2a6](https://github.com/vitejs/vite/commit/91eb2a6bc30103569cce05f6da1acdd72d5f71f0))
+* **types:** add '*?.sharedworker' typing ([#3618](https://github.com/vitejs/vite/issues/3618)) ([690ff99](https://github.com/vitejs/vite/commit/690ff999cdebf390a84506c5b62a17e6e8f47c17))
+
+
+
 ## [2.3.5](https://github.com/vitejs/vite/compare/v2.3.4...v2.3.5) (2021-06-01)
 
 
