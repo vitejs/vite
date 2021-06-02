@@ -541,10 +541,14 @@ export async function createServer(
     }
   }
 
+  let isOptimized = false
   if (!middlewareMode && httpServer) {
     // overwrite listen to run optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
+      if (isOptimized) {
+        return listen(port, ...args)
+      }
       try {
         await container.buildStart({})
         await runOptimize()
@@ -552,6 +556,7 @@ export async function createServer(
         httpServer.emit('error', e)
         return
       }
+      isOptimized = true
       return listen(port, ...args)
     }) as any
 
