@@ -152,7 +152,10 @@ async function getCertificate(config: ResolvedConfig) {
     return content
   } catch (e) {
     const content = await createCertificate()
-    fsp.writeFile(cachePath, content).catch(() => {})
+    fsp
+      .mkdir(config.cacheDir, { recursive: true })
+      .then(() => fsp.writeFile(cachePath, content))
+      .catch(() => {})
     return content
   }
 }
