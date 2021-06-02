@@ -1,3 +1,12 @@
+## [1.2.3](https://github.com/vitejs/vite/compare/plugin-vue@1.2.2...plugin-vue@1.2.3) (2021-06-01)
+
+
+### Bug Fixes
+
+* **plugin-vue:** rewrite default after ts compiled ([#3591](https://github.com/vitejs/vite/issues/3591)) ([ea5bafa](https://github.com/vitejs/vite/commit/ea5bafaefbafd858389f88e537cb3473b4669802))
+
+
+
 ## [1.2.2](https://github.com/vitejs/vite/compare/plugin-vue@1.2.1...plugin-vue@1.2.2) (2021-04-24)
 
 

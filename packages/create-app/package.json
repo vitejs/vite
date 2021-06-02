@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/create-app",
-  "version": "2.3.2",
+  "version": "2.4.1",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
@@ -29,8 +29,8 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-app#readme",
   "dependencies": {
-    "enquirer": "^2.3.6",
     "kolorist": "^1.2.9",
-    "minimist": "^1.2.5"
+    "minimist": "^1.2.5",
+    "prompts": "^2.4.1"
   }
 }

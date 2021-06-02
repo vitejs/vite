@@ -1,3 +1,12 @@
+## [1.1.5](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.4...plugin-vue-jsx@1.1.5) (2021-06-01)
+
+
+### Bug Fixes
+
+* include/exclude options for vue-jsx .d.ts ([#3573](https://github.com/vitejs/vite/issues/3573)) ([82ec0ca](https://github.com/vitejs/vite/commit/82ec0ca69c1f077cf518073edca4e6580ebd4892))
+
+
+
 ## [1.1.4](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.3...plugin-vue-jsx@1.1.4) (2021-05-03)
 
 
