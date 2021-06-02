@@ -145,7 +145,7 @@ async function handleMessage(payload: HMRPayload) {
       return check
     }
   }
-  for (const listener of listeners) {
+  for (const listener of [...listeners]) {
     listener(payload)
   }
 }
