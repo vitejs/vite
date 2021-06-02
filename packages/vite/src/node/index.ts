@@ -74,7 +74,8 @@ export type {
   FullReloadPayload,
   CustomPayload,
   PrunePayload,
-  ErrorPayload
+  ErrorPayload,
+  ViteError
 } from 'types/hmrPayload'
 export type { Connect } from 'types/connect'
 export type { HttpProxy } from 'types/http-proxy'

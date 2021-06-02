@@ -40,18 +40,20 @@ export interface CustomPayload {
 
 export interface ErrorPayload {
   type: 'error'
-  err: {
-    [name: string]: any
-    message: string
-    stack: string
-    id?: string
-    frame?: string
-    plugin?: string
-    pluginCode?: string
-    loc?: {
-      file?: string
-      line: number
-      column: number
-    }
+  err: ViteError
+}
+
+export interface ViteError {
+  [name: string]: any
+  message: string
+  stack: string
+  id?: string
+  frame?: string
+  plugin?: string
+  pluginCode?: string
+  loc?: {
+    file?: string
+    line: number
+    column: number
   }
 }

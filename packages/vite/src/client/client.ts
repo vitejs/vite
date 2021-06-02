@@ -1,4 +1,4 @@
-import { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
+import { ErrorPayload, HMRPayload, Update, ViteError } from 'types/hmrPayload'
 import { ErrorOverlay, overlayId } from './overlay'
 import './env'
 // injected by the hmr plugin when served
@@ -36,6 +36,7 @@ socket.addEventListener('message', async ({ data }) => {
 })
 
 let isFirstUpdate = true
+let customErrorHandler: ((err: ViteError) => void) | null = null
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
@@ -125,6 +126,9 @@ async function handleMessage(payload: HMRPayload) {
         createErrorOverlay(err)
       } else {
         console.error(`[vite] Internal Server Error\n${err.stack}`)
+      }
+      if (customErrorHandler) {
+        customErrorHandler(err)
       }
       break
     }
@@ -455,4 +459,10 @@ export function injectQuery(url: string, queryToInject: string): string {
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
+}
+
+export function setCustomErrorHandler(
+  handler: ((err: ViteError) => void) | null
+): void {
+  customErrorHandler = handler
 }
