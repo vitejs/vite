@@ -12,6 +12,7 @@ import { ViteDevServer, Plugin } from 'vite'
 import { SFCBlock } from '@vue/component-compiler-utils'
 import { handleHotUpdate } from './hmr'
 import { transformVueJsx } from './jsxTransform'
+import { VueTemplateCompiler } from './template/types'
 
 export const vueComponentNormalizer = '\0/vite/vueComponentNormalizer'
 export const vueHotReload = '\0/vite/vueHotReload'
@@ -26,6 +27,10 @@ declare module '@vue/component-compiler-utils' {
 export interface VueViteOptions {
   include?: string | RegExp | (string | RegExp)[]
   exclude?: string | RegExp | (string | RegExp)[]
+  /**
+   * Custom vue template compiler.
+   */
+  vueTemplateCompiler?: VueTemplateCompiler
   /**
    * The options for `@vue/component-compiler-utils`.
    */
