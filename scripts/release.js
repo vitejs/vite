@@ -44,7 +44,7 @@ const versionIncrements = [
 /**
  * @param {import('semver').ReleaseType} i
  */
-const inc = (i) => semver.inc(currentVersion, i)
+const inc = (i) => semver.inc(currentVersion, i, 'beta')
 
 /**
  * @param {string} bin
@@ -108,6 +108,19 @@ async function main() {
 
   const tag =
     pkgName === 'vite' ? `v${targetVersion}` : `${pkgName}@${targetVersion}`
+
+  if (targetVersion.includes('beta') && !args.tag) {
+    /**
+     * @type {{ tagBeta: boolean }}
+     */
+    const { tagBeta } = await prompt({
+      type: 'confirm',
+      name: 'tagBeta',
+      message: `Publish under dist-tag "beta"?`
+    })
+
+    if (tagBeta) args.tag = 'beta'
+  }
 
   /**
    * @type {{ yes: boolean }}
