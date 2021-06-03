@@ -628,6 +628,12 @@ createServer()
 
   Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
 
+### build.htmlTerserOptions
+
+- **Type:** `Options`
+
+  Additional [minify options](https://github.com/terser/html-minifier-terser#options-quick-reference) to pass on to HTMLMinifier.
+
 ### build.cleanCssOptions
 
 - **Type:** `CleanCSS.Options`

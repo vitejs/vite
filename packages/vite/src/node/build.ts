@@ -22,6 +22,7 @@ import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import { Terser } from 'types/terser'
+import { Options as HtmlMinifyOptions } from 'html-minifier-terser'
 import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
@@ -108,6 +109,11 @@ export interface BuildOptions {
    * https://terser.org/docs/api-reference#minify-options
    */
   terserOptions?: Terser.MinifyOptions
+  /**
+   * Options for html terser
+   * https://github.com/terser/html-minifier-terser#options-quick-reference
+   */
+  htmlTerserOptions?: HtmlMinifyOptions | null
   /**
    * Options for clean-css
    * https://github.com/jakubpawlowicz/clean-css#constructor-options
@@ -213,6 +219,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     },
     minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
+    htmlTerserOptions: null,
     cleanCssOptions: {},
     write: true,
     emptyOutDir: null,

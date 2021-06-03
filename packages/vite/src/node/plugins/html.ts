@@ -21,6 +21,7 @@ import {
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { polyfillId } from './dynamicImportPolyfill'
+import { minify } from 'html-minifier-terser'
 import {
   AttributeNode,
   NodeTransform,
@@ -389,6 +390,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           bundle,
           chunk
         })
+
+        // minifying html
+        if (config.build.htmlTerserOptions) {
+          result = minify(result, config.build.htmlTerserOptions)
+        }
 
         this.emitFile({
           type: 'asset',
