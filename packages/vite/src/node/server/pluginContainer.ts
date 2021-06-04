@@ -292,7 +292,9 @@ export async function createPluginContainer(
           let code = ctx._activeCode
           if (err.loc.file) {
             err.id = normalizePath(err.loc.file)
-            code = fs.readFileSync(err.loc.file, 'utf-8')
+            try {
+              code = fs.readFileSync(err.loc.file, 'utf-8')
+            } catch {}
           }
           err.frame = generateCodeFrame(code, err.loc)
         }
