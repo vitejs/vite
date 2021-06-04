@@ -15,7 +15,6 @@ const eventDispatcher = new ViteEventDispatcher()
 export const viteEventTarget = eventDispatcher.target
 
 console.log('[vite] connecting...')
-eventDispatcher.dispatchEvent('vite:connecting')
 
 // use server configuration, then fallback to inference
 const socketProtocol =

@@ -3,7 +3,6 @@ import { ConnectedPayload, ErrorPayload, UpdatePayload } from 'types/hmrPayload'
 export class ViteEventDispatcher {
   readonly target: ViteEventTarget = new EventTarget()
 
-  dispatchEvent(type: 'vite:connecting'): void
   dispatchEvent(type: 'vite:connected', payload: ConnectedPayload): void
   dispatchEvent(type: 'vite:update', payload: UpdatePayload): void
   dispatchEvent(type: 'vite:error', payload: ErrorPayload): void
@@ -20,11 +19,6 @@ export class ViteEventDispatcher {
 
 export interface ViteEventTarget extends EventTarget {
   addEventListener(
-    type: 'vite:connecting',
-    listener: CustomEventListenerOrCustomEventListenerObject<void> | null,
-    options?: EventListenerOptions | boolean
-  ): void
-  addEventListener(
     type: 'vite:connected',
     listener: CustomEventListenerOrCustomEventListenerObject<ConnectedPayload> | null,
     options?: EventListenerOptions | boolean
@@ -40,11 +34,6 @@ export interface ViteEventTarget extends EventTarget {
     options?: EventListenerOptions | boolean
   ): void
 
-  removeEventListener(
-    type: 'vite:connecting',
-    listener: CustomEventListenerOrCustomEventListenerObject<void> | null,
-    options?: EventListenerOptions | boolean
-  ): void
   removeEventListener(
     type: 'vite:connected',
     listener: CustomEventListenerOrCustomEventListenerObject<ConnectedPayload> | null,
