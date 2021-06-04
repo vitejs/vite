@@ -1,6 +1,7 @@
 import { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import { ErrorOverlay, overlayId } from './overlay'
 import './env'
+import { ViteEventDispatcher } from './events'
 // injected by the hmr plugin when served
 declare const __ROOT__: string
 declare const __BASE__: string
@@ -10,10 +11,11 @@ declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
-export const viteEventTarget = new EventTarget()
+const eventDispatcher = new ViteEventDispatcher()
+export const viteEventTarget = eventDispatcher.target
 
 console.log('[vite] connecting...')
-viteEventTarget.dispatchEvent(new Event('vite:connecting'))
+eventDispatcher.dispatchEvent('vite:connecting')
 
 // use server configuration, then fallback to inference
 const socketProtocol =
@@ -47,9 +49,7 @@ async function handleMessage(payload: HMRPayload) {
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
-      viteEventTarget.dispatchEvent(
-        new CustomEvent('vite:connected', { detail: { payload } })
-      )
+      eventDispatcher.dispatchEvent('vite:connected', payload)
       break
     case 'update':
       // if this is the first update and there's already an error overlay, it
@@ -57,17 +57,13 @@ async function handleMessage(payload: HMRPayload) {
       // module script failed to load (since one of the nested imports is 500).
       // in this case a normal update won't work and a full reload is needed.
       if (isFirstUpdate && hasErrorOverlay()) {
-        viteEventTarget.dispatchEvent(
-          new CustomEvent('vite:update', { detail: { payload } })
-        )
+        eventDispatcher.dispatchEvent('vite:update', payload)
         window.location.reload()
         return
       } else {
         clearErrorOverlay()
         isFirstUpdate = false
-        viteEventTarget.dispatchEvent(
-          new CustomEvent('vite:update', { detail: { payload } })
-        )
+        eventDispatcher.dispatchEvent('vite:update', payload)
       }
       payload.updates.forEach((update) => {
         if (update.type === 'js-update') {
@@ -135,14 +131,10 @@ async function handleMessage(payload: HMRPayload) {
       const err = payload.err
       if (enableOverlay) {
         createErrorOverlay(err)
-        viteEventTarget.dispatchEvent(
-          new CustomEvent('vite:error', { detail: { payload, error: err } })
-        )
+        eventDispatcher.dispatchEvent('vite:error', payload)
       } else {
         console.error(`[vite] Internal Server Error\n${err.stack}`)
-        viteEventTarget.dispatchEvent(
-          new CustomEvent('vite:error', { detail: { payload, error: err } })
-        )
+        eventDispatcher.dispatchEvent('vite:error', payload)
       }
       break
     }
