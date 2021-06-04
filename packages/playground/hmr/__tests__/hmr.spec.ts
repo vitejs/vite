@@ -8,7 +8,7 @@ test('should render', async () => {
 
 if (!isBuild) {
   test('should connect', async () => {
-    expect(browserLogs.length).toBe(2)
+    expect(browserLogs.length).toBe(3)
     expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
     browserLogs.length = 0
   })
@@ -20,6 +20,7 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '2')
 
     expect(browserLogs).toMatchObject([
+      '>>> vite:update',
       'foo was: 1',
       '(self-accepting 1) foo is now: 2',
       '(self-accepting 2) foo is now: 2',
@@ -31,6 +32,7 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
 
     expect(browserLogs).toMatchObject([
+      '>>> vite:update',
       'foo was: 2',
       '(self-accepting 1) foo is now: 3',
       '(self-accepting 2) foo is now: 3',
@@ -48,6 +50,7 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '2')
 
     expect(browserLogs).toMatchObject([
+      '>>> vite:update',
       '(dep) foo was: 1',
       '(dep) foo from dispose: 1',
       '(single dep) foo is now: 2',
@@ -64,6 +67,7 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
 
     expect(browserLogs).toMatchObject([
+      '>>> vite:update',
       '(dep) foo was: 2',
       '(dep) foo from dispose: 2',
       '(single dep) foo is now: 3',
@@ -84,6 +88,7 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '2')
 
     expect(browserLogs).toMatchObject([
+      '>>> vite:update',
       '(dep) foo was: 3',
       '(dep) foo from dispose: 3',
       '(single dep) foo is now: 3',
@@ -100,6 +105,7 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
 
     expect(browserLogs).toMatchObject([
+      '>>> vite:update',
       '(dep) foo was: 3',
       '(dep) foo from dispose: 3',
       '(single dep) foo is now: 3',
