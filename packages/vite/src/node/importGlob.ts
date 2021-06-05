@@ -98,7 +98,7 @@ export async function transformImportGlob(
   return {
     imports,
     importsString,
-    exp: `{${entries}}`,
+    exp: `Object.assign({${entries}})`,
     endIndex,
     isEager,
     pattern,
