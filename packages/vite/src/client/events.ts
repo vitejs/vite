@@ -6,14 +6,8 @@ export class ViteEventDispatcher {
   dispatchEvent(type: 'vite:connected', payload: ConnectedPayload): void
   dispatchEvent(type: 'vite:update', payload: UpdatePayload): void
   dispatchEvent(type: 'vite:error', payload: ErrorPayload): void
-  dispatchEvent<P>(type: string, payload?: P): void {
-    this.target.dispatchEvent(
-      new CustomEvent(type, {
-        detail: {
-          ...(payload && { payload })
-        }
-      })
-    )
+  dispatchEvent<P>(type: string, detail?: P): void {
+    this.target.dispatchEvent(new CustomEvent(type, { detail }))
   }
 }
 

@@ -2,6 +2,7 @@ import { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import { ErrorOverlay, overlayId } from './overlay'
 import './env'
 import { ViteEventDispatcher } from './events'
+
 // injected by the hmr plugin when served
 declare const __ROOT__: string
 declare const __BASE__: string
