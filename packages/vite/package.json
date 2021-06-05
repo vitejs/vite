@@ -111,7 +111,7 @@
     "resolve.exports": "^1.0.1",
     "rollup-plugin-license": "^2.2.0",
     "selfsigned": "^1.10.8",
-    "sirv": "^1.0.10",
+    "sirv": "^1.0.12",
     "source-map": "^0.6.1",
     "source-map-support": "^0.5.19",
     "strip-ansi": "^6.0.0",
