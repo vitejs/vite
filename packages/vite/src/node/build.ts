@@ -93,9 +93,9 @@ export interface BuildOptions {
    */
   cssCodeSplit?: boolean
   /**
-   * If true, a separate sourcemap file will be created. If "inline", the
+   * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
-   * "hidden" works like true except that the corresponding sourcemap
+   * 'hidden' works like `true` except that the corresponding sourcemap
    * comments in the bundled files are suppressed.
    * @default false
    */
