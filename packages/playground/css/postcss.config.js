@@ -5,6 +5,7 @@ module.exports = {
 const fs = require('fs')
 const glob = require('fast-glob')
 const path = require('path')
+const { normalizePath } = require('vite')
 
 /**
  * A plugin for testing the `dir-dependency` message handling.
@@ -14,9 +15,8 @@ function testDirDep() {
     postcssPlugin: 'dir-dep',
     AtRule(atRule, { result, Comment }) {
       if (atRule.name === 'test') {
-        const pattern = path.resolve(
-          path.dirname(result.opts.from),
-          './glob-dep/*.css'
+        const pattern = normalizePath(
+          path.resolve(path.dirname(result.opts.from), './glob-dep/*.css')
         )
         const files = glob.sync(pattern)
         const text = files.map((f) => fs.readFileSync(f, 'utf-8')).join('\n')
