@@ -54,7 +54,7 @@ cli
   .option('-c, --config <file>', `[string] use specified config file`)
   .option('-r, --root <path>', `[string] use specified root directory`)
   .option('--base <path>', `[string] public base path (default: /)`)
-  .option('-l, --logLevel <level>', `[string] silent | error | warn | all`)
+  .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
@@ -63,7 +63,7 @@ cli
 cli
   .command('[root]') // default command
   .alias('serve')
-  .option('--host <host>', `[string] specify hostname`)
+  .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
@@ -186,12 +186,19 @@ cli
 
 cli
   .command('preview [root]')
+  .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
+  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .action(
     async (
       root: string,
-      options: { port?: number; open?: boolean | string } & GlobalCLIOptions
+      options: {
+        host?: string
+        port?: number
+        https?: boolean
+        open?: boolean | string
+      } & GlobalCLIOptions
     ) => {
       try {
         const config = await resolveConfig(
@@ -207,7 +214,14 @@ cli
           'serve',
           'development'
         )
-        await preview(config, options.port)
+        await preview(
+          config,
+          cleanOptions(options) as {
+            host?: string
+            port?: number
+            https?: boolean
+          }
+        )
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`)

@@ -1,5 +1,10 @@
 name: CI
 
+env:
+  # 7 GiB by default on GitHub, setting to 6 GiB
+  # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+  NODE_OPTIONS: --max-old-space-size=6144
+
 on:
   push:
     branches:
@@ -12,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [12, 14, 15]
+        node_version: [12, 14, 15, 16]
         include:
           - os: macos-latest
             node_version: 14
@@ -50,7 +55,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build vite
-        run: yarn build-vite
+        run: yarn ci-build-vite
 
       - name: Build plugin-vue
         run: yarn build-plugin-vue
@@ -86,7 +91,7 @@ jobs:
       - name: Prepare
         run: |
           yarn install --frozen-lockfile
-          yarn build-vite
+          yarn ci-build-vite
           yarn build-plugin-vue
 
       - name: Lint

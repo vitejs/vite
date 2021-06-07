@@ -68,9 +68,11 @@ async function handleMessage(payload: HMRPayload) {
           // can't use querySelector with `[href*=]` here since the link may be
           // using relative paths so we need to use link.href to grab the full
           // URL for the include check.
-          const el = ([].slice.call(
-            document.querySelectorAll(`link`)
-          ) as HTMLLinkElement[]).find((e) => e.href.includes(path))
+          const el = (
+            [].slice.call(
+              document.querySelectorAll(`link`)
+            ) as HTMLLinkElement[]
+          ).find((e) => e.href.includes(path))
           if (el) {
             const newPath = `${path}${
               path.includes('?') ? '&' : '?'
@@ -122,7 +124,9 @@ async function handleMessage(payload: HMRPayload) {
       if (enableOverlay) {
         createErrorOverlay(err)
       } else {
-        console.error(`[vite] Internal Server Error\n${err.stack}`)
+        console.error(
+          `[vite] Internal Server Error\n${err.message}\n${err.stack}`
+        )
       }
       break
     }
@@ -172,6 +176,7 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
 }
 
 async function waitForSuccessfulPing(ms = 1000) {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       await fetch(`${base}__vite_ping`)
@@ -335,7 +340,7 @@ const ctxToListenersMap = new Map<
 >()
 
 // Just infer the return type for now
-// _This would have to be activated when used `plugin:@typescript-eslint/recommended`_ eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const createHotContext = (ownerPath: string) => {
   if (!dataMap.has(ownerPath)) {
     dataMap.set(ownerPath, {})
@@ -412,6 +417,7 @@ export const createHotContext = (ownerPath: string) => {
     },
 
     // TODO
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     decline() {},
 
     invalidate() {

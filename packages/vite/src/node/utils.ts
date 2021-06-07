@@ -106,12 +106,12 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte)($|\?)/
 export const isJSRequest = (url: string): boolean => {
+  url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  url = cleanUrl(url)
   if (!path.extname(url) && !url.endsWith('/')) {
     return true
   }
@@ -203,6 +203,10 @@ export function prettifyUrl(url: string, root: string): string {
 
 export function isObject(value: unknown): value is Record<string, any> {
   return Object.prototype.toString.call(value) === '[object Object]'
+}
+
+export function isDefined<T>(value: T | undefined | null): value is T {
+  return value !== undefined && value !== null
 }
 
 export function lookupFile(
@@ -323,11 +327,15 @@ export function writeFile(
   fs.writeFileSync(filename, content)
 }
 
-export function emptyDir(dir: string): void {
-  if (!fs.existsSync(dir)) {
-    return
-  }
+/**
+ * Delete every file and subdirectory. **The given directory must exist.**
+ * Pass an optional `skip` array to preserve files in the root directory.
+ */
+export function emptyDir(dir: string, skip?: string[]): void {
   for (const file of fs.readdirSync(dir)) {
+    if (skip?.includes(file)) {
+      continue
+    }
     const abs = path.resolve(dir, file)
     // baseline is Node 12 so can't use rmSync :(
     if (fs.lstatSync(abs).isDirectory()) {
@@ -451,4 +459,45 @@ export function combineSourcemaps(
   }
 
   return map as RawSourceMap
+}
+
+export function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
+}
+
+export interface Hostname {
+  // undefined sets the default behaviour of server.listen
+  host: string | undefined
+  // resolve to localhost when possible
+  name: string
+}
+
+export function resolveHostname(
+  optionsHost: string | boolean | undefined
+): Hostname {
+  let host: string | undefined
+  if (
+    optionsHost === undefined ||
+    optionsHost === false ||
+    optionsHost === 'localhost'
+  ) {
+    // Use a secure default
+    host = '127.0.0.1'
+  } else if (optionsHost === true) {
+    // If passed --host in the CLI without arguments
+    host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
+  } else {
+    host = optionsHost
+  }
+
+  // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
+  const name =
+    (optionsHost !== '127.0.0.1' && host === '127.0.0.1') ||
+    host === '0.0.0.0' ||
+    host === '::' ||
+    host === undefined
+      ? 'localhost'
+      : host
+
+  return { host, name }
 }

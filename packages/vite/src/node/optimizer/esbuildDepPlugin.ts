@@ -19,10 +19,12 @@ const externalTypes = [
   'scss',
   'styl',
   'stylus',
+  'pcss',
   'postcss',
   // known SFC types
   'vue',
   'svelte',
+  'marko',
   // JSX/TSX may be configured to be compiled differently from how esbuild
   // handles it by default, so exclude them as well
   'jsx',
@@ -91,7 +93,7 @@ export function esbuildDepPlugin(
                 namespace: 'dep'
               }
             : {
-                path: require.resolve(flatId, {
+                path: require.resolve(qualified[flatId], {
                   paths: [resolveDir]
                 })
               }

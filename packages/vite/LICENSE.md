@@ -25,7 +25,7 @@ SOFTWARE.
 
 # Licenses of bundled dependencies
 The published Vite artifact additionally contains code with the following licenses:
-Apache-2.0, MIT, ISC, BSD-2-Clause, (BSD-3-Clause OR GPL-2.0), BSD-3-Clause, CC0-1.0
+Apache-2.0, MIT, ISC, BSD-2-Clause, (MIT), (BSD-3-Clause OR GPL-2.0), BSD-3-Clause, CC0-1.0
 
 # Bundled dependencies:
 ## @ampproject/remapping
@@ -1565,6 +1565,13 @@ By: motdotla
 
 ---------------------------------------
 
+## duplexer
+License: (MIT)
+By: Raynos, Jake Verbaten
+Repository: git://github.com/Raynos/duplexer.git
+
+---------------------------------------
+
 ## ee-first
 License: MIT
 By: Jonathan Ong, Douglas Christopher Wilson
@@ -2946,7 +2953,7 @@ Repository: git@github.com:teambition/merge2.git
 
 ## micromatch
 License: MIT
-By: Jon Schlinkert, Amila Welihinda, Bogdan Chadkin, Brian Woodward, Devon Govett, Elan Shanker, Fabrício Matté, Martin Kolárik, Olsten Larck, Paul Miller, Tom Byrer, Tyler Akins, Peter Bright
+By: Jon Schlinkert, Amila Welihinda, Bogdan Chadkin, Brian Woodward, Devon Govett, Elan Shanker, Fabrício Matté, Martin Kolárik, Olsten Larck, Paul Miller, Tom Byrer, Tyler Akins, Peter Bright, Kuba Juszczyk
 Repository: micromatch/micromatch
 
 > The MIT License (MIT)

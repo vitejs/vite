@@ -136,7 +136,7 @@ function reactRefreshPlugin(opts) {
 
   if (!window.__vite_plugin_react_preamble_installed__) {
     throw new Error(
-      "vite-plugin-react can't detect preamble. Something is wrong. " +
+      "@vitejs/plugin-react-refresh can't detect preamble. Something is wrong. " +
       "See https://github.com/vitejs/vite-plugin-react/pull/11#discussion_r430879201"
     );
   }
@@ -202,8 +202,8 @@ function isRefreshBoundary(ast) {
     const { declaration, specifiers } = node
     if (declaration) {
       if (declaration.type === 'VariableDeclaration') {
-        return declaration.declarations.every(
-          (variable) => isComponentLikeIdentifier(variable.id)
+        return declaration.declarations.every((variable) =>
+          isComponentLikeIdentifier(variable.id)
         )
       }
       if (declaration.type === 'FunctionDeclaration') {
