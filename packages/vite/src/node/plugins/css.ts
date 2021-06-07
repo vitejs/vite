@@ -1100,13 +1100,13 @@ function createViteLessPlugin(
         this.resolvers = resolvers
         this.alias = alias
       }
-      supports() {
+      override supports() {
         return true
       }
-      supportsSync() {
+      override supportsSync() {
         return false
       }
-      async loadFile(
+      override async loadFile(
         filename: string,
         dir: string,
         opts: any,
