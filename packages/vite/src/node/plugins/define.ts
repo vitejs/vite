@@ -46,7 +46,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   const pattern = new RegExp(
-    '(?<!.)\\b(' +
+    '(?<!\\.)\\b(' +
       Object.keys(replacements)
         .map((str) => {
           return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
