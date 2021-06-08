@@ -1,3 +1,12 @@
+## [2.4.2](https://github.com/vitejs/vite/compare/create-app@2.4.1...create-app@2.4.2) (2021-06-08)
+
+
+### Features
+
+* **create-app:** update svelte-ts template to use @tsconfig/svelte a… ([#3668](https://github.com/vitejs/vite/issues/3668)) ([5c3b668](https://github.com/vitejs/vite/commit/5c3b668250903ba9ed75db5c4bb7f548d5cb6105))
+
+
+
 ## [2.4.1](https://github.com/vitejs/vite/compare/create-app@2.4.0...create-app@2.4.1) (2021-06-01)
 
 
