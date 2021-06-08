@@ -180,8 +180,7 @@ export async function handleFileAddUnlink(
     for (const i in server._globImporters) {
       const { module, importGlobs } = server._globImporters[i]
       for (const { base, pattern } of importGlobs) {
-        const relative = path.relative(base, file)
-        if (match(relative, pattern)) {
+        if (match(file, pattern) || match(path.relative(base, file), pattern)) {
           modules.push(module)
           // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
           // calls get fresh glob import results with(out) the newly added(/removed) `file`.

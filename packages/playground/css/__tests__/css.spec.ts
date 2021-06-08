@@ -6,6 +6,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  removeFile,
   testDir,
   untilUpdated
 } from '../../testUtils'
@@ -213,5 +214,31 @@ test('treeshaken async chunk', async () => {
       code.replace('color: plum', 'color: blue')
     )
     await untilUpdated(() => getColor(el), 'blue')
+  }
+})
+
+test('PostCSS dir-dependency', async () => {
+  const el1 = await page.$('.dir-dep')
+  const el2 = await page.$('.dir-dep-2')
+
+  expect(await getColor(el1)).toBe('grey')
+  expect(await getColor(el2)).toBe('grey')
+
+  if (!isBuild) {
+    editFile('glob-dep/foo.css', (code) =>
+      code.replace('color: grey', 'color: blue')
+    )
+    await untilUpdated(() => getColor(el1), 'blue')
+    expect(await getColor(el2)).toBe('grey')
+
+    editFile('glob-dep/bar.css', (code) =>
+      code.replace('color: grey', 'color: red')
+    )
+    await untilUpdated(() => getColor(el2), 'red')
+    expect(await getColor(el1)).toBe('blue')
+
+    // test add/remove
+    removeFile('glob-dep/bar.css')
+    await untilUpdated(() => getColor(el2), 'black')
   }
 })

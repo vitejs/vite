@@ -19,6 +19,7 @@ document.querySelector('.modules-sass').classList.add(sassMod['apply-color'])
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
 
 import './dep.css'
+import './glob-dep.css'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
