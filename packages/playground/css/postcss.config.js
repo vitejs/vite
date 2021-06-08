@@ -16,10 +16,17 @@ function testDirDep() {
     AtRule(atRule, { result, Comment }) {
       if (atRule.name === 'test') {
         const pattern = normalizePath(
-          path.resolve(path.dirname(result.opts.from), './glob-dep/*.css')
+          path.resolve(path.dirname(result.opts.from), './glob-dep/*.{css,js}')
         )
         const files = glob.sync(pattern)
-        const text = files.map((f) => fs.readFileSync(f, 'utf-8')).join('\n')
+        const text = files
+          .map((f) => {
+            if (f.endsWith('.css')) {
+              return fs.readFileSync(f, 'utf-8')
+            }
+            return require(f)
+          })
+          .join('\n')
         atRule.parent.insertAfter(atRule, text)
         atRule.remove()
 
@@ -27,7 +34,7 @@ function testDirDep() {
           type: 'dir-dependency',
           plugin: 'dir-dep',
           dir: './glob-dep',
-          glob: '*.css',
+          glob: '*.{css,js}',
           parent: result.opts.from
         })
       }
