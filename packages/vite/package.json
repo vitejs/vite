@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.3.6",
+  "version": "2.3.7",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -12,7 +12,9 @@
   "files": [
     "bin",
     "dist",
-    "client.d.ts"
+    "client.d.ts",
+    "src",
+    "!/src/**/__tests__/"
   ],
   "engines": {
     "node": ">=12.0.0"
@@ -46,9 +48,9 @@
   },
   "//": "READ .github/contributing.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.12.5",
+    "esbuild": "^0.12.7",
     "html-minifier-terser": "^5.1.1",
-    "postcss": "^8.2.10",
+    "postcss": "^8.3.0",
     "resolve": "^1.19.0",
     "rollup": "^2.38.5"
   },
@@ -118,7 +120,7 @@
     "resolve.exports": "^1.0.1",
     "rollup-plugin-license": "^2.2.0",
     "selfsigned": "^1.10.8",
-    "sirv": "^1.0.10",
+    "sirv": "^1.0.12",
     "source-map": "^0.6.1",
     "source-map-support": "^0.5.19",
     "strip-ansi": "^6.0.0",

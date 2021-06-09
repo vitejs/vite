@@ -32,13 +32,21 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   const replacements: Record<string, string | undefined> = {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
+    'global.process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || config.mode
+    ),
+    'globalThis.process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || config.mode
+    ),
     ...userDefine,
     ...importMetaKeys,
-    'process.env.': `({}).`
+    'process.env.': `({}).`,
+    'global.process.env.': `({}).`,
+    'globalThis.process.env.': `({}).`
   }
 
   const pattern = new RegExp(
-    '\\b(' +
+    '(?<!\\.)\\b(' +
       Object.keys(replacements)
         .map((str) => {
           return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
