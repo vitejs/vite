@@ -126,11 +126,11 @@ function updateModules(
 ) {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
-  let needFulleReload = false
+  let needFullReload = false
 
   for (const mod of modules) {
     invalidate(mod, timestamp, invalidatedModules)
-    if (needFulleReload) {
+    if (needFullReload) {
       continue
     }
 
@@ -140,7 +140,7 @@ function updateModules(
     }>()
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
-      needFulleReload = true
+      needFullReload = true
       continue
     }
 
@@ -154,7 +154,7 @@ function updateModules(
     )
   }
 
-  if (needFulleReload) {
+  if (needFullReload) {
     config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
       clear: true,
       timestamp: true
