@@ -76,7 +76,7 @@ export function createDebugger(
   }
 }
 
-const isWindows = os.platform() === 'win32'
+export const isWindows = os.platform() === 'win32'
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
