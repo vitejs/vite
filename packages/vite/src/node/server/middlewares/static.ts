@@ -1,4 +1,3 @@
-import os from 'os'
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
@@ -6,7 +5,7 @@ import { FileSystemServeOptions } from '..'
 import { normalizePath, ResolvedConfig } from '../..'
 import { FS_PREFIX } from '../../constants'
 import { Logger } from '../../logger'
-import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
+import { cleanUrl, fsPathFromId, isImportRequest, isWindows } from '../../utils'
 import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
@@ -80,7 +79,6 @@ export function serveStaticMiddleware(
 export function serveRawFsMiddleware(
   config: ResolvedConfig
 ): Connect.NextHandleFunction {
-  const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
@@ -99,7 +97,7 @@ export function serveRawFsMiddleware(
       )
 
       url = url.slice(FS_PREFIX.length)
-      if (isWin) url = url.replace(/^[A-Z]:/i, '')
+      if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
       req.url = url
       serveFromRoot(req, res, next)

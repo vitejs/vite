@@ -1,6 +1,4 @@
-import { injectQuery } from '../utils'
-
-const isWindows = process.platform === 'win32'
+import { injectQuery, isWindows } from '../utils'
 
 if (isWindows) {
   // this test will work incorrectly on unix systems
