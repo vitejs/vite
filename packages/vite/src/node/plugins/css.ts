@@ -223,7 +223,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  let styles: Map<string, string>
+  // styles initialization in buildStart causes a styling loss in watch
+  const styles: Map<string, string> = new Map<string, string>()
   let pureCssChunks: Set<string>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
@@ -236,7 +237,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
-      styles = new Map<string, string>()
       pureCssChunks = new Set<string>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
     },
