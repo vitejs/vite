@@ -2,7 +2,7 @@
 name: "\U0001F41E Bug report"
 about: Report an issue with Vite
 title: ''
-labels: 'bug: pending triage'
+labels: 'pending triage'
 assignees: ''
 ---
 
