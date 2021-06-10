@@ -1,5 +1,5 @@
 {
-  "name": "vite-vue-typescript-starter",
+  "name": "vite-vue-jsx-typescript-starter",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
