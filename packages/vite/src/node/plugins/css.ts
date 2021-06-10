@@ -757,7 +757,7 @@ type CssUrlReplacer = (
   url: string,
   importer?: string
 ) => string | Promise<string>
-const cssUrlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+export const cssUrlRE = /(?:^|\:|\s)url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
