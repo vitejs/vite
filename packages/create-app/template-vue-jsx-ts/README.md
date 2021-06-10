@@ -1,6 +1,6 @@
-# Vue 3 + Typescript + Vite
+# Vue 3 + JSX + Typescript + Vite
 
-This template should help get you started developing with Vue 3 and Typescript in Vite.
+This template should help get you started developing with Vue 3, JSX and Typescript in Vite.
 
 ## Recommended IDE Setup
 
