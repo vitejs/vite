@@ -1,0 +1,15 @@
+{
+  "name": "@test/nested-deps",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../vite/bin/vite",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "@yelmor/vite-test-package-a": "^2.0.0",
+    "@yelmor/vite-test-package-b": "^1.0.0"
+  }
+}
