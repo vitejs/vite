@@ -1,0 +1,13 @@
+{
+  "extends": [
+    "config:base",
+    "schedule:weekly",
+    "group:allNonMajor"
+  ],
+  "pin": false,
+  "ignorePaths": [
+    "packages/playground/**",
+    "packages/create-app/template-*/**",
+    "**/__tests__/**"
+  ]
+}
