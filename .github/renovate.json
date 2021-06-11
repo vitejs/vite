@@ -7,6 +7,7 @@
   "pin": false,
   "ignorePaths": [
     "packages/playground/**",
-    "packages/create-app/template-*/**"
+    "packages/create-app/template-*/**",
+    "**/__tests__/**"
   ]
 }
