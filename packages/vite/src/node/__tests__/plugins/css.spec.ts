@@ -24,4 +24,20 @@ describe('search css url function', () => {
     }`)
     ).toBe(false)
   })
+
+  test('after parenthesis', () => {
+    expect(
+      cssUrlRE.test(
+        'mask-image: image(url(mask.png), skyblue, linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
+      )
+    ).toBe(true)
+  })
+
+  test('after comma', () => {
+    expect(
+      cssUrlRE.test(
+        'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
+      )
+    ).toBe(true)
+  })
 })
