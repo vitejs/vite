@@ -429,7 +429,7 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.14.5"
 
-"@babel/plugin-transform-react-jsx@^7.14.3":
+"@babel/plugin-transform-react-jsx@^7.14.5":
   version "7.14.9"
   resolved "https://registry.npmjs.org/@babel/plugin-transform-react-jsx/-/plugin-transform-react-jsx-7.14.9.tgz#3314b2163033abac5200a869c4de242cd50a914c"
   integrity sha512-30PeETvS+AeD1f58i1OVyoDlVYQhap/K20ZrMjLmmzmC2AYR/G43D4sdJAaDAqCD3MYpSWbmrz3kES158QSLjw==
