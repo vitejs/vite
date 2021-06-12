@@ -2,10 +2,16 @@ import fs from 'fs-extra'
 import * as http from 'http'
 import { resolve, dirname } from 'path'
 import sirv from 'sirv'
-import { createServer, build, ViteDevServer, UserConfig } from 'vite'
+import {
+  createServer,
+  build,
+  ViteDevServer,
+  UserConfig,
+  PluginOption
+} from 'vite'
 import { Page } from 'playwright-chromium'
 // eslint-disable-next-line node/no-extraneous-import
-import { RollupWatcher } from 'rollup'
+import { RollupWatcher, RollupWatcherEvent } from 'rollup'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
 
@@ -104,10 +110,10 @@ beforeAll(async () => {
         process.env.VITE_INLINE = 'inline-build'
         // determine build watch
         let isWatch = false
-        const resolvedPlugin = () => ({
+        const resolvedPlugin: () => PluginOption = () => ({
           name: 'vite-plugin-watcher',
           configResolved(resolvedConfig) {
-            isWatch = resolvedConfig.build?.watch
+            isWatch = !!resolvedConfig.build?.watch
           }
         })
         options.plugins = [resolvedPlugin()]
@@ -191,8 +197,8 @@ function startStaticServer(): Promise<string> {
  */
 export async function notifyRebuildComplete(
   watcher: RollupWatcher
-): Promise<any> {
-  let callback
+): Promise<RollupWatcher> {
+  let callback: (event: RollupWatcherEvent) => void
   await new Promise((resolve, reject) => {
     callback = (event) => {
       if (event.code === 'END') {

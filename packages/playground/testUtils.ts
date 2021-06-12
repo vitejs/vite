@@ -70,7 +70,7 @@ export function editFile(
   filename: string,
   replacer: (str: string) => string,
   runInBuild: boolean = false
-) {
+): void {
   if (isBuild && !runInBuild) return
   filename = path.resolve(testDir, filename)
   const content = fs.readFileSync(filename, 'utf-8')
