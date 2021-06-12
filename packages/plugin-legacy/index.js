@@ -76,7 +76,9 @@ function viteLegacyPlugin(options = {}) {
       if (!config.build) {
         config.build = {}
       }
-      config.build.polyfillDynamicImport = true
+      if (genLegacy) {
+        config.build.polyfillDynamicImport = true
+      }
     }
   }
 
