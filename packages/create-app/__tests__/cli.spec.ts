@@ -44,6 +44,11 @@ test('prompts for the framework if none supplied', () => {
   expect(stdout).toContain('Select a framework:')
 })
 
+test('prompts for the framework on not supplying a value for --template', () => {
+  const { stdout } = run([projectName, '--template'])
+  expect(stdout).toContain('Select a framework:')
+})
+
 test('prompts for the framework on supplying an invalid template', () => {
   const { stdout } = run([projectName, '--template', 'unknown'])
   expect(stdout).toContain(
