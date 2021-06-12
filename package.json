@@ -5,6 +5,9 @@
     "packages/*",
     "packages/playground/*"
   ],
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "scripts": {
     "lint": "eslint --ext .js,.ts packages/*/src/**",
     "test": "run-s test-serve test-build",
