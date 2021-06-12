@@ -4,6 +4,8 @@ import { resolve, dirname } from 'path'
 import sirv from 'sirv'
 import { createServer, build, ViteDevServer, UserConfig } from 'vite'
 import { Page } from 'playwright-chromium'
+// eslint-disable-next-line node/no-extraneous-import
+import { RollupWatcher } from 'rollup'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
 
@@ -18,6 +20,7 @@ declare global {
     interface Global {
       page?: Page
       viteTestUrl?: string
+      watcher?: RollupWatcher
     }
   }
 }
@@ -99,7 +102,21 @@ beforeAll(async () => {
         await page.goto(url)
       } else {
         process.env.VITE_INLINE = 'inline-build'
-        await build(options)
+        // determine build watch
+        let isWatch = false
+        const resolvedPlugin = () => ({
+          name: 'vite-plugin-watcher',
+          configResolved(resolvedConfig) {
+            isWatch = resolvedConfig.build?.watch
+          }
+        })
+        options.plugins = [resolvedPlugin()]
+        const rollupOutput = await build(options)
+        // in build watch,call startStaticServer after the build is complete
+        if (isWatch) {
+          global.watcher = rollupOutput as RollupWatcher
+          await notifyRebuildComplete(global.watcher)
+        }
         const url = (global.viteTestUrl = await startStaticServer())
         await page.goto(url)
       }
@@ -167,4 +184,22 @@ function startStaticServer(): Promise<string> {
       resolve(`http://localhost:${port}${base}`)
     })
   })
+}
+
+/**
+ * Send the rebuild complete message in build watch
+ */
+export async function notifyRebuildComplete(
+  watcher: RollupWatcher
+): Promise<any> {
+  let callback
+  await new Promise((resolve, reject) => {
+    callback = (event) => {
+      if (event.code === 'END') {
+        resolve(true)
+      }
+    }
+    watcher.on('event', callback)
+  })
+  return watcher.removeListener('event', callback)
 }

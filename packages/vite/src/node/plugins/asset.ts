@@ -28,7 +28,7 @@ const assetHashToFilenameMap = new WeakMap<
   Map<string, string>
 >()
 // save hashes of the files that has been emitted in build watch
-const emittedHashesSet: Set<string> = new Set()
+const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
@@ -41,7 +41,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       assetCache.set(config, new Map())
-      emittedHashesSet.clear()
+      emittedHashMap.set(config, new Set())
     },
 
     resolveId(id) {
@@ -237,13 +237,14 @@ async function fileToBuiltUrl(
     if (!map.has(contentHash)) {
       map.set(contentHash, fileName)
     }
-    if (!emittedHashesSet.has(contentHash)) {
+    const emittedSet = emittedHashMap.get(config)!
+    if (!emittedSet.has(contentHash)) {
       pluginContext.emitFile({
         fileName,
         type: 'asset',
         source: content
       })
-      emittedHashesSet.add(contentHash)
+      emittedSet.add(contentHash)
     }
 
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
