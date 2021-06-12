@@ -830,6 +830,7 @@ async function bundleConfigFile(
     platform: 'node',
     bundle: true,
     format: mjs ? 'esm' : 'cjs',
+    sourcemap: 'inline',
     metafile: true,
     plugins: [
       {
