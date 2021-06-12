@@ -175,7 +175,7 @@ async function init() {
           type: template && TEMPLATES.includes(template) ? null : 'select',
           name: 'framework',
           message:
-            template && !TEMPLATES.includes(template)
+            typeof template === 'string' && !TEMPLATES.includes(template)
               ? `"${template}" isn't a valid template. Please choose from below: `
               : 'Select a framework:',
           initial: 0,
