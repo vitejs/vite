@@ -1,7 +1,14 @@
-import { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
+import {
+  ConnectedPayload,
+  ErrorPayload,
+  FullReloadPayload,
+  HMRPayload,
+  PrunePayload,
+  Update,
+  UpdatePayload
+} from 'types/hmrPayload'
 import { ErrorOverlay, overlayId } from './overlay'
 import './env'
-import { ViteEventDispatcher } from './events'
 
 // injected by the hmr plugin when served
 declare const __ROOT__: string
@@ -11,9 +18,6 @@ declare const __HMR_HOSTNAME__: string
 declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
-
-const eventDispatcher = new ViteEventDispatcher()
-export const viteEventTarget = eventDispatcher.target
 
 console.log('[vite] connecting...')
 
@@ -45,25 +49,24 @@ let isFirstUpdate = true
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
+      notifyListeners('vite:connected', payload)
       console.log(`[vite] connected.`)
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
-      eventDispatcher.dispatchEvent('vite:connected', payload)
       break
     case 'update':
+      notifyListeners('vite:update', payload)
       // if this is the first update and there's already an error overlay, it
       // means the page opened with existing server compile error and the whole
       // module script failed to load (since one of the nested imports is 500).
       // in this case a normal update won't work and a full reload is needed.
       if (isFirstUpdate && hasErrorOverlay()) {
-        eventDispatcher.dispatchEvent('vite:update', payload)
         window.location.reload()
         return
       } else {
         clearErrorOverlay()
         isFirstUpdate = false
-        eventDispatcher.dispatchEvent('vite:update', payload)
       }
       payload.updates.forEach((update) => {
         if (update.type === 'js-update') {
@@ -92,13 +95,11 @@ async function handleMessage(payload: HMRPayload) {
       })
       break
     case 'custom': {
-      const cbs = customListenersMap.get(payload.event)
-      if (cbs) {
-        cbs.forEach((cb) => cb(payload.data))
-      }
+      notifyListeners(payload.event as CustomEventName<any>, payload.data)
       break
     }
     case 'full-reload':
+      notifyListeners('vite:full-reload', payload)
       if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
@@ -116,6 +117,7 @@ async function handleMessage(payload: HMRPayload) {
       }
       break
     case 'prune':
+      notifyListeners('vite:prune', payload)
       // After an HMR update, some modules are no longer imported on the page
       // but they may have left behind side effects that need to be cleaned up
       // (.e.g style injections)
@@ -128,13 +130,12 @@ async function handleMessage(payload: HMRPayload) {
       })
       break
     case 'error': {
+      notifyListeners('vite:error', payload)
       const err = payload.err
       if (enableOverlay) {
         createErrorOverlay(err)
-        eventDispatcher.dispatchEvent('vite:error', payload)
       } else {
         console.error(`[vite] Internal Server Error\n${err.stack}`)
-        eventDispatcher.dispatchEvent('vite:error', payload)
       }
       break
     }
@@ -144,6 +145,32 @@ async function handleMessage(payload: HMRPayload) {
     }
   }
 }
+
+function notifyListeners(
+  event: 'vite:connected',
+  payload: ConnectedPayload
+): void
+function notifyListeners(event: 'vite:update', payload: UpdatePayload): void
+function notifyListeners(event: 'vite:prune', payload: PrunePayload): void
+function notifyListeners(
+  event: 'vite:full-reload',
+  payload: FullReloadPayload
+): void
+function notifyListeners(event: 'vite:error', payload: ErrorPayload): void
+function notifyListeners<T extends string>(
+  event: CustomEventName<T>,
+  data: any
+): void
+function notifyListeners(event: string, data: any): void {
+  const cbs = customListenersMap.get(event)
+  if (cbs) {
+    cbs.forEach((cb) => cb(data))
+  }
+}
+
+// See https://stackoverflow.com/a/63549561.
+type CustomEventName<T extends string> = (T extends `vite:${T}` ? never : T) &
+  (`vite:${T}` extends T ? never : T)
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 
@@ -341,10 +368,10 @@ const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
-const customListenersMap = new Map<string, ((customData: any) => void)[]>()
+const customListenersMap = new Map<string, ((data: any) => void)[]>()
 const ctxToListenersMap = new Map<
   string,
-  Map<string, ((customData: any) => void)[]>
+  Map<string, ((data: any) => void)[]>
 >()
 
 // Just infer the return type for now
@@ -435,7 +462,7 @@ export const createHotContext = (ownerPath: string) => {
     },
 
     // custom events
-    on(event: string, cb: () => void) {
+    on: (event: string, cb: (data: any) => void) => {
       const addToMap = (map: Map<string, any[]>) => {
         const existing = map.get(event) || []
         existing.push(cb)
