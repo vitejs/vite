@@ -361,7 +361,7 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
-export function ensureLeadingSlash(path: string) {
+export function ensureLeadingSlash(path: string): string {
   return !path.startsWith('/') ? '/' + path : path
 }
 
