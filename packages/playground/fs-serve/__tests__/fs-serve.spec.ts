@@ -19,6 +19,10 @@ if (!isBuild) {
   test('unsafe fetch', async () => {
     expect(await page.textContent('.unsafe-fetch')).toBe('')
   })
+
+  test('nested entry', async () => {
+    expect(await page.textContent('.nested-entry')).toBe('foobar')
+  })
 } else {
   test('dummy test to make jest happy', async () => {
     // Your test suite must contain at least one test.
