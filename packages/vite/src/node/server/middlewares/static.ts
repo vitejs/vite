@@ -1,4 +1,3 @@
-import { fileSync } from 'brotli-size'
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'

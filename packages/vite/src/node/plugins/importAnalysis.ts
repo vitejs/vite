@@ -17,8 +17,7 @@ import {
   isJSRequest,
   prettifyUrl,
   timeFrom,
-  normalizePath,
-  fsPathFromId
+  normalizePath
 } from '../utils'
 import {
   debugHmr,
