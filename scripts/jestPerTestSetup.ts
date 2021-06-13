@@ -7,7 +7,8 @@ import {
   build,
   ViteDevServer,
   UserConfig,
-  PluginOption
+  PluginOption,
+  ResolvedConfig
 } from 'vite'
 import { Page } from 'playwright-chromium'
 // eslint-disable-next-line node/no-extraneous-import
@@ -109,15 +110,16 @@ beforeAll(async () => {
       } else {
         process.env.VITE_INLINE = 'inline-build'
         // determine build watch
-        let isWatch = false
+        let resolvedConfig: ResolvedConfig
         const resolvedPlugin: () => PluginOption = () => ({
           name: 'vite-plugin-watcher',
-          configResolved(resolvedConfig) {
-            isWatch = !!resolvedConfig.build?.watch
+          configResolved(config) {
+            resolvedConfig = config
           }
         })
         options.plugins = [resolvedPlugin()]
         const rollupOutput = await build(options)
+        const isWatch = !!resolvedConfig!.build.watch
         // in build watch,call startStaticServer after the build is complete
         if (isWatch) {
           global.watcher = rollupOutput as RollupWatcher
