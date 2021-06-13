@@ -3,7 +3,13 @@ import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
 import { normalizePath, ResolvedConfig, ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
-import { cleanUrl, fsPathFromId, isImportRequest, isWindows } from '../../utils'
+import {
+  cleanUrl,
+  fsPathFromId,
+  isImportRequest,
+  isWindows,
+  slash
+} from '../../utils'
 import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
@@ -89,8 +95,7 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fsServe.root`
-      ensureServingAccess(path.resolve(fsPathFromId(url)), server)
-
+      ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server)
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
