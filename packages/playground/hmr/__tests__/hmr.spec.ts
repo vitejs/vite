@@ -8,7 +8,7 @@ test('should render', async () => {
 
 if (!isBuild) {
   test('should connect', async () => {
-    expect(browserLogs.length).toBe(3)
+    expect(browserLogs.length).toBe(2)
     expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
     browserLogs.length = 0
   })

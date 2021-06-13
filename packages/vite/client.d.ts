@@ -29,7 +29,6 @@ interface ImportMeta {
     invalidate(): void
 
     on: {
-      (event: 'vite:connected', cb: (payload: ConnectedPayload) => void): void
       (event: 'vite:update', cb: (payload: UpdatePayload) => void): void
       (event: 'vite:prune', cb: (payload: PrunePayload) => void): void
       (

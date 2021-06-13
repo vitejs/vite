@@ -49,7 +49,6 @@ let isFirstUpdate = true
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
-      notifyListeners('vite:connected', payload)
       console.log(`[vite] connected.`)
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
@@ -146,10 +145,6 @@ async function handleMessage(payload: HMRPayload) {
   }
 }
 
-function notifyListeners(
-  event: 'vite:connected',
-  payload: ConnectedPayload
-): void
 function notifyListeners(event: 'vite:update', payload: UpdatePayload): void
 function notifyListeners(event: 'vite:prune', payload: PrunePayload): void
 function notifyListeners(
