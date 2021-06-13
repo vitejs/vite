@@ -1,47 +1,67 @@
+import { codeFrameColumns, SourceLocation } from '@babel/code-frame'
 import { SourceMapConsumer, RawSourceMap } from 'source-map'
 import { ModuleGraph } from '../server/moduleGraph'
+import fs from 'fs'
+
+const stackFrameRE = /^ {4}at (?:(.+?)\s+\()?(?:(.+?):(\d+)(?::(\d+))?)\)?/
 
 export function ssrRewriteStacktrace(
-  stack: string,
+  error: Error,
   moduleGraph: ModuleGraph
 ): string {
-  return stack
-    .split('\n')
-    .map((line) => {
-      return line.replace(
-        /^ {4}at (?:(.+?)\s+\()?(?:(.+?):(\d+)(?::(\d+))?)\)?/,
-        (input, varName, url, line, column) => {
-          if (!url) return input
+  let code!: string
+  let location: SourceLocation | undefined
 
-          const mod = moduleGraph.urlToModuleMap.get(url)
-          const rawSourceMap = mod?.ssrTransformResult?.map
+  const stackFrames = error
+    .stack!.split('\n')
+    .slice(error.message.split('\n').length)
+    .map((line, i) => {
+      return line.replace(stackFrameRE, (input, varName, url, line, column) => {
+        if (!url) return input
 
-          if (!rawSourceMap) {
-            return input
-          }
+        const mod = moduleGraph.urlToModuleMap.get(url)
+        const rawSourceMap = mod?.ssrTransformResult?.map
 
-          const consumer = new SourceMapConsumer(
-            rawSourceMap as any as RawSourceMap
-          )
+        if (!rawSourceMap) {
+          return input
+        }
 
-          const pos = consumer.originalPositionFor({
-            line: Number(line),
-            column: Number(column),
-            bias: SourceMapConsumer.LEAST_UPPER_BOUND
-          })
+        const consumer = new SourceMapConsumer(
+          rawSourceMap as any as RawSourceMap
+        )
 
-          if (!pos.source) {
-            return input
-          }
+        const pos = consumer.originalPositionFor({
+          line: Number(line),
+          column: Number(column),
+          bias: SourceMapConsumer.GREATEST_LOWER_BOUND
+        })
 
-          const source = `${pos.source}:${pos.line || 0}:${pos.column || 0}`
-          if (!varName || varName === 'eval') {
-            return `    at ${source}`
-          } else {
-            return `    at ${varName} (${source})`
+        if (!pos.source) {
+          return input
+        }
+
+        if (i == 0) {
+          code = fs.readFileSync(pos.source, 'utf8')
+          location = {
+            start: { line: pos.line, column: pos.column }
           }
         }
-      )
+
+        const source = `${pos.source}:${pos.line}:${pos.column}`
+        if (!varName || varName === 'eval') {
+          return `    at ${source}`
+        } else {
+          return `    at ${varName} (${source})`
+        }
+      })
     })
-    .join('\n')
+
+  const message = location
+    ? codeFrameColumns(code, location, {
+        highlightCode: true,
+        message: error.message
+      })
+    : error.message
+
+  return message + '\n\n' + stackFrames.join('\n')
 }
