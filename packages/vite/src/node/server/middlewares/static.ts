@@ -1,3 +1,4 @@
+import { fileSync } from 'brotli-size'
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
@@ -5,6 +6,7 @@ import { normalizePath, ResolvedConfig, ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
+  ensureLeadingSlash,
   fsPathFromId,
   isImportRequest,
   isWindows,
@@ -81,8 +83,7 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(
-  server: ViteDevServer,
-  config: ResolvedConfig
+  server: ViteDevServer
 ): Connect.NextHandleFunction {
   const serveFromRoot = sirv('/', sirvOptions)
 
@@ -113,16 +114,13 @@ export function isFileServingAllowed(
 ): boolean {
   if (!server.config.server.fsServe.strict) return true
 
-  const file = cleanUrl(url)
+  const file = ensureLeadingSlash(normalizePath(cleanUrl(url)))
 
   if (server.moduleGraph.safeModulesPath.has(file)) {
     return true
   }
 
-  const normalizedUrl = normalizePath(file)
-  return server.config.server.fsServe.dirs.some((i) =>
-    normalizedUrl.startsWith(i + path.posix.sep)
-  )
+  return server.config.server.fsServe.dirs.some((i) => file.startsWith(i + '/'))
 }
 
 export function ensureServingAccess(url: string, server: ViteDevServer): void {

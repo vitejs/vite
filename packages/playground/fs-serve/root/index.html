@@ -19,14 +19,14 @@
   text('.named', msg)
 
   // imported before, should be treated as safe
-  fetch('/@fs' + ROOT + '/safe.json')
+  fetch('/@fs/' + ROOT + '/safe.json')
     .then((r) => r.json())
     .then((data) => {
       text('.safe-fetch', JSON.stringify(data))
     })
 
   // not imported before, outside of root, treated as unsafe
-  fetch('/@fs' + ROOT + '/unsafe.json')
+  fetch('/@fs/' + ROOT + '/unsafe.json')
     .catch((e) => console.error(e))
     .then((r) => r.json())
     .then((data) => {

@@ -33,7 +33,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, ensureLeadingSlash, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -487,7 +487,7 @@ export async function createServer(
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(serveRawFsMiddleware(server, config))
+  middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
@@ -706,12 +706,14 @@ export function resolveServerOptions(
   const fsServeRoot = normalizePath(
     path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
   )
-  const fsServeDirs = (server.fsServe?.dirs || []).map((i) =>
+  let fsServeDirs = (server.fsServe?.dirs || []).map((i) =>
     normalizePath(path.resolve(root, i))
   )
 
-  fsServeDirs.push(CLIENT_DIR)
+  fsServeDirs.push(normalizePath(CLIENT_DIR))
   fsServeDirs.push(fsServeRoot)
+
+  fsServeDirs = fsServeDirs.map(ensureLeadingSlash)
 
   // TODO: make strict by default
   const fsServeStrict = server.fsServe?.strict ?? false
