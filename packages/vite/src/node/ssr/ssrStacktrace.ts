@@ -1,17 +1,6 @@
 import { SourceMapConsumer, RawSourceMap } from 'source-map'
 import { ModuleGraph } from '../server/moduleGraph'
 
-let offset: number
-try {
-  new Function('throw new Error(1)')()
-} catch (e) {
-  // in Node 12, stack traces account for the function wrapper.
-  // in Node 13 and later, the function wrapper adds two lines,
-  // which must be subtracted to generate a valid mapping
-  const match = /:(\d+):\d+\)$/.exec(e.stack.split('\n')[1])
-  offset = match ? +match[1] - 1 : 0
-}
-
 export function ssrRewriteStacktrace(
   stack: string,
   moduleGraph: ModuleGraph
@@ -36,7 +25,7 @@ export function ssrRewriteStacktrace(
           )
 
           const pos = consumer.originalPositionFor({
-            line: Number(line) - offset,
+            line: Number(line),
             column: Number(column),
             bias: SourceMapConsumer.LEAST_UPPER_BOUND
           })

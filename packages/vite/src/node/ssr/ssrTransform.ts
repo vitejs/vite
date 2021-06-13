@@ -24,12 +24,30 @@ export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
+let offset: number
+try {
+  new Function('throw new Error(1)')()
+} catch (e) {
+  // in Node 12, stack traces account for the function wrapper.
+  // in Node 13 and later, the function wrapper adds two lines,
+  // which must be subtracted to generate a valid mapping
+  const match = /:(\d+):\d+\)$/.exec(e.stack.split('\n')[1])
+  offset = match ? +match[1] - 1 : 0
+}
+
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
   url: string
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
+
+  // SSR modules are wrapped with `new Function()` before they're executed,
+  // so we need to shift the line mappings. These empty lines are removed
+  // before the module is wrapped.
+  if (offset > 0) {
+    s.prependLeft(0, '\n'.repeat(offset))
+  }
 
   const ast = parser.parse(code, {
     sourceType: 'module',
@@ -178,19 +196,17 @@ export async function ssrTransform(
     }
   })
 
-  let map = s.generateMap({ hires: true })
+  let map = s.generateMap({
+    hires: true,
+    source: url,
+    includeContent: true
+  })
+
   if (inMap && inMap.mappings && inMap.sources.length > 0) {
     map = combineSourcemaps(url, [
-      {
-        ...map,
-        sources: inMap.sources,
-        sourcesContent: inMap.sourcesContent
-      } as RawSourceMap,
+      map as RawSourceMap,
       inMap as RawSourceMap
     ]) as SourceMap
-  } else {
-    map.sources = [url]
-    map.sourcesContent = [code]
   }
 
   return {
