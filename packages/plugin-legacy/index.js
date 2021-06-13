@@ -276,7 +276,8 @@ function viteLegacyPlugin(options = {}) {
             () => ({
               plugins: [
                 recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
-                replaceLegacyEnvBabelPlugin()
+                replaceLegacyEnvBabelPlugin(),
+                wrapIIFEBabelPlugin()
               ]
             })
           ],
@@ -598,6 +599,22 @@ function replaceLegacyEnvBabelPlugin() {
       }
     }
   })
+}
+
+function wrapIIFEBabelPlugin() {
+  return ({ types: t, template }) => {
+    const buildIIFE = template(';(function(){%%body%%})();')
+
+    return {
+      name: 'vite-wrap-iife',
+      post({ path }) {
+        if (!this.isWrapped) {
+          this.isWrapped = true
+          path.replaceWith(t.program(buildIIFE({ body: path.node.body })))
+        }
+      }
+    }
+  }
 }
 
 module.exports = viteLegacyPlugin
