@@ -53,6 +53,7 @@ import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { CLIENT_DIR } from '../constants'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -151,6 +152,8 @@ export interface FileSystemServeOptions {
    * @expiremental
    */
   root?: string
+
+  dirs?: string[]
 }
 
 /**
@@ -484,7 +487,7 @@ export async function createServer(
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(serveRawFsMiddleware(config))
+  middlewares.use(serveRawFsMiddleware(server, config))
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
@@ -703,11 +706,19 @@ export function resolveServerOptions(
   const fsServeRoot = normalizePath(
     path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
   )
+  const fsServeDirs = (server.fsServe?.dirs || []).map((i) =>
+    normalizePath(path.resolve(root, i))
+  )
+
+  fsServeDirs.push(CLIENT_DIR)
+  fsServeDirs.push(fsServeRoot)
+
   // TODO: make strict by default
   const fsServeStrict = server.fsServe?.strict ?? false
   server.fsServe = {
     root: fsServeRoot,
-    strict: fsServeStrict
+    strict: fsServeStrict,
+    dirs: fsServeDirs
   }
   return server as ResolvedServerOptions
 }

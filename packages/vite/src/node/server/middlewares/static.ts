@@ -1,10 +1,8 @@
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
-import { FileSystemServeOptions } from '..'
-import { normalizePath, ResolvedConfig } from '../..'
+import { normalizePath, ResolvedConfig, ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
-import { Logger } from '../../logger'
 import { cleanUrl, fsPathFromId, isImportRequest, isWindows } from '../../utils'
 import { AccessRestrictedError } from './error'
 
@@ -77,6 +75,7 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(
+  server: ViteDevServer,
   config: ResolvedConfig
 ): Connect.NextHandleFunction {
   const serveFromRoot = sirv('/', sirvOptions)
@@ -90,11 +89,7 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fsServe.root`
-      ensureServingAccess(
-        path.resolve(fsPathFromId(url)),
-        config.server.fsServe,
-        config.logger
-      )
+      ensureServingAccess(path.resolve(fsPathFromId(url)), server)
 
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
@@ -107,40 +102,43 @@ export function serveRawFsMiddleware(
   }
 }
 
-export function isFileAccessAllowed(
+export function isFileServingAllowed(
   url: string,
-  { root, strict }: Required<FileSystemServeOptions>
+  server: ViteDevServer
 ): boolean {
-  return !strict || normalizePath(url).startsWith(root + path.posix.sep)
+  if (!server.config.server.fsServe.strict) return true
+
+  const file = cleanUrl(url)
+
+  if (server.moduleGraph.safeModulesPath.has(file)) {
+    return true
+  }
+
+  const normalizedUrl = normalizePath(file)
+  return server.config.server.fsServe.dirs.some((i) =>
+    normalizedUrl.startsWith(i + path.posix.sep)
+  )
 }
 
-export function ensureServingAccess(
-  url: string,
-  serveOptions: Required<FileSystemServeOptions>,
-  logger: Logger
-): void {
-  const { strict, root } = serveOptions
-  // TODO: early return, should remove once we polished the restriction logic
-  if (!strict) return
+export function ensureServingAccess(url: string, server: ViteDevServer): void {
+  if (isFileServingAllowed(url, server)) return
 
-  if (!isFileAccessAllowed(url, serveOptions)) {
-    const normalizedUrl = normalizePath(url)
-    if (strict) {
-      throw new AccessRestrictedError(
-        `The request url "${normalizedUrl}" is outside of vite dev server root "${root}". 
-        For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
-        Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
-        normalizedUrl,
-        root
-      )
-    } else {
-      // TODO: warn for potential unrestricted access
-      logger.warnOnce(
-        `For security concerns, accessing files outside of workspace root will ` +
-          `be restricted by default in the future version of Vite. ` +
-          `Refer to [] for more`
-      )
-      logger.warnOnce(`Unrestricted file system access to "${normalizedUrl}"`)
-    }
+  const { strict, root } = server.config.server.fsServe
+
+  if (strict) {
+    throw new AccessRestrictedError(
+      `The request url "${url}" is outside of vite dev server root "${root}". 
+      For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
+      Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
+      url,
+      root
+    )
+  } else {
+    server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
+    server.config.logger.warnOnce(
+      `For security concerns, accessing files outside of workspace root will ` +
+        `be restricted by default in the future version of Vite. ` +
+        `Refer to [] for more`
+    )
   }
 }

@@ -361,6 +361,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
           let url = normalizedUrl
 
+          // record as safe modules
+          server?.moduleGraph.safeModulesPath.add(
+            cleanUrl(url).slice(4 /* '/@fs'.length */)
+          )
+
           // rewrite
           if (url !== specifier) {
             // for optimized cjs deps, support named imports by rewriting named
