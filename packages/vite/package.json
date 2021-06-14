@@ -80,7 +80,7 @@
     "@types/ws": "^7.4.0",
     "@vue/compiler-dom": "^3.0.4",
     "acorn": "^8.0.4",
-    "acorn-class-fields": "^0.3.7",
+    "acorn-class-fields": "^1.0.0",
     "acorn-numeric-separator": "^0.3.6",
     "acorn-static-class-features": "^0.2.4",
     "brotli-size": "^4.0.0",
