@@ -39,7 +39,7 @@ export function compileSFCTemplate(
 
   if (tips) {
     tips.forEach((warn) =>
-      pluginContext.error({
+      pluginContext.warn({
         id: filename,
         message: typeof warn === 'string' ? warn : warn.msg,
       })
