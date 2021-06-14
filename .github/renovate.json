@@ -6,6 +6,7 @@
   ],
   "pin": false,
   "rangeStrategy": "bump",
+  "node": false,
   "ignorePaths": [
     "packages/playground/**",
     "packages/create-app/template-*/**",
