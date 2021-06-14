@@ -31,12 +31,6 @@ export async function ssrTransform(
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    ecmaVersion: 2021,
-    locations: true
-  }) as any
-
   let uid = 0
   const deps = new Set<string>()
   const idToImportMap = new Map<string, string>()
@@ -59,124 +53,154 @@ export async function ssrTransform(
     )
   }
 
-  // 1. check all import statements and record id -> importName map
-  for (const node of ast.body as Node[]) {
-    // import foo from 'foo' --> foo -> __import_foo__.default
-    // import { baz } from 'foo' --> baz -> __import_foo__.baz
-    // import * as ok from 'foo' --> ok -> __import_foo__
-    if (node.type === 'ImportDeclaration') {
-      const importId = defineImport(node, node.source.value as string)
-      for (const spec of node.specifiers) {
-        if (spec.type === 'ImportSpecifier') {
-          idToImportMap.set(
-            spec.local.name,
-            `${importId}.${spec.imported.name}`
-          )
-        } else if (spec.type === 'ImportDefaultSpecifier') {
-          idToImportMap.set(spec.local.name, `${importId}.default`)
-        } else {
-          // namespace specifier
-          idToImportMap.set(spec.local.name, importId)
-        }
+  const cjsRE = /\b(?:(module\.)?(exports)(\.\w+)?\b *(=)?|(require)\()/g
+  let match: RegExpExecArray | null
+  let isCommonJS = false
+  while ((match = cjsRE.exec(code))) {
+    isCommonJS = true
+    if (match[1]) {
+      const moduleExportsEnd = match.index + 'module.exports'.length
+      s.overwrite(match.index, moduleExportsEnd, ssrModuleExportsKey)
+      if (!match[3] && match[4]) {
+        s.appendLeft(moduleExportsEnd, '.default')
       }
-      s.remove(node.start, node.end)
+    } else if (match[2]) {
+      s.overwrite(
+        match.index,
+        match.index + 'exports'.length,
+        ssrModuleExportsKey
+      )
+    } else if (match[5]) {
+      s.overwrite(match.index, match.index + 'require'.length, ssrImportKey)
     }
   }
 
-  // 2. check all export statements and define exports
-  for (const node of ast.body as Node[]) {
-    // named exports
-    if (node.type === 'ExportNamedDeclaration') {
-      if (node.declaration) {
-        if (
-          node.declaration.type === 'FunctionDeclaration' ||
-          node.declaration.type === 'ClassDeclaration'
-        ) {
-          // export function foo() {}
-          defineExport(node.declaration.id!.name)
-        } else {
-          // export const foo = 1, bar = 2
-          for (const declaration of node.declaration.declarations) {
-            const names = extractNames(declaration.id as any)
-            for (const name of names) {
-              defineExport(name)
-            }
-          }
-        }
-        s.remove(node.start, (node.declaration as Node).start)
-      } else if (node.source) {
-        // export { foo, bar } from './foo'
+  if (!isCommonJS) {
+    const ast = parser.parse(code, {
+      sourceType: 'module',
+      ecmaVersion: 2021,
+      locations: true
+    }) as any
+
+    // 1. check all import statements and record id -> importName map
+    for (const node of ast.body as Node[]) {
+      // import foo from 'foo' --> foo -> __import_foo__.default
+      // import { baz } from 'foo' --> baz -> __import_foo__.baz
+      // import * as ok from 'foo' --> ok -> __import_foo__
+      if (node.type === 'ImportDeclaration') {
         const importId = defineImport(node, node.source.value as string)
         for (const spec of node.specifiers) {
-          defineExport(spec.exported.name, `${importId}.${spec.local.name}`)
-        }
-        s.remove(node.start, node.end)
-      } else {
-        // export { foo, bar }
-        for (const spec of node.specifiers) {
-          const local = spec.local.name
-          const binding = idToImportMap.get(local)
-          defineExport(spec.exported.name, binding || local)
+          if (spec.type === 'ImportSpecifier') {
+            idToImportMap.set(
+              spec.local.name,
+              `${importId}.${spec.imported.name}`
+            )
+          } else if (spec.type === 'ImportDefaultSpecifier') {
+            idToImportMap.set(spec.local.name, `${importId}.default`)
+          } else {
+            // namespace specifier
+            idToImportMap.set(spec.local.name, importId)
+          }
         }
         s.remove(node.start, node.end)
       }
     }
 
-    // default export
-    if (node.type === 'ExportDefaultDeclaration') {
-      s.overwrite(
-        node.start,
-        node.start + 14,
-        `${ssrModuleExportsKey}.default =`
-      )
-    }
-
-    // export * from './foo'
-    if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node, node.source.value as string)
-      s.remove(node.start, node.end)
-      s.append(`\n${ssrExportAllKey}(${importId})`)
-    }
-  }
-
-  // 3. convert references to import bindings & import.meta references
-  walk(ast, {
-    onIdentifier(id, parent, parentStack) {
-      const binding = idToImportMap.get(id.name)
-      if (!binding) {
-        return
+    // 2. check all export statements and define exports
+    for (const node of ast.body as Node[]) {
+      // named exports
+      if (node.type === 'ExportNamedDeclaration') {
+        if (node.declaration) {
+          if (
+            node.declaration.type === 'FunctionDeclaration' ||
+            node.declaration.type === 'ClassDeclaration'
+          ) {
+            // export function foo() {}
+            defineExport(node.declaration.id!.name)
+          } else {
+            // export const foo = 1, bar = 2
+            for (const declaration of node.declaration.declarations) {
+              const names = extractNames(declaration.id as any)
+              for (const name of names) {
+                defineExport(name)
+              }
+            }
+          }
+          s.remove(node.start, (node.declaration as Node).start)
+        } else if (node.source) {
+          // export { foo, bar } from './foo'
+          const importId = defineImport(node, node.source.value as string)
+          for (const spec of node.specifiers) {
+            defineExport(spec.exported.name, `${importId}.${spec.local.name}`)
+          }
+          s.remove(node.start, node.end)
+        } else {
+          // export { foo, bar }
+          for (const spec of node.specifiers) {
+            const local = spec.local.name
+            const binding = idToImportMap.get(local)
+            defineExport(spec.exported.name, binding || local)
+          }
+          s.remove(node.start, node.end)
+        }
       }
-      if (isStaticProperty(parent) && parent.shorthand) {
-        // let binding used in a property shorthand
-        // { foo } -> { foo: __import_x__.foo }
-        // skip for destructuring patterns
-        if (
-          !(parent as any).inPattern ||
-          isInDestructuringAssignment(parent, parentStack)
+
+      // default export
+      if (node.type === 'ExportDefaultDeclaration') {
+        s.overwrite(
+          node.start,
+          node.start + 14,
+          `${ssrModuleExportsKey}.default =`
+        )
+      }
+
+      // export * from './foo'
+      if (node.type === 'ExportAllDeclaration') {
+        const importId = defineImport(node, node.source.value as string)
+        s.remove(node.start, node.end)
+        s.append(`\n${ssrExportAllKey}(${importId})`)
+      }
+    }
+
+    // 3. convert references to import bindings & import.meta references
+    walk(ast, {
+      onIdentifier(id, parent, parentStack) {
+        const binding = idToImportMap.get(id.name)
+        if (!binding) {
+          return
+        }
+        if (isStaticProperty(parent) && parent.shorthand) {
+          // let binding used in a property shorthand
+          // { foo } -> { foo: __import_x__.foo }
+          // skip for destructuring patterns
+          if (
+            !(parent as any).inPattern ||
+            isInDestructuringAssignment(parent, parentStack)
+          ) {
+            s.appendLeft(id.end, `: ${binding}`)
+          }
+        } else if (
+          parent.type === 'ClassDeclaration' &&
+          id === parent.superClass
         ) {
-          s.appendLeft(id.end, `: ${binding}`)
+          if (!declaredConst.has(id.name)) {
+            declaredConst.add(id.name)
+            // locate the top-most node containing the class declaration
+            const topNode = parentStack[1]
+            s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
+          }
+        } else {
+          s.overwrite(id.start, id.end, binding)
         }
-      } else if (
-        parent.type === 'ClassDeclaration' &&
-        id === parent.superClass
-      ) {
-        if (!declaredConst.has(id.name)) {
-          declaredConst.add(id.name)
-          // locate the top-most node containing the class declaration
-          const topNode = parentStack[1]
-          s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
-        }
-      } else {
-        s.overwrite(id.start, id.end, binding)
+      },
+      onImportMeta(node) {
+        s.overwrite(node.start, node.end, ssrImportMetaKey)
+      },
+      onDynamicImport(node) {
+        s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
       }
-    },
-    onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey)
-    },
-    onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
-    }
-  })
+    })
+  }
 
   let map = s.generateMap({ hires: true })
   if (inMap && inMap.mappings && inMap.sources.length > 0) {
