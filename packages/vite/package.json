@@ -82,7 +82,7 @@
     "acorn": "^8.0.4",
     "acorn-class-fields": "^1.0.0",
     "acorn-numeric-separator": "^0.3.6",
-    "acorn-static-class-features": "^0.2.4",
+    "acorn-static-class-features": "^1.0.0",
     "brotli-size": "^4.0.0",
     "builtin-modules": "^3.2.0",
     "cac": "^6.6.1",
