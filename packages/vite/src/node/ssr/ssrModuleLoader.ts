@@ -125,37 +125,55 @@ async function instantiateModule(
     }
   }
 
+  let script = isProduction
+    ? result.code + `\n//# sourceURL=${mod.url}`
+    : `(function () {\n${result.code}\n})()`
+
   const { map } = result
-  if (map) {
+  if (map?.mappings) {
     if (mod.file) {
-      map.file = mod.file
-      if (map.mappings && !map.sourcesContent) {
-        await injectSourcesContent(map, mod.file, true)
-      }
+      await injectSourcesContent(map, mod.file, moduleGraph)
     }
-    result.code =
-      convertSourceMap.removeMapFileComments(result.code) +
-      '\n' +
-      convertSourceMap.fromObject(map).toComment()
+
+    script += `\n` + convertSourceMap.fromObject(map).toComment()
   }
 
   try {
-    new Function(
-      `global`,
-      ssrModuleExportsKey,
-      ssrImportMetaKey,
-      ssrImportKey,
-      ssrDynamicImportKey,
-      ssrExportAllKey,
-      result.code.slice(2) + `\n//# sourceURL=${mod.url}`
-    )(
-      context.global,
-      ssrModule,
-      ssrImportMeta,
-      ssrImport,
-      ssrDynamicImport,
-      ssrExportAll
-    )
+    // Use the faster `new Function` in production.
+    if (isProduction) {
+      new Function(
+        `global`,
+        ssrModuleExportsKey,
+        ssrImportMetaKey,
+        ssrImportKey,
+        ssrDynamicImportKey,
+        ssrExportAllKey,
+        script
+      )(
+        context.global,
+        ssrModule,
+        ssrImportMeta,
+        ssrImport,
+        ssrDynamicImport,
+        ssrExportAll
+      )
+    }
+    // Use the slower `vm.runInThisContext` for better sourcemap support.
+    else {
+      const sandbox: Record<string, any> = {
+        global: context.global,
+        [ssrModuleExportsKey]: ssrModule,
+        [ssrImportMetaKey]: ssrImportMeta,
+        [ssrImportKey]: ssrImport,
+        [ssrDynamicImportKey]: ssrDynamicImport,
+        [ssrExportAllKey]: ssrExportAll
+      }
+      const vm = require('vm') as typeof import('vm')
+      vm.runInNewContext(script, sandbox, {
+        filename: mod.file || mod.url,
+        columnOffset: 1
+      })
+    }
   } catch (e) {
     e.stack = ssrRewriteStacktrace(e, moduleGraph)
     server.config.logger.error(

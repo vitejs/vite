@@ -1,3 +1,4 @@
+import { removeMapFileComments } from 'convert-source-map'
 import MagicString from 'magic-string'
 import { SourceMap } from 'rollup'
 import { TransformResult } from '../server/transformRequest'
@@ -38,15 +39,17 @@ try {
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
-  url: string
+  url: string,
+  isProduction: boolean
 ): Promise<TransformResult | null> {
-  const s = new MagicString(code)
+  const s = new MagicString(removeMapFileComments(code))
 
   // SSR modules are wrapped with `new Function()` before they're executed,
   // so we need to shift the line mappings. These empty lines are removed
   // before the module is wrapped.
-  if (offset > 0) {
-    s.prependLeft(0, '\n'.repeat(offset))
+  const lineOffset = isProduction ? offset : 0
+  if (lineOffset > 0) {
+    s.prependLeft(0, '\n'.repeat(lineOffset))
   }
 
   const ast = parser.parse(code, {
@@ -210,7 +213,7 @@ export async function ssrTransform(
   }
 
   return {
-    code: s.toString(),
+    code: s.toString().slice(lineOffset),
     map,
     deps: [...deps]
   }
