@@ -175,7 +175,9 @@ async function instantiateModule(
       })
     }
   } catch (e) {
-    e.stack = ssrRewriteStacktrace(e, moduleGraph)
+    try {
+      e.stack = ssrRewriteStacktrace(e, moduleGraph)
+    } catch {}
     server.config.logger.error(
       `Error when evaluating SSR module ${url}:\n\n${e.stack}`,
       {
