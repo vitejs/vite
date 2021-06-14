@@ -5,6 +5,7 @@
     "group:allNonMajor"
   ],
   "pin": false,
+  "rangeStrategy": "bump",
   "ignorePaths": [
     "packages/playground/**",
     "packages/create-app/template-*/**",
