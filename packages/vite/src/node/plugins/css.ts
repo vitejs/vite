@@ -246,7 +246,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const modules = cssModulesCache.get(config)!.get(id)
+      const modules = cssModulesCache.get(config) && cssModulesCache.get(config)!.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
