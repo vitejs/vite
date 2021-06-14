@@ -199,7 +199,7 @@ export interface LibraryOptions {
   entry: string
   name?: string
   formats?: LibraryFormats[]
-  fileName?: string | ((format?: ModuleFormat) => string)
+  fileName?: string | ((format: ModuleFormat) => string)
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
@@ -627,7 +627,7 @@ export function resolveLibFilename(
   format: ModuleFormat | undefined,
   pkgName: string
 ): string {
-  return typeof libOptions.fileName === 'function'
+  return typeof libOptions.fileName === 'function' && format
     ? libOptions.fileName(format)
     : `${libOptions.fileName || pkgName}.${format || `es`}.js`
 }
