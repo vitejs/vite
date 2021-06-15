@@ -24,37 +24,43 @@ export function ssrRewriteStacktrace(
         const mod = moduleGraph.urlToModuleMap.get(url)
         const rawSourceMap = mod?.ssrTransformResult?.map
 
-        if (!rawSourceMap) {
-          return input
-        }
+        if (rawSourceMap) {
+          const consumer = new SourceMapConsumer(
+            rawSourceMap as any as RawSourceMap
+          )
 
-        const consumer = new SourceMapConsumer(
-          rawSourceMap as any as RawSourceMap
-        )
+          const pos = consumer.originalPositionFor({
+            line: Number(line),
+            column: Number(column),
+            bias: SourceMapConsumer.GREATEST_LOWER_BOUND
+          })
 
-        const pos = consumer.originalPositionFor({
-          line: Number(line),
-          column: Number(column),
-          bias: SourceMapConsumer.GREATEST_LOWER_BOUND
-        })
-
-        if (!pos.source) {
-          return input
-        }
-
-        if (i == 0) {
-          code = fs.readFileSync(pos.source, 'utf8')
-          location = {
-            start: { line: pos.line, column: pos.column }
+          if (pos.source) {
+            url = pos.source
+            line = pos.line
+            column = pos.column
           }
         }
 
-        const source = `${pos.source}:${pos.line}:${pos.column}`
-        if (!varName || varName === 'eval') {
-          return `    at ${source}`
-        } else {
-          return `    at ${varName} (${source})`
+        if (i == 0 && fs.existsSync(url)) {
+          code = fs.readFileSync(url, 'utf8')
+          location = {
+            start: {
+              line: Number(line),
+              column: Number(column)
+            }
+          }
         }
+
+        if (rawSourceMap) {
+          const source = `${url}:${line}:${column}`
+          if (!varName || varName === 'eval') {
+            return `    at ${source}`
+          } else {
+            return `    at ${varName} (${source})`
+          }
+        }
+        return input
       })
     })
 
