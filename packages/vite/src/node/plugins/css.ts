@@ -64,7 +64,7 @@ export interface CSSModulesOptions {
     outputFileName: string
   ) => void
   scopeBehaviour?: 'global' | 'local'
-  globalModulePaths?: string[]
+  globalModulePaths?: RegExp[]
   generateScopedName?:
     | string
     | ((name: string, filename: string, css: string) => string)
