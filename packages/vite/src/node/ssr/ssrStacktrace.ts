@@ -18,8 +18,6 @@ export function ssrRewriteStacktrace(
     .map((line, i) => {
       return line.replace(stackFrameRE, (input, varName, url, line, column) => {
         if (!url) return input
-        // Ignore frames for internal "vm" module
-        if (url === 'vm.js') return ''
 
         const mod = moduleGraph.urlToModuleMap.get(url)
         const rawSourceMap = mod?.ssrTransformResult?.map
@@ -71,5 +69,5 @@ export function ssrRewriteStacktrace(
       })
     : error.message
 
-  return message + '\n\n' + stackFrames.filter(Boolean).join('\n')
+  return message + '\n\n' + stackFrames.join('\n')
 }
