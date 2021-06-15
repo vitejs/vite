@@ -705,6 +705,10 @@ function createServerCloseFn(server: http.Server | null) {
     })
 }
 
+function resolvedAllowDir(root: string, dir: string): string {
+  return ensureLeadingSlash(normalizePath(path.resolve(root, dir)))
+}
+
 export function resolveServerOptions(
   root: string,
   raw?: ServerOptions
@@ -715,11 +719,13 @@ export function resolveServerOptions(
   if (!allowDirs) {
     allowDirs = [server.fsServe?.root || searchForWorkspaceRoot(root)]
   }
-  allowDirs.push(CLIENT_DIR)
+  allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
 
-  allowDirs = allowDirs.map((i) =>
-    ensureLeadingSlash(normalizePath(path.resolve(root, i)))
-  )
+  // only push client dir when vite itself is outside-of-root
+  const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
+  if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
+    allowDirs.push(resolvedClientDir)
+  }
 
   server.fsServe = {
     // TODO: make strict by default
