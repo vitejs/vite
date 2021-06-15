@@ -97,7 +97,6 @@
     "debug": "^4.3.2",
     "dotenv": "^8.6.0",
     "dotenv-expand": "^5.1.0",
-    "enquirer": "^2.3.6",
     "es-module-lexer": "^0.4.1",
     "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
