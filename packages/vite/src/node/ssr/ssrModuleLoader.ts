@@ -127,7 +127,7 @@ async function instantiateModule(
 
   let script = isProduction
     ? result.code + `\n//# sourceURL=${mod.url}`
-    : `(function () {\n${result.code}\n})()`
+    : result.code
 
   const { map } = result
   if (map?.mappings) {
@@ -170,8 +170,7 @@ async function instantiateModule(
       }
       const vm = require('vm') as typeof import('vm')
       vm.runInNewContext(script, sandbox, {
-        filename: mod.file || mod.url,
-        columnOffset: 1
+        filename: mod.file || mod.url
       })
     }
   } catch (e) {
