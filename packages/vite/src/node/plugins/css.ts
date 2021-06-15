@@ -1188,7 +1188,6 @@ const styl: StylePreprocessor = async (source, root, options) => {
 
     const result = ref.render()
 
-    // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
     // Concat imports deps with computed deps
     const deps = [...ref.deps(), ...importsDeps]
 
