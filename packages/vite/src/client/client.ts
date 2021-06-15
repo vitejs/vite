@@ -300,7 +300,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
           /* @vite-ignore */
           base +
             path.slice(1) +
-            `?import=&t=${timestamp}${query ? `&${query}` : ''}`
+            `?import&t=${timestamp}${query ? `&${query}` : ''}`
         )
         moduleMap.set(dep, newMod)
       } catch (e) {
