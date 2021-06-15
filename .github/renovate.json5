@@ -12,6 +12,7 @@
   "pin": false,
   "rangeStrategy": "bump",
   "node": false,
+  "stabilityDays": 7,
   "ignoreDeps": [
     // manually bumping
     "esbuild",
