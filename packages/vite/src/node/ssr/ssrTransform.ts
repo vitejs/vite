@@ -47,7 +47,7 @@ export async function ssrTransform(
   // SSR modules are wrapped with `new Function()` before they're executed,
   // so we need to shift the line mappings. These empty lines are removed
   // before the module is wrapped.
-  const lineOffset = isProduction ? offset : 0
+  const lineOffset = isProduction ? offset : 1
   if (lineOffset > 0) {
     s.prependLeft(0, '\n'.repeat(lineOffset))
   }
