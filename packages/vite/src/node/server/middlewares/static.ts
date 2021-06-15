@@ -111,36 +111,38 @@ export function isFileServingAllowed(
   url: string,
   server: ViteDevServer
 ): boolean {
-  if (!server.config.server.fsServe.strict) return true
+  // explicitly disabled
+  if (server.config.server.fsServe.strict === false) return true
 
   const file = ensureLeadingSlash(normalizePath(cleanUrl(url)))
 
-  if (server.moduleGraph.safeModulesPath.has(file)) {
+  if (server.moduleGraph.safeModulesPath.has(file)) return true
+
+  if (server.config.server.fsServe.dirs.some((i) => file.startsWith(i + '/')))
+    return true
+
+  if (!server.config.server.fsServe.strict) {
+    server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
+    server.config.logger.warnOnce(
+      `For security concerns, accessing files outside of workspace root will ` +
+        `be restricted by default in the future version of Vite. ` +
+        `Refer to [] for more`
+    )
     return true
   }
 
-  return server.config.server.fsServe.dirs.some((i) => file.startsWith(i + '/'))
+  return false
 }
 
 export function ensureServingAccess(url: string, server: ViteDevServer): void {
-  if (isFileServingAllowed(url, server)) return
-
-  const { strict, root } = server.config.server.fsServe
-
-  if (strict) {
+  if (!isFileServingAllowed(url, server)) {
+    const root = server.config.server.fsServe.root
     throw new AccessRestrictedError(
       `The request url "${url}" is outside of vite dev server root "${root}". 
       For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
       Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
       url,
       root
-    )
-  } else {
-    server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
-    server.config.logger.warnOnce(
-      `For security concerns, accessing files outside of workspace root will ` +
-        `be restricted by default in the future version of Vite. ` +
-        `Refer to [] for more`
     )
   }
 }

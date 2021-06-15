@@ -137,11 +137,13 @@ export interface FileSystemServeOptions {
   /**
    * Strictly restrict file accessing outside of allowing paths.
    *
+   * Set to `false` to disable the warning
    * Default to false at this moment, will enabled by default in the future versions.
+   *
    * @expiremental
-   * @default false
+   * @default undefined
    */
-  strict?: boolean
+  strict?: boolean | undefined
 
   /**
    * Restrict accessing files outside this directory will result in a 403.
@@ -715,11 +717,10 @@ export function resolveServerOptions(
 
   fsServeDirs = fsServeDirs.map(ensureLeadingSlash)
 
-  // TODO: make strict by default
-  const fsServeStrict = server.fsServe?.strict ?? false
   server.fsServe = {
     root: fsServeRoot,
-    strict: fsServeStrict,
+    // TODO: make strict by default
+    strict: server.fsServe?.strict,
     dirs: fsServeDirs
   }
   return server as ResolvedServerOptions
