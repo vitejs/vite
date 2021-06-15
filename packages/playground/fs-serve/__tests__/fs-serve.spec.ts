@@ -14,10 +14,12 @@ if (!isBuild) {
 
   test('safe fetch', async () => {
     expect(await page.textContent('.safe-fetch')).toBe(stringified)
+    expect(await page.textContent('.safe-fetch-status')).toBe('200')
   })
 
   test('unsafe fetch', async () => {
     expect(await page.textContent('.unsafe-fetch')).toBe('')
+    expect(await page.textContent('.unsafe-fetch-status')).toBe('403')
   })
 
   test('nested entry', async () => {
