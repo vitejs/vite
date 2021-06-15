@@ -17,8 +17,13 @@
     "esbuild",
     "rollup",
     "@vue/compiler-sfc",
+    "node",
 
-    // breaks since "3.0.1", need futher investigate
+    // breaking changes
+    "source-map",
+    "react-refresh",
+
+    // breaks since "3.0.1", needs futher investigate
     "postcss-load-config"
   ]
 }
