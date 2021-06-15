@@ -64,7 +64,7 @@ export interface CSSModulesOptions {
     outputFileName: string
   ) => void
   scopeBehaviour?: 'global' | 'local'
-  globalModulePaths?: string[]
+  globalModulePaths?: RegExp[]
   generateScopedName?:
     | string
     | ((name: string, filename: string, css: string) => string)
@@ -1188,7 +1188,6 @@ const styl: StylePreprocessor = async (source, root, options) => {
 
     const result = ref.render()
 
-    // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
     // Concat imports deps with computed deps
     const deps = [...ref.deps(), ...importsDeps]
 

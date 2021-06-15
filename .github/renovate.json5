@@ -1,0 +1,24 @@
+{
+  "extends": [
+    "config:base",
+    "schedule:weekly",
+    "group:allNonMajor"
+  ],
+  "ignorePaths": [
+    "packages/playground/**",
+    "packages/create-app/template-*/**",
+    "**/__tests__/**"
+  ],
+  "pin": false,
+  "rangeStrategy": "bump",
+  "node": false,
+  "ignoreDeps": [
+    // manually bumping
+    "esbuild",
+    "rollup",
+    "@vue/compiler-sfc",
+
+    // breaks since "3.0.1", need futher investigate
+    "postcss-load-config"
+  ]
+}
