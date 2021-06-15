@@ -125,9 +125,19 @@ async function instantiateModule(
     }
   }
 
-  let script = isProduction
+  const ssrImportMeta = { url }
+  const ssrArguments: Record<string, any> = {
+    global: context.global,
+    [ssrModuleExportsKey]: ssrModule,
+    [ssrImportMetaKey]: ssrImportMeta,
+    [ssrImportKey]: ssrImport,
+    [ssrDynamicImportKey]: ssrDynamicImport,
+    [ssrExportAllKey]: ssrExportAll
+  }
+
+  let ssrModuleImpl = isProduction
     ? result.code + `\n//# sourceURL=${mod.url}`
-    : result.code
+    : `(0,function(${Object.keys(ssrArguments)}){\n${result.code}\n})`
 
   const { map } = result
   if (map?.mappings) {
@@ -135,45 +145,24 @@ async function instantiateModule(
       await injectSourcesContent(map, mod.file, moduleGraph)
     }
 
-    script += `\n` + convertSourceMap.fromObject(map).toComment()
+    ssrModuleImpl += `\n` + convertSourceMap.fromObject(map).toComment()
   }
 
   try {
-    // Use the faster `new Function` in production.
+    let ssrModuleInit: Function
     if (isProduction) {
-      new Function(
-        `global`,
-        ssrModuleExportsKey,
-        ssrImportMetaKey,
-        ssrImportKey,
-        ssrDynamicImportKey,
-        ssrExportAllKey,
-        script
-      )(
-        context.global,
-        ssrModule,
-        ssrImportMeta,
-        ssrImport,
-        ssrDynamicImport,
-        ssrExportAll
-      )
-    }
-    // Use the slower `vm.runInThisContext` for better sourcemap support.
-    else {
-      const sandbox: Record<string, any> = {
-        global: context.global,
-        [ssrModuleExportsKey]: ssrModule,
-        [ssrImportMetaKey]: ssrImportMeta,
-        [ssrImportKey]: ssrImport,
-        [ssrDynamicImportKey]: ssrDynamicImport,
-        [ssrExportAllKey]: ssrExportAll
-      }
+      // Use the faster `new Function` in production.
+      ssrModuleInit = new Function(...Object.keys(ssrArguments), ssrModuleImpl)
+    } else {
+      // Use the slower `vm.runInThisContext` for better sourcemap support.
       const vm = require('vm') as typeof import('vm')
-      vm.runInNewContext(script, sandbox, {
+      ssrModuleInit = vm.runInThisContext(ssrModuleImpl, {
         filename: mod.file || mod.url,
+        columnOffset: 1,
         displayErrors: false
       })
     }
+    ssrModuleInit(...Object.values(ssrArguments))
   } catch (e) {
     try {
       e.stack = ssrRewriteStacktrace(e, moduleGraph)
