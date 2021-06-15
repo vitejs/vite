@@ -170,7 +170,8 @@ async function instantiateModule(
       }
       const vm = require('vm') as typeof import('vm')
       vm.runInNewContext(script, sandbox, {
-        filename: mod.file || mod.url
+        filename: mod.file || mod.url,
+        displayErrors: false
       })
     }
   } catch (e) {
