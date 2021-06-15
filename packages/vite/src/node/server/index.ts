@@ -130,7 +130,7 @@ export interface ServerOptions {
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
-  fsServe: Required<FileSystemServeOptions>
+  fsServe: Required<Omit<FileSystemServeOptions, 'root'>>
 }
 
 export interface FileSystemServeOptions {
@@ -146,16 +146,21 @@ export interface FileSystemServeOptions {
   strict?: boolean | undefined
 
   /**
-   * Restrict accessing files outside this directory will result in a 403.
+   *
+   * @expiremental
+   * @deprecated use `fsServe.allow` instead
+   */
+  root?: string
+
+  /**
+   * Restrict accessing files outside the allowed directories.
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
    *
    * @expiremental
    */
-  root?: string
-
-  dirs?: string[]
+  allow?: string[]
 }
 
 /**
@@ -705,23 +710,21 @@ export function resolveServerOptions(
   raw?: ServerOptions
 ): ResolvedServerOptions {
   const server = raw || {}
-  const fsServeRoot = normalizePath(
-    path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
-  )
-  let fsServeDirs = (server.fsServe?.dirs || []).map((i) =>
-    normalizePath(path.resolve(root, i))
-  )
+  let allowDirs = server.fsServe?.allow
 
-  fsServeDirs.push(normalizePath(CLIENT_DIR))
-  fsServeDirs.push(fsServeRoot)
+  if (!allowDirs) {
+    allowDirs = [server.fsServe?.root || searchForWorkspaceRoot(root)]
+  }
+  allowDirs.push(CLIENT_DIR)
 
-  fsServeDirs = fsServeDirs.map(ensureLeadingSlash)
+  allowDirs = allowDirs.map((i) =>
+    ensureLeadingSlash(normalizePath(path.resolve(root, i)))
+  )
 
   server.fsServe = {
-    root: fsServeRoot,
     // TODO: make strict by default
     strict: server.fsServe?.strict,
-    dirs: fsServeDirs
+    allow: allowDirs
   }
   return server as ResolvedServerOptions
 }
