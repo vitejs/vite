@@ -1,3 +1,13 @@
+## [2.4.3](https://github.com/vitejs/vite/compare/create-app@2.4.2...create-app@2.4.3) (2021-06-16)
+
+
+### Bug Fixes
+
+* **create-app:** improve prompt message ([#3769](https://github.com/vitejs/vite/issues/3769)) ([9703bcd](https://github.com/vitejs/vite/commit/9703bcd7e594769792779306f8f978dcc010d92f))
+* **create-app:** update svelte templates to use named export of vite-… ([#3760](https://github.com/vitejs/vite/issues/3760)) ([c69f836](https://github.com/vitejs/vite/commit/c69f83615292953d40f07b1178d1ed1d72abe695))
+
+
+
 ## [2.4.2](https://github.com/vitejs/vite/compare/create-app@2.4.1...create-app@2.4.2) (2021-06-08)
 
 
