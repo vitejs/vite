@@ -74,6 +74,6 @@
   import { hello } from 'dep-esbuild-plugin-transform'
   document.querySelector('.esbuild-plugin').textContent = hello()
 
-  import { greeting } from '.hidden-dir/foo.js'
+  import { greeting } from './.hidden-dir/foo.js'
   document.querySelector('.hidden-dir').textContent = greeting
 </script>
