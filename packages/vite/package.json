@@ -87,7 +87,7 @@
     "builtin-modules": "^3.2.0",
     "cac": "^6.7.3",
     "chalk": "^4.1.1",
-    "chokidar": "^3.5.1",
+    "chokidar": "^3.5.2",
     "clean-css": "^4.2.3",
     "compression": "^1.7.4",
     "connect": "^3.7.0",
@@ -97,7 +97,7 @@
     "debug": "^4.3.2",
     "dotenv": "^8.6.0",
     "dotenv-expand": "^5.1.0",
-    "es-module-lexer": "^0.4.1",
+    "es-module-lexer": "^0.6.0",
     "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
     "execa": "^5.1.1",
@@ -124,6 +124,6 @@
     "terser": "^5.7.0",
     "tslib": "^2.3.0",
     "types": "link:./types",
-    "ws": "^7.4.6"
+    "ws": "^7.5.0"
   }
 }
