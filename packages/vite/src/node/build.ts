@@ -407,7 +407,7 @@ async function doBuild(
   try {
     const pkgName = libOptions && getPkgName(config.root)
 
-    const buildOuputOptions = (output: OutputOptions = {}): OutputOptions => {
+    const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
@@ -454,10 +454,10 @@ async function doBuild(
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
         for (const resolvedOutput of outputs) {
-          output.push(buildOuputOptions(resolvedOutput))
+          output.push(buildOutputOptions(resolvedOutput))
         }
       } else {
-        output.push(buildOuputOptions(outputs))
+        output.push(buildOutputOptions(outputs))
       }
 
       const watcherOptions = config.build.watch
@@ -505,7 +505,7 @@ async function doBuild(
 
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate'](
-        buildOuputOptions(output)
+        buildOutputOptions(output)
       )
     }
 
