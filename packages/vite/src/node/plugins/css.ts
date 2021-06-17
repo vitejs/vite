@@ -929,7 +929,6 @@ export interface StylePreprocessorResults {
 
 const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
 
-function loadPreprocessor(lang: PreprocessLang.scss, root: string): typeof Sass
 function loadPreprocessor(lang: PreprocessLang.sass, root: string): typeof Sass
 function loadPreprocessor(lang: PreprocessLang.less, root: string): typeof Less
 function loadPreprocessor(
