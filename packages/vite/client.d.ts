@@ -29,10 +29,10 @@ interface ImportMeta {
     invalidate(): void
 
     on: {
-      (event: 'vite:update', cb: (payload: UpdatePayload) => void): void
-      (event: 'vite:prune', cb: (payload: PrunePayload) => void): void
+      (event: 'vite:beforeUpdate', cb: (payload: UpdatePayload) => void): void
+      (event: 'vite:beforePrune', cb: (payload: PrunePayload) => void): void
       (
-        event: 'vite:full-reload',
+        event: 'vite:beforeFullReload',
         cb: (payload: FullReloadPayload) => void
       ): void
       (event: 'vite:error', cb: (payload: ErrorPayload) => void): void

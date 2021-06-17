@@ -33,8 +33,8 @@ if (import.meta.hot) {
     console.log(`foo was:`, foo)
   })
 
-  import.meta.hot.on('vite:update', (event) => {
-    console.log(`>>> vite:update -- ${event.type}`)
+  import.meta.hot.on('vite:beforeUpdate', (event) => {
+    console.log(`>>> vite:beforeUpdate -- ${event.type}`)
   })
 
   import.meta.hot.on('vite:error', (event) => {

@@ -55,7 +55,7 @@ async function handleMessage(payload: HMRPayload) {
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
     case 'update':
-      notifyListeners('vite:update', payload)
+      notifyListeners('vite:beforeUpdate', payload)
       // if this is the first update and there's already an error overlay, it
       // means the page opened with existing server compile error and the whole
       // module script failed to load (since one of the nested imports is 500).
@@ -98,7 +98,7 @@ async function handleMessage(payload: HMRPayload) {
       break
     }
     case 'full-reload':
-      notifyListeners('vite:full-reload', payload)
+      notifyListeners('vite:beforeFullReload', payload)
       if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
@@ -116,7 +116,7 @@ async function handleMessage(payload: HMRPayload) {
       }
       break
     case 'prune':
-      notifyListeners('vite:prune', payload)
+      notifyListeners('vite:beforePrune', payload)
       // After an HMR update, some modules are no longer imported on the page
       // but they may have left behind side effects that need to be cleaned up
       // (.e.g style injections)
@@ -145,10 +145,13 @@ async function handleMessage(payload: HMRPayload) {
   }
 }
 
-function notifyListeners(event: 'vite:update', payload: UpdatePayload): void
-function notifyListeners(event: 'vite:prune', payload: PrunePayload): void
 function notifyListeners(
-  event: 'vite:full-reload',
+  event: 'vite:beforeUpdate',
+  payload: UpdatePayload
+): void
+function notifyListeners(event: 'vite:beforePrune', payload: PrunePayload): void
+function notifyListeners(
+  event: 'vite:beforeFullReload',
   payload: FullReloadPayload
 ): void
 function notifyListeners(event: 'vite:error', payload: ErrorPayload): void
