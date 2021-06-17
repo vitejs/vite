@@ -83,14 +83,14 @@ describe('css url() references', () => {
   })
 
   test('image-set relative', async () => {
-    let imageSet = await getBg('.css-image-set-relative')
+    const imageSet = await getBg('.css-image-set-relative')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(assetMatch)
     })
   })
 
   test('image-set without the url() call', async () => {
-    let imageSet = await getBg('.css-image-set-without-url-call')
+    const imageSet = await getBg('.css-image-set-without-url-call')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(assetMatch)
     })
