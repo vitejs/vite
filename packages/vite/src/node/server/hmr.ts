@@ -10,6 +10,7 @@ import { RollupError } from 'rollup'
 import { prepareError } from './middlewares/error'
 import match from 'minimatch'
 import { Server } from 'http'
+import { isCSSRequest } from '../plugins/css'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -222,6 +223,20 @@ function propagateUpdate(
       boundary: node,
       acceptedVia: node
     })
+
+    // additionally check for CSS importers, since a PostCSS plugin like
+    // Tailwind JIT may register any file as a dependency to a CSS file.
+    for (const importer of node.importers) {
+      if (isCSSRequest(importer.url)) {
+        propagateUpdate(
+          importer,
+          timestamp,
+          boundaries,
+          currentChain.concat(importer)
+        )
+      }
+    }
+
     return false
   }
 
