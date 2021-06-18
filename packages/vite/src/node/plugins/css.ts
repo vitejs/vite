@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import glob from 'fast-glob'
 import {
   // createDebugger,
   isExternalUrl,
@@ -63,7 +64,7 @@ export interface CSSModulesOptions {
     outputFileName: string
   ) => void
   scopeBehaviour?: 'global' | 'local'
-  globalModulePaths?: string[]
+  globalModulePaths?: RegExp[]
   generateScopedName?:
     | string
     | ((name: string, filename: string, css: string) => string)
@@ -156,26 +157,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         return url
       }
 
-      // const urlReplacer: CssUrlReplacer = server
-      //   ? (url, importer) => {
-      //       if (url.startsWith('/')) {
-      //         return config.base + url.slice(1)
-      //       } else {
-      //         const filePath = normalizePath(
-      //           path.resolve(path.dirname(importer || id), url)
-      //         )
-      //         return fileToDevUrl(filePath, config)
-      //       }
-      //     }
-      //   : (url, importer) => {
-      //       return urlToBuiltUrl(url, importer || id, config, this)
-      //     }
-
       const {
         code: css,
         modules,
         deps
-      } = await compileCSS(id, raw, config, urlReplacer, atImportResolvers)
+      } = await compileCSS(
+        id,
+        raw,
+        config,
+        urlReplacer,
+        atImportResolvers,
+        server
+      )
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -527,7 +520,8 @@ async function compileCSS(
   code: string,
   config: ResolvedConfig,
   urlReplacer: CssUrlReplacer,
-  atImportResolvers: CSSAtImportResolvers
+  atImportResolvers: CSSAtImportResolvers,
+  server?: ViteDevServer
 ): Promise<{
   code: string
   map?: SourceMap
@@ -676,6 +670,30 @@ async function compileCSS(
   for (const message of postcssResult.messages) {
     if (message.type === 'dependency') {
       deps.add(message.file as string)
+    } else if (message.type === 'dir-dependency') {
+      // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
+      const { dir, glob: globPattern = '**' } = message
+      const pattern =
+        normalizePath(path.resolve(path.dirname(id), dir)) + `/` + globPattern
+      const files = glob.sync(pattern, {
+        ignore: ['**/node_modules/**']
+      })
+      for (let i = 0; i < files.length; i++) {
+        deps.add(files[i])
+      }
+      if (server) {
+        // register glob importers so we can trigger updates on file add/remove
+        if (!(id in server._globImporters)) {
+          server._globImporters[id] = {
+            module: server.moduleGraph.getModuleById(id)!,
+            importGlobs: []
+          }
+        }
+        server._globImporters[id].importGlobs.push({
+          base: config.root,
+          pattern
+        })
+      }
     } else if (message.type === 'warning') {
       let msg = `[vite:css] ${message.text}`
       if (message.line && message.column) {
@@ -739,7 +757,9 @@ type CssUrlReplacer = (
   url: string,
   importer?: string
 ) => string | Promise<string>
-const cssUrlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+// https://drafts.csswg.org/css-syntax-3/#identifier-code-point
+export const cssUrlRE =
+  /(?:^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
@@ -1100,13 +1120,13 @@ function createViteLessPlugin(
         this.resolvers = resolvers
         this.alias = alias
       }
-      supports() {
+      override supports() {
         return true
       }
-      supportsSync() {
+      override supportsSync() {
         return false
       }
-      async loadFile(
+      override async loadFile(
         filename: string,
         dir: string,
         opts: any,
@@ -1168,7 +1188,6 @@ const styl: StylePreprocessor = async (source, root, options) => {
 
     const result = ref.render()
 
-    // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
     // Concat imports deps with computed deps
     const deps = [...ref.deps(), ...importsDeps]
 
