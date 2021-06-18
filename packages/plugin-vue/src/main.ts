@@ -8,6 +8,7 @@ import {
   setDescriptor
 } from './utils/descriptorCache'
 import { PluginContext, TransformPluginContext } from 'rollup'
+import { normalizePath } from '@rollup/pluginutils'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
@@ -143,7 +144,9 @@ export async function transformMain(
 
   // SSR module registration by wrapping user setup
   if (ssr) {
-    const normalizedFilename = path.relative(options.root, filename)
+    const normalizedFilename = normalizePath(
+      path.relative(options.root, filename)
+    )
     output.push(
       `import { useSSRContext as __vite_useSSRContext } from 'vue'`,
       `const _sfc_setup = _sfc_main.setup`,

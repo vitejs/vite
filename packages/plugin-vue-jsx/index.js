@@ -2,7 +2,7 @@
 const babel = require('@babel/core')
 const jsx = require('@vue/babel-plugin-jsx')
 const importMeta = require('@babel/plugin-syntax-import-meta')
-const { createFilter } = require('@rollup/pluginutils')
+const { createFilter, normalizePath } = require('@rollup/pluginutils')
 const hash = require('hash-sum')
 const path = require('path')
 
@@ -220,7 +220,7 @@ function vueJsxPlugin(options = {}) {
           }
 
           if (ssr) {
-            const normalizedId = path.relative(root, id)
+            const normalizedId = normalizePath(path.relative(root, id))
             let ssrInjectCode =
               `\nimport { ssrRegisterHelper } from "${ssrRegisterHelperId}"` +
               `\nconst __moduleId = ${JSON.stringify(normalizedId)}`
