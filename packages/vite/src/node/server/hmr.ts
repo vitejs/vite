@@ -227,7 +227,7 @@ function propagateUpdate(
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
     for (const importer of node.importers) {
-      if (isCSSRequest(importer.url)) {
+      if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
         propagateUpdate(
           importer,
           timestamp,
