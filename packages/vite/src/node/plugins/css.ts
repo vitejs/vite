@@ -593,7 +593,7 @@ async function compileCSS(
     if (preprocessResult.deps) {
       preprocessResult.deps.forEach((dep) => {
         // sometimes sass registers the file itself as a dep
-        if (dep !== opts.filename) {
+        if (normalizePath(dep) !== normalizePath(opts.filename)) {
           deps.add(dep)
         }
       })
