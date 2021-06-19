@@ -169,14 +169,14 @@ export class ModuleGraph {
       this.fileToModulesMap.set(file, fileMappedModules)
     }
 
+    const url = `${FS_PREFIX}${file}`
     for (const m of fileMappedModules) {
-      if (m.id === file) {
+      if (m.url === url || m.id === file) {
         return m
       }
     }
 
-    const mod = new ModuleNode(`${FS_PREFIX}${file}`)
-    mod.id = file
+    const mod = new ModuleNode(url)
     mod.file = file
     fileMappedModules.add(mod)
     return mod
