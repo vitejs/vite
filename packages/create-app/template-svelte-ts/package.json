@@ -1,6 +1,7 @@
 {
   "name": "vite-svelte-ts-starter",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -16,6 +17,5 @@
     "tslib": "^2.2.0",
     "typescript": "^4.3.2",
     "vite": "^2.3.7"
-  },
-  "type": "module"
+  }
 }
