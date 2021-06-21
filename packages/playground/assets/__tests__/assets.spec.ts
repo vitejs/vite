@@ -6,7 +6,9 @@ import {
   isBuild,
   listAssets,
   readManifest,
-  readFile
+  readFile,
+  editFile,
+  notifyRebuildComplete
 } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -195,3 +197,15 @@ if (isBuild) {
     }
   })
 }
+describe('css and assets in css in build watch', () => {
+  if (isBuild) {
+    test('css will not be lost and css does not contain undefined', async () => {
+      editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
+      await notifyRebuildComplete(watcher)
+      const cssFile = findAssetFile(/index\.\w+\.css$/, 'foo')
+      expect(cssFile).not.toBe('')
+      expect(cssFile).not.toMatch(/undefined/)
+      watcher?.close()
+    })
+  }
+})
