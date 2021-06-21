@@ -192,7 +192,7 @@ function esbuildScanPlugin(
         async ({ path }) => {
           let raw = fs.readFileSync(path, 'utf-8')
           // Avoid matching the content of the comment
-          raw = raw.replace(commentRE, '')
+          raw = raw.replace(commentRE, '<!---->')
           const isHtml = path.endsWith('.html')
           const regex = isHtml ? scriptModuleRE : scriptRE
           regex.lastIndex = 0
