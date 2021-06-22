@@ -1,3 +1,13 @@
+## [2.4.4](https://github.com/vitejs/vite/compare/create-app@2.4.3...create-app@2.4.4) (2021-06-22)
+
+
+### Bug Fixes
+
+* **create-app:** svelte templates use type module (fixes [#3834](https://github.com/vitejs/vite/issues/3834)) ([#3835](https://github.com/vitejs/vite/issues/3835)) ([ddefe84](https://github.com/vitejs/vite/commit/ddefe8410efdb2104763b9d03fec0e42b9f7bf17))
+* **deps:** update all non-major dependencies ([#3791](https://github.com/vitejs/vite/issues/3791)) ([74d409e](https://github.com/vitejs/vite/commit/74d409eafca8d74ec4a6ece621ea2895bc1f2a32))
+
+
+
 ## [2.4.3](https://github.com/vitejs/vite/compare/create-app@2.4.2...create-app@2.4.3) (2021-06-16)
 
 
