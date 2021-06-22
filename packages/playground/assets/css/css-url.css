@@ -56,6 +56,11 @@
   background-size: 10px;
 }
 
+.css-url-tilde-aliased {
+  background: url('~@/asset.png');
+  background-size: 10px;
+}
+
 /*
 urls inside comments should be ignored
 

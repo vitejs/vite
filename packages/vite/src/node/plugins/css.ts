@@ -827,10 +827,15 @@ async function doUrlReplace(
   replacer: CssUrlReplacer
 ) {
   let wrap = ''
-  const first = rawUrl[0]
+  let first = rawUrl[0]
   if (first === `"` || first === `'`) {
     wrap = first
     rawUrl = rawUrl.slice(1, -1)
+  }
+  first = rawUrl[0]
+  if (first === '~') {
+    const secondChar = rawUrl[1]
+    rawUrl = rawUrl.slice(secondChar === '/' ? 2 : 1)
   }
   if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
     return matched
