@@ -124,7 +124,9 @@ async function handleMessage(payload: HMRPayload) {
       if (enableOverlay) {
         createErrorOverlay(err)
       } else {
-        console.error(`[vite] Internal Server Error\n${err.stack}`)
+        console.error(
+          `[vite] Internal Server Error\n${err.message}\n${err.stack}`
+        )
       }
       break
     }

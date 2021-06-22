@@ -163,17 +163,19 @@ export class ModuleGraph {
   // hmr in the importing css file.
   createFileOnlyEntry(file: string): ModuleNode {
     file = normalizePath(file)
-    const url = `${FS_PREFIX}${file}`
     let fileMappedModules = this.fileToModulesMap.get(file)
     if (!fileMappedModules) {
       fileMappedModules = new Set()
       this.fileToModulesMap.set(file, fileMappedModules)
     }
+
+    const url = `${FS_PREFIX}${file}`
     for (const m of fileMappedModules) {
-      if (m.url === url) {
+      if (m.url === url || m.id === file) {
         return m
       }
     }
+
     const mod = new ModuleNode(url)
     mod.file = file
     fileMappedModules.add(mod)

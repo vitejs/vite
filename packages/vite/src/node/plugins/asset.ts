@@ -27,17 +27,21 @@ const assetHashToFilenameMap = new WeakMap<
   ResolvedConfig,
   Map<string, string>
 >()
+// save hashes of the files that has been emitted in build watch
+const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
 export function assetPlugin(config: ResolvedConfig): Plugin {
+  // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
+  assetHashToFilenameMap.set(config, new Map())
   return {
     name: 'vite:asset',
 
     buildStart() {
       assetCache.set(config, new Map())
-      assetHashToFilenameMap.set(config, new Map())
+      emittedHashMap.set(config, new Set())
     },
 
     resolveId(id) {
@@ -202,8 +206,6 @@ async function fileToBuiltUrl(
   }
 
   const file = cleanUrl(id)
-  const { search, hash } = parseUrl(id)
-  const postfix = (search || '') + (hash || '')
   const content = await fsp.readFile(file)
 
   let url
@@ -223,21 +225,26 @@ async function fileToBuiltUrl(
     // https://bundlers.tooling.report/hashing/asset-cascade/
     // https://github.com/rollup/rollup/issues/3415
     const map = assetHashToFilenameMap.get(config)!
-
     const contentHash = getAssetHash(content)
+    const { search, hash } = parseUrl(id)
+    const postfix = (search || '') + (hash || '')
+    const basename = path.basename(file)
+    const ext = path.extname(basename)
+    const fileName = path.posix.join(
+      config.build.assetsDir,
+      `${basename.slice(0, -ext.length)}.${contentHash}${ext}`
+    )
     if (!map.has(contentHash)) {
-      const basename = path.basename(file)
-      const ext = path.extname(basename)
-      const fileName = path.posix.join(
-        config.build.assetsDir,
-        `${basename.slice(0, -ext.length)}.${contentHash}${ext}`
-      )
       map.set(contentHash, fileName)
+    }
+    const emittedSet = emittedHashMap.get(config)!
+    if (!emittedSet.has(contentHash)) {
       pluginContext.emitFile({
         fileName,
         type: 'asset',
         source: content
       })
+      emittedSet.add(contentHash)
     }
 
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`

@@ -127,7 +127,7 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
 
 const scriptModuleRE =
   /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
-export const scriptRE = /(<script\b(\s[^>]*>|>))(.*?)<\/script>/gims
+export const scriptRE = /(<script\b(?:\s[^>]*>|>))(.*?)<\/script>/gims
 export const commentRE = /<!--(.|[\r\n])*?-->/
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
@@ -192,7 +192,7 @@ function esbuildScanPlugin(
         async ({ path }) => {
           let raw = fs.readFileSync(path, 'utf-8')
           // Avoid matching the content of the comment
-          raw = raw.replace(commentRE, '')
+          raw = raw.replace(commentRE, '<!---->')
           const isHtml = path.endsWith('.html')
           const regex = isHtml ? scriptModuleRE : scriptRE
           regex.lastIndex = 0
@@ -200,8 +200,7 @@ function esbuildScanPlugin(
           let loader: Loader = 'js'
           let match
           while ((match = regex.exec(raw))) {
-            const [, openTag, htmlContent, scriptContent] = match
-            const content = isHtml ? htmlContent : scriptContent
+            const [, openTag, content] = match
             const srcMatch = openTag.match(srcRE)
             const langMatch = openTag.match(langRE)
             const lang =

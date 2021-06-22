@@ -76,7 +76,7 @@ export function createDebugger(
   }
 }
 
-const isWindows = os.platform() === 'win32'
+export const isWindows = os.platform() === 'win32'
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
@@ -118,7 +118,7 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
-const importQueryRE = /(\?|&)import(?:&|$)/
+const importQueryRE = /(\?|&)import=?(?:&|$)/
 const trailingSeparatorRE = /[\?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 

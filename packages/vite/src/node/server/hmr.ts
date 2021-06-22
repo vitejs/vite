@@ -10,6 +10,7 @@ import { RollupError } from 'rollup'
 import { prepareError } from './middlewares/error'
 import match from 'minimatch'
 import { Server } from 'http'
+import { isCSSRequest } from '../plugins/css'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -126,23 +127,22 @@ function updateModules(
 ) {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
+  let needFullReload = false
 
   for (const mod of modules) {
+    invalidate(mod, timestamp, invalidatedModules)
+    if (needFullReload) {
+      continue
+    }
+
     const boundaries = new Set<{
       boundary: ModuleNode
       acceptedVia: ModuleNode
     }>()
-    invalidate(mod, timestamp, invalidatedModules)
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
-        clear: true,
-        timestamp: true
-      })
-      ws.send({
-        type: 'full-reload'
-      })
-      return
+      needFullReload = true
+      continue
     }
 
     updates.push(
@@ -155,17 +155,26 @@ function updateModules(
     )
   }
 
-  config.logger.info(
-    updates
-      .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
-      .join('\n'),
-    { clear: true, timestamp: true }
-  )
-
-  ws.send({
-    type: 'update',
-    updates
-  })
+  if (needFullReload) {
+    config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
+      clear: true,
+      timestamp: true
+    })
+    ws.send({
+      type: 'full-reload'
+    })
+  } else {
+    config.logger.info(
+      updates
+        .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
+        .join('\n'),
+      { clear: true, timestamp: true }
+    )
+    ws.send({
+      type: 'update',
+      updates
+    })
+  }
 }
 
 export async function handleFileAddUnlink(
@@ -180,8 +189,7 @@ export async function handleFileAddUnlink(
     for (const i in server._globImporters) {
       const { module, importGlobs } = server._globImporters[i]
       for (const { base, pattern } of importGlobs) {
-        const relative = path.relative(base, file)
-        if (match(relative, pattern)) {
+        if (match(file, pattern) || match(path.relative(base, file), pattern)) {
           modules.push(module)
           // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
           // calls get fresh glob import results with(out) the newly added(/removed) `file`.
@@ -215,6 +223,20 @@ function propagateUpdate(
       boundary: node,
       acceptedVia: node
     })
+
+    // additionally check for CSS importers, since a PostCSS plugin like
+    // Tailwind JIT may register any file as a dependency to a CSS file.
+    for (const importer of node.importers) {
+      if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
+        propagateUpdate(
+          importer,
+          timestamp,
+          boundaries,
+          currentChain.concat(importer)
+        )
+      }
+    }
+
     return false
   }
 

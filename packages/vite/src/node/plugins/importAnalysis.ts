@@ -222,7 +222,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // for relative js/css imports, inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if (isRelative && !/[\?&]import\b/.test(url)) {
+          if (isRelative && !/[\?&]import=?\b/.test(url)) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])

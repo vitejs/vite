@@ -1,3 +1,43 @@
+## [2.3.8](https://github.com/vitejs/vite/compare/v2.3.7...v2.3.8) (2021-06-19)
+
+
+### Bug Fixes
+
+* **css:** filter out function name suffixes with url ([#3752](https://github.com/vitejs/vite/issues/3752)) ([9aa255a](https://github.com/vitejs/vite/commit/9aa255a0abcb9f5b23c34607b2188f796f4b6c94))
+* **deps:** update all non-major dependencies ([#3791](https://github.com/vitejs/vite/issues/3791)) ([74d409e](https://github.com/vitejs/vite/commit/74d409eafca8d74ec4a6ece621ea2895bc1f2a32))
+* **hmr:** always invalidate all affected modules ([e048114](https://github.com/vitejs/vite/commit/e048114d3657fc8e2fec645eba3f5f2fe230ceb7))
+* **hmr:** avoid css propagation infinite loop ([7362e6e](https://github.com/vitejs/vite/commit/7362e6e9a7a0f0177b467f1cf80552acf22c46a0))
+* **hmr:** avoid duplicated modules for css dependency ([385ced9](https://github.com/vitejs/vite/commit/385ced9c2e9b5f06e9c06669fe19a0a98cc82c8b))
+* **hmr/css:** check CSS importers for hmr boundaries - fix Tailwind 2.2 compat ([6eaec3a](https://github.com/vitejs/vite/commit/6eaec3ab74d126310d93f8a93f8577bed1c3f474))
+* **hmr/css:** fix infinite recursion on hmr ([#3865](https://github.com/vitejs/vite/issues/3865)) ([0d5726f](https://github.com/vitejs/vite/commit/0d5726fff2fe724ffec3c0621e3dcd6775b0fe8b))
+* ?import with trailing = added by some servers ([#3805](https://github.com/vitejs/vite/issues/3805)) ([460d1cd](https://github.com/vitejs/vite/commit/460d1cda317e4c4d03434f2b3d8de9152620005b))
+* don't replace `process.env` if `process` not global variable ([#3703](https://github.com/vitejs/vite/issues/3703)) ([5aeadb7](https://github.com/vitejs/vite/commit/5aeadb719944152be7ed9f9472aa2238ea3557c0))
+* upgrade esbuild for esm compatibility ([#3718](https://github.com/vitejs/vite/issues/3718)) ([dbb5eab](https://github.com/vitejs/vite/commit/dbb5eabe246747abab187a6c8d90cd418856e048)), closes [/github.com/evanw/esbuild/blob/master/CHANGELOG.md#0127](https://github.com//github.com/evanw/esbuild/blob/master/CHANGELOG.md/issues/0127) [#3399](https://github.com/vitejs/vite/issues/3399) [#3413](https://github.com/vitejs/vite/issues/3413)
+
+
+### Features
+
+* allow 'hidden' sourcemap to remove //# sourceMappingURL from generated maps ([#3684](https://github.com/vitejs/vite/issues/3684)) ([19e479b](https://github.com/vitejs/vite/commit/19e479ba0dd1da4d1de075bdf11edabe00af6cb6))
+
+
+
+## [2.3.7](https://github.com/vitejs/vite/compare/v2.3.6...v2.3.7) (2021-06-08)
+
+
+### Bug Fixes
+
+* Include src files in vite npm bundle (for sourcemaps) ([#3656](https://github.com/vitejs/vite/issues/3656)) ([294d8b4](https://github.com/vitejs/vite/commit/294d8b472ca5d5079d8fe35ecb1b0bf6cf7720db))
+* show error message above the stack when HMR overlay is disabled ([#3677](https://github.com/vitejs/vite/issues/3677)) ([6b4c355](https://github.com/vitejs/vite/commit/6b4c3550f673253ca175a1e2ca2efb8d1ec85b3b))
+* tolerant fs error in formatError ([#3665](https://github.com/vitejs/vite/issues/3665)) ([5146cc5](https://github.com/vitejs/vite/commit/5146cc5eb2bfe4317e3a7c8590963cbebaa5b3e9))
+* update `sirv` to decode url in preview ([#3680](https://github.com/vitejs/vite/issues/3680)) ([0430127](https://github.com/vitejs/vite/commit/0430127b7b7216d92a351fcb9c80753563a318e6))
+
+
+### Features
+
+* **css:** support postcss dir-dependency message type ([#3707](https://github.com/vitejs/vite/issues/3707)) ([665d438](https://github.com/vitejs/vite/commit/665d43872914c7a79a5a79aa4b6349961e68a10d))
+
+
+
 ## [2.3.6](https://github.com/vitejs/vite/compare/v2.3.5...v2.3.6) (2021-06-02)
 
 
