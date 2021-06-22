@@ -241,7 +241,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       'chrome87',
       'safari13.1'
     ]
-  } else if (resolved.target === 'esnext' && resolved.minify !== 'esbuild') {
+  } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     // esnext + terser: limit to es2019 so it can be minified by terser
     resolved.target = 'es2019'
   }
