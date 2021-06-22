@@ -3,6 +3,7 @@ import path from 'path'
 import * as net from 'net'
 import * as http from 'http'
 import * as https from 'https'
+import * as http2 from 'http2'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import chalk from 'chalk'
@@ -60,8 +61,9 @@ export interface ServerOptions {
   /**
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
+   * Note: http2.SecureServerSessionOptions is ignored when the proxy option is also used.
    */
-  https?: boolean | https.ServerOptions
+  https?: boolean | https.ServerOptions | http2.SecureServerSessionOptions
   /**
    * Open browser window on startup
    */
