@@ -437,7 +437,6 @@ export default async ({ command, mode }) => {
 
   When using `server.middlewareMode` and `server.https`, setting `server.hmr.server` to your HTTPS server will process HMR secure connection requests through your server. This can be helpful when using self-signed certificates.
 
-
 ### server.watch
 
 - **Type:** `object`
@@ -456,6 +455,7 @@ export default async ({ command, mode }) => {
 - **Related:** [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
 - **Example:**
+
 ```js
 const express = require('express')
 const { createServer: createViteServer } = require('vite')
@@ -524,7 +524,10 @@ createServer()
 
   Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets [browsers with native ES module support](https://caniuse.com/es6-module).
 
-  Another special value is 'esnext' - which only performs minimal transpiling (for minification compat) and assumes native dynamic imports support.
+  Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
+
+  - If the [`build.minify`](#build-minify) option is `'terser'` (the default), `'esnext'` will be forced down to `'es2019'`.
+  - In other cases, it will perform no transpilation at all.
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 

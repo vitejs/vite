@@ -127,7 +127,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
 
       const target = config.build.target
       const minify = config.build.minify === 'esbuild'
-      if (!target && !minify) {
+      if ((!target || target === 'esnext') && !minify) {
         return null
       }
       return transformWithEsbuild(code, chunk.fileName, {
