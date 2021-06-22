@@ -183,6 +183,19 @@ test('?url import', async () => {
   )
 })
 
+test('new URL(..., import.meta.url)', async () => {
+  expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
+})
+
+test('new URL(`${dynamic}`, import.meta.url)', async () => {
+  expect(await page.textContent('.dynamic-import-meta-url-1')).toMatch(
+    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png'
+  )
+  expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
+    assetMatch
+  )
+})
+
 if (isBuild) {
   test('manifest', async () => {
     const manifest = readManifest('foo')

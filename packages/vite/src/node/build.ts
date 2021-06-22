@@ -37,6 +37,7 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
 import { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
+import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 
 export interface BuildOptions {
   /**
@@ -270,6 +271,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
         warnOnError: true,
         exclude: [/node_modules/]
       }),
+      assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins || [])
     ],
     post: [
