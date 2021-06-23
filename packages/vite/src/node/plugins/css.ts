@@ -835,8 +835,9 @@ async function doUrlReplace(
   if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
     return matched
   }
+  const initialComma = matched[0] === ',' ? ',' : ''
 
-  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
+  return `${initialComma}url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
 let CleanCSS: any
