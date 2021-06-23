@@ -2,7 +2,7 @@ import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import { parse as parseUrl } from 'url'
 import qs, { ParsedUrlQuery } from 'querystring'
-import { fileToUrl } from './asset'
+import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
@@ -58,14 +58,22 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           input: cleanUrl(id),
           plugins: config.plugins as Plugin[]
         })
+        let code: string
         try {
           const { output } = await bundle.generate({
             format: 'iife',
             sourcemap: config.build.sourcemap
           })
-          if (query.inline != null) {
-            // inline as base64 data url
-            return `const blob = new Blob([atob(\"${Buffer.from(output[0].code).toString('base64')}\")], { type: 'text/javascript;charset=utf-8' });
+          code = output[0].code
+        } finally {
+          await bundle.close()
+        }
+        const content = Buffer.from(code)
+        if (query.inline != null) {
+          // inline as blob data url
+          return `const blob = new Blob([atob(\"${content.toString(
+            'base64'
+          )}\")], { type: 'text/javascript;charset=utf-8' });
             export default function WorkerWrapper() {
               const objURL = (window.URL || window.webkitURL).createObjectURL(blob);
               try {
@@ -74,16 +82,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
             }`
-          } else {
-            const fileName = path.parse(cleanUrl(id)).name
-            url = `__VITE_ASSET__${this.emitFile({
-              type: 'asset',
-              name: `${fileName}.js`,
-              source: output[0].code
-            })}__`
-          }
-        } finally {
-          await bundle.close()
+        } else {
+          const basename = path.parse(cleanUrl(id)).name
+          const contentHash = getAssetHash(content)
+          const fileName = path.posix.join(
+            config.build.assetsDir,
+            `${basename}.${contentHash}.js`
+          )
+          url = `__VITE_ASSET__${this.emitFile({
+            fileName,
+            type: 'asset',
+            source: code
+          })}__`
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
