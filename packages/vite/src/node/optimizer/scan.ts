@@ -216,12 +216,6 @@ function esbuildScanPlugin(
             }
           }
 
-          // <script setup> may contain TLA which is not true TLA but esbuild
-          // will error on it, so replace it with another operator.
-          if (js.includes('await')) {
-            js = js.replace(/\bawait(\s)/g, 'void$1')
-          }
-
           if (
             loader.startsWith('ts') &&
             (path.endsWith('.svelte') ||
