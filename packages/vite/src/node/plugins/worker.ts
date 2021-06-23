@@ -64,8 +64,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               format: 'es',
               sourcemap: config.build.sourcemap
             })
-            
-            return `const blob = new Blob([atob(\"${Buffer.from(output[0].code).toString('base64')}\")], { type: 'text/javascript;charset=utf-8' });
+
+            return `const blob = new Blob([atob(\"${Buffer.from(
+              output[0].code
+            ).toString(
+              'base64'
+            )}\")], { type: 'text/javascript;charset=utf-8' });
             export default function WorkerWrapper() {
               const objURL = (window.URL || window.webkitURL).createObjectURL(blob);
               try {
@@ -92,6 +96,20 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerOptions = { type: 'module' }
+
+      const isNode = (config.build.target as string).includes('node')
+
+      if (isNode) {
+        return `
+        import { Worker } from "worker_threads" \n
+        import { join } from "path" \n
+        export default function WorkerWrapper() {
+          return new ${workerConstructor}(join(__dirname, ${JSON.stringify(
+          url
+        )}), ${JSON.stringify(workerOptions, null, 2)})
+        }
+        `
+      }
 
       return `export default function WorkerWrapper() {
         return new ${workerConstructor}(${JSON.stringify(
