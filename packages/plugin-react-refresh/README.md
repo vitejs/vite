@@ -27,6 +27,23 @@ export default {
 
 [Full list of Babel parser plugins](https://babeljs.io/docs/en/babel-parser#ecmascript-proposalshttpsgithubcombabelproposals).
 
+## Specifying files to exclude from refreshing
+
+In some situations you may not want a file to act as an HMR boundary, instead preferring that the changes propigate higher in the stack before being handled. In these cases, you can provide an `exclude` function that receives filenames and should return true if that file should not accept hot module replacement.
+
+```js
+export default {
+  plugins: [
+    reactRefresh({
+      exclude(filename) {
+        // Exclude storybook stories
+        return /\.stories\.(t|j)sx?$/.test(filename)
+      }
+    })
+  ]
+}
+```
+
 ### Notes
 
 - If using TSX, any TS-supported syntax will already be transpiled away so you won't need to specify them here.

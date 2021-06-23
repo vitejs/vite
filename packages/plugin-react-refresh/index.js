@@ -75,6 +75,10 @@ function reactRefreshPlugin(opts) {
         return
       }
 
+      if (typeof opts?.exclude === 'function' && opts.exclude(id)) {
+        return
+      }
+
       /**
        * @type ParserOptions["plugins"]
        */
