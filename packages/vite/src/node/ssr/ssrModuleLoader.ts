@@ -88,11 +88,11 @@ async function instantiateModule(
     })
   )
 
-  const ssrImportMeta = { url }
+  const { clearScreen, isProduction, logger, root } = server.config
 
   const ssrImport = (dep: string) => {
     if (isExternal(dep)) {
-      return nodeRequire(dep, mod.file, server.config.root)
+      return nodeRequire(dep, mod.file, root)
     } else {
       return moduleGraph.urlToModuleMap.get(unwrapId(dep))?.ssrModule
     }
@@ -100,7 +100,7 @@ async function instantiateModule(
 
   const ssrDynamicImport = (dep: string) => {
     if (isExternal(dep)) {
-      return Promise.resolve(nodeRequire(dep, mod.file, server.config.root))
+      return Promise.resolve(nodeRequire(dep, mod.file, root))
     } else {
       // #3087 dynamic import vars is ignored at rewrite import path,
       // so here need process relative path
@@ -167,13 +167,10 @@ async function instantiateModule(
     try {
       e.stack = ssrRewriteStacktrace(e, moduleGraph)
     } catch {}
-    server.config.logger.error(
-      `Error when evaluating SSR module ${url}:\n\n${e.stack}`,
-      {
-        timestamp: true,
-        clear: server.config.clearScreen
-      }
-    )
+    logger.error(`Error when evaluating SSR module ${url}:\n\n${e.stack}`, {
+      timestamp: true,
+      clear: clearScreen
+    })
     throw e
   }
 
