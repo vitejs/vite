@@ -60,17 +60,21 @@ export async function ssrTransform(
     isCommonJS = true
     if (match[1]) {
       const moduleExportsEnd = match.index + 'module.exports'.length
+      // rewrite `module.exports` to `__vite_ssr_exports__`
       s.overwrite(match.index, moduleExportsEnd, ssrModuleExportsKey)
       if (!match[3] && match[4]) {
+        // rewrite `module.exports =` to `__vite_ssr_exports__.default =`
         s.appendLeft(moduleExportsEnd, '.default')
       }
     } else if (match[2]) {
+      // rewrite `exports` to `__vite_ssr_exports__`
       s.overwrite(
         match.index,
         match.index + 'exports'.length,
         ssrModuleExportsKey
       )
     } else if (match[5]) {
+      // rewrite `require(` to `__vite_ssr_import__(`
       s.overwrite(match.index, match.index + 'require'.length, ssrImportKey)
     }
   }
