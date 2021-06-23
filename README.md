@@ -1,3 +1,8 @@
+> ### 敬请所有读者注意
+>
+> - 原则上这里只进行英文版对应的翻译工作，如果觉得原文有改进之处，或任何不仅针对中文版，而受益所有语言版本的想法，建议直接在英文版仓库讨论。
+> - **原则上这里不适合讨论 Vite 的使用问题**，建议相关问题在 Vite 的 [issues 区](https://github.com/vitejs/vite/issues)、[Vite 官方讨论区](https://chat.vitejs.dev/) 或各大主流技术社区讨论，以便得到更多人的帮助和更充分的讨论。
+
 <p align="center">
   <a href="https://vitejs.dev" target="_blank" rel="noopener noreferrer">
     <img width="180" src="https://vitejs.dev/logo.svg" alt="Vite logo">
@@ -6,52 +11,45 @@
 <br/>
 <p align="center">
   <a href="https://npmjs.com/package/vite"><img src="https://img.shields.io/npm/v/vite.svg" alt="npm package"></a>
-  <a href="https://nodejs.org/en/about/releases/"><img src="https://img.shields.io/node/v/vite.svg" alt="node compatibility"></a>
-  <a href="https://github.com/vitejs/vite/actions/workflows/ci.yml"><img src="https://github.com/vitejs/vite/actions/workflows/ci.yml/badge.svg?branch=main" alt="build status"></a>
+  <a href="https://nodejs.org/en/about/releases/"><img src="https://img.shields.io/node/v/vite.svg" alt="node compatility"></a>
+  <a href="https://app.circleci.com/pipelines/github/vitejs/vite?branch=main"><img src="https://circleci.com/gh/vitejs/vite/tree/main.svg?style=shield" alt="unix build status"></a>
+  <a href="https://ci.appveyor.com/project/yyx990803/vite/branch/main"><img src="https://ci.appveyor.com/api/projects/status/0q4j8062olbcs71l/branch/main?svg=true" alt="windows build status"></a>
   <a href="https://chat.vitejs.dev"><img src="https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord" alt="discord chat"></a>
 </p>
 <br/>
 
-# Vite ⚡
+# Vite 中文文档
 
-> Next Generation Frontend Tooling
+> Vite：下一代前端开发与构建工具
 
-- 💡 Instant Server Start
-- ⚡️ Lightning Fast HMR
-- 🛠️ Rich Features
-- 📦 Optimized Build
-- 🔩 Universal Plugin Interface
-- 🔑 Fully Typed APIs
+- 💡 极速的开发服务器启动
+- ⚡️ 轻量快速的热模块重载（HMR）
+- 🛠️ 丰富的功能
+- 📦 自带优化的构建
+- 🔩 通用的插件接口
+- 🔑 完全类型化的 API
 
-Vite (French word for "fast", pronounced `/vit/`) is a new breed of frontend build tool that significantly improves the frontend development experience. It consists of two major parts:
+Vite （法语意为 “迅速”，发音 /vit/）是一种全新的前端构建工具，它极大地改善了前端开发体验。
 
-- A dev server that serves your source files over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), with [rich built-in features](https://vitejs.dev/guide/features.html) and astonishingly fast [Hot Module Replacement (HMR)](https://vitejs.dev/guide/features.html#hot-module-replacement).
+## 📝 如何参与贡献
 
-- A [build command](https://vitejs.dev/guide/build.html) that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
+目前 Vite 中文文档处于稳定维护状态。
 
-In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/guide/api-plugin.html) and [JavaScript API](https://vitejs.dev/guide/api-javascript.html) with full typing support.
+**工作流介绍：** 英文文档的所在 [请点击此链接](https://github.com/vitejs/vite/tree/main/docs)，我们会每天拉取英文版文档内容的更新到 sync-docs 分支，并由印记中文 bot 自动发起 Pull Request，解决 Git 冲突并翻译内容。
 
-[Read the Docs to Learn More](https://vitejs.dev).
+贡献指南敬请查看本仓库的 [Wiki](https://github.com/vitejs/docs-cn/wiki) 区。
 
-## Migrating from 1.x
+## 📥 如何开始编辑
 
-Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you are upgrading from 1.x.
+```bash
+# 克隆本仓库
+$ git clone https://github.com/vitejs/docs-cn.git
 
-## Packages
+# 安装依赖
+$ npm install
+# 或者使用 yarn
+$ yarn install
 
-| Package                                                       | Version (click for changelogs)                                                                                                                         |
-| ------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [vite](packages/vite)                                         | [![vite version](https://img.shields.io/npm/v/vite.svg?label=%20)](packages/vite/CHANGELOG.md)                                                         |
-| [@vitejs/plugin-vue](packages/plugin-vue)                     | [![plugin-vue version](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg?label=%20)](packages/plugin-vue/CHANGELOG.md)                               |
-| [@vitejs/plugin-vue-jsx](packages/plugin-vue-jsx)             | [![plugin-vue-jsx version](https://img.shields.io/npm/v/@vitejs/plugin-vue-jsx.svg?label=%20)](packages/plugin-vue-jsx/CHANGELOG.md)                   |
-| [@vitejs/plugin-react-refresh](packages/plugin-react-refresh) | [![plugin-react-refresh version](https://img.shields.io/npm/v/@vitejs/plugin-react-refresh.svg?label=%20)](packages/plugin-react-refresh/CHANGELOG.md) |
-| [@vitejs/plugin-legacy](packages/plugin-legacy)               | [![plugin-legacy version](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg?label=%20)](packages/plugin-legacy/CHANGELOG.md)                      |
-| [@vitejs/create-app](packages/create-app)                     | [![create-app version](https://img.shields.io/npm/v/@vitejs/create-app.svg?label=%20)](packages/create-app/CHANGELOG.md)                               |
-
-## Contribution
-
-See [Contributing Guide](https://github.com/vitejs/vite/tree/main/.github/contributing.md).
-
-## License
-
-MIT
+# 启动开发服务器
+$ yarn dev
+```
