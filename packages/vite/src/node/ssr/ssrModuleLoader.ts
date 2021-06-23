@@ -71,10 +71,9 @@ async function instantiateModule(
     throw new Error(`failed to load module for ssr: ${url}`)
   }
 
-  const ssrModule = {
+  const ssrModule: any = {
     [Symbol.toStringTag]: 'Module'
   }
-  Object.defineProperty(ssrModule, '__esModule', { value: true })
 
   const isExternal = (dep: string) => dep[0] !== '.' && dep[0] !== '/'
 
@@ -150,6 +149,13 @@ async function instantiateModule(
       }
     )
     throw e
+  }
+
+  if (!ssrModule.__esModule) {
+    Object.defineProperty(ssrModule, '__esModule', { value: true })
+    if (!Object.getOwnPropertyDescriptor(ssrModule, 'default')) {
+      Object.defineProperty(ssrModule, 'default', { value: ssrModule })
+    }
   }
 
   mod.ssrModule = Object.freeze(ssrModule)

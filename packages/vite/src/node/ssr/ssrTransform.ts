@@ -82,6 +82,11 @@ export async function ssrTransform(
       locations: true
     }) as any
 
+    // mark this as a module
+    s.prepend(
+      `Object.defineProperty(${ssrModuleExportsKey}, "__esModule", {value: true})\n`
+    )
+
     // 1. check all import statements and record id -> importName map
     for (const node of ast.body as Node[]) {
       // import foo from 'foo' --> foo -> __import_foo__.default
