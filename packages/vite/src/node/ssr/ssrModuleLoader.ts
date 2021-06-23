@@ -158,6 +158,7 @@ async function instantiateModule(
       const vm = require('vm') as typeof import('vm')
       ssrModuleInit = vm.runInThisContext(ssrModuleImpl, {
         filename: mod.file || mod.url,
+        columnOffset: 1,
         displayErrors: false
       })
     }
