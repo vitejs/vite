@@ -38,9 +38,9 @@ export default {
   plugins: [
     reactRefresh({
       // Exclude storybook stories and node_modules
-      exclude: [/\.stories\.(t|j)sx?$/, /node_modules/]
+      exclude: [/\.stories\.(t|j)sx?$/, /node_modules/],
       // Only .tsx files
-      include: '**/*.tsx',
+      include: '**/*.tsx'
     })
   ]
 }
