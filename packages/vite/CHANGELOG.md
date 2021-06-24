@@ -12,7 +12,7 @@
 * **hmr/css:** fix infinite recursion on hmr ([#3865](https://github.com/vitejs/vite/issues/3865)) ([0d5726f](https://github.com/vitejs/vite/commit/0d5726fff2fe724ffec3c0621e3dcd6775b0fe8b))
 * ?import with trailing = added by some servers ([#3805](https://github.com/vitejs/vite/issues/3805)) ([460d1cd](https://github.com/vitejs/vite/commit/460d1cda317e4c4d03434f2b3d8de9152620005b))
 * don't replace `process.env` if `process` not global variable ([#3703](https://github.com/vitejs/vite/issues/3703)) ([5aeadb7](https://github.com/vitejs/vite/commit/5aeadb719944152be7ed9f9472aa2238ea3557c0))
-* upgrade esbuild for esm compatibility ([#3718](https://github.com/vitejs/vite/issues/3718)) ([dbb5eab](https://github.com/vitejs/vite/commit/dbb5eabe246747abab187a6c8d90cd418856e048)), closes [/github.com/evanw/esbuild/blob/master/CHANGELOG.md#0127](https://github.com//github.com/evanw/esbuild/blob/master/CHANGELOG.md/issues/0127) [#3399](https://github.com/vitejs/vite/issues/3399) [#3413](https://github.com/vitejs/vite/issues/3413)
+* upgrade esbuild for esm compatibility ([#3718](https://github.com/vitejs/vite/issues/3718)) ([dbb5eab](https://github.com/vitejs/vite/commit/dbb5eabe246747abab187a6c8d90cd418856e048)), closes [#3399](https://github.com/vitejs/vite/issues/3399) [#3413](https://github.com/vitejs/vite/issues/3413)
 
 
 ### Features
