@@ -287,7 +287,9 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _registerMissingImport: ((id: string, resolved: string) => void) | null
+  _registerMissingImport:
+    | ((id: string, resolved: string, ssr: boolean | undefined) => void)
+    | null
   /**
    * @internal
    */

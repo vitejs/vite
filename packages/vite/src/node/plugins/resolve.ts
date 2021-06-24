@@ -145,7 +145,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
               importer,
               options,
               targetWeb,
-              server
+              server,
+              ssr
             )) &&
             res.id.startsWith(normalizedFsPath)
           ) {
@@ -212,7 +213,9 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           return res
         }
 
-        if ((res = tryNodeResolve(id, importer, options, targetWeb, server))) {
+        if (
+          (res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))
+        ) {
           return res
         }
 
@@ -361,7 +364,8 @@ export function tryNodeResolve(
   importer: string | undefined,
   options: InternalResolveOptions,
   targetWeb: boolean,
-  server?: ViteDevServer
+  server?: ViteDevServer,
+  ssr?: boolean
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild } = options
   const deepMatch = id.match(deepImportRE)
@@ -432,7 +436,7 @@ export function tryNodeResolve(
     } else {
       // this is a missing import.
       // queue optimize-deps re-run.
-      server._registerMissingImport?.(id, resolved)
+      server._registerMissingImport?.(id, resolved, ssr)
     }
     return { id: resolved }
   }
@@ -546,7 +550,7 @@ export function resolvePackageEntry(
   // resolve exports field with highest priority
   // using https://github.com/lukeed/resolve.exports
   if (data.exports) {
-    entryPoint = resolveExports(data, '.', options)
+    entryPoint = resolveExports(data, '.', options, targetWeb)
   }
 
   // if exports resolved to .mjs, still resolve other fields.
@@ -628,7 +632,8 @@ export function resolvePackageEntry(
 function resolveExports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptions
+  options: InternalResolveOptions,
+  targetWeb: boolean
 ) {
   const conditions = [options.isProduction ? 'production' : 'development']
   if (!options.isRequire) {
@@ -638,7 +643,7 @@ function resolveExports(
     conditions.push(...options.conditions)
   }
   return _resolveExports(pkg, key, {
-    browser: true,
+    browser: targetWeb,
     require: options.isRequire,
     conditions
   })
@@ -668,7 +673,7 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(data, relativeId, options)
+      relativeId = resolveExports(data, relativeId, options, targetWeb)
     } else {
       // not exposed
       relativeId = undefined

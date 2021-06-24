@@ -223,7 +223,8 @@ export type ResolvedConfig = Readonly<
 export type ResolveFn = (
   id: string,
   importer?: string,
-  aliasOnly?: boolean
+  aliasOnly?: boolean,
+  ssr?: boolean
 ) => Promise<string | undefined>
 
 export async function resolveConfig(
@@ -347,7 +348,7 @@ export async function resolveConfig(
   const createResolver: ResolvedConfig['createResolver'] = (options) => {
     let aliasContainer: PluginContainer | undefined
     let resolverContainer: PluginContainer | undefined
-    return async (id, importer, aliasOnly) => {
+    return async (id, importer, aliasOnly, ssr) => {
       let container: PluginContainer
       if (aliasOnly) {
         container =
@@ -377,7 +378,7 @@ export async function resolveConfig(
             ]
           }))
       }
-      return (await container.resolveId(id, importer))?.id
+      return (await container.resolveId(id, importer, undefined, ssr))?.id
     }
   }
 
