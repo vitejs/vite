@@ -244,7 +244,15 @@ function propagateUpdate(
     return true
   }
 
+  const isNotCSSMod = !isCSSRequest(node.url)
+  let noImporter = true
+
   for (const importer of node.importers) {
+    if (isCSSRequest(importer.url) && isNotCSSMod) {
+      continue
+    }
+    noImporter = false
+
     const subChain = currentChain.concat(importer)
     if (importer.acceptedHmrDeps.has(node)) {
       boundaries.add({
@@ -263,7 +271,7 @@ function propagateUpdate(
       return true
     }
   }
-  return false
+  return noImporter
 }
 
 function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
