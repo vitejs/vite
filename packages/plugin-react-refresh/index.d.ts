@@ -7,7 +7,8 @@ declare const createPlugin: PluginFactory & { preambleCode: string }
 
 export interface Options {
   parserPlugins?: ParserOptions['plugins']
-  exclude?: (filename: string) => boolean
+  include?: string | RegExp | Array<string | RegExp>
+  exclude?: string | RegExp | Array<string | RegExp>
 }
 
 export default createPlugin

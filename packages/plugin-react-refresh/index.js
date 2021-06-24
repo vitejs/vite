@@ -1,7 +1,7 @@
 // @ts-check
 const fs = require('fs')
 const { transformSync, ParserOptions } = require('@babel/core')
-import { createFilter } from '@rollup/pluginutils'
+const { createFilter } = require('@rollup/pluginutils')
 const runtimePublicPath = '/@react-refresh'
 const runtimeFilePath = require.resolve(
   'react-refresh/cjs/react-refresh-runtime.development.js'
