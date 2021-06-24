@@ -49,7 +49,14 @@ export function resolveSSRExternal(
     let entry
     let requireEntry
     try {
-      entry = tryNodeResolve(id, undefined, resolveOptions, true)?.id
+      entry = tryNodeResolve(
+        id,
+        undefined,
+        resolveOptions,
+        true,
+        undefined,
+        true
+      )?.id
       requireEntry = require.resolve(id, { paths: [root] })
     } catch (e) {
       // resolve failed, assume include
