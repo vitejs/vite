@@ -205,6 +205,15 @@ test('overwrite bindings', async () => {
   `)
 })
 
+test('commonjs false positive', async () => {
+  expect(await transform(`export const exports = require("foo")`))
+    .toMatchInlineSnapshot(`
+    "Object.defineProperty(__vite_ssr_exports__, \\"__esModule\\", {value: true});
+    const exports = require(\\"foo\\")
+    Object.defineProperty(__vite_ssr_exports__, \\"exports\\", { enumerable: true, configurable: true, get(){ return exports }})"
+  `)
+})
+
 describe('commonjs', () => {
   test('require call', async () => {
     expect(await transform(`const foo = require("foo")`)).toMatchInlineSnapshot(
