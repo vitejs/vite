@@ -411,7 +411,7 @@ export default async ({ command, mode }) => {
         '/api': {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
-          configure: (proxy) => {
+          configure: (proxy, options) => {
             // proxy will be an instance of 'http-proxy'
           }),
         }
