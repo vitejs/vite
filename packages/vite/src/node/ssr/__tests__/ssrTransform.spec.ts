@@ -224,7 +224,8 @@ test('overwrite bindings', async () => {
           `function c() { const { test: inject } = { test: true }; console.log(inject) }\n` +
           `const d = inject \n` +
           `function f() {  console.log(inject) }\n` +
-          `function e() { const { inject } = { inject: true } }\n`,
+          `function e() { const { inject } = { inject: true } }\n` +
+          `function g() { const f = () => { const inject = true }; console.log(inject) }\n`,
         null,
         null
       )
@@ -237,6 +238,7 @@ test('overwrite bindings', async () => {
     const d = __vite_ssr_import_0__.inject 
     function f() {  console.log(__vite_ssr_import_0__.inject) }
     function e() { const { inject } = { inject: true } }
+    function g() { const f = () => { const inject = true }; console.log(__vite_ssr_import_0__.inject) }
     "
   `)
 })

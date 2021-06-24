@@ -392,7 +392,8 @@ function isFunction(node: _Node): node is FunctionNode {
 }
 
 function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
-  for (const node of parentStack) {
+  for (let i = parentStack.length - 1; i >= 0; i--) {
+    const node = parentStack[i]
     if (isFunction(node)) {
       return node
     }
