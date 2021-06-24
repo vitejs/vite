@@ -31,7 +31,7 @@ export default {
 
 By default, @vite/plugin-react-refresh will process files ending with `.js`, `.jsx`, and `.tsx`, and excludes all files in `node_modules`.
 
-In some situations you may not want a file to act as an HMR boundary, instead preferring that the changes propigate higher in the stack before being handled. In these cases, you can provide an `include` and/or `exclude` option, which can be regex or a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or array of either. Files must match include and not exclude in order to be processed. Note, when using either `include`, or `exclude`, the defaults will not be merged in, so re-apply them if necessary.
+In some situations you may not want a file to act as an HMR boundary, instead preferring that the changes propagate higher in the stack before being handled. In these cases, you can provide an `include` and/or `exclude` option, which can be regex or a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or array of either. Files must match include and not exclude to be processed. Note, when using either `include`, or `exclude`, the defaults will not be merged in, so re-apply them if necessary.
 
 ```js
 export default {
