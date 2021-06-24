@@ -242,3 +242,27 @@ test('PostCSS dir-dependency', async () => {
     await untilUpdated(() => getColor(el2), 'black')
   }
 })
+
+test('Url separation', async () => {
+  const urlSeparated = await page.$('.url-separated')
+  const baseUrl = 'url(images/dog.webp)'
+  const cases = new Array(5)
+    .fill('')
+    .flatMap((_, i) =>
+      [',', ' ,', ', ', ' , '].map(
+        (sep) => `background-image:${new Array(i + 1).fill(baseUrl).join(sep)};`
+      )
+    )
+
+  // Insert the base case
+  cases.unshift('background-image:url(images/cat.webp),url(images/dog.webp)')
+
+  for (const [c, i] of cases.map((c, i) => [c, i]) as [string, number][]) {
+    // Replace the previous case
+    if (i > 0) editFile('imported.css', (code) => code.replace(cases[i - 1], c))
+
+    expect(await getBg(urlSeparated)).toMatch(
+      /^url\(.+\)(?:\s*,\s*url\(.+\))*$/
+    )
+  }
+})
