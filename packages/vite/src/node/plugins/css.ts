@@ -239,6 +239,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
       pureCssChunks = new Set<string>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+      hasEmitted = false
     },
 
     transform(css, id, ssr) {
