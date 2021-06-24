@@ -401,8 +401,9 @@ export async function createServer(
 
   process.once('SIGTERM', exitProcess)
 
-  if (!process.stdin.isTTY) {
+  if (process.env.CI !== 'true') {
     process.stdin.on('end', exitProcess)
+    process.stdin.resume()
   }
 
   watcher.on('change', async (file) => {
