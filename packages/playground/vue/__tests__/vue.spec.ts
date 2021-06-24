@@ -182,3 +182,9 @@ describe('custom blocks', () => {
     expect(await page.textContent('.custom-block')).toMatch('こんにちは')
   })
 })
+
+describe('async component', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.async-component')).toMatch('ab == ab')
+  })
+})
