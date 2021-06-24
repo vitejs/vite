@@ -88,7 +88,7 @@
     "cac": "^6.7.3",
     "chalk": "^4.1.1",
     "chokidar": "^3.5.2",
-    "clean-css": "^4.2.3",
+    "clean-css": "^5.1.2",
     "compression": "^1.7.4",
     "connect": "^3.7.0",
     "connect-history-api-fallback": "^1.6.0",
