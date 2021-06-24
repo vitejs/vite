@@ -17,6 +17,41 @@ function parseWorkerRequest(id: string): ParsedUrlQuery | null {
 
 const WorkerFileId = 'worker_file'
 
+/**
+ * Create a factory for the worker constructor string.
+ * Can be combined with other strings to build an inline script.
+ *
+ * @param query Parsed worker request data
+ * @returns Factory function taking URL and worker options.
+ * Null is returned if the worker request is invalid.
+ */
+function buildWorkerConstructor(query: ParsedUrlQuery | null) {
+  if (!query) {
+    return null
+  }
+
+  let workerConstructor: string
+  if (query.sharedworker != null) {
+    workerConstructor = 'SharedWorker'
+  } else if (query.worker != null) {
+    workerConstructor = 'Worker'
+  } else {
+    return null
+  }
+
+  return (urlVariable: string, options?: object) => {
+    if (options) {
+      return `new ${workerConstructor}(${urlVariable}, ${JSON.stringify(
+        options,
+        null,
+        2
+      )})`
+    } else {
+      return `new ${workerConstructor}(${urlVariable})`
+    }
+  }
+}
+
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
 
@@ -26,10 +61,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     load(id) {
       if (isBuild) {
         const parsedQuery = parseWorkerRequest(id)
-        if (
-          parsedQuery &&
-          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-        ) {
+        if (buildWorkerConstructor(parsedQuery) != null) {
           return ''
         }
       }
@@ -42,10 +74,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           code: `import '${ENV_PUBLIC_PATH}'\n` + _
         }
       }
-      if (
-        query == null ||
-        (query && (query.worker ?? query.sharedworker) == null)
-      ) {
+
+      const workerConstructor = buildWorkerConstructor(query)
+      if (query == null || workerConstructor == null) {
         return
       }
 
@@ -64,14 +95,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               format: 'es',
               sourcemap: config.build.sourcemap
             })
-            
-            return `const blob = new Blob([atob(\"${Buffer.from(output[0].code).toString('base64')}\")], { type: 'text/javascript;charset=utf-8' });
+
+            return `const blob = new Blob([atob(\"${Buffer.from(
+              output[0].code
+            ).toString(
+              'base64'
+            )}\")], { type: 'text/javascript;charset=utf-8' });
+            const URL = window.URL || window.webkitURL;
             export default function WorkerWrapper() {
-              const objURL = (window.URL || window.webkitURL).createObjectURL(blob);
+              const objURL = URL.createObjectURL(blob);
               try {
-                return new Worker(objURL);
+                return ${workerConstructor('objUrl')};
               } finally {
-                (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                URL.revokeObjectURL(objURL);
               }
             }`
           } finally {
@@ -89,14 +125,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         url = injectQuery(url, WorkerFileId)
       }
 
-      const workerConstructor =
-        query.sharedworker != null ? 'SharedWorker' : 'Worker'
+      const workerUrl = JSON.stringify(url)
       const workerOptions = { type: 'module' }
 
       return `export default function WorkerWrapper() {
-        return new ${workerConstructor}(${JSON.stringify(
-        url
-      )}, ${JSON.stringify(workerOptions, null, 2)})
+        return ${workerConstructor(workerUrl, workerOptions)};
       }`
     }
   }
