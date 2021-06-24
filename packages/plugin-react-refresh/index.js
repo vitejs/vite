@@ -38,7 +38,7 @@ function reactRefreshPlugin(opts) {
   let shouldSkip = false
   let base = '/'
   const filter = createFilter(
-    (opts && opts.include) || /\.(?:tsx|jsx|js)$/,
+    (opts && opts.include) || /\.(t|j)sx?$/,
     (opts && opts.exclude) || /node_modules/
   )
 
