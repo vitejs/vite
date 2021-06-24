@@ -406,7 +406,7 @@ export default async ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/fallback/, '')
-        }
+        },
         // Using the proxy instance
         '/api': {
           target: 'http://jsonplaceholder.typicode.com',
