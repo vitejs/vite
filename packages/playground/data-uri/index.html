@@ -3,8 +3,12 @@
 
 <script type="module">
   import msg from "data:text/javascript, export default 'hi'"
-  document.querySelector('.plain').textContent = msg
+  text('.plain', msg)
 
   import base64Msg from 'data:text/javascript;base64, ZXhwb3J0IGRlZmF1bHQgJ2hpJw=='
-  document.querySelector('.base64').textContent = base64Msg
+  text('.base64', base64Msg)
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
 </script>

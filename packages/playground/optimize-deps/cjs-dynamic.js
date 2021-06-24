@@ -8,12 +8,12 @@
 
   const clip = await import('clipboard')
   if (typeof clip.default === 'function') {
-    document.querySelector('.cjs-dynamic-clipboard').textContent = 'ok'
+    text('.cjs-dynamic-clipboard', 'ok')
   }
 
   const { Socket } = await import('phoenix')
   if (typeof Socket === 'function') {
-    document.querySelector('.cjs-dynamic-phoenix').textContent = 'ok'
+    text('.cjs-dynamic-phoenix', 'ok')
   }
 
   function App() {
@@ -34,4 +34,8 @@
     React.createElement(App),
     document.querySelector('.cjs-dynamic')
   )
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
 })()

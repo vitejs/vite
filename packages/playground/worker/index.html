@@ -19,8 +19,8 @@
 
   const worker = new Worker()
   worker.addEventListener('message', (e) => {
-    document.querySelector('.pong').textContent = e.data.msg
-    document.querySelector('.mode').textContent = e.data.mode
+    text('.pong', e.data.msg)
+    text('.mode', e.data.mode)
   })
 
   document.querySelector('.ping').addEventListener('click', () => {
@@ -29,7 +29,7 @@
 
   const inlineWorker = new InlineWorker()
   inlineWorker.addEventListener('message', (e) => {
-    document.querySelector('.pong-inline').textContent = e.data.msg
+    text('.pong-inline', e.data.msg)
   })
 
   document.querySelector('.ping-inline').addEventListener('click', () => {
@@ -42,8 +42,12 @@
   })
 
   sharedWorker.port.addEventListener('message', (event) => {
-    document.querySelector('.tick-count').textContent = event.data
+    text('.tick-count', event.data)
   })
 
   sharedWorker.port.start()
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
 </script>

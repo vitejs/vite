@@ -14,17 +14,19 @@ if (import.meta.env.LEGACY) {
   if (import.meta.env.LEGACY === false) isLegacy = false
 }
 
-document.getElementById('env').textContent = `is legacy: ${isLegacy}`
+text('#env', `is legacy: ${isLegacy}`)
 
 // Iterators
-
-document.getElementById('iterators').textContent = [...new Set(['hello'])].join(
-  ''
-)
+text('#iterators', [...new Set(['hello'])].join(''))
 
 // babel-helpers
-
-document.getElementById('babel-helpers').textContent =
-  // Using `String.raw` to inject `@babel/plugin-transform-template-literals`
-  // helpers.
+// Using `String.raw` to inject `@babel/plugin-transform-template-literals`
+// helpers.
+text(
+  '#babel-helpers',
   String.raw`exposed babel helpers: ${window._templateObject != null}`
+)
+
+function text(el, text) {
+  document.querySelector(el).textContent = text
+}
