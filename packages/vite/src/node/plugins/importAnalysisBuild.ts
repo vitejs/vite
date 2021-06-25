@@ -96,10 +96,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
+      // skip on lib mode, #3662
+      if (config.build.lib) return
+
       if (
-        config.build.lib ||
-        (importer.includes('node_modules') &&
-          !source.includes('import.meta.glob'))
+        importer.includes('node_modules') &&
+        !source.includes('import.meta.glob')
       ) {
         return
       }
