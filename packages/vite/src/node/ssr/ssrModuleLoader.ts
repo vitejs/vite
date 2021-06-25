@@ -149,6 +149,7 @@ async function instantiateModule(
         clear: server.config.clearScreen
       }
     )
+    e.loggedByVite = server.config.logLevel !== 'silent'
     throw e
   }
 

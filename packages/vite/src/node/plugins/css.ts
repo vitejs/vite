@@ -850,6 +850,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
 
   if (res.errors && res.errors.length) {
     config.logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
+    res.errors[0].loggedByVite = config.logLevel !== 'silent'
     throw res.errors[0]
   }
 
