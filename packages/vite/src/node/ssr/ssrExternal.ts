@@ -3,7 +3,7 @@ import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import { isDefined, lookupFile, resolveFrom, unique } from '../utils'
 import { ResolvedConfig } from '..'
-
+import { createFilter } from '@rollup/pluginutils'
 /**
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
@@ -108,7 +108,10 @@ export function resolveSSRExternal(
   }
   let externals = [...ssrExternals]
   if (config.ssr?.noExternal) {
-    externals = externals.filter((id) => !config.ssr!.noExternal!.includes(id))
+    const filter = createFilter(undefined, config.ssr.noExternal, {
+      resolve: false
+    })
+    externals = externals.filter((id) => filter(id))
   }
   return externals.filter((id) => id !== 'vite')
 }

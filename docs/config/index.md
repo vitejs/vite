@@ -731,7 +731,7 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string[]`
+- **Type:** `string | RegExp | (string | RegExp)[]`
 
   Prevent listed dependencies from being externalized for SSR.
 
