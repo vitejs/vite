@@ -272,7 +272,9 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
         exclude: [/node_modules/]
       }),
       assetImportMetaUrlPlugin(config),
-      ...(options.rollupOptions.plugins || [])
+      ...(options.rollupOptions.plugins
+        ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])
+        : [])
     ],
     post: [
       buildImportAnalysisPlugin(config),

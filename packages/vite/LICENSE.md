@@ -25,33 +25,13 @@ SOFTWARE.
 
 # Licenses of bundled dependencies
 The published Vite artifact additionally contains code with the following licenses:
-Apache-2.0, MIT, ISC, BSD-2-Clause, (MIT), (BSD-3-Clause OR GPL-2.0), BSD-3-Clause, CC0-1.0
+Apache-2.0, MIT, ISC, BSD-3-Clause, BSD-2-Clause, (MIT), (BSD-3-Clause OR GPL-2.0), CC0-1.0
 
 # Bundled dependencies:
 ## @ampproject/remapping
 License: Apache-2.0
 By: Justin Ridgewell
 Repository: git+https://github.com/ampproject/remapping.git
-
----------------------------------------
-
-## @babel/code-frame
-License: MIT
-By: Sebastian McKenzie
-Repository: https://github.com/babel/babel.git
-
----------------------------------------
-
-## @babel/helper-validator-identifier
-License: MIT
-Repository: https://github.com/babel/babel.git
-
----------------------------------------
-
-## @babel/highlight
-License: MIT
-By: suchipi
-Repository: https://github.com/babel/babel.git
 
 ---------------------------------------
 
@@ -127,6 +107,30 @@ Repository: rollup/plugins
 > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 > THE SOFTWARE.
+
+---------------------------------------
+
+## @tsconfig/node10
+License: MIT
+Repository: https://github.com/tsconfig/bases.git
+
+---------------------------------------
+
+## @tsconfig/node12
+License: MIT
+Repository: https://github.com/tsconfig/bases.git
+
+---------------------------------------
+
+## @tsconfig/node14
+License: MIT
+Repository: https://github.com/tsconfig/bases.git
+
+---------------------------------------
+
+## @tsconfig/node16
+License: MIT
+Repository: https://github.com/tsconfig/bases.git
 
 ---------------------------------------
 
@@ -214,6 +218,13 @@ Repository: https://github.com/micromatch/anymatch
 
 ---------------------------------------
 
+## arg
+License: MIT
+By: Josh Junon
+Repository: zeit/arg
+
+---------------------------------------
+
 ## array-union
 License: MIT
 By: Sindre Sorhus
@@ -263,6 +274,12 @@ Repository: erwinmombay/brotli-size
 
 ---------------------------------------
 
+## buffer-from
+License: MIT
+Repository: LinusU/buffer-from
+
+---------------------------------------
+
 ## builtin-modules
 License: MIT
 By: Sindre Sorhus
@@ -281,13 +298,6 @@ Repository: visionmedia/bytes.js
 License: MIT
 By: egoist
 Repository: egoist/cac
-
----------------------------------------
-
-## callsites
-License: MIT
-By: Sindre Sorhus
-Repository: sindresorhus/callsites
 
 ---------------------------------------
 
@@ -381,10 +391,10 @@ Repository: expressjs/cors
 
 ---------------------------------------
 
-## cosmiconfig
+## create-require
 License: MIT
-By: David Clark, Bogdan Chadkin, Suhas Karanth
-Repository: git+https://github.com/davidtheclark/cosmiconfig.git
+By: Maël Nison, Paul Soporan, Pooya Parsa
+Repository: nuxt-contrib/create-require
 
 ---------------------------------------
 
@@ -425,6 +435,12 @@ Repository: git://github.com/visionmedia/debug.git
 > IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
 > WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 > SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---------------------------------------
+
+## diff
+License: BSD-3-Clause
+Repository: git://github.com/kpdecker/jsdiff.git
 
 ---------------------------------------
 
@@ -472,12 +488,6 @@ Repository: git+https://github.com/kikobeats/emojis-list.git
 License: MIT
 By: Douglas Christopher Wilson
 Repository: pillarjs/encodeurl
-
----------------------------------------
-
-## error-ex
-License: MIT
-Repository: qix-/node-error-ex
 
 ---------------------------------------
 
@@ -655,24 +665,10 @@ Repository: sindresorhus/import-cwd
 
 ---------------------------------------
 
-## import-fresh
-License: MIT
-By: Sindre Sorhus
-Repository: sindresorhus/import-fresh
-
----------------------------------------
-
 ## import-from
 License: MIT
 By: Sindre Sorhus
 Repository: sindresorhus/import-from
-
----------------------------------------
-
-## indexes-of
-License: MIT
-By: Dominic Tarr
-Repository: git://github.com/dominictarr/indexes-of.git
 
 ---------------------------------------
 
@@ -686,13 +682,6 @@ Repository: https://github.com/npm/inflight.git
 ## inherits
 License: ISC
 Repository: git://github.com/isaacs/inherits
-
----------------------------------------
-
-## is-arrayish
-License: MIT
-By: Qix
-Repository: https://github.com/qix-/node-is-arrayish.git
 
 ---------------------------------------
 
@@ -759,20 +748,6 @@ Repository: git+https://github.com/isaacs/isexe.git
 
 ---------------------------------------
 
-## js-tokens
-License: MIT
-By: Simon Lydell
-Repository: lydell/js-tokens
-
----------------------------------------
-
-## json-parse-even-better-errors
-License: MIT
-By: Kat Marchán
-Repository: https://github.com/npm/json-parse-even-better-errors
-
----------------------------------------
-
 ## json5
 License: MIT
 By: Aseem Kishore, Max Nanasy, Andrew Eisenberg, Jordan Tucker
@@ -794,10 +769,10 @@ Repository: git+https://github.com/yyx990803/launch-editor.git
 
 ---------------------------------------
 
-## lines-and-columns
+## lilconfig
 License: MIT
-By: Brian Donovan
-Repository: https://github.com/eventualbuddha/lines-and-columns.git
+By: antonk52
+Repository: https://github.com/antonk52/lilconfig
 
 ---------------------------------------
 
@@ -819,6 +794,13 @@ Repository: lodash/lodash
 License: MIT
 By: Rich Harris
 Repository: https://github.com/rich-harris/magic-string
+
+---------------------------------------
+
+## make-error
+License: ISC
+By: Julien Fontanet
+Repository: git://github.com/JsCommunity/make-error.git
 
 ---------------------------------------
 
@@ -1004,20 +986,6 @@ Repository: sindresorhus/open
 
 ---------------------------------------
 
-## parent-module
-License: MIT
-By: Sindre Sorhus
-Repository: sindresorhus/parent-module
-
----------------------------------------
-
-## parse-json
-License: MIT
-By: Sindre Sorhus
-Repository: sindresorhus/parse-json
-
----------------------------------------
-
 ## parseurl
 License: MIT
 By: Douglas Christopher Wilson, Jonathan Ong
@@ -1084,27 +1052,6 @@ Repository: postcss/postcss-load-config
 License: MIT
 By: Alexander Madyankin
 Repository: https://github.com/css-modules/postcss-modules.git
-
-> The MIT License (MIT)
-> 
-> Copyright 2015-2016 Alexander Madyankin <alexander@madyankin.name>
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy of
-> this software and associated documentation files (the "Software"), to deal in
-> the Software without restriction, including without limitation the rights to
-> use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-> the Software, and to permit persons to whom the Software is furnished to do so,
-> subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in all
-> copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-> FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-> COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-> IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-> CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---------------------------------------
 
@@ -1269,6 +1216,12 @@ Repository: http://github.com/mozilla/source-map.git
 
 ---------------------------------------
 
+## source-map-support
+License: MIT
+Repository: https://github.com/evanw/node-source-map-support
+
+---------------------------------------
+
 ## sourcemap-codec
 License: MIT
 By: Rich Harris
@@ -1325,10 +1278,10 @@ Repository: lukeed/totalist
 
 ---------------------------------------
 
-## uniq
+## ts-node
 License: MIT
-By: Mikola Lysenko
-Repository: git://github.com/mikolalysenko/uniq.git
+By: Blake Embrey, Andrew Bradley
+Repository: git://github.com/TypeStrong/ts-node.git
 
 ---------------------------------------
 
@@ -1379,31 +1332,16 @@ License: MIT
 By: Einar Otto Stangvik
 Repository: websockets/ws
 
-> The MIT License (MIT)
-> 
-> Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy
-> of this software and associated documentation files (the "Software"), to deal
-> in the Software without restriction, including without limitation the rights
-> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-> copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in all
-> copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-> SOFTWARE.
-
 ---------------------------------------
 
 ## yaml
 License: ISC
 By: Eemeli Aro
 Repository: github:eemeli/yaml
+
+---------------------------------------
+
+## yn
+License: MIT
+By: Sindre Sorhus
+Repository: sindresorhus/yn
