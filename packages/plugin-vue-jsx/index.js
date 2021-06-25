@@ -226,6 +226,13 @@ function vueJsxPlugin(options = {}) {
           }
 
           if (ssr) {
+            if (hasDefault) {
+              result.code =
+                result.code.replace(
+                  /export default defineComponent/g,
+                  `const __default__ = defineComponent`
+                ) + `\nexport default __default__`
+            }
             let ssrInjectCode =
               `\nimport { ssrRegisterHelper } from "${ssrRegisterHelperId}"` +
               `\nconst __moduleId = ${JSON.stringify(id)}`
