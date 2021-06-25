@@ -112,4 +112,13 @@ For now, calling `import.meta.hot.invalidate()` simply reloads the page.
 
 ## `hot.on(event, cb)`
 
-Listen to a custom HMR event. Custom HMR events can be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
+Listen to an HMR event.
+
+The following HMR events are dispatched by Vite automatically:
+- `'vite:beforeUpdate'` when an update is about to be applied (e.g. a module will be replaced)
+- `'vite:beforeFullReload'` when a full reload is about to occur
+- `'vite:beforePrune'` when modules that are no longer needed are about to be pruned
+- `'vite:error'` when an error occurs (e.g. syntax error)
+
+Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
+
