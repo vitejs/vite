@@ -119,6 +119,15 @@ test('export * from', async () => {
   `)
 })
 
+test('export * as from', async () => {
+  expect((await ssrTransform(`export * as foo from 'vue'`, null, null)).code)
+    .toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"vue\\")
+
+    Object.defineProperty(__vite_ssr_exports__, \\"foo\\", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_0__ }})"
+  `)
+})
+
 test('export default', async () => {
   expect(
     (await ssrTransform(`export default {}`, null, null)).code
