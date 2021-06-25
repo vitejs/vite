@@ -21,5 +21,8 @@
     "resolve-linked": "0.0.0",
     "vue": "^3.0.8",
     "vuex": "^4.0.0-rc.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^1.2.3"
   }
 }
