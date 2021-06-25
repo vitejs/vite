@@ -52,9 +52,9 @@ export function errorMiddleware(
 
     server.config.logger.error(msg, {
       clear: true,
-      timestamp: true
+      timestamp: true,
+      error: err
     })
-    err.loggedByVite = server.config.logLevel !== 'silent'
 
     server.ws.send({
       type: 'error',

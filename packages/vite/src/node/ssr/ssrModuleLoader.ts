@@ -146,10 +146,10 @@ async function instantiateModule(
       `Error when evaluating SSR module ${url}:\n${e.stack}`,
       {
         timestamp: true,
-        clear: server.config.clearScreen
+        clear: server.config.clearScreen,
+        error: e
       }
     )
-    e.loggedByVite = server.config.logLevel !== 'silent'
     throw e
   }
 
