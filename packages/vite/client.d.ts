@@ -1,5 +1,13 @@
 /// <reference lib="dom" />
 
+import {
+  ConnectedPayload,
+  ErrorPayload,
+  FullReloadPayload,
+  PrunePayload,
+  UpdatePayload
+} from 'types/hmrPayload'
+
 interface ImportMeta {
   url: string
 
@@ -20,7 +28,19 @@ interface ImportMeta {
     decline(): void
     invalidate(): void
 
-    on(event: string, cb: (...args: any[]) => void): void
+    on: {
+      (event: 'vite:beforeUpdate', cb: (payload: UpdatePayload) => void): void
+      (event: 'vite:beforePrune', cb: (payload: PrunePayload) => void): void
+      (
+        event: 'vite:beforeFullReload',
+        cb: (payload: FullReloadPayload) => void
+      ): void
+      (event: 'vite:error', cb: (payload: ErrorPayload) => void): void
+      <T extends string>(
+        event: CustomEventName<T>,
+        cb: (data: any) => void
+      ): void
+    }
   }
 
   readonly env: ImportMetaEnv
@@ -46,6 +66,10 @@ interface ImportMetaEnv {
   DEV: boolean
   PROD: boolean
 }
+
+// See https://stackoverflow.com/a/63549561.
+type CustomEventName<T extends string> = (T extends `vite:${T}` ? never : T) &
+  (`vite:${T}` extends T ? never : T)
 
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
