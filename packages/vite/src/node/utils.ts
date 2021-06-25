@@ -361,6 +361,10 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export function ensureLeadingSlash(path: string): string {
+  return !path.startsWith('/') ? '/' + path : path
+}
+
 export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,

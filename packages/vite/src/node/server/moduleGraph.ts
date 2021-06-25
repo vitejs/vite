@@ -50,6 +50,7 @@ export class ModuleGraph {
   idToModuleMap = new Map<string, ModuleNode>()
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
+  safeModulesPath = new Set<string>()
   container: PluginContainer
 
   constructor(container: PluginContainer) {

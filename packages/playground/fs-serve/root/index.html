@@ -1,0 +1,49 @@
+<h2>Normal Import</h2>
+<pre class="full"></pre>
+<pre class="named"></pre>
+
+<h2>Safe Fetch</h2>
+<pre class="safe-fetch-status"></pre>
+<pre class="safe-fetch"></pre>
+
+<h2>Unsafe Fetch</h2>
+<pre class="unsafe-fetch-status"></pre>
+<pre class="unsafe-fetch"></pre>
+
+<h2>Nested Entry</h2>
+<pre class="nested-entry"></pre>
+
+<script type="module">
+  import '../entry'
+  import json, { msg } from '../safe.json'
+
+  text('.full', JSON.stringify(json))
+  text('.named', msg)
+
+  // imported before, should be treated as safe
+  fetch('/@fs/' + ROOT + '/safe.json')
+    .then((r) => {
+      text('.safe-fetch-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.safe-fetch', JSON.stringify(data))
+    })
+
+  // not imported before, outside of root, treated as unsafe
+  fetch('/@fs/' + ROOT + '/unsafe.json')
+    .then((r) => {
+      text('.unsafe-fetch-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.unsafe-fetch', JSON.stringify(data))
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
+</script>

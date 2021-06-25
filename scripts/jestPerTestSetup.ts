@@ -34,6 +34,7 @@ declare global {
 
 let server: ViteDevServer | http.Server
 let tempDir: string
+let rootDir: string
 let err: Error
 
 const logs = ((global as any).browserLogs = [])
@@ -70,16 +71,20 @@ beforeAll(async () => {
         }
       })
 
+      // when `root` dir is present, use it as vite's root
+      let testCustomRoot = resolve(tempDir, 'root')
+      rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : tempDir
+
       const testCustomServe = resolve(dirname(testPath), 'serve.js')
       if (fs.existsSync(testCustomServe)) {
         // test has custom server configuration.
         const { serve } = require(testCustomServe)
-        server = await serve(tempDir, isBuildTest)
+        server = await serve(rootDir, isBuildTest)
         return
       }
 
       const options: UserConfig = {
-        root: tempDir,
+        root: rootDir,
         logLevel: 'silent',
         server: {
           watch: {
@@ -153,7 +158,7 @@ afterAll(async () => {
 
 function startStaticServer(): Promise<string> {
   // check if the test project has base config
-  const configFile = resolve(tempDir, 'vite.config.js')
+  const configFile = resolve(rootDir, 'vite.config.js')
   let config: UserConfig
   try {
     config = require(configFile)
@@ -167,7 +172,7 @@ function startStaticServer(): Promise<string> {
   }
 
   // start static file server
-  const serve = sirv(resolve(tempDir, 'dist'))
+  const serve = sirv(resolve(rootDir, 'dist'))
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200

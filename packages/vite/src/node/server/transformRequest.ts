@@ -16,7 +16,7 @@ import {
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { injectSourcesContent } from './sourcemap'
-import { isFileAccessAllowed } from './middlewares/static'
+import { isFileServingAllowed } from './middlewares/static'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -37,9 +37,11 @@ export interface TransformOptions {
 
 export async function transformRequest(
   url: string,
-  { config, pluginContainer, moduleGraph, watcher }: ViteDevServer,
+  server: ViteDevServer,
   options: TransformOptions = {}
 ): Promise<TransformResult | null> {
+  const { config, pluginContainer, moduleGraph, watcher } = server
+
   url = removeTimestampQuery(url)
   const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
@@ -75,7 +77,7 @@ export async function transformRequest(
     // as string
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
-    if (options.ssr || isFileAccessAllowed(file, config.server.fsServe)) {
+    if (options.ssr || isFileServingAllowed(file, server)) {
       try {
         code = await fs.readFile(file, 'utf-8')
         isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)

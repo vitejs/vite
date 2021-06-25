@@ -1,11 +1,16 @@
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
-import { FileSystemServeOptions } from '..'
-import { normalizePath, ResolvedConfig } from '../..'
+import { normalizePath, ResolvedConfig, ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
-import { Logger } from '../../logger'
-import { cleanUrl, fsPathFromId, isImportRequest, isWindows } from '../../utils'
+import {
+  cleanUrl,
+  ensureLeadingSlash,
+  fsPathFromId,
+  isImportRequest,
+  isWindows,
+  slash
+} from '../../utils'
 import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
@@ -77,7 +82,7 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(
-  config: ResolvedConfig
+  server: ViteDevServer
 ): Connect.NextHandleFunction {
   const serveFromRoot = sirv('/', sirvOptions)
 
@@ -90,12 +95,7 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fsServe.root`
-      ensureServingAccess(
-        path.resolve(fsPathFromId(url)),
-        config.server.fsServe,
-        config.logger
-      )
-
+      ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server)
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
@@ -107,40 +107,42 @@ export function serveRawFsMiddleware(
   }
 }
 
-export function isFileAccessAllowed(
+export function isFileServingAllowed(
   url: string,
-  { root, strict }: Required<FileSystemServeOptions>
+  server: ViteDevServer
 ): boolean {
-  return !strict || normalizePath(url).startsWith(root + path.posix.sep)
+  // explicitly disabled
+  if (server.config.server.fsServe.strict === false) return true
+
+  const file = ensureLeadingSlash(normalizePath(cleanUrl(url)))
+
+  if (server.moduleGraph.safeModulesPath.has(file)) return true
+
+  if (server.config.server.fsServe.allow.some((i) => file.startsWith(i + '/')))
+    return true
+
+  if (!server.config.server.fsServe.strict) {
+    server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
+    server.config.logger.warnOnce(
+      `For security concerns, accessing files outside of serving allow list will ` +
+        `be restricted by default in the future version of Vite. ` +
+        `Refer to https://vitejs.dev/config/#server-fsserve-allow for more details.`
+    )
+    return true
+  }
+
+  return false
 }
 
-export function ensureServingAccess(
-  url: string,
-  serveOptions: Required<FileSystemServeOptions>,
-  logger: Logger
-): void {
-  const { strict, root } = serveOptions
-  // TODO: early return, should remove once we polished the restriction logic
-  if (!strict) return
+export function ensureServingAccess(url: string, server: ViteDevServer): void {
+  if (!isFileServingAllowed(url, server)) {
+    const allow = server.config.server.fsServe.allow
+    throw new AccessRestrictedError(
+      `The request url "${url}" is outside of Vite serving allow list:
 
-  if (!isFileAccessAllowed(url, serveOptions)) {
-    const normalizedUrl = normalizePath(url)
-    if (strict) {
-      throw new AccessRestrictedError(
-        `The request url "${normalizedUrl}" is outside of vite dev server root "${root}". 
-        For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
-        Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
-        normalizedUrl,
-        root
-      )
-    } else {
-      // TODO: warn for potential unrestricted access
-      logger.warnOnce(
-        `For security concerns, accessing files outside of workspace root will ` +
-          `be restricted by default in the future version of Vite. ` +
-          `Refer to [] for more`
-      )
-      logger.warnOnce(`Unrestricted file system access to "${normalizedUrl}"`)
-    }
+${allow.map((i) => `- ${i}`).join('\n')}
+
+Refer to docs https://vitejs.dev/config/#server-fsserve-allow for configurations and more details.`
+    )
   }
 }

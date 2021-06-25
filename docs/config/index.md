@@ -496,12 +496,12 @@ createServer()
 
   Restrict serving files outside of workspace root.
 
-### server.fsServe.root
+### server.fsServe.allow
 
 - **Experimental**
-- **Type:** `string`
+- **Type:** `string[]`
 
-  Restrict files that could be served via `/@fs/`. When `server.fsServe.strict` is set to `true`, accessing files outside this directory will result in a 403.
+  Restrict files that could be served via `/@fs/`. When `server.fsServe.strict` is set to `true`, accessing files outside this directory list will result in a 403.
 
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
 
@@ -516,7 +516,9 @@ createServer()
     server: {
       fsServe: {
         // Allow serving files from one level up to the project root
-        root: '..'
+        allow: [
+          '..'
+        ]
       }
     }
   }
