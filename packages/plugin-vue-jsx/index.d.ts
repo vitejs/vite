@@ -8,7 +8,7 @@ declare interface FilterOptions {
 }
 
 declare function createPlugin(
-  options?: VueJSXPluginOptions & FilterOptions
+  options?: VueJSXPluginOptions & FilterOptions & { babelPlugins?: any[] }
 ): Plugin
 
 export default createPlugin
