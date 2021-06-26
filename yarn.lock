@@ -1398,23 +1398,6 @@
   resolved "https://registry.yarnpkg.com/@vue/shared/-/shared-3.1.2.tgz#1069c0bc7d6f4bd15ccf3a5f3be29450aca368f9"
   integrity sha512-EmH/poaDWBPJaPILXNI/1fvUbArJQmmTyVCwvvyDYDFnkPoTclAbHRAtyIvqfez7jybTDn077HTNILpxlsoWhg==
 
-"@yelmor/vite-test-package-a@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@yelmor/vite-test-package-a/-/vite-test-package-a-1.0.0.tgz#8003fd876b6760adbdd8ec2777933e2728221264"
-  integrity sha512-Z1puRdOVVaZ+GdfdMA8EQdF+0vCTIFP/QbDm9egwNPH7E1y8j43XSJZxuDQDOLNMTrP2FGs+2rOyBlCr3wLCeg==
-
-"@yelmor/vite-test-package-a@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@yelmor/vite-test-package-a/-/vite-test-package-a-2.0.0.tgz#535c6a4c9351101ffdd04ca13ed48576b720816c"
-  integrity sha512-xuPg9ffq0ZH3G0jkb6dfcYKyN1xWpQp5/2JmOvWwxGXZkXBt4wC1px9v46OdLowwiqhySFB/DszRFMrVokw1WQ==
-
-"@yelmor/vite-test-package-b@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@yelmor/vite-test-package-b/-/vite-test-package-b-1.0.0.tgz#b3ea74a649a2f7bc70e9a1cd4bb05dcec955a41d"
-  integrity sha512-EKQK529cWMMPCoxFOOlINJXDPKpL8G8IwW7vk7vqjnkiP7Wx4B2sy9e+dd4xU86MlUSOlsNiEUwaH3HwdeGgOA==
-  dependencies:
-    "@yelmor/vite-test-package-a" "^1.0.0"
-
 JSONStream@^1.0.4:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/JSONStream/-/JSONStream-1.3.5.tgz#3208c1f08d3a4d99261ab64f92302bc15e111ca0"
@@ -6938,6 +6921,19 @@ test-exclude@^6.0.0:
     "@istanbuljs/schema" "^0.1.2"
     glob "^7.1.4"
     minimatch "^3.0.4"
+
+test-package-a@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/test-package-a/-/test-package-a-1.0.0.tgz#c7c36dfa09e9d6451da80b83e0b6aff8f02b29d8"
+  integrity sha1-x8Nt+gnp1kUdqAuD4Lav+PArKdg=
+
+"test-package-a@link:./packages/playground/nested-deps/test-package-a":
+  version "0.0.0"
+  uid ""
+
+"test-package-b@link:./packages/playground/nested-deps/test-package-b":
+  version "0.0.0"
+  uid ""
 
 text-extensions@^1.0.0:
   version "1.9.0"

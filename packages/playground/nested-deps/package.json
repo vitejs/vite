@@ -9,7 +9,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@yelmor/vite-test-package-a": "^2.0.0",
-    "@yelmor/vite-test-package-b": "^1.0.0"
+    "test-package-a": "link:./test-package-a",
+    "test-package-b": "link:./test-package-b"
   }
 }
