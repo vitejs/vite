@@ -200,16 +200,16 @@ function vueJsxPlugin(options = {}) {
         }
 
         if (hotComponents.length) {
+          if (hasDefault && (needHmr || ssr)) {
+            result.code =
+              result.code.replace(
+                /export default defineComponent/g,
+                `const __default__ = defineComponent`
+              ) + `\nexport default __default__`
+          }
+
           if (needHmr && !ssr) {
             let code = result.code
-            if (hasDefault) {
-              code =
-                code.replace(
-                  /export default defineComponent/g,
-                  `const __default__ = defineComponent`
-                ) + `\nexport default __default__`
-            }
-
             let callbackCode = ``
             for (const { local, exported, id } of hotComponents) {
               code +=
@@ -226,13 +226,6 @@ function vueJsxPlugin(options = {}) {
           }
 
           if (ssr) {
-            if (hasDefault) {
-              result.code =
-                result.code.replace(
-                  /export default defineComponent/g,
-                  `const __default__ = defineComponent`
-                ) + `\nexport default __default__`
-            }
             let ssrInjectCode =
               `\nimport { ssrRegisterHelper } from "${ssrRegisterHelperId}"` +
               `\nconst __moduleId = ${JSON.stringify(id)}`
