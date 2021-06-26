@@ -94,7 +94,7 @@ beforeAll(async () => {
             interval: 100
           },
           host: true,
-          fsServe: {
+          fs: {
             strict: !isBuildTest
           }
         },
