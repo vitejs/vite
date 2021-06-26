@@ -5,7 +5,7 @@ const path = require('path')
  */
 module.exports = {
   server: {
-    fsServe: {
+    fs: {
       root: __dirname,
       strict: true
     },

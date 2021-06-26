@@ -126,11 +126,11 @@ export interface ServerOptions {
   /**
    * Options for files served via '/\@fs/'.
    */
-  fsServe?: FileSystemServeOptions
+  fs?: FileSystemServeOptions
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
-  fsServe: Required<Omit<FileSystemServeOptions, 'root'>>
+  fs: Required<Omit<FileSystemServeOptions, 'root'>>
 }
 
 export interface FileSystemServeOptions {
@@ -148,7 +148,7 @@ export interface FileSystemServeOptions {
   /**
    *
    * @expiremental
-   * @deprecated use `fsServe.allow` instead
+   * @deprecated use `fs.allow` instead
    */
   root?: string
 
@@ -717,10 +717,10 @@ export function resolveServerOptions(
   raw?: ServerOptions
 ): ResolvedServerOptions {
   const server = raw || {}
-  let allowDirs = server.fsServe?.allow
+  let allowDirs = server.fs?.allow
 
   if (!allowDirs) {
-    allowDirs = [server.fsServe?.root || searchForWorkspaceRoot(root)]
+    allowDirs = [server.fs?.root || searchForWorkspaceRoot(root)]
   }
   allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
 
@@ -730,9 +730,9 @@ export function resolveServerOptions(
     allowDirs.push(resolvedClientDir)
   }
 
-  server.fsServe = {
+  server.fs = {
     // TODO: make strict by default
-    strict: server.fsServe?.strict,
+    strict: server.fs?.strict,
     allow: allowDirs
   }
   return server as ResolvedServerOptions

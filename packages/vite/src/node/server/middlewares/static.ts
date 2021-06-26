@@ -94,7 +94,7 @@ export function serveRawFsMiddleware(
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      // restrict files outside of `fsServe.root`
+      // restrict files outside of `fs.root`
       ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server)
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
@@ -112,21 +112,21 @@ export function isFileServingAllowed(
   server: ViteDevServer
 ): boolean {
   // explicitly disabled
-  if (server.config.server.fsServe.strict === false) return true
+  if (server.config.server.fs.strict === false) return true
 
   const file = ensureLeadingSlash(normalizePath(cleanUrl(url)))
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (server.config.server.fsServe.allow.some((i) => file.startsWith(i + '/')))
+  if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
     return true
 
-  if (!server.config.server.fsServe.strict) {
+  if (!server.config.server.fs.strict) {
     server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
     server.config.logger.warnOnce(
       `For security concerns, accessing files outside of serving allow list will ` +
         `be restricted by default in the future version of Vite. ` +
-        `Refer to https://vitejs.dev/config/#server-fsserve-allow for more details.`
+        `Refer to https://vitejs.dev/config/#server-fs-allow for more details.`
     )
     return true
   }
@@ -136,13 +136,13 @@ export function isFileServingAllowed(
 
 export function ensureServingAccess(url: string, server: ViteDevServer): void {
   if (!isFileServingAllowed(url, server)) {
-    const allow = server.config.server.fsServe.allow
+    const allow = server.config.server.fs.allow
     throw new AccessRestrictedError(
       `The request url "${url}" is outside of Vite serving allow list:
 
 ${allow.map((i) => `- ${i}`).join('\n')}
 
-Refer to docs https://vitejs.dev/config/#server-fsserve-allow for configurations and more details.`
+Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
     )
   }
 }
