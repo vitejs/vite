@@ -1,3 +1,5 @@
+import { relative } from 'path'
+import { normalizePath } from '@rollup/pluginutils'
 import { ResolvedConfig } from '..'
 import { Plugin } from '../plugin'
 import { chunkToEmittedCssFileMap } from '../plugins/css'
@@ -21,7 +23,9 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             : chunkToEmittedCssFileMap.get(chunk)
           const assetFiles = chunkToEmittedAssetsMap.get(chunk)
           for (const id in chunk.modules) {
-            const mappedChunks = ssrManifest[id] || (ssrManifest[id] = [])
+            const normalizedId = normalizePath(relative(config.root, id))
+            const mappedChunks =
+              ssrManifest[normalizedId] || (ssrManifest[normalizedId] = [])
             if (!chunk.isEntry) {
               mappedChunks.push(base + chunk.fileName)
             }
