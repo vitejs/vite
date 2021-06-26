@@ -90,7 +90,7 @@ async function instantiateModule(
     }
     dep = unwrapId(dep)
     const pendingImport = pendingImports.get(dep)
-    if (!pendingImport || !urlStack.includes(pendingImport) {
+    if (!pendingImport || !urlStack.includes(pendingImport)) {
       pendingImports.set(url, dep)
       await ssrLoadModule(dep, server, context, urlStack)
       pendingImports.delete(url)
