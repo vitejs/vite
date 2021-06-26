@@ -6922,11 +6922,6 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
-test-package-a@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/test-package-a/-/test-package-a-1.0.0.tgz#c7c36dfa09e9d6451da80b83e0b6aff8f02b29d8"
-  integrity sha1-x8Nt+gnp1kUdqAuD4Lav+PArKdg=
-
 "test-package-a@link:./packages/playground/nested-deps/test-package-a":
   version "0.0.0"
   uid ""
