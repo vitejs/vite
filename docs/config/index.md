@@ -700,6 +700,10 @@ createServer()
 
   Dependencies to exclude from pre-bundling.
 
+  :::warning CommonJS
+  CommonJS dependencies should not be excluded from optimization. If an ESM dependency has a nested CommonJS dependency, it should not be excluded as well.
+  :::
+
 ### optimizeDeps.include
 
 - **Type:** `string[]`
