@@ -33,7 +33,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, ensureLeadingSlash, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -53,6 +53,7 @@ import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { CLIENT_DIR } from '../constants'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -125,32 +126,34 @@ export interface ServerOptions {
   /**
    * Options for files served via '/\@fs/'.
    */
-  fsServe?: FileSystemServeOptions
+  fs?: FileSystemServeOptions
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
-  fsServe: Required<FileSystemServeOptions>
+  fs: Required<FileSystemServeOptions>
 }
 
 export interface FileSystemServeOptions {
   /**
    * Strictly restrict file accessing outside of allowing paths.
    *
+   * Set to `false` to disable the warning
    * Default to false at this moment, will enabled by default in the future versions.
+   *
    * @expiremental
-   * @default false
+   * @default undefined
    */
-  strict?: boolean
+  strict?: boolean | undefined
 
   /**
-   * Restrict accessing files outside this directory will result in a 403.
+   * Restrict accessing files outside the allowed directories.
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
    *
    * @expiremental
    */
-  root?: string
+  allow?: string[]
 }
 
 /**
@@ -287,7 +290,9 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _registerMissingImport: ((id: string, resolved: string) => void) | null
+  _registerMissingImport:
+    | ((id: string, resolved: string, ssr: boolean | undefined) => void)
+    | null
   /**
    * @internal
    */
@@ -401,8 +406,9 @@ export async function createServer(
 
   process.once('SIGTERM', exitProcess)
 
-  if (!process.stdin.isTTY) {
+  if (process.env.CI !== 'true') {
     process.stdin.on('end', exitProcess)
+    process.stdin.resume()
   }
 
   watcher.on('change', async (file) => {
@@ -484,7 +490,7 @@ export async function createServer(
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(serveRawFsMiddleware(config))
+  middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
@@ -695,19 +701,33 @@ function createServerCloseFn(server: http.Server | null) {
     })
 }
 
+function resolvedAllowDir(root: string, dir: string): string {
+  return ensureLeadingSlash(normalizePath(path.resolve(root, dir)))
+}
+
 export function resolveServerOptions(
   root: string,
   raw?: ServerOptions
 ): ResolvedServerOptions {
   const server = raw || {}
-  const fsServeRoot = normalizePath(
-    path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
-  )
-  // TODO: make strict by default
-  const fsServeStrict = server.fsServe?.strict ?? false
-  server.fsServe = {
-    root: fsServeRoot,
-    strict: fsServeStrict
+  let allowDirs = server.fs?.allow
+
+  if (!allowDirs) {
+    allowDirs = [searchForWorkspaceRoot(root)]
+  }
+
+  allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
+
+  // only push client dir when vite itself is outside-of-root
+  const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
+  if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
+    allowDirs.push(resolvedClientDir)
+  }
+
+  server.fs = {
+    // TODO: make strict by default
+    strict: server.fs?.strict,
+    allow: allowDirs
   }
   return server as ResolvedServerOptions
 }

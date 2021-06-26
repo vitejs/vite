@@ -9,7 +9,7 @@ const fs = require('fs')
 const args = require('minimist')(process.argv.slice(2))
 const semver = require('semver')
 const chalk = require('chalk')
-const { prompt } = require('enquirer')
+const prompts = require('prompts')
 
 const pkgDir = process.cwd()
 const pkgPath = path.resolve(pkgDir, 'package.json')
@@ -77,21 +77,22 @@ async function main() {
     /**
      * @type {{ release: string }}
      */
-    const { release } = await prompt({
+    const { release } = await prompts({
       type: 'select',
       name: 'release',
       message: 'Select release type',
       choices: versionIncrements
         .map((i) => `${i} (${inc(i)})`)
         .concat(['custom'])
+        .map((i) => ({ value: i, title: i }))
     })
 
     if (release === 'custom') {
       /**
        * @type {{ version: string }}
        */
-      const res = await prompt({
-        type: 'input',
+      const res = await prompts({
+        type: 'text',
         name: 'version',
         message: 'Input custom version',
         initial: currentVersion
@@ -113,7 +114,7 @@ async function main() {
     /**
      * @type {{ tagBeta: boolean }}
      */
-    const { tagBeta } = await prompt({
+    const { tagBeta } = await prompts({
       type: 'confirm',
       name: 'tagBeta',
       message: `Publish under dist-tag "beta"?`
@@ -125,7 +126,7 @@ async function main() {
   /**
    * @type {{ yes: boolean }}
    */
-  const { yes } = await prompt({
+  const { yes } = await prompts({
     type: 'confirm',
     name: 'yes',
     message: `Releasing ${tag}. Confirm?`

@@ -35,7 +35,8 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  ssr?: boolean
 ): Plugin {
   // default resolver which prefers ESM
   const _resolve = config.createResolver({ asSrc: false })
@@ -62,7 +63,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer)
+    return resolver(id, _importer, undefined, ssr)
   }
 
   return {
