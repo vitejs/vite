@@ -130,7 +130,7 @@ export interface ServerOptions {
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
-  fs: Required<Omit<FileSystemServeOptions, 'root'>>
+  fs: Required<FileSystemServeOptions>
 }
 
 export interface FileSystemServeOptions {
@@ -144,13 +144,6 @@ export interface FileSystemServeOptions {
    * @default undefined
    */
   strict?: boolean | undefined
-
-  /**
-   *
-   * @expiremental
-   * @deprecated use `fs.allow` instead
-   */
-  root?: string
 
   /**
    * Restrict accessing files outside the allowed directories.
@@ -720,15 +713,16 @@ export function resolveServerOptions(
   let allowDirs = server.fs?.allow
 
   if (!allowDirs) {
-    allowDirs = [server.fs?.root || searchForWorkspaceRoot(root)]
-  }
-  allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
+    allowDirs = [resolvedAllowDir(root, searchForWorkspaceRoot(root))]
 
-  // only push client dir when vite itself is outside-of-root
-  const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
-  if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
-    allowDirs.push(resolvedClientDir)
+    // only push client dir when vite itself is outside-of-root
+    const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
+    if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
+      allowDirs.push(resolvedClientDir)
+    }
   }
+
+  allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
 
   server.fs = {
     // TODO: make strict by default
