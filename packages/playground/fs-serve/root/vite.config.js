@@ -6,8 +6,8 @@ const path = require('path')
 module.exports = {
   server: {
     fs: {
-      root: __dirname,
-      strict: true
+      strict: true,
+      allow: [__dirname]
     },
     hmr: {
       overlay: false

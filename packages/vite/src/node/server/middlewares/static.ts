@@ -94,7 +94,7 @@ export function serveRawFsMiddleware(
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      // restrict files outside of `fs.root`
+      // restrict files outside of `fs.allow`
       ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server)
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
