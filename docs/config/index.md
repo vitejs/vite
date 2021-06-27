@@ -367,7 +367,7 @@ export default async ({ command, mode }) => {
 
 - **Type:** `boolean | string`
 
-  Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can add it to `process.env.BROWSER` (for ex: firefox). For more info, have a look at [the open package](https://www.npmjs.com/package/open) and [openBrowser.ts](https://github.com/vitejs/vite/blob/11de3c226940a9eaf1ba998f037bfbd1e7aaf3ec/packages/vite/src/node/server/openBrowser.ts#L32)
+  Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can add it to `process.env.BROWSER` (for ex: firefox). For more info, have a look at [the open package](https://github.com/sindresorhus/open#app) and [openBrowser.ts](https://github.com/vitejs/vite/blob/11de3c226940a9eaf1ba998f037bfbd1e7aaf3ec/packages/vite/src/node/server/openBrowser.ts#L32)
 
   **Example:**
 
