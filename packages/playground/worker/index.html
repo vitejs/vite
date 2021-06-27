@@ -1,3 +1,4 @@
+<div>Expected values: <span class="mode-true"></span></div>
 <button class="ping">Ping</button>
 <div>
   Response from worker: <span class="pong"></span><span class="mode"></span>
@@ -16,6 +17,9 @@
   import Worker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
   import SharedWorker from './my-shared-worker?sharedworker&name=shared'
+  import { mode } from './workerImport'
+
+  document.querySelector('.mode-true').textContent = mode
 
   const worker = new Worker()
   worker.addEventListener('message', (e) => {

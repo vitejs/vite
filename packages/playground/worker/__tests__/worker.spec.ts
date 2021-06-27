@@ -51,6 +51,15 @@ if (isBuild) {
     expect(files.length).toBe(3)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
+    const worker = files.find((f) => f.includes('my-worker'))
+    const workerContent = fs.readFileSync(
+      path.resolve(assetsDir, worker),
+      'utf-8'
+    )
+
+    // worker should have all imports resolved and no exports
+    expect(workerContent).not.toMatch(`import`)
+    expect(workerContent).not.toMatch(`export`)
     // chunk
     expect(content).toMatch(`new Worker("/assets`)
     expect(content).toMatch(`new SharedWorker("/assets`)
