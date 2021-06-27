@@ -1,3 +1,18 @@
+## [1.3.4](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.3...plugin-react-refresh@1.3.4) (2021-06-27)
+
+
+### Bug Fixes
+
+* **ci:** fix ci lint step ([#2988](https://github.com/vitejs/vite/issues/2988)) ([4e8ffd8](https://github.com/vitejs/vite/commit/4e8ffd8865e6303d19b5a5ea4501fc54bff4e180))
+* **deps:** update all non-major dependencies ([#3791](https://github.com/vitejs/vite/issues/3791)) ([74d409e](https://github.com/vitejs/vite/commit/74d409eafca8d74ec4a6ece621ea2895bc1f2a32))
+
+
+### Features
+
+* **plugin-react-refresh:** add include / exclude options ([#3916](https://github.com/vitejs/vite/issues/3916)) ([c0a4ea1](https://github.com/vitejs/vite/commit/c0a4ea122794973f2e147f9778e5666f6aaca464))
+
+
+
 ## [1.3.3](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.2...plugin-react-refresh@1.3.3) (2021-04-24)
 
 
