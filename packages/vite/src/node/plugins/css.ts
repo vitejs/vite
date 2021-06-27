@@ -139,6 +139,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
       moduleCache = new Map<string, Record<string, string>>()
       cssModulesCache.set(config, moduleCache)
+      cachedPostcssConfig = undefined
     },
 
     async transform(raw, id) {
