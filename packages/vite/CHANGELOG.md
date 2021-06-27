@@ -1,3 +1,34 @@
+# [2.4.0-beta.0](https://github.com/vitejs/vite/compare/v2.3.8...v2.4.0-beta.0) (2021-06-27)
+
+
+### Bug Fixes
+
+* **build:** bundle non-inlined workers with rollup ([#2494](https://github.com/vitejs/vite/issues/2494)) ([18a2208](https://github.com/vitejs/vite/commit/18a22089df34c32daddf3b280c58f25cae73f722))
+* resolve nested dependencies ([#3254](https://github.com/vitejs/vite/issues/3254)) ([#3753](https://github.com/vitejs/vite/issues/3753)) ([8467f64](https://github.com/vitejs/vite/commit/8467f64aee218dcb3135bb832ccaed36d647052f))
+* **css:** file or contents missing error in build watch ([#3742](https://github.com/vitejs/vite/issues/3742)) ([#3747](https://github.com/vitejs/vite/issues/3747)) ([26b1b99](https://github.com/vitejs/vite/commit/26b1b9988db1ab980ca816d1914b26d6d3424502))
+* **deps:** update all non-major dependencies ([#3878](https://github.com/vitejs/vite/issues/3878)) ([a66a805](https://github.com/vitejs/vite/commit/a66a8053e9520d20bcf95fce870570c5195bcc91))
+* **scan:** 'for await' support in script setup for dev server ([#3889](https://github.com/vitejs/vite/issues/3889)) ([dd46cd1](https://github.com/vitejs/vite/commit/dd46cd1d030dcfffcbb2f20aff2b388cd18700f4))
+* **scan:** avoid breaking html comment regex inside script of scanned html-like files ([bb095db](https://github.com/vitejs/vite/commit/bb095db11db5c7a12db6dcee866694f1f68d1e15))
+* **ssr:** fix binding overwrite at nested function, fix [#3856](https://github.com/vitejs/vite/issues/3856) ([#3869](https://github.com/vitejs/vite/issues/3869)) ([85f51c1](https://github.com/vitejs/vite/commit/85f51c191d4d3317c5796e6c614ade6f7c21dddf))
+* **ssr:** normalize manifest filenames ([#3706](https://github.com/vitejs/vite/issues/3706)) ([aa8ca3f](https://github.com/vitejs/vite/commit/aa8ca3f35218c9fb48f87d3f6f4681d379ee45ca)), closes [#3303](https://github.com/vitejs/vite/issues/3303)
+* **ssr:** not flatten export * as (fix [#3934](https://github.com/vitejs/vite/issues/3934)) ([#3954](https://github.com/vitejs/vite/issues/3954)) ([7381d27](https://github.com/vitejs/vite/commit/7381d27564045a05cffbe4229d71d64b5a791042))
+* **ssr:** not importing browser exports, fix [#3772](https://github.com/vitejs/vite/issues/3772) ([#3933](https://github.com/vitejs/vite/issues/3933)) ([f623ba3](https://github.com/vitejs/vite/commit/f623ba37dbc517656a7ffb10bc1b3cb221a4bc72))
+* do not end server process in CI ([#3659](https://github.com/vitejs/vite/issues/3659)) ([5999444](https://github.com/vitejs/vite/commit/5999444496b6309460687b0769afad018aa21859))
+* missing styles with build watch ([#3742](https://github.com/vitejs/vite/issues/3742)) ([#3887](https://github.com/vitejs/vite/issues/3887)) ([c9a6efe](https://github.com/vitejs/vite/commit/c9a6efe17108a899e1d1f4cb490973486223da99))
+* multiple css url separation (fix [#3922](https://github.com/vitejs/vite/issues/3922)) ([#3926](https://github.com/vitejs/vite/issues/3926)) ([2d01e62](https://github.com/vitejs/vite/commit/2d01e62a70e534694ee1d87f4a328e796ae4c8fe))
+* only downgrade target to es2019 when actually using terser ([bd8723e](https://github.com/vitejs/vite/commit/bd8723eb36be368b4a45240e1f0159fbd40a81a4))
+
+
+### Features
+
+* add client events to import.meta.hot.on ([#3638](https://github.com/vitejs/vite/issues/3638)) ([de1ddd4](https://github.com/vitejs/vite/commit/de1ddd401802784a74f5106c5173945e760d3f03))
+* fs-serve import graph awareness ([#3784](https://github.com/vitejs/vite/issues/3784)) ([c45a02f](https://github.com/vitejs/vite/commit/c45a02f0279103be922a2d24b8cd05141e0ff165))
+* generate inline sourcemaps for bundled vite.config.js files ([#3949](https://github.com/vitejs/vite/issues/3949)) ([cff2fcd](https://github.com/vitejs/vite/commit/cff2fcd8db98bb1c046816fd2e01dcbffbe86629))
+* support for regex for ssr.noExternal ([#3819](https://github.com/vitejs/vite/issues/3819)) ([330c94c](https://github.com/vitejs/vite/commit/330c94c4355e4f091e6e4f46c6a47dbfba410e40))
+* support new URL(url, import.meta.url) usage ([4cbb40d](https://github.com/vitejs/vite/commit/4cbb40d2f1a4050c9944e7e1d9e0f5b204b7e37b))
+
+
+
 ## [2.3.8](https://github.com/vitejs/vite/compare/v2.3.7...v2.3.8) (2021-06-19)
 
 
