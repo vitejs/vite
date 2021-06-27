@@ -40,6 +40,7 @@ import { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
+import { watchPackageDataPlugin } from './packages'
 
 export interface BuildOptions {
   /**
@@ -348,6 +349,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   const options = config.build
   return {
     pre: [
+      watchPackageDataPlugin(config),
       buildHtmlPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
