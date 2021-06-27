@@ -6922,6 +6922,14 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
+"test-package-a@link:./packages/playground/nested-deps/test-package-a":
+  version "0.0.0"
+  uid ""
+
+"test-package-b@link:./packages/playground/nested-deps/test-package-b":
+  version "0.0.0"
+  uid ""
+
 text-extensions@^1.0.0:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/text-extensions/-/text-extensions-1.9.0.tgz#1853e45fee39c945ce6f6c36b2d659b5aabc2a26"
