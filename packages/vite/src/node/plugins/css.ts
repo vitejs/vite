@@ -120,6 +120,7 @@ export const chunkToEmittedCssFileMap = new WeakMap<
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
   let moduleCache: Map<string, Record<string, string>>
+  let cachedPostcssConfig: PostCSSConfigResult | null | undefined
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -158,6 +159,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         return url
       }
 
+      if (cachedPostcssConfig === undefined) {
+        cachedPostcssConfig = await resolvePostcssConfig(config)
+      }
       const {
         code: css,
         modules,
@@ -166,6 +170,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         id,
         raw,
         config,
+        cachedPostcssConfig,
         urlReplacer,
         atImportResolvers,
         server
@@ -521,6 +526,7 @@ async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
+  postcssConfig: PostCSSConfigResult | null,
   urlReplacer: CssUrlReplacer,
   atImportResolvers: CSSAtImportResolvers,
   server?: ViteDevServer
@@ -537,7 +543,6 @@ async function compileCSS(
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
-  const postcssConfig = await resolvePostcssConfig(config)
   const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
 
   // 1. plain css that needs no processing
@@ -722,15 +727,9 @@ interface PostCSSConfigResult {
   plugins: Postcss.Plugin[]
 }
 
-let cachedPostcssConfig: PostCSSConfigResult | null | undefined
-
 async function resolvePostcssConfig(
   config: ResolvedConfig
 ): Promise<PostCSSConfigResult | null> {
-  if (cachedPostcssConfig !== undefined) {
-    return cachedPostcssConfig
-  }
-
   // inline postcss config via vite config
   const inlineOptions = config.css?.postcss
   if (isObject(inlineOptions)) {
@@ -739,7 +738,7 @@ async function resolvePostcssConfig(
       plugins: inlineOptions.plugins || []
     }
     delete result.options.plugins
-    return (cachedPostcssConfig = result)
+    return result
   }
 
   try {
@@ -751,7 +750,7 @@ async function resolvePostcssConfig(
     if (!/No PostCSS Config found/.test(e.message)) {
       throw e
     }
-    return (cachedPostcssConfig = null)
+    return null
   }
 }
 
