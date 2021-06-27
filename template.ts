@@ -1,5 +1,5 @@
 import { SFCBlock } from '@vue/component-compiler-utils'
-import * as defaultVueTemplateCompiler from 'vue-template-compiler'
+import * as vueTemplateCompiler from 'vue-template-compiler'
 import { TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from './index'
 import { createRollupError } from './utils/error'
@@ -10,11 +10,7 @@ export function compileSFCTemplate(
   source: string,
   block: SFCBlock,
   filename: string,
-  {
-    isProduction,
-    vueTemplateOptions = {},
-    vueTemplateCompiler = defaultVueTemplateCompiler as any,
-  }: ResolvedOptions,
+  { isProduction, vueTemplateOptions = {} }: ResolvedOptions,
   pluginContext: TransformPluginContext
 ) {
   const { tips, errors, code } = compileTemplate({
@@ -54,11 +50,7 @@ export function compileSFCTemplate(
         generateCodeFrame &&
         vueTemplateOptions.compilerOptions?.outputSourceRange
       ) {
-        const {
-          msg,
-          start,
-          end,
-        } = error as defaultVueTemplateCompiler.ErrorWithRange
+        const { msg, start, end } = error as vueTemplateCompiler.ErrorWithRange
         return pluginContext.error(
           createRollupError(filename, {
             message: msg,
