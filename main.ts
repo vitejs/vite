@@ -72,7 +72,7 @@ function injectStyles (context) {
   // custom block
   result += await genCustomBlockCode(filePath, descriptor, pluginContext)
   // Expose filename. This is used by the devtools and Vue runtime warnings.
-  if (options.isProduction) {
+  if (!options.isProduction) {
     // Expose the file's full path in development, so that it can be opened
     // from the devtools.
     result += `\ncomponent.options.__file = ${JSON.stringify(
