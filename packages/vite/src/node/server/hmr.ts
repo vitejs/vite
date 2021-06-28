@@ -243,16 +243,18 @@ function propagateUpdate(
   if (!node.importers.size) {
     return true
   }
-
-  const isNotCSSMod = !isCSSRequest(node.url)
-  let noImporter = true
+  
+  // #3716, #3913
+  // For a non-CSS file, if all of its importers are CSS files (registered via
+  // PostCSS plugins) it should be considered a dead end and force full reload.
+  if (
+    !isCSSRequest(node.url) &&
+    [...node.importers].every((i) => isCSSRequest(i.url))
+  ) {
+    return true
+  }
 
   for (const importer of node.importers) {
-    if (isCSSRequest(importer.url) && isNotCSSMod) {
-      continue
-    }
-    noImporter = false
-
     const subChain = currentChain.concat(importer)
     if (importer.acceptedHmrDeps.has(node)) {
       boundaries.add({
@@ -271,7 +273,7 @@ function propagateUpdate(
       return true
     }
   }
-  return noImporter
+  return false
 }
 
 function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
