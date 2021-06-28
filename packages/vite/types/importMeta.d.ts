@@ -18,10 +18,45 @@ interface ImportMeta {
     decline(): void
     invalidate(): void
 
-    on(event: string, cb: (...args: any[]) => void): void
+    on: {
+      (
+        event: 'vite:beforeUpdate',
+        cb: (payload: import('./hmrPayload').UpdatePayload) => void
+      ): void
+      (
+        event: 'vite:beforePrune',
+        cb: (payload: import('./hmrPayload').PrunePayload) => void
+      ): void
+      (
+        event: 'vite:beforeFullReload',
+        cb: (payload: import('./hmrPayload').FullReloadPayload) => void
+      ): void
+      (
+        event: 'vite:error',
+        cb: (payload: import('./hmrPayload').ErrorPayload) => void
+      ): void
+      <T extends string>(
+        event: import('./customEvent').CustomEventName<T>,
+        cb: (data: any) => void
+      ): void
+    }
   }
 
   readonly env: ImportMetaEnv
+
+  glob(pattern: string): Record<
+    string,
+    () => Promise<{
+      [key: string]: any
+    }>
+  >
+
+  globEager(pattern: string): Record<
+    string,
+    {
+      [key: string]: any
+    }
+  >
 }
 
 interface ImportMetaEnv {
