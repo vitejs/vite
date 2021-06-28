@@ -1,5 +1,4 @@
 import {
-  ConnectedPayload,
   ErrorPayload,
   FullReloadPayload,
   HMRPayload,
