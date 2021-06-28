@@ -6,6 +6,7 @@ import {
   Update,
   UpdatePayload
 } from 'types/hmrPayload'
+import { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 import './env'
 
@@ -166,10 +167,6 @@ function notifyListeners(event: string, data: any): void {
     cbs.forEach((cb) => cb(data))
   }
 }
-
-// See https://stackoverflow.com/a/63549561.
-type CustomEventName<T extends string> = (T extends `vite:${T}` ? never : T) &
-  (`vite:${T}` extends T ? never : T)
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 
