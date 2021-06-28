@@ -96,7 +96,7 @@
     "convert-source-map": "^1.8.0",
     "cors": "^2.8.5",
     "debug": "^4.3.2",
-    "dotenv": "^8.6.0",
+    "dotenv": "^10.0.0",
     "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^0.6.0",
     "estree-walker": "^3.0.0",
