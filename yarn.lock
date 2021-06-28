@@ -2430,8 +2430,7 @@ css-color-names@^1.0.1:
   integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
 
 "css-dep@link:./packages/playground/css/css-dep":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 css-parse@~2.0.0:
   version "2.0.0"
@@ -2602,23 +2601,22 @@ delegate@^3.1.2:
 
 "dep-cjs-named-only@link:./packages/playground/optimize-deps/dep-cjs-named-only":
   version "0.0.0"
-  uid ""
 
 "dep-esbuild-plugin-transform@link:./packages/playground/optimize-deps/dep-esbuild-plugin-transform":
   version "0.0.0"
-  uid ""
 
 "dep-import-type@link:./packages/playground/ssr-vue/dep-import-type":
   version "0.0.0"
-  uid ""
 
 "dep-linked-include@link:./packages/playground/optimize-deps/dep-linked-include":
   version "0.0.0"
-  uid ""
+  dependencies:
+    react "17.0.0"
 
 "dep-linked@link:./packages/playground/optimize-deps/dep-linked":
   version "0.0.0"
-  uid ""
+  dependencies:
+    lodash-es "^4.17.20"
 
 depd@~1.1.2:
   version "1.1.2"
@@ -5634,10 +5632,10 @@ polka@^0.5.2:
     "@polka/url" "^0.5.0"
     trouter "^2.0.1"
 
-postcss-import@^13.0.0:
-  version "13.0.0"
-  resolved "https://registry.yarnpkg.com/postcss-import/-/postcss-import-13.0.0.tgz#d6960cd9e3de5464743b04dd8cd9d870662f8b8c"
-  integrity sha512-LPUbm3ytpYopwQQjqgUH4S3EM/Gb9QsaSPP/5vnoi+oKVy3/mIk2sc0Paqw7RL57GpScm9MdIMUypw2znWiBpg==
+postcss-import@^14.0.2:
+  version "14.0.2"
+  resolved "https://registry.yarnpkg.com/postcss-import/-/postcss-import-14.0.2.tgz#60eff77e6be92e7b67fe469ec797d9424cae1aa1"
+  integrity sha512-BJ2pVK4KhUyMcqjuKs9RijV5tatNzNa73e/32aBVE/ejYPe37iH+6vAu9WvqUkB5OAYgLHzbSvzHnorybJCm9g==
   dependencies:
     postcss-value-parser "^4.0.0"
     read-cache "^1.0.0"
@@ -5714,7 +5712,7 @@ postcss-value-parser@^4.0.0, postcss-value-parser@^4.1.0:
   resolved "https://registry.yarnpkg.com/postcss-value-parser/-/postcss-value-parser-4.1.0.tgz#443f6a20ced6481a2bda4fa8532a6e55d789a2cb"
   integrity sha512-97DXOFbQJhk71ne5/Mt6cOu6yxsSfM0QGQyl0L25Gca4yGWEGJaig7l7gbCX623VqTBNGLRLaVUCnNkcedlRSQ==
 
-postcss@^8.1.10, postcss@^8.3.5:
+postcss@^8.1.10, postcss@^8.3.4, postcss@^8.3.5:
   version "8.3.5"
   resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.3.5.tgz#982216b113412bc20a86289e91eb994952a5b709"
   integrity sha512-NxTuJocUhYGsMiMFHDUkmjSKT3EdH4/WbGF6GCi1NDGk+vbcUTun4fpbOqaPtD8IIsztA2ilZm2DhYCuyN58gA==
@@ -6206,16 +6204,13 @@ requires-port@^1.0.0:
   integrity sha1-kl0mAdOaxIXgkc8NpcbmlNw9yv8=
 
 "resolve-browser-field@link:./packages/playground/resolve/browser-field":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-custom-condition@link:./packages/playground/resolve/custom-condition":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-custom-main-field@link:./packages/playground/resolve/custom-main-field":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 resolve-cwd@^3.0.0:
   version "3.0.0"
@@ -6225,12 +6220,10 @@ resolve-cwd@^3.0.0:
     resolve-from "^5.0.0"
 
 "resolve-exports-env@link:./packages/playground/resolve/exports-env":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-exports-path@link:./packages/playground/resolve/exports-path":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -6923,12 +6916,10 @@ test-exclude@^6.0.0:
     minimatch "^3.0.4"
 
 "test-package-a@link:./packages/playground/nested-deps/test-package-a":
-  version "0.0.0"
-  uid ""
+  version "2.0.0"
 
 "test-package-b@link:./packages/playground/nested-deps/test-package-b":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 text-extensions@^1.0.0:
   version "1.9.0"
@@ -7165,7 +7156,6 @@ typedarray-to-buffer@^3.1.5:
 
 "types@link:./packages/vite/types":
   version "0.0.0"
-  uid ""
 
 typescript@^4.3.4, typescript@~4.3.2:
   version "4.3.4"
@@ -7270,6 +7260,18 @@ vary@^1, vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
+
+vite@^2.3.7:
+  version "2.3.8"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-2.3.8.tgz#42e3e03953859fd410e4e6ab3d1cca0aab2adc3c"
+  integrity sha512-QiEx+iqNnJntSgSF2fWRQvRey9pORIrtNJzNyBJXwc+BdzWs83FQolX84cTBo393cfhObrtWa6180dAa4NLDiQ==
+  dependencies:
+    esbuild "^0.12.8"
+    postcss "^8.3.4"
+    resolve "^1.20.0"
+    rollup "^2.38.5"
+  optionalDependencies:
+    fsevents "~2.3.2"
 
 vitepress@^0.15.5:
   version "0.15.5"
