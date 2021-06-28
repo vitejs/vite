@@ -1,7 +1,6 @@
 /// <reference lib="dom" />
 
 import {
-  ConnectedPayload,
   ErrorPayload,
   FullReloadPayload,
   PrunePayload,
