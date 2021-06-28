@@ -744,7 +744,7 @@ async function resolvePostcssConfig(
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
     // @ts-ignore
-    return (cachedPostcssConfig = await postcssrc({}, searchPath))
+    return await postcssrc({}, searchPath)
   } catch (e) {
     if (!/No PostCSS Config found/.test(e.message)) {
       throw e
