@@ -604,7 +604,9 @@ async function compileCSS(
   // 3. postcss
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
   const postcssPlugins =
-    postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
+    postcssConfig && Array.isArray(postcssConfig.plugins)
+      ? postcssConfig.plugins.slice()
+      : []
 
   if (needInlineImport) {
     postcssPlugins.unshift(
