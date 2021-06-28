@@ -243,6 +243,16 @@ function propagateUpdate(
   if (!node.importers.size) {
     return true
   }
+  
+  // #3716, #3913
+  // For a non-CSS file, if all of its importers are CSS files (registered via
+  // PostCSS plugins) it should be considered a dead end and force full reload.
+  if (
+    !isCSSRequest(node.url) &&
+    [...node.importers].every((i) => isCSSRequest(i.url))
+  ) {
+    return true
+  }
 
   for (const importer of node.importers) {
     const subChain = currentChain.concat(importer)
