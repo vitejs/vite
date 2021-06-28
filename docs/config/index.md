@@ -383,7 +383,7 @@ export default async ({ command, mode }) => {
 
 - **Type:** `Record<string, string | ProxyOptions>`
 
-  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`.
+  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
 
   Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
@@ -406,6 +406,14 @@ export default async ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/fallback/, '')
+        },
+        // Using the proxy instance
+        '/api': {
+          target: 'http://jsonplaceholder.typicode.com',
+          changeOrigin: true,
+          configure: (proxy, options) => {
+            // proxy will be an instance of 'http-proxy'
+          }),
         }
       }
     }
@@ -480,7 +488,7 @@ async function createServer() {
 createServer()
 ```
 
-### server.fsServe.strict
+### server.fs.strict
 
 - **Experimental**
 - **Type:** `boolean`
@@ -488,12 +496,12 @@ createServer()
 
   Restrict serving files outside of workspace root.
 
-### server.fsServe.root
+### server.fs.allow
 
 - **Experimental**
-- **Type:** `string`
+- **Type:** `string[]`
 
-  Restrict files that could be served via `/@fs/`. When `server.fsServe.strict` is set to `true`, accessing files outside this directory will result in a 403.
+  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list will result in a 403.
 
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
 
@@ -506,9 +514,11 @@ createServer()
   ```js
   export default {
     server: {
-      fsServe: {
+      fs: {
         // Allow serving files from one level up to the project root
-        root: '..'
+        allow: [
+          '..'
+        ]
       }
     }
   }
@@ -690,6 +700,10 @@ createServer()
 
   Dependencies to exclude from pre-bundling.
 
+  :::warning CommonJS
+  CommonJS dependencies should not be excluded from optimization. If an ESM dependency has a nested CommonJS dependency, it should not be excluded as well.
+  :::
+
 ### optimizeDeps.include
 
 - **Type:** `string[]`
@@ -721,7 +735,7 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string[]`
+- **Type:** `string | RegExp | (string | RegExp)[]`
 
   Prevent listed dependencies from being externalized for SSR.
 

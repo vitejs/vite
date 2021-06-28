@@ -239,6 +239,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
       pureCssChunks = new Set<string>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+      hasEmitted = false
     },
 
     transform(css, id, ssr) {
@@ -836,7 +837,9 @@ async function doUrlReplace(
     return matched
   }
 
-  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
+  // #3926
+  const initialComma = matched[0] === ',' ? ',' : ''
+  return `${initialComma}url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
 let CleanCSS: any

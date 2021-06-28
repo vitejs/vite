@@ -76,7 +76,9 @@ function viteLegacyPlugin(options = {}) {
       if (!config.build) {
         config.build = {}
       }
-      config.build.polyfillDynamicImport = true
+      if (genLegacy) {
+        config.build.polyfillDynamicImport = true
+      }
     }
   }
 
@@ -303,6 +305,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     transformIndexHtml(html, { chunk }) {
+      if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually
         // emitted. Here we simply record its corresponding legacy chunk.

@@ -11,7 +11,7 @@ const debounceMs = 100
 
 export function createMissingImporterRegisterFn(
   server: ViteDevServer
-): (id: string, resolved: string) => void {
+): (id: string, resolved: string, ssr?: boolean) => void {
   const { logger } = server.config
   let knownOptimized = server._optimizeDepsMetadata!.optimized
   let currentMissing: Record<string, string> = {}
@@ -19,7 +19,7 @@ export function createMissingImporterRegisterFn(
 
   let pendingResolve: (() => void) | null = null
 
-  async function rerun() {
+  async function rerun(ssr: boolean | undefined) {
     const newDeps = currentMissing
     currentMissing = {}
 
@@ -48,7 +48,8 @@ export function createMissingImporterRegisterFn(
         server.config,
         true,
         false,
-        newDeps
+        newDeps,
+        ssr
       ))
       knownOptimized = newData!.optimized
 
@@ -84,11 +85,15 @@ export function createMissingImporterRegisterFn(
     })
   }
 
-  return function registerMissingImport(id: string, resolved: string) {
+  return function registerMissingImport(
+    id: string,
+    resolved: string,
+    ssr?: boolean
+  ) {
     if (!knownOptimized[id]) {
       currentMissing[id] = resolved
       if (handle) clearTimeout(handle)
-      handle = setTimeout(rerun, debounceMs)
+      handle = setTimeout(() => rerun(ssr), debounceMs)
       server._pendingReload = new Promise((r) => {
         pendingResolve = r
       })

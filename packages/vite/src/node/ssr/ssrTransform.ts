@@ -133,9 +133,15 @@ export async function ssrTransform(
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node, node.source.value as string)
-      s.remove(node.start, node.end)
-      s.append(`\n${ssrExportAllKey}(${importId})`)
+      if ((node as any).exported) {
+        const importId = defineImport(node, node.source.value as string)
+        defineExport((node as any).exported.name, `${importId}`)
+        s.remove(node.start, node.end)
+      } else {
+        const importId = defineImport(node, node.source.value as string)
+        s.remove(node.start, node.end)
+        s.append(`\n${ssrExportAllKey}(${importId})`)
+      }
     }
   }
 
@@ -392,7 +398,8 @@ function isFunction(node: _Node): node is FunctionNode {
 }
 
 function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
-  for (const node of parentStack) {
+  for (let i = parentStack.length - 1; i >= 0; i--) {
+    const node = parentStack[i]
     if (isFunction(node)) {
       return node
     }

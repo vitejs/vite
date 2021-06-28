@@ -140,13 +140,13 @@ const nodeConfig = {
         src: 'require("sugarss")',
         replacement: `eval('require')('sugarss')`
       },
-      'import-fresh/index.js': {
-        src: `require(filePath)`,
-        replacement: `eval('require')(filePath)`
-      },
       'import-from/index.js': {
         pattern: /require\(resolveFrom/g,
         replacement: `eval('require')(resolveFrom`
+      },
+      'lilconfig/dist/index.js': {
+        pattern: /: require,/g,
+        replacement: `: eval('require'),`
       }
     }),
     // Optional peer deps of ws. Native deps that are mostly for performance.
@@ -273,7 +273,9 @@ function licensePlugin() {
       )
       const licenses = new Set()
       const dependencyLicenseTexts = dependencies
-        .sort(({ name: nameA }, { name: nameB }) => (nameA > nameB) ? 1 : ((nameB > nameA) ? -1 : 0))
+        .sort(({ name: nameA }, { name: nameB }) =>
+          nameA > nameB ? 1 : nameB > nameA ? -1 : 0
+        )
         .map(
           ({
             name,
