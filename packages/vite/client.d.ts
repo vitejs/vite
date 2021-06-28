@@ -1,12 +1,5 @@
 /// <reference lib="dom" />
 
-import {
-  ErrorPayload,
-  FullReloadPayload,
-  PrunePayload,
-  UpdatePayload
-} from 'types/hmrPayload'
-
 interface ImportMeta {
   url: string
 
@@ -28,13 +21,22 @@ interface ImportMeta {
     invalidate(): void
 
     on: {
-      (event: 'vite:beforeUpdate', cb: (payload: UpdatePayload) => void): void
-      (event: 'vite:beforePrune', cb: (payload: PrunePayload) => void): void
+      (
+        event: 'vite:beforeUpdate',
+        cb: (payload: import('./types/hmrPayload').UpdatePayload) => void
+      ): void
+      (
+        event: 'vite:beforePrune',
+        cb: (payload: import('./types/hmrPayload').PrunePayload) => void
+      ): void
       (
         event: 'vite:beforeFullReload',
-        cb: (payload: FullReloadPayload) => void
+        cb: (payload: import('./types/hmrPayload').FullReloadPayload) => void
       ): void
-      (event: 'vite:error', cb: (payload: ErrorPayload) => void): void
+      (
+        event: 'vite:error',
+        cb: (payload: import('./types/hmrPayload').ErrorPayload) => void
+      ): void
       <T extends string>(
         event: CustomEventName<T>,
         cb: (data: any) => void
