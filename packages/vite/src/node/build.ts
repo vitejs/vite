@@ -272,10 +272,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   return {
     pre: [
       buildHtmlPlugin(config),
-      commonjsPlugin({
-        ignoreDynamicRequires: true,
-        ...options.commonjsOptions
-      }),
+      commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
       dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),

@@ -42,6 +42,18 @@ export interface RollupCommonJSOptions {
    */
   sourceMap?: boolean
   /**
+   * Some `require` calls cannot be resolved statically to be translated to
+   * imports.
+   * When this option is set to `false`, the generated code will either
+   * directly throw an error when such a call is encountered or, when
+   * `dynamicRequireTargets` is used, when such a call cannot be resolved with a
+   * configured dynamic require target.
+   * Setting this option to `true` will instead leave the `require` call in the
+   * code or use it as a fallback for `dynamicRequireTargets`.
+   * @default false
+   */
+  ignoreDynamicRequires?: boolean
+  /**
    * Instructs the plugin whether to enable mixed module transformations. This
    * is useful in scenarios with modules that contain a mix of ES `import`
    * statements and CommonJS `require` expressions. Set to `true` if `require`
