@@ -195,7 +195,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (resolved.id.startsWith(root + '/')) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
-        } else if (((this as any).$fs$ || fs).existsSync(cleanUrl(resolved.id))) {
+        } else if (
+          ((this as any).$fs$ || fs).existsSync(cleanUrl(resolved.id))
+        ) {
           // exists but out of root: rewrite to absolute /@fs/ paths
           url = path.posix.join(FS_PREFIX + resolved.id)
         } else {
@@ -222,7 +224,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // for relative js/css imports, inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if (isRelative && !/[\?&]import\b/.test(url)) {
+          if (isRelative && !/[\?&]import=?\b/.test(url)) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -360,6 +362,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             start
           )
           let url = normalizedUrl
+
+          // record as safe modules
+          server?.moduleGraph.safeModulesPath.add(
+            cleanUrl(url).slice(4 /* '/@fs'.length */)
+          )
 
           // rewrite
           if (url !== specifier) {

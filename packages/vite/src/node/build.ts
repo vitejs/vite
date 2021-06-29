@@ -27,6 +27,7 @@ import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
+import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
@@ -37,6 +38,7 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
 import { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
+import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 
 export interface BuildOptions {
   /**
@@ -93,10 +95,13 @@ export interface BuildOptions {
    */
   cssCodeSplit?: boolean
   /**
-   * Whether to generate sourcemap
+   * If `true`, a separate sourcemap file will be created. If 'inline', the
+   * sourcemap will be appended to the resulting output file as data URI.
+   * 'hidden' works like `true` except that the corresponding sourcemap
+   * comments in the bundled files are suppressed.
    * @default false
    */
-  sourcemap?: boolean | 'inline'
+  sourcemap?: boolean | 'inline' | 'hidden'
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
@@ -122,6 +127,10 @@ export interface BuildOptions {
    * Options to pass on to `@rollup/plugin-commonjs`
    */
   commonjsOptions?: RollupCommonJSOptions
+  /**
+   * Options to pass on to `@rollup/plugin-dynamic-import-vars`
+   */
+  dynamicImportVarsOptions?: RollupDynamicImportVarsOptions
   /**
    * Whether to write bundle to disk
    * @default true
@@ -211,6 +220,11 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       extensions: ['.js', '.cjs'],
       ...raw?.commonjsOptions
     },
+    dynamicImportVarsOptions: {
+      warnOnError: true,
+      exclude: [/node_modules/],
+      ...raw?.dynamicImportVarsOptions
+    },
     minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
     cleanCssOptions: {},
@@ -237,7 +251,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       'chrome87',
       'safari13.1'
     ]
-  } else if (resolved.target === 'esnext' && resolved.minify !== 'esbuild') {
+  } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     // esnext + terser: limit to es2019 so it can be minified by terser
     resolved.target = 'es2019'
   }
@@ -258,16 +272,13 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   return {
     pre: [
       buildHtmlPlugin(config),
-      commonjsPlugin({
-        ignoreDynamicRequires: true,
-        ...options.commonjsOptions
-      }),
+      commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
-      dynamicImportVars({
-        warnOnError: true,
-        exclude: [/node_modules/]
-      }),
-      ...(options.rollupOptions.plugins || [])
+      dynamicImportVars(options.dynamicImportVarsOptions),
+      assetImportMetaUrlPlugin(config),
+      ...(options.rollupOptions.plugins
+        ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])
+        : [])
     ],
     post: [
       buildImportAnalysisPlugin(config),
@@ -404,7 +415,7 @@ async function doBuild(
   try {
     const pkgName = libOptions && getPkgName(config.root)
 
-    const buildOuputOptions = (output: OutputOptions = {}): OutputOptions => {
+    const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
@@ -451,10 +462,10 @@ async function doBuild(
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
         for (const resolvedOutput of outputs) {
-          output.push(buildOuputOptions(resolvedOutput))
+          output.push(buildOutputOptions(resolvedOutput))
         }
       } else {
-        output.push(buildOuputOptions(outputs))
+        output.push(buildOutputOptions(outputs))
       }
 
       const watcherOptions = config.build.watch
@@ -502,7 +513,7 @@ async function doBuild(
 
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate'](
-        buildOuputOptions(output)
+        buildOutputOptions(output)
       )
     }
 

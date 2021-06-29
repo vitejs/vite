@@ -17,7 +17,7 @@ export async function resolvePlugins(
   normalPlugins: Plugin[],
   postPlugins: Plugin[]
 ): Promise<Plugin[]> {
-  const isBuild = config.command === 'build'; // always false for our usage
+  const isBuild = config.command === 'build'
 
   const buildPlugins = { pre: [], post: [] };
   // isBuild ? (await import('../build')).resolveBuildPlugins(config) : ...
@@ -32,7 +32,8 @@ export async function resolvePlugins(
       root: config.root,
       isProduction: config.isProduction,
       isBuild,
-      asSrc: true,
+      ssrTarget: config.ssr?.target,
+      asSrc: true
     }),
     htmlInlineScriptProxyPlugin(),
     cssPlugin(config),
@@ -40,9 +41,9 @@ export async function resolvePlugins(
     jsonPlugin(
       {
         namedExports: true,
-        ...config.json,
+        ...config.json
       },
-      false
+      isBuild
     ),
     // wasmPlugin(config),
     // webWorkerPlugin(config),
@@ -56,6 +57,6 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)]),
-  ].filter(Boolean) as Plugin[];
+      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
+  ].filter(Boolean) as Plugin[]
 }

@@ -75,7 +75,7 @@ export function errorMiddleware(
 }
 
 export class AccessRestrictedError extends Error {
-  constructor(msg: string, public url: string, public serveRoot: string) {
+  constructor(msg: string) {
     super(msg)
   }
 }

@@ -105,6 +105,13 @@ export async function resolveConfig(
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   const cacheDir = config.cacheDir
+
+  // create an internal resolver to be used in special scenarios, e.g.
+  // optimizer & handling css @imports
+  const createResolver: ResolvedConfig['createResolver'] = (options) => {
+    return undefined as any;
+  }
+
   const { publicDir } = config
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
@@ -134,15 +141,13 @@ export async function resolveConfig(
       BASE_URL,
       MODE: mode,
       DEV: !isProduction,
-      PROD: isProduction,
+      PROD: isProduction
     },
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file);
     },
     logger,
-    createResolver: (opts) => {
-      return undefined as any;
-    },
+    createResolver,
     optimizeDeps: {
       ...config.optimizeDeps,
       esbuildOptions: {

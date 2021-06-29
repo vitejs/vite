@@ -48,26 +48,28 @@
   const globbed = import.meta.globEager('./glob/*.js')
 
   import { camelCase } from 'dep-linked'
-  document.querySelector('.deps-linked').textContent = camelCase('foo-bar-baz')
+  text('.deps-linked', camelCase('foo-bar-baz'))
 
   import { msg, VueSFC } from 'dep-linked-include'
-  document.querySelector('.force-include').textContent = msg
-  document.querySelector('.plugin').textContent = VueSFC.render()
+  text('.force-include', msg)
+  text('.plugin', VueSFC.render())
 
   import * as linked from 'dep-linked-include'
   const keys = Object.keys(linked)
   if (keys.length) {
-    document.querySelector('.import-star').textContent = `[success] ${keys.join(
-      ', '
-    )}`
+    text('.import-star', `[success] ${keys.join(', ')}`)
   }
 
   import { createApp } from 'vue'
   import { createStore } from 'vuex'
   if (typeof createApp === 'function' && typeof createStore === 'function') {
-    document.querySelector('.vue').textContent = '[success]'
+    text('.vue', '[success]')
   }
 
   import { hello } from 'dep-esbuild-plugin-transform'
-  document.querySelector('.esbuild-plugin').textContent = hello()
+  text('.esbuild-plugin', hello())
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
 </script>

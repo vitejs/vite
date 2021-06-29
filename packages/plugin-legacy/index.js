@@ -76,7 +76,9 @@ function viteLegacyPlugin(options = {}) {
       if (!config.build) {
         config.build = {}
       }
-      config.build.polyfillDynamicImport = true
+      if (genLegacy) {
+        config.build.polyfillDynamicImport = true
+      }
     }
   }
 
@@ -276,7 +278,8 @@ function viteLegacyPlugin(options = {}) {
             () => ({
               plugins: [
                 recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
-                replaceLegacyEnvBabelPlugin()
+                replaceLegacyEnvBabelPlugin(),
+                wrapIIFEBabelPlugin()
               ]
             })
           ],
@@ -302,6 +305,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     transformIndexHtml(html, { chunk }) {
+      if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually
         // emitted. Here we simply record its corresponding legacy chunk.
@@ -598,6 +602,22 @@ function replaceLegacyEnvBabelPlugin() {
       }
     }
   })
+}
+
+function wrapIIFEBabelPlugin() {
+  return ({ types: t, template }) => {
+    const buildIIFE = template(';(function(){%%body%%})();')
+
+    return {
+      name: 'vite-wrap-iife',
+      post({ path }) {
+        if (!this.isWrapped) {
+          this.isWrapped = true
+          path.replaceWith(t.program(buildIIFE({ body: path.node.body })))
+        }
+      }
+    }
+  }
 }
 
 module.exports = viteLegacyPlugin

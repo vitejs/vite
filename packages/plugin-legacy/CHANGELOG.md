@@ -1,3 +1,24 @@
+## [1.4.3](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.2...plugin-legacy@1.4.3) (2021-06-27)
+
+
+### Bug Fixes
+
+* don't force polyfillDynamicImport if renderLegacyChunks is false ([#3695](https://github.com/vitejs/vite/issues/3695)) ([#3774](https://github.com/vitejs/vite/issues/3774)) ([d2a51ca](https://github.com/vitejs/vite/commit/d2a51ca4eda2ca9f99d9a066836d76d2253cfc24))
+* **deps:** update all non-major dependencies ([#3878](https://github.com/vitejs/vite/issues/3878)) ([a66a805](https://github.com/vitejs/vite/commit/a66a8053e9520d20bcf95fce870570c5195bcc91))
+* **plugin-legacy:** chunk may not exist ([#3886](https://github.com/vitejs/vite/issues/3886)) ([dd5931d](https://github.com/vitejs/vite/commit/dd5931d9c1cf382849047332b2c3409755ceebf5))
+
+
+
+## [1.4.2](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.1...plugin-legacy@1.4.2) (2021-06-22)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#3791](https://github.com/vitejs/vite/issues/3791)) ([74d409e](https://github.com/vitejs/vite/commit/74d409eafca8d74ec4a6ece621ea2895bc1f2a32))
+* **plugin-legacy:** wrap chunks in IIFE ([#3783](https://github.com/vitejs/vite/issues/3783)) ([9abdb81](https://github.com/vitejs/vite/commit/9abdb8137ef54dd095e7bc47ae6a1ccf490fd196))
+
+
+
 ## [1.4.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.0...plugin-legacy@1.4.1) (2021-06-01)
 
 

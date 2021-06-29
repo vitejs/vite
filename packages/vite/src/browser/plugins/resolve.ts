@@ -86,7 +86,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
-        const normalizedFsPath = fsPath
+        const normalizedFsPath = normalizePath(fsPath)
         const pathFromBasedir = normalizedFsPath.slice(basedir.length)
         if (pathFromBasedir.startsWith('/node_modules/')) {
           // normalize direct imports from node_modules to bare imports, so the
@@ -98,7 +98,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
               importer,
               options,
               targetWeb,
-              server
+              server,
+              ssr
             )) &&
             res.id.startsWith(normalizedFsPath)
           ) {
@@ -158,10 +159,12 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         }
         // TODO BROWSER SUPPORT
         // re-trigger optimize (if not running optimize already)
-        if ((res = tryNodeResolve(id, importer, options, targetWeb, server))) {
+        if ((res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))) {
           return res
         }
       }
+
+      isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
     },
 
     load(id) {
@@ -267,7 +270,8 @@ export function tryNodeResolve(
   importer: string | undefined,
   options: InternalResolveOptions,
   targetWeb: boolean,
-  server?: ViteDevServer
+  server?: ViteDevServer,
+  ssr?: boolean
 ): PartialResolvedId | undefined {
   return { id: '/@node_modules/' + flattenId(id) + '.js' };
 }

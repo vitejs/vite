@@ -1,4 +1,5 @@
-import { Plugin, ViteDevServer } from '../../node'
+import { ViteDevServer } from '../../node'
+import { Plugin } from '../../node/plugin'
 import { bareImportRE } from '../../node/utils'
 import { tryOptimizedResolve } from './resolve'
 

@@ -383,7 +383,7 @@ export default async ({ command, mode }) => {
 
 - **Type:** `Record<string, string | ProxyOptions>`
 
-  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`.
+  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
 
   Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
@@ -406,6 +406,14 @@ export default async ({ command, mode }) => {
           target: 'http://jsonplaceholder.typicode.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/fallback/, '')
+        },
+        // Using the proxy instance
+        '/api': {
+          target: 'http://jsonplaceholder.typicode.com',
+          changeOrigin: true,
+          configure: (proxy, options) => {
+            // proxy will be an instance of 'http-proxy'
+          }),
         }
       }
     }
@@ -437,7 +445,6 @@ export default async ({ command, mode }) => {
 
   When using `server.middlewareMode` and `server.https`, setting `server.hmr.server` to your HTTPS server will process HMR secure connection requests through your server. This can be helpful when using self-signed certificates.
 
-
 ### server.watch
 
 - **Type:** `object`
@@ -456,6 +463,7 @@ export default async ({ command, mode }) => {
 - **Related:** [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
 - **Example:**
+
 ```js
 const express = require('express')
 const { createServer: createViteServer } = require('vite')
@@ -480,7 +488,7 @@ async function createServer() {
 createServer()
 ```
 
-### server.fsServe.strict
+### server.fs.strict
 
 - **Experimental**
 - **Type:** `boolean`
@@ -488,12 +496,12 @@ createServer()
 
   Restrict serving files outside of workspace root.
 
-### server.fsServe.root
+### server.fs.allow
 
 - **Experimental**
-- **Type:** `string`
+- **Type:** `string[]`
 
-  Restrict files that could be served via `/@fs/`. When `server.fsServe.strict` is set to `true`, accessing files outside this directory will result in a 403.
+  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list will result in a 403.
 
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
 
@@ -506,9 +514,11 @@ createServer()
   ```js
   export default {
     server: {
-      fsServe: {
+      fs: {
         // Allow serving files from one level up to the project root
-        root: '..'
+        allow: [
+          '..'
+        ]
       }
     }
   }
@@ -524,7 +534,10 @@ createServer()
 
   Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets [browsers with native ES module support](https://caniuse.com/es6-module).
 
-  Another special value is 'esnext' - which only performs minimal transpiling (for minification compat) and assumes native dynamic imports support.
+  Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
+
+  - If the [`build.minify`](#build-minify) option is `'terser'` (the default), `'esnext'` will be forced down to `'es2019'`.
+  - In other cases, it will perform no transpilation at all.
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
@@ -583,7 +596,7 @@ createServer()
 
 ### build.sourcemap
 
-- **Type:** `boolean | 'inline'`
+- **Type:** `boolean | 'inline' | 'hidden'`
 - **Default:** `false`
 
   Generate production source maps.
@@ -599,6 +612,12 @@ createServer()
 - **Type:** [`RollupCommonJSOptions`](https://github.com/rollup/plugins/tree/master/packages/commonjs#options)
 
   Options to pass on to [@rollup/plugin-commonjs](https://github.com/rollup/plugins/tree/master/packages/commonjs).
+
+### build.dynamicImportVarsOptions
+
+- **Type:** [`RollupDynamicImportVarsOptions`](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#options)
+
+  Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars).
 
 ### build.lib
 
@@ -687,6 +706,10 @@ createServer()
 
   Dependencies to exclude from pre-bundling.
 
+  :::warning CommonJS
+  CommonJS dependencies should not be excluded from optimization. If an ESM dependency has a nested CommonJS dependency, it should not be excluded as well.
+  :::
+
 ### optimizeDeps.include
 
 - **Type:** `string[]`
@@ -718,7 +741,7 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string[]`
+- **Type:** `string | RegExp | (string | RegExp)[]`
 
   Prevent listed dependencies from being externalized for SSR.
 

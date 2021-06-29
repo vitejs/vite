@@ -64,7 +64,7 @@ export interface CSSModulesOptions {
     outputFileName: string
   ) => void
   scopeBehaviour?: 'global' | 'local'
-  globalModulePaths?: string[]
+  globalModulePaths?: RegExp[]
   generateScopedName?:
     | string
     | ((name: string, filename: string, css: string) => string)
@@ -223,7 +223,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  let styles: Map<string, string>
+  // styles initialization in buildStart causes a styling loss in watch
+  const styles: Map<string, string> = new Map<string, string>()
   let pureCssChunks: Set<string>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
@@ -236,9 +237,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
-      styles = new Map<string, string>()
       pureCssChunks = new Set<string>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+      hasEmitted = false
     },
 
     transform(css, id, ssr) {
@@ -593,7 +594,7 @@ async function compileCSS(
     if (preprocessResult.deps) {
       preprocessResult.deps.forEach((dep) => {
         // sometimes sass registers the file itself as a dep
-        if (dep !== opts.filename) {
+        if (normalizePath(dep) !== normalizePath(opts.filename)) {
           deps.add(dep)
         }
       })
@@ -757,7 +758,9 @@ type CssUrlReplacer = (
   url: string,
   importer?: string
 ) => string | Promise<string>
-const cssUrlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+// https://drafts.csswg.org/css-syntax-3/#identifier-code-point
+export const cssUrlRE =
+  /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
@@ -1186,7 +1189,6 @@ const styl: StylePreprocessor = async (source, root, options) => {
 
     const result = ref.render()
 
-    // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
     // Concat imports deps with computed deps
     const deps = [...ref.deps(), ...importsDeps]
 

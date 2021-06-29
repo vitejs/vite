@@ -35,7 +35,7 @@ const envConfig = {
 /**
  * @type { import('rollup').RollupOptions }
  */
- const clientConfig = {
+const clientConfig = {
   input: path.resolve(__dirname, 'src/client/client.ts'),
   external: ['./env'],
   plugins: [
@@ -57,7 +57,7 @@ const envConfig = {
 /**
  * @type { import('rollup').RollupOptions }
  */
- const browserClientConfig = {
+const browserClientConfig = {
   input: path.resolve(__dirname, 'src/client/browser.ts'),
   external: ['./env'],
   plugins: [
@@ -163,13 +163,13 @@ const nodeConfig = {
         src: 'require("sugarss")',
         replacement: `eval('require')('sugarss')`
       },
-      'import-fresh/index.js': {
-        src: `require(filePath)`,
-        replacement: `eval('require')(filePath)`
-      },
       'import-from/index.js': {
         pattern: /require\(resolveFrom/g,
         replacement: `eval('require')(resolveFrom`
+      },
+      'lilconfig/dist/index.js': {
+        pattern: /: require,/g,
+        replacement: `: eval('require'),`
       }
     }),
     // Optional peer deps of ws. Native deps that are mostly for performance.
@@ -189,10 +189,7 @@ const nodeConfig = {
  */
 const browserConfig = {
   input: path.resolve(__dirname, 'src/browser/index.ts'),
-  external: [
-    'fsevents',
-    'sass'
-  ],
+  external: ['fsevents', 'sass'],
   plugins: [
     viteForBrowserPlugin(),
     replace({
@@ -362,7 +359,9 @@ function licensePlugin() {
       )
       const licenses = new Set()
       const dependencyLicenseTexts = dependencies
-        .sort(({ name: nameA }, { name: nameB }) => (nameA > nameB) ? 1 : ((nameB > nameA) ? -1 : 0))
+        .sort(({ name: nameA }, { name: nameB }) =>
+          nameA > nameB ? 1 : nameB > nameA ? -1 : 0
+        )
         .map(
           ({
             name,
@@ -431,14 +430,15 @@ function licensePlugin() {
 }
 
 function viteForBrowserPlugin() {
-  const pkgJson = require('./package.json');
+  const pkgJson = require('./package.json')
   const aliases = {
     chalk: `const p = new Proxy(s=>s, { get() {return p;}});export default p;`,
     debug: `export default function debug() {return () => {}}`,
     'fast-glob': 'export default { sync: () => [] }',
     'builtin-modules': 'export default []',
     url: 'const URL = globalThis.URL;function parse(s) {return new URL(s[0]==="/" ? "file://"+s : s)};function pathToFileURL(s) {throw new Error(s);};export { URL, parse, pathToFileURL}',
-    'postcss-load-config': 'export default () => {throw new Error("No PostCSS Config found")}',
+    'postcss-load-config':
+      'export default () => {throw new Error("No PostCSS Config found")}',
     fs: `const readFileSync = () => '';const existsSync = () => false;const promises = { readFile: readFileSync, exists: existsSync };export { readFileSync, existsSync, promises };export default {readFileSync, existsSync, promises}`,
     esbuild: `
     import {
@@ -471,7 +471,7 @@ function viteForBrowserPlugin() {
       return init$.then(() => _build(options));
     }
     `,
-    sirv: 'export default function () {}',
+    sirv: 'export default function () {}'
   }
   return {
     name: 'vite:browser',
@@ -494,19 +494,24 @@ function viteForBrowserPlugin() {
       const ms = new MagicString(code)
       return {
         map: ms.generateMap(),
-        code: 
-        code
+        code: code
           .replace(
             /(os\.platform\(\)|process\.platform)\s*===\s*'win32'/g,
             'false'
           )
           .replace(/require\('pnpapi'\)/g, 'undefined')
           .replace(/options\.ssr/g, 'false')
-          .replace(/require\.resolve\('(vite\/)/g, '(\'$1'),
-          }
-      
+          .replace(/require\.resolve\('(vite\/)/g, "('$1")
+      }
     }
   }
 }
 
-export default [envConfig, clientConfig, nodeConfig, browserConfig, browserClientConfig, terserConfig]
+export default [
+  envConfig,
+  clientConfig,
+  nodeConfig,
+  browserConfig,
+  browserClientConfig,
+  terserConfig
+]

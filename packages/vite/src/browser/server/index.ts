@@ -5,13 +5,17 @@ export function resolveServerOptions(
   raw?: ServerOptions
 ): ResolvedServerOptions {
   const server = raw || {}
-  const fsServeRoot = root
+  let allowDirs = server.fs?.allow
 
-  // TODO: make strict by default
-  const fsServeStrict = server.fsServe?.strict ?? false
-  server.fsServe = {
-    root: fsServeRoot,
-    strict: fsServeStrict
+  if (!allowDirs) {
+    allowDirs = [root]
+  }
+
+
+  server.fs = {
+    // TODO: make strict by default
+    strict: server.fs?.strict,
+    allow: allowDirs
   }
   return server as ResolvedServerOptions
 }

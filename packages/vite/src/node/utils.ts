@@ -118,7 +118,7 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
-const importQueryRE = /(\?|&)import(?:&|$)/
+const importQueryRE = /(\?|&)import=?(?:&|$)/
 const trailingSeparatorRE = /[\?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 
@@ -359,6 +359,10 @@ export function copyDir(srcDir: string, destDir: string): void {
       fs.copyFileSync(srcFile, destFile)
     }
   }
+}
+
+export function ensureLeadingSlash(path: string): string {
+  return !path.startsWith('/') ? '/' + path : path
 }
 
 export function ensureWatchedFile(

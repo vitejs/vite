@@ -103,7 +103,8 @@ export async function optimizeDeps(
   config: ResolvedConfig,
   force = config.server.force,
   asCommand = false,
-  newDeps?: Record<string, string> // missing imports encountered after server has started
+  newDeps?: Record<string, string>, // missing imports encountered after server has started
+  ssr?: boolean
 ): Promise<DepOptimizationMetadata | null> {
   config = {
     ...config,
@@ -273,7 +274,7 @@ export async function optimizeDeps(
     define,
     plugins: [
       ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
     ],
     ...esbuildOptions
   })
