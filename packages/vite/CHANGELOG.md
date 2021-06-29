@@ -1,3 +1,14 @@
+# [2.4.0-beta.2](https://github.com/vitejs/vite/compare/v2.4.0-beta.1...v2.4.0-beta.2) (2021-06-29)
+
+
+### Bug Fixes
+
+* revert resolve nested dependencies [#3753](https://github.com/vitejs/vite/issues/3753) ([#4019](https://github.com/vitejs/vite/issues/4019)) ([b6f4293](https://github.com/vitejs/vite/commit/b6f4293435bf90c9a64476d8bfbb022f4f2af9a9)), closes [#4005](https://github.com/vitejs/vite/issues/4005)
+* **commonjs:** `ignoreDynamicRequires` should default to `false` ([#4015](https://github.com/vitejs/vite/issues/4015)) ([c08069c](https://github.com/vitejs/vite/commit/c08069cb3bdf7e7aa16d9cfaef4c1aea3a29cfa2)), closes [/github.com/vitejs/vite/pull/3353#issuecomment-851520683](https://github.com//github.com/vitejs/vite/pull/3353/issues/issuecomment-851520683) [#3426](https://github.com/vitejs/vite/issues/3426) [#3997](https://github.com/vitejs/vite/issues/3997)
+* **css:** skip comma when matching css url ([#4004](https://github.com/vitejs/vite/issues/4004)) ([7d0bc26](https://github.com/vitejs/vite/commit/7d0bc2691f0291c3a9b0df992554f18bf85c8892))
+
+
+
 # [2.4.0-beta.1](https://github.com/vitejs/vite/compare/v2.4.0-beta.0...v2.4.0-beta.1) (2021-06-29)
 
 
