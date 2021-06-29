@@ -760,7 +760,7 @@ type CssUrlReplacer = (
 ) => string | Promise<string>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?:^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+  /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
@@ -837,9 +837,7 @@ async function doUrlReplace(
     return matched
   }
 
-  // #3926
-  const initialComma = matched[0] === ',' ? ',' : ''
-  return `${initialComma}url(${wrap}${await replacer(rawUrl)}${wrap})`
+  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
 let CleanCSS: any
