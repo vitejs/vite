@@ -195,7 +195,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (resolved.id.startsWith(root + '/')) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
-        } else if (fs.existsSync(cleanUrl(resolved.id))) {
+        } else if (((this as any).$fs$ || fs).existsSync(cleanUrl(resolved.id))) {
           // exists but out of root: rewrite to absolute /@fs/ paths
           url = path.posix.join(FS_PREFIX + resolved.id)
         } else {

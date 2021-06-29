@@ -6,6 +6,7 @@ import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import alias from '@rollup/plugin-alias'
+import replace from '@rollup/plugin-replace'
 import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
 import chalk from 'chalk'
@@ -34,8 +35,30 @@ const envConfig = {
 /**
  * @type { import('rollup').RollupOptions }
  */
-const clientConfig = {
+ const clientConfig = {
   input: path.resolve(__dirname, 'src/client/client.ts'),
+  external: ['./env'],
+  plugins: [
+    typescript({
+      target: 'es2018',
+      include: ['src/client/**/*.ts'],
+      baseUrl: path.resolve(__dirname, 'src/client'),
+      paths: {
+        'types/*': ['../../types/*']
+      }
+    })
+  ],
+  output: {
+    dir: path.resolve(__dirname, 'dist/client'),
+    sourcemap: true
+  }
+}
+
+/**
+ * @type { import('rollup').RollupOptions }
+ */
+ const browserClientConfig = {
+  input: path.resolve(__dirname, 'src/client/browser.ts'),
   external: ['./env'],
   plugins: [
     typescript({
@@ -162,6 +185,72 @@ const nodeConfig = {
 }
 
 /**
+ * @type { import('rollup').RollupOptions }
+ */
+const browserConfig = {
+  input: path.resolve(__dirname, 'src/browser/index.ts'),
+  external: [
+    'fsevents',
+    'sass'
+  ],
+  plugins: [
+    viteForBrowserPlugin(),
+    replace({
+      preventAssignment: true,
+      values: {
+        'process.env.DEBUG': 'false'
+      }
+    }),
+    alias({
+      // packages with "module" field that doesn't play well with cjs bundles
+      entries: {
+        'big.js': require.resolve('big.js/big.js')
+      }
+    }),
+    nodeResolve({
+      mainFields: ['module', 'jsnext:main', 'browser'],
+      preferBuiltins: true,
+      exportConditions: ['browser', 'default', 'module', 'import'],
+      dedupe: ['postcss']
+    }),
+    typescript({
+      target: 'es2019',
+      include: ['src/**/*.ts'],
+      esModuleInterop: true
+    }),
+    // Some deps have try...catch require of optional deps, but rollup will
+    // generate code that force require them upfront for side effects.
+    // Shim them with eval() so rollup can skip these calls.
+    shimDepsPlugin({
+      'plugins/terser.ts': {
+        src: `require.resolve('terser'`,
+        replacement: `require.resolve('vite/dist/node/terser'`
+      }
+    }),
+    // Optional peer deps of ws. Native deps that are mostly for performance.
+    // Since ws is not that perf critical for us, just ignore these deps.
+    ignoreDepPlugin({
+      bufferutil: 1,
+      'utf-8-validate': 1
+    }),
+    commonjs({
+      transformMixedEsModules: true,
+      requireReturnsDefault: 'auto'
+    }),
+    json()
+  ],
+  treeshake: {
+    moduleSideEffects: 'no-external',
+    propertyReadSideEffects: false,
+    tryCatchDeoptimization: false
+  },
+  output: {
+    dir: path.resolve(__dirname, 'dist/browser'),
+    sourcemap: true
+  }
+}
+
+/**
  * Terser needs to be run inside a worker, so it cannot be part of the main
  * bundle. We produce a separate bundle for it and shims plugin/terser.ts to
  * use the production path during build.
@@ -233,7 +322,7 @@ function shimDepsPlugin(deps) {
       if (!err) {
         for (const file in deps) {
           if (!transformed[file]) {
-            this.error(
+            this.warn(
               `Did not find "${file}" which is supposed to be shimmed, was the file renamed?`
             )
           }
@@ -341,4 +430,83 @@ function licensePlugin() {
   })
 }
 
-export default [envConfig, clientConfig, nodeConfig, terserConfig]
+function viteForBrowserPlugin() {
+  const pkgJson = require('./package.json');
+  const aliases = {
+    chalk: `const p = new Proxy(s=>s, { get() {return p;}});export default p;`,
+    debug: `export default function debug() {return () => {}}`,
+    'fast-glob': 'export default { sync: () => [] }',
+    'builtin-modules': 'export default []',
+    url: 'const URL = globalThis.URL;function parse(s) {return new URL(s[0]==="/" ? "file://"+s : s)};function pathToFileURL(s) {throw new Error(s);};export { URL, parse, pathToFileURL}',
+    'postcss-load-config': 'export default () => {throw new Error("No PostCSS Config found")}',
+    fs: `const readFileSync = () => '';const existsSync = () => false;const promises = { readFile: readFileSync, exists: existsSync };export { readFileSync, existsSync, promises };export default {readFileSync, existsSync, promises}`,
+    esbuild: `
+    import {
+      initialize,
+      transform as _transform,
+      build as _build
+    } from 'esbuild-wasm';
+    export {
+      TransformResult,
+      TransformOptions,
+      BuildResult,
+      BuildOptions,
+      Message,
+      Loader,
+      ImportKind,
+      Plugin,
+    } from 'esbuild-wasm';
+    
+    const init$ = initialize({
+      wasmURL: 'https://unpkg.com/esbuild-wasm@${
+        require('esbuild-wasm/package.json').version
+      }/esbuild.wasm',
+    });
+    
+    export function transform(input,options) {
+      return init$.then(() => _transform(input, options));
+    }
+    
+    export function build(options) {
+      return init$.then(() => _build(options));
+    }
+    `,
+    sirv: 'export default function () {}',
+  }
+  return {
+    name: 'vite:browser',
+    resolveId: (id, importer) => {
+      if (id in aliases) {
+        return `$browser_shim$${id}`
+      } else if (id in pkgJson.dependencies) {
+        return {
+          id,
+          external: true
+        }
+      }
+    },
+    load: (id) => {
+      if (id.startsWith('$browser_shim$')) {
+        return aliases[id.slice('$browser_shim$'.length)]
+      }
+    },
+    transform: (code, id) => {
+      const ms = new MagicString(code)
+      return {
+        map: ms.generateMap(),
+        code: 
+        code
+          .replace(
+            /(os\.platform\(\)|process\.platform)\s*===\s*'win32'/g,
+            'false'
+          )
+          .replace(/require\('pnpapi'\)/g, 'undefined')
+          .replace(/options\.ssr/g, 'false')
+          .replace(/require\.resolve\('(vite\/)/g, '(\'$1'),
+          }
+      
+    }
+  }
+}
+
+export default [envConfig, clientConfig, nodeConfig, browserConfig, browserClientConfig, terserConfig]

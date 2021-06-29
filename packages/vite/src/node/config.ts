@@ -534,7 +534,7 @@ export async function resolveConfig(
  * Resolve base. Note that some users use Vite to build for non-web targets like
  * electron or expects to deploy
  */
-function resolveBaseUrl(
+export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
   isBuild: boolean,
   logger: Logger
@@ -629,7 +629,7 @@ export function mergeConfig(
   return mergeConfigRecursively(a, b, isRoot ? '' : '.')
 }
 
-function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
+export function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
   return [...normalizeAlias(a), ...normalizeAlias(b)]
 }
 

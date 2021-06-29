@@ -955,7 +955,7 @@ const scss: SassStylePreprocessor = async (
   options,
   resolvers
 ) => {
-  const render = loadPreprocessor(PreprocessLang.sass, root).render
+  const render = (await import('sass')).render
   const internalImporter: Sass.Importer = (url, importer, done) => {
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {

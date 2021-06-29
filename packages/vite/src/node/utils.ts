@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { pathToFileURL, URL } from 'url'
+import { URL } from 'url'
 import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
@@ -129,14 +129,14 @@ export function removeImportQuery(url: string): string {
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
-  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
-  if (resolvedUrl.protocol !== 'relative:') {
-    resolvedUrl = pathToFileURL(url)
-  }
-  let { protocol, pathname, search, hash } = resolvedUrl
-  if (protocol === 'file:') {
-    pathname = pathname.slice(1)
-  }
+  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'file:///')
+  // if (resolvedUrl.protocol !== 'relative:') {
+  //   resolvedUrl = pathToFileURL(url)
+  // }
+  let { pathname, search, hash } = resolvedUrl
+  // if (protocol === 'file:') {
+  //   pathname = pathname.slice(1)
+  // }
   pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''

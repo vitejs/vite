@@ -30,7 +30,7 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import { resolve, join } from 'path'
+import { join } from 'path'
 import { Plugin } from '../plugin'
 import {
   InputOptions,
@@ -139,11 +139,9 @@ export async function createPluginContainer(
   const watchFiles = new Set<string>()
 
   // get rollup version
-  const rollupPkgPath = resolve(require.resolve('rollup'), '../../package.json')
   const minimalContext: MinimalPluginContext = {
     meta: {
-      rollupVersion: JSON.parse(fs.readFileSync(rollupPkgPath, 'utf-8'))
-        .version,
+      rollupVersion: '2.38.5',
       watchMode: true
     }
   }
@@ -293,7 +291,7 @@ export async function createPluginContainer(
           if (err.loc.file) {
             err.id = normalizePath(err.loc.file)
             try {
-              code = fs.readFileSync(err.loc.file, 'utf-8')
+              code = ((ctx as any).$fs$ || fs).readFileSync(err.loc.file, 'utf-8')
             } catch {}
           }
           err.frame = generateCodeFrame(code, err.loc)
