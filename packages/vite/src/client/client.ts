@@ -6,7 +6,7 @@ import {
   Update,
   UpdatePayload
 } from 'types/hmrPayload'
-import { CustomEventName } from 'types/customEvent'
+import { CustomEventName } from 'types/custom-event'
 import { ErrorOverlay, overlayId } from './overlay'
 import './env'
 

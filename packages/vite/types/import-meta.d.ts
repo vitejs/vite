@@ -36,7 +36,7 @@ interface ImportMeta {
         cb: (payload: import('./hmrPayload').ErrorPayload) => void
       ): void
       <T extends string>(
-        event: import('./customEvent').CustomEventName<T>,
+        event: import('./custom-event').CustomEventName<T>,
         cb: (data: any) => void
       ): void
     }
