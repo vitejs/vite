@@ -463,8 +463,7 @@ export async function createServer(
   }
 
   // base
-  // skip base middleware on middleware mode, #4057
-  if (config.base !== '/' && config.server.middlewareMode) {
+  if (config.base !== '/') {
     middlewares.use(baseMiddleware(server))
   }
 
