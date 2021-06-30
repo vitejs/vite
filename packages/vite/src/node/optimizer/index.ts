@@ -261,6 +261,7 @@ export async function optimizeDeps(
     config.optimizeDeps?.esbuildOptions ?? {}
 
   const result = await build({
+    absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
