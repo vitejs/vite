@@ -94,6 +94,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   await Promise.all(
     entries.map((entry) =>
       build({
+        absWorkingDir: process.cwd(),
         write: false,
         entryPoints: [entry],
         bundle: true,

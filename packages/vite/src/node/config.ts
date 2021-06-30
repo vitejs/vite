@@ -825,6 +825,7 @@ async function bundleConfigFile(
   mjs = false
 ): Promise<{ code: string; dependencies: string[] }> {
   const result = await build({
+    absWorkingDir: process.cwd(),
     entryPoints: [fileName],
     outfile: 'out.js',
     write: false,
