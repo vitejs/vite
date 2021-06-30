@@ -38,7 +38,7 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
 const importsRE =
-  /\bimport(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')/gm
+  /\bimport(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')$/gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -233,8 +233,7 @@ function esbuildScanPlugin(
               if (m.index === importsRE.lastIndex) {
                 importsRE.lastIndex++
               }
-              const importPath = m[1].replace(/(\r\n|\n|\r)/gm, "")
-              js += `\nimport ${importPath}`
+              js += `\nimport ${m[1]}`
             }
           }
 
