@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-/// <reference types="vite/types/importMeta" />
+/// <reference path="./types/importMeta" />
 
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
