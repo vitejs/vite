@@ -233,6 +233,7 @@ function esbuildScanPlugin(
               if (m.index === importsRE.lastIndex) {
                 importsRE.lastIndex++
               }
+              m[1] = m[1]. replace(/(\r\n|\n|\r)/gm, "")
               js += `\nimport ${m[1]}`
             }
           }
