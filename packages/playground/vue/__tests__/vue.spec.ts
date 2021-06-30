@@ -24,7 +24,6 @@ test(':slotted', async () => {
 
 test('scan deps from <script setup lang="ts">', async () => {
   expect(await page.textContent('.scan')).toBe('ok')
-  expect(await page.textContent('.multiline-scan')).toBe('ok')
 })
 
 describe('pre-processors', () => {
