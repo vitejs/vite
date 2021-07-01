@@ -270,6 +270,9 @@ export async function optimizeDeps(
     splitting: true,
     sourcemap: true,
     outdir: cacheDir,
+    outExtension: {
+      '.js': '.mjs'
+    },
     treeShaking: 'ignore-annotations',
     metafile: true,
     define,
@@ -288,7 +291,7 @@ export async function optimizeDeps(
   for (const id in deps) {
     const entry = deps[id]
     data.optimized[id] = {
-      file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
+      file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.mjs')),
       src: entry,
       needsInterop: needsInterop(
         id,
