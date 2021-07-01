@@ -37,8 +37,8 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // use Acorn because it's slow. Luckily this doesn't have to be bullet proof
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
-const importsRE =
-  /\bimport(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')/gm
+export const importsRE =
+  /(?:^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?:$|;|\/\/|\/\*)/gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>

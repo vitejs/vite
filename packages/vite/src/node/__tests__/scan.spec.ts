@@ -1,4 +1,4 @@
-import { scriptRE, commentRE } from '../optimizer/scan'
+import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -63,5 +63,37 @@ describe('optimizer-scan:script-test', () => {
     const [, tag1, content1] = scriptRE.exec(`<script>var test = null</script>`)
     expect(tag1).toEqual('<script>')
     expect(content1).toEqual('var test = null')
+  })
+
+  test('imports regex should work', () => {
+    const shouldMatchArray = [
+      `import 'vue'`,
+      `import { foo } from 'vue'`,
+      `import foo from 'vue'`,
+      `;import foo from 'vue'`,
+      `   import foo from 'vue'`,
+      `import { foo
+      } from 'vue'`,
+      `import bar, { foo } from 'vue'`,
+      `import foo from 'vue';`,
+      `*/ import foo from 'vue';`,
+      `import foo from 'vue';//comment`,
+      `import foo from 'vue';/*comment
+      */`
+    ]
+
+    shouldMatchArray.forEach((str) => {
+      importsRE.lastIndex = 0
+      expect(importsRE.exec(str)[1]).toEqual("'vue'")
+    })
+
+    const shouldFailArray = [
+      `testMultiline("import", {
+        body: "ok" });`,
+      `import type, {foo} from 'vue'`
+    ]
+    shouldFailArray.forEach((str) => {
+      expect(importsRE.test(str)).toBe(false)
+    })
   })
 })
