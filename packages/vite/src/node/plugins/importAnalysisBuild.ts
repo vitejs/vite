@@ -161,7 +161,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (needPreloadHelper && !ssr) {
+      if (
+        needPreloadHelper &&
+        !ssr &&
+        !source.includes(`const ${preloadMethod} =`)
+      ) {
         str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
       }
 
