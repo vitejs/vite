@@ -56,6 +56,11 @@ declare const MutationObserver: any
 declare const fetch: any
 
 function polyfill() {
+  const relList = document.createElement('link').relList
+  if (relList && relList.supports && relList.supports('modulepreload')) {
+    return
+  }
+
   for (const link of document.querySelectorAll('link[rel="modulepreload"]')) {
     processPreload(link)
   }
