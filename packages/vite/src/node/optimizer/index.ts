@@ -331,7 +331,7 @@ function needsInterop(
   // if a peer dependency used require() on a ESM dependency, esbuild turns the
   // ESM dependency's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
-  const flatId = flattenId(id) + '.js'
+  const flatId = flattenId(id) + '.mjs'
   let generatedExports: string[] | undefined
   for (const output in outputs) {
     if (
