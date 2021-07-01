@@ -1,5 +1,5 @@
 import path from 'path'
-import { Plugin } from '../../node/plugin'
+import type { Plugin } from '../../node/plugin'
 import chalk from 'chalk'
 import {
   FS_PREFIX,
@@ -9,12 +9,13 @@ import {
   bareImportRE,
   createDebugger,
   isExternalUrl,
+  normalizePath,
   fsPathFromId,
   isDataUrl,
   flattenId
 } from '../../node/utils'
-import { ViteDevServer, InternalResolveOptions } from '../../node'
-import { PartialResolvedId, PluginContext } from 'rollup'
+import type { ViteDevServer, InternalResolveOptions } from '../../node'
+import type { PartialResolvedId, PluginContext } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
 
 const isDebug = process.env.DEBUG
@@ -36,13 +37,17 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   let server: ViteDevServer | undefined
 
   return {
-    name: 'vite:resolve',
+    name: 'vite:browser:resolve',
 
     configureServer(_server) {
       server = _server
     },
 
     resolveId(id, importer, resolveOpts, ssr) {
+      if (id.startsWith(root)) {
+        return id
+      }
+
       const targetWeb = !ssr || ssrTarget === 'webworker'
 
       // this is passed by @rollup/plugin-commonjs
@@ -74,10 +79,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           isDebug && debug(`[url] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
           return res
         }
-      }
-
-      if (id.startsWith(root)) {
-        return id; // direct import
       }
 
       // relative
@@ -273,7 +274,13 @@ export function tryNodeResolve(
   server?: ViteDevServer,
   ssr?: boolean
 ): PartialResolvedId | undefined {
-  return { id: '/@node_modules/' + flattenId(id) + '.js' };
+  const resolved = '/@node_modules/' + flattenId(id) + '.js' 
+  if (server) {
+    // this is a missing import.
+    // queue optimize-deps re-run.
+    server._registerMissingImport?.(id, resolved, ssr)
+  }
+  return { id: resolved };
 }
 
 

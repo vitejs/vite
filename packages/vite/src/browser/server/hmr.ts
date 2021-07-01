@@ -1,12 +1,12 @@
 import path from 'path'
 import chalk from 'chalk'
-import { ViteDevServer } from '../../node'
+import type { ViteDevServer } from '../../node/server'
 import { createDebugger, normalizePath } from '../../node/utils'
-import { ModuleNode } from '../../node/server/moduleGraph'
-import { Update } from 'types/hmrPayload'
+import type { ModuleNode } from '../../node/server/moduleGraph'
+import type { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../../node/constants'
 import { isCSSRequest } from '../../node/plugins/css'
-import { HmrContext } from '../../node/server/hmr'
+import type { HmrContext } from '../../node/server/hmr'
 
 export const debugHmr = createDebugger('vite:hmr')
 

@@ -543,7 +543,7 @@ export async function createServer(
       } finally {
         server._isRunningOptimizer = false
       }
-      server._registerMissingImport = createMissingImporterRegisterFn(server)
+      server._registerMissingImport = createMissingImporterRegisterFn(server, optimizeDeps)
     }
   }
 

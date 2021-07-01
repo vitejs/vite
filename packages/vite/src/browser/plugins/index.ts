@@ -1,6 +1,7 @@
 import { resolvePlugin } from './resolve';
 import aliasPlugin from '@rollup/plugin-alias';
-import { Plugin, ResolvedConfig } from '../../node';
+import type { ResolvedConfig } from '../../node/config';
+import type { Plugin } from '../../node/plugin';
 import { preAliasPlugin } from './preAlias';
 import { htmlInlineScriptProxyPlugin } from '../../node/plugins/html';
 import { cssPlugin, cssPostPlugin } from '../../node/plugins/css';

@@ -1,5 +1,4 @@
 import chalk from 'chalk'
-import { optimizeDeps } from '.'
 import { ViteDevServer } from '..'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 
@@ -10,7 +9,7 @@ import { resolveSSRExternal } from '../ssr/ssrExternal'
 const debounceMs = 100
 
 export function createMissingImporterRegisterFn(
-  server: ViteDevServer
+  server: ViteDevServer, optimizeDeps: typeof import('./index')['optimizeDeps']
 ): (id: string, resolved: string, ssr?: boolean) => void {
   const { logger } = server.config
   let knownOptimized = server._optimizeDepsMetadata!.optimized

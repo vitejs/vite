@@ -439,7 +439,7 @@ function viteForBrowserPlugin() {
     url: 'const URL = globalThis.URL;function parse(s) {return new URL(s[0]==="/" ? "file://"+s : s)};function pathToFileURL(s) {throw new Error(s);};export { URL, parse, pathToFileURL}',
     'postcss-load-config':
       'export default () => {throw new Error("No PostCSS Config found")}',
-    fs: `const readFileSync = () => '';const existsSync = () => false;const promises = { readFile: readFileSync, exists: existsSync };export { readFileSync, existsSync, promises };export default {readFileSync, existsSync, promises}`,
+    fs: `const readFileSync = () => '';const existsSync = () => false;const statSync = () => {throw new Error('Not found')};const promises = { readFile: readFileSync, exists: existsSync, stat: statSync };export { readFileSync, existsSync, statSync, promises };export default {readFileSync, existsSync, promises}`,
     esbuild: `
     import {
       initialize,

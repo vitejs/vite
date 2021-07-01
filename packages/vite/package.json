@@ -1,6 +1,6 @@
 {
   "name": "browser-vite",
-  "version": "2.4.0-browser.1",
+  "version": "2.4.0-browser.3",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -58,9 +58,7 @@
     "esbuild-wasm": "^0.12.8",
     "postcss": "^8.3.5",
     "resolve": "^1.20.0",
-    "rollup": "^2.38.5"
-  },
-  "devDependencies": {
+    "rollup": "^2.38.5",
     "@ampproject/remapping": "^1.0.1",
     "@rollup/plugin-alias": "^3.1.2",
     "@rollup/plugin-commonjs": "^19.0.0",

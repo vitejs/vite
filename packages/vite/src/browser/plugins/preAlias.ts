@@ -1,5 +1,5 @@
-import { ViteDevServer } from '../../node'
-import { Plugin } from '../../node/plugin'
+import type { ViteDevServer } from '../../node/server'
+import type { Plugin } from '../../node/plugin'
 import { bareImportRE } from '../../node/utils'
 import { tryOptimizedResolve } from './resolve'
 
@@ -9,7 +9,7 @@ import { tryOptimizedResolve } from './resolve'
 export function preAliasPlugin(): Plugin {
   let server: ViteDevServer
   return {
-    name: 'vite:pre-alias',
+    name: 'vite:browser:pre-alias',
     configureServer(_server) {
       server = _server
     },

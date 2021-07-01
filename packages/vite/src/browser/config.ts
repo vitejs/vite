@@ -1,5 +1,8 @@
 import path from 'path'
-import { InlineConfig, Logger, mergeAlias, mergeConfig, normalizePath, Plugin, resolveBaseUrl, ResolvedConfig, sortUserPlugins } from '../node';
+import type { Logger } from '../node/logger';
+import type { Plugin } from '../node/plugin';
+import { mergeAlias, mergeConfig, resolveBaseUrl, sortUserPlugins, InlineConfig, ResolvedConfig } from '../node/config';
+import { normalizePath } from '../node/utils';
 import { resolveBuildOptions } from '../node/build';
 import { CLIENT_DIR, DEFAULT_ASSETS_RE } from '../node/constants';
 import { resolvePlugins } from './plugins';

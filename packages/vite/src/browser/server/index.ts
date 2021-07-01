@@ -1,4 +1,4 @@
-import { ResolvedServerOptions, ServerOptions } from '../../node';
+import type { ResolvedServerOptions, ServerOptions } from '../../node/server';
 
 export function resolveServerOptions(
   root: string,
