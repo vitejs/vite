@@ -23,10 +23,7 @@ export function baseMiddleware({
     }
 
     // skip redirect and error fallback on middleware mode, #4057
-    if (
-      config.server.middlewareMode === true ||
-      config.server.middlewareMode === 'html'
-    ) {
+    if (config.server.middlewareMode) {
       return next()
     }
 
