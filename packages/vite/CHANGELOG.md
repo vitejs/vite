@@ -1,3 +1,21 @@
+# [2.4.0-beta.3](https://github.com/vitejs/vite/compare/v2.4.0-beta.2...v2.4.0-beta.3) (2021-07-02)
+
+
+### Bug Fixes
+
+* **ssr:** Transform named default exports without altering scope ([#4053](https://github.com/vitejs/vite/issues/4053)) ([5211aaf](https://github.com/vitejs/vite/commit/5211aaf9b71022a1153dd3ccdef540fd51be72c0))
+* add `type: "module"` hint to cache directory ([#4063](https://github.com/vitejs/vite/issues/4063)) ([58a29b2](https://github.com/vitejs/vite/commit/58a29b241662f77dbf971967b913f4e75f91fe26))
+* allow preprocessor to be installed outside of the root directory ([#3988](https://github.com/vitejs/vite/issues/3988)) ([a0a80f8](https://github.com/vitejs/vite/commit/a0a80f8e992393f01b4b7377e7dc53059ddf1fe1))
+* Avoid importing in source that __vitePreload has declared (close [#4016](https://github.com/vitejs/vite/issues/4016)) ([#4041](https://github.com/vitejs/vite/issues/4041)) ([bd34203](https://github.com/vitejs/vite/commit/bd34203bc40d6a406dfac3ab6cb41f5dfed63a77))
+* ensure that esbuild uses the same working directory as Vite ([#4001](https://github.com/vitejs/vite/issues/4001)) ([19abafe](https://github.com/vitejs/vite/commit/19abafeedda8008f4cc9eeda4cf8cb46e57de8b9))
+* fix esbuild break when importRe matches multiline import ([#4054](https://github.com/vitejs/vite/issues/4054)) ([eb2e41b](https://github.com/vitejs/vite/commit/eb2e41b098fb3d5f367c1f4fdfcad12f7538ac16))
+* skip redirect and error fallback on middleware mode ([#4057](https://github.com/vitejs/vite/issues/4057)) ([d156a9f](https://github.com/vitejs/vite/commit/d156a9f364dddcfc41338f83e39db38a00a2ceb0))
+* the current main branch code build the vite project error ([#4059](https://github.com/vitejs/vite/issues/4059)) ([4adc970](https://github.com/vitejs/vite/commit/4adc9706874581d2d5048fb48c135154591360cf))
+* use `.mjs` extension for injected client modules ([#4061](https://github.com/vitejs/vite/issues/4061)) ([cca92c4](https://github.com/vitejs/vite/commit/cca92c47d54e0f96b56964f13fbe0b2d050c5ed9))
+* use path type import, fix [#4028](https://github.com/vitejs/vite/issues/4028) ([#4031](https://github.com/vitejs/vite/issues/4031)) ([e092e89](https://github.com/vitejs/vite/commit/e092e899dad28f50aaa004419e9da50cf31db72d))
+
+
+
 # [2.4.0-beta.2](https://github.com/vitejs/vite/compare/v2.4.0-beta.1...v2.4.0-beta.2) (2021-06-29)
 
 
