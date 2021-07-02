@@ -99,7 +99,7 @@
     "dotenv": "^10.0.0",
     "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^0.6.0",
-    "estree-walker": "^3.0.0",
+    "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
     "execa": "^5.1.1",
     "fast-glob": "^3.2.6",
