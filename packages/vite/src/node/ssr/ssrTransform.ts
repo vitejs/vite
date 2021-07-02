@@ -129,7 +129,7 @@ export async function ssrTransform(
         // export default function foo() {}
         // export default class A {}
         const { name } = node.declaration.id
-        s.remove(node.start, node.start + `export default `.length)
+        s.remove(node.start, node.start + 15 /* 'export default '.length */)
         s.append(
           `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
             `{ enumerable: true, value: ${name} })`
@@ -138,7 +138,7 @@ export async function ssrTransform(
         // anonymous default exports
         s.overwrite(
           node.start,
-          node.start + `export default`.length,
+          node.start + 14 /* 'export default'.length */,
           `${ssrModuleExportsKey}.default =`
         )
       }
