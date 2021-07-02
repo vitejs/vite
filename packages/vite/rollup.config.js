@@ -26,7 +26,7 @@ const envConfig = {
     })
   ],
   output: {
-    dir: path.resolve(__dirname, 'dist/client'),
+    file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
     sourcemap: true
   }
 }
@@ -48,7 +48,7 @@ const clientConfig = {
     })
   ],
   output: {
-    dir: path.resolve(__dirname, 'dist/client'),
+    file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
     sourcemap: true
   }
 }
