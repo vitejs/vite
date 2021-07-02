@@ -144,6 +144,12 @@ export async function optimizeDeps(
   } else {
     fs.mkdirSync(cacheDir, { recursive: true })
   }
+  // a hint for Node.js
+  // all files in the cache directory should be recognized as ES modules
+  writeFile(
+    path.resolve(cacheDir, 'package.json'),
+    JSON.stringify({ type: 'module' })
+  )
 
   let deps: Record<string, string>, missing: Record<string, string>
   if (!newDeps) {
