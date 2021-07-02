@@ -150,7 +150,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 ### `config`
 
 - **Type:** `(config: UserConfig, env: { mode: string, command: string }) => UserConfig | null | void`
-- **Kind:** `sync`, `sequential`
+- **Kind:** `async`, `sequential`
 
   Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file) and the current config env which exposes the `mode` and `command` being used. It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
 
