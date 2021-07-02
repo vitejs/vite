@@ -124,11 +124,24 @@ export async function ssrTransform(
 
     // default export
     if (node.type === 'ExportDefaultDeclaration') {
-      s.overwrite(
-        node.start,
-        node.start + 14,
-        `${ssrModuleExportsKey}.default =`
-      )
+      if ('id' in node.declaration && node.declaration.id) {
+        // named hoistable/class exports
+        // export default function foo() {}
+        // export default class A {}
+        const { name } = node.declaration.id
+        s.remove(node.start, node.start + 15 /* 'export default '.length */)
+        s.append(
+          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
+            `{ enumerable: true, value: ${name} })`
+        )
+      } else {
+        // anonymous default exports
+        s.overwrite(
+          node.start,
+          node.start + 14 /* 'export default'.length */,
+          `${ssrModuleExportsKey}.default =`
+        )
+      }
     }
 
     // export * from './foo'
