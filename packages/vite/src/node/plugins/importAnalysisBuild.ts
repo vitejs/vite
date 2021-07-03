@@ -43,6 +43,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 
   return Promise.all(
     deps.map((dep) => {
+      dep = `__VITE_PRELOAD_BASE__${dep}`
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -91,7 +92,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadCode
+        return preloadCode.replace('__VITE_PRELOAD_BASE__', config.base)
       }
     },
 
@@ -245,11 +246,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    deps.add(config.base + chunk.fileName)
+                    deps.add(chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                     if (cssFiles) {
                       cssFiles.forEach((file) => {
-                        deps.add(config.base + file)
+                        deps.add(file)
                       })
                     }
                     chunk.imports.forEach(addDeps)
