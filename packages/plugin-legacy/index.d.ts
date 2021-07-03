@@ -22,6 +22,10 @@ export interface Options {
    * default: true
    */
   renderLegacyChunks?: boolean
+  /**
+   * default: false
+   */
+  experimentalUseSWC?: boolean
 }
 
 declare function createPlugin(options?: Options): Plugin

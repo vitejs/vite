@@ -3,13 +3,9 @@ const path = require('path')
 const { createHash } = require('crypto')
 const { build } = require('vite')
 const MagicString = require('magic-string').default
-
-// lazy load babel since it's not used during dev
-let babel
-/**
- * @return {import('@babel/standalone')}
- */
-const loadBabel = () => babel || (babel = require('@babel/standalone'))
+const swc = require('./swc.js')
+const babel = require('./babel.js')
+const { legacyEnvVarMarker } = require('./constants.js')
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
 // DO NOT ALTER THIS CONTENT
@@ -17,8 +13,6 @@ const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("scrip
 
 const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
-
-const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 /**
  * @param {import('.').Options} options
@@ -127,7 +121,12 @@ function viteLegacyPlugin(options = {}) {
         if (!legacyPolyfills.has('es.promise')) {
           // check if the target needs Promise polyfill because SystemJS relies
           // on it
-          detectPolyfills(`Promise.resolve()`, targets, legacyPolyfills)
+
+          if (options.experimentalUseSWC) {
+            swc.detectPolyfills(`Promise.resolve()`, targets, legacyPolyfills)
+          } else {
+            babel.detectPolyfills(`Promise.resolve()`, targets, legacyPolyfills)
+          }
         }
 
         isDebug &&
@@ -225,7 +224,11 @@ function viteLegacyPlugin(options = {}) {
           !Array.isArray(options.modernPolyfills)
         ) {
           // analyze and record modern polyfills
-          detectPolyfills(raw, { esmodules: true }, modernPolyfills)
+          if (options.experimentalUseSWC) {
+            swc.detectPolyfills(raw, { esmodules: true }, modernPolyfills)
+          } else {
+            babel.detectPolyfills(raw, { esmodules: true }, modernPolyfills)
+          }
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
@@ -265,41 +268,24 @@ function viteLegacyPlugin(options = {}) {
 
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
-      const { code, map } = loadBabel().transform(raw, {
-        babelrc: false,
-        configFile: false,
-        compact: true,
-        sourceMaps,
-        inputSourceMap: sourceMaps && chunk.map,
-        presets: [
-          // forcing our plugin to run before preset-env by wrapping it in a
-          // preset so we can catch the injected import statements...
-          [
-            () => ({
-              plugins: [
-                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
-                replaceLegacyEnvBabelPlugin(),
-                wrapIIFEBabelPlugin()
-              ]
-            })
-          ],
-          [
-            'env',
-            {
-              targets,
-              modules: false,
-              bugfixes: true,
-              loose: false,
-              useBuiltIns: needPolyfills ? 'usage' : false,
-              corejs: needPolyfills
-                ? { version: 3, proposals: false }
-                : undefined,
-              shippedProposals: true,
-              ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
-            }
-          ]
-        ]
-      })
+
+      const { code, map } = options.experimentalUseSWC
+        ? swc.transformChunk(raw, {
+            sourceMaps,
+            inputSourceMap: sourceMaps && chunk.map,
+            legacyPolyfills,
+            targets,
+            needPolyfills,
+            ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
+          })
+        : babel.transformChunk(raw, {
+            sourceMaps,
+            inputSourceMap: sourceMaps && chunk.map,
+            legacyPolyfills,
+            targets,
+            needPolyfills,
+            ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
+          })
 
       return { code, map }
     },
@@ -446,43 +432,6 @@ function viteLegacyPlugin(options = {}) {
     legacyPostPlugin,
     legacyEnvPlugin
   ]
-}
-
-/**
- * @param {string} code
- * @param {any} targets
- * @param {Set<string>} list
- */
-function detectPolyfills(code, targets, list) {
-  const { ast } = loadBabel().transform(code, {
-    ast: true,
-    babelrc: false,
-    configFile: false,
-    presets: [
-      [
-        'env',
-        {
-          targets,
-          modules: false,
-          useBuiltIns: 'usage',
-          corejs: { version: 3, proposals: false },
-          shippedProposals: true,
-          ignoreBrowserslistConfig: true
-        }
-      ]
-    ]
-  })
-  for (const node of ast.program.body) {
-    if (node.type === 'ImportDeclaration') {
-      const source = node.source.value
-      if (
-        source.startsWith('core-js/') ||
-        source.startsWith('regenerator-runtime/')
-      ) {
-        list.add(source)
-      }
-    }
-  }
 }
 
 /**
