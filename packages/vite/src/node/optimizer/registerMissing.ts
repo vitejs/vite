@@ -71,7 +71,7 @@ export function createMissingImporterRegisterFn(
     } finally {
       server._isRunningOptimizer = false
       pendingResolve && pendingResolve()
-      server._pendingReload = pendingResolve = null
+      server.pendingReload = pendingResolve = null
     }
 
     // Cached transform results have stale imports (resolved to
@@ -94,7 +94,7 @@ export function createMissingImporterRegisterFn(
       currentMissing[id] = resolved
       if (handle) clearTimeout(handle)
       handle = setTimeout(() => rerun(ssr), debounceMs)
-      server._pendingReload = new Promise((r) => {
+      server.pendingReload = new Promise((r) => {
         pendingResolve = r
       })
     }
