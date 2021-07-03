@@ -38,9 +38,9 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
 export const importsRE =
-  /(?:^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?:$|;|\/\/|\/\*)/gm
+  /(?<!\/\/.*)(?:^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?:$|;|\/\/|\/\*)/gm
 
-const commentsRE = /\/\*(.|[\r\n])*?\*\//gm
+const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -231,7 +231,7 @@ function esbuildScanPlugin(
             // esbuild to keep crawling due to potential side effects.
             let m
             // empty multiline comments to avoid matching commented out imports
-            const code = js.replace(commentsRE, '/* */')
+            const code = js.replace(multilineCommentsRE, '/* */')
             while ((m = importsRE.exec(code)) !== null) {
               // This is necessary to avoid infinite loops with zero-width matches
               if (m.index === importsRE.lastIndex) {

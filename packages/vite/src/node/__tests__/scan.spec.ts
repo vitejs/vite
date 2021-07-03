@@ -90,7 +90,8 @@ describe('optimizer-scan:script-test', () => {
     const shouldFailArray = [
       `testMultiline("import", {
         body: "ok" });`,
-      `import type, {foo} from 'vue'`
+      `import type, {foo} from 'vue'`,
+      `//;import foo from 'vue'`
     ]
     shouldFailArray.forEach((str) => {
       expect(importsRE.test(str)).toBe(false)
