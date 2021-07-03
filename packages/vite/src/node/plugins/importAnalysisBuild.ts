@@ -15,9 +15,10 @@ import { transformImportGlob } from '../importGlob'
 export const isModernFlag = `__VITE_IS_MODERN__`
 export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
+export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadCode = `let scriptRel;const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+const preloadCode = `let scriptRel;const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
 const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
 
 /**
@@ -43,7 +44,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 
   return Promise.all(
     deps.map((dep) => {
-      dep = `__VITE_PRELOAD_BASE__${dep}`
+      // @ts-ignore
+      dep = `${base}${dep}`
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -92,7 +94,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadCode.replace('__VITE_PRELOAD_BASE__', config.base)
+        return preloadCode.replace(preloadBaseMarker, config.base)
       }
     },
 
