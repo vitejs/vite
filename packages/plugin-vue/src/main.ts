@@ -8,6 +8,7 @@ import {
   setDescriptor
 } from './utils/descriptorCache'
 import { PluginContext, TransformPluginContext } from 'rollup'
+import { normalizePath } from '@rollup/pluginutils'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
@@ -143,13 +144,16 @@ export async function transformMain(
 
   // SSR module registration by wrapping user setup
   if (ssr) {
+    const normalizedFilename = normalizePath(
+      path.relative(options.root, filename)
+    )
     output.push(
       `import { useSSRContext as __vite_useSSRContext } from 'vue'`,
       `const _sfc_setup = _sfc_main.setup`,
       `_sfc_main.setup = (props, ctx) => {`,
       `  const ssrContext = __vite_useSSRContext()`,
       `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
-        filename
+        normalizedFilename
       )})`,
       `  return _sfc_setup ? _sfc_setup(props, ctx) : undefined`,
       `}`
@@ -225,8 +229,6 @@ async function genTemplateCode(
   }
 }
 
-const exportDefaultClassRE = /(?:(?:^|\n|;)\s*)export\s+default\s+class\s+([\w$]+)/
-
 async function genScriptCode(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
@@ -246,19 +248,7 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
-      // TODO remove the class check logic after upgrading @vue/compiler-sfc
-      const classMatch = script.content.match(exportDefaultClassRE)
-      if (classMatch) {
-        scriptCode =
-          script.content.replace(exportDefaultClassRE, `\nclass $1`) +
-          `\nconst _sfc_main = ${classMatch[1]}`
-        if (/export\s+default/.test(scriptCode)) {
-          // fallback if there are still export default
-          scriptCode = rewriteDefault(script.content, `_sfc_main`)
-        }
-      } else {
-        scriptCode = rewriteDefault(script.content, `_sfc_main`)
-      }
+      scriptCode = script.content
       map = script.map
       if (script.lang === 'ts') {
         const result = await options.devServer!.transformWithEsbuild(
@@ -270,6 +260,7 @@ async function genScriptCode(
         scriptCode = result.code
         map = result.map
       }
+      scriptCode = rewriteDefault(scriptCode, `_sfc_main`)
     } else {
       if (script.src) {
         await linkSrcToDescriptor(script.src, descriptor, pluginContext)

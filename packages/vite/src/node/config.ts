@@ -2,7 +2,11 @@ import fs from 'fs'
 import path from 'path'
 import { Plugin } from './plugin'
 import { BuildOptions, resolveBuildOptions } from './build'
-import { ServerOptions } from './server'
+import {
+  ResolvedServerOptions,
+  resolveServerOptions,
+  ServerOptions
+} from './server'
 import { CSSOptions } from './plugins/css'
 import {
   createDebugger,
@@ -152,6 +156,12 @@ export interface UserConfig {
    */
   clearScreen?: boolean
   /**
+   * Environment files directory. Can be an absolute path, or a path relative from
+   * the location of the config file itself.
+   * @default root
+   */
+  envDir?: string
+  /**
    * Import aliases
    * @deprecated use `resolve.alias` instead
    */
@@ -168,7 +178,7 @@ export type SSRTarget = 'node' | 'webworker'
 
 export interface SSROptions {
   external?: string[]
-  noExternal?: string[]
+  noExternal?: string | RegExp | (string | RegExp)[]
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
@@ -201,7 +211,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
-    server: ServerOptions
+    server: ResolvedServerOptions
     build: ResolvedBuildOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
@@ -213,7 +223,8 @@ export type ResolvedConfig = Readonly<
 export type ResolveFn = (
   id: string,
   importer?: string,
-  aliasOnly?: boolean
+  aliasOnly?: boolean,
+  ssr?: boolean
 ) => Promise<string | undefined>
 
 export async function resolveConfig(
@@ -264,9 +275,8 @@ export async function resolveConfig(
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
     return p && (!p.apply || p.apply === command)
   }) as Plugin[]
-  const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(
-    rawUserPlugins
-  )
+  const [prePlugins, normalPlugins, postPlugins] =
+    sortUserPlugins(rawUserPlugins)
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
@@ -301,7 +311,10 @@ export async function resolveConfig(
   }
 
   // load .env files
-  const userEnv = inlineConfig.envFile !== false && loadEnv(mode, resolvedRoot)
+  const envDir = config.envDir
+    ? normalizePath(path.resolve(resolvedRoot, config.envDir))
+    : resolvedRoot
+  const userEnv = inlineConfig.envFile !== false && loadEnv(mode, envDir)
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
@@ -335,7 +348,7 @@ export async function resolveConfig(
   const createResolver: ResolvedConfig['createResolver'] = (options) => {
     let aliasContainer: PluginContainer | undefined
     let resolverContainer: PluginContainer | undefined
-    return async (id, importer, aliasOnly) => {
+    return async (id, importer, aliasOnly, ssr) => {
       let container: PluginContainer
       if (aliasOnly) {
         container =
@@ -365,7 +378,7 @@ export async function resolveConfig(
             ]
           }))
       }
-      return (await container.resolveId(id, importer))?.id
+      return (await container.resolveId(id, importer, undefined, ssr))?.id
     }
   }
 
@@ -392,7 +405,7 @@ export async function resolveConfig(
     mode,
     isProduction,
     plugins: userPlugins,
-    server: config.server || {},
+    server: resolveServerOptions(resolvedRoot, config.server),
     build: resolvedBuildOptions,
     env: {
       ...userEnv,
@@ -464,25 +477,6 @@ export async function resolveConfig(
         new Error()
       )
       return resolved.base
-    }
-  })
-
-  if (config.build?.polyfillDynamicImport) {
-    logDeprecationWarning(
-      'build.polyfillDynamicImport',
-      '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.'
-    )
-  }
-
-  Object.defineProperty(resolvedBuildOptions, 'polyfillDynamicImport', {
-    enumerable: false,
-    get() {
-      logDeprecationWarning(
-        'build.polyfillDynamicImport',
-        '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.',
-        new Error()
-      )
-      return false
     }
   })
 
@@ -831,12 +825,14 @@ async function bundleConfigFile(
   mjs = false
 ): Promise<{ code: string; dependencies: string[] }> {
   const result = await build({
+    absWorkingDir: process.cwd(),
     entryPoints: [fileName],
     outfile: 'out.js',
     write: false,
     platform: 'node',
     bundle: true,
     format: mjs ? 'esm' : 'cjs',
+    sourcemap: 'inline',
     metafile: true,
     plugins: [
       {
@@ -909,7 +905,7 @@ async function loadConfigFromBundledFile(
 
 export function loadEnv(
   mode: string,
-  root: string,
+  envDir: string,
   prefix = 'VITE_'
 ): Record<string, string> {
   if (mode === 'local') {
@@ -936,7 +932,7 @@ export function loadEnv(
   }
 
   for (const file of envFiles) {
-    const path = lookupFile(root, [file], true)
+    const path = lookupFile(envDir, [file], true)
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
         debug: !!process.env.DEBUG || undefined

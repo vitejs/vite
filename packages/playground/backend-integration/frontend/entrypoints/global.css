@@ -1,7 +1,8 @@
 @import '~/styles/background.css';
 @import '../../references.css';
 
-html, body {
+html,
+body {
   font-family: sans-serif;
   line-height: 2.4rem;
 }
@@ -13,7 +14,7 @@ body {
 }
 
 ul {
-  padding: 0 .4em;
+  padding: 0 0.4em;
   margin: 0;
 }
 

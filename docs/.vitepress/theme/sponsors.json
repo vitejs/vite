@@ -1,12 +1,20 @@
 [
   {
+    "id": "tailwind",
     "name": "Tailwind Labs",
     "href": "https://tailwindcss.com",
     "src": "/tailwind-labs.svg"
   },
   {
+    "id": "vuejobs",
     "name": "Vue Jobs",
     "href": "https://vuejobs.com/?ref=vuejs",
     "src": "/vuejobs.png"
+  },
+  {
+    "id": "mux",
+    "name": "Mux",
+    "href": "https://mux.com",
+    "src": "/mux.svg"
   }
 ]

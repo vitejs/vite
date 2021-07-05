@@ -6,6 +6,7 @@
 <p>Boolean <code class="boolean"></code></p>
 <p>Object <span class="pre object"></span></p>
 <p>Env Var <code class="env-var"></code></p>
+<p>process as property: <code class="process-as-property"></code></p>
 
 <script type="module">
   text('.exp', __EXP__)
@@ -14,6 +15,7 @@
   text('.boolean', __BOOLEAN__)
   text('.object', JSON.stringify(__OBJ__, null, 2))
   text('.env-var', process.env.SOMEVAR)
+  text('.process-as-property', __OBJ__.process.env.SOMEVAR)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

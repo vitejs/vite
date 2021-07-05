@@ -1,3 +1,72 @@
+## [2.4.4](https://github.com/vitejs/vite/compare/create-app@2.4.3...create-app@2.4.4) (2021-06-22)
+
+
+### Bug Fixes
+
+* **create-app:** svelte templates use type module (fixes [#3834](https://github.com/vitejs/vite/issues/3834)) ([#3835](https://github.com/vitejs/vite/issues/3835)) ([ddefe84](https://github.com/vitejs/vite/commit/ddefe8410efdb2104763b9d03fec0e42b9f7bf17))
+* **deps:** update all non-major dependencies ([#3791](https://github.com/vitejs/vite/issues/3791)) ([74d409e](https://github.com/vitejs/vite/commit/74d409eafca8d74ec4a6ece621ea2895bc1f2a32))
+
+
+
+## [2.4.3](https://github.com/vitejs/vite/compare/create-app@2.4.2...create-app@2.4.3) (2021-06-16)
+
+
+### Bug Fixes
+
+* **create-app:** improve prompt message ([#3769](https://github.com/vitejs/vite/issues/3769)) ([9703bcd](https://github.com/vitejs/vite/commit/9703bcd7e594769792779306f8f978dcc010d92f))
+* **create-app:** update svelte templates to use named export of vite-… ([#3760](https://github.com/vitejs/vite/issues/3760)) ([c69f836](https://github.com/vitejs/vite/commit/c69f83615292953d40f07b1178d1ed1d72abe695))
+
+
+
+## [2.4.2](https://github.com/vitejs/vite/compare/create-app@2.4.1...create-app@2.4.2) (2021-06-08)
+
+
+### Features
+
+* **create-app:** update svelte-ts template to use @tsconfig/svelte a… ([#3668](https://github.com/vitejs/vite/issues/3668)) ([5c3b668](https://github.com/vitejs/vite/commit/5c3b668250903ba9ed75db5c4bb7f548d5cb6105))
+
+
+
+## [2.4.1](https://github.com/vitejs/vite/compare/create-app@2.4.0...create-app@2.4.1) (2021-06-01)
+
+
+### Bug Fixes
+
+* **create-app:** handle invalid template ([#3615](https://github.com/vitejs/vite/issues/3615)) ([4578a8c](https://github.com/vitejs/vite/commit/4578a8cc2f0ab972d6dc6bdb9ac92d6fbbd6fb05))
+
+
+
+# [2.4.0](https://github.com/vitejs/vite/compare/create-app@2.3.2...create-app@2.4.0) (2021-06-01)
+
+
+
+## [2.3.2](https://github.com/vitejs/vite/compare/create-app@2.3.1...create-app@2.3.2) (2021-05-25)
+
+
+### Features
+
+* **create-app:** improve client types ([#3214](https://github.com/vitejs/vite/issues/3214)) ([ba8b7af](https://github.com/vitejs/vite/commit/ba8b7afa650277b7218e0bd53564b5fb45bf4549))
+
+
+
+## [2.3.1](https://github.com/vitejs/vite/compare/create-app@2.3.0...create-app@2.3.1) (2021-05-17)
+
+
+### Bug Fixes
+
+* **create-app:** lit-element templates package.json ([#3435](https://github.com/vitejs/vite/issues/3435)) ([74986d3](https://github.com/vitejs/vite/commit/74986d3d053aabe7ec3de20c987e9df309c684b2))
+
+
+
+# [2.3.0](https://github.com/vitejs/vite/compare/create-app@2.2.5...create-app@2.3.0) (2021-05-11)
+
+
+### Features
+
+* **create-app:** bump vite version to 2.3 ([f8315c9](https://github.com/vitejs/vite/commit/f8315c936dd07aa62c51b02f059a42aab103c9c1))
+
+
+
 ## [2.2.5](https://github.com/vitejs/vite/compare/create-app@2.2.4...create-app@2.2.5) (2021-04-25)
 
 

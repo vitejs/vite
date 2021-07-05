@@ -1,3 +1,21 @@
+## [1.2.4](https://github.com/vitejs/vite/compare/plugin-vue@1.2.3...plugin-vue@1.2.4) (2021-06-27)
+
+
+### Bug Fixes
+
+* **ssr:** normalize manifest filenames ([#3706](https://github.com/vitejs/vite/issues/3706)) ([aa8ca3f](https://github.com/vitejs/vite/commit/aa8ca3f35218c9fb48f87d3f6f4681d379ee45ca)), closes [#3303](https://github.com/vitejs/vite/issues/3303)
+
+
+
+## [1.2.3](https://github.com/vitejs/vite/compare/plugin-vue@1.2.2...plugin-vue@1.2.3) (2021-06-01)
+
+
+### Bug Fixes
+
+* **plugin-vue:** rewrite default after ts compiled ([#3591](https://github.com/vitejs/vite/issues/3591)) ([ea5bafa](https://github.com/vitejs/vite/commit/ea5bafaefbafd858389f88e537cb3473b4669802))
+
+
+
 ## [1.2.2](https://github.com/vitejs/vite/compare/plugin-vue@1.2.1...plugin-vue@1.2.2) (2021-04-24)
 
 

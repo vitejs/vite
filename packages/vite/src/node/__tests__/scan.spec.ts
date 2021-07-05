@@ -1,4 +1,5 @@
-import { scriptRE, commentRE } from '../optimizer/scan'
+import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
+
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
       import ScriptDevelopPane from './ScriptDevelopPane.vue';
@@ -10,14 +11,14 @@ describe('optimizer-scan:script-test', () => {
 
   test('component return value test', () => {
     scriptRE.lastIndex = 0
-    const [, tsOpenTag, , tsContent] = scriptRE.exec(
+    const [, tsOpenTag, tsContent] = scriptRE.exec(
       `<script lang="ts">${scriptContent}</script>`
     )
     expect(tsOpenTag).toEqual('<script lang="ts">')
     expect(tsContent).toEqual(scriptContent)
 
     scriptRE.lastIndex = 0
-    const [, openTag, , content] = scriptRE.exec(
+    const [, openTag, content] = scriptRE.exec(
       `<script>${scriptContent}</script>`
     )
     expect(openTag).toEqual('<script>')
@@ -54,17 +55,45 @@ describe('optimizer-scan:script-test', () => {
 
   test('ordinary script tag test', () => {
     scriptRE.lastIndex = 0
-    const [, tag, , content] = scriptRE.exec(
-      `<script  >var test = null</script>`
-    )
+    const [, tag, content] = scriptRE.exec(`<script  >var test = null</script>`)
     expect(tag).toEqual('<script  >')
     expect(content).toEqual('var test = null')
 
     scriptRE.lastIndex = 0
-    const [, tag1, , content1] = scriptRE.exec(
-      `<script>var test = null</script>`
-    )
+    const [, tag1, content1] = scriptRE.exec(`<script>var test = null</script>`)
     expect(tag1).toEqual('<script>')
     expect(content1).toEqual('var test = null')
+  })
+
+  test('imports regex should work', () => {
+    const shouldMatchArray = [
+      `import 'vue'`,
+      `import { foo } from 'vue'`,
+      `import foo from 'vue'`,
+      `;import foo from 'vue'`,
+      `   import foo from 'vue'`,
+      `import { foo
+      } from 'vue'`,
+      `import bar, { foo } from 'vue'`,
+      `import foo from 'vue';`,
+      `*/ import foo from 'vue';`,
+      `import foo from 'vue';//comment`,
+      `import foo from 'vue';/*comment
+      */`
+    ]
+
+    shouldMatchArray.forEach((str) => {
+      importsRE.lastIndex = 0
+      expect(importsRE.exec(str)[1]).toEqual("'vue'")
+    })
+
+    const shouldFailArray = [
+      `testMultiline("import", {
+        body: "ok" });`,
+      `import type, {foo} from 'vue'`
+    ]
+    shouldFailArray.forEach((str) => {
+      expect(importsRE.test(str)).toBe(false)
+    })
   })
 })

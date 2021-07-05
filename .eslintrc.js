@@ -101,6 +101,18 @@ module.exports = defineConfig({
       rules: {
         'node/no-missing-import': 'off'
       }
+    },
+    {
+      files: ['*.js'],
+      rules: {
+        '@typescript-eslint/explicit-module-boundary-types': 'off'
+      }
+    },
+    {
+      files: ['*.d.ts'],
+      rules: {
+        '@typescript-eslint/triple-slash-reference': 'off'
+      }
     }
   ]
 })

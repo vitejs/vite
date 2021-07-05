@@ -20,6 +20,7 @@ import {
   getAssetFilename
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
+import { polyfillId } from './dynamicImportPolyfill'
 import {
   AttributeNode,
   NodeTransform,
@@ -31,7 +32,8 @@ const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 const htmlCommentRE = /<!--[\s\S]*?-->/g
-const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
+const scriptModuleRE =
+  /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
 
 export function htmlInlineScriptProxyPlugin(): Plugin {
   return {
@@ -100,9 +102,7 @@ export async function traverseHtml(
   }
 }
 
-export function getScriptInfo(
-  node: ElementNode
-): {
+export function getScriptInfo(node: ElementNode): {
   src: AttributeNode | undefined
   isModule: boolean
 } {
@@ -263,6 +263,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         processedHtml.set(id, s.toString())
+
+        // inject dynamic import polyfill
+        if (config.build.polyfillDynamicImport) {
+          js = `import "${polyfillId}";\n${js}`
+        }
+
         return js
       }
     },

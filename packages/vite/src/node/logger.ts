@@ -3,12 +3,14 @@
 import chalk from 'chalk'
 import readline from 'readline'
 import os from 'os'
+import { Hostname } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
 export interface Logger {
   info(msg: string, options?: LogOptions): void
   warn(msg: string, options?: LogOptions): void
+  warnOnce(msg: string, options?: LogOptions): void
   error(msg: string, options?: LogOptions): void
   clearScreen(type: LogType): void
   hasWarned: boolean
@@ -87,6 +89,8 @@ export function createLogger(
     }
   }
 
+  const warnedMessages = new Set<string>()
+
   const logger: Logger = {
     hasWarned: false,
     info(msg, opts) {
@@ -95,6 +99,12 @@ export function createLogger(
     warn(msg, opts) {
       logger.hasWarned = true
       output('warn', msg, opts)
+    },
+    warnOnce(msg, opts) {
+      if (warnedMessages.has(msg)) return
+      logger.hasWarned = true
+      output('warn', msg, opts)
+      warnedMessages.add(msg)
     },
     error(msg, opts) {
       logger.hasWarned = true
@@ -111,16 +121,18 @@ export function createLogger(
 }
 
 export function printServerUrls(
-  hostname: string | undefined,
+  hostname: Hostname,
   protocol: string,
   port: number,
   base: string,
   info: Logger['info']
 ): void {
-  if (hostname === '127.0.0.1') {
-    const url = `${protocol}://localhost:${chalk.bold(port)}${base}`
+  if (hostname.host === '127.0.0.1') {
+    const url = `${protocol}://${hostname.name}:${chalk.bold(port)}${base}`
     info(`  > Local: ${chalk.cyan(url)}`)
-    info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+    if (hostname.name !== '127.0.0.1') {
+      info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+    }
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
@@ -129,7 +141,7 @@ export function printServerUrls(
         const type = detail.address.includes('127.0.0.1')
           ? 'Local:   '
           : 'Network: '
-        const host = detail.address
+        const host = detail.address.replace('127.0.0.1', hostname.name)
         const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
         return `  > ${type} ${chalk.cyan(url)}`
       })

@@ -10,6 +10,7 @@ import { RollupError } from 'rollup'
 import { prepareError } from './middlewares/error'
 import match from 'minimatch'
 import { Server } from 'http'
+import { isCSSRequest } from '../plugins/css'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -19,6 +20,7 @@ export interface HmrOptions {
   protocol?: string
   host?: string
   port?: number
+  clientPort?: number
   path?: string
   timeout?: number
   overlay?: boolean
@@ -125,23 +127,22 @@ function updateModules(
 ) {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
+  let needFullReload = false
 
   for (const mod of modules) {
+    invalidate(mod, timestamp, invalidatedModules)
+    if (needFullReload) {
+      continue
+    }
+
     const boundaries = new Set<{
       boundary: ModuleNode
       acceptedVia: ModuleNode
     }>()
-    invalidate(mod, timestamp, invalidatedModules)
     const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
     if (hasDeadEnd) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
-        clear: true,
-        timestamp: true
-      })
-      ws.send({
-        type: 'full-reload'
-      })
-      return
+      needFullReload = true
+      continue
     }
 
     updates.push(
@@ -154,17 +155,26 @@ function updateModules(
     )
   }
 
-  config.logger.info(
-    updates
-      .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
-      .join('\n'),
-    { clear: true, timestamp: true }
-  )
-
-  ws.send({
-    type: 'update',
-    updates
-  })
+  if (needFullReload) {
+    config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
+      clear: true,
+      timestamp: true
+    })
+    ws.send({
+      type: 'full-reload'
+    })
+  } else {
+    config.logger.info(
+      updates
+        .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
+        .join('\n'),
+      { clear: true, timestamp: true }
+    )
+    ws.send({
+      type: 'update',
+      updates
+    })
+  }
 }
 
 export async function handleFileAddUnlink(
@@ -177,10 +187,15 @@ export async function handleFileAddUnlink(
     delete server._globImporters[file]
   } else {
     for (const i in server._globImporters) {
-      const { module, base, pattern } = server._globImporters[i]
-      const relative = path.relative(base, file)
-      if (match(relative, pattern)) {
-        modules.push(module)
+      const { module, importGlobs } = server._globImporters[i]
+      for (const { base, pattern } of importGlobs) {
+        if (match(file, pattern) || match(path.relative(base, file), pattern)) {
+          modules.push(module)
+          // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
+          // calls get fresh glob import results with(out) the newly added(/removed) `file`.
+          server.moduleGraph.onFileChange(module.file!)
+          break
+        }
       }
     }
   }
@@ -208,10 +223,34 @@ function propagateUpdate(
       boundary: node,
       acceptedVia: node
     })
+
+    // additionally check for CSS importers, since a PostCSS plugin like
+    // Tailwind JIT may register any file as a dependency to a CSS file.
+    for (const importer of node.importers) {
+      if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
+        propagateUpdate(
+          importer,
+          timestamp,
+          boundaries,
+          currentChain.concat(importer)
+        )
+      }
+    }
+
     return false
   }
 
   if (!node.importers.size) {
+    return true
+  }
+  
+  // #3716, #3913
+  // For a non-CSS file, if all of its importers are CSS files (registered via
+  // PostCSS plugins) it should be considered a dead end and force full reload.
+  if (
+    !isCSSRequest(node.url) &&
+    [...node.importers].every((i) => isCSSRequest(i.url))
+  ) {
     return true
   }
 
@@ -244,6 +283,8 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
   seen.add(mod)
   mod.lastHMRTimestamp = timestamp
   mod.transformResult = null
+  mod.ssrModule = null
+  mod.ssrTransformResult = null
   mod.importers.forEach((importer) => {
     if (!importer.acceptedHmrDeps.has(mod)) {
       invalidate(importer, timestamp, seen)

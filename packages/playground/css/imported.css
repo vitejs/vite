@@ -17,3 +17,8 @@ pre {
     color: pink;
   }
 }
+
+/* test url comma separation */
+.url-separated {
+  background-image:url(images/cat.webp),url(images/dog.webp);
+}

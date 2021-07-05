@@ -4,9 +4,12 @@
 
 import fs from 'fs'
 import path from 'path'
-import slash from 'slash'
 import colors from 'css-color-names'
 import { ElementHandle } from 'playwright-chromium'
+
+export function slash(p: string): string {
+  return p.replace(/\\/g, '/')
+}
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 
@@ -20,7 +23,7 @@ Object.keys(colors).forEach((color) => {
 })
 
 function componentToHex(c: number): string {
-  var hex = c.toString(16)
+  const hex = c.toString(16)
   return hex.length == 1 ? '0' + hex : hex
 }
 
@@ -63,8 +66,12 @@ export function readFile(filename: string) {
   return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
 }
 
-export function editFile(filename: string, replacer: (str: string) => string) {
-  if (isBuild) return
+export function editFile(
+  filename: string,
+  replacer: (str: string) => string,
+  runInBuild: boolean = false
+): void {
+  if (isBuild && !runInBuild) return
   filename = path.resolve(testDir, filename)
   const content = fs.readFileSync(filename, 'utf-8')
   const modified = replacer(content)
@@ -119,3 +126,8 @@ export async function untilUpdated(
     }
   }
 }
+
+/**
+ * Send the rebuild complete message in build watch
+ */
+export { notifyRebuildComplete } from '../../scripts/jestPerTestSetup'

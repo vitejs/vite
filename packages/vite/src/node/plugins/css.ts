@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import glob from 'fast-glob'
 import {
   // createDebugger,
   isExternalUrl,
@@ -63,7 +64,7 @@ export interface CSSModulesOptions {
     outputFileName: string
   ) => void
   scopeBehaviour?: 'global' | 'local'
-  globalModulePaths?: string[]
+  globalModulePaths?: RegExp[]
   generateScopedName?:
     | string
     | ((name: string, filename: string, css: string) => string)
@@ -120,8 +121,7 @@ export const romovedPureCssFiles = new Map<string, RenderedChunk>()
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
-  const moduleCache = new Map<string, Record<string, string>>()
-  cssModulesCache.set(config, moduleCache)
+  let moduleCache: Map<string, Record<string, string>>
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -135,6 +135,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
     configureServer(_server) {
       server = _server
+    },
+
+    buildStart() {
+      // Ensure a new cache for every build (i.e. rebuilding in watch mode)
+      moduleCache = new Map<string, Record<string, string>>()
+      cssModulesCache.set(config, moduleCache)
     },
 
     async transform(raw, id) {
@@ -153,30 +159,27 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         return url
       }
 
-      // const urlReplacer: CssUrlReplacer = server
-      //   ? (url, importer) => {
-      //       if (url.startsWith('/')) {
-      //         return config.base + url.slice(1)
-      //       } else {
-      //         const filePath = normalizePath(
-      //           path.resolve(path.dirname(importer || id), url)
-      //         )
-      //         return fileToDevUrl(filePath, config)
-      //       }
-      //     }
-      //   : (url, importer) => {
-      //       return urlToBuiltUrl(url, importer || id, config, this)
-      //     }
-
-      const { code: css, modules, deps } = await compileCSS(
+      const {
+        code: css,
+        modules,
+        deps
+      } = await compileCSS(
         id,
         raw,
         config,
         urlReplacer,
-        atImportResolvers
+        atImportResolvers,
+        server
       )
       if (modules) {
         moduleCache.set(id, modules)
+      }
+
+      // track deps for build watch mode
+      if (config.command === 'build' && config.build.watch && deps) {
+        for (const file of deps) {
+          this.addWatchFile(file)
+        }
       }
 
       // dev
@@ -222,24 +225,31 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  const styles = new Map<string, string>()
-  const pureCssChunks = new Set<string>()
-  const moduleCache = cssModulesCache.get(config)!
+  // styles initialization in buildStart causes a styling loss in watch
+  const styles: Map<string, string> = new Map<string, string>()
+  let pureCssChunks: Set<string>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
-  const outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+  let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
 
   return {
     name: 'vite:css-post',
+
+    buildStart() {
+      // Ensure new caches for every build (i.e. rebuilding in watch mode)
+      pureCssChunks = new Set<string>()
+      outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+      hasEmitted = false
+    },
 
     transform(css, id, ssr) {
       if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
         return
       }
 
-      const modules = moduleCache.get(id)
+      const modules = cssModulesCache.get(config)!.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
@@ -514,7 +524,8 @@ async function compileCSS(
   code: string,
   config: ResolvedConfig,
   urlReplacer: CssUrlReplacer,
-  atImportResolvers: CSSAtImportResolvers
+  atImportResolvers: CSSAtImportResolvers,
+  server?: ViteDevServer
 ): Promise<{
   code: string
   map?: SourceMap
@@ -586,7 +597,7 @@ async function compileCSS(
     if (preprocessResult.deps) {
       preprocessResult.deps.forEach((dep) => {
         // sometimes sass registers the file itself as a dep
-        if (dep !== opts.filename) {
+        if (normalizePath(dep) !== normalizePath(opts.filename)) {
           deps.add(dep)
         }
       })
@@ -663,6 +674,30 @@ async function compileCSS(
   for (const message of postcssResult.messages) {
     if (message.type === 'dependency') {
       deps.add(message.file as string)
+    } else if (message.type === 'dir-dependency') {
+      // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
+      const { dir, glob: globPattern = '**' } = message
+      const pattern =
+        normalizePath(path.resolve(path.dirname(id), dir)) + `/` + globPattern
+      const files = glob.sync(pattern, {
+        ignore: ['**/node_modules/**']
+      })
+      for (let i = 0; i < files.length; i++) {
+        deps.add(files[i])
+      }
+      if (server) {
+        // register glob importers so we can trigger updates on file add/remove
+        if (!(id in server._globImporters)) {
+          server._globImporters[id] = {
+            module: server.moduleGraph.getModuleById(id)!,
+            importGlobs: []
+          }
+        }
+        server._globImporters[id].importGlobs.push({
+          base: config.root,
+          pattern
+        })
+      }
     } else if (message.type === 'warning') {
       let msg = `[vite:css] ${message.text}`
       if (message.line && message.column) {
@@ -726,7 +761,9 @@ type CssUrlReplacer = (
   url: string,
   importer?: string
 ) => string | Promise<string>
-const cssUrlRE = /url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+// https://drafts.csswg.org/css-syntax-3/#identifier-code-point
+export const cssUrlRE =
+  /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
@@ -864,15 +901,26 @@ type PreprocessorAdditionalData =
   | string
   | ((source: string, filename: string) => string | Promise<string>)
 
+type StylePreprocessorOptions = {
+  [key: string]: any
+  additionalData?: PreprocessorAdditionalData
+  filename: string
+  alias: Alias[]
+}
+
+type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
+
 type StylePreprocessor = (
   source: string,
   root: string,
-  options: {
-    [key: string]: any
-    additionalData?: PreprocessorAdditionalData
-    filename: string
-    alias: Alias[]
-  },
+  options: StylePreprocessorOptions,
+  resolvers: CSSAtImportResolvers
+) => StylePreprocessorResults | Promise<StylePreprocessorResults>
+
+type SassStylePreprocessor = (
+  source: string,
+  root: string,
+  options: SassStylePreprocessorOptions,
   resolvers: CSSAtImportResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
@@ -897,7 +945,10 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
     return loadedPreprocessors[lang]
   }
   try {
-    const resolved = require.resolve(lang, { paths: [root] })
+    // Search for the preprocessor in the root directory first, and fall back
+    // to the default require paths.
+    const fallbackPaths = require.resolve.paths(lang) || []
+    const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
     throw new Error(
@@ -907,22 +958,35 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
 }
 
 // .scss/.sass processor
-const scss: StylePreprocessor = async (source, root, options, resolvers) => {
+const scss: SassStylePreprocessor = async (
+  source,
+  root,
+  options,
+  resolvers
+) => {
   const render = loadPreprocessor(PreprocessLang.sass, root).render
+  const internalImporter: Sass.Importer = (url, importer, done) => {
+    resolvers.sass(url, importer).then((resolved) => {
+      if (resolved) {
+        rebaseUrls(resolved, options.filename, options.alias).then(done)
+      } else {
+        done(null)
+      }
+    })
+  }
+  const importer = [internalImporter]
+  if (options.importer) {
+    Array.isArray(options.importer)
+      ? importer.push(...options.importer)
+      : importer.push(options.importer)
+  }
+
   const finalOptions: Sass.Options = {
     ...options,
     data: await getSource(source, options.filename, options.additionalData),
     file: options.filename,
     outFile: options.filename,
-    importer(url, importer, done) {
-      resolvers.sass(url, importer).then((resolved) => {
-        if (resolved) {
-          rebaseUrls(resolved, options.filename, options.alias).then(done)
-        } else {
-          done(null)
-        }
-      })
-    }
+    importer
   }
 
   try {
@@ -950,7 +1014,7 @@ const scss: StylePreprocessor = async (source, root, options, resolvers) => {
   }
 }
 
-const sass: StylePreprocessor = (source, root, options, aliasResolver) =>
+const sass: SassStylePreprocessor = (source, root, options, aliasResolver) =>
   scss(
     source,
     root,
@@ -1063,13 +1127,13 @@ function createViteLessPlugin(
         this.resolvers = resolvers
         this.alias = alias
       }
-      supports() {
+      override supports() {
         return true
       }
-      supportsSync() {
+      override supportsSync() {
         return false
       }
-      async loadFile(
+      override async loadFile(
         filename: string,
         dir: string,
         opts: any,
@@ -1131,7 +1195,6 @@ const styl: StylePreprocessor = async (source, root, options) => {
 
     const result = ref.render()
 
-    // @ts-expect-error: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/51919
     // Concat imports deps with computed deps
     const deps = [...ref.deps(), ...importsDeps]
 

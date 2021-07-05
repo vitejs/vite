@@ -103,7 +103,8 @@ export async function optimizeDeps(
   config: ResolvedConfig,
   force = config.server.force,
   asCommand = false,
-  newDeps?: Record<string, string> // missing imports encountered after server has started
+  newDeps?: Record<string, string>, // missing imports encountered after server has started
+  ssr?: boolean
 ): Promise<DepOptimizationMetadata | null> {
   config = {
     ...config,
@@ -143,6 +144,12 @@ export async function optimizeDeps(
   } else {
     fs.mkdirSync(cacheDir, { recursive: true })
   }
+  // a hint for Node.js
+  // all files in the cache directory should be recognized as ES modules
+  writeFile(
+    path.resolve(cacheDir, 'package.json'),
+    JSON.stringify({ type: 'module' })
+  )
 
   let deps: Record<string, string>, missing: Record<string, string>
   if (!newDeps) {
@@ -260,6 +267,7 @@ export async function optimizeDeps(
     config.optimizeDeps?.esbuildOptions ?? {}
 
   const result = await build({
+    absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
@@ -273,7 +281,7 @@ export async function optimizeDeps(
     define,
     plugins: [
       ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
     ],
     ...esbuildOptions
   })
