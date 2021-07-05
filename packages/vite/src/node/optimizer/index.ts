@@ -361,12 +361,7 @@ function isSingleDefaultExport(exports: string[]) {
 
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
 
-let cachedHash: string | undefined
-
 function getDepHash(root: string, config: ResolvedConfig): string {
-  if (cachedHash) {
-    return cachedHash
-  }
   let content = lookupFile(root, lockfileFormats) || ''
   // also take config into account
   // only a subset of config options that can affect dep optimization
