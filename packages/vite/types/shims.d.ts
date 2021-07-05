@@ -116,4 +116,5 @@ declare module 'compression' {
 
 // LESS' types somewhat references this which doesn't make sense in Node,
 // so we have to shim it
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 declare interface HTMLLinkElement {}
