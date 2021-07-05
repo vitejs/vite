@@ -1,3 +1,12 @@
+## [2.4.5](https://github.com/vitejs/vite/compare/create-app@2.4.4...create-app@2.4.5) (2021-07-05)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#3878](https://github.com/vitejs/vite/issues/3878)) ([a66a805](https://github.com/vitejs/vite/commit/a66a8053e9520d20bcf95fce870570c5195bcc91))
+
+
+
 ## [2.4.4](https://github.com/vitejs/vite/compare/create-app@2.4.3...create-app@2.4.4) (2021-06-22)
 
 
