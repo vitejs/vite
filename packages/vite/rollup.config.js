@@ -440,37 +440,6 @@ function viteForBrowserPlugin() {
     'postcss-load-config':
       'export default () => {throw new Error("No PostCSS Config found")}',
     fs: `const readFileSync = () => '';const existsSync = () => false;const statSync = () => {throw new Error('Not found')};const promises = { readFile: readFileSync, exists: existsSync, stat: statSync };export { readFileSync, existsSync, statSync, promises };export default {readFileSync, existsSync, promises}`,
-    esbuild: `
-    import {
-      initialize,
-      transform as _transform,
-      build as _build
-    } from 'esbuild-wasm';
-    export {
-      TransformResult,
-      TransformOptions,
-      BuildResult,
-      BuildOptions,
-      Message,
-      Loader,
-      ImportKind,
-      Plugin,
-    } from 'esbuild-wasm';
-    
-    const init$ = initialize({
-      wasmURL: 'https://unpkg.com/esbuild-wasm@${
-        require('esbuild-wasm/package.json').version
-      }/esbuild.wasm',
-    });
-    
-    export function transform(input,options) {
-      return init$.then(() => _transform(input, options));
-    }
-    
-    export function build(options) {
-      return init$.then(() => _build(options));
-    }
-    `,
     sirv: 'export default function () {}'
   }
   return {
