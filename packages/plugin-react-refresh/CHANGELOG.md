@@ -1,3 +1,7 @@
+## [1.3.5](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.4...plugin-react-refresh@1.3.5) (2021-07-05)
+
+
+
 ## [1.3.4](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.3...plugin-react-refresh@1.3.4) (2021-06-27)
 
 
