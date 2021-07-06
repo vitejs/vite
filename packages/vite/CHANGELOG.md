@@ -1,3 +1,13 @@
+## [2.4.1](https://github.com/vitejs/vite/compare/v2.4.0...v2.4.1) (2021-07-06)
+
+
+### Bug Fixes
+
+* **hmr:** html registered as a PostCSS dependency, fix [#3716](https://github.com/vitejs/vite/issues/3716) ([#4127](https://github.com/vitejs/vite/issues/4127)) ([09c6c94](https://github.com/vitejs/vite/commit/09c6c94690ea3fc8b66bb6781995b3e15faedf8f))
+* specify full filepath to importMeta.d.ts, fix [#4125](https://github.com/vitejs/vite/issues/4125) ([#4138](https://github.com/vitejs/vite/issues/4138)) ([3bc1d78](https://github.com/vitejs/vite/commit/3bc1d78843d970d367e235f6c30fd7996cf7335a))
+
+
+
 # [2.4.0](https://github.com/vitejs/vite/compare/v2.4.0-beta.3...v2.4.0) (2021-07-05)
 
 

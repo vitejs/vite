@@ -504,6 +504,13 @@ Repository: git://github.com/visionmedia/debug.git
 
 ---------------------------------------
 
+## define-lazy-prop
+License: MIT
+By: Sindre Sorhus
+Repository: sindresorhus/define-lazy-prop
+
+---------------------------------------
+
 ## diff
 License: BSD-3-Clause
 Repository: git://github.com/kpdecker/jsdiff.git
