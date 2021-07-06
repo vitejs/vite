@@ -9,6 +9,8 @@ import alias from '@rollup/plugin-alias'
 import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
 import chalk from 'chalk'
+import fg from 'fast-glob'
+import { sync as resolve } from 'resolve'
 
 /**
  * @type { import('rollup').RollupOptions }
@@ -304,6 +306,21 @@ function licensePlugin() {
             }
             if (repository) {
               text += `Repository: ${repository.url || repository}\n`
+            }
+            if (!licenseText) {
+              try {
+                const pkgDir = path.dirname(
+                  resolve(path.join(name, 'package.json'), {
+                    preserveSymlinks: false
+                  })
+                )
+                const licenseFile = fg.sync(`${pkgDir}/LICENSE*`, {
+                  caseSensitiveMatch: false
+                })[0]
+                if (licenseFile) {
+                  licenseText = fs.readFileSync(licenseFile, 'utf-8')
+                }
+              } catch {}
             }
             if (licenseText) {
               text +=
