@@ -4,6 +4,7 @@
     "schedule:weekly",
     "group:allNonMajor"
   ],
+  "labels": ["dependencies"],
   "ignorePaths": [
     "packages/playground/**",
     "packages/create-app/template-*/**",

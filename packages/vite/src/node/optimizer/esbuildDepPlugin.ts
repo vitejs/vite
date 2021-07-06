@@ -94,7 +94,7 @@ export function esbuildDepPlugin(
                 namespace: 'dep'
               }
             : {
-                path: require.resolve(id, {
+                path: require.resolve(qualified[flatId], {
                   paths: [resolveDir]
                 })
               }

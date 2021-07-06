@@ -27,6 +27,7 @@ import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
+import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
 import { CleanCSS } from 'types/clean-css'
@@ -127,6 +128,10 @@ export interface BuildOptions {
    */
   commonjsOptions?: RollupCommonJSOptions
   /**
+   * Options to pass on to `@rollup/plugin-dynamic-import-vars`
+   */
+  dynamicImportVarsOptions?: RollupDynamicImportVarsOptions
+  /**
    * Whether to write bundle to disk
    * @default true
    */
@@ -215,6 +220,11 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       extensions: ['.js', '.cjs'],
       ...raw?.commonjsOptions
     },
+    dynamicImportVarsOptions: {
+      warnOnError: true,
+      exclude: [/node_modules/],
+      ...raw?.dynamicImportVarsOptions
+    },
     minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
     cleanCssOptions: {},
@@ -262,15 +272,9 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   return {
     pre: [
       buildHtmlPlugin(config),
-      commonjsPlugin({
-        ignoreDynamicRequires: true,
-        ...options.commonjsOptions
-      }),
+      commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
-      dynamicImportVars({
-        warnOnError: true,
-        exclude: [/node_modules/]
-      }),
+      dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])

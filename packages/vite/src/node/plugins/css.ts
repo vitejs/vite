@@ -81,7 +81,7 @@ export interface CSSModulesOptions {
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
-const cssLangRE = new RegExp(cssLangs)
+export const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const commonjsProxyRE = /\?commonjs-proxy/
@@ -760,7 +760,7 @@ type CssUrlReplacer = (
 ) => string | Promise<string>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?:^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+  /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
@@ -837,9 +837,7 @@ async function doUrlReplace(
     return matched
   }
 
-  // #3926
-  const initialComma = matched[0] === ',' ? ',' : ''
-  return `${initialComma}url(${wrap}${await replacer(rawUrl)}${wrap})`
+  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
 let CleanCSS: any
@@ -944,7 +942,10 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
     return loadedPreprocessors[lang]
   }
   try {
-    const resolved = require.resolve(lang, { paths: [root] })
+    // Search for the preprocessor in the root directory first, and fall back
+    // to the default require paths.
+    const fallbackPaths = require.resolve.paths(lang) || []
+    const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
     throw new Error(
