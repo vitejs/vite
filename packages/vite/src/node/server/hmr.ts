@@ -10,7 +10,7 @@ import { RollupError } from 'rollup'
 import { prepareError } from './middlewares/error'
 import match from 'minimatch'
 import { Server } from 'http'
-import { isCSSRequest } from '../plugins/css'
+import { cssLangRE } from '../plugins/css'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -227,7 +227,7 @@ function propagateUpdate(
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
     for (const importer of node.importers) {
-      if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
+      if (cssLangRE.test(importer.url) && !currentChain.includes(importer)) {
         propagateUpdate(
           importer,
           timestamp,
@@ -243,13 +243,13 @@ function propagateUpdate(
   if (!node.importers.size) {
     return true
   }
-  
+
   // #3716, #3913
   // For a non-CSS file, if all of its importers are CSS files (registered via
   // PostCSS plugins) it should be considered a dead end and force full reload.
   if (
-    !isCSSRequest(node.url) &&
-    [...node.importers].every((i) => isCSSRequest(i.url))
+    !cssLangRE.test(node.url) &&
+    [...node.importers].every((i) => cssLangRE.test(i.url))
   ) {
     return true
   }
