@@ -39,7 +39,7 @@ export default {
   plugins: [
     legacy({
       targets: ['ie >= 11'],
-      additionalLegacyPolyfills: ['regenerator-runtime/runtime']  
+      additionalLegacyPolyfills: ['regenerator-runtime/runtime']
     })
   ]
 }
