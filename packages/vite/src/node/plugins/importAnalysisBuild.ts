@@ -32,7 +32,6 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 
   // @ts-ignore
   if (scriptRel === undefined) {
-    // @ts-ignore
     const relList = document.createElement('link').relList
     // @ts-ignore
     scriptRel =
@@ -49,11 +48,10 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
       seen[dep] = true
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-      // @ts-ignore check if the file is already preloaded by SSR markup
+      // check if the file is already preloaded by SSR markup
       if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
         return
       }
-      // @ts-ignore
       const link = document.createElement('link')
       // @ts-ignore
       link.rel = isCss ? 'stylesheet' : scriptRel
@@ -62,7 +60,6 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
         link.crossOrigin = ''
       }
       link.href = dep
-      // @ts-ignore
       document.head.appendChild(link)
       if (isCss) {
         return new Promise((res, rej) => {

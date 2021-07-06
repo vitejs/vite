@@ -111,8 +111,9 @@ function polyfill(modulePath = '.', importFunctionName = '__import__') {
         const absURL = new URL(url, baseURL)
 
         // If the module has already been imported, resolve immediately.
-        if (self[importFunctionName].moduleMap[absURL]) {
-          return resolve(self[importFunctionName].moduleMap[absURL])
+        const moduleFromUrl = self[importFunctionName].moduleMap[absURL as any]
+        if (moduleFromUrl) {
+          return resolve(moduleFromUrl)
         }
 
         const moduleBlob = new Blob(
@@ -131,7 +132,7 @@ function polyfill(modulePath = '.', importFunctionName = '__import__') {
             cleanup(script)
           },
           onload() {
-            resolve(self[importFunctionName].moduleMap[absURL])
+            resolve(self[importFunctionName].moduleMap[absURL as any])
             cleanup(script)
           }
         })
