@@ -46,10 +46,11 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: "Optional if provided reproduction. Please try not to insert an image but copy paste the log text.
+      description: |
+        Optional if provided reproduction. Please try not to insert an image but copy paste the log text.
 
-  1. Run `vite` or `vite build` with the `--debug` flag.
-  2. Provide the error log here."
+        1. Run `vite` or `vite build` with the `--debug` flag.
+        2. Provide the error log here.
       render: shell
   - type: checkboxes
     id: checkboxes

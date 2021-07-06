@@ -91,11 +91,7 @@ function vueJsxPlugin(options = {}) {
       const filter = createFilter(include || /\.[jt]sx$/, exclude)
 
       if (filter(id)) {
-        const plugins = [
-          importMeta,
-          [jsx, babelPluginOptions],
-          ...babelPlugins
-        ]
+        const plugins = [importMeta, [jsx, babelPluginOptions], ...babelPlugins]
         if (id.endsWith('.tsx')) {
           plugins.push([
             require('@babel/plugin-transform-typescript'),

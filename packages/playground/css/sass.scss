@@ -3,7 +3,6 @@
 @import 'css-dep'; // package w/ sass entry points
 @import 'virtual-dep'; // virtual file added through importer
 
-
 .sass {
   /* injected via vite.config.js */
   color: $injectedColor;

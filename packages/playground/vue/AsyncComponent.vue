@@ -11,5 +11,5 @@ const forAwaitTest = async (array): Promise<void> => {
     test += value
   }
 }
-await forAwaitTest([Promise.resolve('a'), Promise.resolve('b')]).catch(() => { })
+await forAwaitTest([Promise.resolve('a'), Promise.resolve('b')]).catch(() => {})
 </script>

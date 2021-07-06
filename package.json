@@ -9,6 +9,7 @@
     "node": ">=12.0.0"
   },
   "scripts": {
+    "format": "prettier --write .",
     "lint": "eslint --ext .js,.ts packages/*/src/**",
     "test": "run-s test-serve test-build",
     "test-serve": "jest",

@@ -3,4 +3,5 @@ packages/vite/dist/
 packages/plugin-vue/dist/
 packages/*/CHANGELOG.md
 LICENSE.md
-.prettierrc
+.prettierignore
+yarn.lock
