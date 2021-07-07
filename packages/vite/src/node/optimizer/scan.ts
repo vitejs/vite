@@ -38,7 +38,7 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
 export const importsRE =
-  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type )(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
+  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 
