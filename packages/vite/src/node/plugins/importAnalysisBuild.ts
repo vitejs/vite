@@ -264,7 +264,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
               let markPos = code.indexOf(preloadMarker, end)
               // fix issue #3051
-              if (markPos == -1 && imports.length == 1) {
+              if (markPos === -1 && imports.length === 1) {
                 markPos = code.indexOf(preloadMarker)
               }
 
