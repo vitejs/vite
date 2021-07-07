@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs, { promises as fsp } from 'fs'
 import path from 'path'
 import { Server as HttpServer } from 'http'
 import { ServerOptions as HttpsServerOptions } from 'https'
@@ -44,7 +44,7 @@ export async function resolveHttpsConfig(
     pfx: readFileIfExists(pfx)
   })
   if (!httpsOption.key || !httpsOption.cert) {
-    httpsOption.cert = httpsOption.key = await createCertificate()
+    httpsOption.cert = httpsOption.key = await getCertificate(config)
   }
   return httpsOption
 }
@@ -132,4 +132,30 @@ async function createCertificate() {
     ]
   })
   return pems.private + pems.cert
+}
+
+async function getCertificate(config: ResolvedConfig) {
+  if (!config.cacheDir) return await createCertificate()
+
+  const cachePath = path.join(config.cacheDir, '_cert.pem')
+
+  try {
+    const [stat, content] = await Promise.all([
+      fsp.stat(cachePath),
+      fsp.readFile(cachePath, 'utf8')
+    ])
+
+    if (Date.now() - stat.ctime.valueOf() > 30 * 24 * 60 * 60 * 1000) {
+      throw new Error('cache is outdated.')
+    }
+
+    return content
+  } catch {
+    const content = await createCertificate()
+    fsp
+      .mkdir(config.cacheDir, { recursive: true })
+      .then(() => fsp.writeFile(cachePath, content))
+      .catch(() => {})
+    return content
+  }
 }
