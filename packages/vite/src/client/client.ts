@@ -22,9 +22,10 @@ declare const __HMR_ENABLE_OVERLAY__: boolean
 console.log('[vite] connecting...')
 
 // use server configuration, then fallback to inference
+const scriptLocation = new URL((document.currentScript as HTMLScriptElement).src)
 const socketProtocol =
-  __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
+  __HMR_PROTOCOL__ || (scriptLocation.protocol === 'https:' ? 'wss' : 'ws')
+const socketHost = `${__HMR_HOSTNAME__ || scriptLocation.hostname}:${__HMR_PORT__ || scriptLocation.port}`
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
 
