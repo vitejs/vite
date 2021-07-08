@@ -291,8 +291,9 @@ function tryFsResolve(
   ) {
     return res
   }
-
-  for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
+  
+  const extArr = options.extensions && options.extensions.length ? options.extensions : DEFAULT_EXTENSIONS
+  for (const ext of extArr) {
     if (
       (res = tryResolveFile(
         file + ext,
