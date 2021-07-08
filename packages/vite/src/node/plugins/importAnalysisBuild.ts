@@ -26,7 +26,7 @@ const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
  */
 function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   // @ts-ignore
-  if (!__VITE_IS_MODERN__ || !deps) {
+  if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
   }
 
@@ -262,7 +262,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              const markPos = code.indexOf(preloadMarker, end)
+              let markPos = code.indexOf(preloadMarker, end)
+              // fix issue #3051
+              if (markPos === -1 && imports.length === 1) {
+                markPos = code.indexOf(preloadMarker)
+              }
+
               if (markPos > 0) {
                 s.overwrite(
                   markPos - 1,
@@ -271,7 +276,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // preload when there are actual other deps.
                   deps.size > 1
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                    : `void 0`
+                    : `[]`
                 )
               }
             }
