@@ -26,7 +26,7 @@ const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
  */
 function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   // @ts-ignore
-  if (!__VITE_IS_MODERN__ || deps.length === 0) {
+  if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
   }
 
