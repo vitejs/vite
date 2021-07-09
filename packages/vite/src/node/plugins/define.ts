@@ -30,31 +30,46 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const replacements: Record<string, string | undefined> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
-    'global.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    'globalThis.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    ...userDefine,
-    ...importMetaKeys,
+  const processEnv = {
     'process.env.': `({}).`,
     'global.process.env.': `({}).`,
     'globalThis.process.env.': `({}).`
   }
 
-  const pattern = new RegExp(
-    '(?<!\\.)\\b(' +
-      Object.keys(replacements)
-        .map((str) => {
-          return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-        })
-        .join('|') +
-      ')\\b',
-    'g'
-  )
+  function generatePattern(
+    ssr: boolean
+  ): [Record<string, string | undefined>, RegExp] {
+    const replacements: Record<string, string | undefined> = {
+      'process.env.NODE_ENV': JSON.stringify(
+        process.env.NODE_ENV || config.mode
+      ),
+      'global.process.env.NODE_ENV': JSON.stringify(
+        process.env.NODE_ENV || config.mode
+      ),
+      'globalThis.process.env.NODE_ENV': JSON.stringify(
+        process.env.NODE_ENV || config.mode
+      ),
+      ...userDefine,
+      ...importMetaKeys,
+      ...(ssr ? {} : processEnv)
+    }
+
+    const pattern = new RegExp(
+      '(?<!\\.)\\b(' +
+        Object.keys(replacements)
+          .map((str) => {
+            return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+          })
+          .join('|') +
+        ')\\b',
+      'g'
+    )
+
+    return [replacements, pattern]
+  }
+
+  const defaultPattern = generatePattern(false)
+  const ssrPattern = generatePattern(true)
 
   return {
     name: 'vite:define',
@@ -72,6 +87,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
+
+      const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
