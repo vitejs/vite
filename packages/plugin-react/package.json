@@ -45,6 +45,6 @@
   },
   "devDependencies": {
     "vite": "link:../vite",
-    "vite-dts": "^1.0.2"
+    "vite-dts": "^1.0.3"
   }
 }
