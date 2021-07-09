@@ -30,15 +30,23 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const processEnv = {
-    'process.env.': `({}).`,
-    'global.process.env.': `({}).`,
-    'globalThis.process.env.': `({}).`
-  }
-
   function generatePattern(
     ssr: boolean
   ): [Record<string, string | undefined>, RegExp] {
+    const processEnv = ssr
+      ? {
+          // account for non-node environments like v8
+          'process.env.': `(typeof process === 'undefined' ? {} : process.env).`,
+          'global.process.env.': `(typeof global.process === 'undefined' ? {} : global.process.env).`,
+          'globalThis.process.env.': `(typeof globalThis.process === 'undefined' ? {} : globalThis.process.env).`
+        }
+      : {
+          // client never has process
+          'process.env.': `({}).`,
+          'global.process.env.': `({}).`,
+          'globalThis.process.env.': `({}).`
+        }
+
     const replacements: Record<string, string | undefined> = {
       'process.env.NODE_ENV': JSON.stringify(
         process.env.NODE_ENV || config.mode
@@ -51,7 +59,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ),
       ...userDefine,
       ...importMetaKeys,
-      ...(ssr ? {} : processEnv)
+      ...processEnv
     }
 
     const pattern = new RegExp(
