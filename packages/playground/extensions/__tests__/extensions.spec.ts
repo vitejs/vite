@@ -1,6 +1,5 @@
 test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
-    console.log(msg)
     expect(msg).not.toMatch('404')
   })
 })
