@@ -1,0 +1,20 @@
+name: Issue Comments
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  reply-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: closed issue comment notification
+        if: github.event.issue.state == 'closed' || github.event.comment.owner != 'github-actions'
+        uses: actions-cool/issues-helper@v2.2.1
+        with:
+          actions: "create-comment"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Comments in old closes issues will probably get ignored.
+            If you have found a concrete bug, please build a minimal reproduction and create an issue against the latest version of Vite and you can reference this issue.
