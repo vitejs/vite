@@ -10,7 +10,6 @@ import { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
-// eslint-disable-next-line node/no-missing-import
 
 // injected by the hmr plugin when served
 declare const __ROOT__: string
