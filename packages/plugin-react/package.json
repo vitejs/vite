@@ -10,15 +10,15 @@
     "dist",
     "src"
   ],
-  "main": "dist/plugin-react.cjs.js",
-  "module": "dist/plugin-react.es.js",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
   "exports": {
     "import": "./dist/plugin-react.es.js",
     "require": "./dist/plugin-react.cjs.js"
   },
   "scripts": {
-    "dev": "vite build --watch",
-    "build": "vite build",
+    "dev": "tsc -p . -w --incremental",
+    "build": "rimraf dist && tsc -p . --outDir dist/esm && tsc -p . --module commonjs --outDir dist/cjs",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-react",
     "release": "node ../../scripts/release.js --skipBuild"
   },
@@ -44,7 +44,6 @@
     "resolve": "^1.20.0"
   },
   "devDependencies": {
-    "vite": "link:../vite",
-    "vite-dts": "^1.0.3"
+    "vite": "link:../vite"
   }
 }
