@@ -272,3 +272,7 @@ viteReact.preambleCode = preambleCode
 function interopDefault(promise: Promise<any>): Promise<any> {
   return promise.then((module) => module.default || module)
 }
+
+// overwrite for cjs require('...')() usage
+module.exports = viteReact
+viteReact['default'] = viteReact

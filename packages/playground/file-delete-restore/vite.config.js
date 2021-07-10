@@ -1,15 +1,12 @@
-const reactRefresh = require('@vitejs/plugin-react-refresh')
+const pluginReact = require('@vitejs/plugin-react')
 
 /**
  * @type {import('vite').UserConfig}
  */
 module.exports = {
-  plugins: [reactRefresh()],
+  plugins: [pluginReact()],
   build: {
     // to make tests faster
     minify: false
-  },
-  esbuild: {
-    jsxInject: `import React from 'react'`
   }
 }

@@ -4,7 +4,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "ES2018",
-    "module": "esnext",
+    "module": "CommonJS",
     "moduleResolution": "Node",
     "strict": true,
     "declaration": true,

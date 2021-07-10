@@ -18,7 +18,7 @@
   },
   "scripts": {
     "dev": "tsc -p . -w --incremental",
-    "build": "rimraf dist && tsc -p . --outDir dist/esm && tsc -p . --module commonjs --outDir dist/cjs",
+    "build": "rimraf dist && tsc -p . --module esnext --outDir dist/esm && tsc -p . --module commonjs --outDir dist/cjs",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-react",
     "release": "node ../../scripts/release.js --skipBuild"
   },
