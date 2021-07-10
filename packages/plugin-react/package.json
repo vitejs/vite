@@ -13,8 +13,8 @@
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "exports": {
-    "import": "./dist/plugin-react.es.js",
-    "require": "./dist/plugin-react.cjs.js"
+    "import": "./dist/esm/index.js",
+    "require": "./dist/cjs/index.js"
   },
   "scripts": {
     "dev": "tsc -p . -w --incremental",

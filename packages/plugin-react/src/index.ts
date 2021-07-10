@@ -1,4 +1,5 @@
-import babel, { ParserOptions, TransformOptions, types as t } from '@babel/core'
+import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
+import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
 import type { Plugin, PluginOption } from 'vite'
@@ -93,7 +94,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
-              await import('react-refresh/babel'),
+              await interopDefault(import('react-refresh/babel')),
               { skipEnvCheck: true }
             ])
           }

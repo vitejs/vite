@@ -3717,7 +3717,7 @@ good-listener@^1.2.2:
   dependencies:
     delegate "^3.1.2"
 
-graceful-fs@^4.1.15, graceful-fs@^4.1.2, graceful-fs@^4.1.6, graceful-fs@^4.2.0, graceful-fs@^4.2.4:
+graceful-fs@^4.1.2, graceful-fs@^4.1.6, graceful-fs@^4.2.0, graceful-fs@^4.2.4:
   version "4.2.8"
   resolved "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.8.tgz#e412b8d33f5e006593cbd3cee6df9f2cebbe802a"
   integrity sha512-qkIilPUYcNhJpd33n0GBXTB1MMPp14TxEsEs0pTrsSVucApsYzW5V+Q8Qxhik6KU3evy+qkAAowTByymK0avdg==
@@ -5056,16 +5056,6 @@ load-json-file@^4.0.0:
     parse-json "^4.0.0"
     pify "^3.0.0"
     strip-bom "^3.0.0"
-
-load-json-file@^6.2.0:
-  version "6.2.0"
-  resolved "https://registry.npmjs.org/load-json-file/-/load-json-file-6.2.0.tgz#5c7770b42cafa97074ca2848707c61662f4251a1"
-  integrity sha512-gUD/epcRms75Cw8RT1pUdHugZYM5ce64ucs2GEISABwkRsOQr0q2wm/MV2TKThycIe5e0ytRweW2RZxclogCdQ==
-  dependencies:
-    graceful-fs "^4.1.15"
-    parse-json "^5.0.0"
-    strip-bom "^4.0.0"
-    type-fest "^0.6.0"
 
 loader-utils@^1.1.0:
   version "1.4.0"
@@ -7827,13 +7817,6 @@ vary@^1, vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
-
-vite-dts@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.npmjs.org/vite-dts/-/vite-dts-1.0.3.tgz#b245e6dfa07829b0e833b3ae9984290464883616"
-  integrity sha512-BaiCEgj6M7zt1nM/9ncuGe32GCtueIpVxdeeTTDvbrPtcXa1vIS8xOr85p7i6RC0J0TGibtHJxhWvi5J8PN/Gg==
-  dependencies:
-    load-json-file "^6.2.0"
 
 "vite@link:packages/vite":
   version "2.5.7"
