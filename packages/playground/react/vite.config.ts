@@ -1,12 +1,15 @@
 import reactPlugin from '@vitejs/plugin-react'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
-  plugins: [reactPlugin()],
+const config: import('vite').UserConfig = {
+  plugins: [
+    reactPlugin({
+      jsxRuntime: 'automatic'
+    })
+  ],
   build: {
     // to make tests faster
     minify: false
   }
 }
+
+export default config

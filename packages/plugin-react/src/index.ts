@@ -27,6 +27,14 @@ export interface Options {
    */
   jsxRuntime?: 'classic' | 'automatic'
   /**
+   * Replaces the import source when importing functions when used with automatic jsx runtime.
+   *
+   * See https://babeljs.io/docs/en/babel-plugin-transform-react-jsx#importsource
+   * @default "react"
+   */
+  jsxImportSource?: string
+
+  /**
    * Babel configuration applied in both dev and prod.
    */
   babel?: TransformOptions
@@ -114,7 +122,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
             plugins.push([
               await import('@babel/plugin-transform-react-jsx'),
-              { runtime: 'automatic' }
+              {
+                runtime: 'automatic',
+                importSource: opts.jsxImportSource ?? 'react'
+              }
             ])
 
             // Avoid inserting `import` statements into CJS modules.
@@ -178,6 +189,11 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     config: () => ({
       resolve: {
         dedupe: ['react', 'react-dom']
+      },
+      // react/jsx-runtime is in CJS format
+      // we want to explicitly cast it to ESM
+      optimizeDeps: {
+        include: ['react/jsx-runtime']
       }
     }),
     configResolved(config) {
@@ -191,10 +207,9 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
       config.plugins.forEach(
         (plugin) =>
-          (plugin.name === 'react-refresh' ||
-            plugin.name === 'vite:react-jsx') &&
+          plugin.name === 'react-refresh' &&
           config.logger.warn(
-            `[@vitejs/plugin-react] This plugin conflicts with "${plugin.name}". Please remove it.`
+            `[@vitejs/react-refresh] This plugin conflicts with "${plugin.name}". Please remove it.`
           )
       )
     },
