@@ -1,0 +1,21 @@
+<h2>direct dependency A</h2>
+<pre class="a"></pre>
+
+<h2>direct dependency B</h2>
+<pre class="b"></pre>
+
+<h2>nested dependency A</h2>
+<pre class="nested-a"></pre>
+
+<script type="module">
+  import A from 'test-package-a'
+  import B, { A as nestedA } from 'test-package-b'
+
+  text('.a', A)
+  text('.b', B)
+  text('.nested-a', nestedA)
+
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
+</script>

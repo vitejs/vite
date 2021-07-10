@@ -1,5 +1,8 @@
 <h1>Resolve</h1>
 
+<h2>Utf8-bom import</h2>
+<p class="utf8-bom">fail</p>
+
 <h2>Deep import</h2>
 <p>Should show [2,4]:<span class="pre deep-import">fail</span></p>
 
@@ -61,6 +64,10 @@
   function text(selector, text) {
     document.querySelector(selector).textContent = text
   }
+
+  // import from a utf-8 bom file
+  import { msg as bomMsg } from './utf8-bom/main.js'
+  text('.utf8-bom', bomMsg)
 
   // deep import
   import slicedToArray from '@babel/runtime/helpers/esm/slicedToArray'

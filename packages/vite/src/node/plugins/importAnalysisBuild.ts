@@ -26,7 +26,7 @@ const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
  */
 function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   // @ts-ignore
-  if (!__VITE_IS_MODERN__ || !deps) {
+  if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
   }
 
@@ -96,7 +96,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (importer.includes('node_modules')) {
+      if (
+        importer.includes('node_modules') &&
+        !source.includes('import.meta.glob')
+      ) {
         return
       }
 
@@ -118,9 +121,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needPreloadHelper = false
 
       for (let index = 0; index < imports.length; index++) {
-        const { s: start, e: end, ss: expStart, d: dynamicIndex } = imports[
-          index
-        ]
+        const {
+          s: start,
+          e: end,
+          ss: expStart,
+          d: dynamicIndex
+        } = imports[index]
 
         const isGlob =
           source.slice(start, end) === 'import.meta' &&
@@ -128,20 +134,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // import.meta.glob
         if (isGlob) {
-          const {
-            importsString,
-            exp,
-            endIndex,
-            isEager
-          } = await transformImportGlob(
-            source,
-            start,
-            importer,
-            index,
-            config.root,
-            undefined,
-            ssr
-          )
+          const { importsString, exp, endIndex, isEager } =
+            await transformImportGlob(
+              source,
+              start,
+              importer,
+              index,
+              config.root,
+              undefined,
+              ssr
+            )
           str().prepend(importsString)
           str().overwrite(expStart, endIndex, exp)
           if (!isEager) {
@@ -159,7 +161,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (needPreloadHelper && !ssr) {
+      if (
+        needPreloadHelper &&
+        !ssr &&
+        !source.includes(`const ${preloadMethod} =`)
+      ) {
         str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
       }
 
@@ -232,8 +238,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (url[0] === `"` && url[url.length - 1] === `"`) {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
+                const analyzed: Set<string> = new Set<string>()
                 const addDeps = (filename: string) => {
                   if (filename === ownerFilename) return
+                  if (analyzed.has(filename)) return
+                  analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     deps.add(config.base + chunk.fileName)
@@ -253,7 +262,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              const markPos = code.indexOf(preloadMarker, end)
+              let markPos = code.indexOf(preloadMarker, end)
+              // fix issue #3051
+              if (markPos === -1 && imports.length === 1) {
+                markPos = code.indexOf(preloadMarker)
+              }
+
               if (markPos > 0) {
                 s.overwrite(
                   markPos - 1,
@@ -262,7 +276,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // preload when there are actual other deps.
                   deps.size > 1
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                    : `void 0`
+                    : `[]`
                 )
               }
             }

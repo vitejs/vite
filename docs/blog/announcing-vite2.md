@@ -34,7 +34,7 @@ The [programmatic API](https://vitejs.dev/guide/api-javascript.html) has also be
 
 ### esbuild Powered Dep Pre-Bundling
 
-Since Vite is a native ESM dev server, it pre-bundles dependencies to reduce the number browser requests and handle CommonJS to ESM conversion. Previously Vite did this using Rollup, and in 2.0 it now uses `esbuild` which results in 10-100x faster dependency pre-bundling. As a reference, cold-booting a test app with heavy dependencies like React Meterial UI previously took 28 seconds on an M1-powered Macbook Pro and now takes ~1.5 seconds. Expect similar improvements if you are switching from a traditional bundler based setup.
+Since Vite is a native ESM dev server, it pre-bundles dependencies to reduce the number browser requests and handle CommonJS to ESM conversion. Previously Vite did this using Rollup, and in 2.0 it now uses `esbuild` which results in 10-100x faster dependency pre-bundling. As a reference, cold-booting a test app with heavy dependencies like React Material UI previously took 28 seconds on an M1-powered Macbook Pro and now takes ~1.5 seconds. Expect similar improvements if you are switching from a traditional bundler based setup.
 
 ### First-class CSS Support
 
@@ -52,7 +52,7 @@ Vite SSR is provided as a low-level feature and we are expecting to see higher l
 
 ### Opt-in Legacy Browser Support
 
-Vite targets modern browsers with native ESM support by default, but you can also opt-in to support legacy browers via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy). The plugin automatically generates dual modern/legacy bundles, and delivers the right bundle based on browser feature detection, ensuring more efficient code in modern browsers that support them.
+Vite targets modern browsers with native ESM support by default, but you can also opt-in to support legacy browsers via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy). The plugin automatically generates dual modern/legacy bundles, and delivers the right bundle based on browser feature detection, ensuring more efficient code in modern browsers that support them.
 
 ## Give it a Try!
 

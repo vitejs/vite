@@ -8,12 +8,12 @@ module.exports = {
   publicDir: 'static',
   resolve: {
     alias: {
-      '@playground': path.resolve(__dirname, '..'),
       '@': path.resolve(__dirname, 'nested')
     }
   },
   build: {
     outDir: 'dist/foo',
-    manifest: true
+    manifest: true,
+    watch: {}
   }
 }

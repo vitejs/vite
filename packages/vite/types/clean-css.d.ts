@@ -453,7 +453,7 @@ export namespace CleanCSS {
       /**
        * denotes a number of /*! ... * / comments preserved; defaults to `all`
        */
-      specialComments?: string
+      specialComments?: 'all' | '1' | 1 | '0' | 0
 
       /**
        * Controls at-rules (e.g. `@charset`, `@import`) optimizing; defaults to `true`

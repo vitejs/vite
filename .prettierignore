@@ -1,0 +1,7 @@
+docs/.vitepress/dist/
+packages/vite/dist/
+packages/plugin-vue/dist/
+packages/*/CHANGELOG.md
+LICENSE.md
+.prettierignore
+yarn.lock

@@ -35,11 +35,11 @@ import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
 
 export default {
-  plugins: [ vitePlugin(), rollupPlugin() ]
+  plugins: [vitePlugin(), rollupPlugin()]
 }
 ```
 
-Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins. 
+Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins.
 
 `plugins` also accept presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
@@ -49,10 +49,7 @@ import frameworkRefresh from 'vite-plugin-framework-refresh'
 import frameworkDevtools from 'vite-plugin-framework-devtools'
 
 export default function framework(config) {
-  return [
-    frameworkRefresh(config),
-    frameworkDevTools(config)
-  ]
+  return [frameworkRefresh(config), frameworkDevTools(config)]
 }
 ```
 
@@ -61,9 +58,7 @@ export default function framework(config) {
 import framework from 'vite-plugin-framework'
 
 export default {
-  plugins: [
-    framework()
-  ]
+  plugins: [framework()]
 }
 ```
 
@@ -155,7 +150,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 ### `config`
 
 - **Type:** `(config: UserConfig, env: { mode: string, command: string }) => UserConfig | null | void`
-- **Kind:** `sync`, `sequential`
+- **Kind:** `async`, `sequential`
 
   Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file) and the current config env which exposes the `mode` and `command` being used. It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
 
@@ -189,8 +184,8 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `configResolved`
 
-- **Type:** `(config: ResolvedConfig) => void`
-- **Kind:** `sync`, `sequential`
+- **Type:** `(config: ResolvedConfig) => void | Promise<void>`
+- **Kind:** `async`, `parallel`
 
   Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based the command is being run.
 

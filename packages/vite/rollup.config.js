@@ -9,6 +9,8 @@ import alias from '@rollup/plugin-alias'
 import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
 import chalk from 'chalk'
+import fg from 'fast-glob'
+import { sync as resolve } from 'resolve'
 
 /**
  * @type { import('rollup').RollupOptions }
@@ -26,7 +28,8 @@ const envConfig = {
     })
   ],
   output: {
-    dir: path.resolve(__dirname, 'dist/client')
+    file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
+    sourcemap: true
   }
 }
 
@@ -47,7 +50,8 @@ const clientConfig = {
     })
   ],
   output: {
-    dir: path.resolve(__dirname, 'dist/client')
+    file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
+    sourcemap: true
   }
 }
 
@@ -67,7 +71,8 @@ const sharedNodeOptions = {
     exports: 'named',
     format: 'cjs',
     externalLiveBindings: false,
-    freeze: false
+    freeze: false,
+    sourcemap: true
   },
   onwarn(warning, warn) {
     // node-resolve complains a lot about this but seems to still work?
@@ -137,13 +142,13 @@ const nodeConfig = {
         src: 'require("sugarss")',
         replacement: `eval('require')('sugarss')`
       },
-      'import-fresh/index.js': {
-        src: `require(filePath)`,
-        replacement: `eval('require')(filePath)`
-      },
       'import-from/index.js': {
         pattern: /require\(resolveFrom/g,
         replacement: `eval('require')(resolveFrom`
+      },
+      'lilconfig/dist/index.js': {
+        pattern: /: require,/g,
+        replacement: `: eval('require'),`
       }
     }),
     // Optional peer deps of ws. Native deps that are mostly for performance.
@@ -270,7 +275,9 @@ function licensePlugin() {
       )
       const licenses = new Set()
       const dependencyLicenseTexts = dependencies
-        .sort(({ name: nameA }, { name: nameB }) => (nameA > nameB ? 1 : -1))
+        .sort(({ name: nameA }, { name: nameB }) =>
+          nameA > nameB ? 1 : nameB > nameA ? -1 : 0
+        )
         .map(
           ({
             name,
@@ -299,6 +306,21 @@ function licensePlugin() {
             }
             if (repository) {
               text += `Repository: ${repository.url || repository}\n`
+            }
+            if (!licenseText) {
+              try {
+                const pkgDir = path.dirname(
+                  resolve(path.join(name, 'package.json'), {
+                    preserveSymlinks: false
+                  })
+                )
+                const licenseFile = fg.sync(`${pkgDir}/LICENSE*`, {
+                  caseSensitiveMatch: false
+                })[0]
+                if (licenseFile) {
+                  licenseText = fs.readFileSync(licenseFile, 'utf-8')
+                }
+              } catch {}
             }
             if (licenseText) {
               text +=

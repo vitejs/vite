@@ -61,11 +61,14 @@ export interface Plugin extends RollupPlugin {
    * Note: User plugins are resolved before running this hook so injecting other
    * plugins inside  the `config` hook will have no effect.
    */
-  config?: (config: UserConfig, env: ConfigEnv) => UserConfig | null | void
+  config?: (
+    config: UserConfig,
+    env: ConfigEnv
+  ) => UserConfig | null | void | Promise<UserConfig | null | void>
   /**
    * Use this hook to read and store the final resolved vite config.
    */
-  configResolved?: (config: ResolvedConfig) => void
+  configResolved?: (config: ResolvedConfig) => void | Promise<void>
   /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
    * instance. This can also be used to store a reference to the server

@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { createHash } from 'crypto'
-import { build } from 'esbuild'
+import { build, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { ResolvedConfig } from '../config'
 import {
   createDebugger,
@@ -47,9 +47,32 @@ export interface DepOptimizationOptions {
    */
   exclude?: string[]
   /**
-   * The bundler sometimes needs to rename symbols to avoid collisions.
-   * Set this to `true` to keep the `name` property on functions and classes.
-   * https://esbuild.github.io/api/#keep-names
+   * Options to pass to esbuild during the dep scanning and optimization
+   *
+   * Certain options are omitted since changing them would not be compatible
+   * with Vite's dep optimization.
+   *
+   * - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
+   * - `plugins` are merged with Vite's dep plugin
+   * - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
+   *
+   * https://esbuild.github.io/api
+   */
+  esbuildOptions?: Omit<
+    EsbuildBuildOptions,
+    | 'bundle'
+    | 'entryPoints'
+    | 'external'
+    | 'write'
+    | 'watch'
+    | 'outdir'
+    | 'outfile'
+    | 'outbase'
+    | 'outExtension'
+    | 'metafile'
+  >
+  /**
+   * @deprecated use `esbuildOptions.keepNames`
    */
   keepNames?: boolean
 }
@@ -80,18 +103,19 @@ export async function optimizeDeps(
   config: ResolvedConfig,
   force = config.server.force,
   asCommand = false,
-  newDeps?: Record<string, string> // missing imports encountered after server has started
+  newDeps?: Record<string, string>, // missing imports encountered after server has started
+  ssr?: boolean
 ): Promise<DepOptimizationMetadata | null> {
   config = {
     ...config,
     command: 'build'
   }
 
-  const { root, logger, optimizeCacheDir: cacheDir } = config
+  const { root, logger, cacheDir } = config
   const log = asCommand ? logger.info : debug
 
   if (!cacheDir) {
-    log(`No package.json. Skipping.`)
+    log(`No cache directory. Skipping.`)
     return null
   }
 
@@ -120,6 +144,12 @@ export async function optimizeDeps(
   } else {
     fs.mkdirSync(cacheDir, { recursive: true })
   }
+  // a hint for Node.js
+  // all files in the cache directory should be recognized as ES modules
+  writeFile(
+    path.resolve(cacheDir, 'package.json'),
+    JSON.stringify({ type: 'module' })
+  )
 
   let deps: Record<string, string>, missing: Record<string, string>
   if (!newDeps) {
@@ -227,15 +257,19 @@ export async function optimizeDeps(
     'process.env.NODE_ENV': JSON.stringify(config.mode)
   }
   for (const key in config.define) {
-    define[key] = JSON.stringify(config.define[key])
+    const value = config.define[key]
+    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
   }
 
   const start = Date.now()
 
+  const { plugins = [], ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
   const result = await build({
+    absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    keepNames: config.optimizeDeps?.keepNames,
     format: 'esm',
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
@@ -245,17 +279,29 @@ export async function optimizeDeps(
     treeShaking: 'ignore-annotations',
     metafile: true,
     define,
-    plugins: [esbuildDepPlugin(flatIdDeps, flatIdToExports, config)]
+    plugins: [
+      ...plugins,
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
+    ],
+    ...esbuildOptions
   })
 
   const meta = result.metafile!
+
+  // the paths in `meta.outputs` are relative to `process.cwd()`
+  const cacheDirOutputPath = path.relative(process.cwd(), cacheDir)
 
   for (const id in deps) {
     const entry = deps[id]
     data.optimized[id] = {
       file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
       src: entry,
-      needsInterop: needsInterop(id, idToExports[id], meta.outputs)
+      needsInterop: needsInterop(
+        id,
+        idToExports[id],
+        meta.outputs,
+        cacheDirOutputPath
+      )
     }
   }
 
@@ -273,7 +319,8 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 function needsInterop(
   id: string,
   exportsData: ExportsData,
-  outputs: Record<string, any>
+  outputs: Record<string, any>,
+  cacheDirOutputPath: string
 ): boolean {
   if (KNOWN_INTEROP_IDS.has(id)) {
     return true
@@ -290,7 +337,10 @@ function needsInterop(
   const flatId = flattenId(id) + '.js'
   let generatedExports: string[] | undefined
   for (const output in outputs) {
-    if (normalizePath(output).endsWith('.vite/' + flatId)) {
+    if (
+      normalizePath(output) ===
+      normalizePath(path.join(cacheDirOutputPath, flatId))
+    ) {
       generatedExports = outputs[output].exports
       break
     }
@@ -311,12 +361,7 @@ function isSingleDefaultExport(exports: string[]) {
 
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
 
-let cachedHash: string | undefined
-
 function getDepHash(root: string, config: ResolvedConfig): string {
-  if (cachedHash) {
-    return cachedHash
-  }
   let content = lookupFile(root, lockfileFormats) || ''
   // also take config into account
   // only a subset of config options that can affect dep optimization

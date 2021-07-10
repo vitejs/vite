@@ -9,9 +9,10 @@
     "serve": "vite preview"
   },
   "devDependencies": {
+    "css-dep": "link:./css-dep",
     "less": "^4.1.0",
     "postcss-nested": "^5.0.3",
     "sass": "^1.32.5",
-    "css-dep": "link:./css-dep"
+    "stylus": "^0.54.8"
   }
 }

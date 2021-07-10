@@ -38,9 +38,9 @@ test('hmr', async () => {
 })
 
 test('client navigation', async () => {
+  await untilUpdated(() => page.textContent('a[href="/about"]'), 'About')
   await page.click('a[href="/about"]')
-  await page.waitForTimeout(10)
-  expect(await page.textContent('h1')).toMatch('About')
+  await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.jsx', (code) =>
     code.replace('<h1>About', '<h1>changed')
   )

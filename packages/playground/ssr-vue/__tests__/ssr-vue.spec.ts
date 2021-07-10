@@ -109,9 +109,9 @@ test('hmr', async () => {
 })
 
 test('client navigation', async () => {
+  await untilUpdated(() => page.textContent('a[href="/about"]'), 'About')
   await page.click('a[href="/about"]')
-  await page.waitForTimeout(10)
-  expect(await page.textContent('h1')).toMatch('About')
+  await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
   await untilUpdated(() => page.textContent('h1'), 'changed')
 })

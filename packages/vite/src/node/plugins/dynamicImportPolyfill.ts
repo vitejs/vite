@@ -5,14 +5,22 @@ import path from 'path'
 
 export const polyfillId = 'vite/dynamic-import-polyfill'
 
+function resolveModulePath(config: ResolvedConfig) {
+  const {
+    base,
+    build: { assetsDir }
+  } = config
+  // #2918 path.posix.join returns a wrong path when config.base is a URL
+  if (/^(https?:)?(\/\/)/i.test(base)) {
+    return `${base.replace(/\/$/, '')}/${assetsDir}/`
+  }
+  return path.posix.join(base, assetsDir, '/')
+}
+
 export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
-  const skip = config.command === 'serve' || config.build.ssr
-  let polyfillLoaded = false
-  const polyfillString =
-    `const p = ${polyfill.toString()};` +
-    `${isModernFlag}&&p(${JSON.stringify(
-      path.posix.join(config.base, config.build.assetsDir, '/')
-    )});`
+  const enabled = config.build.polyfillDynamicImport
+  const skip = !enabled || config.command === 'serve' || config.build.ssr
+  let polyfillString: string | undefined
 
   return {
     name: 'vite:dynamic-import-polyfill',
@@ -23,12 +31,21 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
     },
     load(id) {
       if (id === polyfillId) {
+        if (!enabled && config.command === 'build') {
+          config.logger.warnOnce(
+            `\n'vite/dynamic-import-polyfill' is no longer needed if you target modern browsers`
+          )
+        }
         if (skip) {
           return ''
         }
-        polyfillLoaded = true
         // return a placeholder here and defer the injection to renderChunk
         // so that we can selectively skip the injection based on output format
+        if (!polyfillString) {
+          polyfillString =
+            `const p = ${polyfill.toString()};` +
+            `${isModernFlag}&&p(${JSON.stringify(resolveModulePath(config))});`
+        }
         return polyfillString
       }
     },
@@ -37,7 +54,7 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
       if (skip || format !== 'es') {
         return null
       }
-      if (!polyfillLoaded) {
+      if (!polyfillString) {
         throw new Error(
           `Vite's dynamic import polyfill is enabled but was never imported. This ` +
             `should only happen when using custom non-html rollup inputs. Make ` +
@@ -55,21 +72,16 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
 /**
 The following polyfill function is meant to run in the browser and adapted from
 https://github.com/GoogleChromeLabs/dynamic-import-polyfill
-
 MIT License
-
 Copyright (c) 2018 uupaa and 2019 Google LLC
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE

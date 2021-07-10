@@ -4,32 +4,122 @@
 const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
-const { prompt } = require('enquirer')
+// eslint-disable-next-line node/no-restricted-require
+const prompts = require('prompts')
 const {
   yellow,
   green,
   cyan,
+  blue,
   magenta,
   lightRed,
-  red,
-  stripColors
+  red
 } = require('kolorist')
 
 const cwd = process.cwd()
 
-const TEMPLATES = [
-  yellow('vanilla'),
-  green('vue'),
-  green('vue-ts'),
-  cyan('react'),
-  cyan('react-ts'),
-  magenta('preact'),
-  magenta('preact-ts'),
-  lightRed('lit-element'),
-  lightRed('lit-element-ts'),
-  red('svelte'),
-  red('svelte-ts')
+const FRAMEWORKS = [
+  {
+    name: 'vanilla',
+    color: yellow,
+    variants: [
+      {
+        name: 'vanilla',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'vanilla-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'vue',
+    color: green,
+    variants: [
+      {
+        name: 'vue',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'vue-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'react',
+    color: cyan,
+    variants: [
+      {
+        name: 'react',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'react-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'preact',
+    color: magenta,
+    variants: [
+      {
+        name: 'preact',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'preact-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'lit-element',
+    color: lightRed,
+    variants: [
+      {
+        name: 'lit-element',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'lit-element-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'svelte',
+    color: red,
+    variants: [
+      {
+        name: 'svelte',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'svelte-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  }
 ]
+
+const TEMPLATES = FRAMEWORKS.map(
+  (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name]
+).reduce((a, b) => a.concat(b), [])
 
 const renameFiles = {
   _gitignore: '.gitignore'
@@ -37,70 +127,108 @@ const renameFiles = {
 
 async function init() {
   let targetDir = argv._[0]
-  if (!targetDir) {
-    /**
-     * @type {{ projectName: string }}
-     */
-    const { projectName } = await prompt({
-      type: 'input',
-      name: 'projectName',
-      message: `Project name:`,
-      initial: 'vite-project'
-    })
-    targetDir = projectName
-  }
-  const packageName = await getValidPackageName(targetDir)
-  const root = path.join(cwd, targetDir)
-  console.log(`\nScaffolding project in ${root}...`)
+  let template = argv.template || argv.t
 
-  if (!fs.existsSync(root)) {
-    fs.mkdirSync(root, { recursive: true })
-  } else {
-    const existing = fs.readdirSync(root)
-    if (existing.length) {
-      /**
-       * @type {{ yes: boolean }}
-       */
-      const { yes } = await prompt({
-        type: 'confirm',
-        name: 'yes',
-        initial: 'Y',
-        message:
-          `Target directory ${targetDir} is not empty.\n` +
-          `Remove existing files and continue?`
-      })
-      if (yes) {
-        emptyDir(root)
-      } else {
-        return
+  const defaultProjectName = !targetDir ? 'vite-project' : targetDir
+
+  let result = {}
+
+  try {
+    result = await prompts(
+      [
+        {
+          type: targetDir ? null : 'text',
+          name: 'projectName',
+          message: 'Project name:',
+          initial: defaultProjectName,
+          onState: (state) =>
+            (targetDir = state.value.trim() || defaultProjectName)
+        },
+        {
+          type: () =>
+            !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
+          name: 'overwrite',
+          message: () =>
+            (targetDir === '.'
+              ? 'Current directory'
+              : `Target directory "${targetDir}"`) +
+            ` is not empty. Remove existing files and continue?`
+        },
+        {
+          type: (_, { overwrite } = {}) => {
+            if (overwrite == false) {
+              throw new Error(red('✖') + ' Operation cancelled')
+            }
+            return null
+          },
+          name: 'overwriteChecker'
+        },
+        {
+          type: () => (isValidPackageName(targetDir) ? null : 'text'),
+          name: 'packageName',
+          message: 'Package name:',
+          initial: () => toValidPackageName(targetDir),
+          validate: (dir) =>
+            isValidPackageName(dir) || 'Invalid package.json name'
+        },
+        {
+          type: template && TEMPLATES.includes(template) ? null : 'select',
+          name: 'framework',
+          message:
+            typeof template === 'string' && !TEMPLATES.includes(template)
+              ? `"${template}" isn't a valid template. Please choose from below: `
+              : 'Select a framework:',
+          initial: 0,
+          choices: FRAMEWORKS.map((framework) => {
+            const frameworkColor = framework.color
+            return {
+              title: frameworkColor(framework.name),
+              value: framework
+            }
+          })
+        },
+        {
+          type: (framework) =>
+            framework && framework.variants ? 'select' : null,
+          name: 'variant',
+          message: 'Select a variant:',
+          // @ts-ignore
+          choices: (framework) =>
+            framework.variants.map((variant) => {
+              const variantColor = variant.color
+              return {
+                title: variantColor(variant.name),
+                value: variant.name
+              }
+            })
+        }
+      ],
+      {
+        onCancel: () => {
+          throw new Error(red('✖') + ' Operation cancelled')
+        }
       }
-    }
+    )
+  } catch (cancelled) {
+    console.log(cancelled.message)
+    return
+  }
+
+  // user choice associated with prompts
+  const { framework, overwrite, packageName, variant } = result
+
+  const root = path.join(cwd, targetDir)
+
+  if (overwrite) {
+    emptyDir(root)
+  } else if (!fs.existsSync(root)) {
+    fs.mkdirSync(root)
   }
 
   // determine template
-  let template = argv.t || argv.template
-  let message = 'Select a template:'
-  let isValidTemplate = false
+  template = variant || framework || template
 
-  // --template expects a value
-  if (typeof template === 'string') {
-    const availableTemplates = TEMPLATES.map(stripColors)
-    isValidTemplate = availableTemplates.includes(template)
-    message = `${template} isn't a valid template. Please choose from below:`
-  }
-
-  if (!template || !isValidTemplate) {
-    /**
-     * @type {{ t: string }}
-     */
-    const { t } = await prompt({
-      type: 'select',
-      name: 't',
-      message,
-      choices: TEMPLATES
-    })
-    template = stripColors(t)
-  }
+  console.log(`\nScaffolding project in ${root}...`)
 
   const templateDir = path.join(__dirname, `template-${template}`)
 
@@ -146,31 +274,19 @@ function copy(src, dest) {
   }
 }
 
-async function getValidPackageName(projectName) {
-  const packageNameRegExp = /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
-  if (packageNameRegExp.test(projectName)) {
-    return projectName
-  } else {
-    const suggestedPackageName = projectName
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/^[._]/, '')
-      .replace(/[^a-z0-9-~]+/g, '-')
+function isValidPackageName(projectName) {
+  return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
+    projectName
+  )
+}
 
-    /**
-     * @type {{ inputPackageName: string }}
-     */
-    const { inputPackageName } = await prompt({
-      type: 'input',
-      name: 'inputPackageName',
-      message: `Package name:`,
-      initial: suggestedPackageName,
-      validate: (input) =>
-        packageNameRegExp.test(input) ? true : 'Invalid package.json name'
-    })
-    return inputPackageName
-  }
+function toValidPackageName(projectName) {
+  return projectName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/^[._]/, '')
+    .replace(/[^a-z0-9-~]+/g, '-')
 }
 
 function copyDir(srcDir, destDir) {
@@ -180,6 +296,10 @@ function copyDir(srcDir, destDir) {
     const destFile = path.resolve(destDir, file)
     copy(srcFile, destFile)
   }
+}
+
+function isEmpty(path) {
+  return fs.readdirSync(path).length === 0
 }
 
 function emptyDir(dir) {

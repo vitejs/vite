@@ -1,3 +1,115 @@
+## [2.4.5](https://github.com/vitejs/vite/compare/create-app@2.4.4...create-app@2.4.5) (2021-07-05)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#3878](https://github.com/vitejs/vite/issues/3878)) ([a66a805](https://github.com/vitejs/vite/commit/a66a8053e9520d20bcf95fce870570c5195bcc91))
+
+
+
+## [2.4.4](https://github.com/vitejs/vite/compare/create-app@2.4.3...create-app@2.4.4) (2021-06-22)
+
+
+### Bug Fixes
+
+* **create-app:** svelte templates use type module (fixes [#3834](https://github.com/vitejs/vite/issues/3834)) ([#3835](https://github.com/vitejs/vite/issues/3835)) ([ddefe84](https://github.com/vitejs/vite/commit/ddefe8410efdb2104763b9d03fec0e42b9f7bf17))
+* **deps:** update all non-major dependencies ([#3791](https://github.com/vitejs/vite/issues/3791)) ([74d409e](https://github.com/vitejs/vite/commit/74d409eafca8d74ec4a6ece621ea2895bc1f2a32))
+
+
+
+## [2.4.3](https://github.com/vitejs/vite/compare/create-app@2.4.2...create-app@2.4.3) (2021-06-16)
+
+
+### Bug Fixes
+
+* **create-app:** improve prompt message ([#3769](https://github.com/vitejs/vite/issues/3769)) ([9703bcd](https://github.com/vitejs/vite/commit/9703bcd7e594769792779306f8f978dcc010d92f))
+* **create-app:** update svelte templates to use named export of vite-… ([#3760](https://github.com/vitejs/vite/issues/3760)) ([c69f836](https://github.com/vitejs/vite/commit/c69f83615292953d40f07b1178d1ed1d72abe695))
+
+
+
+## [2.4.2](https://github.com/vitejs/vite/compare/create-app@2.4.1...create-app@2.4.2) (2021-06-08)
+
+
+### Features
+
+* **create-app:** update svelte-ts template to use @tsconfig/svelte a… ([#3668](https://github.com/vitejs/vite/issues/3668)) ([5c3b668](https://github.com/vitejs/vite/commit/5c3b668250903ba9ed75db5c4bb7f548d5cb6105))
+
+
+
+## [2.4.1](https://github.com/vitejs/vite/compare/create-app@2.4.0...create-app@2.4.1) (2021-06-01)
+
+
+### Bug Fixes
+
+* **create-app:** handle invalid template ([#3615](https://github.com/vitejs/vite/issues/3615)) ([4578a8c](https://github.com/vitejs/vite/commit/4578a8cc2f0ab972d6dc6bdb9ac92d6fbbd6fb05))
+
+
+
+# [2.4.0](https://github.com/vitejs/vite/compare/create-app@2.3.2...create-app@2.4.0) (2021-06-01)
+
+
+
+## [2.3.2](https://github.com/vitejs/vite/compare/create-app@2.3.1...create-app@2.3.2) (2021-05-25)
+
+
+### Features
+
+* **create-app:** improve client types ([#3214](https://github.com/vitejs/vite/issues/3214)) ([ba8b7af](https://github.com/vitejs/vite/commit/ba8b7afa650277b7218e0bd53564b5fb45bf4549))
+
+
+
+## [2.3.1](https://github.com/vitejs/vite/compare/create-app@2.3.0...create-app@2.3.1) (2021-05-17)
+
+
+### Bug Fixes
+
+* **create-app:** lit-element templates package.json ([#3435](https://github.com/vitejs/vite/issues/3435)) ([74986d3](https://github.com/vitejs/vite/commit/74986d3d053aabe7ec3de20c987e9df309c684b2))
+
+
+
+# [2.3.0](https://github.com/vitejs/vite/compare/create-app@2.2.5...create-app@2.3.0) (2021-05-11)
+
+
+### Features
+
+* **create-app:** bump vite version to 2.3 ([f8315c9](https://github.com/vitejs/vite/commit/f8315c936dd07aa62c51b02f059a42aab103c9c1))
+
+
+
+## [2.2.5](https://github.com/vitejs/vite/compare/create-app@2.2.4...create-app@2.2.5) (2021-04-25)
+
+
+### Features
+
+* **create-app:** improve non-empty message for current dir ([#3117](https://github.com/vitejs/vite/issues/3117)) ([c0a0a84](https://github.com/vitejs/vite/commit/c0a0a8427e61dc0f5774056aebd038c69492294a))
+
+
+
+## [2.2.4](https://github.com/vitejs/vite/compare/create-app@2.2.3...create-app@2.2.4) (2021-04-15)
+
+
+### Bug Fixes
+
+* **create-app:** change index.html templates' favicon.svg href to absolute URL ([#2620](https://github.com/vitejs/vite/issues/2620)) ([3816f6e](https://github.com/vitejs/vite/commit/3816f6edb67e6bdf94db98e82e8acff4029bfe48))
+* **create-app:** the node in the svelte template is incorrectly mounted ([#2947](https://github.com/vitejs/vite/issues/2947)) ([0825f7e](https://github.com/vitejs/vite/commit/0825f7ee3574ae3f28f566da27835fbf3b210fac))
+
+
+### Features
+
+* **create-app:** add template vanilla-ts ([#2023](https://github.com/vitejs/vite/issues/2023)) ([89898d3](https://github.com/vitejs/vite/commit/89898d36cbe03bce9b6a7ab80a1c45de9989e56e))
+* **create-app:** two-level prompt for framework and variants ([#2941](https://github.com/vitejs/vite/issues/2941)) ([176e55d](https://github.com/vitejs/vite/commit/176e55dd1bf0232f483697d35b95f6e29a47fd74))
+
+
+
+## [2.2.3](https://github.com/vitejs/vite/compare/create-app@2.2.2...create-app@2.2.3) (2021-03-31)
+
+
+### Features
+
+* **create-app:** improved package name validation ([#2772](https://github.com/vitejs/vite/issues/2772)) ([9fa282e](https://github.com/vitejs/vite/commit/9fa282e9209185c70ac80e2fe1fbe4b7e92dae07))
+
+
+
 ## [2.2.2](https://github.com/vitejs/vite/compare/create-app@2.2.1...create-app@2.2.2) (2021-03-25)
 
 

@@ -14,8 +14,6 @@ Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also pow
 
 **Why use this over SvelteKit?**
 
-- SvelteKit is still a work-in-progress.
-- It currently does not support the pure-SPA use case.
 - It brings its own routing solution which might not be preferable for some users.
 - It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
   `vite dev` and `vite build` wouldn't work in a SvelteKit environment, for example.

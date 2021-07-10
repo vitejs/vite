@@ -100,6 +100,11 @@ async function instantiateModule(
     if (isExternal(dep)) {
       return Promise.resolve(nodeRequire(dep, mod.file, server.config.root))
     } else {
+      // #3087 dynamic import vars is ignored at rewrite import path,
+      // so here need process relative path
+      if (dep.startsWith('.')) {
+        dep = path.posix.resolve(path.dirname(url), dep)
+      }
       return ssrLoadModule(dep, server, context, urlStack.concat(url))
     }
   }

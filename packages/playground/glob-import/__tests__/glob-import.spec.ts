@@ -59,7 +59,13 @@ if (!isBuild) {
       JSON.stringify(
         {
           '/dir/a.js': {},
-          ...allResult
+          ...allResult,
+          '/dir/index.js': {
+            modules: {
+              './a.js': {},
+              ...allResult['/dir/index.js'].modules
+            }
+          }
         },
         null,
         2
@@ -75,7 +81,15 @@ if (!isBuild) {
           '/dir/a.js': {
             msg: 'a'
           },
-          ...allResult
+          ...allResult,
+          '/dir/index.js': {
+            modules: {
+              './a.js': {
+                msg: 'a'
+              },
+              ...allResult['/dir/index.js'].modules
+            }
+          }
         },
         null,
         2

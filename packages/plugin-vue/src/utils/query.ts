@@ -9,7 +9,10 @@ export interface VueQuery {
   raw?: boolean
 }
 
-export function parseVueRequest(id: string) {
+export function parseVueRequest(id: string): {
+  filename: string
+  query: VueQuery
+} {
   const [filename, rawQuery] = id.split(`?`, 2)
   const query = qs.parse(rawQuery) as VueQuery
   if (query.vue != null) {
