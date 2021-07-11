@@ -182,7 +182,7 @@ function viteLegacyPlugin(options = {}) {
 
         return (chunkInfo) => {
           let fileName =
-            typeof fileNames == 'function' ? fileNames(chunkInfo) : fileNames
+            typeof fileNames === 'function' ? fileNames(chunkInfo) : fileNames
 
           if (fileName.includes('[name]')) {
             // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
