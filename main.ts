@@ -50,7 +50,7 @@ const ${cssModuleVar} = {}
 ${stylesCode}
 /* normalize component */
 import normalizer from "${vueComponentNormalizer}"
-var component = normalizer(
+var component = /*#__PURE__*/normalizer(
   script,
   render,
   staticRenderFns,
@@ -106,7 +106,7 @@ function injectStyles (context) {
     map = JSON.parse(emptyMapGen.toString())
   }
 
-  result += `\nexport default component.exports`
+  result += `\nexport default /*#__PURE__*/(function () { return component.exports })()`
   return {
     code: result,
     map,
