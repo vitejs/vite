@@ -91,76 +91,92 @@ const sharedNodeOptions = {
 }
 
 /**
- * @type { import('rollup').RollupOptions }
+ *
+ * @param {boolean} isProduction
+ * @returns {import('rollup').RollupOptions}
  */
-const nodeConfig = {
-  ...sharedNodeOptions,
-  input: {
-    index: path.resolve(__dirname, 'src/node/index.ts'),
-    cli: path.resolve(__dirname, 'src/node/cli.ts')
-  },
-  external: [
-    'fsevents',
-    ...Object.keys(require('./package.json').dependencies)
-  ],
-  plugins: [
-    alias({
-      // packages with "module" field that doesn't play well with cjs bundles
-      entries: {
-        '@vue/compiler-dom': require.resolve(
-          '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-        ),
-        'big.js': require.resolve('big.js/big.js')
-      }
-    }),
-    nodeResolve({ preferBuiltins: true }),
-    typescript({
-      target: 'es2019',
-      include: ['src/**/*.ts'],
-      esModuleInterop: true
-    }),
-    // Some deps have try...catch require of optional deps, but rollup will
-    // generate code that force require them upfront for side effects.
-    // Shim them with eval() so rollup can skip these calls.
-    shimDepsPlugin({
-      'plugins/terser.ts': {
-        src: `require.resolve('terser'`,
-        replacement: `require.resolve('vite/dist/node/terser'`
-      },
-      // chokidar -> fsevents
-      'fsevents-handler.js': {
-        src: `require('fsevents')`,
-        replacement: `eval('require')('fsevents')`
-      },
-      // cac re-assigns module.exports even in its mjs dist
-      'cac/dist/index.mjs': {
-        src: `if (typeof module !== "undefined") {`,
-        replacement: `if (false) {`
-      },
-      // postcss-import -> sugarss
-      'process-content.js': {
-        src: 'require("sugarss")',
-        replacement: `eval('require')('sugarss')`
-      },
-      'import-from/index.js': {
-        pattern: /require\(resolveFrom/g,
-        replacement: `eval('require')(resolveFrom`
-      },
-      'lilconfig/dist/index.js': {
-        pattern: /: require,/g,
-        replacement: `: eval('require'),`
-      }
-    }),
-    // Optional peer deps of ws. Native deps that are mostly for performance.
-    // Since ws is not that perf critical for us, just ignore these deps.
-    ignoreDepPlugin({
-      bufferutil: 1,
-      'utf-8-validate': 1
-    }),
-    commonjs({ extensions: ['.js'] }),
-    json(),
-    licensePlugin()
-  ]
+const createNodeConfig = (isProduction) => {
+  /**
+   * @type { import('rollup').RollupOptions }
+   */
+  const nodeConfig = {
+    ...sharedNodeOptions,
+    input: {
+      index: path.resolve(__dirname, 'src/node/index.ts'),
+      cli: path.resolve(__dirname, 'src/node/cli.ts')
+    },
+    external: [
+      'fsevents',
+      ...Object.keys(require('./package.json').dependencies),
+      ...(isProduction
+        ? []
+        : Object.keys(require('./package.json').devDependencies))
+    ],
+    plugins: [
+      alias({
+        // packages with "module" field that doesn't play well with cjs bundles
+        entries: {
+          '@vue/compiler-dom': require.resolve(
+            '@vue/compiler-dom/dist/compiler-dom.cjs.js'
+          ),
+          'big.js': require.resolve('big.js/big.js')
+        }
+      }),
+      nodeResolve({ preferBuiltins: true }),
+      typescript({
+        target: 'es2019',
+        include: ['src/**/*.ts'],
+        esModuleInterop: true
+      }),
+      // Some deps have try...catch require of optional deps, but rollup will
+      // generate code that force require them upfront for side effects.
+      // Shim them with eval() so rollup can skip these calls.
+      isProduction &&
+        shimDepsPlugin({
+          'plugins/terser.ts': {
+            src: `require.resolve('terser'`,
+            replacement: `require.resolve('vite/dist/node/terser'`
+          },
+          // chokidar -> fsevents
+          'fsevents-handler.js': {
+            src: `require('fsevents')`,
+            replacement: `eval('require')('fsevents')`
+          },
+          // cac re-assigns module.exports even in its mjs dist
+          'cac/dist/index.mjs': {
+            src: `if (typeof module !== "undefined") {`,
+            replacement: `if (false) {`
+          },
+          // postcss-import -> sugarss
+          'process-content.js': {
+            src: 'require("sugarss")',
+            replacement: `eval('require')('sugarss')`
+          },
+          'import-from/index.js': {
+            pattern: /require\(resolveFrom/g,
+            replacement: `eval('require')(resolveFrom`
+          },
+          'lilconfig/dist/index.js': {
+            pattern: /: require,/g,
+            replacement: `: eval('require'),`
+          }
+        }),
+      // Optional peer deps of ws. Native deps that are mostly for performance.
+      // Since ws is not that perf critical for us, just ignore these deps.
+      ignoreDepPlugin({
+        bufferutil: 1,
+        'utf-8-validate': 1
+      }),
+      commonjs({
+        extensions: ['.js'],
+        ignore: ['bufferutil', 'utf-8-validate']
+      }),
+      json(),
+      isProduction && licensePlugin()
+    ]
+  }
+
+  return nodeConfig
 }
 
 /**
@@ -360,4 +376,14 @@ function licensePlugin() {
   })
 }
 
-export default [envConfig, clientConfig, nodeConfig, terserConfig]
+export default (commandLineArgs) => {
+  const isDev = commandLineArgs.watch
+  const isProduction = !isDev
+
+  return [
+    envConfig,
+    clientConfig,
+    createNodeConfig(isProduction),
+    ...(isProduction ? [terserConfig] : [])
+  ]
+}
