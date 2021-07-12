@@ -161,14 +161,10 @@ const createNodeConfig = (isProduction) => {
             replacement: `: eval('require'),`
           }
         }),
-      // Optional peer deps of ws. Native deps that are mostly for performance.
-      // Since ws is not that perf critical for us, just ignore these deps.
-      ignoreDepPlugin({
-        bufferutil: 1,
-        'utf-8-validate': 1
-      }),
       commonjs({
         extensions: ['.js'],
+        // Optional peer deps of ws. Native deps that are mostly for performance.
+        // Since ws is not that perf critical for us, just ignore these deps.
         ignore: ['bufferutil', 'utf-8-validate']
       }),
       json(),
@@ -256,26 +252,6 @@ function shimDepsPlugin(deps) {
             )
           }
         }
-      }
-    }
-  }
-}
-
-/**
- * @type { (deps: Record<string, any>) => import('rollup').Plugin }
- */
-function ignoreDepPlugin(ignoredDeps) {
-  return {
-    name: 'ignore-deps',
-    resolveId(id) {
-      if (id in ignoredDeps) {
-        return id
-      }
-    },
-    load(id) {
-      if (id in ignoredDeps) {
-        console.log(`ignored: ${id}`)
-        return ''
       }
     }
   }
