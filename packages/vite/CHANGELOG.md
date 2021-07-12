@@ -1,3 +1,20 @@
+## [2.4.2](https://github.com/vitejs/vite/compare/v2.4.1...v2.4.2) (2021-07-12)
+
+
+### Bug Fixes
+
+* __VITE_PRELOAD__ replacement error ([#4163](https://github.com/vitejs/vite/issues/4163)) ([d377aae](https://github.com/vitejs/vite/commit/d377aae05f73779869ba84c91e050fe0a9f50dce)), closes [#3051](https://github.com/vitejs/vite/issues/3051)
+* shutdown process after closing server ([#4082](https://github.com/vitejs/vite/issues/4082)) ([eac779c](https://github.com/vitejs/vite/commit/eac779c3d7c306288b01a35239e9eaaa2273c1a5))
+* **build:** resolve license files correctly ([#4149](https://github.com/vitejs/vite/issues/4149)) ([bf32b41](https://github.com/vitejs/vite/commit/bf32b41bc4ac89e1fd39c27fb22c3bfa0a150152))
+* **utils:** add dot-all flag to match all characters, fix [#3761](https://github.com/vitejs/vite/issues/3761) ([#3780](https://github.com/vitejs/vite/issues/3780)) ([b9cdfbe](https://github.com/vitejs/vite/commit/b9cdfbeedcd74d33c30cab9d38b1a9ca6d1cd8c2))
+
+
+### Features
+
+* cache certificate ([#3642](https://github.com/vitejs/vite/issues/3642)) ([5dd670f](https://github.com/vitejs/vite/commit/5dd670f06dc2b0928771d571ce6ca5164b0db8e9))
+
+
+
 ## [2.4.1](https://github.com/vitejs/vite/compare/v2.4.0...v2.4.1) (2021-07-06)
 
 
