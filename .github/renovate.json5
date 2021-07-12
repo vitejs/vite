@@ -3,7 +3,7 @@
   "labels": ["dependencies"],
   "ignorePaths": [
     "packages/playground/**",
-    "packages/create-app/template-*/**",
+    "packages/create-vite/template-*/**",
     "**/__tests__/**"
   ],
   "pin": false,

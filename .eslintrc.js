@@ -97,7 +97,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/create-app/template-*/**'],
+      files: ['packages/create-vite/template-*/**'],
       rules: {
         'node/no-missing-import': 'off'
       }

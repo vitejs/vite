@@ -1,4 +1,4 @@
-# @vite/create-app
+# create-vite
 
 ## Scaffolding Your First Vite Project
 
@@ -20,7 +20,7 @@ $ yarn create @vitejs/app
 With PNPM:
 
 ```bash
-$ pnpx @vitejs/create-app
+$ pnpx @vitejs/create-vite
 ```
 
 Then follow the prompts!
@@ -29,16 +29,16 @@ You can also directly specify the project name and the template you want to use 
 
 ```bash
 # npm 6.x
-npm init @vitejs/app my-vue-app --template vue
+npm init vite@latest my-vue-app --template vue
 
 # npm 7+, extra double-dash is needed:
-npm init @vitejs/app my-vue-app -- --template vue
+npm init vite@latest my-vue-app -- --template vue
 
 # yarn
-yarn create @vitejs/app my-vue-app --template vue
+yarn create vite my-vue-app --template vue
 
 # pnpm
-pnpx @vitejs/create-app my-vue-app --template vue
+pnpx create-vite my-vue-app --template vue
 ```
 
 Currently supported template presets include:
@@ -58,7 +58,7 @@ Currently supported template presets include:
 
 ## Community Templates
 
-@vitejs/create-app is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks. You can use a tool like [degit](https://github.com/Rich-Harris/degit) to scaffold your project with one of the templates.
+create-vite is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks. You can use a tool like [degit](https://github.com/Rich-Harris/degit) to scaffold your project with one of the templates.
 
 ```bash
 npx degit user/project my-project
