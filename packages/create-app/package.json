@@ -1,11 +1,15 @@
 {
   "name": "@vitejs/create-app",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "license": "MIT",
   "author": "Evan You",
   "files": [
     "index.js"
   ],
+  "bin": {
+    "create-app": "index.js",
+    "cva": "index.js"
+  },
   "main": "index.js",
   "scripts": {
     "release": "node updateVersions && node ../../scripts/release.js --skipBuild"
