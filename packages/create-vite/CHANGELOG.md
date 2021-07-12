@@ -1,5 +1,24 @@
 # 2.5.0 (2021-07-12)
 
+* @vitejs/create-app has been moved to create-vite, so the command to scaffold a Vite app is now shorter and easier to remember.
+
+With NPM:
+
+```bash
+$ npm init vite@latest
+```
+
+With Yarn:
+
+```bash
+$ yarn create vite
+```
+
+With PNPM:
+
+```bash
+$ pnpx create-vite
+```
 
 
 ## [2.4.5](https://github.com/vitejs/vite/compare/create-app@2.4.4...create-app@2.4.5) (2021-07-05)
