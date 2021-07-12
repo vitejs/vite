@@ -2442,6 +2442,15 @@ create-require@^1.1.0:
   resolved "https://registry.yarnpkg.com/create-require/-/create-require-1.1.1.tgz#c1d7e8f1e5f6cfc9ff65f9cd352d37348756c333"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
 
+create-vite@latest:
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/create-vite/-/create-vite-2.5.0.tgz#cda74191bb68aeddf54683debe676931e6c3445f"
+  integrity sha512-ffQl3garkDsmqxGZS0RfUOJlRl2DnpIv/ee2WHzWN+nZN75kndLFdP/qTRi8WCIY8xVYK4/Dk5Zgkm7h/zlguA==
+  dependencies:
+    kolorist "^1.5.0"
+    minimist "^1.2.5"
+    prompts "^2.4.1"
+
 cross-env@^7.0.3:
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/cross-env/-/cross-env-7.0.3.tgz#865264b29677dc015ba8418918965dd232fc54cf"
