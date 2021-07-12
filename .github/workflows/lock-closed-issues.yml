@@ -1,0 +1,20 @@
+name: Lock Closed Issues
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+permissions:
+  issues: write
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dessant/lock-threads@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-lock-inactive-days: "14"
+          issue-lock-comment: "This issue gets locked because it has been closed for more than 14 days."
+          issue-lock-reason: ""
+          process-only: "issues"
