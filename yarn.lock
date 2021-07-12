@@ -2484,7 +2484,8 @@ css-color-names@^1.0.1:
   integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
 
 "css-dep@link:./packages/playground/css/css-dep":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 css-parse@~2.0.0:
   version "2.0.0"
@@ -2660,22 +2661,23 @@ delegate@^3.1.2:
 
 "dep-cjs-named-only@link:./packages/playground/optimize-deps/dep-cjs-named-only":
   version "0.0.0"
+  uid ""
 
 "dep-esbuild-plugin-transform@link:./packages/playground/optimize-deps/dep-esbuild-plugin-transform":
   version "0.0.0"
+  uid ""
 
 "dep-import-type@link:./packages/playground/ssr-vue/dep-import-type":
   version "0.0.0"
+  uid ""
 
 "dep-linked-include@link:./packages/playground/optimize-deps/dep-linked-include":
   version "0.0.0"
-  dependencies:
-    react "17.0.0"
+  uid ""
 
 "dep-linked@link:./packages/playground/optimize-deps/dep-linked":
   version "0.0.0"
-  dependencies:
-    lodash-es "^4.17.20"
+  uid ""
 
 depd@~1.1.2:
   version "1.1.2"
@@ -6286,13 +6288,16 @@ requires-port@^1.0.0:
   integrity sha1-kl0mAdOaxIXgkc8NpcbmlNw9yv8=
 
 "resolve-browser-field@link:./packages/playground/resolve/browser-field":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-custom-condition@link:./packages/playground/resolve/custom-condition":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-custom-main-field@link:./packages/playground/resolve/custom-main-field":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 resolve-cwd@^3.0.0:
   version "3.0.0"
@@ -6302,10 +6307,12 @@ resolve-cwd@^3.0.0:
     resolve-from "^5.0.0"
 
 "resolve-exports-env@link:./packages/playground/resolve/exports-env":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-exports-path@link:./packages/playground/resolve/exports-path":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -6998,10 +7005,12 @@ test-exclude@^6.0.0:
     minimatch "^3.0.4"
 
 "test-package-a@link:./packages/playground/nested-deps/test-package-a":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "test-package-b@link:./packages/playground/nested-deps/test-package-b":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 text-extensions@^1.0.0:
   version "1.9.0"
@@ -7238,6 +7247,7 @@ typedarray-to-buffer@^3.1.5:
 
 "types@link:./packages/vite/types":
   version "0.0.0"
+  uid ""
 
 typescript@^4.3.5:
   version "4.3.5"
@@ -7386,7 +7396,7 @@ void-elements@^3.1.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-3.1.0.tgz#614f7fbf8d801f0bb5f0661f5b2f5785750e4f09"
   integrity sha1-YU9/v42AHwu18GYfWy9XhXUOTwk=
 
-vue-router@^4.0.3:
+vue-router@^4.0.3, vue-router@^4.0.6:
   version "4.0.10"
   resolved "https://registry.yarnpkg.com/vue-router/-/vue-router-4.0.10.tgz#ec8fda032949b2a31d3273170f8f376e86eb52ac"
   integrity sha512-YbPf6QnZpyyWfnk7CUt2Bme+vo7TLfg1nGZNkvYqKYh4vLaFw6Gn8bPGdmt5m4qrGnKoXLqc4htAsd3dIukICA==

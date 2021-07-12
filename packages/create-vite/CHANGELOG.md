@@ -1,3 +1,7 @@
+# 2.5.0 (2021-07-12)
+
+
+
 ## [2.4.5](https://github.com/vitejs/vite/compare/create-app@2.4.4...create-app@2.4.5) (2021-07-05)
 
 
