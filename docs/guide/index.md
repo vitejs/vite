@@ -25,13 +25,19 @@ Vite requires [Node.js](https://nodejs.org/en/) version >=12.0.0.
 With NPM:
 
 ```bash
-$ npm init @vitejs/app
+$ npm init vite@latest
 ```
 
 With Yarn:
 
 ```bash
-$ yarn create @vitejs/app
+$ yarn create vite
+```
+
+With PNPM:
+
+```bash
+$ pnpx create-vite
 ```
 
 Then follow the prompts!
@@ -40,13 +46,13 @@ You can also directly specify the project name and the template you want to use 
 
 ```bash
 # npm 6.x
-npm init @vitejs/app my-vue-app --template vue
+npm init vite@latest my-vue-app --template vue
 
 # npm 7+, extra double-dash is needed:
-npm init @vitejs/app my-vue-app -- --template vue
+npm init vite@latest my-vue-app -- --template vue
 
 # yarn
-yarn create @vitejs/app my-vue-app --template vue
+yarn create vite my-vue-app --template vue
 ```
 
 Supported template presets include:
