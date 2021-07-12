@@ -375,7 +375,7 @@ export async function createServer(
     async close() {
       process.off('SIGTERM', exitProcess)
 
-      if (!process.stdin.isTTY) {
+      if (process.env.CI !== 'true') {
         process.stdin.off('end', exitProcess)
       }
 
@@ -408,7 +408,6 @@ export async function createServer(
 
   if (process.env.CI !== 'true') {
     process.stdin.on('end', exitProcess)
-    process.stdin.resume()
   }
 
   watcher.on('change', async (file) => {
