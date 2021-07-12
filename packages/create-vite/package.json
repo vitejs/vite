@@ -1,10 +1,10 @@
 {
-  "name": "@vitejs/create-app",
+  "name": "create-vite",
   "version": "2.4.5",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
-    "create-app": "index.js",
+    "create-vite": "index.js",
     "cva": "index.js"
   },
   "files": [
@@ -13,7 +13,7 @@
   ],
   "main": "index.js",
   "scripts": {
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package create-app",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package create-vite",
     "release": "node updateVersions && node ../../scripts/release.js --skipBuild"
   },
   "engines": {
@@ -22,12 +22,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vitejs/vite.git",
-    "directory": "packages/create-app"
+    "directory": "packages/create-vite"
   },
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-app#readme",
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
   "dependencies": {
     "kolorist": "^1.5.0",
     "minimist": "^1.2.5",
