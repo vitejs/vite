@@ -18,6 +18,6 @@ jobs:
           issue-lock-comment: |
             This issue gets locked because it has been closed for more than 14 days.
 
-            If you have any other comments you should use [Discord Vite Land](https://chat.vitejs.dev) or create a new [issue](https://github.com/vitejs/vite/issues/new/choose) or [discussion](https://github.com/vitejs/vite/discussions).
+            If you found a concrete bug or regression related to it, please open a new [bug report](https://github.com/vitejs/vite/issues/new/choose) with a reproduction against the latest Vite version. If you have any other comments you should join the chat at [Vite Land](https://chat.vitejs.dev) or create a new [discussion](https://github.com/vitejs/vite/discussions).
           issue-lock-reason: ""
           process-only: "issues"
