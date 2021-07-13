@@ -13,6 +13,6 @@ const path = require('path')
       pkg.devDependencies['@vitejs/plugin-vue'] =
         `^` + require('../plugin-vue/package.json').version
     }
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   }
 })()
