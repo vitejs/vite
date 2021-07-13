@@ -56,7 +56,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
 
   const viteBabel: Plugin = {
-    name: 'vite:babel',
+    name: 'vite:react-babel',
     enforce: 'pre',
     async transform(code, id, ssr) {
       if (/\.[tj]sx?$/.test(id)) {
@@ -124,7 +124,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
               await import('@babel/plugin-transform-react-jsx'),
               {
                 runtime: 'automatic',
-                importSource: opts.jsxImportSource ?? 'react'
+                importSource: opts.jsxImportSource
               }
             ])
 
@@ -207,9 +207,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
       config.plugins.forEach(
         (plugin) =>
-          plugin.name === 'react-refresh' &&
+          (plugin.name === 'react-refresh' ||
+            plugin.name === 'vite:react-jsx') &&
           config.logger.warn(
-            `[@vitejs/react-refresh] This plugin conflicts with "${plugin.name}". Please remove it.`
+            `[@vitejs/plugin-react] This plugin conflicts with "${plugin.name}". Please remove it.`
           )
       )
     },
@@ -238,7 +239,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const runtimeId = 'react/jsx-runtime'
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
-    name: 'vite:react-jsx',
+    // `alloc/vite-react-jsx` already takes `vite:react-jsx` name.
+    name: 'vite:react-jsx-runtime-automic',
     enforce: 'pre',
     resolveId(id: string) {
       return id === runtimeId ? id : null

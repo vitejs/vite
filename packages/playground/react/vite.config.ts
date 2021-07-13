@@ -6,6 +6,7 @@ const config: import('vite').UserConfig = {
       jsxRuntime: 'automatic'
     })
   ],
+  clearScreen: false,
   build: {
     // to make tests faster
     minify: false
