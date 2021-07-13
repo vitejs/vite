@@ -229,7 +229,7 @@ function esbuildScanPlugin(
             // esbuild to keep crawling due to potential side effects.
             let m
             const original = js
-            while ((m = importsRE.exec(original)) !== null) {
+            while ((m = importsRE.exec(original)) != null) {
               // This is necessary to avoid infinite loops with zero-width matches
               if (m.index === importsRE.lastIndex) {
                 importsRE.lastIndex++

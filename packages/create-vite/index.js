@@ -156,7 +156,7 @@ async function init() {
         },
         {
           type: (_, { overwrite } = {}) => {
-            if (overwrite == false) {
+            if (overwrite === false) {
               throw new Error(red('✖') + ' Operation cancelled')
             }
             return null
