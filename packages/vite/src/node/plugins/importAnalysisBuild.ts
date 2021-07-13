@@ -15,9 +15,10 @@ import { transformImportGlob } from '../importGlob'
 export const isModernFlag = `__VITE_IS_MODERN__`
 export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
+export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadCode = `let scriptRel;const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+const preloadCode = `let scriptRel;const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
 const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
 
 /**
@@ -43,6 +44,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 
   return Promise.all(
     deps.map((dep) => {
+      // @ts-ignore
+      dep = `${base}${dep}`
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -91,7 +94,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadCode
+        return preloadCode.replace(preloadBaseMarker, config.base)
       }
     },
 
@@ -245,11 +248,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    deps.add(config.base + chunk.fileName)
+                    deps.add(chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                     if (cssFiles) {
                       cssFiles.forEach((file) => {
-                        deps.add(config.base + file)
+                        deps.add(file)
                       })
                     }
                     chunk.imports.forEach(addDeps)
