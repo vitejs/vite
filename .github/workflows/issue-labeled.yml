@@ -16,7 +16,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Hello @${{ github.event.issue.user.login }}. We totally like your proposal/feedback, welcome to send us a Pull Request for it. Please provide changelog/TypeScript/documentation/test cases if needed and make sure CI passed, we will review it soon. We appreciate your effort in advance and looking forward to your contribution!
+            Hello @${{ github.event.issue.user.login }}. We like your proposal/feedback and would appreciate a contribution via a Pull Request by you or another community member. We thank you in advance for your contribution and are looking forward to reviewing it!
           labels: "pending triage, need reproduction"
 
       - name: remove pending
@@ -36,5 +36,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Hello @${{ github.event.issue.user.login }}. Please provide a online reproduction by [codesandbox](https://codesandbox.io/) or a minimal GitHub repository. Issues labeled by `need reproduction` will be closed if no activities in 3 days.
+            Hello @${{ github.event.issue.user.login }}. Please provide a minimal reproduction using a GitHub repository or [codesandbox](https://codesandbox.io). Issues marked with `need reproduction` will be closed if they have no activity within 3 days.
           labels: "pending triage"
