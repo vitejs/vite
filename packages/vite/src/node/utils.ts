@@ -206,7 +206,7 @@ export function isObject(value: unknown): value is Record<string, any> {
 }
 
 export function isDefined<T>(value: T | undefined | null): value is T {
-  return value !== undefined && value !== null
+  return value != null
 }
 
 export function lookupFile(

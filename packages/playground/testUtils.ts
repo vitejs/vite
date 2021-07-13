@@ -24,7 +24,7 @@ Object.keys(colors).forEach((color) => {
 
 function componentToHex(c: number): string {
   const hex = c.toString(16)
-  return hex.length == 1 ? '0' + hex : hex
+  return hex.length === 1 ? '0' + hex : hex
 }
 
 function rgbToHex(rgb: string): string {
