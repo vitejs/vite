@@ -250,7 +250,7 @@ async function init() {
 
   const pkg = require(path.join(templateDir, `package.json`))
 
-  pkg.name = packageName
+  pkg.name = packageName || targetDir
 
   write('package.json', JSON.stringify(pkg, null, 2))
 
