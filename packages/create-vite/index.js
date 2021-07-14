@@ -164,7 +164,7 @@ async function init() {
           name: 'overwriteChecker'
         },
         {
-          type: () => (isValidPackageName(targetDir) ? 'text' : null),
+          type: () => (isValidPackageName(targetDir) ? null : 'text'),
           name: 'packageName',
           message: 'Package name:',
           initial: () => toValidPackageName(targetDir),
