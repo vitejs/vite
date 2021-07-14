@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { ViteDevServer } from '..'
 import { cleanUrl, resolveFrom, unwrapId } from '../utils'
-import { ssrRewriteStacktrace } from './ssrStacktrace'
+import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
   ssrModuleExportsKey,
@@ -142,20 +142,7 @@ async function instantiateModule(
     )
   } catch (e) {
     const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-    const { configurable, writable } = Object.getOwnPropertyDescriptor(
-      e,
-      'stack'
-    )!
-    if (configurable) {
-      Object.defineProperty(e, 'stack', {
-        value: stacktrace,
-        enumerable: true,
-        configurable: true,
-        writable: true
-      })
-    } else if (writable) {
-      e.stack = stacktrace
-    }
+    rebindErrorStacktrace(e, stacktrace)
     server.config.logger.error(
       `Error when evaluating SSR module ${url}:\n${stacktrace}`,
       {
