@@ -213,65 +213,55 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        if (
-          asSrc &&
-          server &&
-          !ssr &&
-          (res = tryOptimizedResolve(id, server, importer))
-        ) {
-          return res
-        }
-
-        if (
-          targetWeb &&
-          (res = tryResolveBrowserMapping(
-            id,
-            importer,
-            options,
-            false,
-            preserveSymlinks
-          ))
-        ) {
-          return res
-        }
-
-        if (
-          (res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))
-        ) {
-          return res
-        }
-
-        // node built-ins.
-        // externalize if building for SSR, otherwise redirect to empty module
-        if (isBuiltin(id)) {
-          if (ssr) {
-            if (ssrNoExternal === true) {
-              let message = `Cannot bundle Node.js built-in "${id}"`
-              if (importer) {
-                message += ` imported from "${path.relative(
-                  process.cwd(),
-                  importer
-                )}"`
-              }
-              message += `. Consider disabling ssr.noExternal or remove the built-in dependency.`
-              this.error(message)
-            }
-
-            return {
+        res =
+          (asSrc &&
+            server &&
+            !ssr &&
+            tryOptimizedResolve(id, server, importer)) ||
+          (targetWeb &&
+            tryResolveBrowserMapping(
               id,
-              external: true
-            }
-          } else {
-            if (!asSrc) {
-              debug(
-                `externalized node built-in "${id}" to empty module. ` +
-                  `(imported by: ${chalk.white.dim(importer)})`
-              )
-            }
-            return isProduction
-              ? browserExternalId
-              : `${browserExternalId}:${id}`
+              importer,
+              options,
+              false,
+              preserveSymlinks
+            )) ||
+          tryNodeResolve(id, importer, options, targetWeb, server, ssr)
+
+        if (res) {
+          if (!ssr) {
+            return res
           }
+          const resId = typeof res === 'string' ? res : res.id
+          if (path.isAbsolute(resId) && resId.startsWith(root + '/')) {
+            return res
+          }
+        }
+
+        if (ssr) {
+          if (isBuiltin(id) && ssrNoExternal === true) {
+            let message = `Cannot bundle Node.js built-in "${id}"`
+            if (importer) {
+              message += ` imported from "${path.relative(
+                process.cwd(),
+                importer
+              )}"`
+            }
+            message += `. Consider disabling ssr.noExternal or remove the built-in dependency.`
+            this.error(message)
+          }
+          return { id, external: true }
+        }
+
+        // redirect node built-ins to empty module
+        if (isBuiltin(id)) {
+          if (!asSrc) {
+            debug(
+              `externalized node built-in "${id}" to empty module. ` +
+                `(imported by: ${chalk.white.dim(importer)})`
+            )
+          }
+          return isProduction ? browserExternalId : `${browserExternalId}:${id}`
         }
       }
 

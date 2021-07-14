@@ -90,7 +90,7 @@ async function instantiateModule(
   const pendingDeps: string[] = []
 
   const ssrImport = async (dep: string) => {
-    if (dep[0] !== '.' && dep[0] !== '/') {
+    if (dep[0] !== '/') {
       return nodeRequire(
         dep,
         mod.file,
@@ -98,7 +98,6 @@ async function instantiateModule(
         !!server.config.resolve.preserveSymlinks
       )
     }
-    dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
       pendingDeps.push(dep)
       if (pendingDeps.length === 1) {

@@ -210,16 +210,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           return [url, url]
         }
 
-        // if the resolved id is not a valid browser import specifier,
-        // prefix it to make it valid. We will strip this before feeding it
-        // back into the transform pipeline
-        if (!url.startsWith('.') && !url.startsWith('/')) {
-          url =
-            VALID_ID_PREFIX + resolved.id.replace('\0', NULL_BYTE_PLACEHOLDER)
-        }
-
         // make the URL browser-valid if not SSR
         if (!ssr) {
+          // if the resolved id is not a valid browser import specifier,
+          // prefix it to make it valid. We will strip this before feeding it
+          // back into the transform pipeline
+          if (!url.startsWith('.') && !url.startsWith('/')) {
+            url =
+              VALID_ID_PREFIX + resolved.id.replace('\0', NULL_BYTE_PLACEHOLDER)
+          }
+
           // mark non-js/css imports with `?import`
           url = markExplicitImport(url)
 
