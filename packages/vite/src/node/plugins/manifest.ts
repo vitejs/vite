@@ -97,9 +97,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
         const assetFilesWithLoadPreference = chunkToEmittedAssetsMap.get(chunk)
         if (assetFilesWithLoadPreference) {
-          const assets = Array.from(assetFilesWithLoadPreference)
-            .filter(({ lazy }) => !lazy)
-            .map(({ file }) => file)
+          const assets = Array.from(assetFilesWithLoadPreference).map(
+            ({ file }) => file
+          )
           manifestChunk.assets = assets
         }
 
