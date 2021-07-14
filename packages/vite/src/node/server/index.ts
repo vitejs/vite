@@ -366,7 +366,21 @@ export async function createServer(
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
-        e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
+        const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+        const { configurable, writable } = Object.getOwnPropertyDescriptor(
+          e,
+          'stack'
+        )!
+        if (configurable) {
+          Object.defineProperty(e, 'stack', {
+            value: stacktrace,
+            enumerable: true,
+            configurable: true,
+            writable: true
+          })
+        } else if (writable) {
+          e.stack = stacktrace
+        }
       }
     },
     listen(port?: number, isRestart?: boolean) {
