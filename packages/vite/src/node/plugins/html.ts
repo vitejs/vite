@@ -545,7 +545,7 @@ function injectToHead(
   } else {
     // inject before head close
     if (headInjectRE.test(html)) {
-      return html.replace(headInjectRE, `${tagsHtml}\n$&`)
+      return html.replace(headInjectRE, `${tagsHtml}\n  $&`)
     }
   }
   // if no <head> tag is present, just prepend
@@ -592,7 +592,7 @@ function serializeTags(tags: HtmlTagDescriptor['children']): string {
   if (typeof tags === 'string') {
     return tags
   } else if (tags) {
-    return tags.map(serializeTag).join(`\n  `)
+    return `  ${tags.map(serializeTag).join('\n    ')}`
   }
   return ''
 }
