@@ -97,10 +97,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
         const assetFilesWithLoadPreference = chunkToEmittedAssetsMap.get(chunk)
         if (assetFilesWithLoadPreference) {
-          const assets = Array.from(assetFilesWithLoadPreference).map(
-            ({ file }) => file
-          )
-          manifestChunk.assets = assets
+          manifestChunk.assets = [...assetFilesWithLoadPreference].map(({ file }) => file)
         }
 
         return manifestChunk
