@@ -35,6 +35,18 @@ const htmlCommentRE = /<!--[\s\S]*?-->/g
 const scriptModuleRE =
   /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
 
+interface AttrWithLoadPreference {
+  attr: AttributeNode
+  lazy: boolean
+}
+
+function addSearch(url: string, k: string, v?: string) {
+  const sep = url.indexOf('?') ? '&' : '?'
+  return `${url}${sep}${encodeURIComponent(k)}${
+    v ? `=${encodeURIComponent(v)}` : ''
+  }`
+}
+
 export function htmlInlineScriptProxyPlugin(): Plugin {
   return {
     name: 'vite:html',
@@ -160,7 +172,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         let js = ''
         const s = new MagicString(html)
-        const assetUrls: AttributeNode[] = []
+        const attrWithLoadPreferences: AttrWithLoadPreference[] = []
         let inlineModuleIndex = -1
 
         await traverseHtml(html, id, (node) => {
@@ -199,6 +211,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             }
           }
 
+          let lazy = false
+          if (node.tag === 'img') {
+            for (const p of node.props) {
+              if (
+                p.type === NodeTypes.ATTRIBUTE &&
+                p.value &&
+                p.name === 'loading'
+              ) {
+                lazy = ['lazy', 'auto'].includes(p.value.content)
+              }
+            }
+          }
+
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
           const assetAttrs = assetAttrsConfig[node.tag]
@@ -216,7 +241,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     js += `\nimport ${JSON.stringify(url)}`
                     shouldRemove = true
                   } else {
-                    assetUrls.push(p)
+                    attrWithLoadPreferences.push({
+                      attr: p,
+                      lazy
+                    })
                   }
                 } else if (checkPublicFile(url, config)) {
                   s.overwrite(
@@ -238,20 +266,28 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location.
-        for (const attr of assetUrls) {
+        const _urlToBuiltUrl = (url: string, lazy: boolean) => {
+          return urlToBuiltUrl(
+            lazy ? addSearch(url, '_lazy') : url,
+            id,
+            config,
+            this
+          )
+        }
+        for (const { attr, lazy } of attrWithLoadPreferences) {
           const value = attr.value!
           try {
-            const url =
+            const newValue =
               attr.name === 'srcset'
                 ? await processSrcSet(value.content, ({ url }) =>
-                    urlToBuiltUrl(url, id, config, this)
+                    _urlToBuiltUrl(url, lazy)
                   )
-                : await urlToBuiltUrl(value.content, id, config, this)
+                : await _urlToBuiltUrl(value.content, lazy)
 
             s.overwrite(
               value.loc.start.offset,
               value.loc.end.offset,
-              `"${url}"`
+              `"${newValue}"`
             )
           } catch (e) {
             // #1885 preload may be pointing to urls that do not exist

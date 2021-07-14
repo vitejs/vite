@@ -21,7 +21,8 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
           const cssFiles = chunk.isEntry
             ? null
             : chunkToEmittedCssFileMap.get(chunk)
-          const assetFiles = chunkToEmittedAssetsMap.get(chunk)
+          const assetFilesWithLoadPreference =
+            chunkToEmittedAssetsMap.get(chunk)
           for (const id in chunk.modules) {
             const normalizedId = normalizePath(relative(config.root, id))
             const mappedChunks =
@@ -34,9 +35,11 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                 mappedChunks.push(base + file)
               })
             }
-            if (assetFiles) {
-              assetFiles.forEach((file) => {
-                mappedChunks.push(base + file)
+            if (assetFilesWithLoadPreference) {
+              assetFilesWithLoadPreference.forEach(({ file, lazy }) => {
+                if (!lazy) {
+                  mappedChunks.push(base + file)
+                }
               })
             }
           }
