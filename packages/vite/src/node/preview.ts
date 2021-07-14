@@ -57,30 +57,26 @@ export async function preview(
   const logger = config.logger
   const base = config.base
 
-  await httpServerStart(httpServer, {
+  const serverPort = await httpServerStart(httpServer, {
     port,
     strict: !!serverOptions.port,
     host: hostname.host,
     logger
   })
-    .then((serverPort) => {
-      logger.info(
-        chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-          chalk.green(` build preview server running at:\n`)
-      )
 
-      printServerUrls(hostname, protocol, serverPort, base, logger.info)
+  logger.info(
+    chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+      chalk.green(` build preview server running at:\n`)
+  )
 
-      if (options.open) {
-        const path = typeof options.open === 'string' ? options.open : base
-        openBrowser(
-          `${protocol}://${hostname.name}:${serverPort}${path}`,
-          true,
-          logger
-        )
-      }
-    })
-    .catch((e) => {
-      throw e
-    })
+  printServerUrls(hostname, protocol, serverPort, base, logger.info)
+
+  if (options.open) {
+    const path = typeof options.open === 'string' ? options.open : base
+    openBrowser(
+      `${protocol}://${hostname.name}:${serverPort}${path}`,
+      true,
+      logger
+    )
+  }
 }
