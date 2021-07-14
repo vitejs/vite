@@ -223,6 +223,13 @@ export interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
+   * A promise which will resolve once a reload is complete. A reload is
+   * pending as a result of optimizing missing dependencies.
+   * 
+   * When no reload is pending it will be null.
+   */
+  pendingReload: Promise<void> | null
+  /**
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
@@ -296,10 +303,6 @@ export interface ViteDevServer {
   _registerMissingImport:
     | ((id: string, resolved: string, ssr: boolean | undefined) => void)
     | null
-  /**
-   * @internal
-   */
-  _pendingReload: Promise<void> | null
 }
 
 export async function createServer(
@@ -351,6 +354,7 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
+    pendingReload: null,
     transformWithEsbuild,
     transformRequest(url, options) {
       return transformRequest(url, server, options)
@@ -394,8 +398,7 @@ export async function createServer(
     _ssrExternals: null,
     _globImporters: {},
     _isRunningOptimizer: false,
-    _registerMissingImport: null,
-    _pendingReload: null
+    _registerMissingImport: null
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)

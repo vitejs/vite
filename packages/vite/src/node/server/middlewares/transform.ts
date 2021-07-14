@@ -65,13 +65,13 @@ export function transformMiddleware(
     }
 
     if (
-      server._pendingReload &&
+      server.pendingReload &&
       // always allow vite client requests so that it can trigger page reload
       !req.url?.startsWith(CLIENT_PUBLIC_PATH) &&
       !req.url?.includes('vite/dist/client')
     ) {
       // missing dep pending reload, hold request until reload happens
-      server._pendingReload.then(() =>
+      server.pendingReload.then(() =>
         // If the refresh has not happened after timeout, Vite considers
         // something unexpected has happened. In this case, Vite
         // returns an empty response that will error.
