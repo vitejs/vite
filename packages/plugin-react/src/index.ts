@@ -208,7 +208,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       config.plugins.forEach(
         (plugin) =>
           (plugin.name === 'react-refresh' ||
-            plugin.name === 'vite:react-jsx') &&
+            (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')) &&
           config.logger.warn(
             `[@vitejs/plugin-react] This plugin conflicts with "${plugin.name}". Please remove it.`
           )
@@ -239,8 +239,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const runtimeId = 'react/jsx-runtime'
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
-    // `alloc/vite-react-jsx` already takes `vite:react-jsx` name.
-    name: 'vite:react-jsx-runtime-automic',
+    name: 'vite:react-jsx',
     enforce: 'pre',
     resolveId(id: string) {
       return id === runtimeId ? id : null
