@@ -19,7 +19,15 @@ const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?"/g
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
-export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
+interface AssetWithLoadPreference {
+  file: string
+  lazy: boolean
+}
+
+export const chunkToEmittedAssetsMap = new WeakMap<
+  RenderedChunk,
+  Set<AssetWithLoadPreference>
+>()
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -90,7 +98,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         // some internal plugins may still need to emit chunks (e.g. worker) so
         // fallback to this.getFileName for that.
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
-        registerAssetToChunk(chunk, file)
+        registerAssetToChunk(chunk, file, postfix.includes('_lazy'))
+        // TODO does _lazy make it into final build?
         const outputFilepath = config.base + file + postfix
         s.overwrite(
           match.index,
@@ -124,13 +133,20 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function registerAssetToChunk(chunk: RenderedChunk, file: string): void {
+export function registerAssetToChunk(
+  chunk: RenderedChunk,
+  file: string,
+  lazy: boolean = false
+): void {
   let emitted = chunkToEmittedAssetsMap.get(chunk)
   if (!emitted) {
     emitted = new Set()
     chunkToEmittedAssetsMap.set(chunk, emitted)
   }
-  emitted.add(cleanUrl(file))
+  emitted.add({
+    file: cleanUrl(file),
+    lazy
+  })
 }
 
 export function checkPublicFile(

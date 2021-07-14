@@ -95,8 +95,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           manifestChunk.css = [...cssFiles]
         }
 
-        const assets = chunkToEmittedAssetsMap.get(chunk)
-        if (assets) [(manifestChunk.assets = [...assets])]
+        const assetFilesWithLoadPreference = chunkToEmittedAssetsMap.get(chunk)
+        if (assetFilesWithLoadPreference) {
+          manifestChunk.assets = [...assetFilesWithLoadPreference].map(({ file }) => file)
+        }
 
         return manifestChunk
       }
