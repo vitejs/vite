@@ -254,8 +254,8 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2))
 
-  const pkgManager =
-    pmFromUserAgent(process.env.npm_config_user_agent)?.name || 'npm'
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
@@ -325,13 +325,13 @@ function emptyDir(dir) {
  * @param {string | undefined} userAgent process.env.npm_config_user_agent
  * @returns object | undefined
  */
-function pmFromUserAgent(userAgent) {
+function pkgFromUserAgent(userAgent) {
   if (!userAgent) return undefined
-  const pmSpec = userAgent.split(' ')[0]
-  const pmSpecArr = pmSpec.split('/')
+  const pkgSpec = userAgent.split(' ')[0]
+  const pkgSpecArr = pkgSpec.split('/')
   return {
-    name: pmSpecArr[0],
-    version: pmSpecArr[1]
+    name: pkgSpecArr[0],
+    version: pkgSpecArr[1]
   }
 }
 
