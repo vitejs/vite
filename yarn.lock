@@ -7021,6 +7021,10 @@ test-exclude@^6.0.0:
   version "0.0.0"
   uid ""
 
+"test-package-c@link:./packages/playground/nested-deps/test-package-c":
+  version "0.0.0"
+  uid ""
+
 text-extensions@^1.0.0:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/text-extensions/-/text-extensions-1.9.0.tgz#1853e45fee39c945ce6f6c36b2d659b5aabc2a26"

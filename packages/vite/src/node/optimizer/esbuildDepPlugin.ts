@@ -85,35 +85,29 @@ export function esbuildDepPlugin(
         }
       )
 
-      function resolveEntry(id: string, isEntry: boolean, resolveDir: string) {
+      function resolveEntry(id: string) {
         const flatId = flattenId(id)
         if (flatId in qualified) {
-          return isEntry
-            ? {
-                path: flatId,
-                namespace: 'dep'
-              }
-            : {
-                path: require.resolve(qualified[flatId], {
-                  paths: [resolveDir]
-                })
-              }
+          return {
+            path: flatId,
+            namespace: 'dep'
+          }
         }
       }
 
       build.onResolve(
         { filter: /^[\w@][^:]/ },
-        async ({ path: id, importer, kind, resolveDir }) => {
-          const isEntry = !importer
+        async ({ path: id, importer, kind }) => {
           // ensure esbuild uses our resolved entries
           let entry
           // if this is an entry, return entry namespace resolve result
-          if ((entry = resolveEntry(id, isEntry, resolveDir))) return entry
-
-          // check if this is aliased to an entry - also return entry namespace
-          const aliased = await _resolve(id, undefined, true)
-          if (aliased && (entry = resolveEntry(aliased, isEntry, resolveDir))) {
-            return entry
+          if (!importer) {
+            if ((entry = resolveEntry(id))) return entry
+            // check if this is aliased to an entry - also return entry namespace
+            const aliased = await _resolve(id, undefined, true)
+            if (aliased && (entry = resolveEntry(aliased))) {
+              return entry
+            }
           }
 
           // use vite's own resolver
