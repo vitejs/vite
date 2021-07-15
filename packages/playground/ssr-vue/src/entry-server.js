@@ -49,13 +49,11 @@ function renderPreloadLink(file) {
   } else if (file.endsWith('.woff2')) {
     return ` <link rel="preload" href="${file}" as="font" type="font/woff2" crossorigin>`
   } else if (file.endsWith('.gif')) {
-    return ` <link rel="preload" href="${file}" as="image" type="image/gif" crossorigin>`
-  } else if (file.endsWith('.jpg')) {
-    return ` <link rel="preload" href="${file}" as="image" type="image/jpeg" crossorigin>`
-  } else if (file.endsWith('.jpeg')) {
-    return ` <link rel="preload" href="${file}" as="image" type="image/jpeg" crossorigin>`
+    return ` <link rel="preload" href="${file}" as="image" type="image/gif">`
+  } else if (file.endsWith('.jpg') || file.endsWith('.jpeg')) {
+    return ` <link rel="preload" href="${file}" as="image" type="image/jpeg">`
   } else if (file.endsWith('.png')) {
-    return ` <link rel="preload" href="${file}" as="image" type="image/png" crossorigin>`
+    return ` <link rel="preload" href="${file}" as="image" type="image/png">`
   } else {
     // TODO
     return ''
