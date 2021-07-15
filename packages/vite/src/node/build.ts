@@ -15,7 +15,8 @@ import Rollup, {
   GetModuleInfo,
   WatcherOptions,
   RollupWatcher,
-  RollupError
+  RollupError,
+  ModuleFormat
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
@@ -198,7 +199,7 @@ export interface LibraryOptions {
   entry: string
   name?: string
   formats?: LibraryFormats[]
-  fileName?: string
+  fileName?: string | ((format: ModuleFormat) => string)
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
@@ -425,7 +426,7 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? `${libOptions.fileName || pkgName}.${output.format || `es`}.js`
+          ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
@@ -619,6 +620,16 @@ function staticImportedByEntry(
   )
   cache.set(id, someImporterIs)
   return someImporterIs
+}
+
+export function resolveLibFilename(
+  libOptions: LibraryOptions,
+  format: ModuleFormat,
+  pkgName: string
+): string {
+  return typeof libOptions.fileName === 'function'
+    ? libOptions.fileName(format)
+    : `${libOptions.fileName || pkgName}.${format}.js`
 }
 
 function resolveBuildOutputs(

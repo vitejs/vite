@@ -48,7 +48,10 @@ import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
-import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
+import {
+  rebindErrorStacktrace,
+  ssrRewriteStacktrace
+} from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
@@ -366,7 +369,8 @@ export async function createServer(
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
-        e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
+        const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+        rebindErrorStacktrace(e, stacktrace)
       }
     },
     listen(port?: number, isRestart?: boolean) {
@@ -375,7 +379,7 @@ export async function createServer(
     async close() {
       process.off('SIGTERM', exitProcess)
 
-      if (!process.stdin.isTTY) {
+      if (!middlewareMode && process.env.CI !== 'true') {
         process.stdin.off('end', exitProcess)
       }
 
@@ -406,9 +410,8 @@ export async function createServer(
 
   process.once('SIGTERM', exitProcess)
 
-  if (process.env.CI !== 'true') {
+  if (!middlewareMode && process.env.CI !== 'true') {
     process.stdin.on('end', exitProcess)
-    process.stdin.resume()
   }
 
   watcher.on('change', async (file) => {

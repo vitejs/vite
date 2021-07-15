@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "test-package-a": "link:./test-package-a",
-    "test-package-b": "link:./test-package-b"
+    "test-package-b": "link:./test-package-b",
+    "test-package-c": "link:./test-package-c"
   }
 }
