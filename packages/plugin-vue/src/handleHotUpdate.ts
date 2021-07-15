@@ -38,7 +38,7 @@ export async function handleHotUpdate({
   let needRerender = false
   const affectedModules = new Set<ModuleNode | undefined>()
   const mainModule = modules.find(
-    (m) => !/type=/.test(m.url) || /type=script/.test(m.url)
+    (m) => m.id && (!/type=/.test(m.url) || /type=script/.test(m.url))
   )
   const templateModule = modules.find((m) => /type=template/.test(m.url))
 
