@@ -141,7 +141,8 @@ export class ModuleGraph {
 
   async ensureEntryFromUrl(rawUrl: string): Promise<ModuleNode> {
     const [url, resolvedId] = await this.resolveUrl(rawUrl)
-    let mod = this.urlToModuleMap.get(url)
+    let mod = this.urlToModuleMap.get(url) || this.idToModuleMap.get(resolvedId)
+
     if (!mod) {
       mod = new ModuleNode(url)
       this.urlToModuleMap.set(url, mod)
@@ -179,6 +180,10 @@ export class ModuleGraph {
 
     const mod = new ModuleNode(url)
     mod.file = file
+
+    mod.id = file
+    this.idToModuleMap.set(mod.id, mod)
+
     fileMappedModules.add(mod)
     return mod
   }
