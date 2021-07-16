@@ -247,7 +247,7 @@ export async function optimizeDeps(
     try {
       exportsData = parse(entryContent) as ExportsData
     } catch {
-      config.logger.warn(
+      debug(
         `Unable to parse dependency: ${id}. Trying again with an esbuild transform.`
       )
       const transformed = await transform(entryContent, config.esbuild || {})
