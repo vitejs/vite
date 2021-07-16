@@ -32,6 +32,7 @@ export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
 type TSConfigJSON = {
   extends?: string
   compilerOptions?: {
+    target?: string
     jsxFactory?: string
     jsxFragmentFactory?: string
     useDefineForClassFields?: boolean
@@ -95,7 +96,7 @@ export async function transformWithEsbuild(
     loader = 'js'
   }
 
-  const tsconfigRaw = { compilerOptions: {} }
+  const tsconfigRaw: TSConfigJSON = { compilerOptions: {} }
   if (loader === 'ts' || loader === 'tsx') {
     const tsconfigJson = await loadTsconfigJsonForFile(filename)
 
@@ -114,6 +115,15 @@ export async function transformWithEsbuild(
         // @ts-ignore
         tsconfigRaw.compilerOptions[field] = tsconfigJson.compilerOptions[field]
       }
+    }
+
+    // align with TypeScript 4.3
+    // https://github.com/microsoft/TypeScript/pull/42663
+    if (
+      tsconfigJson.compilerOptions?.target?.toLocaleLowerCase() === 'esnext'
+    ) {
+      tsconfigRaw.compilerOptions!.useDefineForClassFields =
+        tsconfigJson.compilerOptions?.useDefineForClassFields ?? true
     }
   }
 
