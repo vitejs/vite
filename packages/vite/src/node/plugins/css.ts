@@ -24,7 +24,7 @@ import {
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
-import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../constants'
+import { CLIENT_PUBLIC_PATH } from '../constants'
 import { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
@@ -194,17 +194,13 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
           const depModules = new Set(
             await Promise.all(
-              [...deps].map(async (file) => {
-                if (cssLangRE.test(file)) {
-                  return moduleGraph.createFileOnlyEntry(file)
-                }
-
-                const url = file.startsWith(config.root)
-                  ? file.slice(config.root.length)
-                  : path.posix.join(FS_PREFIX, file)
-
-                return await moduleGraph.ensureEntryFromUrl(url)
-              })
+              [...deps].map(async (file) =>
+                cssLangRE.test(file)
+                  ? moduleGraph.createFileOnlyEntry(file)
+                  : moduleGraph.ensureEntryFromUrl(
+                      await fileToUrl(file, config, this)
+                    )
+              )
             )
           )
 
