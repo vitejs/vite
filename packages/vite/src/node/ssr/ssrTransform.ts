@@ -45,6 +45,7 @@ export async function ssrTransform(
 
   function findFreeName(name: string) {
     let suffix = 0
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const usedName = ++suffix > 1 ? `${name}_${suffix}` : name
       if (!usedNames.has(usedName)) {
