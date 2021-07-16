@@ -24,7 +24,7 @@ import {
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
-import { CLIENT_PUBLIC_PATH } from '../constants'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../constants'
 import { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
@@ -191,9 +191,23 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (deps) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
+
           const depModules = new Set(
-            [...deps].map((file) => moduleGraph.createFileOnlyEntry(file))
+            await Promise.all(
+              [...deps].map(async (file) => {
+                if (cssLangRE.test(file)) {
+                  return moduleGraph.createFileOnlyEntry(file)
+                }
+
+                const url = file.startsWith(config.root)
+                  ? file.slice(config.root.length)
+                  : path.posix.join(FS_PREFIX, file)
+
+                return await moduleGraph.ensureEntryFromUrl(url)
+              })
+            )
           )
+
           moduleGraph.updateModuleInfo(
             thisModule,
             depModules,

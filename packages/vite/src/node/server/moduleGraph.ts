@@ -141,7 +141,7 @@ export class ModuleGraph {
 
   async ensureEntryFromUrl(rawUrl: string): Promise<ModuleNode> {
     const [url, resolvedId] = await this.resolveUrl(rawUrl)
-    let mod = this.urlToModuleMap.get(url) || this.idToModuleMap.get(resolvedId)
+    let mod = this.urlToModuleMap.get(url)
 
     if (!mod) {
       mod = new ModuleNode(url)
