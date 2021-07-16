@@ -238,6 +238,9 @@ export async function optimizeDeps(
   const idToExports: Record<string, ExportsData> = {}
   const flatIdToExports: Record<string, ExportsData> = {}
 
+  const { plugins = [], ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
   await init
   for (const id in deps) {
     const flatId = flattenId(id)
@@ -248,9 +251,14 @@ export async function optimizeDeps(
       exportsData = parse(entryContent) as ExportsData
     } catch {
       debug(
-        `Unable to parse dependency: ${id}. Trying again with an esbuild transform.`
+        `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
       )
-      const transformed = await transform(entryContent, config.esbuild || {})
+      const transformed = await transform(entryContent, {
+        loader: 'jsx'
+      })
+      // Ensure that optimization won't fail.
+      esbuildOptions.loader ??= {}
+      esbuildOptions.loader['.js'] ??= 'jsx'
       exportsData = parse(transformed.code) as ExportsData
     }
     for (const { ss, se } of exportsData[0]) {
@@ -272,9 +280,6 @@ export async function optimizeDeps(
   }
 
   const start = Date.now()
-
-  const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
 
   const result = await build({
     absWorkingDir: process.cwd(),
