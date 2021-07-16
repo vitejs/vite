@@ -4,13 +4,13 @@ Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript o
 
 ## `createServer`
 
-**Type Signature**
+**Type Signature:**
 
 ```ts
 async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 ```
 
-**Example Usage**
+**Example Usage:**
 
 ```js
 const { createServer } = require('vite')
@@ -121,7 +121,7 @@ interface ViteDevServer {
 
 ## `build`
 
-**Type Signature**
+**Type Signature:**
 
 ```ts
 async function build(
@@ -129,7 +129,7 @@ async function build(
 ): Promise<RollupOutput | RollupOutput[]>
 ```
 
-**Example Usage**
+**Example Usage:**
 
 ```js
 const path = require('path')
@@ -150,7 +150,7 @@ const { build } = require('vite')
 
 ## `resolveConfig`
 
-**Type Signature**
+**Type Signature:**
 
 ```ts
 async function resolveConfig(

@@ -154,7 +154,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file) and the current config env which exposes the `mode` and `command` being used. It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
 
-  **Example**
+  **Example:**
 
   ```js
   // return partial config (recommended)
@@ -289,7 +289,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   - An array of tag descriptor objects (`{ tag, attrs, children }`) to inject to the existing HTML. Each tag can also specify where it should be injected to (default is prepending to `<head>`)
   - An object containing both as `{ html, tags }`
 
-  **Basic Example**
+  **Basic Example:**
 
   ```js
   const htmlPlugin = () => {
