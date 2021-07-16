@@ -53,26 +53,25 @@ async function loadTsconfigJsonForFile(
   }
 
   let configPath = await findTSConfig(directory)
-  if (!configPath) {
-    tsconfigCache.set(directory, {})
-    return {}
-  }
+  let tsconfig: TSConfigJSON = {}
 
-  let tsconfig = (await readTSConfig(configPath)) as TSConfigJSON
-  while (tsconfig.extends) {
-    const configRequire = createRequire(configPath)
+  if (configPath) {
+    tsconfig = (await readTSConfig(configPath)) as TSConfigJSON
+    while (tsconfig.extends) {
+      const configRequire = createRequire(configPath)
 
-    const extendsPath = configRequire.resolve(tsconfig.extends)
-    const extendedConfig = (await readTSConfig(extendsPath)) as TSConfigJSON
+      const extendsPath = configRequire.resolve(tsconfig.extends)
+      const extendedConfig = (await readTSConfig(extendsPath)) as TSConfigJSON
 
-    tsconfig = {
-      extends: extendedConfig.extends,
-      compilerOptions: {
-        ...extendedConfig.compilerOptions,
-        ...tsconfig.compilerOptions
+      tsconfig = {
+        extends: extendedConfig.extends,
+        compilerOptions: {
+          ...extendedConfig.compilerOptions,
+          ...tsconfig.compilerOptions
+        }
       }
+      configPath = extendsPath
     }
-    configPath = extendsPath
   }
 
   tsconfigCache.set(directory, tsconfig)
