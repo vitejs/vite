@@ -14,6 +14,8 @@ import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { combineSourcemaps } from '../utils'
+import { find as findTSConfig, readFile as readTSConfig } from 'tsconfig'
+import { createRequire } from 'module'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -25,6 +27,55 @@ export interface ESBuildOptions extends TransformOptions {
 
 export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
   map: SourceMap
+}
+
+type TSConfigJSON = {
+  extends?: string
+  compilerOptions?: {
+    jsxFactory?: string
+    jsxFragmentFactory?: string
+    useDefineForClassFields?: boolean
+    importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+  }
+  [key: string]: any
+}
+
+const tsconfigCache = new Map<string, TSConfigJSON>()
+async function loadTsconfigJsonForFile(
+  filename: string
+): Promise<TSConfigJSON> {
+  const directory = path.dirname(filename)
+
+  const cached = tsconfigCache.get(directory)
+  if (cached) {
+    return cached
+  }
+
+  let configPath = await findTSConfig(directory)
+  if (!configPath) {
+    tsconfigCache.set(directory, {})
+    return {}
+  }
+
+  let tsconfig = (await readTSConfig(configPath)) as TSConfigJSON
+  while (tsconfig.extends) {
+    const configRequire = createRequire(configPath)
+
+    const extendsPath = configRequire.resolve(tsconfig.extends)
+    const extendedConfig = (await readTSConfig(extendsPath)) as TSConfigJSON
+
+    tsconfig = {
+      extends: extendedConfig.extends,
+      compilerOptions: {
+        ...extendedConfig.compilerOptions,
+        ...tsconfig.compilerOptions
+      }
+    }
+    configPath = extendsPath
+  }
+
+  tsconfigCache.set(directory, tsconfig)
+  return tsconfig
 }
 
 export async function transformWithEsbuild(
@@ -44,11 +95,34 @@ export async function transformWithEsbuild(
     loader = 'js'
   }
 
+  const tsconfigRaw = { compilerOptions: {} }
+  if (loader === 'ts' || loader === 'tsx') {
+    const tsconfigJson = await loadTsconfigJsonForFile(filename)
+
+    // these fields would affect the compilation result
+    // https://esbuild.github.io/content-types/#tsconfig-json
+    for (const field of [
+      'jsxFactory',
+      'jsxFragmentFactory',
+      'useDefineForClassFields',
+      'importsNotUsedAsValues'
+    ]) {
+      if (
+        tsconfigJson.compilerOptions &&
+        field in tsconfigJson.compilerOptions
+      ) {
+        // @ts-ignore
+        tsconfigRaw.compilerOptions[field] = tsconfigJson.compilerOptions[field]
+      }
+    }
+  }
+
   const resolvedOptions = {
     loader: loader as Loader,
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
+    tsconfigRaw,
     ...options
   } as ESBuildOptions
 
