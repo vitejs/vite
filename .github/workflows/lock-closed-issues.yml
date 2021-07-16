@@ -2,7 +2,7 @@ name: Lock Closed Issues
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "*/5 * * * *"
 
 permissions:
   issues: write
