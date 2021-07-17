@@ -40,6 +40,7 @@ type TSConfigJSON = {
   }
   [key: string]: any
 }
+type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
 
 const tsconfigCache = new Map<string, TSConfigJSON>()
 async function loadTsconfigJsonForFile(
@@ -95,34 +96,31 @@ export async function transformWithEsbuild(
     loader = 'js'
   }
 
-  const tsconfigRaw: TSConfigJSON = { compilerOptions: {} }
+  // these fields would affect the compilation result
+  // https://esbuild.github.io/content-types/#tsconfig-json
+  const meaningfulFields: Array<keyof TSCompilerOptions> = [
+    'jsxFactory',
+    'jsxFragmentFactory',
+    'useDefineForClassFields',
+    'importsNotUsedAsValues'
+  ]
+  const compilerOptionsForFile: TSCompilerOptions = {}
   if (loader === 'ts' || loader === 'tsx') {
-    const tsconfigJson = await loadTsconfigJsonForFile(filename)
+    const loadedTsconfig = await loadTsconfigJsonForFile(filename)
+    const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
 
-    // these fields would affect the compilation result
-    // https://esbuild.github.io/content-types/#tsconfig-json
-    for (const field of [
-      'jsxFactory',
-      'jsxFragmentFactory',
-      'useDefineForClassFields',
-      'importsNotUsedAsValues'
-    ]) {
-      if (
-        tsconfigJson.compilerOptions &&
-        field in tsconfigJson.compilerOptions
-      ) {
-        // @ts-ignore
-        tsconfigRaw.compilerOptions[field] = tsconfigJson.compilerOptions[field]
+    for (const field of meaningfulFields) {
+      if (field in loadedCompilerOptions) {
+        // @ts-ignore TypeScript can't tell they are of the same type
+        compilerOptionsForFile[field] = loadedCompilerOptions[field]
       }
     }
 
     // align with TypeScript 4.3
     // https://github.com/microsoft/TypeScript/pull/42663
-    if (
-      tsconfigJson.compilerOptions?.target?.toLocaleLowerCase() === 'esnext'
-    ) {
-      tsconfigRaw.compilerOptions!.useDefineForClassFields =
-        tsconfigJson.compilerOptions?.useDefineForClassFields ?? true
+    if (loadedCompilerOptions.target?.toLocaleLowerCase() === 'esnext') {
+      compilerOptionsForFile.useDefineForClassFields =
+        loadedCompilerOptions.useDefineForClassFields ?? true
     }
   }
 
@@ -131,7 +129,7 @@ export async function transformWithEsbuild(
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
-    tsconfigRaw,
+    tsconfigRaw: { compilerOptions: compilerOptionsForFile },
     ...options
   } as ESBuildOptions
 
