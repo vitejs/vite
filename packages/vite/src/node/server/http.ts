@@ -165,17 +165,17 @@ export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
     port: number
-    strict: boolean | undefined
+    strictPort: boolean | undefined
     host: string | undefined
     logger: Logger
   }
 ): Promise<number> {
   return new Promise((resolve, reject) => {
-    let { port, strict, host, logger } = serverOptions
+    let { port, strictPort, host, logger } = serverOptions
 
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
-        if (strict) {
+        if (strictPort) {
           httpServer.removeListener('error', onError)
           reject(new Error(`Port ${port} is already in use`))
         } else {

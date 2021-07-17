@@ -59,7 +59,7 @@ export async function preview(
 
   const serverPort = await httpServerStart(httpServer, {
     port,
-    strict: !!serverOptions.port,
+    strictPort: options.strictPort,
     host: hostname.host,
     logger
   })
