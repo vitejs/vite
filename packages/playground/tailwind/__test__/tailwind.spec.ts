@@ -1,5 +1,9 @@
 import { isBuild, editFile, untilUpdated, getColor } from '../../testUtils'
 
+test('should render', async () => {
+  expect(await page.textContent('#pagetitle')).toBe('|Page title|')
+})
+
 if (!isBuild) {
   test('regenerate CSS and HMR', async () => {
     browserLogs.length = 0
