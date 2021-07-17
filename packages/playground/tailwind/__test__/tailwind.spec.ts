@@ -1,12 +1,6 @@
 import { isBuild, editFile, untilUpdated, getColor } from '../../testUtils'
 
 if (!isBuild) {
-  //   test('should connect tailwind', async () => {
-  //     expect(browserLogs.length).toBe(2)
-  //     expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
-  //     browserLogs.length = 0
-  //   })
-
   test('regenerate CSS and HMR', async () => {
     browserLogs.length = 0
     const el = await page.$('#pagetitle')
@@ -36,8 +30,6 @@ if (!isBuild) {
       '[vite] css hot updated: /index.css',
       '[vite] hot updated: /src/components/HelloWorld.vue'
     ])
-
-    console.log('logs', browserLogs)
 
     browserLogs.length = 0
   })

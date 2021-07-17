@@ -3,8 +3,6 @@ import Page from './views/Page.vue'
 
 const history = createWebHistory()
 
-// const Page = () => import("./views/Page.vue");
-
 const routeur = createRouter({
   history: history,
   routes: [
