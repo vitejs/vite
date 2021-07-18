@@ -505,3 +505,9 @@ export function resolveHostname(
 
   return { host, name }
 }
+
+export function getLastModified(path: string): number | undefined {
+  try {
+    return fs.statSync(path).mtimeMs
+  } catch {}
+}

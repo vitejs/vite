@@ -23,7 +23,13 @@ import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import { Terser } from 'types/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import {
+  copyDir,
+  emptyDir,
+  getLastModified,
+  lookupFile,
+  normalizePath
+} from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { RollupCommonJSOptions } from 'types/commonjs'
@@ -459,7 +465,13 @@ async function doBuild(
 
     // watch file changes with rollup
     if (config.build.watch) {
-      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
+      const { configFile, configFileLastModified } = config
+      if (
+        configFile &&
+        configFileLastModified !== getLastModified(configFile)
+      ) {
+        return doBuild(inlineConfig)
+      }
 
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
@@ -489,6 +501,7 @@ async function doBuild(
         }
       })
 
+      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
           config.logger.info(chalk.cyanBright(`\nbuild started...`))
@@ -503,8 +516,8 @@ async function doBuild(
         }
       })
 
-      if (config.configFile) {
-        const configWatcher = chokidar.watch(config.configFile, {
+      if (configFile) {
+        const configWatcher = chokidar.watch(configFile, {
           ignoreInitial: true
         })
         type Watcher = RollupWatcher & {

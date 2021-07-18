@@ -10,6 +10,7 @@ import {
 import { CSSOptions } from './plugins/css'
 import {
   createDebugger,
+  getLastModified,
   isExternalUrl,
   isObject,
   lookupFile,
@@ -199,6 +200,7 @@ export type ResolvedConfig = Readonly<
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
+    configFileLastModified: number | undefined
     inlineConfig: InlineConfig
     root: string
     base: string
@@ -234,6 +236,7 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let configFileDependencies: string[] = []
+  let configFileLastModified: number | undefined
   let mode = inlineConfig.mode || defaultMode
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
@@ -260,6 +263,7 @@ export async function resolveConfig(
       config = mergeConfig(loadResult.config, config)
       configFile = loadResult.path
       configFileDependencies = loadResult.dependencies
+      configFileLastModified = loadResult.lastModified
     }
   }
 
@@ -395,6 +399,7 @@ export async function resolveConfig(
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies,
+    configFileLastModified,
     inlineConfig,
     root: resolvedRoot,
     base: BASE_URL,
@@ -686,10 +691,12 @@ export async function loadConfigFromFile(
   path: string
   config: UserConfig
   dependencies: string[]
+  lastModified: number
 } | null> {
   const start = Date.now()
 
   let resolvedPath: string | undefined
+  let lastModified: number | undefined
   let isTS = false
   let isMjs = false
   let dependencies: string[] = []
@@ -705,33 +712,32 @@ export async function loadConfigFromFile(
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
+    lastModified = getLastModified(resolvedPath)
     isTS = configFile.endsWith('.ts')
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
-    if (fs.existsSync(jsconfigFile)) {
-      resolvedPath = jsconfigFile
-    }
+    resolvedPath = path.resolve(configRoot, 'vite.config.js')
+    lastModified = getLastModified(resolvedPath)
 
-    if (!resolvedPath) {
-      const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
-      if (fs.existsSync(mjsconfigFile)) {
-        resolvedPath = mjsconfigFile
+    if (!lastModified) {
+      resolvedPath = path.resolve(configRoot, 'vite.config.mjs')
+      lastModified = getLastModified(resolvedPath)
+      if (lastModified) {
         isMjs = true
       }
     }
 
-    if (!resolvedPath) {
-      const tsconfigFile = path.resolve(configRoot, 'vite.config.ts')
-      if (fs.existsSync(tsconfigFile)) {
-        resolvedPath = tsconfigFile
+    if (!lastModified) {
+      resolvedPath = path.resolve(configRoot, 'vite.config.ts')
+      lastModified = getLastModified(resolvedPath)
+      if (lastModified) {
         isTS = true
       }
     }
   }
 
-  if (!resolvedPath) {
+  if (!lastModified) {
     debug('no config file found.')
     return null
   }
@@ -810,7 +816,8 @@ export async function loadConfigFromFile(
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies
+      dependencies,
+      lastModified
     }
   } catch (e) {
     createLogger(logLevel).error(
