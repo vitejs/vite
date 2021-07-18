@@ -122,7 +122,6 @@ async function prepareProxyRequest(
   req: http.IncomingMessage,
   opts: ProxyOptions
 ) {
-  // req.url = req.originalUrl || req.url
   const newProxyOptions = Object.assign({}, opts)
 
   if (opts.router) {
@@ -140,7 +139,10 @@ async function prepareProxyRequest(
 }
 
 async function getTarget(req: http.IncomingMessage, config: ProxyOptions) {
-  let newTarget
+  let newTarget:
+    | HttpProxy.ProxyTarget
+    | Promise<HttpProxy.ProxyTarget | undefined>
+    | undefined
   const router = config.router
 
   switch (typeof router) {
@@ -159,7 +161,7 @@ function getTargetFromProxyTable(
   req: http.IncomingMessage,
   table: { [hostOrPath: string]: HttpProxy.ServerOptions['target'] }
 ) {
-  let result
+  let result: HttpProxy.ProxyTarget | undefined
   const host = req.headers.host as string
   const path = req.url
 
