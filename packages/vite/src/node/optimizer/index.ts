@@ -335,12 +335,10 @@ function needsInterop(
   // ESM dependency's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
   const flatId = flattenId(id) + '.js'
+  const cachePath = normalizePath(path.join(cacheDirOutputPath, flatId))
   let generatedExports: string[] | undefined
   for (const output in outputs) {
-    if (
-      normalizePath(output) ===
-      normalizePath(path.join(cacheDirOutputPath, flatId))
-    ) {
+    if (normalizePath(path.relative(process.cwd(), output)) === cachePath) {
       generatedExports = outputs[output].exports
       break
     }
