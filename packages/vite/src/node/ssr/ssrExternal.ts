@@ -4,6 +4,7 @@ import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import { isDefined, lookupFile, resolveFrom, unique } from '../utils'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
+
 /**
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
@@ -46,8 +47,8 @@ export function resolveSSRExternal(
     }
     seen.add(id)
 
-    let entry
-    let requireEntry
+    let entry: string | undefined
+    let requireEntry: string
     try {
       entry = tryNodeResolve(
         id,

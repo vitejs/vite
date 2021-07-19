@@ -1142,7 +1142,7 @@ function createViteLessPlugin(
         )
         if (resolved) {
           const result = await rebaseUrls(resolved, this.rootFile, this.alias)
-          let contents
+          let contents: string
           if (result && 'contents' in result) {
             contents = result.contents
           } else {
