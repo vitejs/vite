@@ -203,7 +203,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               )
             )
           )
-
           moduleGraph.updateModuleInfo(
             thisModule,
             depModules,
