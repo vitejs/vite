@@ -2,7 +2,7 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
-import type { Plugin, PluginOption } from 'vite'
+import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -50,14 +50,20 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let isProduction = true
   let skipFastRefresh = opts.fastRefresh === false
   let filter = createFilter(opts.include, opts.exclude)
+  let jsxInject: string | undefined
 
   const userPlugins = opts.babel?.plugins || []
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
 
+  const importReactRegex = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
+
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
+    configResolved(config) {
+      jsxInject = config.esbuild ? config.esbuild.jsxInject : undefined
+    },
     async transform(code, id, ssr) {
       if (/\.[tj]sx?$/.test(id)) {
         const plugins = [...userPlugins]
@@ -135,7 +141,13 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           }
           // Even if the automatic JSX runtime is not used, we can still
           // inject the React import for .jsx and .tsx modules.
-          else if (!isNodeModules && !/(^|\n)import React /.test(code)) {
+          else if (
+            !isNodeModules &&
+            !(
+              importReactRegex.test(code) ||
+              importReactRegex.test(jsxInject ?? '')
+            )
+          ) {
             code = `import React from 'react'; ` + code
           }
         }
