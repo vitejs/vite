@@ -191,7 +191,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (deps) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
-
           const depModules = new Set(
             await Promise.all(
               [...deps].map(async (file) =>
