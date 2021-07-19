@@ -145,7 +145,7 @@ export function esbuildDepPlugin(
         const entryFile = qualified[id]
 
         let relativePath = normalizePath(path.relative(root, entryFile))
-        if (!relativePath.startsWith('./')) {
+        if (!relativePath.startsWith('./') && relativePath !== '.') {
           relativePath = `./${relativePath}`
         }
 
