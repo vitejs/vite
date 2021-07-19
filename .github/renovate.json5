@@ -1,0 +1,26 @@
+{
+  "extends": ["config:base", "schedule:weekly", "group:allNonMajor"],
+  "labels": ["dependencies"],
+  "ignorePaths": [
+    "packages/playground/**",
+    "packages/create-vite/template-*/**",
+    "**/__tests__/**"
+  ],
+  "pin": false,
+  "rangeStrategy": "bump",
+  "node": false,
+  "ignoreDeps": [
+    // manually bumping
+    "esbuild",
+    "rollup",
+    "@vue/compiler-sfc",
+    "node",
+
+    // breaking changes
+    "source-map",
+    "react-refresh",
+
+    // breaks since "3.0.1", needs futher investigate
+    "postcss-load-config"
+  ]
+}

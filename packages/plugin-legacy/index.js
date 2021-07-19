@@ -76,7 +76,9 @@ function viteLegacyPlugin(options = {}) {
       if (!config.build) {
         config.build = {}
       }
-      config.build.polyfillDynamicImport = true
+      if (genLegacy) {
+        config.build.polyfillDynamicImport = true
+      }
     }
   }
 
@@ -97,7 +99,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     async generateBundle(opts, bundle) {
-      if (!isLegacyOutput(opts)) {
+      if (!isLegacyBundle(bundle, opts)) {
         if (!modernPolyfills.size) {
           return
         }
@@ -166,8 +168,9 @@ function viteLegacyPlugin(options = {}) {
       }
 
       /**
-       * @param {string|((chunkInfo: import('rollup').PreRenderedChunk)=>string)} fileNames
+       * @param {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)} fileNames
        * @param {string?} defaultFileName
+       * @returns {(chunkInfo: import('rollup').PreRenderedChunk) => string)}
        */
       const getLegacyOutputFileName = (
         fileNames,
@@ -177,21 +180,20 @@ function viteLegacyPlugin(options = {}) {
           return path.posix.join(config.build.assetsDir, defaultFileName)
         }
 
-        // does not support custom functions.
-        if (typeof fileNames === 'function') {
-          throw new Error(
-            `@vitejs/plugin-legacy rollupOptions.output.entryFileNames and rollupOptions.output.chunkFileNames` +
-              ` does not support the function format.`
-          )
-        }
+        return (chunkInfo) => {
+          let fileName =
+            typeof fileNames === 'function' ? fileNames(chunkInfo) : fileNames
 
-        let fileName = defaultFileName
-        // Custom string file return format.
-        if (fileNames && typeof fileNames === 'string') {
-          fileName = fileNames.replace(/\[name\]/, '[name]-legacy')
-        }
+          if (fileName.includes('[name]')) {
+            // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
+            fileName = fileName.replace('[name]', '[name]-legacy')
+          } else {
+            // entry.js -> entry-legacy.js
+            fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
+          }
 
-        return fileName
+          return fileName
+        }
       }
 
       /**
@@ -217,7 +219,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     renderChunk(raw, chunk, opts) {
-      if (!isLegacyOutput(opts)) {
+      if (!isLegacyChunk(chunk, opts)) {
         if (
           options.modernPolyfills &&
           !Array.isArray(options.modernPolyfills)
@@ -276,7 +278,8 @@ function viteLegacyPlugin(options = {}) {
             () => ({
               plugins: [
                 recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
-                replaceLegacyEnvBabelPlugin()
+                replaceLegacyEnvBabelPlugin(),
+                wrapIIFEBabelPlugin()
               ]
             })
           ],
@@ -302,6 +305,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     transformIndexHtml(html, { chunk }) {
+      if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually
         // emitted. Here we simply record its corresponding legacy chunk.
@@ -395,7 +399,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     generateBundle(opts, bundle) {
-      if (isLegacyOutput(opts)) {
+      if (isLegacyBundle(bundle, opts)) {
         // avoid emitting duplicate assets
         for (const name in bundle) {
           if (bundle[name].type === 'asset') {
@@ -560,14 +564,27 @@ function polyfillsPlugin(imports) {
 }
 
 /**
+ * @param {import('rollup').RenderedChunk} chunk
  * @param {import('rollup').NormalizedOutputOptions} options
  */
-function isLegacyOutput(options) {
-  return (
-    options.format === 'system' &&
-    typeof options.entryFileNames === 'string' &&
-    options.entryFileNames.includes('-legacy')
-  )
+function isLegacyChunk(chunk, options) {
+  return options.format === 'system' && chunk.fileName.includes('-legacy')
+}
+
+/**
+ * @param {import('rollup').OutputBundle} bundle
+ * @param {import('rollup').NormalizedOutputOptions} options
+ */
+function isLegacyBundle(bundle, options) {
+  if (options.format === 'system') {
+    const entryChunk = Object.values(bundle).find(
+      (output) => output.type === 'chunk' && output.isEntry
+    )
+
+    return !!entryChunk && entryChunk.fileName.includes('-legacy')
+  }
+
+  return false
 }
 
 /**
@@ -598,6 +615,22 @@ function replaceLegacyEnvBabelPlugin() {
       }
     }
   })
+}
+
+function wrapIIFEBabelPlugin() {
+  return ({ types: t, template }) => {
+    const buildIIFE = template(';(function(){%%body%%})();')
+
+    return {
+      name: 'vite-wrap-iife',
+      post({ path }) {
+        if (!this.isWrapped) {
+          this.isWrapped = true
+          path.replaceWith(t.program(buildIIFE({ body: path.node.body })))
+        }
+      }
+    }
+  }
 }
 
 module.exports = viteLegacyPlugin

@@ -1,3 +1,153 @@
+## [2.4.2](https://github.com/vitejs/vite/compare/v2.4.1...v2.4.2) (2021-07-12)
+
+
+### Bug Fixes
+
+* __VITE_PRELOAD__ replacement error ([#4163](https://github.com/vitejs/vite/issues/4163)) ([d377aae](https://github.com/vitejs/vite/commit/d377aae05f73779869ba84c91e050fe0a9f50dce)), closes [#3051](https://github.com/vitejs/vite/issues/3051)
+* shutdown process after closing server ([#4082](https://github.com/vitejs/vite/issues/4082)) ([eac779c](https://github.com/vitejs/vite/commit/eac779c3d7c306288b01a35239e9eaaa2273c1a5))
+* **build:** resolve license files correctly ([#4149](https://github.com/vitejs/vite/issues/4149)) ([bf32b41](https://github.com/vitejs/vite/commit/bf32b41bc4ac89e1fd39c27fb22c3bfa0a150152))
+* **utils:** add dot-all flag to match all characters, fix [#3761](https://github.com/vitejs/vite/issues/3761) ([#3780](https://github.com/vitejs/vite/issues/3780)) ([b9cdfbe](https://github.com/vitejs/vite/commit/b9cdfbeedcd74d33c30cab9d38b1a9ca6d1cd8c2))
+
+
+### Features
+
+* cache certificate ([#3642](https://github.com/vitejs/vite/issues/3642)) ([5dd670f](https://github.com/vitejs/vite/commit/5dd670f06dc2b0928771d571ce6ca5164b0db8e9))
+
+
+
+## [2.4.1](https://github.com/vitejs/vite/compare/v2.4.0...v2.4.1) (2021-07-06)
+
+
+### Bug Fixes
+
+* **hmr:** html registered as a PostCSS dependency, fix [#3716](https://github.com/vitejs/vite/issues/3716) ([#4127](https://github.com/vitejs/vite/issues/4127)) ([09c6c94](https://github.com/vitejs/vite/commit/09c6c94690ea3fc8b66bb6781995b3e15faedf8f))
+* specify full filepath to importMeta.d.ts, fix [#4125](https://github.com/vitejs/vite/issues/4125) ([#4138](https://github.com/vitejs/vite/issues/4138)) ([3bc1d78](https://github.com/vitejs/vite/commit/3bc1d78843d970d367e235f6c30fd7996cf7335a))
+
+
+
+# [2.4.0](https://github.com/vitejs/vite/compare/v2.4.0-beta.3...v2.4.0) (2021-07-05)
+
+
+
+# [2.4.0-beta.3](https://github.com/vitejs/vite/compare/v2.4.0-beta.2...v2.4.0-beta.3) (2021-07-02)
+
+
+### Bug Fixes
+
+* **ssr:** Transform named default exports without altering scope ([#4053](https://github.com/vitejs/vite/issues/4053)) ([5211aaf](https://github.com/vitejs/vite/commit/5211aaf9b71022a1153dd3ccdef540fd51be72c0))
+* add `type: "module"` hint to cache directory ([#4063](https://github.com/vitejs/vite/issues/4063)) ([58a29b2](https://github.com/vitejs/vite/commit/58a29b241662f77dbf971967b913f4e75f91fe26))
+* allow preprocessor to be installed outside of the root directory ([#3988](https://github.com/vitejs/vite/issues/3988)) ([a0a80f8](https://github.com/vitejs/vite/commit/a0a80f8e992393f01b4b7377e7dc53059ddf1fe1))
+* Avoid importing in source that __vitePreload has declared (close [#4016](https://github.com/vitejs/vite/issues/4016)) ([#4041](https://github.com/vitejs/vite/issues/4041)) ([bd34203](https://github.com/vitejs/vite/commit/bd34203bc40d6a406dfac3ab6cb41f5dfed63a77))
+* ensure that esbuild uses the same working directory as Vite ([#4001](https://github.com/vitejs/vite/issues/4001)) ([19abafe](https://github.com/vitejs/vite/commit/19abafeedda8008f4cc9eeda4cf8cb46e57de8b9))
+* fix esbuild break when importRe matches multiline import ([#4054](https://github.com/vitejs/vite/issues/4054)) ([eb2e41b](https://github.com/vitejs/vite/commit/eb2e41b098fb3d5f367c1f4fdfcad12f7538ac16))
+* skip redirect and error fallback on middleware mode ([#4057](https://github.com/vitejs/vite/issues/4057)) ([d156a9f](https://github.com/vitejs/vite/commit/d156a9f364dddcfc41338f83e39db38a00a2ceb0))
+* the current main branch code build the vite project error ([#4059](https://github.com/vitejs/vite/issues/4059)) ([4adc970](https://github.com/vitejs/vite/commit/4adc9706874581d2d5048fb48c135154591360cf))
+* use `.mjs` extension for injected client modules ([#4061](https://github.com/vitejs/vite/issues/4061)) ([cca92c4](https://github.com/vitejs/vite/commit/cca92c47d54e0f96b56964f13fbe0b2d050c5ed9))
+* use path type import, fix [#4028](https://github.com/vitejs/vite/issues/4028) ([#4031](https://github.com/vitejs/vite/issues/4031)) ([e092e89](https://github.com/vitejs/vite/commit/e092e899dad28f50aaa004419e9da50cf31db72d))
+
+
+
+# [2.4.0-beta.2](https://github.com/vitejs/vite/compare/v2.4.0-beta.1...v2.4.0-beta.2) (2021-06-29)
+
+
+### Bug Fixes
+
+* revert resolve nested dependencies [#3753](https://github.com/vitejs/vite/issues/3753) ([#4019](https://github.com/vitejs/vite/issues/4019)) ([b6f4293](https://github.com/vitejs/vite/commit/b6f4293435bf90c9a64476d8bfbb022f4f2af9a9)), closes [#4005](https://github.com/vitejs/vite/issues/4005)
+* **commonjs:** `ignoreDynamicRequires` should default to `false` ([#4015](https://github.com/vitejs/vite/issues/4015)) ([c08069c](https://github.com/vitejs/vite/commit/c08069cb3bdf7e7aa16d9cfaef4c1aea3a29cfa2)), closes [/github.com/vitejs/vite/pull/3353#issuecomment-851520683](https://github.com//github.com/vitejs/vite/pull/3353/issues/issuecomment-851520683) [#3426](https://github.com/vitejs/vite/issues/3426) [#3997](https://github.com/vitejs/vite/issues/3997)
+* **css:** skip comma when matching css url ([#4004](https://github.com/vitejs/vite/issues/4004)) ([7d0bc26](https://github.com/vitejs/vite/commit/7d0bc2691f0291c3a9b0df992554f18bf85c8892))
+
+
+
+# [2.4.0-beta.1](https://github.com/vitejs/vite/compare/v2.4.0-beta.0...v2.4.0-beta.1) (2021-06-29)
+
+
+### Bug Fixes
+
+* **hmr:** entry mod's importers contains css mod invalidate hmr ([#3929](https://github.com/vitejs/vite/issues/3929)) ([d97b33a](https://github.com/vitejs/vite/commit/d97b33a8cb9a72ed64244f239900a9a862b6ba68))
+* **types:** correct import of types ([#4003](https://github.com/vitejs/vite/issues/4003)) ([4954636](https://github.com/vitejs/vite/commit/4954636c859fbfce76d02aea7881e59435fa3211))
+
+
+### Features
+
+* allow passing options to rollupjs dynamic import vars plugin ([#3047](https://github.com/vitejs/vite/issues/3047)) ([5507b4c](https://github.com/vitejs/vite/commit/5507b4c912d2e0e36e63488f5db8e9d1bb0a80f6))
+
+
+
+# [2.4.0-beta.0](https://github.com/vitejs/vite/compare/v2.3.8...v2.4.0-beta.0) (2021-06-27)
+
+### BREAKING CHANGES
+
+- **server:** `server.fsServe` renamed to `server.fs` ([#3965](https://github.com/vitejs/vite/pull/3965))
+- **server:** `server.fs.root` deprecated in favor of `server.fs.allow` ([#3968](https://github.com/vitejs/vite/pull/3968))
+
+### Security
+
+We have improved the file serving boundaries detection with ([#3784](https://github.com/vitejs/vite/issues/3784)). While it's still experimental and **disabled by default**, you can opt-in it by
+
+```js
+// vite.config.js
+export default {
+  server: {
+    fs: {
+      strict: true
+    }
+  }
+}
+```
+
+It should smartly serve the files related to your project (directly imported, linked deps, etc.) while denying the rest. If you find any false-negative, please [open an issue](https://github.com/vitejs/vite/issues/new?assignees=&labels=pending+triage&template=bug_report.yml) with reproduction to report.
+
+### Bug Fixes
+
+* **build:** bundle non-inlined workers with rollup ([#2494](https://github.com/vitejs/vite/issues/2494)) ([18a2208](https://github.com/vitejs/vite/commit/18a22089df34c32daddf3b280c58f25cae73f722))
+* resolve nested dependencies ([#3254](https://github.com/vitejs/vite/issues/3254)) ([#3753](https://github.com/vitejs/vite/issues/3753)) ([8467f64](https://github.com/vitejs/vite/commit/8467f64aee218dcb3135bb832ccaed36d647052f))
+* **css:** file or contents missing error in build watch ([#3742](https://github.com/vitejs/vite/issues/3742)) ([#3747](https://github.com/vitejs/vite/issues/3747)) ([26b1b99](https://github.com/vitejs/vite/commit/26b1b9988db1ab980ca816d1914b26d6d3424502))
+* **deps:** update all non-major dependencies ([#3878](https://github.com/vitejs/vite/issues/3878)) ([a66a805](https://github.com/vitejs/vite/commit/a66a8053e9520d20bcf95fce870570c5195bcc91))
+* **scan:** 'for await' support in script setup for dev server ([#3889](https://github.com/vitejs/vite/issues/3889)) ([dd46cd1](https://github.com/vitejs/vite/commit/dd46cd1d030dcfffcbb2f20aff2b388cd18700f4))
+* **scan:** avoid breaking html comment regex inside script of scanned html-like files ([bb095db](https://github.com/vitejs/vite/commit/bb095db11db5c7a12db6dcee866694f1f68d1e15))
+* **ssr:** fix binding overwrite at nested function, fix [#3856](https://github.com/vitejs/vite/issues/3856) ([#3869](https://github.com/vitejs/vite/issues/3869)) ([85f51c1](https://github.com/vitejs/vite/commit/85f51c191d4d3317c5796e6c614ade6f7c21dddf))
+* **ssr:** normalize manifest filenames ([#3706](https://github.com/vitejs/vite/issues/3706)) ([aa8ca3f](https://github.com/vitejs/vite/commit/aa8ca3f35218c9fb48f87d3f6f4681d379ee45ca)), closes [#3303](https://github.com/vitejs/vite/issues/3303)
+* **ssr:** not flatten export * as (fix [#3934](https://github.com/vitejs/vite/issues/3934)) ([#3954](https://github.com/vitejs/vite/issues/3954)) ([7381d27](https://github.com/vitejs/vite/commit/7381d27564045a05cffbe4229d71d64b5a791042))
+* **ssr:** not importing browser exports, fix [#3772](https://github.com/vitejs/vite/issues/3772) ([#3933](https://github.com/vitejs/vite/issues/3933)) ([f623ba3](https://github.com/vitejs/vite/commit/f623ba37dbc517656a7ffb10bc1b3cb221a4bc72))
+* do not end server process in CI ([#3659](https://github.com/vitejs/vite/issues/3659)) ([5999444](https://github.com/vitejs/vite/commit/5999444496b6309460687b0769afad018aa21859))
+* missing styles with build watch ([#3742](https://github.com/vitejs/vite/issues/3742)) ([#3887](https://github.com/vitejs/vite/issues/3887)) ([c9a6efe](https://github.com/vitejs/vite/commit/c9a6efe17108a899e1d1f4cb490973486223da99))
+* multiple css url separation (fix [#3922](https://github.com/vitejs/vite/issues/3922)) ([#3926](https://github.com/vitejs/vite/issues/3926)) ([2d01e62](https://github.com/vitejs/vite/commit/2d01e62a70e534694ee1d87f4a328e796ae4c8fe))
+* only downgrade target to es2019 when actually using terser ([bd8723e](https://github.com/vitejs/vite/commit/bd8723eb36be368b4a45240e1f0159fbd40a81a4))
+
+
+### Features
+
+* add client events to import.meta.hot.on ([#3638](https://github.com/vitejs/vite/issues/3638)) ([de1ddd4](https://github.com/vitejs/vite/commit/de1ddd401802784a74f5106c5173945e760d3f03))
+* fs-serve import graph awareness ([#3784](https://github.com/vitejs/vite/issues/3784)) ([c45a02f](https://github.com/vitejs/vite/commit/c45a02f0279103be922a2d24b8cd05141e0ff165))
+* generate inline sourcemaps for bundled vite.config.js files ([#3949](https://github.com/vitejs/vite/issues/3949)) ([cff2fcd](https://github.com/vitejs/vite/commit/cff2fcd8db98bb1c046816fd2e01dcbffbe86629))
+* support for regex for ssr.noExternal ([#3819](https://github.com/vitejs/vite/issues/3819)) ([330c94c](https://github.com/vitejs/vite/commit/330c94c4355e4f091e6e4f46c6a47dbfba410e40))
+* support new URL(url, import.meta.url) usage ([4cbb40d](https://github.com/vitejs/vite/commit/4cbb40d2f1a4050c9944e7e1d9e0f5b204b7e37b))
+
+
+
+## [2.3.8](https://github.com/vitejs/vite/compare/v2.3.7...v2.3.8) (2021-06-19)
+
+
+### Bug Fixes
+
+* **css:** filter out function name suffixes with url ([#3752](https://github.com/vitejs/vite/issues/3752)) ([9aa255a](https://github.com/vitejs/vite/commit/9aa255a0abcb9f5b23c34607b2188f796f4b6c94))
+* **deps:** update all non-major dependencies ([#3791](https://github.com/vitejs/vite/issues/3791)) ([74d409e](https://github.com/vitejs/vite/commit/74d409eafca8d74ec4a6ece621ea2895bc1f2a32))
+* **hmr:** always invalidate all affected modules ([e048114](https://github.com/vitejs/vite/commit/e048114d3657fc8e2fec645eba3f5f2fe230ceb7))
+* **hmr:** avoid css propagation infinite loop ([7362e6e](https://github.com/vitejs/vite/commit/7362e6e9a7a0f0177b467f1cf80552acf22c46a0))
+* **hmr:** avoid duplicated modules for css dependency ([385ced9](https://github.com/vitejs/vite/commit/385ced9c2e9b5f06e9c06669fe19a0a98cc82c8b))
+* **hmr/css:** check CSS importers for hmr boundaries - fix Tailwind 2.2 compat ([6eaec3a](https://github.com/vitejs/vite/commit/6eaec3ab74d126310d93f8a93f8577bed1c3f474))
+* **hmr/css:** fix infinite recursion on hmr ([#3865](https://github.com/vitejs/vite/issues/3865)) ([0d5726f](https://github.com/vitejs/vite/commit/0d5726fff2fe724ffec3c0621e3dcd6775b0fe8b))
+* ?import with trailing = added by some servers ([#3805](https://github.com/vitejs/vite/issues/3805)) ([460d1cd](https://github.com/vitejs/vite/commit/460d1cda317e4c4d03434f2b3d8de9152620005b))
+* don't replace `process.env` if `process` not global variable ([#3703](https://github.com/vitejs/vite/issues/3703)) ([5aeadb7](https://github.com/vitejs/vite/commit/5aeadb719944152be7ed9f9472aa2238ea3557c0))
+* upgrade esbuild for esm compatibility ([#3718](https://github.com/vitejs/vite/issues/3718)) ([dbb5eab](https://github.com/vitejs/vite/commit/dbb5eabe246747abab187a6c8d90cd418856e048)), closes [#3399](https://github.com/vitejs/vite/issues/3399) [#3413](https://github.com/vitejs/vite/issues/3413)
+
+
+### Features
+
+* allow 'hidden' sourcemap to remove //# sourceMappingURL from generated maps ([#3684](https://github.com/vitejs/vite/issues/3684)) ([19e479b](https://github.com/vitejs/vite/commit/19e479ba0dd1da4d1de075bdf11edabe00af6cb6))
+
+
+
 ## [2.3.7](https://github.com/vitejs/vite/compare/v2.3.6...v2.3.7) (2021-06-08)
 
 

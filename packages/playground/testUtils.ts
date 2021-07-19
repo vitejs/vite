@@ -24,7 +24,7 @@ Object.keys(colors).forEach((color) => {
 
 function componentToHex(c: number): string {
   const hex = c.toString(16)
-  return hex.length == 1 ? '0' + hex : hex
+  return hex.length === 1 ? '0' + hex : hex
 }
 
 function rgbToHex(rgb: string): string {
@@ -66,8 +66,12 @@ export function readFile(filename: string) {
   return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
 }
 
-export function editFile(filename: string, replacer: (str: string) => string) {
-  if (isBuild) return
+export function editFile(
+  filename: string,
+  replacer: (str: string) => string,
+  runInBuild: boolean = false
+): void {
+  if (isBuild && !runInBuild) return
   filename = path.resolve(testDir, filename)
   const content = fs.readFileSync(filename, 'utf-8')
   const modified = replacer(content)
@@ -122,3 +126,8 @@ export async function untilUpdated(
     }
   }
 }
+
+/**
+ * Send the rebuild complete message in build watch
+ */
+export { notifyRebuildComplete } from '../../scripts/jestPerTestSetup'
