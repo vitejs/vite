@@ -82,6 +82,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
+  const insertPreload = !(ssr || !!config.build.lib)
 
   return {
     name: 'vite:import-analysis',
@@ -145,7 +146,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               index,
               config.root,
               undefined,
-              ssr
+              insertPreload
             )
           str().prepend(importsString)
           str().overwrite(expStart, endIndex, exp)
@@ -155,7 +156,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        if (dynamicIndex > -1 && !ssr) {
+        if (dynamicIndex > -1 && insertPreload) {
           needPreloadHelper = true
           const dynamicEnd = source.indexOf(`)`, end) + 1
           const original = source.slice(dynamicIndex, dynamicEnd)
@@ -166,7 +167,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (
         needPreloadHelper &&
-        !ssr &&
+        insertPreload &&
         !source.includes(`const ${preloadMethod} =`)
       ) {
         str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
