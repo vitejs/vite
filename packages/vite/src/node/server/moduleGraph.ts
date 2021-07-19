@@ -179,7 +179,6 @@ export class ModuleGraph {
 
     const mod = new ModuleNode(url)
     mod.file = file
-
     fileMappedModules.add(mod)
     return mod
   }
