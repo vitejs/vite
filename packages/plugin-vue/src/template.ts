@@ -109,7 +109,8 @@ export function resolveTemplateCompilerOptions(
   const { id, filename, cssVars } = descriptor
 
   let transformAssetUrls = options.template?.transformAssetUrls
-  let assetUrlOptions
+  // @vue/compiler-sfc/dist/compiler-sfc.d.ts should export `AssetURLOptions`
+  let assetUrlOptions //: AssetURLOptions | undefined
   if (options.devServer) {
     // during dev, inject vite base so that @vue/compiler-sfc can transform
     // relative paths directly to absolute paths without incurring an extra import

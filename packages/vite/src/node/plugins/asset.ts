@@ -82,8 +82,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk) {
-      let match
-      let s
+      let match: RegExpExecArray | null
+      let s: MagicString | undefined
       while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
         const [full, hash, postfix = ''] = match
@@ -208,7 +208,7 @@ async function fileToBuiltUrl(
   const file = cleanUrl(id)
   const content = await fsp.readFile(file)
 
-  let url
+  let url: string
   if (
     config.build.lib ||
     (!file.endsWith('.svg') &&

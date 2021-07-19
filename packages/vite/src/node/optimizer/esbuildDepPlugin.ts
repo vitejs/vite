@@ -53,7 +53,7 @@ export function esbuildDepPlugin(
     kind: ImportKind,
     resolveDir?: string
   ): Promise<string | undefined> => {
-    let _importer
+    let _importer: string
     // explicit resolveDir - this is passed only during yarn pnp resolve for
     // entries
     if (resolveDir) {
@@ -99,7 +99,7 @@ export function esbuildDepPlugin(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
           // ensure esbuild uses our resolved entries
-          let entry
+          let entry: { path: string; namespace: string } | undefined
           // if this is an entry, return entry namespace resolve result
           if (!importer) {
             if ((entry = resolveEntry(id))) return entry

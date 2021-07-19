@@ -42,7 +42,7 @@ export async function transformImportGlob(
   if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
     throw err(`pattern must start with "." or "/" (relative to project root)`)
   }
-  let base
+  let base: string
   let parentDepth = 0
   const isAbsolute = pattern.startsWith('/')
   if (isAbsolute) {

@@ -46,7 +46,8 @@ import {
   SourceDescription,
   EmittedFile,
   SourceMap,
-  RollupError
+  RollupError,
+  TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
@@ -492,7 +493,7 @@ export async function createPluginContainer(
         ctx._activeId = id
         ctx._activeCode = code
         const start = isDebug ? Date.now() : 0
-        let result
+        let result: TransformResult | string | undefined
         try {
           result = await plugin.transform.call(ctx as any, code, id, ssr)
         } catch (e) {

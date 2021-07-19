@@ -187,7 +187,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         const isModern = String(format === 'es')
         if (config.build.sourcemap) {
           const s = new MagicString(code)
-          let match
+          let match: RegExpExecArray | null
           while ((match = re.exec(code))) {
             s.overwrite(
               match.index,

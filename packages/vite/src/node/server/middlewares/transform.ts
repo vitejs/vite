@@ -87,13 +87,13 @@ export function transformMiddleware(
       return
     }
 
-    let url
+    let url: string
     try {
       url = removeTimestampQuery(req.url!).replace(NULL_BYTE_PLACEHOLDER, '\0')
     } catch (err) {
       // if it starts with %PUBLIC%, someone's migrating from something
       // like create-react-app
-      let errorMessage
+      let errorMessage: string
       if (req.url?.startsWith('/%PUBLIC')) {
         errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
       } else {
