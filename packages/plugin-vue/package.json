@@ -32,7 +32,7 @@
     "@vue/compiler-sfc": "^3.0.8"
   },
   "devDependencies": {
-    "@rollup/pluginutils": "^4.1.0",
+    "@rollup/pluginutils": "^4.1.1",
     "@types/hash-sum": "^1.0.0",
     "@vue/compiler-sfc": "^3.0.8",
     "debug": "^4.3.2",
