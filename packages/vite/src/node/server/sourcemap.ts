@@ -14,7 +14,7 @@ export async function injectSourcesContent(
       map.sourcesContent![i] = await fs.readFile(
         path.resolve(sourceRoot, decodeURI(sourcePath)),
         'utf-8'
-      )
+      ).catch(() => '')
     })
   )
 }
