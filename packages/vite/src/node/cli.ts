@@ -2,11 +2,9 @@ import { cac } from 'cac'
 import chalk from 'chalk'
 import { BuildOptions } from './build'
 import { ServerOptions, ViteDevServer } from './server'
-import { createLogger, LogLevel } from './logger'
+import { createLogger, LogLevel, SHORTCUTS } from './logger'
 import { resolveConfig } from '.'
 import { preview } from './preview'
-import { restartServer } from './server/hmr'
-import { openBrowser, resolveBrowserUrl } from './server/openBrowser'
 
 const cli = cac('vite')
 
@@ -51,36 +49,6 @@ function cleanOptions(options: GlobalCLIOptions) {
   delete ret.clearScreen
   return ret
 }
-
-export interface Shortcut {
-  name: string
-  desc: string
-  action(server: ViteDevServer): void
-}
-
-export const SHORTCUTS: Shortcut[] = [
-  {
-    name: 'r',
-    desc: 'restart',
-    action(server: ViteDevServer): void {
-      restartServer(server)
-    }
-  },
-  {
-    name: 'o',
-    desc: 'open browser',
-    action(server: ViteDevServer): void {
-      openBrowser(resolveBrowserUrl(server), true, server.config.logger)
-    }
-  },
-  {
-    name: 'f',
-    desc: 'force restart',
-    action(server: ViteDevServer): void {
-      restartServer(server, true)
-    }
-  }
-]
 
 function bindShortcut(server: ViteDevServer) {
   process.stdin.resume()

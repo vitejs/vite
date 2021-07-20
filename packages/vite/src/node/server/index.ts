@@ -53,11 +53,10 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
-import { printServerUrls } from '../logger'
+import { printServerUrls, SHORTCUTS } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
-import { SHORTCUTS } from '../cli'
 
 export interface ServerOptions {
   host?: string | boolean
