@@ -211,7 +211,8 @@ cli
             logLevel: options.logLevel,
             server: {
               open: options.open,
-              strictPort: options.strictPort
+              strictPort: options.strictPort,
+              https: options.https
             }
           },
           'serve',
@@ -222,7 +223,6 @@ cli
           cleanOptions(options) as {
             host?: string
             port?: number
-            https?: boolean
           }
         )
       } catch (e) {
