@@ -14,7 +14,7 @@ export async function injectSourcesContent(
       map.sourcesContent![i] = await fs.readFile(
         path.resolve(sourceRoot, decodeURI(sourcePath)),
         'utf-8'
-      ).catch(() => '')
+      ).catch(() => '/* Vite fails to read source because it is missing or a virtual module.*/')
     })
   )
 }
