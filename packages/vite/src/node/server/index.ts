@@ -10,12 +10,9 @@ import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
 import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
+import { createPluginContainer, PluginContainer } from './pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
-import { createWebSocketServer, WebSocketServer } from '../server/ws'
+import { createWebSocketServer, WebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
