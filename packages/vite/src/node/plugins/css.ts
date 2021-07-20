@@ -41,6 +41,7 @@ import type Sass from 'sass'
 import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
 import type Less from 'less'
 import { Alias } from 'types/alias'
+import type { ModuleNode } from '../server/moduleGraph'
 
 // const debug = createDebugger('vite:css')
 
@@ -191,9 +192,16 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (deps) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
-          const depModules = new Set(
-            [...deps].map((file) => moduleGraph.createFileOnlyEntry(file))
-          )
+          const depModules = new Set<string | ModuleNode>()
+          for (const file of deps) {
+            depModules.add(
+              cssLangRE.test(file)
+                ? moduleGraph.createFileOnlyEntry(file)
+                : await moduleGraph.ensureEntryFromUrl(
+                    await fileToUrl(file, config, this)
+                  )
+            )
+          }
           moduleGraph.updateModuleInfo(
             thisModule,
             depModules,
