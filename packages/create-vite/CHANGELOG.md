@@ -1,3 +1,12 @@
+## [2.5.2](https://github.com/vitejs/vite/compare/create-vite@2.5.1...create-vite@2.5.2) (2021-07-20)
+
+
+### Bug Fixes
+
+* create-vite when targetDir is a valid packageName ([#4247](https://github.com/vitejs/vite/issues/4247)) ([02e244d](https://github.com/vitejs/vite/commit/02e244dce128e7ea054034f68a0e28edabec28a0))
+
+
+
 ## [2.5.1](https://github.com/vitejs/vite/compare/create-vite@2.5.0...create-vite@2.5.1) (2021-07-12)
 
 
