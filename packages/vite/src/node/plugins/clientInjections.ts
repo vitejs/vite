@@ -2,7 +2,7 @@ import path from 'path'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { normalizePath } from '../utils'
+import { normalizePath, isObject } from '../utils'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -25,7 +25,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const overlay = options.overlay !== false
         let port: number | string | undefined
         if (config.server.middlewareMode) {
-          if (typeof config.server.hmr === 'object') {
+          if (isObject(config.server.hmr)) {
             port = config.server.hmr.clientPort || config.server.hmr.port
           }
           port = String(port || 24678)
