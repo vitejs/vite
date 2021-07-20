@@ -610,7 +610,12 @@ async function startServer(
   )
 
   printServerUrls(hostname, protocol, serverPort, base, info)
-
+  // print shortcuts info
+  info(
+    `  > Shortcuts: ${SHORTCUTS.map(
+      (item) => `"${item.name}" ${item.desc}`
+    ).join(', ')}`
+  )
   // @ts-ignore
   if (global.__vite_start_time) {
     info(
