@@ -1,5 +1,5 @@
 import * as http from 'http'
-import { createDebugger } from '../../utils'
+import { createDebugger, isObject } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
 import { Connect } from 'types/connect'
@@ -94,7 +94,7 @@ export function proxyMiddleware(
             req.url = bypassResult
             debug(`bypass: ${req.url} -> ${bypassResult}`)
             return next()
-          } else if (typeof bypassResult === 'object') {
+          } else if (isObject(bypassResult)) {
             Object.assign(options, bypassResult)
             debug(`bypass: ${req.url} use modified options: %O`, options)
             return next()

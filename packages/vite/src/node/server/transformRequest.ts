@@ -11,7 +11,8 @@ import {
   prettifyUrl,
   removeTimestampQuery,
   timeFrom,
-  ensureWatchedFile
+  ensureWatchedFile,
+  isObject
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
@@ -101,7 +102,7 @@ export async function transformRequest(
     }
   } else {
     isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
-    if (typeof loadResult === 'object') {
+    if (isObject(loadResult)) {
       code = loadResult.code
       map = loadResult.map
     } else {
@@ -130,7 +131,7 @@ export async function transformRequest(
   const transformResult = await pluginContainer.transform(code, id, map, ssr)
   if (
     transformResult == null ||
-    (typeof transformResult === 'object' && transformResult.code == null)
+    (isObject(transformResult) && transformResult.code == null)
   ) {
     // no transform applied, keep code as-is
     isDebug &&
