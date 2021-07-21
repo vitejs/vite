@@ -160,9 +160,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const resolved = await resolveUrl(url, importer)
         if (resolved) {
           if (config?.css?.publicPath) {
-            return (
-              config.css.publicPath + path.posix.relative(config.root, resolved)
-            )
+            return [
+              config.css.publicPath,
+              path.posix.relative(config.root, resolved)
+            ].join('')
           }
           return fileToUrl(resolved, config, this)
         }

@@ -257,7 +257,7 @@ export default async ({ command, mode }) => {
 
 - **Type:** `string`
 
-  The option lets users can customize url prefixes. Example:
+  This option allows the user to customize the URL prefix. Example:
 
   ```js
   export default {
