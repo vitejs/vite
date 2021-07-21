@@ -1,32 +1,51 @@
-import { promises as fs } from 'fs'
 import path from 'path'
+import { promises as fs } from 'fs'
+import { Logger } from '../logger'
+import { createDebugger } from '../utils'
+
+const isDebug = !!process.env.DEBUG
+const debug = createDebugger('vite:sourcemap', {
+  onlyWhenFocused: true
+})
+
+interface SourceMapLike {
+  sources: string[]
+  sourcesContent?: (string | null)[]
+  sourceRoot?: string
+}
 
 export async function injectSourcesContent(
-  map: { sources: string[]; sourcesContent?: string[]; sourceRoot?: string },
-  file: string
+  map: SourceMapLike,
+  file: string,
+  logger: Logger
 ): Promise<void> {
+  let sourceRoot: string | undefined
   try {
-    var sourceRoot = await fs.realpath(
+    // The source root is undefined for virtual modules and permission errors.
+    sourceRoot = await fs.realpath(
       path.resolve(path.dirname(file), map.sourceRoot || '')
     )
-  } catch (e) {
-    if (e.code !== 'ENOENT') throw e
-    var isVirtual = true
-  }
-  map.sourcesContent = []
-  await Promise.all(
-    map.sources.filter(Boolean).map(async (sourcePath, i) => {
+  } catch {}
+
+  const missingSources: string[] = []
+  map.sourcesContent = await Promise.all(
+    map.sources.filter(Boolean).map((sourcePath) => {
       sourcePath = decodeURI(sourcePath)
-      if (!isVirtual) {
+      if (sourceRoot) {
         sourcePath = path.resolve(sourceRoot, sourcePath)
       }
-      try {
-        map.sourcesContent![i] = await fs.readFile(sourcePath, 'utf-8')
-      } catch (e) {
-        throw new Error(
-          `Sourcemap for "${file}" has a non-existent source: "${sourcePath}"`
-        )
-      }
+      return fs.readFile(sourcePath, 'utf-8').catch(() => {
+        missingSources.push(sourcePath)
+        return null
+      })
     })
   )
+
+  // Use this command…
+  //    DEBUG="vite:sourcemap" vite build
+  // …to log the missing sources.
+  if (missingSources.length) {
+    logger.warnOnce(`Sourcemap for "${file}" points to missing source files`)
+    isDebug && debug(`Missing sources:\n  ` + missingSources.join(`\n  `))
+  }
 }
