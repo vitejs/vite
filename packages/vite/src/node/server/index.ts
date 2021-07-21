@@ -8,14 +8,11 @@ import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import { resolveHttpsConfig, resolveHttpServer } from './http'
+import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
+import { createPluginContainer, PluginContainer } from './pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
-import { createWebSocketServer, WebSocketServer } from '../server/ws'
+import { createWebSocketServer, WebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
@@ -33,7 +30,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, ensureLeadingSlash, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -48,11 +45,15 @@ import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
-import { ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
+import {
+  rebindErrorStacktrace,
+  ssrRewriteStacktrace
+} from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { CLIENT_DIR } from '../constants'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -125,32 +126,34 @@ export interface ServerOptions {
   /**
    * Options for files served via '/\@fs/'.
    */
-  fsServe?: FileSystemServeOptions
+  fs?: FileSystemServeOptions
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
-  fsServe: Required<FileSystemServeOptions>
+  fs: Required<FileSystemServeOptions>
 }
 
 export interface FileSystemServeOptions {
   /**
    * Strictly restrict file accessing outside of allowing paths.
    *
+   * Set to `false` to disable the warning
    * Default to false at this moment, will enabled by default in the future versions.
+   *
    * @expiremental
-   * @default false
+   * @default undefined
    */
-  strict?: boolean
+  strict?: boolean | undefined
 
   /**
-   * Restrict accessing files outside this directory will result in a 403.
+   * Restrict accessing files outside the allowed directories.
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
    *
    * @expiremental
    */
-  root?: string
+  allow?: string[]
 }
 
 /**
@@ -287,7 +290,9 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _registerMissingImport: ((id: string, resolved: string) => void) | null
+  _registerMissingImport:
+    | ((id: string, resolved: string, ssr: boolean | undefined) => void)
+    | null
   /**
    * @internal
    */
@@ -361,7 +366,8 @@ export async function createServer(
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
-        e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
+        const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+        rebindErrorStacktrace(e, stacktrace)
       }
     },
     listen(port?: number, isRestart?: boolean) {
@@ -370,7 +376,7 @@ export async function createServer(
     async close() {
       process.off('SIGTERM', exitProcess)
 
-      if (!process.stdin.isTTY) {
+      if (!middlewareMode && process.env.CI !== 'true') {
         process.stdin.off('end', exitProcess)
       }
 
@@ -401,7 +407,7 @@ export async function createServer(
 
   process.once('SIGTERM', exitProcess)
 
-  if (!process.stdin.isTTY) {
+  if (!middlewareMode && process.env.CI !== 'true') {
     process.stdin.on('end', exitProcess)
   }
 
@@ -484,7 +490,7 @@ export async function createServer(
   middlewares.use(transformMiddleware(server))
 
   // serve static files
-  middlewares.use(serveRawFsMiddleware(config))
+  middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
@@ -578,85 +584,67 @@ async function startServer(
   }
 
   const options = server.config.server
-  let port = inlinePort || options.port || 3000
+  const port = inlinePort || options.port || 3000
   const hostname = resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
   const base = server.config.base
 
-  return new Promise((resolve, reject) => {
-    const onError = (e: Error & { code?: string }) => {
-      if (e.code === 'EADDRINUSE') {
-        if (options.strictPort) {
-          httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
-        } else {
-          info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, hostname.host)
-        }
-      } else {
-        httpServer.removeListener('error', onError)
-        reject(e)
-      }
-    }
-
-    httpServer.on('error', onError)
-
-    httpServer.listen(port, hostname.host, () => {
-      httpServer.removeListener('error', onError)
-
-      info(
-        chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-          chalk.green(` dev server running at:\n`),
-        {
-          clear: !server.config.logger.hasWarned
-        }
-      )
-
-      printServerUrls(hostname, protocol, port, base, info)
-
-      // @ts-ignore
-      if (global.__vite_start_time) {
-        info(
-          chalk.cyan(
-            // @ts-ignore
-            `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
-          )
-        )
-      }
-
-      // @ts-ignore
-      const profileSession = global.__vite_profile_session
-      if (profileSession) {
-        profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
-          // Write profile to disk, upload, etc.
-          if (!err) {
-            const outPath = path.resolve('./vite-profile.cpuprofile')
-            fs.writeFileSync(outPath, JSON.stringify(profile))
-            info(
-              chalk.yellow(
-                `  CPU profile written to ${chalk.white.dim(outPath)}\n`
-              )
-            )
-          } else {
-            throw err
-          }
-        })
-      }
-
-      if (options.open && !isRestart) {
-        const path = typeof options.open === 'string' ? options.open : base
-        openBrowser(
-          `${protocol}://${hostname.name}:${port}${path}`,
-          true,
-          server.config.logger
-        )
-      }
-
-      resolve(server)
-    })
+  const serverPort = await httpServerStart(httpServer, {
+    port,
+    strictPort: options.strictPort,
+    host: hostname.host,
+    logger: server.config.logger
   })
+
+  info(
+    chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+      chalk.green(` dev server running at:\n`),
+    {
+      clear: !server.config.logger.hasWarned
+    }
+  )
+
+  printServerUrls(hostname, protocol, serverPort, base, info)
+
+  // @ts-ignore
+  if (global.__vite_start_time) {
+    info(
+      chalk.cyan(
+        // @ts-ignore
+        `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
+      )
+    )
+  }
+
+  // @ts-ignore
+  const profileSession = global.__vite_profile_session
+  if (profileSession) {
+    profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
+      // Write profile to disk, upload, etc.
+      if (!err) {
+        const outPath = path.resolve('./vite-profile.cpuprofile')
+        fs.writeFileSync(outPath, JSON.stringify(profile))
+        info(
+          chalk.yellow(`  CPU profile written to ${chalk.white.dim(outPath)}\n`)
+        )
+      } else {
+        throw err
+      }
+    })
+  }
+
+  if (options.open && !isRestart) {
+    const path = typeof options.open === 'string' ? options.open : base
+    openBrowser(
+      `${protocol}://${hostname.name}:${serverPort}${path}`,
+      true,
+      server.config.logger
+    )
+  }
+
+  return server
 }
 
 function createServerCloseFn(server: http.Server | null) {
@@ -695,19 +683,33 @@ function createServerCloseFn(server: http.Server | null) {
     })
 }
 
+function resolvedAllowDir(root: string, dir: string): string {
+  return ensureLeadingSlash(normalizePath(path.resolve(root, dir)))
+}
+
 export function resolveServerOptions(
   root: string,
   raw?: ServerOptions
 ): ResolvedServerOptions {
   const server = raw || {}
-  const fsServeRoot = normalizePath(
-    path.resolve(root, server.fsServe?.root || searchForWorkspaceRoot(root))
-  )
-  // TODO: make strict by default
-  const fsServeStrict = server.fsServe?.strict ?? false
-  server.fsServe = {
-    root: fsServeRoot,
-    strict: fsServeStrict
+  let allowDirs = server.fs?.allow
+
+  if (!allowDirs) {
+    allowDirs = [searchForWorkspaceRoot(root)]
+  }
+
+  allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
+
+  // only push client dir when vite itself is outside-of-root
+  const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
+  if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
+    allowDirs.push(resolvedClientDir)
+  }
+
+  server.fs = {
+    // TODO: make strict by default
+    strict: server.fs?.strict,
+    allow: allowDirs
   }
   return server as ResolvedServerOptions
 }

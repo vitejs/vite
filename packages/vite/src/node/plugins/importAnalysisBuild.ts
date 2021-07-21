@@ -15,9 +15,10 @@ import { transformImportGlob } from '../importGlob'
 export const isModernFlag = `__VITE_IS_MODERN__`
 export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
+export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadCode = `let scriptRel;const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+const preloadCode = `let scriptRel;const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
 const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
 
 /**
@@ -26,7 +27,7 @@ const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
  */
 function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   // @ts-ignore
-  if (!__VITE_IS_MODERN__ || !deps) {
+  if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
   }
 
@@ -43,6 +44,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 
   return Promise.all(
     deps.map((dep) => {
+      // @ts-ignore
+      dep = `${base}${dep}`
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -79,6 +82,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
+  const insertPreload = !(ssr || !!config.build.lib)
 
   return {
     name: 'vite:import-analysis',
@@ -91,7 +95,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadCode
+        return preloadCode.replace(preloadBaseMarker, config.base)
       }
     },
 
@@ -142,7 +146,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               index,
               config.root,
               undefined,
-              ssr
+              insertPreload
             )
           str().prepend(importsString)
           str().overwrite(expStart, endIndex, exp)
@@ -152,7 +156,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        if (dynamicIndex > -1 && !ssr) {
+        if (dynamicIndex > -1 && insertPreload) {
           needPreloadHelper = true
           const dynamicEnd = source.indexOf(`)`, end) + 1
           const original = source.slice(dynamicIndex, dynamicEnd)
@@ -161,7 +165,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (needPreloadHelper && !ssr) {
+      if (
+        needPreloadHelper &&
+        insertPreload &&
+        !source.includes(`const ${preloadMethod} =`)
+      ) {
         str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
       }
 
@@ -180,7 +188,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         const isModern = String(format === 'es')
         if (config.build.sourcemap) {
           const s = new MagicString(code)
-          let match
+          let match: RegExpExecArray | null
           while ((match = re.exec(code))) {
             s.overwrite(
               match.index,
@@ -241,11 +249,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    deps.add(config.base + chunk.fileName)
+                    deps.add(chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                     if (cssFiles) {
                       cssFiles.forEach((file) => {
-                        deps.add(config.base + file)
+                        deps.add(file)
                       })
                     }
                     chunk.imports.forEach(addDeps)
@@ -258,7 +266,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              const markPos = code.indexOf(preloadMarker, end)
+              let markPos = code.indexOf(preloadMarker, end)
+              // fix issue #3051
+              if (markPos === -1 && imports.length === 1) {
+                markPos = code.indexOf(preloadMarker)
+              }
+
               if (markPos > 0) {
                 s.overwrite(
                   markPos - 1,
@@ -267,7 +280,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // preload when there are actual other deps.
                   deps.size > 1
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                    : `void 0`
+                    : `[]`
                 )
               }
             }

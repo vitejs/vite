@@ -7,7 +7,8 @@ import {
   getPrevDescriptor,
   setDescriptor
 } from './utils/descriptorCache'
-import { PluginContext, TransformPluginContext } from 'rollup'
+import { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
+import { normalizePath } from '@rollup/pluginutils'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
@@ -62,7 +63,7 @@ export async function transformMain(
   const hasTemplateImport = descriptor.template && !useInlineTemplate
 
   let templateCode = ''
-  let templateMap
+  let templateMap: RawSourceMap | undefined
   if (hasTemplateImport) {
     ;({ code: templateCode, map: templateMap } = await genTemplateCode(
       descriptor,
@@ -143,13 +144,16 @@ export async function transformMain(
 
   // SSR module registration by wrapping user setup
   if (ssr) {
+    const normalizedFilename = normalizePath(
+      path.relative(options.root, filename)
+    )
     output.push(
       `import { useSSRContext as __vite_useSSRContext } from 'vue'`,
       `const _sfc_setup = _sfc_main.setup`,
       `_sfc_main.setup = (props, ctx) => {`,
       `  const ssrContext = __vite_useSSRContext()`,
       `  ;(ssrContext.modules || (ssrContext.modules = new Set())).add(${JSON.stringify(
-        filename
+        normalizedFilename
       )})`,
       `  return _sfc_setup ? _sfc_setup(props, ctx) : undefined`,
       `}`
@@ -235,7 +239,8 @@ async function genScriptCode(
   map: RawSourceMap
 }> {
   let scriptCode = `const _sfc_main = {}`
-  let map
+  let map: RawSourceMap | SourceMap | undefined
+
   const script = resolveScript(descriptor, options, ssr)
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
