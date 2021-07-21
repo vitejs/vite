@@ -7,7 +7,7 @@ import {
   getPrevDescriptor,
   setDescriptor
 } from './utils/descriptorCache'
-import { PluginContext, TransformPluginContext } from 'rollup'
+import { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
 import { normalizePath } from '@rollup/pluginutils'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
@@ -63,7 +63,7 @@ export async function transformMain(
   const hasTemplateImport = descriptor.template && !useInlineTemplate
 
   let templateCode = ''
-  let templateMap
+  let templateMap: RawSourceMap | undefined
   if (hasTemplateImport) {
     ;({ code: templateCode, map: templateMap } = await genTemplateCode(
       descriptor,
@@ -239,7 +239,8 @@ async function genScriptCode(
   map: RawSourceMap
 }> {
   let scriptCode = `const _sfc_main = {}`
-  let map
+  let map: RawSourceMap | SourceMap | undefined
+
   const script = resolveScript(descriptor, options, ssr)
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed

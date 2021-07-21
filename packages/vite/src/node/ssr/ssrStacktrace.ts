@@ -56,3 +56,20 @@ export function ssrRewriteStacktrace(
     })
     .join('\n')
 }
+
+export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
+  const { configurable, writable } = Object.getOwnPropertyDescriptor(
+    e,
+    'stack'
+  )!
+  if (configurable) {
+    Object.defineProperty(e, 'stack', {
+      value: stacktrace,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    })
+  } else if (writable) {
+    e.stack = stacktrace
+  }
+}

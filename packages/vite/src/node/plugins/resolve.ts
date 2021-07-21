@@ -105,7 +105,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       const options = isRequire ? requireOptions : baseOptions
 
-      let res
+      let res: string | PartialResolvedId | undefined
 
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
@@ -371,7 +371,7 @@ export function tryNodeResolve(
   const deepMatch = id.match(deepImportRE)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
 
-  let basedir
+  let basedir: string
   if (dedupe && dedupe.includes(pkgId)) {
     basedir = root
   } else if (
@@ -501,7 +501,7 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
   const pkgDir = path.dirname(pkgPath)
   const { sideEffects } = data
-  let hasSideEffects
+  let hasSideEffects: (id: string) => boolean
   if (typeof sideEffects === 'boolean') {
     hasSideEffects = () => sideEffects
   } else if (Array.isArray(sideEffects)) {

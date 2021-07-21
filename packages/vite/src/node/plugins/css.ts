@@ -41,6 +41,7 @@ import type Sass from 'sass'
 import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
 import type Less from 'less'
 import { Alias } from 'types/alias'
+import type { ModuleNode } from '../server/moduleGraph'
 
 // const debug = createDebugger('vite:css')
 
@@ -81,7 +82,7 @@ export interface CSSModulesOptions {
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
-const cssLangRE = new RegExp(cssLangs)
+export const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const commonjsProxyRE = /\?commonjs-proxy/
@@ -112,6 +113,11 @@ const cssModulesCache = new WeakMap<
 export const chunkToEmittedCssFileMap = new WeakMap<
   RenderedChunk,
   Set<string>
+>()
+
+const postcssConfigCache = new WeakMap<
+  ResolvedConfig,
+  PostCSSConfigResult | null
 >()
 
 /**
@@ -191,9 +197,16 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (deps) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
-          const depModules = new Set(
-            [...deps].map((file) => moduleGraph.createFileOnlyEntry(file))
-          )
+          const depModules = new Set<string | ModuleNode>()
+          for (const file of deps) {
+            depModules.add(
+              cssLangRE.test(file)
+                ? moduleGraph.createFileOnlyEntry(file)
+                : await moduleGraph.ensureEntryFromUrl(
+                    await fileToUrl(file, config, this)
+                  )
+            )
+          }
           moduleGraph.updateModuleInfo(
             thisModule,
             depModules,
@@ -721,37 +734,40 @@ interface PostCSSConfigResult {
   plugins: Postcss.Plugin[]
 }
 
-let cachedPostcssConfig: PostCSSConfigResult | null | undefined
-
 async function resolvePostcssConfig(
   config: ResolvedConfig
 ): Promise<PostCSSConfigResult | null> {
-  if (cachedPostcssConfig !== undefined) {
-    return cachedPostcssConfig
+  let result = postcssConfigCache.get(config)
+  if (result !== undefined) {
+    return result
   }
 
   // inline postcss config via vite config
   const inlineOptions = config.css?.postcss
   if (isObject(inlineOptions)) {
-    const result = {
-      options: { ...inlineOptions },
+    const options = { ...inlineOptions }
+
+    delete options.plugins
+    result = {
+      options,
       plugins: inlineOptions.plugins || []
     }
-    delete result.options.plugins
-    return (cachedPostcssConfig = result)
+  } else {
+    try {
+      const searchPath =
+        typeof inlineOptions === 'string' ? inlineOptions : config.root
+      // @ts-ignore
+      result = await postcssrc({}, searchPath)
+    } catch (e) {
+      if (!/No PostCSS Config found/.test(e.message)) {
+        throw e
+      }
+      result = null
+    }
   }
 
-  try {
-    const searchPath =
-      typeof inlineOptions === 'string' ? inlineOptions : config.root
-    // @ts-ignore
-    return (cachedPostcssConfig = await postcssrc({}, searchPath))
-  } catch (e) {
-    if (!/No PostCSS Config found/.test(e.message)) {
-      throw e
-    }
-    return (cachedPostcssConfig = null)
-  }
+  postcssConfigCache.set(config, result)
+  return result
 }
 
 type CssUrlReplacer = (
@@ -942,7 +958,10 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
     return loadedPreprocessors[lang]
   }
   try {
-    const resolved = require.resolve(lang, { paths: [root] })
+    // Search for the preprocessor in the root directory first, and fall back
+    // to the default require paths.
+    const fallbackPaths = require.resolve.paths(lang) || []
+    const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
     throw new Error(
@@ -1139,7 +1158,7 @@ function createViteLessPlugin(
         )
         if (resolved) {
           const result = await rebaseUrls(resolved, this.rootFile, this.alias)
-          let contents
+          let contents: string
           if (result && 'contents' in result) {
             contents = result.contents
           } else {
