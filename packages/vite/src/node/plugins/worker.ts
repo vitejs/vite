@@ -8,7 +8,7 @@ import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 
-function parseWorkerRequest(id: string): Record<string,string> | null {
+function parseWorkerRequest(id: string): Record<string, string> | null {
   const { search } = parseUrl(id)
   if (!search) {
     return null
