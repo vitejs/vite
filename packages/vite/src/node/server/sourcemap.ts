@@ -29,15 +29,18 @@ export async function injectSourcesContent(
 
   const missingSources: string[] = []
   map.sourcesContent = await Promise.all(
-    map.sources.filter(Boolean).map((sourcePath) => {
-      sourcePath = decodeURI(sourcePath)
-      if (sourceRoot) {
-        sourcePath = path.resolve(sourceRoot, sourcePath)
+    map.sources.map((sourcePath) => {
+      if (sourcePath) {
+        sourcePath = decodeURI(sourcePath)
+        if (sourceRoot) {
+          sourcePath = path.resolve(sourceRoot, sourcePath)
+        }
+        return fs.readFile(sourcePath, 'utf-8').catch(() => {
+          missingSources.push(sourcePath)
+          return null
+        })
       }
-      return fs.readFile(sourcePath, 'utf-8').catch(() => {
-        missingSources.push(sourcePath)
-        return null
-      })
+      return null
     })
   )
 
