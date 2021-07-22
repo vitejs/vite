@@ -352,7 +352,7 @@ export async function createServer(
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
-    transformIndexHtml: null as any,
+    transformIndexHtml: null!, // to be immediately set
     ssrLoadModule(url) {
       if (!server._ssrExternals) {
         server._ssrExternals = resolveSSRExternal(

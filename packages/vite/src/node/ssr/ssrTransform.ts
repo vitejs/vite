@@ -146,9 +146,9 @@ export async function ssrTransform(
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      if ((node as any).exported) {
+      if (node.exported) {
         const importId = defineImport(node, node.source.value as string)
-        defineExport((node as any).exported.name, `${importId}`)
+        defineExport(node.exported.name, `${importId}`)
         s.remove(node.start, node.end)
       } else {
         const importId = defineImport(node, node.source.value as string)
