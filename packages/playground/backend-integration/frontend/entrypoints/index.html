@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<link rel="stylesheet" href="/global.css" />
+
+<h1>Backend Integration</h1>
+
+<p>
+  This test configures the <code>root</code> to simulate a Laravel/Rails setup.
+</p>
+
+<h2>JS Asset References</h2>
+
+<ul>
+  <li class="asset-reference outside-root">Asset Outside Root</li>
+</ul>
+
+<h2>CSS Asset References</h2>
+
+<ul>
+  <li>
+    Background URL with Alias:
+    <div class="background-asset outside-root--aliased"></div>
+  </li>
+  <li>
+    Background URL with Relative Path:
+    <div class="background-asset outside-root--relative"></div>
+  </li>
+</ul>
+
+<script type="module">
+  import './global.css'
+
+  // Importing a file outside the `root` should provide an @fs path.
+  import outsideRootUrl from '~/images/logo.png'
+  setAssetReference('.outside-root', outsideRootUrl)
+
+  // Helper: Allows to test the URL content as well as the request being served.
+  function setAssetReference(elSelector, url) {
+    const text = document.createElement('code')
+    text.classList.add('asset-url')
+    text.textContent = url
+
+    const img = document.createElement('img')
+    img.classList.add('asset-preview')
+    img.src = url
+
+    const el = document.querySelector(`.asset-reference${elSelector}`)
+    el.appendChild(img)
+    el.appendChild(text)
+  }
+</script>

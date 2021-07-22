@@ -1,0 +1,32 @@
+<h2>direct dependency A</h2>
+<pre class="a"></pre>
+
+<h2>direct dependency B</h2>
+<pre class="b"></pre>
+
+<h2>nested dependency A</h2>
+<pre class="nested-a"></pre>
+
+<h2>direct dependency C</h2>
+<pre class="c"></pre>
+
+<h2>side dependency C</h2>
+<pre class="side-c"></pre>
+
+<script type="module">
+  import A from 'test-package-a'
+  import B, { A as nestedA } from 'test-package-b'
+  import C from 'test-package-c'
+  import { C as sideC } from 'test-package-c/side'
+
+  text('.a', A)
+  text('.b', B)
+  text('.nested-a', nestedA)
+
+  text('.c', C)
+  text('.side-c', sideC)
+
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
+</script>

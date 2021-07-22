@@ -8,7 +8,7 @@ export function terserPlugin(options: Terser.MinifyOptions): Plugin {
       // when vite is linked, the worker thread won't share the same resolve
       // root with vite itself, so we have to pass in the basedir and resolve
       // terser first.
-      // eslint-disable-next-line
+      // eslint-disable-next-line node/no-restricted-require
       const terserPath = require.resolve('terser', {
         paths: [basedir]
       })
@@ -21,11 +21,11 @@ export function terserPlugin(options: Terser.MinifyOptions): Plugin {
 
     async renderChunk(code, _chunk, outputOptions) {
       const res = await worker.run(__dirname, code, {
+        safari10: true,
         ...options,
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
-        toplevel: outputOptions.format === 'cjs',
-        safari10: true
+        toplevel: outputOptions.format === 'cjs'
       })
       return {
         code: res.code!,

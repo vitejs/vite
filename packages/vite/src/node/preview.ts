@@ -1,4 +1,3 @@
-import os from 'os'
 import path from 'path'
 import sirv from 'sirv'
 import chalk from 'chalk'
@@ -6,14 +5,27 @@ import connect from 'connect'
 import compression from 'compression'
 import { ResolvedConfig } from '.'
 import { Connect } from 'types/connect'
-import { resolveHttpServer } from './server/http'
+import {
+  resolveHttpsConfig,
+  resolveHttpServer,
+  httpServerStart
+} from './server/http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
+import { printServerUrls } from './logger'
+import { resolveHostname } from './utils'
 
-export async function preview(config: ResolvedConfig, port = 5000) {
+export async function preview(
+  config: ResolvedConfig,
+  serverOptions: { host?: string; port?: number }
+): Promise<void> {
   const app = connect() as Connect.Server
-  const httpServer = await resolveHttpServer(config.server, app)
+  const httpServer = await resolveHttpServer(
+    config.server,
+    app,
+    await resolveHttpsConfig(config)
+  )
 
   // cors
   const { cors } = config.server
@@ -33,42 +45,38 @@ export async function preview(config: ResolvedConfig, port = 5000) {
     config.base,
     sirv(distDir, {
       etag: true,
+      dev: !config.isProduction,
       single: true
     })
   )
 
-  const options = config.server || {}
-  const hostname = options.host || 'localhost'
+  const options = config.server
+  const hostname = resolveHostname(serverOptions.host ?? options.host)
+  const port = serverOptions.port ?? 5000
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
 
-  httpServer.listen(port, () => {
-    logger.info(
-      chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-        chalk.green(` build preview server running at:\n`)
-    )
-    const interfaces = os.networkInterfaces()
-    Object.keys(interfaces).forEach((key) =>
-      (interfaces[key] || [])
-        .filter((details) => details.family === 'IPv4')
-        .map((detail) => {
-          return {
-            type: detail.address.includes('127.0.0.1')
-              ? 'Local:   '
-              : 'Network: ',
-            host: detail.address.replace('127.0.0.1', hostname)
-          }
-        })
-        .forEach(({ type, host }) => {
-          const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-          logger.info(`  > ${type} ${chalk.cyan(url)}`)
-        })
-    )
-
-    if (options.open) {
-      const path = typeof options.open === 'string' ? options.open : base
-      openBrowser(`${protocol}://${hostname}:${port}${path}`, true, logger)
-    }
+  const serverPort = await httpServerStart(httpServer, {
+    port,
+    strictPort: options.strictPort,
+    host: hostname.host,
+    logger
   })
+
+  logger.info(
+    chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+      chalk.green(` build preview server running at:\n`)
+  )
+
+  printServerUrls(hostname, protocol, serverPort, base, logger.info)
+
+  if (options.open) {
+    const path = typeof options.open === 'string' ? options.open : base
+    openBrowser(
+      `${protocol}://${hostname.name}:${serverPort}${path}`,
+      true,
+      logger
+    )
+  }
 }

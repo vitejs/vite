@@ -19,10 +19,12 @@ const externalTypes = [
   'scss',
   'styl',
   'stylus',
+  'pcss',
   'postcss',
   // known SFC types
   'vue',
   'svelte',
+  'marko',
   // JSX/TSX may be configured to be compiled differently from how esbuild
   // handles it by default, so exclude them as well
   'jsx',
@@ -33,7 +35,8 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  ssr?: boolean
 ): Plugin {
   // default resolver which prefers ESM
   const _resolve = config.createResolver({ asSrc: false })
@@ -50,7 +53,7 @@ export function esbuildDepPlugin(
     kind: ImportKind,
     resolveDir?: string
   ): Promise<string | undefined> => {
-    let _importer
+    let _importer: string
     // explicit resolveDir - this is passed only during yarn pnp resolve for
     // entries
     if (resolveDir) {
@@ -60,7 +63,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer)
+    return resolver(id, _importer, undefined, ssr)
   }
 
   return {
@@ -82,33 +85,29 @@ export function esbuildDepPlugin(
         }
       )
 
-      function resolveEntry(id: string, isEntry: boolean) {
+      function resolveEntry(id: string) {
         const flatId = flattenId(id)
         if (flatId in qualified) {
-          return isEntry
-            ? {
-                path: flatId,
-                namespace: 'dep'
-              }
-            : {
-                path: path.resolve(qualified[flatId])
-              }
+          return {
+            path: flatId,
+            namespace: 'dep'
+          }
         }
       }
 
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          const isEntry = !importer
           // ensure esbuild uses our resolved entries
-          let entry
+          let entry: { path: string; namespace: string } | undefined
           // if this is an entry, return entry namespace resolve result
-          if ((entry = resolveEntry(id, isEntry))) return entry
-
-          // check if this is aliased to an entry - also return entry namespace
-          const aliased = await _resolve(id, undefined, true)
-          if (aliased && (entry = resolveEntry(aliased, isEntry))) {
-            return entry
+          if (!importer) {
+            if ((entry = resolveEntry(id))) return entry
+            // check if this is aliased to an entry - also return entry namespace
+            const aliased = await _resolve(id, undefined, true)
+            if (aliased && (entry = resolveEntry(aliased))) {
+              return entry
+            }
           }
 
           // use vite's own resolver

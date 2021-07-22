@@ -14,4 +14,26 @@ if (import.meta.env.LEGACY) {
   if (import.meta.env.LEGACY === false) isLegacy = false
 }
 
-document.getElementById('env').textContent = `is legacy: ${isLegacy}`
+text('#env', `is legacy: ${isLegacy}`)
+
+// Iterators
+text('#iterators', [...new Set(['hello'])].join(''))
+
+// babel-helpers
+// Using `String.raw` to inject `@babel/plugin-transform-template-literals`
+// helpers.
+text(
+  '#babel-helpers',
+  String.raw`exposed babel helpers: ${window._templateObject != null}`
+)
+
+// dynamic chunk names
+import('./immutable-chunk.js')
+  .then(({ fn }) => fn())
+  .then((assets) => {
+    text('#assets', assets.join('\n'))
+  })
+
+function text(el, text) {
+  document.querySelector(el).textContent = text
+}

@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { ViteDevServer } from '..'
 import { cleanUrl, resolveFrom, unwrapId } from '../utils'
-import { ssrRewriteStacktrace } from './ssrStacktrace'
+import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
   ssrModuleExportsKey,
@@ -100,6 +100,11 @@ async function instantiateModule(
     if (isExternal(dep)) {
       return Promise.resolve(nodeRequire(dep, mod.file, server.config.root))
     } else {
+      // #3087 dynamic import vars is ignored at rewrite import path,
+      // so here need process relative path
+      if (dep.startsWith('.')) {
+        dep = path.posix.resolve(path.dirname(url), dep)
+      }
       return ssrLoadModule(dep, server, context, urlStack.concat(url))
     }
   }
@@ -136,9 +141,10 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
-    e.stack = ssrRewriteStacktrace(e.stack, moduleGraph)
+    const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+    rebindErrorStacktrace(e, stacktrace)
     server.config.logger.error(
-      `Error when evaluating SSR module ${url}:\n${e.stack}`,
+      `Error when evaluating SSR module ${url}:\n${stacktrace}`,
       {
         timestamp: true,
         clear: server.config.clearScreen

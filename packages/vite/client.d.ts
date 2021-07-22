@@ -1,55 +1,5 @@
 /// <reference lib="dom" />
-
-interface ImportMeta {
-  url: string
-
-  readonly hot?: {
-    readonly data: any
-
-    accept(): void
-    accept(cb: (mod: any) => void): void
-    accept(dep: string, cb: (mod: any) => void): void
-    accept(deps: readonly string[], cb: (mods: any[]) => void): void
-
-    /**
-     * @deprecated
-     */
-    acceptDeps(): never
-
-    dispose(cb: (data: any) => void): void
-    decline(): void
-    invalidate(): void
-
-    on(event: string, cb: (...args: any[]) => void): void
-  }
-
-  readonly env: ImportMetaEnv
-
-  glob(
-    pattern: string
-  ): Record<
-    string,
-    () => Promise<{
-      [key: string]: any
-    }>
-  >
-
-  globEager(
-    pattern: string
-  ): Record<
-    string,
-    {
-      [key: string]: any
-    }
-  >
-}
-interface ImportMetaEnv {
-  [key: string]: string | boolean | undefined
-  BASE_URL: string
-  MODE: string
-  DEV: boolean
-  PROD: boolean
-}
+/// <reference path="./types/importMeta.d.ts" />
 
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
@@ -78,6 +28,10 @@ declare module '*.module.stylus' {
   const classes: CSSModuleClasses
   export default classes
 }
+declare module '*.module.pcss' {
+  const classes: CSSModuleClasses
+  export default classes
+}
 
 // CSS
 declare module '*.css' {
@@ -101,6 +55,10 @@ declare module '*.styl' {
   export default css
 }
 declare module '*.stylus' {
+  const css: string
+  export default css
+}
+declare module '*.pcss' {
   const css: string
   export default css
 }
@@ -203,6 +161,13 @@ declare module '*?worker&inline' {
     new (): Worker
   }
   export default workerConstructor
+}
+
+declare module '*?sharedworker' {
+  const sharedWorkerConstructor: {
+    new (): SharedWorker
+  }
+  export default sharedWorkerConstructor
 }
 
 declare module '*?raw' {

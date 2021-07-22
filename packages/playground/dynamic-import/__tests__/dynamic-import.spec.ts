@@ -20,6 +20,22 @@ test('should load data URL of `data:`', async () => {
   await untilUpdated(() => page.textContent('.view'), 'data', true)
 })
 
+test('should have same reference on static and dynamic js import', async () => {
+  await page.click('.mxd')
+  await untilUpdated(() => page.textContent('.view'), 'true', true)
+})
+
+// in this case, it is not possible to detect the correct module
+test('should have same reference on static and dynamic js import', async () => {
+  await page.click('.mxd2')
+  await untilUpdated(() => page.textContent('.view'), 'false', true)
+})
+
+test('should have same reference on static and dynamic js import', async () => {
+  await page.click('.mxdjson')
+  await untilUpdated(() => page.textContent('.view'), 'true', true)
+})
+
 // since this test has a timeout, it should be put last so that it
 // does not bleed on the last
 test('should load dynamic import with vars', async () => {

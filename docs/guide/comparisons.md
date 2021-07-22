@@ -16,7 +16,6 @@ Due to a more integrated build process, Vite supports a wide range of features t
 - [Library Mode](./build#library-mode)
 - [Automatic CSS code-splitting](./features#css-code-splitting)
 - [Optimized async chunk loading](./features#async-chunk-loading-optimization)
-- [Automatic dynamic import polyfill](./features#dynamic-import-polyfill)
 - Official [legacy mode plugin](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) that generates dual modern/legacy bundles and auto delivers the right bundle based on browser support.
 
 **Faster Dependency Pre-Bundling**

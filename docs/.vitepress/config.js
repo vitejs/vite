@@ -17,7 +17,10 @@ module.exports = {
 
     algolia: {
       apiKey: 'b573aa848fd57fb47d693b531297403c',
-      indexName: 'vitejs'
+      indexName: 'vitejs',
+      searchParameters: {
+        facetFilters: ['tags:en']
+      }
     },
 
     carbonAds: {
@@ -54,8 +57,7 @@ module.exports = {
           },
           {
             text: 'Changelog',
-            link:
-              'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
           }
         ]
       },

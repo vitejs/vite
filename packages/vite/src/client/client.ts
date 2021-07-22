@@ -1,6 +1,15 @@
-import { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
+import {
+  ErrorPayload,
+  FullReloadPayload,
+  HMRPayload,
+  PrunePayload,
+  Update,
+  UpdatePayload
+} from 'types/hmrPayload'
+import { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 import './env'
+
 // injected by the hmr plugin when served
 declare const __ROOT__: string
 declare const __BASE__: string
@@ -46,6 +55,7 @@ async function handleMessage(payload: HMRPayload) {
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
       break
     case 'update':
+      notifyListeners('vite:beforeUpdate', payload)
       // if this is the first update and there's already an error overlay, it
       // means the page opened with existing server compile error and the whole
       // module script failed to load (since one of the nested imports is 500).
@@ -68,9 +78,11 @@ async function handleMessage(payload: HMRPayload) {
           // can't use querySelector with `[href*=]` here since the link may be
           // using relative paths so we need to use link.href to grab the full
           // URL for the include check.
-          const el = ([].slice.call(
-            document.querySelectorAll(`link`)
-          ) as HTMLLinkElement[]).find((e) => e.href.includes(path))
+          const el = (
+            [].slice.call(
+              document.querySelectorAll(`link`)
+            ) as HTMLLinkElement[]
+          ).find((e) => e.href.includes(path))
           if (el) {
             const newPath = `${path}${
               path.includes('?') ? '&' : '?'
@@ -82,13 +94,11 @@ async function handleMessage(payload: HMRPayload) {
       })
       break
     case 'custom': {
-      const cbs = customListenersMap.get(payload.event)
-      if (cbs) {
-        cbs.forEach((cb) => cb(payload.data))
-      }
+      notifyListeners(payload.event as CustomEventName<any>, payload.data)
       break
     }
     case 'full-reload':
+      notifyListeners('vite:beforeFullReload', payload)
       if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
@@ -106,6 +116,7 @@ async function handleMessage(payload: HMRPayload) {
       }
       break
     case 'prune':
+      notifyListeners('vite:beforePrune', payload)
       // After an HMR update, some modules are no longer imported on the page
       // but they may have left behind side effects that need to be cleaned up
       // (.e.g style injections)
@@ -118,11 +129,14 @@ async function handleMessage(payload: HMRPayload) {
       })
       break
     case 'error': {
+      notifyListeners('vite:error', payload)
       const err = payload.err
       if (enableOverlay) {
         createErrorOverlay(err)
       } else {
-        console.error(`[vite] Internal Server Error\n${err.stack}`)
+        console.error(
+          `[vite] Internal Server Error\n${err.message}\n${err.stack}`
+        )
       }
       break
     }
@@ -130,6 +144,27 @@ async function handleMessage(payload: HMRPayload) {
       const check: never = payload
       return check
     }
+  }
+}
+
+function notifyListeners(
+  event: 'vite:beforeUpdate',
+  payload: UpdatePayload
+): void
+function notifyListeners(event: 'vite:beforePrune', payload: PrunePayload): void
+function notifyListeners(
+  event: 'vite:beforeFullReload',
+  payload: FullReloadPayload
+): void
+function notifyListeners(event: 'vite:error', payload: ErrorPayload): void
+function notifyListeners<T extends string>(
+  event: CustomEventName<T>,
+  data: any
+): void
+function notifyListeners(event: string, data: any): void {
+  const cbs = customListenersMap.get(event)
+  if (cbs) {
+    cbs.forEach((cb) => cb(data))
   }
 }
 
@@ -172,6 +207,7 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
 }
 
 async function waitForSuccessfulPing(ms = 1000) {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       await fetch(`${base}__vite_ping`)
@@ -201,7 +237,7 @@ const supportsConstructedSheet = (() => {
 
 const sheetsMap = new Map()
 
-export function updateStyle(id: string, content: string) {
+export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
   if (supportsConstructedSheet && !content.includes('@import')) {
     if (style && !(style instanceof CSSStyleSheet)) {
@@ -235,7 +271,7 @@ export function updateStyle(id: string, content: string) {
   sheetsMap.set(id, style)
 }
 
-export function removeStyle(id: string) {
+export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
@@ -328,12 +364,14 @@ const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
-const customListenersMap = new Map<string, ((customData: any) => void)[]>()
+const customListenersMap = new Map<string, ((data: any) => void)[]>()
 const ctxToListenersMap = new Map<
   string,
-  Map<string, ((customData: any) => void)[]>
+  Map<string, ((data: any) => void)[]>
 >()
 
+// Just infer the return type for now
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const createHotContext = (ownerPath: string) => {
   if (!dataMap.has(ownerPath)) {
     dataMap.set(ownerPath, {})
@@ -410,6 +448,7 @@ export const createHotContext = (ownerPath: string) => {
     },
 
     // TODO
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     decline() {},
 
     invalidate() {
@@ -419,7 +458,7 @@ export const createHotContext = (ownerPath: string) => {
     },
 
     // custom events
-    on(event: string, cb: () => void) {
+    on: (event: string, cb: (data: any) => void) => {
       const addToMap = (map: Map<string, any[]>) => {
         const existing = map.get(event) || []
         existing.push(cb)
@@ -436,7 +475,7 @@ export const createHotContext = (ownerPath: string) => {
 /**
  * urls here are dynamic import() urls that couldn't be statically analyzed
  */
-export function injectQuery(url: string, queryToInject: string) {
+export function injectQuery(url: string, queryToInject: string): string {
   // skip urls that won't be handled by vite
   if (!url.startsWith('.') && !url.startsWith('/')) {
     return url

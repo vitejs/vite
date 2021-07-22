@@ -1,3 +1,37 @@
+## [1.1.6](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.5...plugin-vue-jsx@1.1.6) (2021-06-27)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#3791](https://github.com/vitejs/vite/issues/3791)) ([74d409e](https://github.com/vitejs/vite/commit/74d409eafca8d74ec4a6ece621ea2895bc1f2a32))
+* **plugin-vue-jsx:** replace default export with helper during SSR ([#3966](https://github.com/vitejs/vite/issues/3966)) ([bc86464](https://github.com/vitejs/vite/commit/bc86464d3c6591eae96e070a1724a3f21874c8ce))
+* **ssr:** normalize manifest filenames ([#3706](https://github.com/vitejs/vite/issues/3706)) ([aa8ca3f](https://github.com/vitejs/vite/commit/aa8ca3f35218c9fb48f87d3f6f4681d379ee45ca)), closes [#3303](https://github.com/vitejs/vite/issues/3303)
+
+
+### Features
+
+* **plugin-vue-jsx:**  jsx plugin should have extra babel plugins option ([#3923](https://github.com/vitejs/vite/issues/3923)) ([aada0c5](https://github.com/vitejs/vite/commit/aada0c5e71e4826cf049596f3459d48b386ea4da))
+
+
+
+## [1.1.5](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.4...plugin-vue-jsx@1.1.5) (2021-06-01)
+
+
+### Bug Fixes
+
+* include/exclude options for vue-jsx .d.ts ([#3573](https://github.com/vitejs/vite/issues/3573)) ([82ec0ca](https://github.com/vitejs/vite/commit/82ec0ca69c1f077cf518073edca4e6580ebd4892))
+
+
+
+## [1.1.4](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.3...plugin-vue-jsx@1.1.4) (2021-05-03)
+
+
+### Features
+
+* include/exclude options for vue-jsx plugin ([#1953](https://github.com/vitejs/vite/issues/1953)) ([fbecf1e](https://github.com/vitejs/vite/commit/fbecf1e5349ea5da8ff6f194efdcb152e2995398))
+
+
+
 ## [1.1.3](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.2...plugin-vue-jsx@1.1.3) (2021-03-31)
 
 

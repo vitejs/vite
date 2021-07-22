@@ -24,7 +24,7 @@ export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
 }
 
-export const flattenId = (id: string) => id.replace(/[\/\.]/g, '_')
+export const flattenId = (id: string): string => id.replace(/[\/\.]/g, '_')
 
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
@@ -40,7 +40,7 @@ try {
 
 const ssrExtensions = ['.js', '.json', '.node']
 
-export function resolveFrom(id: string, basedir: string, ssr = false) {
+export function resolveFrom(id: string, basedir: string, ssr = false): string {
   return resolve.sync(id, {
     basedir,
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
@@ -58,7 +58,10 @@ interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
 }
 
-export function createDebugger(ns: string, options: DebuggerOptions = {}) {
+export function createDebugger(
+  ns: string,
+  options: DebuggerOptions = {}
+): debug.Debugger['log'] {
   const log = debug(ns)
   const { onlyWhenFocused } = options
   const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns
@@ -73,7 +76,7 @@ export function createDebugger(ns: string, options: DebuggerOptions = {}) {
   }
 }
 
-const isWindows = os.platform() === 'win32'
+export const isWindows = os.platform() === 'win32'
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
@@ -91,39 +94,39 @@ export function ensureVolumeInPath(file: string): string {
   return isWindows ? path.resolve(file) : file
 }
 
-export const queryRE = /\?.*$/
-export const hashRE = /#.*$/
+export const queryRE = /\?.*$/s
+export const hashRE = /#.*$/s
 
-export const cleanUrl = (url: string) =>
+export const cleanUrl = (url: string): string =>
   url.replace(hashRE, '').replace(queryRE, '')
 
 export const externalRE = /^(https?:)?\/\//
-export const isExternalUrl = (url: string) => externalRE.test(url)
+export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
 export const dataUrlRE = /^\s*data:/i
-export const isDataUrl = (url: string) => dataUrlRE.test(url)
+export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue)($|\?)/
-export const isJSRequest = (url: string) => {
+const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte)($|\?)/
+export const isJSRequest = (url: string): boolean => {
+  url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  url = cleanUrl(url)
   if (!path.extname(url) && !url.endsWith('/')) {
     return true
   }
   return false
 }
 
-const importQueryRE = /(\?|&)import(?:&|$)/
+const importQueryRE = /(\?|&)import=?(?:&|$)/
 const trailingSeparatorRE = /[\?&]$/
-export const isImportRequest = (url: string) => importQueryRE.test(url)
+export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 
-export function removeImportQuery(url: string) {
+export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export function injectQuery(url: string, queryToInject: string) {
+export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
   let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
@@ -141,7 +144,7 @@ export function injectQuery(url: string, queryToInject: string) {
 }
 
 const timestampRE = /\bt=\d{13}&?\b/
-export function removeTimestampQuery(url: string) {
+export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
@@ -149,7 +152,7 @@ export async function asyncReplace(
   input: string,
   re: RegExp,
   replacer: (match: RegExpExecArray) => string | Promise<string>
-) {
+): Promise<string> {
   let match: RegExpExecArray | null
   let remaining = input
   let rewritten = ''
@@ -162,7 +165,7 @@ export async function asyncReplace(
   return rewritten
 }
 
-export function timeFrom(start: number, subtract = 0) {
+export function timeFrom(start: number, subtract = 0): string {
   const time: number | string = Date.now() - start - subtract
   const timeString = (time + `ms`).padEnd(5, ' ')
   if (time < 10) {
@@ -177,7 +180,7 @@ export function timeFrom(start: number, subtract = 0) {
 /**
  * pretty url for logging.
  */
-export function prettifyUrl(url: string, root: string) {
+export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
@@ -202,6 +205,10 @@ export function isObject(value: unknown): value is Record<string, any> {
   return Object.prototype.toString.call(value) === '[object Object]'
 }
 
+export function isDefined<T>(value: T | undefined | null): value is T {
+  return value != null
+}
+
 export function lookupFile(
   dir: string,
   formats: string[],
@@ -223,7 +230,7 @@ const splitRE = /\r?\n/
 
 const range: number = 2
 
-export function pad(source: string, n = 2) {
+export function pad(source: string, n = 2): string {
   const lines = source.split(splitRE)
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
@@ -245,7 +252,7 @@ export function posToNumber(
 export function numberToPos(
   source: string,
   offset: number | { line: number; column: number }
-) {
+): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
     throw new Error('offset is longer than source length!')
@@ -309,7 +316,10 @@ export function generateCodeFrame(
   return res.join('\n')
 }
 
-export function writeFile(filename: string, content: string | Uint8Array) {
+export function writeFile(
+  filename: string,
+  content: string | Uint8Array
+): void {
   const dir = path.dirname(filename)
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true })
@@ -317,11 +327,15 @@ export function writeFile(filename: string, content: string | Uint8Array) {
   fs.writeFileSync(filename, content)
 }
 
-export function emptyDir(dir: string) {
-  if (!fs.existsSync(dir)) {
-    return
-  }
+/**
+ * Delete every file and subdirectory. **The given directory must exist.**
+ * Pass an optional `skip` array to preserve files in the root directory.
+ */
+export function emptyDir(dir: string, skip?: string[]): void {
   for (const file of fs.readdirSync(dir)) {
+    if (skip?.includes(file)) {
+      continue
+    }
     const abs = path.resolve(dir, file)
     // baseline is Node 12 so can't use rmSync :(
     if (fs.lstatSync(abs).isDirectory()) {
@@ -333,10 +347,13 @@ export function emptyDir(dir: string) {
   }
 }
 
-export function copyDir(srcDir: string, destDir: string) {
+export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
+    if (srcFile === destDir) {
+      continue
+    }
     const destFile = path.resolve(destDir, file)
     const stat = fs.statSync(srcFile)
     if (stat.isDirectory()) {
@@ -347,11 +364,15 @@ export function copyDir(srcDir: string, destDir: string) {
   }
 }
 
+export function ensureLeadingSlash(path: string): string {
+  return !path.startsWith('/') ? '/' + path : path
+}
+
 export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,
   root: string
-) {
+): void {
   if (
     file &&
     // only need to watch if out of root
@@ -373,14 +394,17 @@ const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
-) {
-  const imageCandidates: ImageCandidate[] = srcs.split(',').map((s) => {
-    const [url, descriptor] = s
-      .replace(escapedSpaceCharacters, ' ')
-      .trim()
-      .split(' ', 2)
-    return { url, descriptor }
-  })
+): Promise<string> {
+  const imageCandidates: ImageCandidate[] = srcs
+    .split(',')
+    .map((s) => {
+      const [url, descriptor] = s
+        .replace(escapedSpaceCharacters, ' ')
+        .trim()
+        .split(' ', 2)
+      return { url, descriptor }
+    })
+    .filter(({ url }) => !!url)
 
   const ret = await Promise.all(
     imageCandidates.map(async ({ url, descriptor }) => {
@@ -418,7 +442,8 @@ export function combineSourcemaps(
     return { ...nullSourceMap }
   }
 
-  let map
+  // We don't declare type here so we can convert/fake/map as RawSourceMap
+  let map //: SourceMap
   let mapIndex = 1
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
@@ -442,4 +467,45 @@ export function combineSourcemaps(
   }
 
   return map as RawSourceMap
+}
+
+export function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
+}
+
+export interface Hostname {
+  // undefined sets the default behaviour of server.listen
+  host: string | undefined
+  // resolve to localhost when possible
+  name: string
+}
+
+export function resolveHostname(
+  optionsHost: string | boolean | undefined
+): Hostname {
+  let host: string | undefined
+  if (
+    optionsHost === undefined ||
+    optionsHost === false ||
+    optionsHost === 'localhost'
+  ) {
+    // Use a secure default
+    host = '127.0.0.1'
+  } else if (optionsHost === true) {
+    // If passed --host in the CLI without arguments
+    host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
+  } else {
+    host = optionsHost
+  }
+
+  // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
+  const name =
+    (optionsHost !== '127.0.0.1' && host === '127.0.0.1') ||
+    host === '0.0.0.0' ||
+    host === '::' ||
+    host === undefined
+      ? 'localhost'
+      : host
+
+  return { host, name }
 }

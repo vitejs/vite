@@ -17,7 +17,7 @@ export function setResolvedScript(
   descriptor: SFCDescriptor,
   script: SFCScriptBlock,
   ssr: boolean
-) {
+): void {
   ;(ssr ? ssrCache : clientCache).set(descriptor, script)
 }
 
@@ -25,7 +25,7 @@ export function resolveScript(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
   ssr: boolean
-) {
+): SFCScriptBlock | null {
   if (!descriptor.script && !descriptor.scriptSetup) {
     return null
   }

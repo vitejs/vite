@@ -151,13 +151,13 @@ export class ErrorOverlay extends HTMLElement {
     })
   }
 
-  text(selector: string, text: string, linkFiles = false) {
+  text(selector: string, text: string, linkFiles = false): void {
     const el = this.root.querySelector(selector)!
     if (!linkFiles) {
       el.textContent = text
     } else {
       let curIndex = 0
-      let match
+      let match: RegExpExecArray | null
       while ((match = fileRE.exec(text))) {
         const { 0: file, index } = match
         if (index != null) {
@@ -176,7 +176,7 @@ export class ErrorOverlay extends HTMLElement {
     }
   }
 
-  close() {
+  close(): void {
     this.parentNode?.removeChild(this)
   }
 }

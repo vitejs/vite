@@ -14,9 +14,7 @@ You can learn more about the rationale behind the project in the [Why Vite](./wh
 
 ## Browser Support
 
-- For development: [native ESM dynamic import support](https://caniuse.com/es6-module-dynamic-import) is required.
-
-- For production: the default build targets browsers that support [native ESM via script tags](https://caniuse.com/es6-module). Legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) - see the [Building for Production](./build) section for more details.
+- The default build targets browsers that support both [native ESM via script tags](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import). Legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) - see the [Building for Production](./build) section for more details.
 
 ## Scaffolding Your First Vite Project
 
@@ -27,13 +25,19 @@ Vite requires [Node.js](https://nodejs.org/en/) version >=12.0.0.
 With NPM:
 
 ```bash
-$ npm init @vitejs/app
+$ npm init vite@latest
 ```
 
 With Yarn:
 
 ```bash
-$ yarn create @vitejs/app
+$ yarn create vite
+```
+
+With PNPM:
+
+```bash
+$ pnpx create-vite
 ```
 
 Then follow the prompts!
@@ -42,18 +46,19 @@ You can also directly specify the project name and the template you want to use 
 
 ```bash
 # npm 6.x
-npm init @vitejs/app my-vue-app --template vue
+npm init vite@latest my-vue-app --template vue
 
 # npm 7+, extra double-dash is needed:
-npm init @vitejs/app my-vue-app -- --template vue
+npm init vite@latest my-vue-app -- --template vue
 
 # yarn
-yarn create @vitejs/app my-vue-app --template vue
+yarn create vite my-vue-app --template vue
 ```
 
 Supported template presets include:
 
 - `vanilla`
+- `vanilla-ts`
 - `vue`
 - `vue-ts`
 - `react`
@@ -65,11 +70,11 @@ Supported template presets include:
 - `svelte`
 - `svelte-ts`
 
-See [@vitejs/create-app](https://github.com/vitejs/vite/tree/main/packages/create-app) for more details on each template.
+See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each template.
 
 ## Community Templates
 
-@vitejs/create-app is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks. You can use a tool like [degit](https://github.com/Rich-Harris/degit) to scaffold your project with one of the templates.
+create-vite is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks. You can use a tool like [degit](https://github.com/Rich-Harris/degit) to scaffold your project with one of the templates.
 
 ```bash
 npx degit user/project my-project

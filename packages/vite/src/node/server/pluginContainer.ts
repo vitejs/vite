@@ -46,7 +46,8 @@ import {
   SourceDescription,
   EmittedFile,
   SourceMap,
-  RollupError
+  RollupError,
+  TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
@@ -60,6 +61,7 @@ import {
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
+  isObject,
   isExternalUrl,
   normalizePath,
   numberToPos,
@@ -292,7 +294,9 @@ export async function createPluginContainer(
           let code = ctx._activeCode
           if (err.loc.file) {
             err.id = normalizePath(err.loc.file)
-            code = fs.readFileSync(err.loc.file, 'utf-8')
+            try {
+              code = fs.readFileSync(err.loc.file, 'utf-8')
+            } catch {}
           }
           err.frame = generateCodeFrame(code, err.loc)
         }
@@ -490,7 +494,7 @@ export async function createPluginContainer(
         ctx._activeId = id
         ctx._activeCode = code
         const start = isDebug ? Date.now() : 0
-        let result
+        let result: TransformResult | string | undefined
         try {
           result = await plugin.transform.call(ctx as any, code, id, ssr)
         } catch (e) {
@@ -503,7 +507,7 @@ export async function createPluginContainer(
             plugin.name,
             prettifyUrl(id, root)
           )
-        if (typeof result === 'object') {
+        if (isObject(result)) {
           code = result.code || ''
           if (result.map) ctx.sourcemapChain.push(result.map)
         } else {

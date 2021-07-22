@@ -8,7 +8,8 @@
 }
 
 .sponsors img {
-  width: 200px;
+  max-width: 200px;
+  height: 40px;
   display: block;
   margin: 1.25rem 0;
 }
@@ -19,10 +20,17 @@
 
 .sponsors.frontpage img {
   display: inline-block;
+  vertical-align: middle;
+  margin: 0 1rem 1.25rem 1rem;
 }
 
 .sponsors.frontpage h2 {
   color: #999;
   font-size: 1.2rem;
   border: none;
+}
+
+/* special cases */
+#sponsor-mux {
+  padding: 5px 0;
 }

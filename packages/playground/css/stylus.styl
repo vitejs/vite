@@ -1,0 +1,11 @@
+@import './nested/nested'
+@import 'css-dep'; // package w/ styl entry points
+
+$color ?= blue
+
+.stylus
+  color $color
+
+.stylus-additional-data
+  /* injected via vite.config.js */
+  color $injectedColor
