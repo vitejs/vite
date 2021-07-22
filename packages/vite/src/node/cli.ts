@@ -55,9 +55,9 @@ function bindShortcut(server: ViteDevServer) {
   process.stdin.setEncoding('utf8')
   process.stdin.on('data', (data) => {
     const str = data.toString().trim().toLowerCase()
-    const sh = SHORTCUTS.filter((item) => item.name === str)[0]
-    if (sh) {
-      sh.action(server)
+    const shortcut = SHORTCUTS.filter((item) => item.name === str)[0]
+    if (shortcut) {
+      shortcut.action(server)
     } else {
       createLogger(server.config.logLevel).error(
         chalk.red(`Invalid ShortCut: ${str}`)
