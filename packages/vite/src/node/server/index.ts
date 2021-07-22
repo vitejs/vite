@@ -498,6 +498,7 @@ export async function createServer(
     middlewares.use(
       history({
         logger: createDebugger('vite:spa-fallback'),
+        disableDotRule: true,
         // support /dir/ without explicit index.html
         rewrites: [
           {
