@@ -14,6 +14,7 @@ import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
+import { transformStyle } from './style'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
@@ -21,7 +22,8 @@ export async function transformMain(
   filename: string,
   options: ResolvedOptions,
   pluginContext: TransformPluginContext,
-  ssr: boolean
+  ssr: boolean,
+  asCustomElement: boolean
 ) {
   const { root, devServer, isProduction } = options
 
@@ -92,7 +94,9 @@ export async function transformMain(
   }
 
   // styles
-  const stylesCode = await genStyleCode(descriptor, pluginContext)
+  const stylesCode = asCustomElement
+    ? await genCustomElementStyleCode(descriptor, options, pluginContext)
+    : await genStyleCode(descriptor, pluginContext)
 
   // custom blocks
   const customBlocksCode = await genCustomBlockCode(descriptor, pluginContext)
@@ -113,7 +117,6 @@ export async function transformMain(
     // expose filename during serve for devtools to pickup
     output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }
-  output.push('export default _sfc_main')
 
   // HMR
   if (
@@ -132,7 +135,9 @@ export async function transformMain(
       output.push(`export const _rerender_only = true`)
     }
     output.push(
-      `import.meta.hot.accept(({ default: updated, _rerender_only }) => {`,
+      `import.meta.hot.accept(({ default: ${
+        asCustomElement ? `{ def: updated }` : `updated`
+      }, _rerender_only }) => {`,
       `  if (_rerender_only) {`,
       `    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render)`,
       `  } else {`,
@@ -183,6 +188,15 @@ export async function transformMain(
     // if this is a template only update, we will be reusing a cached version
     // of the main module compile result, which has outdated sourcesContent.
     resolvedMap.sourcesContent = templateMap.sourcesContent
+  }
+
+  if (asCustomElement) {
+    output.push(
+      `import { defineCustomElement as __ce } from 'vue'`,
+      `export default __ce(_sfc_main)`
+    )
+  } else {
+    output.push(`export default _sfc_main`)
   }
 
   return {
@@ -396,4 +410,20 @@ function attrsToQuery(
         : `&lang.${langFallback}`
   }
   return query
+}
+
+async function genCustomElementStyleCode(
+  descriptor: SFCDescriptor,
+  options: ResolvedOptions,
+  pluginContext: TransformPluginContext
+) {
+  const styles = (
+    await Promise.all(
+      descriptor.styles.map((style, index) =>
+        transformStyle(style.content, descriptor, index, options, pluginContext)
+      )
+    )
+  ).map((res) => JSON.stringify(res!.code))
+
+  return `_sfc_main.styles = [${styles.join(',')}]`
 }
