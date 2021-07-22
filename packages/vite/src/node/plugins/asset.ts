@@ -6,7 +6,7 @@ import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { PluginContext, RenderedChunk, OutputOptions } from 'rollup'
+import { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
 
@@ -185,7 +185,7 @@ export function getAssetFilename(
   return assetHashToFilenameMap.get(config)?.get(hash)
 }
 
-function assetFileNameToFileName(
+function assetFileNamesToFileName(
   file: string,
   contentHash: string,
   content: string | Buffer,
@@ -194,6 +194,7 @@ function assetFileNameToFileName(
   const basename = path.basename(file)
 
   // placeholders for `assetFileNames`
+  // see https://rollupjs.org/guide/en/#outputassetfilenames for available placeholders
   // `hash` is slightly different from the rollup's one
   const extname = path.extname(basename)
   const ext = extname.substr(1)
@@ -228,7 +229,6 @@ function assetFileNameToFileName(
     throw new TypeError('assetFileNames must be a string or a function')
   }
 
-  // see https://rollupjs.org/guide/en/#outputassetfilenames for available placeholders
   const fileName = assetFileNames.replace(
     /\[\w+\]/g,
     (placeholder: string): string => {
@@ -297,7 +297,12 @@ async function fileToBuiltUrl(
     const contentHash = getAssetHash(content)
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
-    const fileName = assetFileNameToFileName(file, contentHash, content, config)
+    const fileName = assetFileNamesToFileName(
+      file,
+      contentHash,
+      content,
+      config
+    )
     if (!map.has(contentHash)) {
       map.set(contentHash, fileName)
     }
