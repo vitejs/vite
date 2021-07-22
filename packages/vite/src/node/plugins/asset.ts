@@ -185,36 +185,43 @@ export function getAssetFilename(
   return assetHashToFilenameMap.get(config)?.get(hash)
 }
 
-function assetFileNamesToFileName(
+/**
+ * converts the source filepath of the asset to the output filename based on the assetFileNames option. \
+ * this function imitates the behavior of rollup.js. \
+ * https://rollupjs.org/guide/en/#outputassetfilenames
+ *
+ * @example
+ * ```ts
+ * const content = Buffer.from('text');
+ * const fileName = assetFileNamesToFileName(
+ *   'assets/[name].[hash][extname]',
+ *   '/path/to/file.txt',
+ *   getAssetHash(content),
+ *   content
+ * )
+ * // fileName: 'assets/file.982d9e3e.txt'
+ * ```
+ *
+ * @param assetFileNames filename pattern. e.g. `'assets/[name].[hash][extname]'`
+ * @param file filepath of the asset
+ * @param contentHash hash of the asset. used for `'[hash]'` placeholder
+ * @param content content of the asset. passed to `assetFileNames` if `assetFileNames` is a function
+ * @returns output filename
+ */
+export function assetFileNamesToFileName(
+  assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined>,
   file: string,
   contentHash: string,
-  content: string | Buffer,
-  config: ResolvedConfig
+  content: string | Buffer
 ): string {
   const basename = path.basename(file)
 
   // placeholders for `assetFileNames`
-  // see https://rollupjs.org/guide/en/#outputassetfilenames for available placeholders
   // `hash` is slightly different from the rollup's one
   const extname = path.extname(basename)
   const ext = extname.substr(1)
   const name = basename.slice(0, -extname.length)
   const hash = contentHash
-
-  let assetFileNames: OutputOptions['assetFileNames']
-  const output = config.build?.rollupOptions?.output
-  // only the object format is currently considered here
-  if (output && !Array.isArray(output)) {
-    assetFileNames = output.assetFileNames
-  }
-  // defaults to '<assetsDir>/[name].[hash][extname]'
-  // slightly different from rollup's one ('assets/[name]-[hash][extname]')
-  if (assetFileNames == null) {
-    assetFileNames = path.posix.join(
-      config.build.assetsDir,
-      '[name].[hash][extname]'
-    )
-  }
 
   if (typeof assetFileNames === 'function') {
     assetFileNames = assetFileNames({
@@ -297,11 +304,17 @@ async function fileToBuiltUrl(
     const contentHash = getAssetHash(content)
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
+    const output = config.build?.rollupOptions?.output
+    const assetFileNames =
+      (output && !Array.isArray(output) ? output.assetFileNames : undefined) ??
+      // defaults to '<assetsDir>/[name].[hash][extname]'
+      // slightly different from rollup's one ('assets/[name]-[hash][extname]')
+      path.posix.join(config.build.assetsDir, '[name].[hash][extname]')
     const fileName = assetFileNamesToFileName(
+      assetFileNames,
       file,
       contentHash,
-      content,
-      config
+      content
     )
     if (!map.has(contentHash)) {
       map.set(contentHash, fileName)
