@@ -185,6 +185,75 @@ export function getAssetFilename(
   return assetHashToFilenameMap.get(config)?.get(hash)
 }
 
+function assetFileNameToFileName(
+  file: string,
+  contentHash: string,
+  content: string | Buffer,
+  config: ResolvedConfig
+): string {
+  const basename = path.basename(file)
+
+  // placeholders for `assetFileNames`
+  // `hash` is slightly different from the rollup's one
+  const extname = path.extname(basename)
+  const ext = extname.substr(1)
+  const name = basename.slice(0, -extname.length)
+  const hash = contentHash
+
+  let assetFileNames: OutputOptions['assetFileNames']
+  const output = config.build?.rollupOptions?.output
+  // only the object format is currently considered here
+  if (output && !Array.isArray(output)) {
+    assetFileNames = output.assetFileNames
+  }
+  // defaults to '<assetsDir>/[name].[hash][extname]'
+  // slightly different from rollup's one ('assets/[name]-[hash][extname]')
+  if (assetFileNames == null) {
+    assetFileNames = path.posix.join(
+      config.build.assetsDir,
+      '[name].[hash][extname]'
+    )
+  }
+
+  if (typeof assetFileNames === 'function') {
+    assetFileNames = assetFileNames({
+      name: file,
+      source: content,
+      type: 'asset'
+    })
+    if (typeof assetFileNames !== 'string') {
+      throw new TypeError('assetFileNames must return a string')
+    }
+  } else if (typeof assetFileNames !== 'string') {
+    throw new TypeError('assetFileNames must be a string or a function')
+  }
+
+  // see https://rollupjs.org/guide/en/#outputassetfilenames for available placeholders
+  const fileName = assetFileNames.replace(
+    /\[\w+\]/g,
+    (placeholder: string): string => {
+      switch (placeholder) {
+        case '[ext]':
+          return ext
+
+        case '[extname]':
+          return extname
+
+        case '[hash]':
+          return hash
+
+        case '[name]':
+          return name
+      }
+      throw new Error(
+        `invalid placeholder ${placeholder} in assetFileNames "${assetFileNames}"`
+      )
+    }
+  )
+
+  return fileName
+}
+
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
@@ -228,78 +297,7 @@ async function fileToBuiltUrl(
     const contentHash = getAssetHash(content)
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
-
-    // create fileName using rollupOptions.output.assetFileNames
-    let fileName: string
-    {
-      const basename = path.basename(file)
-
-      // placeholders for `assetFileNames`
-      // `hash` is slightly different from the rollup's one
-      const _extname = path.extname(basename)
-      const _ext = _extname.substr(1)
-      const _name = basename.slice(0, -_extname.length)
-      const _hash = contentHash
-
-      let assetFileNames: OutputOptions['assetFileNames']
-      const output = config.build?.rollupOptions?.output
-      // only the object format is currently considered here
-      if (output && !Array.isArray(output)) {
-        assetFileNames = output.assetFileNames
-      }
-      // defaults to '<assetsDir>/[name].[hash][extname]'
-      // slightly different from rollup's one ('assets/[name]-[hash][extname]')
-      if (assetFileNames == null) {
-        assetFileNames = path.posix.join(
-          config.build.assetsDir,
-          '[name].[hash][extname]'
-        )
-      }
-
-      switch (typeof assetFileNames) {
-        // e.g. assetFileNames: 'dir/[name].[ext]'
-        case 'string':
-          // see https://rollupjs.org/guide/en/#outputassetfilenames for available placeholders
-          fileName = assetFileNames.replace(
-            /\[\w+\]/g,
-            (placeholder: string): string => {
-              switch (placeholder) {
-                case '[ext]':
-                  return _ext
-
-                case '[extname]':
-                  return _extname
-
-                case '[hash]':
-                  return _hash
-
-                case '[name]':
-                  return _name
-              }
-              throw new Error(
-                `invalid placeholder ${placeholder} in assetFileNames "${assetFileNames}"`
-              )
-            }
-          )
-          break
-
-        // e.g. assetFileNames: () => 'name'
-        case 'function':
-          fileName = assetFileNames({
-            name: file,
-            source: content,
-            type: 'asset'
-          })
-          if (typeof fileName !== 'string') {
-            throw new TypeError('assetFileNames must return a string')
-          }
-          break
-
-        default:
-          throw new TypeError('assetFileNames must be a string or a function')
-      }
-    }
-
+    const fileName = assetFileNameToFileName(file, contentHash, content, config)
     if (!map.has(contentHash)) {
       map.set(contentHash, fileName)
     }
