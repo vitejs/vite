@@ -77,7 +77,7 @@ export function transformMiddleware(
         // returns an empty response that will error.
         setTimeout(() => {
           // Don't do anything if response has already been sent
-          if (!res.writableEnded) return
+          if (res.writableEnded) return
           // status code request timeout
           res.statusCode = 408
           res.end(
