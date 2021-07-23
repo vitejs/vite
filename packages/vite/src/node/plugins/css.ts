@@ -86,6 +86,7 @@ export const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const commonjsProxyRE = /\?commonjs-proxy/
+const inlineRE = /(\?|&)inline\b/
 
 const enum PreprocessLang {
   less = 'less',
@@ -190,36 +191,37 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       if (server) {
         // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = server
-        const thisModule = moduleGraph.getModuleById(id)!
-
-        // CSS modules cannot self-accept since it exports values
-        const isSelfAccepting = !modules
-        if (deps) {
-          // record deps in the module graph so edits to @import css can trigger
-          // main import to hot update
-          const depModules = new Set<string | ModuleNode>()
-          for (const file of deps) {
-            depModules.add(
-              cssLangRE.test(file)
-                ? moduleGraph.createFileOnlyEntry(file)
-                : await moduleGraph.ensureEntryFromUrl(
-                    await fileToUrl(file, config, this)
-                  )
+        const thisModule = moduleGraph.getModuleById(id)
+        if (thisModule) {
+          // CSS modules cannot self-accept since it exports values
+          const isSelfAccepting = !modules
+          if (deps) {
+            // record deps in the module graph so edits to @import css can trigger
+            // main import to hot update
+            const depModules = new Set<string | ModuleNode>()
+            for (const file of deps) {
+              depModules.add(
+                cssLangRE.test(file)
+                  ? moduleGraph.createFileOnlyEntry(file)
+                  : await moduleGraph.ensureEntryFromUrl(
+                      await fileToUrl(file, config, this)
+                    )
+              )
+            }
+            moduleGraph.updateModuleInfo(
+              thisModule,
+              depModules,
+              // The root CSS proxy module is self-accepting and should not
+              // have an explicit accept list
+              new Set(),
+              isSelfAccepting
             )
+            for (const file of deps) {
+              this.addWatchFile(file)
+            }
+          } else {
+            thisModule.isSelfAccepting = isSelfAccepting
           }
-          moduleGraph.updateModuleInfo(
-            thisModule,
-            depModules,
-            // The root CSS proxy module is self-accepting and should not
-            // have an explicit accept list
-            new Set(),
-            isSelfAccepting
-          )
-          for (const file of deps) {
-            this.addWatchFile(file)
-          }
-        } else {
-          thisModule.isSelfAccepting = isSelfAccepting
         }
       }
 
@@ -255,11 +257,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
     },
 
-    transform(css, id, ssr) {
+    async transform(css, id, ssr) {
       if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
         return
       }
 
+      const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
@@ -271,6 +274,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // server only
           if (ssr) {
             return modulesCode || `export default ${JSON.stringify(css)}`
+          }
+          if (inlined) {
+            return `export default ${JSON.stringify(css)}`
           }
           return [
             `import { updateStyle, removeStyle } from ${JSON.stringify(
@@ -289,7 +295,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // build CSS handling ----------------------------------------------------
 
       // record css
-      styles.set(id, css)
+      if (!inlined) {
+        styles.set(id, css)
+      } else {
+        css = await minifyCSS(css, config)
+      }
 
       return {
         code: modulesCode || `export default ${JSON.stringify(css)}`,
