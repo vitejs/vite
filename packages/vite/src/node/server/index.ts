@@ -10,12 +10,9 @@ import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
 import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
+import { createPluginContainer, PluginContainer } from './pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
-import { createWebSocketServer, WebSocketServer } from '../server/ws'
+import { createWebSocketServer, WebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
 import { transformMiddleware } from './middlewares/transform'
@@ -355,7 +352,7 @@ export async function createServer(
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
-    transformIndexHtml: null as any,
+    transformIndexHtml: null!, // to be immediately set
     ssrLoadModule(url) {
       if (!server._ssrExternals) {
         server._ssrExternals = resolveSSRExternal(
@@ -551,15 +548,19 @@ export async function createServer(
   }
 
   if (!middlewareMode && httpServer) {
+    let isOptimized = false
     // overwrite listen to run optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
-      try {
-        await container.buildStart({})
-        await runOptimize()
-      } catch (e) {
-        httpServer.emit('error', e)
-        return
+      if (!isOptimized) {
+        try {
+          await container.buildStart({})
+          await runOptimize()
+          isOptimized = true
+        } catch (e) {
+          httpServer.emit('error', e)
+          return
+        }
       }
       return listen(port, ...args)
     }) as any

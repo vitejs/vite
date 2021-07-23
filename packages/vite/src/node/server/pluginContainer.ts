@@ -61,6 +61,7 @@ import {
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
+  isObject,
   isExternalUrl,
   normalizePath,
   numberToPos,
@@ -506,7 +507,7 @@ export async function createPluginContainer(
             plugin.name,
             prettifyUrl(id, root)
           )
-        if (typeof result === 'object') {
+        if (isObject(result)) {
           code = result.code || ''
           if (result.map) ctx.sourcemapChain.push(result.map)
         } else {
