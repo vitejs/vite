@@ -76,6 +76,8 @@ export function transformMiddleware(
         // something unexpected has happened. In this case, Vite
         // returns an empty response that will error.
         setTimeout(() => {
+          // Don't do anything if response has already been sent
+          if (res.writableEnded) return
           // status code request timeout
           res.statusCode = 408
           res.end(
