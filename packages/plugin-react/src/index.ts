@@ -2,7 +2,7 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
-import type { Plugin, PluginOption } from 'vite'
+import type { Logger, Plugin, PluginOption } from 'vite'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -55,6 +55,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const userPlugins = opts.babel?.plugins || []
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
+  let logger: Logger
 
   const importReactRegex = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
 
@@ -63,6 +64,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     enforce: 'pre',
     configResolved(config) {
       jsxInject = config.esbuild ? config.esbuild.jsxInject : undefined
+      logger = config.logger
     },
     async transform(code, id, ssr) {
       if (/\.[tj]sx?$/.test(id)) {
@@ -141,14 +143,18 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           }
           // Even if the automatic JSX runtime is not used, we can still
           // inject the React import for .jsx and .tsx modules.
-          else if (
-            !isNodeModules &&
-            !(
-              importReactRegex.test(code) ||
-              importReactRegex.test(jsxInject ?? '')
-            )
-          ) {
-            code = `import React from 'react'; ` + code
+          else if (!isNodeModules) {
+            const importedInCode = importReactRegex.test(code)
+            const importedInJsxInject = importReactRegex.test(jsxInject ?? '')
+            if (importedInJsxInject) {
+              logger.warnOnce(
+                '[vite-plugin-react] This plugin imports React for you automatically,' +
+                  ' so you can stop using `esbuild.jsxInject` for that purpose.'
+              )
+            }
+            if (!(importedInCode || importedInJsxInject)) {
+              code = `import React from 'react'; ` + code
+            }
           }
         }
 
