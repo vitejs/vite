@@ -95,6 +95,9 @@ export async function handleHotUpdate({
       )
       if (mod) {
         affectedModules.add(mod)
+        if (mod.url.includes('&inline')) {
+          affectedModules.add(mainModule)
+        }
       } else {
         // new style block - force reload
         affectedModules.add(mainModule)

@@ -45,9 +45,10 @@ export interface Options {
   style?: Partial<SFCStyleCompileOptions>
 
   /**
-   * Transform Vue SFCs into custom elements (requires Vue >= 3.2.0)
-   * - `true` -> all `*.vue` imports are converted into custom elements
-   * - `string | RegExp` -> matched files are converted into custom elements
+   * Transform Vue SFCs into custom elements.
+   * **requires Vue >= 3.2.0 & Vite >= 2.4.4**
+   * - `true`: all `*.vue` imports are converted into custom elements
+   * - `string | RegExp`: matched files are converted into custom elements
    *
    * @default /\.ce\.vue$/
    */
