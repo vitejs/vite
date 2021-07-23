@@ -2,7 +2,7 @@
   "include": ["src"],
   "exclude": ["**/*.spec.ts"],
   "compilerOptions": {
-    "outDir": "dist",
+    "outDir": "dist/cjs",
     "target": "ES2018",
     "module": "CommonJS",
     "moduleResolution": "Node",
