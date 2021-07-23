@@ -266,3 +266,8 @@ test('Url separation', async () => {
     )
   }
 })
+
+test('inlined', async () => {
+  // should not insert css
+  expect(await getColor('.inlined')).toBe('black')
+})
