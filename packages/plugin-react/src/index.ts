@@ -51,13 +51,11 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let skipFastRefresh = opts.fastRefresh === false
   let filter = createFilter(opts.include, opts.exclude)
   let jsxInject: string | undefined
+  let logger: Logger
 
   const userPlugins = opts.babel?.plugins || []
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
-  let logger: Logger
-
-  const importReactRegex = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
 
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
@@ -144,15 +142,13 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           // Even if the automatic JSX runtime is not used, we can still
           // inject the React import for .jsx and .tsx modules.
           else if (!isNodeModules) {
-            const importedInCode = importReactRegex.test(code)
-            const importedInJsxInject = importReactRegex.test(jsxInject ?? '')
-            if (importedInJsxInject) {
+            const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
+            if (jsxInject && importReactRE.test(jsxInject)) {
               logger.warnOnce(
-                '[vite-plugin-react] This plugin imports React for you automatically,' +
+                '[@vitejs/plugin-react] This plugin imports React for you automatically,' +
                   ' so you can stop using `esbuild.jsxInject` for that purpose.'
               )
-            }
-            if (!(importedInCode || importedInJsxInject)) {
+            } else if (!importReactRE.test(code)) {
               code = `import React from 'react'; ` + code
             }
           }
@@ -228,7 +224,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           (plugin.name === 'react-refresh' ||
             (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')) &&
           config.logger.warn(
-            `[@vitejs/plugin-react] This plugin conflicts with "${plugin.name}". Please remove it.`
+            `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
+              `since this plugin conflicts with it.`
           )
       )
     },
