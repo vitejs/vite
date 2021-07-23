@@ -341,13 +341,17 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          combinedMap = combineSourcemaps(this.filename, [
-            {
-              ...(m as RawSourceMap),
-              sourcesContent: combinedMap.sourcesContent
-            },
-            combinedMap as RawSourceMap
-          ]) as SourceMap
+          combinedMap = combineSourcemaps(
+            this.filename,
+            [
+              {
+                ...(m as RawSourceMap),
+                sourcesContent: combinedMap.sourcesContent
+              },
+              combinedMap as RawSourceMap
+            ],
+            true
+          ) as SourceMap
         }
       }
       if (!combinedMap) {
