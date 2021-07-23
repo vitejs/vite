@@ -46,7 +46,7 @@ export interface Options {
 
   /**
    * Transform Vue SFCs into custom elements.
-   * **requires Vue >= 3.2.0 & Vite >= 2.4.4**
+   * **requires Vue \>= 3.2.0 & Vite \>= 2.4.4**
    * - `true`: all `*.vue` imports are converted into custom elements
    * - `string | RegExp`: matched files are converted into custom elements
    *
@@ -79,7 +79,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
   const customElementFilter =
     typeof rawOptions.customElement === 'boolean'
-      ? () => rawOptions.customElement
+      ? () => rawOptions.customElement as boolean
       : createFilter(rawOptions.customElement || /\.ce\.vue$/)
 
   return {
