@@ -5,7 +5,6 @@ module.exports = {
   build: {
     outDir: './dist',
     emptyOutDir: true,
-    polyfillDynamicImport: false,
     rollupOptions: {
       preserveEntrySignatures: 'strict',
       input: {
