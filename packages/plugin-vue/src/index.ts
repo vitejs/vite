@@ -78,8 +78,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
   )
 
   const customElementFilter =
-    rawOptions.customElement === true
-      ? () => true
+    typeof rawOptions.customElement === 'boolean'
+      ? () => rawOptions.customElement
       : createFilter(rawOptions.customElement || /\.ce\.vue$/)
 
   return {
