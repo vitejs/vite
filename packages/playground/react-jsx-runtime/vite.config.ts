@@ -4,10 +4,9 @@ const config: import('vite').UserConfig = {
   plugins: [
     reactPlugin({
       jsxRuntime: 'automatic',
+      jsxImportSource: '@emotion/react',
       babel: {
-        plugins: [
-          ['@babel/plugin-proposal-pipeline-operator', { proposal: 'fsharp' }]
-        ]
+        plugins: ['@emotion/babel-plugin']
       }
     })
   ],

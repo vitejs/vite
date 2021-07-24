@@ -1,40 +1,29 @@
-/* eslint-disable */
 import { useState } from 'react'
+import { css } from '@emotion/react'
 
-const StatelessCounter = ({ value, onChange }) => {
+export function Counter() {
+  const [count, setCount] = useState(0)
+
   return (
-    <button onClick={() => onChange((count) => count + 1)}>
-      count is: {value}
+    <button
+      css={css`
+        border: 2px solid #000;
+      `}
+      onClick={() => setCount((count) => count + 1)}
+    >
+      count is: {count}
     </button>
   )
 }
-
-const withState = (Comp) => {
-  return ({ defaultValue }) => {
-    const [val, setCount] = useState(defaultValue)
-    return <Comp value={val} onChange={setCount} />
-  }
-}
-
-const withWrapper = (Comp, Wrapper) => {
-  return (props) => {
-    return (
-      <Wrapper>
-        <Comp {...props} />
-      </Wrapper>
-    )
-  }
-}
-
-// @ts-expect-error ts does not support pipeline operators yet
-const Counter = StatelessCounter |> withState |> ((_) => withWrapper(_, 'p'))
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Hello Vite + React</h1>
-        <Counter defaultValue={0} />
+        <h1>Hello Vite + React + @emotion/react</h1>
+        <p>
+          <Counter />
+        </p>
         <p>
           Edit <code>App.jsx</code> and save to test HMR updates.
         </p>
