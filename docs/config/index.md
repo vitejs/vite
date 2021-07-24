@@ -518,9 +518,7 @@ createServer()
     server: {
       fs: {
         // Allow serving files from one level up to the project root
-        allow: [
-          '..'
-        ]
+        allow: ['..']
       }
     }
   }
@@ -601,7 +599,7 @@ createServer()
 - **Type:** `boolean | 'inline' | 'hidden'`
 - **Default:** `false`
 
-  Generate production source maps.
+  Generate production source maps. If `true`, a separate sourcemap file will be created. If `'inline'`, the sourcemap will be appended to the resulting output file as a data URI. `'hidden'` works like `true` except that the corresponding sourcemap comments in the bundled files are suppressed.
 
 ### build.rollupOptions
 
@@ -623,10 +621,10 @@ createServer()
 
 ### build.lib
 
-- **Type:** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string }`
+- **Type:** `{ entry: string, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string | ((format: ModuleFormat) => string) }`
 - **Related:** [Library Mode](/guide/build#library-mode)
 
-  Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`. `fileName` is the name of the package file output, default `fileName` is the name option of package.json
+  Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`. `fileName` is the name of the package file output, default `fileName` is the name option of package.json, it can also be defined as function taking the `format` as an argument.
 
 ### build.manifest
 

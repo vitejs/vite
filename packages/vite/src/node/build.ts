@@ -15,7 +15,8 @@ import Rollup, {
   GetModuleInfo,
   WatcherOptions,
   RollupWatcher,
-  RollupError
+  RollupError,
+  ModuleFormat
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
@@ -39,6 +40,7 @@ import { isCSSRequest } from './plugins/css'
 import { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
+import { loadFallbackPlugin } from './plugins/loadFallback'
 
 export interface BuildOptions {
   /**
@@ -198,7 +200,7 @@ export interface LibraryOptions {
   entry: string
   name?: string
   formats?: LibraryFormats[]
-  fileName?: string
+  fileName?: string | ((format: ModuleFormat) => string)
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
@@ -288,7 +290,8 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
         : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-      buildReporterPlugin(config)
+      buildReporterPlugin(config),
+      loadFallbackPlugin()
     ]
   }
 }
@@ -425,7 +428,7 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? `${libOptions.fileName || pkgName}.${output.format || `es`}.js`
+          ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
@@ -619,6 +622,16 @@ function staticImportedByEntry(
   )
   cache.set(id, someImporterIs)
   return someImporterIs
+}
+
+export function resolveLibFilename(
+  libOptions: LibraryOptions,
+  format: ModuleFormat,
+  pkgName: string
+): string {
+  return typeof libOptions.fileName === 'function'
+    ? libOptions.fileName(format)
+    : `${libOptions.fileName || pkgName}.${format}.js`
 }
 
 function resolveBuildOutputs(

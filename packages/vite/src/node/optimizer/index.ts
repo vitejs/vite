@@ -128,7 +128,7 @@ export async function optimizeDeps(
   }
 
   if (!force) {
-    let prevData
+    let prevData: DepOptimizationMetadata | undefined
     try {
       prevData = JSON.parse(fs.readFileSync(dataPath, 'utf-8'))
     } catch (e) {}
