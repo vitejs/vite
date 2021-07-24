@@ -203,11 +203,6 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     config: () => ({
       resolve: {
         dedupe: ['react', 'react-dom']
-      },
-      // react/jsx-runtime is in CJS format
-      // we want to explicitly cast it to ESM
-      optimizeDeps: {
-        include: ['react/jsx-runtime']
       }
     }),
     configResolved(config) {
@@ -256,6 +251,13 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
     enforce: 'pre',
+    config: () => ({
+      // react/jsx-runtime is in CJS format
+      // we want to explicitly cast it to ESM
+      optimizeDeps: {
+        include: ['react/jsx-runtime']
+      }
+    }),
     resolveId(id: string) {
       return id === runtimeId ? id : null
     },
