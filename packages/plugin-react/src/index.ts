@@ -83,23 +83,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
         const isTypeScript = /\.tsx?$/.test(id)
         if (isTypeScript) {
-          // TODO: maybe we need to read tsconfig to determine parser plugins to
-          // enable here, but allowing decorators by default since it's very
-          // commonly used with TS.
-          parserPlugins.push('typescript', 'decorators-legacy')
+          parserPlugins.push('typescript')
         }
 
         const isNodeModules = id.includes('node_modules')
-        if (!isNodeModules && !isProduction) {
-          plugins.push(
-            await interopDefault(
-              import('@babel/plugin-transform-react-jsx-self')
-            ),
-            await interopDefault(
-              import('@babel/plugin-transform-react-jsx-source')
-            )
-          )
-        }
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
@@ -138,10 +125,23 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             if (isCommonJS) {
               plugins.push(babelImportToRequire)
             }
-          }
-          // Even if the automatic JSX runtime is not used, we can still
-          // inject the React import for .jsx and .tsx modules.
-          else if (!isNodeModules) {
+          } else if (!isNodeModules) {
+            // @babel/plugin-transform-react-jsx-self and
+            // @babel/plugin-transform-react-jsx-source is not supported for
+            // automatic runtime. See https://babeljs.io/docs/en/babel-preset-react
+            if (!isNodeModules && !isProduction) {
+              plugins.push(
+                await interopDefault(
+                  import('@babel/plugin-transform-react-jsx-self')
+                ),
+                await interopDefault(
+                  import('@babel/plugin-transform-react-jsx-source')
+                )
+              )
+            }
+
+            // Even if the automatic JSX runtime is not used, we can still
+            // inject the React import for .jsx and .tsx modules.
             const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
             if (jsxInject && importReactRE.test(jsxInject)) {
               logger.warnOnce(
