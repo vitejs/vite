@@ -131,6 +131,13 @@ export interface ServerOptions {
    * Options for files served via '/\@fs/'.
    */
   fs?: FileSystemServeOptions
+  /**
+   * Disable key bindings for the server by setting this to `false`. This can be
+   * useful if you need the `process.stdin` stream for another purpose.
+   *
+   * @default true
+   */
+  bindShortcuts?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -611,7 +618,9 @@ async function startServer(
   )
 
   printServerUrls(hostname, protocol, serverPort, base, info)
-  bindShortcuts(server)
+  if (options.bindShortcuts !== false) {
+    bindShortcuts(server)
+  }
   // @ts-ignore
   if (global.__vite_start_time) {
     info(
