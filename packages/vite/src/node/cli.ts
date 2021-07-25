@@ -252,6 +252,6 @@ cli
   )
 
 cli.help()
-cli.version(require('vite/package.json').version)
+cli.version(require('../../package.json').version)
 
 cli.parse()
