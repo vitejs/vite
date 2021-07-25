@@ -4,9 +4,6 @@ import chalk from 'chalk'
 import readline from 'readline'
 import os from 'os'
 import { Hostname } from './utils'
-import { restartServer } from './server/hmr'
-import { openBrowser, resolveBrowserUrl } from './server/openBrowser'
-import type { ViteDevServer } from './server'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -151,33 +148,3 @@ export function printServerUrls(
       .forEach((msg) => info(msg))
   }
 }
-
-export interface Shortcut {
-  name: string
-  desc: string
-  action(server: ViteDevServer): void
-}
-
-export const SHORTCUTS: Shortcut[] = [
-  {
-    name: 'r',
-    desc: 'restart',
-    action(server: ViteDevServer): void {
-      restartServer(server)
-    }
-  },
-  {
-    name: 'o',
-    desc: 'open browser',
-    action(server: ViteDevServer): void {
-      openBrowser(resolveBrowserUrl(server), true, server.config.logger)
-    }
-  },
-  {
-    name: 'f',
-    desc: 'force restart',
-    action(server: ViteDevServer): void {
-      restartServer(server, true)
-    }
-  }
-]

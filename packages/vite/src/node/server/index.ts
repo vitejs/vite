@@ -53,10 +53,11 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
-import { printServerUrls, SHORTCUTS } from '../logger'
+import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
+import { bindShortcuts } from './shortcuts'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -610,12 +611,7 @@ async function startServer(
   )
 
   printServerUrls(hostname, protocol, serverPort, base, info)
-  // print shortcuts info
-  info(
-    `  > Shortcuts: ${SHORTCUTS.map(
-      (item) => `"${item.name}" ${item.desc}`
-    ).join(', ')}`
-  )
+  bindShortcuts(server)
   // @ts-ignore
   if (global.__vite_start_time) {
     info(

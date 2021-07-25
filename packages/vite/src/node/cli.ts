@@ -1,8 +1,8 @@
 import { cac } from 'cac'
 import chalk from 'chalk'
 import { BuildOptions } from './build'
-import { ServerOptions, ViteDevServer } from './server'
-import { createLogger, LogLevel, SHORTCUTS } from './logger'
+import { ServerOptions } from './server'
+import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
 import { preview } from './preview'
 
@@ -50,22 +50,6 @@ function cleanOptions(options: GlobalCLIOptions) {
   return ret
 }
 
-function bindShortcut(server: ViteDevServer) {
-  process.stdin.resume()
-  process.stdin.setEncoding('utf8')
-  process.stdin.on('data', (data) => {
-    const str = data.toString().trim().toLowerCase()
-    const shortcut = SHORTCUTS.filter((item) => item.name === str)[0]
-    if (shortcut) {
-      shortcut.action(server)
-    } else {
-      createLogger(server.config.logLevel).error(
-        chalk.red(`Invalid ShortCut: ${str}`)
-      )
-    }
-  })
-}
-
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
   .option('-r, --root <path>', `[string] use specified root directory`)
@@ -105,7 +89,6 @@ cli
         server: cleanOptions(options) as ServerOptions
       })
       await server.listen()
-      bindShortcut(server)
     } catch (e) {
       createLogger(options.logLevel).error(
         chalk.red(`error when starting dev server:\n${e.stack}`)
