@@ -46,7 +46,7 @@ describe('search css url function', () => {
 })
 
 describe('css path resolutions', () => {
-  const mockedProjectPath = '/foo/bar/project'
+  const mockedProjectPath = path.join(process.cwd(), '/foo/bar/project')
   const mockedBarCssRelativePath = '/css/bar.module.css'
   const mockedFooCssRelativePath = '/css/foo.module.css'
 
