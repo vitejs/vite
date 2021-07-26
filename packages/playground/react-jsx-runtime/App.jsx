@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { css } from '@emotion/react'
 
+import _Switch from 'react-switch'
+const Switch = _Switch.default
+
 export function Counter() {
   const [count, setCount] = useState(0)
 
@@ -17,10 +20,13 @@ export function Counter() {
 }
 
 function App() {
+  const [checked, setChecked] = useState(false)
+
   return (
     <div className="App">
       <header className="App-header">
         <h1>Hello Vite + React + @emotion/react</h1>
+        <Switch checked={checked} onChange={setChecked} />
         <p>
           <Counter />
         </p>
