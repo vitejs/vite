@@ -57,7 +57,7 @@ import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
-import { bindShortcuts, SHORTCUTS } from './shortcuts'
+import { bindShortcuts } from './shortcuts'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -619,12 +619,7 @@ async function startServer(
 
   printServerUrls(hostname, protocol, serverPort, base, info)
   if (options.bindShortcuts !== false) {
-    info(
-      `  > Shortcuts: ` +
-        SHORTCUTS.map((shortcut) => {
-          return `"${shortcut.key}" ${shortcut.name}`
-        }).join(', ')
-    )
+    bindShortcuts(server, isRestart)
   }
 
   // @ts-ignore
