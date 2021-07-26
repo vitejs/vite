@@ -19,17 +19,24 @@ export function Counter() {
   )
 }
 
-function App() {
+function FragmentTest() {
   const [checked, setChecked] = useState(false)
+  return (
+    <>
+      <Switch checked={checked} onChange={setChecked} />
+      <p>
+        <Counter />
+      </p>
+    </>
+  )
+}
 
+function App() {
   return (
     <div className="App">
       <header className="App-header">
         <h1>Hello Vite + React + @emotion/react</h1>
-        <Switch checked={checked} onChange={setChecked} />
-        <p>
-          <Counter />
-        </p>
+        <FragmentTest />
         <p>
           Edit <code>App.jsx</code> and save to test HMR updates.
         </p>
