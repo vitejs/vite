@@ -253,20 +253,6 @@ export default async ({ command, mode }) => {
   }
   ```
 
-### css.publicPath
-
-- **Type:** `string`
-
-  This option allows the user to customize the URL prefix. Example:
-
-  ```js
-  export default {
-    css: {
-      publicPath: 'http://127.0.0.1:8080/'
-    }
-  }
-  ```
-
 ### json.namedExports
 
 - **Type:** `boolean`
@@ -534,6 +520,20 @@ createServer()
         // Allow serving files from one level up to the project root
         allow: ['..']
       }
+    }
+  }
+  ```
+
+### server.publicPath
+
+- **Type:** `string`
+
+  This option allows the user to customize the URL prefix. Example:
+
+  ```js
+  export default {
+    server: {
+      publicPath: 'http://127.0.0.1:8080/'
     }
   }
   ```
