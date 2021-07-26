@@ -56,7 +56,6 @@ export interface CSSOptions {
     | (Postcss.ProcessOptions & {
         plugins?: Postcss.Plugin[]
       })
-  publicPath?: string
 }
 
 export interface CSSModulesOptions {
@@ -159,11 +158,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
         const resolved = await resolveUrl(url, importer)
         if (resolved) {
-          if (config?.css?.publicPath) {
-            return (
-              config.css.publicPath + path.posix.relative(config.root, resolved)
-            )
-          }
           return fileToUrl(resolved, config, this)
         }
         return url

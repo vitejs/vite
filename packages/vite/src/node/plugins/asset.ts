@@ -175,7 +175,8 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX + id)
   }
-  return config.base + rtn.replace(/^\//, '')
+  const publicPath = config.server?.publicPath || ''
+  return publicPath + config.base + rtn.replace(/^\//, '')
 }
 
 export function getAssetFilename(

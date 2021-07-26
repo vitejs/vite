@@ -127,6 +127,7 @@ export interface ServerOptions {
    * Options for files served via '/\@fs/'.
    */
   fs?: FileSystemServeOptions
+  publicPath?: string
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
