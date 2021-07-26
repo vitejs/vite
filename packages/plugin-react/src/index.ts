@@ -139,7 +139,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
             if (!isNodeModules || (ast = restoredAst)) {
               plugins.push([
-                await loadPlugin('@babel/plugin-transform-react-jsx'),
+                await loadPlugin(
+                  '@babel/plugin-transform-react-jsx' +
+                    (isProduction ? '' : '-development')
+                ),
                 {
                   runtime: 'automatic',
                   importSource: opts.jsxImportSource
