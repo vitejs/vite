@@ -1,6 +1,7 @@
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
+import resolve from 'resolve'
 import type { Logger, Plugin, PluginOption } from 'vite'
 import {
   addRefreshWrapper,
@@ -212,7 +213,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       config.plugins.forEach(
         (plugin) =>
           (plugin.name === 'react-refresh' ||
-            plugin.name === 'vite:react-jsx') &&
+            (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')) &&
           config.logger.warn(
             `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
               `since this plugin conflicts with it.`
@@ -241,7 +242,43 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     }
   }
 
-  return [viteBabel, viteReactRefresh]
+  const runtimeId = 'react/jsx-runtime'
+  // Adapted from https://github.com/alloc/vite-react-jsx
+  const viteReactJsx: Plugin = {
+    name: 'vite:react-jsx',
+    enforce: 'pre',
+    config: () => ({
+      // react/jsx-runtime is in CJS format
+      // we want to explicitly cast it to ESM
+      optimizeDeps: {
+        include: ['react/jsx-runtime']
+      }
+    }),
+    resolveId(id: string) {
+      return id === runtimeId ? id : null
+    },
+    load(id: string) {
+      if (id === runtimeId) {
+        const runtimePath = resolve.sync(runtimeId, {
+          basedir: projectRoot
+        })
+        const exports = ['jsx', 'jsxs', 'Fragment']
+        return [
+          `import * as jsxRuntime from '${runtimePath}'`,
+          // We can't use `export * from` or else any callsite that uses
+          // this module will be compiled to `jsxRuntime.exports.jsx`
+          // instead of the more concise `jsx` alias.
+          ...exports.map((name) => `export const ${name} = jsxRuntime.${name}`)
+        ].join('\n')
+      }
+    }
+  }
+
+  return [
+    viteBabel,
+    viteReactRefresh,
+    opts.jsxRuntime === 'automatic' && viteReactJsx
+  ]
 }
 
 viteReact.preambleCode = preambleCode
