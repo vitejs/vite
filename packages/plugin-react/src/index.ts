@@ -94,7 +94,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
-              await interopDefault(import('react-refresh/babel.js')),
+              await loadPlugin('react-refresh/babel.js'),
               { skipEnvCheck: true }
             ])
           }
@@ -113,7 +113,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             ast = restoredAst
 
             plugins.push([
-              await import('@babel/plugin-transform-react-jsx'),
+              await loadPlugin('@babel/plugin-transform-react-jsx'),
               {
                 runtime: 'automatic',
                 importSource: opts.jsxImportSource
@@ -130,12 +130,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // automatic runtime. See https://babeljs.io/docs/en/babel-preset-react
             if (!isNodeModules && !isProduction) {
               plugins.push(
-                await interopDefault(
-                  import('@babel/plugin-transform-react-jsx-self')
-                ),
-                await interopDefault(
-                  import('@babel/plugin-transform-react-jsx-source')
-                )
+                await loadPlugin('@babel/plugin-transform-react-jsx-self'),
+                await loadPlugin('@babel/plugin-transform-react-jsx-source')
               )
             }
 
@@ -250,8 +246,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
 viteReact.preambleCode = preambleCode
 
-function interopDefault(promise: Promise<any>): Promise<any> {
-  return promise.then((module) => module.default || module)
+function loadPlugin(path: string): Promise<any> {
+  return import(path).then((module) => module.default || module)
 }
 
 // overwrite for cjs require('...')() usage
