@@ -418,10 +418,6 @@ export async function createServer(
 
   process.once('SIGTERM', exitProcess)
 
-  // bindShortcuts in middlewareMode
-  if (middlewareMode && serverConfig.bindShortcuts !== false) {
-    bindShortcuts(server)
-  }
   if (!middlewareMode && process.env.CI !== 'true') {
     process.stdin.on('end', exitProcess)
   }
@@ -623,8 +619,9 @@ async function startServer(
 
   printServerUrls(hostname, protocol, serverPort, base, info)
   if (options.bindShortcuts !== false) {
-    bindShortcuts(server)
+    bindShortcuts(server, isRestart)
   }
+
   // @ts-ignore
   if (global.__vite_start_time) {
     info(
