@@ -61,6 +61,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     // self-closing tag if no children
     const selfClosing = children.length === 0
     const startTag = t.jsxOpeningElement(name, props, selfClosing)
+    startTag.loc = node.loc
     const endTag = selfClosing ? null : t.jsxClosingElement(name)
 
     return t.jsxElement(startTag, endTag, children, selfClosing)

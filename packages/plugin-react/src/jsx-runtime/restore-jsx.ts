@@ -7,7 +7,8 @@ let babelRestoreJSX: Promise<PluginItem> | undefined
 /** Restore JSX from `React.createElement` calls */
 export async function restoreJSX(
   babel: typeof import('@babel/core'),
-  code: string
+  code: string,
+  filename: string
 ): Promise<RestoredJSX> {
   const [reactAlias, isCommonJS] = parseReactAlias(code)
   const reactJsxRE = new RegExp(
@@ -37,6 +38,7 @@ export async function restoreJSX(
   const result = await babel.transformAsync(code, {
     ast: true,
     code: false,
+    filename,
     parserOpts: {
       plugins: ['jsx']
     },
