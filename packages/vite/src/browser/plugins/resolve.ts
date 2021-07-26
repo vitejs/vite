@@ -44,10 +44,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
     },
 
     resolveId(id, importer, resolveOpts, ssr) {
-      if (id.startsWith(root)) {
-        return id
-      }
-
       const targetWeb = !ssr || ssrTarget === 'webworker'
 
       // this is passed by @rollup/plugin-commonjs
