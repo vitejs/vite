@@ -2,7 +2,7 @@ import type { ViteDevServer } from '..'
 import { openBrowser, resolveBrowserUrl } from './openBrowser'
 import { restartServer } from './hmr'
 
-export function bindShortcuts(server: ViteDevServer) {
+export function bindShortcuts(server: ViteDevServer): void {
   server.config.logger.info(
     `  > Shortcuts: ` +
       SHORTCUTS.map((shortcut) => {
