@@ -2,16 +2,7 @@ import type { ViteDevServer } from '..'
 import { openBrowser, resolveBrowserUrl } from './openBrowser'
 import { restartServer } from './hmr'
 
-export function bindShortcuts(server: ViteDevServer, isRestart = false): void {
-  server.config.logger.info(
-    `  > Shortcuts: ` +
-      SHORTCUTS.map((shortcut) => {
-        return `"${shortcut.key}" ${shortcut.name}`
-      }).join(', ')
-  )
-
-  if (isRestart) return
-
+export function bindShortcuts(server: ViteDevServer): void {
   const { stdin } = process
   stdin.resume()
   stdin.setEncoding('utf8')

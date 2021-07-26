@@ -5,6 +5,7 @@ import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
 import { preview } from './preview'
+import { bindShortcuts } from './server/shortcuts'
 
 const cli = cac('vite')
 
@@ -89,6 +90,9 @@ cli
         server: cleanOptions(options) as ServerOptions
       })
       await server.listen()
+      if (options.bindShortcuts !== false) {
+        bindShortcuts(server)
+      }
     } catch (e) {
       createLogger(options.logLevel).error(
         chalk.red(`error when starting dev server:\n${e.stack}`)
