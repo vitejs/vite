@@ -2,7 +2,7 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
-import type { Logger, Plugin, PluginOption } from 'vite'
+import type { Plugin, PluginOption } from 'vite'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -45,24 +45,50 @@ export interface Options {
 }
 
 export default function viteReact(opts: Options = {}): PluginOption[] {
+  // Provide default values for Rollup compat.
   let base = '/'
-  let projectRoot = process.cwd()
-  let isProduction = true
-  let skipFastRefresh = opts.fastRefresh === false
   let filter = createFilter(opts.include, opts.exclude)
-  let jsxInject: string | undefined
-  let logger: Logger
+  let isProduction = true
+  let projectRoot = process.cwd()
+  let skipFastRefresh = opts.fastRefresh === false
+  let skipReactImport = false
 
   const userPlugins = opts.babel?.plugins || []
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
 
+  const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
+
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
     configResolved(config) {
-      jsxInject = config.esbuild ? config.esbuild.jsxInject : undefined
-      logger = config.logger
+      base = config.base
+      projectRoot = config.root
+      filter = createFilter(opts.include, opts.exclude, {
+        resolve: projectRoot
+      })
+      isProduction = config.isProduction
+      skipFastRefresh = isProduction || config.command === 'build'
+
+      const jsxInject = config.esbuild && config.esbuild.jsxInject
+      if (jsxInject && importReactRE.test(jsxInject)) {
+        skipReactImport = true
+        config.logger.warn(
+          '[@vitejs/plugin-react] This plugin imports React for you automatically,' +
+            ' so you can stop using `esbuild.jsxInject` for that purpose.'
+        )
+      }
+
+      config.plugins.forEach(
+        (plugin) =>
+          (plugin.name === 'react-refresh' ||
+            (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')) &&
+          config.logger.warn(
+            `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
+              `since this plugin conflicts with it.`
+          )
+      )
     },
     async transform(code, id, ssr) {
       if (/\.[tj]sx?$/.test(id)) {
@@ -136,13 +162,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
             // Even if the automatic JSX runtime is not used, we can still
             // inject the React import for .jsx and .tsx modules.
-            const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
-            if (jsxInject && importReactRE.test(jsxInject)) {
-              logger.warnOnce(
-                '[@vitejs/plugin-react] This plugin imports React for you automatically,' +
-                  ' so you can stop using `esbuild.jsxInject` for that purpose.'
-              )
-            } else if (!importReactRE.test(code)) {
+            if (!skipReactImport && !importReactRE.test(code)) {
               code = `import React from 'react'; ` + code
             }
           }
@@ -199,25 +219,6 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         dedupe: ['react', 'react-dom']
       }
     }),
-    configResolved(config) {
-      base = config.base
-      projectRoot = config.root
-      isProduction = config.isProduction
-      skipFastRefresh = isProduction || config.command === 'build'
-      filter = createFilter(opts.include, opts.exclude, {
-        resolve: projectRoot
-      })
-
-      config.plugins.forEach(
-        (plugin) =>
-          (plugin.name === 'react-refresh' ||
-            (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')) &&
-          config.logger.warn(
-            `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
-              `since this plugin conflicts with it.`
-          )
-      )
-    },
     resolveId(id) {
       if (id === runtimePublicPath) {
         return id
