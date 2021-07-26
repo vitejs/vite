@@ -619,7 +619,7 @@ async function startServer(
 
   printServerUrls(hostname, protocol, serverPort, base, info)
   if (options.bindShortcuts !== false) {
-    bindShortcuts(server, isRestart)
+    bindShortcuts(server)
   }
 
   // @ts-ignore
