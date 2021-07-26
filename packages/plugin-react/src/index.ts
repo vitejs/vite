@@ -262,7 +262,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         })
         const exports = ['jsx', 'jsxs', 'Fragment']
         return [
-          `import * as jsxRuntime from '${runtimePath}'`,
+          `import * as jsxRuntime from ${JSON.stringify(runtimePath)}`,
           // We can't use `export * from` or else any callsite that uses
           // this module will be compiled to `jsxRuntime.exports.jsx`
           // instead of the more concise `jsx` alias.
