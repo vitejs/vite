@@ -102,7 +102,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         }
 
         let ast: t.File | null | undefined
-        if (id.endsWith('x')) {
+        if (isNodeModules || id.endsWith('x')) {
           if (opts.jsxRuntime === 'automatic') {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
@@ -111,25 +111,23 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
               ? await restoreJSX(babel, code)
               : [null, false]
 
-            ast = restoredAst
+            if (!isNodeModules || (ast = restoredAst)) {
+              plugins.push([
+                await loadPlugin('@babel/plugin-transform-react-jsx'),
+                {
+                  runtime: 'automatic',
+                  importSource: opts.jsxImportSource
+                }
+              ])
 
-            plugins.push([
-              await loadPlugin('@babel/plugin-transform-react-jsx'),
-              {
-                runtime: 'automatic',
-                importSource: opts.jsxImportSource
+              // Avoid inserting `import` statements into CJS modules.
+              if (isCommonJS) {
+                plugins.push(babelImportToRequire)
               }
-            ])
-
-            // Avoid inserting `import` statements into CJS modules.
-            if (isCommonJS) {
-              plugins.push(babelImportToRequire)
             }
           } else if (!isNodeModules) {
-            // @babel/plugin-transform-react-jsx-self and
-            // @babel/plugin-transform-react-jsx-source is not supported for
-            // automatic runtime. See https://babeljs.io/docs/en/babel-preset-react
-            if (!isNodeModules && !isProduction) {
+            // These plugins are only needed for the classic runtime.
+            if (!isProduction) {
               plugins.push(
                 await loadPlugin('@babel/plugin-transform-react-jsx-self'),
                 await loadPlugin('@babel/plugin-transform-react-jsx-source')
