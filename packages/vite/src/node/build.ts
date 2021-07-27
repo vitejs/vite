@@ -31,7 +31,6 @@ import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
-import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
@@ -117,10 +116,9 @@ export interface BuildOptions {
    */
   terserOptions?: Terser.MinifyOptions
   /**
-   * Options for clean-css
-   * https://github.com/jakubpawlowicz/clean-css#constructor-options
+   * @deprecated Vite now uses esbuild for CSS minification.
    */
-  cleanCssOptions?: CleanCSS.Options
+  cleanCssOptions?: any
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/guide/en/#big-list-of-options
@@ -207,7 +205,7 @@ export interface LibraryOptions {
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export type ResolvedBuildOptions = Required<
-  Omit<BuildOptions, 'base' | 'polyfillDynamicImport'>
+  Omit<BuildOptions, 'base' | 'cleanCssOptions' | 'polyfillDynamicImport'>
 >
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
@@ -231,7 +229,6 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     },
     minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
-    cleanCssOptions: {},
     write: true,
     emptyOutDir: null,
     manifest: false,
@@ -346,13 +343,13 @@ async function doBuild(
   const input = libOptions
     ? resolve(libOptions.entry)
     : typeof options.ssr === 'string'
-    ? resolve(options.ssr)
-    : options.rollupOptions?.input || resolve('index.html')
+      ? resolve(options.ssr)
+      : options.rollupOptions?.input || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. ` +
-        `Please specify a dedicated SSR entry.`
+      `Please specify a dedicated SSR entry.`
     )
   }
 
@@ -376,7 +373,7 @@ async function doBuild(
           fs.readFileSync(dataPath, 'utf-8')
         ) as DepOptimizationMetadata
         knownImports = Object.keys(data.optimized)
-      } catch (e) {}
+      } catch (e) { }
     }
     if (!knownImports) {
       // no dev deps optimization data, do a fresh scan
@@ -394,8 +391,8 @@ async function doBuild(
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
-      ? 'strict'
-      : false,
+        ? 'strict'
+        : false,
     ...options.rollupOptions,
     plugins,
     external,
@@ -430,8 +427,8 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+            ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
+            : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
@@ -444,9 +441,9 @@ async function doBuild(
         inlineDynamicImports: ssr && typeof input === 'string',
         manualChunks:
           !ssr &&
-          !libOptions &&
-          output?.format !== 'umd' &&
-          output?.format !== 'iife'
+            !libOptions &&
+            output?.format !== 'umd' &&
+            output?.format !== 'iife'
             ? createMoveToVendorChunkFn(config)
             : undefined,
         ...output
@@ -557,7 +554,7 @@ function prepareOutDir(
           `\n${chalk.bold(`(!)`)} outDir ${chalk.white.dim(
             outDir
           )} is not inside project root and will not be emptied.\n` +
-            `Use --emptyOutDir to override.\n`
+          `Use --emptyOutDir to override.\n`
         )
       )
     } else if (emptyOutDir !== false) {
@@ -649,7 +646,7 @@ function resolveBuildOutputs(
     ) {
       throw new Error(
         `Option "build.lib.name" is required when output formats ` +
-          `include "umd" or "iife".`
+        `include "umd" or "iife".`
       )
     }
     if (!outputs) {
@@ -661,7 +658,7 @@ function resolveBuildOutputs(
       logger.warn(
         chalk.yellow(
           `"build.lib.formats" will be ignored because ` +
-            `"build.rollupOptions.output" is already an array format`
+          `"build.rollupOptions.output" is already an array format`
         )
       )
     }
@@ -687,9 +684,9 @@ export function onRollupWarning(
     if (!importer || !/\?commonjs-external$/.test(importer)) {
       throw new Error(
         `[vite]: Rollup failed to resolve import "${id}" from "${importer}".\n` +
-          `This is most likely unintended because it can break your application at runtime.\n` +
-          `If you do want to externalize this module explicitly add it to\n` +
-          `\`build.rollupOptions.external\``
+        `This is most likely unintended because it can break your application at runtime.\n` +
+        `If you do want to externalize this module explicitly add it to\n` +
+        `\`build.rollupOptions.external\``
       )
     }
   }

@@ -8,7 +8,7 @@ Or you can follow these steps to configure it manually:
 
    ```js
    // vite.config.js
-   export default {
+   export default defineConfig({
      build: {
        // generate manifest.json in outDir
        manifest: true,
@@ -17,7 +17,7 @@ Or you can follow these steps to configure it manually:
          input: '/path/to/main.js'
        }
      }
-   }
+   })
    ```
 
 2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
