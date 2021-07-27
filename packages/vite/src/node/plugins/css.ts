@@ -42,6 +42,7 @@ import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-impor
 import type Less from 'less'
 import { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
+import { transform, formatMessages } from 'esbuild'
 
 // const debug = createDebugger('vite:css')
 
@@ -866,31 +867,18 @@ async function doUrlReplace(
   return `url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
-let CleanCSS: any
-
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  CleanCSS = CleanCSS || (await import('clean-css')).default
-  const res = new CleanCSS({
-    rebase: false,
-    ...config.build.cleanCssOptions
-  }).minify(css)
-
-  if (res.errors && res.errors.length) {
-    config.logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
-    throw res.errors[0]
-  }
-
-  // do not warn on remote @imports
-  const warnings =
-    res.warnings &&
-    res.warnings.filter((m: string) => !m.includes('remote @import'))
-  if (warnings && warnings.length) {
+  const { code, warnings } = await transform(css, {
+    loader: 'css',
+    minify: true
+  })
+  if (warnings.length) {
+    const msgs = await formatMessages(warnings, { kind: 'warning' })
     config.logger.warn(
-      chalk.yellow(`warnings when minifying css:\n${warnings.join('\n')}`)
+      chalk.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
     )
   }
-
-  return res.styles
+  return code
 }
 
 // #1845

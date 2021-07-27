@@ -528,6 +528,13 @@ export async function resolveConfig(
     }
   })
 
+  if (config.build?.cleanCssOptions) {
+    logDeprecationWarning(
+      'build.cleanCssOptions',
+      'Vite now uses esbuild for CSS minification.'
+    )
+  }
+
   return resolved
 }
 
