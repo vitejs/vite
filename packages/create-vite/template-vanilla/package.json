@@ -7,6 +7,6 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "vite": "^2.4.3"
+    "vite": "^2.4.4"
   }
 }
