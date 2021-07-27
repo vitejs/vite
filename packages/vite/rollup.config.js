@@ -122,7 +122,10 @@ const nodeConfig = {
   },
   external: [
     'fsevents',
-    ...Object.keys(require('./package.json').dependencies)
+    'esbuild',
+    'postcss',
+    'resolve',
+    'rollup',
   ],
   plugins: [
     alias({

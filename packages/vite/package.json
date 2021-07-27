@@ -1,6 +1,6 @@
 {
   "name": "browser-vite",
-  "version": "2.4.0-browser.5",
+  "version": "2.4.0-browser.6",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -91,6 +91,7 @@
     "cac": "^6.7.3",
     "chalk": "^4.1.1",
     "chokidar": "^3.5.2",
+    "cjs-module-lexer": "^1.2.2",
     "clean-css": "^5.1.3",
     "compression": "^1.7.4",
     "connect": "^3.7.0",

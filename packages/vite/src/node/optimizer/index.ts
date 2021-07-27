@@ -14,6 +14,7 @@ import {
 } from '../utils'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { ImportSpecifier, init, parse } from 'es-module-lexer'
+import { init as cjs_init, parse as cjs_parse } from 'cjs-module-lexer'
 import { scanImports } from './scan'
 
 const debug = createDebugger('vite:deps')
@@ -22,6 +23,7 @@ export type ExportsData = [ImportSpecifier[], string[]] & {
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
   hasReExports?: true
+  cjsExports?: string[]
 }
 
 export interface DepOptimizationOptions {
@@ -231,7 +233,7 @@ export async function optimizeDeps(
   const idToExports: Record<string, ExportsData> = {}
   const flatIdToExports: Record<string, ExportsData> = {}
 
-  await init
+  await Promise.all([init, cjs_init()]);
   for (const id in deps) {
     const flatId = flattenId(id)
     flatIdDeps[flatId] = deps[id]
@@ -242,6 +244,19 @@ export async function optimizeDeps(
       if (/export\s+\*\s+from/.test(exp)) {
         exportsData.hasReExports = true
       }
+    }
+    if (exportsData[0].length === 0 && exportsData[1].length === 0) {
+      // cjs
+      const {exports, reexports} = cjs_parse(entryContent);
+      const expSet = new Set(exports);
+      while (reexports.length) {
+        const nested = reexports.pop()!;
+        const nestedPath = path.join(path.dirname(deps[id]), nested);
+        const {exports: exports2, reexports: reexports2} = cjs_parse(fs.readFileSync(nestedPath, 'utf-8'))
+        exports2.forEach(e => expSet.add(e));
+        reexports.push(...reexports2);
+      }
+      exportsData.cjsExports = Array.from(expSet);
     }
     idToExports[id] = exportsData
     flatIdToExports[flatId] = exportsData

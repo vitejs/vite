@@ -160,7 +160,9 @@ export function esbuildDepPlugin(
         const [imports, exports] = data
         if (!imports.length && !exports.length) {
           // cjs
-          contents += `export default require("${relativePath}");`
+          const { cjsExports = [] } = data;
+          const keys = cjsExports.filter(i => i != "default").join(', ');
+          contents += `export { ${keys} } from "${relativePath}";import m from "${relativePath}";export default m;`
         } else {
           if (exports.includes('default')) {
             contents += `import d from "${relativePath}";export default d;`
