@@ -108,7 +108,8 @@ module.exports = {
   build: {
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
-      name: 'MyLib'
+      name: 'MyLib',
+      fileName: format => `my-lib.${format}.js`  
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled

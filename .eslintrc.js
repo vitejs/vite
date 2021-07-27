@@ -14,6 +14,7 @@ module.exports = defineConfig({
     ecmaVersion: 2020
   },
   rules: {
+    eqeqeq: ['warn', 'always', { null: 'never' }],
     'no-debugger': ['error'],
     'no-empty': ['warn', { allowEmptyCatch: true }],
     'no-process-exit': 'off',
@@ -97,7 +98,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/create-app/template-*/**'],
+      files: ['packages/create-vite/template-*/**'],
       rules: {
         'node/no-missing-import': 'off'
       }
@@ -106,6 +107,12 @@ module.exports = defineConfig({
       files: ['*.js'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off'
+      }
+    },
+    {
+      files: ['*.d.ts'],
+      rules: {
+        '@typescript-eslint/triple-slash-reference': 'off'
       }
     }
   ]
