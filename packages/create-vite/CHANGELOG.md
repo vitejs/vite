@@ -1,3 +1,7 @@
+## [2.5.3](https://github.com/vitejs/vite/compare/create-vite@2.5.2...create-vite@2.5.3) (2021-07-27)
+
+
+
 ## [2.5.2](https://github.com/vitejs/vite/compare/create-vite@2.5.1...create-vite@2.5.2) (2021-07-20)
 
 
