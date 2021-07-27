@@ -1,20 +1,19 @@
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import { resolvePlugins } from '../plugins'
-import { parse as parseUrl } from 'url'
-import qs, { ParsedUrlQuery } from 'querystring'
+import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 
-function parseWorkerRequest(id: string): ParsedUrlQuery | null {
+function parseWorkerRequest(id: string): Record<string, string> | null {
   const { search } = parseUrl(id)
   if (!search) {
     return null
   }
-  return qs.parse(search.slice(1))
+  return Object.fromEntries(new URLSearchParams(search.slice(1)))
 }
 
 const WorkerFileId = 'worker_file'

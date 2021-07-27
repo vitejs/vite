@@ -206,7 +206,7 @@ export function isObject(value: unknown): value is Record<string, any> {
 }
 
 export function isDefined<T>(value: T | undefined | null): value is T {
-  return value !== undefined && value !== null
+  return value != null
 }
 
 export function lookupFile(
@@ -351,6 +351,9 @@ export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
+    if (srcFile === destDir) {
+      continue
+    }
     const destFile = path.resolve(destDir, file)
     const stat = fs.statSync(srcFile)
     if (stat.isDirectory()) {
@@ -439,7 +442,8 @@ export function combineSourcemaps(
     return { ...nullSourceMap }
   }
 
-  let map
+  // We don't declare type here so we can convert/fake/map as RawSourceMap
+  let map //: SourceMap
   let mapIndex = 1
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
