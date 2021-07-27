@@ -12,7 +12,7 @@ export default defineConfig({
   plugins: [vuePlugin(), vueI18nPlugin],
   build: {
     // to make tests faster
-    minify: false
+    // minify: false
   },
   css: {
     modules: {

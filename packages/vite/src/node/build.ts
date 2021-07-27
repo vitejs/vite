@@ -31,7 +31,6 @@ import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
-import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
@@ -116,10 +115,9 @@ export interface BuildOptions {
    */
   terserOptions?: Terser.MinifyOptions
   /**
-   * Options for clean-css
-   * https://github.com/jakubpawlowicz/clean-css#constructor-options
+   * @deprecated Vite now uses esbuild for CSS minification.
    */
-  cleanCssOptions?: CleanCSS.Options
+  cleanCssOptions?: any
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/guide/en/#big-list-of-options
@@ -205,7 +203,9 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<Omit<BuildOptions, 'base'>>
+export type ResolvedBuildOptions = Required<
+  Omit<BuildOptions, 'base' | 'cleanCssOptions'>
+>
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
@@ -229,7 +229,6 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     },
     minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
-    cleanCssOptions: {},
     write: true,
     emptyOutDir: null,
     manifest: false,
