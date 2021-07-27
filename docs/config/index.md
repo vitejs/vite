@@ -55,7 +55,7 @@ Vite also directly supports TS config files. You can use `vite.config.ts` with t
 If the config needs to conditional determine options based on the command (`serve` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
 
 ```js
-export default ({ command, mode }) => {
+export default defineConfig(({ command, mode }) => {
   if (command === 'serve') {
     return {
       // serve specific config
@@ -65,7 +65,7 @@ export default ({ command, mode }) => {
       // build specific config
     }
   }
-}
+})
 ```
 
 ### Async Config
@@ -73,7 +73,7 @@ export default ({ command, mode }) => {
 If the config needs to call async function, it can export a async function instead:
 
 ```js
-export default async ({ command, mode }) => {
+export default defineConfig(async ({ command, mode }) => {
   const data = await asyncFunction()
   return {
     // build specific config
@@ -242,7 +242,7 @@ export default async ({ command, mode }) => {
   Specify options to pass to CSS pre-processors. Example:
 
   ```js
-  export default {
+  export default defineConfig({
     css: {
       preprocessorOptions: {
         scss: {
@@ -250,7 +250,7 @@ export default async ({ command, mode }) => {
         }
       }
     }
-  }
+  })
   ```
 
 ### json.namedExports
@@ -276,12 +276,12 @@ export default async ({ command, mode }) => {
   `ESBuildOptions` extends [ESbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
 
   ```js
-  export default {
+  export default defineConfig({
     esbuild: {
       jsxFactory: 'h',
       jsxFragment: 'Fragment'
     }
-  }
+  })
   ```
 
   By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, both of which expect type of `string | RegExp | (string | RegExp)[]`.
@@ -289,11 +289,11 @@ export default async ({ command, mode }) => {
   In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
 
   ```js
-  export default {
+  export default defineConfig({
     esbuild: {
       jsxInject: `import React from 'react'`
     }
-  }
+  })
   ```
 
   Set to `false` to disable ESbuild transforms.
@@ -374,11 +374,11 @@ export default async ({ command, mode }) => {
   **Example:**
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       open: '/docs/index.html'
     }
-  }
+  })
   ```
 
 ### server.proxy
@@ -392,7 +392,7 @@ export default async ({ command, mode }) => {
   **Example:**
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       proxy: {
         // string shorthand
@@ -419,7 +419,7 @@ export default async ({ command, mode }) => {
         }
       }
     }
-  }
+  })
   ```
 
 ### server.cors
@@ -514,14 +514,14 @@ createServer()
   Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       fs: {
         // Allow serving files from one level up to the project root
         allow: ['..']
       }
     }
-  }
+  })
   ```
 
 ## Build Options

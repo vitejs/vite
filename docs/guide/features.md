@@ -78,12 +78,12 @@ If not using JSX with React or Vue, custom `jsxFactory` and `jsxFragment` can be
 
 ```js
 // vite.config.js
-export default {
+export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
     jsxFragment: 'Fragment'
   }
-}
+})
 ```
 
 More details in [esbuild docs](https://esbuild.github.io/content-types/#jsx).
@@ -92,11 +92,11 @@ You can inject the JSX helpers using `jsxInject` (which is a Vite-only option) t
 
 ```js
 // vite.config.js
-export default {
+export default defineConfig({
   esbuild: {
     jsxInject: `import React from 'react'`
   }
-}
+})
 ```
 
 ## CSS

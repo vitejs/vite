@@ -53,10 +53,11 @@ Vite 2.0 core is now framework agnostic. Vue support is now provided via [`@vite
 
 ```js
 import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig({
   plugins: [vue()]
-}
+})
 ```
 
 ### Custom Blocks Transforms
@@ -66,6 +67,7 @@ A custom plugin can be used to transform Vue custom blocks like the one below:
 ```ts
 // vite.config.js
 import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 
 const vueI18nPlugin = {
   name: 'vue-i18n',
@@ -82,9 +84,9 @@ const vueI18nPlugin = {
   }
 }
 
-export default {
+export default defineConfig({
   plugins: [vue(), vueI18nPlugin]
-}
+})
 ```
 
 ## React Support
