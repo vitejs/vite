@@ -15,7 +15,8 @@ import Rollup, {
   GetModuleInfo,
   WatcherOptions,
   RollupWatcher,
-  RollupError
+  RollupError,
+  ModuleFormat
 } from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
@@ -30,7 +31,6 @@ import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
-import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
@@ -39,6 +39,7 @@ import { isCSSRequest } from './plugins/css'
 import { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
+import { loadFallbackPlugin } from './plugins/loadFallback'
 
 export interface BuildOptions {
   /**
@@ -73,6 +74,7 @@ export interface BuildOptions {
    * whether to inject dynamic import polyfill.
    * Note: does not apply to library mode.
    * @default false
+   * @deprecated use plugin-legacy for browsers that don't support dynamic import
    */
   polyfillDynamicImport?: boolean
   /**
@@ -120,10 +122,9 @@ export interface BuildOptions {
    */
   terserOptions?: Terser.MinifyOptions
   /**
-   * Options for clean-css
-   * https://github.com/jakubpawlowicz/clean-css#constructor-options
+   * @deprecated Vite now uses esbuild for CSS minification.
    */
-  cleanCssOptions?: CleanCSS.Options
+  cleanCssOptions?: any
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/guide/en/#big-list-of-options
@@ -204,18 +205,19 @@ export interface LibraryOptions {
   entry: string
   name?: string
   formats?: LibraryFormats[]
-  fileName?: string
+  fileName?: string | ((format: ModuleFormat) => string)
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<Omit<BuildOptions, 'base'>>
+export type ResolvedBuildOptions = Required<
+  Omit<BuildOptions, 'base' | 'cleanCssOptions' | 'polyfillDynamicImport'>
+>
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
-    polyfillDynamicImport: false,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -234,7 +236,6 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     },
     minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
-    cleanCssOptions: {},
     write: true,
     emptyOutDir: null,
     manifest: false,
@@ -295,7 +296,8 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
         : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-      buildReporterPlugin(config)
+      buildReporterPlugin(config),
+      loadFallbackPlugin()
     ]
   }
 }
@@ -432,7 +434,7 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? `${libOptions.fileName || pkgName}.${output.format || `es`}.js`
+          ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
@@ -626,6 +628,16 @@ function staticImportedByEntry(
   )
   cache.set(id, someImporterIs)
   return someImporterIs
+}
+
+export function resolveLibFilename(
+  libOptions: LibraryOptions,
+  format: ModuleFormat,
+  pkgName: string
+): string {
+  return typeof libOptions.fileName === 'function'
+    ? libOptions.fileName(format)
+    : `${libOptions.fileName || pkgName}.${format}.js`
 }
 
 function resolveBuildOutputs(

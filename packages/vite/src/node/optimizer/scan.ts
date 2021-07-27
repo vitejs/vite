@@ -37,8 +37,8 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // use Acorn because it's slow. Luckily this doesn't have to be bullet proof
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
-const importsRE =
-  /\bimport(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')/gm
+export const importsRE =
+  /(?:^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?:$|;|\/\/|\/\*)/gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -94,6 +94,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   await Promise.all(
     entries.map((entry) =>
       build({
+        absWorkingDir: process.cwd(),
         write: false,
         entryPoints: [entry],
         bundle: true,
@@ -198,7 +199,7 @@ function esbuildScanPlugin(
           regex.lastIndex = 0
           let js = ''
           let loader: Loader = 'js'
-          let match
+          let match: RegExpExecArray | null
           while ((match = regex.exec(raw))) {
             const [, openTag, content] = match
             const srcMatch = openTag.match(srcRE)
@@ -226,9 +227,9 @@ function esbuildScanPlugin(
             // esbuild from crawling further.
             // the solution is to add `import 'x'` for every source to force
             // esbuild to keep crawling due to potential side effects.
-            let m
+            let m: RegExpExecArray | null
             const original = js
-            while ((m = importsRE.exec(original)) !== null) {
+            while ((m = importsRE.exec(original)) != null) {
               // This is necessary to avoid infinite loops with zero-width matches
               if (m.index === importsRE.lastIndex) {
                 importsRE.lastIndex++

@@ -211,8 +211,56 @@ test('should declare variable for imported super class', async () => {
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = __vite_ssr_import__(\\"./dependency\\")
     const Foo = __vite_ssr_import_0__.Foo;
-    __vite_ssr_exports__.default = class A extends Foo {}
+    class A extends Foo {}
     class B extends Foo {}
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A })
+    Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }})"
+  `)
+})
+
+// #4049
+test('should handle default export variants', async () => {
+  // default anonymous functions
+  expect(
+    (await ssrTransform(`export default function() {}\n`, null, null)).code
+  ).toMatchInlineSnapshot(`
+    "__vite_ssr_exports__.default = function() {}
+    "
+  `)
+  // default anonymous class
+  expect((await ssrTransform(`export default class {}\n`, null, null)).code)
+    .toMatchInlineSnapshot(`
+    "__vite_ssr_exports__.default = class {}
+    "
+  `)
+  // default named functions
+  expect(
+    (
+      await ssrTransform(
+        `export default function foo() {}\n` +
+          `foo.prototype = Object.prototype;`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "function foo() {}
+    foo.prototype = Object.prototype;
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: foo })"
+  `)
+  // default named classes
+  expect(
+    (
+      await ssrTransform(
+        `export default class A {}\n` + `export class B extends A {}`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "class A {}
+    class B extends A {}
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A })
     Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }})"
   `)
 })

@@ -21,7 +21,6 @@ import {
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import { dynamicImportPolyfillId } from './dynamicImportPolyfill'
 import {
   AttributeNode,
   NodeTransform,
@@ -52,7 +51,7 @@ export function htmlInlineScriptProxyPlugin(): Plugin {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
         const html = fs.readFileSync(file, 'utf-8').replace(htmlCommentRE, '')
-        let match
+        let match: RegExpExecArray | null | undefined
         scriptModuleRE.lastIndex = 0
         for (let i = 0; i <= index; i++) {
           match = scriptModuleRE.exec(html)
@@ -268,10 +267,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // inject module preload polyfill
         if (config.build.polyfillModulePreload) {
           js = `import "${modulePreloadPolyfillId}";\n${js}`
-        }
-        // inject dynamic import polyfill
-        if (config.build.polyfillDynamicImport) {
-          js = `import "${dynamicImportPolyfillId}";\n${js}`
         }
 
         return js
@@ -490,7 +485,7 @@ export async function applyHtmlTransforms(
     if (typeof res === 'string') {
       html = res
     } else {
-      let tags
+      let tags: HtmlTagDescriptor[]
       if (Array.isArray(res)) {
         tags = res
       } else {
@@ -550,7 +545,7 @@ function injectToHead(
   } else {
     // inject before head close
     if (headInjectRE.test(html)) {
-      return html.replace(headInjectRE, `${tagsHtml}\n$&`)
+      return html.replace(headInjectRE, `${tagsHtml}\n  $&`)
     }
   }
   // if no <head> tag is present, just prepend
@@ -597,7 +592,7 @@ function serializeTags(tags: HtmlTagDescriptor['children']): string {
   if (typeof tags === 'string') {
     return tags
   } else if (tags) {
-    return tags.map(serializeTag).join(`\n  `)
+    return `  ${tags.map(serializeTag).join('\n    ')}`
   }
   return ''
 }

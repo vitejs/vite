@@ -19,7 +19,15 @@ export function baseMiddleware({
       // rewrite url to remove base.. this ensures that other middleware does
       // not need to consider base being prepended or not
       req.url = url.replace(base, '/')
-    } else if (path === '/' || path === '/index.html') {
+      return next()
+    }
+
+    // skip redirect and error fallback on middleware mode, #4057
+    if (config.server.middlewareMode) {
+      return next()
+    }
+
+    if (path === '/' || path === '/index.html') {
       // redirect root visit to based url
       res.writeHead(302, {
         Location: base

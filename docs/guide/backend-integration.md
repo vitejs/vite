@@ -8,7 +8,7 @@ Or you can follow these steps to configure it manually:
 
    ```js
    // vite.config.js
-   export default {
+   export default defineConfig({
      build: {
        // generate manifest.json in outDir
        manifest: true,
@@ -17,14 +17,7 @@ Or you can follow these steps to configure it manually:
          input: '/path/to/main.js'
        }
      }
-   }
-   ```
-
-   If you use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) or manually enable the [`build.dynamicImportPolyfill` option](/config/#build-polyfilldynamicimport), remember to add the [dynamic import polyfill](/config/#build-polyfilldynamicimport) to your entry, since it will no longer be auto-injected:
-
-   ```js
-   // add the beginning of your app entry
-   import 'vite/dynamic-import-polyfill'
+   })
    ```
 
    If you haven't disabled the [module preload polyfill](/config/#polyfillmodulepreload), you also need to import the polyfill in your entry
