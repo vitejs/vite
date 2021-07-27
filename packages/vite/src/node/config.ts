@@ -386,9 +386,9 @@ export async function resolveConfig(
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
       ? path.resolve(
-        resolvedRoot,
-        typeof publicDir === 'string' ? publicDir : 'public'
-      )
+          resolvedRoot,
+          typeof publicDir === 'string' ? publicDir : 'public'
+        )
       : ''
 
   const resolved: ResolvedConfig = {
@@ -428,12 +428,12 @@ export async function resolveConfig(
     }
   }
 
-    ; (resolved.plugins as Plugin[]) = await resolvePlugins(
-      resolved,
-      prePlugins,
-      normalPlugins,
-      postPlugins
-    )
+  ;(resolved.plugins as Plugin[]) = await resolvePlugins(
+    resolved,
+    prePlugins,
+    normalPlugins,
+    postPlugins
+  )
 
   // call configResolved hooks
   await Promise.all(userPlugins.map((p) => p.configResolved?.(resolved)))
@@ -454,7 +454,8 @@ export async function resolveConfig(
   ) => {
     logger.warn(
       chalk.yellow.bold(
-        `(!) "${deprecatedOption}" option is deprecated. ${hint}${error ? `\n${error.stack}` : ''
+        `(!) "${deprecatedOption}" option is deprecated. ${hint}${
+          error ? `\n${error.stack}` : ''
         }`
       )
     )
@@ -573,7 +574,7 @@ function resolveBaseUrl(
     logger.warn(
       chalk.yellow.bold(
         `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
-        `URL, ./, or an empty string.`
+          `URL, ./, or an empty string.`
       )
     )
     base = '/'
@@ -663,11 +664,11 @@ function normalizeAlias(o: AliasOptions): Alias[] {
   return Array.isArray(o)
     ? o.map(normalizeSingleAlias)
     : Object.keys(o).map((find) =>
-      normalizeSingleAlias({
-        find,
-        replacement: (o as any)[find]
-      })
-    )
+        normalizeSingleAlias({
+          find,
+          replacement: (o as any)[find]
+        })
+      )
 }
 
 // https://github.com/vitejs/vite/issues/1363
@@ -725,7 +726,7 @@ export async function loadConfigFromFile(
     if (pkg && JSON.parse(pkg).type === 'module') {
       isMjs = true
     }
-  } catch (e) { }
+  } catch (e) {}
 
   if (configFile) {
     // explicit config path is always resolved from cwd
@@ -915,7 +916,7 @@ async function loadConfigFromBundledFile(
   const defaultLoader = require.extensions[extension]!
   require.extensions[extension] = (module: NodeModule, filename: string) => {
     if (filename === fileName) {
-      ; (module as NodeModuleWithCompile)._compile(bundledCode, filename)
+      ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
       defaultLoader(module, filename)
     }
@@ -936,7 +937,7 @@ export function loadEnv(
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
-      `the .local postfix for .env files.`
+        `the .local postfix for .env files.`
     )
   }
 
