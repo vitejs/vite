@@ -1,3 +1,17 @@
+# [1.3.0](https://github.com/vitejs/vite/compare/plugin-vue@1.2.5...plugin-vue@1.3.0) (2021-07-27)
+
+
+### Bug Fixes
+
+* reuse the old preprocessor after changing the lang attr ([#4224](https://github.com/vitejs/vite/issues/4224)) ([7a3c6e6](https://github.com/vitejs/vite/commit/7a3c6e616385cbc069620ae583d6739a972c0ead))
+
+
+### Features
+
+* **plugin-vue:** support importing vue files as custom elements ([3a3af6e](https://github.com/vitejs/vite/commit/3a3af6eeafbc9fc686fc909ec6a61c61283316fc))
+
+
+
 ## [1.2.5](https://github.com/vitejs/vite/compare/plugin-vue@1.2.4...plugin-vue@1.2.5) (2021-07-12)
 
 
