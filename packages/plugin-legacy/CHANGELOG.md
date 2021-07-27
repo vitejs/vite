@@ -1,3 +1,12 @@
+## [1.4.4](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.3...plugin-legacy@1.4.4) (2021-07-12)
+
+
+### Features
+
+* allow entryFileNames, chunkFileNames functions for legacy ([#4122](https://github.com/vitejs/vite/issues/4122)) ([df29bff](https://github.com/vitejs/vite/commit/df29bfff44ad7f2e822f92935d0ca9c99f15b67e))
+
+
+
 ## [1.4.3](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.2...plugin-legacy@1.4.3) (2021-06-27)
 
 
