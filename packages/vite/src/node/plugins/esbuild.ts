@@ -118,7 +118,7 @@ export async function transformWithEsbuild(
 
     // align with TypeScript 4.3
     // https://github.com/microsoft/TypeScript/pull/42663
-    if (loadedCompilerOptions.target?.toLocaleLowerCase() === 'esnext') {
+    if (loadedCompilerOptions.target?.toLowerCase() === 'esnext') {
       compilerOptionsForFile.useDefineForClassFields =
         loadedCompilerOptions.useDefineForClassFields ?? true
     }
