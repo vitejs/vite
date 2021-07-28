@@ -8,6 +8,7 @@ body {
 }
 
 body {
+  color: black;
   margin: 4vh auto;
   max-width: 800px;
   padding: 0 4vw;
