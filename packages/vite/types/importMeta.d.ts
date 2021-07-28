@@ -60,7 +60,7 @@ interface ImportMeta {
 }
 
 interface ImportMetaEnv {
-  [key: string]: string | boolean | undefined
+  [key: string]: string | undefined
   BASE_URL: string
   MODE: string
   DEV: boolean
