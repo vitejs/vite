@@ -59,8 +59,14 @@ interface ImportMeta {
   >
 }
 
-interface ImportMetaEnv {
+// The index signature is for user-defined variables, which are always strings. Some
+// predefined properties are boolean, and TypeScript doesn't allow them to have types
+// that don't match the index signature. However, in this case properties are always
+// accessed statically (.PROP, not [PROP]), so the limitation doesn't matter.
+// The intersection type is a workaround.
+type ImportMetaEnv = {
   [key: string]: string | undefined
+} & {
   BASE_URL: string
   MODE: string
   DEV: boolean
