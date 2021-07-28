@@ -128,9 +128,9 @@ const createNodeConfig = (isProduction) => {
         include: ['src/**/*.ts', 'types/**'],
         exclude: ['src/**/__tests__/**'],
         esModuleInterop: true,
-        ...// in production we use api-extractor for dts generation
+        // in production we use api-extractor for dts generation
         // in development we need to rely on the rollup ts plugin
-        (isProduction
+        ...(isProduction
           ? {}
           : {
               tsconfig: 'tsconfig.base.json',
