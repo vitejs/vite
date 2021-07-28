@@ -84,9 +84,9 @@ async function handleMessage(payload: HMRPayload) {
             ) as HTMLLinkElement[]
           ).find((e) => e.href.includes(path))
           if (el) {
-            const newPath =
-              base +
-              `${path.slice(1)}${path.includes('?') ? '&' : '?'}t=${timestamp}`
+            const newPath = `${base}${path.slice(1)}${
+              path.includes('?') ? '&' : '?'
+            }t=${timestamp}`
             el.href = new URL(newPath, el.href).href
           }
           console.log(`[vite] css hot updated: ${path}`)
