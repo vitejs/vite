@@ -65,9 +65,9 @@ const sharedNodeOptions = {
     tryCatchDeoptimization: false
   },
   output: {
-    dir: path.resolve(__dirname, 'dist/node'),
-    entryFileNames: `[name].js`,
-    chunkFileNames: 'chunks/dep-[hash].js',
+    dir: path.resolve(__dirname, 'dist'),
+    entryFileNames: `node/[name].js`,
+    chunkFileNames: 'node/chunks/dep-[hash].js',
     exports: 'named',
     format: 'cjs',
     externalLiveBindings: false,
@@ -125,8 +125,18 @@ const createNodeConfig = (isProduction) => {
       nodeResolve({ preferBuiltins: true }),
       typescript({
         target: 'es2019',
-        include: ['src/**/*.ts'],
-        esModuleInterop: true
+        include: ['src/**/*.ts', 'types/**'],
+        exclude: ['src/**/__tests__/**'],
+        esModuleInterop: true,
+        // in production we use api-extractor for dts generation
+        // in development we need to rely on the rollup ts plugin
+        ...(isProduction
+          ? {}
+          : {
+              tsconfig: 'tsconfig.base.json',
+              declaration: true,
+              declarationDir: path.resolve(__dirname, 'dist/')
+            })
       }),
       // Some deps have try...catch require of optional deps, but rollup will
       // generate code that force require them upfront for side effects.
