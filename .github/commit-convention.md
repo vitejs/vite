@@ -1,6 +1,6 @@
 ## Git Commit Message Convention
 
-> This is adapted from [Angular's commit convention](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-angular).
+> Vite expects [semantic pull requests](https://github.com/zeke/semantic-pull-requests).
 
 #### TL;DR:
 
@@ -8,7 +8,7 @@ Messages must be matched by the following regex:
 
 <!-- prettier-ignore -->
 ```js
-/^(revert: )?(feat|fix|docs|dx|refactor|perf|test|workflow|build|ci|chore|types|wip|release|deps)(\(.+\))?: .{1,50}/
+/^(revert: )?(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .{1,50}/
 ```
 
 #### Examples
