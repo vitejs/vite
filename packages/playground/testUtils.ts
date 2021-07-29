@@ -6,6 +6,7 @@ import fs from 'fs'
 import path from 'path'
 import colors from 'css-color-names'
 import { ElementHandle } from 'playwright-chromium'
+import type { Manifest } from 'vite'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -51,18 +52,18 @@ async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
   return el
 }
 
-export async function getColor(el: string | ElementHandle) {
+export async function getColor(el: string | ElementHandle): Promise<string> {
   el = await toEl(el)
   const rgb = await el.evaluate((el) => getComputedStyle(el as Element).color)
   return hexToNameMap[rgbToHex(rgb)] || rgb
 }
 
-export async function getBg(el: string | ElementHandle) {
+export async function getBg(el: string | ElementHandle): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
-export function readFile(filename: string) {
+export function readFile(filename: string): string {
   return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
 }
 
@@ -78,20 +79,20 @@ export function editFile(
   fs.writeFileSync(filename, modified)
 }
 
-export function addFile(filename: string, content: string) {
+export function addFile(filename: string, content: string): void {
   fs.writeFileSync(path.resolve(testDir, filename), content)
 }
 
-export function removeFile(filename: string) {
+export function removeFile(filename: string): void {
   fs.unlinkSync(path.resolve(testDir, filename))
 }
 
-export function listAssets(base = '') {
+export function listAssets(base = ''): string[] {
   const assetsDir = path.join(testDir, 'dist', base, 'assets')
   return fs.readdirSync(assetsDir)
 }
 
-export function findAssetFile(match: string | RegExp, base = '') {
+export function findAssetFile(match: string | RegExp, base = ''): string {
   const assetsDir = path.join(testDir, 'dist', base, 'assets')
   const files = fs.readdirSync(assetsDir)
   const file = files.find((file) => {
@@ -100,7 +101,7 @@ export function findAssetFile(match: string | RegExp, base = '') {
   return file ? fs.readFileSync(path.resolve(assetsDir, file), 'utf-8') : ''
 }
 
-export function readManifest(base = '') {
+export function readManifest(base = ''): Manifest {
   return JSON.parse(
     fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8')
   )
@@ -113,7 +114,7 @@ export async function untilUpdated(
   poll: () => string | Promise<string>,
   expected: string,
   runInBuild = false
-) {
+): Promise<void> {
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 100 : 50
   for (let tries = 0; tries < maxTries; tries++) {
