@@ -268,8 +268,8 @@ export async function resolveConfig(
     allowClearScreen: config.clearScreen
   })
 
-  // user config may provide an alternative mode
-  mode = config.mode || mode
+  // user config may provide an alternative mode. But --mode has a higher prority
+  mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
   // resolve plugins
