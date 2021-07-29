@@ -49,9 +49,7 @@ export interface ConfigEnv {
   mode: string
 }
 
-export type UserConfigFn = (
-  env: Readonly<ConfigEnv>
-) => UserConfig | Promise<UserConfig>
+export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
 export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
 
 /**
