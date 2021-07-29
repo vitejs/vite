@@ -20,6 +20,7 @@ import {
   getAssetFilename
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
+import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import {
   AttributeNode,
   NodeTransform,
@@ -262,6 +263,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         processedHtml.set(id, s.toString())
+
+        // inject module preload polyfill
+        if (config.build.polyfillModulePreload) {
+          js = `import "${modulePreloadPolyfillId}";\n${js}`
+        }
 
         return js
       }
