@@ -49,7 +49,9 @@ export interface ConfigEnv {
   mode: string
 }
 
-export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
+export type UserConfigFn = (
+  env: Readonly<ConfigEnv>
+) => UserConfig | Promise<UserConfig>
 export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
 
 /**
@@ -270,6 +272,7 @@ export async function resolveConfig(
 
   // user config may provide an alternative mode
   mode = config.mode || mode
+  configEnv.mode = mode
 
   // resolve plugins
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {

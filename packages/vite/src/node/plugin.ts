@@ -63,7 +63,7 @@ export interface Plugin extends RollupPlugin {
    */
   config?: (
     config: UserConfig,
-    env: ConfigEnv
+    env: Readonly<ConfigEnv>
   ) => UserConfig | null | void | Promise<UserConfig | null | void>
   /**
    * Use this hook to read and store the final resolved vite config.
