@@ -20,7 +20,6 @@ import {
   normalizePath,
   fsPathFromId,
   ensureVolumeInPath,
-  resolveFrom,
   isDataUrl,
   cleanUrl,
   slash
@@ -29,6 +28,7 @@ import { ViteDevServer, SSRTarget } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
+import resolve from 'resolve'
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
@@ -61,6 +61,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryPrefix?: string
   preferRelative?: boolean
   isRequire?: boolean
+  preserveSymlinks?: boolean
 }
 
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
@@ -361,7 +362,7 @@ export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
-  importer: string | undefined,
+  importer: string | null | undefined,
   options: InternalResolveOptions,
   targetWeb: boolean,
   server?: ViteDevServer,
@@ -379,12 +380,12 @@ export function tryNodeResolve(
     path.isAbsolute(importer) &&
     fs.existsSync(cleanUrl(importer))
   ) {
-    basedir = path.dirname(importer)
+    basedir = fs.realpathSync.native(path.dirname(importer))
   } else {
     basedir = root
   }
 
-  const pkg = resolvePackageData(pkgId, basedir)
+  const pkg = resolvePackageData(pkgId, basedir, options.preserveSymlinks)
 
   if (!pkg) {
     return
@@ -483,14 +484,18 @@ const packageCache = new Map<string, PackageData>()
 
 export function resolvePackageData(
   id: string,
-  basedir: string
+  basedir: string,
+  preserveSymlinks = false
 ): PackageData | undefined {
   const cacheKey = id + basedir
   if (packageCache.has(cacheKey)) {
     return packageCache.get(cacheKey)
   }
   try {
-    const pkgPath = resolveFrom(`${id}/package.json`, basedir)
+    const pkgPath = resolve.sync(`${id}/package.json`, {
+      basedir,
+      preserveSymlinks
+    })
     return loadPackageData(pkgPath, cacheKey)
   } catch (e) {
     isDebug && debug(`${chalk.red(`[failed loading package.json]`)} ${id}`)
