@@ -73,7 +73,7 @@ const browserClientConfig = {
     })
   ],
   output: {
-    dir: path.resolve(__dirname, 'dist/client'),
+    file: path.resolve(__dirname, 'dist/client', 'browser.mjs'),
     sourcemap: true
   }
 }
@@ -493,6 +493,7 @@ export default (commandLineArgs) => {
   return [
     envConfig,
     clientConfig,
+    browserClientConfig,
     browserConfig,
     createNodeConfig(isProduction),
     ...(isProduction ? [terserConfig] : [])
