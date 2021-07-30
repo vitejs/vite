@@ -334,15 +334,18 @@ function tryResolveFile(
     // #2051 if we don't have read permission on a directory, existsSync() still
     // works and will result in massively slow subsequent checks (which are
     // unnecessary in the first place)
-    fs.accessSync(file, fs.constants.R_OK)
+    // @ts-ignore
+    (options.$fs$ || fs).accessSync(file, fs.constants.R_OK)
     isReadable = true
   } catch (e) {}
   if (isReadable) {
-    if (!fs.statSync(file).isDirectory()) {
+    // @ts-ignore
+    if (!(options.$fs$ || fs).statSync(file).isDirectory()) {
       return normalizePath(ensureVolumeInPath(file)) + postfix
     } else if (tryIndex) {
       const pkgPath = file + '/package.json'
-      if (fs.existsSync(pkgPath)) {
+      // @ts-ignore
+      if ((options.$fs$ || fs).existsSync(pkgPath)) {
         // path points to a node package
         const pkg = loadPackageData(pkgPath)
         return resolvePackageEntry(file, pkg, options, targetWeb)
@@ -377,7 +380,8 @@ export function tryNodeResolve(
   } else if (
     importer &&
     path.isAbsolute(importer) &&
-    fs.existsSync(cleanUrl(importer))
+      // @ts-ignore
+      (options.$fs$ || fs).existsSync(cleanUrl(importer))
   ) {
     basedir = path.dirname(importer)
   } else {
@@ -578,7 +582,8 @@ export function resolvePackageEntry(
           options
         )
         if (resolvedBrowserEntry) {
-          const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
+          // @ts-ignore
+          const content = (options.$fs$ || fs).readFileSync(resolvedBrowserEntry, 'utf-8')
           if (
             (/typeof exports\s*==/.test(content) &&
               /typeof module\s*==/.test(content)) ||

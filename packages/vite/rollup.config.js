@@ -134,6 +134,7 @@ const createNodeConfig = (isProduction) => {
       'postcss',
       'resolve',
       'rollup',
+      'sass',
       ...(isProduction
         ? []
         : Object.keys(require('./package.json').dependencies))
