@@ -1,0 +1,14 @@
+{
+  "name": "test-ssr-esm",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "cjs-package": "link:./cjs-package",
+    "esm-package": "link:./esm-package",
+    "vite": "link:../../vite"
+  },
+  "scripts": {
+    "serve": "node server.mjs"
+  }
+}

@@ -1,3 +1,5 @@
+import vm from 'vm'
+import fs from 'fs'
 import path from 'path'
 import { Module } from 'module'
 import { ViteDevServer } from '..'
@@ -95,9 +97,7 @@ async function instantiateModule(
     extensions: ['.js', '.mjs', '.ts', '.jsx', '.tsx', '.json'],
     isBuild: true,
     isProduction,
-    // Disable "module" condition.
-    isRequire: true,
-    mainFields: ['main'],
+    mainFields: ['main', 'module'],
     root
   }
 
@@ -108,7 +108,7 @@ async function instantiateModule(
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
 
-  const ssrImport = async (dep: string) => {
+  async function ssrImport(dep: string) {
     if (dep[0] !== '.' && dep[0] !== '/') {
       return nodeRequire(dep, mod.file, resolveOptions)
     }
@@ -128,7 +128,7 @@ async function instantiateModule(
     return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
   }
 
-  const ssrDynamicImport = (dep: string) => {
+  function ssrDynamicImport(dep: string) {
     // #3087 dynamic import vars is ignored at rewrite import path,
     // so here need process relative path
     if (dep[0] === '.') {
@@ -152,26 +152,25 @@ async function instantiateModule(
   }
 
   const ssrImportMeta = { url }
+  const ssrArguments = {
+    global: context.global,
+    [ssrModuleExportsKey]: ssrModule,
+    [ssrImportMetaKey]: ssrImportMeta,
+    [ssrImportKey]: ssrImport,
+    [ssrDynamicImportKey]: ssrDynamicImport,
+    [ssrExportAllKey]: ssrExportAll
+  }
+
   try {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const AsyncFunction = async function () {}.constructor as typeof Function
-    const initModule = new AsyncFunction(
-      `global`,
-      ssrModuleExportsKey,
-      ssrImportMetaKey,
-      ssrImportKey,
-      ssrDynamicImportKey,
-      ssrExportAllKey,
-      result.code + `\n//# sourceURL=${mod.url}`
-    )
-    await initModule(
-      context.global,
-      ssrModule,
-      ssrImportMeta,
-      ssrImport,
-      ssrDynamicImport,
-      ssrExportAll
-    )
+    const ssrModuleImpl = `(0,async function(${Object.keys(ssrArguments)}){\n${
+      result.code
+    }\n})`
+    const ssrModuleInit = vm.runInThisContext(ssrModuleImpl, {
+      filename: mod.file || mod.url,
+      columnOffset: 1,
+      displayErrors: false
+    })
+    await ssrModuleInit(...Object.values(ssrArguments))
   } catch (e) {
     const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
     rebindErrorStacktrace(e, stacktrace)
@@ -188,16 +187,23 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
-function nodeRequire(
+async function nodeRequire(
   id: string,
   importer: string | null,
   resolveOptions: InternalResolveOptions
 ) {
-  const loadModule = Module.createRequire(importer || resolveOptions.root + '/')
+  let resolvedId: string | undefined
+
+  // Hook into `require` so that `resolveOptions` are respected.
+  // Note: ESM-only dependencies don't use this hook at all.
   const unhookNodeResolve = hookNodeResolve(
     (nodeResolve) => (id, parent, isMain, options) => {
       if (id[0] === '.' || Module.builtinModules.includes(id)) {
         return nodeResolve(id, parent, isMain, options)
+      }
+      // No parent exists when an ESM package imports a CJS package.
+      if (!parent) {
+        return id
       }
       const resolved = tryNodeResolve(id, parent.id, resolveOptions, false)
       if (!resolved) {
@@ -207,19 +213,14 @@ function nodeRequire(
     }
   )
 
-  let mod: any
   try {
-    mod = loadModule(id)
+    // Resolve the import manually, to avoid the ESM resolver.
+    resolvedId = fs.realpathSync.native(
+      Module.createRequire(importer || resolveOptions.root + '/').resolve(id)
+    )
+    // TypeScript transforms dynamic `import` so we must use eval.
+    return await eval(`import("${resolvedId}")`)
   } finally {
     unhookNodeResolve()
   }
-
-  // rollup-style default import interop for cjs
-  const defaultExport = mod.__esModule ? mod.default : mod
-  return new Proxy(mod, {
-    get(mod, prop) {
-      if (prop === 'default') return defaultExport
-      return mod[prop]
-    }
-  })
 }

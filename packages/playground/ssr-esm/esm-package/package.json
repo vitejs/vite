@@ -1,0 +1,10 @@
+{
+  "name": "esm-package",
+  "version": "0.0.0",
+  "exports": {
+    ".": {
+      "development": "./index.dev.mjs",
+      "default": "./index.mjs"
+    }
+  }
+}
