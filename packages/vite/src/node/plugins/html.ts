@@ -20,7 +20,7 @@ import {
   getAssetFilename
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
-import { polyfillId } from './dynamicImportPolyfill'
+import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import {
   AttributeNode,
   NodeTransform,
@@ -51,7 +51,7 @@ export function htmlInlineScriptProxyPlugin(): Plugin {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
         const html = fs.readFileSync(file, 'utf-8').replace(htmlCommentRE, '')
-        let match
+        let match: RegExpExecArray | null | undefined
         scriptModuleRE.lastIndex = 0
         for (let i = 0; i <= index; i++) {
           match = scriptModuleRE.exec(html)
@@ -264,9 +264,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         processedHtml.set(id, s.toString())
 
-        // inject dynamic import polyfill
-        if (config.build.polyfillDynamicImport) {
-          js = `import "${polyfillId}";\n${js}`
+        // inject module preload polyfill
+        if (config.build.polyfillModulePreload) {
+          js = `import "${modulePreloadPolyfillId}";\n${js}`
         }
 
         return js
@@ -485,7 +485,7 @@ export async function applyHtmlTransforms(
     if (typeof res === 'string') {
       html = res
     } else {
-      let tags
+      let tags: HtmlTagDescriptor[]
       if (Array.isArray(res)) {
         tags = res
       } else {

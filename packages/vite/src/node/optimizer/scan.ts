@@ -199,7 +199,7 @@ function esbuildScanPlugin(
           regex.lastIndex = 0
           let js = ''
           let loader: Loader = 'js'
-          let match
+          let match: RegExpExecArray | null
           while ((match = regex.exec(raw))) {
             const [, openTag, content] = match
             const srcMatch = openTag.match(srcRE)
@@ -227,7 +227,7 @@ function esbuildScanPlugin(
             // esbuild from crawling further.
             // the solution is to add `import 'x'` for every source to force
             // esbuild to keep crawling due to potential side effects.
-            let m
+            let m: RegExpExecArray | null
             const original = js
             while ((m = importsRE.exec(original)) != null) {
               // This is necessary to avoid infinite loops with zero-width matches
