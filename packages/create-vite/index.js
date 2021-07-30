@@ -261,10 +261,16 @@ async function init() {
   if (root !== cwd) {
     console.log(`  cd ${path.relative(cwd, root)}`)
   }
-  console.log(`  ${pkgManager === 'yarn' ? `yarn` : `${pkgManager} install`}`)
-  console.log(
-    `  ${pkgManager === 'yarn' ? `yarn dev` : `${pkgManager} run dev`}`
-  )
+  switch (pkgManager) {
+    case 'yarn':
+      console.log('  yarn')
+      console.log('  yarn dev')
+      break
+    default:
+      console.log(`${pkgManager} install`)
+      console.log(`${pkgManager} run dev`)
+      break
+  }
   console.log()
 }
 
