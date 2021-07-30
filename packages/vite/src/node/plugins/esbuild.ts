@@ -8,7 +8,8 @@ import {
   TransformOptions,
   TransformResult
 } from 'esbuild'
-import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
+import { cleanUrl, generateCodeFrame } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
@@ -17,7 +18,7 @@ import { combineSourcemaps } from '../utils'
 import { find as findTSConfig, readFile as readTSConfig } from 'tsconfig'
 import { createRequire } from 'module'
 
-const debug = createDebugger('vite:esbuild')
+const debug = createDebugger(DebugScopes.ESBUILD)
 
 export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]

@@ -8,13 +8,8 @@ import {
   ServerOptions
 } from './server'
 import { CSSOptions } from './plugins/css'
-import {
-  createDebugger,
-  isExternalUrl,
-  isObject,
-  lookupFile,
-  normalizePath
-} from './utils'
+import { isExternalUrl, isObject, lookupFile, normalizePath } from './utils'
+import { createDebugger, DebugScopes } from './debugger'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
 import { ESBuildOptions } from './plugins/esbuild'
@@ -40,7 +35,7 @@ import {
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 
-const debug = createDebugger('vite:config')
+const debug = createDebugger(DebugScopes.CONFIG)
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.

@@ -5,18 +5,18 @@ import { createHash } from 'crypto'
 import { build, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { ResolvedConfig } from '../config'
 import {
-  createDebugger,
   emptyDir,
   lookupFile,
   normalizePath,
   writeFile,
   flattenId
 } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { ImportSpecifier, init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
 
-const debug = createDebugger('vite:deps')
+const debug = createDebugger(DebugScopes.DEPS)
 
 export type ExportsData = [ImportSpecifier[], string[]] & {
   // es-module-lexer has a facade detection but isn't always accurate for our

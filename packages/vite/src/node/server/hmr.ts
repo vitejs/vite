@@ -2,7 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { createServer, ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
+import { normalizePath } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import { ModuleNode } from './moduleGraph'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
@@ -12,7 +13,7 @@ import match from 'minimatch'
 import { Server } from 'http'
 import { cssLangRE } from '../plugins/css'
 
-export const debugHmr = createDebugger('vite:hmr')
+export const debugHmr = createDebugger(DebugScopes.HMR)
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 

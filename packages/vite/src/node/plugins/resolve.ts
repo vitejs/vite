@@ -12,7 +12,6 @@ import {
 import {
   isBuiltin,
   bareImportRE,
-  createDebugger,
   deepImportRE,
   injectQuery,
   isExternalUrl,
@@ -25,6 +24,7 @@ import {
   cleanUrl,
   slash
 } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import { ViteDevServer, SSRTarget } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
@@ -35,7 +35,7 @@ import { resolve as _resolveExports } from 'resolve.exports'
 export const browserExternalId = '__vite-browser-external'
 
 const isDebug = process.env.DEBUG
-const debug = createDebugger('vite:resolve-details', {
+const debug = createDebugger(DebugScopes.RESOLVE_DETAILS, {
   onlyWhenFocused: true
 })
 

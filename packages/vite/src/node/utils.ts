@@ -1,4 +1,3 @@
-import debug from 'debug'
 import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
@@ -47,33 +46,6 @@ export function resolveFrom(id: string, basedir: string, ssr = false): string {
     // necessary to work with pnpm
     preserveSymlinks: isRunningWithYarnPnp || false
   })
-}
-
-// set in bin/vite.js
-const filter = process.env.VITE_DEBUG_FILTER
-
-const DEBUG = process.env.DEBUG
-
-interface DebuggerOptions {
-  onlyWhenFocused?: boolean | string
-}
-
-export function createDebugger(
-  ns: string,
-  options: DebuggerOptions = {}
-): debug.Debugger['log'] {
-  const log = debug(ns)
-  const { onlyWhenFocused } = options
-  const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns
-  return (msg: string, ...args: any[]) => {
-    if (filter && !msg.includes(filter)) {
-      return
-    }
-    if (onlyWhenFocused && !DEBUG?.includes(focus)) {
-      return
-    }
-    log(msg, ...args)
-  }
 }
 
 export const isWindows = os.platform() === 'win32'

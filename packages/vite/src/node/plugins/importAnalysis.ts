@@ -9,7 +9,6 @@ import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
   isBuiltin,
   cleanUrl,
-  createDebugger,
   generateCodeFrame,
   injectQuery,
   isDataUrl,
@@ -19,6 +18,7 @@ import {
   timeFrom,
   normalizePath
 } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import {
   debugHmr,
   handlePrunedModules,
@@ -41,7 +41,7 @@ import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 
 const isDebug = !!process.env.DEBUG
-const debugRewrite = createDebugger('vite:rewrite')
+const debugRewrite = createDebugger(DebugScopes.REWRITE)
 
 const clientDir = normalizePath(CLIENT_DIR)
 

@@ -10,13 +10,13 @@ import {
   OPTIMIZABLE_ENTRY_RE
 } from '../constants'
 import {
-  createDebugger,
   normalizePath,
   isObject,
   cleanUrl,
   externalRE,
   dataUrlRE
 } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import {
   createPluginContainer,
   PluginContainer
@@ -25,7 +25,7 @@ import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
 
-const debug = createDebugger('vite:deps')
+const debug = createDebugger(DebugScopes.DEPS)
 
 const htmlTypesRE = /\.(html|vue|svelte)$/
 

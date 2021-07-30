@@ -3,7 +3,6 @@ import { ViteDevServer } from '..'
 import { Connect } from 'types/connect'
 import {
   cleanUrl,
-  createDebugger,
   injectQuery,
   isImportRequest,
   isJSRequest,
@@ -13,6 +12,7 @@ import {
   removeTimestampQuery,
   unwrapId
 } from '../../utils'
+import { createDebugger, DebugScopes } from '../../debugger'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
@@ -30,7 +30,7 @@ import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
  */
 const NEW_DEPENDENCY_BUILD_TIMEOUT = 1000
 
-const debugCache = createDebugger('vite:cache')
+const debugCache = createDebugger(DebugScopes.CACHE)
 const isDebug = !!process.env.DEBUG
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])

@@ -1,10 +1,10 @@
 import path from 'path'
 import { promises as fs } from 'fs'
 import { Logger } from '../logger'
-import { createDebugger } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 
 const isDebug = !!process.env.DEBUG
-const debug = createDebugger('vite:sourcemap', {
+const debug = createDebugger(DebugScopes.SOURCEMAP, {
   onlyWhenFocused: true
 })
 

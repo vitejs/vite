@@ -30,7 +30,8 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, ensureLeadingSlash, normalizePath } from '../utils'
+import { ensureLeadingSlash, normalizePath } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -497,7 +498,7 @@ export async function createServer(
   if (!middlewareMode || middlewareMode === 'html') {
     middlewares.use(
       history({
-        logger: createDebugger('vite:spa-fallback'),
+        logger: createDebugger(DebugScopes.SPA_FALLBACK),
         // support /dir/ without explicit index.html
         rewrites: [
           {

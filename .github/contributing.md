@@ -75,6 +75,10 @@ test('?raw import', async () => {
 })
 ```
 
+## Debug Logging
+
+You can set the DEBUG environment variable to turn on debugging logs. E.g. `DEBUG="vite:resolve"`. To see all debug logs you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can see the list of all available debug scopes in [debugger.ts](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/debugger.ts).
+
 ## Pull Request Guidelines
 
 - Checkout a topic branch from a base branch, e.g. `main`, and merge back against that branch.

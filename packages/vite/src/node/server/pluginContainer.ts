@@ -58,7 +58,6 @@ import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import { FSWatcher } from 'chokidar'
 import {
-  createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
   isObject,
@@ -68,6 +67,7 @@ import {
   prettifyUrl,
   timeFrom
 } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
@@ -127,11 +127,11 @@ export async function createPluginContainer(
   const isDebug = process.env.DEBUG
 
   const seenResolves: Record<string, true | undefined> = {}
-  const debugResolve = createDebugger('vite:resolve')
-  const debugPluginResolve = createDebugger('vite:plugin-resolve', {
+  const debugResolve = createDebugger(DebugScopes.RESOLVE)
+  const debugPluginResolve = createDebugger(DebugScopes.PLUGIN_RESOLVE, {
     onlyWhenFocused: 'vite:plugin'
   })
-  const debugPluginTransform = createDebugger('vite:plugin-transform', {
+  const debugPluginTransform = createDebugger(DebugScopes.PLUGIN_TRANSFORM, {
     onlyWhenFocused: 'vite:plugin'
   })
 

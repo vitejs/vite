@@ -1,7 +1,8 @@
 import { Connect } from 'types/connect'
-import { createDebugger, prettifyUrl, timeFrom } from '../../utils'
+import { prettifyUrl, timeFrom } from '../../utils'
+import { createDebugger, DebugScopes } from '../../debugger'
 
-const logTime = createDebugger('vite:time')
+const logTime = createDebugger(DebugScopes.TIME)
 
 export function timeMiddleware(root: string): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`

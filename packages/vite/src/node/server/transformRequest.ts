@@ -6,7 +6,6 @@ import { SourceDescription, SourceMap } from 'rollup'
 import { ViteDevServer } from '..'
 import chalk from 'chalk'
 import {
-  createDebugger,
   cleanUrl,
   prettifyUrl,
   removeTimestampQuery,
@@ -14,14 +13,15 @@ import {
   ensureWatchedFile,
   isObject
 } from '../utils'
+import { createDebugger, DebugScopes } from '../debugger'
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
-const debugLoad = createDebugger('vite:load')
-const debugTransform = createDebugger('vite:transform')
-const debugCache = createDebugger('vite:cache')
+const debugLoad = createDebugger(DebugScopes.LOAD)
+const debugTransform = createDebugger(DebugScopes.TRANSFORM)
+const debugCache = createDebugger(DebugScopes.CACHE)
 const isDebug = !!process.env.DEBUG
 
 export interface TransformResult {
