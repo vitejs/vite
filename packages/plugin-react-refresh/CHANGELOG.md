@@ -1,3 +1,12 @@
+## [1.3.6](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.5...plugin-react-refresh@1.3.6) (2021-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4387](https://github.com/vitejs/vite/issues/4387)) ([2f900ba](https://github.com/vitejs/vite/commit/2f900ba4d4ad8061e0046898e8d1de3129e7f784))
+
+
+
 ## [1.3.5](https://github.com/vitejs/vite/compare/plugin-react-refresh@1.3.4...plugin-react-refresh@1.3.5) (2021-07-05)
 
 

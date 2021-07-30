@@ -528,6 +528,32 @@ export async function resolveConfig(
     }
   })
 
+  if (config.build?.polyfillDynamicImport) {
+    logDeprecationWarning(
+      'build.polyfillDynamicImport',
+      '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.'
+    )
+  }
+
+  Object.defineProperty(resolvedBuildOptions, 'polyfillDynamicImport', {
+    enumerable: false,
+    get() {
+      logDeprecationWarning(
+        'build.polyfillDynamicImport',
+        '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.',
+        new Error()
+      )
+      return false
+    }
+  })
+
+  if (config.build?.cleanCssOptions) {
+    logDeprecationWarning(
+      'build.cleanCssOptions',
+      'Vite now uses esbuild for CSS minification.'
+    )
+  }
+
   return resolved
 }
 

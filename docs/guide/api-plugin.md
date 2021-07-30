@@ -34,9 +34,9 @@ Users will add plugins to the project `devDependencies` and configure them using
 import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
 
-export default {
+export default defineConfig({
   plugins: [vitePlugin(), rollupPlugin()]
-}
+})
 ```
 
 Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins.
@@ -55,11 +55,12 @@ export default function framework(config) {
 
 ```js
 // vite.config.js
+import { defineConfig } from 'vite'
 import framework from 'vite-plugin-framework'
 
-export default {
+export default defineConfig({
   plugins: [framework()]
-}
+})
 ```
 
 ## Simple Examples
@@ -429,8 +430,9 @@ You can also augment an existing Rollup plugin with Vite-only properties:
 ```js
 // vite.config.js
 import example from 'rollup-plugin-example'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig({
   plugins: [
     {
       ...example(),
@@ -438,7 +440,7 @@ export default {
       apply: 'build'
     }
   ]
-}
+})
 ```
 
 Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions.
