@@ -78,7 +78,7 @@ export default defineConfig(async ({ command, mode }) => {
   return {
     // build specific config
   }
-}
+})
 ```
 
 ## Shared Options
