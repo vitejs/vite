@@ -30,7 +30,9 @@ interface GlobalCLIOptions {
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions(options: GlobalCLIOptions) {
+function cleanOptions<Options extends GlobalCLIOptions>(
+  options: Options
+): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
   delete ret['--']
   delete ret.debug
@@ -86,7 +88,7 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        server: cleanOptions(options) as ServerOptions
+        server: cleanOptions(options)
       })
       await server.listen()
     } catch (e) {
@@ -133,7 +135,7 @@ cli
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
-    const buildOptions = cleanOptions(options) as BuildOptions
+    const buildOptions: BuildOptions = cleanOptions(options)
 
     try {
       await build({
@@ -195,7 +197,7 @@ cli
     async (
       root: string,
       options: {
-        host?: string
+        host?: string | boolean
         port?: number
         https?: boolean
         open?: boolean | string
@@ -218,13 +220,7 @@ cli
           'serve',
           'development'
         )
-        await preview(
-          config,
-          cleanOptions(options) as {
-            host?: string
-            port?: number
-          }
-        )
+        await preview(config, cleanOptions(options))
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`)

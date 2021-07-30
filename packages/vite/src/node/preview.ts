@@ -3,7 +3,7 @@ import sirv from 'sirv'
 import chalk from 'chalk'
 import connect from 'connect'
 import compression from 'compression'
-import { ResolvedConfig } from '.'
+import { ResolvedConfig, ServerOptions } from '.'
 import { Connect } from 'types/connect'
 import {
   resolveHttpsConfig,
@@ -18,7 +18,7 @@ import { resolveHostname } from './utils'
 
 export async function preview(
   config: ResolvedConfig,
-  serverOptions: { host?: string; port?: number }
+  serverOptions: Pick<ServerOptions, 'port' | 'host'>
 ): Promise<void> {
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
