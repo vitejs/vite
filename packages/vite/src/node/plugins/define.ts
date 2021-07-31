@@ -49,9 +49,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       'globalThis.process.env.': `({}).`
     }
   }
+
   const generatePattern = (replacements: Replacements) =>
+    // Do not allow preceding '.', but do allow preceding '...' for spread operations
     new RegExp(
-      '(?<!\\.)\\b(' +
+      '(?<!(?<!\\.\\.)\\.)\\b(' +
         Object.keys(replacements)
           .map((str) => {
             return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')

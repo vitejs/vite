@@ -254,14 +254,23 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2))
 
-  const pkgManager = /yarn/.test(process.env.npm_execpath) ? 'yarn' : 'npm'
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
     console.log(`  cd ${path.relative(cwd, root)}`)
   }
-  console.log(`  ${pkgManager === 'yarn' ? `yarn` : `npm install`}`)
-  console.log(`  ${pkgManager === 'yarn' ? `yarn dev` : `npm run dev`}`)
+  switch (pkgManager) {
+    case 'yarn':
+      console.log('  yarn')
+      console.log('  yarn dev')
+      break
+    default:
+      console.log(`  ${pkgManager} install`)
+      console.log(`  ${pkgManager} run dev`)
+      break
+  }
   console.log()
 }
 
@@ -315,6 +324,20 @@ function emptyDir(dir) {
     } else {
       fs.unlinkSync(abs)
     }
+  }
+}
+
+/**
+ * @param {string | undefined} userAgent process.env.npm_config_user_agent
+ * @returns object | undefined
+ */
+function pkgFromUserAgent(userAgent) {
+  if (!userAgent) return undefined
+  const pkgSpec = userAgent.split(' ')[0]
+  const pkgSpecArr = pkgSpec.split('/')
+  return {
+    name: pkgSpecArr[0],
+    version: pkgSpecArr[1]
   }
 }
 
