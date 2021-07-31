@@ -1,3 +1,21 @@
+function dep() {
+  const virtualId = '/node_modules/dep/index.js'
+
+  return {
+    name: 'dep',
+    resolveId(id) {
+      if (id === 'dep') {
+        return virtualId
+      }
+    },
+    load(id) {
+      if (id === virtualId) {
+        return 'export const DEP_STRING = `__STRING__`'
+      }
+    }
+  }
+}
+
 module.exports = {
   define: {
     __EXP__: '1 + 1',
@@ -16,5 +34,9 @@ module.exports = {
       }
     },
     'process.env.SOMEVAR': '"SOMEVAR"'
-  }
+  },
+  optimizeDeps: {
+    exclude: ['dep']
+  },
+  plugins: [dep()]
 }

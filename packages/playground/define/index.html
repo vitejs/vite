@@ -2,6 +2,7 @@
 
 <p>Raw Expression <code class="exp"></code></p>
 <p>String <code class="string"></code></p>
+<p>Dep String <code class="dep-string"></code></p>
 <p>Number <code class="number"></code></p>
 <p>Boolean <code class="boolean"></code></p>
 <p>Object <span class="pre object"></span></p>
@@ -9,8 +10,11 @@
 <p>process as property: <code class="process-as-property"></code></p>
 
 <script type="module">
+  import { DEP_STRING } from 'dep'
+
   text('.exp', __EXP__)
   text('.string', __STRING__)
+  text('.dep-string', DEP_STRING)
   text('.number', __NUMBER__)
   text('.boolean', __BOOLEAN__)
   text('.object', JSON.stringify(__OBJ__, null, 2))
