@@ -152,6 +152,69 @@ test('css modules', async () => {
   await untilUpdated(() => getColor(imported), 'red')
 })
 
+test('css modules composes/from path resolving', async () => {
+  const imported = await page.$('.path-resolved-modules-css')
+  expect(await getColor(imported)).toBe('turquoise')
+
+  // check if the generated CSS module class name is indeed using the
+  // format specified in vite.config.js
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composed-module__apply-color___[\w-]{5}/
+  )
+
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composes-path-resolving-module__path-resolving-css___[\w-]{5}/
+  )
+
+  // @todo HMR is not working on this situation.
+  // editFile('composed.module.css', (code) =>
+  //   code.replace('color: turquoise', 'color: red')
+  // )
+  // await untilUpdated(() => getColor(imported), 'red')
+})
+
+test('sass modules composes/from path resolving', async () => {
+  const imported = await page.$('.path-resolved-modules-sass')
+  expect(await getColor(imported)).toBe('orangered')
+
+  // check if the generated CSS module class name is indeed using the
+  // format specified in vite.config.js
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composed-module__apply-color___[\w-]{5}/
+  )
+
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composes-path-resolving-module__path-resolving-sass___[\w-]{5}/
+  )
+
+  // @todo HMR is not working on this situation.
+  // editFile('composed.module.scss', (code) =>
+  //   code.replace('color: orangered', 'color: red')
+  // )
+  // await untilUpdated(() => getColor(imported), 'red')
+})
+
+test('less modules composes/from path resolving', async () => {
+  const imported = await page.$('.path-resolved-modules-less')
+  expect(await getColor(imported)).toBe('blue')
+
+  // check if the generated CSS module class name is indeed using the
+  // format specified in vite.config.js
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composed-module__apply-color___[\w-]{5}/
+  )
+
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composes-path-resolving-module__path-resolving-less___[\w-]{5}/
+  )
+
+  // @todo HMR is not working on this situation.
+  // editFile('composed.module.scss', (code) =>
+  //   code.replace('color: orangered', 'color: red')
+  // )
+  // await untilUpdated(() => getColor(imported), 'red')
+})
+
 test('css modules w/ sass', async () => {
   const imported = await page.$('.modules-sass')
   expect(await getColor(imported)).toBe('orangered')

@@ -540,6 +540,12 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
   }
 }
 
+function getCssResolversKeys(
+  resolvers: CSSAtImportResolvers
+): Array<keyof CSSAtImportResolvers> {
+  return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
+}
+
 async function compileCSS(
   id: string,
   code: string,
@@ -665,6 +671,16 @@ async function compileCSS(
           if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
             modulesOptions.getJSON(cssFileName, _modules, outputFileName)
           }
+        },
+        async resolve(id: string) {
+          for (const key of getCssResolversKeys(atImportResolvers)) {
+            const resolved = await atImportResolvers[key](id)
+            if (resolved) {
+              return path.resolve(resolved)
+            }
+          }
+
+          return id
         }
       })
     )
