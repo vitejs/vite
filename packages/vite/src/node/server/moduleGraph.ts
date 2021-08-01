@@ -71,6 +71,7 @@ export class ModuleGraph {
   }
 
   addWatchModuleToFile(file: string, id: string): void {
+    file = normalizePath(file)
     let fileMappedModules = this.fileToModulesMap.get(file)
     if (!fileMappedModules) {
       fileMappedModules = new Set()
