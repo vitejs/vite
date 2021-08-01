@@ -58,8 +58,10 @@ interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
 }
 
+type ViteDebugScope = `vite:${string}`
+
 export function createDebugger(
-  ns: string,
+  ns: ViteDebugScope,
   options: DebuggerOptions = {}
 ): debug.Debugger['log'] {
   const log = debug(ns)
