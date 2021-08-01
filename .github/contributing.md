@@ -77,7 +77,7 @@ test('?raw import', async () => {
 
 ## Debug Logging
 
-You can set the DEBUG environment variable to turn on debugging logs. E.g. `DEBUG="vite:resolve"`. To see all debug logs you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You `grep` the code for `vite:` to see a list of available debug scopes.
+You can set the `DEBUG` environment variable to turn on debugging logs. E.g. `DEBUG="vite:resolve"`. To see all debug logs you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
 
 ## Pull Request Guidelines
 
