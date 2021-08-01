@@ -11,20 +11,20 @@ const cli = cac('vite')
 // global options
 interface GlobalCLIOptions {
   '--'?: string[]
-  debug?: boolean | string
-  d?: boolean | string
-  filter?: string
-  f?: string
-  config?: string
   c?: boolean | string
+  config?: string
+  r?: string
   root?: string
   base?: string
-  r?: string
-  mode?: string
-  m?: string
-  logLevel?: LogLevel
   l?: LogLevel
+  logLevel?: LogLevel
   clearScreen?: boolean
+  d?: boolean | string
+  debug?: boolean | string
+  f?: string
+  filter?: string
+  m?: string
+  mode?: string
 }
 
 /**
@@ -35,20 +35,20 @@ function cleanOptions<Options extends GlobalCLIOptions>(
 ): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
   delete ret['--']
-  delete ret.debug
-  delete ret.d
-  delete ret.filter
-  delete ret.f
-  delete ret.config
   delete ret.c
+  delete ret.config
+  delete ret.r
   delete ret.root
   delete ret.base
-  delete ret.r
-  delete ret.mode
-  delete ret.m
-  delete ret.logLevel
   delete ret.l
+  delete ret.logLevel
   delete ret.clearScreen
+  delete ret.d
+  delete ret.debug
+  delete ret.f
+  delete ret.filter
+  delete ret.m
+  delete ret.mode
   return ret
 }
 
@@ -60,6 +60,7 @@ cli
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
+  .option('-m, --mode <mode>', `[string] set env mode`)
 
 // dev
 cli
@@ -71,7 +72,6 @@ cli
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
-  .option('-m, --mode <mode>', `[string] set env mode`)
   .option(
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`
@@ -131,7 +131,6 @@ cli
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`
   )
-  .option('-m, --mode <mode>', `[string] set env mode`)
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
