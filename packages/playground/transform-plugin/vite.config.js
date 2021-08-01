@@ -1,9 +1,10 @@
+const { normalizePath } = require('vite')
 let transformCount = 1
 
 const transformPlugin = {
   name: 'transform',
   transform(code, id) {
-    if (id === require.resolve('./index.js')) {
+    if (id === normalizePath(require.resolve('./index.js'))) {
       // Ensure `index.js` is reevaluated if 'plugin-dep.js' is changed
       this.addWatchFile(require.resolve('./plugin-dep.js'))
 
