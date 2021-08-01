@@ -79,7 +79,7 @@ export class ModuleGraph {
 
     const moduleNode = this.idToModuleMap.get(id)
     if (moduleNode) {
-      fileMappedModules!.add(moduleNode)
+      fileMappedModules.add(moduleNode)
     }
   }
 
