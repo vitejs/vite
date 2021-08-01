@@ -143,11 +143,11 @@ export async function transformRequest(
     code = transformResult.code!
     map = transformResult.map
 
-    transformResult.watchFiles.forEach((file) => {
-      if (mod.id) {
-        moduleGraph.addWatchModuleToFile(file, mod.id)
-      }
-    })
+    if (mod.id) {
+      transformResult.watchFiles.forEach((file) => {
+        moduleGraph.addWatchModuleToFile(file, mod.id!)
+      })
+    }
   }
 
   if (map && mod.file) {
