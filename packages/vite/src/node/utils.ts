@@ -58,13 +58,16 @@ interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
 }
 
+export type ViteDebugScope = `vite:${string}`
+
 export function createDebugger(
-  ns: string,
+  namespace: ViteDebugScope,
   options: DebuggerOptions = {}
 ): debug.Debugger['log'] {
-  const log = debug(ns)
+  const log = debug(namespace)
   const { onlyWhenFocused } = options
-  const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns
+  const focus =
+    typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
   return (msg: string, ...args: any[]) => {
     if (filter && !msg.includes(filter)) {
       return
