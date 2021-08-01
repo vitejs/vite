@@ -60,7 +60,7 @@ body:
       options:
         - label: Follow our [Code of Conduct](https://github.com/vitejs/vite/blob/main/CODE_OF_CONDUCT.md)
           required: true
-        - label: Read the [Contributing Guidelines](https://github.com/vitejs/vite/blob/main/.github/contributing.md).
+        - label: Read the [Contributing Guidelines](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
           required: true
         - label: Read the [docs](https://vitejs.dev/guide).
           required: true
