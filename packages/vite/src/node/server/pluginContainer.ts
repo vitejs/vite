@@ -95,7 +95,7 @@ export interface PluginContainer {
     id: string,
     inMap?: SourceDescription['map'],
     ssr?: boolean
-  ): Promise<(SourceDescription & { watchFiles: Array<string> }) | null>
+  ): Promise<(SourceDescription & { watchFiles: string[] }) | null>
   load(id: string, ssr?: boolean): Promise<LoadResult | null>
   close(): Promise<void>
 }
