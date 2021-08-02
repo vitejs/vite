@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { createServer, ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, isObject, normalizePath } from '../utils'
 import { ModuleNode } from './moduleGraph'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
@@ -467,6 +467,7 @@ async function readModifiedFile(file: string): Promise<string> {
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = Date.now()
+  const prevAddress = server.httpServer ? server.httpServer.address() : null
   let newServer = null
   try {
     newServer = await createServer(server.config.inlineConfig)
@@ -486,7 +487,10 @@ async function restartServer(server: ViteDevServer) {
     }
   }
   if (!server.config.server.middlewareMode) {
-    await server.listen(undefined, true)
+    await server.listen(
+      isObject(prevAddress) ? prevAddress.port : undefined,
+      true
+    )
   } else {
     server.config.logger.info('server restarted.', { timestamp: true })
   }

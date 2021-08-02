@@ -371,12 +371,6 @@ export async function createServer(
       }
     },
     listen(port?: number, isRestart?: boolean) {
-      if (port !== undefined) {
-        server.config.inlineConfig.server = {
-          ...(config.inlineConfig.server || {}),
-          port,
-        };
-      }
       return startServer(server, port, isRestart)
     },
     async close() {
