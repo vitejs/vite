@@ -17,7 +17,7 @@ export interface Logger {
     options: LogOptions & { error: Error | RollupError | null }
   ): void
   clearScreen(type: LogType): void
-  hasLogged(error: Error | RollupError): boolean
+  hasErrorLogged(error: Error | RollupError): boolean
   hasWarned: boolean
 }
 
@@ -56,7 +56,7 @@ export function createLogger(
 ): Logger {
   const { prefix = '[vite]', allowClearScreen = true } = options
 
-  const loggedErrors = new WeakMap<Error | RollupError, boolean>()
+  const loggedErrors = new WeakSet<Error | RollupError>()
   const thresh = LogLevels[level]
   const clear =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
@@ -84,7 +84,7 @@ export function createLogger(
         }
       }
       if (options.error) {
-        loggedErrors.set(options.error, true)
+        loggedErrors.add(options.error)
       }
       if (type === lastType && msg === lastMsg) {
         sameCount++
@@ -128,7 +128,7 @@ export function createLogger(
         clear()
       }
     },
-    hasLogged(error) {
+    hasErrorLogged(error) {
       return loggedErrors.has(error)
     }
   }
