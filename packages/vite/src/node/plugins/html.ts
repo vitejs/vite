@@ -553,7 +553,7 @@ function injectToHead(
 }
 
 const bodyInjectRE = /<\/body>/
-const bodyPrependInjectRE = /<body>/
+const bodyPrependInjectRE = /<body[^>]*>/
 function injectToBody(
   html: string,
   tags: HtmlTagDescriptor[],
