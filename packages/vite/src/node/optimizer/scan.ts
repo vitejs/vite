@@ -201,7 +201,7 @@ function esbuildScanPlugin(
           regex.lastIndex = 0
           let js = ''
           let loader: Loader = 'js'
-          let match
+          let match: RegExpExecArray | null
           while ((match = regex.exec(raw))) {
             const [, openTag, content] = match
             const srcMatch = openTag.match(srcRE)
@@ -285,9 +285,11 @@ function esbuildScanPlugin(
               }
               return externalUnlessEntry({ path: id })
             } else {
+              const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
-                path: path.resolve(resolved)
+                path: path.resolve(resolved),
+                namespace
               }
             }
           } else {

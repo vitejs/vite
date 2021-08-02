@@ -1,3 +1,12 @@
+## [1.1.7](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.6...plugin-vue-jsx@1.1.7) (2021-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4387](https://github.com/vitejs/vite/issues/4387)) ([2f900ba](https://github.com/vitejs/vite/commit/2f900ba4d4ad8061e0046898e8d1de3129e7f784))
+
+
+
 ## [1.1.6](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.5...plugin-vue-jsx@1.1.6) (2021-06-27)
 
 

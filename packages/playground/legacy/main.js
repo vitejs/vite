@@ -27,6 +27,13 @@ text(
   String.raw`exposed babel helpers: ${window._templateObject != null}`
 )
 
+// dynamic chunk names
+import('./immutable-chunk.js')
+  .then(({ fn }) => fn())
+  .then((assets) => {
+    text('#assets', assets.join('\n'))
+  })
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }

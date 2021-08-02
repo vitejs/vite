@@ -46,10 +46,11 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: "Optional if provided reproduction. Please try not to insert an image but copy paste the log text.
+      description: |
+        Optional if provided reproduction. Please try not to insert an image but copy paste the log text.
 
-  1. Run `vite` or `vite build` with the `--debug` flag.
-  2. Provide the error log here."
+        1. Run `vite` or `vite build` with the `--debug` flag.
+        2. Provide the error log here.
       render: shell
   - type: checkboxes
     id: checkboxes
@@ -59,7 +60,7 @@ body:
       options:
         - label: Follow our [Code of Conduct](https://github.com/vitejs/vite/blob/main/CODE_OF_CONDUCT.md)
           required: true
-        - label: Read the [Contributing Guidelines](https://github.com/vitejs/vite/blob/main/.github/contributing.md).
+        - label: Read the [Contributing Guidelines](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
           required: true
         - label: Read the [docs](https://vitejs.dev/guide).
           required: true
