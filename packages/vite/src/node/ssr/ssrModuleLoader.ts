@@ -44,7 +44,7 @@ export async function ssrLoadModule(
     .catch(() => {
       pendingImports.delete(url)
     })
-    .then(() => {
+    .finally(() => {
       pendingModules.delete(url)
     })
   return modulePromise
