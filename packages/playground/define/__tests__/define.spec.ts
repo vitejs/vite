@@ -11,4 +11,13 @@ test('string', async () => {
   expect(await page.textContent('.env-var')).toBe(
     JSON.parse(defines['process.env.SOMEVAR'])
   )
+  expect(await page.textContent('.process-as-property')).toBe(
+    defines.__OBJ__.process.env.SOMEVAR
+  )
+  expect(await page.textContent('.spread-object')).toBe(
+    JSON.stringify({ SOMEVAR: defines['process.env.SOMEVAR'] })
+  )
+  expect(await page.textContent('.spread-array')).toBe(
+    JSON.stringify([...defines.__STRING__])
+  )
 })

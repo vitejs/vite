@@ -15,7 +15,7 @@ export async function transformImportGlob(
   importIndex: number,
   root: string,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
-  ssr = false
+  preload = true
 ): Promise<{
   importsString: string
   imports: string[]
@@ -26,6 +26,8 @@ export async function transformImportGlob(
   base: string
 }> {
   const isEager = source.slice(pos, pos + 21) === 'import.meta.globEager'
+  const isEagerDefault =
+    isEager && source.slice(pos + 21, pos + 28) === 'Default'
 
   const err = (msg: string) => {
     const e = new Error(`Invalid glob import syntax: ${msg}`)
@@ -40,7 +42,7 @@ export async function transformImportGlob(
   if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
     throw err(`pattern must start with "." or "/" (relative to project root)`)
   }
-  let base
+  let base: string
   let parentDepth = 0
   const isAbsolute = pattern.startsWith('/')
   if (isAbsolute) {
@@ -79,13 +81,13 @@ export async function transformImportGlob(
     imports.push(importee)
     const identifier = `__glob_${importIndex}_${i}`
     if (isEager) {
-      importsString += `import * as ${identifier} from ${JSON.stringify(
-        importee
-      )};`
+      importsString += `import ${
+        isEagerDefault ? `` : `* as `
+      }${identifier} from ${JSON.stringify(importee)};`
       entries += ` ${JSON.stringify(file)}: ${identifier},`
     } else {
       let imp = `import(${JSON.stringify(importee)})`
-      if (!normalizeUrl && !ssr) {
+      if (!normalizeUrl && preload) {
         imp =
           `(${isModernFlag}` +
           `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
