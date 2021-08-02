@@ -159,7 +159,7 @@ export interface UserConfig {
   /**
    * Custom logger.
    */
-  logger?: Logger
+  customLogger?: Logger
   /**
    * Default: true
    */
@@ -275,7 +275,7 @@ export async function resolveConfig(
   // Define logger
   const logger = createLogger(config.logLevel, {
     allowClearScreen: config.clearScreen,
-    logger: config.logger
+    customLogger: config.customLogger
   })
 
   // user config may provide an alternative mode. But --mode has a higher prority
