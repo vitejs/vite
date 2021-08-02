@@ -50,6 +50,7 @@ export class ModuleGraph {
   idToModuleMap = new Map<string, ModuleNode>()
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
+  safeModulesPath = new Set<string>()
   container: PluginContainer
 
   constructor(container: PluginContainer) {
@@ -163,17 +164,19 @@ export class ModuleGraph {
   // hmr in the importing css file.
   createFileOnlyEntry(file: string): ModuleNode {
     file = normalizePath(file)
-    const url = `${FS_PREFIX}${file}`
     let fileMappedModules = this.fileToModulesMap.get(file)
     if (!fileMappedModules) {
       fileMappedModules = new Set()
       this.fileToModulesMap.set(file, fileMappedModules)
     }
+
+    const url = `${FS_PREFIX}${file}`
     for (const m of fileMappedModules) {
-      if (m.url === url) {
+      if (m.url === url || m.id === file) {
         return m
       }
     }
+
     const mod = new ModuleNode(url)
     mod.file = file
     fileMappedModules.add(mod)

@@ -6,6 +6,7 @@
   <button @click="state.count++">count is: {{ state.count }}</button>
   <Foo />
   <p class="virtual">msg from virtual module: {{ foo.msg }}</p>
+  <p class="inter">this will be styled with a font-face</p>
 
   <ImportType />
 </template>

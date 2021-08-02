@@ -1,7 +1,7 @@
 // @ts-check
 const fs = require('fs')
 const { transformSync, ParserOptions } = require('@babel/core')
-
+const { createFilter } = require('@rollup/pluginutils')
 const runtimePublicPath = '/@react-refresh'
 const runtimeFilePath = require.resolve(
   'react-refresh/cjs/react-refresh-runtime.development.js'
@@ -37,6 +37,10 @@ window.__vite_plugin_react_preamble_installed__ = true
 function reactRefreshPlugin(opts) {
   let shouldSkip = false
   let base = '/'
+  const filter = createFilter(
+    (opts && opts.include) || /\.(t|j)sx?$/,
+    (opts && opts.exclude) || /node_modules/
+  )
 
   return {
     name: 'react-refresh',
@@ -65,7 +69,7 @@ function reactRefreshPlugin(opts) {
         return
       }
 
-      if (!/\.(t|j)sx?$/.test(id) || id.includes('node_modules')) {
+      if (!filter(id)) {
         return
       }
 

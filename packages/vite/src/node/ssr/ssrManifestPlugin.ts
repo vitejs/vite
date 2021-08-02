@@ -1,6 +1,9 @@
+import { relative } from 'path'
+import { normalizePath } from '@rollup/pluginutils'
 import { ResolvedConfig } from '..'
 import { Plugin } from '../plugin'
 import { chunkToEmittedCssFileMap } from '../plugins/css'
+import { chunkToEmittedAssetsMap } from '../plugins/asset'
 
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
@@ -12,16 +15,27 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
     generateBundle(_options, bundle) {
       for (const file in bundle) {
         const chunk = bundle[file]
-        if (chunk.type === 'chunk' && !chunk.isEntry) {
-          // links for entry chunks are already generated in static HTML
-          // so we only need to record info for non-entry chunks
-          // TODO: also include non-CSS assets
-          const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+        if (chunk.type === 'chunk') {
+          // links for certain entry chunks are already generated in static HTML
+          // in those cases we only need to record info for non-entry chunks
+          const cssFiles = chunk.isEntry
+            ? null
+            : chunkToEmittedCssFileMap.get(chunk)
+          const assetFiles = chunkToEmittedAssetsMap.get(chunk)
           for (const id in chunk.modules) {
-            const mappedChunks = ssrManifest[id] || (ssrManifest[id] = [])
-            mappedChunks.push(base + chunk.fileName)
+            const normalizedId = normalizePath(relative(config.root, id))
+            const mappedChunks =
+              ssrManifest[normalizedId] || (ssrManifest[normalizedId] = [])
+            if (!chunk.isEntry) {
+              mappedChunks.push(base + chunk.fileName)
+            }
             if (cssFiles) {
               cssFiles.forEach((file) => {
+                mappedChunks.push(base + file)
+              })
+            }
+            if (assetFiles) {
+              assetFiles.forEach((file) => {
                 mappedChunks.push(base + file)
               })
             }
