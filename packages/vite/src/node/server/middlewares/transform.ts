@@ -76,6 +76,8 @@ export function transformMiddleware(
         // something unexpected has happened. In this case, Vite
         // returns an empty response that will error.
         setTimeout(() => {
+          // Don't do anything if response has already been sent
+          if (res.writableEnded) return
           // status code request timeout
           res.statusCode = 408
           res.end(
@@ -87,13 +89,13 @@ export function transformMiddleware(
       return
     }
 
-    let url
+    let url: string
     try {
       url = removeTimestampQuery(req.url!).replace(NULL_BYTE_PLACEHOLDER, '\0')
     } catch (err) {
       // if it starts with %PUBLIC%, someone's migrating from something
       // like create-react-app
-      let errorMessage
+      let errorMessage: string
       if (req.url?.startsWith('/%PUBLIC')) {
         errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
       } else {

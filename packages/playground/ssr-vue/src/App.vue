@@ -16,7 +16,7 @@
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('./assets/fonts/Inter-Italic.woff2?#iefix') format('woff2'),
+  src: url('./assets/fonts/Inter-Italic.woff2#iefix') format('woff2'),
     url('./assets/fonts/Inter-Italic.woff') format('woff');
 }
 .inter {

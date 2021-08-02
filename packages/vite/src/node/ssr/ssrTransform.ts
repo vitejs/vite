@@ -124,18 +124,37 @@ export async function ssrTransform(
 
     // default export
     if (node.type === 'ExportDefaultDeclaration') {
-      s.overwrite(
-        node.start,
-        node.start + 14,
-        `${ssrModuleExportsKey}.default =`
-      )
+      if ('id' in node.declaration && node.declaration.id) {
+        // named hoistable/class exports
+        // export default function foo() {}
+        // export default class A {}
+        const { name } = node.declaration.id
+        s.remove(node.start, node.start + 15 /* 'export default '.length */)
+        s.append(
+          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
+            `{ enumerable: true, value: ${name} })`
+        )
+      } else {
+        // anonymous default exports
+        s.overwrite(
+          node.start,
+          node.start + 14 /* 'export default'.length */,
+          `${ssrModuleExportsKey}.default =`
+        )
+      }
     }
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node, node.source.value as string)
-      s.remove(node.start, node.end)
-      s.append(`\n${ssrExportAllKey}(${importId})`)
+      if (node.exported) {
+        const importId = defineImport(node, node.source.value as string)
+        defineExport(node.exported.name, `${importId}`)
+        s.remove(node.start, node.end)
+      } else {
+        const importId = defineImport(node, node.source.value as string)
+        s.remove(node.start, node.end)
+        s.append(`\n${ssrExportAllKey}(${importId})`)
+      }
     }
   }
 
@@ -392,7 +411,8 @@ function isFunction(node: _Node): node is FunctionNode {
 }
 
 function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
-  for (const node of parentStack) {
+  for (let i = parentStack.length - 1; i >= 0; i--) {
+    const node = parentStack[i]
     if (isFunction(node)) {
       return node
     }

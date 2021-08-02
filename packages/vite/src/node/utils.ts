@@ -58,13 +58,16 @@ interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
 }
 
+export type ViteDebugScope = `vite:${string}`
+
 export function createDebugger(
-  ns: string,
+  namespace: ViteDebugScope,
   options: DebuggerOptions = {}
 ): debug.Debugger['log'] {
-  const log = debug(ns)
+  const log = debug(namespace)
   const { onlyWhenFocused } = options
-  const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns
+  const focus =
+    typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
   return (msg: string, ...args: any[]) => {
     if (filter && !msg.includes(filter)) {
       return
@@ -94,8 +97,8 @@ export function ensureVolumeInPath(file: string): string {
   return isWindows ? path.resolve(file) : file
 }
 
-export const queryRE = /\?.*$/
-export const hashRE = /#.*$/
+export const queryRE = /\?.*$/s
+export const hashRE = /#.*$/s
 
 export const cleanUrl = (url: string): string =>
   url.replace(hashRE, '').replace(queryRE, '')
@@ -206,7 +209,7 @@ export function isObject(value: unknown): value is Record<string, any> {
 }
 
 export function isDefined<T>(value: T | undefined | null): value is T {
-  return value !== undefined && value !== null
+  return value != null
 }
 
 export function lookupFile(
@@ -351,6 +354,9 @@ export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
+    if (srcFile === destDir) {
+      continue
+    }
     const destFile = path.resolve(destDir, file)
     const stat = fs.statSync(srcFile)
     if (stat.isDirectory()) {
@@ -359,6 +365,10 @@ export function copyDir(srcDir: string, destDir: string): void {
       fs.copyFileSync(srcFile, destFile)
     }
   }
+}
+
+export function ensureLeadingSlash(path: string): string {
+  return !path.startsWith('/') ? '/' + path : path
 }
 
 export function ensureWatchedFile(
@@ -435,7 +445,8 @@ export function combineSourcemaps(
     return { ...nullSourceMap }
   }
 
-  let map
+  // We don't declare type here so we can convert/fake/map as RawSourceMap
+  let map //: SourceMap
   let mapIndex = 1
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
