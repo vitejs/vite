@@ -50,7 +50,7 @@ Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you 
 
 ## Contribution
 
-See [Contributing Guide](https://github.com/vitejs/vite/tree/main/.github/contributing.md).
+See [Contributing Guide](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
 
 ## License
 
