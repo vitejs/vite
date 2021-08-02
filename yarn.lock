@@ -7390,7 +7390,8 @@ test-exclude@^6.0.0:
   uid ""
 
 "test-package-c@link:./packages/playground/nested-deps/test-package-c":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 text-extensions@^1.0.0:
   version "1.9.0"
@@ -7739,6 +7740,18 @@ vary@^1, vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
+
+vite@^2.3.7:
+  version "2.4.4"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-2.4.4.tgz#8c402a07ad45f168f6eb5428bead38f3e4363e47"
+  integrity sha512-m1wK6pFJKmaYA6AeZIUXyiAgUAAJzVXhIMYCdZUpCaFMGps0v0IlNJtbmPvkUhVEyautalajmnW5X6NboUPsnw==
+  dependencies:
+    esbuild "^0.12.8"
+    postcss "^8.3.6"
+    resolve "^1.20.0"
+    rollup "^2.38.5"
+  optionalDependencies:
+    fsevents "~2.3.2"
 
 vitepress@^0.15.6:
   version "0.15.6"

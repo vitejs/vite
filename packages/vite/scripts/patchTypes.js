@@ -4,7 +4,7 @@ const path = require('path')
 const chalk = require('chalk')
 const { parse } = require('@babel/parser')
 const MagicString = require('magic-string').default
-const tempDir = path.resolve(__dirname, '../temp/node')
+const tempDir = path.resolve(__dirname, '../temp')
 const typesDir = path.resolve(__dirname, '../types')
 
 // walk through the temp dts dir, find all import/export of types/*
