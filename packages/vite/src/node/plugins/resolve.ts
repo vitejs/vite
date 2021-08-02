@@ -59,7 +59,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   asSrc?: boolean
   tryIndex?: boolean
   tryPrefix?: string
-  skipPackage?: boolean
+  skipPackageJson?: boolean
   preferRelative?: boolean
   isRequire?: boolean
 }
@@ -288,7 +288,7 @@ function tryFsResolve(
       false,
       targetWeb,
       options.tryPrefix,
-      options.skipPackage
+      options.skipPackageJson
     ))
   ) {
     return res
@@ -303,7 +303,7 @@ function tryFsResolve(
         false,
         targetWeb,
         options.tryPrefix,
-        options.skipPackage
+        options.skipPackageJson
       ))
     ) {
       return res
@@ -318,7 +318,7 @@ function tryFsResolve(
       tryIndex,
       targetWeb,
       options.tryPrefix,
-      options.skipPackage
+      options.skipPackageJson
     ))
   ) {
     return res
@@ -332,7 +332,7 @@ function tryResolveFile(
   tryIndex: boolean,
   targetWeb: boolean,
   tryPrefix?: string,
-  skipPkg?: boolean
+  skipPackageJson?: boolean
 ): string | undefined {
   let isReadable = false
   try {
@@ -346,7 +346,7 @@ function tryResolveFile(
     if (!fs.statSync(file).isDirectory()) {
       return normalizePath(ensureVolumeInPath(file)) + postfix
     } else if (tryIndex) {
-      if (!skipPkg) {
+      if (!skipPackageJson) {
         const pkgPath = file + '/package.json'
         if (fs.existsSync(pkgPath)) {
           // path points to a node package
@@ -617,8 +617,8 @@ export function resolvePackageEntry(
     options.mainFields?.[0] === 'sass' &&
     !options.extensions?.includes(path.extname(entryPoint))
   ) {
-      entryPoint = '';
-      options.skipPackage = true;
+    entryPoint = ''
+    options.skipPackageJson = true
   }
 
   // resolve object browser field in package.json
