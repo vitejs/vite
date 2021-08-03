@@ -217,7 +217,7 @@ export async function createPluginContainer(
       return MODULES.keys()
     }
 
-    async addWatchFile(id: string) {
+    addWatchFile(id: string) {
       watchFiles.add(id)
       ;(this._addedImports || (this._addedImports = new Set())).add(id)
       if (watcher) ensureWatchedFile(watcher, id, root)
