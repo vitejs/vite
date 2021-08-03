@@ -20,7 +20,7 @@ import {
   getAssetFilename
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
-import { polyfillId } from './dynamicImportPolyfill'
+import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import {
   AttributeNode,
   NodeTransform,
@@ -264,9 +264,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         processedHtml.set(id, s.toString())
 
-        // inject dynamic import polyfill
-        if (config.build.polyfillDynamicImport) {
-          js = `import "${polyfillId}";\n${js}`
+        // inject module preload polyfill
+        if (config.build.polyfillModulePreload) {
+          js = `import "${modulePreloadPolyfillId}";\n${js}`
         }
 
         return js
@@ -553,7 +553,7 @@ function injectToHead(
 }
 
 const bodyInjectRE = /<\/body>/
-const bodyPrependInjectRE = /<body>/
+const bodyPrependInjectRE = /<body[^>]*>/
 function injectToBody(
   html: string,
   tags: HtmlTagDescriptor[],

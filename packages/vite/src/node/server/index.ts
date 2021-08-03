@@ -435,6 +435,13 @@ export async function createServer(
     handleFileAddUnlink(normalizePath(file), server, true)
   })
 
+  if (!middlewareMode && httpServer) {
+    httpServer.once('listening', () => {
+      // update actual port since this may be different from initial value
+      serverConfig.port = (httpServer.address() as AddressInfo).port
+    })
+  }
+
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const plugin of plugins) {
@@ -548,23 +555,22 @@ export async function createServer(
   }
 
   if (!middlewareMode && httpServer) {
+    let isOptimized = false
     // overwrite listen to run optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
-      try {
-        await container.buildStart({})
-        await runOptimize()
-      } catch (e) {
-        httpServer.emit('error', e)
-        return
+      if (!isOptimized) {
+        try {
+          await container.buildStart({})
+          await runOptimize()
+          isOptimized = true
+        } catch (e) {
+          httpServer.emit('error', e)
+          return
+        }
       }
       return listen(port, ...args)
     }) as any
-
-    httpServer.once('listening', () => {
-      // update actual port since this may be different from initial value
-      serverConfig.port = (httpServer.address() as AddressInfo).port
-    })
   } else {
     await container.buildStart({})
     await runOptimize()

@@ -8,7 +8,8 @@ import {
 } from 'types/hmrPayload'
 import { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
-import './env'
+// eslint-disable-next-line node/no-missing-import
+import '@vite/env'
 
 // injected by the hmr plugin when served
 declare const __ROOT__: string
@@ -84,7 +85,7 @@ async function handleMessage(payload: HMRPayload) {
             ) as HTMLLinkElement[]
           ).find((e) => e.href.includes(path))
           if (el) {
-            const newPath = `${path}${
+            const newPath = `${base}${path.slice(1)}${
               path.includes('?') ? '&' : '?'
             }t=${timestamp}`
             el.href = new URL(newPath, el.href).href
