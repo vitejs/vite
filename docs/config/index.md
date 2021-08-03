@@ -751,3 +751,10 @@ SSR options may be adjusted in minor releases.
 - **Default:** `node`
 
   Build target for the SSR server.
+
+### ssr.bundle
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  Bundles all dependencies into a single JavaScript file.
