@@ -46,7 +46,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   const pattern = new RegExp(
-    '(?<!\\.)\\b(' +
+    // Do not allow preceding '.', but do allow preceding '...' for spread operations
+    '(?<!(?<!\\.\\.)\\.)\\b(' +
       Object.keys(replacements)
         .map((str) => {
           return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
