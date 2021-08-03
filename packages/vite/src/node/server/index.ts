@@ -456,14 +456,16 @@ export async function createServer(
   }
 
   // cors (enabled by default)
-  const { cors } = serverConfig
-  if (cors !== false) {
-    middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  if (serverConfig.cors !== false) {
+    middlewares.use(
+      corsMiddleware(
+        typeof serverConfig.cors === 'boolean' ? {} : serverConfig.cors
+      )
+    )
   }
 
   // proxy
-  const { proxy } = serverConfig
-  if (proxy) {
+  if (serverConfig.proxy) {
     middlewares.use(proxyMiddleware(httpServer, config))
   }
 
