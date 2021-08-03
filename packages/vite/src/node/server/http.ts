@@ -136,9 +136,10 @@ async function createCertificate() {
 }
 
 async function getCertificate(config: ResolvedConfig) {
-  if (!config.cacheDir) return await createCertificate()
+  const { cacheDir } = config
+  if (!cacheDir) return await createCertificate()
 
-  const cachePath = path.join(config.cacheDir, '_cert.pem')
+  const cachePath = path.join(cacheDir, '_cert.pem')
 
   try {
     const [stat, content] = await Promise.all([
@@ -154,7 +155,7 @@ async function getCertificate(config: ResolvedConfig) {
   } catch {
     const content = await createCertificate()
     fsp
-      .mkdir(config.cacheDir, { recursive: true })
+      .mkdir(cacheDir, { recursive: true })
       .then(() => fsp.writeFile(cachePath, content))
       .catch(() => {})
     return content

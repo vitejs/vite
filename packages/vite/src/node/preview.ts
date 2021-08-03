@@ -21,45 +21,59 @@ export async function preview(
   serverOptions: Pick<ServerOptions, 'port' | 'host'>
 ): Promise<void> {
   const app = connect() as Connect.Server
+  const {
+    root,
+    base,
+    server: serverConfig,
+    build,
+    logger,
+    isProduction
+  } = config
+  const {
+    cors,
+    strictPort,
+    https,
+    open,
+    host: serverConfigHost,
+    proxy
+  } = serverConfig
+  const { host: serverOptionHost, port: serverOptionPort } = serverOptions
+
   const httpServer = await resolveHttpServer(
-    config.server,
+    serverConfig,
     app,
     await resolveHttpsConfig(config)
   )
 
   // cors
-  const { cors } = config.server
   if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
-  if (config.server.proxy) {
+  if (proxy) {
     app.use(proxyMiddleware(httpServer, config))
   }
 
   app.use(compression())
 
-  const distDir = path.resolve(config.root, config.build.outDir)
+  const distDir = path.resolve(root, build.outDir)
   app.use(
-    config.base,
+    base,
     sirv(distDir, {
       etag: true,
-      dev: !config.isProduction,
+      dev: !isProduction,
       single: true
     })
   )
 
-  const options = config.server
-  const hostname = resolveHostname(serverOptions.host ?? options.host)
-  const port = serverOptions.port ?? 5000
-  const protocol = options.https ? 'https' : 'http'
-  const logger = config.logger
-  const base = config.base
+  const hostname = resolveHostname(serverOptionHost ?? serverConfigHost)
+  const port = serverOptionPort ?? 5000
+  const protocol = https ? 'https' : 'http'
 
   const serverPort = await httpServerStart(httpServer, {
     port,
-    strictPort: options.strictPort,
+    strictPort,
     host: hostname.host,
     logger
   })
@@ -71,8 +85,8 @@ export async function preview(
 
   printServerUrls(hostname, protocol, serverPort, base, logger.info)
 
-  if (options.open) {
-    const path = typeof options.open === 'string' ? options.open : base
+  if (open) {
+    const path = typeof open === 'string' ? open : base
     openBrowser(
       `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,

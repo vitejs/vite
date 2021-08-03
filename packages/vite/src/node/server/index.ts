@@ -303,8 +303,7 @@ export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
-  const root = config.root
-  const serverConfig = config.server
+  const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config)
   let { middlewareMode } = serverConfig
   if (middlewareMode === true) {
@@ -335,7 +334,7 @@ export async function createServer(
   let exitProcess: () => void
 
   const server: ViteDevServer = {
-    config: config,
+    config,
     middlewares,
     get app() {
       config.logger.warn(
@@ -584,31 +583,33 @@ async function startServer(
   inlinePort?: number,
   isRestart: boolean = false
 ): Promise<ViteDevServer> {
-  const httpServer = server.httpServer
+  const { httpServer, config } = server
   if (!httpServer) {
     throw new Error('Cannot call server.listen in middleware mode.')
   }
+  const {
+    logger,
+    server: { host, open, https, strictPort, port: serverOptionPort },
+    base
+  } = config
+  const { info, hasWarned } = logger
 
-  const options = server.config.server
-  const port = inlinePort || options.port || 3000
-  const hostname = resolveHostname(options.host)
-
-  const protocol = options.https ? 'https' : 'http'
-  const info = server.config.logger.info
-  const base = server.config.base
+  const port = inlinePort || serverOptionPort || 3000
+  const hostname = resolveHostname(host)
+  const protocol = https ? 'https' : 'http'
 
   const serverPort = await httpServerStart(httpServer, {
     port,
-    strictPort: options.strictPort,
+    strictPort,
     host: hostname.host,
-    logger: server.config.logger
+    logger
   })
 
   info(
     chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
       chalk.green(` dev server running at:\n`),
     {
-      clear: !server.config.logger.hasWarned
+      clear: !hasWarned
     }
   )
 
@@ -641,12 +642,12 @@ async function startServer(
     })
   }
 
-  if (options.open && !isRestart) {
-    const path = typeof options.open === 'string' ? options.open : base
+  if (open && !isRestart) {
+    const path = typeof open === 'string' ? open : base
     openBrowser(
       `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
-      server.config.logger
+      logger
     )
   }
 
