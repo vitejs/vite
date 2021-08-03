@@ -171,6 +171,7 @@ export async function createPluginContainer(
     _activeId: string | null = null
     _activeCode: string | null = null
     _resolveSkips?: Set<Plugin>
+    _addedImports: Set<string> | null = null
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
@@ -216,8 +217,9 @@ export async function createPluginContainer(
       return MODULES.keys()
     }
 
-    addWatchFile(id: string) {
+    async addWatchFile(id: string) {
       watchFiles.add(id)
+      ;(this._addedImports || (this._addedImports = new Set())).add(id)
       if (watcher) ensureWatchedFile(watcher, id, root)
     }
 
