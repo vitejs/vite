@@ -7,7 +7,6 @@ import { ModuleNode } from './moduleGraph'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
-import { prepareError } from './middlewares/error'
 import match from 'minimatch'
 import { Server } from 'http'
 import { cssLangRE } from '../plugins/css'
@@ -468,18 +467,19 @@ async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = Date.now()
   const { port } = server.config.server
+  
+  await server.close()
+  
   let newServer = null
   try {
     newServer = await createServer(server.config.inlineConfig)
   } catch (err) {
-    server.ws.send({
-      type: 'error',
-      err: prepareError(err)
+    server.config.logger.error(err.message, {
+      timestamp: true,
     })
     return
   }
 
-  await server.close()
   for (const key in newServer) {
     if (key !== 'app') {
       // @ts-ignore
