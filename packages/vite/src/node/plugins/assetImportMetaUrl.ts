@@ -18,9 +18,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'asset-import-meta-url',
     async transform(code, id, ssr) {
-      const importMetaUrlRE =
-        /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\)/g
       if (code.includes('new URL') && code.includes(`import.meta.url`)) {
+        const importMetaUrlRE =
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\)/g
         let s: MagicString | null = null
         let match: RegExpExecArray | null
         while ((match = importMetaUrlRE.exec(code))) {
