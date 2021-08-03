@@ -384,7 +384,7 @@ export async function resolveConfig(
                 root: resolvedRoot,
                 isProduction,
                 isBuild: command === 'build',
-                ssrTarget: resolved.ssr?.target,
+                ssrConfig: resolved.ssr,
                 asSrc: true,
                 preferRelative: false,
                 tryIndex: true,
