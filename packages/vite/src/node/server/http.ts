@@ -136,10 +136,9 @@ async function createCertificate() {
 }
 
 async function getCertificate(config: ResolvedConfig) {
-  const { cacheDir } = config
-  if (!cacheDir) return await createCertificate()
+  if (!config.cacheDir) return await createCertificate()
 
-  const cachePath = path.join(cacheDir, '_cert.pem')
+  const cachePath = path.join(config.cacheDir, '_cert.pem')
 
   try {
     const [stat, content] = await Promise.all([
@@ -155,7 +154,7 @@ async function getCertificate(config: ResolvedConfig) {
   } catch {
     const content = await createCertificate()
     fsp
-      .mkdir(cacheDir, { recursive: true })
+      .mkdir(config.cacheDir, { recursive: true })
       .then(() => fsp.writeFile(cachePath, content))
       .catch(() => {})
     return content
@@ -172,16 +171,16 @@ export async function httpServerStart(
   }
 ): Promise<number> {
   return new Promise((resolve, reject) => {
-    let { port, strictPort, host, logger } = serverOptions
-
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
-        if (strictPort) {
+        if (serverOptions.strictPort) {
           httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
+          reject(new Error(`Port ${serverOptions.port} is already in use`))
         } else {
-          logger.info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, host)
+          serverOptions.logger.info(
+            `Port ${serverOptions.port} is in use, trying another one...`
+          )
+          httpServer.listen(++serverOptions.port, serverOptions.host)
         }
       } else {
         httpServer.removeListener('error', onError)
@@ -191,9 +190,9 @@ export async function httpServerStart(
 
     httpServer.on('error', onError)
 
-    httpServer.listen(port, host, () => {
+    httpServer.listen(serverOptions.port, serverOptions.host, () => {
       httpServer.removeListener('error', onError)
-      resolve(port)
+      resolve(serverOptions.port)
     })
   })
 }

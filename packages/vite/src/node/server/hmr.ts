@@ -43,31 +43,18 @@ export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer
 ): Promise<any> {
-  const {
-    ws,
-    config: {
-      root,
-      server: serverConfig,
-      configFile,
-      inlineConfig,
-      configFileDependencies,
-      logger,
-      plugins
-    },
-    moduleGraph
-  } = server
+  const { ws, config, moduleGraph } = server
+  const shortFile = getShortName(file, config.root)
 
-  const shortFile = getShortName(file, root)
-
-  const isConfig = file === configFile
-  const isConfigDependency = configFileDependencies.some(
+  const isConfig = file === config.configFile
+  const isConfigDependency = config.configFileDependencies.some(
     (name) => file === path.resolve(name)
   )
-  const isEnv = inlineConfig.envFile !== false && file.endsWith('.env')
+  const isEnv = config.inlineConfig.envFile !== false && file.endsWith('.env')
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
-    logger.info(
+    config.logger.info(
       chalk.green(
         `${path.relative(process.cwd(), file)} changed, restarting server...`
       ),
@@ -100,7 +87,7 @@ export async function handleHMRUpdate(
     server
   }
 
-  for (const plugin of plugins) {
+  for (const plugin of config.plugins) {
     if (plugin.handleHotUpdate) {
       const filteredModules = await plugin.handleHotUpdate(hmrContext)
       if (filteredModules) {
@@ -112,15 +99,15 @@ export async function handleHMRUpdate(
   if (!hmrContext.modules.length) {
     // html file cannot be hot updated
     if (file.endsWith('.html')) {
-      logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
         clear: true,
         timestamp: true
       })
       ws.send({
         type: 'full-reload',
-        path: serverConfig.middlewareMode
+        path: config.server.middlewareMode
           ? '*'
-          : '/' + normalizePath(path.relative(root, file))
+          : '/' + normalizePath(path.relative(config.root, file))
       })
     } else {
       // loaded but not in the module graph, probably not js
@@ -195,31 +182,30 @@ export async function handleFileAddUnlink(
   server: ViteDevServer,
   isUnlink = false
 ): Promise<void> {
-  const {
-    moduleGraph,
-    config: { root },
-    _globImporters
-  } = server
-  const modules = [...(moduleGraph.getModulesByFile(file) ?? [])]
-
-  if (isUnlink && file in _globImporters) {
-    delete _globImporters[file]
+  const modules = [...(server.moduleGraph.getModulesByFile(file) ?? [])]
+  if (isUnlink && file in server._globImporters) {
+    delete server._globImporters[file]
   } else {
-    for (const i in _globImporters) {
-      const { module, importGlobs } = _globImporters[i]
+    for (const i in server._globImporters) {
+      const { module, importGlobs } = server._globImporters[i]
       for (const { base, pattern } of importGlobs) {
         if (match(file, pattern) || match(path.relative(base, file), pattern)) {
           modules.push(module)
           // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
           // calls get fresh glob import results with(out) the newly added(/removed) `file`.
-          moduleGraph.onFileChange(module.file!)
+          server.moduleGraph.onFileChange(module.file!)
           break
         }
       }
     }
   }
   if (modules.length > 0) {
-    updateModules(getShortName(file, root), modules, Date.now(), server)
+    updateModules(
+      getShortName(file, server.config.root),
+      modules,
+      Date.now(),
+      server
+    )
   }
 }
 
@@ -481,18 +467,11 @@ async function readModifiedFile(file: string): Promise<string> {
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = Date.now()
-
-  const {
-    config: { inlineConfig, logger, server: serverConfig },
-    ws
-  } = server
-  const { port, middlewareMode } = serverConfig
-
   let newServer = null
   try {
-    newServer = await createServer(inlineConfig)
+    newServer = await createServer(server.config.inlineConfig)
   } catch (err) {
-    ws.send({
+    server.ws.send({
       type: 'error',
       err: prepareError(err)
     })
@@ -506,9 +485,9 @@ async function restartServer(server: ViteDevServer) {
       server[key] = newServer[key]
     }
   }
-  if (!middlewareMode) {
-    await server.listen(port, true)
+  if (!server.config.server.middlewareMode) {
+    await server.listen(server.config.server.port, true)
   } else {
-    logger.info('server restarted.', { timestamp: true })
+    server.config.logger.info('server restarted.', { timestamp: true })
   }
 }

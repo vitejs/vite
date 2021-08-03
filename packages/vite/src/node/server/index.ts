@@ -325,7 +325,6 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const plugins = config.plugins
   const container = await createPluginContainer(config, watcher)
   const moduleGraph = new ModuleGraph(container)
   const closeHttpServer = createServerCloseFn(httpServer)
@@ -443,7 +442,7 @@ export async function createServer(
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of plugins) {
+  for (const plugin of config.plugins) {
     if (plugin.configureServer) {
       postHooks.push(await plugin.configureServer(server))
     }
@@ -583,41 +582,43 @@ async function startServer(
   inlinePort?: number,
   isRestart: boolean = false
 ): Promise<ViteDevServer> {
-  const { httpServer, config } = server
-  if (!httpServer) {
+  if (!server.httpServer) {
     throw new Error('Cannot call server.listen in middleware mode.')
   }
-  const {
-    logger,
-    server: { host, open, https, strictPort, port: serverOptionPort },
-    base
-  } = config
-  const { info, hasWarned } = logger
 
-  const port = inlinePort || serverOptionPort || 3000
-  const hostname = resolveHostname(host)
-  const protocol = https ? 'https' : 'http'
+  const { config } = server
+  const options = config.server
 
-  const serverPort = await httpServerStart(httpServer, {
+  const port = inlinePort || options.port || 3000
+  const hostname = resolveHostname(options.host)
+  const protocol = options.https ? 'https' : 'http'
+
+  const serverPort = await httpServerStart(server.httpServer, {
     port,
-    strictPort,
+    strictPort: options.strictPort,
     host: hostname.host,
-    logger
+    logger: config.logger
   })
 
-  info(
+  config.logger.info(
     chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
       chalk.green(` dev server running at:\n`),
     {
-      clear: !hasWarned
+      clear: !config.logger.hasWarned
     }
   )
 
-  printServerUrls(hostname, protocol, serverPort, base, info)
+  printServerUrls(
+    hostname,
+    protocol,
+    serverPort,
+    config.base,
+    config.logger.info
+  )
 
   // @ts-ignore
   if (global.__vite_start_time) {
-    info(
+    config.logger.info(
       chalk.cyan(
         // @ts-ignore
         `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
@@ -633,7 +634,7 @@ async function startServer(
       if (!err) {
         const outPath = path.resolve('./vite-profile.cpuprofile')
         fs.writeFileSync(outPath, JSON.stringify(profile))
-        info(
+        config.logger.info(
           chalk.yellow(`  CPU profile written to ${chalk.white.dim(outPath)}\n`)
         )
       } else {
@@ -642,12 +643,12 @@ async function startServer(
     })
   }
 
-  if (open && !isRestart) {
-    const path = typeof open === 'string' ? open : base
+  if (options.open && !isRestart) {
+    const path = typeof options.open === 'string' ? options.open : config.base
     openBrowser(
       `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
-      logger
+      config.logger
     )
   }
 
