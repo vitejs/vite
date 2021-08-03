@@ -194,6 +194,7 @@ export interface SSROptions {
    * Default: 'node'
    */
   target?: SSRTarget
+  bundle?: boolean
 }
 
 export interface InlineConfig extends UserConfig {
