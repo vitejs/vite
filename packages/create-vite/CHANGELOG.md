@@ -1,3 +1,12 @@
+## [2.5.4](https://github.com/vitejs/vite/compare/create-vite@2.5.3...create-vite@2.5.4) (2021-08-03)
+
+
+### Bug Fixes
+
+* **create-vite:** distinguish pnpm pkgManager ([#4220](https://github.com/vitejs/vite/issues/4220)) ([c0a3dbf](https://github.com/vitejs/vite/commit/c0a3dbfa66266378f6f329f1981d5827b781fdbb))
+
+
+
 ## [2.5.3](https://github.com/vitejs/vite/compare/create-vite@2.5.2...create-vite@2.5.3) (2021-07-27)
 
 
