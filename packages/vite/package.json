@@ -47,7 +47,7 @@
   },
   "//": "READ .github/contributing.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.12.8",
+    "esbuild": "^0.12.17",
     "postcss": "^8.3.6",
     "resolve": "^1.20.0",
     "rollup": "^2.38.5"
