@@ -107,6 +107,9 @@ export const isCSSRequest = (request: string): boolean =>
 export const isDirectCSSRequest = (request: string): boolean =>
   cssLangRE.test(request) && directRequestRE.test(request)
 
+export const isDirectRequest = (request: string): boolean =>
+  directRequestRE.test(request)
+
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
   Map<string, Record<string, string>>
