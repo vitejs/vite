@@ -467,6 +467,7 @@ async function readModifiedFile(file: string): Promise<string> {
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = Date.now()
+  const { port } = server.config.server
   let newServer = null
   try {
     newServer = await createServer(server.config.inlineConfig)
@@ -486,7 +487,7 @@ async function restartServer(server: ViteDevServer) {
     }
   }
   if (!server.config.server.middlewareMode) {
-    await server.listen(undefined, true)
+    await server.listen(port, true)
   } else {
     server.config.logger.info('server restarted.', { timestamp: true })
   }
