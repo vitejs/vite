@@ -12,10 +12,7 @@ export interface Logger {
   info(msg: string, options?: LogOptions): void
   warn(msg: string, options?: LogOptions): void
   warnOnce(msg: string, options?: LogOptions): void
-  error(
-    msg: string,
-    options: LogOptions & { error: Error | RollupError | null }
-  ): void
+  error(msg: string, options: LogErrorOptions): void
   clearScreen(type: LogType): void
   hasErrorLogged(error: Error | RollupError): boolean
   hasWarned: boolean
@@ -24,6 +21,10 @@ export interface Logger {
 export interface LogOptions {
   clear?: boolean
   timestamp?: boolean
+}
+
+export interface LogErrorOptions extends LogOptions {
+  error?: Error | RollupError | null
 }
 
 export const LogLevels: Record<LogLevel, number> = {
@@ -67,11 +68,7 @@ export function createLogger(
       ? clearScreen
       : () => {}
 
-  function output(
-    type: LogType,
-    msg: string,
-    options: LogOptions & { error?: Error | RollupError | null } = {}
-  ) {
+  function output(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (thresh >= LogLevels[type]) {
       const method = type === 'info' ? 'log' : type
       const format = () => {
