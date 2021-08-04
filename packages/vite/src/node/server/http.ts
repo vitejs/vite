@@ -6,6 +6,7 @@ import { ResolvedConfig, ServerOptions } from '..'
 import { isObject } from '../utils'
 import { Connect } from 'types/connect'
 import { Logger } from '../logger'
+import { Buffer } from 'buffer'
 
 export async function resolveHttpServer(
   { proxy }: ServerOptions,
@@ -44,9 +45,19 @@ export async function resolveHttpsConfig(
     key: readFileIfExists(key),
     pfx: readFileIfExists(pfx)
   })
-  if (!httpsOption.key || !httpsOption.cert) {
+
+  if (!httpsOption.pfx && (!httpsOption.key || !httpsOption.cert)) {
     httpsOption.cert = httpsOption.key = await getCertificate(config)
   }
+
+  if (httpsOption.pfx && httpsOption.passphrase) {
+    const buf = Buffer.from(new String(httpsOption.passphrase))
+    // type definition is incorrect; Buffer should be allowed per Node docs
+    // will not work if passphrase is left a string - throws error: Pass phrase must be a buffer
+    // @ts-ignore
+    httpsOption.passphrase = buf
+  }
+
   return httpsOption
 }
 
