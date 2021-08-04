@@ -752,7 +752,7 @@ SSR options may be adjusted in minor releases.
 
   Build target for the SSR server.
 
-### ssr.bundle
+### ssr.bundleAll
 
 - **Type:** `boolean`
 - **Default:** `false`

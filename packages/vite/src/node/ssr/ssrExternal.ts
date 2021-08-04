@@ -18,7 +18,7 @@ export function resolveSSRExternal(
   ssrExternals: Set<string> = new Set(),
   seen: Set<string> = new Set()
 ): string[] {
-  if (config.ssr?.bundle) {
+  if (config.ssr?.bundleAll) {
     return []
   }
 
