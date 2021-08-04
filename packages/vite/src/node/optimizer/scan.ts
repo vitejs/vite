@@ -232,7 +232,7 @@ function esbuildScanPlugin(
             let m
             // empty multiline comments to avoid matching commented out imports
             const code = js.replace(multilineCommentsRE, '/* */')
-            while ((m = importsRE.exec(code)) !== null) {
+            while ((m = importsRE.exec(code)) != null) {
               // This is necessary to avoid infinite loops with zero-width matches
               if (m.index === importsRE.lastIndex) {
                 importsRE.lastIndex++
