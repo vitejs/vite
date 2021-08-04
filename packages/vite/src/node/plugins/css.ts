@@ -83,7 +83,7 @@ export interface CSSModulesOptions {
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
-export const cssLangRE = new RegExp(cssLangs)
+const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const commonjsProxyRE = /\?commonjs-proxy/
@@ -102,10 +102,13 @@ const enum PureCssLang {
 type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
 
 export const isCSSRequest = (request: string): boolean =>
-  cssLangRE.test(request) && !directRequestRE.test(request)
+  cssLangRE.test(request)
 
 export const isDirectCSSRequest = (request: string): boolean =>
   cssLangRE.test(request) && directRequestRE.test(request)
+
+export const isDirectRequest = (request: string): boolean =>
+  directRequestRE.test(request)
 
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
@@ -150,7 +153,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
+      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
         return
       }
 
@@ -202,7 +205,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             const depModules = new Set<string | ModuleNode>()
             for (const file of deps) {
               depModules.add(
-                cssLangRE.test(file)
+                isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
                       await fileToUrl(file, config, this)
@@ -259,7 +262,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(css, id, ssr) {
-      if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
+      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
         return
       }
 
