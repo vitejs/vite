@@ -22,7 +22,11 @@ import {
   DEP_VERSION_RE,
   NULL_BYTE_PLACEHOLDER
 } from '../../constants'
-import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
+import {
+  isCSSRequest,
+  isDirectCSSRequest,
+  isDirectRequest
+} from '../../plugins/css'
 
 /**
  * Time (ms) Vite has to full-reload the page before returning
@@ -147,7 +151,11 @@ export function transformMiddleware(
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports
-        if (isCSSRequest(url) && req.headers.accept?.includes('text/css')) {
+        if (
+          isCSSRequest(url) &&
+          !isDirectRequest(url) &&
+          req.headers.accept?.includes('text/css')
+        ) {
           url = injectQuery(url, 'direct')
         }
 
