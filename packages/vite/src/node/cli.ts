@@ -217,7 +217,7 @@ cli
             }
           },
           'serve',
-          'development'
+          'production'
         )
         await preview(config, cleanOptions(options))
       } catch (e) {
