@@ -31,6 +31,7 @@ export type { Plugin } from './plugin'
 export type {
   Logger,
   LogOptions,
+  LogErrorOptions,
   LogLevel,
   LogType,
   LoggerOptions
