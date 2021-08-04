@@ -1,3 +1,19 @@
+# [2.5.0-beta.1](https://github.com/vitejs/vite/compare/v2.5.0-beta.0...v2.5.0-beta.1) (2021-08-04)
+
+
+### Bug Fixes
+
+* change the preview default mode from `development` to `production` ([#4483](https://github.com/vitejs/vite/issues/4483)) ([77933ba](https://github.com/vitejs/vite/commit/77933ba86e7b15cb32ba80c27ae707db2a598cec))
+* close vite dev server before creating new one ([#4374](https://github.com/vitejs/vite/issues/4374)) ([9e4572e](https://github.com/vitejs/vite/commit/9e4572edf5a21db9ed2d5ffa9c1a54dbea3687b3))
+* register files added by addWatchFile() as current module's dependency ([db4ba56](https://github.com/vitejs/vite/commit/db4ba56e38a2ce7fa4a4ecf52d9eb0f375073560)), closes [#3216](https://github.com/vitejs/vite/issues/3216)
+
+
+### Features
+
+* add `logger.hasErrorLogged(error)` method ([#3957](https://github.com/vitejs/vite/issues/3957)) ([fb406ce](https://github.com/vitejs/vite/commit/fb406ce4c0fe6da3333c9d1c00477b2880d46352))
+
+
+
 # [2.5.0-beta.0](https://github.com/vitejs/vite/compare/v2.4.4...v2.5.0-beta.0) (2021-08-03)
 
 

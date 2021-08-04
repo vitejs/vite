@@ -2655,7 +2655,8 @@ css-color-names@^1.0.1:
   integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
 
 "css-dep@link:./packages/playground/css/css-dep":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 css-parse@~2.0.0:
   version "2.0.0"
@@ -2841,22 +2842,23 @@ delegate@^3.1.2:
 
 "dep-cjs-named-only@link:./packages/playground/optimize-deps/dep-cjs-named-only":
   version "0.0.0"
+  uid ""
 
 "dep-esbuild-plugin-transform@link:./packages/playground/optimize-deps/dep-esbuild-plugin-transform":
   version "0.0.0"
+  uid ""
 
 "dep-import-type@link:./packages/playground/ssr-vue/dep-import-type":
   version "0.0.0"
+  uid ""
 
 "dep-linked-include@link:./packages/playground/optimize-deps/dep-linked-include":
   version "0.0.0"
-  dependencies:
-    react "17.0.0"
+  uid ""
 
 "dep-linked@link:./packages/playground/optimize-deps/dep-linked":
   version "0.0.0"
-  dependencies:
-    lodash-es "^4.17.20"
+  uid ""
 
 depd@~1.1.2:
   version "1.1.2"
@@ -3059,7 +3061,7 @@ es-to-primitive@^1.2.1:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
-esbuild@^0.12.17:
+esbuild@^0.12.17, esbuild@^0.12.8:
   version "0.12.17"
   resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.12.17.tgz#5816f905c2905de0ebbc658860df7b5b48afbcd3"
   integrity sha512-GshKJyVYUnlSXIZj/NheC2O0Kblh42CS7P1wJyTbbIHevTG4jYMS9NNw8EOd8dDWD0dzydYHS01MpZoUcQXB4g==
@@ -6604,13 +6606,16 @@ requires-port@^1.0.0:
   integrity sha1-kl0mAdOaxIXgkc8NpcbmlNw9yv8=
 
 "resolve-browser-field@link:./packages/playground/resolve/browser-field":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-custom-condition@link:./packages/playground/resolve/custom-condition":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-custom-main-field@link:./packages/playground/resolve/custom-main-field":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 resolve-cwd@^3.0.0:
   version "3.0.0"
@@ -6620,10 +6625,12 @@ resolve-cwd@^3.0.0:
     resolve-from "^5.0.0"
 
 "resolve-exports-env@link:./packages/playground/resolve/exports-env":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-exports-path@link:./packages/playground/resolve/exports-path":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -7370,13 +7377,16 @@ test-exclude@^6.0.0:
     minimatch "^3.0.4"
 
 "test-package-a@link:./packages/playground/nested-deps/test-package-a":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "test-package-b@link:./packages/playground/nested-deps/test-package-b":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "test-package-c@link:./packages/playground/nested-deps/test-package-c":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 text-extensions@^1.0.0:
   version "1.9.0"
@@ -7630,6 +7640,7 @@ typedarray-to-buffer@^3.1.5:
 
 "types@link:./packages/vite/types":
   version "0.0.0"
+  uid ""
 
 typescript@^4.3.5, typescript@~4.3.5:
   version "4.3.5"
@@ -7734,6 +7745,18 @@ vary@^1, vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
+
+vite@^2.3.7:
+  version "2.4.4"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-2.4.4.tgz#8c402a07ad45f168f6eb5428bead38f3e4363e47"
+  integrity sha512-m1wK6pFJKmaYA6AeZIUXyiAgUAAJzVXhIMYCdZUpCaFMGps0v0IlNJtbmPvkUhVEyautalajmnW5X6NboUPsnw==
+  dependencies:
+    esbuild "^0.12.8"
+    postcss "^8.3.6"
+    resolve "^1.20.0"
+    rollup "^2.38.5"
+  optionalDependencies:
+    fsevents "~2.3.2"
 
 vitepress@^0.15.6:
   version "0.15.6"
