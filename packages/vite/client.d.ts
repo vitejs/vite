@@ -95,6 +95,10 @@ declare module '*.webp' {
   const src: string
   export default src
 }
+declare module '*.avif' {
+  const src: string
+  export default src
+}
 
 // media
 declare module '*.mp4' {
@@ -144,6 +148,16 @@ declare module '*.ttf' {
   export default src
 }
 declare module '*.otf' {
+  const src: string
+  export default src
+}
+
+// other
+declare module '*.wasm' {
+  const src: string
+  export default src
+}
+declare module '*.webmanifest' {
   const src: string
   export default src
 }
