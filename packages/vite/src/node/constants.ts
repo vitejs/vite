@@ -46,6 +46,9 @@ export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.mjs')
 export const ENV_ENTRY = require.resolve('vite/dist/client/env.mjs')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
+// ** READ THIS ** before editing `KNOWN_ASSET_TYPES`.
+//   If you add an asset to `KNOWN_ASSET_TYPES`, make sure to also add it
+//   to the TypeScript declaration file `packages/vite/client.d.ts`.
 export const KNOWN_ASSET_TYPES = [
   // images
   'png',
