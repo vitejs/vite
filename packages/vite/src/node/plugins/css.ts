@@ -998,7 +998,9 @@ const scss: SassStylePreprocessor = async (
   const internalImporter: Sass.Importer = (url, importer, done) => {
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias).then(done)
+        rebaseUrls(resolved, options.filename, options.alias)
+          .then(done)
+          .catch(done)
       } else {
         done(null)
       }
