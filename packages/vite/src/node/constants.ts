@@ -72,7 +72,8 @@ export const KNOWN_ASSET_TYPES = [
   'otf',
 
   // other
-  'wasm'
+  'wasm',
+  'webmanifest'
 ]
 
 export const DEFAULT_ASSETS_RE = new RegExp(
