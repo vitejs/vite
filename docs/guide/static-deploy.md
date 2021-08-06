@@ -188,9 +188,9 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
    ```js
    {
-    "projects": {
-      "default": "<YOUR_FIREBASE_ID>"
-    }
+     "projects": {
+       "default": "<YOUR_FIREBASE_ID>"
+     }
    }
    ```
 
