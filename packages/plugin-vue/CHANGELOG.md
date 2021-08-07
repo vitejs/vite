@@ -1,5 +1,8 @@
 # [1.4.0](https://github.com/vitejs/vite/compare/plugin-vue@1.3.0...plugin-vue@1.4.0) (2021-08-07)
 
+### Features
+
+* Custom Elements mode behavior changed: now only inlines the CSS and no longer exports the custom element constructor (exports the component as in normal mode). Users now need to explicitly call `defineCustomElement` on the component. This allows the custom element to be defined using an async version of the source component.
 
 ### Bug Fixes
 
