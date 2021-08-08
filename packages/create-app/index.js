@@ -9,7 +9,7 @@ const alternativeCommands = {
   npm: 'npm init vite',
   unknown: 'npm init vite'
 }
-console.log(process.env.npm_execpath)
+
 function getPackageManager() {
   if (!process.env.npm_execpath) {
     return 'unknown'
