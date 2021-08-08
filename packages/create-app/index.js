@@ -5,7 +5,7 @@ const { yellow, green } = require('kolorist')
 
 const alternativeCommands = {
   yarn: 'yarn create vite',
-  pnpm: 'pnpx create-react-app vite',
+  pnpm: 'pnpx create-vite-app',
   npm: 'npm init vite',
   unknown: 'npm init vite'
 }
