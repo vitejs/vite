@@ -4,11 +4,12 @@
 const { yellow, green } = require('kolorist')
 
 const alternativeCommands = {
-  npm: 'npm init vite',
   yarn: 'yarn create vite',
+  pnpm: 'pnpx create-react-app vite',
+  npm: 'npm init vite',
   unknown: 'npm init vite'
 }
-
+console.log(process.env.npm_execpath)
 function getPackageManager() {
   if (!process.env.npm_execpath) {
     return 'unknown'
@@ -16,6 +17,9 @@ function getPackageManager() {
 
   if (process.env.npm_execpath.indexOf('yarn') !== -1) {
     return 'yarn'
+  }
+  if (process.env.npm_execpath.indexOf('pnpm') !== -1) {
+    return 'pnpm'
   }
   if (process.env.npm_execpath.indexOf('npm') !== -1) {
     return 'npm'
