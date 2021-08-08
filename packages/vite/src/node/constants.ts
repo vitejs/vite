@@ -67,6 +67,7 @@ export const KNOWN_ASSET_TYPES = [
   'wav',
   'flac',
   'aac',
+  'md',
 
   // fonts
   'woff2?',
