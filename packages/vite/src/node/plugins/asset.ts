@@ -320,7 +320,7 @@ async function fileToBuiltUrl(
     if (!map.has(contentHash)) {
       map.set(contentHash, fileName)
     }
-    const emittedSet = emittedHashMap.get(config)!    
+    const emittedSet = emittedHashMap.get(config)!
     if (!emittedSet.has(contentHash)) {
       const name = normalizePath(path.relative(config.root, file))
       pluginContext.emitFile({
