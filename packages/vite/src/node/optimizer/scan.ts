@@ -79,7 +79,9 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   )
 
   if (!entries.length) {
-    debug(`No entry HTML files detected`)
+    config.logger.warn(
+      'Could not determine entry point from rollupOptions or html files. Skipping dependency pre-bundling.'
+    )
     return { deps: {}, missing: {} }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
