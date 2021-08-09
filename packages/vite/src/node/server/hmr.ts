@@ -138,7 +138,7 @@ function updateModules(
       boundary: ModuleNode
       acceptedVia: ModuleNode
     }>()
-    const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
+    const hasDeadEnd = propagateUpdate(mod, boundaries)
     if (hasDeadEnd) {
       needFullReload = true
       continue
@@ -210,7 +210,6 @@ export async function handleFileAddUnlink(
 
 function propagateUpdate(
   node: ModuleNode,
-  timestamp: number,
   boundaries: Set<{
     boundary: ModuleNode
     acceptedVia: ModuleNode
@@ -227,12 +226,7 @@ function propagateUpdate(
     // Tailwind JIT may register any file as a dependency to a CSS file.
     for (const importer of node.importers) {
       if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
-        propagateUpdate(
-          importer,
-          timestamp,
-          boundaries,
-          currentChain.concat(importer)
-        )
+        propagateUpdate(importer, boundaries, currentChain.concat(importer))
       }
     }
 
@@ -268,7 +262,7 @@ function propagateUpdate(
       return true
     }
 
-    if (propagateUpdate(importer, timestamp, boundaries, subChain)) {
+    if (propagateUpdate(importer, boundaries, subChain)) {
       return true
     }
   }
