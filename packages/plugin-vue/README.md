@@ -82,23 +82,27 @@ export default {
 
 ## Using Vue SFCs as Custom Elements
 
-> Requires `vue@^3.2.0`
+> Requires `vue@^3.2.0` & `@vitejs/plugin-vue@^1.4.0`
 
-By default, files ending in `*.ce.vue` will be processed as native Custom Elements when imported (created with `defineCustomElement` from Vue core):
+Vue 3.2 introduces the `defineCustomElement` method, which works with SFCs. By default, `<style>` tags inside SFCs are extracted and merged into CSS files during build. However when shipping a library of custom elements, it may be desirable to inline the styles as JavaScript strings and inject them into the custom elements' shadow root instead.
+
+Starting in 1.4.0, files ending with `*.ce.vue` will be compiled in "custom elements" mode: its `<style>` tags are compiled into inlined CSS strings and attached to the component as its `styles` property:
 
 ```js
+import { defineCustomElement } from 'vue'
 import Example from './Example.ce.vue'
 
-// register
-customElements.define('my-example', Example)
+console.log(Example.styles) // ['/* css content */']
 
-// can also be instantiated
-const myExample = new Example()
+// register
+customElements.define('my-example', defineCustomElement(Example))
 ```
+
+Note in custom elements mode there is no need to use `<style scoped>` since the CSS is already scoped inside the shadow DOM.
 
 The `customElement` plugin option can be used to configure the behavior:
 
-- `{ customElement: true }` will import all `*.vue` files as Custom Elements.
+- `{ customElement: true }` will import all `*.vue` files in custom element mode.
 - Use a string or regex pattern to change how files should be loaded as Custom Elements (this check is applied after `include` and `exclude` matches).
 
 ## License

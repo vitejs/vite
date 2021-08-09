@@ -38,7 +38,9 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
 export const importsRE =
-  /(?:^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?:$|;|\/\/|\/\*)/gm
+  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
+
+const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -77,7 +79,9 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   )
 
   if (!entries.length) {
-    debug(`No entry HTML files detected`)
+    config.logger.warn(
+      'Could not determine entry point from rollupOptions or html files. Skipping dependency pre-bundling.'
+    )
     return { deps: {}, missing: {} }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
@@ -227,9 +231,10 @@ function esbuildScanPlugin(
             // esbuild from crawling further.
             // the solution is to add `import 'x'` for every source to force
             // esbuild to keep crawling due to potential side effects.
-            let m: RegExpExecArray | null
-            const original = js
-            while ((m = importsRE.exec(original)) != null) {
+            let m
+            // empty multiline comments to avoid matching commented out imports
+            const code = js.replace(multilineCommentsRE, '/* */')
+            while ((m = importsRE.exec(code)) != null) {
               // This is necessary to avoid infinite loops with zero-width matches
               if (m.index === importsRE.lastIndex) {
                 importsRE.lastIndex++
@@ -282,9 +287,11 @@ function esbuildScanPlugin(
               }
               return externalUnlessEntry({ path: id })
             } else {
+              const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
-                path: path.resolve(resolved)
+                path: path.resolve(resolved),
+                namespace
               }
             }
           } else {

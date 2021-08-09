@@ -21,7 +21,12 @@ import { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
-import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
+import {
+  CLIENT_PUBLIC_PATH,
+  CLIENT_ENTRY,
+  ENV_ENTRY,
+  DEFAULT_ASSETS_RE
+} from './constants'
 import {
   InternalResolveOptions,
   ResolveOptions,
@@ -152,6 +157,10 @@ export interface UserConfig {
    */
   logLevel?: LogLevel
   /**
+   * Custom logger.
+   */
+  customLogger?: Logger
+  /**
    * Default: true
    */
   clearScreen?: boolean
@@ -265,11 +274,13 @@ export async function resolveConfig(
 
   // Define logger
   const logger = createLogger(config.logLevel, {
-    allowClearScreen: config.clearScreen
+    allowClearScreen: config.clearScreen,
+    customLogger: config.customLogger
   })
 
-  // user config may provide an alternative mode
-  mode = config.mode || mode
+  // user config may provide an alternative mode. But --mode has a higher prority
+  mode = inlineConfig.mode || config.mode || mode
+  configEnv.mode = mode
 
   // resolve plugins
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
@@ -294,13 +305,16 @@ export async function resolveConfig(
     config.root ? path.resolve(config.root) : process.cwd()
   )
 
+  const clientAlias = [
+    { find: /^[\/]?@vite\/env/, replacement: () => ENV_ENTRY },
+    { find: CLIENT_PUBLIC_PATH, replacement: () => CLIENT_ENTRY }
+  ]
+
   // resolve alias with internal client alias
   const resolvedAlias = mergeAlias(
-    // #1732 the CLIENT_DIR may contain $$ which cannot be used as direct
-    // replacement string.
     // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
     // replacement, but its implementation does work with function values.
-    [{ find: /^\/@vite\//, replacement: () => CLIENT_DIR + '/' }],
+    clientAlias,
     config.resolve?.alias || config.alias || []
   )
 
@@ -527,6 +541,32 @@ export async function resolveConfig(
       return resolved.optimizeDeps.esbuildOptions?.keepNames
     }
   })
+
+  if (config.build?.polyfillDynamicImport) {
+    logDeprecationWarning(
+      'build.polyfillDynamicImport',
+      '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.'
+    )
+  }
+
+  Object.defineProperty(resolvedBuildOptions, 'polyfillDynamicImport', {
+    enumerable: false,
+    get() {
+      logDeprecationWarning(
+        'build.polyfillDynamicImport',
+        '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.',
+        new Error()
+      )
+      return false
+    }
+  })
+
+  if (config.build?.cleanCssOptions) {
+    logDeprecationWarning(
+      'build.cleanCssOptions',
+      'Vite now uses esbuild for CSS minification.'
+    )
+  }
 
   return resolved
 }
@@ -814,7 +854,8 @@ export async function loadConfigFromFile(
     }
   } catch (e) {
     createLogger(logLevel).error(
-      chalk.red(`failed to load config from ${resolvedPath}`)
+      chalk.red(`failed to load config from ${resolvedPath}`),
+      { error: e }
     )
     throw e
   }
