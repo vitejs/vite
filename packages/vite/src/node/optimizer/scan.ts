@@ -280,19 +280,17 @@ function esbuildScanPlugin(
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
             }
+            // dependency or forced included
             if (resolved.includes('node_modules') || include?.includes(id)) {
-              // dependency or forced included, externalize and stop crawling
               if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
                 depImports[id] = resolved
               }
-              return externalUnlessEntry({ path: id })
-            } else {
-              const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
-              // linked package, keep crawling
-              return {
-                path: path.resolve(resolved),
-                namespace
-              }
+            }
+            // linked package, dependency, or forced included - keep crawling
+            const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
+            return {
+              path: path.resolve(resolved),
+              namespace
             }
           } else {
             missing[id] = normalizePath(importer)
