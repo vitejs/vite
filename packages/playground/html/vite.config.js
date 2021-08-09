@@ -8,7 +8,10 @@ module.exports = {
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        nested: resolve(__dirname, 'nested/index.html')
+        nested: resolve(__dirname, 'nested/index.html'),
+        inline1: resolve(__dirname, 'inline/shared-1.html'),
+        inline2: resolve(__dirname, 'inline/shared-2.html'),
+        inline3: resolve(__dirname, 'inline/unique.html'),
       }
     }
   },
