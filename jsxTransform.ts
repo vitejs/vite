@@ -6,9 +6,15 @@ export function transformVueJsx(
   id: string,
   jsxOptions?: Record<string, any>
 ) {
-  const plugins = []
+  const plugins: any[] = [
+    [require.resolve('@babel/plugin-proposal-decorators'), { legacy: true }],
+    [
+      require.resolve('@babel/plugin-proposal-class-properties'),
+      { loose: true },
+    ],
+  ]
   if (/\.tsx$/.test(id)) {
-    plugins.push([
+    plugins.unshift([
       require.resolve('@babel/plugin-transform-typescript'),
       { isTSX: true, allowExtensions: true },
     ])
@@ -21,7 +27,7 @@ export function transformVueJsx(
     sourceMaps: true,
     plugins,
     babelrc: false,
-    configFile: false
+    configFile: false,
   })!
 
   return {
