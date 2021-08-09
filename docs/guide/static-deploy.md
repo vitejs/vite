@@ -138,24 +138,28 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
    If you are deploying to `https://<USERNAME or GROUP>.gitlab.io/<REPO>/`, for example your repository is at `https://gitlab.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
 
-2. Set `build.outDir` in `vite.config.js` to `public`.
-
-3. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
+2. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
 
    ```yaml
-   image: node:10.22.0
+   image: node:16.5.0
    pages:
+     stage: deploy
      cache:
+       key:
+         files:
+           - package-lock.json
+         prefix: npm
        paths:
          - node_modules/
      script:
        - npm install
        - npm run build
+       - cp -a dist/. public/
      artifacts:
        paths:
          - public
-     only:
-       - master
+     rules:
+       - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
    ```
 
 ## Netlify
@@ -188,9 +192,9 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
    ```js
    {
-    "projects": {
-      "default": "<YOUR_FIREBASE_ID>"
-    }
+     "projects": {
+       "default": "<YOUR_FIREBASE_ID>"
+     }
    }
    ```
 
@@ -266,3 +270,17 @@ Go to https://vercel.com/import/git and import the project into Vercel using you
 After your project has been imported, all subsequent pushes to branches will generate Preview Deployments, and all changes made to the Production Branch (commonly "main") will result in a Production Deployment.
 
 Once deployed, you will get a URL to see your app live, such as the following: https://vite.vercel.app
+
+## Azure Static Web Apps
+
+You can quickly deploy your Vite app with Microsoft Azure [Static Web Apps](https://aka.ms/staticwebapps) service. You need:
+
+- An Azure account and a subscription key. You can create a [free Azure account here](https://azure.microsoft.com/free).
+- Your app code pushed to [GitHub](https://github.com).
+- The [SWA Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestaticwebapps) in [Visual Studio Code](https://code.visualstudio.com).
+
+Install the extension in VS Code and navigate to your app root. Open the Static Web Apps extension, sign in to Azure, and click the '+' sign to create a new Static Web App. You will be prompted to designate which subscription key to use.
+
+Follow the wizard started by the extension to give your app a name, choose a framework preset, and designate the app root (usually `/`) and built file location `/dist`. The wizard will run and will create a GitHub action in your repo in a `.github` folder.
+
+The action will work to deploy your app (watch its progress in your repo's Actions tab) and, when successfully completed, you can view your app in the address provided in the extension's progress window by clicking the 'Browse Website' button that appears when the GitHub action has run.

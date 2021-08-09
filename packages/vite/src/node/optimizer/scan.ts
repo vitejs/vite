@@ -37,11 +37,12 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // use Acorn because it's slow. Luckily this doesn't have to be bullet proof
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
-const importsRE = /\bimport(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')/gm
+export const importsRE =
+  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
-export async function scanImports(
-  config: ResolvedConfig
-): Promise<{
+const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+
+export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
   missing: Record<string, string>
 }> {
@@ -78,7 +79,9 @@ export async function scanImports(
   )
 
   if (!entries.length) {
-    debug(`No entry HTML files detected`)
+    config.logger.warn(
+      'Could not determine entry point from rollupOptions or html files. Skipping dependency pre-bundling.'
+    )
     return { deps: {}, missing: {} }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
@@ -95,6 +98,7 @@ export async function scanImports(
   await Promise.all(
     entries.map((entry) =>
       build({
+        absWorkingDir: process.cwd(),
         write: false,
         entryPoints: [entry],
         bundle: true,
@@ -126,8 +130,9 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
   })
 }
 
-const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
-export const scriptRE = /(<script\b(\s[^>]*>|>))(.*?)<\/script>/gims
+const scriptModuleRE =
+  /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
+export const scriptRE = /(<script\b(?:\s[^>]*>|>))(.*?)<\/script>/gims
 export const commentRE = /<!--(.|[\r\n])*?-->/
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
@@ -192,16 +197,15 @@ function esbuildScanPlugin(
         async ({ path }) => {
           let raw = fs.readFileSync(path, 'utf-8')
           // Avoid matching the content of the comment
-          raw = raw.replace(commentRE, '')
+          raw = raw.replace(commentRE, '<!---->')
           const isHtml = path.endsWith('.html')
           const regex = isHtml ? scriptModuleRE : scriptRE
           regex.lastIndex = 0
           let js = ''
           let loader: Loader = 'js'
-          let match
+          let match: RegExpExecArray | null
           while ((match = regex.exec(raw))) {
-            const [, openTag, htmlContent, scriptContent] = match
-            const content = isHtml ? htmlContent : scriptContent
+            const [, openTag, content] = match
             const srcMatch = openTag.match(srcRE)
             const langMatch = openTag.match(langRE)
             const lang =
@@ -217,12 +221,6 @@ function esbuildScanPlugin(
             }
           }
 
-          // <script setup> may contain TLA which is not true TLA but esbuild
-          // will error on it, so replace it with another operator.
-          if (js.includes('await')) {
-            js = js.replace(/\bawait(\s)/g, 'void$1')
-          }
-
           if (
             loader.startsWith('ts') &&
             (path.endsWith('.svelte') ||
@@ -234,8 +232,9 @@ function esbuildScanPlugin(
             // the solution is to add `import 'x'` for every source to force
             // esbuild to keep crawling due to potential side effects.
             let m
-            const original = js
-            while ((m = importsRE.exec(original)) !== null) {
+            // empty multiline comments to avoid matching commented out imports
+            const code = js.replace(multilineCommentsRE, '/* */')
+            while ((m = importsRE.exec(code)) != null) {
               // This is necessary to avoid infinite loops with zero-width matches
               if (m.index === importsRE.lastIndex) {
                 importsRE.lastIndex++
@@ -288,9 +287,11 @@ function esbuildScanPlugin(
               }
               return externalUnlessEntry({ path: id })
             } else {
+              const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
-                path: path.resolve(resolved)
+                path: path.resolve(resolved),
+                namespace
               }
             }
           } else {

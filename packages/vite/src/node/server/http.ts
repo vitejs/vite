@@ -1,21 +1,21 @@
-import fs from 'fs'
+import fs, { promises as fsp } from 'fs'
 import path from 'path'
 import { Server as HttpServer } from 'http'
 import { ServerOptions as HttpsServerOptions } from 'https'
-import { ServerOptions } from '..'
+import { ResolvedConfig, ServerOptions } from '..'
+import { isObject } from '../utils'
 import { Connect } from 'types/connect'
+import { Logger } from '../logger'
 
 export async function resolveHttpServer(
-  { https = false, proxy }: ServerOptions,
-  app: Connect.Server
+  { proxy }: ServerOptions,
+  app: Connect.Server,
+  httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
-  if (!https) {
+  if (!httpsOptions) {
     return require('http').createServer(app)
   }
 
-  const httpsOptions = await resolveHttpsConfig(
-    typeof https === 'boolean' ? {} : https
-  )
   if (proxy) {
     // #484 fallback to http1 when proxy is needed.
     return require('https').createServer(httpsOptions, app)
@@ -31,8 +31,12 @@ export async function resolveHttpServer(
 }
 
 export async function resolveHttpsConfig(
-  httpsOption: HttpsServerOptions
-): Promise<HttpsServerOptions> {
+  config: ResolvedConfig
+): Promise<HttpsServerOptions | undefined> {
+  if (!config.server.https) return undefined
+
+  const httpsOption = isObject(config.server.https) ? config.server.https : {}
+
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
     ca: readFileIfExists(ca),
@@ -41,7 +45,7 @@ export async function resolveHttpsConfig(
     pfx: readFileIfExists(pfx)
   })
   if (!httpsOption.key || !httpsOption.cert) {
-    httpsOption.cert = httpsOption.key = await createCertificate()
+    httpsOption.cert = httpsOption.key = await getCertificate(config)
   }
   return httpsOption
 }
@@ -129,4 +133,66 @@ async function createCertificate() {
     ]
   })
   return pems.private + pems.cert
+}
+
+async function getCertificate(config: ResolvedConfig) {
+  if (!config.cacheDir) return await createCertificate()
+
+  const cachePath = path.join(config.cacheDir, '_cert.pem')
+
+  try {
+    const [stat, content] = await Promise.all([
+      fsp.stat(cachePath),
+      fsp.readFile(cachePath, 'utf8')
+    ])
+
+    if (Date.now() - stat.ctime.valueOf() > 30 * 24 * 60 * 60 * 1000) {
+      throw new Error('cache is outdated.')
+    }
+
+    return content
+  } catch {
+    const content = await createCertificate()
+    fsp
+      .mkdir(config.cacheDir, { recursive: true })
+      .then(() => fsp.writeFile(cachePath, content))
+      .catch(() => {})
+    return content
+  }
+}
+
+export async function httpServerStart(
+  httpServer: HttpServer,
+  serverOptions: {
+    port: number
+    strictPort: boolean | undefined
+    host: string | undefined
+    logger: Logger
+  }
+): Promise<number> {
+  return new Promise((resolve, reject) => {
+    let { port, strictPort, host, logger } = serverOptions
+
+    const onError = (e: Error & { code?: string }) => {
+      if (e.code === 'EADDRINUSE') {
+        if (strictPort) {
+          httpServer.removeListener('error', onError)
+          reject(new Error(`Port ${port} is already in use`))
+        } else {
+          logger.info(`Port ${port} is in use, trying another one...`)
+          httpServer.listen(++port, host)
+        }
+      } else {
+        httpServer.removeListener('error', onError)
+        reject(e)
+      }
+    }
+
+    httpServer.on('error', onError)
+
+    httpServer.listen(port, host, () => {
+      httpServer.removeListener('error', onError)
+      resolve(port)
+    })
+  })
 }

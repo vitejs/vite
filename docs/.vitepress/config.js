@@ -57,8 +57,7 @@ module.exports = {
           },
           {
             text: 'Changelog',
-            link:
-              'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
           }
         ]
       },
@@ -72,6 +71,10 @@ module.exports = {
           {
             text: '简体中文',
             link: 'https://cn.vitejs.dev'
+          },
+          {
+            text: '日本語',
+            link: 'https://ja.vitejs.dev'
           }
         ]
       }

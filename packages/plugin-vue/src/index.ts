@@ -43,6 +43,17 @@ export interface Options {
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
   style?: Partial<SFCStyleCompileOptions>
+
+  /**
+   * Transform Vue SFCs into custom elements.
+   * **requires Vue \>= 3.2.0 & Vite \>= 2.4.4**
+   * - `true`: all `*.vue` imports are converted into custom elements
+   * - `string | RegExp`: matched files are converted into custom elements
+   *
+   * @default /\.ce\.vue$/
+   */
+  customElement?: boolean | string | RegExp | (string | RegExp)[]
+
   /**
    * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
    */
@@ -65,6 +76,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     rawOptions.include || /\.vue$/,
     rawOptions.exclude
   )
+
+  const customElementFilter =
+    typeof rawOptions.customElement === 'boolean'
+      ? () => rawOptions.customElement as boolean
+      : createFilter(rawOptions.customElement || /\.ce\.vue$/)
 
   return {
     name: 'vite:vue',
@@ -144,7 +160,14 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
       if (!query.vue) {
         // main request
-        return transformMain(code, filename, options, this, ssr)
+        return transformMain(
+          code,
+          filename,
+          options,
+          this,
+          ssr,
+          customElementFilter(filename)
+        )
       } else {
         // sub block request
         const descriptor = getDescriptor(filename)!

@@ -34,12 +34,12 @@ Users will add plugins to the project `devDependencies` and configure them using
 import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
 
-export default {
-  plugins: [ vitePlugin(), rollupPlugin() ]
-}
+export default defineConfig({
+  plugins: [vitePlugin(), rollupPlugin()]
+})
 ```
 
-Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins. 
+Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins.
 
 `plugins` also accept presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
@@ -49,22 +49,18 @@ import frameworkRefresh from 'vite-plugin-framework-refresh'
 import frameworkDevtools from 'vite-plugin-framework-devtools'
 
 export default function framework(config) {
-  return [
-    frameworkRefresh(config),
-    frameworkDevTools(config)
-  ]
+  return [frameworkRefresh(config), frameworkDevTools(config)]
 }
 ```
 
 ```js
 // vite.config.js
+import { defineConfig } from 'vite'
 import framework from 'vite-plugin-framework'
 
-export default {
-  plugins: [
-    framework()
-  ]
-}
+export default defineConfig({
+  plugins: [framework()]
+})
 ```
 
 ## Simple Examples
@@ -155,11 +151,11 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 ### `config`
 
 - **Type:** `(config: UserConfig, env: { mode: string, command: string }) => UserConfig | null | void`
-- **Kind:** `sync`, `sequential`
+- **Kind:** `async`, `sequential`
 
   Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file) and the current config env which exposes the `mode` and `command` being used. It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
 
-  **Example**
+  **Example:**
 
   ```js
   // return partial config (recommended)
@@ -294,7 +290,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   - An array of tag descriptor objects (`{ tag, attrs, children }`) to inject to the existing HTML. Each tag can also specify where it should be injected to (default is prepending to `<head>`)
   - An object containing both as `{ html, tags }`
 
-  **Basic Example**
+  **Basic Example:**
 
   ```js
   const htmlPlugin = () => {
@@ -434,8 +430,9 @@ You can also augment an existing Rollup plugin with Vite-only properties:
 ```js
 // vite.config.js
 import example from 'rollup-plugin-example'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig({
   plugins: [
     {
       ...example(),
@@ -443,7 +440,7 @@ export default {
       apply: 'build'
     }
   ]
-}
+})
 ```
 
 Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions.

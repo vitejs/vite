@@ -1,11 +1,17 @@
-import os from 'os'
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
-import { ResolvedConfig } from '../..'
+import { normalizePath, ResolvedConfig, ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
-import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
-import { searchForWorkspaceRoot } from '../searchRoot'
+import {
+  cleanUrl,
+  ensureLeadingSlash,
+  fsPathFromId,
+  isImportRequest,
+  isWindows,
+  slash
+} from '../../utils'
+import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
   dev: true,
@@ -76,14 +82,9 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(
-  config: ResolvedConfig
+  server: ViteDevServer
 ): Connect.NextHandleFunction {
-  const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
-  const serveRoot = path.resolve(
-    config.root,
-    config.server?.fsServe?.root || searchForWorkspaceRoot(config.root)
-  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
@@ -93,16 +94,10 @@ export function serveRawFsMiddleware(
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      // restrict files outside of `fsServe.root`
-      if (!path.resolve(fsPathFromId(url)).startsWith(serveRoot + path.sep)) {
-        res.statusCode = 403
-        res.write(renderFsRestrictedHTML(serveRoot))
-        res.end()
-        return
-      }
-
+      // restrict files outside of `fs.allow`
+      ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server)
       url = url.slice(FS_PREFIX.length)
-      if (isWin) url = url.replace(/^[A-Z]:/i, '')
+      if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
       req.url = url
       serveFromRoot(req, res, next)
@@ -112,28 +107,42 @@ export function serveRawFsMiddleware(
   }
 }
 
-function renderFsRestrictedHTML(root: string) {
-  // to have syntax highlighting and autocompletion in IDE
-  const html = String.raw
-  return html`
-    <body>
-      <h1>403 Restricted</h1>
-      <p>
-        For security concerns, accessing files outside of workspace root
-        (<code>${root}</code>) is restricted since Vite v2.3.x
-      </p>
-      <p>
-        Refer to docs
-        <a href="https://vitejs.dev/config/#server-fsserveroot">
-          https://vitejs.dev/config/#server-fsserveroot
-        </a>
-        for configurations and more details.
-      </p>
-      <style>
-        body {
-          padding: 1em 2em;
-        }
-      </style>
-    </body>
-  `
+export function isFileServingAllowed(
+  url: string,
+  server: ViteDevServer
+): boolean {
+  // explicitly disabled
+  if (server.config.server.fs.strict === false) return true
+
+  const file = ensureLeadingSlash(normalizePath(cleanUrl(url)))
+
+  if (server.moduleGraph.safeModulesPath.has(file)) return true
+
+  if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
+    return true
+
+  if (!server.config.server.fs.strict) {
+    server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
+    server.config.logger.warnOnce(
+      `For security concerns, accessing files outside of serving allow list will ` +
+        `be restricted by default in the future version of Vite. ` +
+        `Refer to https://vitejs.dev/config/#server-fs-allow for more details.`
+    )
+    return true
+  }
+
+  return false
+}
+
+export function ensureServingAccess(url: string, server: ViteDevServer): void {
+  if (!isFileServingAllowed(url, server)) {
+    const allow = server.config.server.fs.allow
+    throw new AccessRestrictedError(
+      `The request url "${url}" is outside of Vite serving allow list:
+
+${allow.map((i) => `- ${i}`).join('\n')}
+
+Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
+    )
+  }
 }

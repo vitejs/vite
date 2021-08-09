@@ -56,6 +56,21 @@ describe('pre-processors', () => {
     )
     await untilUpdated(() => getColor(el), 'blue')
   })
+
+  test('stylus + change lang', async () => {
+    expect(await getColor('p.pug-stylus')).toBe('orange')
+    editFile('PreProcessors.vue', (code) =>
+      code
+        .replace('<style lang="stylus">', '<style lang="scss">')
+        .replace('color = orange', '$color: yellow;')
+        .replace('color: color', '{ color: $color; }')
+    )
+    await untilUpdated(() => getColor('p.pug-stylus'), 'yellow')
+    editFile('PreProcessors.vue', (code) =>
+      code.replace('$color: yellow;', '$color: orange;')
+    )
+    await untilUpdated(() => getColor('p.pug-stylus'), 'orange')
+  })
 })
 
 describe('css modules', () => {
@@ -180,5 +195,11 @@ describe('src imports', () => {
 describe('custom blocks', () => {
   test('should work', async () => {
     expect(await page.textContent('.custom-block')).toMatch('こんにちは')
+  })
+})
+
+describe('async component', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.async-component')).toMatch('ab == ab')
   })
 })

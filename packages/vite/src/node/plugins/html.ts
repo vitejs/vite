@@ -20,6 +20,7 @@ import {
   getAssetFilename
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
+import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import {
   AttributeNode,
   NodeTransform,
@@ -31,7 +32,8 @@ const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 const htmlCommentRE = /<!--[\s\S]*?-->/g
-const scriptModuleRE = /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
+const scriptModuleRE =
+  /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
 
 export function htmlInlineScriptProxyPlugin(): Plugin {
   return {
@@ -49,7 +51,7 @@ export function htmlInlineScriptProxyPlugin(): Plugin {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
         const html = fs.readFileSync(file, 'utf-8').replace(htmlCommentRE, '')
-        let match
+        let match: RegExpExecArray | null | undefined
         scriptModuleRE.lastIndex = 0
         for (let i = 0; i <= index; i++) {
           match = scriptModuleRE.exec(html)
@@ -100,9 +102,7 @@ export async function traverseHtml(
   }
 }
 
-export function getScriptInfo(
-  node: ElementNode
-): {
+export function getScriptInfo(node: ElementNode): {
   src: AttributeNode | undefined
   isModule: boolean
 } {
@@ -153,7 +153,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       if (id.endsWith('.html')) {
         const publicPath = `/${slash(path.relative(config.root, id))}`
         // pre-transform
-        html = await applyHtmlTransforms(html, publicPath, id, preHooks)
+        html = await applyHtmlTransforms(html, preHooks, {
+          path: publicPath,
+          filename: id
+        })
 
         let js = ''
         const s = new MagicString(html)
@@ -260,6 +263,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         processedHtml.set(id, s.toString())
+
+        // inject module preload polyfill
+        if (config.build.polyfillModulePreload) {
+          js = `import "${modulePreloadPolyfillId}";\n${js}`
+        }
+
         return js
       }
     },
@@ -374,15 +383,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         const shortEmitName = path.posix.relative(config.root, id)
-        result = await applyHtmlTransforms(
-          result,
-          '/' + shortEmitName,
-          id,
-          postHooks,
-          undefined,
+        result = await applyHtmlTransforms(result, postHooks, {
+          path: '/' + shortEmitName,
+          filename: id,
           bundle,
           chunk
-        )
+        })
 
         this.emitFile({
           type: 'asset',
@@ -424,6 +430,7 @@ export interface IndexHtmlTransformContext {
   server?: ViteDevServer
   bundle?: OutputBundle
   chunk?: OutputChunk
+  originalUrl?: string
 }
 
 export type IndexHtmlTransformHook = (
@@ -462,25 +469,13 @@ export function resolveHtmlTransforms(
 
 export async function applyHtmlTransforms(
   html: string,
-  path: string,
-  filename: string,
   hooks: IndexHtmlTransformHook[],
-  server?: ViteDevServer,
-  bundle?: OutputBundle,
-  chunk?: OutputChunk
+  ctx: IndexHtmlTransformContext
 ): Promise<string> {
   const headTags: HtmlTagDescriptor[] = []
   const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
   const bodyPrependTags: HtmlTagDescriptor[] = []
-
-  const ctx: IndexHtmlTransformContext = {
-    path,
-    filename,
-    server,
-    bundle,
-    chunk
-  }
 
   for (const hook of hooks) {
     const res = await hook(html, ctx)
@@ -490,7 +485,7 @@ export async function applyHtmlTransforms(
     if (typeof res === 'string') {
       html = res
     } else {
-      let tags
+      let tags: HtmlTagDescriptor[]
       if (Array.isArray(res)) {
         tags = res
       } else {
@@ -550,7 +545,7 @@ function injectToHead(
   } else {
     // inject before head close
     if (headInjectRE.test(html)) {
-      return html.replace(headInjectRE, `${tagsHtml}\n$&`)
+      return html.replace(headInjectRE, `${tagsHtml}\n  $&`)
     }
   }
   // if no <head> tag is present, just prepend
@@ -558,7 +553,7 @@ function injectToHead(
 }
 
 const bodyInjectRE = /<\/body>/
-const bodyPrependInjectRE = /<body>/
+const bodyPrependInjectRE = /<body[^>]*>/
 function injectToBody(
   html: string,
   tags: HtmlTagDescriptor[],
@@ -597,7 +592,7 @@ function serializeTags(tags: HtmlTagDescriptor['children']): string {
   if (typeof tags === 'string') {
     return tags
   } else if (tags) {
-    return tags.map(serializeTag).join(`\n  `)
+    return `  ${tags.map(serializeTag).join('\n    ')}`
   }
   return ''
 }
