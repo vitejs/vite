@@ -50,7 +50,7 @@ const ${cssModuleVar} = {}
 ${stylesCode}
 /* normalize component */
 import normalizer from "${vueComponentNormalizer}"
-var component = /*#__PURE__*/normalizer(
+var __component__ = /*#__PURE__*/normalizer(
   script,
   render,
   staticRenderFns,
@@ -75,14 +75,14 @@ function injectStyles (context) {
   if (!options.isProduction) {
     // Expose the file's full path in development, so that it can be opened
     // from the devtools.
-    result += `\ncomponent.options.__file = ${JSON.stringify(
+    result += `\n__component__.options.__file = ${JSON.stringify(
       path.relative(options.root, filePath).replace(/\\/g, '/')
     )}`
   }
   // else if (options.exposeFilename) {
   // 	// Libraries can opt-in to expose their components' filenames in production builds.
   // 	// For security reasons, only expose the file's basename in production.
-  // 	code += `\ncomponent.options.__file = ${JSON.stringify(filePath)}`
+  // 	code += `\n__component__.options.__file = ${JSON.stringify(filePath)}`
   // }
 
   if (options.devServer && !options.isProduction) {
@@ -106,7 +106,7 @@ function injectStyles (context) {
     map = JSON.parse(emptyMapGen.toString())
   }
 
-  result += `\nexport default /*#__PURE__*/(function () { return component.exports })()`
+  result += `\nexport default /*#__PURE__*/(function () { return __component__.exports })()`
   return {
     code: result,
     map,
@@ -228,7 +228,7 @@ async function genCustomBlockCode(
       const query = `?vue&type=${block.type}&index=${index}${srcQuery}${attrsQuery}`
       const request = JSON.stringify(src + query)
       code += `import block${index} from ${request}\n`
-      code += `if (typeof block${index} === 'function') block${index}(component)\n`
+      code += `if (typeof block${index} === 'function') block${index}(__component__)\n`
     })
   )
   return code
@@ -246,7 +246,7 @@ import vue from "vue"
 __VUE_HMR_RUNTIME__.install(vue)
 if(__VUE_HMR_RUNTIME__.compatible){
   if (!__VUE_HMR_RUNTIME__.isRecorded('${id}')) {
-    __VUE_HMR_RUNTIME__.createRecord('${id}', component.options)
+    __VUE_HMR_RUNTIME__.createRecord('${id}', __component__.options)
   }
    import.meta.hot.accept((update) => {
       __VUE_HMR_RUNTIME__.${
