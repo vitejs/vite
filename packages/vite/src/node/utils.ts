@@ -512,3 +512,16 @@ export function resolveHostname(
 
   return { host, name }
 }
+
+const absoluteRE = /^([\x20-\x7F]+:\/)?\//
+export function toAssetPublicPath(
+  name: string,
+  dir: string,
+  config: { base: string }
+): string {
+  return isExternalUrl(name)
+    ? name
+    : absoluteRE.test(config.base)
+    ? config.base + name
+    : normalizePath(config.base + path.posix.relative(dir, name))
+}

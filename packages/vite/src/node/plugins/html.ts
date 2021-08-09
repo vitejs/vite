@@ -9,7 +9,8 @@ import {
   isExternalUrl,
   isDataUrl,
   generateCodeFrame,
-  processSrcSet
+  processSrcSet,
+  toAssetPublicPath
 } from '../utils'
 import { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
@@ -275,66 +276,76 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(_, bundle) {
       const analyzedChunk: Map<OutputChunk, number> = new Map()
-      const getPreloadLinksForChunk = (
-        chunk: OutputChunk,
-        seen: Set<string> = new Set()
-      ): HtmlTagDescriptor[] => {
-        const tags: HtmlTagDescriptor[] = []
-        chunk.imports.forEach((file) => {
-          const importee = bundle[file]
-          if (importee?.type === 'chunk' && !seen.has(file)) {
-            seen.add(file)
-            tags.push({
-              tag: 'link',
-              attrs: {
-                rel: 'modulepreload',
-                href: toPublicPath(file, config)
-              }
-            })
-            tags.push(...getPreloadLinksForChunk(importee, seen))
-          }
-        })
-        return tags
-      }
 
-      const getCssTagsForChunk = (
-        chunk: OutputChunk,
-        seen: Set<string> = new Set()
-      ): HtmlTagDescriptor[] => {
-        const tags: HtmlTagDescriptor[] = []
-        if (!analyzedChunk.has(chunk)) {
-          analyzedChunk.set(chunk, 1)
+      for (const [id, html] of processedHtml) {
+        const htmlName = path.posix.relative(config.root, id)
+        const htmlDir = path.posix.dirname(htmlName)
+
+        // resolve asset url references
+        let result = html.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+          return (
+            toAssetPublicPath(
+              getAssetFilename(fileHash, config)!,
+              htmlDir,
+              config
+            ) + postfix
+          )
+        })
+
+        const getPreloadLinksForChunk = (
+          chunk: OutputChunk,
+          seen: Set<string> = new Set()
+        ): HtmlTagDescriptor[] => {
+          const tags: HtmlTagDescriptor[] = []
           chunk.imports.forEach((file) => {
             const importee = bundle[file]
-            if (importee?.type === 'chunk') {
-              tags.push(...getCssTagsForChunk(importee, seen))
-            }
-          })
-        }
-
-        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFiles) {
-          cssFiles.forEach((file) => {
-            if (!seen.has(file)) {
+            if (importee?.type === 'chunk' && !seen.has(file)) {
               seen.add(file)
               tags.push({
                 tag: 'link',
                 attrs: {
-                  rel: 'stylesheet',
-                  href: toPublicPath(file, config)
+                  rel: 'modulepreload',
+                  href: toAssetPublicPath(file, htmlDir, config)
                 }
               })
+              tags.push(...getPreloadLinksForChunk(importee, seen))
             }
           })
+          return tags
         }
-        return tags
-      }
 
-      for (const [id, html] of processedHtml) {
-        // resolve asset url references
-        let result = html.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return config.base + getAssetFilename(fileHash, config) + postfix
-        })
+        const getCssTagsForChunk = (
+          chunk: OutputChunk,
+          seen: Set<string> = new Set()
+        ): HtmlTagDescriptor[] => {
+          const tags: HtmlTagDescriptor[] = []
+          if (!analyzedChunk.has(chunk)) {
+            analyzedChunk.set(chunk, 1)
+            chunk.imports.forEach((file) => {
+              const importee = bundle[file]
+              if (importee?.type === 'chunk') {
+                tags.push(...getCssTagsForChunk(importee, seen))
+              }
+            })
+          }
+
+          const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+          if (cssFiles) {
+            cssFiles.forEach((file) => {
+              if (!seen.has(file)) {
+                seen.add(file)
+                tags.push({
+                  tag: 'link',
+                  attrs: {
+                    rel: 'stylesheet',
+                    href: toAssetPublicPath(file, htmlDir, config)
+                  }
+                })
+              }
+            })
+          }
+          return tags
+        }
 
         // find corresponding entry chunk
         const chunk = Object.values(bundle).find(
@@ -353,7 +364,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               attrs: {
                 type: 'module',
                 crossorigin: true,
-                src: toPublicPath(chunk.fileName, config)
+                src: toAssetPublicPath(chunk.fileName, htmlDir, config)
               }
             },
             // preload for imports
@@ -375,16 +386,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 tag: 'link',
                 attrs: {
                   rel: 'stylesheet',
-                  href: toPublicPath(cssChunk.fileName, config)
+                  href: toAssetPublicPath(cssChunk.fileName, htmlDir, config)
                 }
               }
             ])
           }
         }
 
-        const shortEmitName = path.posix.relative(config.root, id)
         result = await applyHtmlTransforms(result, postHooks, {
-          path: '/' + shortEmitName,
+          path: '/' + htmlName,
           filename: id,
           bundle,
           chunk
@@ -392,7 +402,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         this.emitFile({
           type: 'asset',
-          fileName: shortEmitName,
+          fileName: htmlName,
           source: result
         })
       }
@@ -521,10 +531,6 @@ export async function applyHtmlTransforms(
   }
 
   return html
-}
-
-function toPublicPath(filename: string, config: ResolvedConfig) {
-  return isExternalUrl(filename) ? filename : config.base + filename
 }
 
 const headInjectRE = /<\/head>/
