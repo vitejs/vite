@@ -51,7 +51,7 @@ export function isHashUrl(url: string): boolean {
   return url.startsWith('#')
 }
 
-const externalRE = /^https?:\/\//
+const externalRE = /^(https?:)?\/\//
 export function isExternalUrl(url: string): boolean {
   return externalRE.test(url)
 }
