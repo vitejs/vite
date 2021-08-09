@@ -6,7 +6,7 @@ import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { PluginContext, RenderedChunk } from 'rollup'
+import { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
@@ -28,17 +28,21 @@ const assetHashToFilenameMap = new WeakMap<
   ResolvedConfig,
   Map<string, string>
 >()
+// save hashes of the files that has been emitted in build watch
+const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
 export function assetPlugin(config: ResolvedConfig): Plugin {
+  // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
+  assetHashToFilenameMap.set(config, new Map())
   return {
     name: 'vite:asset',
 
     buildStart() {
       assetCache.set(config, new Map())
-      assetHashToFilenameMap.set(config, new Map())
+      emittedHashMap.set(config, new Set())
     },
 
     resolveId(id) {
@@ -79,8 +83,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk) {
-      let match
-      let s
+      let match: RegExpExecArray | null
+      let s: MagicString | undefined
       while ((match = assetUrlQuotedRE.exec(code))) {
         s = s || (s = new MagicString(code))
         const [full, hash, postfix = ''] = match
@@ -183,6 +187,82 @@ export function getAssetFilename(
 }
 
 /**
+ * converts the source filepath of the asset to the output filename based on the assetFileNames option. \
+ * this function imitates the behavior of rollup.js. \
+ * https://rollupjs.org/guide/en/#outputassetfilenames
+ *
+ * @example
+ * ```ts
+ * const content = Buffer.from('text');
+ * const fileName = assetFileNamesToFileName(
+ *   'assets/[name].[hash][extname]',
+ *   '/path/to/file.txt',
+ *   getAssetHash(content),
+ *   content
+ * )
+ * // fileName: 'assets/file.982d9e3e.txt'
+ * ```
+ *
+ * @param assetFileNames filename pattern. e.g. `'assets/[name].[hash][extname]'`
+ * @param file filepath of the asset
+ * @param contentHash hash of the asset. used for `'[hash]'` placeholder
+ * @param content content of the asset. passed to `assetFileNames` if `assetFileNames` is a function
+ * @returns output filename
+ */
+export function assetFileNamesToFileName(
+  assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined>,
+  file: string,
+  contentHash: string,
+  content: string | Buffer
+): string {
+  const basename = path.basename(file)
+
+  // placeholders for `assetFileNames`
+  // `hash` is slightly different from the rollup's one
+  const extname = path.extname(basename)
+  const ext = extname.substr(1)
+  const name = basename.slice(0, -extname.length)
+  const hash = contentHash
+
+  if (typeof assetFileNames === 'function') {
+    assetFileNames = assetFileNames({
+      name: file,
+      source: content,
+      type: 'asset'
+    })
+    if (typeof assetFileNames !== 'string') {
+      throw new TypeError('assetFileNames must return a string')
+    }
+  } else if (typeof assetFileNames !== 'string') {
+    throw new TypeError('assetFileNames must be a string or a function')
+  }
+
+  const fileName = assetFileNames.replace(
+    /\[\w+\]/g,
+    (placeholder: string): string => {
+      switch (placeholder) {
+        case '[ext]':
+          return ext
+
+        case '[extname]':
+          return extname
+
+        case '[hash]':
+          return hash
+
+        case '[name]':
+          return name
+      }
+      throw new Error(
+        `invalid placeholder ${placeholder} in assetFileNames "${assetFileNames}"`
+      )
+    }
+  )
+
+  return fileName
+}
+
+/**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
  */
@@ -203,11 +283,9 @@ async function fileToBuiltUrl(
   }
 
   const file = cleanUrl(id)
-  const { search, hash } = parseUrl(id)
-  const postfix = (search || '') + (hash || '')
   const content = await fsp.readFile(file)
 
-  let url
+  let url: string
   if (
     config.build.lib ||
     (!file.endsWith('.svg') &&
@@ -224,16 +302,26 @@ async function fileToBuiltUrl(
     // https://bundlers.tooling.report/hashing/asset-cascade/
     // https://github.com/rollup/rollup/issues/3415
     const map = assetHashToFilenameMap.get(config)!
-
     const contentHash = getAssetHash(content)
+    const { search, hash } = parseUrl(id)
+    const postfix = (search || '') + (hash || '')
+    const output = config.build?.rollupOptions?.output
+    const assetFileNames =
+      (output && !Array.isArray(output) ? output.assetFileNames : undefined) ??
+      // defaults to '<assetsDir>/[name].[hash][extname]'
+      // slightly different from rollup's one ('assets/[name]-[hash][extname]')
+      path.posix.join(config.build.assetsDir, '[name].[hash][extname]')
+    const fileName = assetFileNamesToFileName(
+      assetFileNames,
+      file,
+      contentHash,
+      content
+    )
     if (!map.has(contentHash)) {
-      const basename = path.basename(file)
-      const ext = path.extname(basename)
-      const fileName = path.posix.join(
-        config.build.assetsDir,
-        `${basename.slice(0, -ext.length)}.${contentHash}${ext}`
-      )
       map.set(contentHash, fileName)
+    }
+    const emittedSet = emittedHashMap.get(config)!    
+    if (!emittedSet.has(contentHash)) {
       const name = normalizePath(path.relative(config.root, file))
       pluginContext.emitFile({
         name,
@@ -241,6 +329,7 @@ async function fileToBuiltUrl(
         type: 'asset',
         source: content
       })
+      emittedSet.add(contentHash)
     }
 
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
@@ -250,7 +339,7 @@ async function fileToBuiltUrl(
   return url
 }
 
-function getAssetHash(content: Buffer) {
+export function getAssetHash(content: Buffer): string {
   return createHash('sha256').update(content).digest('hex').slice(0, 8)
 }
 

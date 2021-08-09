@@ -222,7 +222,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // for relative js/css imports, inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if (isRelative && !/[\?&]import\b/.test(url)) {
+          if (isRelative && !/[\?&]import=?\b/.test(url)) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -361,6 +361,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
           let url = normalizedUrl
 
+          // record as safe modules
+          server?.moduleGraph.safeModulesPath.add(
+            cleanUrl(url).slice(4 /* '/@fs'.length */)
+          )
+
           // rewrite
           if (url !== specifier) {
             // for optimized cjs deps, support named imports by rewriting named
@@ -481,6 +486,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // node CSS imports does its own graph update in the css plugin so we
       // only handle js graph updates here.
       if (!isCSSRequest(importer)) {
+        // attached by pluginContainer.addWatchFile
+        const pluginImports = (this as any)._addedImports as
+          | Set<string>
+          | undefined
+        if (pluginImports) {
+          ;(
+            await Promise.all(
+              [...pluginImports].map((id) => normalizeUrl(id, 0))
+            )
+          ).forEach(([url]) => importedUrls.add(url))
+        }
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
           importedUrls,

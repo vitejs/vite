@@ -7,7 +7,7 @@ import {
 import WebSocket from 'ws'
 import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import { ResolvedConfig } from '..'
-
+import { isObject } from '../utils'
 export const HMR_HEADER = 'vite-hmr'
 
 export interface WebSocketServer {
@@ -23,7 +23,7 @@ export function createWebSocketServer(
   let wss: WebSocket.Server
   let httpsServer: Server | undefined = undefined
 
-  const hmr = typeof config.server.hmr === 'object' && config.server.hmr
+  const hmr = isObject(config.server.hmr) && config.server.hmr
   const wsServer = (hmr && hmr.server) || server
 
   if (wsServer) {
@@ -78,7 +78,8 @@ export function createWebSocketServer(
   wss.on('error', (e: Error & { code: string }) => {
     if (e.code !== 'EADDRINUSE') {
       config.logger.error(
-        chalk.red(`WebSocket server error:\n${e.stack || e.message}`)
+        chalk.red(`WebSocket server error:\n${e.stack || e.message}`),
+        { error: e }
       )
     }
   })

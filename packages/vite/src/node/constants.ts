@@ -41,11 +41,14 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
 // eslint-disable-next-line node/no-missing-require
-export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
+export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.mjs')
 // eslint-disable-next-line node/no-missing-require
-export const ENV_ENTRY = require.resolve('vite/dist/client/env.js')
+export const ENV_ENTRY = require.resolve('vite/dist/client/env.mjs')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
+// ** READ THIS ** before editing `KNOWN_ASSET_TYPES`.
+//   If you add an asset to `KNOWN_ASSET_TYPES`, make sure to also add it
+//   to the TypeScript declaration file `packages/vite/client.d.ts`.
 export const KNOWN_ASSET_TYPES = [
   // images
   'png',
@@ -72,7 +75,8 @@ export const KNOWN_ASSET_TYPES = [
   'otf',
 
   // other
-  'wasm'
+  'wasm',
+  'webmanifest'
 ]
 
 export const DEFAULT_ASSETS_RE = new RegExp(

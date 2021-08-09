@@ -6,6 +6,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  removeFile,
   testDir,
   untilUpdated
 } from '../../testUtils'
@@ -151,6 +152,69 @@ test('css modules', async () => {
   await untilUpdated(() => getColor(imported), 'red')
 })
 
+test('css modules composes/from path resolving', async () => {
+  const imported = await page.$('.path-resolved-modules-css')
+  expect(await getColor(imported)).toBe('turquoise')
+
+  // check if the generated CSS module class name is indeed using the
+  // format specified in vite.config.js
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composed-module__apply-color___[\w-]{5}/
+  )
+
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composes-path-resolving-module__path-resolving-css___[\w-]{5}/
+  )
+
+  // @todo HMR is not working on this situation.
+  // editFile('composed.module.css', (code) =>
+  //   code.replace('color: turquoise', 'color: red')
+  // )
+  // await untilUpdated(() => getColor(imported), 'red')
+})
+
+test('sass modules composes/from path resolving', async () => {
+  const imported = await page.$('.path-resolved-modules-sass')
+  expect(await getColor(imported)).toBe('orangered')
+
+  // check if the generated CSS module class name is indeed using the
+  // format specified in vite.config.js
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composed-module__apply-color___[\w-]{5}/
+  )
+
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composes-path-resolving-module__path-resolving-sass___[\w-]{5}/
+  )
+
+  // @todo HMR is not working on this situation.
+  // editFile('composed.module.scss', (code) =>
+  //   code.replace('color: orangered', 'color: red')
+  // )
+  // await untilUpdated(() => getColor(imported), 'red')
+})
+
+test('less modules composes/from path resolving', async () => {
+  const imported = await page.$('.path-resolved-modules-less')
+  expect(await getColor(imported)).toBe('blue')
+
+  // check if the generated CSS module class name is indeed using the
+  // format specified in vite.config.js
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composed-module__apply-color___[\w-]{5}/
+  )
+
+  expect(await imported.getAttribute('class')).toMatch(
+    /.composes-path-resolving-module__path-resolving-less___[\w-]{5}/
+  )
+
+  // @todo HMR is not working on this situation.
+  // editFile('composed.module.scss', (code) =>
+  //   code.replace('color: orangered', 'color: red')
+  // )
+  // await untilUpdated(() => getColor(imported), 'red')
+})
+
 test('css modules w/ sass', async () => {
   const imported = await page.$('.modules-sass')
   expect(await getColor(imported)).toBe('orangered')
@@ -174,6 +238,10 @@ test('@import dependency w/ sass entry', async () => {
 
 test('@import dependency w/ stylus entry', async () => {
   expect(await getColor('.css-dep-stylus')).toBe('red')
+})
+
+test('@import dependency w/out package scss', async () => {
+  expect(await getColor('.sass-dep')).toBe('lavender')
 })
 
 test('async chunk', async () => {
@@ -214,4 +282,59 @@ test('treeshaken async chunk', async () => {
     )
     await untilUpdated(() => getColor(el), 'blue')
   }
+})
+
+test('PostCSS dir-dependency', async () => {
+  const el1 = await page.$('.dir-dep')
+  const el2 = await page.$('.dir-dep-2')
+
+  expect(await getColor(el1)).toBe('grey')
+  expect(await getColor(el2)).toBe('grey')
+
+  if (!isBuild) {
+    editFile('glob-dep/foo.css', (code) =>
+      code.replace('color: grey', 'color: blue')
+    )
+    await untilUpdated(() => getColor(el1), 'blue')
+    expect(await getColor(el2)).toBe('grey')
+
+    editFile('glob-dep/bar.css', (code) =>
+      code.replace('color: grey', 'color: red')
+    )
+    await untilUpdated(() => getColor(el2), 'red')
+    expect(await getColor(el1)).toBe('blue')
+
+    // test add/remove
+    removeFile('glob-dep/bar.css')
+    await untilUpdated(() => getColor(el2), 'black')
+  }
+})
+
+test('Url separation', async () => {
+  const urlSeparated = await page.$('.url-separated')
+  const baseUrl = 'url(images/dog.webp)'
+  const cases = new Array(5)
+    .fill('')
+    .flatMap((_, i) =>
+      [',', ' ,', ', ', ' , '].map(
+        (sep) => `background-image:${new Array(i + 1).fill(baseUrl).join(sep)};`
+      )
+    )
+
+  // Insert the base case
+  cases.unshift('background-image:url(images/cat.webp),url(images/dog.webp)')
+
+  for (const [c, i] of cases.map((c, i) => [c, i]) as [string, number][]) {
+    // Replace the previous case
+    if (i > 0) editFile('imported.css', (code) => code.replace(cases[i - 1], c))
+
+    expect(await getBg(urlSeparated)).toMatch(
+      /^url\(.+\)(?:\s*,\s*url\(.+\))*$/
+    )
+  }
+})
+
+test('inlined', async () => {
+  // should not insert css
+  expect(await getColor('.inlined')).toBe('black')
 })

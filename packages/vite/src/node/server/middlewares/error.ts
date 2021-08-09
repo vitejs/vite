@@ -52,7 +52,8 @@ export function errorMiddleware(
 
     server.config.logger.error(msg, {
       clear: true,
-      timestamp: true
+      timestamp: true,
+      error: err
     })
 
     server.ws.send({
@@ -75,7 +76,7 @@ export function errorMiddleware(
 }
 
 export class AccessRestrictedError extends Error {
-  constructor(msg: string, public url: string, public serveRoot: string) {
+  constructor(msg: string) {
     super(msg)
   }
 }

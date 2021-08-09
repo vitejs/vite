@@ -47,15 +47,16 @@ export async function ssrTransform(
     const importId = `__vite_ssr_import_${uid++}__`
     s.appendLeft(
       node.start,
-      `const ${importId} = ${ssrImportKey}(${JSON.stringify(source)})\n`
+      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`
     )
     return importId
   }
 
-  function defineExport(name: string, local = name) {
-    s.append(
+  function defineExport(position: number, name: string, local = name) {
+    s.appendRight(
+      position,
       `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }})`
+        `{ enumerable: true, configurable: true, get(){ return ${local} }});`
     )
   }
 
@@ -93,49 +94,73 @@ export async function ssrTransform(
           node.declaration.type === 'ClassDeclaration'
         ) {
           // export function foo() {}
-          defineExport(node.declaration.id!.name)
+          defineExport(node.end, node.declaration.id!.name)
         } else {
           // export const foo = 1, bar = 2
           for (const declaration of node.declaration.declarations) {
             const names = extractNames(declaration.id as any)
             for (const name of names) {
-              defineExport(name)
+              defineExport(node.end, name)
             }
           }
         }
         s.remove(node.start, (node.declaration as Node).start)
-      } else if (node.source) {
-        // export { foo, bar } from './foo'
-        const importId = defineImport(node, node.source.value as string)
-        for (const spec of node.specifiers) {
-          defineExport(spec.exported.name, `${importId}.${spec.local.name}`)
-        }
-        s.remove(node.start, node.end)
       } else {
-        // export { foo, bar }
-        for (const spec of node.specifiers) {
-          const local = spec.local.name
-          const binding = idToImportMap.get(local)
-          defineExport(spec.exported.name, binding || local)
-        }
         s.remove(node.start, node.end)
+        if (node.source) {
+          // export { foo, bar } from './foo'
+          const importId = defineImport(node, node.source.value as string)
+          for (const spec of node.specifiers) {
+            defineExport(
+              node.end,
+              spec.exported.name,
+              `${importId}.${spec.local.name}`
+            )
+          }
+        } else {
+          // export { foo, bar }
+          for (const spec of node.specifiers) {
+            const local = spec.local.name
+            const binding = idToImportMap.get(local)
+            defineExport(node.end, spec.exported.name, binding || local)
+          }
+        }
       }
     }
 
     // default export
     if (node.type === 'ExportDefaultDeclaration') {
-      s.overwrite(
-        node.start,
-        node.start + 14,
-        `${ssrModuleExportsKey}.default =`
-      )
+      if ('id' in node.declaration && node.declaration.id) {
+        // named hoistable/class exports
+        // export default function foo() {}
+        // export default class A {}
+        const { name } = node.declaration.id
+        s.remove(node.start, node.start + 15 /* 'export default '.length */)
+        s.append(
+          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
+            `{ enumerable: true, value: ${name} });`
+        )
+      } else {
+        // anonymous default exports
+        s.overwrite(
+          node.start,
+          node.start + 14 /* 'export default'.length */,
+          `${ssrModuleExportsKey}.default =`
+        )
+      }
     }
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node, node.source.value as string)
-      s.remove(node.start, node.end)
-      s.append(`\n${ssrExportAllKey}(${importId})`)
+      if (node.exported) {
+        const importId = defineImport(node, node.source.value as string)
+        s.remove(node.start, node.end)
+        defineExport(node.end, node.exported.name, `${importId}`)
+      } else {
+        const importId = defineImport(node, node.source.value as string)
+        s.remove(node.start, node.end)
+        s.appendLeft(node.end, `${ssrExportAllKey}(${importId});`)
+      }
     }
   }
 
@@ -392,7 +417,8 @@ function isFunction(node: _Node): node is FunctionNode {
 }
 
 function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
-  for (const node of parentStack) {
+  for (let i = parentStack.length - 1; i >= 0; i--) {
+    const node = parentStack[i]
     if (isFunction(node)) {
       return node
     }
