@@ -138,24 +138,28 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
    If you are deploying to `https://<USERNAME or GROUP>.gitlab.io/<REPO>/`, for example your repository is at `https://gitlab.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
 
-2. Set `build.outDir` in `vite.config.js` to `public`.
-
-3. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
+2. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
 
    ```yaml
-   image: node:10.22.0
+   image: node:16.5.0
    pages:
+     stage: deploy
      cache:
+       key:
+         files:
+           - package-lock.json
+         prefix: npm
        paths:
          - node_modules/
      script:
        - npm install
        - npm run build
+       - cp -a dist/. public/
      artifacts:
        paths:
          - public
-     only:
-       - master
+     rules:
+       - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
    ```
 
 ## Netlify
