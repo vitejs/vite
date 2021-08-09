@@ -9,6 +9,7 @@ import { FS_PREFIX } from '../constants'
 import { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
+import { normalizePath } from '../utils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
@@ -321,7 +322,9 @@ async function fileToBuiltUrl(
     }
     const emittedSet = emittedHashMap.get(config)!
     if (!emittedSet.has(contentHash)) {
+      const name = normalizePath(path.relative(config.root, file))
       pluginContext.emitFile({
+        name,
         fileName,
         type: 'asset',
         source: content
