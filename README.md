@@ -11,6 +11,9 @@
   <a href="https://chat.vitejs.dev"><img src="https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord" alt="discord chat"></a>
 </p>
 <br/>
+<p align="center">
+  <a href="https://open.vscode.dev/vitejs/vite"><img src="https://open.vscode.dev/badges/open-in-vscode.svg" alt="Open in Visual Studio Code"></a>
+</p>
 
 # Vite ⚡
 
