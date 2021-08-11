@@ -32,13 +32,13 @@
   - `httpsOptions` has been removed. [`server.https`](/config/#server-https) can directly accept the options object.
   - `chokidarWatchOptions` is now [`server.watch`](/config/#server-watch).
 
-- [`assetsInclude`](/config/#assetsInclude) now expects `string | RegExp | (string | RegExp)[]` instead of a function.
+- [`assetsInclude`](/config/#assetsinclude) now expects `string | RegExp | (string | RegExp)[]` instead of a function.
 
 - All Vue specific options are removed; Pass options to the Vue plugin instead.
 
 ## Alias Behavior Change
 
-[`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias` and no longer require start/ending slashes. The behavior is now a direct replacement, so 1.0-style directory alias key should remove the ending slash:
+[`alias`](/config/#resolve-alias) is now being passed to `@rollup/plugin-alias` and no longer require start/ending slashes. The behavior is now a direct replacement, so 1.0-style directory alias key should remove the ending slash:
 
 ```diff
 - alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') }
