@@ -1,20 +1,18 @@
 {
   "name": "@vitejs/create-app",
-  "version": "2.4.4",
+  "version": "2.5.2",
   "license": "MIT",
   "author": "Evan You",
+  "files": [
+    "index.js"
+  ],
   "bin": {
     "create-app": "index.js",
     "cva": "index.js"
   },
-  "files": [
-    "index.js",
-    "template-*"
-  ],
   "main": "index.js",
   "scripts": {
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package create-app",
-    "release": "node updateVersions && node ../../scripts/release.js --skipBuild"
+    "release": "node ../../scripts/release.js --skipBuild"
   },
   "engines": {
     "node": ">=12.0.0"
@@ -29,8 +27,7 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-app#readme",
   "dependencies": {
-    "kolorist": "^1.5.0",
-    "minimist": "^1.2.5",
-    "prompts": "^2.4.1"
+    "create-vite": "latest",
+    "kolorist": "^1.5.0"
   }
 }

@@ -14,6 +14,7 @@ module.exports = defineConfig({
     ecmaVersion: 2020
   },
   rules: {
+    eqeqeq: ['warn', 'always', { null: 'never' }],
     'no-debugger': ['error'],
     'no-empty': ['warn', { allowEmptyCatch: true }],
     'no-process-exit': 'off',
@@ -75,6 +76,7 @@ module.exports = defineConfig({
       'error',
       { allow: ['arrowFunctions'] }
     ],
+    '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-explicit-any': 'off', // maybe we should turn this on in a new PR
     '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
     '@typescript-eslint/no-inferrable-types': 'off',
@@ -97,7 +99,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/create-app/template-*/**'],
+      files: ['packages/create-vite/template-*/**'],
       rules: {
         'node/no-missing-import': 'off'
       }

@@ -157,7 +157,7 @@ export class ErrorOverlay extends HTMLElement {
       el.textContent = text
     } else {
       let curIndex = 0
-      let match
+      let match: RegExpExecArray | null
       while ((match = fileRE.exec(text))) {
         const { 0: file, index } = match
         if (index != null) {
@@ -182,4 +182,4 @@ export class ErrorOverlay extends HTMLElement {
 }
 
 export const overlayId = 'vite-error-overlay'
-customElements.define(overlayId, ErrorOverlay)
+!customElements.get(overlayId) && customElements.define(overlayId, ErrorOverlay)

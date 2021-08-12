@@ -7,7 +7,7 @@ import {
   getPrevDescriptor,
   setDescriptor
 } from './utils/descriptorCache'
-import { PluginContext, TransformPluginContext } from 'rollup'
+import { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
 import { normalizePath } from '@rollup/pluginutils'
 import { resolveScript } from './script'
 import { transformTemplateInMain } from './template'
@@ -21,7 +21,8 @@ export async function transformMain(
   filename: string,
   options: ResolvedOptions,
   pluginContext: TransformPluginContext,
-  ssr: boolean
+  ssr: boolean,
+  asCustomElement: boolean
 ) {
   const { root, devServer, isProduction } = options
 
@@ -63,7 +64,7 @@ export async function transformMain(
   const hasTemplateImport = descriptor.template && !useInlineTemplate
 
   let templateCode = ''
-  let templateMap
+  let templateMap: RawSourceMap | undefined
   if (hasTemplateImport) {
     ;({ code: templateCode, map: templateMap } = await genTemplateCode(
       descriptor,
@@ -92,7 +93,11 @@ export async function transformMain(
   }
 
   // styles
-  const stylesCode = await genStyleCode(descriptor, pluginContext)
+  const stylesCode = await genStyleCode(
+    descriptor,
+    pluginContext,
+    asCustomElement
+  )
 
   // custom blocks
   const customBlocksCode = await genCustomBlockCode(descriptor, pluginContext)
@@ -113,7 +118,6 @@ export async function transformMain(
     // expose filename during serve for devtools to pickup
     output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }
-  output.push('export default _sfc_main')
 
   // HMR
   if (
@@ -185,6 +189,8 @@ export async function transformMain(
     resolvedMap.sourcesContent = templateMap.sourcesContent
   }
 
+  output.push(`export default _sfc_main`)
+
   return {
     code: output.join('\n'),
     map: resolvedMap || {
@@ -239,7 +245,8 @@ async function genScriptCode(
   map: RawSourceMap
 }> {
   let scriptCode = `const _sfc_main = {}`
-  let map
+  let map: RawSourceMap | SourceMap | undefined
+
   const script = resolveScript(descriptor, options, ssr)
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
@@ -283,7 +290,8 @@ async function genScriptCode(
 
 async function genStyleCode(
   descriptor: SFCDescriptor,
-  pluginContext: PluginContext
+  pluginContext: PluginContext,
+  asCustomElement: boolean
 ) {
   let stylesCode = ``
   let hasCSSModules = false
@@ -298,21 +306,53 @@ async function genStyleCode(
       // that the module needs to export the modules json
       const attrsQuery = attrsToQuery(style.attrs, 'css')
       const srcQuery = style.src ? `&src` : ``
-      const query = `?vue&type=style&index=${i}${srcQuery}`
+      const directQuery = asCustomElement ? `&inline` : ``
+      const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}`
       const styleRequest = src + query + attrsQuery
       if (style.module) {
+        if (asCustomElement) {
+          throw new Error(
+            `<style module> is not supported in custom elements mode.`
+          )
+        }
         if (!hasCSSModules) {
           stylesCode += `\nconst cssModules = _sfc_main.__cssModules = {}`
           hasCSSModules = true
         }
         stylesCode += genCSSModulesCode(i, styleRequest, style.module)
       } else {
-        stylesCode += `\nimport ${JSON.stringify(styleRequest)}`
+        if (asCustomElement) {
+          stylesCode += `\nimport _style_${i} from ${JSON.stringify(
+            styleRequest
+          )}`
+        } else {
+          stylesCode += `\nimport ${JSON.stringify(styleRequest)}`
+        }
       }
       // TODO SSR critical CSS collection
     }
+    if (asCustomElement) {
+      stylesCode += `\n_sfc_main.styles = [${descriptor.styles
+        .map((_, i) => `_style_${i}`)
+        .join(',')}]`
+    }
   }
   return stylesCode
+}
+
+function genCSSModulesCode(
+  index: number,
+  request: string,
+  moduleName: string | boolean
+): string {
+  const styleVar = `style${index}`
+  const exposedName = typeof moduleName === 'string' ? moduleName : '$style'
+  // inject `.module` before extension so vite handles it as css module
+  const moduleRequest = request.replace(/\.(\w+)$/, '.module.$1')
+  return (
+    `\nimport ${styleVar} from ${JSON.stringify(moduleRequest)}` +
+    `\ncssModules["${exposedName}"] = ${styleVar}`
+  )
 }
 
 async function genCustomBlockCode(
@@ -334,21 +374,6 @@ async function genCustomBlockCode(
     code += `if (typeof block${index} === 'function') block${index}(_sfc_main)\n`
   }
   return code
-}
-
-function genCSSModulesCode(
-  index: number,
-  request: string,
-  moduleName: string | boolean
-): string {
-  const styleVar = `style${index}`
-  const exposedName = typeof moduleName === 'string' ? moduleName : '$style'
-  // inject `.module` before extension so vite handles it as css module
-  const moduleRequest = request.replace(/\.(\w+)$/, '.module.$1')
-  return (
-    `\nimport ${styleVar} from ${JSON.stringify(moduleRequest)}` +
-    `\ncssModules["${exposedName}"] = ${styleVar}`
-  )
 }
 
 /**

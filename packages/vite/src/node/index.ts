@@ -31,6 +31,7 @@ export type { Plugin } from './plugin'
 export type {
   Logger,
   LogOptions,
+  LogErrorOptions,
   LogLevel,
   LogType,
   LoggerOptions
@@ -80,6 +81,5 @@ export type { Connect } from 'types/connect'
 export type { HttpProxy } from 'types/http-proxy'
 export type { FSWatcher, WatchOptions } from 'types/chokidar'
 export type { Terser } from 'types/terser'
-export type { CleanCSS } from 'types/clean-css'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'

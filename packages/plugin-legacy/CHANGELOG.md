@@ -1,3 +1,32 @@
+## [1.5.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.0...plugin-legacy@1.5.1) (2021-08-03)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4468](https://github.com/vitejs/vite/issues/4468)) ([cd54a22](https://github.com/vitejs/vite/commit/cd54a22b8d5048f5d25a9954697f49b6d65dcc1f))
+* **plugin-legacy:** bake-in Promise polyfill, fix [#4414](https://github.com/vitejs/vite/issues/4414) ([#4440](https://github.com/vitejs/vite/issues/4440)) ([024a2de](https://github.com/vitejs/vite/commit/024a2de63df60a4037f9f7b13a0bc6e2b0d41fb6))
+
+
+
+# [1.5.0](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.4...plugin-legacy@1.5.0) (2021-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4387](https://github.com/vitejs/vite/issues/4387)) ([2f900ba](https://github.com/vitejs/vite/commit/2f900ba4d4ad8061e0046898e8d1de3129e7f784))
+* **plugin-legacy:** legacy fallback for dynamic import ([#3885](https://github.com/vitejs/vite/issues/3885)) ([fc6d8f1](https://github.com/vitejs/vite/commit/fc6d8f1d3efe836f17f3c45375dd3749128b8137))
+
+
+
+## [1.4.4](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.3...plugin-legacy@1.4.4) (2021-07-12)
+
+
+### Features
+
+* allow entryFileNames, chunkFileNames functions for legacy ([#4122](https://github.com/vitejs/vite/issues/4122)) ([df29bff](https://github.com/vitejs/vite/commit/df29bfff44ad7f2e822f92935d0ca9c99f15b67e))
+
+
+
 ## [1.4.3](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.2...plugin-legacy@1.4.3) (2021-06-27)
 
 

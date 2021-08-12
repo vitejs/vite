@@ -7,7 +7,6 @@ import { ModuleNode } from './moduleGraph'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
-import { prepareError } from './middlewares/error'
 import match from 'minimatch'
 import { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
@@ -139,7 +138,7 @@ function updateModules(
       boundary: ModuleNode
       acceptedVia: ModuleNode
     }>()
-    const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
+    const hasDeadEnd = propagateUpdate(mod, boundaries)
     if (hasDeadEnd) {
       needFullReload = true
       continue
@@ -211,7 +210,6 @@ export async function handleFileAddUnlink(
 
 function propagateUpdate(
   node: ModuleNode,
-  timestamp: number,
   boundaries: Set<{
     boundary: ModuleNode
     acceptedVia: ModuleNode
@@ -228,12 +226,7 @@ function propagateUpdate(
     // Tailwind JIT may register any file as a dependency to a CSS file.
     for (const importer of node.importers) {
       if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
-        propagateUpdate(
-          importer,
-          timestamp,
-          boundaries,
-          currentChain.concat(importer)
-        )
+        propagateUpdate(importer, boundaries, currentChain.concat(importer))
       }
     }
 
@@ -243,7 +236,7 @@ function propagateUpdate(
   if (!node.importers.size) {
     return true
   }
-  
+
   // #3716, #3913
   // For a non-CSS file, if all of its importers are CSS files (registered via
   // PostCSS plugins) it should be considered a dead end and force full reload.
@@ -269,7 +262,7 @@ function propagateUpdate(
       return true
     }
 
-    if (propagateUpdate(importer, timestamp, boundaries, subChain)) {
+    if (propagateUpdate(importer, boundaries, subChain)) {
       return true
     }
   }
@@ -467,18 +460,20 @@ async function readModifiedFile(file: string): Promise<string> {
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = Date.now()
+  const { port } = server.config.server
+  
+  await server.close()
+  
   let newServer = null
   try {
     newServer = await createServer(server.config.inlineConfig)
   } catch (err) {
-    server.ws.send({
-      type: 'error',
-      err: prepareError(err)
+    server.config.logger.error(err.message, {
+      timestamp: true,
     })
     return
   }
 
-  await server.close()
   for (const key in newServer) {
     if (key !== 'app') {
       // @ts-ignore
@@ -486,7 +481,7 @@ async function restartServer(server: ViteDevServer) {
     }
   }
   if (!server.config.server.middlewareMode) {
-    await server.listen(undefined, true)
+    await server.listen(port, true)
   } else {
     server.config.logger.info('server restarted.', { timestamp: true })
   }
