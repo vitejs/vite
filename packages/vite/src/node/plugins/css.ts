@@ -208,7 +208,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                 isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
-                      await fileToUrl(file, config, this)
+                      (
+                        await fileToUrl(file, config, this)
+                      ).replace(config.base, '/')
                     )
               )
             }
