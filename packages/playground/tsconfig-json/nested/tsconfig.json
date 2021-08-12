@@ -14,6 +14,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
 
+    /* tsconfig.json should support comments and trailing comma */
     "useDefineForClassFields": false
   }
 }
