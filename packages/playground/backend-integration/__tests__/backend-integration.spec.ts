@@ -53,12 +53,7 @@ if (isBuild) {
         code.replace('text-black', 'text-[rgb(204,0,0)]')
       )
       await untilUpdated(() => getColor(el), 'rgb(204, 0, 0)')
-      expect(browserLogs).toMatchObject([
-        '[vite] css hot updated: /global.css',
-        '[vite] css hot updated: /global.css',
-        '[vite] hot updated: /main.ts',
-        '[vite] hot updated: /global.css'
-      ])
+      expect(browserLogs).toContain('[vite] css hot updated: /global.css')
     })
   })
 }
