@@ -13,8 +13,9 @@ import {
 import { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
-import { cleanUrl, fsPathFromId } from '../../utils'
+import { cleanUrl, fsPathFromId, injectQuery } from '../../utils'
 import { assetAttrsConfig } from '../../plugins/html'
+import type { ModuleGraph } from '../moduleGraph'
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer
@@ -45,9 +46,17 @@ const processNodeUrl = (
   s: MagicString,
   config: ResolvedConfig,
   htmlPath: string,
-  originalUrl?: string
+  originalUrl?: string,
+  moduleGraph?: ModuleGraph
 ) => {
-  const url = node.value?.content || ''
+  let url = node.value?.content || ''
+
+  if (moduleGraph) {
+    const mod = moduleGraph.urlToModuleMap.get(url)
+    if (mod && mod.lastHMRTimestamp > 0) {
+      url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+    }
+  }
   if (startsWithSingleSlashRE.test(url)) {
     // prefix with base
     s.overwrite(
@@ -79,10 +88,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, server, originalUrl }
 ) => {
-  // TODO: solve this design issue
-  // Optional chain expressions can return undefined by design
-  // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-  const config = server?.config!
+  const { config, moduleGraph } = server!
   const base = config.base || '/'
 
   const s = new MagicString(html)
@@ -101,7 +107,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
 
       if (src) {
-        processNodeUrl(src, s, config, htmlPath, originalUrl)
+        processNodeUrl(src, s, config, htmlPath, originalUrl, moduleGraph)
       } else if (isModule) {
         // inline js module. convert to src="proxy"
         s.overwrite(
