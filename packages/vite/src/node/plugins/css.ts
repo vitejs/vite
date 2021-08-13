@@ -120,7 +120,7 @@ export const chunkToEmittedCssFileMap = new WeakMap<
   Set<string>
 >()
 
-export const romovedPureCssFiles = new Map<string, RenderedChunk>()
+export const removedPureCssFiles = new Map<string, RenderedChunk>()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
@@ -152,6 +152,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
       moduleCache = new Map<string, Record<string, string>>()
       cssModulesCache.set(config, moduleCache)
+
+      removedPureCssFiles.clear()
     },
 
     async transform(raw, id) {
@@ -474,7 +476,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
         pureCssChunks.forEach((fileName) => {
-          romovedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
+          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
         })
       }
