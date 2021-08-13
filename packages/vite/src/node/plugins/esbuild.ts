@@ -226,19 +226,18 @@ function prettifyMessage(m: Message, code: string): string {
 async function findTSConfig(dir: string): Promise<string | void> {
   const configFile = path.resolve(dir, 'tsconfig.json')
 
-  return stat(configFile).then((stats) => {
-    if (isFile(stats)) {
-      return configFile
-    }
+  const stats = await stat(configFile)
+  if (isFile(stats)) {
+    return configFile
+  }
 
-    const parentDir = path.dirname(dir)
+  const parentDir = path.dirname(dir)
 
-    if (dir === parentDir) {
-      return
-    }
+  if (dir === parentDir) {
+    return
+  }
 
-    return findTSConfig(parentDir)
-  })
+  return findTSConfig(parentDir)
 }
 
 /**
