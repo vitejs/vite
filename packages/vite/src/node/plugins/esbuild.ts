@@ -245,9 +245,9 @@ async function findTSConfig(dir: string): Promise<string | void> {
  * Check if a file exists.
  */
 function stat(filename: string): Promise<fs.Stats | void> {
-  return new Promise<fs.Stats | void>((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     fs.stat(filename, (err, stats) => {
-      return err ? resolve(undefined) : resolve(stats)
+      return err ? resolve() : resolve(stats)
     })
   })
 }
@@ -256,9 +256,7 @@ function stat(filename: string): Promise<fs.Stats | void> {
  * Check filesystem stat is a directory.
  */
 function isFile(stats: fs.Stats | void) {
-  return stats
-    ? (stats as fs.Stats).isFile() || (stats as fs.Stats).isFIFO()
-    : false
+  return stats ? stats.isFile() || stats.isFIFO() : false
 }
 
 // from <https://github.com/TypeStrong/tsconfig/pull/31>
@@ -288,8 +286,9 @@ function stripDanglingComma(jsonString: string) {
       backslashCount += 1
     }
 
-    return Boolean(backslashCount % 2)
+    return backslashCount % 2 === 1
   }
+
   let insideString = false
   let offset = 0
   let result = ''
