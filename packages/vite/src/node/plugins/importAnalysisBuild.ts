@@ -4,7 +4,7 @@ import { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import { ImportSpecifier, init, parse as parseImports } from 'es-module-lexer'
 import { OutputChunk } from 'rollup'
-import { chunkToEmittedCssFileMap, removedPureCssFiles } from './css'
+import { chunkToEmittedCssFileMap, removedPureCssFilesCache } from './css'
 import { transformImportGlob } from '../importGlob'
 
 /**
@@ -257,7 +257,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     }
                     chunk.imports.forEach(addDeps)
                   } else {
-                    const chunk = removedPureCssFiles.get(filename)
+                    const removedPureCssFiles =
+                      removedPureCssFilesCache.get(config)
+                    const chunk = removedPureCssFiles!.get(filename)
                     if (chunk) {
                       const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                       if (cssFiles && cssFiles.size > 0) {
