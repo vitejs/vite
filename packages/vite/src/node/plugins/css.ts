@@ -478,9 +478,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
-        const removedPureCssFiles = removedPureCssFilesCache.get(config)
+        const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunks.forEach((fileName) => {
-          removedPureCssFiles!.set(fileName, bundle[fileName] as RenderedChunk)
+          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
         })
       }
