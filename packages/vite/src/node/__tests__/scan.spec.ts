@@ -3,7 +3,7 @@ import {
   commentRE,
   importsRE,
   multilineCommentsRE,
-  singleCommentsRE
+  singlelineCommentsRE
 } from '../optimizer/scan'
 
 describe('optimizer-scan:script-test', () => {
@@ -116,8 +116,8 @@ describe('optimizer-scan:script-test', () => {
       */`.replace(multilineCommentsRE, '')
     expect(ret).not.toContain('export default')
 
-    singleCommentsRE.lastIndex = 0
-    ret = `//export default { }`.replace(singleCommentsRE, '')
+    singlelineCommentsRE.lastIndex = 0
+    ret = `//export default { }`.replace(singlelineCommentsRE, '')
     expect(ret).not.toContain('export default')
   })
 })

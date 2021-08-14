@@ -41,7 +41,7 @@ export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
-export const singleCommentsRE = /\/\/.*/g
+export const singlelineCommentsRE = /\/\/.*/g
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -239,7 +239,7 @@ function esbuildScanPlugin(
           // empty singleline & multiline comments to avoid matching comments
           const code = js
             .replace(multilineCommentsRE, '/* */')
-            .replace(singleCommentsRE, '')
+            .replace(singlelineCommentsRE, '')
 
           if (
             loader.startsWith('ts') &&
