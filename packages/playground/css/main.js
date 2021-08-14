@@ -66,3 +66,7 @@ if (import.meta.env.DEV) {
 // inlined
 import inlined from './inlined.css?inline'
 text('.inlined-code', inlined)
+
+// URL
+import url from './css-url.css?url'
+text('.url-code', url)
