@@ -40,8 +40,8 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
-const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
-const singleCommentsRegex = /\/\/.*/g
+export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+export const singleCommentsRE = /\/\/.*/g
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -239,7 +239,7 @@ function esbuildScanPlugin(
           // empty singleline & multiline comments to avoid matching comments
           const code = js
             .replace(multilineCommentsRE, '/* */')
-            .replace(singleCommentsRegex, '')
+            .replace(singleCommentsRE, '')
 
           if (
             loader.startsWith('ts') &&
