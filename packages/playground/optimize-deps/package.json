@@ -15,6 +15,8 @@
     "dep-linked": "link:./dep-linked",
     "dep-linked-include": "link:./dep-linked-include",
     "dep-esbuild-plugin-transform": "link:./dep-esbuild-plugin-transform",
+    "dep-cjs-compiled-from-esm": "file:./dep-cjs-compiled-from-esm",
+    "dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
     "phoenix": "^1.5.7",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
