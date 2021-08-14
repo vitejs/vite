@@ -2846,10 +2846,6 @@ delegate@^3.1.2:
 "dep-cjs-compiled-from-esm@file:./packages/playground/optimize-deps/dep-cjs-compiled-from-esm":
   version "0.0.0"
 
-"dep-cjs-named-only@link:./packages/playground/optimize-deps/dep-cjs-named-only":
-  version "0.0.0"
-  uid ""
-
 "dep-esbuild-plugin-transform@link:./packages/playground/optimize-deps/dep-esbuild-plugin-transform":
   version "0.0.0"
   uid ""

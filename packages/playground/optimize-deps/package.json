@@ -11,7 +11,6 @@
   "dependencies": {
     "axios": "^0.21.1",
     "clipboard": "^2.0.6",
-    "dep-cjs-named-only": "link:./dep-cjs-named-only",
     "dep-linked": "link:./dep-linked",
     "dep-linked-include": "link:./dep-linked-include",
     "dep-esbuild-plugin-transform": "link:./dep-esbuild-plugin-transform",
