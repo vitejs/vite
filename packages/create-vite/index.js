@@ -3,7 +3,7 @@
 // @ts-check
 const fs = require('fs')
 const path = require('path')
-const argv = require('minimist')(process.argv.slice(2))
+const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
 // eslint-disable-next-line node/no-restricted-require
 const prompts = require('prompts')
 const {
