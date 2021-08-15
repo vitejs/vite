@@ -55,7 +55,7 @@ You may configure the port of the server py passing `--port` flag as an argument
 Now the `preview` method will launch the server at http://localhost:8080.
 
 ::: tip NOTE
-If you are using `npm` as your package manager, you may run into issues with changing the `serve` command to `preview` due to npm's usage of `pre` and `post` commands. For more info checkout the [npm docs](https://docs.npmjs.com/cli/v7/using-npm/scripts#pre--post-scripts) regarding Pre & Post scripts.
+If you change the script name from `serve` to `preview`, you may run into issues with some package managers due to the way they handle [Pre & Post scripts](https://docs.npmjs.com/cli/v7/using-npm/scripts#pre--post-scripts).
 :::
 
 ## GitHub Pages
