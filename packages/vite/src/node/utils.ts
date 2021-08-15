@@ -51,7 +51,7 @@ export function resolveFrom(id: string, basedir: string, ssr = false): string {
 }
 
 /**
- * Like `resolveFrom` but supports resolving `node_modules` path in `id`
+ * like `resolveFrom` but supports resolving `node_modules` path in `id`
  */
 export function nestedResolveFrom(id: string, basedir: string): string {
   const pkgs = id.split('/node_modules/')
