@@ -7,7 +7,9 @@ module.exports = {
       'test-package-a',
       'test-package-b',
       'test-package-c',
-      'test-package-c/side'
-    ]
+      'test-package-c/side',
+      'test-package-d/node_modules/test-package-d-nested'
+    ],
+    exclude: ['test-package-d']
   }
 }
