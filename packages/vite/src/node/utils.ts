@@ -24,7 +24,8 @@ export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
 }
 
-export const flattenId = (id: string): string => id.replace(/[\/\.]/g, '_')
+export const flattenId = (id: string): string =>
+  id.replace(/\/node_modules\//g, '__').replace(/[\/\.]/g, '_')
 
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
