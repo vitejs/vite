@@ -51,25 +51,46 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       let url: string
+      const isNode = (config.build.target as string).includes('node')
+
       if (isBuild) {
         // bundle the file as entry to support imports
         const rollup = require('rollup') as typeof Rollup
         const bundle = await rollup.rollup({
           input: cleanUrl(id),
+          ...config?.build?.rollupOptions,
           plugins: await resolvePlugins({ ...config }, [], [], [])
         })
+
         let code: string
         try {
-          const { output } = await bundle.generate({
-            format: 'iife',
-            sourcemap: config.build.sourcemap
-          })
-          code = output[0].code
+          if (isNode) {
+            const { output } = await bundle.generate({
+              format: 'cjs',
+              sourcemap: config.build.sourcemap
+            })
+            code = output[0].code
+          } else {
+            const { output } = await bundle.generate({
+              format: 'iife',
+              sourcemap: config.build.sourcemap
+            })
+            code = output[0].code
+          }
         } finally {
           await bundle.close()
         }
         const content = Buffer.from(code)
         if (query.inline != null) {
+          if (isNode) {
+            return `
+            import { Worker } from "worker_threads" \n
+            import { join } from "path" \n
+            export default function WorkerWrapper() {
+              return new Worker(\'${content.toString().trim()}', { eval: true })
+            }
+          `
+          }
           // inline as blob data url
           return `const blob = new Blob([atob(\"${content.toString(
             'base64'
@@ -104,16 +125,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerOptions = { type: 'module' }
 
-      const isNode = (config.build.target as string).includes('node')
-
       if (isNode) {
         return `
         import { Worker } from "worker_threads" \n
         import { join } from "path" \n
         export default function WorkerWrapper() {
-          return new ${workerConstructor}(join(__dirname, ${JSON.stringify(
-          url
-        )}), ${JSON.stringify(workerOptions, null, 2)})
+          return new Worker(join(__dirname, ${JSON.stringify(
+            url
+          )}), ${JSON.stringify(workerOptions, null, 2)})
         }
         `
       }
