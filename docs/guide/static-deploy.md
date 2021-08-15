@@ -37,7 +37,7 @@ Once you've built the app, you may test it locally by running `npm run serve` co
 
 ```bash
 $ npm run build
-$ npm run serve 
+$ npm run serve
 ```
 
 The `preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
