@@ -202,7 +202,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           asSrc &&
           server &&
           !ssr &&
-          (res = tryOptimizedResolve(id, server))
+          (res = tryOptimizedResolve(id, server, importer))
         ) {
           return res
         }
@@ -459,19 +459,56 @@ export function tryNodeResolve(
 
 export function tryOptimizedResolve(
   id: string,
-  server: ViteDevServer
+  server: ViteDevServer,
+  importer?: string
 ): string | undefined {
   const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
   if (cacheDir && depData) {
     const isOptimized = depData.optimized[id]
-    if (isOptimized) {
+
+    const getOptimizedUrl = (
+      optimizedEntry: typeof depData.optimized[string]
+    ) => {
       return (
-        isOptimized.file +
+        optimizedEntry.file +
         `?v=${depData.browserHash}${
-          isOptimized.needsInterop ? `&es-interop` : ``
+          optimizedEntry.needsInterop ? `&es-interop` : ``
         }`
       )
+    }
+
+    // check if id has been optimized
+    if (isOptimized) {
+      return getOptimizedUrl(isOptimized)
+    }
+
+    // if has importer, further check if id is importing from nested depedency
+    if (importer) {
+      let resolvedSrc: string | undefined
+      for (const [k, v] of Object.entries(depData.optimized)) {
+        // check for scenarios, e.g.
+        //   k  => "my-lib/node_modules/foo"
+        //   id => "foo"
+        // this narrows the need to do a full resolve
+        if (k.endsWith(id)) {
+          // lazily initialize resolvedSrc
+          if (resolvedSrc == null) {
+            try {
+              // this may throw errors if unable to resolve, e.g. aliased id
+              resolvedSrc = resolveFrom(id, path.dirname(importer))
+            } catch {
+              // this is best-effort only so swallow errors
+              break
+            }
+          }
+
+          // match by src path, return url similar as above
+          if (v.src === resolvedSrc) {
+            return getOptimizedUrl(v)
+          }
+        }
+      }
     }
   }
 }
