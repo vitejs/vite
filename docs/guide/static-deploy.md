@@ -10,12 +10,12 @@ The following guides are based on some shared assumptions:
 {
   "scripts": {
     "build": "vite build",
-    "preview": "vite preview"
+    "serve": "vite preview"
   }
 }
 ```
 
-It is important to note that `vite preview` is intended for previewing the build locally and not meant as a production server.
+It is important to note that `vite serve` is intended for previewing the build locally and not meant as a production server.
 
 ::: tip NOTE
 These guides provide instructions for performing a static deployment of your Vite site. Vite also has experimental support for Server Side Rendering. SSR refers to front-end frameworks that support running the same application in Node.js, pre-rendering it to HTML, and finally hydrating it on the client. Check out the [SSR Guide](./ssr) to learn about this feature. On the other hand, if you are looking for integration with traditional server-side frameworks, check out the [Backend Integration guide](./backend-integration) instead.
@@ -33,11 +33,11 @@ By default, the build output will be placed at `dist`. You may deploy this `dist
 
 ### Testing The App Locally
 
-Once you've built the app, you may test it locally by running `npm run preview` command.
+Once you've built the app, you may test it locally by running `npm run serve` command.
 
 ```bash
 $ npm run build
-$ npm run preview
+$ npm run serve 
 ```
 
 The `preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
@@ -47,7 +47,7 @@ You may configure the port of the server py passing `--port` flag as an argument
 ```json
 {
   "scripts": {
-    "preview": "vite preview --port 8080"
+    "serve": "vite preview --port 8080"
   }
 }
 ```
