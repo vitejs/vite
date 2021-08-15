@@ -1,3 +1,5 @@
-// import { parentPort } from 'worker_threads'
+import { parentPort } from 'worker_threads'
 
-// console.log(parentPort)
+parentPort.on('message', (message) => {
+  parentPort.postMessage('pong')
+})

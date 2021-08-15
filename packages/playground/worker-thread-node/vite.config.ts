@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { builtinModules } from 'module'
 
 export default defineConfig({
   build: {
@@ -10,7 +11,7 @@ export default defineConfig({
       fileName: 'main'
     },
     rollupOptions: {
-      external: ['worker_threads', 'path']
+      external: [...builtinModules]
     },
     emptyOutDir: true
   }
