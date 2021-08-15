@@ -23,7 +23,8 @@ import {
   resolveFrom,
   isDataUrl,
   cleanUrl,
-  slash
+  slash,
+  nestedResolveFrom
 } from '../utils'
 import { ViteDevServer, SSRTarget } from '..'
 import { createFilter } from '@rollup/pluginutils'
@@ -394,9 +395,14 @@ export function tryNodeResolve(
     path.isAbsolute(importer) &&
     fs.existsSync(cleanUrl(importer))
   ) {
-    basedir = path.join(path.dirname(importer), nestedRoot)
+    basedir = path.dirname(importer)
   } else {
-    basedir = path.join(root, nestedRoot)
+    basedir = root
+  }
+
+  // nested node module, step-by-step resolve to the basedir of the nestedPath
+  if (nodeModulesMatch) {
+    basedir = nestedResolveFrom(nestedRoot, basedir)
   }
 
   const pkg = resolvePackageData(pkgId, basedir)

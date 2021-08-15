@@ -50,6 +50,19 @@ export function resolveFrom(id: string, basedir: string, ssr = false): string {
   })
 }
 
+/**
+ * Like `resolveFrom` but supports resolving `node_modules` path in `id`
+ */
+export function nestedResolveFrom(id: string, basedir: string): string {
+  const pkgs = id.split('/node_modules/')
+  try {
+    for (const pkg of pkgs) {
+      basedir = resolveFrom(pkg, basedir)
+    }
+  } catch {}
+  return basedir
+}
+
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
 
