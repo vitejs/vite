@@ -375,8 +375,16 @@ export function tryNodeResolve(
   ssr?: boolean
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild } = options
-  const deepMatch = id.match(deepImportRE)
-  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
+
+  // split id by "node_modules" to get actual nested package name
+  const nodeModulesMatch = id.match(/(.+)\/node_modules\/(.+)/)
+  const nestedRoot = nodeModulesMatch ? nodeModulesMatch[1] : ''
+  const nestedPath = nodeModulesMatch ? nodeModulesMatch[2] : id
+
+  // check for deep import, e.g. "my-lib/foo"
+  const deepMatch = nestedPath.match(deepImportRE)
+
+  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : nestedPath
 
   let basedir: string
   if (dedupe && dedupe.includes(pkgId)) {
@@ -386,9 +394,9 @@ export function tryNodeResolve(
     path.isAbsolute(importer) &&
     fs.existsSync(cleanUrl(importer))
   ) {
-    basedir = path.dirname(importer)
+    basedir = path.join(path.dirname(importer), nestedRoot)
   } else {
-    basedir = root
+    basedir = path.join(root, nestedRoot)
   }
 
   const pkg = resolvePackageData(pkgId, basedir)
