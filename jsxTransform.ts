@@ -16,7 +16,7 @@ export function transformVueJsx(
   if (/\.tsx$/.test(id)) {
     plugins.unshift([
       require.resolve('@babel/plugin-transform-typescript'),
-      { isTSX: true, allowExtensions: true },
+      { isTSX: true, allowExtensions: true, allowDeclareFields: true },
     ])
   }
 
