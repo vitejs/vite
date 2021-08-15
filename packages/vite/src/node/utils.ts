@@ -45,7 +45,7 @@ export function resolveFrom(id: string, basedir: string, ssr = false): string {
     basedir,
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
-    preserveSymlinks: isRunningWithYarnPnp || false
+    preserveSymlinks: true
   })
 }
 
