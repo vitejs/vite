@@ -552,97 +552,108 @@ export function resolvePackageEntry(
   if (cached) {
     return cached
   }
-  let entryPoint: string | undefined | void
+  try {
+    let entryPoint: string | undefined | void
 
-  // resolve exports field with highest priority
-  // using https://github.com/lukeed/resolve.exports
-  if (data.exports) {
-    entryPoint = resolveExports(data, '.', options, targetWeb)
-  }
+    // resolve exports field with highest priority
+    // using https://github.com/lukeed/resolve.exports
+    if (data.exports) {
+      entryPoint = resolveExports(data, '.', options, targetWeb)
+    }
 
-  // if exports resolved to .mjs, still resolve other fields.
-  // This is because .mjs files can technically import .cjs files which would
-  // make them invalid for pure ESM environments - so if other module/browser
-  // fields are present, prioritize those instead.
-  if (targetWeb && (!entryPoint || entryPoint.endsWith('.mjs'))) {
-    // check browser field
-    // https://github.com/defunctzombie/package-browser-field-spec
-    const browserEntry =
-      typeof data.browser === 'string'
-        ? data.browser
-        : isObject(data.browser) && data.browser['.']
-    if (browserEntry) {
-      // check if the package also has a "module" field.
-      if (typeof data.module === 'string' && data.module !== browserEntry) {
-        // if both are present, we may have a problem: some package points both
-        // to ESM, with "module" targeting Node.js, while some packages points
-        // "module" to browser ESM and "browser" to UMD.
-        // the heuristics here is to actually read the browser entry when
-        // possible and check for hints of UMD. If it is UMD, prefer "module"
-        // instead; Otherwise, assume it's ESM and use it.
-        const resolvedBrowserEntry = tryFsResolve(
-          path.join(dir, browserEntry),
-          options
-        )
-        if (resolvedBrowserEntry) {
-          const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
-          if (
-            (/typeof exports\s*==/.test(content) &&
-              /typeof module\s*==/.test(content)) ||
-            /module\.exports\s*=/.test(content)
-          ) {
-            // likely UMD or CJS(!!! e.g. firebase 7.x), prefer module
-            entryPoint = data.module
+    // if exports resolved to .mjs, still resolve other fields.
+    // This is because .mjs files can technically import .cjs files which would
+    // make them invalid for pure ESM environments - so if other module/browser
+    // fields are present, prioritize those instead.
+    if (targetWeb && (!entryPoint || entryPoint.endsWith('.mjs'))) {
+      // check browser field
+      // https://github.com/defunctzombie/package-browser-field-spec
+      const browserEntry =
+        typeof data.browser === 'string'
+          ? data.browser
+          : isObject(data.browser) && data.browser['.']
+      if (browserEntry) {
+        // check if the package also has a "module" field.
+        if (typeof data.module === 'string' && data.module !== browserEntry) {
+          // if both are present, we may have a problem: some package points both
+          // to ESM, with "module" targeting Node.js, while some packages points
+          // "module" to browser ESM and "browser" to UMD.
+          // the heuristics here is to actually read the browser entry when
+          // possible and check for hints of UMD. If it is UMD, prefer "module"
+          // instead; Otherwise, assume it's ESM and use it.
+          const resolvedBrowserEntry = tryFsResolve(
+            path.join(dir, browserEntry),
+            options
+          )
+          if (resolvedBrowserEntry) {
+            const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
+            if (
+              (/typeof exports\s*==/.test(content) &&
+                /typeof module\s*==/.test(content)) ||
+              /module\.exports\s*=/.test(content)
+            ) {
+              // likely UMD or CJS(!!! e.g. firebase 7.x), prefer module
+              entryPoint = data.module
+            }
           }
+        } else {
+          entryPoint = browserEntry
         }
-      } else {
-        entryPoint = browserEntry
       }
     }
-  }
 
-  if (!entryPoint || entryPoint.endsWith('.mjs')) {
-    for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
-      if (typeof data[field] === 'string') {
-        entryPoint = data[field]
-        break
+    if (!entryPoint || entryPoint.endsWith('.mjs')) {
+      for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
+        if (typeof data[field] === 'string') {
+          entryPoint = data[field]
+          break
+        }
       }
     }
+
+    entryPoint = entryPoint || data.main || 'index.js'
+
+    // make sure we don't get scripts when looking for sass
+    if (
+      options.mainFields?.[0] === 'sass' &&
+      !options.extensions?.includes(path.extname(entryPoint))
+    ) {
+      entryPoint = ''
+      options.skipPackageJson = true
+    }
+
+    // resolve object browser field in package.json
+    const { browser: browserField } = data
+    if (targetWeb && isObject(browserField)) {
+      entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
+    }
+
+    entryPoint = path.join(dir, entryPoint)
+    const resolvedEntryPoint = tryFsResolve(entryPoint, options)
+
+    if (resolvedEntryPoint) {
+      isDebug &&
+        debug(
+          `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(
+            resolvedEntryPoint
+          )}`
+        )
+      setResolvedCache('.', resolvedEntryPoint, targetWeb)
+      return resolvedEntryPoint
+    } else {
+      packageEntryFailure(id)
+    }
+  } catch (e) {
+    packageEntryFailure(id, e.message)
   }
+}
 
-  entryPoint = entryPoint || data.main || 'index.js'
-
-  // make sure we don't get scripts when looking for sass
-  if (
-    options.mainFields?.[0] === 'sass' &&
-    !options.extensions?.includes(path.extname(entryPoint))
-  ) {
-    entryPoint = ''
-    options.skipPackageJson = true
-  }
-
-  // resolve object browser field in package.json
-  const { browser: browserField } = data
-  if (targetWeb && isObject(browserField)) {
-    entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
-  }
-
-  entryPoint = path.join(dir, entryPoint)
-  const resolvedEntryPoint = tryFsResolve(entryPoint, options)
-
-  if (resolvedEntryPoint) {
-    isDebug &&
-      debug(
-        `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(resolvedEntryPoint)}`
-      )
-    setResolvedCache('.', resolvedEntryPoint, targetWeb)
-    return resolvedEntryPoint
-  } else {
-    throw new Error(
-      `Failed to resolve entry for package "${id}". ` +
-        `The package may have incorrect main/module/exports specified in its package.json.`
-    )
-  }
+function packageEntryFailure(id: string, details?: string) {
+  throw new Error(
+    `Failed to resolve entry for package "${id}". ` +
+      `The package may have incorrect main/module/exports specified in its package.json` +
+      (details ? ': ' + details : '.')
+  )
 }
 
 function resolveExports(
