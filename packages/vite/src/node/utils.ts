@@ -512,3 +512,19 @@ export function resolveHostname(
 
   return { host, name }
 }
+
+export function isTargetNode(target: string | false | string[]): boolean {
+  if (!target) {
+    return false
+  }
+
+  if (typeof target === 'string') {
+    return target.includes('node')
+  }
+
+  if (Array.isArray(target)) {
+    return Boolean(target.filter((f) => f.includes('node')).length)
+  }
+
+  return false
+}

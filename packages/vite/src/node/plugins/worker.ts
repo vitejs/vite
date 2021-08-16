@@ -3,7 +3,7 @@ import { Plugin } from '../plugin'
 import { resolvePlugins } from '../plugins'
 import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
-import { cleanUrl, injectQuery } from '../utils'
+import { cleanUrl, injectQuery, isTargetNode } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
@@ -51,7 +51,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       let url: string
-      const isNode = (config.build.target as string).includes('node')
+      const isNode = isTargetNode(config?.build?.target)
 
       if (isBuild) {
         // bundle the file as entry to support imports
