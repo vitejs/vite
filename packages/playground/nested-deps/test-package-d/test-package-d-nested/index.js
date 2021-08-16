@@ -1,1 +1,1 @@
-export default 'nested-D@1.0.0'
+export default 'D-nested@1.0.0'
