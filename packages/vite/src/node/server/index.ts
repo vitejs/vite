@@ -319,7 +319,11 @@ export async function createServer(
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
-    ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      ...(Array.isArray(ignored) ? ignored : [ignored])
+    ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
     disableGlobbing: true,
