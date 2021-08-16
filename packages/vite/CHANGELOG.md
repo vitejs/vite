@@ -1,3 +1,7 @@
+# [2.5.0](https://github.com/vitejs/vite/compare/v2.5.0-beta.3...v2.5.0) (2021-08-16)
+
+
+
 # [2.5.0-beta.3](https://github.com/vitejs/vite/compare/v2.5.0-beta.2...v2.5.0-beta.3) (2021-08-14)
 
 
