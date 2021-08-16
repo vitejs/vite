@@ -523,7 +523,7 @@ export function isTargetNode(target: string | false | string[]): boolean {
   }
 
   if (Array.isArray(target)) {
-    return Boolean(target.filter((f) => f.includes('node')).length)
+    return target.some((f) => f.includes('node'))
   }
 
   return false
