@@ -36,10 +36,13 @@ export function baseMiddleware({
       return
     } else if (req.headers.accept?.includes('text/html')) {
       // non-based page visit
-      res.statusCode = 404
+      const redirectPath = base + url.slice(1)
+      res.writeHead(404, {
+        'Content-Type': 'text/html'
+      })
       res.end(
         `The server is configured with a public base URL of ${base} - ` +
-          `did you mean to visit ${base}${url.slice(1)} instead?`
+          `did you mean to visit <a href="${redirectPath}">${redirectPath}</a> instead?`
       )
       return
     }
