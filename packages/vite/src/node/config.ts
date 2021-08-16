@@ -187,7 +187,7 @@ export type SSRTarget = 'node' | 'webworker'
 
 export interface SSROptions {
   external?: string[]
-  noExternal?: string | RegExp | (string | RegExp)[]
+  noExternal?: string | RegExp | (string | RegExp)[] | true
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
@@ -383,7 +383,7 @@ export async function resolveConfig(
                 root: resolvedRoot,
                 isProduction,
                 isBuild: command === 'build',
-                ssrTarget: resolved.ssr?.target,
+                ssrConfig: resolved.ssr,
                 asSrc: true,
                 preferRelative: false,
                 tryIndex: true,

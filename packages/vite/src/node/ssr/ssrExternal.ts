@@ -18,6 +18,10 @@ export function resolveSSRExternal(
   ssrExternals: Set<string> = new Set(),
   seen: Set<string> = new Set()
 ): string[] {
+  if (config.ssr?.noExternal === true) {
+    return []
+  }
+
   const { root } = config
   const pkgContent = lookupFile(root, ['package.json'])
   if (!pkgContent) {
