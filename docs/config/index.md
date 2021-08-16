@@ -741,9 +741,9 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string | RegExp | (string | RegExp)[] | true`
 
-  Prevent listed dependencies from being externalized for SSR.
+  Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized.
 
 ### ssr.target
 
@@ -751,10 +751,3 @@ SSR options may be adjusted in minor releases.
 - **Default:** `node`
 
   Build target for the SSR server.
-
-### ssr.bundleAll
-
-- **Type:** `boolean`
-- **Default:** `false`
-
-  Bundles all dependencies into a single JavaScript file.

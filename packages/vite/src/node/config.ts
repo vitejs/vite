@@ -187,14 +187,13 @@ export type SSRTarget = 'node' | 'webworker'
 
 export interface SSROptions {
   external?: string[]
-  noExternal?: string | RegExp | (string | RegExp)[]
+  noExternal?: string | RegExp | (string | RegExp)[] | true
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
    * Default: 'node'
    */
   target?: SSRTarget
-  bundleAll?: boolean
 }
 
 export interface InlineConfig extends UserConfig {

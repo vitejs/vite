@@ -7,6 +7,6 @@ module.exports = {
   },
   ssr: {
     target: 'webworker',
-    bundleAll: true
+    noExternal: true
   }
 }

@@ -254,7 +254,7 @@ The default target for the SSR build is a node environment, but you can also run
 
 ## SSR Bundle
 
-In some cases like `webworker` runtimes, you might want to bundle your SSR build into a single JavaScript file. You can enable this behavior by setting `ssr.bundleAll` to `true`. This will do two things:
+In some cases like `webworker` runtimes, you might want to bundle your SSR build into a single JavaScript file. You can enable this behavior by setting `ssr.noExternal` to `true`. This will do two things:
 
 - Treat all dependencies as `noExternal`
 - Throw an error if any Node.js built-ins are imported

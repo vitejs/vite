@@ -78,7 +78,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
   let server: ViteDevServer | undefined
 
-  const { target: ssrTarget } = ssrConfig ?? {}
+  const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
 
   return {
     name: 'vite:resolve',
@@ -226,7 +226,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         // externalize if building for SSR, otherwise redirect to empty module
         if (isBuiltin(id)) {
           if (ssr) {
-            if (ssrConfig?.bundleAll) {
+            if (ssrNoExternal === true) {
               let message = `Cannot bundle Node.js built-in "${id}"`
               if (importer) {
                 message += ` imported from "${path.relative(
@@ -234,7 +234,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
                   importer
                 )}"`
               }
-              message += `. Consider disabling ssr.bundleAll or remove the built-in dependency.`
+              message += `. Consider disabling ssr.noExternal or remove the built-in dependency.`
               this.error(message)
             }
 
