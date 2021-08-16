@@ -28,7 +28,7 @@
   "devDependencies": {
     "@microsoft/api-extractor": "^7.18.4",
     "@types/fs-extra": "^9.0.12",
-    "@types/jest": "^26.0.24",
+    "@types/jest": "^27.0.1",
     "@types/node": "^15.12.2",
     "@types/semver": "^7.3.8",
     "@typescript-eslint/eslint-plugin": "^4.28.5",
