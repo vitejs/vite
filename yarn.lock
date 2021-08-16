@@ -2637,7 +2637,8 @@ css-color-names@^1.0.1:
   integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
 
 "css-dep@link:./packages/playground/css/css-dep":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 css-parse@~2.0.0:
   version "2.0.0"
@@ -2821,24 +2822,27 @@ delegate@^3.1.2:
   resolved "https://registry.yarnpkg.com/delegate/-/delegate-3.2.0.tgz#b66b71c3158522e8ab5744f720d8ca0c2af59166"
   integrity sha512-IofjkYBZaZivn0V8nnsMJGBr4jVLxHDheKSW88PyxS5QC4Vo9ZbZVvhzlSxY87fVq3STR6r+4cGepyHkcWOQSw==
 
-"dep-cjs-named-only@link:./packages/playground/optimize-deps/dep-cjs-named-only":
+"dep-cjs-compiled-from-cjs@file:./packages/playground/optimize-deps/dep-cjs-compiled-from-cjs":
+  version "0.0.0"
+
+"dep-cjs-compiled-from-esm@file:./packages/playground/optimize-deps/dep-cjs-compiled-from-esm":
   version "0.0.0"
 
 "dep-esbuild-plugin-transform@link:./packages/playground/optimize-deps/dep-esbuild-plugin-transform":
   version "0.0.0"
+  uid ""
 
 "dep-import-type@link:./packages/playground/ssr-vue/dep-import-type":
   version "0.0.0"
+  uid ""
 
 "dep-linked-include@link:./packages/playground/optimize-deps/dep-linked-include":
   version "0.0.0"
-  dependencies:
-    react "17.0.0"
+  uid ""
 
 "dep-linked@link:./packages/playground/optimize-deps/dep-linked":
   version "0.0.0"
-  dependencies:
-    lodash-es "^4.17.20"
+  uid ""
 
 depd@~1.1.2:
   version "1.1.2"
@@ -6556,13 +6560,16 @@ requires-port@^1.0.0:
   integrity sha1-kl0mAdOaxIXgkc8NpcbmlNw9yv8=
 
 "resolve-browser-field@link:./packages/playground/resolve/browser-field":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-custom-condition@link:./packages/playground/resolve/custom-condition":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-custom-main-field@link:./packages/playground/resolve/custom-main-field":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 resolve-cwd@^3.0.0:
   version "3.0.0"
@@ -6572,10 +6579,12 @@ resolve-cwd@^3.0.0:
     resolve-from "^5.0.0"
 
 "resolve-exports-env@link:./packages/playground/resolve/exports-env":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "resolve-exports-path@link:./packages/playground/resolve/exports-path":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -7317,13 +7326,16 @@ test-exclude@^6.0.0:
     minimatch "^3.0.4"
 
 "test-package-a@link:./packages/playground/nested-deps/test-package-a":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "test-package-b@link:./packages/playground/nested-deps/test-package-b":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 "test-package-c@link:./packages/playground/nested-deps/test-package-c":
-  version "1.0.0"
+  version "0.0.0"
+  uid ""
 
 text-extensions@^1.0.0:
   version "1.9.0"
@@ -7577,6 +7589,7 @@ typedarray-to-buffer@^3.1.5:
 
 "types@link:./packages/vite/types":
   version "0.0.0"
+  uid ""
 
 typescript@^4.3.5, typescript@~4.3.5:
   version "4.3.5"

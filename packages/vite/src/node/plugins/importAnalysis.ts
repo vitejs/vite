@@ -377,7 +377,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 str().overwrite(
                   dynamicIndex,
                   end + 1,
-                  `import('${url}').then(m => ({ ...m.default, default: m.default }))`
+                  `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
                 )
               } else {
                 const exp = source.slice(expStart, expEnd)
