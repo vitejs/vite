@@ -83,11 +83,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const content = Buffer.from(code)
         if (query.inline != null) {
           if (isNode) {
+            let code = content.toString().trim()
+            code = code.replace(/\r?\n|\r/g, '')
+
             return `
             import { Worker } from "worker_threads" \n
             import { join } from "path" \n
             export default function WorkerWrapper() {
-              return new Worker(\'${content.toString().trim()}', { eval: true })
+              return new Worker(\'${code}', { eval: true })
             }
           `
           }

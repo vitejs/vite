@@ -2,19 +2,19 @@ import { isBuild, testDir } from '../../testUtils'
 import fs from 'fs-extra'
 import path from 'path'
 
+test('response from worker', async () => {
+  const distDir = path.resolve(testDir, 'dist')
+  const { run } = require(path.join(distDir, 'main.cjs'))
+  expect(await run('ping')).toBe('pong')
+})
+
+test('response from inline worker', async () => {
+  const distDir = path.resolve(testDir, 'dist')
+  const { inlineWorker } = require(path.join(distDir, 'main.cjs'))
+  expect(await inlineWorker('ping')).toBe('this is inline node worker')
+})
+
 if (isBuild) {
-  test('response from worker', async () => {
-    const distDir = path.resolve(testDir, 'dist')
-    const { run } = require(path.join(distDir, 'main.cjs'))
-    expect(await run('ping')).toBe('pong')
-  })
-
-  test('response from inline worker', async () => {
-    const distDir = path.resolve(testDir, 'dist')
-    const { inlineWorker } = require(path.join(distDir, 'main.cjs'))
-    expect(await inlineWorker('ping')).toBe('this is inline node worker')
-  })
-
   test('worker code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/assets')
     const distDir = path.resolve(testDir, 'dist')
