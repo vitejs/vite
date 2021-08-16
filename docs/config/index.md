@@ -415,7 +415,7 @@ export default defineConfig(async ({ command, mode }) => {
           changeOrigin: true,
           configure: (proxy, options) => {
             // proxy will be an instance of 'http-proxy'
-          },
+          }
         }
       }
     }
@@ -741,9 +741,9 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string | RegExp | (string | RegExp)[] | true`
 
-  Prevent listed dependencies from being externalized for SSR.
+  Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized.
 
 ### ssr.target
 

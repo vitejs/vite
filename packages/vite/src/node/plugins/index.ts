@@ -39,7 +39,7 @@ export async function resolvePlugins(
       root: config.root,
       isProduction: config.isProduction,
       isBuild,
-      ssrTarget: config.ssr?.target,
+      ssrConfig: config.ssr,
       asSrc: true
     }),
     htmlInlineScriptProxyPlugin(),

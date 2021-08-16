@@ -25,7 +25,7 @@ import {
   cleanUrl,
   slash
 } from '../utils'
-import { ViteDevServer, SSRTarget } from '..'
+import { ViteDevServer, SSROptions } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
@@ -50,7 +50,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   root: string
   isBuild: boolean
   isProduction: boolean
-  ssrTarget?: SSRTarget
+  ssrConfig?: SSROptions
   /**
    * src code mode also attempts the following:
    * - resolving /xxx as URLs
@@ -69,7 +69,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
     root,
     isProduction,
     asSrc,
-    ssrTarget,
+    ssrConfig,
     preferRelative = false
   } = baseOptions
   const requireOptions: InternalResolveOptions = {
@@ -77,6 +77,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
     isRequire: true
   }
   let server: ViteDevServer | undefined
+
+  const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
 
   return {
     name: 'vite:resolve',
@@ -224,6 +226,18 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         // externalize if building for SSR, otherwise redirect to empty module
         if (isBuiltin(id)) {
           if (ssr) {
+            if (ssrNoExternal === true) {
+              let message = `Cannot bundle Node.js built-in "${id}"`
+              if (importer) {
+                message += ` imported from "${path.relative(
+                  process.cwd(),
+                  importer
+                )}"`
+              }
+              message += `. Consider disabling ssr.noExternal or remove the built-in dependency.`
+              this.error(message)
+            }
+
             return {
               id,
               external: true
