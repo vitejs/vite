@@ -10,7 +10,7 @@ The following guides are based on some shared assumptions:
 {
   "scripts": {
     "build": "vite build",
-    "preview": "vite preview"
+    "serve": "vite preview"
   }
 }
 ```
@@ -33,26 +33,30 @@ By default, the build output will be placed at `dist`. You may deploy this `dist
 
 ### Testing The App Locally
 
-Once you've built the app, you may test it locally by running `npm run preview` command.
+Once you've built the app, you may test it locally by running `npm run serve` command.
 
 ```bash
 $ npm run build
-$ npm run preview
+$ npm run serve
 ```
 
-The `preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
+The `vite preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
 
 You may configure the port of the server py passing `--port` flag as an argument.
 
 ```json
 {
   "scripts": {
-    "preview": "vite preview --port 8080"
+    "serve": "vite preview --port 8080"
   }
 }
 ```
 
 Now the `preview` method will launch the server at http://localhost:8080.
+
+::: tip NOTE
+If you change the script name from `serve` to `preview`, you may run into issues with some package managers due to the way they handle [Pre & Post scripts](https://docs.npmjs.com/cli/v7/using-npm/scripts#pre--post-scripts).
+:::
 
 ## GitHub Pages
 
