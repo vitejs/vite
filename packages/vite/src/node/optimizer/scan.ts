@@ -79,7 +79,9 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   )
 
   if (!entries.length) {
-    debug(`No entry HTML files detected`)
+    config.logger.warn(
+      'Could not determine entry point from rollupOptions or html files. Skipping dependency pre-bundling.'
+    )
     return { deps: {}, missing: {} }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
@@ -133,6 +135,7 @@ const scriptModuleRE =
 export const scriptRE = /(<script\b(?:\s[^>]*>|>))(.*?)<\/script>/gims
 export const commentRE = /<!--(.|[\r\n])*?-->/
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
+const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 
 function esbuildScanPlugin(
@@ -205,9 +208,23 @@ function esbuildScanPlugin(
           while ((match = regex.exec(raw))) {
             const [, openTag, content] = match
             const srcMatch = openTag.match(srcRE)
+            const typeMatch = openTag.match(typeRE)
             const langMatch = openTag.match(langRE)
+            const type =
+              typeMatch && (typeMatch[1] || typeMatch[2] || typeMatch[3])
             const lang =
               langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
+            // skip type="application/ld+json" and other non-JS types
+            if (
+              type &&
+              !(
+                type.includes('javascript') ||
+                type.includes('ecmascript') ||
+                type === 'module'
+              )
+            ) {
+              continue
+            }
             if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
               loader = lang
             }
@@ -232,7 +249,7 @@ function esbuildScanPlugin(
             let m
             // empty multiline comments to avoid matching commented out imports
             const code = js.replace(multilineCommentsRE, '/* */')
-            while ((m = importsRE.exec(code)) !== null) {
+            while ((m = importsRE.exec(code)) != null) {
               // This is necessary to avoid infinite loops with zero-width matches
               if (m.index === importsRE.lastIndex) {
                 importsRE.lastIndex++

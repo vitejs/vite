@@ -10,7 +10,7 @@ The following guides are based on some shared assumptions:
 {
   "scripts": {
     "build": "vite build",
-    "preview": "vite preview"
+    "serve": "vite preview"
   }
 }
 ```
@@ -33,26 +33,30 @@ By default, the build output will be placed at `dist`. You may deploy this `dist
 
 ### Testing The App Locally
 
-Once you've built the app, you may test it locally by running `npm run preview` command.
+Once you've built the app, you may test it locally by running `npm run serve` command.
 
 ```bash
 $ npm run build
-$ npm run preview
+$ npm run serve
 ```
 
-The `preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
+The `vite preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
 
 You may configure the port of the server py passing `--port` flag as an argument.
 
 ```json
 {
   "scripts": {
-    "preview": "vite preview --port 8080"
+    "serve": "vite preview --port 8080"
   }
 }
 ```
 
 Now the `preview` method will launch the server at http://localhost:8080.
+
+::: tip NOTE
+If you change the script name from `serve` to `preview`, you may run into issues with some package managers due to the way they handle [Pre & Post scripts](https://docs.npmjs.com/cli/v7/using-npm/scripts#pre--post-scripts).
+:::
 
 ## GitHub Pages
 
@@ -138,24 +142,28 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
    If you are deploying to `https://<USERNAME or GROUP>.gitlab.io/<REPO>/`, for example your repository is at `https://gitlab.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
 
-2. Set `build.outDir` in `vite.config.js` to `public`.
-
-3. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
+2. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
 
    ```yaml
-   image: node:10.22.0
+   image: node:16.5.0
    pages:
+     stage: deploy
      cache:
+       key:
+         files:
+           - package-lock.json
+         prefix: npm
        paths:
          - node_modules/
      script:
        - npm install
        - npm run build
+       - cp -a dist/. public/
      artifacts:
        paths:
          - public
-     only:
-       - master
+     rules:
+       - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
    ```
 
 ## Netlify
@@ -188,9 +196,9 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
    ```js
    {
-    "projects": {
-      "default": "<YOUR_FIREBASE_ID>"
-    }
+     "projects": {
+       "default": "<YOUR_FIREBASE_ID>"
+     }
    }
    ```
 

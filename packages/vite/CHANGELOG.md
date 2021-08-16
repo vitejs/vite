@@ -1,3 +1,52 @@
+# [2.5.0](https://github.com/vitejs/vite/compare/v2.5.0-beta.3...v2.5.0) (2021-08-16)
+
+
+
+# [2.5.0-beta.3](https://github.com/vitejs/vite/compare/v2.5.0-beta.2...v2.5.0-beta.3) (2021-08-14)
+
+
+### Bug Fixes
+
+* add ?inline css query typings ([#4570](https://github.com/vitejs/vite/issues/4570)) ([c8a17a2](https://github.com/vitejs/vite/commit/c8a17a23de4cde5d8d523ebc1b437e5b191446dd))
+* skip optimizer run on non-JS script tags ([#4565](https://github.com/vitejs/vite/issues/4565)) ([270bd3a](https://github.com/vitejs/vite/commit/270bd3a72dbf8dfb839909545659dde1d14e1e38))
+* support dangling comma and throw on circular dependency in tsconfig ([#4590](https://github.com/vitejs/vite/issues/4590)) ([f318416](https://github.com/vitejs/vite/commit/f3184161fde7df614b584520ddef5d7f049a5ff0))
+
+
+
+# [2.5.0-beta.2](https://github.com/vitejs/vite/compare/v2.5.0-beta.1...v2.5.0-beta.2) (2021-08-09)
+
+
+### Bug Fixes
+
+* **client:** vite-error-overlay customElement is registered twice ([#4475](https://github.com/vitejs/vite/issues/4475)) ([28a9612](https://github.com/vitejs/vite/commit/28a9612d65f9004d6a3c698f86f7b22796347768))
+* add missing assets to `packages/vite/client.d.ts` ([#4516](https://github.com/vitejs/vite/issues/4516)) ([420d82d](https://github.com/vitejs/vite/commit/420d82dc31c930fd82c28612e3dd864f35278503))
+* avoid crash when a file imported in SCSS does not exist ([#4505](https://github.com/vitejs/vite/issues/4505)) ([a03e944](https://github.com/vitejs/vite/commit/a03e94419ef4da3b842f0211536afb1501bc0919))
+
+
+### Features
+
+* add asset name ([#3028](https://github.com/vitejs/vite/issues/3028)) ([#3050](https://github.com/vitejs/vite/issues/3050)) ([a055938](https://github.com/vitejs/vite/commit/a05593894bb76ac46897c6833dffed04de71b960))
+* import `.webmanifest` assets as URL ([#4515](https://github.com/vitejs/vite/issues/4515)) ([8c5ac3f](https://github.com/vitejs/vite/commit/8c5ac3f89c69717b3bddedc229b77fabb9239085))
+* log a warning if dependency pre-bundling cannot be run ([#4546](https://github.com/vitejs/vite/issues/4546)) ([120f3b9](https://github.com/vitejs/vite/commit/120f3b97456597998b29413e8eec5e7ad41f2e7a))
+
+
+
+# [2.5.0-beta.1](https://github.com/vitejs/vite/compare/v2.5.0-beta.0...v2.5.0-beta.1) (2021-08-04)
+
+
+### Bug Fixes
+
+* change the preview default mode from `development` to `production` ([#4483](https://github.com/vitejs/vite/issues/4483)) ([77933ba](https://github.com/vitejs/vite/commit/77933ba86e7b15cb32ba80c27ae707db2a598cec))
+* close vite dev server before creating new one ([#4374](https://github.com/vitejs/vite/issues/4374)) ([9e4572e](https://github.com/vitejs/vite/commit/9e4572edf5a21db9ed2d5ffa9c1a54dbea3687b3))
+* register files added by addWatchFile() as current module's dependency ([db4ba56](https://github.com/vitejs/vite/commit/db4ba56e38a2ce7fa4a4ecf52d9eb0f375073560)), closes [#3216](https://github.com/vitejs/vite/issues/3216)
+
+
+### Features
+
+* add `logger.hasErrorLogged(error)` method ([#3957](https://github.com/vitejs/vite/issues/3957)) ([fb406ce](https://github.com/vitejs/vite/commit/fb406ce4c0fe6da3333c9d1c00477b2880d46352))
+
+
+
 # [2.5.0-beta.0](https://github.com/vitejs/vite/compare/v2.4.4...v2.5.0-beta.0) (2021-08-03)
 
 

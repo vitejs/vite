@@ -18,7 +18,7 @@ body:
     id: reproduction
     attributes:
       label: Reproduction
-      description: Please provide a link to a repo that can reproduce the problem you ran into. A reproduction is required unless you are absolutely sure that the issue is obvious and the provided information is enough to understand the problem. If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "need reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
+      description: Please provide a link to a repo that can reproduce the problem you ran into. A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required unless you are absolutely sure that the issue is obvious and the provided information is enough to understand the problem. If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "need reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
       placeholder: Reproduction
     validations:
       required: true
@@ -64,9 +64,11 @@ body:
           required: true
         - label: Read the [docs](https://vitejs.dev/guide).
           required: true
-        - label: Check that there isn't already an issue that reports the same bug to avoid creating a duplicate.
+        - label: Check that there isn't [already an issue](https://github.com/vitejs/vite/issues) that reports the same bug to avoid creating a duplicate.
           required: true
         - label: Make sure this is a Vite issue and not a framework-specific issue. For example, if it's a Vue SFC related bug, it should likely be reported to https://github.com/vuejs/vue-next instead.
           required: true
         - label: Check that this is a concrete bug. For Q&A open a [GitHub Discussion](https://github.com/vitejs/vite/discussions) or join our [Discord Chat Server](https://chat.vitejs.dev/).
+          required: true
+        - label: The provided reproduction is a [minimal reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) of the bug.
           required: true

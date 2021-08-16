@@ -31,6 +31,7 @@ export type { Plugin } from './plugin'
 export type {
   Logger,
   LogOptions,
+  LogErrorOptions,
   LogLevel,
   LogType,
   LoggerOptions
@@ -82,3 +83,4 @@ export type { FSWatcher, WatchOptions } from 'types/chokidar'
 export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
