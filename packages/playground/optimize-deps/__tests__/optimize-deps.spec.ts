@@ -28,6 +28,18 @@ test('dynamic default import from webpacked cjs (clipboard)', async () => {
   expect(await page.textContent('.cjs-dynamic-clipboard')).toBe('ok')
 })
 
+test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', async () => {
+  expect(await page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm')).toBe(
+    'ok'
+  )
+})
+
+test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
+  expect(await page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs')).toBe(
+    'ok'
+  )
+})
+
 test('dedupe', async () => {
   expect(await page.textContent('.dedupe button')).toBe('count is 0')
   await page.click('.dedupe button')
