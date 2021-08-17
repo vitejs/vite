@@ -484,51 +484,50 @@ export function tryOptimizedResolve(
 ): string | undefined {
   const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
-  if (cacheDir && depData) {
-    const isOptimized = depData.optimized[id]
 
-    const getOptimizedUrl = (
-      optimizedEntry: typeof depData.optimized[string]
-    ) => {
-      return (
-        optimizedEntry.file +
-        `?v=${depData.browserHash}${
-          optimizedEntry.needsInterop ? `&es-interop` : ``
-        }`
-      )
-    }
+  if (!cacheDir || !depData) return
 
-    // check if id has been optimized
-    if (isOptimized) {
-      return getOptimizedUrl(isOptimized)
-    }
+  const getOptimizedUrl = (optimizedData: typeof depData.optimized[string]) => {
+    return (
+      optimizedData.file +
+      `?v=${depData.browserHash}${
+        optimizedData.needsInterop ? `&es-interop` : ``
+      }`
+    )
+  }
 
-    // if has importer, further check if id is importing from nested depedency
-    if (importer) {
-      let resolvedSrc: string | undefined
-      for (const [k, v] of Object.entries(depData.optimized)) {
-        // check for scenarios, e.g.
-        //   k  => "my-lib/node_modules/foo"
-        //   id => "foo"
-        // this narrows the need to do a full resolve
-        if (k.endsWith(id)) {
-          // lazily initialize resolvedSrc
-          if (resolvedSrc == null) {
-            try {
-              // this may throw errors if unable to resolve, e.g. aliased id
-              resolvedSrc = resolveFrom(id, path.dirname(importer))
-            } catch {
-              // this is best-effort only so swallow errors
-              break
-            }
-          }
+  // check if id has been optimized
+  const isOptimized = depData.optimized[id]
+  if (isOptimized) {
+    return getOptimizedUrl(isOptimized)
+  }
 
-          // match by src path, return url similar as above
-          if (v.src === resolvedSrc) {
-            return getOptimizedUrl(v)
-          }
-        }
+  if (!importer) return
+
+  // further check if id is imported by nested dependency
+  let resolvedSrc: string | undefined
+
+  for (const [pkgPath, optimizedData] of Object.entries(depData.optimized)) {
+    // check for scenarios, e.g.
+    //   pkgPath  => "my-lib/node_modules/foo"
+    //   id       => "foo"
+    // this narrows the need to do a full resolve
+    if (!pkgPath.endsWith(id)) continue
+
+    // lazily initialize resolvedSrc
+    if (resolvedSrc == null) {
+      try {
+        // this may throw errors if unable to resolve, e.g. aliased id
+        resolvedSrc = resolveFrom(id, path.dirname(importer))
+      } catch {
+        // this is best-effort only so swallow errors
+        break
       }
+    }
+
+    // match by src to correctly identify if id belongs to nested dependency
+    if (optimizedData.src === resolvedSrc) {
+      return getOptimizedUrl(optimizedData)
     }
   }
 }
