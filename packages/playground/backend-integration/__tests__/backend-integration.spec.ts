@@ -32,15 +32,28 @@ if (isBuild) {
     expect(htmlEntry.assets.length).toEqual(1)
   })
 } else {
-  test('preserve the base in CSS HMR', async () => {
-    await untilUpdated(() => getColor('body'), 'black') // sanity check
-    editFile('frontend/entrypoints/global.css', (code) =>
-      code.replace('black', 'red')
-    )
-    await untilUpdated(() => getColor('body'), 'red') // successful HMR
+  describe('CSS HMR', () => {
+    test('preserve the base in CSS HMR', async () => {
+      await untilUpdated(() => getColor('body'), 'black') // sanity check
+      editFile('frontend/entrypoints/global.css', (code) =>
+        code.replace('black', 'red')
+      )
+      await untilUpdated(() => getColor('body'), 'red') // successful HMR
 
-    // Verify that the base (/dev/) was added during the css-update
-    const link = await page.$('link[rel="stylesheet"]')
-    expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
+      // Verify that the base (/dev/) was added during the css-update
+      const link = await page.$('link[rel="stylesheet"]')
+      expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
+    })
+
+    test('CSS dependencies are tracked for HMR', async () => {
+      const el = await page.$('h1')
+      browserLogs.length = 0
+
+      editFile('frontend/entrypoints/main.ts', (code) =>
+        code.replace('text-black', 'text-[rgb(204,0,0)]')
+      )
+      await untilUpdated(() => getColor(el), 'rgb(204, 0, 0)')
+      expect(browserLogs).toContain('[vite] css hot updated: /global.css')
+    })
   })
 }
