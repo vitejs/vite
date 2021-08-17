@@ -120,7 +120,14 @@ export interface ServerOptions {
    */
   strictPort?: boolean
   /**
+   * Whether to serve an `index.html` file as the application entry point.
+   * `true` by default. If `false`, you must provide a middleware to handle.
+   */
+  htmlEntryPoint?: boolean
+  /**
    * Create Vite dev server to be used as a middleware in an existing server
+   * `false` by default. `true` and `'ssr'` are equivalent.
+   * `html` is a shortcut for `true` and `htmlEntryPoint: true`
    */
   middlewareMode?: boolean | 'html' | 'ssr'
   /**
@@ -321,6 +328,10 @@ export async function createServer(
   if (middlewareMode === true) {
     middlewareMode = 'ssr'
   }
+  const htmlEntryPoint =
+    typeof serverConfig.htmlEntryPoint === 'undefined'
+      ? !middlewareMode || middlewareMode === 'html'
+      : serverConfig.htmlEntryPoint
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
@@ -514,7 +525,7 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, config))
 
   // spa fallback
-  if (!middlewareMode || middlewareMode === 'html') {
+  if (htmlEntryPoint) {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
@@ -523,7 +534,7 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  if (!middlewareMode || middlewareMode === 'html') {
+  if (htmlEntryPoint) {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
     // handle 404s
