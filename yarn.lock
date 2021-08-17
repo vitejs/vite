@@ -5429,9 +5429,8 @@ neo-async@^2.6.0:
   version "0.0.0"
   uid ""
 
-"nested-include@link:./packages/playground/optimize-deps/nested-exclude/nested-include":
-  version "0.0.0"
-  uid ""
+"nested-include@file:./packages/playground/optimize-deps/nested-exclude/nested-include":
+  version "1.0.0"
 
 nice-try@^1.0.4:
   version "1.0.5"
