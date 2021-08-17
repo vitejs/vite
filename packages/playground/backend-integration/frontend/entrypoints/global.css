@@ -1,4 +1,5 @@
 @import '~/styles/background.css';
+@import '~/styles/tailwind.css';
 @import '../../references.css';
 
 html,
