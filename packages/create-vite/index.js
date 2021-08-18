@@ -3,8 +3,8 @@
 // @ts-check
 const fs = require('fs')
 const path = require('path')
-// For solving the problem failed to create a project with number-only argument,
-// the second argument of "minimist" is added to convert it to string type.
+// Avoids autoconversion to number of the project name by defining that the args 
+// non associated with an option ( _ ) needs to be parsed as a string. See #4606
 const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
 // eslint-disable-next-line node/no-restricted-require
 const prompts = require('prompts')
