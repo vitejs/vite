@@ -3,8 +3,8 @@ import InlineWorker from './worker-inline?worker&inline'
 import { Worker } from 'worker_threads'
 
 export const run = async (message: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const worker = new MyWorker() as Worker
+  return new Promise((resolve, _) => {
+    const worker = new MyWorker() as unknown as Worker
     worker.postMessage(message)
     worker.on('message', (msg) => {
       worker.terminate()
@@ -14,8 +14,8 @@ export const run = async (message: string): Promise<string> => {
 }
 
 export const inlineWorker = async (message: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const worker = new InlineWorker() as Worker
+  return new Promise((resolve, _) => {
+    const worker = new InlineWorker() as unknown as Worker
     worker.postMessage(message)
     worker.on('message', (msg) => {
       worker.terminate()
