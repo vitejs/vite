@@ -898,11 +898,10 @@ async function doUrlReplace(
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  const target = config.build.target
   const { code, warnings } = await transform(css, {
     loader: 'css',
     minify: true,
-    target: target || undefined
+    target: config.build.target || undefined
   })
   if (warnings.length) {
     const msgs = await formatMessages(warnings, { kind: 'warning' })
