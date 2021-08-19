@@ -900,7 +900,8 @@ async function doUrlReplace(
 async function minifyCSS(css: string, config: ResolvedConfig) {
   const { code, warnings } = await transform(css, {
     loader: 'css',
-    minify: true
+    minify: true,
+    target: config.build.target || undefined
   })
   if (warnings.length) {
     const msgs = await formatMessages(warnings, { kind: 'warning' })
