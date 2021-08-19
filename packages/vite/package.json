@@ -45,7 +45,7 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path .",
     "release": "node ../../scripts/release.js"
   },
-  "//": "READ .github/contributing.md to understand what to put under deps vs. devDeps!",
+  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.12.17",
     "postcss": "^8.3.6",
