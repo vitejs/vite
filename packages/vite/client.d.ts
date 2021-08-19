@@ -164,7 +164,6 @@ declare module '*.webmanifest' {
 
 // web worker
 declare module '*?worker' {
-  import { Worker as NodeWorker } from 'worker_threads'
   const workerConstructor: {
     new (): Worker
   }
@@ -172,7 +171,6 @@ declare module '*?worker' {
 }
 
 declare module '*?worker&inline' {
-  import { Worker as NodeWorker } from 'worker_threads'
   const workerConstructor: {
     new (): Worker
   }
