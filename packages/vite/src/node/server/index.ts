@@ -500,8 +500,13 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, config))
 
-  // spa fallback
+  // run post config hooks
+  // This is applied before the html middleware so that user middleware can
+  // serve custom content instead of index.html.
+  postHooks.forEach((fn) => fn && fn())
+
   if (!middlewareMode || middlewareMode === 'html') {
+    // spa fallback
     middlewares.use(
       history({
         logger: createDebugger('vite:spa-fallback'),
@@ -521,16 +526,10 @@ export async function createServer(
         ]
       })
     )
-  }
 
-  // run post config hooks
-  // This is applied before the html middleware so that user middleware can
-  // serve custom content instead of index.html.
-  postHooks.forEach((fn) => fn && fn())
-
-  if (!middlewareMode || middlewareMode === 'html') {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
+
     // handle 404s
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
     middlewares.use(function vite404Middleware(_, res) {
