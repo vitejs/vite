@@ -51,6 +51,14 @@ export interface CSSOptions {
    * https://github.com/css-modules/postcss-modules
    */
   modules?: CSSModulesOptions | false
+  isModuleFile?: (arg: {
+    id: string
+    code: string
+    config: ResolvedConfig
+    urlReplacer: CssUrlReplacer
+    atImportResolvers: CSSAtImportResolvers
+    server?: ViteDevServer
+  }) => boolean
   preprocessorOptions?: Record<string, any>
   postcss?:
     | string
@@ -572,8 +580,23 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  const { modules: modulesOptions, preprocessorOptions } = config.css || {}
-  const isModule = modulesOptions !== false && cssModuleRE.test(id)
+  const {
+    modules: modulesOptions,
+    preprocessorOptions,
+    isModuleFile
+  } = config.css || {}
+  const isModule =
+    modulesOptions !== false &&
+    (isModuleFile
+      ? isModuleFile({
+          id,
+          code,
+          config,
+          urlReplacer,
+          atImportResolvers,
+          server
+        })
+      : cssModuleRE.test(id))
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
