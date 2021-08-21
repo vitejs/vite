@@ -172,7 +172,7 @@ export interface UserConfig {
    */
   envDir?: string
   /**
-   * Env variables starts envVariblePrefix exposed to your client source code via import.meta.env.
+   * Env variables starts envVariblePrefix will be exposed to your client source code via import.meta.env.
    * @default 'VITE_'
    */
   envVariblePrefix?: string | string[]
