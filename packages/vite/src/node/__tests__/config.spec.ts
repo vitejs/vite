@@ -151,12 +151,14 @@ describe('resolveEnvVariblePrefix', () => {
     const config: UserConfig = {}
     expect(resolveEnvVariblePrefix(config)).toMatchObject(['VITE_'])
   })
+
   test(`throw error if envVariblePrefix contains ''`, () => {
     let config: UserConfig = { envVariblePrefix: '' }
     expect(() => resolveEnvVariblePrefix(config)).toThrow()
     config = { envVariblePrefix: ['', 'CUSTOM_'] }
     expect(() => resolveEnvVariblePrefix(config)).toThrow()
   })
+
   test('should work correctly for valid envVariblePrefix value', () => {
     const config: UserConfig = { envVariblePrefix: [' ', 'CUSTOM_'] }
     expect(resolveEnvVariblePrefix(config)).toMatchObject([' ', 'CUSTOM_'])
