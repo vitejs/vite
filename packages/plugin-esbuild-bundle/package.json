@@ -1,0 +1,19 @@
+{
+  "name": "vite-esbuild-bundle-plugin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "vite": "^2.1.5",
+    "esbuild": "0.12.22",
+    "@types/node": "~15.12.4"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
