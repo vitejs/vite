@@ -46,6 +46,28 @@ import { transform, formatMessages } from 'esbuild'
 
 // const debug = createDebugger('vite:css')
 
+export interface PostcssImportOptions {
+  filter?: (path: string) => boolean | undefined
+  root?: string | undefined
+  path?: string | string[] | undefined
+  plugins?: Postcss.AcceptedPlugin[] | undefined
+  resolve?:
+    | ((
+        id: string,
+        basedir: string,
+        importOptions?: PostcssImportOptions
+      ) => string | string[] | Promise<string | string[]>)
+    | undefined
+  load?:
+    | ((
+        filename: string,
+        importOptions: PostcssImportOptions
+      ) => string | Promise<string>)
+    | undefined
+  skipDuplicates?: boolean | undefined
+  addModulesDirectories?: string[] | undefined
+}
+
 export interface CSSOptions {
   /**
    * https://github.com/css-modules/postcss-modules
@@ -57,6 +79,7 @@ export interface CSSOptions {
     | (Postcss.ProcessOptions & {
         plugins?: Postcss.Plugin[]
       })
+  postcssImportOptions?: PostcssImportOptions
 }
 
 export interface CSSModulesOptions {
@@ -650,20 +673,35 @@ async function compileCSS(
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
+  const hasImportPlugin = postcssPlugins.some(
+    (plugin) => plugin.postcssPlugin === 'postcss-import'
+  )
+
+  if (hasImportPlugin) {
+    config.logger.warn(
+      chalk.yellow(
+        `[vite:css] postcss plugins contains 'postcss-import'. Use postcssImportOptions instead'`
+      )
+    )
+  }
+
   if (needInlineImport) {
-    postcssPlugins.unshift(
-      (await import('postcss-import')).default({
-        async resolve(id, basedir) {
-          const resolved = await atImportResolvers.css(
-            id,
-            path.join(basedir, '*')
-          )
-          if (resolved) {
-            return path.resolve(resolved)
-          }
-          return id
+    const defaultImportConfig: PostcssImportOptions = {
+      async resolve(id, basedir) {
+        const resolved = await atImportResolvers.css(
+          id,
+          path.join(basedir, '*')
+        )
+        if (resolved) {
+          return path.resolve(resolved)
         }
-      })
+        return id
+      }
+    }
+    postcssPlugins.unshift(
+      (await import('postcss-import')).default(
+        Object.assign(defaultImportConfig, config.css?.postcssImportOptions)
+      )
     )
   }
   postcssPlugins.push(
