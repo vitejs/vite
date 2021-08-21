@@ -1016,16 +1016,11 @@ export function loadEnv(
 export function resolveEnvVariblePrefix({
   envVariblePrefix = 'VITE_'
 }: UserConfig): string[] {
-  if (
-    typeof envVariblePrefix === 'string' &&
-    envVariblePrefix.trim().length === 0
-  ) {
-    // TODO: warn or error?
-    envVariblePrefix = 'VITE_'
+  envVariblePrefix = arraify(envVariblePrefix)
+  if (envVariblePrefix.some((prefix) => prefix === '')) {
+    throw new Error(
+      `Unexpected envVariblePrefix '', which could lead unexpected exposure of sensitive information.`
+    )
   }
-  envVariblePrefix = arraify(envVariblePrefix).filter(
-    (prefix) => prefix.trim() !== ''
-  )
-
   return envVariblePrefix
 }
