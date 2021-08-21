@@ -7,6 +7,7 @@ export interface VueQuery {
   index?: number
   lang?: string
   raw?: boolean
+  from?: string
 }
 
 export function parseVueRequest(id: string) {

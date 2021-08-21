@@ -148,7 +148,7 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
         return await transformMain(code, filename, options, this)
       }
 
-      const descriptor = getDescriptor(filename)!
+      const descriptor = getDescriptor(query.from || filename)!
       // sub block request
       if (query.type === 'template') {
         return compileSFCTemplate(
