@@ -172,7 +172,7 @@ export interface UserConfig {
    */
   envDir?: string
   /**
-   * Env variables starts envVariblePrefix will be exposed to your client source code via import.meta.env.
+   * Env variables starts `envVariblePrefix` will be exposed to your client source code via import.meta.env.
    * @default 'VITE_'
    */
   envVariblePrefix?: string | string[]
@@ -1019,7 +1019,7 @@ export function resolveEnvVariblePrefix({
   envVariblePrefix = arraify(envVariblePrefix)
   if (envVariblePrefix.some((prefix) => prefix === '')) {
     throw new Error(
-      `Unexpected envVariblePrefix '', which could lead unexpected exposure of sensitive information.`
+      `envVariblePrefix option contains value '', which could lead unexpected exposure of sensitive information.`
     )
   }
   return envVariblePrefix

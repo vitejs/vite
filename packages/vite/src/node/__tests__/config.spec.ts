@@ -147,7 +147,7 @@ describe('resolveConfig', () => {
 })
 
 describe('resolveEnvVariblePrefix', () => {
-  test(`use 'VITE_' as default value for undefined`, () => {
+  test(`use 'VITE_' as default value`, () => {
     const config: UserConfig = {}
     expect(resolveEnvVariblePrefix(config)).toMatchObject(['VITE_'])
   })
