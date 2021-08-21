@@ -1,4 +1,4 @@
-import { TemplateCompileOptions } from '@vue/component-compiler-utils/lib/compileTemplate'
+import { TemplateCompileOptions } from '@vue/component-compiler-utils'
 import { normalizeComponentCode } from './utils/componentNormalizer'
 import { vueHotReloadCode } from './utils/vueHotReload'
 import fs from 'fs'
