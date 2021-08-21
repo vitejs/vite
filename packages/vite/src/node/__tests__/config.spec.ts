@@ -1,5 +1,10 @@
 import { InlineConfig } from '..'
-import { mergeConfig, resolveConfig, UserConfigExport } from '../config'
+import {
+  mergeConfig,
+  resolveConfig,
+  UserConfigExport,
+  resolveEnvVariblePrefix
+} from '../config'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -137,5 +142,22 @@ describe('resolveConfig', () => {
         }
       }
     })
+  })
+})
+
+describe('resolveEnvVariblePrefix', () => {
+  test(`use 'VITE_' as default value for undefined`, () => {
+    const config: UserConfigExport = {}
+    expect(resolveEnvVariblePrefix(config)).toMatchObject(['VITE_'])
+  })
+  test(`use 'VITE_' as fallback value for plain empty prefix `, () => {
+    let config: UserConfigExport = { envVariblePrefix: '' }
+    expect(resolveEnvVariblePrefix(config)).toMatchObject(['VITE_'])
+    config = { envVariblePrefix: ' ' }
+    expect(resolveEnvVariblePrefix(config)).toMatchObject(['VITE_'])
+  })
+  test('ignored empty value for arraify prefix', () => {
+    const config: UserConfigExport = { envVariblePrefix: ['', ' ', 'CUSTOM_'] }
+    expect(resolveEnvVariblePrefix(config)).toMatchObject(['CUSTOM_'])
   })
 })
