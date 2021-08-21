@@ -15,7 +15,7 @@ import {
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { ImportSpecifier, init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
-import { transform } from 'esbuild'
+import { transformWithEsbuild } from '../plugins/esbuild'
 
 const debug = createDebugger('vite:deps')
 
@@ -244,8 +244,8 @@ export async function optimizeDeps(
   await init
   for (const id in deps) {
     const flatId = flattenId(id)
-    flatIdDeps[flatId] = deps[id]
-    const entryContent = fs.readFileSync(deps[id], 'utf-8')
+    const filePath = (flatIdDeps[flatId] = deps[id])
+    const entryContent = fs.readFileSync(filePath, 'utf-8')
     let exportsData: ExportsData
     try {
       exportsData = parse(entryContent) as ExportsData
@@ -253,7 +253,7 @@ export async function optimizeDeps(
       debug(
         `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
       )
-      const transformed = await transform(entryContent, {
+      const transformed = await transformWithEsbuild(entryContent, filePath, {
         loader: 'jsx'
       })
       // Ensure that optimization won't fail.
