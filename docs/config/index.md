@@ -338,7 +338,7 @@ export default defineConfig(async ({ command, mode }) => {
 - **Type:** `string | string[]`
 - **Default:** `VITE_`
 
-  Env variables starts `envVariblePrefix` will be exposed to your client source code via import.meta.env.
+  Env variables starts with `envVariblePrefix` will be exposed to your client source code via import.meta.env.
 
 :::warning SECURITY NOTES
 
