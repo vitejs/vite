@@ -12,7 +12,6 @@ import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
 // injected by the hmr plugin when served
-declare const __ROOT__: string
 declare const __BASE__: string
 declare const __HMR_PROTOCOL__: string
 declare const __HMR_HOSTNAME__: string
