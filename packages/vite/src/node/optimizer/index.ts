@@ -238,7 +238,7 @@ export async function optimizeDeps(
   const idToExports: Record<string, ExportsData> = {}
   const flatIdToExports: Record<string, ExportsData> = {}
 
-  const { plugins = [], ...esbuildOptions } =
+  let { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
   await init
@@ -256,9 +256,15 @@ export async function optimizeDeps(
       const transformed = await transformWithEsbuild(entryContent, filePath, {
         loader: 'jsx'
       })
-      // Ensure that optimization won't fail.
-      esbuildOptions.loader ??= {}
-      esbuildOptions.loader['.js'] ??= 'jsx'
+      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+      // This is useful for packages such as Gatsby.
+      esbuildOptions = {
+        ...esbuildOptions,
+        loader: {
+          '.js': 'jsx',
+          ...esbuildOptions.loader
+        }
+      }
       exportsData = parse(transformed.code) as ExportsData
     }
     for (const { ss, se } of exportsData[0]) {
