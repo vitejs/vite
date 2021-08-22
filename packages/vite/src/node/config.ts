@@ -172,10 +172,10 @@ export interface UserConfig {
    */
   envDir?: string
   /**
-   * Env variables starts with `envVariblePrefix` will be exposed to your client source code via import.meta.env.
+   * Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
    * @default 'VITE_'
    */
-  envVariblePrefix?: string | string[]
+  envPrefix?: string | string[]
   /**
    * Import aliases
    * @deprecated use `resolve.alias` instead
@@ -336,7 +336,7 @@ export async function resolveConfig(
     : resolvedRoot
   const userEnv =
     inlineConfig.envFile !== false &&
-    loadEnv(mode, envDir, resolveEnvVariblePrefix(config))
+    loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
@@ -1013,14 +1013,14 @@ export function loadEnv(
   return env
 }
 
-export function resolveEnvVariblePrefix({
-  envVariblePrefix = 'VITE_'
+export function resolveEnvPrefix({
+  envPrefix = 'VITE_'
 }: UserConfig): string[] {
-  envVariblePrefix = arraify(envVariblePrefix)
-  if (envVariblePrefix.some((prefix) => prefix === '')) {
+  envPrefix = arraify(envPrefix)
+  if (envPrefix.some((prefix) => prefix === '')) {
     throw new Error(
-      `envVariblePrefix option contains value '', which could lead unexpected exposure of sensitive information.`
+      `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`
     )
   }
-  return envVariblePrefix
+  return envPrefix
 }

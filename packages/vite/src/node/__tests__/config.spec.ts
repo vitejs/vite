@@ -3,7 +3,7 @@ import {
   mergeConfig,
   resolveConfig,
   UserConfigExport,
-  resolveEnvVariblePrefix,
+  resolveEnvPrefix,
   UserConfig
 } from '../config'
 
@@ -146,21 +146,21 @@ describe('resolveConfig', () => {
   })
 })
 
-describe('resolveEnvVariblePrefix', () => {
+describe('resolveEnvPrefix', () => {
   test(`use 'VITE_' as default value`, () => {
     const config: UserConfig = {}
-    expect(resolveEnvVariblePrefix(config)).toMatchObject(['VITE_'])
+    expect(resolveEnvPrefix(config)).toMatchObject(['VITE_'])
   })
 
-  test(`throw error if envVariblePrefix contains ''`, () => {
-    let config: UserConfig = { envVariblePrefix: '' }
-    expect(() => resolveEnvVariblePrefix(config)).toThrow()
-    config = { envVariblePrefix: ['', 'CUSTOM_'] }
-    expect(() => resolveEnvVariblePrefix(config)).toThrow()
+  test(`throw error if envPrefix contains ''`, () => {
+    let config: UserConfig = { envPrefix: '' }
+    expect(() => resolveEnvPrefix(config)).toThrow()
+    config = { envPrefix: ['', 'CUSTOM_'] }
+    expect(() => resolveEnvPrefix(config)).toThrow()
   })
 
-  test('should work correctly for valid envVariblePrefix value', () => {
-    const config: UserConfig = { envVariblePrefix: [' ', 'CUSTOM_'] }
-    expect(resolveEnvVariblePrefix(config)).toMatchObject([' ', 'CUSTOM_'])
+  test('should work correctly for valid envPrefix value', () => {
+    const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
+    expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
   })
 })
