@@ -955,7 +955,7 @@ async function loadConfigFromBundledFile(
 export function loadEnv(
   mode: string,
   envDir: string,
-  prefixes: string[]
+  prefixes: string | string[] = 'VITE_'
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
@@ -963,6 +963,7 @@ export function loadEnv(
         `the .local postfix for .env files.`
     )
   }
+  prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
