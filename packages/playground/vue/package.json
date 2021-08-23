@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "lodash-es": "^4.17.20",
-    "vue": "^3.0.8"
+    "vue": "^3.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^1.0.0",
-    "@vue/compiler-sfc": "^3.0.8",
+    "@vue/compiler-sfc": "^3.2.0",
     "js-yaml": "^3.14.1",
     "less": "^3.13.0",
     "pug": "^3.0.0",
