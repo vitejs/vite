@@ -14,7 +14,9 @@ import {
   SFCBlock,
   SFCScriptCompileOptions,
   SFCStyleCompileOptions,
-  SFCTemplateCompileOptions
+  SFCTemplateCompileOptions,
+  shouldTransformRef,
+  transformRef
 } from '@vue/compiler-sfc'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor } from './utils/descriptorCache'
@@ -55,6 +57,17 @@ export interface Options {
   customElement?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
+   * Enable Vue ref transform (experimental).
+   * **requires Vue \>= 3.2.5**
+   * - `true`: transform will be enabled for all vue,js(x),ts(x) files
+   * - `string | RegExp`: apply to vue + only matched files
+   * - `false`: disable in all cases
+   *
+   * @default false
+   */
+  refTransform?: boolean | string | RegExp | (string | RegExp)[]
+
+  /**
    * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
    */
   ssr?: boolean
@@ -66,21 +79,32 @@ export interface ResolvedOptions extends Options {
 }
 
 export default function vuePlugin(rawOptions: Options = {}): Plugin {
+  const {
+    include = /\.vue$/,
+    exclude,
+    customElement = /\.ce\.vue$/,
+    refTransform = false
+  } = rawOptions
+
+  const filter = createFilter(include, exclude)
+
+  const customElementFilter =
+    typeof customElement === 'boolean'
+      ? () => customElement
+      : createFilter(customElement)
+
+  const refTransformFilter =
+    refTransform === false
+      ? () => false
+      : refTransform === true
+      ? createFilter(/\.(j|t)sx?$/)
+      : createFilter(refTransform)
+
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
     ...rawOptions,
     root: process.cwd()
   }
-
-  const filter = createFilter(
-    rawOptions.include || /\.vue$/,
-    rawOptions.exclude
-  )
-
-  const customElementFilter =
-    typeof rawOptions.customElement === 'boolean'
-      ? () => rawOptions.customElement as boolean
-      : createFilter(rawOptions.customElement || /\.ce\.vue$/)
 
   return {
     name: 'vite:vue',
@@ -154,7 +178,20 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     transform(code, id, ssr = !!options.ssr) {
       const { filename, query } = parseVueRequest(id)
-      if ((!query.vue && !filter(filename)) || query.raw) {
+      if (query.raw) {
+        return
+      }
+      if (!filter(filename) && !query.vue) {
+        if (
+          refTransformFilter(filename) &&
+          !query.vue &&
+          shouldTransformRef(code)
+        ) {
+          return transformRef(code, {
+            filename,
+            sourceMap: true
+          })
+        }
         return
       }
 
