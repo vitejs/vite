@@ -29,12 +29,12 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue#readme",
   "peerDependencies": {
-    "@vue/compiler-sfc": "^3.0.8"
+    "@vue/compiler-sfc": "^3.2.0"
   },
   "devDependencies": {
     "@rollup/pluginutils": "^4.1.1",
     "@types/hash-sum": "^1.0.0",
-    "@vue/compiler-sfc": "^3.0.8",
+    "@vue/compiler-sfc": "^3.2.0",
     "debug": "^4.3.2",
     "hash-sum": "^2.0.0",
     "rollup": "^2.38.5",
