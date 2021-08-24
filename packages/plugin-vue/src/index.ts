@@ -100,9 +100,16 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       ? createFilter(/\.(j|t)sx?$/)
       : createFilter(refTransform)
 
+  // compat for older verisons
+  const canUseRefTransform = typeof shouldTransformRef === 'function'
+
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
     ...rawOptions,
+    include,
+    exclude,
+    customElement,
+    refTransform,
     root: process.cwd()
   }
 
@@ -182,15 +189,15 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         return
       }
       if (!filter(filename) && !query.vue) {
-        if (
-          refTransformFilter(filename) &&
-          !query.vue &&
-          shouldTransformRef(code)
-        ) {
-          return transformRef(code, {
-            filename,
-            sourceMap: true
-          })
+        if (!query.vue && refTransformFilter(filename)) {
+          if (!canUseRefTransform) {
+            this.warn('refTransform requires @vue/compiler-sfc@^3.2.5.')
+          } else if (shouldTransformRef(code)) {
+            return transformRef(code, {
+              filename,
+              sourceMap: true
+            })
+          }
         }
         return
       }
