@@ -9,6 +9,6 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.0.8"
+    "vue": "^3.2.6"
   }
 }
