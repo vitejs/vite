@@ -40,12 +40,17 @@ try {
 
 const ssrExtensions = ['.js', '.json', '.node']
 
-export function resolveFrom(id: string, basedir: string, ssr = false): string {
+export function resolveFrom(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false,
+  ssr = false
+): string {
   return resolve.sync(id, {
     basedir,
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
-    preserveSymlinks: isRunningWithYarnPnp || false
+    preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false
   })
 }
 

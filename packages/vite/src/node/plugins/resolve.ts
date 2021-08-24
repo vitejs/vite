@@ -44,6 +44,7 @@ export interface ResolveOptions {
   conditions?: string[]
   extensions?: string[]
   dedupe?: string[]
+  preserveSymlinks?: boolean
 }
 
 export interface InternalResolveOptions extends ResolveOptions {
@@ -405,7 +406,11 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  const pkg = resolvePackageData(pkgId, basedir)
+  const pkg = resolvePackageData(
+    pkgId,
+    basedir,
+    !!server?.config.resolve.preserveSymlinks
+  )
 
   if (!pkg) {
     return
@@ -504,14 +509,15 @@ const packageCache = new Map<string, PackageData>()
 
 export function resolvePackageData(
   id: string,
-  basedir: string
+  basedir: string,
+  preserveSymlinks = false
 ): PackageData | undefined {
   const cacheKey = id + basedir
   if (packageCache.has(cacheKey)) {
     return packageCache.get(cacheKey)
   }
   try {
-    const pkgPath = resolveFrom(`${id}/package.json`, basedir)
+    const pkgPath = resolveFrom(`${id}/package.json`, basedir, preserveSymlinks)
     return loadPackageData(pkgPath, cacheKey)
   } catch (e) {
     isDebug && debug(`${chalk.red(`[failed loading package.json]`)} ${id}`)
