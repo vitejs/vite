@@ -9,11 +9,11 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.5",
+    "vue": "^3.2.6",
     "vue-router": "^4.0.6"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^1.0.0",
-    "@vue/compiler-sfc": "^3.2.5"
+    "@vue/compiler-sfc": "^3.2.6"
   }
 }
