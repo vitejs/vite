@@ -203,3 +203,11 @@ describe('async component', () => {
     expect(await page.textContent('.async-component')).toMatch('ab == ab')
   })
 })
+
+describe('ref transform', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.ref-transform')).toMatch('0')
+    await page.click('.ref-transform')
+    expect(await page.textContent('.ref-transform')).toMatch('1')
+  })
+})
