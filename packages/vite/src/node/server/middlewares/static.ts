@@ -50,7 +50,7 @@ export function serveStaticMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
-    const url = req.url!
+    let url = req.url!
 
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
@@ -58,6 +58,8 @@ export function serveStaticMiddleware(
     if (path.extname(cleanUrl(url)) === '.html') {
       return next()
     }
+
+    url = decodeURI(url)
 
     // apply aliases to static requests as well
     let redirected: string | undefined
