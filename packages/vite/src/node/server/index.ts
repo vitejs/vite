@@ -487,7 +487,7 @@ export async function createServer(
     res.end('pong')
   })
 
-  //decode request url
+  // decode request url
   middlewares.use(decodeURIMiddleware())
 
   // serve static files under /public
