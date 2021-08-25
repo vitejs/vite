@@ -422,8 +422,6 @@ async function doBuild(
   }
 
   try {
-    const pkgName = libOptions && getPkgName(config.root)
-
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       return {
         dir: outDir,
@@ -434,7 +432,7 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
+          ? resolveLibFilename(libOptions, output.format || 'es', config.root)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
@@ -633,11 +631,11 @@ function staticImportedByEntry(
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
-  pkgName: string
+  root: string
 ): string {
   return typeof libOptions.fileName === 'function'
     ? libOptions.fileName(format)
-    : `${libOptions.fileName || pkgName}.${format}.js`
+    : `${libOptions.fileName || getPkgName(root)}.${format}.js`
 }
 
 function resolveBuildOutputs(
