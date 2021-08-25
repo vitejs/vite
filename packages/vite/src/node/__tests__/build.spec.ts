@@ -8,7 +8,7 @@ describe('resolveLibFilename', () => {
         entry: 'mylib.js'
       },
       'es',
-      'mylib'
+      __dirname
     )
 
     expect(filename).toBe('custom-filename-function.es.js')
@@ -16,16 +16,25 @@ describe('resolveLibFilename', () => {
 
   test('custom filename string', () => {
     const filename = resolveLibFilename(
-      { fileName: 'custom-filename', entry: 'mylib.js' },
+      {
+        fileName: 'custom-filename',
+        entry: 'mylib.js'
+      },
       'es',
-      'mylib'
+      __dirname
     )
 
     expect(filename).toBe('custom-filename.es.js')
   })
 
   test('package name as filename', () => {
-    const filename = resolveLibFilename({ entry: 'mylib.js' }, 'es', 'mylib')
+    const filename = resolveLibFilename(
+      {
+        entry: 'mylib.js'
+      },
+      'es',
+      __dirname
+    )
 
     expect(filename).toBe('mylib.es.js')
   })
