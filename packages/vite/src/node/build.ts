@@ -576,9 +576,7 @@ function prepareOutDir(
 function getPkgName(root: string) {
   const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
 
-  if (!name) throw new Error('no name found in package.json')
-
-  return name.startsWith('@') ? name.split('/')[1] : name
+  return name && name.startsWith('@') ? name.split('/')[1] : name
 }
 
 function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
@@ -635,9 +633,19 @@ export function resolveLibFilename(
   format: ModuleFormat,
   pkgName: string
 ): string {
-  return typeof libOptions.fileName === 'function'
-    ? libOptions.fileName(format)
-    : `${libOptions.fileName || pkgName}.${format}.js`
+  if (typeof libOptions.fileName === 'function') {
+    return libOptions.fileName(format)
+  }
+
+  const name = libOptions.fileName || pkgName
+
+  if (!name) {
+    throw new Error(
+      'Option "build.lib.fileName" is required when no name found in package.json'
+    )
+  }
+
+  return `${name}.${format}.js`
 }
 
 function resolveBuildOutputs(
