@@ -1,4 +1,4 @@
-import { Connect } from 'types/connect'
+import type { Connect } from 'types/connect'
 
 export function decodeURIMiddleware(): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
