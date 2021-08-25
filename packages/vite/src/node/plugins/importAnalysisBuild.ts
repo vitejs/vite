@@ -44,7 +44,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
-      dep = `${base}${dep}`
+      const baseNoTrailingSlash = base.endsWith('/') ? base.slice(0, -1) : base
+      dep = baseNoTrailingSlash + dep
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
