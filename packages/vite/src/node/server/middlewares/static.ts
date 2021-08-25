@@ -34,11 +34,12 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
-    req.url = decodeURI(req.url!)
     // skip import request
     if (isImportRequest(req.url!)) {
       return next()
     }
+    // reset sirv decoded state
+    req._decoded = false
     serve(req, res, next)
   }
 }
@@ -51,7 +52,7 @@ export function serveStaticMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
-    const url = (req.url = decodeURI(req.url!))
+    const url = decodeURI(req.url!)
 
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
@@ -78,6 +79,8 @@ export function serveStaticMiddleware(
       req.url = redirected
     }
 
+    // reset sirv decoded state
+    req._decoded = false
     serve(req, res, next)
   }
 }
@@ -100,7 +103,9 @@ export function serveRawFsMiddleware(
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
-      req.url = decodeURI(url)
+      req.url = url
+      // reset sirv decoded state
+      req._decoded = false
       serveFromRoot(req, res, next)
     } else {
       next()
