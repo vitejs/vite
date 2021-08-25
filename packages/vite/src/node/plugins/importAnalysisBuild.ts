@@ -44,8 +44,10 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
-      const safeBase =
-        base.endsWith('/') && dep.startsWith('/') ? base.slice(0, -1) : base
+      const hasDoubleSlash = base.endsWith('/') && dep.startsWith('/')
+      // @ts-ignore
+      const safeBase = hasDoubleSlash ? base.slice(0, -1) : base
+      // @ts-ignore
       dep = safeBase + dep
       // @ts-ignore
       if (dep in seen) return
