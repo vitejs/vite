@@ -163,7 +163,11 @@ function esbuildScanPlugin(
   }
 
   const include = config.optimizeDeps?.include
-  const exclude = config.optimizeDeps?.exclude
+  const exclude = [
+    ...(config.optimizeDeps?.exclude || []),
+    '@vite/client',
+    '@vite/env'
+  ]
 
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
