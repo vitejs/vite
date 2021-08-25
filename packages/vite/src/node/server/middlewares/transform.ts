@@ -114,13 +114,17 @@ export function transformMiddleware(
         }
       }
 
-      // warn explicit /public/ paths
-      if (url.startsWith('/public/')) {
+      const publicPath =
+        normalizePath(server.config.publicDir).slice(
+          server.config.root.length
+        ) + '/'
+      // warn explicit public paths
+      if (url.startsWith(publicPath)) {
         logger.warn(
           chalk.yellow(
             `files in the public directory are served at the root path.\n` +
               `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
-                url.replace(/^\/public\//, '/')
+                url.replace(publicPath, '/')
               )}.`
           )
         )
