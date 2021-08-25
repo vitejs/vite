@@ -530,7 +530,7 @@ createServer()
 
 ### build.target
 
-- **Type:** `string`
+- **Type:** `string | string[]`
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
@@ -646,12 +646,6 @@ createServer()
 - **Type:** `TerserOptions`
 
   Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
-
-### build.cleanCssOptions
-
-- **Type:** `CleanCSS.Options`
-
-  Constructor options to pass on to [clean-css](https://github.com/jakubpawlowicz/clean-css#constructor-options).
 
 ### build.write
 
