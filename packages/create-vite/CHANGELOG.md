@@ -1,3 +1,17 @@
+# [2.6.0](https://github.com/vitejs/vite/compare/create-vite@2.5.4...create-vite@2.6.0) (2021-08-25)
+
+
+### Bug Fixes
+
+* **create-vite:** project name with only numbers as an argument ([#4606](https://github.com/vitejs/vite/issues/4606)) ([085a621](https://github.com/vitejs/vite/commit/085a6219ceb89052ac0a269e7ccda081e534a800))
+
+
+### Features
+
+* **create-vite:** update vue templates ([fe9ebe7](https://github.com/vitejs/vite/commit/fe9ebe7bb227979e9420ba295b892a716daaaf69))
+
+
+
 ## [2.5.4](https://github.com/vitejs/vite/compare/create-vite@2.5.3...create-vite@2.5.4) (2021-08-03)
 
 
