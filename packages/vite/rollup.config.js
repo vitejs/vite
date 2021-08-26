@@ -275,6 +275,20 @@ function licensePlugin() {
       const coreLicense = fs.readFileSync(
         path.resolve(__dirname, '../../LICENSE')
       )
+      function sortLiscense(licenses) {
+        let withParenthesis = []
+        let noParenthesis = []
+        licenses.forEach((license) => {
+          if (/^\(/.test(license)) {
+            withParenthesis.push(license)
+          } else {
+            noParenthesis.push(license)
+          }
+        })
+        withParenthesis = withParenthesis.sort()
+        noParenthesis = noParenthesis.sort()
+        return [...noParenthesis, ...withParenthesis]
+      }
       const licenses = new Set()
       const dependencyLicenseTexts = dependencies
         .sort(({ name: nameA }, { name: nameB }) =>
@@ -346,11 +360,7 @@ function licensePlugin() {
         coreLicense +
         `\n# Licenses of bundled dependencies\n` +
         `The published Vite artifact additionally contains code with the following licenses:\n` +
-        `${Array.from(licenses)
-          .sort((a, b) => {
-            return a.startsWith('(') ? 1 : b.startsWith('(') ? -1 : b - a
-          })
-          .join(', ')}\n\n` +
+        `${sortLiscense(licenses)}\n\n` +
         `# Bundled dependencies:\n` +
         dependencyLicenseTexts
       const existingLicenseText = fs.readFileSync('LICENSE.md', 'utf8')
