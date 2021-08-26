@@ -34,7 +34,37 @@ Vite only performs transpilation on `.ts` files and does **NOT** perform type ch
 
 Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
 
-Note that because `esbuild` only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports. You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOptions` so that TS will warn you against the features that do not work with isolated transpilation.
+### TypeScript Compiler Options
+
+Some configuration fields under `compilerOptions` in `tsconfig.json` require special attention.
+
+#### `isolatedModules`
+
+Should be set to `true`.
+
+It is because `esbuild` only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports.
+
+You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOptions`, so that TS will warn you against the features that do not work with isolated transpilation.
+
+#### `useDefineForClassFields`
+
+Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext`. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663). It is also the standard ECMAScript runtime behavior.
+
+But it may be counter-intuitive for those coming from other programming languages or older versions of TypeScript.
+You can read more about the transition in the [TypeScript 3.7 release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier).
+
+If you are using a library that heavily relies on class fields, please be careful about the library's intended usage of it.
+
+Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties), [Vue Class Components 8.x](https://github.com/vuejs/vue-class-component/issues/465), etc.
+
+But a few libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). Please explicitly set `useDefineForClassFields` to `false` in these cases.
+
+#### Other Compiler Options Affecting the Build Result
+
+- [`extends`](https://www.typescriptlang.org/tsconfig#extends)
+- [`importsNotUsedAsValues`](https://www.typescriptlang.org/tsconfig#importsNotUsedAsValues)
+- [`jsxFactory`](https://www.typescriptlang.org/tsconfig#jsxFactory)
+- [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
 
 ### Client Types
 
