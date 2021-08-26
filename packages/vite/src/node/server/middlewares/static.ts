@@ -8,6 +8,7 @@ import {
   ensureLeadingSlash,
   fsPathFromId,
   isImportRequest,
+  isInternalRequest,
   isWindows,
   slash
 } from '../../utils'
@@ -34,12 +35,10 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
-    // skip import request
-    if (isImportRequest(req.url!)) {
+    // skip import request and internal requests `/@fs/ /@vite-client` etc...
+    if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
-    // reset sirv decoded url
-    delete req._decoded
     serve(req, res, next)
   }
 }
@@ -52,14 +51,18 @@ export function serveStaticMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
-    const url = decodeURI(req.url!)
-
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
     // special processing
-    if (path.extname(cleanUrl(url)) === '.html') {
+    // also skip internal requests `/@fs/ /@vite-client` etc...
+    if (
+      path.extname(cleanUrl(req.url!)) === '.html' ||
+      isInternalRequest(req.url!)
+    ) {
       return next()
     }
+
+    const url = decodeURI(req.url!)
 
     // apply aliases to static requests as well
     let redirected: string | undefined
@@ -77,9 +80,10 @@ export function serveStaticMiddleware(
         redirected = redirected.slice(dir.length)
       }
       req.url = redirected
+      // reset sirv decoded url
+      delete req._decoded
     }
-    // reset sirv decoded url
-    delete req._decoded
+
     serve(req, res, next)
   }
 }
