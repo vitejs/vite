@@ -4,7 +4,7 @@ import { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import { ImportSpecifier, init, parse as parseImports } from 'es-module-lexer'
 import { OutputChunk } from 'rollup'
-import { chunkToEmittedCssFileMap } from './css'
+import { chunkToEmittedCssFileMap, removedPureCssFilesCache } from './css'
 import { transformImportGlob } from '../importGlob'
 
 /**
@@ -18,28 +18,27 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadCode = `let scriptRel;const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
 const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
  * the async chunk itself.
  */
+
+function detectScriptRel() {
+  // @ts-ignore
+  const relList = document.createElement('link').relList
+  // @ts-ignore
+  return relList && relList.supports && relList.supports('modulepreload')
+    ? 'modulepreload'
+    : 'preload'
+}
+
+declare const scriptRel: string
 function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
-  }
-
-  // @ts-ignore
-  if (scriptRel === undefined) {
-    // @ts-ignore
-    const relList = document.createElement('link').relList
-    // @ts-ignore
-    scriptRel =
-      relList && relList.supports && relList.supports('modulepreload')
-        ? 'modulepreload'
-        : 'preload'
   }
 
   return Promise.all(
@@ -83,6 +82,11 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
   const insertPreload = !(ssr || !!config.build.lib)
+
+  const scriptRel = config.build.polyfillModulePreload
+    ? `'modulepreload'`
+    : `(${detectScriptRel.toString()})()`
+  const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
 
   return {
     name: 'vite:import-analysis',
@@ -212,7 +216,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const isPolyfillEnabled = config.build.polyfillDynamicImport
       for (const file in bundle) {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
@@ -230,14 +233,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
               const { s: start, e: end, d: dynamicIndex } = imports[index]
-              // if dynamic import polyfill is used, rewrite the import to
-              // use the polyfilled function.
-              if (isPolyfillEnabled) {
-                s.overwrite(dynamicIndex, dynamicIndex + 6, `__import__`)
-              }
               // check the chunk being imported
               const url = code.slice(start, end)
               const deps: Set<string> = new Set()
+              let hasRemovedPureCssChunk = false
 
               if (url[0] === `"` && url[url.length - 1] === `"`) {
                 const ownerFilename = chunk.fileName
@@ -257,6 +256,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       })
                     }
                     chunk.imports.forEach(addDeps)
+                  } else {
+                    const removedPureCssFiles =
+                      removedPureCssFilesCache.get(config)!
+                    const chunk = removedPureCssFiles.get(filename)
+                    if (chunk) {
+                      const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+                      if (cssFiles && cssFiles.size > 0) {
+                        cssFiles.forEach((file) => {
+                          deps.add(config.base + file)
+                        })
+                        hasRemovedPureCssChunk = true
+                      }
+
+                      s.overwrite(dynamicIndex, end + 1, 'Promise.resolve({})')
+                    }
                   }
                 }
                 const normalizedFile = path.posix.join(
@@ -278,7 +292,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   markPos + preloadMarker.length + 1,
                   // the dep list includes the main chunk, so only need to
                   // preload when there are actual other deps.
-                  deps.size > 1
+                  deps.size > 1 ||
+                    // main chunk is removed
+                    (hasRemovedPureCssChunk && deps.size > 0)
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
                     : `[]`
                 )

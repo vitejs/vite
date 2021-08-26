@@ -22,7 +22,11 @@ import {
   DEP_VERSION_RE,
   NULL_BYTE_PLACEHOLDER
 } from '../../constants'
-import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
+import {
+  isCSSRequest,
+  isDirectCSSRequest,
+  isDirectRequest
+} from '../../plugins/css'
 
 /**
  * Time (ms) Vite has to full-reload the page before returning
@@ -76,6 +80,8 @@ export function transformMiddleware(
         // something unexpected has happened. In this case, Vite
         // returns an empty response that will error.
         setTimeout(() => {
+          // Don't do anything if response has already been sent
+          if (res.writableEnded) return
           // status code request timeout
           res.statusCode = 408
           res.end(
@@ -87,21 +93,10 @@ export function transformMiddleware(
       return
     }
 
-    let url: string
-    try {
-      url = removeTimestampQuery(req.url!).replace(NULL_BYTE_PLACEHOLDER, '\0')
-    } catch (err) {
-      // if it starts with %PUBLIC%, someone's migrating from something
-      // like create-react-app
-      let errorMessage: string
-      if (req.url?.startsWith('/%PUBLIC')) {
-        errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
-      } else {
-        errorMessage = `Vite encountered a suspiciously malformed request ${req.url}`
-      }
-      next(new Error(errorMessage))
-      return
-    }
+    let url = removeTimestampQuery(req.url!).replace(
+      NULL_BYTE_PLACEHOLDER,
+      '\0'
+    )
 
     const withoutQuery = cleanUrl(url)
 
@@ -119,13 +114,17 @@ export function transformMiddleware(
         }
       }
 
-      // warn explicit /public/ paths
-      if (url.startsWith('/public/')) {
+      const publicPath =
+        normalizePath(server.config.publicDir).slice(
+          server.config.root.length
+        ) + '/'
+      // warn explicit public paths
+      if (url.startsWith(publicPath)) {
         logger.warn(
           chalk.yellow(
             `files in the public directory are served at the root path.\n` +
               `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
-                url.replace(/^\/public\//, '/')
+                url.replace(publicPath, '/')
               )}.`
           )
         )
@@ -145,7 +144,11 @@ export function transformMiddleware(
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports
-        if (isCSSRequest(url) && req.headers.accept?.includes('text/css')) {
+        if (
+          isCSSRequest(url) &&
+          !isDirectRequest(url) &&
+          req.headers.accept?.includes('text/css')
+        ) {
           url = injectQuery(url, 'direct')
         }
 

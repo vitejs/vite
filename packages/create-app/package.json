@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/create-app",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -12,7 +12,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "release": "node updateVersions && node ../../scripts/release.js --skipBuild"
+    "release": "node ../../scripts/release.js --skipBuild"
   },
   "engines": {
     "node": ">=12.0.0"

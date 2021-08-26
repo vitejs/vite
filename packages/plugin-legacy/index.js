@@ -15,8 +15,12 @@ const loadBabel = () => babel || (babel = require('@babel/standalone'))
 // DO NOT ALTER THIS CONTENT
 const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();`
 
+const legacyPolyfillId = 'vite-legacy-polyfill'
 const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
+const dynamicFallbackInlineCode = `!function(){try{new Function("m","return import(m)")}catch(o){console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}}();`
+
+const blankDynamicImport = `import('data:text/javascript;base64,Cg==');`
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
@@ -31,6 +35,7 @@ function viteLegacyPlugin(options = {}) {
   let config
   const targets = options.targets || 'defaults'
   const genLegacy = options.renderLegacyChunks !== false
+  const genDynamicFallback = genLegacy
 
   const debugFlag = process.env.DEBUG
   const isDebug = debugFlag === 'vite:*' || debugFlag === 'vite:legacy'
@@ -39,7 +44,12 @@ function viteLegacyPlugin(options = {}) {
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set()
-  const legacyPolyfills = new Set()
+  // System JS relies on the Promise interface. It needs to be polyfilled for IE 11. (array.iterator is mandatory for supporting Promise.all)
+  const DEFAULT_LEGACY_POLYFILL = [
+    'core-js/modules/es.promise',
+    'core-js/modules/es.array.iterator'
+  ]
+  const legacyPolyfills = new Set(DEFAULT_LEGACY_POLYFILL)
 
   if (Array.isArray(options.modernPolyfills)) {
     options.modernPolyfills.forEach((i) => {
@@ -75,9 +85,6 @@ function viteLegacyPlugin(options = {}) {
     config(config) {
       if (!config.build) {
         config.build = {}
-      }
-      if (genLegacy) {
-        config.build.polyfillDynamicImport = true
       }
     }
   }
@@ -123,7 +130,7 @@ function viteLegacyPlugin(options = {}) {
       }
 
       // legacy bundle
-      if (legacyPolyfills.size) {
+      if (legacyPolyfills.size || genDynamicFallback) {
         if (!legacyPolyfills.has('es.promise')) {
           // check if the target needs Promise polyfill because SystemJS relies
           // on it
@@ -228,28 +235,31 @@ function viteLegacyPlugin(options = {}) {
           detectPolyfills(raw, { esmodules: true }, modernPolyfills)
         }
 
+        const ms = new MagicString(raw)
+
+        if (genDynamicFallback && chunk.isEntry) {
+          ms.prepend(blankDynamicImport)
+        }
+
         if (raw.includes(legacyEnvVarMarker)) {
           const re = new RegExp(legacyEnvVarMarker, 'g')
-          if (config.build.sourcemap) {
-            const s = new MagicString(raw)
-            let match
-            while ((match = re.exec(raw))) {
-              s.overwrite(
-                match.index,
-                match.index + legacyEnvVarMarker.length,
-                `false`
-              )
-            }
-            return {
-              code: s.toString(),
-              map: s.generateMap({ hires: true })
-            }
-          } else {
-            return raw.replace(re, `false`)
+          let match
+          while ((match = re.exec(raw))) {
+            ms.overwrite(
+              match.index,
+              match.index + legacyEnvVarMarker.length,
+              `false`
+            )
           }
         }
 
-        return null
+        if (config.build.sourcemap) {
+          return {
+            code: ms.toString(),
+            map: ms.generateMap({ hires: true })
+          }
+        }
+        return ms.toString()
       }
 
       if (!genLegacy) {
@@ -358,6 +368,7 @@ function viteLegacyPlugin(options = {}) {
           tag: 'script',
           attrs: {
             nomodule: true,
+            id: legacyPolyfillId,
             src: `${config.base}${legacyPolyfillFilename}`
           },
           injectTo: 'body'
@@ -390,6 +401,16 @@ function viteLegacyPlugin(options = {}) {
         throw new Error(
           `No corresponding legacy entry chunk found for ${htmlFilename}`
         )
+      }
+
+      // 5. inject dynamic import fallback entry
+      if (genDynamicFallback && legacyPolyfillFilename && legacyEntryFilename) {
+        tags.push({
+          tag: 'script',
+          attrs: { type: 'module' },
+          children: dynamicFallbackInlineCode,
+          injectTo: 'head'
+        })
       }
 
       return {
@@ -639,5 +660,6 @@ viteLegacyPlugin.default = viteLegacyPlugin
 
 viteLegacyPlugin.cspHashes = [
   createHash('sha256').update(safari10NoModuleFix).digest('base64'),
-  createHash('sha256').update(systemJSInlineCode).digest('base64')
+  createHash('sha256').update(systemJSInlineCode).digest('base64'),
+  createHash('sha256').update(dynamicFallbackInlineCode).digest('base64')
 ]

@@ -61,6 +61,7 @@ import {
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
+  isObject,
   isExternalUrl,
   normalizePath,
   numberToPos,
@@ -170,6 +171,7 @@ export async function createPluginContainer(
     _activeId: string | null = null
     _activeCode: string | null = null
     _resolveSkips?: Set<Plugin>
+    _addedImports: Set<string> | null = null
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
@@ -217,6 +219,7 @@ export async function createPluginContainer(
 
     addWatchFile(id: string) {
       watchFiles.add(id)
+      ;(this._addedImports || (this._addedImports = new Set())).add(id)
       if (watcher) ensureWatchedFile(watcher, id, root)
     }
 
@@ -506,7 +509,7 @@ export async function createPluginContainer(
             plugin.name,
             prettifyUrl(id, root)
           )
-        if (typeof result === 'object') {
+        if (isObject(result)) {
           code = result.code || ''
           if (result.map) ctx.sourcemapChain.push(result.map)
         } else {

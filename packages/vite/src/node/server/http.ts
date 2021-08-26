@@ -3,6 +3,7 @@ import path from 'path'
 import { Server as HttpServer } from 'http'
 import { ServerOptions as HttpsServerOptions } from 'https'
 import { ResolvedConfig, ServerOptions } from '..'
+import { isObject } from '../utils'
 import { Connect } from 'types/connect'
 import { Logger } from '../logger'
 
@@ -34,8 +35,7 @@ export async function resolveHttpsConfig(
 ): Promise<HttpsServerOptions | undefined> {
   if (!config.server.https) return undefined
 
-  const httpsOption =
-    typeof config.server.https === 'object' ? config.server.https : {}
+  const httpsOption = isObject(config.server.https) ? config.server.https : {}
 
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {

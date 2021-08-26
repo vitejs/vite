@@ -11,42 +11,44 @@ const cli = cac('vite')
 // global options
 interface GlobalCLIOptions {
   '--'?: string[]
-  debug?: boolean | string
-  d?: boolean | string
-  filter?: string
-  f?: string
-  config?: string
   c?: boolean | string
+  config?: string
+  r?: string
   root?: string
   base?: string
-  r?: string
-  mode?: string
-  m?: string
-  logLevel?: LogLevel
   l?: LogLevel
+  logLevel?: LogLevel
   clearScreen?: boolean
+  d?: boolean | string
+  debug?: boolean | string
+  f?: string
+  filter?: string
+  m?: string
+  mode?: string
 }
 
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions(options: GlobalCLIOptions) {
+function cleanOptions<Options extends GlobalCLIOptions>(
+  options: Options
+): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
   delete ret['--']
-  delete ret.debug
-  delete ret.d
-  delete ret.filter
-  delete ret.f
-  delete ret.config
   delete ret.c
+  delete ret.config
+  delete ret.r
   delete ret.root
   delete ret.base
-  delete ret.r
-  delete ret.mode
-  delete ret.m
-  delete ret.logLevel
   delete ret.l
+  delete ret.logLevel
   delete ret.clearScreen
+  delete ret.d
+  delete ret.debug
+  delete ret.f
+  delete ret.filter
+  delete ret.m
+  delete ret.mode
   return ret
 }
 
@@ -58,6 +60,7 @@ cli
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
+  .option('-m, --mode <mode>', `[string] set env mode`)
 
 // dev
 cli
@@ -69,7 +72,6 @@ cli
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
-  .option('-m, --mode <mode>', `[string] set env mode`)
   .option(
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`
@@ -86,12 +88,13 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        server: cleanOptions(options) as ServerOptions
+        server: cleanOptions(options)
       })
       await server.listen()
     } catch (e) {
       createLogger(options.logLevel).error(
-        chalk.red(`error when starting dev server:\n${e.stack}`)
+        chalk.red(`error when starting dev server:\n${e.stack}`),
+        { error: e }
       )
       process.exit(1)
     }
@@ -129,11 +132,10 @@ cli
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`
   )
-  .option('-m, --mode <mode>', `[string] set env mode`)
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     const { build } = await import('./build')
-    const buildOptions = cleanOptions(options) as BuildOptions
+    const buildOptions: BuildOptions = cleanOptions(options)
 
     try {
       await build({
@@ -147,7 +149,8 @@ cli
       })
     } catch (e) {
       createLogger(options.logLevel).error(
-        chalk.red(`error during build:\n${e.stack}`)
+        chalk.red(`error during build:\n${e.stack}`),
+        { error: e }
       )
       process.exit(1)
     }
@@ -177,7 +180,8 @@ cli
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
-          chalk.red(`error when optimizing deps:\n${e.stack}`)
+          chalk.red(`error when optimizing deps:\n${e.stack}`),
+          { error: e }
         )
         process.exit(1)
       }
@@ -195,7 +199,7 @@ cli
     async (
       root: string,
       options: {
-        host?: string
+        host?: string | boolean
         port?: number
         https?: boolean
         open?: boolean | string
@@ -216,18 +220,13 @@ cli
             }
           },
           'serve',
-          'development'
+          'production'
         )
-        await preview(
-          config,
-          cleanOptions(options) as {
-            host?: string
-            port?: number
-          }
-        )
+        await preview(config, cleanOptions(options))
       } catch (e) {
         createLogger(options.logLevel).error(
-          chalk.red(`error when starting preview server:\n${e.stack}`)
+          chalk.red(`error when starting preview server:\n${e.stack}`),
+          { error: e }
         )
         process.exit(1)
       }

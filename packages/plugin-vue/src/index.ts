@@ -14,7 +14,9 @@ import {
   SFCBlock,
   SFCScriptCompileOptions,
   SFCStyleCompileOptions,
-  SFCTemplateCompileOptions
+  SFCTemplateCompileOptions,
+  shouldTransformRef,
+  transformRef
 } from '@vue/compiler-sfc'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor } from './utils/descriptorCache'
@@ -43,6 +45,28 @@ export interface Options {
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
   style?: Partial<SFCStyleCompileOptions>
+
+  /**
+   * Transform Vue SFCs into custom elements.
+   * **requires Vue \>= 3.2.0 & Vite \>= 2.4.4**
+   * - `true`: all `*.vue` imports are converted into custom elements
+   * - `string | RegExp`: matched files are converted into custom elements
+   *
+   * @default /\.ce\.vue$/
+   */
+  customElement?: boolean | string | RegExp | (string | RegExp)[]
+
+  /**
+   * Enable Vue ref transform (experimental).
+   * **requires Vue \>= 3.2.5**
+   * - `true`: transform will be enabled for all vue,js(x),ts(x) files
+   * - `string | RegExp`: apply to vue + only matched files
+   * - `false`: disable in all cases
+   *
+   * @default false
+   */
+  refTransform?: boolean | string | RegExp | (string | RegExp)[]
+
   /**
    * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
    */
@@ -55,16 +79,39 @@ export interface ResolvedOptions extends Options {
 }
 
 export default function vuePlugin(rawOptions: Options = {}): Plugin {
+  const {
+    include = /\.vue$/,
+    exclude,
+    customElement = /\.ce\.vue$/,
+    refTransform = false
+  } = rawOptions
+
+  const filter = createFilter(include, exclude)
+
+  const customElementFilter =
+    typeof customElement === 'boolean'
+      ? () => customElement
+      : createFilter(customElement)
+
+  const refTransformFilter =
+    refTransform === false
+      ? () => false
+      : refTransform === true
+      ? createFilter(/\.(j|t)sx?$/)
+      : createFilter(refTransform)
+
+  // compat for older verisons
+  const canUseRefTransform = typeof shouldTransformRef === 'function'
+
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
     ...rawOptions,
+    include,
+    exclude,
+    customElement,
+    refTransform,
     root: process.cwd()
   }
-
-  const filter = createFilter(
-    rawOptions.include || /\.vue$/,
-    rawOptions.exclude
-  )
 
   return {
     name: 'vite:vue',
@@ -138,13 +185,33 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     transform(code, id, ssr = !!options.ssr) {
       const { filename, query } = parseVueRequest(id)
-      if ((!query.vue && !filter(filename)) || query.raw) {
+      if (query.raw) {
+        return
+      }
+      if (!filter(filename) && !query.vue) {
+        if (!query.vue && refTransformFilter(filename)) {
+          if (!canUseRefTransform) {
+            this.warn('refTransform requires @vue/compiler-sfc@^3.2.5.')
+          } else if (shouldTransformRef(code)) {
+            return transformRef(code, {
+              filename,
+              sourceMap: true
+            })
+          }
+        }
         return
       }
 
       if (!query.vue) {
         // main request
-        return transformMain(code, filename, options, this, ssr)
+        return transformMain(
+          code,
+          filename,
+          options,
+          this,
+          ssr,
+          customElementFilter(filename)
+        )
       } else {
         // sub block request
         const descriptor = getDescriptor(filename)!

@@ -55,7 +55,7 @@ Vite also directly supports TS config files. You can use `vite.config.ts` with t
 If the config needs to conditional determine options based on the command (`serve` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
 
 ```js
-export default ({ command, mode }) => {
+export default defineConfig(({ command, mode }) => {
   if (command === 'serve') {
     return {
       // serve specific config
@@ -65,7 +65,7 @@ export default ({ command, mode }) => {
       // build specific config
     }
   }
-}
+})
 ```
 
 ### Async Config
@@ -73,12 +73,12 @@ export default ({ command, mode }) => {
 If the config needs to call async function, it can export a async function instead:
 
 ```js
-export default async ({ command, mode }) => {
+export default defineConfig(async ({ command, mode }) => {
   const data = await asyncFunction()
   return {
     // build specific config
   }
-}
+})
 ```
 
 ## Shared Options
@@ -213,7 +213,7 @@ export default async ({ command, mode }) => {
   ```ts
   interface CSSModulesOptions {
     scopeBehaviour?: 'global' | 'local'
-    globalModulePaths?: string[]
+    globalModulePaths?: RegExp[]
     generateScopedName?:
       | string
       | ((name: string, filename: string, css: string) => string)
@@ -242,7 +242,7 @@ export default async ({ command, mode }) => {
   Specify options to pass to CSS pre-processors. Example:
 
   ```js
-  export default {
+  export default defineConfig({
     css: {
       preprocessorOptions: {
         scss: {
@@ -250,7 +250,7 @@ export default async ({ command, mode }) => {
         }
       }
     }
-  }
+  })
   ```
 
 ### json.namedExports
@@ -276,12 +276,12 @@ export default async ({ command, mode }) => {
   `ESBuildOptions` extends [ESbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
 
   ```js
-  export default {
+  export default defineConfig({
     esbuild: {
       jsxFactory: 'h',
       jsxFragment: 'Fragment'
     }
-  }
+  })
   ```
 
   By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, both of which expect type of `string | RegExp | (string | RegExp)[]`.
@@ -289,11 +289,11 @@ export default async ({ command, mode }) => {
   In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
 
   ```js
-  export default {
+  export default defineConfig({
     esbuild: {
       jsxInject: `import React from 'react'`
     }
-  }
+  })
   ```
 
   Set to `false` to disable ESbuild transforms.
@@ -374,11 +374,11 @@ export default async ({ command, mode }) => {
   **Example:**
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       open: '/docs/index.html'
     }
-  }
+  })
   ```
 
 ### server.proxy
@@ -392,11 +392,11 @@ export default async ({ command, mode }) => {
   **Example:**
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       proxy: {
         // string shorthand
-        '/foo': 'http://localhost:4567/foo',
+        '/foo': 'http://localhost:4567',
         // with options
         '/api': {
           target: 'http://jsonplaceholder.typicode.com',
@@ -415,11 +415,11 @@ export default async ({ command, mode }) => {
           changeOrigin: true,
           configure: (proxy, options) => {
             // proxy will be an instance of 'http-proxy'
-          }),
+          }
         }
       }
     }
-  }
+  })
   ```
 
 ### server.cors
@@ -452,6 +452,8 @@ export default async ({ command, mode }) => {
 - **Type:** `object`
 
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
+
+  When running Vite on Windows Subsystem for Linux (WSL) 2, if the project folder resides in a Windows filesystem, you'll need to set this option to `{ usePolling: true }`. This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739) with the Windows filesystem.
 
 ### server.middlewareMode
 
@@ -514,21 +516,21 @@ createServer()
   Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       fs: {
         // Allow serving files from one level up to the project root
         allow: ['..']
       }
     }
-  }
+  })
   ```
 
 ## Build Options
 
 ### build.target
 
-- **Type:** `string`
+- **Type:** `string | string[]`
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
@@ -543,20 +545,18 @@ createServer()
 
   Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
-### build.polyfillDynamicImport
+### build.polyfillModulePreload
 
 - **Type:** `boolean`
-- **Default:** `false`
+- **Default:** `true`
 
-  Whether to automatically inject [dynamic import polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill).
+  Whether to automatically inject [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill).
 
-  If set to true, the polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-html custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
+  If set to `true`, the polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-html custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
 
   ```js
-  import 'vite/dynamic-import-polyfill'
+  import 'vite/modulepreload-polyfill'
   ```
-
-  When using [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), the plugin sets this option to `true` automatically.
 
   Note: the polyfill does **not** apply to [Library Mode](/guide/build#library-mode). If you need to support browsers without native dynamic import, you should probably avoid using it in your library.
 
@@ -599,7 +599,7 @@ createServer()
 - **Type:** `boolean | 'inline' | 'hidden'`
 - **Default:** `false`
 
-  Generate production source maps.
+  Generate production source maps. If `true`, a separate sourcemap file will be created. If `'inline'`, the sourcemap will be appended to the resulting output file as a data URI. `'hidden'` works like `true` except that the corresponding sourcemap comments in the bundled files are suppressed.
 
 ### build.rollupOptions
 
@@ -646,12 +646,6 @@ createServer()
 - **Type:** `TerserOptions`
 
   Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
-
-### build.cleanCssOptions
-
-- **Type:** `CleanCSS.Options`
-
-  Constructor options to pass on to [clean-css](https://github.com/jakubpawlowicz/clean-css#constructor-options).
 
 ### build.write
 
@@ -741,9 +735,9 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string | RegExp | (string | RegExp)[] | true`
 
-  Prevent listed dependencies from being externalized for SSR.
+  Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized.
 
 ### ssr.target
 

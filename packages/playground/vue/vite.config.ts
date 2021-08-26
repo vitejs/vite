@@ -9,10 +9,15 @@ export default defineConfig({
       '/@': __dirname
     }
   },
-  plugins: [vuePlugin(), vueI18nPlugin],
+  plugins: [
+    vuePlugin({
+      refTransform: true
+    }),
+    vueI18nPlugin
+  ],
   build: {
     // to make tests faster
-    minify: false
+    // minify: false
   },
   css: {
     modules: {

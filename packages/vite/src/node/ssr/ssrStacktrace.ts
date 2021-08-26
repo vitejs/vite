@@ -32,7 +32,7 @@ export function ssrRewriteStacktrace(
           }
 
           const consumer = new SourceMapConsumer(
-            rawSourceMap as any as RawSourceMap
+            rawSourceMap as unknown as RawSourceMap
           )
 
           const pos = consumer.originalPositionFor({
