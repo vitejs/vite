@@ -80,7 +80,7 @@
   },
   "lint-staged": {
     "*": [
-      "prettier --write"
+      "prettier --write --ignore-unknown"
     ],
     "packages/*/{src,types}/**/*.ts": [
       "eslint --ext .ts"
