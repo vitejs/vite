@@ -877,6 +877,11 @@
   resolved "https://registry.yarnpkg.com/@polka/url/-/url-1.0.0-next.17.tgz#25fdbdfd282c2f86ddf3fcefbd98be99cd2627e2"
   integrity sha512-0p1rCgM3LLbAdwBnc7gqgnvjHg9KpbhcSphergHShlkWz8EdPawoMJ3/VbezI0mGC5eKCDzMaPgF9Yca6cKvrg==
 
+"@polka/url@^1.0.0-next.19":
+  version "1.0.0-next.19"
+  resolved "https://registry.yarnpkg.com/@polka/url/-/url-1.0.0-next.19.tgz#2c94db828794aa53e7a420809dac870348819233"
+  integrity sha512-kHR9OHwP9WLpyC0i/WCAQCgf5hXkR9C+/21qxmrn+YwRlDRnBlqrcrFpXxhJTA9LDHJWa/FjoO2LJ12q8iWlEQ==
+
 "@rollup/plugin-alias@^3.1.5":
   version "3.1.5"
   resolved "https://registry.yarnpkg.com/@rollup/plugin-alias/-/plugin-alias-3.1.5.tgz#73356a3a1eab2e1e2fd952f9f53cd89fc740d952"
@@ -6972,12 +6977,21 @@ simple-swizzle@^0.2.2:
   dependencies:
     is-arrayish "^0.3.1"
 
-sirv@^1.0.12, sirv@^1.0.14:
+sirv@^1.0.12:
   version "1.0.14"
   resolved "https://registry.yarnpkg.com/sirv/-/sirv-1.0.14.tgz#b826343f573e12653c5b3c3080a3a2a6a06595cd"
   integrity sha512-czTFDFjK9lXj0u9mJ3OmJoXFztoilYS+NdRPcJoT182w44wSEkHSiO7A2517GLJ8wKM4GjCm2OXE66Dhngbzjg==
   dependencies:
     "@polka/url" "^1.0.0-next.17"
+    mime "^2.3.1"
+    totalist "^1.0.0"
+
+sirv@^1.0.16:
+  version "1.0.16"
+  resolved "https://registry.yarnpkg.com/sirv/-/sirv-1.0.16.tgz#9caadfc46c264a38ad1c38c99259692fbf76ed10"
+  integrity sha512-x56DISeIgSUGVJrQS3mwu+UvtnzHenKDFBQL+UlAswxwk9b2Cpc0KGVvftoIJZgweOOXbMZzyXFYgVElOuSI1Q==
+  dependencies:
+    "@polka/url" "^1.0.0-next.19"
     mime "^2.3.1"
     totalist "^1.0.0"
 

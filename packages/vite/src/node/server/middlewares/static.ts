@@ -38,8 +38,6 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
     if (isImportRequest(req.url!)) {
       return next()
     }
-    // reset sirv decoded state
-    req._decoded = false
     serve(req, res, next)
   }
 }
@@ -79,8 +77,6 @@ export function serveStaticMiddleware(
       req.url = redirected
     }
 
-    // reset sirv decoded state
-    req._decoded = false
     serve(req, res, next)
   }
 }
@@ -104,8 +100,6 @@ export function serveRawFsMiddleware(
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
       req.url = url
-      // reset sirv decoded state
-      req._decoded = false
       serveFromRoot(req, res, next)
     } else {
       next()

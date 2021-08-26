@@ -15,7 +15,6 @@ export namespace Connect {
 
   export class IncomingMessage extends http.IncomingMessage {
     originalUrl?: http.IncomingMessage['url']
-    _decoded?: boolean
   }
 
   export type NextFunction = (err?: any) => void
