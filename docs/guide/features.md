@@ -48,9 +48,7 @@ You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOp
 
 #### `useDefineForClassFields`
 
-Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext`. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663).
-
-This is because it is the standard ECMAScript runtime behavior.
+Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext`. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663). It is also the standard ECMAScript runtime behavior.
 
 But it may be counter-intuitive for those coming from other programming languages or older versions of TypeScript.
 You can read more about the transition in the [TypeScript 3.7 release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier).
@@ -59,7 +57,7 @@ If you are using a library that heavily relies on class fields, please be carefu
 
 Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties), [Vue Class Components 8.x](https://github.com/vuejs/vue-class-component/issues/465), etc.
 
-But some libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). If you are using such libraries, please explicitly set `useDefineForClassFields` to `false`.
+But a few libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). Please explicitly set `useDefineForClassFields` to `false` in these cases.
 
 #### Other Compiler Options Affecting the Build Result
 
