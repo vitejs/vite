@@ -102,7 +102,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
-      const workerOptions = { type: 'module' }
+      const workerOptions = isBuild ? {} : { type: 'module' }
 
       return `export default function WorkerWrapper() {
         return new ${workerConstructor}(${JSON.stringify(
