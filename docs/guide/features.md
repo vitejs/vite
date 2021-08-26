@@ -48,7 +48,7 @@ You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOp
 
 #### `useDefineForClassFields`
 
-Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext`. It is consistent with the behavior of `tsc` 4.3.2 and later.
+Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext`. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663).
 
 This is because it is the standard ECMAScript runtime behavior.
 
