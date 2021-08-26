@@ -39,7 +39,7 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
       return next()
     }
     // reset sirv decoded url
-    req._decoded = undefined
+    delete req._decoded
     serve(req, res, next)
   }
 }
@@ -79,7 +79,7 @@ export function serveStaticMiddleware(
       req.url = redirected
     }
     // reset sirv decoded url
-    req._decoded = undefined
+    delete req._decoded
     serve(req, res, next)
   }
 }
@@ -104,7 +104,7 @@ export function serveRawFsMiddleware(
 
       req.url = url
       // reset sirv decoded url
-      req._decoded = undefined
+      delete req._decoded
       serveFromRoot(req, res, next)
     } else {
       next()
