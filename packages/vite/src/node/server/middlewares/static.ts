@@ -80,8 +80,6 @@ export function serveStaticMiddleware(
         redirected = redirected.slice(dir.length)
       }
       req.url = redirected
-      // reset sirv decoded url
-      delete req._decoded
     }
 
     serve(req, res, next)
@@ -107,8 +105,6 @@ export function serveRawFsMiddleware(
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
       req.url = url
-      // reset sirv decoded url
-      delete req._decoded
       serveFromRoot(req, res, next)
     } else {
       next()
