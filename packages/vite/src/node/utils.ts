@@ -4,7 +4,13 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { pathToFileURL, URL } from 'url'
-import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
+import {
+  FS_PREFIX,
+  DEFAULT_EXTENSIONS,
+  VALID_ID_PREFIX,
+  CLIENT_PUBLIC_PATH,
+  ENV_PUBLIC_PATH
+} from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
@@ -122,8 +128,17 @@ export const isJSRequest = (url: string): boolean => {
 }
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
+const internalPrefixes = [
+  FS_PREFIX,
+  VALID_ID_PREFIX,
+  CLIENT_PUBLIC_PATH,
+  ENV_PUBLIC_PATH
+]
+const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
 const trailingSeparatorRE = /[\?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
+export const isInternalRequest = (url: string): boolean =>
+  InternalPrefixRE.test(url)
 
 export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')

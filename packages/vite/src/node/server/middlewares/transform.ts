@@ -93,7 +93,7 @@ export function transformMiddleware(
       return
     }
 
-    let url = removeTimestampQuery(req.url!).replace(
+    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
       NULL_BYTE_PLACEHOLDER,
       '\0'
     )
