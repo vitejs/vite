@@ -649,6 +649,8 @@ function mergeConfigRecursively(
       } else if (key === 'assetsInclude' && rootPath === '') {
         merged[key] = [].concat(existing, value)
         continue
+      } else if (key === 'noExternal' && existing === true) {
+        continue
       }
     }
 
