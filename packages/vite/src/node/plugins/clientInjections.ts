@@ -24,13 +24,13 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const timeout = options.timeout || 30000
         const overlay = options.overlay !== false
         let port: number | string | undefined
+        if (isObject(config.server.hmr)) {
+          port = config.server.hmr.clientPort || config.server.hmr.port
+        }
         if (config.server.middlewareMode) {
-          if (isObject(config.server.hmr)) {
-            port = config.server.hmr.clientPort || config.server.hmr.port
-          }
           port = String(port || 24678)
         } else {
-          port = String(options.port || config.server.port!)
+          port = String(port ||options.port || config.server.port!)
         }
         let hmrBase = config.base
         if (options.path) {
