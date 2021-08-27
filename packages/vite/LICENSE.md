@@ -25,7 +25,7 @@ SOFTWARE.
 
 # Licenses of bundled dependencies
 The published Vite artifact additionally contains code with the following licenses:
-Apache-2.0,BSD-2-Clause,BSD-3-Clause,CC0-1.0,ISC,MIT,(BSD-3-Clause OR GPL-2.0),(MIT)
+Apache-2.0, BSD-2-Clause, BSD-3-Clause, CC0-1.0, ISC, MIT, (BSD-3-Clause OR GPL-2.0), (MIT)
 
 # Bundled dependencies:
 ## @ampproject/remapping

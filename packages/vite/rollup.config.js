@@ -360,7 +360,7 @@ function licensePlugin() {
         coreLicense +
         `\n# Licenses of bundled dependencies\n` +
         `The published Vite artifact additionally contains code with the following licenses:\n` +
-        `${sortLiscense(licenses)}\n\n` +
+        `${sortLiscense(licenses).join(', ')}\n\n` +
         `# Bundled dependencies:\n` +
         dependencyLicenseTexts
       const existingLicenseText = fs.readFileSync('LICENSE.md', 'utf8')
