@@ -58,7 +58,7 @@ export async function transformMain(
   // inside <script setup>. This can only be done for build because
   // inlined template cannot be individually hot updated.
   const useInlineTemplate =
-    !devServer &&
+    isProduction &&
     descriptor.scriptSetup &&
     !(descriptor.template && descriptor.template.src)
   const hasTemplateImport = descriptor.template && !useInlineTemplate
@@ -114,7 +114,7 @@ export async function transformMain(
       `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
     )
   }
-  if (devServer && !isProduction) {
+  if (!isProduction) {
     // expose filename during serve for devtools to pickup
     output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }

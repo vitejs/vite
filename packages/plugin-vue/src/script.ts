@@ -42,7 +42,7 @@ export function resolveScript(
     ...options.script,
     id: descriptor.id,
     isProd: options.isProduction,
-    inlineTemplate: !options.devServer,
+    inlineTemplate: options.isProduction,
     refTransform: options.refTransform !== false,
     templateOptions: resolveTemplateCompilerOptions(descriptor, options, ssr)
   })
