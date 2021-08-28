@@ -1,10 +1,5 @@
-import {
-  scriptRE,
-  commentRE,
-  importsRE,
-  multilineCommentsRE,
-  singlelineCommentsRE
-} from '../optimizer/scan'
+import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
+import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'

@@ -3,6 +3,7 @@ import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
 import { ResolvedConfig } from '../config'
+import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -21,9 +22,12 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       if (code.includes('new URL') && code.includes(`import.meta.url`)) {
         const importMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\)/g
+        const noCommentsCode = code
+          .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
+          .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
         let s: MagicString | null = null
         let match: RegExpExecArray | null
-        while ((match = importMetaUrlRE.exec(code))) {
+        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
           const { 0: exp, 1: rawUrl, index } = match
 
           if (ssr) {
