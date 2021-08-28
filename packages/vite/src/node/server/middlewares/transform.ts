@@ -93,21 +93,10 @@ export function transformMiddleware(
       return
     }
 
-    let url: string
-    try {
-      url = removeTimestampQuery(req.url!).replace(NULL_BYTE_PLACEHOLDER, '\0')
-    } catch (err) {
-      // if it starts with %PUBLIC%, someone's migrating from something
-      // like create-react-app
-      let errorMessage: string
-      if (req.url?.startsWith('/%PUBLIC')) {
-        errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
-      } else {
-        errorMessage = `Vite encountered a suspiciously malformed request ${req.url}`
-      }
-      next(new Error(errorMessage))
-      return
-    }
+    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
+      NULL_BYTE_PLACEHOLDER,
+      '\0'
+    )
 
     const withoutQuery = cleanUrl(url)
 
@@ -125,13 +114,17 @@ export function transformMiddleware(
         }
       }
 
-      // warn explicit /public/ paths
-      if (url.startsWith('/public/')) {
+      const publicPath =
+        normalizePath(server.config.publicDir).slice(
+          server.config.root.length
+        ) + '/'
+      // warn explicit public paths
+      if (url.startsWith(publicPath)) {
         logger.warn(
           chalk.yellow(
             `files in the public directory are served at the root path.\n` +
               `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
-                url.replace(/^\/public\//, '/')
+                url.replace(publicPath, '/')
               )}.`
           )
         )

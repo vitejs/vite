@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 
+<head>
+  <meta charset="UTF-8" />
+</head>
+
 <link rel="icon" href="data:," />
 <link rel="stylesheet" href="/raw.css" />
 
@@ -13,9 +17,6 @@
   <script src="/raw.js"></script>
   <li class="raw-css">
     Raw CSS from publicDir should load (this should be red)
-  </li>
-  <li>
-    <img src="/white space.png" />
   </li>
 </ul>
 
@@ -68,6 +69,12 @@
 </div>
 <div class="css-url-aliased">
   <span style="background: #fff">CSS background (aliased)</span>
+</div>
+
+<h2>Unicode URL</h2>
+<div>
+  <code class="unicode-url"></code>
+  <img src="./nested/テスト-測試-white space.png" />
 </div>
 
 <h2>Image Src Set</h2>
@@ -157,6 +164,9 @@
 
   import fooUrl from './foo.js?url'
   text('.url', fooUrl)
+
+  import unicodeUrl from './テスト-測試-white space.js?url'
+  text('.unicode-url', unicodeUrl)
 
   const metaUrl = new URL('./nested/asset.png', import.meta.url)
   text('.import-meta-url', metaUrl)

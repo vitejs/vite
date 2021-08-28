@@ -3,7 +3,8 @@ import slash from 'slash'
 import {
   compileTemplate,
   SFCDescriptor,
-  SFCTemplateCompileOptions
+  SFCTemplateCompileOptions,
+  SFCTemplateCompileResults
 } from '@vue/compiler-sfc'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
@@ -48,7 +49,7 @@ export function transformTemplateInMain(
   options: ResolvedOptions,
   pluginContext: PluginContext,
   ssr: boolean
-) {
+): SFCTemplateCompileResults {
   const result = compile(code, descriptor, options, pluginContext, ssr)
   return {
     ...result,
