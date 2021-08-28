@@ -718,7 +718,7 @@ createServer()
   ```js
   export default defineConfig({
     optimizeDeps: {
-      include: ['esm-dep/node_modules/cjs-dep']
+      include: ['esm-dep > cjs-dep']
     }
   })
   ```

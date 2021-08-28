@@ -391,10 +391,12 @@ export function tryNodeResolve(
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild } = options
 
-  // split id by "node_modules" to get actual nested package name
-  const nodeModulesMatch = id.match(/(.+)\/node_modules\/(.+)/)
-  const nestedRoot = nodeModulesMatch ? nodeModulesMatch[1] : ''
-  const nestedPath = nodeModulesMatch ? nodeModulesMatch[2] : id
+  // split id by last '>' for nested selected packages, for example:
+  // 'foo > bar > baz' => 'foo > bar' & 'baz'
+  // 'foo'             => ''          & 'foo'
+  const lastArrowIndex = id.lastIndexOf('>')
+  const nestedRoot = id.substring(0, lastArrowIndex).trim()
+  const nestedPath = id.substring(lastArrowIndex + 1).trim()
 
   // check for deep import, e.g. "my-lib/foo"
   const deepMatch = nestedPath.match(deepImportRE)
@@ -415,7 +417,7 @@ export function tryNodeResolve(
   }
 
   // nested node module, step-by-step resolve to the basedir of the nestedPath
-  if (nodeModulesMatch) {
+  if (nestedRoot) {
     basedir = nestedResolveFrom(nestedRoot, basedir)
   }
 
@@ -509,7 +511,7 @@ export function tryOptimizedResolve(
 
   for (const [pkgPath, optimizedData] of Object.entries(depData.optimized)) {
     // check for scenarios, e.g.
-    //   pkgPath  => "my-lib/node_modules/foo"
+    //   pkgPath  => "my-lib > foo"
     //   id       => "foo"
     // this narrows the need to do a full resolve
     if (!pkgPath.endsWith(id)) continue

@@ -31,7 +31,10 @@ export function unwrapId(id: string): string {
 }
 
 export const flattenId = (id: string): string =>
-  id.replace(/\/node_modules\//g, '__').replace(/[\/\.]/g, '_')
+  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.]/g, '_')
+
+export const normalizeId = (id: string): string =>
+  id.replace(/(\s*>\s*)/g, ' > ')
 
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
@@ -57,10 +60,11 @@ export function resolveFrom(id: string, basedir: string, ssr = false): string {
 }
 
 /**
- * like `resolveFrom` but supports resolving `node_modules` path in `id`
+ * like `resolveFrom` but supports resolving `>` path in `id`,
+ * for example: `foo > bar > baz`
  */
 export function nestedResolveFrom(id: string, basedir: string): string {
-  const pkgs = id.split('/node_modules/')
+  const pkgs = id.split('>').map((pkg) => pkg.trim())
   try {
     for (const pkg of pkgs) {
       basedir = resolveFrom(pkg, basedir)

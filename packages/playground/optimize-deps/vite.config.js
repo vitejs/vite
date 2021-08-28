@@ -13,7 +13,7 @@ module.exports = {
       'dep-linked-include',
       // required since it isn't in node_modules and is ignored by the optimizer otherwise
       'dep-esbuild-plugin-transform',
-      'nested-exclude/node_modules/nested-include'
+      'nested-exclude>nested-include'
     ],
     exclude: ['nested-exclude'],
     esbuildOptions: {
