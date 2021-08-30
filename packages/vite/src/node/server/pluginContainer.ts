@@ -51,7 +51,6 @@ import {
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
-import acornNumericSeparator from 'acorn-numeric-separator'
 import acornStaticClassFeatures from 'acorn-static-class-features'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
@@ -116,8 +115,7 @@ type PluginContext = Omit<
 
 export let parser = acorn.Parser.extend(
   acornClassFields,
-  acornStaticClassFeatures,
-  acornNumericSeparator
+  acornStaticClassFeatures
 )
 
 export async function createPluginContainer(
@@ -399,8 +397,7 @@ export async function createPluginContainer(
         parser = acorn.Parser.extend(
           ...[
             acornClassFields,
-            acornStaticClassFeatures,
-            acornNumericSeparator
+            acornStaticClassFeatures
           ].concat(options.acornInjectPlugins)
         )
       }
