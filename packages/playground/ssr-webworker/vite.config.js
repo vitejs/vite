@@ -8,5 +8,16 @@ module.exports = {
   ssr: {
     target: 'webworker',
     noExternal: true
-  }
+  },
+  plugins: [
+    {
+      config() {
+        return {
+          ssr: {
+            noExternal: ['this-should-not-replace-the-boolean']
+          }
+        }
+      }
+    }
+  ]
 }
