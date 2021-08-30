@@ -285,10 +285,22 @@ export async function createPluginContainer(
           : // some rollup plugins, e.g. json, sets position instead of pos
             (err as any).position
       if (pos != null) {
-        err.loc = err.loc || {
-          file: err.id,
-          ...numberToPos(ctx._activeCode, pos)
+        let errLocation;
+        try {
+          errLocation = numberToPos(ctx._activeCode, pos);
         }
+        catch (err2) {
+          logger.error(
+            chalk.red(`Error in error handler:\n${err2.stack || err2.message}\n`),
+            // print extra newline to separate the two errors
+            { error: err2 }
+          )
+          throw err;
+        }
+        err.loc = err.loc || {
+            file: err.id,
+            ...errLocation
+        };
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
       } else if (err.loc) {
         // css preprocessors may report errors in an included file
