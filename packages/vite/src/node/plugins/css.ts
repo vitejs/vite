@@ -403,6 +403,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
         } else if (!config.build.ssr) {
           // legacy build, inline css
+          pureCssChunks.delete(chunk.fileName)
           chunkCSS = await processChunkCSS(chunkCSS, {
             inlined: true,
             minify: true
