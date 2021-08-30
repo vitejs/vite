@@ -15,7 +15,9 @@ import {
   isObject,
   cleanUrl,
   externalRE,
-  dataUrlRE
+  dataUrlRE,
+  multilineCommentsRE,
+  singlelineCommentsRE
 } from '../utils'
 import {
   createPluginContainer,
@@ -39,9 +41,6 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // simply be ignored.
 export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
-
-export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
-export const singlelineCommentsRE = /\/\/.*/g
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
