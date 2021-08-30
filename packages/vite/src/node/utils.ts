@@ -44,7 +44,7 @@ try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-const ssrExtensions = ['.js', '.json', '.node']
+const ssrExtensions = ['.js', '.cjs', '.json', '.node']
 
 export function resolveFrom(id: string, basedir: string, ssr = false): string {
   return resolve.sync(id, {
