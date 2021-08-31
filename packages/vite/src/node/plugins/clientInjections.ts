@@ -30,7 +30,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         if (config.server.middlewareMode) {
           port = String(port || 24678)
         } else {
-          port = String(port ||options.port || config.server.port!)
+          port = String(port || options.port || config.server.port!)
         }
         let hmrBase = config.base
         if (options.path) {

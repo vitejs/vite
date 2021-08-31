@@ -16,6 +16,7 @@
     "dep-esbuild-plugin-transform": "link:./dep-esbuild-plugin-transform",
     "dep-cjs-compiled-from-esm": "file:./dep-cjs-compiled-from-esm",
     "dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
+    "nested-exclude": "link:./nested-exclude",
     "phoenix": "^1.5.7",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",

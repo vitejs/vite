@@ -23,7 +23,8 @@ import {
   resolveFrom,
   isDataUrl,
   cleanUrl,
-  slash
+  slash,
+  nestedResolveFrom
 } from '../utils'
 import { ViteDevServer, SSROptions } from '..'
 import { createFilter } from '@rollup/pluginutils'
@@ -204,7 +205,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           asSrc &&
           server &&
           !ssr &&
-          (res = tryOptimizedResolve(id, server))
+          (res = tryOptimizedResolve(id, server, importer))
         ) {
           return res
         }
@@ -389,8 +390,18 @@ export function tryNodeResolve(
   ssr?: boolean
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild } = options
-  const deepMatch = id.match(deepImportRE)
-  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
+
+  // split id by last '>' for nested selected packages, for example:
+  // 'foo > bar > baz' => 'foo > bar' & 'baz'
+  // 'foo'             => ''          & 'foo'
+  const lastArrowIndex = id.lastIndexOf('>')
+  const nestedRoot = id.substring(0, lastArrowIndex).trim()
+  const nestedPath = id.substring(lastArrowIndex + 1).trim()
+
+  // check for deep import, e.g. "my-lib/foo"
+  const deepMatch = nestedPath.match(deepImportRE)
+
+  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : nestedPath
 
   let basedir: string
   if (dedupe && dedupe.includes(pkgId)) {
@@ -403,6 +414,11 @@ export function tryNodeResolve(
     basedir = path.dirname(importer)
   } else {
     basedir = root
+  }
+
+  // nested node module, step-by-step resolve to the basedir of the nestedPath
+  if (nestedRoot) {
+    basedir = nestedResolveFrom(nestedRoot, basedir)
   }
 
   const pkg = resolvePackageData(pkgId, basedir)
@@ -465,19 +481,55 @@ export function tryNodeResolve(
 
 export function tryOptimizedResolve(
   id: string,
-  server: ViteDevServer
+  server: ViteDevServer,
+  importer?: string
 ): string | undefined {
   const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
-  if (cacheDir && depData) {
-    const isOptimized = depData.optimized[id]
-    if (isOptimized) {
-      return (
-        isOptimized.file +
-        `?v=${depData.browserHash}${
-          isOptimized.needsInterop ? `&es-interop` : ``
-        }`
-      )
+
+  if (!cacheDir || !depData) return
+
+  const getOptimizedUrl = (optimizedData: typeof depData.optimized[string]) => {
+    return (
+      optimizedData.file +
+      `?v=${depData.browserHash}${
+        optimizedData.needsInterop ? `&es-interop` : ``
+      }`
+    )
+  }
+
+  // check if id has been optimized
+  const isOptimized = depData.optimized[id]
+  if (isOptimized) {
+    return getOptimizedUrl(isOptimized)
+  }
+
+  if (!importer) return
+
+  // further check if id is imported by nested dependency
+  let resolvedSrc: string | undefined
+
+  for (const [pkgPath, optimizedData] of Object.entries(depData.optimized)) {
+    // check for scenarios, e.g.
+    //   pkgPath  => "my-lib > foo"
+    //   id       => "foo"
+    // this narrows the need to do a full resolve
+    if (!pkgPath.endsWith(id)) continue
+
+    // lazily initialize resolvedSrc
+    if (resolvedSrc == null) {
+      try {
+        // this may throw errors if unable to resolve, e.g. aliased id
+        resolvedSrc = resolveFrom(id, path.dirname(importer))
+      } catch {
+        // this is best-effort only so swallow errors
+        break
+      }
+    }
+
+    // match by src to correctly identify if id belongs to nested dependency
+    if (optimizedData.src === resolvedSrc) {
+      return getOptimizedUrl(optimizedData)
     }
   }
 }
