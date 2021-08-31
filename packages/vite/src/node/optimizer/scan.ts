@@ -122,7 +122,7 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
   return glob(pattern, {
     cwd: config.root,
     ignore: [
-      '**/node_modules/**',
+      `${config.root}/**/node_modules/**`,
       `**/${config.build.outDir}/**`,
       `**/__tests__/**`
     ],
