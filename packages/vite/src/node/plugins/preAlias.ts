@@ -13,9 +13,9 @@ export function preAliasPlugin(): Plugin {
     configureServer(_server) {
       server = _server
     },
-    resolveId(id, _, __, ssr) {
+    resolveId(id, importer, _, ssr) {
       if (!ssr && bareImportRE.test(id)) {
-        return tryOptimizedResolve(id, server)
+        return tryOptimizedResolve(id, server, importer)
       }
     }
   }

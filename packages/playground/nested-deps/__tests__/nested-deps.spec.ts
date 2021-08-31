@@ -5,4 +5,6 @@ test('handle nested package', async () => {
   const c = await page.textContent('.c')
   expect(c).toBe('es-C@1.0.0')
   expect(await page.textContent('.side-c')).toBe(c)
+  expect(await page.textContent('.d')).toBe('D@1.0.0')
+  expect(await page.textContent('.nested-d')).toBe('D-nested@1.0.0')
 })

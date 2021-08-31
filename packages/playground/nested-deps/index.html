@@ -13,11 +13,18 @@
 <h2>side dependency C</h2>
 <pre class="side-c"></pre>
 
+<h2>direct dependency D</h2>
+<pre class="d"></pre>
+
+<h2>nested dependency nested-D (dep of D)</h2>
+<pre class="nested-d"></pre>
+
 <script type="module">
   import A from 'test-package-a'
   import B, { A as nestedA } from 'test-package-b'
   import C from 'test-package-c'
   import { C as sideC } from 'test-package-c/side'
+  import D, { nestedD } from 'test-package-d'
 
   text('.a', A)
   text('.b', B)
@@ -25,6 +32,9 @@
 
   text('.c', C)
   text('.side-c', sideC)
+
+  text('.d', D)
+  text('.nested-d', nestedD)
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text

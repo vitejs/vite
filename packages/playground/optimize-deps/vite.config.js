@@ -12,8 +12,10 @@ module.exports = {
     include: [
       'dep-linked-include',
       // required since it isn't in node_modules and is ignored by the optimizer otherwise
-      'dep-esbuild-plugin-transform'
+      'dep-esbuild-plugin-transform',
+      'nested-exclude>nested-include'
     ],
+    exclude: ['nested-exclude'],
     esbuildOptions: {
       plugins: [
         {

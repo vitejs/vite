@@ -10,7 +10,8 @@ import {
   lookupFile,
   normalizePath,
   writeFile,
-  flattenId
+  flattenId,
+  normalizeId
 } from '../utils'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { ImportSpecifier, init, parse } from 'es-module-lexer'
@@ -184,10 +185,13 @@ export async function optimizeDeps(
   if (include) {
     const resolve = config.createResolver({ asSrc: false })
     for (const id of include) {
-      if (!deps[id]) {
+      // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
+      // and for pretty printing
+      const normalizedId = normalizeId(id)
+      if (!deps[normalizedId]) {
         const entry = await resolve(id)
         if (entry) {
-          deps[id] = entry
+          deps[normalizedId] = entry
         } else {
           throw new Error(
             `Failed to resolve force included dependency: ${chalk.cyan(id)}`

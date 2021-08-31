@@ -30,7 +30,11 @@ export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
 }
 
-export const flattenId = (id: string): string => id.replace(/[\/\.]/g, '_')
+export const flattenId = (id: string): string =>
+  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.]/g, '_')
+
+export const normalizeId = (id: string): string =>
+  id.replace(/(\s*>\s*)/g, ' > ')
 
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
@@ -53,6 +57,20 @@ export function resolveFrom(id: string, basedir: string, ssr = false): string {
     // necessary to work with pnpm
     preserveSymlinks: isRunningWithYarnPnp || false
   })
+}
+
+/**
+ * like `resolveFrom` but supports resolving `>` path in `id`,
+ * for example: `foo > bar > baz`
+ */
+export function nestedResolveFrom(id: string, basedir: string): string {
+  const pkgs = id.split('>').map((pkg) => pkg.trim())
+  try {
+    for (const pkg of pkgs) {
+      basedir = resolveFrom(pkg, basedir)
+    }
+  } catch {}
+  return basedir
 }
 
 // set in bin/vite.js
