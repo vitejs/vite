@@ -13,7 +13,7 @@
     "@vitejs/plugin-vue": "^1.6.0",
     "@vue/compiler-sfc": "^3.2.6",
     "typescript": "^4.3.2",
-    "vite": "^2.5.1",
+    "vite": "^2.5.2",
     "vue-tsc": "^0.2.2"
   }
 }
