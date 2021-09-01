@@ -1,3 +1,12 @@
+## [1.5.2](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.1...plugin-legacy@1.5.2) (2021-09-01)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** avoid executing blank dynamic import ([#4767](https://github.com/vitejs/vite/issues/4767)) ([de71408](https://github.com/vitejs/vite/commit/de7140853140029a3f48600b60e700464e7662b5)), closes [#4568](https://github.com/vitejs/vite/issues/4568)
+
+
+
 ## [1.5.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.0...plugin-legacy@1.5.1) (2021-08-03)
 
 
