@@ -5268,10 +5268,10 @@ map-obj@^4.0.0:
   resolved "https://registry.yarnpkg.com/map-obj/-/map-obj-4.2.1.tgz#e4ea399dbc979ae735c83c863dd31bdf364277b7"
   integrity sha512-+WA2/1sPmDj1dlvvJmB5G6JKfY9dpn7EVBUL06+y6PoljPkh+6V1QihwxNkbcGxCRjt2b0F9K0taiCuo7MbdFQ==
 
-markdown-it-anchor@^7.1.0:
-  version "7.1.0"
-  resolved "https://registry.yarnpkg.com/markdown-it-anchor/-/markdown-it-anchor-7.1.0.tgz#30fb21497bf59e83ff4d1ddc052d821962e2489e"
-  integrity sha512-loQggrwsIkkP7TOrESvmYkV2ikbQNNKhHcWyqC7/C2CmfHl1tkUizJJU8C5aGgg7J6oXVQJx17gk7i47tNn/lQ==
+markdown-it-anchor@^8.1.2:
+  version "8.3.0"
+  resolved "https://registry.yarnpkg.com/markdown-it-anchor/-/markdown-it-anchor-8.3.0.tgz#9e1a71766f778c382e5b6d3808d8c4d3a3b4ae30"
+  integrity sha512-YXMxKqZDH/MM/sFBZe+JQ/XFa7i8mIWZYkcY7jCGmpNNqcj2iS9Wyxy5devkUoL14NJOUt5IleD99D8StAwkXg==
 
 markdown-it-container@^3.0.0:
   version "3.0.0"
@@ -7865,10 +7865,10 @@ vary@^1, vary@~1.1.2:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-vitepress@^0.16.0:
-  version "0.16.1"
-  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-0.16.1.tgz#70ba4326a4bdc7152f264868c0775615c0bc16d5"
-  integrity sha512-jsgNY+b4mngVHQ1mZZ7ZGJliup/nM0jwdKTGoptwVzSQfkx5i3lF14jRRMb6ulC+9X5xbQ7N/zNcWqVWMFd/cQ==
+vitepress@^0.17.0:
+  version "0.17.0"
+  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-0.17.0.tgz#14c54d5c9f0542dbe47ffe8f908d231c81796536"
+  integrity sha512-Fe2IVz79l2PhHWYP7aj8cYuVZttGsFLlekHZu78a8ewDTij8Laq6EfOCx7Eadeh4P/BYaYDv7UGXN0vTin811w==
   dependencies:
     "@docsearch/css" "^1.0.0-alpha.28"
     "@docsearch/js" "^1.0.0-alpha.28"
@@ -7886,7 +7886,7 @@ vitepress@^0.16.0:
     gray-matter "^4.0.3"
     lru-cache "^6.0.0"
     markdown-it "^12.0.6"
-    markdown-it-anchor "^7.1.0"
+    markdown-it-anchor "^8.1.2"
     markdown-it-container "^3.0.0"
     markdown-it-emoji "^2.0.0"
     markdown-it-table-of-contents "^0.5.2"
@@ -7895,7 +7895,7 @@ vitepress@^0.16.0:
     polka "^0.5.2"
     prismjs "^1.23.0"
     sirv "^1.0.12"
-    vite "^2.4.4"
+    vite "^2.5.0"
     vue "^3.2.1"
 
 void-elements@^3.1.0:
