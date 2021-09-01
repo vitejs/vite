@@ -51,7 +51,6 @@ import {
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
-import acornNumericSeparator from 'acorn-numeric-separator'
 import acornStaticClassFeatures from 'acorn-static-class-features'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
@@ -116,8 +115,7 @@ type PluginContext = Omit<
 
 export let parser = acorn.Parser.extend(
   acornClassFields,
-  acornStaticClassFeatures,
-  acornNumericSeparator
+  acornStaticClassFeatures
 )
 
 export async function createPluginContainer(
@@ -285,9 +283,22 @@ export async function createPluginContainer(
           : // some rollup plugins, e.g. json, sets position instead of pos
             (err as any).position
       if (pos != null) {
+        let errLocation
+        try {
+          errLocation = numberToPos(ctx._activeCode, pos)
+        } catch (err2) {
+          logger.error(
+            chalk.red(
+              `Error in error handler:\n${err2.stack || err2.message}\n`
+            ),
+            // print extra newline to separate the two errors
+            { error: err2 }
+          )
+          throw err
+        }
         err.loc = err.loc || {
           file: err.id,
-          ...numberToPos(ctx._activeCode, pos)
+          ...errLocation
         }
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
       } else if (err.loc) {
@@ -385,11 +396,9 @@ export async function createPluginContainer(
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
-          ...[
-            acornClassFields,
-            acornStaticClassFeatures,
-            acornNumericSeparator
-          ].concat(options.acornInjectPlugins)
+          ...[acornClassFields, acornStaticClassFeatures].concat(
+            options.acornInjectPlugins
+          )
         )
       }
       return {

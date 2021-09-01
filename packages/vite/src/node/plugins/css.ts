@@ -120,6 +120,11 @@ export const chunkToEmittedCssFileMap = new WeakMap<
   Set<string>
 >()
 
+export const removedPureCssFilesCache = new WeakMap<
+  ResolvedConfig,
+  Map<string, RenderedChunk>
+>()
+
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
   PostCSSConfigResult | null
@@ -150,6 +155,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
       moduleCache = new Map<string, Record<string, string>>()
       cssModulesCache.set(config, moduleCache)
+
+      removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
     },
 
     async transform(raw, id) {
@@ -208,7 +215,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                 isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
-                      await fileToUrl(file, config, this)
+                      (
+                        await fileToUrl(file, config, this)
+                      ).replace(config.base, '/')
                     )
               )
             }
@@ -471,7 +480,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
+        const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunks.forEach((fileName) => {
+          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
         })
       }
@@ -889,7 +900,8 @@ async function doUrlReplace(
 async function minifyCSS(css: string, config: ResolvedConfig) {
   const { code, warnings } = await transform(css, {
     loader: 'css',
-    minify: true
+    minify: true,
+    target: config.build.target || undefined
   })
   if (warnings.length) {
     const msgs = await formatMessages(warnings, { kind: 'warning' })

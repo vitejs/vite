@@ -333,6 +333,18 @@ export default defineConfig(async ({ command, mode }) => {
 
   See [here](/guide/env-and-mode#env-files) for more about environment files.
 
+### envPrefix
+
+- **Type:** `string | string[]`
+- **Default:** `VITE_`
+
+  Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+
+:::warning SECURITY NOTES
+
+- `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+  :::
+
 ## Server Options
 
 ### server.host
@@ -530,7 +542,7 @@ createServer()
 
 ### build.target
 
-- **Type:** `string`
+- **Type:** `string | string[]`
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
@@ -647,12 +659,6 @@ createServer()
 
   Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
 
-### build.cleanCssOptions
-
-- **Type:** `CleanCSS.Options`
-
-  Constructor options to pass on to [clean-css](https://github.com/jakubpawlowicz/clean-css#constructor-options).
-
 ### build.write
 
 - **Type:** `boolean`
@@ -707,7 +713,16 @@ createServer()
   Dependencies to exclude from pre-bundling.
 
   :::warning CommonJS
-  CommonJS dependencies should not be excluded from optimization. If an ESM dependency has a nested CommonJS dependency, it should not be excluded as well.
+  CommonJS dependencies should not be excluded from optimization. If an ESM dependency is excluded from optimization, but has a nested CommonJS dependency, the CommonJS dependency should be added to `optimizeDeps.include`. Example:
+
+  ```js
+  export default defineConfig({
+    optimizeDeps: {
+      include: ['esm-dep > cjs-dep']
+    }
+  })
+  ```
+
   :::
 
 ### optimizeDeps.include
@@ -741,9 +756,9 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string | RegExp | (string | RegExp)[] | true`
 
-  Prevent listed dependencies from being externalized for SSR.
+  Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized.
 
 ### ssr.target
 

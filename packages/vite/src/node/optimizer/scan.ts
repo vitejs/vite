@@ -15,7 +15,9 @@ import {
   isObject,
   cleanUrl,
   externalRE,
-  dataUrlRE
+  dataUrlRE,
+  multilineCommentsRE,
+  singlelineCommentsRE
 } from '../utils'
 import {
   createPluginContainer,
@@ -39,8 +41,6 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // simply be ignored.
 export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
-
-const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -162,7 +162,11 @@ function esbuildScanPlugin(
   }
 
   const include = config.optimizeDeps?.include
-  const exclude = config.optimizeDeps?.exclude
+  const exclude = [
+    ...(config.optimizeDeps?.exclude || []),
+    '@vite/client',
+    '@vite/env'
+  ]
 
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
@@ -235,6 +239,10 @@ function esbuildScanPlugin(
               js += content + '\n'
             }
           }
+          // empty singleline & multiline comments to avoid matching comments
+          const code = js
+            .replace(multilineCommentsRE, '/* */')
+            .replace(singlelineCommentsRE, '')
 
           if (
             loader.startsWith('ts') &&
@@ -247,8 +255,6 @@ function esbuildScanPlugin(
             // the solution is to add `import 'x'` for every source to force
             // esbuild to keep crawling due to potential side effects.
             let m
-            // empty multiline comments to avoid matching commented out imports
-            const code = js.replace(multilineCommentsRE, '/* */')
             while ((m = importsRE.exec(code)) != null) {
               // This is necessary to avoid infinite loops with zero-width matches
               if (m.index === importsRE.lastIndex) {
@@ -258,11 +264,11 @@ function esbuildScanPlugin(
             }
           }
 
-          if (!js.includes(`export default`)) {
+          if (!code.includes(`export default`)) {
             js += `\nexport default {}`
           }
 
-          if (js.includes('import.meta.glob')) {
+          if (code.includes('import.meta.glob')) {
             return {
               // transformGlob already transforms to js
               loader: 'js',

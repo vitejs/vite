@@ -1,5 +1,11 @@
 import { InlineConfig } from '..'
-import { mergeConfig, resolveConfig, UserConfigExport } from '../config'
+import {
+  mergeConfig,
+  resolveConfig,
+  UserConfigExport,
+  resolveEnvPrefix,
+  UserConfig
+} from '../config'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -137,5 +143,24 @@ describe('resolveConfig', () => {
         }
       }
     })
+  })
+})
+
+describe('resolveEnvPrefix', () => {
+  test(`use 'VITE_' as default value`, () => {
+    const config: UserConfig = {}
+    expect(resolveEnvPrefix(config)).toMatchObject(['VITE_'])
+  })
+
+  test(`throw error if envPrefix contains ''`, () => {
+    let config: UserConfig = { envPrefix: '' }
+    expect(() => resolveEnvPrefix(config)).toThrow()
+    config = { envPrefix: ['', 'CUSTOM_'] }
+    expect(() => resolveEnvPrefix(config)).toThrow()
+  })
+
+  test('should work correctly for valid envPrefix value', () => {
+    const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
+    expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
   })
 })

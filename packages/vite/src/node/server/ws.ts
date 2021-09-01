@@ -8,6 +8,7 @@ import WebSocket from 'ws'
 import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import { ResolvedConfig } from '..'
 import { isObject } from '../utils'
+import { Socket } from 'net'
 export const HMR_HEADER = 'vite-hmr'
 
 export interface WebSocketServer {
@@ -30,7 +31,7 @@ export function createWebSocketServer(
     wss = new WebSocket.Server({ noServer: true })
     wsServer.on('upgrade', (req, socket, head) => {
       if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
-        wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.handleUpgrade(req, socket as Socket, head, (ws) => {
           wss.emit('connection', ws, req)
         })
       }

@@ -9,6 +9,7 @@ import {
 } from './server'
 import { CSSOptions } from './plugins/css'
 import {
+  arraify,
   createDebugger,
   isExternalUrl,
   isObject,
@@ -21,12 +22,7 @@ import { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
-import {
-  CLIENT_PUBLIC_PATH,
-  CLIENT_ENTRY,
-  ENV_ENTRY,
-  DEFAULT_ASSETS_RE
-} from './constants'
+import { CLIENT_ENTRY, ENV_ENTRY, DEFAULT_ASSETS_RE } from './constants'
 import {
   InternalResolveOptions,
   ResolveOptions,
@@ -171,6 +167,11 @@ export interface UserConfig {
    */
   envDir?: string
   /**
+   * Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+   * @default 'VITE_'
+   */
+  envPrefix?: string | string[]
+  /**
    * Import aliases
    * @deprecated use `resolve.alias` instead
    */
@@ -187,7 +188,7 @@ export type SSRTarget = 'node' | 'webworker'
 
 export interface SSROptions {
   external?: string[]
-  noExternal?: string | RegExp | (string | RegExp)[]
+  noExternal?: string | RegExp | (string | RegExp)[] | true
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
@@ -307,7 +308,7 @@ export async function resolveConfig(
 
   const clientAlias = [
     { find: /^[\/]?@vite\/env/, replacement: () => ENV_ENTRY },
-    { find: CLIENT_PUBLIC_PATH, replacement: () => CLIENT_ENTRY }
+    { find: /^[\/]?@vite\/client/, replacement: () => CLIENT_ENTRY }
   ]
 
   // resolve alias with internal client alias
@@ -328,7 +329,9 @@ export async function resolveConfig(
   const envDir = config.envDir
     ? normalizePath(path.resolve(resolvedRoot, config.envDir))
     : resolvedRoot
-  const userEnv = inlineConfig.envFile !== false && loadEnv(mode, envDir)
+  const userEnv =
+    inlineConfig.envFile !== false &&
+    loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
@@ -383,7 +386,7 @@ export async function resolveConfig(
                 root: resolvedRoot,
                 isProduction,
                 isBuild: command === 'build',
-                ssrTarget: resolved.ssr?.target,
+                ssrConfig: resolved.ssr,
                 asSrc: true,
                 preferRelative: false,
                 tryIndex: true,
@@ -653,6 +656,8 @@ function mergeConfigRecursively(
         continue
       } else if (key === 'assetsInclude' && rootPath === '') {
         merged[key] = [].concat(existing, value)
+        continue
+      } else if (key === 'noExternal' && existing === true) {
         continue
       }
     }
@@ -947,7 +952,7 @@ async function loadConfigFromBundledFile(
 export function loadEnv(
   mode: string,
   envDir: string,
-  prefix = 'VITE_'
+  prefixes: string | string[] = 'VITE_'
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
@@ -955,7 +960,7 @@ export function loadEnv(
         `the .local postfix for .env files.`
     )
   }
-
+  prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
@@ -967,7 +972,10 @@ export function loadEnv(
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
-    if (key.startsWith(prefix) && env[key] === undefined) {
+    if (
+      prefixes.some((prefix) => key.startsWith(prefix)) &&
+      env[key] === undefined
+    ) {
       env[key] = process.env[key] as string
     }
   }
@@ -988,7 +996,10 @@ export function loadEnv(
 
       // only keys that start with prefix are exposed to client
       for (const [key, value] of Object.entries(parsed)) {
-        if (key.startsWith(prefix) && env[key] === undefined) {
+        if (
+          prefixes.some((prefix) => key.startsWith(prefix)) &&
+          env[key] === undefined
+        ) {
           env[key] = value
         } else if (key === 'NODE_ENV') {
           // NODE_ENV override in .env file
@@ -997,6 +1008,17 @@ export function loadEnv(
       }
     }
   }
-
   return env
+}
+
+export function resolveEnvPrefix({
+  envPrefix = 'VITE_'
+}: UserConfig): string[] {
+  envPrefix = arraify(envPrefix)
+  if (envPrefix.some((prefix) => prefix === '')) {
+    throw new Error(
+      `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`
+    )
+  }
+  return envPrefix
 }

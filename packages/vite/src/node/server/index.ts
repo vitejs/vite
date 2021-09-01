@@ -21,7 +21,6 @@ import {
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
-import { decodeURIMiddleware } from './middlewares/decodeURI'
 import {
   serveRawFsMiddleware,
   servePublicMiddleware,
@@ -319,7 +318,11 @@ export async function createServer(
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
-    ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      ...(Array.isArray(ignored) ? ignored : [ignored])
+    ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
     disableGlobbing: true,
@@ -482,9 +485,6 @@ export async function createServer(
   middlewares.use('/__vite_ping', function viteHMRPingMiddleware(_, res) {
     res.end('pong')
   })
-
-  //decode request url
-  middlewares.use(decodeURIMiddleware())
 
   // serve static files under /public
   // this applies before the transform middleware so that these files are served

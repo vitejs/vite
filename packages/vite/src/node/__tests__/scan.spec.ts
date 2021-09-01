@@ -1,4 +1,5 @@
 import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
+import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -101,5 +102,17 @@ describe('optimizer-scan:script-test', () => {
     shouldFailArray.forEach((str) => {
       expect(importsRE.test(str)).toBe(false)
     })
+  })
+
+  test('script comments test', () => {
+    multilineCommentsRE.lastIndex = 0
+    let ret = `/*
+      export default { }
+      */`.replace(multilineCommentsRE, '')
+    expect(ret).not.toContain('export default')
+
+    singlelineCommentsRE.lastIndex = 0
+    ret = `//export default { }`.replace(singlelineCommentsRE, '')
+    expect(ret).not.toContain('export default')
   })
 })
