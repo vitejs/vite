@@ -291,7 +291,7 @@ export function numberToPos(
 ): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
-    throw new Error('offset is longer than source length!')
+    throw new Error(`offset is longer than source length! offset ${offset} > length ${source.length}`);
   }
   const lines = source.split(splitRE)
   let counted = 0
