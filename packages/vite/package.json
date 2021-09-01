@@ -79,7 +79,6 @@
     "@vue/compiler-dom": "^3.1.5",
     "acorn": "^8.4.1",
     "acorn-class-fields": "^1.0.0",
-    "acorn-numeric-separator": "^0.3.6",
     "acorn-static-class-features": "^1.0.0",
     "brotli-size": "^4.0.0",
     "builtin-modules": "^3.2.0",

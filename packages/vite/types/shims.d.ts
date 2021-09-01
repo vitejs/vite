@@ -27,11 +27,6 @@ declare module 'acorn-static-class-features' {
   export default plugin
 }
 
-declare module 'acorn-numeric-separator' {
-  const plugin: any
-  export default plugin
-}
-
 declare module 'connect-history-api-fallback' {
   const plugin: any
   export = plugin
