@@ -20,7 +20,7 @@ const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 const dynamicFallbackInlineCode = `!function(){try{new Function("m","return import(m)")}catch(o){console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}}();`
 
-const blankDynamicImport = `import('data:text/javascript;base64,Cg==');`
+const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
@@ -238,7 +238,7 @@ function viteLegacyPlugin(options = {}) {
         const ms = new MagicString(raw)
 
         if (genDynamicFallback && chunk.isEntry) {
-          ms.prepend(blankDynamicImport)
+          ms.prepend(forceDynamicImportUsage)
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
