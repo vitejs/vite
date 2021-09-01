@@ -24,6 +24,9 @@
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
+<h2>Resolve filename with hash</h2>
+<p class="hash">fail</p>
+
 <h2>Resolve dir and file of the same name (should prioritize file)</h2>
 <p class="dir-vs-file">fail</p>
 
@@ -103,6 +106,10 @@
   // implicit index resolving
   import { foo } from './util'
   text('.index', foo())
+
+  // resolving filenames with hashes
+  import { msg as hashMsg } from 'resolve-exports-path/hash#.js'
+  text('.hash', hashMsg)
 
   // implicit dir index vs. file
   import { file } from './dir'

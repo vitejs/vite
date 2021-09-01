@@ -276,43 +276,41 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
 }
 
+function getPossiblePostfixSplits(fsPath: string) {
+  const questionIndex = fsPath.indexOf('?')
+
+  if (questionIndex > 0) {
+    // if a question mark is used, everything after is definitely
+    // the postfix:
+    return [[fsPath.slice(0, questionIndex), fsPath.slice(questionIndex)]]
+  }
+
+  const hashIndex = fsPath.indexOf('#')
+  if (hashIndex > 0) {
+    // if a hash is used, it could either be a postfix or part
+    // of the filename
+    return [
+      [fsPath.slice(0, hashIndex), fsPath.slice(hashIndex)],
+      [fsPath, '']
+    ]
+  }
+
+  return [[fsPath, '']]
+}
+
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true
 ): string | undefined {
-  let file = fsPath
-  let postfix = ''
-
-  let postfixIndex = fsPath.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = fsPath.indexOf('#')
-  }
-  if (postfixIndex > 0) {
-    file = fsPath.slice(0, postfixIndex)
-    postfix = fsPath.slice(postfixIndex)
-  }
+  const possiblePostfixSplits = getPossiblePostfixSplits(fsPath)
 
   let res: string | undefined
-  if (
-    (res = tryResolveFile(
-      file,
-      postfix,
-      options,
-      false,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson
-    ))
-  ) {
-    return res
-  }
-
-  for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
+  for (const [file, postfix] of possiblePostfixSplits) {
     if (
       (res = tryResolveFile(
-        file + ext,
+        file,
         postfix,
         options,
         false,
@@ -325,18 +323,38 @@ function tryFsResolve(
     }
   }
 
-  if (
-    (res = tryResolveFile(
-      file,
-      postfix,
-      options,
-      tryIndex,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson
-    ))
-  ) {
-    return res
+  for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
+    for (const [file, postfix] of possiblePostfixSplits) {
+      if (
+        (res = tryResolveFile(
+          file + ext,
+          postfix,
+          options,
+          false,
+          targetWeb,
+          options.tryPrefix,
+          options.skipPackageJson
+        ))
+      ) {
+        return res
+      }
+    }
+  }
+
+  for (const [file, postfix] of possiblePostfixSplits) {
+    if (
+      (res = tryResolveFile(
+        file,
+        postfix,
+        options,
+        tryIndex,
+        targetWeb,
+        options.tryPrefix,
+        options.skipPackageJson
+      ))
+    ) {
+      return res
+    }
   }
 }
 

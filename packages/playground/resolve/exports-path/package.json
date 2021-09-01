@@ -6,6 +6,7 @@
       "import": "./main.js",
       "require": "./cjs.js"
     },
+    "./hash#.js": "./hash#.js",
     "./deep.js": "./deep.js",
     "./dir/": "./dir/",
     "./dir-mapped/*": {

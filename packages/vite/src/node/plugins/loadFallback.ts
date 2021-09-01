@@ -7,9 +7,9 @@ export function loadFallbackPlugin(): Plugin {
     name: 'load-fallback',
     async load(id) {
       try {
-        return fs.readFile(cleanUrl(id), 'utf-8')
+        return await fs.readFile(cleanUrl(id), 'utf-8')
       } catch (e) {
-        return fs.readFile(id, 'utf-8')
+        return await fs.readFile(id, 'utf-8')
       }
     }
   }
