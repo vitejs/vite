@@ -520,7 +520,7 @@ export function tryOptimizedResolve(
     if (resolvedSrc == null) {
       try {
         // this may throw errors if unable to resolve, e.g. aliased id
-        resolvedSrc = resolveFrom(id, path.dirname(importer))
+        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
       } catch {
         // this is best-effort only so swallow errors
         break
