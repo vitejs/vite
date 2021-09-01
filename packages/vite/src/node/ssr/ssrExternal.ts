@@ -28,14 +28,12 @@ export function resolveSSRExternal(
     return []
   }
   const pkg = JSON.parse(pkgContent)
-  const devDeps = Object.keys(pkg.devDependencies || {})
   const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
-  const deps = unique([...importedDeps, ...Object.keys(pkg.dependencies || {})])
-
-  for (const id of devDeps) {
-    ssrExternals.add(id)
-    seen.add(id)
-  }
+  const deps = unique([
+    ...importedDeps,
+    ...Object.keys(pkg.devDependencies || {}),
+    ...Object.keys(pkg.dependencies || {})
+  ])
 
   const resolveOptions: InternalResolveOptions = {
     root,
