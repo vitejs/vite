@@ -207,7 +207,7 @@ function vueJsxPlugin(options = {}) {
               ) + `\nexport default __default__`
           }
 
-          if (needHmr && !ssr) {
+          if (needHmr && !ssr && !/\?vue&type=script/.test(id)) {
             let code = result.code
             let callbackCode = ``
             for (const { local, exported, id } of hotComponents) {

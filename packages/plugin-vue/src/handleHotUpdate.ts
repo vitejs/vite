@@ -46,7 +46,14 @@ export async function handleHotUpdate({
     !isEqualBlock(descriptor.script, prevDescriptor.script) ||
     !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup)
   ) {
-    affectedModules.add(mainModule)
+    let scriptModule: ModuleNode | undefined
+    if (descriptor.script?.lang && !descriptor.script.src) {
+      const scriptModuleRE = new RegExp(
+        `type=script.*&lang\.${descriptor.script.lang}$`
+      )
+      scriptModule = modules.find((m) => scriptModuleRE.test(m.url))
+    }
+    affectedModules.add(scriptModule || mainModule)
   }
 
   if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {

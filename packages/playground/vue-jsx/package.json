@@ -9,6 +9,7 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue-jsx": "^1.0.0"
+    "@vitejs/plugin-vue-jsx": "^1.0.0",
+    "@vitejs/plugin-vue": "^1.3.0"
   }
 }

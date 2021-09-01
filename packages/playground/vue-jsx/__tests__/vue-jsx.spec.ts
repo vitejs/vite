@@ -5,6 +5,8 @@ test('should render', async () => {
   expect(await page.textContent('.named-specifier')).toMatch('1')
   expect(await page.textContent('.default')).toMatch('2')
   expect(await page.textContent('.default-tsx')).toMatch('3')
+  expect(await page.textContent('.script')).toMatch('4')
+  expect(await page.textContent('.src-import')).toMatch('5')
   expect(await page.textContent('.other-ext')).toMatch('Other Ext')
 })
 
@@ -17,6 +19,10 @@ test('should update', async () => {
   expect(await page.textContent('.default')).toMatch('3')
   await page.click('.default-tsx')
   expect(await page.textContent('.default-tsx')).toMatch('4')
+  await page.click('.script')
+  expect(await page.textContent('.script')).toMatch('5')
+  await page.click('.src-import')
+  expect(await page.textContent('.src-import')).toMatch('6')
 })
 
 if (!isBuild) {
@@ -73,5 +79,27 @@ if (!isBuild) {
 
     // should not affect other components on the page
     expect(await page.textContent('.named')).toMatch('1')
+  })
+
+  test('hmr: script in .vue', async () => {
+    editFile('Script.vue', (code) =>
+      code.replace('script {count', 'script updated {count')
+    )
+    await untilUpdated(() => page.textContent('.script'), 'script updated 4')
+
+    expect(await page.textContent('.src-import')).toMatch('6')
+  })
+
+  test('hmr: src import in .vue', async () => {
+    await page.click('.script')
+    editFile('SrcImport.jsx', (code) =>
+      code.replace('src import {count', 'src import updated {count')
+    )
+    await untilUpdated(
+      () => page.textContent('.src-import'),
+      'src import updated 5'
+    )
+
+    expect(await page.textContent('.script')).toMatch('5')
   })
 }
