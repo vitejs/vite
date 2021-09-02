@@ -7,7 +7,8 @@ import {
   SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
-  OPTIMIZABLE_ENTRY_RE
+  OPTIMIZABLE_ENTRY_RE,
+  HASH_PLACEHOLDER
 } from '../constants'
 import {
   isBuiltin,
@@ -290,8 +291,8 @@ function getPossiblePostfixSplits(fsPath: string) {
     // if a hash is used, it could either be a postfix or part
     // of the filename
     return [
-      [fsPath.slice(0, hashIndex), fsPath.slice(hashIndex)],
-      [fsPath, '']
+      [fsPath, ''],
+      [(fsPath.slice(0, hashIndex), fsPath.slice(hashIndex))]
     ]
   }
 
@@ -358,6 +359,14 @@ function tryFsResolve(
   }
 }
 
+function makePathWebSafe(path?: string) {
+  if (!path) {
+    return undefined
+  }
+
+  return path.replace(/#/g, HASH_PLACEHOLDER)
+}
+
 function tryResolveFile(
   file: string,
   postfix: string,
@@ -377,18 +386,30 @@ function tryResolveFile(
   } catch (e) {}
   if (isReadable) {
     if (!fs.statSync(file).isDirectory()) {
-      return normalizePath(ensureVolumeInPath(file)) + postfix
+      const normalized = normalizePath(ensureVolumeInPath(file)) + postfix
+
+      return targetWeb ? makePathWebSafe(normalized) : normalized
     } else if (tryIndex) {
       if (!skipPackageJson) {
         const pkgPath = file + '/package.json'
         if (fs.existsSync(pkgPath)) {
           // path points to a node package
           const pkg = loadPackageData(pkgPath)
-          return resolvePackageEntry(file, pkg, options, targetWeb)
+          const resolvedPackage = resolvePackageEntry(
+            file,
+            pkg,
+            options,
+            targetWeb
+          )
+
+          return targetWeb ? makePathWebSafe(resolvedPackage) : resolvedPackage
         }
       }
       const index = tryFsResolve(file + '/index', options)
-      if (index) return index + postfix
+      if (index) {
+        const indexPath = index + postfix
+        return targetWeb ? makePathWebSafe(indexPath) : indexPath
+      }
     }
   }
   if (tryPrefix) {

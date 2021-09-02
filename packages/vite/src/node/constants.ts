@@ -38,6 +38,12 @@ export const VALID_ID_PREFIX = `/@id/`
  */
 export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
+/**
+ * Some node packages use the '#' character in their import paths, which
+ * is invalid in URLs, so we have to replace them.
+ */
+export const HASH_PLACEHOLDER = `__x2F__`
+
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
 // eslint-disable-next-line node/no-missing-require

@@ -42,6 +42,10 @@ test('filename with hash', async () => {
   expect(await page.textContent('.hash')).toMatch('[success]')
 })
 
+test('dir/index with hash', async () => {
+  expect(await page.textContent('.hash-dir')).toMatch('[success]')
+})
+
 test('implicit dir/index.js', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })

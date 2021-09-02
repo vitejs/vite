@@ -9,7 +9,8 @@ import {
   DEFAULT_EXTENSIONS,
   VALID_ID_PREFIX,
   CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH
+  ENV_PUBLIC_PATH,
+  HASH_PLACEHOLDER
 } from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
@@ -123,6 +124,8 @@ export function ensureVolumeInPath(file: string): string {
 
 export const queryRE = /\?.*$/s
 export const hashRE = /#.*$/s
+
+export const hashPlaceholderRE = new RegExp(HASH_PLACEHOLDER, 'g')
 
 export const cleanUrl = (url: string): string =>
   url.replace(hashRE, '').replace(queryRE, '')
@@ -291,7 +294,9 @@ export function numberToPos(
 ): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
-    throw new Error(`offset is longer than source length! offset ${offset} > length ${source.length}`);
+    throw new Error(
+      `offset is longer than source length! offset ${offset} > length ${source.length}`
+    )
   }
   const lines = source.split(splitRE)
   let counted = 0

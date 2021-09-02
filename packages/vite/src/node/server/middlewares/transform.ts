@@ -4,6 +4,7 @@ import { Connect } from 'types/connect'
 import {
   cleanUrl,
   createDebugger,
+  hashPlaceholderRE,
   injectQuery,
   isImportRequest,
   isJSRequest,
@@ -141,6 +142,8 @@ export function transformMiddleware(
         // Strip valid id prefix. This is prepended to resolved Ids that are
         // not valid browser import specifiers by the importAnalysis plugin.
         url = unwrapId(url)
+
+        url = url.replace(hashPlaceholderRE, '#')
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports

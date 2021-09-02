@@ -17,7 +17,8 @@ import {
   externalRE,
   dataUrlRE,
   multilineCommentsRE,
-  singlelineCommentsRE
+  singlelineCommentsRE,
+  hashPlaceholderRE
 } from '../utils'
 import {
   createPluginContainer,
@@ -380,6 +381,7 @@ function esbuildScanPlugin(
       // presence of import.meta.glob, since it results in import relationships
       // but isn't crawled by esbuild.
       build.onLoad({ filter: JS_TYPES_RE }, ({ path: id }) => {
+        id = id.replace(hashPlaceholderRE, '#')
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
