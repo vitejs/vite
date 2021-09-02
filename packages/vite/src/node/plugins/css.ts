@@ -57,6 +57,8 @@ export interface CSSOptions {
     | (Postcss.ProcessOptions & {
         plugins?: Postcss.Plugin[]
       })
+  inject?: string
+  remove?: string
 }
 
 export interface CSSModulesOptions {
@@ -295,12 +297,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `import { updateStyle, removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
+            `const inject = ${config.css?.inject}`,
+            `const remove = ${config.css?.remove}`,
             `const id = ${JSON.stringify(id)}`,
             `const css = ${JSON.stringify(css)}`,
-            `updateStyle(id, css)`,
+            `updateStyle(id, css, inject, remove)`,
             // css modules exports change on edit so it can't self accept
             `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
-            `import.meta.hot.prune(() => removeStyle(id))`
+            `import.meta.hot.prune(() => removeStyle(id, remove))`
           ].join('\n')
         }
       }

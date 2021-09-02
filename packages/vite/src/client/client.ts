@@ -237,11 +237,16 @@ const supportsConstructedSheet = (() => {
 
 const sheetsMap = new Map()
 
-export function updateStyle(id: string, content: string): void {
+export function updateStyle(
+  id: string,
+  content: string,
+  inject?: (style: HTMLStyleElement) => void,
+  remove?: (style: HTMLStyleElement) => void
+): void {
   let style = sheetsMap.get(id)
   if (supportsConstructedSheet && !content.includes('@import')) {
     if (style && !(style instanceof CSSStyleSheet)) {
-      removeStyle(id)
+      removeStyle(id, remove)
       style = undefined
     }
 
@@ -255,7 +260,7 @@ export function updateStyle(id: string, content: string): void {
     }
   } else {
     if (style && !(style instanceof HTMLStyleElement)) {
-      removeStyle(id)
+      removeStyle(id, remove)
       style = undefined
     }
 
@@ -263,7 +268,11 @@ export function updateStyle(id: string, content: string): void {
       style = document.createElement('style')
       style.setAttribute('type', 'text/css')
       style.innerHTML = content
-      document.head.appendChild(style)
+      if (inject) {
+        inject(style)
+      } else {
+        document.head.appendChild(style)
+      }
     } else {
       style.innerHTML = content
     }
@@ -271,7 +280,10 @@ export function updateStyle(id: string, content: string): void {
   sheetsMap.set(id, style)
 }
 
-export function removeStyle(id: string): void {
+export function removeStyle(
+  id: string,
+  remove?: (style: HTMLStyleElement) => void
+): void {
   const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
@@ -282,7 +294,11 @@ export function removeStyle(id: string): void {
         (s: CSSStyleSheet) => s !== style
       )
     } else {
-      document.head.removeChild(style)
+      if (remove) {
+        remove(style)
+      } else {
+        document.head.removeChild(style)
+      }
     }
     sheetsMap.delete(id)
   }
