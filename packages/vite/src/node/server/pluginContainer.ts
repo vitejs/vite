@@ -121,7 +121,8 @@ export let parser = acorn.Parser.extend(
 )
 
 export async function createPluginContainer(
-  { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  // @ts-ignore
+  { $fs$, plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
@@ -169,6 +170,7 @@ export async function createPluginContainer(
     _activeId: string | null = null
     _activeCode: string | null = null
     _resolveSkips?: Set<Plugin>
+    $fs$ = $fs$
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null

@@ -7,6 +7,10 @@ import { resolveBuildOptions } from '../node/build';
 import { CLIENT_DIR, DEFAULT_ASSETS_RE } from '../node/constants';
 import { resolvePlugins } from './plugins';
 import { resolveServerOptions } from './server';
+import { PluginContainer } from '../node';
+import aliasPlugin from '@rollup/plugin-alias';
+import { resolvePlugin } from './plugins/resolve';
+import { createPluginContainer } from '../node/server/pluginContainer';
 
 export interface BrowserFS {
   readFileSync(file: string, encoding: 'utf-8'): string;
@@ -52,24 +56,6 @@ export async function resolveConfig(
   // BROWSER VITE
   // @ts-ignore
   config.$fs$ = $fs$;
-  prePlugins.unshift({
-    name: 'vite:tree',
-    resolveId() {
-      // @ts-ignore
-      this.$fs$ = $fs$;
-      return undefined;
-    },
-    load() {
-      // @ts-ignore
-      this.$fs$ = $fs$;
-      return undefined;
-    },
-    transform() {
-      // @ts-ignore
-      this.$fs$ = $fs$;
-      return undefined;
-    },
-  });
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
@@ -112,7 +98,40 @@ export async function resolveConfig(
   // create an internal resolver to be used in special scenarios, e.g.
   // optimizer & handling css @imports
   const createResolver: ResolvedConfig['createResolver'] = (options) => {
-    return undefined as any;
+    let aliasContainer: PluginContainer | undefined
+    let resolverContainer: PluginContainer | undefined
+    return async (id, importer, aliasOnly, ssr) => {
+      let container: PluginContainer
+      if (aliasOnly) {
+        container =
+          aliasContainer ||
+          (aliasContainer = await createPluginContainer({
+            ...resolved,
+            plugins: [aliasPlugin({ entries: resolved.resolve.alias })]
+          }))
+      } else {
+        container =
+          resolverContainer ||
+          (resolverContainer = await createPluginContainer({
+            ...resolved,
+            plugins: [
+              aliasPlugin({ entries: resolved.resolve.alias }),
+              resolvePlugin({
+                ...resolved.resolve,
+                root: resolvedRoot,
+                isProduction,
+                isBuild: command === 'build',
+                ssrTarget: resolved.ssr?.target,
+                asSrc: true,
+                preferRelative: false,
+                tryIndex: true,
+                ...options
+              })
+            ]
+          }))
+      }
+      return (await container.resolveId(id, importer, undefined, ssr))?.id
+    }
   }
 
   const { publicDir } = config

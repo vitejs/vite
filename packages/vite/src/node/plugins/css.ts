@@ -641,6 +641,11 @@ async function compileCSS(
             return path.resolve(resolved)
           }
           return id
+        },
+        // @ts-ignore
+        async load(filename, options) {
+          // @ts-ignore
+          return (config.$fs$ || fs).readFileSync(filename, 'utf-8')
         }
       })
     )
