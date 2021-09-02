@@ -1,7 +1,7 @@
 import path from 'path'
 import { promises as fs } from 'fs'
-import { Logger } from '../logger'
 import { createDebugger } from '../utils'
+import { ResolvedConfig } from '../config'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
@@ -17,8 +17,9 @@ interface SourceMapLike {
 export async function injectSourcesContent(
   map: SourceMapLike,
   file: string,
-  logger: Logger
-): Promise<void> {
+  config: ResolvedConfig
+  ): Promise<void> {
+  const { logger } = config;
   let sourceRoot: string | undefined
   try {
     // The source root is undefined for virtual modules and permission errors.
@@ -35,7 +36,7 @@ export async function injectSourcesContent(
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)
         }
-        return fs.readFile(sourcePath, 'utf-8').catch(() => {
+        return ((config as any).$fs$?.promises || fs).readFile(sourcePath, 'utf-8').catch(() => {
           missingSources.push(sourcePath)
           return null
         })

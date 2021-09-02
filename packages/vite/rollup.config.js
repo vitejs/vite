@@ -450,9 +450,10 @@ function viteForBrowserPlugin() {
     url: 'const URL = globalThis.URL;const URLSearchParams = globalThis.URLSearchParams;function parse(s) {return new URL(s[0]==="/" ? "file://"+s : s)};function pathToFileURL(s) {throw new Error(s);};export { URL, parse, pathToFileURL, URLSearchParams }',
     'postcss-load-config':
       'export default () => {throw new Error("No PostCSS Config found")}',
-    fs: `const readFileSync = () => '';const existsSync = () => false;const statSync = () => {throw new Error('Not found')};const promises = { readFile: readFileSync, exists: existsSync, stat: statSync };export { readFileSync, existsSync, statSync, promises };export default {readFileSync, existsSync, promises}`,
+    fs: `const readFileSync = () => '';const existsSync = () => false;const statSync = () => {throw new Error('Not found')};const promises = { readFile: () => Promise.resolve(''), exists: () => Promise.resolve(false), stat: () => Promise.reject(new Error('Not found')) };export { readFileSync, existsSync, statSync, promises };export default {readFileSync, existsSync, promises}`,
     sirv: 'export default function () {}'
   }
+  
   return {
     name: 'vite:browser',
     resolveId: (id, importer) => {

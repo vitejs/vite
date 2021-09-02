@@ -147,7 +147,7 @@ export async function transformRequest(
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
     if (map.mappings && !map.sourcesContent) {
-      await injectSourcesContent(map, mod.file, logger)
+      await injectSourcesContent(map, mod.file, config)
     }
   }
 
