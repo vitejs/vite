@@ -7,6 +7,7 @@ import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
+import { onRollupWarning } from '../build'
 
 function parseWorkerRequest(id: string): Record<string, string> | null {
   const { search } = parseUrl(id)
@@ -56,7 +57,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const rollup = require('rollup') as typeof Rollup
         const bundle = await rollup.rollup({
           input: cleanUrl(id),
-          plugins: await resolvePlugins({ ...config }, [], [], [])
+          plugins: await resolvePlugins({ ...config }, [], [], []),
+          onwarn(warning, warn) {
+            onRollupWarning(warning, warn, config)
+          },
         })
         let code: string
         try {
