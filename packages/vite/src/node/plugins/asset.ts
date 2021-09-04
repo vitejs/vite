@@ -68,7 +68,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const file = checkPublicFile(id, config) || cleanUrl(id)
         // raw query, read file and return as string
         return `export default ${JSON.stringify(
-          ((this as any).$fs$ || fs).readFileSync(file, 'utf-8')
+          fs.readFileSync(file, 'utf-8')
         )}`
       }
 
@@ -206,7 +206,7 @@ async function fileToBuiltUrl(
   }
 
   const file = cleanUrl(id)
-  const content = ((config as any).$fs$ || fs).readFileSync(file, 'utf-8')
+  const content = fs.readFileSync(file, 'utf-8')
 
   let url: string
   if (

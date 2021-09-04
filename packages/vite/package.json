@@ -1,6 +1,6 @@
 {
   "name": "browser-vite",
-  "version": "2.4.4-browser.6",
+  "version": "2.4.4-browser.7",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",

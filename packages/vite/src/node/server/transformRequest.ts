@@ -80,7 +80,7 @@ export async function transformRequest(
     // like /service-worker.js or /api/users
     if (options.ssr || isFileServingAllowed(file, server)) {
       try {
-        code = ((config as any).$fs$ || fs).readFileSync(file, 'utf-8')
+        code = fs.readFileSync(file, 'utf-8')
         isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {

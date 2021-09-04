@@ -36,7 +36,7 @@ export async function injectSourcesContent(
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)
         }
-        return ((config as any).$fs$?.promises || fs).readFile(sourcePath, 'utf-8').catch(() => {
+        return fs.readFile(sourcePath, 'utf-8').catch(() => {
           missingSources.push(sourcePath)
           return null
         })

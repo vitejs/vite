@@ -121,8 +121,7 @@ export let parser = acorn.Parser.extend(
 )
 
 export async function createPluginContainer(
-  // @ts-ignore
-  { $fs$, plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
@@ -170,7 +169,6 @@ export async function createPluginContainer(
     _activeId: string | null = null
     _activeCode: string | null = null
     _resolveSkips?: Set<Plugin>
-    $fs$ = $fs$
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
@@ -295,7 +293,7 @@ export async function createPluginContainer(
           if (err.loc.file) {
             err.id = normalizePath(err.loc.file)
             try {
-              code = ((ctx as any).$fs$ || fs).readFileSync(err.loc.file, 'utf-8')
+              code = fs.readFileSync(err.loc.file, 'utf-8')
             } catch {}
           }
           err.frame = generateCodeFrame(code, err.loc)

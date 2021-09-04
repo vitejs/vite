@@ -17,6 +17,7 @@ import {
 import type { ViteDevServer, InternalResolveOptions } from '../../node'
 import type { PartialResolvedId, PluginContext } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
+import fs from 'fs';
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -160,16 +161,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           return res
         }
       }
-
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
-    },
-
-    load(id) {
-        // @ts-ignore
-        if (id.startsWith(root) && this.$fs$.existsSync(id)) {
-        // @ts-ignore
-        return this.$fs$.readFileSync(id, 'utf-8');
-      }
     }
   }
 }
@@ -249,8 +241,7 @@ function tryResolveFile(
   tryPrefix?: string
 ): string | undefined {
   if (!file.startsWith(options.root)) return undefined;
-  // @ts-ignore
-  if (context.$fs$.existsSync(file)) {
+  if (fs.existsSync(file)) {
     return file + postfix
   } else if (tryIndex) {
     const index = tryFsResolve(file + '/index', options, context, false)

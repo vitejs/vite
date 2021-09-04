@@ -12,14 +12,8 @@ import aliasPlugin from '@rollup/plugin-alias';
 import { resolvePlugin } from './plugins/resolve';
 import { createPluginContainer } from '../node/server/pluginContainer';
 
-export interface BrowserFS {
-  readFileSync(file: string, encoding: 'utf-8'): string;
-  existsSync(file: string): boolean;
-}
-
 export async function resolveConfig(
   inlineConfig: InlineConfig,
-  $fs$: BrowserFS,
   command: 'build' | 'serve',
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
@@ -52,10 +46,6 @@ export async function resolveConfig(
     }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
-
-  // BROWSER VITE
-  // @ts-ignore
-  config.$fs$ = $fs$;
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]

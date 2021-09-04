@@ -73,7 +73,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   entries = entries.filter(
     (entry) =>
       (JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)) &&
-      ((config as any).$fs$ || fs).existsSync(entry)
+      fs.existsSync(entry)
   )
 
   if (!entries.length) {
@@ -191,7 +191,7 @@ function esbuildScanPlugin(
       build.onLoad(
         { filter: htmlTypesRE, namespace: 'html' },
         async ({ path }) => {
-          let raw = ((config as any).$fs$ || fs).readFileSync(path, 'utf-8')
+          let raw = fs.readFileSync(path, 'utf-8')
           // Avoid matching the content of the comment
           raw = raw.replace(commentRE, '<!---->')
           const isHtml = path.endsWith('.html')
@@ -355,7 +355,7 @@ function esbuildScanPlugin(
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
-        let contents = ((config as any).$fs$ || fs).readFileSync(id, 'utf-8')
+        let contents = fs.readFileSync(id, 'utf-8')
         if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
           contents = config.esbuild.jsxInject + `\n` + contents
         }
