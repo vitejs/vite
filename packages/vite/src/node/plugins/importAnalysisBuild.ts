@@ -44,7 +44,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
-      dep = `${base}${dep}`
+      // fix part of #4840
+      dep = /^(https?:\/)?\//.test(dep) ? dep : `${base}${dep}`
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
