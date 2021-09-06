@@ -27,9 +27,8 @@ export interface Options {
    */
   jsxRuntime?: 'classic' | 'automatic'
   /**
-   * Replaces the import source when importing functions when used with automatic jsx runtime.
-   *
-   * See https://babeljs.io/docs/en/babel-plugin-transform-react-jsx#importsource
+   * Control where the JSX factory is imported from.
+   * This option is ignored when `jsxRuntime` is not `"automatic"`.
    * @default "react"
    */
   jsxImportSource?: string
