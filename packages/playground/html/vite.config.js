@@ -8,7 +8,9 @@ module.exports = {
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        nested: resolve(__dirname, 'nested/index.html')
+        nested: resolve(__dirname, 'nested/index.html'),
+        scriptAsync: resolve(__dirname, 'scriptAsync.html'),
+        scriptMixed: resolve(__dirname, 'scriptMixed.html')
       }
     }
   },
