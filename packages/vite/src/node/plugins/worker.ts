@@ -75,15 +75,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const content = Buffer.from(code)
         if (query.inline != null) {
           // inline as blob data url
-          return `const blob = new Blob([atob(\"${content.toString(
-            'base64'
-          )}\")], { type: 'text/javascript;charset=utf-8' });
+          return `const encodedJs = "${content.toString('base64')}";
+            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper() {
-              const objURL = (window.URL || window.webkitURL).createObjectURL(blob);
+              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return new Worker(objURL);
+                return objURL ? new Worker(objURL) : new Worker("data:application/javascript;base64," + encodedJs, {type: "module"});
               } finally {
-                (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
             }`
         } else {
