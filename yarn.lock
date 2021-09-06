@@ -2728,8 +2728,7 @@ css-color-names@^1.0.1:
   integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
 
 "css-dep@link:./packages/playground/css/css-dep":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 css-parse@~2.0.0:
   version "2.0.0"
@@ -2784,6 +2783,11 @@ dargs@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/dargs/-/dargs-7.0.0.tgz#04015c41de0bcb69ec84050f3d9be0caf8d6d5cc"
   integrity sha512-2iy1EkLdlBzQGvbweYRFxmFath8+K7+AKB0TlhHWkNuH+TmovaMH/Wp7V7R4u7f4SnX3OgLsU9t1NI9ioDnUpg==
+
+data-uri-to-buffer@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/data-uri-to-buffer/-/data-uri-to-buffer-3.0.1.tgz#594b8973938c5bc2c33046535785341abc4f3636"
+  integrity sha512-WboRycPNsVw3B3TL559F7kuBUM4d8CgMEvk6xEJlOp7OBPjt6G7z8WMWlD2rOFZLk6OYfFIUGsCOWzcQH9K2og==
 
 data-urls@^2.0.0:
   version "2.0.0"
@@ -2912,19 +2916,19 @@ denque@^1.1.0:
 
 "dep-esbuild-plugin-transform@link:./packages/playground/optimize-deps/dep-esbuild-plugin-transform":
   version "0.0.0"
-  uid ""
 
 "dep-import-type@link:./packages/playground/ssr-vue/dep-import-type":
   version "0.0.0"
-  uid ""
 
 "dep-linked-include@link:./packages/playground/optimize-deps/dep-linked-include":
   version "0.0.0"
-  uid ""
+  dependencies:
+    react "17.0.0"
 
 "dep-linked@link:./packages/playground/optimize-deps/dep-linked":
   version "0.0.0"
-  uid ""
+  dependencies:
+    lodash-es "^4.17.20"
 
 depd@~1.1.2:
   version "1.1.2"
@@ -3493,6 +3497,13 @@ fd-slicer@~1.1.0:
   integrity sha1-JcfInLH5B3+IkbvmHY85Dq4lbx4=
   dependencies:
     pend "~1.2.0"
+
+fetch-blob@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/fetch-blob/-/fetch-blob-3.1.2.tgz#6bc438675f3851ecea51758ac91f6a1cd1bacabd"
+  integrity sha512-hunJbvy/6OLjCD0uuhLdp0mMPzP/yd2ssd1t2FCJsaA7wkWhpbp9xfuNVpv7Ll4jFhzp6T4LAupSiV9uOeg0VQ==
+  dependencies:
+    web-streams-polyfill "^3.0.3"
 
 file-entry-cache@^6.0.1:
   version "6.0.1"
@@ -5571,8 +5582,9 @@ neo-async@^2.6.0:
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
 
 "nested-exclude@link:./packages/playground/optimize-deps/nested-exclude":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
+  dependencies:
+    nested-include "file:./packages/playground/optimize-deps/nested-exclude/nested-include"
 
 "nested-include@file:./packages/playground/optimize-deps/nested-exclude/nested-include":
   version "1.0.0"
@@ -5597,10 +5609,13 @@ node-emoji@^1.8.1:
   dependencies:
     lodash "^4.17.21"
 
-node-fetch@^2.6.1:
-  version "2.6.1"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
-  integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
+node-fetch@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-3.0.0.tgz#79da7146a520036f2c5f644e4a26095f17e411ea"
+  integrity sha512-bKMI+C7/T/SPU1lKnbQbwxptpCrG9ashG+VkytmXCPZyuM9jB6VU+hY0oi4lC8LxTtAeWdckNCTa3nrGsAdA3Q==
+  dependencies:
+    data-uri-to-buffer "^3.0.1"
+    fetch-blob "^3.1.2"
 
 node-forge@^0.10.0:
   version "0.10.0"
@@ -6669,16 +6684,13 @@ reserved-words@^0.1.2:
   integrity sha1-AKCUD5jNUBrqqsMWQR2a3FKzGrE=
 
 "resolve-browser-field@link:./packages/playground/resolve/browser-field":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-custom-condition@link:./packages/playground/resolve/custom-condition":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-custom-main-field@link:./packages/playground/resolve/custom-main-field":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 resolve-cwd@^3.0.0:
   version "3.0.0"
@@ -6688,12 +6700,10 @@ resolve-cwd@^3.0.0:
     resolve-from "^5.0.0"
 
 "resolve-exports-env@link:./packages/playground/resolve/exports-env":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "resolve-exports-path@link:./packages/playground/resolve/exports-path":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -7452,24 +7462,21 @@ test-exclude@^6.0.0:
     minimatch "^3.0.4"
 
 "test-package-a@link:./packages/playground/nested-deps/test-package-a":
-  version "0.0.0"
-  uid ""
+  version "2.0.0"
 
 "test-package-b@link:./packages/playground/nested-deps/test-package-b":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "test-package-c@link:./packages/playground/nested-deps/test-package-c":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "test-package-d-nested@link:./packages/playground/nested-deps/test-package-d/test-package-d-nested":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
 
 "test-package-d@link:./packages/playground/nested-deps/test-package-d":
-  version "0.0.0"
-  uid ""
+  version "1.0.0"
+  dependencies:
+    test-package-d-nested "link:./packages/playground/nested-deps/test-package-d/test-package-d-nested"
 
 text-extensions@^1.0.0:
   version "1.9.0"
@@ -7730,7 +7737,6 @@ typedarray-to-buffer@^3.1.5:
 
 "types@link:./packages/vite/types":
   version "0.0.0"
-  uid ""
 
 typescript@^4.3.4, typescript@^4.3.5, typescript@~4.3.5:
   version "4.3.5"
@@ -7962,6 +7968,11 @@ web-streams-polyfill@^3.0.1:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/web-streams-polyfill/-/web-streams-polyfill-3.1.0.tgz#86f983b4f44745502b0d8563d9ef3afc609d4465"
   integrity sha512-wO9r1YnYe7kFBLHyyVEhV1H8VRWoNiNnuP+v/HUUmSTaRF8F93Kmd3JMrETx0f11GXxRek6OcL2QtjFIdc5WYw==
+
+web-streams-polyfill@^3.0.3:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/web-streams-polyfill/-/web-streams-polyfill-3.1.1.tgz#1516f2d4ea8f1bdbfed15eb65cb2df87098c8364"
+  integrity sha512-Czi3fG883e96T4DLEPRvufrF2ydhOOW1+1a6c3gNjH2aIh50DNFBdfwh2AKoOf1rXvpvavAoA11Qdq9+BKjE0Q==
 
 webcrypto-core@^1.2.0:
   version "1.2.0"
