@@ -44,7 +44,7 @@ VITE_SOME_KEY=123
 
 Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
 
-If you want to customize env variables prefix, see [envPrefix](/config/index#envPrefix) option.
+If you want to customize env variables prefix, see [envPrefix](/config/index#envprefix) option.
 
 :::warning SECURITY NOTES
 
