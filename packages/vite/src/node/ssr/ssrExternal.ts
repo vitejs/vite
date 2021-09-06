@@ -18,20 +18,22 @@ export function resolveSSRExternal(
   ssrExternals: Set<string> = new Set(),
   seen: Set<string> = new Set()
 ): string[] {
+  if (config.ssr?.noExternal === true) {
+    return []
+  }
+
   const { root } = config
   const pkgContent = lookupFile(root, ['package.json'])
   if (!pkgContent) {
     return []
   }
   const pkg = JSON.parse(pkgContent)
-  const devDeps = Object.keys(pkg.devDependencies || {})
   const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
-  const deps = unique([...importedDeps, ...Object.keys(pkg.dependencies || {})])
-
-  for (const id of devDeps) {
-    ssrExternals.add(id)
-    seen.add(id)
-  }
+  const deps = unique([
+    ...importedDeps,
+    ...Object.keys(pkg.devDependencies || {}),
+    ...Object.keys(pkg.dependencies || {})
+  ])
 
   const resolveOptions: InternalResolveOptions = {
     root,

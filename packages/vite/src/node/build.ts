@@ -31,7 +31,6 @@ import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
-import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
@@ -66,9 +65,16 @@ export interface BuildOptions {
    */
   target?: 'modules' | TransformOptions['target'] | false
   /**
+   * whether to inject module preload polyfill.
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  polyfillModulePreload?: boolean
+  /**
    * whether to inject dynamic import polyfill.
    * Note: does not apply to library mode.
    * @default false
+   * @deprecated use plugin-legacy for browsers that don't support dynamic import
    */
   polyfillDynamicImport?: boolean
   /**
@@ -116,10 +122,9 @@ export interface BuildOptions {
    */
   terserOptions?: Terser.MinifyOptions
   /**
-   * Options for clean-css
-   * https://github.com/jakubpawlowicz/clean-css#constructor-options
+   * @deprecated Vite now uses esbuild for CSS minification.
    */
-  cleanCssOptions?: CleanCSS.Options
+  cleanCssOptions?: any
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/guide/en/#big-list-of-options
@@ -205,12 +210,14 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<Omit<BuildOptions, 'base'>>
+export type ResolvedBuildOptions = Required<
+  Omit<BuildOptions, 'base' | 'cleanCssOptions' | 'polyfillDynamicImport'>
+>
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
-    polyfillDynamicImport: false,
+    polyfillModulePreload: true,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -229,7 +236,6 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     },
     minify: raw?.ssr ? false : 'terser',
     terserOptions: {},
-    cleanCssOptions: {},
     write: true,
     emptyOutDir: null,
     manifest: false,
@@ -403,16 +409,16 @@ async function doBuild(
   }
 
   const outputBuildError = (e: RollupError) => {
-    config.logger.error(
-      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ''}${e.message}`)
-    )
+    let msg = chalk.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
-      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ''
-      config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
+      msg += `\nfile: ${chalk.cyan(
+        e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : '')
+      )}`
     }
     if (e.frame) {
-      config.logger.error(chalk.yellow(e.frame))
+      msg += `\n` + chalk.yellow(e.frame)
     }
+    config.logger.error(msg, { error: e })
   }
 
   try {

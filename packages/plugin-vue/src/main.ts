@@ -136,9 +136,7 @@ export async function transformMain(
       output.push(`export const _rerender_only = true`)
     }
     output.push(
-      `import.meta.hot.accept(({ default: ${
-        asCustomElement ? `{ def: updated }` : `updated`
-      }, _rerender_only }) => {`,
+      `import.meta.hot.accept(({ default: updated, _rerender_only }) => {`,
       `  if (_rerender_only) {`,
       `    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render)`,
       `  } else {`,
@@ -191,14 +189,7 @@ export async function transformMain(
     resolvedMap.sourcesContent = templateMap.sourcesContent
   }
 
-  if (asCustomElement) {
-    output.push(
-      `import { defineCustomElement as __ce } from 'vue'`,
-      `export default __ce(_sfc_main)`
-    )
-  } else {
-    output.push(`export default _sfc_main`)
-  }
+  output.push(`export default _sfc_main`)
 
   return {
     code: output.join('\n'),

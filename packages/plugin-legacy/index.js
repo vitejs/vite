@@ -20,7 +20,7 @@ const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 const dynamicFallbackInlineCode = `!function(){try{new Function("m","return import(m)")}catch(o){console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}}();`
 
-const blankDynamicImport = `import('data:text/javascript;base64,Cg==');`
+const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
@@ -44,7 +44,12 @@ function viteLegacyPlugin(options = {}) {
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set()
-  const legacyPolyfills = new Set()
+  // System JS relies on the Promise interface. It needs to be polyfilled for IE 11. (array.iterator is mandatory for supporting Promise.all)
+  const DEFAULT_LEGACY_POLYFILL = [
+    'core-js/modules/es.promise',
+    'core-js/modules/es.array.iterator'
+  ]
+  const legacyPolyfills = new Set(DEFAULT_LEGACY_POLYFILL)
 
   if (Array.isArray(options.modernPolyfills)) {
     options.modernPolyfills.forEach((i) => {
@@ -233,7 +238,7 @@ function viteLegacyPlugin(options = {}) {
         const ms = new MagicString(raw)
 
         if (genDynamicFallback && chunk.isEntry) {
-          ms.prepend(blankDynamicImport)
+          ms.prepend(forceDynamicImportUsage)
         }
 
         if (raw.includes(legacyEnvVarMarker)) {

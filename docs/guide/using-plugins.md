@@ -13,14 +13,15 @@ $ npm i -D @vitejs/plugin-legacy
 ```js
 // vite.config.js
 import legacy from '@vitejs/plugin-legacy'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig({
   plugins: [
     legacy({
       targets: ['defaults', 'not IE 11']
     })
   ]
-}
+})
 ```
 
 `plugins` also accept presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
@@ -35,7 +36,7 @@ Vite aims to provide out-of-the-box support for common web development patterns.
 
 Check out the [Plugins section](../plugins/) for information about official plugins. Community plugins are listed in [awesome-vite](https://github.com/vitejs/awesome-vite#plugins). For compatible Rollup plugins, check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions or the [Rollup Plugin Compatibility section](../guide/api-plugin#rollup-plugin-compatibility) in case it is not listed there.
 
-You can also find plugins that follow the [recommended conventions](./api-plugin.md#conventions) using a [npm search for vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Vite plugins or a [npm search for rollup-plugin](https://www.npmjs.com/search?q=rollup-plugin&ranking=popularity) or a [npm search for vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Rollup plugins.
+You can also find plugins that follow the [recommended conventions](./api-plugin.md#conventions) using a [npm search for vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Vite plugins or a [npm search for rollup-plugin](https://www.npmjs.com/search?q=rollup-plugin&ranking=popularity) for Rollup plugins.
 
 ## Enforcing Plugin Ordering
 
@@ -48,15 +49,16 @@ For compatibility with some Rollup plugins, it may be needed to enforce the orde
 ```js
 // vite.config.js
 import image from '@rollup/plugin-image'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig({
   plugins: [
     {
       ...image(),
       enforce: 'pre'
     }
   ]
-}
+})
 ```
 
 Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information, and look out for the `enforce` label and usage instructions for popular plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) compatibility listing.
@@ -68,15 +70,16 @@ By default, plugins are invoked for both serve and build. In cases where a plugi
 ```js
 // vite.config.js
 import typescript2 from 'rollup-plugin-typescript2'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig({
   plugins: [
     {
       ...typescript2(),
       apply: 'build'
     }
   ]
-}
+})
 ```
 
 ## Building Plugins

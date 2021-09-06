@@ -1,6 +1,6 @@
 {
   "name": "browser-vite",
-  "version": "2.4.4-browser.7",
+  "version": "2.5.3-browser.1",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -19,7 +19,7 @@
     "!/src/**/__tests__/"
   ],
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=12.2.0"
   },
   "repository": {
     "type": "git",
@@ -47,26 +47,25 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path .",
     "release": "node ../../scripts/release.js"
   },
-  "//": "READ .github/contributing.md to understand what to put under deps vs. devDeps!",
+  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "optionalDependencies": {
     "fsevents": "~2.3.2"
   },
   "dependencies": {
-    "esbuild": "^0.12.8",
-    "esbuild-wasm": "^0.12.8",
+    "esbuild": "^0.12.17",
+    "esbuild-wasm": "^0.12.17",
     "postcss": "^8.3.6",
     "resolve": "^1.20.0",
     "rollup": "^2.38.5",
     "@ampproject/remapping": "^1.0.1",
-    "@rollup/plugin-alias": "^3.1.4",
-    "@rollup/plugin-commonjs": "^19.0.1",
-    "@rollup/plugin-dynamic-import-vars": "^1.3.0",
+    "@rollup/plugin-alias": "^3.1.5",
+    "@rollup/plugin-commonjs": "^20.0.0",
+    "@rollup/plugin-dynamic-import-vars": "^1.4.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "13.0.4",
     "@rollup/plugin-replace": "^2.4.2",
-    "@rollup/plugin-typescript": "^8.2.3",
+    "@rollup/plugin-typescript": "^8.2.5",
     "@rollup/pluginutils": "^4.1.1",
-    "@types/clean-css": "^4.2.5",
     "@types/convert-source-map": "^1.5.2",
     "@types/debug": "^4.1.7",
     "@types/es-module-lexer": "^0.3.0",
@@ -87,7 +86,7 @@
     "brotli-size": "^4.0.0",
     "builtin-modules": "^3.2.0",
     "cac": "^6.7.3",
-    "chalk": "^4.1.1",
+    "chalk": "^4.1.2",
     "chokidar": "^3.5.2",
     "cjs-module-lexer": "^1.2.2",
     "clean-css": "^5.1.3",
@@ -118,11 +117,14 @@
     "resolve.exports": "^1.0.2",
     "rollup-plugin-license": "^2.5.0",
     "selfsigned": "^1.10.11",
-    "sirv": "^1.0.12",
+    "sirv": "^1.0.17",
     "source-map": "^0.6.1",
     "source-map-support": "^0.5.19",
     "strip-ansi": "^6.0.0",
+    "strip-bom": "^4.0.0",
+    "strip-json-comments": "^3.1.1",
     "terser": "^5.7.1",
+    "tsconfig": "^7.0.0",
     "tslib": "^2.3.0",
     "types": "link:./types",
     "ws": "^7.5.3"

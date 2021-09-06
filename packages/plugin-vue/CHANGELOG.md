@@ -1,3 +1,43 @@
+# [1.6.0](https://github.com/vitejs/vite/compare/plugin-vue@1.5.0...plugin-vue@1.6.0) (2021-08-24)
+
+
+### Features
+
+* **plugin-vue:** latest ref transform support ([533b002](https://github.com/vitejs/vite/commit/533b0029adc912257251b5021879ab1d676a16ab))
+* **plugin-vue:** warn compiler-sfc version mismatch ([e7263b9](https://github.com/vitejs/vite/commit/e7263b98f2e174198b322d26c6a7207d706a6639))
+
+
+
+# [1.5.0](https://github.com/vitejs/vite/compare/plugin-vue@1.4.0...plugin-vue@1.5.0) (2021-08-24)
+
+
+
+# [1.4.0](https://github.com/vitejs/vite/compare/plugin-vue@1.3.0...plugin-vue@1.4.0) (2021-08-07)
+
+### Features
+
+* Custom Elements mode behavior changed: now only inlines the CSS and no longer exports the custom element constructor (exports the component as in normal mode). Users now need to explicitly call `defineCustomElement` on the component. This allows the custom element to be defined using an async version of the source component.
+
+### Bug Fixes
+
+* revert update dependency slash to v4 ([#4118](https://github.com/vitejs/vite/issues/4118)) ([#4519](https://github.com/vitejs/vite/issues/4519)) ([9b4fe1f](https://github.com/vitejs/vite/commit/9b4fe1fa68c522878d1bdef87d7aa02ae08e986f))
+
+
+
+# [1.3.0](https://github.com/vitejs/vite/compare/plugin-vue@1.2.5...plugin-vue@1.3.0) (2021-07-27)
+
+
+### Bug Fixes
+
+* reuse the old preprocessor after changing the lang attr ([#4224](https://github.com/vitejs/vite/issues/4224)) ([7a3c6e6](https://github.com/vitejs/vite/commit/7a3c6e616385cbc069620ae583d6739a972c0ead))
+
+
+### Features
+
+* **plugin-vue:** support importing vue files as custom elements ([3a3af6e](https://github.com/vitejs/vite/commit/3a3af6eeafbc9fc686fc909ec6a61c61283316fc))
+
+
+
 ## [1.2.5](https://github.com/vitejs/vite/compare/plugin-vue@1.2.4...plugin-vue@1.2.5) (2021-07-12)
 
 

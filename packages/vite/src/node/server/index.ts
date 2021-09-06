@@ -21,7 +21,6 @@ import {
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
 import history from 'connect-history-api-fallback'
-import { decodeURIMiddleware } from './middlewares/decodeURI'
 import {
   serveRawFsMiddleware,
   servePublicMiddleware,
@@ -319,7 +318,11 @@ export async function createServer(
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
-    ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      ...(Array.isArray(ignored) ? ignored : [ignored])
+    ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
     disableGlobbing: true,
@@ -435,6 +438,13 @@ export async function createServer(
     handleFileAddUnlink(normalizePath(file), server, true)
   })
 
+  if (!middlewareMode && httpServer) {
+    httpServer.once('listening', () => {
+      // update actual port since this may be different from initial value
+      serverConfig.port = (httpServer.address() as AddressInfo).port
+    })
+  }
+
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const plugin of plugins) {
@@ -475,9 +485,6 @@ export async function createServer(
   middlewares.use('/__vite_ping', function viteHMRPingMiddleware(_, res) {
     res.end('pong')
   })
-
-  //decode request url
-  middlewares.use(decodeURIMiddleware())
 
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
@@ -564,11 +571,6 @@ export async function createServer(
       }
       return listen(port, ...args)
     }) as any
-
-    httpServer.once('listening', () => {
-      // update actual port since this may be different from initial value
-      serverConfig.port = (httpServer.address() as AddressInfo).port
-    })
   } else {
     await container.buildStart({})
     await runOptimize()

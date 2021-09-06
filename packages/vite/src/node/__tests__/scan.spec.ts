@@ -1,4 +1,5 @@
 import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
+import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -80,6 +81,9 @@ describe('optimizer-scan:script-test', () => {
       `import foo from 'vue';//comment`,
       `import foo from 'vue';/*comment
       */`
+      // Skipped, false negatives with current regex
+      // `import typescript from 'typescript'`,
+      // import type, {foo} from 'vue'
     ]
 
     shouldMatchArray.forEach((str) => {
@@ -90,10 +94,25 @@ describe('optimizer-scan:script-test', () => {
     const shouldFailArray = [
       `testMultiline("import", {
         body: "ok" });`,
-      `import type, {foo} from 'vue'`
+      `//;import foo from 'vue'`,
+      `import type { Bar } from 'foo'`,
+      `import type{ Bar } from 'foo'`,
+      `import type Bar from 'foo'`
     ]
     shouldFailArray.forEach((str) => {
       expect(importsRE.test(str)).toBe(false)
     })
+  })
+
+  test('script comments test', () => {
+    multilineCommentsRE.lastIndex = 0
+    let ret = `/*
+      export default { }
+      */`.replace(multilineCommentsRE, '')
+    expect(ret).not.toContain('export default')
+
+    singlelineCommentsRE.lastIndex = 0
+    ret = `//export default { }`.replace(singlelineCommentsRE, '')
+    expect(ret).not.toContain('export default')
   })
 })
