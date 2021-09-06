@@ -1,10 +1,10 @@
-const pluginReact = require('@vitejs/plugin-react')
+const react = require('@vitejs/plugin-react')
 
 /**
  * @type {import('vite').UserConfig}
  */
 module.exports = {
-  plugins: [pluginReact()],
+  plugins: [react()],
   build: {
     minify: false
   }
