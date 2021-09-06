@@ -4,7 +4,7 @@ import type { Plugin } from '../node/plugin';
 import { mergeAlias, mergeConfig, resolveBaseUrl, sortUserPlugins, InlineConfig, ResolvedConfig } from '../node/config';
 import { normalizePath } from '../node/utils';
 import { resolveBuildOptions } from '../node/build';
-import { CLIENT_DIR, DEFAULT_ASSETS_RE } from '../node/constants';
+import { CLIENT_DIR, CLIENT_ENTRY, DEFAULT_ASSETS_RE, ENV_ENTRY } from '../node/constants';
 import { resolvePlugins } from './plugins';
 import { resolveServerOptions } from './server';
 import { PluginContainer } from '../node';
@@ -34,6 +34,7 @@ export async function resolveConfig(
     clearScreen: () => {
       /* empty */
     },
+    hasErrorLogged: () => false,
     hasWarned: false,
     warnOnce: (s) => console.warn(s),
   }
@@ -63,13 +64,16 @@ export async function resolveConfig(
     config.root ? path.resolve(config.root) : process.cwd()
   )
 
+  const clientAlias = [
+    { find: /^[\/]?@vite\/env/, replacement: () => ENV_ENTRY },
+    { find: /^[\/]?@vite\/client/, replacement: () => CLIENT_ENTRY }
+  ]
+
   // resolve alias with internal client alias
   const resolvedAlias = mergeAlias(
-    // #1732 the CLIENT_DIR may contain $$ which cannot be used as direct
-    // replacement string.
     // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
     // replacement, but its implementation does work with function values.
-    [{ find: /^\/@vite\//, replacement: () => CLIENT_DIR + '/' }],
+    clientAlias,
     config.resolve?.alias || config.alias || []
   )
 
@@ -111,7 +115,7 @@ export async function resolveConfig(
                 root: resolvedRoot,
                 isProduction,
                 isBuild: command === 'build',
-                ssrTarget: resolved.ssr?.target,
+                ssrConfig: resolved.ssr,
                 asSrc: true,
                 preferRelative: false,
                 tryIndex: true,

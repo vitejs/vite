@@ -28,7 +28,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   const {
     root,
     asSrc,
-    ssrTarget,
+    ssrConfig,
     preferRelative = false
   } = baseOptions
   const requireOptions: InternalResolveOptions = {
@@ -36,6 +36,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
     isRequire: true
   }
   let server: ViteDevServer | undefined
+
+  const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
 
   return {
     name: 'vite:browser:resolve',
@@ -56,12 +58,12 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       const options = isRequire ? requireOptions : baseOptions
 
-      let res
+      let res: string | PartialResolvedId | undefined
 
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
         const fsPath = fsPathFromId(id)
-        res = tryFsResolve(fsPath, options, this)
+        res = tryFsResolve(fsPath, options)
         isDebug && debug(`[@fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
@@ -72,7 +74,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       // /foo -> /fs-root/foo
       if (asSrc && id.startsWith('/')) {
         const fsPath = path.resolve(root, id.slice(1))
-        if ((res = tryFsResolve(fsPath, options, this))) {
+        if ((res = tryFsResolve(fsPath, options))) {
           isDebug && debug(`[url] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
           return res
         }
@@ -112,7 +114,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         //   return res;
         // }
 
-        if ((res = tryFsResolve(fsPath, options, this))) {
+        if ((res = tryFsResolve(fsPath, options))) {
           // const pkg = importer != null && idToPkgMap.get(importer);
           // if (pkg) {
           //   idToPkgMap.set(res, pkg);
@@ -126,7 +128,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       }
 
       // absolute fs paths
-      if (path.isAbsolute(id) && (res = tryFsResolve(id, options, this))) {
+      if (path.isAbsolute(id) && (res = tryFsResolve(id, options))) {
         isDebug && debug(`[fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
         return res
       }
@@ -151,7 +153,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           asSrc &&
           server &&
           !ssr &&
-          (res = tryOptimizedResolve(id, server))
+          (res = tryOptimizedResolve(id, server, importer))
         ) {
           return res
         }
@@ -169,7 +171,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
-  context: PluginContext,
   tryIndex = true,
   targetWeb = true
 ): string | undefined {
@@ -191,10 +192,10 @@ function tryFsResolve(
       file,
       postfix,
       options,
-      context,
       false,
       targetWeb,
-      options.tryPrefix
+      options.tryPrefix,
+      options.skipPackageJson
     ))
   ) {
     return res
@@ -206,10 +207,10 @@ function tryFsResolve(
         file + ext,
         postfix,
         options,
-        context,
         false,
         targetWeb,
-        options.tryPrefix
+        options.tryPrefix,
+        options.skipPackageJson
       ))
     ) {
       return res
@@ -221,10 +222,10 @@ function tryFsResolve(
       file,
       postfix,
       options,
-      context,
       tryIndex,
       targetWeb,
-      options.tryPrefix
+      options.tryPrefix,
+      options.skipPackageJson
     ))
   ) {
     return res
@@ -235,21 +236,21 @@ function tryResolveFile(
   file: string,
   postfix: string,
   options: InternalResolveOptions,
-  context: PluginContext,
   tryIndex: boolean,
   targetWeb: boolean,
-  tryPrefix?: string
+  tryPrefix?: string,
+  skipPackageJson?: boolean
 ): string | undefined {
   if (!file.startsWith(options.root)) return undefined;
   if (fs.existsSync(file)) {
     return file + postfix
   } else if (tryIndex) {
-    const index = tryFsResolve(file + '/index', options, context, false)
+    const index = tryFsResolve(file + '/index', options, false)
     if (index) return index + postfix
   }
   if (tryPrefix) {
     const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
-    return tryResolveFile(prefixed, postfix, options, context, tryIndex, targetWeb)
+    return tryResolveFile(prefixed, postfix, options, tryIndex, targetWeb)
   }
 }
 
@@ -273,17 +274,28 @@ export function tryNodeResolve(
 
 export function tryOptimizedResolve(
   id: string,
-  server: ViteDevServer
+  server: ViteDevServer,
+  importer?: string
 ): string | undefined {
   const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
-  if (cacheDir && depData) {
-    const isOptimized = depData.optimized[id]
-    if (isOptimized) {
-      return isOptimized.file /*+
-        `?v=${depData.browserHash}${
-          isOptimized.needsInterop ? `&es-interop` : ``
-        }`*/
-    }
+
+  if (!cacheDir || !depData) return
+
+  const getOptimizedUrl = (optimizedData: typeof depData.optimized[string]) => {
+    return (
+      optimizedData.file //+
+      // `?v=${depData.browserHash}${
+      //   optimizedData.needsInterop ? `&es-interop` : ``
+      // }`
+    )
   }
+
+  // check if id has been optimized
+  const isOptimized = depData.optimized[id]
+  if (isOptimized) {
+    return getOptimizedUrl(isOptimized)
+  }
+
+  if (!importer) return
 }

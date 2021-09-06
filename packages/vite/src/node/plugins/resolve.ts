@@ -217,9 +217,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           return res
         }
 
-        if (
-          (res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))
-        ) {
+        if ((res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))) {
           return res
         }
 
