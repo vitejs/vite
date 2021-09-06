@@ -418,6 +418,7 @@ A function can also be used for more precise control:
 
 ```js
 apply(config, { command }) {
+  // apply only on build but not for SSR
   return command === 'build' && !config.build.ssr
 }
 ```
