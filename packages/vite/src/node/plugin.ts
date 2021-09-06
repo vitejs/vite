@@ -50,9 +50,9 @@ export interface Plugin extends RollupPlugin {
    */
   enforce?: 'pre' | 'post'
   /**
-   * Apply the plugin only for serve or for build.
+   * Apply the plugin only for serve or build, or on certain conditions.
    */
-  apply?: 'serve' | 'build'
+  apply?: 'serve' | 'build' | ((config: UserConfig, env: ConfigEnv) => boolean)
   /**
    * Modify vite config before it's resolved. The hook can either mutate the
    * passed-in config directly, or return a partial config object that will be

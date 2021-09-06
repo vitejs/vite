@@ -82,6 +82,14 @@ export default defineConfig({
 })
 ```
 
+A function can also be used for more precise control:
+
+```js
+apply(config, { command }) {
+  return command === 'build' && !config.build.ssr
+}
+```
+
 ## Building Plugins
 
 Check out the [Plugins API Guide](./api-plugin.md) for documentation about creating plugins.
