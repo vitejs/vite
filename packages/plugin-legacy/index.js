@@ -97,7 +97,7 @@ function viteLegacyPlugin(options = {}) {
     apply: 'build',
 
     configResolved(config) {
-      if (config.build.minify === 'esbuild') {
+      if (!config.build.ssr && config.build.minify === 'esbuild') {
         throw new Error(
           `Can't use esbuild as the minifier when targeting legacy browsers ` +
             `because esbuild minification is not legacy safe.`
@@ -106,6 +106,10 @@ function viteLegacyPlugin(options = {}) {
     },
 
     async generateBundle(opts, bundle) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (!isLegacyBundle(bundle, opts)) {
         if (!modernPolyfills.size) {
           return
@@ -170,7 +174,7 @@ function viteLegacyPlugin(options = {}) {
       }
       config = _config
 
-      if (!genLegacy) {
+      if (!genLegacy || config.build.ssr) {
         return
       }
 
@@ -226,6 +230,10 @@ function viteLegacyPlugin(options = {}) {
     },
 
     renderChunk(raw, chunk, opts) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (!isLegacyChunk(chunk, opts)) {
         if (
           options.modernPolyfills &&
@@ -315,6 +323,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     transformIndexHtml(html, { chunk }) {
+      if (config.build.ssr) return
       if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually
@@ -420,6 +429,10 @@ function viteLegacyPlugin(options = {}) {
     },
 
     generateBundle(opts, bundle) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (isLegacyBundle(bundle, opts)) {
         // avoid emitting duplicate assets
         for (const name in bundle) {
