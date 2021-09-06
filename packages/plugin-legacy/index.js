@@ -451,12 +451,14 @@ function viteLegacyPlugin(options = {}) {
   const legacyEnvPlugin = {
     name: 'legacy-env',
 
-    config(_, env) {
+    config(config, env) {
       if (env) {
         return {
           define: {
             'import.meta.env.LEGACY':
-              env.command === 'serve' ? false : legacyEnvVarMarker
+              env.command === 'serve' || config.build.ssr
+                ? false
+                : legacyEnvVarMarker
           }
         }
       } else {
