@@ -95,26 +95,26 @@ describe('nested w/ query', () => {
   testPage(true)
 })
 
-function testIsAsyncScript(page, isAsync) {}
+if (isBuild) {
+  describe('scriptAsync', () => {
+    beforeAll(async () => {
+      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      await page.goto(viteTestUrl + '/scriptAsync.html')
+    })
 
-describe('scriptAsync', () => {
-  beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-    await page.goto(viteTestUrl + '/scriptAsync.html')
+    test('script is async', async () => {
+      expect(await page.$('head script[type=module][async]')).toBeTruthy()
+    })
   })
 
-  test('script is async', async () => {
-    expect(await page.$('head script[type=module][async]')).toBeTruthy()
-  })
-})
+  describe('scriptMixed', () => {
+    beforeAll(async () => {
+      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      await page.goto(viteTestUrl + '/scriptMixed.html')
+    })
 
-describe('scriptMixed', () => {
-  beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-    await page.goto(viteTestUrl + '/scriptMixed.html')
+    test('script is mixed', async () => {
+      expect(await page.$('head script[type=module][async]')).toBeNull()
+    })
   })
-
-  test('script is async', async () => {
-    expect(await page.$('head script[type=module][async]')).toBeNull()
-  })
-})
+}
