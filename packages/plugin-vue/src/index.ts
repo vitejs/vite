@@ -58,9 +58,14 @@ export interface Options {
 
   /**
    * Enable Vue ref transform (experimental).
+   * https://github.com/vuejs/vue-next/tree/master/packages/ref-transform
+   *
    * **requires Vue \>= 3.2.5**
-   * - `true`: transform will be enabled for all vue,js(x),ts(x) files
-   * - `string | RegExp`: apply to vue + only matched files
+   *
+   * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
+   *           those inside node_modules
+   * - `string | RegExp`: apply to vue + only matched files (will include
+   *                      node_modules, so specify directories in necessary)
    * - `false`: disable in all cases
    *
    * @default false
@@ -97,7 +102,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     refTransform === false
       ? () => false
       : refTransform === true
-      ? createFilter(/\.(j|t)sx?$/)
+      ? createFilter(/\.(j|t)sx?$/, /node_modules/)
       : createFilter(refTransform)
 
   // compat for older verisons
