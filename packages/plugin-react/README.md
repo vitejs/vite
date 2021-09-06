@@ -5,14 +5,15 @@ The all-in-one Vite plugin for React projects.
 - enable [Fast Refresh](https://www.npmjs.com/package/react-refresh) in development
 - use the [automatic JSX runtime](https://github.com/alloc/vite-react-jsx#faq)
 - avoid manual `import React` in `.jsx` and `.tsx` modules
+- dedupe the `react` and `react-dom` packages
 - use custom Babel plugins/presets
 
 ```js
 // vite.config.js
-import reactPlugin from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react'
 
 export default {
-  plugins: [reactPlugin()]
+  plugins: [react()]
 }
 ```
 
@@ -23,7 +24,7 @@ By default, Fast Refresh is used by files ending with `.js`, `.jsx`, `.ts`, and 
 In some situations, you may not want a file to act as a HMR boundary, instead preferring that the changes propagate higher in the stack before being handled. In these cases, you can provide an `include` and/or `exclude` option, which can be a regex, a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or an array of either. Files matching `include` and not `exclude` will use Fast Refresh. The defaults are always applied.
 
 ```js
-reactPlugin({
+react({
   // Exclude storybook stories
   exclude: /\.stories\.(t|j)sx?$/,
   // Only .tsx files
@@ -36,7 +37,7 @@ reactPlugin({
 The `babel` option lets you add plugins, presets, and [other configuration](https://babeljs.io/docs/en/options) to the Babel transformation performed on each JSX/TSX file.
 
 ```js
-reactPlugin({
+react({
   babel: {
     presets: [...],
     // Your plugins run before any built-in transform (eg: Fast Refresh)
@@ -54,7 +55,7 @@ reactPlugin({
 If you are using ES syntax that are still in proposal status (e.g. class properties), you can selectively enable them with the `babel.parserOpts.plugins` option:
 
 ```js
-reactPlugin({
+react({
   babel: {
     parserOpts: {
       plugins: ['decorators-legacy']
