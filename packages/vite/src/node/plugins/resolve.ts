@@ -217,7 +217,9 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           return res
         }
 
-        if ((res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))) {
+        if (
+          (res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))
+        ) {
           return res
         }
 
@@ -407,7 +409,7 @@ export function tryNodeResolve(
   } else if (
     importer &&
     path.isAbsolute(importer) &&
-      fs.existsSync(cleanUrl(importer))
+    fs.existsSync(cleanUrl(importer))
   ) {
     basedir = path.dirname(importer)
   } else {

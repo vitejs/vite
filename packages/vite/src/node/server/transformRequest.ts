@@ -1,4 +1,4 @@
-import fs from 'fs'
+import { promises as fs } from 'fs'
 import path from 'path'
 import getEtag from 'etag'
 import * as convertSourceMap from 'convert-source-map'
@@ -80,7 +80,7 @@ export async function transformRequest(
     // like /service-worker.js or /api/users
     if (options.ssr || isFileServingAllowed(file, server)) {
       try {
-        code = fs.readFileSync(file, 'utf-8')
+        code = await fs.readFile(file, 'utf-8')
         isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
@@ -147,7 +147,7 @@ export async function transformRequest(
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
     if (map.mappings && !map.sourcesContent) {
-      await injectSourcesContent(map, mod.file, config)
+      await injectSourcesContent(map, mod.file, logger)
     }
   }
 

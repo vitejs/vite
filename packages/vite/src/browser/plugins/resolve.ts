@@ -159,7 +159,9 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         }
         // TODO BROWSER SUPPORT
         // re-trigger optimize (if not running optimize already)
-        if ((res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))) {
+        if (
+          (res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))
+        ) {
           return res
         }
       }

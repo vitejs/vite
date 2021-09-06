@@ -244,10 +244,10 @@ export async function optimizeDeps(
   const idToExports: Record<string, ExportsData> = {}
   const flatIdToExports: Record<string, ExportsData> = {}
 
-  await Promise.all([init, cjs_init()]);
   const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
-
+  config.optimizeDeps?.esbuildOptions ?? {}
+  
+  await Promise.all([init, cjs_init()]);
   for (const id in deps) {
     const flatId = flattenId(id)
     const filePath = (flatIdDeps[flatId] = deps[id])

@@ -1,6 +1,6 @@
 import path from 'path'
 import { parse as parseUrl } from 'url'
-import fs from 'fs'
+import fs, { promises as fsp } from 'fs'
 import mime from 'mime/lite'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
@@ -69,7 +69,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const file = checkPublicFile(id, config) || cleanUrl(id)
         // raw query, read file and return as string
         return `export default ${JSON.stringify(
-          fs.readFileSync(file, 'utf-8')
+          await fsp.readFile(file, 'utf-8')
         )}`
       }
 
@@ -283,7 +283,7 @@ async function fileToBuiltUrl(
   }
 
   const file = cleanUrl(id)
-  const content = fs.readFileSync(file, 'utf-8')
+  const content = await fsp.readFile(file)
 
   let url: string
   if (
