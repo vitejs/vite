@@ -1,3 +1,16 @@
+## [2.5.4](https://github.com/vitejs/vite/compare/v2.5.3...v2.5.4) (2021-09-07)
+
+
+### Bug Fixes
+
+* check for Blob before creating worker URL, close [#4462](https://github.com/vitejs/vite/issues/4462) ([#4674](https://github.com/vitejs/vite/issues/4674)) ([311026f](https://github.com/vitejs/vite/commit/311026f0eb327874ca43e3ecccb9a9916f0850fb))
+* **css:** loadPreprocessor tolerate `require.resolve.paths` not exists ([#4853](https://github.com/vitejs/vite/issues/4853)) ([c588b8f](https://github.com/vitejs/vite/commit/c588b8fd4cbef6a29a8b62985f7cfb53fb1f6fb7))
+* handle error in numberToPos and formatError ([#4782](https://github.com/vitejs/vite/issues/4782)) ([c87763c](https://github.com/vitejs/vite/commit/c87763c1418d1ba876eae13d139eba83ac6f28b2))
+* **overlay:** handle missing customElements ([#4856](https://github.com/vitejs/vite/issues/4856)) ([e5b472d](https://github.com/vitejs/vite/commit/e5b472d12e4bdaf7c0a2bd4015e73b40a716dac8))
+* sometimes THIS_IS_UNDEFINED warnings were still shown ([#4844](https://github.com/vitejs/vite/issues/4844)) ([8d956f6](https://github.com/vitejs/vite/commit/8d956f6e585bed9ce4f02b7c9fed6631144f638d))
+
+
+
 ## [2.5.3](https://github.com/vitejs/vite/compare/v2.5.2...v2.5.3) (2021-09-01)
 
 
