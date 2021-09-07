@@ -338,7 +338,7 @@ export async function createServer(
   let exitProcess: () => void
 
   const server: ViteDevServer = {
-    config: config,
+    config,
     middlewares,
     get app() {
       config.logger.warn(
