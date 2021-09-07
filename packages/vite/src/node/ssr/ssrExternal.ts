@@ -63,9 +63,6 @@ export function resolveSSRExternal(
       requireEntry = require.resolve(id, { paths: [root] })
     } catch (e) {
       // resolve failed, assume include
-      config.logger.warn(
-        `Bundling package for SSR due to resolve failure. ${e.message}`
-      )
       continue
     }
     if (!entry) {
