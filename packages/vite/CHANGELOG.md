@@ -1,3 +1,12 @@
+## [2.5.5](https://github.com/vitejs/vite/compare/v2.5.4...v2.5.5) (2021-09-08)
+
+
+### Bug Fixes
+
+* **hmr:** should break on first matched plugin that performs custom hmr handling ([b3b8c61](https://github.com/vitejs/vite/commit/b3b8c61b37f36713605d61baeb98cfc0deb0b020))
+
+
+
 ## [2.5.4](https://github.com/vitejs/vite/compare/v2.5.3...v2.5.4) (2021-09-07)
 
 
