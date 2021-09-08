@@ -1,9 +1,17 @@
 import fs from 'fs'
 import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
-import { isDefined, lookupFile, resolveFrom, unique } from '../utils'
+import {
+  createDebugger,
+  isDefined,
+  lookupFile,
+  resolveFrom,
+  unique
+} from '../utils'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
+
+const debug = createDebugger('vite:ssr-external')
 
 /**
  * Heuristics for determining whether a dependency should be externalized for
@@ -63,9 +71,7 @@ export function resolveSSRExternal(
       requireEntry = require.resolve(id, { paths: [root] })
     } catch (e) {
       // resolve failed, assume include
-      config.logger.warn(
-        `Bundling package for SSR due to resolve failure. ${e.message}`
-      )
+      debug(`Failed to resolve entries for package "${id}"\n`, e)
       continue
     }
     if (!entry) {
