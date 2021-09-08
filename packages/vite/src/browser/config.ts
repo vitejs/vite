@@ -4,7 +4,7 @@ import type { Plugin } from '../node/plugin';
 import { mergeAlias, mergeConfig, resolveBaseUrl, sortUserPlugins, InlineConfig, ResolvedConfig } from '../node/config';
 import { normalizePath } from '../node/utils';
 import { resolveBuildOptions } from '../node/build';
-import { CLIENT_DIR, CLIENT_ENTRY, DEFAULT_ASSETS_RE, ENV_ENTRY } from '../node/constants';
+import { CLIENT_ENTRY, DEFAULT_ASSETS_RE, ENV_ENTRY } from '../node/constants';
 import { resolvePlugins } from './plugins';
 import { resolveServerOptions } from './server';
 import { PluginContainer } from '../node';

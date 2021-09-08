@@ -15,7 +15,7 @@ import {
   flattenId
 } from '../../node/utils'
 import type { ViteDevServer, InternalResolveOptions } from '../../node'
-import type { PartialResolvedId, PluginContext } from 'rollup'
+import type { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
 import fs from 'fs';
 
@@ -37,7 +37,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
   let server: ViteDevServer | undefined
 
-  const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
+  const { target: ssrTarget } = ssrConfig ?? {}
 
   return {
     name: 'vite:browser:resolve',
