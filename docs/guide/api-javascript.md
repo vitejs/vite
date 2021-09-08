@@ -40,7 +40,7 @@ The `InlineConfig` interface extends `UserConfig` with additional properties:
 ```ts
 interface ViteDevServer {
   /**
-   * The resolved vite config object.
+   * The resolved Vite config object.
    */
   config: ResolvedConfig
   /**
@@ -84,7 +84,7 @@ interface ViteDevServer {
     options?: TransformOptions
   ): Promise<TransformResult | null>
   /**
-   * Apply vite built-in HTML transforms and any plugin HTML transforms.
+   * Apply Vite built-in HTML transforms and any plugin HTML transforms.
    */
   transformIndexHtml(url: string, html: string): Promise<string>
   /**
