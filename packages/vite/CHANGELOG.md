@@ -1,3 +1,13 @@
+## [2.5.6](https://github.com/vitejs/vite/compare/v2.5.5...v2.5.6) (2021-09-08)
+
+
+### Bug Fixes
+
+* **importAnalysis:** properly inherit dependency version query for self imports ([c7c39b1](https://github.com/vitejs/vite/commit/c7c39b133bc06627932741a4622fb8ab5c904d97))
+* use debugger for package resolution warnings ([#4873](https://github.com/vitejs/vite/issues/4873)) ([38de2c9](https://github.com/vitejs/vite/commit/38de2c9fe530f4c0074f0b3473ce2ced97dda31b))
+
+
+
 ## [2.5.5](https://github.com/vitejs/vite/compare/v2.5.4...v2.5.5) (2021-09-08)
 
 
