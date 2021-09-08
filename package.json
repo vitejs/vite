@@ -55,7 +55,7 @@
     "ts-jest": "^27.0.4",
     "ts-node": "^10.1.0",
     "typescript": "^4.3.5",
-    "vitepress": "^0.17.0",
+    "vitepress": "^0.17.1",
     "yorkie": "^2.0.0"
   },
   "peerDependencies": {
