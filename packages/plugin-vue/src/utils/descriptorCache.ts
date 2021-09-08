@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
@@ -45,16 +46,24 @@ export function setPrevDescriptor(
 
 export function getDescriptor(
   filename: string,
-  errorOnMissing = true
+  root: string,
+  isProduction: boolean | undefined,
+  createIfNotFound = true
 ): SFCDescriptor | undefined {
   if (cache.has(filename)) {
     return cache.get(filename)!
   }
-  if (errorOnMissing) {
-    throw new Error(
-      `${filename} has no corresponding SFC entry in the cache. ` +
-        `This is a @vitejs/plugin-vue internal error, please open an issue.`
+  if (createIfNotFound) {
+    const { descriptor, errors } = createDescriptor(
+      filename,
+      fs.readFileSync(filename, 'utf-8'),
+      root,
+      isProduction
     )
+    if (errors) {
+      throw errors[0]
+    }
+    return descriptor
   }
 }
 
