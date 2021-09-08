@@ -19,7 +19,7 @@ test('should respected each `tsconfig.json`s compilerOptions', () => {
   expect(browserLogs).toContain('data setter in NestedWithExtendsBase')
 })
 
-describe.only('transformWithEsbuild', () => {
+describe('transformWithEsbuild', () => {
   test('merge tsconfigRaw object', async () => {
     const main = path.resolve(__dirname, '../src/main.ts')
     const mainContent = fs.readFileSync(main, 'utf-8')
