@@ -73,7 +73,7 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create vite server in middleware mode. This disables Vite's own HTML
+  // Create Vite server in middleware mode. This disables Vite's own HTML
   // serving logic and let the parent server take control.
   //
   // If you want to use Vite's own HTML serving logic (using Vite as
@@ -109,7 +109,7 @@ app.use('*', async (req, res) => {
       'utf-8'
     )
 
-    // 2. Apply vite HTML transforms. This injects the vite HMR client, and
+    // 2. Apply Vite HTML transforms. This injects the Vite HMR client, and
     //    also applies HTML transforms from Vite plugins, e.g. global preambles
     //    from @vitejs/plugin-react-refresh
     template = await vite.transformIndexHtml(url, template)
@@ -130,7 +130,7 @@ app.use('*', async (req, res) => {
     // 6. Send the rendered HTML back.
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   } catch (e) {
-    // If an error is caught, let vite fix the stracktrace so it maps back to
+    // If an error is caught, let Vite fix the stracktrace so it maps back to
     // your actual source code.
     vite.ssrFixStacktrace(e)
     console.error(e)
