@@ -118,7 +118,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
       try {
         imports = parseImports(source)[0]
-      } catch (e) {
+      } catch (e: any) {
         const isVue = importer.endsWith('.vue')
         const maybeJSX = !isVue && isJSRequest(importer)
 
@@ -189,6 +189,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         const isRelative = url.startsWith('.')
+        const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
@@ -219,10 +220,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // mark non-js/css imports with `?import`
           url = markExplicitImport(url)
 
-          // for relative js/css imports, inherit importer's version query
+          // for relative js/css imports, or self-module virtual imports
+          // (e.g. vue blocks), inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if (isRelative && !/[\?&]import=?\b/.test(url)) {
+          if ((isRelative || isSelfImport) && !/[\?&]import=?\b/.test(url)) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -237,7 +239,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
-          } catch (e) {
+          } catch (e: any) {
             // it's possible that the dep fails to resolve (non-existent import)
             // attach location to the missing import
             e.pos = pos
