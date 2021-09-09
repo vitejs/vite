@@ -1,0 +1,4 @@
+{
+  // I'm deliberately malformed to test how vite reacts to broken tsconfig
+  "compilerOptions":
+}

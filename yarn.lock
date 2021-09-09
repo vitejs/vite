@@ -7545,10 +7545,10 @@ ts-node@^10.1.0:
     make-error "^1.1.1"
     yn "3.1.1"
 
-tsconfck@^1.0.0-6:
-  version "1.0.0-6"
-  resolved "https://registry.yarnpkg.com/tsconfck/-/tsconfck-1.0.0-6.tgz#c5c54a08bfa9df717a40e2fad544971957aee33d"
-  integrity sha512-2g9uWvOTlHV4WyqvtipO4q72mHhs1ZMjsPXdFfkyI7NGbjxu+2N3N5Csx3RIKAtR8vYB3rXoitm9MrErv88OoA==
+tsconfck@^1.0.0-7:
+  version "1.0.0-7"
+  resolved "https://registry.yarnpkg.com/tsconfck/-/tsconfck-1.0.0-7.tgz#9e569bd30030fb5219be9974a3a774b6346d82cc"
+  integrity sha512-Jiwn8kHYk7+6dNLzBfqDQKsL9IF6oEk33YQ6U9u3MCRYbMYEsnE2QXnxUrlSlJBjM46cvVss7FBpayZsOX+CLA==
 
 tslib@^1.10.0, tslib@^1.8.1, tslib@^1.9.0:
   version "1.14.1"

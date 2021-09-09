@@ -14,7 +14,7 @@ import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { combineSourcemaps } from '../utils'
-import { parse } from 'tsconfck'
+import { parse, TSConfckParseResult } from 'tsconfck'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -197,10 +197,22 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-const tsconfckCache = new Map()
+const tsconfigCache = new Map<string, TSConfckParseResult>()
 async function loadTsconfigJsonForFile(
   filename: string
 ): Promise<TSConfigJSON> {
-  const parseResult = await parse(filename, { cache: tsconfckCache })
-  return parseResult.tsconfig
+  return parse(filename, {
+    cache: tsconfigCache,
+    resolveWithEmptyIfConfigNotFound: true
+  }).then(
+    (result) => result.tsconfig,
+    (err) => {
+      debug(`error while parsing tsconfig for ${filename}, ${err}`)
+      tsconfigCache.set(filename, {
+        filename: 'tsconfig_parse_error',
+        tsconfig: {}
+      })
+      return {}
+    }
+  )
 }

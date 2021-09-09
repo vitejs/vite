@@ -1,6 +1,7 @@
 // @ts-nocheck
 import '../nested/main'
 import '../nested-with-extends/main'
+import '../has-error/main'
 
 import { MainTypeOnlyClass } from './not-used-type'
 
