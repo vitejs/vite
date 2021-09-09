@@ -153,7 +153,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           asSrc &&
           server &&
           !ssr &&
-          (res = tryOptimizedResolve(id, server, importer))
+          (res = tryOptimizedResolve(id, server, importer)) !== undefined
         ) {
           return res
         }
