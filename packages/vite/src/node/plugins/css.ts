@@ -1006,6 +1006,7 @@ const scss: SassStylePreprocessor = async (
   options,
   resolvers
 ) => {
+  // BROWSER VITE patch: dynamic sass import
   const render = (await import('sass')).render
   const internalImporter: Sass.Importer = (url, importer, done) => {
     resolvers.sass(url, importer).then((resolved) => {

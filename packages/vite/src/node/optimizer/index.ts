@@ -276,8 +276,8 @@ export async function optimizeDeps(
         exportsData.hasReExports = true
       }
     }
+    // BROWSER VITE patch: fetch CJS exports
     if (exportsData[0].length === 0 && exportsData[1].length === 0) {
-      // cjs
       const {exports, reexports} = cjs_parse(entryContent);
       const expSet = new Set(exports);
       while (reexports.length) {

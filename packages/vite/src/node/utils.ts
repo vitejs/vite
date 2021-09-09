@@ -165,6 +165,7 @@ export function removeImportQuery(url: string): string {
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
+  // BROWSER VITE patch: fix logic for browser URL support
   let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'file:///')
   // if (resolvedUrl.protocol !== 'relative:') {
   //   resolvedUrl = pathToFileURL(url)

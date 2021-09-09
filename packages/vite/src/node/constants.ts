@@ -40,6 +40,7 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
+// BROWSER VITE patch: disable require for browser build
 // eslint-disable-next-line node/no-missing-require
 export const CLIENT_ENTRY = process.env.VITE_BROWSER ? 'browser-vite/dist/client/client.mjs' : require.resolve('browser-vite/dist/client/client.mjs')
 // eslint-disable-next-line node/no-missing-require

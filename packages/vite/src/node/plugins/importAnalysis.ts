@@ -320,7 +320,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // If resolvable, let's resolve it
         if (specifier) {
           // skip external / data uri
-          if (isExternalUrl(specifier) || isDataUrl(specifier)) {
+          // BROWSER VITE patch: support URL resolve in build mode
+          if (/*isExternalUrl(specifier) || */isDataUrl(specifier)) {
             continue
           }
           // skip ssr external

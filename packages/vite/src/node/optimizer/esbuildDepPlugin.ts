@@ -158,6 +158,7 @@ export function esbuildDepPlugin(
         const [imports, exports] = data
         if (!imports.length && !exports.length) {
           // cjs
+          // BROWSER VITE patch: proper CJS exports
           const { cjsExports = [] } = data;
           const keys = cjsExports.filter(i => i !== "default" && i !== '__esModule').join(', ');
           contents += `export { ${keys} } from "${relativePath}";import m from "${relativePath}";export default m;`
