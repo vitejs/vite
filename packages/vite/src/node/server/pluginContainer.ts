@@ -38,7 +38,6 @@ import {
   OutputOptions,
   ModuleInfo,
   NormalizedInputOptions,
-  ChangeEvent,
   PartialResolvedId,
   ResolvedId,
   PluginContext as RollupPluginContext,
@@ -82,7 +81,6 @@ export interface PluginContainerOptions {
 export interface PluginContainer {
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
-  watchChange(id: string, event?: ChangeEvent): void
   resolveId(
     id: string,
     importer?: string,
@@ -528,17 +526,6 @@ export async function createPluginContainer(
       return {
         code,
         map: ctx._getCombinedSourcemap()
-      }
-    },
-
-    watchChange(id, event = 'update') {
-      const ctx = new Context()
-      if (watchFiles.has(id)) {
-        for (const plugin of plugins) {
-          if (!plugin.watchChange) continue
-          ctx._activePlugin = plugin
-          plugin.watchChange.call(ctx as any, id, { event })
-        }
       }
     },
 
