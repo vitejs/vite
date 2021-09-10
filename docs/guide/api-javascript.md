@@ -88,16 +88,6 @@ interface ViteDevServer {
    */
   transformIndexHtml(url: string, html: string): Promise<string>
   /**
-   * Util for transforming a file with esbuild.
-   * Can be useful for certain plugins.
-   */
-  transformWithEsbuild(
-    code: string,
-    filename: string,
-    options?: EsbuildTransformOptions,
-    inMap?: object
-  ): Promise<ESBuildTransformResult>
-  /**
    * Load a given URL as an instantiated module for SSR.
    */
   ssrLoadModule(
