@@ -414,6 +414,15 @@ function myPlugin() {
 }
 ```
 
+A function can also be used for more precise control:
+
+```js
+apply(config, { command }) {
+  // apply only on build but not for SSR
+  return command === 'build' && !config.build.ssr
+}
+```
+
 ## Rollup Plugin Compatibility
 
 A fair number of Rollup plugins will work directly as a Vite plugin (e.g. `@rollup/plugin-alias` or `@rollup/plugin-json`), but not all of them, since some plugin hooks do not make sense in an unbundled dev server context.
