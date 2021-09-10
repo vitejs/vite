@@ -71,7 +71,9 @@ export function proxyMiddleware(
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
+            debug(`${req.url} -> ws ${opts.target}`)
             proxy.ws(req, socket, head)
+            return
           }
         }
       }
