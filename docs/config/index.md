@@ -356,12 +356,23 @@ export default defineConfig(async ({ command, mode }) => {
   Set this to `0.0.0.0` to listen on all addresses, including LAN and public addresses.
 
   This can be set via the CLI using `--host 0.0.0.0` or `--host`.
+ 
 
 ### server.port
 
 - **Type:** `number`
 
   Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
+  
+   **Example:**
+
+  ```js
+  export default defineConfig({
+    server: {
+      port: 8888
+    }
+  })
+  ```  
 
 ### server.strictPort
 
