@@ -62,7 +62,7 @@ export function proxyMiddleware(
     httpServer.on('upgrade', (req, socket, head) => {
       const url = req.url!
       for (const context in proxies) {
-        if (url.startsWith(context)) {
+        if (testUrl(url, context)) {
           const [proxy, opts] = proxies[context]
           if (
             (opts.ws || opts.target?.toString().startsWith('ws:')) &&
@@ -82,10 +82,7 @@ export function proxyMiddleware(
   return function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
-      if (
-        (context.startsWith('^') && new RegExp(context).test(url)) ||
-        url.startsWith(context)
-      ) {
+      if (testUrl(url, context)) {
         const [proxy, opts] = proxies[context]
         const options: HttpProxy.ServerOptions = {}
 
@@ -115,4 +112,11 @@ export function proxyMiddleware(
     }
     next()
   }
+}
+
+function testUrl(url: string, target: string) {
+  return (
+    (target.startsWith('^') && new RegExp(target).test(url)) ||
+    url.startsWith(target)
+  )
 }
