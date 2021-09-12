@@ -149,3 +149,16 @@ async function resolveConfig(
   defaultMode?: string
 ): Promise<ResolvedConfig>
 ```
+
+## `transformWithEsbuild`
+
+**Type Signature:**
+
+```ts
+async function transformWithEsbuild(
+  code: string,
+  filename: string,
+  options?: EsbuildTransformOptions,
+  inMap?: object
+): Promise<ESBuildTransformResult>
+```
