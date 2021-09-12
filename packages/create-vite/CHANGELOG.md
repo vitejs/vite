@@ -76,7 +76,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpx create-vite
+$ pnpm dlx create-vite
 ```
 
 
