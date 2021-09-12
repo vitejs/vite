@@ -500,27 +500,33 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, config))
 
-  // spa fallback
-  if (!middlewareMode || middlewareMode === 'html') {
-    middlewares.use(
-      history({
-        logger: createDebugger('vite:spa-fallback'),
-        // support /dir/ without explicit index.html
-        rewrites: [
-          {
-            from: /\/$/,
-            to({ parsedUrl }: any) {
-              const rewritten = parsedUrl.pathname + 'index.html'
-              if (fs.existsSync(path.join(root, rewritten))) {
-                return rewritten
-              } else {
-                return `/index.html`
-              }
+  function viteSpaFallbackMiddleware(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    next: Connect.NextFunction
+  ) {
+    return history({
+      logger: createDebugger('vite:spa-fallback'),
+      // support /dir/ without explicit index.html
+      rewrites: [
+        {
+          from: /\/$/,
+          to({ parsedUrl }: any) {
+            const rewritten = parsedUrl.pathname + 'index.html'
+            if (fs.existsSync(path.join(root, rewritten))) {
+              return rewritten
+            } else {
+              return `/index.html`
             }
           }
-        ]
-      })
-    )
+        }
+      ]
+    })(req, res, next)
+  }
+
+  // spa fallback
+  if (!middlewareMode || middlewareMode === 'html') {
+    middlewares.use(viteSpaFallbackMiddleware)
   }
 
   // run post config hooks
