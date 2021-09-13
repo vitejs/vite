@@ -264,7 +264,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                       if (cssFiles && cssFiles.size > 0) {
                         cssFiles.forEach((file) => {
-                          deps.add(config.base + file)
+                          deps.add(file)
                         })
                         hasRemovedPureCssChunk = true
                       }
