@@ -149,43 +149,43 @@ test('import.meta', async () => {
 })
 
 test('dynamic import', async () => {
-  expect(
-    (await ssrTransform(`export const i = () => import('./foo')`, null, null))
-      .code
-  ).toMatchInlineSnapshot(`
+  const result = await ssrTransform(
+    `export const i = () => import('./foo')`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
     "const i = () => __vite_ssr_dynamic_import__('./foo')
     Object.defineProperty(__vite_ssr_exports__, \\"i\\", { enumerable: true, configurable: true, get(){ return i }});"
   `)
+  expect(result.deps).toEqual([])
+  expect(result.dynamicDeps).toEqual(['./foo'])
 })
 
 test('do not rewrite method definition', async () => {
-  expect(
-    (
-      await ssrTransform(
-        `import { fn } from 'vue';class A { fn() { fn() } }`,
-        null,
-        null
-      )
-    ).code
-  ).toMatchInlineSnapshot(`
+  const result = await ssrTransform(
+    `import { fn } from 'vue';class A { fn() { fn() } }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
     class A { fn() { __vite_ssr_import_0__.fn() } }"
   `)
+  expect(result.deps).toEqual(['vue'])
 })
 
 test('do not rewrite catch clause', async () => {
-  expect(
-    (
-      await ssrTransform(
-        `import {error} from './dependency';try {} catch(error) {}`,
-        null,
-        null
-      )
-    ).code
-  ).toMatchInlineSnapshot(`
+  const result = await ssrTransform(
+    `import {error} from './dependency';try {} catch(error) {}`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./dependency\\");
     try {} catch(error) {}"
   `)
+  expect(result.deps).toEqual(['./dependency'])
 })
 
 // #2221
