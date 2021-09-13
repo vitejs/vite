@@ -457,7 +457,7 @@ export function tryNodeResolve(
 
   // nested node module, step-by-step resolve to the basedir of the nestedPath
   if (nestedRoot) {
-    basedir = nestedResolveFrom(nestedRoot, basedir)
+    basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
   const pkg = resolvePackageData(pkgId, basedir, preserveSymlinks)

@@ -68,11 +68,15 @@ export function resolveFrom(
  * like `resolveFrom` but supports resolving `>` path in `id`,
  * for example: `foo > bar > baz`
  */
-export function nestedResolveFrom(id: string, basedir: string): string {
+export function nestedResolveFrom(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false
+): string {
   const pkgs = id.split('>').map((pkg) => pkg.trim())
   try {
     for (const pkg of pkgs) {
-      basedir = resolveFrom(pkg, basedir)
+      basedir = resolveFrom(pkg, basedir, preserveSymlinks)
     }
   } catch {}
   return basedir
@@ -296,7 +300,9 @@ export function numberToPos(
 ): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
-    throw new Error(`offset is longer than source length! offset ${offset} > length ${source.length}`);
+    throw new Error(
+      `offset is longer than source length! offset ${offset} > length ${source.length}`
+    )
   }
   const lines = source.split(splitRE)
   let counted = 0
