@@ -15,12 +15,12 @@ import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { createWebSocketServer, WebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
+import { spaFallbackMiddleware } from './middlewares/spaFallback'
 import { transformMiddleware } from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
-import history from 'connect-history-api-fallback'
 import {
   serveRawFsMiddleware,
   servePublicMiddleware,
@@ -29,7 +29,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, ensureLeadingSlash, normalizePath } from '../utils'
+import { ensureLeadingSlash, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
@@ -502,25 +502,7 @@ export async function createServer(
 
   // spa fallback
   if (!middlewareMode || middlewareMode === 'html') {
-    middlewares.use(
-      history({
-        logger: createDebugger('vite:spa-fallback'),
-        // support /dir/ without explicit index.html
-        rewrites: [
-          {
-            from: /\/$/,
-            to({ parsedUrl }: any) {
-              const rewritten = parsedUrl.pathname + 'index.html'
-              if (fs.existsSync(path.join(root, rewritten))) {
-                return rewritten
-              } else {
-                return `/index.html`
-              }
-            }
-          }
-        ]
-      })
-    )
+    middlewares.use(spaFallbackMiddleware(root))
   }
 
   // run post config hooks
