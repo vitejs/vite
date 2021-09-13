@@ -1,0 +1,13 @@
+{
+  "name": "preserveSymlinks",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite --force",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "workspaces": {},
+  "dependencies": {
+    "@symlinks/moduleA": "link:./moduleA"
+  }
+}
