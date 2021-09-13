@@ -1,0 +1,17 @@
+{
+  "name": "@symlinks/moduleA",
+  "version": "0.0.0",
+  "module": "dist/symlinks-moduleA.esm.js",
+  "main": "dist/symlinks-moduleA.cjs.js",
+  "preconstruct": {
+    "entrypoints": [
+      "index.js"
+    ]
+  },
+  "scripts": {
+    "dev": "preconstruct dev"
+  },
+  "devDependencies": {
+    "@preconstruct/cli": "^2.0.6"
+  }
+}

@@ -206,6 +206,16 @@ export default defineConfig(async ({ command, mode }) => {
 
   List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
+### resolve.preserveSymlinks
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  Enabling this setting causes vite to determine file identity by the original file path (i.e. the path without following symlinks) instead of the real file path (i.e. the path after following symlinks).
+
+- **Related:** [esbuild#preserve-symlinks](https://esbuild.github.io/api/#preserve-symlinks), [webpack#resolve.symlinks
+  ](https://webpack.js.org/configuration/resolve/#resolvesymlinks)
+
 ### css.modules
 
 - **Type:**

@@ -50,12 +50,17 @@ try {
 
 const ssrExtensions = ['.js', '.cjs', '.json', '.node']
 
-export function resolveFrom(id: string, basedir: string, ssr = false): string {
+export function resolveFrom(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false,
+  ssr = false
+): string {
   return resolve.sync(id, {
     basedir,
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
-    preserveSymlinks: isRunningWithYarnPnp || false
+    preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false
   })
 }
 
@@ -63,11 +68,15 @@ export function resolveFrom(id: string, basedir: string, ssr = false): string {
  * like `resolveFrom` but supports resolving `>` path in `id`,
  * for example: `foo > bar > baz`
  */
-export function nestedResolveFrom(id: string, basedir: string): string {
+export function nestedResolveFrom(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false
+): string {
   const pkgs = id.split('>').map((pkg) => pkg.trim())
   try {
     for (const pkg of pkgs) {
-      basedir = resolveFrom(pkg, basedir)
+      basedir = resolveFrom(pkg, basedir, preserveSymlinks)
     }
   } catch {}
   return basedir
@@ -291,7 +300,9 @@ export function numberToPos(
 ): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
-    throw new Error(`offset is longer than source length! offset ${offset} > length ${source.length}`);
+    throw new Error(
+      `offset is longer than source length! offset ${offset} > length ${source.length}`
+    )
   }
   const lines = source.split(splitRE)
   let counted = 0

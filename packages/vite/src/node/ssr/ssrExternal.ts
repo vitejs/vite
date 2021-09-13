@@ -103,7 +103,9 @@ export function resolveSSRExternal(
   }
 
   for (const id of depsToTrace) {
-    const depRoot = path.dirname(resolveFrom(`${id}/package.json`, root))
+    const depRoot = path.dirname(
+      resolveFrom(`${id}/package.json`, root, !!config.resolve.preserveSymlinks)
+    )
     resolveSSRExternal(
       {
         ...config,
