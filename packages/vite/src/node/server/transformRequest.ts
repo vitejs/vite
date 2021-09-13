@@ -29,6 +29,7 @@ export interface TransformResult {
   map: SourceMap | null
   etag?: string
   deps?: string[]
+  dynamicDeps?: string[]
 }
 
 export interface TransformOptions {
