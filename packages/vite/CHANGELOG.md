@@ -1,3 +1,21 @@
+## [2.5.7](https://github.com/vitejs/vite/compare/v2.5.6...v2.5.7) (2021-09-13)
+
+
+### Bug Fixes
+
+* compute getPkgName only when used ([#4729](https://github.com/vitejs/vite/issues/4729)) ([ce29273](https://github.com/vitejs/vite/commit/ce292735f538556996540d764e4024fcb9dc9ac7))
+* **css:** return sourcemap in vite:css transform ([#4880](https://github.com/vitejs/vite/issues/4880)) ([015290a](https://github.com/vitejs/vite/commit/015290a169d5ca3806aa0b2eb417426d61df9b7d))
+* **esbuildDepPlugin:** externalize built-in module during SSR ([#4904](https://github.com/vitejs/vite/issues/4904)) ([5cc4587](https://github.com/vitejs/vite/commit/5cc458753171e88bb56fa49dbbf5c87a19d0294f))
+* the base is duplicated in `importAnalysisBuild.ts` ([#4740](https://github.com/vitejs/vite/issues/4740)) ([7e929ae](https://github.com/vitejs/vite/commit/7e929ae4932ef89e56b92acdd46856ae41171302))
+
+
+### Features
+
+* allow `apply` condition to be a function ([#4857](https://github.com/vitejs/vite/issues/4857)) ([f19282f](https://github.com/vitejs/vite/commit/f19282f003f64093518290a61446403b1f022d18))
+* **ssr:** exports `dynamicDeps` for ssrTransform, close [#4898](https://github.com/vitejs/vite/issues/4898) ([#4909](https://github.com/vitejs/vite/issues/4909)) ([9e51a76](https://github.com/vitejs/vite/commit/9e51a76b3fce27cb0a4a4ae558c4499e9dd540cd))
+
+
+
 ## [2.5.6](https://github.com/vitejs/vite/compare/v2.5.5...v2.5.6) (2021-09-08)
 
 
