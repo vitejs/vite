@@ -74,7 +74,8 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   // dependencies.
   entries = entries.filter(
     (entry) =>
-      (JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)) &&
+      // BROWSER VITE patch: we want to parse md/mdx files as well with an injected plugin
+      // (JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)) &&
       fs.existsSync(entry)
   )
 
