@@ -7,7 +7,7 @@ import { createDebugger } from '../../utils'
 export function spaFallbackMiddleware(
   root: string
 ): Connect.NextHandleFunction {
-  const spaFallbackMiddleware = return history({
+  const spaFallbackMiddleware = history({
     logger: createDebugger('vite:spa-fallback'),
     // support /dir/ without explicit index.html
     rewrites: [
@@ -24,7 +24,7 @@ export function spaFallbackMiddleware(
       }
     ]
   })
-  
+
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteSpaFallbackMiddleware(req, res, next) {
     return spaFallbackMiddleware(req, res, next)
