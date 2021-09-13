@@ -50,6 +50,9 @@
 <h2>Dep from hidden dir</h2>
 <div>This should show hello!: <span class="hidden-dir"></span></div>
 
+<h2>Nested include</h2>
+<div>Module path: <span class="nested-include"></span></div>
+
 <script type="module">
   // test dep detection in globbed files
   const globbed = import.meta.globEager('./glob/*.js')
@@ -78,6 +81,9 @@
 
   import { greeting } from './.hidden-dir/foo.js'
   text('.hidden-dir', greeting)
+
+  import { nestedInclude } from 'nested-exclude'
+  text('.nested-include', nestedInclude)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

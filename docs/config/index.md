@@ -343,6 +343,18 @@ export default defineConfig(async ({ command, mode }) => {
 
   See [here](/guide/env-and-mode#env-files) for more about environment files.
 
+### envPrefix
+
+- **Type:** `string | string[]`
+- **Default:** `VITE_`
+
+  Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+
+:::warning SECURITY NOTES
+
+- `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+  :::
+
 ## Server Options
 
 ### server.host
@@ -485,7 +497,7 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create vite server in middleware mode.
+  // Create Vite server in middleware mode.
   const vite = await createViteServer({
     server: { middlewareMode: 'ssr' }
   })
@@ -540,7 +552,7 @@ createServer()
 
 ### build.target
 
-- **Type:** `string`
+- **Type:** `string | string[]`
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
@@ -657,12 +669,6 @@ createServer()
 
   Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
 
-### build.cleanCssOptions
-
-- **Type:** `CleanCSS.Options`
-
-  Constructor options to pass on to [clean-css](https://github.com/jakubpawlowicz/clean-css#constructor-options).
-
 ### build.write
 
 - **Type:** `boolean`
@@ -708,7 +714,7 @@ createServer()
 
   By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
 
-  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from vite project root. This will overwrite default entries inference.
+  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference.
 
 ### optimizeDeps.exclude
 
@@ -717,7 +723,16 @@ createServer()
   Dependencies to exclude from pre-bundling.
 
   :::warning CommonJS
-  CommonJS dependencies should not be excluded from optimization. If an ESM dependency has a nested CommonJS dependency, it should not be excluded as well.
+  CommonJS dependencies should not be excluded from optimization. If an ESM dependency is excluded from optimization, but has a nested CommonJS dependency, the CommonJS dependency should be added to `optimizeDeps.include`. Example:
+
+  ```js
+  export default defineConfig({
+    optimizeDeps: {
+      include: ['esm-dep > cjs-dep']
+    }
+  })
+  ```
+
   :::
 
 ### optimizeDeps.include

@@ -37,7 +37,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpx create-vite
+$ pnpm dlx create-vite
 ```
 
 Then follow the prompts!
@@ -133,7 +133,7 @@ yarn build
 yarn link
 ```
 
-Then go to your vite based project and run `yarn link vite`. Now restart the development server (`yarn dev`) to ride on the bleeding edge!
+Then go to your Vite based project and run `yarn link vite`. Now restart the development server (`yarn dev`) to ride on the bleeding edge!
 
 ## Community
 

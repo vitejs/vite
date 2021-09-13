@@ -4,7 +4,13 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { pathToFileURL, URL } from 'url'
-import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
+import {
+  FS_PREFIX,
+  DEFAULT_EXTENSIONS,
+  VALID_ID_PREFIX,
+  CLIENT_PUBLIC_PATH,
+  ENV_PUBLIC_PATH
+} from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
@@ -24,7 +30,11 @@ export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
 }
 
-export const flattenId = (id: string): string => id.replace(/[\/\.]/g, '_')
+export const flattenId = (id: string): string =>
+  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.]/g, '_')
+
+export const normalizeId = (id: string): string =>
+  id.replace(/(\s*>\s*)/g, ' > ')
 
 export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
@@ -38,7 +48,7 @@ try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-const ssrExtensions = ['.js', '.json', '.node']
+const ssrExtensions = ['.js', '.cjs', '.json', '.node']
 
 export function resolveFrom(
   id: string,
@@ -52,6 +62,20 @@ export function resolveFrom(
     // necessary to work with pnpm
     preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false
   })
+}
+
+/**
+ * like `resolveFrom` but supports resolving `>` path in `id`,
+ * for example: `foo > bar > baz`
+ */
+export function nestedResolveFrom(id: string, basedir: string): string {
+  const pkgs = id.split('>').map((pkg) => pkg.trim())
+  try {
+    for (const pkg of pkgs) {
+      basedir = resolveFrom(pkg, basedir)
+    }
+  } catch {}
+  return basedir
 }
 
 // set in bin/vite.js
@@ -127,8 +151,17 @@ export const isJSRequest = (url: string): boolean => {
 }
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
+const internalPrefixes = [
+  FS_PREFIX,
+  VALID_ID_PREFIX,
+  CLIENT_PUBLIC_PATH,
+  ENV_PUBLIC_PATH
+]
+const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
 const trailingSeparatorRE = /[\?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
+export const isInternalRequest = (url: string): boolean =>
+  InternalPrefixRE.test(url)
 
 export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
@@ -263,7 +296,7 @@ export function numberToPos(
 ): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
-    throw new Error('offset is longer than source length!')
+    throw new Error(`offset is longer than source length! offset ${offset} > length ${source.length}`);
   }
   const lines = source.split(splitRE)
   let counted = 0
@@ -517,3 +550,10 @@ export function resolveHostname(
 
   return { host, name }
 }
+
+export function arraify<T>(target: T | T[]): T[] {
+  return Array.isArray(target) ? target : [target]
+}
+
+export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+export const singlelineCommentsRE = /\/\/.*/g

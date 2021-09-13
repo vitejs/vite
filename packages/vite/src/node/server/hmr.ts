@@ -91,6 +91,7 @@ export async function handleHMRUpdate(
       const filteredModules = await plugin.handleHotUpdate(hmrContext)
       if (filteredModules) {
         hmrContext.modules = filteredModules
+        break
       }
     }
   }
@@ -461,15 +462,15 @@ async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = Date.now()
   const { port } = server.config.server
-  
+
   await server.close()
-  
+
   let newServer = null
   try {
     newServer = await createServer(server.config.inlineConfig)
-  } catch (err) {
+  } catch (err: any) {
     server.config.logger.error(err.message, {
-      timestamp: true,
+      timestamp: true
     })
     return
   }

@@ -1,3 +1,12 @@
+## [1.1.8](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.7...plugin-vue-jsx@1.1.8) (2021-09-07)
+
+
+### Bug Fixes
+
+* hmr doesn't work when modifying the code of jsx in sfc ([#4563](https://github.com/vitejs/vite/issues/4563)) ([1012367](https://github.com/vitejs/vite/commit/101236794c5d6d28591302d5552cb1c0ab8f4115))
+
+
+
 ## [1.1.7](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.6...plugin-vue-jsx@1.1.7) (2021-07-27)
 
 
