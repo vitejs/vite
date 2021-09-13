@@ -94,3 +94,37 @@ describe('nested w/ query', () => {
 
   testPage(true)
 })
+
+if (isBuild) {
+  describe('inline entry', () => {
+    const _countTags = (selector) => page.$$eval(selector, (t) => t.length)
+    const countScriptTags = _countTags.bind(this, 'script[type=module]')
+    const countPreloadTags = _countTags.bind(this, 'link[rel=modulepreload]')
+
+    test('is inlined', async () => {
+      await page.goto(viteTestUrl + '/inline/shared-1.html?v=1')
+      expect(await countScriptTags()).toBeGreaterThan(1)
+      expect(await countPreloadTags()).toBe(0)
+    })
+
+    test('is not inlined', async () => {
+      await page.goto(viteTestUrl + '/inline/unique.html?v=1')
+      expect(await countScriptTags()).toBe(1)
+      expect(await countPreloadTags()).toBeGreaterThan(0)
+    })
+
+    test('execution order when inlined', async () => {
+      await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
+      expect((await page.textContent('#output')).trim()).toBe(
+        'dep1 common dep2 dep3 shared'
+      )
+    })
+
+    test('execution order when not inlined', async () => {
+      await page.goto(viteTestUrl + '/inline/unique.html?v=1')
+      expect((await page.textContent('#output')).trim()).toBe(
+        'dep1 common dep2 unique'
+      )
+    })
+  })
+}
