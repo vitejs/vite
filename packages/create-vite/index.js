@@ -3,7 +3,7 @@
 // @ts-check
 const fs = require('fs')
 const path = require('path')
-// Avoids autoconversion to number of the project name by defining that the args 
+// Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
 const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
 // eslint-disable-next-line node/no-restricted-require
