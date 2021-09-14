@@ -177,6 +177,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
+        let someScriptsAreAsync = false
+        let someScriptsAreDefer = false
 
         await traverseHtml(html, id, (node) => {
           if (node.type !== NodeTypes.ELEMENT) {
@@ -213,6 +215,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
 
               everyScriptIsAsync &&= isAsync
+              someScriptsAreAsync ||= isAsync
+              someScriptsAreDefer ||= !isAsync
             }
           }
 
@@ -254,6 +258,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+
+        if (someScriptsAreAsync && someScriptsAreDefer) {
+          config.logger.warn(
+            `\nMixed async and defer script modules in ${id}, output script will fallback to defer. Every script, including inline ones, need to be marked as async for your output script to be async.`
+          )
+        }
 
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location.
