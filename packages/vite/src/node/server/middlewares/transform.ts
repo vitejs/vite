@@ -114,20 +114,22 @@ export function transformMiddleware(
         }
       }
 
-      const publicPath =
-        normalizePath(server.config.publicDir).slice(
-          server.config.root.length
-        ) + '/'
-      // warn explicit public paths
-      if (url.startsWith(publicPath)) {
-        logger.warn(
-          chalk.yellow(
-            `files in the public directory are served at the root path.\n` +
-              `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
-                url.replace(publicPath, '/')
-              )}.`
+      // check if public dir is inside root dir
+      const publicDir = normalizePath(server.config.publicDir)
+      const rootDir = normalizePath(server.config.root)
+      if (publicDir.startsWith(rootDir)) {
+        const publicPath = `${publicDir.slice(rootDir.length)}/`
+        // warn explicit public paths
+        if (url.startsWith(publicPath)) {
+          logger.warn(
+            chalk.yellow(
+              `files in the public directory are served at the root path.\n` +
+                `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
+                  url.replace(publicPath, '/')
+                )}.`
+            )
           )
-        )
+        }
       }
 
       if (
