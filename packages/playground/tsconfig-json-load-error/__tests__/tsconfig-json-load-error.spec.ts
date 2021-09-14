@@ -1,12 +1,8 @@
 import { editFile, isBuild, readFile, untilUpdated } from '../../testUtils'
 
-test('should log 500 error in browser for malformed tsconfig', () => {
-  // don't test for actual complete message as this might be locale dependant. chrome does log 500 consistently though
-  expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
-  expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
-})
-
 if (isBuild) {
+  // build errors due to invalid tsconfig. the error is opaque in the testing framework
+  // but we can make sure that it failed by checking for missing output
   test('should not output files to dist', () => {
     let err
     try {
@@ -18,6 +14,12 @@ if (isBuild) {
     expect(err.code).toBe('ENOENT')
   })
 } else {
+  test('should log 500 error in browser for malformed tsconfig', () => {
+    // don't test for actual complete message as this might be locale dependant. chrome does log 500 consistently though
+    expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
+    expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
+  })
+
   test('should show error overlay for tsconfig error', async () => {
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
     expect(errorOverlay).toBeTruthy()
