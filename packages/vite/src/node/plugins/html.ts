@@ -322,9 +322,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         return chunks
       }
 
-      const toScriptTag = (chunk: OutputChunk): HtmlTagDescriptor => ({
+      const toScriptTag = (
+        chunk: OutputChunk,
+        isAsync: boolean
+      ): HtmlTagDescriptor => ({
         tag: 'script',
         attrs: {
+          ...(isAsync ? { async: true } : {}),
           type: 'module',
           crossorigin: true,
           src: toPublicPath(chunk.fileName, config)
@@ -402,8 +406,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // when inlined, discard entry chunk and inject <script> for everything in post-order
           const imports = getImportedChunks(chunk)
           const assetTags = canInlineEntry
-            ? imports.map(toScriptTag)
-            : [toScriptTag(chunk), ...imports.map(toPreloadTag)]
+            ? imports.map((chunk) => toScriptTag(chunk, isAsync))
+            : [toScriptTag(chunk, isAsync), ...imports.map(toPreloadTag)]
 
           assetTags.push(...getCssTagsForChunk(chunk))
 
