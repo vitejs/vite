@@ -58,9 +58,14 @@ export interface Options {
 
   /**
    * Enable Vue ref transform (experimental).
+   * https://github.com/vuejs/vue-next/tree/master/packages/ref-transform
+   *
    * **requires Vue \>= 3.2.5**
-   * - `true`: transform will be enabled for all vue,js(x),ts(x) files
-   * - `string | RegExp`: apply to vue + only matched files
+   *
+   * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
+   *           those inside node_modules
+   * - `string | RegExp`: apply to vue + only matched files (will include
+   *                      node_modules, so specify directories in necessary)
    * - `false`: disable in all cases
    *
    * @default false
@@ -97,7 +102,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     refTransform === false
       ? () => false
       : refTransform === true
-      ? createFilter(/\.(j|t)sx?$/)
+      ? createFilter(/\.(j|t)sx?$/, /node_modules/)
       : createFilter(refTransform)
 
   // compat for older verisons
@@ -162,7 +167,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')
         }
-        const descriptor = getDescriptor(filename)!
+        const descriptor = getDescriptor(
+          filename,
+          options.root,
+          options.isProduction
+        )!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
           // handle <scrip> + <script setup> merge via compileScript()
@@ -214,7 +223,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         )
       } else {
         // sub block request
-        const descriptor = getDescriptor(filename)!
+        const descriptor = getDescriptor(
+          filename,
+          options.root,
+          options.isProduction
+        )!
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this, ssr)
         } else if (query.type === 'style') {

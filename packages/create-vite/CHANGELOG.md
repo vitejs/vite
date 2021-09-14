@@ -1,3 +1,7 @@
+## [2.6.2](https://github.com/vitejs/vite/compare/create-vite@2.6.1...create-vite@2.6.2) (2021-09-07)
+
+
+
 ## [2.6.1](https://github.com/vitejs/vite/compare/create-vite@2.5.4...create-vite@2.6.1) (2021-08-31)
 
 
@@ -72,7 +76,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpx create-vite
+$ pnpm dlx create-vite
 ```
 
 
