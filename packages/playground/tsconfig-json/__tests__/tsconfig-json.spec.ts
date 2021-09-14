@@ -13,8 +13,4 @@ test('should respected each `tsconfig.json`s compilerOptions', () => {
   expect(browserLogs).toContain('nested-with-extends side effect')
   // nested-with-extends base setter should be called (because of `"useDefineForClassFields": false"`)
   expect(browserLogs).toContain('data setter in NestedWithExtendsBase')
-
-  expect(browserLogs).toContain(
-    'side effect of ts file with malformed ts-config'
-  )
 })

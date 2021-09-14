@@ -8,15 +8,22 @@ import {
   TransformOptions,
   TransformResult
 } from 'esbuild'
-import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
+import {
+  cleanUrl,
+  createDebugger,
+  ensureWatchedFile,
+  generateCodeFrame
+} from '../utils'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
-import { ResolvedConfig } from '..'
+import { ResolvedConfig, ViteDevServer } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { combineSourcemaps } from '../utils'
-import { parse, TSConfckParseResult } from 'tsconfck'
+import { parse, TSConfckParseError, TSConfckParseResult } from 'tsconfck'
 
 const debug = createDebugger('vite:esbuild')
+
+let server: ViteDevServer
 
 export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
@@ -139,6 +146,13 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
 
   return {
     name: 'vite:esbuild',
+    configureServer(_server) {
+      server = _server
+      server.watcher
+        .on('add', reloadOnTsconfigChange)
+        .on('change', reloadOnTsconfigChange)
+        .on('unlink', reloadOnTsconfigChange)
+    },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
         const result = await transformWithEsbuild(code, id, options)
@@ -201,18 +215,46 @@ const tsconfigCache = new Map<string, TSConfckParseResult>()
 async function loadTsconfigJsonForFile(
   filename: string
 ): Promise<TSConfigJSON> {
-  return parse(filename, {
-    cache: tsconfigCache,
-    resolveWithEmptyIfConfigNotFound: true
-  }).then(
-    (result) => result.tsconfig,
-    (err) => {
-      debug(`error while parsing tsconfig for ${filename}, ${err}`)
-      tsconfigCache.set(filename, {
-        filename: 'tsconfig_parse_error',
-        tsconfig: {}
-      })
-      return {}
+  try {
+    const result = await parse(filename, {
+      cache: tsconfigCache,
+      resolveWithEmptyIfConfigNotFound: true
+    })
+    // tsconfig could be out of root, make sure it is watched on dev
+    if (server && result.tsconfigFile !== 'no_tsconfig_file_found') {
+      ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
     }
-  )
+    return result.tsconfig
+  } catch (e) {
+    if (e instanceof TSConfckParseError) {
+      // tsconfig could be out of root, make sure it is watched on dev
+      if (server && e.tsconfigFile) {
+        ensureWatchedFile(server.watcher, e.tsconfigFile, server.config.root)
+      }
+    }
+    throw e
+  }
+}
+
+function reloadOnTsconfigChange(changedFile: string) {
+  // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
+  // any json file in the tsconfig cache could have been used to compile ts
+  if (
+    path.basename(changedFile) === 'tsconfig.json' ||
+    (changedFile.endsWith('.json') && tsconfigCache.has(changedFile))
+  ) {
+    server.config.logger.info(
+      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure typescript is compiled with updated config values.`,
+      { clear: server.config.clearScreen, timestamp: true }
+    )
+    // clear tsconfig cache so that recompile works with up2date configs
+    tsconfigCache.clear()
+    // clear module graph to remove code compiled with outdated config
+    server.moduleGraph.invalidateAll()
+    // force full reload
+    server.ws.send({
+      type: 'full-reload',
+      path: '*'
+    })
+  }
 }
