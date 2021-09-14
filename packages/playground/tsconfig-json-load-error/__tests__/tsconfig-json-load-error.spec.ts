@@ -24,8 +24,9 @@ if (isBuild) {
     const message = await errorOverlay.$$eval('.message-body', (m) => {
       return m[0].innerHTML
     })
-    expect(message).toContain(
-      'tsconfig-json-load-error/has-error/tsconfig.json failed: SyntaxError: Unexpected token } in JSON at position 107'
+    // use regex with variable filename and position values because they are different on win
+    expect(message).toMatch(
+      /^parsing .* failed: SyntaxError: Unexpected token } in JSON at position \d+$/
     )
   })
   test('should reload when tsconfig is changed', async () => {
