@@ -60,7 +60,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           plugins: await resolvePlugins({ ...config }, [], [], []),
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
-          },
+          }
         })
         let code: string
         try {

@@ -281,22 +281,23 @@ export async function createPluginContainer(
           : // some rollup plugins, e.g. json, sets position instead of pos
             (err as any).position
       if (pos != null) {
-        let errLocation;
+        let errLocation
         try {
-          errLocation = numberToPos(ctx._activeCode, pos);
-        }
-        catch (err2) {
+          errLocation = numberToPos(ctx._activeCode, pos)
+        } catch (err2) {
           logger.error(
-            chalk.red(`Error in error handler:\n${err2.stack || err2.message}\n`),
+            chalk.red(
+              `Error in error handler:\n${err2.stack || err2.message}\n`
+            ),
             // print extra newline to separate the two errors
             { error: err2 }
           )
-          throw err;
+          throw err
         }
         err.loc = err.loc || {
-            file: err.id,
-            ...errLocation
-        };
+          file: err.id,
+          ...errLocation
+        }
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
       } else if (err.loc) {
         // css preprocessors may report errors in an included file
@@ -393,10 +394,9 @@ export async function createPluginContainer(
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
-          ...[
-            acornClassFields,
-            acornStaticClassFeatures
-          ].concat(options.acornInjectPlugins)
+          ...[acornClassFields, acornStaticClassFeatures].concat(
+            options.acornInjectPlugins
+          )
         )
       }
       return {
