@@ -1,6 +1,14 @@
 import { editFile, isBuild, readFile, untilUpdated } from '../../testUtils'
 
 if (isBuild) {
+  test('should throw an error on build', () => {
+    const buildError = beforeAllError
+    expect(buildError).toBeTruthy()
+    expect(buildError.message).toMatch(
+      /^parsing .* failed: SyntaxError: Unexpected token } in JSON at position \d+$/
+    )
+    beforeAllError = null // got expected error, null it here so testsuite does not fail from rethrow in afterAll
+  })
   // build errors due to invalid tsconfig. the error is opaque in the testing framework
   // but we can make sure that it failed by checking for missing output
   test('should not output files to dist', () => {
