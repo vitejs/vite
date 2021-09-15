@@ -117,7 +117,7 @@
     "source-map-support": "^0.5.19",
     "strip-ansi": "^6.0.0",
     "terser": "^5.7.1",
-    "tsconfck": "^1.0.0-10",
+    "tsconfck": "^1.0.0",
     "tslib": "^2.3.0",
     "types": "link:./types",
     "ws": "^7.5.3"

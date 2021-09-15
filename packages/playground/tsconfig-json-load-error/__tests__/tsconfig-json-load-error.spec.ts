@@ -9,8 +9,7 @@ if (isBuild) {
     )
     beforeAllError = null // got expected error, null it here so testsuite does not fail from rethrow in afterAll
   })
-  // build errors due to invalid tsconfig. the error is opaque in the testing framework
-  // but we can make sure that it failed by checking for missing output
+
   test('should not output files to dist', () => {
     let err
     try {
@@ -39,6 +38,7 @@ if (isBuild) {
       /^parsing .* failed: SyntaxError: Unexpected token } in JSON at position \d+$/
     )
   })
+
   test('should reload when tsconfig is changed', async () => {
     await editFile('has-error/tsconfig.json', (content) => {
       return content.replace('"compilerOptions":', '"compilerOptions":{}')
