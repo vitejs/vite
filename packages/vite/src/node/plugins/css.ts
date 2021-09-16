@@ -179,8 +179,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       const {
         code: css,
         modules,
-        deps,
-        map
+        deps
       } = await compileCSS(
         id,
         raw,
@@ -242,7 +241,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       return {
         code: css,
-        map
+        // TODO CSS source map
+        map: { mappings: '' }
       }
     }
   }
