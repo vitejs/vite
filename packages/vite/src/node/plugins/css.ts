@@ -574,7 +574,7 @@ async function compileCSS(
   server?: ViteDevServer
 ): Promise<{
   code: string
-  map?: SourceMap
+  map?: SourceMap | string
   ast?: Postcss.Result
   modules?: Record<string, string>
   deps?: Set<string>
@@ -599,7 +599,7 @@ async function compileCSS(
     return { code }
   }
 
-  let map: SourceMap | undefined
+  let map: any | undefined // can be SourceMapGenerator or SourceMap or ?
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
@@ -639,7 +639,7 @@ async function compileCSS(
     }
 
     code = preprocessResult.code
-    map = preprocessResult.map as SourceMap
+    map = preprocessResult.map
     if (preprocessResult.deps) {
       preprocessResult.deps.forEach((dep) => {
         // sometimes sass registers the file itself as a dep
@@ -708,7 +708,7 @@ async function compileCSS(
   if (!postcssPlugins.length) {
     return {
       code,
-      map
+      map: convertToSourceMap(map)
     }
   }
 
@@ -769,10 +769,32 @@ async function compileCSS(
   return {
     ast: postcssResult,
     code: postcssResult.css,
-    map: postcssResult.map as any,
+    map: convertToSourceMap(postcssResult.map),
     modules,
     deps
   }
+}
+
+// utility function to turn map returned by postcss into a value that matches transform hook signature
+function convertToSourceMap(map: any): SourceMap | string | undefined {
+  if (!map) {
+    return undefined
+  }
+  if (
+    map.constructor.name === 'SourceMapGenerator' &&
+    map._mappings &&
+    map.toJSON
+  ) {
+    return map.toJSON()
+  }
+  if (typeof map === 'string' || (map.mappings && map.sources && map.version)) {
+    return map
+  }
+  throw new Error(
+    `failed to convert map to SourceMap format, expected SourceMapGenerator, SourceMap or string, got: ${JSON.stringify(
+      map
+    )}`
+  )
 }
 
 interface PostCSSConfigResult {
