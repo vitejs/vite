@@ -76,6 +76,11 @@ export const assetAttrsConfig: Record<string, string[]> = {
   use: ['xlink:href', 'href']
 }
 
+export const isAsyncScriptMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, boolean>
+>()
+
 export async function traverseHtml(
   html: string,
   filePath: string,
@@ -105,9 +110,11 @@ export async function traverseHtml(
 export function getScriptInfo(node: ElementNode): {
   src: AttributeNode | undefined
   isModule: boolean
+  isAsync: boolean
 } {
   let src: AttributeNode | undefined
   let isModule = false
+  let isAsync = false
   for (let i = 0; i < node.props.length; i++) {
     const p = node.props[i]
     if (p.type === NodeTypes.ATTRIBUTE) {
@@ -115,10 +122,12 @@ export function getScriptInfo(node: ElementNode): {
         src = p
       } else if (p.name === 'type' && p.value && p.value.content === 'module') {
         isModule = true
+      } else if (p.name === 'async') {
+        isAsync = true
       }
     }
   }
-  return { src, isModule }
+  return { src, isModule, isAsync }
 }
 
 function formatParseError(e: any, id: string, html: string): Error {
@@ -149,6 +158,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:build-html',
 
+    buildStart() {
+      isAsyncScriptMap.set(config, new Map())
+    },
+
     async transform(html, id) {
       if (id.endsWith('.html')) {
         const publicPath = `/${slash(path.relative(config.root, id))}`
@@ -163,6 +176,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const assetUrls: AttributeNode[] = []
         let inlineModuleIndex = -1
 
+        let everyScriptIsAsync = true
+        let someScriptsAreAsync = false
+        let someScriptsAreDefer = false
+
         await traverseHtml(html, id, (node) => {
           if (node.type !== NodeTypes.ELEMENT) {
             return
@@ -172,7 +189,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // script tags
           if (node.tag === 'script') {
-            const { src, isModule } = getScriptInfo(node)
+            const { src, isModule, isAsync } = getScriptInfo(node)
 
             const url = src && src.value && src.value.content
             if (url && checkPublicFile(url, config)) {
@@ -196,6 +213,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
                 shouldRemove = true
               }
+
+              everyScriptIsAsync &&= isAsync
+              someScriptsAreAsync ||= isAsync
+              someScriptsAreDefer ||= !isAsync
             }
           }
 
@@ -235,6 +256,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.remove(node.loc.start.offset, node.loc.end.offset)
           }
         })
+
+        isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+
+        if (someScriptsAreAsync && someScriptsAreDefer) {
+          config.logger.warn(
+            `\nMixed async and defer script modules in ${id}, output script will fallback to defer. Every script, including inline ones, need to be marked as async for your output script to be async.`
+          )
+        }
 
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location.
@@ -293,9 +322,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         return chunks
       }
 
-      const toScriptTag = (chunk: OutputChunk): HtmlTagDescriptor => ({
+      const toScriptTag = (
+        chunk: OutputChunk,
+        isAsync: boolean
+      ): HtmlTagDescriptor => ({
         tag: 'script',
         attrs: {
+          ...(isAsync ? { async: true } : {}),
           type: 'module',
           crossorigin: true,
           src: toPublicPath(chunk.fileName, config)
@@ -344,6 +377,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
 
       for (const [id, html] of processedHtml) {
+        const isAsync = isAsyncScriptMap.get(config)!.get(id)!
+
         // resolve asset url references
         let result = html.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           return config.base + getAssetFilename(fileHash, config) + postfix
@@ -371,8 +406,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // when inlined, discard entry chunk and inject <script> for everything in post-order
           const imports = getImportedChunks(chunk)
           const assetTags = canInlineEntry
-            ? imports.map(toScriptTag)
-            : [toScriptTag(chunk), ...imports.map(toPreloadTag)]
+            ? imports.map((chunk) => toScriptTag(chunk, isAsync))
+            : [toScriptTag(chunk, isAsync), ...imports.map(toPreloadTag)]
 
           assetTags.push(...getCssTagsForChunk(chunk))
 
