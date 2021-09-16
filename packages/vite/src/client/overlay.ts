@@ -34,6 +34,8 @@ const template = /*html*/ `
   box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
   overflow: hidden;
   border-top: 8px solid var(--red);
+  direction: ltr;
+  text-align: left;
 }
 
 pre {
