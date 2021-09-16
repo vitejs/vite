@@ -96,6 +96,28 @@ describe('nested w/ query', () => {
 })
 
 if (isBuild) {
+  describe('scriptAsync', () => {
+    beforeAll(async () => {
+      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      await page.goto(viteTestUrl + '/scriptAsync.html')
+    })
+
+    test('script is async', async () => {
+      expect(await page.$('head script[type=module][async]')).toBeTruthy()
+    })
+  })
+
+  describe('scriptMixed', () => {
+    beforeAll(async () => {
+      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      await page.goto(viteTestUrl + '/scriptMixed.html')
+    })
+
+    test('script is mixed', async () => {
+      expect(await page.$('head script[type=module][async]')).toBeNull()
+    })
+  })
+
   describe('inline entry', () => {
     const _countTags = (selector) => page.$$eval(selector, (t) => t.length)
     const countScriptTags = _countTags.bind(this, 'script[type=module]')
