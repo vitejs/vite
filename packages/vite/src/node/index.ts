@@ -1,5 +1,5 @@
 export * from './config'
-export { createServer } from './server'
+export { createServer, searchForWorkspaceRoot } from './server'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
 export { send } from './server/send'

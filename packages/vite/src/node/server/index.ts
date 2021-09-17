@@ -54,6 +54,8 @@ import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
 
+export { searchForWorkspaceRoot } from './searchRoot'
+
 export interface ServerOptions {
   host?: string | boolean
   port?: number
