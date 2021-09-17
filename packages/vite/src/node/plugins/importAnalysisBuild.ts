@@ -80,7 +80,46 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
     })
   ).then(() => baseModule())
 }
-
+function ParseCjsDynamicImports(code: string) {
+  /**
+   * cjs
+   * https://rollupjs.org/guide/en/#outputinlinedynamicimports
+   * import('a.vue') => Promise.resolve().then(function(){ return require('a.vue') })
+   */
+  const Imports: ImportSpecifier[] = []
+  let start = 0
+  const CodeArray = code.split(preloadMethod)
+  for (let i = 1; i < CodeArray.length; i++) {
+    const CurrentCode = CodeArray[i]
+    start += CodeArray[i - 1].length + preloadMethod.length
+    const CodeEndIndex = CurrentCode.indexOf(preloadMarker)
+    if (CodeEndIndex > -1) {
+      const DynamicImportMatch = CurrentCode.slice(0, CodeEndIndex).match(
+        /require\(["|'](.+)["|']\)/
+      )
+      if (DynamicImportMatch) {
+        // Dynamic imports are indicated by imports[2].d > -1
+        // In this case the "d" index is the start of the dynamic import
+        const startIndex =
+          start +
+          DynamicImportMatch.index! +
+          DynamicImportMatch[0].indexOf(DynamicImportMatch[1]) -
+          1
+        const endIndex = startIndex + DynamicImportMatch[1].length + 2
+        Imports.push({
+          n: DynamicImportMatch[1],
+          s: startIndex,
+          e: endIndex,
+          ss: startIndex,
+          se: endIndex,
+          d: startIndex,
+          a: -1
+        })
+      }
+    }
+  }
+  return Imports
+}
 /**
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
@@ -209,7 +248,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       // make sure we only perform the preload logic in modern builds.
       if (code.indexOf(isModernFlag) > -1) {
         const re = new RegExp(isModernFlag, 'g')
-        const isModern = String(format === 'es')
+        const isModern = String(['es', 'cjs'].includes(format))
         if (config.build.sourcemap) {
           const s = new MagicString(code)
           let match: RegExpExecArray | null
@@ -232,7 +271,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (format !== 'es' || ssr) {
+      if (!['es', 'cjs'].includes(format) || ssr) {
         return
       }
 
@@ -244,7 +283,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const code = chunk.code
           let imports: ImportSpecifier[]
           try {
-            imports = parseImports(code)[0].filter((i) => i.d > -1)
+            if (format === 'cjs') {
+              imports = ParseCjsDynamicImports(code)
+            } else {
+              imports = parseImports(code)[0].filter((i) => i.d > -1)
+            }
           } catch (e: any) {
             this.error(e, e.idx)
           }
