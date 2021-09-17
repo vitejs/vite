@@ -23,7 +23,7 @@ export interface Options {
   fastRefresh?: boolean
   /**
    * Set this to `"automatic"` to use [vite-react-jsx](https://github.com/alloc/vite-react-jsx).
-   * @default "classic"
+   * @default "automatic"
    */
   jsxRuntime?: 'classic' | 'automatic'
   /**
@@ -51,6 +51,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let projectRoot = process.cwd()
   let skipFastRefresh = opts.fastRefresh === false
   let skipReactImport = false
+
+  const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
 
   const userPlugins = opts.babel?.plugins || []
   const userParserPlugins =
@@ -128,7 +130,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
         let ast: t.File | null | undefined
         if (isNodeModules || id.endsWith('x')) {
-          if (opts.jsxRuntime === 'automatic') {
+          if (useAutomaticRuntime) {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
             // automatic runtime!
@@ -270,7 +272,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   return [
     viteBabel,
     viteReactRefresh,
-    opts.jsxRuntime === 'automatic' && viteReactJsx
+    useAutomaticRuntime && viteReactJsx
   ]
 }
 
