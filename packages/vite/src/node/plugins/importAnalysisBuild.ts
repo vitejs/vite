@@ -80,7 +80,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
     })
   ).then(() => baseModule())
 }
-function ParseCjsDynamicImports(code: string) {
+function parseCjsDynamicImports(code: string) {
   /**
    * cjs
    * https://rollupjs.org/guide/en/#outputinlinedynamicimports
@@ -284,7 +284,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           let imports: ImportSpecifier[]
           try {
             if (format === 'cjs') {
-              imports = ParseCjsDynamicImports(code)
+              imports = parseCjsDynamicImports(code)
             } else {
               imports = parseImports(code)[0].filter((i) => i.d > -1)
             }
