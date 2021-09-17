@@ -1,9 +1,8 @@
-import reactPlugin from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react'
 
 const config: import('vite').UserConfig = {
   plugins: [
-    reactPlugin({
-      jsxRuntime: 'automatic',
+    react({
       jsxImportSource: '@emotion/react',
       babel: {
         plugins: ['@emotion/babel-plugin']
