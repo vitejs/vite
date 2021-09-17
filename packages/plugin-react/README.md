@@ -10,11 +10,12 @@ The all-in-one Vite plugin for React projects.
 
 ```js
 // vite.config.js
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default {
+export default defineConfig({
   plugins: [react()]
-}
+})
 ```
 
 ## Filter which files use Fast Refresh
