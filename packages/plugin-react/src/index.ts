@@ -192,7 +192,9 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             decoratorsBeforeExport: true
           },
           plugins,
-          sourceMaps: true
+          sourceMaps: true,
+          // Vite handles sourcemap flattening
+          inputSourceMap: false as any
         }
 
         const result = ast
