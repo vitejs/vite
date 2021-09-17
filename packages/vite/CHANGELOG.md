@@ -1,3 +1,12 @@
+## [2.5.8](https://github.com/vitejs/vite/compare/v2.5.7...v2.5.8) (2021-09-17)
+
+
+### Bug Fixes
+
+* **css:** revert return sourcemap in vite:css transform ([#4880](https://github.com/vitejs/vite/issues/4880)) ([#4951](https://github.com/vitejs/vite/issues/4951)) ([17feb38](https://github.com/vitejs/vite/commit/17feb38248419bf3ea6fb3a356906f1b449c9764))
+
+
+
 ## [2.5.7](https://github.com/vitejs/vite/compare/v2.5.6...v2.5.7) (2021-09-13)
 
 
