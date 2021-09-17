@@ -86,43 +86,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
 
-        const normalizedFsPath = normalizePath(fsPath)
-        const pathFromBasedir = normalizedFsPath.slice(basedir.length)
-        if (pathFromBasedir.startsWith('/node_modules/')) {
-          // normalize direct imports from node_modules to bare imports, so the
-          // hashing logic is shared and we avoid duplicated modules #2503
-          const bareImport = pathFromBasedir.slice('/node_modules/'.length)
-          if (
-            (res = tryNodeResolve(
-              bareImport,
-              importer,
-              options,
-              targetWeb,
-              server,
-              ssr
-            )) &&
-            res.id.startsWith(normalizedFsPath)
-          ) {
-            return res
-          }
-        }
-
-        // if (
-        //   targetWeb &&
-        //   (res = tryResolveBrowserMapping(fsPath, importer, options, true))
-        // ) {
-        //   return res;
-        // }
-
         if ((res = tryFsResolve(fsPath, options))) {
-          // const pkg = importer != null && idToPkgMap.get(importer);
-          // if (pkg) {
-          //   idToPkgMap.set(res, pkg);
-          //   return {
-          //     id: res,
-          //     moduleSideEffects: pkg.hasSideEffects(res),
-          //   };
-          // }
           return res;
         }
       }
@@ -147,24 +111,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         return null
       }
 
-      // bare package imports, perform node resolve
-      if (bareImportRE.test(id)) {
-        if (
-          asSrc &&
-          server &&
-          !ssr &&
-          (res = tryOptimizedResolve(id, server, importer)) !== undefined
-        ) {
-          return res
-        }
-        // TODO BROWSER SUPPORT
-        // re-trigger optimize (if not running optimize already)
-        if (
-          (res = tryNodeResolve(id, importer, options, targetWeb, server, ssr))
-        ) {
-          return res
-        }
-      }
       isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
     }
   }
@@ -255,24 +201,6 @@ function tryResolveFile(
     return tryResolveFile(prefixed, postfix, options, tryIndex, targetWeb)
   }
 }
-
-export function tryNodeResolve(
-  id: string,
-  importer: string | undefined,
-  options: InternalResolveOptions,
-  targetWeb: boolean,
-  server?: ViteDevServer,
-  ssr?: boolean
-): PartialResolvedId | undefined {
-  const resolved = '/@node_modules/' + flattenId(id) + '.js' 
-  if (server) {
-    // this is a missing import.
-    // queue optimize-deps re-run.
-    server._registerMissingImport?.(id, resolved, ssr)
-  }
-  return { id: resolved };
-}
-
 
 export function tryOptimizedResolve(
   id: string,
