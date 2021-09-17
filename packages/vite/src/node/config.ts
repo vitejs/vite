@@ -127,7 +127,7 @@ export interface UserConfig {
    */
   esbuild?: ESBuildOptions | false
   /**
-   * Specify additional files to be treated as static assets.
+   * Specify additional picomatch patterns to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
