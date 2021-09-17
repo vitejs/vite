@@ -467,7 +467,13 @@ export function tryNodeResolve(
   }
 
   let resolved = deepMatch
-    ? resolveDeepImport(id, pkg, options, targetWeb, preserveSymlinks)
+    ? resolveDeepImport(
+        '.' + id.slice(pkgId.length),
+        pkg,
+        options,
+        targetWeb,
+        preserveSymlinks
+      )
     : resolvePackageEntry(id, pkg, options, targetWeb, preserveSymlinks)
   if (!resolved) {
     return
@@ -804,7 +810,6 @@ function resolveDeepImport(
   targetWeb: boolean,
   preserveSymlinks: boolean
 ): string | undefined {
-  id = '.' + id.slice(data.name.length)
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache
