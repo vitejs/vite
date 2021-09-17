@@ -86,28 +86,28 @@ function parseCjsDynamicImports(code: string) {
    * https://rollupjs.org/guide/en/#outputinlinedynamicimports
    * import('a.vue') => Promise.resolve().then(function(){ return require('a.vue') })
    */
-  const Imports: ImportSpecifier[] = []
+  const imports: ImportSpecifier[] = []
   let start = 0
-  const CodeArray = code.split(preloadMethod)
-  for (let i = 1; i < CodeArray.length; i++) {
-    const CurrentCode = CodeArray[i]
-    start += CodeArray[i - 1].length + preloadMethod.length
-    const CodeEndIndex = CurrentCode.indexOf(preloadMarker)
-    if (CodeEndIndex > -1) {
-      const DynamicImportMatch = CurrentCode.slice(0, CodeEndIndex).match(
-        /require\(["|'](.+)["|']\)/
-      )
-      if (DynamicImportMatch) {
+  const codeArray = code.split(preloadMethod)
+  for (let i = 1; i < codeArray.length; i++) {
+    const currentCode = codeArray[i]
+    start += codeArray[i - 1].length + preloadMethod.length
+    const codeEndIndex = currentCode.indexOf(preloadMarker)
+    if (codeEndIndex > -1) {
+      const dynamicImportMatch = currentCode
+        .slice(0, codeEndIndex)
+        .match(/require\(["|'](.+)["|']\)/)
+      if (dynamicImportMatch) {
         // Dynamic imports are indicated by imports[2].d > -1
         // In this case the "d" index is the start of the dynamic import
         const startIndex =
           start +
-          DynamicImportMatch.index! +
-          DynamicImportMatch[0].indexOf(DynamicImportMatch[1]) -
+          dynamicImportMatch.index! +
+          dynamicImportMatch[0].indexOf(dynamicImportMatch[1]) -
           1
-        const endIndex = startIndex + DynamicImportMatch[1].length + 2
-        Imports.push({
-          n: DynamicImportMatch[1],
+        const endIndex = startIndex + dynamicImportMatch[1].length + 2
+        imports.push({
+          n: dynamicImportMatch[1],
           s: startIndex,
           e: endIndex,
           ss: startIndex,
@@ -118,7 +118,7 @@ function parseCjsDynamicImports(code: string) {
       }
     }
   }
-  return Imports
+  return imports
 }
 /**
  * Build only. During serve this is performed as part of ./importAnalysis.
