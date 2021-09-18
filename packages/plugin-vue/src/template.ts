@@ -185,7 +185,8 @@ export function resolveTemplateCompilerOptions(
       ...options.template?.compilerOptions,
       scopeId: hasScoped ? `data-v-${id}` : undefined,
       bindingMetadata: resolvedScript ? resolvedScript.bindings : undefined,
-      expressionPlugins
+      expressionPlugins,
+      sourceMap: options.sourceMap
     }
   }
 }

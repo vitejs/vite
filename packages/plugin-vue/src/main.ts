@@ -25,16 +25,11 @@ export async function transformMain(
   ssr: boolean,
   asCustomElement: boolean
 ) {
-  const { root, devServer, isProduction } = options
+  const { devServer, isProduction } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
-  const { descriptor, errors } = createDescriptor(
-    filename,
-    code,
-    root,
-    isProduction
-  )
+  const { descriptor, errors } = createDescriptor(filename, code, options)
 
   if (errors.length) {
     errors.forEach((error) =>
@@ -167,8 +162,8 @@ export async function transformMain(
 
   // if the template is inlined into the main module (indicated by the presence
   // of templateMap, we need to concatenate the two source maps.
-  let resolvedMap = map
-  if (map && templateMap) {
+  let resolvedMap = options.sourceMap ? map : undefined
+  if (resolvedMap && templateMap) {
     const generator = SourceMapGenerator.fromSourceMap(
       new SourceMapConsumer(map)
     )
@@ -184,7 +179,7 @@ export async function transformMain(
         }
       })
     })
-    resolvedMap = (generator as any).toJSON()
+    resolvedMap = (generator as any).toJSON() as RawSourceMap
     // if this is a template only update, we will be reusing a cached version
     // of the main module compile result, which has outdated sourcesContent.
     resolvedMap.sourcesContent = templateMap.sourcesContent
@@ -195,13 +190,14 @@ export async function transformMain(
   // handle TS transpilation
   let resolvedCode = output.join('\n')
   if (
-    descriptor.script?.lang === 'ts' ||
-    descriptor.scriptSetup?.lang === 'ts'
+    (descriptor.script?.lang === 'ts' ||
+      descriptor.scriptSetup?.lang === 'ts') &&
+    !descriptor.script?.src // only normal script can have src
   ) {
     const { code, map } = await transformWithEsbuild(
       resolvedCode,
       filename,
-      { loader: 'ts' },
+      { loader: 'ts', sourcemap: options.sourceMap },
       resolvedMap
     )
     resolvedCode = code
@@ -268,10 +264,7 @@ async function genScriptCode(
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
-    if (
-      (!script.lang || (script.lang === 'ts' && options.devServer)) &&
-      !script.src
-    ) {
+    if ((!script.lang || script.lang === 'ts') && !script.src) {
       scriptCode = rewriteDefault(script.content, '_sfc_main')
       map = script.map
     } else {
