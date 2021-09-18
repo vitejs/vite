@@ -13,7 +13,7 @@ import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function transformTemplateAsModule(
+export async function transformTemplateAsModule(
   code: string,
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
@@ -36,7 +36,7 @@ export function transformTemplateAsModule(
 
   return {
     code: returnCode,
-    map: result.map as any
+    map: result.map
   }
 }
 
