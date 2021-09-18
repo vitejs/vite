@@ -76,6 +76,11 @@ export const assetAttrsConfig: Record<string, string[]> = {
   use: ['xlink:href', 'href']
 }
 
+export const isAsyncScriptMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, boolean>
+>()
+
 export async function traverseHtml(
   html: string,
   filePath: string,
@@ -105,9 +110,11 @@ export async function traverseHtml(
 export function getScriptInfo(node: ElementNode): {
   src: AttributeNode | undefined
   isModule: boolean
+  isAsync: boolean
 } {
   let src: AttributeNode | undefined
   let isModule = false
+  let isAsync = false
   for (let i = 0; i < node.props.length; i++) {
     const p = node.props[i]
     if (p.type === NodeTypes.ATTRIBUTE) {
@@ -115,10 +122,12 @@ export function getScriptInfo(node: ElementNode): {
         src = p
       } else if (p.name === 'type' && p.value && p.value.content === 'module') {
         isModule = true
+      } else if (p.name === 'async') {
+        isAsync = true
       }
     }
   }
-  return { src, isModule }
+  return { src, isModule, isAsync }
 }
 
 function formatParseError(e: any, id: string, html: string): Error {
@@ -149,6 +158,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:build-html',
 
+    buildStart() {
+      isAsyncScriptMap.set(config, new Map())
+    },
+
     async transform(html, id) {
       if (id.endsWith('.html')) {
         const publicPath = `/${slash(path.relative(config.root, id))}`
@@ -163,6 +176,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const assetUrls: AttributeNode[] = []
         let inlineModuleIndex = -1
 
+        let everyScriptIsAsync = true
+        let someScriptsAreAsync = false
+        let someScriptsAreDefer = false
+
         await traverseHtml(html, id, (node) => {
           if (node.type !== NodeTypes.ELEMENT) {
             return
@@ -172,7 +189,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // script tags
           if (node.tag === 'script') {
-            const { src, isModule } = getScriptInfo(node)
+            const { src, isModule, isAsync } = getScriptInfo(node)
 
             const url = src && src.value && src.value.content
             if (url && checkPublicFile(url, config)) {
@@ -196,6 +213,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
                 shouldRemove = true
               }
+
+              everyScriptIsAsync &&= isAsync
+              someScriptsAreAsync ||= isAsync
+              someScriptsAreDefer ||= !isAsync
             }
           }
 
@@ -236,6 +257,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         })
 
+        isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+
+        if (someScriptsAreAsync && someScriptsAreDefer) {
+          config.logger.warn(
+            `\nMixed async and defer script modules in ${id}, output script will fallback to defer. Every script, including inline ones, need to be marked as async for your output script to be async.`
+          )
+        }
+
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location.
         for (const attr of assetUrls) {
@@ -273,29 +302,46 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async generateBundle(_, bundle) {
+    async generateBundle(options, bundle) {
       const analyzedChunk: Map<OutputChunk, number> = new Map()
-      const getPreloadLinksForChunk = (
+      const getImportedChunks = (
         chunk: OutputChunk,
         seen: Set<string> = new Set()
-      ): HtmlTagDescriptor[] => {
-        const tags: HtmlTagDescriptor[] = []
+      ): OutputChunk[] => {
+        const chunks: OutputChunk[] = []
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
           if (importee?.type === 'chunk' && !seen.has(file)) {
             seen.add(file)
-            tags.push({
-              tag: 'link',
-              attrs: {
-                rel: 'modulepreload',
-                href: toPublicPath(file, config)
-              }
-            })
-            tags.push(...getPreloadLinksForChunk(importee, seen))
+
+            // post-order traversal
+            chunks.push(...getImportedChunks(importee, seen))
+            chunks.push(importee)
           }
         })
-        return tags
+        return chunks
       }
+
+      const toScriptTag = (
+        chunk: OutputChunk,
+        isAsync: boolean
+      ): HtmlTagDescriptor => ({
+        tag: 'script',
+        attrs: {
+          ...(isAsync ? { async: true } : {}),
+          type: 'module',
+          crossorigin: true,
+          src: toPublicPath(chunk.fileName, config)
+        }
+      })
+
+      const toPreloadTag = (chunk: OutputChunk): HtmlTagDescriptor => ({
+        tag: 'link',
+        attrs: {
+          rel: 'modulepreload',
+          href: toPublicPath(chunk.fileName, config)
+        }
+      })
 
       const getCssTagsForChunk = (
         chunk: OutputChunk,
@@ -331,6 +377,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
 
       for (const [id, html] of processedHtml) {
+        const isAsync = isAsyncScriptMap.get(config)!.get(id)!
+
         // resolve asset url references
         let result = html.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           return config.base + getAssetFilename(fileHash, config) + postfix
@@ -343,23 +391,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             chunk.isEntry &&
             chunk.facadeModuleId === id
         ) as OutputChunk | undefined
+        let canInlineEntry = false
 
         // inject chunk asset links
         if (chunk) {
-          const assetTags = [
-            // js entry chunk for this page
-            {
-              tag: 'script',
-              attrs: {
-                type: 'module',
-                crossorigin: true,
-                src: toPublicPath(chunk.fileName, config)
-              }
-            },
-            // preload for imports
-            ...getPreloadLinksForChunk(chunk),
-            ...getCssTagsForChunk(chunk)
-          ]
+          // an entry chunk can be inlined if
+          //  - it's an ES module (e.g. not generated by the legacy plugin)
+          //  - it contains no meaningful code other than import statments
+          if (options.format === 'es' && isEntirelyImport(chunk.code)) {
+            canInlineEntry = true
+          }
+
+          // when not inlined, inject <script> for entry and modulepreload its dependencies
+          // when inlined, discard entry chunk and inject <script> for everything in post-order
+          const imports = getImportedChunks(chunk)
+          const assetTags = canInlineEntry
+            ? imports.map((chunk) => toScriptTag(chunk, isAsync))
+            : [toScriptTag(chunk, isAsync), ...imports.map(toPreloadTag)]
+
+          assetTags.push(...getCssTagsForChunk(chunk))
 
           result = injectToHead(result, assetTags)
         }
@@ -389,6 +439,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           bundle,
           chunk
         })
+
+        if (chunk && canInlineEntry) {
+          // all imports from entry have been inlined to html, prevent rollup from outputting it
+          delete bundle[chunk.fileName]
+        }
 
         this.emitFile({
           type: 'asset',
@@ -521,6 +576,14 @@ export async function applyHtmlTransforms(
   }
 
   return html
+}
+
+const importRE = /\bimport\s*("[^"]*[^\\]"|'[^']*[^\\]');*/g
+const commentRE = /\/\*[\s\S]*?\*\/|\/\/.*$/gm
+function isEntirelyImport(code: string) {
+  // only consider "side-effect" imports, which match <script type=module> semantics exactly
+  // the regexes will remove too little in some exotic cases, but false-negatives are alright
+  return !code.replace(importRE, '').replace(commentRE, '').trim().length
 }
 
 function toPublicPath(filename: string, config: ResolvedConfig) {

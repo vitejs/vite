@@ -7,8 +7,6 @@ env:
 
 on:
   push:
-    branches:
-      - main
   pull_request:
 
 jobs:
@@ -59,6 +57,9 @@ jobs:
 
       - name: Build plugin-vue
         run: yarn build-plugin-vue
+
+      - name: Build plugin-react
+        run: yarn build-plugin-react
 
       - name: Test serve
         run: yarn test-serve --runInBand

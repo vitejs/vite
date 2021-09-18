@@ -127,7 +127,7 @@ export interface UserConfig {
    */
   esbuild?: ESBuildOptions | false
   /**
-   * Specify additional files to be treated as static assets.
+   * Specify additional picomatch patterns to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
@@ -285,7 +285,15 @@ export async function resolveConfig(
 
   // resolve plugins
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
-    return p && (!p.apply || p.apply === command)
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
+    }
   }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
@@ -440,6 +448,7 @@ export async function resolveConfig(
       ...config.optimizeDeps,
       esbuildOptions: {
         keepNames: config.optimizeDeps?.keepNames,
+        preserveSymlinks: config.resolve?.preserveSymlinks,
         ...config.optimizeDeps?.esbuildOptions
       }
     }
