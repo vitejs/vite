@@ -122,7 +122,7 @@ export async function transformWithEsbuild(
 
   try {
     const result = await transform(code, resolvedOptions)
-    if (inMap) {
+    if (inMap && resolvedOptions.sourcemap) {
       const nextMap = JSON.parse(result.map)
       nextMap.sourcesContent = []
       return {
@@ -135,7 +135,9 @@ export async function transformWithEsbuild(
     } else {
       return {
         ...result,
-        map: JSON.parse(result.map)
+        map: resolvedOptions.sourcemap
+          ? JSON.parse(result.map)
+          : { mappings: '' }
       }
     }
   } catch (e) {
