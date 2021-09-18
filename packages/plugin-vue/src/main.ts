@@ -14,6 +14,7 @@ import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
+import { transformWithEsbuild } from 'vite'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
@@ -191,8 +192,24 @@ export async function transformMain(
 
   output.push(`export default _sfc_main`)
 
+  // handle TS transpilation
+  let resolvedCode = output.join('\n')
+  if (
+    descriptor.script?.lang === 'ts' ||
+    descriptor.scriptSetup?.lang === 'ts'
+  ) {
+    const { code, map } = await transformWithEsbuild(
+      resolvedCode,
+      filename,
+      { loader: 'ts' },
+      resolvedMap
+    )
+    resolvedCode = code
+    resolvedMap = resolvedMap ? (map as any) : resolvedMap
+  }
+
   return {
-    code: output.join('\n'),
+    code: resolvedCode,
     map: resolvedMap || {
       mappings: ''
     }
@@ -255,19 +272,8 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
-      scriptCode = script.content
+      scriptCode = rewriteDefault(script.content, '_sfc_main')
       map = script.map
-      if (script.lang === 'ts') {
-        const result = await options.devServer!.transformWithEsbuild(
-          scriptCode,
-          descriptor.filename,
-          { loader: 'ts' },
-          map
-        )
-        scriptCode = result.code
-        map = result.map
-      }
-      scriptCode = rewriteDefault(scriptCode, `_sfc_main`)
     } else {
       if (script.src) {
         await linkSrcToDescriptor(script.src, descriptor, pluginContext)
