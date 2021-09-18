@@ -37,10 +37,6 @@ declare module 'launch-editor-middleware' {
   export = plugin
 }
 
-declare module 'merge-source-map' {
-  export default function merge(oldMap: object, newMap: object): object
-}
-
 declare module 'postcss-load-config' {
   import { ProcessOptions, Plugin } from 'postcss'
   function load(
