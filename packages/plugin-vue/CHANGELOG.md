@@ -1,3 +1,12 @@
+# [1.7.0](https://github.com/vitejs/vite/compare/plugin-vue@1.6.2...plugin-vue@1.7.0) (2021-09-18)
+
+
+### Features
+
+* **plugin-vue:** support TS in template expressions ([01fa2ab](https://github.com/vitejs/vite/commit/01fa2abe901834c1c3168c343120429700e82983))
+
+
+
 ## [1.6.2](https://github.com/vitejs/vite/compare/plugin-vue@1.6.1...plugin-vue@1.6.2) (2021-09-08)
 
 
