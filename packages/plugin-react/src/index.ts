@@ -271,11 +271,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     }
   }
 
-  return [
-    viteBabel,
-    viteReactRefresh,
-    useAutomaticRuntime && viteReactJsx
-  ]
+  return [viteBabel, viteReactRefresh, useAutomaticRuntime && viteReactJsx]
 }
 
 viteReact.preambleCode = preambleCode
