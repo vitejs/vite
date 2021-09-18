@@ -28,6 +28,10 @@
     "react-refresh",
 
     // breaks since "3.0.1", needs futher investigate
-    "postcss-load-config"
+    "postcss-load-config",
+
+    // ESM Only
+    "strip-ansi",
+    "periscopic"
   ]
 }
