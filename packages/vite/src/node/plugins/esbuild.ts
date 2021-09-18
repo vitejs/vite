@@ -50,52 +50,70 @@ export async function transformWithEsbuild(
   options?: TransformOptions,
   inMap?: object
 ): Promise<ESBuildTransformResult> {
-  // if the id ends with a valid ext, use it (e.g. vue blocks)
-  // otherwise, cleanup the query before checking the ext
-  const ext = path.extname(
-    /\.\w+$/.test(filename) ? filename : cleanUrl(filename)
-  )
+  let loader = options?.loader
 
-  let loader = ext.slice(1)
-  if (loader === 'cjs' || loader === 'mjs') {
-    loader = 'js'
+  if (!loader) {
+    // if the id ends with a valid ext, use it (e.g. vue blocks)
+    // otherwise, cleanup the query before checking the ext
+    const ext = path
+      .extname(/\.\w+$/.test(filename) ? filename : cleanUrl(filename))
+      .slice(1)
+
+    if (ext === 'cjs' || ext === 'mjs') {
+      loader = 'js'
+    } else {
+      loader = ext as Loader
+    }
   }
 
-  // these fields would affect the compilation result
-  // https://esbuild.github.io/content-types/#tsconfig-json
-  const meaningfulFields: Array<keyof TSCompilerOptions> = [
-    'jsxFactory',
-    'jsxFragmentFactory',
-    'useDefineForClassFields',
-    'importsNotUsedAsValues'
-  ]
-  const compilerOptionsForFile: TSCompilerOptions = {}
-  if (loader === 'ts' || loader === 'tsx') {
-    const loadedTsconfig = await loadTsconfigJsonForFile(filename)
-    const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
+  let tsconfigRaw = options?.tsconfigRaw
 
-    for (const field of meaningfulFields) {
-      if (field in loadedCompilerOptions) {
-        // @ts-ignore TypeScript can't tell they are of the same type
-        compilerOptionsForFile[field] = loadedCompilerOptions[field]
+  // if options provide tsconfigraw in string, it takes highest precedence
+  if (typeof tsconfigRaw !== 'string') {
+    // these fields would affect the compilation result
+    // https://esbuild.github.io/content-types/#tsconfig-json
+    const meaningfulFields: Array<keyof TSCompilerOptions> = [
+      'jsxFactory',
+      'jsxFragmentFactory',
+      'useDefineForClassFields',
+      'importsNotUsedAsValues'
+    ]
+    const compilerOptionsForFile: TSCompilerOptions = {}
+    if (loader === 'ts' || loader === 'tsx') {
+      const loadedTsconfig = await loadTsconfigJsonForFile(filename)
+      const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
+
+      for (const field of meaningfulFields) {
+        if (field in loadedCompilerOptions) {
+          // @ts-ignore TypeScript can't tell they are of the same type
+          compilerOptionsForFile[field] = loadedCompilerOptions[field]
+        }
+      }
+
+      // align with TypeScript 4.3
+      // https://github.com/microsoft/TypeScript/pull/42663
+      if (loadedCompilerOptions.target?.toLowerCase() === 'esnext') {
+        compilerOptionsForFile.useDefineForClassFields =
+          loadedCompilerOptions.useDefineForClassFields ?? true
       }
     }
 
-    // align with TypeScript 4.3
-    // https://github.com/microsoft/TypeScript/pull/42663
-    if (loadedCompilerOptions.target?.toLowerCase() === 'esnext') {
-      compilerOptionsForFile.useDefineForClassFields =
-        loadedCompilerOptions.useDefineForClassFields ?? true
+    tsconfigRaw = {
+      ...tsconfigRaw,
+      compilerOptions: {
+        ...compilerOptionsForFile,
+        ...tsconfigRaw?.compilerOptions
+      }
     }
   }
 
   const resolvedOptions = {
-    loader: loader as Loader,
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
-    tsconfigRaw: { compilerOptions: compilerOptionsForFile },
-    ...options
+    ...options,
+    loader,
+    tsconfigRaw
   } as ESBuildOptions
 
   delete resolvedOptions.include
