@@ -664,6 +664,14 @@ createServer()
 
   When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
 
+### build.ssrManifest
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Related:** [Server-Side Rendering](/guide/ssr)
+
+  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
+
 ### build.minify
 
 - **Type:** `boolean | 'terser' | 'esbuild'`
