@@ -91,7 +91,7 @@ cli
         server: cleanOptions(options)
       })
       await server.listen()
-    } catch (e) {
+    } catch (e: any) {
       createLogger(options.logLevel).error(
         chalk.red(`error when starting dev server:\n${e.stack}`),
         { error: e }
@@ -147,7 +147,7 @@ cli
         clearScreen: options.clearScreen,
         build: buildOptions
       })
-    } catch (e) {
+    } catch (e: any) {
       createLogger(options.logLevel).error(
         chalk.red(`error during build:\n${e.stack}`),
         { error: e }
@@ -178,7 +178,7 @@ cli
           'development'
         )
         await optimizeDeps(config, options.force, true)
-      } catch (e) {
+      } catch (e: any) {
         createLogger(options.logLevel).error(
           chalk.red(`error when optimizing deps:\n${e.stack}`),
           { error: e }
@@ -223,7 +223,7 @@ cli
           'production'
         )
         await preview(config, cleanOptions(options))
-      } catch (e) {
+      } catch (e: any) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`),
           { error: e }

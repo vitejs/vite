@@ -334,7 +334,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
             `?import&t=${timestamp}${query ? `&${query}` : ''}`
         )
         moduleMap.set(dep, newMod)
-      } catch (e) {
+      } catch (e: any) {
         warnFailedFetch(e, dep)
       }
     })

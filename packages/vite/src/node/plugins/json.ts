@@ -62,7 +62,7 @@ export function jsonPlugin(
           }),
           map: { mappings: '' }
         }
-      } catch (e) {
+      } catch (e: any) {
         const errorMessageList = /[\d]+/.exec(e.message)
         const position = errorMessageList && parseInt(errorMessageList[0], 10)
         const msg = position

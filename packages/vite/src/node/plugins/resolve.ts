@@ -764,7 +764,7 @@ export function resolvePackageEntry(
     } else {
       packageEntryFailure(id)
     }
-  } catch (e) {
+  } catch (e: any) {
     packageEntryFailure(id, e.message)
   }
 }

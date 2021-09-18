@@ -63,7 +63,7 @@ export function createMissingImporterRegisterFn(
         chalk.greenBright(`✨ dependencies updated, reloading page...`),
         { timestamp: true }
       )
-    } catch (e) {
+    } catch (e: any) {
       logger.error(
         chalk.red(`error while updating dependencies:\n${e.stack}`),
         { timestamp: true, error: e }

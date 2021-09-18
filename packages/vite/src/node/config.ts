@@ -827,7 +827,7 @@ export async function loadConfigFromFile(
         delete require.cache[require.resolve(resolvedPath)]
         userConfig = require(resolvedPath)
         debug(`cjs config loaded in ${Date.now() - start}ms`)
-      } catch (e) {
+      } catch (e: any) {
         const ignored = new RegExp(
           [
             `Cannot use import statement`,
@@ -866,7 +866,7 @@ export async function loadConfigFromFile(
       config,
       dependencies
     }
-  } catch (e) {
+  } catch (e: any) {
     createLogger(logLevel).error(
       chalk.red(`failed to load config from ${resolvedPath}`),
       { error: e }

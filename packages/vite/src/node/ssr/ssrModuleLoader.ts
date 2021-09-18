@@ -157,7 +157,7 @@ async function instantiateModule(
       ssrDynamicImport,
       ssrExportAll
     )
-  } catch (e) {
+  } catch (e: any) {
     const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
     rebindErrorStacktrace(e, stacktrace)
     server.config.logger.error(

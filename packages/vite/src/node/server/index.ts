@@ -421,7 +421,7 @@ export async function createServer(
     if (serverConfig.hmr !== false) {
       try {
         await handleHMRUpdate(file, server)
-      } catch (err) {
+      } catch (err: any) {
         ws.send({
           type: 'error',
           err: prepareError(err)

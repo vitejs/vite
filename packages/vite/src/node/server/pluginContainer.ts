@@ -284,7 +284,7 @@ export async function createPluginContainer(
         let errLocation
         try {
           errLocation = numberToPos(ctx._activeCode, pos)
-        } catch (err2) {
+        } catch (err2: any) {
           logger.error(
             chalk.red(
               `Error in error handler:\n${err2.stack || err2.message}\n`
@@ -506,7 +506,7 @@ export async function createPluginContainer(
         let result: TransformResult | string | undefined
         try {
           result = await plugin.transform.call(ctx as any, code, id, ssr)
-        } catch (e) {
+        } catch (e: any) {
           ctx.error(e)
         }
         if (!result) continue

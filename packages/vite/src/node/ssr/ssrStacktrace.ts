@@ -4,7 +4,7 @@ import { ModuleGraph } from '../server/moduleGraph'
 let offset: number
 try {
   new Function('throw new Error(1)')()
-} catch (e) {
+} catch (e: any) {
   // in Node 12, stack traces account for the function wrapper.
   // in Node 13 and later, the function wrapper adds two lines,
   // which must be subtracted to generate a valid mapping

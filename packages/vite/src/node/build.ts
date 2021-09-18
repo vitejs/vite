@@ -537,7 +537,7 @@ async function doBuild(
     } else {
       return await generate(outputs)
     }
-  } catch (e) {
+  } catch (e: any) {
     outputBuildError(e)
     throw e
   }

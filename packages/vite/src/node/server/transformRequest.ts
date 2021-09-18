@@ -83,7 +83,7 @@ export async function transformRequest(
       try {
         code = await fs.readFile(file, 'utf-8')
         isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
-      } catch (e) {
+      } catch (e: any) {
         if (e.code !== 'ENOENT') {
           throw e
         }

@@ -282,7 +282,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               value.loc.end.offset,
               `"${url}"`
             )
-          } catch (e) {
+          } catch (e: any) {
             // #1885 preload may be pointing to urls that do not exist
             // locally on disk
             if (e.code !== 'ENOENT') {
