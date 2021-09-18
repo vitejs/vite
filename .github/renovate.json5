@@ -9,12 +9,19 @@
   "pin": false,
   "rangeStrategy": "bump",
   "node": false,
+  "packageRules": [
+    {
+      "depTypeList": ["peerDependencies"],
+      "enabled": false
+    }
+  ],
   "ignoreDeps": [
     // manually bumping
     "esbuild",
     "rollup",
-    "@vue/compiler-sfc",
     "node",
+    "ts-node",
+    "typescript",
 
     // breaking changes
     "source-map",
