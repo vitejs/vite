@@ -5,3 +5,4 @@ packages/*/CHANGELOG.md
 LICENSE.md
 .prettierignore
 yarn.lock
+packages/playground/tsconfig-json-load-error/has-error/tsconfig.json

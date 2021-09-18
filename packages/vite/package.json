@@ -116,10 +116,8 @@
     "source-map": "^0.6.1",
     "source-map-support": "^0.5.19",
     "strip-ansi": "^6.0.0",
-    "strip-bom": "^4.0.0",
-    "strip-json-comments": "^3.1.1",
     "terser": "^5.7.1",
-    "tsconfig": "^7.0.0",
+    "tsconfck": "^1.0.0",
     "tslib": "^2.3.0",
     "types": "link:./types",
     "ws": "^7.5.3"

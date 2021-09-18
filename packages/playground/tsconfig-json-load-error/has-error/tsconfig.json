@@ -1,0 +1,4 @@
+{
+  // this config is deliberately malformed to test how vite handles broken tsconfig
+  "compilerOptions":
+}

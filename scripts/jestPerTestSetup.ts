@@ -28,6 +28,7 @@ declare global {
       page?: Page
       viteTestUrl?: string
       watcher?: RollupWatcher
+      beforeAllError: any
     }
   }
 }
@@ -35,7 +36,11 @@ declare global {
 let server: ViteDevServer | http.Server
 let tempDir: string
 let rootDir: string
-let err: Error
+
+const setBeforeAllError = (err) => ((global as any).beforeAllError = err)
+const getBeforeAllError = () => (global as any).beforeAllError
+//init with null so old errors don't carry over
+setBeforeAllError(null)
 
 const logs = ((global as any).browserLogs = [])
 const onConsole = (msg) => {
@@ -137,7 +142,7 @@ beforeAll(async () => {
   } catch (e) {
     // jest doesn't exit if our setup has error here
     // https://github.com/facebook/jest/issues/2713
-    err = e
+    setBeforeAllError(e)
 
     // Closing the page since an error in the setup, for example a runtime error
     // when building the playground should skip further tests.
@@ -151,8 +156,9 @@ afterAll(async () => {
   global.page?.off('console', onConsole)
   await global.page?.close()
   await server?.close()
-  if (err) {
-    throw err
+  const beforeAllErr = getBeforeAllError()
+  if (beforeAllErr) {
+    throw beforeAllErr
   }
 })
 
