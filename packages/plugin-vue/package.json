@@ -30,7 +30,7 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue#readme",
   "peerDependencies": {
     "@vue/compiler-sfc": "^3.2.6",
-    "vite": "^2.5.9"
+    "vite": "^2.5.10"
   },
   "devDependencies": {
     "@rollup/pluginutils": "^4.1.1",
