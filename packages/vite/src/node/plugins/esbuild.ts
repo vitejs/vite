@@ -1,4 +1,3 @@
-import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { Plugin } from '../plugin'
@@ -9,17 +8,22 @@ import {
   TransformOptions,
   TransformResult
 } from 'esbuild'
-import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
+import {
+  cleanUrl,
+  createDebugger,
+  ensureWatchedFile,
+  generateCodeFrame
+} from '../utils'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
-import { ResolvedConfig } from '..'
+import { ResolvedConfig, ViteDevServer } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { combineSourcemaps } from '../utils'
-import stripBom from 'strip-bom'
-import stripComments from 'strip-json-comments'
-import { createRequire } from 'module'
+import { parse, TSConfckParseError, TSConfckParseResult } from 'tsconfck'
 
 const debug = createDebugger('vite:esbuild')
+
+let server: ViteDevServer
 
 export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
@@ -160,6 +164,13 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
 
   return {
     name: 'vite:esbuild',
+    configureServer(_server) {
+      server = _server
+      server.watcher
+        .on('add', reloadOnTsconfigChange)
+        .on('change', reloadOnTsconfigChange)
+        .on('unlink', reloadOnTsconfigChange)
+    },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
         const result = await transformWithEsbuild(code, id, options)
@@ -218,192 +229,50 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-// modified from <https://github.com/TypeStrong/tsconfig/blob/v7.0.0/src/tsconfig.ts#L75-L95>
-
-/**
- * Copyright (c) 2015 TypeStrong
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-async function findTSConfig(dir: string): Promise<string | void> {
-  const configFile = path.resolve(dir, 'tsconfig.json')
-
-  const stats = await stat(configFile)
-  if (isFile(stats)) {
-    return configFile
-  }
-
-  const parentDir = path.dirname(dir)
-
-  if (dir === parentDir) {
-    return
-  }
-
-  return findTSConfig(parentDir)
-}
-
-/**
- * Check if a file exists.
- */
-function stat(filename: string): Promise<fs.Stats | void> {
-  return new Promise((resolve, reject) => {
-    fs.stat(filename, (err, stats) => {
-      return err ? resolve() : resolve(stats)
-    })
-  })
-}
-
-/**
- * Check filesystem stat is a directory.
- */
-function isFile(stats: fs.Stats | void) {
-  return stats ? stats.isFile() || stats.isFIFO() : false
-}
-
-// from <https://github.com/TypeStrong/tsconfig/pull/31>
-// by @dominikg
-
-/**
- * replace dangling commas from pseudo-json string with single space
- *
- * limitations:
- * - pseudo-json must not contain comments, use strip-json-comments before
- * - only a single dangling comma before } or ] is removed
- *   stripDanglingComma('[1,2,]') === '[1,2 ]
- *   stripDanglingComma('[1,2,,]') === '[1,2, ]
- *
- * implementation heavily inspired by strip-json-comments
- */
-function stripDanglingComma(jsonString: string) {
-  /**
-   * Check if char at qoutePosition is escaped by an odd number of backslashes preceding it
-   */
-  function isEscaped(jsonString: string, quotePosition: number) {
-    let index = quotePosition - 1
-    let backslashCount = 0
-
-    while (jsonString[index] === '\\') {
-      index -= 1
-      backslashCount += 1
-    }
-
-    return backslashCount % 2 === 1
-  }
-
-  let insideString = false
-  let offset = 0
-  let result = ''
-  let danglingCommaPos = null
-  for (let i = 0; i < jsonString.length; i++) {
-    const currentCharacter = jsonString[i]
-
-    if (currentCharacter === '"') {
-      const escaped = isEscaped(jsonString, i)
-      if (!escaped) {
-        insideString = !insideString
-      }
-    }
-
-    if (insideString) {
-      danglingCommaPos = null
-      continue
-    }
-    if (currentCharacter === ',') {
-      danglingCommaPos = i
-      continue
-    }
-    if (danglingCommaPos) {
-      if (currentCharacter === '}' || currentCharacter === ']') {
-        result += jsonString.slice(offset, danglingCommaPos) + ' '
-        offset = danglingCommaPos + 1
-        danglingCommaPos = null
-      } else if (!currentCharacter.match(/\s/)) {
-        danglingCommaPos = null
-      }
-    }
-  }
-
-  return result + jsonString.substring(offset)
-}
-
-async function readTSConfig(configPath: string): Promise<TSConfigJSON> {
-  const content: string = await new Promise((resolve, reject) => {
-    fs.readFile(configPath, 'utf-8', (err, data) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      resolve(stripComments(stripBom(data)))
-    })
-  })
-
-  // tsconfig.json can be empty
-  if (/^\s*$/.test(content)) {
-    return {}
-  }
-
-  return JSON.parse(stripDanglingComma(content)) as TSConfigJSON
-}
-
-const tsconfigCache = new Map<string, TSConfigJSON>()
+const tsconfigCache = new Map<string, TSConfckParseResult>()
 async function loadTsconfigJsonForFile(
   filename: string
 ): Promise<TSConfigJSON> {
-  const directory = path.dirname(filename)
-
-  const cached = tsconfigCache.get(directory)
-  if (cached) {
-    return cached
-  }
-
-  let configPath = await findTSConfig(directory)
-  let tsconfig: TSConfigJSON = {}
-
-  if (configPath) {
-    const visited = new Set()
-    visited.add(configPath)
-
-    tsconfig = await readTSConfig(configPath)
-    while (tsconfig.extends) {
-      const configRequire = createRequire(configPath)
-
-      const extendsPath = configRequire.resolve(tsconfig.extends)
-      const extendedConfig = await readTSConfig(extendsPath)
-
-      if (visited.has(extendsPath)) {
-        throw new Error(
-          `Circular dependency detected in the "extends" field of ${configPath}`
-        )
-      }
-      visited.add(extendsPath)
-
-      tsconfig = {
-        extends: extendedConfig.extends,
-        compilerOptions: {
-          ...extendedConfig.compilerOptions,
-          ...tsconfig.compilerOptions
-        }
-      }
-      configPath = extendsPath
+  try {
+    const result = await parse(filename, {
+      cache: tsconfigCache,
+      resolveWithEmptyIfConfigNotFound: true
+    })
+    // tsconfig could be out of root, make sure it is watched on dev
+    if (server && result.tsconfigFile !== 'no_tsconfig_file_found') {
+      ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
     }
+    return result.tsconfig
+  } catch (e) {
+    if (e instanceof TSConfckParseError) {
+      // tsconfig could be out of root, make sure it is watched on dev
+      if (server && e.tsconfigFile) {
+        ensureWatchedFile(server.watcher, e.tsconfigFile, server.config.root)
+      }
+    }
+    throw e
   }
+}
 
-  tsconfigCache.set(directory, tsconfig)
-  return tsconfig
+function reloadOnTsconfigChange(changedFile: string) {
+  // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
+  // any json file in the tsconfig cache could have been used to compile ts
+  if (
+    path.basename(changedFile) === 'tsconfig.json' ||
+    (changedFile.endsWith('.json') && tsconfigCache.has(changedFile))
+  ) {
+    server.config.logger.info(
+      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure typescript is compiled with updated config values.`,
+      { clear: server.config.clearScreen, timestamp: true }
+    )
+    // clear tsconfig cache so that recompile works with up2date configs
+    tsconfigCache.clear()
+    // clear module graph to remove code compiled with outdated config
+    server.moduleGraph.invalidateAll()
+    // force full reload
+    server.ws.send({
+      type: 'full-reload',
+      path: '*'
+    })
+  }
 }
