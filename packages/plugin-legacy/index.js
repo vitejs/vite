@@ -181,7 +181,7 @@ function viteLegacyPlugin(options = {}) {
       /**
        * @param {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)} fileNames
        * @param {string?} defaultFileName
-       * @returns {(chunkInfo: import('rollup').PreRenderedChunk) => string)}
+       * @returns {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)}
        */
       const getLegacyOutputFileName = (
         fileNames,
@@ -559,7 +559,9 @@ async function buildPolyfillChunk(
       }
     }
   })
-  const polyfillChunk = (Array.isArray(res) ? res[0] : res).output[0]
+  const _polyfillChunk = Array.isArray(res) ? res[0] : res
+  if (!('output' in _polyfillChunk)) return
+  const polyfillChunk = _polyfillChunk.output[0]
 
   // associate the polyfill chunk to every entry chunk so that we can retrieve
   // the polyfill filename in index html transform
