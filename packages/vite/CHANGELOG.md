@@ -1,3 +1,12 @@
+## [2.5.10](https://github.com/vitejs/vite/compare/v2.5.9...v2.5.10) (2021-09-18)
+
+
+### Bug Fixes
+
+* handle sourcemap: false in transformWithEsbuild ([de552eb](https://github.com/vitejs/vite/commit/de552eb637c12e8fbfb31fe3817ed87c14c4defb))
+
+
+
 ## [2.5.9](https://github.com/vitejs/vite/compare/v2.5.8...v2.5.9) (2021-09-18)
 
 
