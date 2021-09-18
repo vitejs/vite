@@ -17,7 +17,7 @@ export default defineConfig({
   ],
   build: {
     // to make tests faster
-    // minify: false
+    minify: false
   },
   css: {
     modules: {

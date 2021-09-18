@@ -9,8 +9,11 @@ export const vueI18nPlugin: Plugin = {
     if (/\.ya?ml$/.test(id)) {
       code = JSON.stringify(require('js-yaml').safeLoad(code.trim()))
     }
-    return `export default Comp => {
+    return {
+      code: `export default Comp => {
       Comp.i18n = ${code}
-    }`
+    }`,
+      map: { mappings: '' }
+    }
   }
 }
