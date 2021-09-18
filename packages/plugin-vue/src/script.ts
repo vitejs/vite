@@ -44,7 +44,9 @@ export function resolveScript(
     isProd: options.isProduction,
     inlineTemplate: !options.devServer,
     refTransform: options.refTransform !== false,
-    templateOptions: resolveTemplateCompilerOptions(descriptor, options, ssr)
+    templateOptions: resolveTemplateCompilerOptions(descriptor, options, ssr),
+    // @ts-ignore TODO remove ignore when we support this in @vue/compiler-sfc
+    sourceMap: options.sourceMap
   })
 
   cacheToUse.set(descriptor, resolved)
