@@ -4,6 +4,7 @@ export { build } from './build'
 export { optimizeDeps } from './optimizer'
 export { send } from './server/send'
 export { createLogger } from './logger'
+export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
 export { normalizePath } from './utils'
 
@@ -51,6 +52,7 @@ export type {
 } from './plugins/html'
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
+export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type {

@@ -237,6 +237,8 @@ export interface ViteDevServer {
   /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
+   *
+   * @deprecated import `transformWithEsbuild` from `vite` instead
    */
   transformWithEsbuild(
     code: string,
