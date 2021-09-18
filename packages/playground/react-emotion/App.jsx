@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { css } from '@emotion/react'
 
 import _Switch from 'react-switch'
-const Switch = _Switch.default || _Switch;
+const Switch = _Switch.default || _Switch
 
 export function Counter() {
   const [count, setCount] = useState(0)
