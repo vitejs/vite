@@ -1,3 +1,17 @@
+# [1.8.0](https://github.com/vitejs/vite/compare/plugin-vue@1.7.1...plugin-vue@1.8.0) (2021-09-18)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4545](https://github.com/vitejs/vite/issues/4545)) ([a44fd5d](https://github.com/vitejs/vite/commit/a44fd5d38679da0be2536103e83af730cda73a95))
+
+
+### Performance Improvements
+
+* **plugin-vue:** inline main script for build + avoid sourcemap generation when possible ([93d9a2d](https://github.com/vitejs/vite/commit/93d9a2d175b1a1e3fe54197856a86887b1dadb74))
+
+
+
 ## [1.7.1](https://github.com/vitejs/vite/compare/plugin-vue@1.7.0...plugin-vue@1.7.1) (2021-09-18)
 
 
