@@ -154,8 +154,8 @@ declare module '*.otf' {
 
 // other
 declare module '*.wasm' {
-  const src: string
-  export default src
+  const initWasm: (options: WebAssembly.Imports) => Promise<WebAssembly.Exports>
+  export default initWasm
 }
 declare module '*.webmanifest' {
   const src: string
