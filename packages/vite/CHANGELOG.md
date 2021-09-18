@@ -1,3 +1,12 @@
+## [2.5.9](https://github.com/vitejs/vite/compare/v2.5.8...v2.5.9) (2021-09-18)
+
+
+### Features
+
+* export transformWithEsbuild ([#4882](https://github.com/vitejs/vite/issues/4882)) ([930d9db](https://github.com/vitejs/vite/commit/930d9db7b7b48abd4e812930be4e79f22659b50e))
+
+
+
 ## [2.5.8](https://github.com/vitejs/vite/compare/v2.5.7...v2.5.8) (2021-09-17)
 
 
