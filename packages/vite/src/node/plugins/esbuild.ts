@@ -9,7 +9,12 @@ import {
   TransformOptions,
   TransformResult
 } from 'esbuild'
-import { cleanUrl, createDebugger, generateCodeFrame } from '../utils'
+import {
+  cleanUrl,
+  createDebugger,
+  generateCodeFrame,
+  toUpperCaseDriveLetter
+} from '../utils'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { SourceMap } from 'rollup'
 import { ResolvedConfig } from '..'
@@ -104,21 +109,21 @@ export async function transformWithEsbuild(
 
   try {
     const result = await transform(code, resolvedOptions)
+    let map: SourceMap
     if (inMap) {
       const nextMap = JSON.parse(result.map)
       nextMap.sourcesContent = []
-      return {
-        ...result,
-        map: combineSourcemaps(filename, [
-          nextMap as RawSourceMap,
-          inMap as RawSourceMap
-        ]) as SourceMap
-      }
+      map = combineSourcemaps(filename, [
+        nextMap as RawSourceMap,
+        inMap as RawSourceMap
+      ]) as SourceMap
     } else {
-      return {
-        ...result,
-        map: JSON.parse(result.map)
-      }
+      map = JSON.parse(result.map)
+    }
+    map.sources = map.sources.map((it) => toUpperCaseDriveLetter(it))
+    return {
+      ...result,
+      map
     }
   } catch (e) {
     debug(`esbuild error with options used: `, resolvedOptions)
