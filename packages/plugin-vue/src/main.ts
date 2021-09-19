@@ -15,6 +15,7 @@ import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 import { transformWithEsbuild } from 'vite'
+import { EXPORT_HELPER_ID } from './helper'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
@@ -39,6 +40,7 @@ export async function transformMain(
   }
 
   // feature information
+  const attachedProps: [string, string][] = []
   const hasScoped = descriptor.styles.some((s) => s.scoped)
 
   // script
@@ -70,11 +72,10 @@ export async function transformMain(
     ))
   }
 
-  let renderReplace = ''
   if (hasTemplateImport) {
-    renderReplace = ssr
-      ? `_sfc_main.ssrRender = _sfc_ssrRender`
-      : `_sfc_main.render = _sfc_render`
+    attachedProps.push(
+      ssr ? ['ssrRender', '_sfc_ssrRender'] : ['render', '_sfc_render']
+    )
   } else {
     // #2128
     // User may empty the template but we didn't provide rerender function before
@@ -82,9 +83,7 @@ export async function transformMain(
       prevDescriptor &&
       !isEqualBlock(descriptor.template, prevDescriptor.template)
     ) {
-      renderReplace = ssr
-        ? `_sfc_main.ssrRender = () => {}`
-        : `_sfc_main.render = () => {}`
+      attachedProps.push([ssr ? 'ssrRender' : 'render', '() => {}'])
     }
   }
 
@@ -92,7 +91,8 @@ export async function transformMain(
   const stylesCode = await genStyleCode(
     descriptor,
     pluginContext,
-    asCustomElement
+    asCustomElement,
+    attachedProps
   )
 
   // custom blocks
@@ -102,17 +102,14 @@ export async function transformMain(
     scriptCode,
     templateCode,
     stylesCode,
-    customBlocksCode,
-    renderReplace
+    customBlocksCode
   ]
   if (hasScoped) {
-    output.push(
-      `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
-    )
+    attachedProps.push([`__scopeId`, JSON.stringify(`data-v-${descriptor.id}`)])
   }
   if (devServer && !isProduction) {
     // expose filename during serve for devtools to pickup
-    output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
+    attachedProps.push([`__file`, JSON.stringify(filename)])
   }
 
   // HMR
@@ -185,7 +182,16 @@ export async function transformMain(
     resolvedMap.sourcesContent = templateMap.sourcesContent
   }
 
-  output.push(`export default _sfc_main`)
+  if (!attachedProps.length) {
+    output.push(`export default _sfc_main`)
+  } else {
+    output.push(
+      `import _export_sfc from '${EXPORT_HELPER_ID}'`,
+      `export default /*#__PURE__*/_export_sfc(_sfc_main, [${attachedProps
+        .map(([key, val]) => `['${key}',${val}]`)
+        .join(',')}])`
+    )
+  }
 
   // handle TS transpilation
   let resolvedCode = output.join('\n')
@@ -290,7 +296,8 @@ async function genScriptCode(
 async function genStyleCode(
   descriptor: SFCDescriptor,
   pluginContext: PluginContext,
-  asCustomElement: boolean
+  asCustomElement: boolean,
+  attachedProps: [string, string][]
 ) {
   let stylesCode = ``
   let hasCSSModules = false
@@ -315,7 +322,8 @@ async function genStyleCode(
           )
         }
         if (!hasCSSModules) {
-          stylesCode += `\nconst cssModules = _sfc_main.__cssModules = {}`
+          stylesCode += `\nconst cssModules = {}`
+          attachedProps.push([`__cssModules`, `cssModules`])
           hasCSSModules = true
         }
         stylesCode += genCSSModulesCode(i, styleRequest, style.module)
@@ -331,9 +339,10 @@ async function genStyleCode(
       // TODO SSR critical CSS collection
     }
     if (asCustomElement) {
-      stylesCode += `\n_sfc_main.styles = [${descriptor.styles
-        .map((_, i) => `_style_${i}`)
-        .join(',')}]`
+      attachedProps.push([
+        `styles`,
+        `[${descriptor.styles.map((_, i) => `_style_${i}`).join(',')}]`
+      ])
     }
   }
   return stylesCode

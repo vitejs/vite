@@ -25,6 +25,7 @@ import { transformMain } from './main'
 import { handleHotUpdate } from './handleHotUpdate'
 import { transformTemplateAsModule } from './template'
 import { transformStyle } from './style'
+import { EXPORT_HELPER_ID, helperCode } from './helper'
 
 // extend the descriptor so we can store the scopeId on it
 declare module '@vue/compiler-sfc' {
@@ -156,7 +157,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       options.devServer = server
     },
 
-    async resolveId(id, importer) {
+    async resolveId(id) {
+      // component export helper
+      if (id === EXPORT_HELPER_ID) {
+        return id
+      }
       // serve sub-part requests (*?vue) as virtual modules
       if (parseVueRequest(id).query.vue) {
         return id
@@ -164,6 +169,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     load(id, ssr = !!options.ssr) {
+      if (id === EXPORT_HELPER_ID) {
+        return helperCode
+      }
+
       const { filename, query } = parseVueRequest(id)
       // select corresponding block for sub-part virtual modules
       if (query.vue) {
