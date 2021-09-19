@@ -52,10 +52,7 @@ test('/external', async () => {
       /link rel="stylesheet".*?href="\/assets\/Home\.\w{8}\.css"/
     )
     expect(externalHtml).toMatch(
-      /link rel="modulepreload".*?href="\/assets\/About\.\w{8}\.js"/
-    )
-    expect(externalHtml).toMatch(
-      /link rel="stylesheet".*?href="\/assets\/About\.\w{8}\.css"/
+      /link rel="modulepreload".*?href="\/assets\/External\.\w{8}\.js"/
     )
   }
 })
