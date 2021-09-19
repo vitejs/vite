@@ -136,7 +136,9 @@ export async function transformWithEsbuild(
         inMap as RawSourceMap
       ]) as SourceMap
     } else {
-      map = JSON.parse(result.map)
+      map = resolvedOptions.sourcemap
+        ? JSON.parse(result.map)
+        : { mappings: '' }
     }
     map.sources = map.sources.map((it) => toUpperCaseDriveLetter(it))
     return {
