@@ -562,19 +562,7 @@ export function arraify<T>(target: T | T[]): T[] {
 }
 
 export function toUpperCaseDriveLetter(pathName: string): string {
-  if (/^\w:/.test(pathName)) {
-    return pathName
-      .split(':')
-      .map((it, index) => {
-        if (index === 0 && it.length === 1) {
-          return it.toUpperCase()
-        } else {
-          return it
-        }
-      })
-      .join(':')
-  }
-  return pathName
+  return pathName.replace(/^\w:/, letter => letter.toUpperCase())
 }
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
