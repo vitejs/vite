@@ -1,3 +1,12 @@
+## [1.8.1](https://github.com/vitejs/vite/compare/plugin-vue@1.8.0...plugin-vue@1.8.1) (2021-09-19)
+
+
+### Bug Fixes
+
+* **plugin-vue:** generate tree-shakable code ([316d7af](https://github.com/vitejs/vite/commit/316d7afc0c84e51359938a12ebe1b09ca34ea8bd))
+
+
+
 # [1.8.0](https://github.com/vitejs/vite/compare/plugin-vue@1.7.1...plugin-vue@1.8.0) (2021-09-18)
 
 
