@@ -25,7 +25,7 @@ export async function transformMain(
   ssr: boolean,
   asCustomElement: boolean
 ) {
-  const { devServer, isProduction } = options
+  const { devServer, isProduction, devToolsEnabled } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
@@ -55,6 +55,7 @@ export async function transformMain(
   // inlined template cannot be individually hot updated.
   const useInlineTemplate =
     !devServer &&
+    !devToolsEnabled &&
     descriptor.scriptSetup &&
     !(descriptor.template && descriptor.template.src)
   const hasTemplateImport = descriptor.template && !useInlineTemplate
@@ -110,7 +111,7 @@ export async function transformMain(
       `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
     )
   }
-  if (devServer && !isProduction) {
+  if (devToolsEnabled || (devServer && !isProduction)) {
     // expose filename during serve for devtools to pickup
     output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
   }
