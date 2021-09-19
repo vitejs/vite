@@ -1,3 +1,3 @@
 <template>
-  <div>Example external component's content</div>
+  <div>Example external component content</div>
 </template>

@@ -34,7 +34,7 @@ test('/about', async () => {
 
 test('/external', async () => {
   await page.goto(url + '/external')
-  expect(await page.textContent('div')).toMatch('Example external component\'s content')
+  expect(await page.textContent('div')).toMatch('Example external component content')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('mismatch')
@@ -42,7 +42,7 @@ test('/external', async () => {
 
   // fetch sub route
   const externalHtml = await (await fetch(url + '/external')).text()
-  expect(externalHtml).toMatch('Example external component\'s content')
+  expect(externalHtml).toMatch('Example external component content')
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(externalHtml).not.toMatch(
