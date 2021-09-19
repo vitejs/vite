@@ -140,7 +140,9 @@ export async function transformWithEsbuild(
         ? JSON.parse(result.map)
         : { mappings: '' }
     }
-    map.sources = map.sources.map((it) => toUpperCaseDriveLetter(it))
+    if (Array.isArray(map.sources)) {
+      map.sources = map.sources.map((it) => toUpperCaseDriveLetter(it))
+    }
     return {
       ...result,
       map
