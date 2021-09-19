@@ -45,7 +45,7 @@ function vueJsxPlugin(options = {}) {
   let needSourceMap = true
 
   return {
-    name: 'vue-jsx',
+    name: 'vite:vue-jsx',
 
     config(config) {
       return {

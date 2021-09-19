@@ -17,7 +17,7 @@ import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
-    name: 'asset-import-meta-url',
+    name: 'vite:asset-import-meta-url',
     async transform(code, id, ssr) {
       if (code.includes('new URL') && code.includes(`import.meta.url`)) {
         const importMetaUrlRE =
