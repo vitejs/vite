@@ -79,7 +79,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyConfigPlugin = {
-    name: 'legacy-config',
+    name: 'vite:legacy-config',
 
     apply: 'build',
     config(config) {
@@ -93,7 +93,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyGenerateBundlePlugin = {
-    name: 'legacy-generate-polyfill-chunk',
+    name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
 
     configResolved(config) {
@@ -164,7 +164,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyPostPlugin = {
-    name: 'legacy-post-process',
+    name: 'vite:legacy-post-process',
     enforce: 'post',
     apply: 'build',
 
@@ -449,7 +449,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyEnvPlugin = {
-    name: 'legacy-env',
+    name: 'vite:legacy-env',
 
     config(config, env) {
       if (env) {
@@ -584,7 +584,7 @@ const polyfillId = 'vite/legacy-polyfills'
  */
 function polyfillsPlugin(imports) {
   return {
-    name: 'polyfills',
+    name: 'vite:legacy-polyfills',
     resolveId(id) {
       if (id === polyfillId) {
         return id
