@@ -1,8 +1,9 @@
 import path from 'path'
 import chalk from 'chalk'
+import { gzip } from 'zlib'
+import { promisify } from 'util'
 import { Plugin } from 'rollup'
 import { ResolvedConfig } from '../config'
-import size from 'brotli-size'
 import { normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
@@ -23,6 +24,7 @@ const writeColors = {
 }
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
+  const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
   function isLarge(code: string | Uint8Array): boolean {
@@ -31,14 +33,16 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   }
 
   async function getCompressedSize(code: string | Uint8Array): Promise<string> {
-    if (config.build.ssr || !config.build.brotliSize) {
+    if (
+      config.build.ssr ||
+      !config.build.reportCompressedSize ||
+      config.build.brotliSize === false
+    ) {
       return ''
     }
-    if (isLarge(code)) {
-      return ' / brotli: skipped (large chunk)'
-    }
-    return ` / brotli: ${(
-      (await size(typeof code === 'string' ? code : Buffer.from(code))) / 1024
+    return ` / gzip: ${(
+      (await compress(typeof code === 'string' ? code : Buffer.from(code)))
+        .length / 1024
     ).toFixed(2)} KiB`
   }
 

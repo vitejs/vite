@@ -80,7 +80,6 @@
     "acorn": "^8.5.0",
     "acorn-class-fields": "^1.0.0",
     "acorn-static-class-features": "^1.0.0",
-    "brotli-size": "^4.0.0",
     "builtin-modules": "^3.2.0",
     "cac": "^6.7.3",
     "chalk": "^4.1.2",
