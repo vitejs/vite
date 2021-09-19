@@ -79,7 +79,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyConfigPlugin = {
-    name: 'legacy-config',
+    name: 'vite:legacy-config',
 
     apply: 'build',
     config(config) {
@@ -93,7 +93,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyGenerateBundlePlugin = {
-    name: 'legacy-generate-polyfill-chunk',
+    name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
 
     configResolved(config) {
@@ -164,7 +164,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyPostPlugin = {
-    name: 'legacy-post-process',
+    name: 'vite:legacy-post-process',
     enforce: 'post',
     apply: 'build',
 
@@ -181,7 +181,7 @@ function viteLegacyPlugin(options = {}) {
       /**
        * @param {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)} fileNames
        * @param {string?} defaultFileName
-       * @returns {(chunkInfo: import('rollup').PreRenderedChunk) => string)}
+       * @returns {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)}
        */
       const getLegacyOutputFileName = (
         fileNames,
@@ -449,7 +449,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyEnvPlugin = {
-    name: 'legacy-env',
+    name: 'vite:legacy-env',
 
     config(config, env) {
       if (env) {
@@ -559,7 +559,9 @@ async function buildPolyfillChunk(
       }
     }
   })
-  const polyfillChunk = (Array.isArray(res) ? res[0] : res).output[0]
+  const _polyfillChunk = Array.isArray(res) ? res[0] : res
+  if (!('output' in _polyfillChunk)) return
+  const polyfillChunk = _polyfillChunk.output[0]
 
   // associate the polyfill chunk to every entry chunk so that we can retrieve
   // the polyfill filename in index html transform
@@ -582,7 +584,7 @@ const polyfillId = 'vite/legacy-polyfills'
  */
 function polyfillsPlugin(imports) {
   return {
-    name: 'polyfills',
+    name: 'vite:legacy-polyfills',
     resolveId(id) {
       if (id === polyfillId) {
         return id

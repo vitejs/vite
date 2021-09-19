@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { defineProps, reactive, onBeforeMount } from 'vue'
+import { reactive, onBeforeMount } from 'vue'
 
 defineProps({
   label: String

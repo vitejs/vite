@@ -14,6 +14,7 @@ import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
+import { transformWithEsbuild } from 'vite'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
@@ -24,16 +25,11 @@ export async function transformMain(
   ssr: boolean,
   asCustomElement: boolean
 ) {
-  const { root, devServer, isProduction } = options
+  const { devServer, isProduction } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
-  const { descriptor, errors } = createDescriptor(
-    filename,
-    code,
-    root,
-    isProduction
-  )
+  const { descriptor, errors } = createDescriptor(filename, code, options)
 
   if (errors.length) {
     errors.forEach((error) =>
@@ -166,8 +162,8 @@ export async function transformMain(
 
   // if the template is inlined into the main module (indicated by the presence
   // of templateMap, we need to concatenate the two source maps.
-  let resolvedMap = map
-  if (map && templateMap) {
+  let resolvedMap = options.sourceMap ? map : undefined
+  if (resolvedMap && templateMap) {
     const generator = SourceMapGenerator.fromSourceMap(
       new SourceMapConsumer(map)
     )
@@ -183,7 +179,7 @@ export async function transformMain(
         }
       })
     })
-    resolvedMap = (generator as any).toJSON()
+    resolvedMap = (generator as any).toJSON() as RawSourceMap
     // if this is a template only update, we will be reusing a cached version
     // of the main module compile result, which has outdated sourcesContent.
     resolvedMap.sourcesContent = templateMap.sourcesContent
@@ -191,8 +187,25 @@ export async function transformMain(
 
   output.push(`export default _sfc_main`)
 
+  // handle TS transpilation
+  let resolvedCode = output.join('\n')
+  if (
+    (descriptor.script?.lang === 'ts' ||
+      descriptor.scriptSetup?.lang === 'ts') &&
+    !descriptor.script?.src // only normal script can have src
+  ) {
+    const { code, map } = await transformWithEsbuild(
+      resolvedCode,
+      filename,
+      { loader: 'ts', sourcemap: options.sourceMap },
+      resolvedMap
+    )
+    resolvedCode = code
+    resolvedMap = resolvedMap ? (map as any) : resolvedMap
+  }
+
   return {
-    code: output.join('\n'),
+    code: resolvedCode,
     map: resolvedMap || {
       mappings: ''
     }
@@ -251,23 +264,9 @@ async function genScriptCode(
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
-    if (
-      (!script.lang || (script.lang === 'ts' && options.devServer)) &&
-      !script.src
-    ) {
-      scriptCode = script.content
+    if ((!script.lang || script.lang === 'ts') && !script.src) {
+      scriptCode = rewriteDefault(script.content, '_sfc_main')
       map = script.map
-      if (script.lang === 'ts') {
-        const result = await options.devServer!.transformWithEsbuild(
-          scriptCode,
-          descriptor.filename,
-          { loader: 'ts' },
-          map
-        )
-        scriptCode = result.code
-        map = result.map
-      }
-      scriptCode = rewriteDefault(scriptCode, `_sfc_main`)
     } else {
       if (script.src) {
         await linkSrcToDescriptor(script.src, descriptor, pluginContext)

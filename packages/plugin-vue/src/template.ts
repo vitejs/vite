@@ -4,7 +4,8 @@ import {
   compileTemplate,
   SFCDescriptor,
   SFCTemplateCompileOptions,
-  SFCTemplateCompileResults
+  SFCTemplateCompileResults,
+  CompilerOptions
 } from '@vue/compiler-sfc'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
@@ -12,7 +13,7 @@ import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function transformTemplateAsModule(
+export async function transformTemplateAsModule(
   code: string,
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
@@ -35,7 +36,7 @@ export function transformTemplateAsModule(
 
   return {
     code: returnCode,
-    map: result.map as any
+    map: result.map
   }
 }
 
@@ -157,6 +158,16 @@ export function resolveTemplateCompilerOptions(
     }
   }
 
+  // if using TS, support TS syntax in template expressions
+  const expressionPlugins: CompilerOptions['expressionPlugins'] =
+    options.template?.compilerOptions?.expressionPlugins || []
+  if (
+    descriptor.script?.lang === 'ts' ||
+    descriptor.scriptSetup?.lang === 'ts'
+  ) {
+    expressionPlugins.push('typescript')
+  }
+
   return {
     ...options.template,
     id,
@@ -173,7 +184,9 @@ export function resolveTemplateCompilerOptions(
     compilerOptions: {
       ...options.template?.compilerOptions,
       scopeId: hasScoped ? `data-v-${id}` : undefined,
-      bindingMetadata: resolvedScript ? resolvedScript.bindings : undefined
+      bindingMetadata: resolvedScript ? resolvedScript.bindings : undefined,
+      expressionPlugins,
+      sourceMap: options.sourceMap
     }
   }
 }

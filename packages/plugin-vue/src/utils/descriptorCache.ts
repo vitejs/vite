@@ -3,6 +3,7 @@ import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
 import { CompilerError, parse, SFCDescriptor } from '@vue/compiler-sfc'
+import { ResolvedOptions } from '..'
 
 // node_modules/@vue/compiler-sfc/dist/compiler-sfc.d.ts SFCParseResult should be exported so it can be re-used
 export interface SFCParseResult {
@@ -16,12 +17,11 @@ const prevCache = new Map<string, SFCDescriptor | undefined>()
 export function createDescriptor(
   filename: string,
   source: string,
-  root: string,
-  isProduction: boolean | undefined
+  { root, isProduction, sourceMap }: ResolvedOptions
 ): SFCParseResult {
   const { descriptor, errors } = parse(source, {
     filename,
-    sourceMap: true
+    sourceMap
   })
 
   // ensure the path is normalized in a way that is consistent inside
@@ -46,8 +46,7 @@ export function setPrevDescriptor(
 
 export function getDescriptor(
   filename: string,
-  root: string,
-  isProduction: boolean | undefined,
+  options: ResolvedOptions,
   createIfNotFound = true
 ): SFCDescriptor | undefined {
   if (cache.has(filename)) {
@@ -57,8 +56,7 @@ export function getDescriptor(
     const { descriptor, errors } = createDescriptor(
       filename,
       fs.readFileSync(filename, 'utf-8'),
-      root,
-      isProduction
+      options
     )
     if (errors) {
       throw errors[0]

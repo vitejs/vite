@@ -1,7 +1,7 @@
 <template>
   <div class="comments"><!--hello--></div>
   <h1>Vue SFCs</h1>
-  <pre>{{ time }}</pre>
+  <pre>{{ time as string }}</pre>
   <div class="hmr-block">
     <Hmr />
   </div>
