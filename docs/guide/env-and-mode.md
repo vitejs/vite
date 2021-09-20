@@ -60,11 +60,13 @@ By default, Vite provides type definition for `import.meta.env`. While you can d
 To achieve, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript
+interface ImportMetaEnv extends Readonly<Record<string, string>> {
+  readonly VITE_APP_TITLE: string
+  // more env variables...
+}
+
 interface ImportMeta {
-  env: {
-    VITE_APP_TITLE: string
-    // more env variables...
-  }
+  readonly env: ImportMetaEnv
 }
 ```
 
