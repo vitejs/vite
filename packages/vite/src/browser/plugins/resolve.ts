@@ -6,13 +6,10 @@ import {
   DEFAULT_EXTENSIONS,
 } from '../../node/constants'
 import {
-  bareImportRE,
   createDebugger,
   isExternalUrl,
-  normalizePath,
   fsPathFromId,
   isDataUrl,
-  flattenId
 } from '../../node/utils'
 import type { ViteDevServer, InternalResolveOptions } from '../../node'
 import type { PartialResolvedId } from 'rollup'
@@ -28,27 +25,16 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   const {
     root,
     asSrc,
-    ssrConfig,
     preferRelative = false
   } = baseOptions
   const requireOptions: InternalResolveOptions = {
     ...baseOptions,
     isRequire: true
   }
-  let server: ViteDevServer | undefined
-
-  const { target: ssrTarget } = ssrConfig ?? {}
-
   return {
     name: 'vite:browser:resolve',
 
-    configureServer(_server) {
-      server = _server
-    },
-
     resolveId(id, importer, resolveOpts, ssr) {
-      const targetWeb = !ssr || ssrTarget === 'webworker'
-
       // this is passed by @rollup/plugin-commonjs
       const isRequire =
         resolveOpts &&
