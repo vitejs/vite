@@ -13,9 +13,8 @@
     "bin",
     "dist",
     "client.d.ts",
-    "src",
-    "types",
-    "!/src/**/__tests__/"
+    "src/client",
+    "types"
   ],
   "engines": {
     "node": ">=12.2.0"
