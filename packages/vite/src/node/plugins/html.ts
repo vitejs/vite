@@ -409,7 +409,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // when not inlined, inject <script> for entry and modulepreload its dependencies
           // when inlined, discard entry chunk and inject <script> for everything in post-order
           const imports = getImportedChunks(chunk)
-
           const assetTags = canInlineEntry
             ? imports.map((chunk) => toScriptTag(chunk, isAsync))
             : [toScriptTag(chunk, isAsync), ...imports.map(toPreloadTag)]
