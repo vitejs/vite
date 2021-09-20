@@ -108,7 +108,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     ) {
       const props: any[] = node.arguments.map(getJSXProps)
       //if calling this recursively works, flatten.
-      if (props.every((prop) => prop !== null)) {
+      if (props.every((prop) => prop != null)) {
         return [].concat(...props)
       }
     }
