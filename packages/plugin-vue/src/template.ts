@@ -161,10 +161,8 @@ export function resolveTemplateCompilerOptions(
   // if using TS, support TS syntax in template expressions
   const expressionPlugins: CompilerOptions['expressionPlugins'] =
     options.template?.compilerOptions?.expressionPlugins || []
-  if (
-    descriptor.script?.lang === 'ts' ||
-    descriptor.scriptSetup?.lang === 'ts'
-  ) {
+  const lang = descriptor.scriptSetup?.lang || descriptor.script?.lang
+  if (lang && /tsx?$/.test(lang) && !expressionPlugins.includes('typescript')) {
     expressionPlugins.push('typescript')
   }
 
