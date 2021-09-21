@@ -658,9 +658,9 @@ function serializeTag(
   indent: string = ''
 ): string {
   if (unaryTags.has(tag)) {
-    return `${indent}<${tag}${serializeAttrs(attrs)}>`
+    return `<${tag}${serializeAttrs(attrs)}>`
   } else {
-    return `${indent}<${tag}${serializeAttrs(attrs)}>${serializeTags(
+    return `<${tag}${serializeAttrs(attrs)}>${serializeTags(
       children,
       incrementIndent(indent)
     )}</${tag}>`
@@ -674,7 +674,7 @@ function serializeTags(
   if (typeof tags === 'string') {
     return tags
   } else if (tags && tags.length) {
-    return `${tags.map((tag) => serializeTag(tag, indent)).join('\n')}\n`
+    return tags.map((tag) => `${indent}${serializeTag(tag, indent)}\n`).join('')
   }
   return ''
 }
