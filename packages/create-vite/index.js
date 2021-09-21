@@ -15,7 +15,8 @@ const {
   blue,
   magenta,
   lightRed,
-  red
+  red,
+  lightCyan
 } = require('kolorist')
 
 const cwd = process.cwd()
@@ -112,6 +113,22 @@ const FRAMEWORKS = [
       },
       {
         name: 'svelte-ts',
+        display: 'TypeScript',
+        color: blue
+      }
+    ]
+  },
+  {
+    name: 'solid',
+    color: lightCyan,
+    variants: [
+      {
+        name: 'solid',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'solid-ts',
         display: 'TypeScript',
         color: blue
       }

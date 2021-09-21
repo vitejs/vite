@@ -55,6 +55,8 @@ Currently supported template presets include:
 - `lit-element-ts`
 - `svelte`
 - `svelte-ts`
+- `solid-ts`
+- `solid-ts`
 
 ## Community Templates
 

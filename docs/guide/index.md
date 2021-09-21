@@ -73,6 +73,8 @@ Supported template presets include:
 - `lit-element-ts`
 - `svelte`
 - `svelte-ts`
+- `solid`
+- `solid-ts`
 
 See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each template.
 
