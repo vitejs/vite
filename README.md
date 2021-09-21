@@ -10,7 +10,7 @@ Changes required for this usage:
   - remove watch/glob/config
   - but keep resolving project files through FS (will be shimmed in-App)
 - Remove serve
-- Remove dependency handling/odptimizing/resolving
+- Remove dependency handling/optimizing/resolving
   - handled in-App through custom plugins
   - using a service to generate/serve optimized dependencies (see below)
 
