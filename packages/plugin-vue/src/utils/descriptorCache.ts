@@ -2,8 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
-import { CompilerError, parse, SFCDescriptor } from '@vue/compiler-sfc'
+import { CompilerError, SFCDescriptor } from '@vue/compiler-sfc'
 import { ResolvedOptions } from '..'
+import { compiler } from '../compiler'
 
 // node_modules/@vue/compiler-sfc/dist/compiler-sfc.d.ts SFCParseResult should be exported so it can be re-used
 export interface SFCParseResult {
@@ -19,7 +20,7 @@ export function createDescriptor(
   source: string,
   { root, isProduction, sourceMap }: ResolvedOptions
 ): SFCParseResult {
-  const { descriptor, errors } = parse(source, {
+  const { descriptor, errors } = compiler.parse(source, {
     filename,
     sourceMap
   })

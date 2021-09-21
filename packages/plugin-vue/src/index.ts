@@ -1,12 +1,3 @@
-try {
-  require.resolve('@vue/compiler-sfc')
-} catch (e) {
-  throw new Error(
-    '@vitejs/plugin-vue requires @vue/compiler-sfc to be present in the dependency ' +
-      'tree.'
-  )
-}
-
 import fs from 'fs'
 import { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from '@rollup/pluginutils'
@@ -14,10 +5,9 @@ import {
   SFCBlock,
   SFCScriptCompileOptions,
   SFCStyleCompileOptions,
-  SFCTemplateCompileOptions,
-  shouldTransformRef,
-  transformRef
+  SFCTemplateCompileOptions
 } from '@vue/compiler-sfc'
+import { compiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor } from './utils/descriptorCache'
 import { getResolvedScript } from './script'
@@ -26,13 +16,6 @@ import { handleHotUpdate } from './handleHotUpdate'
 import { transformTemplateAsModule } from './template'
 import { transformStyle } from './style'
 import { EXPORT_HELPER_ID, helperCode } from './helper'
-
-// extend the descriptor so we can store the scopeId on it
-declare module '@vue/compiler-sfc' {
-  interface SFCDescriptor {
-    id: string
-  }
-}
 
 export { parseVueRequest, VueQuery } from './utils/query'
 
@@ -108,7 +91,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       : createFilter(refTransform)
 
   // compat for older verisons
-  const canUseRefTransform = typeof shouldTransformRef === 'function'
+  const canUseRefTransform = typeof compiler.shouldTransformRef === 'function'
 
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
@@ -209,8 +192,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         if (!query.vue && refTransformFilter(filename)) {
           if (!canUseRefTransform) {
             this.warn('refTransform requires @vue/compiler-sfc@^3.2.5.')
-          } else if (shouldTransformRef(code)) {
-            return transformRef(code, {
+          } else if (compiler.shouldTransformRef(code)) {
+            return compiler.transformRef(code, {
               filename,
               sourceMap: true
             })

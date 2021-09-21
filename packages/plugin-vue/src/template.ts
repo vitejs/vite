@@ -1,16 +1,16 @@
 import path from 'path'
 import slash from 'slash'
 import {
-  compileTemplate,
   SFCDescriptor,
   SFCTemplateCompileOptions,
   SFCTemplateCompileResults,
   CompilerOptions
-} from '@vue/compiler-sfc'
+} from 'vue/compiler-sfc'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
+import { compiler } from './compiler'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformTemplateAsModule(
@@ -70,7 +70,7 @@ export function compile(
   ssr: boolean
 ) {
   const filename = descriptor.filename
-  const result = compileTemplate({
+  const result = compiler.compileTemplate({
     ...resolveTemplateCompilerOptions(descriptor, options, ssr)!,
     source: code
   })

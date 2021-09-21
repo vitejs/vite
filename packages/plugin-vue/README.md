@@ -1,6 +1,6 @@
 # @vitejs/plugin-vue [![npm](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg)](https://npmjs.com/package/@vitejs/plugin-vue)
 
-Note: requires `@vue/compiler-sfc` as peer dependency. This is largely a port of `rollup-plugin-vue` with some vite-specific tweaks.
+> Note: as of `vue` 3.2.13+ and `@vitejs/plugin-vue` 1.9.0+, `@vue/compiler-sfc` is no longer required as a peer dependency.
 
 ```js
 // vite.config.js
@@ -46,7 +46,7 @@ export interface Options {
    */
   refTransform?: boolean | string | RegExp | (string | RegExp)[]
 
-  // options to pass on to @vue/compiler-sfc
+  // options to pass on to vue/compiler-sfc
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
   style?: Partial<SFCStyleCompileOptions>

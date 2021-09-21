@@ -60,9 +60,9 @@
     "yorkie": "^2.0.0"
   },
   "peerDependencies": {
+    "less": ">=4.0.0",
     "sass": ">=1.0.0",
-    "stylus": ">=0.54.0",
-    "less": ">=4.0.0"
+    "stylus": ">=0.54.0"
   },
   "peerDependenciesMeta": {
     "sass": {

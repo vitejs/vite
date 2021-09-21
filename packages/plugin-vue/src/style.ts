@@ -1,6 +1,7 @@
-import { compileStyleAsync, SFCDescriptor } from '@vue/compiler-sfc'
+import { SFCDescriptor } from '@vue/compiler-sfc'
 import { TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
+import { compiler } from './compiler'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformStyle(
@@ -13,7 +14,7 @@ export async function transformStyle(
   const block = descriptor.styles[index]
   // vite already handles pre-processors and CSS module so this is only
   // applying SFC-specific transforms like scoped mode and CSS vars rewrite (v-bind(var))
-  const result = await compileStyleAsync({
+  const result = await compiler.compileStyleAsync({
     ...options.style,
     filename: descriptor.filename,
     id: `data-v-${descriptor.id}`,
