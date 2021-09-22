@@ -287,7 +287,7 @@ async function fileToBuiltUrl(
 
   let url: string
   if (
-    config.build.lib ||
+    (config.build.lib && !config.build.lib.emitAssets) ||
     (!file.endsWith('.svg') &&
       content.length < Number(config.build.assetsInlineLimit))
   ) {

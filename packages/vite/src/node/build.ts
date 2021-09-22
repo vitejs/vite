@@ -212,6 +212,7 @@ export interface LibraryOptions {
   name?: string
   formats?: LibraryFormats[]
   fileName?: string | ((format: ModuleFormat) => string)
+  emitAssets?: boolean
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
