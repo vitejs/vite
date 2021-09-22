@@ -33,7 +33,7 @@ export async function ssrTransform(
 
   const ast = parser.parse(code, {
     sourceType: 'module',
-    ecmaVersion: 2021,
+    ecmaVersion: 2022,
     locations: true
   }) as any
 
