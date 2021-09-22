@@ -11,6 +11,17 @@
 </p>
 <br/>
 
+# ‹div›RIOTS Tools
+
+<p align="center">
+  <a href="https://backlight.dev"><img src="https://img.shields.io/badge/Backlight.dev-Design%20System%20Editor-%23f8c307" alt="backlight.dev"></a>
+  <a href="https://webcomopnents.dev"><img src="https://img.shields.io/badge/WebComponents.dev-Web%20Components%20Studio-%23459BCF" alt="webcomopnents.dev"></a>
+  <a href="https://components.studio"><img src="https://img.shields.io/badge/Components.studio-Components%20Studio-%23319795" alt="components.studio"></a>
+</p>
+
+
+[‹div›RIOTS](https://divriots.com) are makers of online studios dedicated to Design Systems and Components. We use the *Vite* project in the rendering process of the built-in preview in the editor itself.
+
 # Vite for Browser ⚡
 
 This is a fork of vite which aims at being used in a browser (served by service worker).
