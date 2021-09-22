@@ -41,7 +41,7 @@ import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 
 const isDebug = !!process.env.DEBUG
-const debugRewrite = createDebugger('vite:rewrite')
+const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
@@ -105,11 +105,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
-        isDebug && debugRewrite(chalk.dim(`[skipped] ${prettyImporter}`))
+        isDebug && debug(chalk.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
-      const rewriteStart = Date.now()
+      const start = Date.now()
       await init
       let imports: readonly ImportSpecifier[] = []
       // strip UTF-8 BOM
@@ -140,10 +140,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length) {
         isDebug &&
-          debugRewrite(
-            `${timeFrom(rewriteStart)} ${chalk.dim(
-              `[no imports] ${prettyImporter}`
-            )}`
+          debug(
+            `${timeFrom(start)} ${chalk.dim(`[no imports] ${prettyImporter}`)}`
           )
         return source
       }
@@ -509,6 +507,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           handlePrunedModules(prunedImports, server)
         }
       }
+
+      isDebug &&
+        debug(
+          `${timeFrom(start)} ${chalk.dim(
+            `[${importedUrls.size} imports rewritten] ${prettyImporter}`
+          )}`
+        )
 
       if (s) {
         return s.toString()
