@@ -1,16 +1,16 @@
 import path from 'path'
 import slash from 'slash'
 import {
-  compileTemplate,
   SFCDescriptor,
   SFCTemplateCompileOptions,
   SFCTemplateCompileResults,
   CompilerOptions
-} from '@vue/compiler-sfc'
+} from 'vue/compiler-sfc'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
+import { compiler } from './compiler'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformTemplateAsModule(
@@ -70,7 +70,7 @@ export function compile(
   ssr: boolean
 ) {
   const filename = descriptor.filename
-  const result = compileTemplate({
+  const result = compiler.compileTemplate({
     ...resolveTemplateCompilerOptions(descriptor, options, ssr)!,
     source: code
   })
@@ -161,10 +161,8 @@ export function resolveTemplateCompilerOptions(
   // if using TS, support TS syntax in template expressions
   const expressionPlugins: CompilerOptions['expressionPlugins'] =
     options.template?.compilerOptions?.expressionPlugins || []
-  if (
-    descriptor.script?.lang === 'ts' ||
-    descriptor.scriptSetup?.lang === 'ts'
-  ) {
+  const lang = descriptor.scriptSetup?.lang || descriptor.script?.lang
+  if (lang && /tsx?$/.test(lang) && !expressionPlugins.includes('typescript')) {
     expressionPlugins.push('typescript')
   }
 

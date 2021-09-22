@@ -1,3 +1,17 @@
+## [2.6.3](https://github.com/vitejs/vite/compare/create-vite@2.6.2...create-vite@2.6.3) (2021-09-21)
+
+
+### Bug Fixes
+
+* pnpm create-vite command documentation ([#4902](https://github.com/vitejs/vite/issues/4902)) ([3392a8a](https://github.com/vitejs/vite/commit/3392a8ad5618cc68b6898a327b6c8959de6f4992))
+
+
+### Features
+
+* **create-vite:** update vue templates ([a2be9c1](https://github.com/vitejs/vite/commit/a2be9c11fccb53ed60a33d72025c2d30635be1a7))
+
+
+
 ## [2.6.2](https://github.com/vitejs/vite/compare/create-vite@2.6.1...create-vite@2.6.2) (2021-09-07)
 
 

@@ -185,8 +185,14 @@ export interface BuildOptions {
    */
   ssrManifest?: boolean
   /**
+   * Set to false to disable reporting compressed chunk sizes.
+   * Can slightly improve build speed.
+   */
+  reportCompressedSize?: boolean
+  /**
    * Set to false to disable brotli compressed size reporting for build.
    * Can slightly improve build speed.
+   * @deprecated use `build.reportCompressedSize` instead.
    */
   brotliSize?: boolean
   /**
@@ -211,7 +217,11 @@ export interface LibraryOptions {
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export type ResolvedBuildOptions = Required<
-  Omit<BuildOptions, 'base' | 'cleanCssOptions' | 'polyfillDynamicImport'>
+  Omit<
+    BuildOptions,
+    // make deprecated options optional
+    'base' | 'cleanCssOptions' | 'polyfillDynamicImport' | 'brotliSize'
+  >
 >
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
@@ -242,7 +252,8 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     lib: false,
     ssr: false,
     ssrManifest: false,
-    brotliSize: true,
+    reportCompressedSize: true,
+    // brotliSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
     ...raw

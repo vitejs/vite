@@ -1,12 +1,3 @@
-try {
-  require.resolve('@vue/compiler-sfc')
-} catch (e) {
-  throw new Error(
-    '@vitejs/plugin-vue requires @vue/compiler-sfc to be present in the dependency ' +
-      'tree.'
-  )
-}
-
 import fs from 'fs'
 import { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from '@rollup/pluginutils'
@@ -14,10 +5,9 @@ import {
   SFCBlock,
   SFCScriptCompileOptions,
   SFCStyleCompileOptions,
-  SFCTemplateCompileOptions,
-  shouldTransformRef,
-  transformRef
+  SFCTemplateCompileOptions
 } from '@vue/compiler-sfc'
+import { compiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor } from './utils/descriptorCache'
 import { getResolvedScript } from './script'
@@ -25,13 +15,7 @@ import { transformMain } from './main'
 import { handleHotUpdate } from './handleHotUpdate'
 import { transformTemplateAsModule } from './template'
 import { transformStyle } from './style'
-
-// extend the descriptor so we can store the scopeId on it
-declare module '@vue/compiler-sfc' {
-  interface SFCDescriptor {
-    id: string
-  }
-}
+import { EXPORT_HELPER_ID, helperCode } from './helper'
 
 export { parseVueRequest, VueQuery } from './utils/query'
 
@@ -108,7 +92,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       : createFilter(refTransform)
 
   // compat for older verisons
-  const canUseRefTransform = typeof shouldTransformRef === 'function'
+  const canUseRefTransform = typeof compiler.shouldTransformRef === 'function'
 
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
@@ -160,7 +144,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       options.devServer = server
     },
 
-    async resolveId(id, importer) {
+    async resolveId(id) {
+      // component export helper
+      if (id === EXPORT_HELPER_ID) {
+        return id
+      }
       // serve sub-part requests (*?vue) as virtual modules
       if (parseVueRequest(id).query.vue) {
         return id
@@ -168,6 +156,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     load(id, ssr = !!options.ssr) {
+      if (id === EXPORT_HELPER_ID) {
+        return helperCode
+      }
+
       const { filename, query } = parseVueRequest(id)
       // select corresponding block for sub-part virtual modules
       if (query.vue) {
@@ -204,8 +196,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         if (!query.vue && refTransformFilter(filename)) {
           if (!canUseRefTransform) {
             this.warn('refTransform requires @vue/compiler-sfc@^3.2.5.')
-          } else if (shouldTransformRef(code)) {
-            return transformRef(code, {
+          } else if (compiler.shouldTransformRef(code)) {
+            return compiler.transformRef(code, {
               filename,
               sourceMap: true
             })
