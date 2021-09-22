@@ -140,7 +140,7 @@ export interface FileSystemServeOptions {
    * Set to `false` to disable the warning
    * Default to false at this moment, will enabled by default in the future versions.
    *
-   * @expiremental
+   * @experimental
    * @default undefined
    */
   strict?: boolean | undefined
@@ -151,7 +151,7 @@ export interface FileSystemServeOptions {
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
    *
-   * @expiremental
+   * @experimental
    */
   allow?: string[]
 }
