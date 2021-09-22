@@ -176,7 +176,7 @@ export async function createPluginContainer(
     parse(code: string, opts: any = {}) {
       return parser.parse(code, {
         sourceType: 'module',
-        ecmaVersion: 2020,
+        ecmaVersion: 'latest',
         locations: true,
         ...opts
       })

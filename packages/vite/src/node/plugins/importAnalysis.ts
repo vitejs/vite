@@ -568,7 +568,7 @@ function transformCjsImport(
 ): string | undefined {
   const node = (
     parseJS(importExp, {
-      ecmaVersion: 2020,
+      ecmaVersion: 'latest',
       sourceType: 'module'
     }) as any
   ).body[0] as Node
