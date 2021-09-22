@@ -440,6 +440,7 @@ async function doBuild(
         exports: ssr ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
+        generatedCode: 'es2015',
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
