@@ -1,29 +1,3 @@
-# Vite for Browser
-
-This is a fork of vite which aims at being used in a browser (served by service worker).
-Changes required for this usage:
-- Generate an un-bundled 'browser' build: ([rollup.config.js#L218-L274](https://github.com/divriots/vite/blob/browser-vite/packages/vite/rollup.config.js#L218-L274))
-  - avoids duplicate dependencies in App using it
-  - prefers browser alternatives for dependencies
-- Shim CLI-only dependencies (chalk,debug...) ([rollup.config.js#L470-L477](https://github.com/divriots/vite/blob/browser-vite/packages/vite/rollup.config.js#L470-L477))
-- Limit FS dependency
-  - remove watch/glob/config
-  - but keep resolving project files through FS (will be shimmed in-App)
-- Remove serve
-- Remove dependency handling/optimizing/resolving
-  - handled in-App through custom plugins
-  - using a service to generate/serve optimized dependencies (see below)
-
-Another change was made to support running the dependency optimizer as a service:
-- Parse CJS exports (using cjs-module-lexer) to avoid the es-interop transform (further de-coupling vite & optimizer)  ([#8e80d8](https://github.com/divriots/vite/commit/8e80d88372b4ea287b502ceec7edf52a4c3026b3))
-
-(would maybe be a worthy addition of upstream ?)
-
-# That's all folks ! Below is upstream README !
-
-
-
-
 <p align="center">
   <a href="https://vitejs.dev" target="_blank" rel="noopener noreferrer">
     <img width="180" src="https://vitejs.dev/logo.svg" alt="Vite logo">
@@ -33,10 +7,35 @@ Another change was made to support running the dependency optimizer as a service
 <p align="center">
   <a href="https://npmjs.com/package/vite"><img src="https://img.shields.io/npm/v/vite.svg" alt="npm package"></a>
   <a href="https://nodejs.org/en/about/releases/"><img src="https://img.shields.io/node/v/vite.svg" alt="node compatibility"></a>
-  <a href="https://github.com/vitejs/vite/actions/workflows/ci.yml"><img src="https://github.com/vitejs/vite/actions/workflows/ci.yml/badge.svg?branch=main" alt="build status"></a>
   <a href="https://chat.vitejs.dev"><img src="https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord" alt="discord chat"></a>
 </p>
 <br/>
+
+# Vite for Browser ⚡
+
+This is a fork of vite which aims at being used in a browser (served by service worker).
+
+Here are the changes made, required to run it in the Browser:
+- Generate an un-bundled `browser` build: [rollup.config.js#L218-L274](https://github.com/divriots/vite/blob/browser-vite/packages/vite/rollup.config.js#L218-L274)
+  - avoids duplicate dependencies in App using it
+  - prefers browser alternatives for dependencies
+- Shim CLI-only dependencies (chalk,debug...): [rollup.config.js#L470-L477](https://github.com/divriots/vite/blob/browser-vite/packages/vite/rollup.config.js#L470-L477)
+- Limit FS dependency
+  - remove watch/glob/config
+  - but keep resolving project files through FS (will be shimmed in-App)
+- Remove serve
+- Remove dependency handling/optimizing/resolving
+  - handled in-App through custom plugins
+  - using a service to generate/serve optimized dependencies (see below)
+
+Another change was made to support running the dependency optimizer as a service:
+- Parse CJS exports (using cjs-module-lexer) to avoid the es-interop transform (further de-coupling vite & optimizer): [#8e80d8](https://github.com/divriots/vite/commit/8e80d88372b4ea287b502ceec7edf52a4c3026b3)
+
+---
+
+**That's all folks ! Below is upstream README !**
+
+---
 
 # Vite ⚡
 
