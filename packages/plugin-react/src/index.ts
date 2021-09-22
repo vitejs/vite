@@ -251,6 +251,13 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
     enforce: 'pre',
+    config() {
+      return {
+        optimizeDeps: {
+          include: ['react/jsx-dev-runtime']
+        }
+      }
+    },
     resolveId(id: string) {
       return id === runtimeId ? id : null
     },
