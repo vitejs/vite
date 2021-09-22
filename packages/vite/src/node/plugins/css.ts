@@ -43,6 +43,7 @@ import type Less from 'less'
 import { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
+import { URL } from 'url'
 
 // const debug = createDebugger('vite:css')
 
@@ -1009,6 +1010,11 @@ const scss: SassStylePreprocessor = async (
   // BROWSER VITE patch: dynamic sass import
   const render = (await import('sass')).render
   const internalImporter: Sass.Importer = (url, importer, done) => {
+    // BROWSER VITE patch: when running in-browser, sass will provide importer as location.origin based url
+    if (isExternalUrl(importer)) {
+      const url = new URL(importer)
+      importer = url.pathname
+    }
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
         rebaseUrls(resolved, options.filename, options.alias)
@@ -1083,13 +1089,11 @@ async function rebaseUrls(
   // in the same dir, no need to rebase
   const fileDir = path.dirname(file)
   const rootDir = path.dirname(rootFile)
-  if (fileDir === rootDir) {
-    return { file }
-  }
   // no url()
   const content = fs.readFileSync(file, 'utf-8')
-  if (!cssUrlRE.test(content)) {
-    return { file }
+  // BROWSER VITE patch: always return content (browser sass has no FS access)
+  if (fileDir === rootDir || !cssUrlRE.test(content)) {
+    return { file, contents: content }
   }
   const rebased = await rewriteCssUrls(content, (url) => {
     if (url.startsWith('/')) return url
