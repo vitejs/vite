@@ -70,6 +70,7 @@ import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
+import { performance } from 'perf_hooks'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -423,7 +424,7 @@ export async function createPluginContainer(
       const ctx = new Context()
       ctx.ssr = !!ssr
       ctx._resolveSkips = skips
-      const resolveStart = isDebug ? Date.now() : 0
+      const resolveStart = isDebug ? performance.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
@@ -433,7 +434,7 @@ export async function createPluginContainer(
 
         ctx._activePlugin = plugin
 
-        const pluginResolveStart = isDebug ? Date.now() : 0
+        const pluginResolveStart = isDebug ? performance.now() : 0
         const result = await plugin.resolveId.call(
           ctx as any,
           rawId,
@@ -502,7 +503,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
-        const start = isDebug ? Date.now() : 0
+        const start = isDebug ? performance.now() : 0
         let result: TransformResult | string | undefined
         try {
           result = await plugin.transform.call(ctx as any, code, id, ssr)

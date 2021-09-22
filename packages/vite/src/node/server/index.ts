@@ -53,6 +53,7 @@ import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
+import { performance } from 'perf_hooks'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -602,8 +603,10 @@ async function startServer(
   if (global.__vite_start_time) {
     info(
       chalk.cyan(
-        // @ts-ignore
-        `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
+        `\n  ready in ${Math.round(
+          // @ts-ignore
+          performance.now() - global.__vite_start_time
+        )}ms.\n`
       )
     )
   }

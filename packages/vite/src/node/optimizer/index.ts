@@ -17,6 +17,7 @@ import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { ImportSpecifier, init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
 import { transformWithEsbuild } from '../plugins/esbuild'
+import { performance } from 'perf_hooks'
 
 const debug = createDebugger('vite:deps')
 
@@ -286,7 +287,7 @@ export async function optimizeDeps(
     define[key] = typeof value === 'string' ? value : JSON.stringify(value)
   }
 
-  const start = Date.now()
+  const start = performance.now()
 
   const result = await build({
     absWorkingDir: process.cwd(),
@@ -329,7 +330,7 @@ export async function optimizeDeps(
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
 
-  debug(`deps bundled in ${Date.now() - start}ms`)
+  debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
   return data
 }
 

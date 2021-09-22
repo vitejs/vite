@@ -19,6 +19,7 @@ import {
   DecodedSourceMap,
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'
+import { performance } from 'perf_hooks'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -211,8 +212,8 @@ export async function asyncReplace(
 }
 
 export function timeFrom(start: number, subtract = 0): string {
-  const time: number | string = Date.now() - start - subtract
-  const timeString = (time + `ms`).padEnd(5, ' ')
+  const time: number | string = performance.now() - start - subtract
+  const timeString = (time.toFixed(2) + `ms`).padEnd(5, ' ')
   if (time < 10) {
     return chalk.green(timeString)
   } else if (time < 50) {
@@ -562,7 +563,7 @@ export function arraify<T>(target: T | T[]): T[] {
 }
 
 export function toUpperCaseDriveLetter(pathName: string): string {
-  return pathName.replace(/^\w:/, letter => letter.toUpperCase())
+  return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
 }
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
