@@ -39,6 +39,7 @@ import type { Node } from 'estree'
 import { transformImportGlob } from '../importGlob'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import { performance } from 'perf_hooks'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
@@ -109,7 +110,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const start = Date.now()
+      const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
       // strip UTF-8 BOM

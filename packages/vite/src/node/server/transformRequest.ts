@@ -18,6 +18,7 @@ import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
+import { performance } from 'perf_hooks'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -66,7 +67,7 @@ export async function transformRequest(
   let map: SourceDescription['map'] = null
 
   // load
-  const loadStart = isDebug ? Date.now() : 0
+  const loadStart = isDebug ? performance.now() : 0
   const loadResult = await pluginContainer.load(id, ssr)
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
@@ -128,7 +129,7 @@ export async function transformRequest(
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
-  const transformStart = isDebug ? Date.now() : 0
+  const transformStart = isDebug ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, map, ssr)
   if (
     transformResult == null ||
