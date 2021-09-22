@@ -1,3 +1,7 @@
+# [1.0.0](https://github.com/vitejs/vite/compare/plugin-react@1.0.0-beta.0...plugin-react@1.0.0) (2021-09-22)
+
+
+
 # 1.0.0-beta.0 (2021-09-20)
 
 
