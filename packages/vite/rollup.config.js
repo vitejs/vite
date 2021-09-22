@@ -196,7 +196,8 @@ const terserConfig = {
   ...sharedNodeOptions,
   output: {
     ...sharedNodeOptions.output,
-    exports: 'default'
+    exports: 'default',
+    sourcemap: false
   },
   input: {
     terser: require.resolve('terser')

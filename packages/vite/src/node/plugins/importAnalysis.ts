@@ -39,9 +39,10 @@ import type { Node } from 'estree'
 import { transformImportGlob } from '../importGlob'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import { performance } from 'perf_hooks'
 
 const isDebug = !!process.env.DEBUG
-const debugRewrite = createDebugger('vite:rewrite')
+const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
@@ -105,11 +106,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
-        isDebug && debugRewrite(chalk.dim(`[skipped] ${prettyImporter}`))
+        isDebug && debug(chalk.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
-      const rewriteStart = Date.now()
+      const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
       // strip UTF-8 BOM
@@ -118,7 +119,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
       try {
         imports = parseImports(source)[0]
-      } catch (e) {
+      } catch (e: any) {
         const isVue = importer.endsWith('.vue')
         const maybeJSX = !isVue && isJSRequest(importer)
 
@@ -140,10 +141,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length) {
         isDebug &&
-          debugRewrite(
-            `${timeFrom(rewriteStart)} ${chalk.dim(
-              `[no imports] ${prettyImporter}`
-            )}`
+          debug(
+            `${timeFrom(start)} ${chalk.dim(`[no imports] ${prettyImporter}`)}`
           )
         return source
       }
@@ -189,6 +188,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         const isRelative = url.startsWith('.')
+        const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
@@ -219,10 +219,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // mark non-js/css imports with `?import`
           url = markExplicitImport(url)
 
-          // for relative js/css imports, inherit importer's version query
+          // for relative js/css imports, or self-module virtual imports
+          // (e.g. vue blocks), inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if (isRelative && !/[\?&]import=?\b/.test(url)) {
+          if ((isRelative || isSelfImport) && !/[\?&]import=?\b/.test(url)) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -237,7 +238,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
-          } catch (e) {
+          } catch (e: any) {
             // it's possible that the dep fails to resolve (non-existent import)
             // attach location to the missing import
             e.pos = pos
@@ -508,6 +509,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      isDebug &&
+        debug(
+          `${timeFrom(start)} ${chalk.dim(
+            `[${importedUrls.size} imports rewritten] ${prettyImporter}`
+          )}`
+        )
+
       if (s) {
         return s.toString()
       } else {
@@ -561,7 +569,7 @@ function transformCjsImport(
 ): string | undefined {
   const node = (
     parseJS(importExp, {
-      ecmaVersion: 2020,
+      ecmaVersion: 'latest',
       sourceType: 'module'
     }) as any
   ).body[0] as Node

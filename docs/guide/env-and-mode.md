@@ -16,7 +16,7 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 During production, these env variables are **statically replaced**. It is therefore necessary to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will not work.
 
-It will also replace these strings appearing in JavaScript strings and Vue templates. This should be a rare case, but it can be unintended. There are ways to work around this behavior:
+It will also replace these strings appearing in JavaScript strings and Vue templates. This should be a rare case, but it can be unintended. You may see errors like `Missing Semicolon` or `Unexpected token` in this case, for example when `"process.env.NODE_ENV: "` is transformed to `""development": "`. There are ways to work around this behavior:
 
 - For JavaScript strings, you can break the string up with a unicode zero-width space, e.g. `'import.meta\u200b.env.MODE'`.
 
@@ -44,7 +44,7 @@ VITE_SOME_KEY=123
 
 Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
 
-If you want to customize env variables prefix, see [envPrefix](/config/index#envPrefix) option.
+If you want to customize env variables prefix, see [envPrefix](/config/index#envprefix) option.
 
 :::warning SECURITY NOTES
 
@@ -60,9 +60,13 @@ By default, Vite provides type definition for `import.meta.env`. While you can d
 To achieve, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript
-interface ImportMetaEnv {
-  VITE_APP_TITLE: string
+interface ImportMetaEnv extends Readonly<Record<string, string>> {
+  readonly VITE_APP_TITLE: string
   // more env variables...
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
 }
 ```
 

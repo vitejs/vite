@@ -88,6 +88,7 @@ const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
+const usedRE = /(\?|&)used\b/
 
 const enum PreprocessLang {
   less = 'less',
@@ -315,7 +316,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       return {
-        code: modulesCode || `export default ${JSON.stringify(css)}`,
+        code:
+          modulesCode ||
+          (usedRE.test(id)
+            ? `export default ${JSON.stringify(css)}`
+            : `export default ''`),
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
@@ -989,7 +994,7 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
   try {
     // Search for the preprocessor in the root directory first, and fall back
     // to the default require paths.
-    const fallbackPaths = require.resolve.paths(lang) || []
+    const fallbackPaths = require.resolve.paths?.(lang) || []
     const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {

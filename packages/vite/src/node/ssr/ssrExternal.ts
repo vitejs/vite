@@ -1,9 +1,18 @@
 import fs from 'fs'
 import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
-import { isDefined, lookupFile, resolveFrom, unique } from '../utils'
+import {
+  createDebugger,
+  isDefined,
+  lookupFile,
+  normalizePath,
+  resolveFrom,
+  unique
+} from '../utils'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
+
+const debug = createDebugger('vite:ssr-external')
 
 /**
  * Heuristics for determining whether a dependency should be externalized for
@@ -60,9 +69,12 @@ export function resolveSSRExternal(
         undefined,
         true
       )?.id
-      requireEntry = require.resolve(id, { paths: [root] })
+      // normalizePath required for windows. tryNodeResolve uses normalizePath
+      // which returns with '/', require.resolve returns with '\\'
+      requireEntry = normalizePath(require.resolve(id, { paths: [root] }))
     } catch (e) {
       // resolve failed, assume include
+      debug(`Failed to resolve entries for package "${id}"\n`, e)
       continue
     }
     if (!entry) {
@@ -94,7 +106,9 @@ export function resolveSSRExternal(
   }
 
   for (const id of depsToTrace) {
-    const depRoot = path.dirname(resolveFrom(`${id}/package.json`, root))
+    const depRoot = path.dirname(
+      resolveFrom(`${id}/package.json`, root, !!config.resolve.preserveSymlinks)
+    )
     resolveSSRExternal(
       {
         ...config,
