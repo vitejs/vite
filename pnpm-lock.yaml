@@ -135,6 +135,18 @@ importers:
   packages/playground/css-codesplit-cjs:
     specifiers: {}
 
+  packages/playground/css/css-dep:
+    specifiers: {}
+
+  packages/playground/css/pkg-dep:
+    specifiers: {}
+
+  packages/playground/css/postcss-caching/blue-app:
+    specifiers: {}
+
+  packages/playground/css/postcss-caching/green-app:
+    specifiers: {}
+
   packages/playground/data-uri:
     specifiers: {}
 
@@ -209,11 +221,23 @@ importers:
       test-package-c: link:test-package-c
       test-package-d: link:test-package-d
 
+  packages/playground/nested-deps/test-package-a:
+    specifiers: {}
+
+  packages/playground/nested-deps/test-package-b:
+    specifiers: {}
+
+  packages/playground/nested-deps/test-package-c:
+    specifiers: {}
+
   packages/playground/nested-deps/test-package-d:
     specifiers:
       test-package-d-nested: link:./test-package-d-nested
     dependencies:
       test-package-d-nested: link:test-package-d-nested
+
+  packages/playground/nested-deps/test-package-d/test-package-d-nested:
+    specifiers: {}
 
   packages/playground/optimize-deps:
     specifiers:
@@ -252,11 +276,35 @@ importers:
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
 
+  packages/playground/optimize-deps/dep-cjs-compiled-from-cjs:
+    specifiers: {}
+
+  packages/playground/optimize-deps/dep-cjs-compiled-from-esm:
+    specifiers: {}
+
+  packages/playground/optimize-deps/dep-esbuild-plugin-transform:
+    specifiers: {}
+
+  packages/playground/optimize-deps/dep-linked:
+    specifiers:
+      lodash-es: ^4.17.20
+    dependencies:
+      lodash-es: 4.17.21
+
+  packages/playground/optimize-deps/dep-linked-include:
+    specifiers:
+      react: 17.0.0
+    dependencies:
+      react: 17.0.0
+
   packages/playground/optimize-deps/nested-exclude:
     specifiers:
       nested-include: link:./nested-include
     dependencies:
       nested-include: link:nested-include
+
+  packages/playground/optimize-deps/nested-exclude/nested-include:
+    specifiers: {}
 
   packages/playground/optimize-missing-deps:
     specifiers:
@@ -268,6 +316,15 @@ importers:
       multi-entry-dep: link:multi-entry-dep
     devDependencies:
       express: 4.17.1
+
+  packages/playground/optimize-missing-deps/missing-dep:
+    specifiers:
+      multi-entry-dep: file:../multi-entry-dep
+    dependencies:
+      multi-entry-dep: link:../multi-entry-dep
+
+  packages/playground/optimize-missing-deps/multi-entry-dep:
+    specifiers: {}
 
   packages/playground/preload:
     specifiers:
@@ -285,6 +342,9 @@ importers:
       '@symlinks/moduleA': link:./moduleA
     dependencies:
       '@symlinks/moduleA': link:moduleA
+
+  packages/playground/preserve-symlinks/moduleA:
+    specifiers: {}
 
   packages/playground/react:
     specifiers:
@@ -339,6 +399,24 @@ importers:
   packages/playground/resolve-linked:
     specifiers: {}
 
+  packages/playground/resolve/browser-field:
+    specifiers: {}
+
+  packages/playground/resolve/custom-condition:
+    specifiers: {}
+
+  packages/playground/resolve/custom-main-field:
+    specifiers: {}
+
+  packages/playground/resolve/exports-env:
+    specifiers: {}
+
+  packages/playground/resolve/exports-path:
+    specifiers: {}
+
+  packages/playground/resolve/inline-package:
+    specifiers: {}
+
   packages/playground/ssr-react:
     specifiers:
       '@vitejs/plugin-react': workspace:*
@@ -386,6 +464,12 @@ importers:
       dep-import-type: link:dep-import-type
       express: 4.17.1
       serve-static: 1.14.1
+
+  packages/playground/ssr-vue/dep-import-type:
+    specifiers: {}
+
+  packages/playground/ssr-vue/example-external-component:
+    specifiers: {}
 
   packages/playground/ssr-webworker:
     specifiers:
@@ -3252,7 +3336,7 @@ packages:
         integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==
       }
     dependencies:
-      follow-redirects: 1.14.4_debug@4.3.2
+      follow-redirects: 1.14.4
     transitivePeerDependencies:
       - debug
     dev: false
@@ -5529,7 +5613,7 @@ packages:
       }
     dev: true
 
-  /follow-redirects/1.14.4_debug@4.3.2:
+  /follow-redirects/1.14.4:
     resolution:
       {
         integrity: sha512-zwGkiSXC1MUJG/qmeIFH2HBJx9u0V46QGUe3YR1fXG8bXQxq7fLj0RjLZQ5nubr9qNJUZrH+xUcwXEoXNpfS+g==
@@ -5540,8 +5624,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dependencies:
-      debug: 4.3.2
 
   /form-data/3.0.1:
     resolution:
@@ -6087,7 +6169,7 @@ packages:
     engines: { node: '>=8.0.0' }
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.14.4_debug@4.3.2
+      follow-redirects: 1.14.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -9349,6 +9431,17 @@ packages:
       prop-types: 15.7.2
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
+    dev: false
+
+  /react/17.0.0:
+    resolution:
+      {
+        integrity: sha512-rG9bqS3LMuetoSUKHN8G3fMNuQOePKDThK6+2yXFWtoeTDLVNh/QCaxT+Jr+rNf4lwNXpx+atdn3Aa0oi8/6eQ==
+      }
+    engines: { node: '>=0.10.0' }
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
     dev: false
 
   /react/17.0.2:
