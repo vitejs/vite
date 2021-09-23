@@ -75,6 +75,21 @@ test('?raw import', async () => {
 })
 ```
 
+## Note on Test Dependencies
+
+In many test cases we need to mock dependencies using `link:` and `file:` protocols (which are supported by package managers like `yarn` and `pnpm`). However, `pnpm` treats `link:` and `file:` the same way and always use symlinks. This can be undesirable in cases where we want the dependency to be actually copied into `node_modules`.
+
+To work around this, playground packages that uses the `file:` protocol should also include the following `postinstall` script:
+
+```json
+"scripts": {
+  ...
+  "postinstall": "node ../../../scripts/patchFileDeps"
+}
+```
+
+This script patches the dependencies using `file:` protocol to match the copying behavior instead of linking.
+
 ## Debug Logging
 
 You can set the `DEBUG` environment variable to turn on debugging logs. E.g. `DEBUG="vite:resolve"`. To see all debug logs you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
