@@ -1,3 +1,12 @@
+# [2.6.0-beta.2](https://github.com/vitejs/vite/compare/v2.6.0-beta.1...v2.6.0-beta.2) (2021-09-23)
+
+
+### Bug Fixes
+
+* performance is not defined ([#5048](https://github.com/vitejs/vite/issues/5048)) ([20b20e4](https://github.com/vitejs/vite/commit/20b20e4b814bd08ea85518109b5053bbca24d992))
+
+
+
 # [2.6.0-beta.1](https://github.com/vitejs/vite/compare/v2.6.0-beta.0...v2.6.0-beta.1) (2021-09-23)
 
 
