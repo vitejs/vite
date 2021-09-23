@@ -47,12 +47,13 @@ jobs:
             ${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
             ${{ runner.os }}-${{ matrix.node_version }}-
 
-      - name: Install pnpm + deps
+      - name: Install pnpm
         uses: pnpm/action-setup@v2.0.1
         with:
           version: 6.15.1
-          run_install: |
-            - args: [--frozen-lockfile]
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
 
       - name: Build vite
         run: pnpm run ci-build-vite
@@ -91,12 +92,13 @@ jobs:
             ${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
             ${{ runner.os }}-${{ matrix.node_version }}-
 
-      - name: Install pnpm + deps
+      - name: Install pnpm
         uses: pnpm/action-setup@v2.0.1
         with:
           version: 6.15.1
-          run_install: |
-            - args: [--frozen-lockfile]
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
 
       - name: Prepare
         run: |
