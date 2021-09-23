@@ -17,5 +17,5 @@ module.exports = async () => {
 
   await fs.mkdirp(DIR)
   await fs.writeFile(path.join(DIR, 'wsEndpoint'), browserServer.wsEndpoint())
-  await fs.remove(path.resolve(__dirname, '../temp'))
+  await fs.remove(path.resolve(__dirname, '../packages/temp'))
 }

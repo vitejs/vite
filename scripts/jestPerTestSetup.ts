@@ -63,14 +63,14 @@ beforeAll(async () => {
     if (testName) {
       const playgroundRoot = resolve(__dirname, '../packages/playground')
       const srcDir = resolve(playgroundRoot, testName)
-      tempDir = resolve(__dirname, '../temp', testName)
+      tempDir = resolve(__dirname, '../packages/temp/', testName)
       await fs.copy(srcDir, tempDir, {
-        dereference: true,
+        dereference: false,
         filter(file) {
           file = slash(file)
           return (
             !file.includes('__tests__') &&
-            !file.includes('node_modules') &&
+            // !file.includes('node_modules') &&
             !file.match(/dist(\/|$)/)
           )
         }
