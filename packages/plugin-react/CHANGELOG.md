@@ -1,14 +1,18 @@
-# 1.0.0-beta.0 (2021-09-20)
+## [1.0.1](https://github.com/vitejs/vite/compare/plugin-react@1.0.0...plugin-react@1.0.1) (2021-09-22)
 
 
 ### Bug Fixes
 
-* **deps:** update all non-major dependencies ([#4545](https://github.com/vitejs/vite/issues/4545)) ([a44fd5d](https://github.com/vitejs/vite/commit/a44fd5d38679da0be2536103e83af730cda73a95))
-* disable `inputSourceMap` option of babel ([#4834](https://github.com/vitejs/vite/issues/4834)) ([ba89bd6](https://github.com/vitejs/vite/commit/ba89bd6df9231da85cebd089199bc4ad097af243)), closes [#4055](https://github.com/vitejs/vite/issues/4055)
+* **plugin-react:** inconsistent error warning ([#5031](https://github.com/vitejs/vite/issues/5031)) ([89ba8ce](https://github.com/vitejs/vite/commit/89ba8cedb8636968516bc38b37e1d2d5ed6234bb))
+
+
+### Features
+
+* **plugin-react:** pre-optimize jsx-dev-runtime ([#5036](https://github.com/vitejs/vite/issues/5036)) ([a34dd27](https://github.com/vitejs/vite/commit/a34dd2725e64fedf626e23ba9ced480f5465a59b))
 
 
 
-# 1.0.0 (TBD)
+# [1.0.0](https://github.com/vitejs/vite/compare/plugin-react@1.0.0-beta.0...plugin-react@1.0.0) (2021-09-22)
 
 See the [readme](https://github.com/aleclarson/vite/blob/f8129ce6e87684eb7a4edd8106351c5d98207d7b/packages/plugin-react/README.md#vitejsplugin-react-) for more information.
 

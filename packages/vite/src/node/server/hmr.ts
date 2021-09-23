@@ -10,6 +10,7 @@ import { RollupError } from 'rollup'
 import match from 'minimatch'
 import { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
+import { performance } from 'perf_hooks'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -460,7 +461,7 @@ async function readModifiedFile(file: string): Promise<string> {
 
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
-  global.__vite_start_time = Date.now()
+  global.__vite_start_time = performance.now()
   const { port } = server.config.server
 
   await server.close()

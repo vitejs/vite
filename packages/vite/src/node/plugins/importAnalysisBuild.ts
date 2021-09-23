@@ -94,7 +94,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
 
   return {
-    name: 'vite:import-analysis',
+    name: 'vite:build-import-analysis',
 
     resolveId(id) {
       if (id === preloadHelperId) {
