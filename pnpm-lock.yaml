@@ -97,11 +97,13 @@ importers:
 
   packages/playground/alias:
     specifiers:
+      resolve-linked: workspace:*
       vite: workspace:*
       vue: ^3.2.13
     dependencies:
       vue: 3.2.14
     devDependencies:
+      resolve-linked: link:../resolve-linked
       vite: link:../../vite
 
   packages/playground/assets:
@@ -360,6 +362,7 @@ importers:
       resolve-custom-main-field: link:./custom-main-field
       resolve-exports-env: link:./exports-env
       resolve-exports-path: link:./exports-path
+      resolve-linked: workspace:*
       vite: workspace:*
     dependencies:
       '@babel/runtime': 7.15.4
@@ -369,6 +372,7 @@ importers:
       resolve-custom-main-field: link:custom-main-field
       resolve-exports-env: link:exports-env
       resolve-exports-path: link:exports-path
+      resolve-linked: link:../resolve-linked
     devDependencies:
       vite: link:../../vite
 

@@ -12,6 +12,7 @@
     "vue": "^3.2.13"
   },
   "devDependencies": {
-    "vite": "workspace:*"
+    "vite": "workspace:*",
+    "resolve-linked": "workspace:*"
   }
 }

@@ -64,17 +64,17 @@ beforeAll(async () => {
       const playgroundRoot = resolve(__dirname, '../packages/playground')
       const srcDir = resolve(playgroundRoot, testName)
       tempDir = resolve(__dirname, '../packages/temp/', testName)
-      await fs.copy(srcDir, tempDir, {
-        dereference: false,
-        filter(file) {
-          file = slash(file)
-          return (
-            !file.includes('__tests__') &&
-            // !file.includes('node_modules') &&
-            !file.match(/dist(\/|$)/)
-          )
-        }
-      })
+      // await fs.copy(srcDir, tempDir, {
+      //   dereference: false,
+      //   filter(file) {
+      //     file = slash(file)
+      //     return (
+      //       !file.includes('__tests__') &&
+      //       // !file.includes('node_modules') &&
+      //       !file.match(/dist(\/|$)/)
+      //     )
+      //   }
+      // })
 
       // when `root` dir is present, use it as vite's root
       let testCustomRoot = resolve(tempDir, 'root')
