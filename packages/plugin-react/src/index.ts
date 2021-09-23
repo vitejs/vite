@@ -12,6 +12,7 @@ import {
 } from './fast-refresh'
 import { babelImportToRequire } from './jsx-runtime/babel-import-to-require'
 import { restoreJSX } from './jsx-runtime/restore-jsx'
+import { findCompilerOption } from './tsconfig'
 
 export interface Options {
   include?: string | RegExp | Array<string | RegExp>
@@ -111,6 +112,9 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isTypeScript = /\.tsx?$/.test(id)
         if (isTypeScript) {
           parserPlugins.push('typescript')
+          if (findCompilerOption(id, 'experimentalDecorators')) {
+            parserPlugins.push('decorators-legacy')
+          }
         }
 
         const isNodeModules = id.includes('node_modules')
