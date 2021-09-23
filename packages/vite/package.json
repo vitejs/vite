@@ -121,9 +121,9 @@
     "ws": "^7.5.5"
   },
   "peerDependencies": {
-    "less": ">=4.0.0",
-    "sass": ">=1.0.0",
-    "stylus": ">=0.54.0"
+    "less": "*",
+    "sass": "*",
+    "stylus": "*"
   },
   "peerDependenciesMeta": {
     "sass": {
