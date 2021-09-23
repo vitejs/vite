@@ -32,7 +32,11 @@ export interface Options {
    * @default "react"
    */
   jsxImportSource?: string
-
+  /**
+   * Enable decorator syntax proposal.
+   * @see https://babeljs.io/docs/en/babel-plugin-proposal-decorators
+   */
+  decorators?: { legacy: true } | { beforeExport: boolean }
   /**
    * Babel configuration applied in both dev and prod.
    */
@@ -57,6 +61,18 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const userPlugins = opts.babel?.plugins || []
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
+
+  // Shortcut for enabling decorator syntax.
+  if (opts.decorators) {
+    userParserPlugins.push(
+      'legacy' in opts.decorators
+        ? 'decorators-legacy'
+        : [
+            'decorators',
+            { decoratorsBeforeExport: opts.decorators.beforeExport }
+          ]
+    )
+  }
 
   const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
 
