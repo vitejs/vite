@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const { performance } = require('perf_hooks')
 
 if (!__dirname.includes('node_modules')) {
   try {
