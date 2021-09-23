@@ -6,8 +6,7 @@ export function findCompilerOption(fileName: string, optionKey: string): any {
     ? path.posix
     : path.win32
 
-  let parentDir = dirname(fileName)
-  while (true) {
+  for (let parentDir = dirname(fileName); ; ) {
     let config = readJsonFile(join(parentDir, 'tsconfig.json'))
     while (config) {
       if (config.compilerOptions?.[optionKey] !== undefined) {

@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-export function readJsonFile(file: string, throwError?: boolean) {
+export function readJsonFile(file: string, throwError?: boolean): any {
   let content: string
   try {
     content = fs.readFileSync(file, 'utf8')
