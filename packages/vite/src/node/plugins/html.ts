@@ -590,33 +590,39 @@ function toPublicPath(filename: string, config: ResolvedConfig) {
   return isExternalUrl(filename) ? filename : config.base + filename
 }
 
-const headInjectRE = /<\/head>/
-const headPrependInjectRE = [/<head>/, /<!doctype html>/i]
+const headInjectRE = /([ \t]*)<\/head>/
+const headPrependInjectRE = [/([ \t]*)<head>/, /<!doctype html>/i]
 function injectToHead(
   html: string,
   tags: HtmlTagDescriptor[],
   prepend = false
 ) {
-  const tagsHtml = serializeTags(tags)
   if (prepend) {
     // inject after head or doctype
     for (const re of headPrependInjectRE) {
       if (re.test(html)) {
-        return html.replace(re, `$&\n${tagsHtml}`)
+        return html.replace(
+          re,
+          (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
+        )
       }
     }
   } else {
     // inject before head close
     if (headInjectRE.test(html)) {
-      return html.replace(headInjectRE, `${tagsHtml}\n  $&`)
+      // respect indentation of head tag
+      return html.replace(
+        headInjectRE,
+        (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
+      )
     }
   }
   // if no <head> tag is present, just prepend
-  return tagsHtml + `\n` + html
+  return serializeTags(tags) + html
 }
 
-const bodyInjectRE = /<\/body>/
-const bodyPrependInjectRE = /<body[^>]*>/
+const bodyInjectRE = /([ \t]*)<\/body>/
+const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/
 function injectToBody(
   html: string,
   tags: HtmlTagDescriptor[],
@@ -624,38 +630,51 @@ function injectToBody(
 ) {
   if (prepend) {
     // inject after body open
-    const tagsHtml = `\n` + serializeTags(tags)
     if (bodyPrependInjectRE.test(html)) {
-      return html.replace(bodyPrependInjectRE, `$&\n${tagsHtml}`)
+      return html.replace(
+        bodyPrependInjectRE,
+        (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
+      )
     }
     // if no body, prepend
-    return tagsHtml + `\n` + html
+    return serializeTags(tags) + html
   } else {
     // inject before body close
-    const tagsHtml = `\n` + serializeTags(tags)
     if (bodyInjectRE.test(html)) {
-      return html.replace(bodyInjectRE, `${tagsHtml}\n$&`)
+      return html.replace(
+        bodyInjectRE,
+        (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
+      )
     }
     // if no body, append
-    return html + `\n` + tagsHtml
+    return html + `\n` + serializeTags(tags)
   }
 }
 
 const unaryTags = new Set(['link', 'meta', 'base'])
 
-function serializeTag({ tag, attrs, children }: HtmlTagDescriptor): string {
+function serializeTag(
+  { tag, attrs, children }: HtmlTagDescriptor,
+  indent: string = ''
+): string {
   if (unaryTags.has(tag)) {
     return `<${tag}${serializeAttrs(attrs)}>`
   } else {
-    return `<${tag}${serializeAttrs(attrs)}>${serializeTags(children)}</${tag}>`
+    return `<${tag}${serializeAttrs(attrs)}>${serializeTags(
+      children,
+      incrementIndent(indent)
+    )}</${tag}>`
   }
 }
 
-function serializeTags(tags: HtmlTagDescriptor['children']): string {
+function serializeTags(
+  tags: HtmlTagDescriptor['children'],
+  indent: string = ''
+): string {
   if (typeof tags === 'string') {
     return tags
-  } else if (tags) {
-    return `  ${tags.map(serializeTag).join('\n    ')}`
+  } else if (tags && tags.length) {
+    return tags.map((tag) => `${indent}${serializeTag(tag, indent)}\n`).join('')
   }
   return ''
 }
@@ -670,4 +689,8 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
     }
   }
   return res
+}
+
+function incrementIndent(indent: string = '') {
+  return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
 }
