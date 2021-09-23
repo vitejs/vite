@@ -219,11 +219,16 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       if ((!target || target === 'esnext') && !minify) {
         return null
       }
+
       const res = await transformWithEsbuild(code, chunk.fileName, {
         target: target || undefined,
-        minify,
-        treeShaking: true,
-        format: rollupToEsbuildFormatMap[opts.format]
+        ...(minify
+          ? {
+              minify,
+              treeShaking: true,
+              format: rollupToEsbuildFormatMap[opts.format]
+            }
+          : undefined)
       })
       return res
     }
