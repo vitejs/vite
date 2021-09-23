@@ -36,7 +36,7 @@
     "@types/hash-sum": "^1.0.0",
     "debug": "^4.3.2",
     "hash-sum": "^2.0.0",
-    "rollup": "^2.38.5",
+    "rollup": "^2.57.0",
     "slash": "^3.0.0",
     "source-map": "^0.6.1",
     "vue": "^3.2.13",
