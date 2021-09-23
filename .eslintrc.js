@@ -99,6 +99,12 @@ module.exports = defineConfig({
       }
     },
     {
+      files: ['packages/vite/types/**'],
+      rules: {
+        'node/no-extraneous-import': 'off'
+      }
+    },
+    {
       files: ['packages/playground/**'],
       rules: {
         'node/no-extraneous-import': 'off',
