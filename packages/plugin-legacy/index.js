@@ -97,7 +97,7 @@ function viteLegacyPlugin(options = {}) {
     apply: 'build',
 
     configResolved(config) {
-      if (!config.build.ssr && config.build.minify === 'esbuild') {
+      if (!config.build.ssr && genLegacy && config.build.minify === 'esbuild') {
         throw new Error(
           `Can't use esbuild as the minifier when targeting legacy browsers ` +
             `because esbuild minification is not legacy safe.`
