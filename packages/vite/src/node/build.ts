@@ -280,6 +280,10 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     resolved.minify = false
   }
 
+  if (resolved.minify === true) {
+    resolved.minify = 'esbuild'
+  }
+
   return resolved
 }
 
@@ -302,7 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     post: [
       buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
-      ...(options.minify && options.minify !== 'esbuild'
+      ...(options.minify === 'terser'
         ? [terserPlugin(options.terserOptions)]
         : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),

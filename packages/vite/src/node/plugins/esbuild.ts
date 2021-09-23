@@ -147,7 +147,7 @@ export async function transformWithEsbuild(
       ...result,
       map
     }
-  } catch (e) {
+  } catch (e: any) {
     debug(`esbuild error with options used: `, resolvedOptions)
     // patch error information
     if (e.errors) {
