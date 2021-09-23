@@ -3,7 +3,7 @@
 
 ### Features
 
-* **plugin-vue:** define __VUE_SSR__ flag ([49618c1](https://github.com/vitejs/vite/commit/49618c17f38ee54ea17b4b04d58eb5fbf3e532fe))
+* ~~**plugin-vue:** define __VUE_SSR__ flag ([49618c1](https://github.com/vitejs/vite/commit/49618c17f38ee54ea17b4b04d58eb5fbf3e532fe))~~ (Reverted)
 
 
 
