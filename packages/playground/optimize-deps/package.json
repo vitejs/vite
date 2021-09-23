@@ -22,7 +22,7 @@
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "resolve-linked": "0.0.0",
-    "vue": "^3.2.13",
+    "vue": "^3.2.16",
     "vuex": "^4.0.0"
   },
   "devDependencies": {

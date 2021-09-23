@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "miniflare": "^1.3.3",
-    "vite": "workspace:*"
+    "vite": "workspace:*",
+    "resolve-linked": "workspace:*"
   }
 }
