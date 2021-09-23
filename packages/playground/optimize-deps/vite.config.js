@@ -9,14 +9,7 @@ module.exports = {
   },
 
   optimizeDeps: {
-    include: [
-      'dep-linked-include',
-      'nested-exclude > nested-include',
-      // required since it isn't in node_modules and is ignored by the optimizer otherwise
-      'dep-esbuild-plugin-transform',
-      'dep-cjs-compiled-from-cjs',
-      'dep-cjs-compiled-from-esm'
-    ],
+    include: ['dep-linked-include', 'nested-exclude > nested-include'],
     exclude: ['nested-exclude'],
     esbuildOptions: {
       plugins: [
@@ -38,17 +31,7 @@ module.exports = {
 
   build: {
     // to make tests faster
-    minify: false,
-    // force CommonJS handling on nested-exclude > nested-include since it's
-    // linked and not in node_modules
-    commonjsOptions: {
-      include: [
-        /node_modules/,
-        /nested-include/,
-        /dep-cjs-compiled-from-cjs/,
-        /dep-cjs-compiled-from-esm/
-      ]
-    }
+    minify: false
   },
 
   plugins: [
