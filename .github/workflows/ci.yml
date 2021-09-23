@@ -53,7 +53,7 @@ jobs:
           version: 6.15.1
 
       - name: Install deps
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Build vite
         run: pnpm run ci-build-vite
@@ -98,7 +98,7 @@ jobs:
           version: 6.15.1
 
       - name: Install deps
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Prepare
         run: |
