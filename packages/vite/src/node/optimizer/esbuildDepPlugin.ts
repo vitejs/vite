@@ -6,8 +6,7 @@ import {
   isRunningWithYarnPnp,
   flattenId,
   normalizePath,
-  isExternalUrl,
-  isBuiltin
+  isExternalUrl
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import { ExportsData } from '.'
@@ -121,7 +120,7 @@ export function esbuildDepPlugin(
                 namespace: 'browser-external'
               }
             }
-            if (isExternalUrl(resolved) || (ssr && isBuiltin(id))) {
+            if (isExternalUrl(resolved)) {
               return {
                 path: resolved,
                 external: true
