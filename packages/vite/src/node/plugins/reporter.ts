@@ -1,8 +1,9 @@
 import path from 'path'
 import chalk from 'chalk'
+import { gzip } from 'zlib'
+import { promisify } from 'util'
 import { Plugin } from 'rollup'
 import { ResolvedConfig } from '../config'
-import size from 'brotli-size'
 import { normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
@@ -23,6 +24,7 @@ const writeColors = {
 }
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
+  const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
   function isLarge(code: string | Uint8Array): boolean {
@@ -31,15 +33,17 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   }
 
   async function getCompressedSize(code: string | Uint8Array): Promise<string> {
-    if (config.build.ssr || !config.build.brotliSize) {
+    if (
+      config.build.ssr ||
+      !config.build.reportCompressedSize ||
+      config.build.brotliSize === false
+    ) {
       return ''
     }
-    if (isLarge(code)) {
-      return ' / brotli: skipped (large chunk)'
-    }
-    return ` / brotli: ${(
-      (await size(typeof code === 'string' ? code : Buffer.from(code))) / 1024
-    ).toFixed(2)}kb`
+    return ` / gzip: ${(
+      (await compress(typeof code === 'string' ? code : Buffer.from(code)))
+        .length / 1024
+    ).toFixed(2)} KiB`
   }
 
   function printFileInfo(
@@ -56,12 +60,12 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           path.resolve(config.root, config.build.outDir)
         )
       ) + '/'
-    const kbs = content.length / 1024
-    const sizeColor = kbs > chunkLimit ? chalk.yellow : chalk.dim
+    const kibs = content.length / 1024
+    const sizeColor = kibs > chunkLimit ? chalk.yellow : chalk.dim
     config.logger.info(
       `${chalk.gray(chalk.white.dim(outDir))}${writeColors[type](
         filePath.padEnd(maxLength + 2)
-      )} ${sizeColor(`${kbs.toFixed(2)}kb${compressedSize}`)}`
+      )} ${sizeColor(`${kibs.toFixed(2)} KiB${compressedSize}`)}`
     )
   }
 
@@ -207,7 +211,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       ) {
         config.logger.warn(
           chalk.yellow(
-            `\n(!) Some chunks are larger than ${chunkLimit}kb after minification. Consider:\n` +
+            `\n(!) Some chunks are larger than ${chunkLimit} KiB after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
               `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n` +
               `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`

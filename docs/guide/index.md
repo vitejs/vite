@@ -1,8 +1,12 @@
 # Getting Started
 
+<audio id="vite-audio">
+  <source src="/vite.mp3" type="audio/mpeg">
+</audio>
+
 ## Overview
 
-Vite (French word for "fast", pronounced `/vit/`) is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
+Vite (French word for "quick", pronounced `/vit/`<button style="border:none;padding:3px;border-radius:4px" id="play-vite-audio" onclick="document.getElementById('vite-audio').play();"><img src="/voice.svg" height="15"></button>, like "veet") is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
 
 - A dev server that provides [rich feature enhancements](./features) over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), for example extremely fast [Hot Module Replacement (HMR)](./features#hot-module-replacement).
 
@@ -37,7 +41,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpx create-vite
+$ pnpm dlx create-vite
 ```
 
 Then follow the prompts!
@@ -133,7 +137,7 @@ yarn build
 yarn link
 ```
 
-Then go to your vite based project and run `yarn link vite`. Now restart the development server (`yarn dev`) to ride on the bleeding edge!
+Then go to your Vite based project and run `yarn link vite`. Now restart the development server (`yarn dev`) to ride on the bleeding edge!
 
 ## Community
 

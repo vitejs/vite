@@ -15,13 +15,12 @@ import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { createWebSocketServer, WebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
+import { spaFallbackMiddleware } from './middlewares/spaFallback'
 import { transformMiddleware } from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
-import history from 'connect-history-api-fallback'
-import { decodeURIMiddleware } from './middlewares/decodeURI'
 import {
   serveRawFsMiddleware,
   servePublicMiddleware,
@@ -30,13 +29,16 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, ensureLeadingSlash, normalizePath } from '../utils'
+import { ensureLeadingSlash, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
-import { TransformResult } from 'rollup'
-import { TransformOptions, transformRequest } from './transformRequest'
+import {
+  TransformOptions,
+  TransformResult,
+  transformRequest
+} from './transformRequest'
 import {
   transformWithEsbuild,
   ESBuildTransformResult
@@ -54,6 +56,7 @@ import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
+import { performance } from 'perf_hooks'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -140,7 +143,7 @@ export interface FileSystemServeOptions {
    * Set to `false` to disable the warning
    * Default to false at this moment, will enabled by default in the future versions.
    *
-   * @expiremental
+   * @experimental
    * @default undefined
    */
   strict?: boolean | undefined
@@ -151,7 +154,7 @@ export interface FileSystemServeOptions {
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
    *
-   * @expiremental
+   * @experimental
    */
   allow?: string[]
 }
@@ -238,6 +241,8 @@ export interface ViteDevServer {
   /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
+   *
+   * @deprecated import `transformWithEsbuild` from `vite` instead
    */
   transformWithEsbuild(
     code: string,
@@ -297,6 +302,10 @@ export interface ViteDevServer {
    * @internal
    */
   _pendingReload: Promise<void> | null
+  /**
+   * @internal
+   */
+  _pendingRequests: Record<string, Promise<TransformResult | null> | null>
 }
 
 export async function createServer(
@@ -319,7 +328,11 @@ export async function createServer(
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
-    ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      ...(Array.isArray(ignored) ? ignored : [ignored])
+    ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
     disableGlobbing: true,
@@ -335,7 +348,7 @@ export async function createServer(
   let exitProcess: () => void
 
   const server: ViteDevServer = {
-    config: config,
+    config,
     middlewares,
     get app() {
       config.logger.warn(
@@ -389,10 +402,11 @@ export async function createServer(
     },
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
-    _globImporters: {},
+    _globImporters: Object.create(null),
     _isRunningOptimizer: false,
     _registerMissingImport: null,
-    _pendingReload: null
+    _pendingReload: null,
+    _pendingRequests: Object.create(null)
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -483,9 +497,6 @@ export async function createServer(
     res.end('pong')
   })
 
-  //decode request url
-  middlewares.use(decodeURIMiddleware())
-
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
@@ -502,25 +513,7 @@ export async function createServer(
 
   // spa fallback
   if (!middlewareMode || middlewareMode === 'html') {
-    middlewares.use(
-      history({
-        logger: createDebugger('vite:spa-fallback'),
-        // support /dir/ without explicit index.html
-        rewrites: [
-          {
-            from: /\/$/,
-            to({ parsedUrl }: any) {
-              const rewritten = parsedUrl.pathname + 'index.html'
-              if (fs.existsSync(path.join(root, rewritten))) {
-                return rewritten
-              } else {
-                return `/index.html`
-              }
-            }
-          }
-        ]
-      })
-    )
+    middlewares.use(spaFallbackMiddleware(root))
   }
 
   // run post config hooks
@@ -618,8 +611,10 @@ async function startServer(
   if (global.__vite_start_time) {
     info(
       chalk.cyan(
-        // @ts-ignore
-        `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
+        `\n  ready in ${Math.round(
+          // @ts-ignore
+          performance.now() - global.__vite_start_time
+        )}ms.\n`
       )
     )
   }

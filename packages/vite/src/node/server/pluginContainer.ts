@@ -38,7 +38,6 @@ import {
   OutputOptions,
   ModuleInfo,
   NormalizedInputOptions,
-  ChangeEvent,
   PartialResolvedId,
   ResolvedId,
   PluginContext as RollupPluginContext,
@@ -51,7 +50,6 @@ import {
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
-import acornNumericSeparator from 'acorn-numeric-separator'
 import acornStaticClassFeatures from 'acorn-static-class-features'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
@@ -72,6 +70,7 @@ import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
+import { performance } from 'perf_hooks'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -83,7 +82,6 @@ export interface PluginContainerOptions {
 export interface PluginContainer {
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
-  watchChange(id: string, event?: ChangeEvent): void
   resolveId(
     id: string,
     importer?: string,
@@ -116,8 +114,7 @@ type PluginContext = Omit<
 
 export let parser = acorn.Parser.extend(
   acornClassFields,
-  acornStaticClassFeatures,
-  acornNumericSeparator
+  acornStaticClassFeatures
 )
 
 export async function createPluginContainer(
@@ -180,7 +177,7 @@ export async function createPluginContainer(
     parse(code: string, opts: any = {}) {
       return parser.parse(code, {
         sourceType: 'module',
-        ecmaVersion: 2020,
+        ecmaVersion: 'latest',
         locations: true,
         ...opts
       })
@@ -285,9 +282,22 @@ export async function createPluginContainer(
           : // some rollup plugins, e.g. json, sets position instead of pos
             (err as any).position
       if (pos != null) {
+        let errLocation
+        try {
+          errLocation = numberToPos(ctx._activeCode, pos)
+        } catch (err2) {
+          logger.error(
+            chalk.red(
+              `Error in error handler:\n${err2.stack || err2.message}\n`
+            ),
+            // print extra newline to separate the two errors
+            { error: err2 }
+          )
+          throw err
+        }
         err.loc = err.loc || {
           file: err.id,
-          ...numberToPos(ctx._activeCode, pos)
+          ...errLocation
         }
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
       } else if (err.loc) {
@@ -385,11 +395,9 @@ export async function createPluginContainer(
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
-          ...[
-            acornClassFields,
-            acornStaticClassFeatures,
-            acornNumericSeparator
-          ].concat(options.acornInjectPlugins)
+          ...[acornClassFields, acornStaticClassFeatures].concat(
+            options.acornInjectPlugins
+          )
         )
       }
       return {
@@ -416,7 +424,7 @@ export async function createPluginContainer(
       const ctx = new Context()
       ctx.ssr = !!ssr
       ctx._resolveSkips = skips
-      const resolveStart = isDebug ? Date.now() : 0
+      const resolveStart = isDebug ? performance.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
@@ -426,7 +434,7 @@ export async function createPluginContainer(
 
         ctx._activePlugin = plugin
 
-        const pluginResolveStart = isDebug ? Date.now() : 0
+        const pluginResolveStart = isDebug ? performance.now() : 0
         const result = await plugin.resolveId.call(
           ctx as any,
           rawId,
@@ -495,7 +503,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
-        const start = isDebug ? Date.now() : 0
+        const start = isDebug ? performance.now() : 0
         let result: TransformResult | string | undefined
         try {
           result = await plugin.transform.call(ctx as any, code, id, ssr)
@@ -519,17 +527,6 @@ export async function createPluginContainer(
       return {
         code,
         map: ctx._getCombinedSourcemap()
-      }
-    },
-
-    watchChange(id, event = 'update') {
-      const ctx = new Context()
-      if (watchFiles.has(id)) {
-        for (const plugin of plugins) {
-          if (!plugin.watchChange) continue
-          ctx._activePlugin = plugin
-          plugin.watchChange.call(ctx as any, id, { event })
-        }
       }
     },
 

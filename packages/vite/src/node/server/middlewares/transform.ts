@@ -22,7 +22,11 @@ import {
   DEP_VERSION_RE,
   NULL_BYTE_PLACEHOLDER
 } from '../../constants'
-import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
+import {
+  isCSSRequest,
+  isDirectCSSRequest,
+  isDirectRequest
+} from '../../plugins/css'
 
 /**
  * Time (ms) Vite has to full-reload the page before returning
@@ -89,21 +93,10 @@ export function transformMiddleware(
       return
     }
 
-    let url: string
-    try {
-      url = removeTimestampQuery(req.url!).replace(NULL_BYTE_PLACEHOLDER, '\0')
-    } catch (err) {
-      // if it starts with %PUBLIC%, someone's migrating from something
-      // like create-react-app
-      let errorMessage: string
-      if (req.url?.startsWith('/%PUBLIC')) {
-        errorMessage = `index.html shouldn't include environment variables like %PUBLIC_URL%, see https://vitejs.dev/guide/#index-html-and-project-root for more information`
-      } else {
-        errorMessage = `Vite encountered a suspiciously malformed request ${req.url}`
-      }
-      next(new Error(errorMessage))
-      return
-    }
+    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
+      NULL_BYTE_PLACEHOLDER,
+      '\0'
+    )
 
     const withoutQuery = cleanUrl(url)
 
@@ -121,16 +114,22 @@ export function transformMiddleware(
         }
       }
 
-      // warn explicit /public/ paths
-      if (url.startsWith('/public/')) {
-        logger.warn(
-          chalk.yellow(
-            `files in the public directory are served at the root path.\n` +
-              `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
-                url.replace(/^\/public\//, '/')
-              )}.`
+      // check if public dir is inside root dir
+      const publicDir = normalizePath(server.config.publicDir)
+      const rootDir = normalizePath(server.config.root)
+      if (publicDir.startsWith(rootDir)) {
+        const publicPath = `${publicDir.slice(rootDir.length)}/`
+        // warn explicit public paths
+        if (url.startsWith(publicPath)) {
+          logger.warn(
+            chalk.yellow(
+              `files in the public directory are served at the root path.\n` +
+                `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
+                  url.replace(publicPath, '/')
+                )}.`
+            )
           )
-        )
+        }
       }
 
       if (
@@ -147,7 +146,11 @@ export function transformMiddleware(
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports
-        if (isCSSRequest(url) && req.headers.accept?.includes('text/css')) {
+        if (
+          isCSSRequest(url) &&
+          !isDirectRequest(url) &&
+          req.headers.accept?.includes('text/css')
+        ) {
           url = injectQuery(url, 'direct')
         }
 

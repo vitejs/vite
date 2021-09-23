@@ -206,6 +206,16 @@ export default defineConfig(async ({ command, mode }) => {
 
   List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
+### resolve.preserveSymlinks
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  Enabling this setting causes vite to determine file identity by the original file path (i.e. the path without following symlinks) instead of the real file path (i.e. the path after following symlinks).
+
+- **Related:** [esbuild#preserve-symlinks](https://esbuild.github.io/api/#preserve-symlinks), [webpack#resolve.symlinks
+  ](https://webpack.js.org/configuration/resolve/#resolvesymlinks)
+
 ### css.modules
 
 - **Type:**
@@ -303,13 +313,21 @@ export default defineConfig(async ({ command, mode }) => {
 - **Type:** `string | RegExp | (string | RegExp)[]`
 - **Related:** [Static Asset Handling](/guide/assets)
 
-  Specify additional file types to be treated as static assets so that:
+  Specify additional [picomatch patterns](https://github.com/micromatch/picomatch) to be treated as static assets so that:
 
   - They will be excluded from the plugin transform pipeline when referenced from HTML or directly requested over `fetch` or XHR.
 
   - Importing them from JS will return their resolved URL string (this can be overwritten if you have a `enforce: 'pre'` plugin to handle the asset type differently).
 
   The built-in asset type list can be found [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts).
+
+  **Example:**
+
+  ```js
+  export default defineConfig({
+    assetsInclude: ['**/*.gltf']
+  })
+  ```
 
 ### logLevel
 
@@ -332,6 +350,18 @@ export default defineConfig(async ({ command, mode }) => {
   The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root.
 
   See [here](/guide/env-and-mode#env-files) for more about environment files.
+
+### envPrefix
+
+- **Type:** `string | string[]`
+- **Default:** `VITE_`
+
+  Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+
+:::warning SECURITY NOTES
+
+- `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+  :::
 
 ## Server Options
 
@@ -415,7 +445,7 @@ export default defineConfig(async ({ command, mode }) => {
           changeOrigin: true,
           configure: (proxy, options) => {
             // proxy will be an instance of 'http-proxy'
-          }),
+          }
         }
       }
     }
@@ -475,7 +505,7 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create vite server in middleware mode.
+  // Create Vite server in middleware mode.
   const vite = await createViteServer({
     server: { middlewareMode: 'ssr' }
   })
@@ -530,7 +560,7 @@ createServer()
 
 ### build.target
 
-- **Type:** `string`
+- **Type:** `string | string[]`
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
@@ -634,6 +664,14 @@ createServer()
 
   When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
 
+### build.ssrManifest
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Related:** [Server-Side Rendering](/guide/ssr)
+
+  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
+
 ### build.minify
 
 - **Type:** `boolean | 'terser' | 'esbuild'`
@@ -646,12 +684,6 @@ createServer()
 - **Type:** `TerserOptions`
 
   Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
-
-### build.cleanCssOptions
-
-- **Type:** `CleanCSS.Options`
-
-  Constructor options to pass on to [clean-css](https://github.com/jakubpawlowicz/clean-css#constructor-options).
 
 ### build.write
 
@@ -698,7 +730,7 @@ createServer()
 
   By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
 
-  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from vite project root. This will overwrite default entries inference.
+  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference.
 
 ### optimizeDeps.exclude
 
@@ -707,7 +739,16 @@ createServer()
   Dependencies to exclude from pre-bundling.
 
   :::warning CommonJS
-  CommonJS dependencies should not be excluded from optimization. If an ESM dependency has a nested CommonJS dependency, it should not be excluded as well.
+  CommonJS dependencies should not be excluded from optimization. If an ESM dependency is excluded from optimization, but has a nested CommonJS dependency, the CommonJS dependency should be added to `optimizeDeps.include`. Example:
+
+  ```js
+  export default defineConfig({
+    optimizeDeps: {
+      include: ['esm-dep > cjs-dep']
+    }
+  })
+  ```
+
   :::
 
 ### optimizeDeps.include
@@ -741,9 +782,9 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string | RegExp | (string | RegExp)[] | true`
 
-  Prevent listed dependencies from being externalized for SSR.
+  Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized.
 
 ### ssr.target
 

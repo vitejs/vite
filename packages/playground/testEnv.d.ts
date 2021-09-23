@@ -9,4 +9,5 @@ declare global {
   const browserLogs: string[]
   const viteTestUrl: string
   const watcher: RollupWatcher
+  let beforeAllError: any | null // error caught in beforeAll, useful if you want to test error scenarios on build
 }

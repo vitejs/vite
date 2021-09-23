@@ -33,12 +33,13 @@ export async function ssrTransform(
 
   const ast = parser.parse(code, {
     sourceType: 'module',
-    ecmaVersion: 2021,
+    ecmaVersion: 'latest',
     locations: true
   }) as any
 
   let uid = 0
   const deps = new Set<string>()
+  const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
@@ -200,6 +201,9 @@ export async function ssrTransform(
     },
     onDynamicImport(node) {
       s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
+      if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
+        dynamicDeps.add(node.source.value as string)
+      }
     }
   })
 
@@ -221,7 +225,8 @@ export async function ssrTransform(
   return {
     code: s.toString(),
     map,
-    deps: [...deps]
+    deps: [...deps],
+    dynamicDeps: [...dynamicDeps]
   }
 }
 
@@ -289,7 +294,7 @@ function walk(
         // walk function expressions and add its arguments to known identifiers
         // so that we don't prefix them
         node.params.forEach((p) =>
-          (eswalk as any)(p, {
+          (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
               if (
                 child.type === 'Identifier' &&

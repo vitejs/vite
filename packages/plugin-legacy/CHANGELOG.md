@@ -1,3 +1,22 @@
+## [1.5.3](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.2...plugin-legacy@1.5.3) (2021-09-07)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** fix regression introduced in [#4536](https://github.com/vitejs/vite/issues/4536) ([#4861](https://github.com/vitejs/vite/issues/4861)) ([fdc3212](https://github.com/vitejs/vite/commit/fdc3212474ff951e7e67810eca6cfb3ef1ed9ea2))
+* **plugin-legacy:** skip in SSR build ([#4536](https://github.com/vitejs/vite/issues/4536)) ([1f068fc](https://github.com/vitejs/vite/commit/1f068fcec38fc07c34e75a19821064386e460907))
+
+
+
+## [1.5.2](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.1...plugin-legacy@1.5.2) (2021-09-01)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** avoid executing blank dynamic import ([#4767](https://github.com/vitejs/vite/issues/4767)) ([de71408](https://github.com/vitejs/vite/commit/de7140853140029a3f48600b60e700464e7662b5)), closes [#4568](https://github.com/vitejs/vite/issues/4568)
+
+
+
 ## [1.5.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.0...plugin-legacy@1.5.1) (2021-08-03)
 
 

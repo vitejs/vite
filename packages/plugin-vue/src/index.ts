@@ -1,12 +1,3 @@
-try {
-  require.resolve('@vue/compiler-sfc')
-} catch (e) {
-  throw new Error(
-    '@vitejs/plugin-vue requires @vue/compiler-sfc to be present in the dependency ' +
-      'tree.'
-  )
-}
-
 import fs from 'fs'
 import { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from '@rollup/pluginutils'
@@ -16,6 +7,7 @@ import {
   SFCStyleCompileOptions,
   SFCTemplateCompileOptions
 } from '@vue/compiler-sfc'
+import { compiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor } from './utils/descriptorCache'
 import { getResolvedScript } from './script'
@@ -23,13 +15,7 @@ import { transformMain } from './main'
 import { handleHotUpdate } from './handleHotUpdate'
 import { transformTemplateAsModule } from './template'
 import { transformStyle } from './style'
-
-// extend the descriptor so we can store the scopeId on it
-declare module '@vue/compiler-sfc' {
-  interface SFCDescriptor {
-    id: string
-  }
-}
+import { EXPORT_HELPER_ID, helperCode } from './helper'
 
 export { parseVueRequest, VueQuery } from './utils/query'
 
@@ -55,6 +41,22 @@ export interface Options {
   customElement?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
+   * Enable Vue ref transform (experimental).
+   * https://github.com/vuejs/vue-next/tree/master/packages/ref-transform
+   *
+   * **requires Vue \>= 3.2.5**
+   *
+   * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
+   *           those inside node_modules
+   * - `string | RegExp`: apply to vue + only matched files (will include
+   *                      node_modules, so specify directories in necessary)
+   * - `false`: disable in all cases
+   *
+   * @default false
+   */
+  refTransform?: boolean | string | RegExp | (string | RegExp)[]
+
+  /**
    * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
    */
   ssr?: boolean
@@ -62,25 +64,45 @@ export interface Options {
 
 export interface ResolvedOptions extends Options {
   root: string
+  sourceMap: boolean
   devServer?: ViteDevServer
 }
 
 export default function vuePlugin(rawOptions: Options = {}): Plugin {
+  const {
+    include = /\.vue$/,
+    exclude,
+    customElement = /\.ce\.vue$/,
+    refTransform = false
+  } = rawOptions
+
+  const filter = createFilter(include, exclude)
+
+  const customElementFilter =
+    typeof customElement === 'boolean'
+      ? () => customElement
+      : createFilter(customElement)
+
+  const refTransformFilter =
+    refTransform === false
+      ? () => false
+      : refTransform === true
+      ? createFilter(/\.(j|t)sx?$/, /node_modules/)
+      : createFilter(refTransform)
+
+  // compat for older verisons
+  const canUseRefTransform = typeof compiler.shouldTransformRef === 'function'
+
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
     ...rawOptions,
-    root: process.cwd()
+    include,
+    exclude,
+    customElement,
+    refTransform,
+    root: process.cwd(),
+    sourceMap: true
   }
-
-  const filter = createFilter(
-    rawOptions.include || /\.vue$/,
-    rawOptions.exclude
-  )
-
-  const customElementFilter =
-    typeof rawOptions.customElement === 'boolean'
-      ? () => rawOptions.customElement as boolean
-      : createFilter(rawOptions.customElement || /\.ce\.vue$/)
 
   return {
     name: 'vite:vue',
@@ -89,7 +111,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       if (!filter(ctx.file)) {
         return
       }
-      return handleHotUpdate(ctx)
+      return handleHotUpdate(ctx, options)
     },
 
     config(config) {
@@ -109,6 +131,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       options = {
         ...options,
         root: config.root,
+        sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
         isProduction: config.isProduction
       }
     },
@@ -117,7 +140,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       options.devServer = server
     },
 
-    async resolveId(id, importer) {
+    async resolveId(id) {
+      // component export helper
+      if (id === EXPORT_HELPER_ID) {
+        return id
+      }
       // serve sub-part requests (*?vue) as virtual modules
       if (parseVueRequest(id).query.vue) {
         return id
@@ -125,13 +152,17 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     load(id, ssr = !!options.ssr) {
+      if (id === EXPORT_HELPER_ID) {
+        return helperCode
+      }
+
       const { filename, query } = parseVueRequest(id)
       // select corresponding block for sub-part virtual modules
       if (query.vue) {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')
         }
-        const descriptor = getDescriptor(filename)!
+        const descriptor = getDescriptor(filename, options)!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
           // handle <scrip> + <script setup> merge via compileScript()
@@ -154,7 +185,20 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     transform(code, id, ssr = !!options.ssr) {
       const { filename, query } = parseVueRequest(id)
-      if ((!query.vue && !filter(filename)) || query.raw) {
+      if (query.raw) {
+        return
+      }
+      if (!filter(filename) && !query.vue) {
+        if (!query.vue && refTransformFilter(filename)) {
+          if (!canUseRefTransform) {
+            this.warn('refTransform requires @vue/compiler-sfc@^3.2.5.')
+          } else if (compiler.shouldTransformRef(code)) {
+            return compiler.transformRef(code, {
+              filename,
+              sourceMap: true
+            })
+          }
+        }
         return
       }
 
@@ -170,7 +214,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         )
       } else {
         // sub block request
-        const descriptor = getDescriptor(filename)!
+        const descriptor = getDescriptor(filename, options)!
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this, ssr)
         } else if (query.type === 'style') {

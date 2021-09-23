@@ -1,8 +1,10 @@
 # Backend Integration
 
+:::tip Note
 If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, check for existing integrations listed in [Awesome Vite](https://github.com/vitejs/awesome-vite#integrations-with-backends).
 
-Or you can follow these steps to configure it manually:
+If you need a custom integration, you can follow the steps in this guide to configure it manually
+:::
 
 1. In your Vite config, configure the entry and enable build manifest:
 
@@ -20,7 +22,7 @@ Or you can follow these steps to configure it manually:
    })
    ```
 
-   If you haven't disabled the [module preload polyfill](/config/#polyfillmodulepreload), you also need to import the polyfill in your entry
+   If you haven't disabled the [module preload polyfill](/config/#build-polyfillmodulepreload), you also need to import the polyfill in your entry
 
    ```js
    // add the beginning of your app entry

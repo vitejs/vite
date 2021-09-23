@@ -7,19 +7,18 @@ import {
 } from './utils/descriptorCache'
 import { getResolvedScript, setResolvedScript } from './script'
 import { ModuleNode, HmrContext } from 'vite'
+import { ResolvedOptions } from '.'
 
 const debug = _debug('vite:hmr')
 
 /**
  * Vite-specific HMR handling
  */
-export async function handleHotUpdate({
-  file,
-  modules,
-  read,
-  server
-}: HmrContext): Promise<ModuleNode[] | void> {
-  const prevDescriptor = getDescriptor(file, false)
+export async function handleHotUpdate(
+  { file, modules, read, server }: HmrContext,
+  options: ResolvedOptions
+): Promise<ModuleNode[] | void> {
+  const prevDescriptor = getDescriptor(file, options, false)
   if (!prevDescriptor) {
     // file hasn't been requested yet (e.g. async component)
     return
@@ -28,12 +27,7 @@ export async function handleHotUpdate({
   setPrevDescriptor(file, prevDescriptor)
 
   const content = await read()
-  const { descriptor } = createDescriptor(
-    file,
-    content,
-    server.config.root,
-    false
-  )
+  const { descriptor } = createDescriptor(file, content, options)
 
   let needRerender = false
   const affectedModules = new Set<ModuleNode | undefined>()
@@ -46,7 +40,14 @@ export async function handleHotUpdate({
     !isEqualBlock(descriptor.script, prevDescriptor.script) ||
     !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup)
   ) {
-    affectedModules.add(mainModule)
+    let scriptModule: ModuleNode | undefined
+    if (descriptor.script?.lang && !descriptor.script.src) {
+      const scriptModuleRE = new RegExp(
+        `type=script.*&lang\.${descriptor.script.lang}$`
+      )
+      scriptModule = modules.find((m) => scriptModuleRE.test(m.url))
+    }
+    affectedModules.add(scriptModule || mainModule)
   }
 
   if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {

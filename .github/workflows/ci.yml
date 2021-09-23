@@ -9,7 +9,10 @@ on:
   push:
     branches:
       - main
+      - release/*
+      - feat/*
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -59,6 +62,9 @@ jobs:
 
       - name: Build plugin-vue
         run: yarn build-plugin-vue
+
+      - name: Build plugin-react
+        run: yarn build-plugin-react
 
       - name: Test serve
         run: yarn test-serve --runInBand

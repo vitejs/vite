@@ -73,7 +73,7 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create vite server in middleware mode. This disables Vite's own HTML
+  // Create Vite server in middleware mode. This disables Vite's own HTML
   // serving logic and let the parent server take control.
   //
   // If you want to use Vite's own HTML serving logic (using Vite as
@@ -109,7 +109,7 @@ app.use('*', async (req, res) => {
       'utf-8'
     )
 
-    // 2. Apply vite HTML transforms. This injects the vite HMR client, and
+    // 2. Apply Vite HTML transforms. This injects the Vite HMR client, and
     //    also applies HTML transforms from Vite plugins, e.g. global preambles
     //    from @vitejs/plugin-react-refresh
     template = await vite.transformIndexHtml(url, template)
@@ -130,7 +130,7 @@ app.use('*', async (req, res) => {
     // 6. Send the rendered HTML back.
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   } catch (e) {
-    // If an error is caught, let vite fix the stracktrace so it maps back to
+    // If an error is caught, let Vite fix the stracktrace so it maps back to
     // your actual source code.
     vite.ssrFixStacktrace(e)
     console.error(e)
@@ -251,3 +251,10 @@ export function mySSRPlugin() {
 ## SSR Target
 
 The default target for the SSR build is a node environment, but you can also run the server in a Web Worker. Packages entry resolution is different for each platform. You can configure the target to be Web Worker using the `ssr.target` set to `'webworker'`.
+
+## SSR Bundle
+
+In some cases like `webworker` runtimes, you might want to bundle your SSR build into a single JavaScript file. You can enable this behavior by setting `ssr.noExternal` to `true`. This will do two things:
+
+- Treat all dependencies as `noExternal`
+- Throw an error if any Node.js built-ins are imported

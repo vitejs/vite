@@ -113,7 +113,7 @@ export interface BuildOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
-   * @default 'terser'
+   * @default 'esbuild'
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
@@ -185,8 +185,14 @@ export interface BuildOptions {
    */
   ssrManifest?: boolean
   /**
+   * Set to false to disable reporting compressed chunk sizes.
+   * Can slightly improve build speed.
+   */
+  reportCompressedSize?: boolean
+  /**
    * Set to false to disable brotli compressed size reporting for build.
    * Can slightly improve build speed.
+   * @deprecated use `build.reportCompressedSize` instead.
    */
   brotliSize?: boolean
   /**
@@ -211,7 +217,11 @@ export interface LibraryOptions {
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export type ResolvedBuildOptions = Required<
-  Omit<BuildOptions, 'base' | 'cleanCssOptions' | 'polyfillDynamicImport'>
+  Omit<
+    BuildOptions,
+    // make deprecated options optional
+    'base' | 'cleanCssOptions' | 'polyfillDynamicImport' | 'brotliSize'
+  >
 >
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
@@ -234,7 +244,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     },
-    minify: raw?.ssr ? false : 'terser',
+    minify: raw?.ssr ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,
@@ -242,7 +252,8 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     lib: false,
     ssr: false,
     ssrManifest: false,
-    brotliSize: true,
+    reportCompressedSize: true,
+    // brotliSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
     ...raw
@@ -269,6 +280,10 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     resolved.minify = false
   }
 
+  if (resolved.minify === true) {
+    resolved.minify = 'esbuild'
+  }
+
   return resolved
 }
 
@@ -291,7 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     post: [
       buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
-      ...(options.minify && options.minify !== 'esbuild'
+      ...(options.minify === 'terser'
         ? [terserPlugin(options.terserOptions)]
         : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
@@ -409,21 +424,19 @@ async function doBuild(
   }
 
   const outputBuildError = (e: RollupError) => {
-    config.logger.error(
-      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ''}${e.message}`)
-    )
+    let msg = chalk.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
-      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ''
-      config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
+      msg += `\nfile: ${chalk.cyan(
+        e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : '')
+      )}`
     }
     if (e.frame) {
-      config.logger.error(chalk.yellow(e.frame))
+      msg += `\n` + chalk.yellow(e.frame)
     }
+    config.logger.error(msg, { error: e })
   }
 
   try {
-    const pkgName = libOptions && getPkgName(config.root)
-
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       return {
         dir: outDir,
@@ -434,7 +447,7 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
+          ? resolveLibFilename(libOptions, output.format || 'es', config.root)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
@@ -576,9 +589,7 @@ function prepareOutDir(
 function getPkgName(root: string) {
   const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
 
-  if (!name) throw new Error('no name found in package.json')
-
-  return name.startsWith('@') ? name.split('/')[1] : name
+  return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
 function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
@@ -633,11 +644,20 @@ function staticImportedByEntry(
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
-  pkgName: string
+  root: string
 ): string {
-  return typeof libOptions.fileName === 'function'
-    ? libOptions.fileName(format)
-    : `${libOptions.fileName || pkgName}.${format}.js`
+  if (typeof libOptions.fileName === 'function') {
+    return libOptions.fileName(format)
+  }
+
+  const name = libOptions.fileName || getPkgName(root)
+
+  if (!name)
+    throw new Error(
+      'Name in package.json is required if option "build.lib.fileName" is not provided.'
+    )
+
+  return `${name}.${format}.js`
 }
 
 function resolveBuildOutputs(

@@ -183,6 +183,19 @@ test('?url import', async () => {
   )
 })
 
+describe('unicode url', () => {
+  test('from js import', async () => {
+    const src = readFile('テスト-測試-white space.js')
+    expect(await page.textContent('.unicode-url')).toMatch(
+      isBuild
+        ? `data:application/javascript;base64,${Buffer.from(src).toString(
+            'base64'
+          )}`
+        : `/foo/テスト-測試-white space.js`
+    )
+  })
+})
+
 test('new URL(..., import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
 })

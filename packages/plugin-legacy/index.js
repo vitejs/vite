@@ -20,7 +20,7 @@ const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 const dynamicFallbackInlineCode = `!function(){try{new Function("m","return import(m)")}catch(o){console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}}();`
 
-const blankDynamicImport = `import('data:text/javascript;base64,Cg==');`
+const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
@@ -79,7 +79,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyConfigPlugin = {
-    name: 'legacy-config',
+    name: 'vite:legacy-config',
 
     apply: 'build',
     config(config) {
@@ -93,11 +93,11 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyGenerateBundlePlugin = {
-    name: 'legacy-generate-polyfill-chunk',
+    name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
 
     configResolved(config) {
-      if (config.build.minify === 'esbuild') {
+      if (!config.build.ssr && config.build.minify === 'esbuild') {
         throw new Error(
           `Can't use esbuild as the minifier when targeting legacy browsers ` +
             `because esbuild minification is not legacy safe.`
@@ -106,6 +106,10 @@ function viteLegacyPlugin(options = {}) {
     },
 
     async generateBundle(opts, bundle) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (!isLegacyBundle(bundle, opts)) {
         if (!modernPolyfills.size) {
           return
@@ -160,7 +164,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyPostPlugin = {
-    name: 'legacy-post-process',
+    name: 'vite:legacy-post-process',
     enforce: 'post',
     apply: 'build',
 
@@ -170,14 +174,14 @@ function viteLegacyPlugin(options = {}) {
       }
       config = _config
 
-      if (!genLegacy) {
+      if (!genLegacy || config.build.ssr) {
         return
       }
 
       /**
        * @param {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)} fileNames
        * @param {string?} defaultFileName
-       * @returns {(chunkInfo: import('rollup').PreRenderedChunk) => string)}
+       * @returns {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)}
        */
       const getLegacyOutputFileName = (
         fileNames,
@@ -226,6 +230,10 @@ function viteLegacyPlugin(options = {}) {
     },
 
     renderChunk(raw, chunk, opts) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (!isLegacyChunk(chunk, opts)) {
         if (
           options.modernPolyfills &&
@@ -238,7 +246,7 @@ function viteLegacyPlugin(options = {}) {
         const ms = new MagicString(raw)
 
         if (genDynamicFallback && chunk.isEntry) {
-          ms.prepend(blankDynamicImport)
+          ms.prepend(forceDynamicImportUsage)
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
@@ -315,6 +323,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     transformIndexHtml(html, { chunk }) {
+      if (config.build.ssr) return
       if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually
@@ -420,6 +429,10 @@ function viteLegacyPlugin(options = {}) {
     },
 
     generateBundle(opts, bundle) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (isLegacyBundle(bundle, opts)) {
         // avoid emitting duplicate assets
         for (const name in bundle) {
@@ -436,14 +449,16 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyEnvPlugin = {
-    name: 'legacy-env',
+    name: 'vite:legacy-env',
 
-    config(_, env) {
+    config(config, env) {
       if (env) {
         return {
           define: {
             'import.meta.env.LEGACY':
-              env.command === 'serve' ? false : legacyEnvVarMarker
+              env.command === 'serve' || config.build.ssr
+                ? false
+                : legacyEnvVarMarker
           }
         }
       } else {
@@ -544,7 +559,9 @@ async function buildPolyfillChunk(
       }
     }
   })
-  const polyfillChunk = (Array.isArray(res) ? res[0] : res).output[0]
+  const _polyfillChunk = Array.isArray(res) ? res[0] : res
+  if (!('output' in _polyfillChunk)) return
+  const polyfillChunk = _polyfillChunk.output[0]
 
   // associate the polyfill chunk to every entry chunk so that we can retrieve
   // the polyfill filename in index html transform
@@ -567,7 +584,7 @@ const polyfillId = 'vite/legacy-polyfills'
  */
 function polyfillsPlugin(imports) {
   return {
-    name: 'polyfills',
+    name: 'vite:legacy-polyfills',
     resolveId(id) {
       if (id === polyfillId) {
         return id

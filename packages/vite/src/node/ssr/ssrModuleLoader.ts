@@ -91,7 +91,12 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeRequire(dep, mod.file, server.config.root)
+      return nodeRequire(
+        dep,
+        mod.file,
+        server.config.root,
+        !!server.config.resolve.preserveSymlinks
+      )
     }
     dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
@@ -159,7 +164,8 @@ async function instantiateModule(
       `Error when evaluating SSR module ${url}:\n${stacktrace}`,
       {
         timestamp: true,
-        clear: server.config.clearScreen
+        clear: server.config.clearScreen,
+        error: e
       }
     )
     throw e
@@ -168,8 +174,13 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
-function nodeRequire(id: string, importer: string | null, root: string) {
-  const mod = require(resolve(id, importer, root))
+function nodeRequire(
+  id: string,
+  importer: string | null,
+  root: string,
+  preserveSymlinks: boolean
+) {
+  const mod = require(resolve(id, importer, root, preserveSymlinks))
   const defaultExport = mod.__esModule ? mod.default : mod
   // rollup-style default import interop for cjs
   return new Proxy(mod, {
@@ -182,7 +193,12 @@ function nodeRequire(id: string, importer: string | null, root: string) {
 
 const resolveCache = new Map<string, string>()
 
-function resolve(id: string, importer: string | null, root: string) {
+function resolve(
+  id: string,
+  importer: string | null,
+  root: string,
+  preserveSymlinks: boolean
+) {
   const key = id + importer + root
   const cached = resolveCache.get(key)
   if (cached) {
@@ -192,7 +208,7 @@ function resolve(id: string, importer: string | null, root: string) {
     importer && fs.existsSync(cleanUrl(importer))
       ? path.dirname(importer)
       : root
-  const resolved = resolveFrom(id, resolveDir, true)
+  const resolved = resolveFrom(id, resolveDir, preserveSymlinks, true)
   resolveCache.set(key, resolved)
   return resolved
 }

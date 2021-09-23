@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.5.0-beta.0",
+  "version": "2.6.0-beta.2",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -13,9 +13,8 @@
     "bin",
     "dist",
     "client.d.ts",
-    "src",
-    "types",
-    "!/src/**/__tests__/"
+    "src/client",
+    "types"
   ],
   "engines": {
     "node": ">=12.2.0"
@@ -45,12 +44,12 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path .",
     "release": "node ../../scripts/release.js"
   },
-  "//": "READ .github/contributing.md to understand what to put under deps vs. devDeps!",
+  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.12.17",
-    "postcss": "^8.3.6",
+    "esbuild": "^0.13.1",
+    "postcss": "^8.3.7",
     "resolve": "^1.20.0",
-    "rollup": "^2.38.5"
+    "rollup": "^2.57.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
@@ -61,7 +60,7 @@
     "@rollup/plugin-commonjs": "^20.0.0",
     "@rollup/plugin-dynamic-import-vars": "^1.4.0",
     "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "13.0.4",
+    "@rollup/plugin-node-resolve": "13.0.5",
     "@rollup/plugin-typescript": "^8.2.5",
     "@rollup/pluginutils": "^4.1.1",
     "@types/convert-source-map": "^1.5.2",
@@ -76,12 +75,10 @@
     "@types/sass": "^1.16.1",
     "@types/stylus": "^0.48.36",
     "@types/ws": "^7.4.7",
-    "@vue/compiler-dom": "^3.1.5",
-    "acorn": "^8.4.1",
+    "@vue/compiler-dom": "^3.2.14",
+    "acorn": "^8.5.0",
     "acorn-class-fields": "^1.0.0",
-    "acorn-numeric-separator": "^0.3.6",
     "acorn-static-class-features": "^1.0.0",
-    "brotli-size": "^4.0.0",
     "builtin-modules": "^3.2.0",
     "cac": "^6.7.3",
     "chalk": "^4.1.2",
@@ -94,7 +91,7 @@
     "debug": "^4.3.2",
     "dotenv": "^10.0.0",
     "dotenv-expand": "^5.1.0",
-    "es-module-lexer": "^0.7.1",
+    "es-module-lexer": "^0.9.0",
     "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
     "execa": "^5.1.1",
@@ -113,14 +110,30 @@
     "resolve.exports": "^1.0.2",
     "rollup-plugin-license": "^2.5.0",
     "selfsigned": "^1.10.11",
-    "sirv": "^1.0.12",
+    "sirv": "^1.0.17",
     "source-map": "^0.6.1",
-    "source-map-support": "^0.5.19",
+    "source-map-support": "^0.5.20",
     "strip-ansi": "^6.0.0",
-    "terser": "^5.7.1",
-    "tsconfig": "^7.0.0",
-    "tslib": "^2.3.0",
+    "terser": "^5.9.0",
+    "tsconfck": "^1.0.0",
+    "tslib": "^2.3.1",
     "types": "link:./types",
-    "ws": "^7.5.3"
+    "ws": "^7.5.5"
+  },
+  "peerDependencies": {
+    "less": "*",
+    "sass": "*",
+    "stylus": "*"
+  },
+  "peerDependenciesMeta": {
+    "sass": {
+      "optional": true
+    },
+    "stylus": {
+      "optional": true
+    },
+    "less": {
+      "optional": true
+    }
   }
 }

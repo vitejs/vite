@@ -17,7 +17,9 @@ import {
   isJSRequest,
   prettifyUrl,
   timeFrom,
-  normalizePath
+  normalizePath,
+  removeImportQuery,
+  unwrapId
 } from '../utils'
 import {
   debugHmr,
@@ -39,9 +41,11 @@ import type { Node } from 'estree'
 import { transformImportGlob } from '../importGlob'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import { performance } from 'perf_hooks'
+import { transformRequest } from '../server/transformRequest'
 
 const isDebug = !!process.env.DEBUG
-const debugRewrite = createDebugger('vite:rewrite')
+const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
@@ -105,11 +109,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
-        isDebug && debugRewrite(chalk.dim(`[skipped] ${prettyImporter}`))
+        isDebug && debug(chalk.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
-      const rewriteStart = Date.now()
+      const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
       // strip UTF-8 BOM
@@ -118,7 +122,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
       try {
         imports = parseImports(source)[0]
-      } catch (e) {
+      } catch (e: any) {
         const isVue = importer.endsWith('.vue')
         const maybeJSX = !isVue && isJSRequest(importer)
 
@@ -140,10 +144,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length) {
         isDebug &&
-          debugRewrite(
-            `${timeFrom(rewriteStart)} ${chalk.dim(
-              `[no imports] ${prettyImporter}`
-            )}`
+          debug(
+            `${timeFrom(start)} ${chalk.dim(`[no imports] ${prettyImporter}`)}`
           )
         return source
       }
@@ -160,6 +162,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
+      const staticImportedUrls = new Set<string>()
       const acceptedUrls = new Set<{
         url: string
         start: number
@@ -189,6 +192,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         const isRelative = url.startsWith('.')
+        const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
@@ -219,10 +223,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // mark non-js/css imports with `?import`
           url = markExplicitImport(url)
 
-          // for relative js/css imports, inherit importer's version query
+          // for relative js/css imports, or self-module virtual imports
+          // (e.g. vue blocks), inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if (isRelative && !/[\?&]import=?\b/.test(url)) {
+          if ((isRelative || isSelfImport) && !/[\?&]import=?\b/.test(url)) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -237,7 +242,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
-          } catch (e) {
+          } catch (e: any) {
             // it's possible that the dep fails to resolve (non-existent import)
             // attach location to the missing import
             e.pos = pos
@@ -288,18 +293,28 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           } else if (prop === '.glo' && source[end + 4] === 'b') {
             // transform import.meta.glob()
             // e.g. `import.meta.glob('glob:./dir/*.js')`
-            const { imports, importsString, exp, endIndex, base, pattern } =
-              await transformImportGlob(
-                source,
-                start,
-                importer,
-                index,
-                root,
-                normalizeUrl
-              )
+            const {
+              imports,
+              importsString,
+              exp,
+              endIndex,
+              base,
+              pattern,
+              isEager
+            } = await transformImportGlob(
+              source,
+              start,
+              importer,
+              index,
+              root,
+              normalizeUrl
+            )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
-            imports.forEach((url) => importedUrls.add(url.replace(base, '/')))
+            imports.forEach((url) => {
+              importedUrls.add(url)
+              if (isEager) staticImportedUrls.add(url)
+            })
             if (!(importerModule.file! in server._globImporters)) {
               server._globImporters[importerModule.file!] = {
                 module: importerModule,
@@ -377,7 +392,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 str().overwrite(
                   dynamicIndex,
                   end + 1,
-                  `import('${url}').then(m => ({ ...m.default, default: m.default }))`
+                  `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
                 )
               } else {
                 const exp = source.slice(expStart, expEnd)
@@ -396,7 +411,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           // make sure to normalize away base
-          importedUrls.add(url.replace(base, '/'))
+          importedUrls.add(url)
+          if (!isDynamicImport) {
+            // for pre-transforming
+            staticImportedUrls.add(url)
+          }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning
           const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(rawUrl)
@@ -508,6 +527,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      isDebug &&
+        debug(
+          `${timeFrom(start)} ${chalk.dim(
+            `[${importedUrls.size} imports rewritten] ${prettyImporter}`
+          )}`
+        )
+
+      // pre-transform known direct imports
+      if (staticImportedUrls.size) {
+        staticImportedUrls.forEach((url) => {
+          transformRequest(unwrapId(removeImportQuery(url)), server, { ssr })
+        })
+      }
+
       if (s) {
         return s.toString()
       } else {
@@ -561,7 +594,7 @@ function transformCjsImport(
 ): string | undefined {
   const node = (
     parseJS(importExp, {
-      ecmaVersion: 2020,
+      ecmaVersion: 'latest',
       sourceType: 'module'
     }) as any
   ).body[0] as Node
