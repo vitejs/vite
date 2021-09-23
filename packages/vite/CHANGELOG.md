@@ -1,3 +1,26 @@
+# [2.6.0-beta.1](https://github.com/vitejs/vite/compare/v2.6.0-beta.0...v2.6.0-beta.1) (2021-09-23)
+
+
+### Bug Fixes
+
+* bump js parser ecmaVersion option to 'latest', fix [#5013](https://github.com/vitejs/vite/issues/5013) ([#5021](https://github.com/vitejs/vite/issues/5021)) ([3541ebc](https://github.com/vitejs/vite/commit/3541ebc7a0033ae2297b8618a57b56958de6dbb5))
+* dedupe import analysis public name ([#5032](https://github.com/vitejs/vite/issues/5032)) ([545b1f1](https://github.com/vitejs/vite/commit/545b1f13cec069bbae5f37c7540171128f439e7b))
+* exclude ?commonjs-external when building in JSON plugin ([#4867](https://github.com/vitejs/vite/issues/4867)) ([fe25567](https://github.com/vitejs/vite/commit/fe25567828e7a5cadc6c009ae674a59670e14a49))
+* exclude missing dependencies from optimization during SSR ([#5017](https://github.com/vitejs/vite/issues/5017)) ([2204afa](https://github.com/vitejs/vite/commit/2204afa34482384460507aa0149730ab05f99e31))
+* move peerDeps from [#2042](https://github.com/vitejs/vite/issues/2042) to the right package.json ([3161d75](https://github.com/vitejs/vite/commit/3161d7560c44ecfe45ac2259c3d702634e6611d0))
+* sourcemaps windows drive letter inconsistency, fix 4964 ([#4985](https://github.com/vitejs/vite/issues/4985)) ([723cd63](https://github.com/vitejs/vite/commit/723cd633d85d6476cb2ae92d0fe08cf74f3dec93))
+* **ssr:** handle default arguments properly in `ssrTransform` ([#5040](https://github.com/vitejs/vite/issues/5040)) ([6a60080](https://github.com/vitejs/vite/commit/6a600805f0c2803e843a0af279d5f8cc1a2c4d89))
+* use lax range for peer deps ([35bd963](https://github.com/vitejs/vite/commit/35bd963cb4bcab9d1bfb9757c5baec69d734b875))
+
+
+### Features
+
+* default build.minify to esbuild ([#5041](https://github.com/vitejs/vite/issues/5041)) ([e4892be](https://github.com/vitejs/vite/commit/e4892be418e1294f2ec8462f0bf8bd14a6be0fb4))
+* pre transform direct imports before requests hit the server ([#5037](https://github.com/vitejs/vite/issues/5037)) ([57b9a37](https://github.com/vitejs/vite/commit/57b9a37ea677e7d63f2e5085a4d018787c025e98))
+* support .astro files ([#5038](https://github.com/vitejs/vite/issues/5038)) ([79ff0ec](https://github.com/vitejs/vite/commit/79ff0ecc7fddb34c0a0498169e15c31f857cfecb))
+
+
+
 # [2.6.0-beta.0](https://github.com/vitejs/vite/compare/v2.5.7...v2.6.0-beta.0) (2021-09-20)
 
 
