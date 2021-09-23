@@ -507,7 +507,8 @@ export function tryNodeResolve(
       importer?.includes('node_modules') ||
       exclude?.includes(pkgId) ||
       exclude?.includes(id) ||
-      SPECIAL_QUERY_RE.test(resolved)
+      SPECIAL_QUERY_RE.test(resolved) ||
+      ssr
     ) {
       // excluded from optimization
       // Inject a version query to npm deps so that the browser
