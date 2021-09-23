@@ -9,6 +9,7 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "vite": "workspace:*"
+    "vite": "workspace:*",
+    "vue": "^3.2.13"
   }
 }

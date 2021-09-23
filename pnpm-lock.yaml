@@ -224,8 +224,10 @@ importers:
   packages/playground/json:
     specifiers:
       vite: workspace:*
+      vue: ^3.2.13
     devDependencies:
       vite: link:../../vite
+      vue: 3.2.14
 
   packages/playground/legacy:
     specifiers:
@@ -264,6 +266,7 @@ importers:
 
   packages/playground/optimize-deps:
     specifiers:
+      '@vitejs/plugin-vue': workspace:*
       axios: ^0.21.1
       clipboard: ^2.0.6
       dep-cjs-compiled-from-cjs: file:./dep-cjs-compiled-from-cjs
@@ -271,6 +274,7 @@ importers:
       dep-esbuild-plugin-transform: link:./dep-esbuild-plugin-transform
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
+      lodash-es: ^4.17.20
       nested-exclude: link:./nested-exclude
       phoenix: ^1.5.7
       react: ^17.0.1
@@ -287,6 +291,7 @@ importers:
       dep-esbuild-plugin-transform: link:dep-esbuild-plugin-transform
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
+      lodash-es: 4.17.21
       nested-exclude: link:nested-exclude
       phoenix: 1.5.13
       react: 17.0.2
@@ -295,6 +300,7 @@ importers:
       vue: 3.2.14
       vuex: 4.0.2_vue@3.2.14
     devDependencies:
+      '@vitejs/plugin-vue': link:../../plugin-vue
       vite: link:../../vite
 
   packages/playground/preload:
