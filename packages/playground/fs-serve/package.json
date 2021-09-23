@@ -7,5 +7,8 @@
     "build": "vite build root",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "serve": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "workspace:*"
   }
 }

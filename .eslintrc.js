@@ -29,7 +29,14 @@ module.exports = defineConfig({
     'node/no-missing-import': [
       'error',
       {
-        allowModules: ['types', 'estree', 'testUtils', 'stylus'],
+        allowModules: [
+          'types',
+          'estree',
+          'testUtils',
+          'less',
+          'sass',
+          'stylus'
+        ],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
@@ -37,7 +44,7 @@ module.exports = defineConfig({
       'error',
       {
         // for try-catching yarn pnp
-        allowModules: ['pnpapi'],
+        allowModules: ['pnpapi', 'vite'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],

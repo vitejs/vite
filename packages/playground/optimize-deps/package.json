@@ -23,5 +23,8 @@
     "resolve-linked": "0.0.0",
     "vue": "^3.2.13",
     "vuex": "^4.0.0"
+  },
+  "devDependencies": {
+    "vite": "workspace:*"
   }
 }

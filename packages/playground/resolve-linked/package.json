@@ -2,5 +2,8 @@
   "name": "resolve-linked",
   "version": "0.0.0",
   "private": true,
-  "main": "src/index.js"
+  "main": "src/index.js",
+  "devDependencies": {
+    "vite": "workspace:*"
+  }
 }

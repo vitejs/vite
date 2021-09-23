@@ -13,5 +13,8 @@
     "test-package-b": "link:./test-package-b",
     "test-package-c": "link:./test-package-c",
     "test-package-d": "link:./test-package-d"
+  },
+  "devDependencies": {
+    "vite": "workspace:*"
   }
 }

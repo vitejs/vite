@@ -1,5 +1,5 @@
 {
-  "name": "preserveSymlinks",
+  "name": "preserve-symlinks",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite --force",
@@ -9,5 +9,8 @@
   "workspaces": {},
   "dependencies": {
     "@symlinks/moduleA": "link:./moduleA"
+  },
+  "devDependencies": {
+    "vite": "workspace:*"
   }
 }

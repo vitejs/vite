@@ -10,5 +10,8 @@
   },
   "dependencies": {
     "vue": "^3.2.13"
+  },
+  "devDependencies": {
+    "vite": "workspace:*"
   }
 }
