@@ -113,7 +113,7 @@ export interface BuildOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
-   * @default 'terser'
+   * @default 'esbuild'
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
@@ -244,7 +244,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     },
-    minify: raw?.ssr ? false : 'terser',
+    minify: raw?.ssr ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,
@@ -280,6 +280,10 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     resolved.minify = false
   }
 
+  if (resolved.minify === true) {
+    resolved.minify = 'esbuild'
+  }
+
   return resolved
 }
 
@@ -302,7 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     post: [
       buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
-      ...(options.minify && options.minify !== 'esbuild'
+      ...(options.minify === 'terser'
         ? [terserPlugin(options.terserOptions)]
         : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
