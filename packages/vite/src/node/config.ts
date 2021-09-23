@@ -581,6 +581,16 @@ export async function resolveConfig(
     )
   }
 
+  if (config.build?.terserOptions && config.build.minify === 'esbuild') {
+    logger.warn(
+      chalk.yellow(
+        `build.terserOptions is specified but build.minify is not set to use Terser. ` +
+          `Note Vite now defaults to use esbuild for minification. If you still ` +
+          `prefer Terser, set build.minify to "terser".`
+      )
+    )
+  }
+
   return resolved
 }
 
