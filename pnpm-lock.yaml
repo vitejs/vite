@@ -120,6 +120,9 @@ importers:
     dependencies:
       tailwindcss: 2.2.15_ts-node@10.2.1
 
+  packages/playground/cli:
+    specifiers: {}
+
   packages/playground/css:
     specifiers:
       css-dep: link:./css-dep
