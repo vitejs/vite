@@ -58,6 +58,8 @@ import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
 import { performance } from 'perf_hooks'
 
+export { searchForWorkspaceRoot } from './searchRoot'
+
 export interface ServerOptions {
   host?: string | boolean
   port?: number
