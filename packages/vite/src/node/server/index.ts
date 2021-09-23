@@ -34,8 +34,11 @@ import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
-import { TransformResult } from 'rollup'
-import { TransformOptions, transformRequest } from './transformRequest'
+import {
+  TransformOptions,
+  TransformResult,
+  transformRequest
+} from './transformRequest'
 import {
   transformWithEsbuild,
   ESBuildTransformResult
@@ -299,6 +302,10 @@ export interface ViteDevServer {
    * @internal
    */
   _pendingReload: Promise<void> | null
+  /**
+   * @internal
+   */
+  _pendingRequests: Record<string, Promise<TransformResult | null> | null>
 }
 
 export async function createServer(
@@ -395,10 +402,11 @@ export async function createServer(
     },
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
-    _globImporters: {},
+    _globImporters: Object.create(null),
     _isRunningOptimizer: false,
     _registerMissingImport: null,
-    _pendingReload: null
+    _pendingReload: null,
+    _pendingRequests: Object.create(null)
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
