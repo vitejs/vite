@@ -8,7 +8,7 @@ module.exports = {
       'test-package-b',
       'test-package-c',
       'test-package-c/side',
-      'test-package-d    > test-package-d-nested'
+      'test-package-d > test-package-d-nested'
     ],
     exclude: ['test-package-d']
   }

@@ -11,8 +11,8 @@
   "dependencies": {
     "axios": "^0.21.1",
     "clipboard": "^2.0.6",
-    "dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
-    "dep-cjs-compiled-from-esm": "file:./dep-cjs-compiled-from-esm",
+    "dep-cjs-compiled-from-cjs": "link:./dep-cjs-compiled-from-cjs",
+    "dep-cjs-compiled-from-esm": "link:./dep-cjs-compiled-from-esm",
     "dep-esbuild-plugin-transform": "link:./dep-esbuild-plugin-transform",
     "dep-linked": "link:./dep-linked",
     "dep-linked-include": "link:./dep-linked-include",

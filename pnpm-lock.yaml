@@ -264,13 +264,19 @@ importers:
     devDependencies:
       vite: link:../../vite
 
+  packages/playground/nested-deps/test-package-d:
+    specifiers:
+      test-package-d-nested: link:./test-package-d-nested
+    dependencies:
+      test-package-d-nested: link:test-package-d-nested
+
   packages/playground/optimize-deps:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
       axios: ^0.21.1
       clipboard: ^2.0.6
-      dep-cjs-compiled-from-cjs: file:./dep-cjs-compiled-from-cjs
-      dep-cjs-compiled-from-esm: file:./dep-cjs-compiled-from-esm
+      dep-cjs-compiled-from-cjs: link:./dep-cjs-compiled-from-cjs
+      dep-cjs-compiled-from-esm: link:./dep-cjs-compiled-from-esm
       dep-esbuild-plugin-transform: link:./dep-esbuild-plugin-transform
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
@@ -303,6 +309,12 @@ importers:
       '@vitejs/plugin-vue': link:../../plugin-vue
       vite: link:../../vite
 
+  packages/playground/optimize-deps/nested-exclude:
+    specifiers:
+      nested-include: file:./nested-include
+    dependencies:
+      nested-include: link:nested-include
+
   packages/playground/preload:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
@@ -319,10 +331,12 @@ importers:
   packages/playground/preserve-symlinks:
     specifiers:
       '@symlinks/moduleA': link:./moduleA
+      sirv: ^1.0.17
       vite: workspace:*
     dependencies:
       '@symlinks/moduleA': link:moduleA
     devDependencies:
+      sirv: 1.0.17
       vite: link:../../vite
 
   packages/playground/react:
