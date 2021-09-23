@@ -13,8 +13,7 @@
     "react-dom": "^17.0.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "workspace:*",
-    "vite": "workspace:*"
+    "@vitejs/plugin-react": "workspace:*"
   },
   "babel": {
     "presets": [

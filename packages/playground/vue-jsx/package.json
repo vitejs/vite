@@ -13,7 +13,6 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue-jsx": "workspace:*",
-    "@vitejs/plugin-vue": "workspace:*",
-    "vite": "workspace:*"
+    "@vitejs/plugin-vue": "workspace:*"
   }
 }

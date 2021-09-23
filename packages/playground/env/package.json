@@ -9,7 +9,6 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
-    "vite": "workspace:*"
+    "cross-env": "^7.0.3"
   }
 }

@@ -13,6 +13,7 @@ importers:
       chalk: ^4.1.2
       conventional-changelog-cli: ^2.1.1
       cross-env: ^7.0.3
+      esbuild: ^0.13.2
       eslint: ^7.32.0
       eslint-define-config: ^1.0.9
       eslint-plugin-node: ^11.1.0
@@ -47,6 +48,7 @@ importers:
       chalk: 4.1.2
       conventional-changelog-cli: 2.1.1
       cross-env: 7.0.3
+      esbuild: 0.13.2
       eslint: 7.32.0
       eslint-define-config: 1.0.9
       eslint-plugin-node: 11.1.0_eslint@7.32.0
@@ -98,28 +100,20 @@ importers:
   packages/playground/alias:
     specifiers:
       resolve-linked: workspace:*
-      vite: workspace:*
       vue: ^3.2.16
     dependencies:
       vue: 3.2.16
     devDependencies:
       resolve-linked: link:../resolve-linked
-      vite: link:../../vite
 
   packages/playground/assets:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/backend-integration:
     specifiers:
       tailwindcss: ^2.2.4
-      vite: workspace:*
     dependencies:
       tailwindcss: 2.2.15_ts-node@10.2.1
-    devDependencies:
-      vite: link:../../vite
 
   packages/playground/css:
     specifiers:
@@ -128,126 +122,80 @@ importers:
       postcss-nested: ^5.0.3
       sass: ^1.32.5
       stylus: ^0.54.8
-      vite: workspace:*
     devDependencies:
       css-dep: link:css-dep
       less: 4.1.1
       postcss-nested: 5.0.6
       sass: 1.42.1
       stylus: 0.54.8
-      vite: link:../../vite
 
   packages/playground/css-codesplit:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/css-codesplit-cjs:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/data-uri:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/define:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/dynamic-import:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/env:
     specifiers:
       cross-env: ^7.0.3
-      vite: workspace:*
     devDependencies:
       cross-env: 7.0.3
-      vite: link:../../vite
 
   packages/playground/extensions:
     specifiers:
-      vite: workspace:*
       vue: ^3.2.16
     dependencies:
       vue: 3.2.16
-    devDependencies:
-      vite: link:../../vite
 
   packages/playground/file-delete-restore:
     specifiers:
       '@vitejs/plugin-react': workspace:*
       react: ^17.0.1
       react-dom: ^17.0.1
-      vite: workspace:*
     dependencies:
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
     devDependencies:
       '@vitejs/plugin-react': link:../../plugin-react
-      vite: link:../../vite
 
   packages/playground/fs-serve:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/glob-import:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/hmr:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/html:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/json:
     specifiers:
-      vite: workspace:*
       vue: ^3.2.16
     devDependencies:
-      vite: link:../../vite
       vue: 3.2.16
 
   packages/playground/legacy:
     specifiers:
       '@vitejs/plugin-legacy': workspace:*
-      vite: workspace:*
     devDependencies:
       '@vitejs/plugin-legacy': link:../../plugin-legacy
-      vite: link:../../vite
 
   packages/playground/lib:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/multiple-entrypoints:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/nested-deps:
     specifiers:
@@ -255,20 +203,11 @@ importers:
       test-package-b: link:./test-package-b
       test-package-c: link:./test-package-c
       test-package-d: link:./test-package-d
-      vite: workspace:*
     dependencies:
       test-package-a: link:test-package-a
       test-package-b: link:test-package-b
       test-package-c: link:test-package-c
       test-package-d: link:test-package-d
-    devDependencies:
-      vite: link:../../vite
-
-  packages/playground/nested-deps/test-package-d:
-    specifiers:
-      test-package-d-nested: link:./test-package-d-nested
-    dependencies:
-      test-package-d-nested: link:test-package-d-nested
 
   packages/playground/optimize-deps:
     specifiers:
@@ -286,7 +225,6 @@ importers:
       react: ^17.0.1
       react-dom: ^17.0.1
       resolve-linked: 0.0.0
-      vite: workspace:*
       vue: ^3.2.16
       vuex: ^4.0.0
     dependencies:
@@ -307,26 +245,21 @@ importers:
       vuex: 4.0.2_vue@3.2.16
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
-      vite: link:../../vite
-
-  packages/playground/optimize-deps/nested-exclude:
-    specifiers:
-      nested-include: link:./nested-include
-    dependencies:
-      nested-include: link:nested-include
 
   packages/playground/optimize-missing-deps:
     specifiers:
+      express: ^4.17.1
       missing-dep: file:./missing-dep
       multi-entry-dep: file:./multi-entry-dep
     dependencies:
       missing-dep: link:missing-dep
       multi-entry-dep: link:multi-entry-dep
+    devDependencies:
+      express: 4.17.1
 
   packages/playground/preload:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
-      vite: workspace:*
       vue: ^3.2.16
       vue-router: ^4.0.0
     dependencies:
@@ -334,29 +267,23 @@ importers:
       vue-router: 4.0.11_vue@3.2.16
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
-      vite: link:../../vite
 
   packages/playground/preserve-symlinks:
     specifiers:
       '@symlinks/moduleA': link:./moduleA
-      vite: workspace:*
     dependencies:
       '@symlinks/moduleA': link:moduleA
-    devDependencies:
-      vite: link:../../vite
 
   packages/playground/react:
     specifiers:
       '@vitejs/plugin-react': workspace:*
       react: ^17.0.1
       react-dom: ^17.0.1
-      vite: workspace:*
     dependencies:
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
     devDependencies:
       '@vitejs/plugin-react': link:../../plugin-react
-      vite: link:../../vite
 
   packages/playground/react-emotion:
     specifiers:
@@ -367,7 +294,6 @@ importers:
       react: ^17.0.1
       react-dom: ^17.0.1
       react-switch: ^6.0.0
-      vite: workspace:*
     dependencies:
       '@emotion/react': 11.4.1_react@17.0.2
       react: 17.0.2
@@ -377,7 +303,6 @@ importers:
       '@babel/plugin-proposal-pipeline-operator': 7.15.0
       '@emotion/babel-plugin': 11.3.0
       '@vitejs/plugin-react': link:../../plugin-react
-      vite: link:../../vite
 
   packages/playground/resolve:
     specifiers:
@@ -389,7 +314,6 @@ importers:
       resolve-exports-env: link:./exports-env
       resolve-exports-path: link:./exports-path
       resolve-linked: workspace:*
-      vite: workspace:*
     dependencies:
       '@babel/runtime': 7.15.4
       normalize.css: 8.0.1
@@ -399,14 +323,9 @@ importers:
       resolve-exports-env: link:exports-env
       resolve-exports-path: link:exports-path
       resolve-linked: link:../resolve-linked
-    devDependencies:
-      vite: link:../../vite
 
   packages/playground/resolve-linked:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/ssr-react:
     specifiers:
@@ -419,7 +338,6 @@ importers:
       react-router: ^5.2.0
       react-router-dom: ^5.2.0
       serve-static: ^1.14.1
-      vite: workspace:*
     dependencies:
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
@@ -431,7 +349,6 @@ importers:
       cross-env: 7.0.3
       express: 4.17.1
       serve-static: 1.14.1
-      vite: link:../../vite
 
   packages/playground/ssr-vue:
     specifiers:
@@ -443,7 +360,6 @@ importers:
       example-external-component: file:example-external-component
       express: ^4.17.1
       serve-static: ^1.14.1
-      vite: workspace:*
       vue: ^3.2.16
       vue-router: ^4.0.0
     dependencies:
@@ -458,27 +374,23 @@ importers:
       dep-import-type: link:dep-import-type
       express: 4.17.1
       serve-static: 1.14.1
-      vite: link:../../vite
 
   packages/playground/ssr-webworker:
     specifiers:
       miniflare: ^1.3.3
       react: ^17.0.2
       resolve-linked: workspace:*
-      vite: workspace:*
     dependencies:
       react: 17.0.2
     devDependencies:
       miniflare: 1.4.1
       resolve-linked: link:../resolve-linked
-      vite: link:../../vite
 
   packages/playground/tailwind:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
       autoprefixer: ^10.3.0
       tailwindcss: ^2.2.4
-      vite: workspace:*
       vue: ^3.2.16
       vue-router: ^4.0.0
     dependencies:
@@ -488,19 +400,12 @@ importers:
       vue-router: 4.0.11_vue@3.2.16
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
-      vite: link:../../vite
 
   packages/playground/tsconfig-json:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/tsconfig-json-load-error:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/vue:
     specifiers:
@@ -511,7 +416,6 @@ importers:
       pug: ^3.0.0
       sass: ^1.30.0
       stylus: ^0.54.8
-      vite: workspace:*
       vue: ^3.2.16
     dependencies:
       lodash-es: 4.17.21
@@ -523,32 +427,23 @@ importers:
       pug: 3.0.2
       sass: 1.42.1
       stylus: 0.54.8
-      vite: link:../../vite
 
   packages/playground/vue-jsx:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
       '@vitejs/plugin-vue-jsx': workspace:*
-      vite: workspace:*
       vue: ^3.2.16
     dependencies:
       vue: 3.2.16
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../plugin-vue-jsx
-      vite: link:../../vite
 
   packages/playground/wasm:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/playground/worker:
-    specifiers:
-      vite: workspace:*
-    devDependencies:
-      vite: link:../../vite
+    specifiers: {}
 
   packages/plugin-legacy:
     specifiers:
@@ -574,7 +469,6 @@ importers:
       '@rollup/pluginutils': ^4.1.1
       react-refresh: ^0.10.0
       resolve: ^1.20.0
-      vite: link:../vite
     dependencies:
       '@babel/core': 7.15.5
       '@babel/plugin-transform-react-jsx': 7.14.9_@babel+core@7.15.5
@@ -584,8 +478,6 @@ importers:
       '@rollup/pluginutils': 4.1.1
       react-refresh: 0.10.0
       resolve: 1.20.0
-    devDependencies:
-      vite: link:../vite
 
   packages/plugin-vue:
     specifiers:
@@ -664,7 +556,7 @@ importers:
       dotenv: ^10.0.0
       dotenv-expand: ^5.1.0
       es-module-lexer: ^0.9.0
-      esbuild: ^0.13.1
+      esbuild: ^0.13.2
       estree-walker: ^2.0.2
       etag: ^1.8.1
       execa: ^5.1.1
@@ -4914,7 +4806,6 @@ packages:
     cpu: [arm64]
     os: [android]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-darwin-64/0.13.2:
@@ -4925,7 +4816,6 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-darwin-arm64/0.13.2:
@@ -4936,7 +4826,6 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-freebsd-64/0.13.2:
@@ -4947,7 +4836,6 @@ packages:
     cpu: [x64]
     os: [freebsd]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-freebsd-arm64/0.13.2:
@@ -4958,7 +4846,6 @@ packages:
     cpu: [arm64]
     os: [freebsd]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-linux-32/0.13.2:
@@ -4969,7 +4856,6 @@ packages:
     cpu: [ia32]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-linux-64/0.13.2:
@@ -4980,7 +4866,6 @@ packages:
     cpu: [x64]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-linux-arm/0.13.2:
@@ -4991,7 +4876,6 @@ packages:
     cpu: [arm]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-linux-arm64/0.13.2:
@@ -5002,7 +4886,6 @@ packages:
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-linux-mips64le/0.13.2:
@@ -5013,7 +4896,6 @@ packages:
     cpu: [mips64el]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-linux-ppc64le/0.13.2:
@@ -5024,7 +4906,6 @@ packages:
     cpu: [ppc64]
     os: [linux]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-openbsd-64/0.13.2:
@@ -5035,7 +4916,6 @@ packages:
     cpu: [x64]
     os: [openbsd]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-sunos-64/0.13.2:
@@ -5046,7 +4926,6 @@ packages:
     cpu: [x64]
     os: [sunos]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-windows-32/0.13.2:
@@ -5057,7 +4936,6 @@ packages:
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-windows-64/0.13.2:
@@ -5068,7 +4946,6 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild-windows-arm64/0.13.2:
@@ -5079,7 +4956,6 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /esbuild/0.12.29:
@@ -5115,7 +4991,6 @@ packages:
       esbuild-windows-32: 0.13.2
       esbuild-windows-64: 0.13.2
       esbuild-windows-arm64: 0.13.2
-    dev: false
 
   /escalade/3.1.1:
     resolution:

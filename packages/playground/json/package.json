@@ -9,7 +9,6 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "vite": "workspace:*",
     "vue": "^3.2.16"
   }
 }

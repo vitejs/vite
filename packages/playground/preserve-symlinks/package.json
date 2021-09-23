@@ -6,11 +6,7 @@
     "build": "vite build",
     "serve": "vite preview"
   },
-  "workspaces": {},
   "dependencies": {
     "@symlinks/moduleA": "link:./moduleA"
-  },
-  "devDependencies": {
-    "vite": "workspace:*"
   }
 }

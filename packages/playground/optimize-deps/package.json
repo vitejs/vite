@@ -26,7 +26,6 @@
     "vuex": "^4.0.0"
   },
   "devDependencies": {
-    "vite": "workspace:*",
     "@vitejs/plugin-vue": "workspace:*"
   }
 }
