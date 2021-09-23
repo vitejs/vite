@@ -113,7 +113,7 @@ export interface BuildOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
-   * @default 'terser'
+   * @default 'esbuild'
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
@@ -244,7 +244,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     },
-    minify: raw?.ssr ? false : 'terser',
+    minify: raw?.ssr ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,

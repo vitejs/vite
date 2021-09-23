@@ -196,6 +196,15 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   }
 }
 
+const rollupToEsbuildFormatMap: Record<
+  string,
+  TransformOptions['format'] | undefined
+> = {
+  es: 'esm',
+  cjs: 'cjs',
+  iife: 'iife'
+}
+
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
@@ -210,10 +219,13 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       if ((!target || target === 'esnext') && !minify) {
         return null
       }
-      return transformWithEsbuild(code, chunk.fileName, {
+      const res = await transformWithEsbuild(code, chunk.fileName, {
         target: target || undefined,
-        minify
+        minify,
+        treeShaking: true,
+        format: rollupToEsbuildFormatMap[opts.format]
       })
+      return res
     }
   }
 }
