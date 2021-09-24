@@ -124,7 +124,8 @@ function viteLegacyPlugin(options = {}) {
           modernPolyfills,
           bundle,
           facadeToModernPolyfillMap,
-          config.build
+          config.build,
+          options.externalSystemJS,
         )
         return
       }
@@ -154,7 +155,8 @@ function viteLegacyPlugin(options = {}) {
           facadeToLegacyPolyfillMap,
           // force using terser for legacy polyfill minification, since esbuild
           // isn't legacy-safe
-          config.build
+          config.build,
+          options.externalSystemJS,
         )
       }
     }
@@ -533,7 +535,8 @@ async function buildPolyfillChunk(
   imports,
   bundle,
   facadeToChunkMap,
-  buildOptions
+  buildOptions,
+  externalSystemJS
 ) {
   let { minify, assetsDir } = buildOptions
   minify = minify ? 'terser' : false
@@ -542,7 +545,7 @@ async function buildPolyfillChunk(
     root: __dirname,
     configFile: false,
     logLevel: 'error',
-    plugins: [polyfillsPlugin(imports)],
+    plugins: [polyfillsPlugin(imports, externalSystemJS)],
     build: {
       write: false,
       target: false,
@@ -582,7 +585,7 @@ const polyfillId = 'vite/legacy-polyfills'
  * @param {Set<string>} imports
  * @return {import('rollup').Plugin}
  */
-function polyfillsPlugin(imports) {
+function polyfillsPlugin(imports, externalSystemJS) {
   return {
     name: 'vite:legacy-polyfills',
     resolveId(id) {
@@ -594,7 +597,7 @@ function polyfillsPlugin(imports) {
       if (id === polyfillId) {
         return (
           [...imports].map((i) => `import "${i}";`).join('') +
-          `import "systemjs/dist/s.min.js";`
+          (externalSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }
     }
