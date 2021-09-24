@@ -306,9 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     post: [
       buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
-      ...(options.minify === 'terser'
-        ? [terserPlugin(options.terserOptions)]
-        : []),
+      ...(options.minify === 'terser' ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       buildReporterPlugin(config),

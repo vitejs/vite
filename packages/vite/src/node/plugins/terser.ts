@@ -1,8 +1,9 @@
 import { Plugin } from '../plugin'
 import { Worker } from 'okie'
 import { Terser } from 'types/terser'
+import { ResolvedConfig } from '..'
 
-export function terserPlugin(options: Terser.MinifyOptions): Plugin {
+export function terserPlugin(config: ResolvedConfig): Plugin {
   const worker = new Worker(
     (basedir: string, code: string, options: Terser.MinifyOptions) => {
       // when vite is linked, the worker thread won't share the same resolve
@@ -20,9 +21,15 @@ export function terserPlugin(options: Terser.MinifyOptions): Plugin {
     name: 'vite:terser',
 
     async renderChunk(code, _chunk, outputOptions) {
+      // Do not minify ES lib output since that would remove pure annotations
+      // and break tree-shaking
+      if (config.build.lib && outputOptions.format === 'es') {
+        return null
+      }
+
       const res = await worker.run(__dirname, code, {
         safari10: true,
-        ...options,
+        ...config.build.terserOptions,
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
         toplevel: outputOptions.format === 'cjs'
