@@ -75,19 +75,16 @@ jobs:
         with:
           node-version: 14
 
-      - name: Set dependencies cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-            ${{ runner.os }}-${{ matrix.node_version }}-
-
       - name: Install pnpm
         uses: pnpm/action-setup@v2.0.1
         with:
           version: 6.15.1
+
+      - name: Set node version to ${{ matrix.node_version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: "pnpm"
 
       - name: Install deps
         run: pnpm install
