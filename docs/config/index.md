@@ -543,7 +543,7 @@ createServer()
   - contains one of the following file
     - `pnpm-workspace.yaml`
 
-  Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example
+  Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example:
 
   ```js
   export default defineConfig({
@@ -551,6 +551,25 @@ createServer()
       fs: {
         // Allow serving files from one level up to the project root
         allow: ['..']
+      }
+    }
+  })
+  ```
+
+  When `server.fs.allow` is specified, the auto workspace root detection will be disabled. To extend the original behavior, a utility `searchForWorkspaceRoot` is exposed:
+
+  ```js
+  import { defineConfig, searchForWorkspaceRoot } from 'vite'
+
+  export default defineConfig({
+    server: {
+      fs: {
+        allow: [
+          // search up for workspace root
+          searchForWorkspaceRoot(process.cwd()),
+          // your custom rules
+          '/path/to/custom/allow'
+        ]
       }
     }
   })
