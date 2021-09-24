@@ -293,8 +293,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         processedHtml.set(id, s.toString())
 
-        // inject module preload polyfill
-        if (config.build.polyfillModulePreload) {
+        // inject module preload polyfill only when configured and needed
+        if (
+          config.build.polyfillModulePreload &&
+          (someScriptsAreAsync || someScriptsAreDefer)
+        ) {
           js = `import "${modulePreloadPolyfillId}";\n${js}`
         }
 
@@ -391,6 +394,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             chunk.isEntry &&
             chunk.facadeModuleId === id
         ) as OutputChunk | undefined
+
         let canInlineEntry = false
 
         // inject chunk asset links
