@@ -77,5 +77,11 @@
     "packages/**/*.d.ts": [
       "eslint --ext .ts"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "workspace:*",
+      "@vitejs/plugin-vue": "workspace:*"
+    }
   }
 }

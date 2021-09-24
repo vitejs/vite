@@ -1,5 +1,9 @@
 lockfileVersion: 5.3
 
+overrides:
+  vite: workspace:*
+  '@vitejs/plugin-vue': workspace:*
+
 importers:
   .:
     specifiers:
@@ -612,12 +616,6 @@ importers:
       '@rollup/pluginutils': 4.1.1
       '@vue/babel-plugin-jsx': 1.0.7_@babel+core@7.15.5
       hash-sum: 2.0.0
-
-  packages/temp:
-    specifiers:
-      css-color-names: ^1.0.1
-    devDependencies:
-      css-color-names: 1.0.1
 
   packages/vite:
     specifiers:
@@ -2802,18 +2800,6 @@ packages:
     dependencies:
       '@typescript-eslint/types': 4.31.2
       eslint-visitor-keys: 2.1.0
-    dev: true
-
-  /@vitejs/plugin-vue/1.9.0_vite@2.5.10:
-    resolution:
-      {
-        integrity: sha512-TQB87f8baZsTZO/g7Az/dTCwV8eDxwkrP8hMl8HpwLJz/NKvmXtBqa7bYg8GKWNwqjy+pBRLdgiML+BI3HphOw==
-      }
-    engines: { node: '>=12.0.0' }
-    peerDependencies:
-      vite: ^2.5.10
-    dependencies:
-      vite: 2.5.10
     dev: true
 
   /@vue/babel-helper-vue-transform-on/1.0.2:
@@ -5059,15 +5045,6 @@ packages:
     os: [win32]
     requiresBuild: true
     optional: true
-
-  /esbuild/0.12.29:
-    resolution:
-      {
-        integrity: sha512-w/XuoBCSwepyiZtIRsKsetiLDUVGPVw1E/R3VTFSecIy8UR7Cq3SOtwKHJMFoVqqVG36aGkzh4e8BvpO1Fdc7g==
-      }
-    hasBin: true
-    requiresBuild: true
-    dev: true
 
   /esbuild/0.13.2:
     resolution:
@@ -11165,22 +11142,6 @@ packages:
     engines: { node: '>= 0.8' }
     dev: true
 
-  /vite/2.5.10:
-    resolution:
-      {
-        integrity: sha512-0ObiHTi5AHyXdJcvZ67HMsDgVpjT5RehvVKv6+Q0jFZ7zDI28PF5zK9mYz2avxdA+4iJMdwCz6wnGNnn4WX5Gg==
-      }
-    engines: { node: '>=12.2.0' }
-    hasBin: true
-    dependencies:
-      esbuild: 0.12.29
-      postcss: 8.3.7
-      resolve: 1.20.0
-      rollup: 2.57.0
-    optionalDependencies:
-      fsevents: 2.3.2
-    dev: true
-
   /vitepress/0.19.1:
     resolution:
       {
@@ -11191,9 +11152,9 @@ packages:
     dependencies:
       '@docsearch/css': 1.0.0-alpha.28
       '@docsearch/js': 1.0.0-alpha.28
-      '@vitejs/plugin-vue': 1.9.0_vite@2.5.10
+      '@vitejs/plugin-vue': link:packages/plugin-vue
       prismjs: 1.25.0
-      vite: 2.5.10
+      vite: link:packages/vite
       vue: 3.2.16
     transitivePeerDependencies:
       - react
