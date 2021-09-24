@@ -58,6 +58,8 @@ import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
 import { performance } from 'perf_hooks'
 
+export { searchForWorkspaceRoot } from './searchRoot'
+
 export interface ServerOptions {
   host?: string | boolean
   port?: number
@@ -639,7 +641,7 @@ async function startServer(
   if (options.open && !isRestart) {
     const path = typeof options.open === 'string' ? options.open : base
     openBrowser(
-      `${protocol}://${hostname.name}:${serverPort}${path}`,
+      path.startsWith('http') ? path : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
       server.config.logger
     )
