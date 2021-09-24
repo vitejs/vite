@@ -312,7 +312,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
             imports.forEach((url) => {
-              importedUrls.add(url.replace(base, '/'))
+              url = url.replace(base, '/')
+              importedUrls.add(url)
               if (isEager) staticImportedUrls.add(url)
             })
             if (!(importerModule.file! in server._globImporters)) {
@@ -411,10 +412,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           // make sure to normalize away base
-          importedUrls.add(url.replace(base, '/'))
+          const urlWithoutBase = url.replace(base, '/')
+          importedUrls.add(urlWithoutBase)
           if (!isDynamicImport) {
             // for pre-transforming
-            staticImportedUrls.add(url)
+            staticImportedUrls.add(urlWithoutBase)
           }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning
