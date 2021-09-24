@@ -104,6 +104,7 @@ if (isBuild) {
 
     test('script is async', async () => {
       expect(await page.$('head script[type=module][async]')).toBeTruthy()
+      expect(await page.$('head script[type=module]:not([async])')).toBeNull()
     })
   })
 
@@ -115,6 +116,20 @@ if (isBuild) {
 
     test('script is mixed', async () => {
       expect(await page.$('head script[type=module][async]')).toBeNull()
+      expect(await page.$('head script[type=module]:not([async])')).toBeTruthy()
+    })
+  })
+
+  describe('zeroJS', () => {
+    // Ensure that the modulePreload polyfill is discarded in this case
+
+    beforeAll(async () => {
+      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      await page.goto(viteTestUrl + '/zeroJS.html')
+    })
+
+    test('zeroJS', async () => {
+      expect(await page.$('head script[type=module]')).toBeNull()
     })
   })
 

@@ -1,0 +1,8 @@
+{
+  "name": "missing-dep",
+  "version": "0.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "multi-entry-dep": "file:../multi-entry-dep"
+  }
+}

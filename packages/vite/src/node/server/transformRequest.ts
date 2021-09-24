@@ -18,6 +18,7 @@ import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
+import { performance } from 'perf_hooks'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -37,23 +38,50 @@ export interface TransformOptions {
   html?: boolean
 }
 
-export async function transformRequest(
+export function transformRequest(
   url: string,
   server: ViteDevServer,
   options: TransformOptions = {}
 ): Promise<TransformResult | null> {
-  const { config, pluginContainer, moduleGraph, watcher } = server
+  const pending = server._pendingRequests[url]
+  if (pending) {
+    debugTransform(
+      `[reuse pending] for ${prettifyUrl(url, server.config.root)}`
+    )
+    return pending
+  }
+  const result = doTransform(url, server, options)
+  server._pendingRequests[url] = result
+  const onDone = () => {
+    server._pendingRequests[url] = null
+  }
+  result.then(onDone, onDone)
+  return result
+}
 
+async function doTransform(
+  url: string,
+  server: ViteDevServer,
+  options: TransformOptions
+) {
   url = removeTimestampQuery(url)
+  const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const ssr = !!options.ssr
 
+  const module = await server.moduleGraph.getModuleByUrl(url)
+
   // check if we have a fresh cache
-  const module = await moduleGraph.getModuleByUrl(url)
   const cached =
     module && (ssr ? module.ssrTransformResult : module.transformResult)
   if (cached) {
+    // TODO: check if the module is "partially invalidated" - i.e. an import
+    // down the chain has been fully invalidated, but this current module's
+    // content has not changed.
+    // in this case, we can reuse its previous cached result and only update
+    // its import timestamps.
+
     isDebug && debugCache(`[memory] ${prettyUrl}`)
     return cached
   }
@@ -66,7 +94,7 @@ export async function transformRequest(
   let map: SourceDescription['map'] = null
 
   // load
-  const loadStart = isDebug ? Date.now() : 0
+  const loadStart = isDebug ? performance.now() : 0
   const loadResult = await pluginContainer.load(id, ssr)
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
@@ -128,7 +156,7 @@ export async function transformRequest(
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
-  const transformStart = isDebug ? Date.now() : 0
+  const transformStart = isDebug ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, map, ssr)
   if (
     transformResult == null ||
