@@ -39,7 +39,7 @@ function cleanStack(stack: string) {
     .join('\n')
 }
 
-export function logError(server: ViteDevServer, err: RollupError) {
+export function logError(server: ViteDevServer, err: RollupError): void {
   const msg = buildErrorMessage(err, [
     chalk.red(`Internal server error: ${err.message}`)
   ])
