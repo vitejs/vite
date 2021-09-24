@@ -16,6 +16,12 @@ import { proxyMiddleware } from './server/middlewares/proxy'
 import { printServerUrls } from './logger'
 import { resolveHostname } from './utils'
 
+/**
+ * Starts the Vite server in preview mode, to simulate a production deployment
+ * @param config - the resolve Vite config
+ * @param serverOptions - what host and port to use
+ * @experimental
+ */
 export async function preview(
   config: ResolvedConfig,
   serverOptions: Pick<ServerOptions, 'port' | 'host'>
