@@ -33,44 +33,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2.0.1
+        with:
+          version: 6.15.1
+
       - name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node_version }}
+          cache: "pnpm"
 
-      - name: Get yarn cache directory
-        id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: Set dependencies cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
-          key: ${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('yarn.lock') }}
-            ${{ runner.os }}-${{ matrix.node_version }}-
-
-      - name: Versions
-        run: yarn versions
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Install deps
+        run: pnpm install
 
       - name: Build vite
-        run: yarn ci-build-vite
+        run: pnpm run ci-build-vite
 
       - name: Build plugin-vue
-        run: yarn build-plugin-vue
+        run: pnpm run build-plugin-vue
 
       - name: Build plugin-react
-        run: yarn build-plugin-react
+        run: pnpm run build-plugin-react
 
       - name: Test serve
-        run: yarn test-serve --runInBand
+        run: pnpm run test-serve -- --runInBand
 
       - name: Test build
-        run: yarn test-build --runInBand
+        run: pnpm run test-build -- --runInBand
 
   lint:
     runs-on: ubuntu-latest
@@ -80,25 +70,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2.0.1
+        with:
+          version: 6.15.1
+
       - name: Set node version to 14
         uses: actions/setup-node@v2
         with:
           node-version: 14
+          cache: "pnpm"
 
-      - name: Set dependencies cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/yarn
-          key: lint-dependencies-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            lint-dependencies-${{ hashFiles('yarn.lock') }}
-            lint-dependencies-
+      - name: Install deps
+        run: pnpm install
 
       - name: Prepare
         run: |
-          yarn install --frozen-lockfile
-          yarn ci-build-vite
-          yarn build-plugin-vue
+          pnpm run ci-build-vite
+          pnpm run build-plugin-vue
 
       - name: Lint
-        run: yarn lint
+        run: pnpm run lint

@@ -126,18 +126,18 @@ You can specify additional CLI options like `--port` or `--https`. For a full li
 
 ## Using Unreleased Commits
 
-If you can't wait for a new release to test the latest features, you will need to clone the [vite repo](https://github.com/vitejs/vite) to your local machine and then build and link it yourself ([Yarn 1.x](https://classic.yarnpkg.com/lang/en/) is required):
+If you can't wait for a new release to test the latest features, you will need to clone the [vite repo](https://github.com/vitejs/vite) to your local machine and then build and link it yourself ([pnpm](https://pnpm.io/) is required):
 
 ```bash
 git clone https://github.com/vitejs/vite.git
 cd vite
-yarn
+pnpm install
 cd packages/vite
-yarn build
-yarn link
+pnpm run build
+pnpm link # you can use your preferred package manager for this step
 ```
 
-Then go to your Vite based project and run `yarn link vite`. Now restart the development server (`yarn dev`) to ride on the bleeding edge!
+Then go to your Vite based project and run `pnpm link vite` (or the package manager that you used to link `vite` globally). Now restart the development server to ride on the bleeding edge!
 
 ## Community
 

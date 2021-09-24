@@ -3,15 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "node server"
-  },
-  "workspaces": {
-    "packages": [
-      "./*"
-    ]
+    "dev": "node server",
+    "postinstall": "node ../../../scripts/patchFileDeps"
   },
   "dependencies": {
     "missing-dep": "file:./missing-dep",
     "multi-entry-dep": "file:./multi-entry-dep"
+  },
+  "devDependencies": {
+    "express": "^4.17.1"
   }
 }

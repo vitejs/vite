@@ -6,5 +6,6 @@ packages/plugin-vue/dist/
 packages/*/CHANGELOG.md
 LICENSE.md
 .prettierignore
-yarn.lock
+pnpm-lock.yaml
+pnpm-workspace.yaml
 packages/playground/tsconfig-json-load-error/has-error/tsconfig.json

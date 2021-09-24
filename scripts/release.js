@@ -141,13 +141,13 @@ async function main() {
 
   step('\nBuilding package...')
   if (!skipBuild && !isDryRun) {
-    await run('yarn', ['build'])
+    await run('pnpm', ['run', 'build'])
   } else {
     console.log(`(skipped)`)
   }
 
   step('\nGenerating changelog...')
-  await run('yarn', ['changelog'])
+  await run('pnpm', ['run', 'changelog'])
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' })
   if (stdout) {
@@ -199,6 +199,8 @@ async function publishPackage(version, runIfNotDry) {
     publicArgs.push(`--tag`, args.tag)
   }
   try {
+    // important: we still use Yarn 1 to publish since we rely on its specific
+    // behavior
     await runIfNotDry('yarn', publicArgs, {
       stdio: 'pipe'
     })

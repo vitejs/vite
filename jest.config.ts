@@ -11,8 +11,8 @@ const config: Config.InitialOptions = {
   globalTeardown: './scripts/jestGlobalTeardown.js',
   testEnvironment: './scripts/jestEnv.js',
   setupFilesAfterEnv: ['./scripts/jestPerTestSetup.ts'],
-  watchPathIgnorePatterns: ['<rootDir>/temp'],
-  modulePathIgnorePatterns: ['<rootDir>/temp'],
+  watchPathIgnorePatterns: ['<rootDir>/packages/temp'],
+  modulePathIgnorePatterns: ['<rootDir>/packages/temp'],
   moduleNameMapper: {
     testUtils: '<rootDir>/packages/playground/testUtils.ts'
   },

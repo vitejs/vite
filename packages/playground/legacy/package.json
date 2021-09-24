@@ -10,6 +10,6 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "@vitejs/plugin-legacy": "^1.0.0"
+    "@vitejs/plugin-legacy": "workspace:*"
   }
 }

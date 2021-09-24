@@ -4,15 +4,15 @@ Hi! We are really excited that you are interested in contributing to Vite. Befor
 
 ## Repo Setup
 
-The Vite repo is a monorepo using Yarn workspaces. The package manager used to install and link dependencies must be [Yarn v1](https://classic.yarnpkg.com/).
+The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/).
 
 To development and test the core `vite` package:
 
-1. Go to `packages/vite` and run `yarn dev`. This starts `rollup` in watch mode.
+1. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
 
-2. Run `yarn link` in `packages/vite`. This links `vite` globally so that you can:
+2. Run `pnpm link` in `packages/vite`. This links `vite` globally so that you can:
 
-   - Run `yarn link vite` in another Vite project to use the locally built Vite;
+   - Run `pnpm link vite` in another Vite project to use the locally built Vite;
    - Use the `vite` binary anywhere.
 
 ## Running Tests
@@ -21,15 +21,15 @@ Each package under `packages/playground/` contains a `__tests__` directory. The 
 
 Each test can be run under either dev server mode or build mode.
 
-- `yarn test` by default runs every test in both serve and build mode.
+- `pnpm test` by default runs every test in both serve and build mode.
 
-- `yarn test-serve` runs tests only under serve mode.
+- `pnpm run test-serve` runs tests only under serve mode. This is just calling `jest` so you can pass any Jest flags to this command. Since Jest will attempt to run tests in parallel, if your machine has many cores this may cause flaky test failures with multiple Playwright instances running at the same time. You can force the tests to run in series with `pnpm run test-serve -- --runInBand`.
 
-- `yarn test-build` runs tests only under build mode.
+- `pnpm run test-build` runs tests only under build mode.
 
-- You can also use `yarn test-serve [match]` or `yarn test-build [match]` to run tests in a specific playground package, e.g. `yarn test-serve css` will run tests for both `playground/css` and `playground/css-codesplit` under serve mode.
+- You can also use `pnpm run test-serve -- [match]` or `pnpm run test-build -- [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve -- css` will run tests for both `playground/css` and `playground/css-codesplit` under serve mode.
 
-  Note package matching is not available for the `yarn test` script, which always runs all tests.
+  Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
 ### Test Env and Helpers
 
@@ -75,6 +75,20 @@ test('?raw import', async () => {
 })
 ```
 
+## Note on Test Dependencies
+
+In many test cases we need to mock dependencies using `link:` and `file:` protocols (which are supported by package managers like `yarn` and `pnpm`). However, `pnpm` treats `link:` and `file:` the same way and always use symlinks. This can be undesirable in cases where we want the dependency to be actually copied into `node_modules`.
+
+To work around this, playground packages that uses the `file:` protocol should also include the following `postinstall` script:
+
+```jsonc
+"scripts": {
+  //...
+  "postinstall": "node ../../../scripts/patchFileDeps"
+}
+
+This script patches the dependencies using `file:` protocol to match the copying behavior instead of linking.
+
 ## Debug Logging
 
 You can set the `DEBUG` environment variable to turn on debugging logs. E.g. `DEBUG="vite:resolve"`. To see all debug logs you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
@@ -92,7 +106,7 @@ You can set the `DEBUG` environment variable to turn on debugging logs. E.g. `DE
 
   - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log, e.g. `fix: update entities encoding/decoding (fix #3899)`.
   - Provide a detailed description of the bug in the PR. Live demo preferred.
-  - Add appropriate test coverage if applicable. You can check the coverage of your code addition by running `yarn test --coverage`.
+  - Add appropriate test coverage if applicable.
 
 - It's OK to have multiple small commits as you work on the PR - GitHub can automatically squash them before merging.
 
