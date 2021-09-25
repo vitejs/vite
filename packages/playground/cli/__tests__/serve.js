@@ -61,6 +61,7 @@ exports.serve = async function serve(root, isProd) {
     'vite',
     [isProd ? 'preview' : '', '--port', `${port}`],
     {
+      detached: true, // force a new process group so we can kill it with all subprocesses later
       preferLocal: true,
       cwd: root,
       stdio: 'pipe'
@@ -68,29 +69,15 @@ exports.serve = async function serve(root, isProd) {
   )
   collectStreams('server', serverProcess)
 
-  // close server helper, send SIGTERM followed by SIGKILL if needed, give up after a timeout of 5 seconds
+  // close server helper, send SIGKILL to process group. give up after a timeout of 3 seconds
   const close = async () => {
-    const killTimeoutSeconds = 5
-    const killTimeoutMsg = `server process still alive ${killTimeoutSeconds}s after killing it`
     if (serverProcess) {
-      let timer
-      const timerPromise = new Promise(
-        (_, reject) =>
-          (timer = setTimeout(() => {
-            reject(killTimeoutMsg)
-          }, 1000 * killTimeoutSeconds))
-      )
-
-      serverProcess.kill('SIGTERM', {
-        forceKillAfterTimeout: (killTimeoutSeconds - 2) * 1000
-      })
-
+      const killTimeoutMsg = `server process still alive 3s after killing it`
+      killProcessTree(serverProcess.pid)
       try {
-        await Promise.race([serverProcess, timerPromise]).finally(() => {
-          clearTimeout(timer)
-        })
+        await resolvedOrTimoutError(serverProcess, 3000, killTimeoutMsg)
       } catch (e) {
-        if (!serverProcess.killed || e === killTimeoutMsg) {
+        if (e.signal !== 'SIGKILL' || e === killTimeoutMsg) {
           collectErrorStreams('server', e)
           console.error('failed to end vite cli process:', e)
           await printStreamsToConsole('server')
@@ -101,29 +88,22 @@ exports.serve = async function serve(root, isProd) {
 
   try {
     await startedOnPort(serverProcess, port, 3000)
-    return {
-      close
-    }
+    return { close }
   } catch (e) {
-    console.error('failed to start server', e)
+    console.error('failed to start server:', e)
+    // server might have started on a different port, try to close it
     try {
       await close()
     } catch (e1) {
-      console.error('failed to close server process', e1)
+      console.error('failed to close server process:', e1)
     }
+    throw e
   }
 }
 
 // helper to validate that server was started on the correct port
 async function startedOnPort(serverProcess, port, timeout) {
-  let id
   let checkPort
-  const timerPromise = new Promise(
-    (_, reject) =>
-      (id = setTimeout(() => {
-        reject(`timeout for server start after ${timeout}`)
-      }, timeout))
-  )
   const startedPromise = new Promise((resolve, reject) => {
     checkPort = (data) => {
       const str = data.toString()
@@ -136,17 +116,37 @@ async function startedOnPort(serverProcess, port, timeout) {
           resolve()
         } else {
           const msg = `test server started on ${startedPort} instead of ${port}`
-          console.log(msg)
           reject(msg)
         }
       }
     }
-
     serverProcess.stdout.on('data', checkPort)
   })
-
-  return Promise.race([timerPromise, startedPromise]).finally(() => {
+  return resolvedOrTimoutError(
+    startedPromise,
+    3000,
+    'test server failed to start within 3s'
+  ).finally(() => {
     serverProcess.stdout.off('data', checkPort)
-    clearTimeout(id)
+  })
+}
+
+function killProcessTree(pid) {
+  const isWin = process.platform === 'win32'
+  const killServerProcess = isWin
+    ? `taskkill /pid ${pid} /T /F`
+    : `kill -9 -$(ps -o pgid= ${pid} | grep -o '[0-9]*')`
+  execa.commandSync(killServerProcess, { shell: !isWin }) // unix needs shell for $() expansion
+}
+
+async function resolvedOrTimoutError(promise, ms, errorMessage) {
+  let timer
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(errorMessage), ms)
+    })
+  ]).finally(() => {
+    clearTimeout(timer)
   })
 }
