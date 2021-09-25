@@ -86,6 +86,7 @@ To work around this, playground packages that uses the `file:` protocol should a
   //...
   "postinstall": "node ../../../scripts/patchFileDeps"
 }
+```
 
 This script patches the dependencies using `file:` protocol to match the copying behavior instead of linking.
 
