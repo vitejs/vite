@@ -61,10 +61,10 @@ exports.serve = async function serve(root, isProd) {
     'vite',
     [isProd ? 'preview' : '', '--port', `${port}`],
     {
-      detached: true, // force a new process group so we can kill it with all subprocesses later
       preferLocal: true,
       cwd: root,
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+      stdio: 'pipe',
+      cleanup: true
     }
   )
   collectStreams('server', serverProcess)
@@ -73,8 +73,8 @@ exports.serve = async function serve(root, isProd) {
   const close = async () => {
     if (serverProcess) {
       const killTimeoutMsg = `server process still alive 3s after killing it`
-      killProcessTree(serverProcess.pid)
       try {
+        killProcess(serverProcess)
         await resolvedOrTimoutError(serverProcess, 3000, killTimeoutMsg)
       } catch (e) {
         if (e.signal !== 'SIGKILL' || e === killTimeoutMsg) {
@@ -82,9 +82,6 @@ exports.serve = async function serve(root, isProd) {
           console.error('failed to end vite cli process:', e)
           await printStreamsToConsole('server')
         }
-      } finally {
-        serverProcess.disconnect()
-        serverProcess.unref()
       }
     }
   }
@@ -134,12 +131,11 @@ async function startedOnPort(serverProcess, port) {
   })
 }
 
-function killProcessTree(pid) {
-  const isWin = process.platform === 'win32'
-  const killServerProcess = isWin
-    ? `taskkill /pid ${pid} /T /F`
-    : `kill -9 -$(ps -o pgid= ${pid} | grep -o '[0-9]*')`
-  execa.commandSync(killServerProcess, { shell: !isWin }) // unix needs shell for $() expansion
+function killProcess(childProcess) {
+  childProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+  if (process.platform === 'win32') {
+    execa.commandSync(`taskkill /pid ${childProcess.pid} /T /F`)
+  }
 }
 
 async function resolvedOrTimoutError(promise, ms, errorMessage) {
