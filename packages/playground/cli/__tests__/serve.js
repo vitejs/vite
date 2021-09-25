@@ -87,7 +87,7 @@ exports.serve = async function serve(root, isProd) {
   }
 
   try {
-    await startedOnPort(serverProcess, port, 3000)
+    await startedOnPort(serverProcess, port)
     return { close }
   } catch (e) {
     console.error('failed to start server:', e)
@@ -102,7 +102,7 @@ exports.serve = async function serve(root, isProd) {
 }
 
 // helper to validate that server was started on the correct port
-async function startedOnPort(serverProcess, port, timeout) {
+async function startedOnPort(serverProcess, port) {
   let checkPort
   const startedPromise = new Promise((resolve, reject) => {
     checkPort = (data) => {
@@ -124,8 +124,8 @@ async function startedOnPort(serverProcess, port, timeout) {
   })
   return resolvedOrTimoutError(
     startedPromise,
-    3000,
-    'test server failed to start within 3s'
+    5000,
+    `test server failed to start within 5s`
   ).finally(() => {
     serverProcess.stdout.off('data', checkPort)
   })
