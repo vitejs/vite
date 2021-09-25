@@ -86,16 +86,16 @@ const FRAMEWORKS = [
     ]
   },
   {
-    name: 'lit-element',
+    name: 'lit',
     color: lightRed,
     variants: [
       {
-        name: 'lit-element',
+        name: 'lit',
         display: 'JavaScript',
         color: yellow
       },
       {
-        name: 'lit-element-ts',
+        name: 'lit-ts',
         display: 'TypeScript',
         color: blue
       }

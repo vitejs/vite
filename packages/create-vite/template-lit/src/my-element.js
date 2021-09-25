@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit-element'
+import { html, css, LitElement } from 'lit'
 
 /**
  * An example element.

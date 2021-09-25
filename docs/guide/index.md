@@ -69,8 +69,8 @@ Supported template presets include:
 - `react-ts`
 - `preact`
 - `preact-ts`
-- `lit-element`
-- `lit-element-ts`
+- `lit`
+- `lit-ts`
 - `svelte`
 - `svelte-ts`
 
