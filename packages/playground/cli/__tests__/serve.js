@@ -64,7 +64,7 @@ exports.serve = async function serve(root, isProd) {
       detached: true, // force a new process group so we can kill it with all subprocesses later
       preferLocal: true,
       cwd: root,
-      stdio: 'pipe'
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
     }
   )
   collectStreams('server', serverProcess)
@@ -82,6 +82,9 @@ exports.serve = async function serve(root, isProd) {
           console.error('failed to end vite cli process:', e)
           await printStreamsToConsole('server')
         }
+      } finally {
+        serverProcess.disconnect()
+        serverProcess.unref()
       }
     }
   }
