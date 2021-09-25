@@ -68,27 +68,31 @@ exports.serve = async function serve(root, isProd) {
   )
   collectStreams('server', serverProcess)
 
-  // close server helper, send SIGTERM followed by SIGKILL if needed, give up after 3sec
+  // close server helper, send SIGTERM followed by SIGKILL if needed, give up after a timeout of 5 seconds
   const close = async () => {
+    const killTimeoutSeconds = 5
+    const killTimeoutMsg = `server process still alive ${killTimeoutSeconds}s after killing it`
     if (serverProcess) {
       let timer
       const timerPromise = new Promise(
         (_, reject) =>
           (timer = setTimeout(() => {
-            reject(`server process still alive after 3s`)
-          }, 3000))
+            reject(killTimeoutMsg)
+          }, 1000 * killTimeoutSeconds))
       )
 
-      serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+      serverProcess.kill('SIGTERM', {
+        forceKillAfterTimeout: (killTimeoutSeconds - 2) * 1000
+      })
 
       try {
         await Promise.race([serverProcess, timerPromise]).finally(() => {
           clearTimeout(timer)
         })
       } catch (e) {
-        if (!e.killed) {
+        if (!serverProcess.killed || e === killTimeoutMsg) {
           collectErrorStreams('server', e)
-          console.error('failed to end vite cli process', e)
+          console.error('failed to end vite cli process:', e)
           await printStreamsToConsole('server')
         }
       }
