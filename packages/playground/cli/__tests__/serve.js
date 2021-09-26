@@ -8,6 +8,8 @@ const execa = require('execa')
 // make sure this port is unique
 const port = (exports.port = 9510)
 
+const is_windows = process.platform === 'win32'
+
 /**
  * @param {string} root
  * @param {boolean} isProd
@@ -29,7 +31,7 @@ exports.serve = async function serve(root, isProd) {
   }
 
   // helper to output stream content on error
-  const printStreamsToConsole = async (name) => {
+  const printStreamsToConsole = (name) => {
     const std = streams[name]
     if (std.out && std.out.length > 0) {
       console.log(`stdout of ${name}\n${std.out.join('\n')}\n`)
@@ -51,7 +53,7 @@ exports.serve = async function serve(root, isProd) {
       await buildProcess
     } catch (e) {
       collectErrorStreams('build', e)
-      await printStreamsToConsole('build')
+      printStreamsToConsole('build')
       throw e
     }
   }
@@ -59,12 +61,11 @@ exports.serve = async function serve(root, isProd) {
   // run `vite --port x` or `vite preview --port x` to start server
   const serverProcess = execa(
     'vite',
-    [isProd ? 'preview' : '', '--port', `${port}`],
+    [isProd ? 'preview' : '', '--port', `${port}`, '--strict-port'],
     {
       preferLocal: true,
       cwd: root,
-      stdio: 'pipe',
-      cleanup: true
+      stdio: 'pipe'
     }
   )
   collectStreams('server', serverProcess)
@@ -77,28 +78,16 @@ exports.serve = async function serve(root, isProd) {
         killProcess(serverProcess)
         await resolvedOrTimoutError(serverProcess, 3000, killTimeoutMsg)
       } catch (e) {
-        if (e.signal !== 'SIGKILL' || e === killTimeoutMsg) {
+        if ((!is_windows && !e.killed) || e === killTimeoutMsg) {
           collectErrorStreams('server', e)
+          printStreamsToConsole('server')
           console.error('failed to end vite cli process:', e)
-          await printStreamsToConsole('server')
         }
       }
     }
   }
-
-  try {
-    await startedOnPort(serverProcess, port)
-    return { close }
-  } catch (e) {
-    console.error('failed to start server:', e)
-    // server might have started on a different port, try to close it
-    try {
-      await close()
-    } catch (e1) {
-      console.error('failed to close server process:', e1)
-    }
-    throw e
-  }
+  await startedOnPort(serverProcess, port)
+  return { close }
 }
 
 // helper to validate that server was started on the correct port
@@ -133,7 +122,7 @@ async function startedOnPort(serverProcess, port) {
 
 function killProcess(childProcess) {
   childProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
-  if (process.platform === 'win32') {
+  if (is_windows) {
     execa.commandSync(`taskkill /pid ${childProcess.pid} /T /F`)
   }
 }
