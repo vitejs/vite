@@ -294,6 +294,7 @@ export async function optimizeDeps(
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
+    target: config.build.target || undefined,
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
