@@ -772,6 +772,10 @@ export async function loadConfigFromFile(
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
     isTS = configFile.endsWith('.ts')
+
+    if (configFile.endsWith('.mjs')) {
+      isMjs = true
+    }
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
