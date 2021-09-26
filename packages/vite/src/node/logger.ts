@@ -160,7 +160,7 @@ export function printHttpServerUrls(
   }
 }
 
-export function printServerUrls(
+function printServerUrls(
   hostname: Hostname,
   protocol: string,
   port: number,
