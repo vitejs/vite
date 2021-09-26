@@ -8,7 +8,7 @@ const execa = require('execa')
 // make sure this port is unique
 const port = (exports.port = 9510)
 
-const is_windows = process.platform === 'win32'
+const isWindows = process.platform === 'win32'
 
 /**
  * @param {string} root
@@ -31,7 +31,7 @@ exports.serve = async function serve(root, isProd) {
   }
 
   // helper to output stream content on error
-  const printStreamsToConsole = (name) => {
+  const printStreamsToConsole = async (name) => {
     const std = streams[name]
     if (std.out && std.out.length > 0) {
       console.log(`stdout of ${name}\n${std.out.join('\n')}\n`)
@@ -43,9 +43,8 @@ exports.serve = async function serve(root, isProd) {
 
   // only run `vite build` when needed
   if (isProd) {
-    const buildCommand = `vite build`
     try {
-      const buildProcess = execa.command(buildCommand, {
+      const buildProcess = execa('vite', ['build'], {
         preferLocal: true,
         cwd: root,
         stdio: 'pipe'
@@ -53,61 +52,80 @@ exports.serve = async function serve(root, isProd) {
       collectStreams('build', buildProcess)
       await buildProcess
     } catch (e) {
-      console.error(`failed to run vite cli process : "${buildCommand}"`)
       collectErrorStreams('build', e)
-      printStreamsToConsole('build')
+      await printStreamsToConsole('build')
       throw e
     }
   }
 
-  const serverCommand = isProd
-    ? `vite preview --port ${port} --strict-port`
-    : `vite --port ${port} --strict-port`
-  const serverProcess = execa.command(serverCommand, {
-    preferLocal: true,
-    cwd: root,
-    stdio: 'pipe'
-  })
+  // run `vite --port x` or `vite preview --port x` to start server
+  const serverProcess = execa(
+    'vite',
+    [isProd ? 'preview' : '', '--port', `${port}`],
+    {
+      preferLocal: true,
+      cwd: root,
+      stdio: 'pipe'
+    }
+  )
   collectStreams('server', serverProcess)
 
+  // close server helper, send SIGTERM followed by SIGKILL if needed, give up after 3sec
   const close = async () => {
     if (serverProcess) {
-      const killTimeoutMsg = `server process still alive 3s after killing it`
+      let timer
+      const timerPromise = new Promise(
+        (_, reject) =>
+          (timer = setTimeout(() => {
+            reject(`server process still alive after 3s`)
+          }, 3000))
+      )
+
+      serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+      if (isWindows) {
+        execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+      }
+
       try {
-        killProcess(serverProcess)
-        await resolvedOrTimoutError(serverProcess, 3000, killTimeoutMsg)
+        await Promise.race([serverProcess, timerPromise]).finally(() => {
+          clearTimeout(timer)
+        })
       } catch (e) {
-        if ((!is_windows && !e.killed) || e === killTimeoutMsg) {
+        if (!e.killed && !isWindows) {
           collectErrorStreams('server', e)
-          printStreamsToConsole('server')
-          console.error(
-            `failed to end vite cli process : "${serverCommand}"`,
-            e
-          )
+          console.error('failed to end vite cli process', e)
+          await printStreamsToConsole('server')
         }
       }
     }
   }
-  try {
-    await resolvedOrTimoutError(
-      startedOnPort(serverProcess, port),
-      5000,
-      `test server failed to start within 5s`
-    )
-  } catch (e) {
-    console.error(`failed to start vite cli process : "${serverCommand}"`)
-    collectErrorStreams('server', e)
-    printStreamsToConsole('server')
-    throw e
-  }
 
-  return { close }
+  try {
+    await startedOnPort(serverProcess, port, 3000)
+    return {
+      close
+    }
+  } catch (e) {
+    console.error('failed to start server', e)
+    try {
+      await close()
+    } catch (e1) {
+      console.error('failed to close server process', e1)
+    }
+  }
 }
 
 // helper to validate that server was started on the correct port
-async function startedOnPort(serverProcess, port) {
+async function startedOnPort(serverProcess, port, timeout) {
+  let id
   let checkPort
-  return new Promise((resolve, reject) => {
+  const timerPromise = new Promise(
+    (_, reject) =>
+      (id = setTimeout(() => {
+        reject(`timeout for server start after ${timeout}`)
+      }, timeout))
+  )
+  const startedPromise = new Promise((resolve, reject) => {
     checkPort = (data) => {
       const str = data.toString()
       // hack, console output may contain color code gibberish
@@ -116,34 +134,20 @@ async function startedOnPort(serverProcess, port) {
       if (match) {
         const startedPort = parseInt(match[2], 10)
         if (startedPort === port) {
-          serverProcess.stdout.off('data', checkPort)
           resolve()
         } else {
-          serverProcess.stdout.off('data', checkPort)
           const msg = `test server started on ${startedPort} instead of ${port}`
+          console.log(msg)
           reject(msg)
         }
       }
     }
+
     serverProcess.stdout.on('data', checkPort)
   })
-}
 
-function killProcess(childProcess) {
-  childProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
-  if (is_windows) {
-    execa.commandSync(`taskkill /pid ${childProcess.pid} /T /F`)
-  }
-}
-
-async function resolvedOrTimoutError(promise, ms, errorMessage) {
-  let timer
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      timer = setTimeout(() => reject(errorMessage), ms)
-    })
-  ]).finally(() => {
-    clearTimeout(timer)
+  return Promise.race([timerPromise, startedPromise]).finally(() => {
+    serverProcess.stdout.off('data', checkPort)
+    clearTimeout(id)
   })
 }
