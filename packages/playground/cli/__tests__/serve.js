@@ -86,14 +86,25 @@ exports.serve = async function serve(root, isProd) {
       }
     }
   }
-  await startedOnPort(serverProcess, port)
+  try {
+    await resolvedOrTimoutError(
+      startedOnPort(serverProcess, port),
+      5000,
+      `test server failed to start within 5s`
+    )
+  } catch (e) {
+    collectErrorStreams('server', e)
+    printStreamsToConsole('server')
+    throw e
+  }
+
   return { close }
 }
 
 // helper to validate that server was started on the correct port
 async function startedOnPort(serverProcess, port) {
   let checkPort
-  const startedPromise = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     checkPort = (data) => {
       const str = data.toString()
       // hack, console output may contain color code gibberish
@@ -102,21 +113,16 @@ async function startedOnPort(serverProcess, port) {
       if (match) {
         const startedPort = parseInt(match[2], 10)
         if (startedPort === port) {
+          serverProcess.stdout.off('data', checkPort)
           resolve()
         } else {
+          serverProcess.stdout.off('data', checkPort)
           const msg = `test server started on ${startedPort} instead of ${port}`
           reject(msg)
         }
       }
     }
     serverProcess.stdout.on('data', checkPort)
-  })
-  return resolvedOrTimoutError(
-    startedPromise,
-    5000,
-    `test server failed to start within 5s`
-  ).finally(() => {
-    serverProcess.stdout.off('data', checkPort)
   })
 }
 
