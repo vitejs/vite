@@ -2,6 +2,7 @@
 // this is automtically detected by scripts/jestPerTestSetup.ts and will replace
 // the default e2e test serve behavior
 
+const path = require('path')
 // eslint-disable-next-line node/no-restricted-require
 const execa = require('execa')
 
@@ -15,6 +16,13 @@ const isWindows = process.platform === 'win32'
  * @param {boolean} isProd
  */
 exports.serve = async function serve(root, isProd) {
+  const viteBin = path.join(
+    path.relative(root, process.cwd()),
+    'packages',
+    'vite',
+    'bin',
+    'vite.js'
+  )
   // collect stdout and stderr streams from child processes here to avoid interfering with regular jest output
   const streams = {
     build: { out: [], err: [] },
@@ -44,8 +52,7 @@ exports.serve = async function serve(root, isProd) {
   // only run `vite build` when needed
   if (isProd) {
     try {
-      const buildProcess = execa('vite', ['build'], {
-        preferLocal: true,
+      const buildProcess = execa(viteBin, ['build'], {
         cwd: root,
         stdio: 'pipe'
       })
@@ -59,15 +66,14 @@ exports.serve = async function serve(root, isProd) {
   }
 
   // run `vite --port x` or `vite preview --port x` to start server
-  const serverProcess = execa(
-    'vite',
-    [isProd ? 'preview' : '', '--port', `${port}`],
-    {
-      preferLocal: true,
-      cwd: root,
-      stdio: 'pipe'
-    }
-  )
+  const viteServerArgs = ['--port', `${port}`, '--strict-port']
+  if (isProd) {
+    viteServerArgs.unshift('preview')
+  }
+  const serverProcess = execa('vite', viteServerArgs, {
+    cwd: root,
+    stdio: 'pipe'
+  })
   collectStreams('server', serverProcess)
 
   // close server helper, send SIGTERM followed by SIGKILL if needed, give up after 3sec
