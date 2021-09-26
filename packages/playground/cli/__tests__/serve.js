@@ -80,24 +80,25 @@ exports.serve = async function serve(root, isProd) {
   const close = async () => {
     if (serverProcess) {
       let timer
+      const timeoutError = `server process still alive after 3s`
       const timerPromise = new Promise(
         (_, reject) =>
           (timer = setTimeout(() => {
-            reject(`server process still alive after 3s`)
+            reject(timeoutError)
           }, 3000))
       )
 
-      serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
-      if (isWindows) {
-        execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
-      }
-
       try {
-        await Promise.race([serverProcess, timerPromise]).finally(() => {
+        const closeTimerRace = Promise.race([
+          serverProcess,
+          timerPromise
+        ]).finally(() => {
           clearTimeout(timer)
         })
+        killProcess(serverProcess)
+        await closeTimerRace
       } catch (e) {
-        if (!e.killed && !isWindows) {
+        if (e === timeoutError || (!serverProcess.killed && !isWindows)) {
           collectErrorStreams('server', e)
           console.error('failed to end vite cli process', e)
           await printStreamsToConsole('server')
@@ -156,4 +157,17 @@ async function startedOnPort(serverProcess, port, timeout) {
     serverProcess.stdout.off('data', checkPort)
     clearTimeout(id)
   })
+}
+
+// helper function to kill process, uses taskkill on windows to ensure child process is killed too
+function killProcess(serverProcess) {
+  if (isWindows) {
+    try {
+      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+    } catch (e) {
+      console.error('failed to taskkill:', e)
+    }
+  } else {
+    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+  }
 }
