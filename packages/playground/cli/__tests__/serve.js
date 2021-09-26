@@ -70,7 +70,7 @@ exports.serve = async function serve(root, isProd) {
   if (isProd) {
     viteServerArgs.unshift('preview')
   }
-  const serverProcess = execa('vite', viteServerArgs, {
+  const serverProcess = execa(viteBin, viteServerArgs, {
     cwd: root,
     stdio: 'pipe'
   })
