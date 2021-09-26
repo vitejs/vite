@@ -106,7 +106,7 @@ Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.htm
 
 #### Specifying Alternative Root
 
-Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
+Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite dev some/sub/dir`.
 
 ## Command Line Interface
 

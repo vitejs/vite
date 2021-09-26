@@ -156,7 +156,7 @@ export function fileToUrl(
   config: ResolvedConfig,
   ctx: PluginContext
 ): string | Promise<string> {
-  if (config.command === 'serve') {
+  if (config.command === 'dev') {
     return fileToDevUrl(id, config)
   } else {
     return fileToBuiltUrl(id, config, ctx)

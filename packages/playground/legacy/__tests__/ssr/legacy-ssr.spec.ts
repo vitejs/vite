@@ -14,7 +14,7 @@ if (isBuild) {
     expect(await page.textContent('#env')).toMatch('false')
   })
 } else {
-  // this test doesn't support serve mode
+  // this test doesn't support dev mode
   // must contain at least one test
   test('should work', () => void 0)
 }

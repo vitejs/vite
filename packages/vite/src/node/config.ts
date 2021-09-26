@@ -47,7 +47,7 @@ const debug = createDebugger('vite:config')
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
 export interface ConfigEnv {
-  command: 'build' | 'serve'
+  command: 'build' | 'dev'
   mode: string
 }
 
@@ -58,7 +58,7 @@ export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
  * Type helper to make it easier to use vite.config.ts
  * accepts a direct {@link UserConfig} object, or a function that returns it.
  * The function receives a {@link ConfigEnv} object that exposes two properties:
- * `command` (either `'build'` or `'serve'`), and `mode`.
+ * `command` (either `'build'` or `'dev'`), and `mode`.
  */
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
@@ -214,7 +214,7 @@ export type ResolvedConfig = Readonly<
     root: string
     base: string
     publicDir: string
-    command: 'build' | 'serve'
+    command: 'build' | 'dev'
     mode: string
     isProduction: boolean
     env: Record<string, any>
@@ -240,7 +240,7 @@ export type ResolveFn = (
 
 export async function resolveConfig(
   inlineConfig: InlineConfig,
-  command: 'build' | 'serve',
+  command: 'build' | 'dev',
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig

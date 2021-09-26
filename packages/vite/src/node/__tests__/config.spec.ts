@@ -117,7 +117,7 @@ describe('resolveConfig', () => {
       }
     }
 
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
+    expect(await resolveConfig(config, 'dev')).toMatchObject({
       optimizeDeps: {
         esbuildOptions: {
           keepNames: false
@@ -136,7 +136,7 @@ describe('resolveConfig', () => {
       }
     }
 
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
+    expect(await resolveConfig(config, 'dev')).toMatchObject({
       optimizeDeps: {
         esbuildOptions: {
           keepNames: false

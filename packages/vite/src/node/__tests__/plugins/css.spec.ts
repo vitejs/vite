@@ -62,7 +62,7 @@ describe('css path resolutions', () => {
           ]
         }
       },
-      'serve'
+      'dev'
     )
 
     const { transform, buildStart } = cssPlugin(config)

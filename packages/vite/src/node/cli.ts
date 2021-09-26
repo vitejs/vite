@@ -66,7 +66,8 @@ cli
 // dev
 cli
   .command('[root]') // default command
-  .alias('serve')
+  .alias('dev')
+  .alias('serve') // deprecated
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
@@ -78,6 +79,16 @@ cli
     `[boolean] force the optimizer to ignore the cache and re-bundle`
   )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
+    if (cli.matchedCommandName === 'serve') {
+      createLogger(options.logLevel).warn(
+        `The ${chalk.yellow(
+          'vite serve'
+        )} command is deprecated, use ${chalk.green('vite')} or ${chalk.green(
+          'vite dev'
+        )} instead`
+      )
+    }
+
     // output structure is preserved even after bundling so require()
     // is ok here
     const { createServer } = await import('./server')
@@ -247,7 +258,7 @@ cli
               https: options.https
             }
           },
-          'serve',
+          'dev',
           'production'
         )
         const server = await preview(config, cleanOptions(options))

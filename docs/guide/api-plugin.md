@@ -217,8 +217,8 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
       // use stored config in other hooks
       transform(code, id) {
-        if (config.command === 'serve') {
-          // serve: plugin invoked by dev server
+        if (config.command === 'dev') {
+          // dev: plugin invoked by dev server
         } else {
           // build: plugin invoked by Rollup
         }
@@ -414,13 +414,13 @@ A Vite plugin can additionally specify an `enforce` property (similar to webpack
 
 ## Conditional Application
 
-By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property to only invoke them during `'build'` or `'serve'`:
+By default plugins are invoked for both dev and build. In cases where a plugin needs to be conditionally applied only during dev or build, use the `apply` property to only invoke them during `'build'` or `'dev'`:
 
 ```js
 function myPlugin() {
   return {
     name: 'build-only',
-    apply: 'build' // or 'serve'
+    apply: 'build' // or 'dev'
   }
 }
 ```

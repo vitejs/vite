@@ -23,13 +23,13 @@ import { HmrContext } from './server/hmr'
  * coupling between its bundle phase and output phase hooks then it should
  * just work (that means, most of them).
  *
- * By default, the plugins are run during both serve and build. When a plugin
- * is applied during serve, it will only run **non output plugin hooks** (see
+ * By default, the plugins are run during both dev and build. When a plugin
+ * is applied during dev, it will only run **non output plugin hooks** (see
  * rollup type definition of {@link rollup#PluginHooks}). You can think of the
  * dev server as only running `const bundle = rollup.rollup()` but never calling
  * `bundle.generate()`.
  *
- * A plugin that expects to have different behavior depending on serve/build can
+ * A plugin that expects to have different behavior depending on dev/build can
  * export a factory function that receives the command being run via options.
  *
  * If a plugin should be applied only for server or build, a function format
@@ -50,9 +50,9 @@ export interface Plugin extends RollupPlugin {
    */
   enforce?: 'pre' | 'post'
   /**
-   * Apply the plugin only for serve or build, or on certain conditions.
+   * Apply the plugin only for dev or build, or on certain conditions.
    */
-  apply?: 'serve' | 'build' | ((config: UserConfig, env: ConfigEnv) => boolean)
+  apply?: 'dev' | 'build' | ((config: UserConfig, env: ConfigEnv) => boolean)
   /**
    * Modify vite config before it's resolved. The hook can either mutate the
    * passed-in config directly, or return a partial config object that will be

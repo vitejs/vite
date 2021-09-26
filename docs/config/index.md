@@ -52,13 +52,13 @@ Vite also directly supports TS config files. You can use `vite.config.ts` with t
 
 ### Conditional Config
 
-If the config needs to conditional determine options based on the command (`serve` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
+If the config needs to conditional determine options based on the command (`dev` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
 
 ```js
 export default defineConfig(({ command, mode }) => {
-  if (command === 'serve') {
+  if (command === 'dev') {
     return {
-      // serve specific config
+      // dev specific config
     }
   } else {
     return {
@@ -108,9 +108,9 @@ export default defineConfig(async ({ command, mode }) => {
 ### mode
 
 - **Type:** `string`
-- **Default:** `'development'` for serve, `'production'` for build
+- **Default:** `'development'` for dev, `'production'` for build
 
-  Specifying this in config will override the default mode for **both serve and build**. This value can also be overridden via the command line `--mode` option.
+  Specifying this in config will override the default mode for **both dev and build**. This value can also be overridden via the command line `--mode` option.
 
   See [Env Variables and Modes](/guide/env-and-mode) for more details.
 

@@ -281,7 +281,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
-      if (config.command === 'serve') {
+      if (config.command === 'dev') {
         if (isDirectCSSRequest(id)) {
           return css
         } else {

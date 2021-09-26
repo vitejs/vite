@@ -84,7 +84,7 @@ module.exports = {
       }
     },
     {
-      name: 'serve-only-transform',
+      name: 'dev-only-transform',
       transformIndexHtml(_, ctx) {
         if (ctx.server) {
           return [

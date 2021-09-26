@@ -311,7 +311,7 @@ export interface ViteDevServer {
 export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'development')
+  const config = await resolveConfig(inlineConfig, 'dev', 'development')
   const root = config.root
   const serverConfig = config.server
   const httpsOptions = await resolveHttpsConfig(config)
@@ -617,7 +617,9 @@ async function startServer(
   if (options.open && !isRestart) {
     const path = typeof options.open === 'string' ? options.open : base
     openBrowser(
-      path.startsWith('http') ? path : `${protocol}://${hostname.name}:${serverPort}${path}`,
+      path.startsWith('http')
+        ? path
+        : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
       server.config.logger
     )

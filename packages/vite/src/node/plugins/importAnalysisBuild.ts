@@ -82,7 +82,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 }
 
 /**
- * Build only. During serve this is performed as part of ./importAnalysis.
+ * Build only. During dev this is performed as part of ./importAnalysis.
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr

@@ -65,7 +65,7 @@ beforeAll(async () => {
       tempDir = resolve(__dirname, '../packages/temp/', testName)
 
       // when `root` dir is present, use it as vite's root
-      let testCustomRoot = resolve(tempDir, 'root')
+      const testCustomRoot = resolve(tempDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : tempDir
 
       const testCustomServe = resolve(dirname(testPath), 'serve.js')
@@ -103,7 +103,7 @@ beforeAll(async () => {
       }
 
       if (!isBuildTest) {
-        process.env.VITE_INLINE = 'inline-serve'
+        process.env.VITE_INLINE = 'inline-dev'
         server = await (await createServer(options)).listen()
         // use resolved port/base from server
         const base = server.config.base === '/' ? '' : server.config.base

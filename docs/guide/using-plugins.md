@@ -65,7 +65,7 @@ Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed info
 
 ## Conditional Application
 
-By default, plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property to only invoke them during `'build'` or `'serve'`:
+By default, plugins are invoked for both dev and build. In cases where a plugin needs to be conditionally applied only during dev or build, use the `apply` property to only invoke them during `'build'` or `'dev'`:
 
 ```js
 // vite.config.js

@@ -32,7 +32,7 @@ test('mode file override', async () => {
 
 test('inline variables', async () => {
   expect(await page.textContent('.inline')).toBe(
-    isBuild ? `inline-build` : `inline-serve`
+    isBuild ? `inline-build` : `inline-dev`
   )
 })
 

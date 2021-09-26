@@ -63,8 +63,8 @@ function vueJsxPlugin(options = {}) {
     },
 
     configResolved(config) {
-      needHmr = config.command === 'serve' && !config.isProduction
-      needSourceMap = config.command === 'serve' || !!config.build.sourcemap
+      needHmr = config.command === 'dev' && !config.isProduction
+      needSourceMap = config.command === 'dev' || !!config.build.sourcemap
       root = config.root
     },
 

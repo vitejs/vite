@@ -145,7 +145,7 @@ const { build } = require('vite')
 ```ts
 async function resolveConfig(
   inlineConfig: InlineConfig,
-  command: 'build' | 'serve',
+  command: 'build' | 'dev',
   defaultMode?: string
 ): Promise<ResolvedConfig>
 ```
