@@ -85,6 +85,7 @@ export interface PluginContainer {
   resolveId(
     id: string,
     importer?: string,
+    isEntry?: boolean,
     skip?: Set<Plugin>,
     ssr?: boolean
   ): Promise<PartialResolvedId | null>
@@ -186,14 +187,20 @@ export async function createPluginContainer(
     async resolve(
       id: string,
       importer?: string,
-      options?: { skipSelf?: boolean }
+      options?: { skipSelf?: boolean; isEntry?: boolean }
     ) {
       let skips: Set<Plugin> | undefined
       if (options?.skipSelf && this._activePlugin) {
         skips = new Set(this._resolveSkips)
         skips.add(this._activePlugin)
       }
-      let out = await container.resolveId(id, importer, skips, this.ssr)
+      let out = await container.resolveId(
+        id,
+        importer,
+        typeof options?.isEntry === 'boolean' ? options?.isEntry : !importer,
+        skips,
+        this.ssr
+      )
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -420,7 +427,13 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(rawId, importer = join(root, 'index.html'), skips, ssr) {
+    async resolveId(
+      rawId,
+      importer = join(root, 'index.html'),
+      isEntry: boolean,
+      skips,
+      ssr
+    ) {
       const ctx = new Context()
       ctx.ssr = !!ssr
       ctx._resolveSkips = skips
@@ -439,7 +452,7 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          {},
+          { isEntry },
           ssr
         )
         if (!result) continue
