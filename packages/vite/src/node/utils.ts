@@ -19,6 +19,7 @@ import {
   DecodedSourceMap,
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'
+import { performance } from 'perf_hooks'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -142,7 +143,7 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -211,8 +212,8 @@ export async function asyncReplace(
 }
 
 export function timeFrom(start: number, subtract = 0): string {
-  const time: number | string = Date.now() - start - subtract
-  const timeString = (time + `ms`).padEnd(5, ' ')
+  const time: number | string = performance.now() - start - subtract
+  const timeString = (time.toFixed(2) + `ms`).padEnd(5, ' ')
   if (time < 10) {
     return chalk.green(timeString)
   } else if (time < 50) {

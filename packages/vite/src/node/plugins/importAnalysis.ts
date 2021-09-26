@@ -17,7 +17,9 @@ import {
   isJSRequest,
   prettifyUrl,
   timeFrom,
-  normalizePath
+  normalizePath,
+  removeImportQuery,
+  unwrapId
 } from '../utils'
 import {
   debugHmr,
@@ -39,9 +41,11 @@ import type { Node } from 'estree'
 import { transformImportGlob } from '../importGlob'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import { performance } from 'perf_hooks'
+import { transformRequest } from '../server/transformRequest'
 
 const isDebug = !!process.env.DEBUG
-const debugRewrite = createDebugger('vite:rewrite')
+const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
@@ -105,11 +109,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
-        isDebug && debugRewrite(chalk.dim(`[skipped] ${prettyImporter}`))
+        isDebug && debug(chalk.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
-      const rewriteStart = Date.now()
+      const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
       // strip UTF-8 BOM
@@ -140,10 +144,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length) {
         isDebug &&
-          debugRewrite(
-            `${timeFrom(rewriteStart)} ${chalk.dim(
-              `[no imports] ${prettyImporter}`
-            )}`
+          debug(
+            `${timeFrom(start)} ${chalk.dim(`[no imports] ${prettyImporter}`)}`
           )
         return source
       }
@@ -160,6 +162,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
+      const staticImportedUrls = new Set<string>()
       const acceptedUrls = new Set<{
         url: string
         start: number
@@ -290,18 +293,29 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           } else if (prop === '.glo' && source[end + 4] === 'b') {
             // transform import.meta.glob()
             // e.g. `import.meta.glob('glob:./dir/*.js')`
-            const { imports, importsString, exp, endIndex, base, pattern } =
-              await transformImportGlob(
-                source,
-                start,
-                importer,
-                index,
-                root,
-                normalizeUrl
-              )
+            const {
+              imports,
+              importsString,
+              exp,
+              endIndex,
+              base,
+              pattern,
+              isEager
+            } = await transformImportGlob(
+              source,
+              start,
+              importer,
+              index,
+              root,
+              normalizeUrl
+            )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
-            imports.forEach((url) => importedUrls.add(url.replace(base, '/')))
+            imports.forEach((url) => {
+              url = url.replace(base, '/')
+              importedUrls.add(url)
+              if (isEager) staticImportedUrls.add(url)
+            })
             if (!(importerModule.file! in server._globImporters)) {
               server._globImporters[importerModule.file!] = {
                 module: importerModule,
@@ -398,7 +412,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           // make sure to normalize away base
-          importedUrls.add(url.replace(base, '/'))
+          const urlWithoutBase = url.replace(base, '/')
+          importedUrls.add(urlWithoutBase)
+          if (!isDynamicImport) {
+            // for pre-transforming
+            staticImportedUrls.add(urlWithoutBase)
+          }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning
           const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(rawUrl)
@@ -510,6 +529,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      isDebug &&
+        debug(
+          `${timeFrom(start)} ${chalk.dim(
+            `[${importedUrls.size} imports rewritten] ${prettyImporter}`
+          )}`
+        )
+
+      // pre-transform known direct imports
+      if (staticImportedUrls.size) {
+        staticImportedUrls.forEach((url) => {
+          transformRequest(unwrapId(removeImportQuery(url)), server, { ssr })
+        })
+      }
+
       if (s) {
         return s.toString()
       } else {
@@ -563,7 +596,7 @@ function transformCjsImport(
 ): string | undefined {
   const node = (
     parseJS(importExp, {
-      ecmaVersion: 2020,
+      ecmaVersion: 'latest',
       sourceType: 'module'
     }) as any
   ).body[0] as Node

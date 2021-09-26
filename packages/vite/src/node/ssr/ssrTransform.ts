@@ -33,7 +33,7 @@ export async function ssrTransform(
 
   const ast = parser.parse(code, {
     sourceType: 'module',
-    ecmaVersion: 2021,
+    ecmaVersion: 'latest',
     locations: true
   }) as any
 
@@ -294,7 +294,7 @@ function walk(
         // walk function expressions and add its arguments to known identifiers
         // so that we don't prefix them
         node.params.forEach((p) =>
-          (eswalk as any)(p, {
+          (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
               if (
                 child.type === 'Identifier' &&

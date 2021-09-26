@@ -15,6 +15,7 @@
     "resolve-custom-main-field": "link:./custom-main-field",
     "resolve-custom-condition": "link:./custom-condition",
     "@babel/runtime": "^7.12.5",
-    "normalize.css": "^8.0.1"
+    "normalize.css": "^8.0.1",
+    "resolve-linked": "workspace:*"
   }
 }

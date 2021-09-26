@@ -8,8 +8,11 @@
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "serve": "vite preview"
   },
+  "dependencies": {
+    "vue": "^3.2.16"
+  },
   "devDependencies": {
-    "@vitejs/plugin-vue-jsx": "^1.0.0",
-    "@vitejs/plugin-vue": "^1.3.0"
+    "@vitejs/plugin-vue-jsx": "workspace:*",
+    "@vitejs/plugin-vue": "workspace:*"
   }
 }

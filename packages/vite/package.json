@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.6.0-beta.0",
+  "version": "2.6.0-beta.2",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -31,12 +31,12 @@
   "scripts": {
     "predev": "rimraf dist",
     "dev": "rollup -c -w",
-    "prebuild": "rimraf dist && yarn lint",
+    "prebuild": "rimraf dist && npm run lint",
     "build": "run-s build-bundle build-types",
     "build-bundle": "rollup -c",
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
-    "ci-build": "rimraf dist && yarn run-s build-bundle build-types",
+    "ci-build": "rimraf dist && run-s build-bundle build-types",
     "patch-types": "node scripts/patchTypes",
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",
@@ -46,10 +46,10 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.12.17",
-    "postcss": "^8.3.6",
+    "esbuild": "^0.13.2",
+    "postcss": "^8.3.7",
     "resolve": "^1.20.0",
-    "rollup": "^2.38.5"
+    "rollup": "^2.57.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
@@ -60,7 +60,7 @@
     "@rollup/plugin-commonjs": "^20.0.0",
     "@rollup/plugin-dynamic-import-vars": "^1.4.0",
     "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "13.0.4",
+    "@rollup/plugin-node-resolve": "13.0.5",
     "@rollup/plugin-typescript": "^8.2.5",
     "@rollup/pluginutils": "^4.1.1",
     "@types/convert-source-map": "^1.5.2",
@@ -75,7 +75,7 @@
     "@types/sass": "^1.16.1",
     "@types/stylus": "^0.48.36",
     "@types/ws": "^7.4.7",
-    "@vue/compiler-dom": "^3.2.12",
+    "@vue/compiler-dom": "^3.2.14",
     "acorn": "^8.5.0",
     "acorn-class-fields": "^1.0.0",
     "acorn-static-class-features": "^1.0.0",
@@ -91,7 +91,7 @@
     "debug": "^4.3.2",
     "dotenv": "^10.0.0",
     "dotenv-expand": "^5.1.0",
-    "es-module-lexer": "^0.8.0",
+    "es-module-lexer": "^0.9.0",
     "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
     "execa": "^5.1.1",
@@ -114,10 +114,26 @@
     "source-map": "^0.6.1",
     "source-map-support": "^0.5.20",
     "strip-ansi": "^6.0.0",
-    "terser": "^5.8.0",
+    "terser": "^5.9.0",
     "tsconfck": "^1.0.0",
     "tslib": "^2.3.1",
     "types": "link:./types",
     "ws": "^7.5.5"
+  },
+  "peerDependencies": {
+    "less": "*",
+    "sass": "*",
+    "stylus": "*"
+  },
+  "peerDependenciesMeta": {
+    "sass": {
+      "optional": true
+    },
+    "stylus": {
+      "optional": true
+    },
+    "less": {
+      "optional": true
+    }
   }
 }

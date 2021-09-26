@@ -40,6 +40,7 @@ import {
 } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
+import { performance } from 'perf_hooks'
 
 const debug = createDebugger('vite:config')
 
@@ -580,6 +581,16 @@ export async function resolveConfig(
     )
   }
 
+  if (config.build?.terserOptions && config.build.minify === 'esbuild') {
+    logger.warn(
+      chalk.yellow(
+        `build.terserOptions is specified but build.minify is not set to use Terser. ` +
+          `Note Vite now defaults to use esbuild for minification. If you still ` +
+          `prefer Terser, set build.minify to "terser".`
+      )
+    )
+  }
+
   return resolved
 }
 
@@ -741,7 +752,8 @@ export async function loadConfigFromFile(
   config: UserConfig
   dependencies: string[]
 } | null> {
-  const start = Date.now()
+  const start = performance.now()
+  const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
   let resolvedPath: string | undefined
   let isTS = false
@@ -760,6 +772,10 @@ export async function loadConfigFromFile(
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
     isTS = configFile.endsWith('.ts')
+
+    if (configFile.endsWith('.mjs')) {
+      isMjs = true
+    }
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
@@ -806,17 +822,14 @@ export async function loadConfigFromFile(
         userConfig = (await eval(`import(fileUrl + '.js?t=${Date.now()}')`))
           .default
         fs.unlinkSync(resolvedPath + '.js')
-        debug(
-          `TS + native esm config loaded in ${Date.now() - start}ms`,
-          fileUrl
-        )
+        debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
       } else {
         // using eval to avoid this from being compiled away by TS/Rollup
         // append a query so that we force reload fresh config in case of
         // server restart
         userConfig = (await eval(`import(fileUrl + '?t=${Date.now()}')`))
           .default
-        debug(`native esm config loaded in ${Date.now() - start}ms`, fileUrl)
+        debug(`native esm config loaded in ${getTime()}`, fileUrl)
       }
     }
 
@@ -826,7 +839,7 @@ export async function loadConfigFromFile(
         // clear cache in case of server restart
         delete require.cache[require.resolve(resolvedPath)]
         userConfig = require(resolvedPath)
-        debug(`cjs config loaded in ${Date.now() - start}ms`)
+        debug(`cjs config loaded in ${getTime()}`)
       } catch (e) {
         const ignored = new RegExp(
           [
@@ -852,7 +865,7 @@ export async function loadConfigFromFile(
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
       userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
-      debug(`bundled config file loaded in ${Date.now() - start}ms`)
+      debug(`bundled config file loaded in ${getTime()}`)
     }
 
     const config = await (typeof userConfig === 'function'

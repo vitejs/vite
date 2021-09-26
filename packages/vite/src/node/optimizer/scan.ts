@@ -26,10 +26,11 @@ import {
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
+import { performance } from 'perf_hooks'
 
 const debug = createDebugger('vite:deps')
 
-const htmlTypesRE = /\.(html|vue|svelte)$/
+const htmlTypesRE = /\.(html|vue|svelte|astro)$/
 
 // A simple regex to detect import sources. This is only used on
 // <script lang="ts"> blocks in vue (setup only) or svelte files, since
@@ -46,7 +47,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
   missing: Record<string, string>
 }> {
-  const s = Date.now()
+  const start = performance.now()
 
   let entries: string[] = []
 
@@ -110,7 +111,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
     )
   )
 
-  debug(`Scan completed in ${Date.now() - s}ms:`, deps)
+  debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
 
   return {
     deps,
