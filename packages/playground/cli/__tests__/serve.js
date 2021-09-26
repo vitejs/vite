@@ -43,8 +43,9 @@ exports.serve = async function serve(root, isProd) {
 
   // only run `vite build` when needed
   if (isProd) {
+    const buildCommand = `vite build`
     try {
-      const buildProcess = execa('vite', ['build'], {
+      const buildProcess = execa.command(buildCommand, {
         preferLocal: true,
         cwd: root,
         stdio: 'pipe'
@@ -52,25 +53,23 @@ exports.serve = async function serve(root, isProd) {
       collectStreams('build', buildProcess)
       await buildProcess
     } catch (e) {
+      console.error(`failed to run vite cli process : "${buildCommand}"`)
       collectErrorStreams('build', e)
       printStreamsToConsole('build')
       throw e
     }
   }
 
-  // run `vite --port x` or `vite preview --port x` to start server
-  const serverProcess = execa(
-    'vite',
-    [isProd ? 'preview' : '', '--port', `${port}`, '--strict-port'],
-    {
-      preferLocal: true,
-      cwd: root,
-      stdio: 'pipe'
-    }
-  )
+  const serverCommand = isProd
+    ? `vite preview --port ${port} --strict-port`
+    : `vite --port ${port} --strict-port`
+  const serverProcess = execa.command(serverCommand, {
+    preferLocal: true,
+    cwd: root,
+    stdio: 'pipe'
+  })
   collectStreams('server', serverProcess)
 
-  // close server helper, send SIGKILL to process group. give up after a timeout of 3 seconds
   const close = async () => {
     if (serverProcess) {
       const killTimeoutMsg = `server process still alive 3s after killing it`
@@ -81,7 +80,10 @@ exports.serve = async function serve(root, isProd) {
         if ((!is_windows && !e.killed) || e === killTimeoutMsg) {
           collectErrorStreams('server', e)
           printStreamsToConsole('server')
-          console.error('failed to end vite cli process:', e)
+          console.error(
+            `failed to end vite cli process : "${serverCommand}"`,
+            e
+          )
         }
       }
     }
@@ -93,6 +95,7 @@ exports.serve = async function serve(root, isProd) {
       `test server failed to start within 5s`
     )
   } catch (e) {
+    console.error(`failed to start vite cli process : "${serverCommand}"`)
     collectErrorStreams('server', e)
     printStreamsToConsole('server')
     throw e
