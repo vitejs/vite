@@ -88,7 +88,7 @@ Note that:
 [import.meta.url](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import.meta) is a native ESM feature that exposes the current module's URL. Combining it with the native [URL constructor](https://developer.mozilla.org/en-US/docs/Web/API/URL), we can obtain the full, resolved URL of a static asset using relative path from a JavaScript module:
 
 ```js
-const imgUrl = new URL('./img.png', import.meta.url)
+const imgUrl = new URL('./img.png', import.meta.url).href
 
 document.getElementById('hero-img').src = imgUrl
 ```
