@@ -3,6 +3,19 @@
 <div class="umd"></div>
 <div class="dynamic-import-message"></div>
 
+<div
+  class="emitAssets-default"
+  style="
+    background-size: contain;
+    background-repeat: no-repeat;
+    padding-left: 20px;
+  "
+>
+  <-background-image should be inline unless emitAssets:true is set
+</div>
+<div class="emitAssets-true"></div>
+<script src="./lib2/emit-assets.js"></script>
+
 <script type="module">
   import myLib from './my-lib-custom-filename.es.js'
 

@@ -1,4 +1,4 @@
-import { isBuild, findAssetFile, testDir } from 'testUtils'
+import { isBuild, findAssetFile, testDir, getBg } from 'testUtils'
 import path from 'path'
 import fs from 'fs'
 
@@ -9,6 +9,16 @@ if (isBuild) {
 
   test('umd', async () => {
     expect(await page.textContent('.umd')).toBe('It works')
+  })
+
+  test('lib: emitAssets:undefined|false = is inlined', async () => {
+    const match = `data:image/png;base64`
+    expect(await getBg('.emitAssets-default')).toMatch(match)
+  })
+
+  test('lib: emitAssets:true = is emitted', async () => {
+    const match = /\/assets\/asset\.\w{8}\.png/
+    expect(await getBg('.emitAssets-true')).toMatch(match)
   })
 
   test('Library mode does not include `preload`', async () => {
