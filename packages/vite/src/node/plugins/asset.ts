@@ -176,7 +176,8 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX + id)
   }
-  return config.base + rtn.replace(/^\//, '')
+  const origin = config.server?.origin ?? ''
+  return origin + config.base + rtn.replace(/^\//, '')
 }
 
 export function getAssetFilename(
