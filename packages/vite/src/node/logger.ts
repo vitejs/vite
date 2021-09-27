@@ -160,7 +160,7 @@ export function printHttpServerUrls(
   }
 }
 
-export function printServerUrls(
+function printServerUrls(
   hostname: Hostname,
   protocol: string,
   port: number,
@@ -176,7 +176,7 @@ export function printServerUrls(
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
-      .filter((detail) => detail.family === 'IPv4')
+      .filter((detail) => detail && detail.address && detail.family === 'IPv4')
       .map((detail) => {
         const type = detail.address.includes('127.0.0.1')
           ? 'Local:   '
