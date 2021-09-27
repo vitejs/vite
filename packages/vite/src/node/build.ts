@@ -234,16 +234,6 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},
-    commonjsOptions: {
-      include: [/node_modules/],
-      extensions: ['.js', '.cjs'],
-      ...raw?.commonjsOptions
-    },
-    dynamicImportVarsOptions: {
-      warnOnError: true,
-      exclude: [/node_modules/],
-      ...raw?.dynamicImportVarsOptions
-    },
     minify: raw?.ssr ? false : 'esbuild',
     terserOptions: {},
     write: true,
@@ -256,7 +246,17 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     // brotliSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
-    ...raw
+    ...raw,
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs'],
+      ...raw?.commonjsOptions
+    },
+    dynamicImportVarsOptions: {
+      warnOnError: true,
+      exclude: [/node_modules/],
+      ...raw?.dynamicImportVarsOptions
+    }
   }
 
   // handle special build targets
