@@ -130,6 +130,10 @@ export interface ServerOptions {
    * Options for files served via '/\@fs/'.
    */
   fs?: FileSystemServeOptions
+  /**
+   * Origin for the generated asset URLs.
+   */
+  origin?: string
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
