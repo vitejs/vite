@@ -47,7 +47,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.13.2",
-    "postcss": "^8.3.7",
+    "postcss": "^8.3.8",
     "resolve": "^1.20.0",
     "rollup": "^2.57.0"
   },
@@ -75,7 +75,7 @@
     "@types/sass": "^1.16.1",
     "@types/stylus": "^0.48.36",
     "@types/ws": "^7.4.7",
-    "@vue/compiler-dom": "^3.2.14",
+    "@vue/compiler-dom": "^3.2.19",
     "acorn": "^8.5.0",
     "acorn-class-fields": "^1.0.0",
     "acorn-static-class-features": "^1.0.0",
