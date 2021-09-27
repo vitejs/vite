@@ -39,7 +39,7 @@
     "rollup": "^2.57.0",
     "slash": "^3.0.0",
     "source-map": "^0.6.1",
-    "vue": "^3.2.16",
-    "@vue/compiler-sfc": "^3.2.16"
+    "vue": "^3.2.19",
+    "@vue/compiler-sfc": "^3.2.19"
   }
 }
