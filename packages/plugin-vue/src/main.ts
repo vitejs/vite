@@ -111,7 +111,10 @@ export async function transformMain(
   }
   if (devToolsEnabled || (devServer && !isProduction)) {
     // expose filename during serve for devtools to pickup
-    attachedProps.push([`__file`, JSON.stringify(filename)])
+    attachedProps.push([
+      `__file`,
+      JSON.stringify(isProduction ? path.basename(filename) : filename)
+    ])
   }
 
   // HMR
