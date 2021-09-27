@@ -230,8 +230,13 @@ function esbuildScanPlugin(
             ) {
               continue
             }
-            if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
-              loader = lang
+            if (
+              lang === 'ts' ||
+              lang === 'typescript' ||
+              lang === 'tsx' ||
+              lang === 'jsx'
+            ) {
+              loader = lang === 'typescript' ? 'ts' : lang;
             }
             if (srcMatch) {
               const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
