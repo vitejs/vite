@@ -1,3 +1,27 @@
+# [2.6.0-beta.3](https://github.com/vitejs/vite/compare/v2.6.0-beta.2...v2.6.0-beta.3) (2021-09-27)
+
+
+### Bug Fixes
+
+* Allow custom asset URL origin in development ([#5104](https://github.com/vitejs/vite/issues/5104)) ([e4ef6dd](https://github.com/vitejs/vite/commit/e4ef6ddbbf6cef689537fe35d8f8378150e87f6e))
+* avoid module preload polyfill for zero js html ([#4999](https://github.com/vitejs/vite/issues/4999)) ([ac55755](https://github.com/vitejs/vite/commit/ac55755f12e1f497e00a6ba1781cc80a065d770b))
+* injected tags indentation ([#5000](https://github.com/vitejs/vite/issues/5000)) ([4b84c0d](https://github.com/vitejs/vite/commit/4b84c0d66beff9fa6fd6f304df95a70fa2f23144))
+* **lib-mode:** do not minify lib mode es output ([06d86e4](https://github.com/vitejs/vite/commit/06d86e4a2e90ca916a43d450bca1e6c28bc4bfe2)), closes [/github.com/vuejs/vue-next/issues/2860#issuecomment-926882793](https://github.com//github.com/vuejs/vue-next/issues/2860/issues/issuecomment-926882793)
+* normalize away `base` in imported URLs ([#5065](https://github.com/vitejs/vite/issues/5065)) ([9164da0](https://github.com/vitejs/vite/commit/9164da0fe62cb85e77752849ea6d7a68287fb576))
+* server.address before listen, chdir in test, basic cli test ([#5059](https://github.com/vitejs/vite/issues/5059)) ([fb37a63](https://github.com/vitejs/vite/commit/fb37a6315711eb6bae3030e98acdad1b819f0893))
+* should load `--config foo.mjs` as an ES module ([#5091](https://github.com/vitejs/vite/issues/5091)) ([5d2c50a](https://github.com/vitejs/vite/commit/5d2c50ad229fc8a9e20171ab17053ea525018e71))
+* **types:** missing return type on `logError` ([#5067](https://github.com/vitejs/vite/issues/5067)) ([3c9f1a1](https://github.com/vitejs/vite/commit/3c9f1a16c618858e73cc5be2971b1c9a3bf44420))
+* use the same `target` for optimized dependencies and source files ([#5095](https://github.com/vitejs/vite/issues/5095)) ([8456a6f](https://github.com/vitejs/vite/commit/8456a6f2e9d48bea315457f2301bd1585756e6e4)), closes [#4897](https://github.com/vitejs/vite/issues/4897)
+
+
+### Features
+
+* expose `preview` method ([#5014](https://github.com/vitejs/vite/issues/5014)) ([9885656](https://github.com/vitejs/vite/commit/9885656c33306c3b9992000e0a8c89ae7aade8e5))
+* expose `searchForWorkspaceRoot` util ([#4958](https://github.com/vitejs/vite/issues/4958)) ([d0f7bf1](https://github.com/vitejs/vite/commit/d0f7bf16b4949a3c0766ab1119ec166501fd5a63))
+* server.open supports absolute path ([#5068](https://github.com/vitejs/vite/issues/5068)) ([2d6f682](https://github.com/vitejs/vite/commit/2d6f682ce32246f2faf7f1a19155770596a75785))
+
+
+
 # [2.6.0-beta.2](https://github.com/vitejs/vite/compare/v2.6.0-beta.1...v2.6.0-beta.2) (2021-09-23)
 
 
