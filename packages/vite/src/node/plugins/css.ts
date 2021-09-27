@@ -51,6 +51,7 @@ export interface CSSOptions {
    * https://github.com/css-modules/postcss-modules
    */
   modules?: CSSModulesOptions | false
+  module?: (id: string) => boolean | boolean
   preprocessorOptions?: Record<string, any>
   postcss?:
     | string
@@ -579,8 +580,8 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  const { modules: modulesOptions, preprocessorOptions } = config.css || {}
-  const isModule = modulesOptions !== false && cssModuleRE.test(id)
+  const { modules: modulesOptions, preprocessorOptions, module } = config.css || {}
+  const isModule = modulesOptions !== false && (cssModuleRE.test(id) || (typeof module === 'function' ? module(id) : (!!module)))
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
