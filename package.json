@@ -9,6 +9,7 @@
     "node": ">=12.0.0"
   },
   "scripts": {
+    "preinstall": "node scripts/preinstall",
     "format": "prettier --write .",
     "lint": "eslint packages/*/{src,types}/**",
     "test": "run-s test-serve test-build",
@@ -20,10 +21,10 @@
     "build-docs": "vitepress build docs",
     "serve-docs": "vitepress serve docs",
     "build": "run-s build-vite build-plugin-vue build-plugin-react",
-    "build-vite": "cd packages/vite && yarn build",
-    "build-plugin-vue": "cd packages/plugin-vue && yarn build",
-    "build-plugin-react": "cd packages/plugin-react && yarn build",
-    "ci-build-vite": "cd packages/vite && yarn ci-build",
+    "build-vite": "cd packages/vite && npm run build",
+    "build-plugin-vue": "cd packages/plugin-vue && npm run build",
+    "build-plugin-react": "cd packages/plugin-react && npm run build",
+    "ci-build-vite": "cd packages/vite && npm run ci-build",
     "ci-docs": "run-s build-vite build-plugin-vue build-docs"
   },
   "devDependencies": {
@@ -57,7 +58,10 @@
     "ts-node": "^10.1.0",
     "typescript": "~4.3.5",
     "vitepress": "^0.19.1",
-    "yorkie": "^2.0.0"
+    "yorkie": "^2.0.0",
+    "rollup": "^2.57.0",
+    "esbuild": "^0.13.2",
+    "vite": "workspace:*"
   },
   "gitHooks": {
     "pre-commit": "lint-staged --concurrent false",
@@ -73,5 +77,11 @@
     "packages/**/*.d.ts": [
       "eslint --ext .ts"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "workspace:*",
+      "@vitejs/plugin-vue": "workspace:*"
+    }
   }
 }

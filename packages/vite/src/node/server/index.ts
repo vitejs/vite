@@ -34,8 +34,11 @@ import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
-import { TransformResult } from 'rollup'
-import { TransformOptions, transformRequest } from './transformRequest'
+import {
+  TransformOptions,
+  TransformResult,
+  transformRequest
+} from './transformRequest'
 import {
   transformWithEsbuild,
   ESBuildTransformResult
@@ -49,11 +52,11 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
-import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
-import { performance } from 'perf_hooks'
+
+export { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions {
   host?: string | boolean
@@ -299,6 +302,10 @@ export interface ViteDevServer {
    * @internal
    */
   _pendingReload: Promise<void> | null
+  /**
+   * @internal
+   */
+  _pendingRequests: Record<string, Promise<TransformResult | null> | null>
 }
 
 export async function createServer(
@@ -395,10 +402,11 @@ export async function createServer(
     },
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
-    _globImporters: {},
+    _globImporters: Object.create(null),
     _isRunningOptimizer: false,
     _registerMissingImport: null,
-    _pendingReload: null
+    _pendingReload: null,
+    _pendingRequests: Object.create(null)
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -589,28 +597,6 @@ async function startServer(
     logger: server.config.logger
   })
 
-  info(
-    chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-      chalk.green(` dev server running at:\n`),
-    {
-      clear: !server.config.logger.hasWarned
-    }
-  )
-
-  printServerUrls(hostname, protocol, serverPort, base, info)
-
-  // @ts-ignore
-  if (global.__vite_start_time) {
-    info(
-      chalk.cyan(
-        `\n  ready in ${Math.round(
-          // @ts-ignore
-          performance.now() - global.__vite_start_time
-        )}ms.\n`
-      )
-    )
-  }
-
   // @ts-ignore
   const profileSession = global.__vite_profile_session
   if (profileSession) {
@@ -631,7 +617,7 @@ async function startServer(
   if (options.open && !isRestart) {
     const path = typeof options.open === 'string' ? options.open : base
     openBrowser(
-      `${protocol}://${hostname.name}:${serverPort}${path}`,
+      path.startsWith('http') ? path : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
       server.config.logger
     )

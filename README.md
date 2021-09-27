@@ -23,7 +23,7 @@
 - 🔩 Universal Plugin Interface
 - 🔑 Fully Typed APIs
 
-Vite (French word for "quick", pronounced `/vit/`, like "veet") is a new breed of frontend build tool that significantly improves the frontend development experience. It consists of two major parts:
+Vite (French word for "quick", pronounced [`/vit/`](https://cdn.jsdelivr.net/gh/vitejs/vite@main/docs/public/vite.mp3), like "veet") is a new breed of frontend build tool that significantly improves the frontend development experience. It consists of two major parts:
 
 - A dev server that serves your source files over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), with [rich built-in features](https://vitejs.dev/guide/features.html) and astonishingly fast [Hot Module Replacement (HMR)](https://vitejs.dev/guide/features.html#hot-module-replacement).
 

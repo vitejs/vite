@@ -9,13 +9,15 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "lodash-es": "^4.17.20"
+    "lodash-es": "^4.17.20",
+    "vue": "^3.2.16"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^1.0.0",
+    "@vitejs/plugin-vue": "workspace:*",
     "js-yaml": "^3.14.1",
     "less": "^3.13.0",
     "pug": "^3.0.0",
-    "sass": "^1.30.0"
+    "sass": "^1.30.0",
+    "stylus": "^0.54.8"
   }
 }

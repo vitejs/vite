@@ -1,10 +1,13 @@
 /* eslint no-console: 0 */
 
 import chalk from 'chalk'
-import readline from 'readline'
+import { AddressInfo, Server } from 'net'
 import os from 'os'
+import readline from 'readline'
 import { RollupError } from 'rollup'
-import { Hostname } from './utils'
+import { ResolvedConfig } from '.'
+import { ServerOptions } from './server'
+import { Hostname, resolveHostname } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -135,6 +138,26 @@ export function createLogger(
   }
 
   return logger
+}
+
+export function printHttpServerUrls(
+  server: Server,
+  config: ResolvedConfig,
+  options: ServerOptions
+): void {
+  const address = server.address()
+  const isAddressInfo = (x: any): x is AddressInfo => x.address
+  if (isAddressInfo(address)) {
+    const hostname = resolveHostname(options.host)
+    const protocol = config.server.https ? 'https' : 'http'
+    printServerUrls(
+      hostname,
+      protocol,
+      address.port,
+      config.base,
+      config.logger.info
+    )
+  }
 }
 
 export function printServerUrls(

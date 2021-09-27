@@ -9,10 +9,10 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.13",
+    "vue": "^3.2.16",
     "vue-router": "^4.0.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^1.0.0"
+    "@vitejs/plugin-vue": "workspace:*"
   }
 }
