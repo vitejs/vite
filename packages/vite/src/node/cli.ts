@@ -106,19 +106,16 @@ cli
         throw new Error('HTTP server not available')
       }
 
+      await server.listen()
+
       printHttpServerUrls(server.httpServer, server.config, options)
 
       // @ts-ignore
       if (global.__vite_start_time) {
-        info(
-          chalk.cyan(
-            // @ts-ignore
-            performance.now() - global.__vite_start_time
-          )
-        )
+        // @ts-ignore
+        const startupDuration = performance.now() - global.__vite_start_time
+        info(`\n  ${chalk.cyan(`ready in ${Math.ceil(startupDuration)}ms.`)}\n`)
       }
-
-      await server.listen()
     } catch (e) {
       createLogger(options.logLevel).error(
         chalk.red(`error when starting dev server:\n${e.stack}`),
