@@ -40,7 +40,7 @@ importers:
       ts-node: ^10.1.0
       typescript: ~4.4.3
       vite: workspace:*
-      vitepress: ^0.19.1
+      vitepress: ^0.19.2
       yorkie: ^2.0.0
     devDependencies:
       '@microsoft/api-extractor': 7.18.11
@@ -75,7 +75,7 @@ importers:
       ts-node: 10.2.1_3b624d72c50530188ff09826d1b48ebf
       typescript: 4.4.3
       vite: link:packages/vite
-      vitepress: 0.19.1
+      vitepress: 0.19.2
       yorkie: 2.0.0
 
   packages/create-app:
@@ -8575,8 +8575,8 @@ packages:
     engines: {node: '>= 0.8'}
     dev: true
 
-  /vitepress/0.19.1:
-    resolution: {integrity: sha512-+tC2xy4r6zcYlUypyJPIsQd3lhNtomNUMo9r5JD+A721sb686lxmlsYrYYKf2vZ9DWUQ3T091u3tET7vJnZwjw==}
+  /vitepress/0.19.2:
+    resolution: {integrity: sha512-F8KY5gTfIa9B61by6rlGQE2K/fw2FIflld6UuB3SHTp0E5cblYGUkGfVwMiai+ets2ztDqWIiJJqpDBm/Cam1Q==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
@@ -8585,7 +8585,7 @@ packages:
       '@vitejs/plugin-vue': link:packages/plugin-vue
       prismjs: 1.25.0
       vite: link:packages/vite
-      vue: 3.2.16
+      vue: 3.2.19
     transitivePeerDependencies:
       - react
       - react-dom
