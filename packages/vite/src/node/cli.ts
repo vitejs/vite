@@ -149,7 +149,7 @@ cli
   .option(
     '--minify [minifier]',
     `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
-      `or specify minifier to use (default: terser)`
+      `or specify minifier to use (default: esbuild)`
   )
   .option('--manifest', `[boolean] emit build manifest json`)
   .option('--ssrManifest', `[boolean] emit ssr manifest json`)
