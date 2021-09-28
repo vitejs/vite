@@ -1,3 +1,13 @@
+# [2.6.0-beta.4](https://github.com/vitejs/vite/compare/v2.6.0-beta.3...v2.6.0-beta.4) (2021-09-28)
+
+
+### Bug Fixes
+
+* don't overwrite default options unless given new value ([#5111](https://github.com/vitejs/vite/issues/5111)) ([4d72b40](https://github.com/vitejs/vite/commit/4d72b403e474ce468d95cc1ef95fdfbec625eb6d))
+* use global location for import.meta.url rewrite (fix [#5087](https://github.com/vitejs/vite/issues/5087)) ([#5113](https://github.com/vitejs/vite/issues/5113)) ([0b54853](https://github.com/vitejs/vite/commit/0b54853ad8f62edef7815808bb8d5f8638bee0cb))
+
+
+
 # [2.6.0-beta.3](https://github.com/vitejs/vite/compare/v2.6.0-beta.2...v2.6.0-beta.3) (2021-09-27)
 
 

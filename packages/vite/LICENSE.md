@@ -237,13 +237,6 @@ Repository: git+https://github.com/ampproject/remapping.git
 
 ---------------------------------------
 
-## @babel/parser
-License: MIT
-By: The Babel Team
-Repository: https://github.com/babel/babel.git
-
----------------------------------------
-
 ## @cspotcode/source-map-consumer
 License: BSD-3-Clause
 By: Andrew Bradley, Nick Fitzgerald, Tobias Koppers, Duncan Beevers, Stephen Crane, Ryan Seddon, Miles Elam, Mihai Bazon, Michael Ficarra, Todd Wolfson, Alexander Solovyov, Felix Gnass, Conrad Irwin, usrbincc, David Glasser, Chase Douglas, Evan Wallace, Heather Arthur, Hugh Kennedy, Simon Lydell, Jmeas Smith, Michael Z Goddard, azu, John Gozde, Adam Kirkton, Chris Montgomery, J. Ryan Stinnett, Jack Herrington, Chris Truter, Daniel Espeset, Jamie Wong, Eddy Bruël, Hawken Rives, Gilad Peleg, djchie, Gary Ye, Nicolas Lalevée
