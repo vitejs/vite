@@ -621,7 +621,9 @@ async function startServer(
   if (options.open && !isRestart) {
     const path = typeof options.open === 'string' ? options.open : base
     openBrowser(
-      path.startsWith('http') ? path : `${protocol}://${hostname.name}:${serverPort}${path}`,
+      path.startsWith('http')
+        ? path
+        : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
       server.config.logger
     )

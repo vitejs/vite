@@ -125,7 +125,7 @@ function viteLegacyPlugin(options = {}) {
           bundle,
           facadeToModernPolyfillMap,
           config.build,
-          options.externalSystemJS,
+          options.externalSystemJS
         )
         return
       }
@@ -156,7 +156,7 @@ function viteLegacyPlugin(options = {}) {
           // force using terser for legacy polyfill minification, since esbuild
           // isn't legacy-safe
           config.build,
-          options.externalSystemJS,
+          options.externalSystemJS
         )
       }
     }
