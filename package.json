@@ -56,7 +56,7 @@
     "sirv": "^1.0.17",
     "ts-jest": "^27.0.5",
     "ts-node": "^10.1.0",
-    "typescript": "~4.3.5",
+    "typescript": "~4.4.3",
     "vitepress": "^0.19.1",
     "yorkie": "^2.0.0",
     "rollup": "^2.57.0",
