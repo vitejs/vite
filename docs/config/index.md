@@ -601,7 +601,7 @@ export default defineConfig({
 
   Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
 
-  - If the [`build.minify`](#build-minify) option is `'terser'` (the default), `'esnext'` will be forced down to `'es2019'`.
+  - If the [`build.minify`](#build-minify) option is `'terser'`, `'esnext'` will be forced down to `'es2019'`.
   - In other cases, it will perform no transpilation at all.
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
@@ -708,9 +708,9 @@ export default defineConfig({
 ### build.minify
 
 - **Type:** `boolean | 'terser' | 'esbuild'`
-- **Default:** `'terser'`
+- **Default:** `'esbuild'`
 
-  Set to `false` to disable minification, or specify the minifier to use. The default is [Terser](https://github.com/terser/terser) which is slower but produces smaller bundles in most cases. Esbuild minification is significantly faster but will result in slightly larger bundles.
+  Set to `false` to disable minification, or specify the minifier to use. The default is [Esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
 ### build.terserOptions
 
