@@ -48,12 +48,13 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               // Note: native import.meta.url is not supported in the baseline
               // target so we use the global location here. It can be
               // window.location or self.location in case it is used in a Web Worker.
+              // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
               s.overwrite(
                 index,
                 index + exp.length,
                 `new URL(import.meta.globEagerDefault(${JSON.stringify(
                   pattern
-                )})[${rawUrl}], location)`
+                )})[${rawUrl}], self.location)`
               )
               continue
             }
@@ -65,7 +66,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.overwrite(
             index,
             index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, location)`
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`
           )
         }
         if (s) {
