@@ -44,8 +44,10 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob<T = {[key: string]: any}>(pattern: string): Record<string, () => Promise<T>>
-  globEager<T = {[key: string]: any}>(pattern: string): Record<string, T>
+  glob<T = { [key: string]: any }>(
+    pattern: string
+  ): Record<string, () => Promise<T>>
+  globEager<T = { [key: string]: any }>(pattern: string): Record<string, T>
 }
 
 interface ImportMetaEnv {
