@@ -110,7 +110,7 @@ export interface BuildOptions {
    * but has poor CSS support, e.g. Android WeChat WebView, which
    * doesn't support the #RGBA syntax.
    */
-  cssMinifyTarget?: TransformOptions['target'] | false
+  cssTarget?: TransformOptions['target'] | false
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
@@ -241,7 +241,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
     cssCodeSplit: !raw?.lib,
-    cssMinifyTarget: false,
+    cssTarget: false,
     sourcemap: false,
     rollupOptions: {},
     commonjsOptions: {
@@ -285,8 +285,8 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     resolved.target = 'es2019'
   }
 
-  if (!resolved.cssMinifyTarget) {
-    resolved.cssMinifyTarget = resolved.target
+  if (!resolved.cssTarget) {
+    resolved.cssTarget = resolved.target
   }
 
   // normalize false string into actual false

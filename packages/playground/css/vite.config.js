@@ -4,7 +4,7 @@ const path = require('path')
  */
 module.exports = {
   build: {
-    cssMinifyTarget: 'chrome61'
+    cssTarget: 'chrome61'
   },
   resolve: {
     alias: {
