@@ -1,3 +1,12 @@
+## [2.6.1](https://github.com/vitejs/vite/compare/v2.6.0...v2.6.1) (2021-09-29)
+
+
+### Bug Fixes
+
+* **cli:** reorder dev server message ([#5141](https://github.com/vitejs/vite/issues/5141)) ([5fb3e0f](https://github.com/vitejs/vite/commit/5fb3e0f996bcca073420122ca4de3b4300e1c5f5))
+
+
+
 # [2.6.0](https://github.com/vitejs/vite/compare/v2.6.0-beta.4...v2.6.0) (2021-09-29)
 
 
