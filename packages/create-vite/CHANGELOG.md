@@ -1,3 +1,12 @@
+## [2.6.5](https://github.com/vitejs/vite/compare/create-vite@2.6.4...create-vite@2.6.5) (2021-09-29)
+
+
+### Features
+
+* **create-vite:** migrate lit-element to lit ([#5012](https://github.com/vitejs/vite/issues/5012)) ([d66ea0f](https://github.com/vitejs/vite/commit/d66ea0f420eb7926d927b64e40ecaf83d9388e63))
+
+
+
 ## [2.6.4](https://github.com/vitejs/vite/compare/create-vite@2.6.3...create-vite@2.6.4) (2021-09-22)
 
 
