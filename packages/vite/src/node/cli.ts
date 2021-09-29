@@ -92,6 +92,12 @@ cli
         server: cleanOptions(options)
       })
 
+      if (!server.httpServer) {
+        throw new Error('HTTP server not available')
+      }
+
+      await server.listen()
+
       const info = server.config.logger.info
 
       info(
@@ -101,12 +107,6 @@ cli
           clear: !server.config.logger.hasWarned
         }
       )
-
-      if (!server.httpServer) {
-        throw new Error('HTTP server not available')
-      }
-
-      await server.listen()
 
       printHttpServerUrls(server.httpServer, server.config, options)
 
