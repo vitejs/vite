@@ -1,3 +1,20 @@
+# [1.6.0](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.3...plugin-legacy@1.6.0) (2021-09-29)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4545](https://github.com/vitejs/vite/issues/4545)) ([a44fd5d](https://github.com/vitejs/vite/commit/a44fd5d38679da0be2536103e83af730cda73a95))
+* esbuild minification and renderLegacyChunks false ([#5054](https://github.com/vitejs/vite/issues/5054)) ([ed384cf](https://github.com/vitejs/vite/commit/ed384cfeff9e3ccb0fdbb07ec91758308da66226))
+* normalize internal plugin names ([#4976](https://github.com/vitejs/vite/issues/4976)) ([37f0b2f](https://github.com/vitejs/vite/commit/37f0b2fff74109d381513ed052a32b43655ee11d))
+* **plugin-legacy:** fix type errors ([#4762](https://github.com/vitejs/vite/issues/4762)) ([5491143](https://github.com/vitejs/vite/commit/5491143be0b4214d2dab91076a85739d6d106481))
+
+
+### Features
+
+* **plugin-legacy:** add externalSystemJS option ([#5024](https://github.com/vitejs/vite/issues/5024)) ([60b6f55](https://github.com/vitejs/vite/commit/60b6f5595a00cbf014a30d57721081eb79436a97))
+
+
+
 ## [1.5.3](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.2...plugin-legacy@1.5.3) (2021-09-07)
 
 
