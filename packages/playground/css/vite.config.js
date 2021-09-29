@@ -3,6 +3,9 @@ const path = require('path')
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  build: {
+    cssMinifyTarget: 'chrome61'
+  },
   resolve: {
     alias: {
       '@': __dirname
