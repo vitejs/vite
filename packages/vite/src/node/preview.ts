@@ -1,8 +1,8 @@
 import path from 'path'
 import sirv from 'sirv'
+import chalk from 'chalk'
 import connect from 'connect'
 import compression from 'compression'
-import { Server } from 'http'
 import { ResolvedConfig, ServerOptions } from '.'
 import { Connect } from 'types/connect'
 import {
@@ -13,6 +13,7 @@ import {
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
+import { printServerUrls } from './logger'
 import { resolveHostname } from './utils'
 
 /**
@@ -24,7 +25,7 @@ import { resolveHostname } from './utils'
 export async function preview(
   config: ResolvedConfig,
   serverOptions: Pick<ServerOptions, 'port' | 'host'>
-): Promise<Server> {
+): Promise<void> {
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.server,
@@ -69,6 +70,13 @@ export async function preview(
     logger
   })
 
+  logger.info(
+    chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+      chalk.green(` build preview server running at:\n`)
+  )
+
+  printServerUrls(hostname, protocol, serverPort, base, logger.info)
+
   if (options.open) {
     const path = typeof options.open === 'string' ? options.open : base
     openBrowser(
@@ -79,6 +87,4 @@ export async function preview(
       logger
     )
   }
-
-  return httpServer
 }

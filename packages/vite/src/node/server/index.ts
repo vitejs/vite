@@ -52,9 +52,11 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
+import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
+import { performance } from 'perf_hooks'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -600,6 +602,28 @@ async function startServer(
     host: hostname.host,
     logger: server.config.logger
   })
+
+  info(
+    chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+      chalk.green(` dev server running at:\n`),
+    {
+      clear: !server.config.logger.hasWarned
+    }
+  )
+
+  printServerUrls(hostname, protocol, serverPort, base, info)
+
+  // @ts-ignore
+  if (global.__vite_start_time) {
+    info(
+      chalk.cyan(
+        `\n  ready in ${Math.round(
+          // @ts-ignore
+          performance.now() - global.__vite_start_time
+        )}ms.\n`
+      )
+    )
+  }
 
   // @ts-ignore
   const profileSession = global.__vite_profile_session
