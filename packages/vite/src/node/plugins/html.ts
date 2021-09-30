@@ -500,9 +500,9 @@ export type IndexHtmlTransformHook = (
 export type IndexHtmlTransform =
   | IndexHtmlTransformHook
   | {
-    enforce?: 'pre' | 'post'
-    transform: IndexHtmlTransformHook
-  }
+      enforce?: 'pre' | 'post'
+      transform: IndexHtmlTransformHook
+    }
 
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[]
