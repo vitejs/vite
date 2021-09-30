@@ -6,7 +6,6 @@ import os from 'os'
 import readline from 'readline'
 import { RollupError } from 'rollup'
 import { ResolvedConfig } from '.'
-import { ServerOptions } from './server'
 import { Hostname, resolveHostname } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -142,13 +141,12 @@ export function createLogger(
 
 export function printHttpServerUrls(
   server: Server,
-  config: ResolvedConfig,
-  options: ServerOptions
+  config: ResolvedConfig
 ): void {
   const address = server.address()
   const isAddressInfo = (x: any): x is AddressInfo => x.address
   if (isAddressInfo(address)) {
-    const hostname = resolveHostname(options.host)
+    const hostname = resolveHostname(config.server.host)
     const protocol = config.server.https ? 'https' : 'http'
     printServerUrls(
       hostname,

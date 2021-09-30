@@ -108,7 +108,7 @@ cli
         }
       )
 
-      printHttpServerUrls(server.httpServer, server.config, options)
+      printHttpServerUrls(server.httpServer, server.config)
 
       // @ts-ignore
       if (global.__vite_start_time) {
@@ -249,7 +249,7 @@ cli
         )
         const server = await preview(config, cleanOptions(options))
 
-        printHttpServerUrls(server, config, options)
+        printHttpServerUrls(server, config)
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`),
