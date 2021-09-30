@@ -382,7 +382,7 @@ function tryResolveFile(
   } catch (e) {}
   if (isReadable) {
     if (!fs.statSync(file).isDirectory()) {
-      return normalizePath(ensureVolumeInPath(file)) + postfix
+      return getRealPath(file, preserveSymlinks) + postfix
     } else if (tryIndex) {
       if (!skipPackageJson) {
         const pkgPath = file + '/package.json'
@@ -396,7 +396,7 @@ function tryResolveFile(
             targetWeb,
             preserveSymlinks
           )
-          return resolved ? getRealPath(resolved, preserveSymlinks) : resolved
+          return resolved
         }
       }
       const index = tryFsResolve(file + '/index', options, preserveSymlinks)
@@ -478,8 +478,6 @@ export function tryNodeResolve(
   if (!resolved) {
     return
   }
-
-  resolved = getRealPath(resolved, preserveSymlinks)
 
   // link id to pkg for browser field mapping check
   idToPkgMap.set(resolved, pkg)
@@ -919,8 +917,9 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
 }
 
 function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
+  resolved = ensureVolumeInPath(resolved)
   if (!preserveSymlinks && browserExternalId !== resolved) {
-    return normalizePath(fs.realpathSync(resolved))
+    resolved = fs.realpathSync(resolved)
   }
-  return resolved
+  return normalizePath(resolved)
 }
