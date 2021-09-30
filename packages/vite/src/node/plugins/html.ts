@@ -473,9 +473,9 @@ export type IndexHtmlTransformResult =
   | string
   | HtmlTagDescriptor[]
   | {
-    html: string
-    tags: HtmlTagDescriptor[]
-  }
+      html: string
+      tags: HtmlTagDescriptor[]
+    }
 
 export interface IndexHtmlTransformContext {
   /**
