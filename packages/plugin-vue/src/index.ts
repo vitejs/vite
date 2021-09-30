@@ -118,8 +118,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       return {
         define: {
           __VUE_OPTIONS_API__: true,
-          __VUE_PROD_DEVTOOLS__: false,
-          ...config.define
+          __VUE_PROD_DEVTOOLS__: false
         },
         ssr: {
           external: ['vue', '@vue/server-renderer']
