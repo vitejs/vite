@@ -273,8 +273,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const url =
               attr.name === 'srcset'
                 ? await processSrcSet(value.content, ({ url }) =>
-                  urlToBuiltUrl(url, id, config, this)
-                )
+                    urlToBuiltUrl(url, id, config, this)
+                  )
                 : await urlToBuiltUrl(value.content, id, config, this)
 
             s.overwrite(
