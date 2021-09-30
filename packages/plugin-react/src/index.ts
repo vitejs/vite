@@ -70,7 +70,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         resolve: projectRoot
       })
       isProduction = config.isProduction
-      skipFastRefresh = isProduction || config.command === 'build'
+      skipFastRefresh ||= isProduction || config.command === 'build'
 
       const jsxInject = config.esbuild && config.esbuild.jsxInject
       if (jsxInject && importReactRE.test(jsxInject)) {
