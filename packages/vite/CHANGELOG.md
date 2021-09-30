@@ -1,3 +1,13 @@
+## [2.6.2](https://github.com/vitejs/vite/compare/v2.6.1...v2.6.2) (2021-09-30)
+
+
+### Bug Fixes
+
+* **cli:** log correct hostname ([#5156](https://github.com/vitejs/vite/issues/5156)) ([6f977a5](https://github.com/vitejs/vite/commit/6f977a5f01604d406d2e0c74c4d01a79d3416f06))
+* properly handle postfix for getRealPath ([#5149](https://github.com/vitejs/vite/issues/5149)) ([7d257c3](https://github.com/vitejs/vite/commit/7d257c38356f8195ca44b39b55f9d791c6b8c33e))
+
+
+
 ## [2.6.1](https://github.com/vitejs/vite/compare/v2.6.0...v2.6.1) (2021-09-29)
 
 
