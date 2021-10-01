@@ -37,7 +37,7 @@ const scriptModuleRE =
 
 export function htmlInlineScriptProxyPlugin(): Plugin {
   return {
-    name: 'vite:html',
+    name: 'vite:html-inline-script-proxy',
 
     resolveId(id) {
       if (htmlProxyRE.test(id)) {
