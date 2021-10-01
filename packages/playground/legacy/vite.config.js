@@ -10,9 +10,6 @@ module.exports = {
   ],
 
   build: {
-    // make tests faster
-    minify: false,
-
     rollupOptions: {
       output: {
         chunkFileNames(chunkInfo) {
