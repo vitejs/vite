@@ -625,7 +625,7 @@ importers:
     specifiers:
       '@ampproject/remapping': ^1.0.1
       '@rollup/plugin-alias': ^3.1.5
-      '@rollup/plugin-commonjs': ^20.0.0
+      '@rollup/plugin-commonjs': ^21.0.0
       '@rollup/plugin-dynamic-import-vars': ^1.4.0
       '@rollup/plugin-json': ^4.1.0
       '@rollup/plugin-node-resolve': 13.0.5
@@ -702,7 +702,7 @@ importers:
     devDependencies:
       '@ampproject/remapping': 1.0.1
       '@rollup/plugin-alias': 3.1.5_rollup@2.57.0
-      '@rollup/plugin-commonjs': 20.0.0_rollup@2.57.0
+      '@rollup/plugin-commonjs': 21.0.0_rollup@2.57.0
       '@rollup/plugin-dynamic-import-vars': 1.4.0_rollup@2.57.0
       '@rollup/plugin-json': 4.1.0_rollup@2.57.0
       '@rollup/plugin-node-resolve': 13.0.5_rollup@2.57.0
@@ -1808,8 +1808,8 @@ packages:
       slash: 3.0.0
     dev: true
 
-  /@rollup/plugin-commonjs/20.0.0_rollup@2.57.0:
-    resolution: {integrity: sha512-5K0g5W2Ol8hAcTHqcTBHiA7M58tfmYi1o9KxeJuuRNpGaTa5iLjcyemBitCBcKXaHamOBBEH2dGom6v6Unmqjg==}
+  /@rollup/plugin-commonjs/21.0.0_rollup@2.57.0:
+    resolution: {integrity: sha512-XDQimjHl0kNotAV5lLo34XoygaI0teqiKGJ100B3iCU8+15YscJPeqk2KqkqD3NIe1H8ZTUo5lYjUFZyEgASTw==}
     engines: {node: '>= 8.0.0'}
     peerDependencies:
       rollup: ^2.38.3
