@@ -26,7 +26,7 @@ const createNonEmptyDir = () => {
 }
 
 // Vue 3 starter template
-const templateFiles = readdirSync(join(CLI_PATH, 'template-vue'))
+const templateFiles = readdirSync(join(CLI_PATH, 'templates', 'template-vue'))
   // _gitignore is renamed to .gitignore
   .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
   .sort()

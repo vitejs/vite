@@ -9,7 +9,7 @@
   },
   "files": [
     "index.js",
-    "template-*"
+    "templates"
   ],
   "main": "index.js",
   "scripts": {

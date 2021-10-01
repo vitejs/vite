@@ -4,11 +4,12 @@ const latestVersion = require('../vite/package.json').version
 const isLatestPreRelease = /beta|alpha|rc/.test(latestVersion)
 
 ;(async () => {
+  const templatesDir = path.join(__dirname, 'templates')
   const templates = fs
-    .readdirSync(__dirname)
+    .readdirSync(templatesDir)
     .filter((d) => d.startsWith('template-'))
   for (const t of templates) {
-    const pkgPath = path.join(__dirname, t, `package.json`)
+    const pkgPath = path.join(templatesDir, t, `package.json`)
     const pkg = require(pkgPath)
     if (!isLatestPreRelease) {
       pkg.devDependencies.vite = `^` + latestVersion
