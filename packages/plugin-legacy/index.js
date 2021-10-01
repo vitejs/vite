@@ -96,6 +96,14 @@ function viteLegacyPlugin(options = {}) {
     name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
 
+    config() {
+      return {
+        build: {
+          minify: 'terser'
+        }
+      }
+    },
+
     configResolved(config) {
       if (!config.build.ssr && genLegacy && config.build.minify === 'esbuild') {
         throw new Error(
