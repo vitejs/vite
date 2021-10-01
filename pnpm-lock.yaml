@@ -20,7 +20,7 @@ importers:
       cross-env: ^7.0.3
       esbuild: ^0.13.2
       eslint: ^7.32.0
-      eslint-define-config: ^1.0.9
+      eslint-define-config: ^1.1.1
       eslint-plugin-node: ^11.1.0
       execa: ^5.1.1
       fs-extra: ^10.0.0
@@ -55,7 +55,7 @@ importers:
       cross-env: 7.0.3
       esbuild: 0.13.2
       eslint: 7.32.0
-      eslint-define-config: 1.0.9
+      eslint-define-config: 1.1.1
       eslint-plugin-node: 11.1.0_eslint@7.32.0
       execa: 5.1.1
       fs-extra: 10.0.0
@@ -4018,8 +4018,8 @@ packages:
       source-map: 0.6.1
     dev: true
 
-  /eslint-define-config/1.0.9:
-    resolution: {integrity: sha512-LRzNlRo9sv43BAXY+nhZIUCZLRisTMEXXSqlGc2uZ8emAGyJv3FDSew2MIVRMwThexEjVxjNmeqduaexJ/GT3Q==}
+  /eslint-define-config/1.1.1:
+    resolution: {integrity: sha512-ZfQUX9WGjwgtrZ6vdYb9a18FMsvf01fyq+SwGOptIhe57lA6NXDeinD2iGHsPGfihKZvqQsdV6NduJ8QobXMiA==}
     dev: true
 
   /eslint-plugin-es/3.0.1_eslint@7.32.0:
