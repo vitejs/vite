@@ -308,16 +308,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // build CSS handling ----------------------------------------------------
 
+      const used = usedRE.test(id)
+
       // record css
       if (!inlined) {
         styles.set(id, css)
+      } else if (!modulesCode && used) {
+        css = await minifyCSS(css, config)
       }
 
       return {
         code:
           modulesCode ||
-          (usedRE.test(id)
-            ? `export default ${JSON.stringify(await minifyCSS(css, config))}`
+          (used
+            ? `export default ${JSON.stringify(css)}`
             : `export default ''`),
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
