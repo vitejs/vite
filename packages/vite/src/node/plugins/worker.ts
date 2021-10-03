@@ -3,7 +3,7 @@ import { Plugin } from '../plugin'
 import { resolvePlugins } from '../plugins'
 import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
-import { cleanUrl, injectQuery } from '../utils'
+import { cleanUrl, injectQuery, resolveHostname } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
@@ -101,6 +101,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, WorkerFileId)
+        // Get full worker url path in dev
+        const protocol = config.server.https ? 'https' : 'http'
+        const hostname = resolveHostname(config.server.host)
+        url = `${protocol}://${hostname.name}:${config.server.port}${url}`
       }
 
       const workerConstructor =
