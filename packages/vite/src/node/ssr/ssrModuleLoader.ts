@@ -11,6 +11,7 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
+import { createSSRExternalsFilter } from './ssrExternal'
 
 interface SSRContext {
   global: NodeJS.Global
@@ -85,12 +86,17 @@ async function instantiateModule(
   urlStack = urlStack.concat(url)
   const isCircular = (url: string) => urlStack.includes(url)
 
+  const isExternal = createSSRExternalsFilter(
+    server._ssrExternals!,
+    server.config.ssr?.noExternal
+  )
+
   // Since dynamic imports can happen in parallel, we need to
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
 
   const ssrImport = async (dep: string) => {
-    if (dep[0] !== '/') {
+    if (dep[0] !== '/' && isExternal(dep)) {
       return nodeRequire(
         dep,
         mod.file,

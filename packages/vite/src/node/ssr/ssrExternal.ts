@@ -9,7 +9,7 @@ import {
   resolveFrom,
   unique
 } from '../utils'
-import { ResolvedConfig } from '..'
+import { ResolvedConfig, SSROptions } from '..'
 import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:ssr-external')
@@ -131,6 +131,26 @@ export function resolveSSRExternal(
     externals = externals.filter((id) => filter(id))
   }
   return externals.filter((id) => id !== 'vite')
+}
+
+/**
+ * Create a function that returns true when the given bare import
+ * should be imported like a Node dependency normally is.
+ */
+export function createSSRExternalsFilter(
+  externals: string[],
+  noExternal?: SSROptions['noExternal']
+) {
+  // Deep imports of an externalized package may be defined
+  // in `ssr.noExternal` so we have to check for that.
+  const noExternalFilter =
+    noExternal && noExternal !== true
+      ? createFilter(undefined, noExternal, { resolve: false })
+      : null
+
+  return (dep: string) =>
+    (!noExternalFilter || noExternalFilter(dep)) &&
+    shouldExternalizeForSSR(dep, externals)
 }
 
 export function shouldExternalizeForSSR(
