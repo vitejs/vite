@@ -147,8 +147,7 @@ async function init() {
             (targetDir = state.value.trim() || defaultProjectName)
         },
         {
-          type: () =>
-            !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
+          type: () => isEmptyDir(targetDir) ? null : 'confirm',
           name: 'overwrite',
           message: () =>
             (targetDir === '.'
@@ -222,7 +221,7 @@ async function init() {
   const root = path.join(cwd, targetDir)
 
   if (overwrite) {
-    emptyDir(root)
+    makeDirEmpty(root)
   } else if (!fs.existsSync(root)) {
     fs.mkdirSync(root)
   }
@@ -309,11 +308,11 @@ function copyDir(srcDir, destDir) {
   }
 }
 
-function isEmpty(path) {
-  return fs.readdirSync(path).length === 0
+function isEmptyDir(path) {
+  return !fs.existsSync(path) || fs.readdirSync(path).length === 0
 }
 
-function emptyDir(dir) {
+function makeDirEmpty(dir) {
   if (!fs.existsSync(dir)) {
     return
   }
@@ -321,7 +320,7 @@ function emptyDir(dir) {
     const abs = path.resolve(dir, file)
     // baseline is Node 12 so can't use rmSync :(
     if (fs.lstatSync(abs).isDirectory()) {
-      emptyDir(abs)
+      makeDirEmpty(abs)
       fs.rmdirSync(abs)
     } else {
       fs.unlinkSync(abs)
