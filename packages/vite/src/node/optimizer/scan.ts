@@ -265,8 +265,16 @@ function esbuildScanPlugin(
             }
           }
 
-          if (!code.includes(`export default`)) {
-            js += `\nexport default {}`
+          // This will trigger incorrectly if `export default` is contained
+          // anywhere in a string/template. Svelte files can't have
+          // 'export default` as code so we know if it's encountered it's a
+          // false positive
+          if (
+            !code.includes('export default') ||
+            path.endsWith('.svelte') ||
+            path.endsWith('.astro')
+          ) {
+            js += '\nexport default {}'
           }
 
           if (code.includes('import.meta.glob')) {
