@@ -39,7 +39,12 @@ export async function ssrTransform(
       locations: true
     }) as any
   } catch (err) {
-    throw new Error('Parse failure: ' + err.message + '\n' + code)
+    const line = err.loc.line
+    throw new Error(
+      `Parse failure: ${err.message}\nContents of line ${line}: ${
+        code.split('\n')[line - 1]
+      }`
+    )
   }
 
   let uid = 0
