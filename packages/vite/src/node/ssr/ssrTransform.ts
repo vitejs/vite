@@ -31,11 +31,16 @@ export async function ssrTransform(
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    ecmaVersion: 'latest',
-    locations: true
-  }) as any
+  let ast
+  try {
+    ast = parser.parse(code, {
+      sourceType: 'module',
+      ecmaVersion: 'latest',
+      locations: true
+    }) as any
+  } catch (err) {
+    throw new Error('Parse failure: ' + err.message + '\n' + code)
+  }
 
   let uid = 0
   const deps = new Set<string>()
