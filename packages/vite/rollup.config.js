@@ -107,6 +107,7 @@ const createNodeConfig = (isProduction) => {
     },
     external: [
       'fsevents',
+      'vite/native-import.js',
       ...Object.keys(require('./package.json').dependencies),
       ...(isProduction
         ? []

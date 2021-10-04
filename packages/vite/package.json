@@ -14,7 +14,8 @@
     "dist",
     "client.d.ts",
     "src/client",
-    "types"
+    "types",
+    "native-import.js"
   ],
   "engines": {
     "node": ">=12.2.0"
@@ -46,7 +47,7 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.13.2",
+    "esbuild": "^0.12.28",
     "postcss": "^8.3.8",
     "resolve": "^1.20.0",
     "rollup": "^2.57.0"

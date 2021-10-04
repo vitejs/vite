@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { pathToFileURL } from 'url';
 import { ViteDevServer } from '..'
 import { cleanUrl, resolveFrom, unwrapId } from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
@@ -11,6 +12,8 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
+// @ts-ignore
+import NATIVE_IMPORT from 'vite/native-import.js'
 
 interface SSRContext {
   global: NodeJS.Global
@@ -91,11 +94,12 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeRequire(
+      return await nodeRequireOrImport(
         dep,
         mod.file,
         server.config.root,
-        !!server.config.resolve.preserveSymlinks
+        !!server.config.resolve.preserveSymlinks,
+        server,
       )
     }
     dep = unwrapId(dep)
@@ -180,9 +184,55 @@ function nodeRequire(
   root: string,
   preserveSymlinks: boolean
 ) {
-  const mod = require(resolve(id, importer, root, preserveSymlinks))
-  const defaultExport = mod.__esModule ? mod.default : mod
-  // rollup-style default import interop for cjs
+  const mdl = require(resolve(id, importer, root, preserveSymlinks));
+  console.log('NODE_REQUIRE', id)
+  return proxyESM(mdl);
+}
+
+function nodeRequireOrImport(
+  id: string,
+  importer: string | null,
+  root: string,
+  preserveSymlinks: boolean,
+  server: ViteDevServer,
+): Promise<any> {
+  return new Promise((res, reject) => {
+    if (id.startsWith('node:')) {
+      return res(NATIVE_IMPORT(id.slice('node:'.length)))
+    }
+    try {
+      const mdl = nodeRequire(id, importer, root, preserveSymlinks);
+      return res(mdl);
+    } catch (e) {
+      const resolvedPath = resolve(id, importer, root, preserveSymlinks);
+      if (e instanceof SyntaxError && /export|import/.test(e.message)) {
+        server.config.logger.error(
+          `Failed to load "${id}"!\nESM format is not natively supported in "node@${process.version}".\nPlease use CommonJS or upgrade to an LTS version of node above "node@12.17.0".`,
+        );
+      } else if (e.code === 'ERR_REQUIRE_ESM') {
+        console.log('NODE_IMPORT', resolvedPath);
+        const url = pathToFileURL(resolvedPath);
+        try {
+          return NATIVE_IMPORT(url.toString()).then(
+            (mdl: any) => {
+              const mod = proxyESM(mdl, true);
+              return res(mod);
+            },
+            (err: any) => {
+              reject(err)
+            }
+        )
+        } catch (e) {
+          reject(e);
+        }
+      }
+    }
+  })
+}
+
+// rollup-style default import interop for cjs
+function proxyESM(mod: any, isESM = mod.__esModule) {
+  const defaultExport = isESM ? mod.default : mod
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
