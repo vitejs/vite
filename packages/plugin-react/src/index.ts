@@ -97,7 +97,6 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
         const parserPlugins: typeof userParserPlugins = [
           ...userParserPlugins,
-          'jsx',
           'importMeta',
           // This plugin is applied before esbuild transforms the code,
           // so we need to enable some stage 3 syntax that is supported in
@@ -107,6 +106,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           'classPrivateProperties',
           'classPrivateMethods'
         ]
+
+        if (!id.endsWith('.ts')) {
+          parserPlugins.push('jsx')
+        }
 
         const isTypeScript = /\.tsx?$/.test(id)
         if (isTypeScript) {
