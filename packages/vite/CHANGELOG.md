@@ -1,3 +1,14 @@
+## [2.6.3](https://github.com/vitejs/vite/compare/v2.6.2...v2.6.3) (2021-10-05)
+
+
+### Bug Fixes
+
+* **dev:** read property of undefined ([#5177](https://github.com/vitejs/vite/issues/5177)) ([70e882f](https://github.com/vitejs/vite/commit/70e882f06a80bcfb6f5189902984751d9c06cf8f))
+* **type:** update ExportsData type ([b582581](https://github.com/vitejs/vite/commit/b582581761519a14424e707131a8818de35fd2c4))
+* upgrade to @rollup/plugin-commonjs 21.x ([#5173](https://github.com/vitejs/vite/issues/5173)) ([c5bfc5e](https://github.com/vitejs/vite/commit/c5bfc5ec2f52877cd4c57c6731a927ac79b8d322))
+
+
+
 ## [2.6.2](https://github.com/vitejs/vite/compare/v2.6.1...v2.6.2) (2021-09-30)
 
 
