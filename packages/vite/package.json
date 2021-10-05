@@ -14,8 +14,7 @@
     "dist",
     "client.d.ts",
     "src/client",
-    "types",
-    "native-import.js"
+    "types"
   ],
   "engines": {
     "node": ">=12.2.0"
