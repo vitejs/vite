@@ -1,3 +1,12 @@
+## [1.0.2](https://github.com/vitejs/vite/compare/plugin-react@1.0.1...plugin-react@1.0.2) (2021-10-05)
+
+
+### Bug Fixes
+
+* **plugin-react:** respect `opts.fastRefresh` in viteBabel ([#5139](https://github.com/vitejs/vite/issues/5139)) ([5cf4e69](https://github.com/vitejs/vite/commit/5cf4e69cd3afc7f960e02072171c7c441747e8f0))
+
+
+
 ## [1.0.1](https://github.com/vitejs/vite/compare/plugin-react@1.0.0...plugin-react@1.0.1) (2021-09-22)
 
 
