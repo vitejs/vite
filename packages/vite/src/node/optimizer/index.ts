@@ -3,7 +3,7 @@ import path from 'path'
 import chalk from 'chalk'
 import { createHash } from 'crypto'
 import { build, BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import { ResolvedConfig } from '../config'
+import { ResolvedConfig, ResolveFn } from '../config'
 import {
   createDebugger,
   emptyDir,
@@ -245,9 +245,9 @@ export async function optimizeDeps(
   const flatIdToExports: Record<string, ExportsData> = {}
 
   const { plugins = [], ...esbuildOptions } =
-  config.optimizeDeps?.esbuildOptions ?? {}
-  
-  await Promise.all([init, cjs_init()]);
+    config.optimizeDeps?.esbuildOptions ?? {}
+
+  await Promise.all([init, cjs_init()])
   for (const id in deps) {
     const flatId = flattenId(id)
     const filePath = (flatIdDeps[flatId] = deps[id])
@@ -278,16 +278,65 @@ export async function optimizeDeps(
     }
     // BROWSER VITE patch: fetch CJS exports
     if (exportsData[0].length === 0 && exportsData[1].length === 0) {
-      const {exports, reexports} = cjs_parse(entryContent);
-      const expSet = new Set(exports);
-      while (reexports.length) {
-        const nested = reexports.pop()!;
-        const nestedPath = path.join(path.dirname(deps[id]), nested);
-        const {exports: exports2, reexports: reexports2} = cjs_parse(fs.readFileSync(nestedPath, 'utf-8'))
-        exports2.forEach(e => expSet.add(e));
-        reexports.push(...reexports2);
+      const { exports, reexports } = cjs_parse(entryContent)
+      const expSet = new Set(exports)
+      let _resolve, _resolveRequire
+      const reexportsToResolve = reexports.map((nested) => ({
+        nested,
+        importer: deps[id],
+        isRequire: true
+      }))
+      while (reexportsToResolve.length) {
+        const { nested, importer, isRequire } = reexportsToResolve.pop()!
+        let resolve: ResolveFn | undefined = isRequire
+          ? _resolveRequire
+          : _resolve
+        if (!resolve) {
+          resolve = config.createResolver({
+            asSrc: false,
+            isRequire
+          })
+          if (isRequire) _resolveRequire = resolve
+          else _resolve = resolve
+        }
+        const nestedPath = await resolve(nested, importer)
+        if (!nestedPath) {
+          logger.warn(
+            `Failed to resolve ${nested} from ${importer} (for CJS exports)`
+          )
+        } else {
+          const nestedContent = fs.readFileSync(nestedPath, 'utf-8')
+          const esm_exports = parse(nestedContent)
+          if (esm_exports[0].length === 0 && esm_exports[1].length === 0) {
+            // cjs
+            const { exports: exports2, reexports: reexports2 } =
+              cjs_parse(nestedContent)
+            exports2.forEach((e) => expSet.add(e))
+            reexportsToResolve.push(
+              ...reexports2.map((it) => ({
+                nested: it,
+                importer: nestedPath,
+                isRequire: true
+              }))
+            )
+          } else {
+            // esm
+            for (const { ss, se, n } of esm_exports[0]) {
+              const exp = nestedContent.slice(ss, se)
+              if (/export\s+\*\s+from/.test(exp) && n) {
+                // esm reexports
+                reexportsToResolve.push({
+                  nested: n,
+                  importer: nestedPath,
+                  isRequire: false
+                })
+              }
+            }
+            esm_exports[1].forEach((e) => expSet.add(e))
+          }
+        }
       }
-      exportsData.cjsExports = Array.from(expSet);
+      exportsData.cjsExports = Array.from(expSet)
     }
     idToExports[id] = exportsData
     flatIdToExports[flatId] = exportsData
