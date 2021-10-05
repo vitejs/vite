@@ -1,3 +1,12 @@
+## [1.6.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.6.0...plugin-legacy@1.6.1) (2021-10-05)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** use terser as the default minifier ([#5168](https://github.com/vitejs/vite/issues/5168)) ([9ee7234](https://github.com/vitejs/vite/commit/9ee72343884a7d679767833f7a659bbca6b96595))
+
+
+
 # [1.6.0](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.3...plugin-legacy@1.6.0) (2021-09-29)
 
 
