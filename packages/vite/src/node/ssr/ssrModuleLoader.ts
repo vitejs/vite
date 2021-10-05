@@ -3,7 +3,7 @@ import path from 'path'
 import { pathToFileURL } from 'url';
 import { builtinModules } from 'module';
 import { ViteDevServer } from '..'
-import { cleanUrl, resolveFrom, unwrapId } from '../utils'
+import { cleanUrl, isObject, resolveFrom, unwrapId } from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -100,7 +100,7 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return await handleImport(
+      return await nodeImport(
         dep,
         mod.file,
         server.config
@@ -183,36 +183,35 @@ async function instantiateModule(
 }
 
 // In node@12+ we can use dynamic import to load CJS and ESM
-// Caveat https://github.com/vitejs/vite/pull/5197#discussion_r722583544
 async function nodeImport(
   id: string,
   importer: string | null,
   config: ViteDevServer['config'],
 ) {
-  const url = pathToFileURL(resolve(id, importer, config.root, !!config.resolve.preserveSymlinks))
+  let url: string
+  // `resolve` doesn't handle `node:` builtins, so handle them directly
+  if (id.startsWith('node:') || builtins.has(id)) {
+    url = id
+  } else {
+    url = pathToFileURL(resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)).toString()
+  }
   const mod = await nativeImport(url);
-  return proxyESM(mod);
-}
-
-async function handleImport(
-  id: string,
-  importer: string | null,
-  config: ViteDevServer['config'],
-): Promise<any> {
-    // `resolve` doesn't handle `node:` builtins, so handle them directly
-    if (id.startsWith('node:') || builtins.has(id)) {
-      return nativeImport(id);
-    }
-    return nodeImport(id, importer, config);
+  return proxyESM(id, mod);
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(mod: any) {
-  const isESM = !!(mod.__esModule ?? mod.default);
+function proxyESM(id: string, mod: any) {
   return new Proxy(mod, {
     get(mod, prop) {
-      if (prop === 'default') return isESM ? mod.default : mod;
-      return mod[prop]
+      if (prop in mod) {
+        return mod[prop];
+      }
+      // commonjs interop: module whose exports are not statically analyzable
+      if (isObject(mod.default) && prop in mod.default) {
+        return mod.default[prop]
+      }
+      // throw an error like ESM import does
+      throw new SyntaxError(`The requested module '${id}' does not provide an export named '${prop.toString()}'`)
     }
   })
 }
