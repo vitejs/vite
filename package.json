@@ -60,7 +60,7 @@
     "vitepress": "^0.19.2",
     "yorkie": "^2.0.0",
     "rollup": "^2.57.0",
-    "esbuild": "^0.12.24",
+    "esbuild": "^0.12.29",
     "vite": "workspace:*"
   },
   "gitHooks": {
