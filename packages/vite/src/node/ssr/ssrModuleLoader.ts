@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { pathToFileURL } from 'url';
+import { builtinModules } from 'module';
 import { ViteDevServer } from '..'
 import { cleanUrl, resolveFrom, unwrapId } from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
@@ -12,8 +13,13 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
-// @ts-ignore
-import NATIVE_IMPORT from 'vite/native-import.js'
+
+const builtins = new Set(builtinModules);
+
+// This is a workaround since typescript compiles dynamic imports to `require`.
+// Thankfully, when `typescript@4.5.0` lands it won't and this can be removed!
+// See #5197 for notes
+const nativeImport = eval('u => import(u)');
 
 interface SSRContext {
   global: NodeJS.Global
@@ -94,12 +100,10 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return await nodeRequireOrImport(
+      return await handleImport(
         dep,
         mod.file,
-        server.config.root,
-        !!server.config.resolve.preserveSymlinks,
-        server,
+        server.config
       )
     }
     dep = unwrapId(dep)
@@ -178,62 +182,36 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
-function nodeRequire(
+// In node@12+ we can use dynamic import to load CJS and ESM
+// Caveat https://github.com/vitejs/vite/pull/5197#discussion_r722583544
+async function nodeImport(
   id: string,
   importer: string | null,
-  root: string,
-  preserveSymlinks: boolean
+  config: ViteDevServer['config'],
 ) {
-  const mdl = require(resolve(id, importer, root, preserveSymlinks));
-  return proxyESM(mdl);
+  const url = pathToFileURL(resolve(id, importer, config.root, !!config.resolve.preserveSymlinks))
+  const mod = await nativeImport(url);
+  return proxyESM(mod);
 }
 
-function nodeRequireOrImport(
+async function handleImport(
   id: string,
   importer: string | null,
-  root: string,
-  preserveSymlinks: boolean,
-  server: ViteDevServer,
+  config: ViteDevServer['config'],
 ): Promise<any> {
-  return new Promise((res, reject) => {
-    if (id.startsWith('node:')) {
-      return res(NATIVE_IMPORT(id.slice('node:'.length)))
+    // `resolve` doesn't handle `node:` builtins, so handle them directly
+    if (id.startsWith('node:') || builtins.has(id)) {
+      return nativeImport(id);
     }
-    try {
-      const mdl = nodeRequire(id, importer, root, preserveSymlinks);
-      return res(mdl);
-    } catch (e) {
-      const resolvedPath = resolve(id, importer, root, preserveSymlinks);
-      if (e instanceof SyntaxError && /export|import/.test(e.message)) {
-        server.config.logger.error(
-          `Failed to load "${id}"!\nESM format is not natively supported in "node@${process.version}".\nPlease use CommonJS or upgrade to an LTS version of node above "node@12.17.0".`,
-        );
-      } else if (e.code === 'ERR_REQUIRE_ESM') {
-        const url = pathToFileURL(resolvedPath);
-        try {
-          return NATIVE_IMPORT(url.toString()).then(
-            (mdl: any) => {
-              const mod = proxyESM(mdl, true);
-              return res(mod);
-            },
-            (err: any) => {
-              reject(err)
-            }
-        )
-        } catch (e) {
-          reject(e);
-        }
-      }
-    }
-  })
+    return nodeImport(id, importer, config);
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(mod: any, isESM = mod.__esModule) {
-  const defaultExport = isESM ? mod.default : mod
+function proxyESM(mod: any) {
+  const isESM = !!(mod.__esModule ?? mod.default);
   return new Proxy(mod, {
     get(mod, prop) {
-      if (prop === 'default') return defaultExport
+      if (prop === 'default') return isESM ? mod.default : mod;
       return mod[prop]
     }
   })
