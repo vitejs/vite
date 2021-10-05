@@ -39,6 +39,7 @@ export async function ssrTransform(
       locations: true
     }) as any
   } catch (err) {
+    if (!err.loc) throw err
     const line = err.loc.line
     throw new Error(
       `Parse failure: ${err.message}\nContents of line ${line}: ${
