@@ -1,3 +1,12 @@
+## [1.9.3](https://github.com/vitejs/vite/compare/plugin-vue@1.9.2...plugin-vue@1.9.3) (2021-10-05)
+
+
+### Bug Fixes
+
+* **plugin-vue:** don't use object spread in the config hook ([#5155](https://github.com/vitejs/vite/issues/5155)) ([c1ce471](https://github.com/vitejs/vite/commit/c1ce471c07264db034f42573662971f0dc531df7))
+
+
+
 ## [1.9.2](https://github.com/vitejs/vite/compare/plugin-vue@1.9.1...plugin-vue@1.9.2) (2021-09-24)
 
 
