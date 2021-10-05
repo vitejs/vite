@@ -31,13 +31,13 @@ export async function ssrTransform(
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
-  let ast
+  let ast: any
   try {
     ast = parser.parse(code, {
       sourceType: 'module',
       ecmaVersion: 'latest',
       locations: true
-    }) as any
+    })
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
     const line = err.loc.line
