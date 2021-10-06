@@ -100,7 +100,7 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return await nodeImport(
+      return nodeImport(
         dep,
         mod.file,
         server.config
