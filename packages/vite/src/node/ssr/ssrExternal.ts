@@ -1,4 +1,3 @@
-import fs from 'fs'
 import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import {
@@ -17,9 +16,6 @@ const debug = createDebugger('vite:ssr-external')
 /**
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
- *
- * TODO right now externals are imported using require(), we probably need to
- * rework this when more libraries ship native ESM distributions for Node.
  */
 export function resolveSSRExternal(
   config: ResolvedConfig,
@@ -97,11 +93,7 @@ export function resolveSSRExternal(
         // entry is not js, cannot externalize
         continue
       }
-      // check if the entry is cjs
-      const content = fs.readFileSync(entry, 'utf-8')
-      if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
-        ssrExternals.add(id)
-      }
+      ssrExternals.add(id)
     }
   }
 
