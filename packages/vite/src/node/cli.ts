@@ -66,7 +66,8 @@ cli
 // dev
 cli
   .command('[root]') // default command
-  .alias('serve')
+  .alias('serve') // the command is called 'serve' in Vite's API
+  .alias('dev') // alias to align with the script name
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
@@ -102,7 +103,7 @@ cli
 
       info(
         chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-          chalk.green(` dev server running at:\n`),
+        chalk.green(` dev server running at:\n`),
         {
           clear: !server.config.logger.hasWarned
         }
@@ -149,7 +150,7 @@ cli
   .option(
     '--minify [minifier]',
     `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
-      `or specify minifier to use (default: esbuild)`
+    `or specify minifier to use (default: esbuild)`
   )
   .option('--manifest', `[boolean] emit build manifest json`)
   .option('--ssrManifest', `[boolean] emit ssr manifest json`)
