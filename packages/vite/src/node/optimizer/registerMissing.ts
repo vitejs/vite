@@ -54,10 +54,7 @@ export function createMissingImporterRegisterFn(
       knownOptimized = newData!.optimized
 
       // update ssr externals
-      server._ssrExternals = resolveSSRExternal(
-        server.config,
-        Object.keys(knownOptimized)
-      )
+      server._ssrExternals = resolveSSRExternal(server.config)
 
       logger.info(
         chalk.greenBright(`✨ dependencies updated, reloading page...`),

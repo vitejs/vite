@@ -3,11 +3,9 @@ import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import {
   createDebugger,
-  isDefined,
   lookupFile,
   normalizePath,
-  resolveFrom,
-  unique
+  resolveFrom
 } from '../utils'
 import { ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
@@ -23,26 +21,45 @@ const debug = createDebugger('vite:ssr-external')
  */
 export function resolveSSRExternal(
   config: ResolvedConfig,
-  knownImports: string[],
   ssrExternals: Set<string> = new Set(),
   seen: Set<string> = new Set()
 ): string[] {
-  if (config.ssr?.noExternal === true) {
+  const ssrConfig = config.ssr
+  if (ssrConfig?.noExternal === true) {
     return []
   }
+  ssrConfig?.external?.forEach((id) => {
+    ssrExternals.add(id)
+    seen.add(id)
+  })
 
-  const { root } = config
+  collectExternals(config.root, ssrExternals, seen)
+  ssrExternals.delete('vite')
+
+  let externals = [...ssrExternals]
+  if (ssrConfig?.noExternal) {
+    externals = externals.filter(
+      createFilter(undefined, ssrConfig.noExternal, { resolve: false })
+    )
+  }
+  return externals
+}
+
+function collectExternals(
+  root: string,
+  ssrExternals: Set<string>,
+  seen: Set<string>
+) {
   const pkgContent = lookupFile(root, ['package.json'])
   if (!pkgContent) {
-    return []
+    return
   }
+
   const pkg = JSON.parse(pkgContent)
-  const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
-  const deps = unique([
-    ...importedDeps,
-    ...Object.keys(pkg.devDependencies || {}),
-    ...Object.keys(pkg.dependencies || {})
-  ])
+  const deps = {
+    ...pkg.devDependencies,
+    ...pkg.dependencies
+  }
 
   const resolveOptions: InternalResolveOptions = {
     root,
@@ -52,10 +69,8 @@ export function resolveSSRExternal(
 
   const depsToTrace = new Set<string>()
 
-  for (const id of deps) {
-    if (seen.has(id)) {
-      continue
-    }
+  for (const id in deps) {
+    if (seen.has(id)) continue
     seen.add(id)
 
     let entry: string | undefined
@@ -73,31 +88,36 @@ export function resolveSSRExternal(
       // which returns with '/', require.resolve returns with '\\'
       requireEntry = normalizePath(require.resolve(id, { paths: [root] }))
     } catch (e) {
+      try {
+        // no main entry, but deep imports may be allowed
+        const pkgPath = resolveFrom(`${id}/package.json`, root)
+        if (pkgPath.includes('node_modules')) {
+          ssrExternals.add(id)
+        } else {
+          depsToTrace.add(path.dirname(pkgPath))
+        }
+        continue
+      } catch {}
+
       // resolve failed, assume include
       debug(`Failed to resolve entries for package "${id}"\n`, e)
       continue
     }
+    // no esm entry but has require entry
     if (!entry) {
-      // no esm entry but has require entry (is this even possible?)
       ssrExternals.add(id)
-      continue
     }
-    if (!entry.includes('node_modules')) {
-      // entry is not a node dep, possibly linked - don't externalize
-      // instead, trace its dependencies.
-      depsToTrace.add(id)
-      continue
+    // trace the dependencies of linked packages
+    else if (!entry.includes('node_modules')) {
+      const pkgPath = resolveFrom(`${id}/package.json`, root)
+      depsToTrace.add(path.dirname(pkgPath))
     }
-    if (entry !== requireEntry) {
-      // has separate esm/require entry, assume require entry is cjs
+    // has separate esm/require entry, assume require entry is cjs
+    else if (entry !== requireEntry) {
       ssrExternals.add(id)
-    } else {
-      // node resolve and esm resolve resolves to the same file.
-      if (!/\.m?js$/.test(entry)) {
-        // entry is not js, cannot externalize
-        continue
-      }
-      // check if the entry is cjs
+    }
+    // externalize js entries with commonjs
+    else if (/\.m?js$/.test(entry)) {
       const content = fs.readFileSync(entry, 'utf-8')
       if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
         ssrExternals.add(id)
@@ -105,32 +125,9 @@ export function resolveSSRExternal(
     }
   }
 
-  for (const id of depsToTrace) {
-    const depRoot = path.dirname(
-      resolveFrom(`${id}/package.json`, root, !!config.resolve.preserveSymlinks)
-    )
-    resolveSSRExternal(
-      {
-        ...config,
-        root: depRoot
-      },
-      knownImports,
-      ssrExternals,
-      seen
-    )
+  for (const depRoot of depsToTrace) {
+    collectExternals(depRoot, ssrExternals, seen)
   }
-
-  if (config.ssr?.external) {
-    config.ssr.external.forEach((id) => ssrExternals.add(id))
-  }
-  let externals = [...ssrExternals]
-  if (config.ssr?.noExternal) {
-    const filter = createFilter(undefined, config.ssr.noExternal, {
-      resolve: false
-    })
-    externals = externals.filter((id) => filter(id))
-  }
-  return externals.filter((id) => id !== 'vite')
 }
 
 export function shouldExternalizeForSSR(
@@ -148,14 +145,4 @@ export function shouldExternalizeForSSR(
     }
   })
   return should
-}
-
-function getNpmPackageName(importPath: string): string | null {
-  const parts = importPath.split('/')
-  if (parts[0].startsWith('@')) {
-    if (!parts[1]) return null
-    return `${parts[0]}/${parts[1]}`
-  } else {
-    return parts[0]
-  }
 }

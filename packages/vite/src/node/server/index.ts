@@ -371,14 +371,7 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     ssrLoadModule(url) {
-      if (!server._ssrExternals) {
-        server._ssrExternals = resolveSSRExternal(
-          config,
-          server._optimizeDepsMetadata
-            ? Object.keys(server._optimizeDepsMetadata.optimized)
-            : []
-        )
-      }
+      server._ssrExternals ||= resolveSSRExternal(config)
       return ssrLoadModule(url, server)
     },
     ssrFixStacktrace(e) {
