@@ -103,7 +103,7 @@ cli
 
       info(
         chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-        chalk.green(` dev server running at:\n`),
+          chalk.green(` dev server running at:\n`),
         {
           clear: !server.config.logger.hasWarned
         }
