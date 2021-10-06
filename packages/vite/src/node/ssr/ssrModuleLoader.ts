@@ -1,9 +1,8 @@
 import fs from 'fs'
 import path from 'path'
-import { pathToFileURL } from 'url';
-import { builtinModules } from 'module';
+import { pathToFileURL } from 'url'
 import { ViteDevServer } from '..'
-import { cleanUrl, isObject, resolveFrom, unwrapId } from '../utils'
+import { cleanUrl, isBuiltin, isObject, resolveFrom, unwrapId } from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -13,8 +12,6 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
-
-const builtins = new Set(builtinModules);
 
 // This is a workaround since typescript compiles dynamic imports to `require`.
 // Thankfully, when `typescript@4.5.0` lands it won't and this can be removed!
@@ -190,7 +187,7 @@ async function nodeImport(
 ) {
   let url: string
   // `resolve` doesn't handle `node:` builtins, so handle them directly
-  if (id.startsWith('node:') || builtins.has(id)) {
+  if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
     url = pathToFileURL(resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)).toString()
