@@ -14,7 +14,8 @@ import {
   isExternalUrl,
   isObject,
   lookupFile,
-  normalizePath
+  normalizePath,
+  dynamicImport
 } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
@@ -819,16 +820,15 @@ export async function loadConfigFromFile(
         const bundled = await bundleConfigFile(resolvedPath, true)
         dependencies = bundled.dependencies
         fs.writeFileSync(resolvedPath + '.js', bundled.code)
-        userConfig = (await eval(`import(fileUrl + '.js?t=${Date.now()}')`))
+        userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
           .default
         fs.unlinkSync(resolvedPath + '.js')
         debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
       } else {
-        // using eval to avoid this from being compiled away by TS/Rollup
+        // using Function to avoid this from being compiled away by TS/Rollup
         // append a query so that we force reload fresh config in case of
         // server restart
-        userConfig = (await eval(`import(fileUrl + '?t=${Date.now()}')`))
-          .default
+        userConfig = (await dynamicImport(`${fileUrl}?t=${Date.now()}`)).default
         debug(`native esm config loaded in ${getTime()}`, fileUrl)
       }
     }
