@@ -1,3 +1,13 @@
+## [2.6.5](https://github.com/vitejs/vite/compare/v2.6.4...v2.6.5) (2021-10-07)
+
+
+### Features
+
+* **internal:** expose printHttpServerUrls ([f94a720](https://github.com/vitejs/vite/commit/f94a720478c4905463ddf36f4c666431b2a438a9))
+* **server:** expose server.printUrls() ([96a9ee4](https://github.com/vitejs/vite/commit/96a9ee4f3566e273db53ef9023222699520e4f8f))
+
+
+
 ## [2.6.4](https://github.com/vitejs/vite/compare/v2.6.3...v2.6.4) (2021-10-07)
 
 
