@@ -39,8 +39,9 @@ const htmlTypesRE = /\.(html|vue|svelte)$/
 // use Acorn because it's slow. Luckily this doesn't have to be bullet proof
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
+// BROWSER VITE patch: no lookbehind for safari support
 export const importsRE =
-  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
+  /(?:^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from\s*)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\*)/gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -72,11 +73,10 @@ export async function scanImports(config: ResolvedConfig): Promise<{
 
   // Non-supported entry file types and virtual files should not be scanned for
   // dependencies.
-  entries = entries.filter(
-    (entry) =>
-      // BROWSER VITE patch: we want to parse md/mdx files as well with an injected plugin
-      // (JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)) &&
-      fs.existsSync(entry)
+  entries = entries.filter((entry) =>
+    // BROWSER VITE patch: we want to parse md/mdx files as well with an injected plugin
+    // (JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)) &&
+    fs.existsSync(entry)
   )
 
   if (!entries.length) {
