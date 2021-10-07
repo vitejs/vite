@@ -108,7 +108,7 @@ cli
         }
       )
 
-      printHttpServerUrls(server.httpServer, server.config)
+      server.printUrls()
 
       // @ts-ignore
       if (global.__vite_start_time) {
