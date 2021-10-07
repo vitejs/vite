@@ -568,3 +568,10 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
+
+/**
+ * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
+ *
+ * @param file File path to import.
+ */
+export const dynamicImport = new Function('file', 'return import(file)')
