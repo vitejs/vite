@@ -21,6 +21,7 @@ const debug = createDebugger('vite:ssr-external')
  */
 export function resolveSSRExternal(
   config: ResolvedConfig,
+  knownImports: string[],
   ssrExternals: Set<string> = new Set(),
   seen: Set<string> = new Set()
 ): string[] {
@@ -34,6 +35,14 @@ export function resolveSSRExternal(
   })
 
   collectExternals(config.root, ssrExternals, seen)
+
+  for (const dep of knownImports) {
+    // assume external if not yet seen
+    if (!seen.has(dep)) {
+      ssrExternals.add(dep)
+    }
+  }
+
   ssrExternals.delete('vite')
 
   let externals = [...ssrExternals]
