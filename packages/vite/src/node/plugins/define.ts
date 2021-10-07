@@ -47,7 +47,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   const pattern = new RegExp(
     // Do not allow preceding '.', but do allow preceding '...' for spread operations
-    '(?<!(?<!\\.\\.)\\.)\\b(' +
+    // BROWSER VITE patch: no lookbehind for safari support
+    '(^|[^\\.]|\\.\\.\\.)\\b(' +
       Object.keys(replacements)
         .map((str) => {
           return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
@@ -76,8 +77,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
-        return code.replace(pattern, (_, match) => {
-          return '' + replacements[match]
+        return code.replace(pattern, (_, prefix, match) => {
+          return prefix + replacements[match]
         })
       }
 
@@ -87,9 +88,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
       while ((match = pattern.exec(code))) {
         hasReplaced = true
-        const start = match.index
-        const end = start + match[0].length
-        const replacement = '' + replacements[match[1]]
+        const start = match.index+match[1].length
+        const end = start + match[2].length
+        const replacement = '' + replacements[match[2]]
         s.overwrite(start, end, replacement)
       }
 
