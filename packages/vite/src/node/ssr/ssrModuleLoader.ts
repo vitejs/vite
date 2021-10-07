@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { pathToFileURL } from 'url'
 import { ViteDevServer } from '..'
-import { cleanUrl, isBuiltin, isObject, resolveFrom, unwrapId } from '../utils'
+import { dynamicImport, cleanUrl, isBuiltin, isObject, resolveFrom, unwrapId } from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -12,11 +12,6 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
-
-// This is a workaround since typescript compiles dynamic imports to `require`.
-// Thankfully, when `typescript@4.5.0` lands it won't and this can be removed!
-// See #5197 for notes
-const nativeImport = eval('u => import(u)')
 
 interface SSRContext {
   global: NodeJS.Global
@@ -190,7 +185,7 @@ async function nodeImport(
       resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)
     ).toString()
   }
-  const mod = await nativeImport(url)
+  const mod = await dynamicImport(url)
   return proxyESM(id, mod)
 }
 
