@@ -123,6 +123,9 @@ importers:
   packages/playground/cli:
     specifiers: {}
 
+  packages/playground/cli-module:
+    specifiers: {}
+
   packages/playground/css:
     specifiers:
       css-dep: link:./css-dep
