@@ -266,18 +266,14 @@ function esbuildScanPlugin(
           }
 
           // This will trigger incorrectly if `export default` is contained
-          // anywhere in a string/template. Svelte files can't have
-          // 'export default` as code so we know if it's encountered it's a
-          // false positive
-          if (
-            !code.includes('export default') ||
-            path.endsWith('.svelte') ||
-            path.endsWith('.astro')
-          ) {
+          // anywhere in a string. Svelte and Astro files can't have
+          // `export default` as code so we know if it's encountered it's a
+          // false positive (e.g. contained in a string)
+          if (!js.includes('export default') && path.endsWith('.vue')) {
             js += '\nexport default {}'
           }
 
-          if (code.includes('import.meta.glob')) {
+          if (js.includes('import.meta.glob')) {
             return {
               // transformGlob already transforms to js
               loader: 'js',
