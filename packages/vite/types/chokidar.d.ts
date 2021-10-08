@@ -178,7 +178,7 @@ export interface WatchOptions {
   interval?: number
   
   /**
-   * use to override the default ignored
+   * Use to override the default ignored
    */
   chokidarOptions?: any
 
