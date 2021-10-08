@@ -8,7 +8,7 @@ import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
  *
- * Supports tempalte string with dynamic segments:
+ * Supports template string with dynamic segments:
  * ```
  * new URL(`./dir/${name}.png`, import.meta.url)
  * // transformed to
