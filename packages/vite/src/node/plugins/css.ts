@@ -24,7 +24,7 @@ import {
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
-import { CLIENT_PUBLIC_PATH } from '../constants'
+import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
@@ -161,7 +161,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
+      if (
+        !isCSSRequest(id) ||
+        commonjsProxyRE.test(id) ||
+        SPECIAL_QUERY_RE.test(id)
+      ) {
         return
       }
 
@@ -272,7 +276,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(css, id, ssr) {
-      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
+      if (
+        !isCSSRequest(id) ||
+        commonjsProxyRE.test(id) ||
+        SPECIAL_QUERY_RE.test(id)
+      ) {
         return
       }
 
