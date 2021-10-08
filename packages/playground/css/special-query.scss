@@ -1,0 +1,13 @@
+.inline {
+  color: green;
+}
+
+.url {
+  color: green;
+}
+
+.raw {
+  & {
+    color: green;
+  }
+}

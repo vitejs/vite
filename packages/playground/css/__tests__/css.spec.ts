@@ -1,5 +1,3 @@
-import fs from 'fs'
-import path from 'path'
 import {
   editFile,
   findAssetFile,
@@ -7,7 +5,7 @@ import {
   getColor,
   isBuild,
   removeFile,
-  testDir,
+  readFile,
   untilUpdated
 } from '../../testUtils'
 
@@ -334,7 +332,20 @@ test('Url separation', async () => {
   }
 })
 
-test('inlined', async () => {
+test('special query', async () => {
   // should not insert css
-  expect(await getColor('.inlined')).toBe('black')
+  expect(await getColor('.url')).toBe('black')
+  expect(await getColor('.raw')).toBe('black')
+  expect(await getColor('.inline')).toBe('black')
+
+  const source = readFile('special-query.scss')
+
+  expect(await page.textContent('.url-code')).toMatch(
+    isBuild
+      ? `data:null;base64,${Buffer.from(source).toString(
+          'base64'
+        )}`
+      : '/special-query.scss'
+  )
+  expect(await page.textContent('.raw-code')).toMatch(source)
 })

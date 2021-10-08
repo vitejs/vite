@@ -63,6 +63,14 @@ if (import.meta.env.DEV) {
   import('./async-treeshaken')
 }
 
-// inlined
-import inlined from './inlined.css?inline'
-text('.inlined-code', inlined)
+// ?url import
+import url from './special-query.scss?url'
+text('.url-code', url)
+
+// ?raw import
+import raw from './special-query.scss?raw'
+text('.raw-code', raw)
+
+// ?inline import
+import inline from './special-query.scss?inline'
+text('.inline-code', inline)
