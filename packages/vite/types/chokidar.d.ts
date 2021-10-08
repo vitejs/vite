@@ -118,7 +118,9 @@ export interface WatchOptions {
    * (the path), second time with two arguments (the path and the
    * [`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats) object of that path).
    */
-  ignored?: Matcher
+  ignored?: 
+  
+  
 
   /**
    * If set to `false` then `add`/`addDir` events are also emitted for matching paths while
@@ -176,6 +178,11 @@ export interface WatchOptions {
    * Interval of file system polling.
    */
   interval?: number
+  
+  /**
+   * use to override the default ignored
+   */
+  chokidarOptions?:any
 
   /**
    * Interval of file system polling for binary files. ([see list of binary extensions](https://gi
