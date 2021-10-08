@@ -119,8 +119,6 @@ export interface WatchOptions {
    * [`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats) object of that path).
    */
   ignored?: Matcher
-  
-  
 
   /**
    * If set to `false` then `add`/`addDir` events are also emitted for matching paths while
