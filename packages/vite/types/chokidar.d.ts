@@ -182,7 +182,7 @@ export interface WatchOptions {
   /**
    * use to override the default ignored
    */
-  chokidarOptions?:any
+  chokidarOptions?: any
 
   /**
    * Interval of file system polling for binary files. ([see list of binary extensions](https://gi
