@@ -335,7 +335,7 @@ export async function createServer(
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
 
-  const { ignored = [], ...watchOptions } = serverConfig.watch || {}
+  const { ignored = [],chokidarOptions={}, ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
     ignored: [
       '**/node_modules/**',
@@ -345,7 +345,8 @@ export async function createServer(
     ignoreInitial: true,
     ignorePermissionErrors: true,
     disableGlobbing: true,
-    ...watchOptions
+    ...watchOptions,
+    ...chokidarOptions,
   }) as FSWatcher
 
   const plugins = config.plugins
