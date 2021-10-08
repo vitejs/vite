@@ -269,7 +269,7 @@ function esbuildScanPlugin(
           // anywhere in a string. Svelte and Astro files can't have
           // `export default` as code so we know if it's encountered it's a
           // false positive (e.g. contained in a string)
-          if (!js.includes('export default') || !path.endsWith('.vue')) {
+          if (!path.endsWith('.vue') || !js.includes('export default')) {
             js += '\nexport default {}'
           }
 
