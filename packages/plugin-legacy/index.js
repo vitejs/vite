@@ -86,6 +86,15 @@ function viteLegacyPlugin(options = {}) {
       if (!config.build) {
         config.build = {}
       }
+
+      if (!config.build.cssTarget) {
+        // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
+        // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
+        // But note that only the `HexRGBA` feature affects the minify outcome.
+        // HSL & rebeccapurple values will be minified away regardless the target.
+        // So targeting `chrome61` suffices to fix the compatiblity issue.
+        config.build.cssTarget = 'chrome61'
+      }
     }
   }
 

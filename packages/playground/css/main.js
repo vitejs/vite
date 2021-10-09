@@ -1,3 +1,5 @@
+import './minify.css'
+
 import css from './imported.css'
 text('.imported-css', css)
 
