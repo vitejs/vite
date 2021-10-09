@@ -151,6 +151,10 @@ export function indexHtmlMiddleware(
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
+    if (res.writableEnded) {
+      return next()
+    }
+
     const url = req.url && cleanUrl(req.url)
     // spa-fallback always redirects to /index.html
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {

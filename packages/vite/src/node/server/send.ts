@@ -20,6 +20,10 @@ export function send(
   cacheControl = 'no-cache',
   map?: SourceMap | null
 ): void {
+  if (res.writableEnded) {
+    return
+  }
+
   if (req.headers['if-none-match'] === etag) {
     res.statusCode = 304
     return res.end()
