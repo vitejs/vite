@@ -22,7 +22,7 @@ function ssrRegisterHelper(comp, filename) {
   comp.setup = (props, ctx) => {
     // @ts-ignore
     const ssrContext = useSSRContext()
-      ; (ssrContext.modules || (ssrContext.modules = new Set())).add(filename)
+    ;(ssrContext.modules || (ssrContext.modules = new Set())).add(filename)
     if (setup) {
       return setup(props, ctx)
     }
