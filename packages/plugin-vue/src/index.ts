@@ -87,8 +87,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     refTransform === false
       ? () => false
       : refTransform === true
-        ? createFilter(/\.(j|t)sx?$/, /node_modules/)
-        : createFilter(refTransform)
+      ? createFilter(/\.(j|t)sx?$/, /node_modules/)
+      : createFilter(refTransform)
 
   // compat for older verisons
   const canUseRefTransform = typeof compiler.shouldTransformRef === 'function'
