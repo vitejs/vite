@@ -185,7 +185,7 @@ function actuallyCompile(
             semi: false,
             parser: 'babel',
           })
-        } catch (e) {
+        } catch (e: any) {
           if (e.code === 'MODULE_NOT_FOUND') {
             tips.push(
               'The `prettify` option is on, but the dependency `prettier` is not found.\n' +
