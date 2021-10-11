@@ -39,12 +39,17 @@ export interface VueViteOptions {
    * The options for `@vue/babel-preset-jsx`
    */
   jsxOptions?: Record<string, any>
+  /**
+   * The options for esbuld to transform script code
+   */
+  target?: string
 }
 
 export interface ResolvedOptions extends VueViteOptions {
   root: string
   devServer?: ViteDevServer
   isProduction: boolean
+  target?: string
 }
 
 export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {

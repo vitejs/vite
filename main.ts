@@ -152,7 +152,7 @@ async function genScriptCode(
         const result = await options.devServer!.transformWithEsbuild(
           scriptCode,
           filename,
-          { loader: 'ts' },
+          { loader: 'ts', target: options.target },
           map
         )
         scriptCode = result.code
