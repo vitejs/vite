@@ -1,3 +1,12 @@
+## [1.0.3](https://github.com/vitejs/vite/compare/plugin-react@1.0.2...plugin-react@1.0.3) (2021-10-11)
+
+
+### Bug Fixes
+
+* **plugin-react:** turn off jsx for .ts ([#5198](https://github.com/vitejs/vite/issues/5198)) ([916f9d3](https://github.com/vitejs/vite/commit/916f9d3984d5e83f7cb869b3606a1f043a814b97)), closes [#5102](https://github.com/vitejs/vite/issues/5102)
+
+
+
 ## [1.0.2](https://github.com/vitejs/vite/compare/plugin-react@1.0.1...plugin-react@1.0.2) (2021-10-05)
 
 
