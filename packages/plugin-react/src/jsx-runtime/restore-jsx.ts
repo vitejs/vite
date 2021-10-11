@@ -11,6 +11,10 @@ export async function restoreJSX(
   filename: string
 ): Promise<RestoredJSX> {
   const [reactAlias, isCommonJS] = parseReactAlias(code)
+  if (!reactAlias) {
+    return [null, false]
+  }
+
   const reactJsxRE = new RegExp(
     '\\b' + reactAlias + '\\.(createElement|Fragment)\\b',
     'g'
