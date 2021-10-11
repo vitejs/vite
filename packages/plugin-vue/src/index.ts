@@ -87,8 +87,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     refTransform === false
       ? () => false
       : refTransform === true
-      ? createFilter(/\.(j|t)sx?$/, /node_modules/)
-      : createFilter(refTransform)
+        ? createFilter(/\.(j|t)sx?$/, /node_modules/)
+        : createFilter(refTransform)
 
   // compat for older verisons
   const canUseRefTransform = typeof compiler.shouldTransformRef === 'function'
@@ -103,6 +103,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     root: process.cwd(),
     sourceMap: true
   }
+
+  // Temporal handling for 2.7 breaking change
+  const isSSR = (opt: { ssr?: boolean } | boolean | undefined) =>
+    opt === undefined ? !!options.ssr :
+      (typeof opt === 'boolean' ? opt : opt?.ssr === true)
 
   return {
     name: 'vite:vue',
@@ -150,7 +155,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       }
     },
 
-    load(id, ssr = !!options.ssr) {
+    load(id, opt) {
+      const ssr = isSSR(opt)
       if (id === EXPORT_HELPER_ID) {
         return helperCode
       }
@@ -182,7 +188,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       }
     },
 
-    transform(code, id, ssr = !!options.ssr) {
+    transform(code, id, opt) {
+      const ssr = isSSR(opt)
       const { filename, query } = parseVueRequest(id)
       if (query.raw) {
         return

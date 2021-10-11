@@ -22,7 +22,7 @@ function ssrRegisterHelper(comp, filename) {
   comp.setup = (props, ctx) => {
     // @ts-ignore
     const ssrContext = useSSRContext()
-    ;(ssrContext.modules || (ssrContext.modules = new Set())).add(filename)
+      ; (ssrContext.modules || (ssrContext.modules = new Set())).add(filename)
     if (setup) {
       return setup(props, ctx)
     }
@@ -80,7 +80,8 @@ function vueJsxPlugin(options = {}) {
       }
     },
 
-    transform(code, id, ssr) {
+    transform(code, id, opt) {
+      const ssr = typeof opt === 'boolean' ? opt : opt?.ssr === true
       const {
         include,
         exclude,

@@ -91,7 +91,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           )
       )
     },
-    async transform(code, id, ssr) {
+    async transform(code, id, options) {
+      const ssr = typeof options === 'boolean' ? options : options?.ssr === true
       if (/\.[tj]sx?$/.test(id)) {
         const plugins = [...userPlugins]
 
