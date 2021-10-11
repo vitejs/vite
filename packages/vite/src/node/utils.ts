@@ -572,6 +572,10 @@ export const singlelineCommentsRE = /\/\/.*/g
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
  *
+ * As a temporary workaround for Jest's lack of stable ESM support, we fallback to require
+ * if we're in a Jest environment.
+ * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
+ *
  * @param file File path to import.
  */
-export const dynamicImport = new Function('file', 'return import(file)')
+export const dynamicImport = typeof jest === 'undefined' ? new Function('file', 'return import(file)') : new Function('file', 'return require(file)')
