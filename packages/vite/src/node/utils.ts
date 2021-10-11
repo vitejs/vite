@@ -578,4 +578,4 @@ export const singlelineCommentsRE = /\/\/.*/g
  *
  * @param file File path to import.
  */
-export const dynamicImport = typeof jest === 'undefined' ? new Function('file', 'return import(file)') : new Function('file', 'return require(file)')
+export const dynamicImport = typeof jest === 'undefined' ? new Function('file', 'return import(file)') : new Function('require', 'file', 'return require(file)').bind(null, require)
