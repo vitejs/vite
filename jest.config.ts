@@ -12,6 +12,7 @@ const config: Config.InitialOptions = {
   testEnvironment: './scripts/jestEnv.js',
   setupFilesAfterEnv: ['./scripts/jestPerTestSetup.ts'],
   testPathIgnorePatterns : [
+    "<rootDir>/packages/playground/optimize-deps",
     "<rootDir>/packages/playground/ssr-react",
     "<rootDir>/packages/playground/ssr-vue",
   ],
