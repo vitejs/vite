@@ -11,6 +11,11 @@ const config: Config.InitialOptions = {
   globalTeardown: './scripts/jestGlobalTeardown.js',
   testEnvironment: './scripts/jestEnv.js',
   setupFilesAfterEnv: ['./scripts/jestPerTestSetup.ts'],
+  testPathIgnorePatterns : [
+    "<rootDir>/packages/vite/src/node/ssr",
+    "<rootDir>/packages/playground/ssr-react",
+    "<rootDir>/packages/playground/ssr-vue",
+  ],
   watchPathIgnorePatterns: ['<rootDir>/packages/temp'],
   modulePathIgnorePatterns: ['<rootDir>/packages/temp'],
   moduleNameMapper: {
