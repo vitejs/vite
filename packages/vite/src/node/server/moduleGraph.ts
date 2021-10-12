@@ -1,4 +1,6 @@
 import { extname } from 'path'
+import { ModuleInfo, PartialResolvedId } from 'rollup'
+import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
@@ -8,8 +10,6 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import { TransformResult } from './transformRequest'
-import { PluginContainer } from './pluginContainer'
-import { parse as parseUrl } from 'url'
 
 export class ModuleNode {
   /**
@@ -22,6 +22,7 @@ export class ModuleNode {
   id: string | null = null
   file: string | null = null
   type: 'js' | 'css'
+  info?: ModuleInfo
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
@@ -51,11 +52,10 @@ export class ModuleGraph {
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
-  container: PluginContainer
 
-  constructor(container: PluginContainer) {
-    this.container = container
-  }
+  constructor(
+    private resolveId: (url: string) => Promise<PartialResolvedId | null>
+  ) {}
 
   async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined> {
     const [url] = await this.resolveUrl(rawUrl)
@@ -81,6 +81,7 @@ export class ModuleGraph {
   }
 
   invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()): void {
+    mod.info = undefined
     mod.transformResult = null
     mod.ssrTransformResult = null
     invalidateSSRModule(mod, seen)
@@ -189,7 +190,7 @@ export class ModuleGraph {
   // the same module
   async resolveUrl(url: string): Promise<[string, string]> {
     url = removeImportQuery(removeTimestampQuery(url))
-    const resolvedId = (await this.container.resolveId(url))?.id || url
+    const resolvedId = (await this.resolveId(url))?.id || url
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)
     if (ext && !pathname!.endsWith(ext)) {
