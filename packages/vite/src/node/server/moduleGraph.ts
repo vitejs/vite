@@ -23,6 +23,7 @@ export class ModuleNode {
   file: string | null = null
   type: 'js' | 'css'
   info?: ModuleInfo
+  meta?: Record<string, any>
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
@@ -46,6 +47,13 @@ function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
   mod.ssrModule = null
   mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
 }
+
+export type ResolvedUrl = [
+  url: string,
+  resolvedId: string,
+  meta: object | null | undefined
+]
+
 export class ModuleGraph {
   urlToModuleMap = new Map<string, ModuleNode>()
   idToModuleMap = new Map<string, ModuleNode>()
@@ -141,10 +149,11 @@ export class ModuleGraph {
   }
 
   async ensureEntryFromUrl(rawUrl: string): Promise<ModuleNode> {
-    const [url, resolvedId] = await this.resolveUrl(rawUrl)
+    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)
+      if (meta) mod.meta = meta
       this.urlToModuleMap.set(url, mod)
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
@@ -188,14 +197,15 @@ export class ModuleGraph {
   // 1. remove the HMR timestamp query (?t=xxxx)
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
-  async resolveUrl(url: string): Promise<[string, string]> {
+  async resolveUrl(url: string): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
-    const resolvedId = (await this.resolveId(url))?.id || url
+    const resolved = await this.resolveId(url)
+    const resolvedId = resolved?.id || url
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)
     if (ext && !pathname!.endsWith(ext)) {
       url = pathname + ext + (search || '') + (hash || '')
     }
-    return [url, resolvedId]
+    return [url, resolvedId, resolved?.meta]
   }
 }

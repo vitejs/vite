@@ -192,11 +192,20 @@ export async function createPluginContainer(
     }
     if (!module.info) {
       module.info = new Proxy(
-        { id, meta: EMPTY_OBJECT } as ModuleInfo,
+        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
         ModuleInfoProxy
       )
     }
     return module.info
+  }
+
+  function updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+    if (meta) {
+      const moduleInfo = getModuleInfo(id)
+      if (moduleInfo) {
+        moduleInfo.meta = { ...moduleInfo.meta, ...meta }
+      }
+    }
   }
 
   // we should create a new context for each async hook pipeline so that the
@@ -486,6 +495,9 @@ export async function createPluginContainer(
           id = result
         } else {
           id = result.id
+          if ('meta' in result) {
+            result.meta = { ...partial.meta, ...result.meta }
+          }
           Object.assign(partial, result)
         }
 
@@ -528,6 +540,9 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         const result = await plugin.load.call(ctx as any, id, { ssr })
         if (result != null) {
+          if (isObject(result)) {
+            updateModuleInfo(id, result)
+          }
           return result
         }
       }
@@ -563,12 +578,7 @@ export async function createPluginContainer(
           if (result.map) {
             ctx.sourcemapChain.push(result.map)
           }
-          if (result.meta) {
-            const moduleInfo = getModuleInfo(id)
-            if (moduleInfo) {
-              moduleInfo.meta = { ...moduleInfo.meta, ...result.meta }
-            }
-          }
+          updateModuleInfo(id, result)
         } else {
           code = result
         }
