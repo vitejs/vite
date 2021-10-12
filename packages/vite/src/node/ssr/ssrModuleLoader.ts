@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { pathToFileURL } from 'url'
 import { ViteDevServer } from '..'
 import { cleanUrl, resolveFrom, unwrapId } from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
@@ -80,7 +81,10 @@ async function instantiateModule(
   // referenced before it's been instantiated.
   mod.ssrModule = ssrModule
 
-  const ssrImportMeta = { url }
+  const ssrImportMeta = {
+    // The filesystem URL, matching native Node.js modules
+    url: pathToFileURL(mod.file!).toString(),
+  }
 
   urlStack = urlStack.concat(url)
   const isCircular = (url: string) => urlStack.includes(url)
