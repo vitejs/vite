@@ -94,13 +94,19 @@ export function loadPackageData(
 
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
   const pkgDir = path.dirname(pkgPath)
+
+  // When the "sideEffects" field is defined, we can assume modules
+  // in the package are either side effect-free or not, which means
+  // Rollup doesn't have to statically analyze the AST.
   const { sideEffects } = data
-  let hasSideEffects: (id: string) => boolean
+  let hasSideEffects: (id: string) => boolean | 'no-treeshake'
   if (typeof sideEffects === 'boolean') {
-    hasSideEffects = () => sideEffects
+    hasSideEffects = () => sideEffects && 'no-treeshake'
   } else if (Array.isArray(sideEffects)) {
-    hasSideEffects = createFilter(sideEffects, null, { resolve: pkgDir })
+    const filter = createFilter(sideEffects, null, { resolve: pkgDir })
+    hasSideEffects = (id) => filter(id) && 'no-treeshake'
   } else {
+    // Statically analyze each module for side effects.
     hasSideEffects = () => true
   }
 
