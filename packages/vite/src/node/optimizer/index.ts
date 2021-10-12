@@ -362,7 +362,8 @@ export async function optimizeDeps(
     splitting: true,
     sourcemap: true,
     outdir: cacheDir,
-    treeShaking: 'ignore-annotations',
+    treeShaking: true,
+    ignoreAnnotations: true,
     metafile: true,
     define,
     plugins: [

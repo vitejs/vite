@@ -96,20 +96,18 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  await Promise.all(
-    entries.map((entry) =>
-      build({
-        absWorkingDir: process.cwd(),
-        write: false,
-        entryPoints: [entry],
-        bundle: true,
-        format: 'esm',
-        logLevel: 'error',
-        plugins: [...plugins, plugin],
-        ...esbuildOptions
-      })
-    )
-  )
+  // BROWSER VITE patch: single build for all entries
+  await build({
+    absWorkingDir: process.cwd(),
+    outdir: path.join(process.cwd(), 'dist'), // unused, but needs to differ src/dist files
+    write: false,
+    entryPoints: entries,
+    bundle: true,
+    format: 'esm',
+    logLevel: 'error',
+    plugins: [...plugins, plugin],
+    ...esbuildOptions
+  })
 
   debug(`Scan completed in ${Date.now() - s}ms:`, deps)
 
