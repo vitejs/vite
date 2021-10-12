@@ -9,12 +9,16 @@ export function loadFallbackPlugin(): Plugin {
   return {
     name: 'vite:load-fallback',
     async load(id) {
+      let filename: string
+      let code: string
       try {
-        // if we don't add `await` here, we couldn't catch the error in readFile
-        return await fs.readFile(cleanUrl(id), 'utf-8')
+        code = await fs.readFile((filename = cleanUrl(id)), 'utf-8')
       } catch (e) {
-        return fs.readFile(id, 'utf-8')
+        // Try unclean `id` to handle rare case where the file path
+        // contains the # character.
+        code = await fs.readFile((filename = id), 'utf-8')
       }
+      return { code, meta: { filename } }
     }
   }
 }
