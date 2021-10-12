@@ -142,3 +142,8 @@ test('client navigation', async () => {
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
   await untilUpdated(() => page.textContent('h1'), 'changed')
 })
+
+test('import.meta.url', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.protocol')).toEqual('file:')
+})
