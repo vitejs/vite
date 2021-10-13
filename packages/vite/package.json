@@ -105,7 +105,7 @@
     "open": "^8.2.1",
     "periscopic": "^2.0.3",
     "postcss-import": "^14.0.2",
-    "postcss-load-config": "^3.0.0",
+    "postcss-load-config": "^3.1.0",
     "postcss-modules": "^4.2.2",
     "resolve.exports": "^1.0.2",
     "rollup-plugin-license": "^2.5.0",
