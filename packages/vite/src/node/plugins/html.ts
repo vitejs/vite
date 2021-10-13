@@ -30,11 +30,10 @@ import {
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
-// HTML Proxy Caches are stored by config -> filePath -> hash (getScriptHash()).
-// Referencing scripts by filePath allows for easier garbage collection & fewer memory leaks
+// HTML Proxy Caches are stored by config -> filePath -> index
 export const htmlProxyMap = new WeakMap<
   ResolvedConfig,
-  Map<string, Map<string, string>>
+  Map<string, Array<string>>
 >()
 
 export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
@@ -54,10 +53,10 @@ export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
     load(id) {
       const proxyMatch = id.match(htmlProxyRE)
       if (proxyMatch) {
-        const index = proxyMatch[1]
+        const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
         const url = file.replace(config.root, '')
-        const result = htmlProxyMap.get(config)?.get(url)?.get(index)
+        const result = htmlProxyMap.get(config)!.get(url)![index]
         if (result) {
           return result
         } else {
@@ -79,9 +78,9 @@ export function addToHTMLProxyCache(
     htmlProxyMap.set(config, new Map())
   }
   if (!htmlProxyMap.get(config)!.get(filePath)) {
-    htmlProxyMap.get(config)!.set(filePath, new Map())
+    htmlProxyMap.get(config)!.set(filePath, [])
   }
-  htmlProxyMap.get(config)!.get(filePath)!.set(`${index}`, code)
+  htmlProxyMap.get(config)!.get(filePath)![index] = code
 }
 
 // this extends the config in @vue/compiler-sfc with <link href>
