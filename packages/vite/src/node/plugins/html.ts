@@ -1,15 +1,14 @@
-import fs from 'fs'
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
 import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
 import {
-  slash,
   cleanUrl,
-  isExternalUrl,
-  isDataUrl,
   generateCodeFrame,
-  processSrcSet
+  isDataUrl,
+  isExternalUrl,
+  processSrcSet,
+  slash
 } from '../utils'
 import { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
@@ -31,11 +30,13 @@ import {
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
-const htmlCommentRE = /<!--[\s\S]*?-->/g
-const scriptModuleRE =
-  /(<script\b[^>]*type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gims
+// HTML Proxy Caches are stored by config -> filePath -> index
+export const htmlProxyMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, Array<string>>
+>()
 
-export function htmlInlineScriptProxyPlugin(): Plugin {
+export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:html-inline-script-proxy',
 
@@ -45,25 +46,41 @@ export function htmlInlineScriptProxyPlugin(): Plugin {
       }
     },
 
+    buildStart() {
+      htmlProxyMap.set(config, new Map())
+    },
+
     load(id) {
       const proxyMatch = id.match(htmlProxyRE)
       if (proxyMatch) {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
-        const html = fs.readFileSync(file, 'utf-8').replace(htmlCommentRE, '')
-        let match: RegExpExecArray | null | undefined
-        scriptModuleRE.lastIndex = 0
-        for (let i = 0; i <= index; i++) {
-          match = scriptModuleRE.exec(html)
-        }
-        if (match) {
-          return match[2]
+        const url = file.replace(config.root, '')
+        const result = htmlProxyMap.get(config)!.get(url)![index]
+        if (result) {
+          return result
         } else {
-          throw new Error(`No matching html proxy module found from ${id}`)
+          throw new Error(`No matching HTML proxy module found from ${id}`)
         }
       }
     }
   }
+}
+
+/** Add script to cache */
+export function addToHTMLProxyCache(
+  config: ResolvedConfig,
+  filePath: string,
+  index: number,
+  code: string
+): void {
+  if (!htmlProxyMap.get(config)) {
+    htmlProxyMap.set(config, new Map())
+  }
+  if (!htmlProxyMap.get(config)!.get(filePath)) {
+    htmlProxyMap.get(config)!.set(filePath, [])
+  }
+  htmlProxyMap.get(config)!.get(filePath)![index] = code
 }
 
 // this extends the config in @vue/compiler-sfc with <link href>
@@ -209,7 +226,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 js += `\nimport ${JSON.stringify(url)}`
                 shouldRemove = true
               } else if (node.children.length) {
+                const contents = node.children
+                  .map((child: any) => child.content || '')
+                  .join('')
                 // <script type="module">...</script>
+                const filePath = id.replace(config.root, '')
+                addToHTMLProxyCache(
+                  config,
+                  filePath,
+                  inlineModuleIndex,
+                  contents
+                )
                 js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
                 shouldRemove = true
               }

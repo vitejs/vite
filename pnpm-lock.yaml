@@ -428,6 +428,14 @@ importers:
   packages/playground/resolve/inline-package:
     specifiers: {}
 
+  packages/playground/ssr-html:
+    specifiers:
+      cross-env: ^7.0.3
+      express: ^4.17.1
+    devDependencies:
+      cross-env: 7.0.3
+      express: 4.17.1
+
   packages/playground/ssr-react:
     specifiers:
       '@vitejs/plugin-react': workspace:*
