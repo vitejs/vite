@@ -485,7 +485,7 @@ export default defineConfig(async ({ command, mode }) => {
 
   When running Vite on Windows Subsystem for Linux (WSL) 2, if the project folder resides in a Windows filesystem, you'll need to set this option to `{ usePolling: true }`. This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739) with the Windows filesystem.
 
-  The Vite server watcher skips `.git/` and `node_modules/` directories by default. If you want to watch a package inside `node_moduels/`, you can pass a negated glob pattern to `server.watch.ignored`. That is:
+  The Vite server watcher skips `.git/` and `node_modules/` directories by default. If you want to watch a package inside `node_modules/`, you can pass a negated glob pattern to `server.watch.ignored`. That is:
 
   ```js
   export default defineConfig({
@@ -758,7 +758,7 @@ export default defineConfig({
 - **Type:** `boolean`
 - **Default:** `true` if `outDir` is inside `root`
 
-  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentially removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
+  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentally removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
 ### build.brotliSize
 
