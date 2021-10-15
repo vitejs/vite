@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { pathToFileURL } from 'url'
 import { ViteDevServer } from '..'
-import { dynamicImport, cleanUrl, isBuiltin, isObject, resolveFrom, unwrapId } from '../utils'
+import { dynamicImport, cleanUrl, isBuiltin, resolveFrom, unwrapId, usingDynamicImport } from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -184,9 +184,10 @@ async function nodeImport(
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    url = pathToFileURL(
-      resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)
-    ).toString()
+    url = resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)
+    if (usingDynamicImport) {
+      url = pathToFileURL(url).toString()
+    }
   }
   const mod = await dynamicImport(url)
   return proxyESM(id, mod)
@@ -194,19 +195,11 @@ async function nodeImport(
 
 // rollup-style default import interop for cjs
 function proxyESM(id: string, mod: any) {
+  const defaultExport = mod.__esModule ? mod.default : mod
   return new Proxy(mod, {
     get(mod, prop) {
-      if (prop in mod) {
-        return mod[prop]
-      }
-      // commonjs interop: module whose exports are not statically analyzable
-      if (isObject(mod.default) && prop in mod.default) {
-        return mod.default[prop]
-      }
-      // throw an error like ESM import does
-      throw new SyntaxError(
-        `The requested module '${id}' does not provide an export named '${prop.toString()}'`
-      )
+      if (prop === 'default') return defaultExport
+      return mod[prop]
     }
   })
 }

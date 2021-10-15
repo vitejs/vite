@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import {
@@ -93,7 +94,15 @@ export function resolveSSRExternal(
         // entry is not js, cannot externalize
         continue
       }
-      ssrExternals.add(id)
+      if (pkg.type === "module" || entry.endsWith('.mjs')) {
+        ssrExternals.add(id)
+        continue
+      }
+      // check if the entry is cjs
+      const content = fs.readFileSync(entry, 'utf-8')
+      if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
+        ssrExternals.add(id)
+      }
     }
   }
 
