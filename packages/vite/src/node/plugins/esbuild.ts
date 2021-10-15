@@ -74,7 +74,7 @@ export async function transformWithEsbuild(
   let tsconfigRaw = options?.tsconfigRaw
 
   // if options provide tsconfigraw in string, it takes highest precedence
-  if (typeof tsconfigRaw !== 'string') {
+  if (typeof tsconfigRaw !== 'string' && !tsconfigRaw?.compilerOptions) {
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [
