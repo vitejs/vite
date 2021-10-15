@@ -181,5 +181,4 @@ describe('noHead', () => {
     const kw = await page.$('meta[name=keywords]')
     expect(await kw.getAttribute('content')).toBe('es modules')
   })
-
 })
