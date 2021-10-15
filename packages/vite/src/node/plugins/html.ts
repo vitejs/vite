@@ -637,7 +637,7 @@ function injectToHead(
         (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
       )
     }
-    else if(doctypePrependInjectRE) {
+    else if(doctypePrependInjectRE.test(html)) {
       return html.replace(
         doctypePrependInjectRE,
         `$&\n${serializeTags(tags)}`
