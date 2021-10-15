@@ -166,7 +166,6 @@ if (isBuild) {
   })
 }
 
-
 describe('noHead', () => {
   // If there isn't a <head>, scripts are injected after <!DOCTYPE html>
 
