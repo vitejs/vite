@@ -26,7 +26,7 @@ export async function transformMain(
     pluginContext
   )
   // script
-  const scriptVar = 'script'
+  const scriptVar = '__vue2_script'
   const { scriptCode, map: scriptMap } = await genScriptCode(
     scriptVar,
     descriptor,
@@ -49,13 +49,13 @@ ${templateCode}
 const ${cssModuleVar} = {}
 ${stylesCode}
 /* normalize component */
-import normalizer from "${vueComponentNormalizer}"
-var __component__ = /*#__PURE__*/normalizer(
-  script,
-  render,
-  staticRenderFns,
+import __vue2_normalizer from "${vueComponentNormalizer}"
+var __component__ = /*#__PURE__*/__vue2_normalizer(
+  __vue2_script,
+  __vue2_render,
+  __vue2_staticRenderFns,
   ${hasFunctional ? `true` : `false`},
-  injectStyles,
+  __vue2_injectStyles,
   ${scoped ? JSON.stringify(descriptor.id) : `null`},
   null,
   null
@@ -63,7 +63,7 @@ var __component__ = /*#__PURE__*/normalizer(
   `.trim() + `\n`
 
   result += `
-function injectStyles (context) {
+function __vue2_injectStyles (context) {
   for(let o in ${cssModuleVar}){
     this[o] = ${cssModuleVar}[o]
   }
@@ -183,7 +183,7 @@ async function genTemplateRequest(
 ) {
   const template = descriptor.template
   if (!template) {
-    return { code: `let render, staticRenderFns` }
+    return { code: `let __vue2_render, __vue2_staticRenderFns` }
   }
   const src = template.src || filename
   const srcQuery = template.src ? `&src` : ``
@@ -192,7 +192,7 @@ async function genTemplateRequest(
   const query = `?vue${from}&type=template${srcQuery}${attrsQuery}`
   const templateRequest = src + query
   return {
-    code: `import { render, staticRenderFns } from '${templateRequest}'`,
+    code: `import { render as __vue2_render, staticRenderFns as __vue2_staticRenderFns } from '${templateRequest}'`,
     templateRequest,
   }
 }
