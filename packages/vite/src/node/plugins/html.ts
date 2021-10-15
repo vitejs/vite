@@ -622,7 +622,7 @@ function toPublicPath(filename: string, config: ResolvedConfig) {
 }
 
 const headInjectRE = /([ \t]*)<\/head>/
-const headPrependInjectRE = [/([ \t]*)<head>/, /<!doctype html>/i]
+const headPrependInjectRE = [/([ \t]*)<head[^>]*>/, /<!doctype html>/i]
 function injectToHead(
   html: string,
   tags: HtmlTagDescriptor[],
