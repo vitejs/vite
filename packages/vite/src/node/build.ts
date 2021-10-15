@@ -103,6 +103,15 @@ export interface BuildOptions {
    */
   cssCodeSplit?: boolean
   /**
+   * An optional separate target for CSS minification.
+   * As esbuild only supports configuring targets to mainstream
+   * browsers, users may need this option when they are targeting
+   * a niche browser that comes with most modern JavaScript features
+   * but has poor CSS support, e.g. Android WeChat WebView, which
+   * doesn't support the #RGBA syntax.
+   */
+  cssTarget?: TransformOptions['target'] | false
+  /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
    * 'hidden' works like `true` except that the corresponding sourcemap
@@ -232,6 +241,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
     cssCodeSplit: !raw?.lib,
+    cssTarget: false,
     sourcemap: false,
     rollupOptions: {},
     minify: raw?.ssr ? false : 'esbuild',
@@ -273,6 +283,10 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     // esnext + terser: limit to es2019 so it can be minified by terser
     resolved.target = 'es2019'
+  }
+
+  if (!resolved.cssTarget) {
+    resolved.cssTarget = resolved.target
   }
 
   // normalize false string into actual false

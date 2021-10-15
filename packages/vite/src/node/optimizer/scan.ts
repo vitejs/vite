@@ -27,6 +27,7 @@ import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
 import { performance } from 'perf_hooks'
+import chalk from 'chalk'
 
 const debug = createDebugger('vite:deps')
 
@@ -51,7 +52,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
 
   let entries: string[] = []
 
-  const explicitEntryPatterns = config.optimizeDeps?.entries
+  const explicitEntryPatterns = config.optimizeDeps.entries
   const buildInput = config.build.rollupOptions?.input
 
   if (explicitEntryPatterns) {
@@ -80,9 +81,15 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   )
 
   if (!entries.length) {
-    config.logger.warn(
-      'Could not determine entry point from rollupOptions or html files. Skipping dependency pre-bundling.'
-    )
+    if (!explicitEntryPatterns && !config.optimizeDeps.include) {
+      config.logger.warn(
+        chalk.yellow(
+          '(!) Could not auto-determine entry point from rollupOptions or html files ' +
+            'and there are no explicit optimizeDeps.include patterns. ' +
+            'Skipping dependency pre-bundling.'
+        )
+      )
+    }
     return { deps: {}, missing: {} }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
@@ -265,11 +272,15 @@ function esbuildScanPlugin(
             }
           }
 
-          if (!code.includes(`export default`)) {
-            js += `\nexport default {}`
+          // This will trigger incorrectly if `export default` is contained
+          // anywhere in a string. Svelte and Astro files can't have
+          // `export default` as code so we know if it's encountered it's a
+          // false positive (e.g. contained in a string)
+          if (!path.endsWith('.vue') || !js.includes('export default')) {
+            js += '\nexport default {}'
           }
 
-          if (code.includes('import.meta.glob')) {
+          if (js.includes('import.meta.glob')) {
             return {
               // transformGlob already transforms to js
               loader: 'js',

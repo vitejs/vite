@@ -485,6 +485,23 @@ export default defineConfig(async ({ command, mode }) => {
 
   When running Vite on Windows Subsystem for Linux (WSL) 2, if the project folder resides in a Windows filesystem, you'll need to set this option to `{ usePolling: true }`. This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739) with the Windows filesystem.
 
+  The Vite server watcher skips `.git/` and `node_modules/` directories by default. If you want to watch a package inside `node_modules/`, you can pass a negated glob pattern to `server.watch.ignored`. That is:
+
+  ```js
+  export default defineConfig({
+    server: {
+      watch: {
+        ignored: ['!**/node_modules/your-package-name/**']
+      }
+    },
+    // The watched package must be excluded from optimization,
+    // so that it can appear in the dependency graph and trigger hot reload.
+    optimizeDeps: {
+      exclude: ['your-package-name']
+    }
+  })
+  ```
+
 ### server.middlewareMode
 
 - **Type:** `'ssr' | 'html'`
@@ -657,6 +674,17 @@ export default defineConfig({
 
   If disabled, all CSS in the entire project will be extracted into a single CSS file.
 
+### build.cssTarget
+
+- **Type:** `string | string[]`
+- **Default:** the same as [`build.target`](/config/#build-target)
+
+  This options allows users to set a different browser target for CSS minification from the one used for JavaScript transpilation.
+
+  It should only be used when you are targeting a non-mainstream browser.
+  One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
+  In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transform `rgba()` colors into `#RGBA` hexadecimal notations.
+
 ### build.sourcemap
 
 - **Type:** `boolean | 'inline' | 'hidden'`
@@ -730,7 +758,7 @@ export default defineConfig({
 - **Type:** `boolean`
 - **Default:** `true` if `outDir` is inside `root`
 
-  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentially removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
+  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentally removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
 ### build.brotliSize
 
