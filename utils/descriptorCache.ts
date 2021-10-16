@@ -26,21 +26,22 @@ export function createDescriptor(
   const normalizedPath = slash(path.normalize(path.relative(root, filename)))
   descriptor.id = hash(normalizedPath + (isProduction ? source : ''))
 
-  cache.set(filename, descriptor)
+  cache.set(slash(filename), descriptor)
   return descriptor
 }
 
 export function getPrevDescriptor(filename: string) {
-  return prevCache.get(filename)
+  return prevCache.get(slash(filename))
 }
 
 export function setPrevDescriptor(filename: string, entry: SFCDescriptor) {
-  prevCache.set(filename, entry)
+  prevCache.set(slash(filename), entry)
 }
 
 export function getDescriptor(filename: string, errorOnMissing = true) {
-  if (cache.has(filename)) {
-    return cache.get(filename)!
+  const descriptor = cache.get(slash(filename))
+  if (descriptor) {
+    return descriptor
   }
   if (errorOnMissing) {
     throw new Error(
@@ -51,5 +52,5 @@ export function getDescriptor(filename: string, errorOnMissing = true) {
 }
 
 export function setDescriptor(filename: string, entry: SFCDescriptor) {
-  cache.set(filename, entry)
+  cache.set(slash(filename), entry)
 }
