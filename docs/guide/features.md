@@ -108,6 +108,8 @@ If not using JSX with React or Vue, custom `jsxFactory` and `jsxFragment` can be
 
 ```js
 // vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
@@ -122,6 +124,8 @@ You can inject the JSX helpers using `jsxInject` (which is a Vite-only option) t
 
 ```js
 // vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig({
   esbuild: {
     jsxInject: `import React from 'react'`
