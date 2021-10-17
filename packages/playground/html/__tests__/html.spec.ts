@@ -165,3 +165,20 @@ if (isBuild) {
     })
   })
 }
+
+describe('noHead', () => {
+  // If there isn't a <head>, scripts are injected after <!DOCTYPE html>
+
+  beforeAll(async () => {
+    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    await page.goto(viteTestUrl + '/noHead.html')
+  })
+
+  test('noHead tags transform', async () => {
+    const el = await page.$('meta[name=description]')
+    expect(await el.getAttribute('content')).toBe('a vite app')
+
+    const kw = await page.$('meta[name=keywords]')
+    expect(await kw.getAttribute('content')).toBe('es modules')
+  })
+})
