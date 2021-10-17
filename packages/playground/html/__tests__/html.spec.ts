@@ -178,7 +178,7 @@ describe('noHead', () => {
     const el = await page.$('meta[name=description]')
     expect(await el.getAttribute('content')).toBe('a vite app')
 
-    const kw = await page.$('meta[name=keywords]')
+    const kw = await page.$('head meta[name=keywords]')
     expect(await kw.getAttribute('content')).toBe('es modules')
   })
 })

@@ -637,21 +637,25 @@ function injectToHead(
         (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
       )
     }
-    else if(doctypePrependInjectRE.test(html)) {
+    else if (doctypePrependInjectRE.test(html)) {
       return html.replace(
         doctypePrependInjectRE,
         `$&\n${serializeTags(tags)}`
       )
     }
   } else {
-    // inject before head close
-    if (headInjectRE.test(html)) {
-      // respect indentation of head tag
-      return html.replace(
-        headInjectRE,
-        (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
-      )
+    // ensure a head tag is present
+    if (!headInjectRE.test(html)) {
+      const headTag = `<head>\n</head>`
+      html = doctypePrependInjectRE.test(html)
+        ? html.replace(doctypePrependInjectRE, `$&\n${headTag}`)
+        : `${headTag}\n${html}`
     }
+    // inject before head close, respecting indentation of head tag
+    return html.replace(
+      headInjectRE,
+      (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
+    )
   }
   // if no <head> tag is present, just prepend
   return serializeTags(tags) + html
