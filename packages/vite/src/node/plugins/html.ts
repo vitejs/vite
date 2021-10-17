@@ -622,7 +622,8 @@ function toPublicPath(filename: string, config: ResolvedConfig) {
 }
 
 const headInjectRE = /([ \t]*)<\/head>/
-const headPrependInjectRE = [/([ \t]*)<head[^>]*>/, /<!doctype html>/i]
+const headPrependInjectRE = /([ \t]*)<head[^>]*>/
+const doctypePrependInjectRE = /<!doctype html>/i
 function injectToHead(
   html: string,
   tags: HtmlTagDescriptor[],
@@ -630,13 +631,17 @@ function injectToHead(
 ) {
   if (prepend) {
     // inject after head or doctype
-    for (const re of headPrependInjectRE) {
-      if (re.test(html)) {
-        return html.replace(
-          re,
-          (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
-        )
-      }
+    if (headPrependInjectRE.test(html)) {
+      return html.replace(
+        headPrependInjectRE,
+        (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
+      )
+    }
+    else if(doctypePrependInjectRE.test(html)) {
+      return html.replace(
+        doctypePrependInjectRE,
+        `$&\n${serializeTags(tags)}`
+      )
     }
   } else {
     // inject before head close
