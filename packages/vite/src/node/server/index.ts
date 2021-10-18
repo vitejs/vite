@@ -148,10 +148,9 @@ export interface FileSystemServeOptions {
    * Set to `false` to disable the warning
    * Default to false at this moment, will enabled by default in the future versions.
    *
-   * @experimental
-   * @default undefined
+   * @default true
    */
-  strict?: boolean | undefined
+  strict?: boolean
 
   /**
    * Restrict accessing files outside the allowed directories.
@@ -159,7 +158,6 @@ export interface FileSystemServeOptions {
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
    *
-   * @experimental
    */
   allow?: string[]
 }
@@ -704,8 +702,7 @@ export function resolveServerOptions(
   }
 
   server.fs = {
-    // TODO: make strict by default
-    strict: server.fs?.strict,
+    strict: server.fs?.strict ?? true,
     allow: allowDirs
   }
   return server as ResolvedServerOptions
