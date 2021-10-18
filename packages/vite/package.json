@@ -29,10 +29,8 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/#readme",
   "scripts": {
-    "predev": "rimraf dist",
-    "dev": "rollup -c -w",
-    "prebuild": "rimraf dist && npm run lint",
-    "build": "run-s build-bundle build-types",
+    "dev": "rimraf dist && rollup -c -w",
+    "build": "rimraf dist && npm run lint && run-s build-bundle build-types",
     "build-bundle": "rollup -c",
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
