@@ -378,6 +378,7 @@ export default defineConfig(async ({ command, mode }) => {
 ### server.port
 
 - **Type:** `number`
+- **Default:** `3000`
 
   Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
 
