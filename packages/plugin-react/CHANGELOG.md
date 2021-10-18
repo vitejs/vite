@@ -1,3 +1,13 @@
+## [1.0.5](https://github.com/vitejs/vite/compare/plugin-react@1.0.4...plugin-react@1.0.5) (2021-10-18)
+
+
+### Bug Fixes
+
+* **plugin-react:** fix regex for react imports ([#5274](https://github.com/vitejs/vite/issues/5274)) ([00b3e4f](https://github.com/vitejs/vite/commit/00b3e4fe102652b2d92e76a05e8c7a5b766b1d03))
+* **plugin-react:** transform .mjs files ([#5314](https://github.com/vitejs/vite/issues/5314)) ([8ce2ea1](https://github.com/vitejs/vite/commit/8ce2ea17d51b80c660f2cdca7844d4fc6991baed))
+
+
+
 ## [1.0.4](https://github.com/vitejs/vite/compare/plugin-react@1.0.3...plugin-react@1.0.4) (2021-10-11)
 
 
