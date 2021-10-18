@@ -54,6 +54,8 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^1.0.1",
+    "@babel/parser": "^7.15.8",
+    "@babel/types": "^7.15.6",
     "@rollup/plugin-alias": "^3.1.5",
     "@rollup/plugin-commonjs": "^21.0.0",
     "@rollup/plugin-dynamic-import-vars": "^1.4.0",

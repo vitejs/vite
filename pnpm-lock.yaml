@@ -635,6 +635,8 @@ importers:
   packages/vite:
     specifiers:
       '@ampproject/remapping': ^1.0.1
+      '@babel/parser': ^7.15.8
+      '@babel/types': ^7.15.6
       '@rollup/plugin-alias': ^3.1.5
       '@rollup/plugin-commonjs': ^21.0.0
       '@rollup/plugin-dynamic-import-vars': ^1.4.0
@@ -712,6 +714,8 @@ importers:
       fsevents: 2.3.2
     devDependencies:
       '@ampproject/remapping': 1.0.1
+      '@babel/parser': 7.15.8
+      '@babel/types': 7.15.6
       '@rollup/plugin-alias': 3.1.5_rollup@2.57.0
       '@rollup/plugin-commonjs': 21.0.0_rollup@2.57.0
       '@rollup/plugin-dynamic-import-vars': 1.4.0_rollup@2.57.0
@@ -1068,6 +1072,12 @@ packages:
     resolution: {integrity: sha512-rycZXvQ+xS9QyIcJ9HXeDWf1uxqlbVFAUq0Rq0dbc50Zb/+wUe/ehyfzGfm9KZZF0kBejYgxltBXocP+gKdL2g==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  /@babel/parser/7.15.8:
+    resolution: {integrity: sha512-BRYa3wcQnjS/nqI8Ac94pYYpJfojHVvVXJ97+IDCImX4Jc8W8Xv1+47enbruk+q1etOpsQNwnfFcNGw+gtPGxA==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+    dev: true
 
   /@babel/plugin-proposal-pipeline-operator/7.15.0:
     resolution: {integrity: sha512-/XNBV8GmMxl7icZ0G5o4f3aGXHDKuhS8xHhbdusjE/ZDrsqtLq5kUiw/i7J6ZnlS/ngM0IQTN2CPlrPTb6GKVw==}
