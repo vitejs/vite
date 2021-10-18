@@ -623,8 +623,15 @@ function toPublicPath(filename: string, config: ResolvedConfig) {
 
 const headInjectRE = /([ \t]*)<\/head>/i
 const headPrependInjectRE = /([ \t]*)<head[^>]*>/i
+
+const htmlInjectRE = /<\/html>/i
 const htmlPrependInjectRE = /([ \t]*)<html[^>]*>/i
+
+const bodyInjectRE = /([ \t]*)<\/body>/i
+const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/i
+
 const doctypePrependInjectRE = /<!doctype html>/i
+
 function injectToHead(
   html: string,
   tags: HtmlTagDescriptor[],
@@ -647,14 +654,18 @@ function injectToHead(
         (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
       )
     }
+    // try to inject before the body tag
+    if (bodyPrependInjectRE.test(html)) {
+      return html.replace(
+        bodyPrependInjectRE,
+        (match, p1) => `${serializeTags(tags, p1)}\n${match}`
+      )
+    }
   }
   // if no head tag is present, we prepend the tag for both prepend and append
   return prependInjectFallback(html, tags)
 }
 
-const htmlInjectRE = /<\/html>/i
-const bodyInjectRE = /([ \t]*)<\/body>/i
-const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/i
 function injectToBody(
   html: string,
   tags: HtmlTagDescriptor[],
@@ -668,7 +679,13 @@ function injectToBody(
         (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
       )
     }
-    // if no body, prepend
+    // if no there is no body tag, inject after head or fallback to prepend in html
+    if (headInjectRE.test(html)) {
+      return html.replace(
+        headInjectRE,
+        (match, p1) => `${match}\n${serializeTags(tags, p1)}`
+      )
+    }
     return prependInjectFallback(html, tags)
   } else {
     // inject before body close
