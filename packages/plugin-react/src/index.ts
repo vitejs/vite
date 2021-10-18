@@ -96,6 +96,9 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       )
     },
     async transform(code, id, ssr) {
+      // Remove querystring to check file extension.
+      id = id.split('?')[0]
+
       if (/\.(mjs|[tj]sx?)$/.test(id)) {
         const plugins = [...userPlugins]
 
