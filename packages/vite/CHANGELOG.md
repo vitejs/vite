@@ -1,3 +1,22 @@
+## [2.6.8](https://github.com/vitejs/vite/compare/v2.6.7...v2.6.8) (2021-10-18)
+
+
+### Bug Fixes
+
+* avoid scan failures in .svelte and .astro files ([#5193](https://github.com/vitejs/vite/issues/5193)) ([386ca79](https://github.com/vitejs/vite/commit/386ca79da5c54c35cdff978d0f48481bbbaacd44))
+* **deps:** bump postcss-load-config to 3.1.0 ([#5277](https://github.com/vitejs/vite/issues/5277)) ([b7e8a5c](https://github.com/vitejs/vite/commit/b7e8a5c0423570789f8c5476ac42e39ce8c2a009))
+* **html:** tags prepend doctype regex ([#5315](https://github.com/vitejs/vite/issues/5315)) ([256b2bb](https://github.com/vitejs/vite/commit/256b2bbd20a31b4a363cb1cf3b6c7e797b0ee5f2))
+* improve HTML script proxying ([#5279](https://github.com/vitejs/vite/issues/5279)) ([1d6e7bb](https://github.com/vitejs/vite/commit/1d6e7bb38570a65f54f813a2dc2165f719a1391b))
+* regEx for <head> tag, fix [#5285](https://github.com/vitejs/vite/issues/5285) ([#5311](https://github.com/vitejs/vite/issues/5311)) ([3ac08cc](https://github.com/vitejs/vite/commit/3ac08cc78432e3640e3d2925ca854247493b4903))
+* **ssr:** make import.meta.url be the filesystem URL ([#5268](https://github.com/vitejs/vite/issues/5268)) ([7674cf2](https://github.com/vitejs/vite/commit/7674cf2e558c6209f667a112a7862058fe7290c8))
+
+
+### Features
+
+* **ws:** expose `on` / `off` for `server.ws` ([#5273](https://github.com/vitejs/vite/issues/5273)) ([6f696be](https://github.com/vitejs/vite/commit/6f696be112d5d0c3db433ae9cf0c73af078f2825))
+
+
+
 ## [2.6.7](https://github.com/vitejs/vite/compare/v2.6.6...v2.6.7) (2021-10-11)
 
 
