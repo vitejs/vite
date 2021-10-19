@@ -1018,9 +1018,9 @@ const scss: SassStylePreprocessor = async (
     }
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias)
-          .then(done)
-          .catch(done)
+        // BROWSER VITE patch: fix https://github.com/vitejs/vite/issues/5337
+        const file = path.resolve(resolved);
+        done({file, contents: fs.readFileSync(file, 'utf-8')})
       } else {
         done(null)
       }
