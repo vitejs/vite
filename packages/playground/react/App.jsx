@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Dummy from './components/Dummy?qs-should-not-break-plugin-react'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -23,6 +24,8 @@ function App() {
           Learn React
         </a>
       </header>
+
+      <Dummy />
     </div>
   )
 }
