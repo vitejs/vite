@@ -1,7 +1,7 @@
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
-import { normalizePath, ResolvedConfig, ViteDevServer } from '../..'
+import { normalizePath, ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
@@ -45,12 +45,12 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
 
 export function serveStaticMiddleware(
   dir: string,
-  config: ResolvedConfig
+  server: ViteDevServer
 ): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteServeStaticMiddleware(req, res, next) {
+  return async function viteServeStaticMiddleware(req, res, next) {
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
     // special processing
@@ -66,7 +66,7 @@ export function serveStaticMiddleware(
 
     // apply aliases to static requests as well
     let redirected: string | undefined
-    for (const { find, replacement } of config.resolve.alias) {
+    for (const { find, replacement } of server.config.resolve.alias) {
       const matches =
         typeof find === 'string' ? url.startsWith(find) : find.test(url)
       if (matches) {
@@ -79,6 +79,16 @@ export function serveStaticMiddleware(
       if (redirected.startsWith(dir)) {
         redirected = redirected.slice(dir.length)
       }
+    }
+
+    const resolvedUrl = redirected || url
+    const fileUrl = path.resolve(dir, resolvedUrl.startsWith('/') ? resolvedUrl.slice(1) : resolvedUrl)
+    // TODO: should use ensureServingAccess(fileUrl, server)
+    if (!isFileServingAllowed(fileUrl, server)) {
+      return next()
+    }
+
+    if (redirected) {
       req.url = redirected
     }
 
