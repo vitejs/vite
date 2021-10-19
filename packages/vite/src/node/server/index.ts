@@ -157,7 +157,6 @@ export interface FileSystemServeOptions {
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
-   *
    */
   allow?: string[]
 }
