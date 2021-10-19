@@ -196,3 +196,22 @@ describe('noBody', () => {
     expect(await kw.innerHTML()).toMatch(`<!-- this is appended to body -->`)
   })
 })
+
+describe('importAsString', () => {
+  // The build-html plugin should not alter HTML that is not an input.
+  test('not transformed', async () => {
+    const messages = []
+    function addConsoleMessage(message) {
+      messages.push(message.args()[0])
+    }
+
+    page.on('console', addConsoleMessage)
+    await page.goto(viteTestUrl + '/index.html')
+    await page.waitForLoadState()
+    page.off('console', addConsoleMessage)
+
+    const finalMessage = messages[messages.length - 1]?.toString()
+    expect(finalMessage).toMatch('Some imported HTML')
+    expect(finalMessage).not.toMatch('This is injected')
+  })
+})

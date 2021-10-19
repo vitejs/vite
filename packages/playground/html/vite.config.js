@@ -150,6 +150,18 @@ ${
           }
         ]
       }
+    },
+    {
+      // Emulate rollup-plugin-string
+      name: 'import-as-string-module',
+      transform(code, id) {
+        if (id.endsWith('importAsString.html')) {
+          return {
+            code: `export default ${JSON.stringify(code)}`,
+            map: { mappings: '' }
+          }
+        }
+      }
     }
   ]
 }
