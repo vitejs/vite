@@ -106,8 +106,8 @@ code {
   <pre class="stack"></pre>
   <div class="tip">
     Click outside or fix the code to dismiss.<br>
-    You can also disable this overlay with
-    <code>hmr: { overlay: false }</code> in <code>vite.config.js.</code>
+    You can also disable this overlay by setting
+    <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
   </div>
 </div>
 `
