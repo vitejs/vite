@@ -294,6 +294,66 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
 }
 
+function tryFsResolveWithPreservePostfix(
+  fsPath: string,
+  options: InternalResolveOptions,
+  preserveSymlinks: boolean,
+  tryIndex = true,
+  targetWeb = true
+): string | undefined {
+  const file = fsPath
+  const postfix = ''
+
+  let res: string | undefined
+
+  if (
+    (res = tryResolveFile(
+      file,
+      postfix,
+      options,
+      false,
+      targetWeb,
+      preserveSymlinks,
+      options.tryPrefix,
+      options.skipPackageJson
+    ))
+  ) {
+    return res
+  }
+
+  for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
+    if (
+      (res = tryResolveFile(
+        file + ext,
+        postfix,
+        options,
+        false,
+        targetWeb,
+        preserveSymlinks,
+        options.tryPrefix,
+        options.skipPackageJson
+      ))
+    ) {
+      return res
+    }
+  }
+
+  if (
+    (res = tryResolveFile(
+      file,
+      postfix,
+      options,
+      tryIndex,
+      targetWeb,
+      preserveSymlinks,
+      options.tryPrefix,
+      options.skipPackageJson
+    ))
+  ) {
+    return res
+  }
+}
+
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
@@ -313,7 +373,24 @@ function tryFsResolve(
     postfix = fsPath.slice(postfixIndex)
   }
 
+  const hasPrefixMark = ['#', '?'].some((mark) => fsPath.includes(mark))
+
   let res: string | undefined
+
+  if (hasPrefixMark) {
+    if (
+      (res = tryFsResolveWithPreservePostfix(
+        fsPath,
+        options,
+        preserveSymlinks,
+        tryIndex,
+        targetWeb
+      ))
+    ) {
+      return res
+    }
+  }
+
   if (
     (res = tryResolveFile(
       file,
@@ -465,7 +542,6 @@ export function tryNodeResolve(
   if (!pkg) {
     return
   }
-
   let resolved = deepMatch
     ? resolveDeepImport(
         '.' + id.slice(pkgId.length),
