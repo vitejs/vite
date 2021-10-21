@@ -175,6 +175,32 @@ test('do not rewrite method definition', async () => {
   expect(result.deps).toEqual(['vue'])
 })
 
+test('do not rewrite when variable is in scope', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A(){ const fn = () => {}; return { fn }; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A(){ const fn = () => {}; return { fn }; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
+test('do not rewrite when function declaration is in scope', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A(){ function fn() {}; return { fn }; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
 test('do not rewrite catch clause', async () => {
   const result = await ssrTransform(
     `import {error} from './dependency';try {} catch(error) {}`,
