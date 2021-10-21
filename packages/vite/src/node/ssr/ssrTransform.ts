@@ -303,7 +303,7 @@ function walk(
         }
       } else if (isFunction(node)) {
         // If it is a function declaration, it could be shadowing an import
-        // Add its name to the scope so it won't gets replaced
+        // Add its name to the scope so it won't get replaced
         if (node.type === 'FunctionDeclaration') {
           const parentFunction = findParentFunction(parentStack)
           if (parentFunction) {
