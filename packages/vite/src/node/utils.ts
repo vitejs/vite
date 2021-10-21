@@ -38,6 +38,8 @@ export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
 export function isBuiltin(id: string): boolean {
+  const deepMatch = id.match(deepImportRE)
+  id = deepMatch ? deepMatch[1] || deepMatch[2] : id
   return builtins.includes(id)
 }
 
