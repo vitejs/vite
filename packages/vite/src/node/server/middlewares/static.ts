@@ -12,6 +12,7 @@ import {
   isWindows,
   slash
 } from '../../utils'
+import match from 'minimatch'
 import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
@@ -122,6 +123,8 @@ export function serveRawFsMiddleware(
   }
 }
 
+const _matchOptions = { matchBase: true }
+
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer
@@ -130,6 +133,9 @@ export function isFileServingAllowed(
   if (server.config.server.fs.strict === false) return true
 
   const file = ensureLeadingSlash(normalizePath(cleanUrl(url)))
+
+  if (server.config.server.fs.deny.some((i) => match(file, i, _matchOptions)))
+    return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
