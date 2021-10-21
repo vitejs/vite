@@ -294,97 +294,40 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
 }
 
-function tryFsResolveWithPreservePostfix(
-  fsPath: string,
-  options: InternalResolveOptions,
-  preserveSymlinks: boolean,
-  tryIndex = true,
-  targetWeb = true
-): string | undefined {
-  const file = fsPath
-  const postfix = ''
-
-  let res: string | undefined
-
-  if (
-    (res = tryResolveFile(
-      file,
-      postfix,
-      options,
-      false,
-      targetWeb,
-      preserveSymlinks,
-      options.tryPrefix,
-      options.skipPackageJson
-    ))
-  ) {
-    return res
-  }
-
-  for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
-    if (
-      (res = tryResolveFile(
-        file + ext,
-        postfix,
-        options,
-        false,
-        targetWeb,
-        preserveSymlinks,
-        options.tryPrefix,
-        options.skipPackageJson
-      ))
-    ) {
-      return res
-    }
-  }
-
-  if (
-    (res = tryResolveFile(
-      file,
-      postfix,
-      options,
-      tryIndex,
-      targetWeb,
-      preserveSymlinks,
-      options.tryPrefix,
-      options.skipPackageJson
-    ))
-  ) {
-    return res
-  }
-}
-
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   preserveSymlinks: boolean,
   tryIndex = true,
-  targetWeb = true
+  targetWeb = true,
+  preservePostfix = false
 ): string | undefined {
   let file = fsPath
   let postfix = ''
 
-  let postfixIndex = fsPath.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = fsPath.indexOf('#')
+  if (!preservePostfix) {
+    let postfixIndex = fsPath.indexOf('?')
+    if (postfixIndex < 0) {
+      postfixIndex = fsPath.indexOf('#')
+    }
+    if (postfixIndex > 0) {
+      file = fsPath.slice(0, postfixIndex)
+      postfix = fsPath.slice(postfixIndex)
+    }
   }
-  if (postfixIndex > 0) {
-    file = fsPath.slice(0, postfixIndex)
-    postfix = fsPath.slice(postfixIndex)
-  }
-
-  const hasPrefixMark = ['#', '?'].some((mark) => fsPath.includes(mark))
 
   let res: string | undefined
 
-  if (hasPrefixMark) {
+  if (postfix) {
+    // if we fould postfix exist, we should first try resolving file with postfix. details see #4703.
     if (
-      (res = tryFsResolveWithPreservePostfix(
+      (res = tryFsResolve(
         fsPath,
         options,
         preserveSymlinks,
         tryIndex,
-        targetWeb
+        targetWeb,
+        true
       ))
     ) {
       return res
