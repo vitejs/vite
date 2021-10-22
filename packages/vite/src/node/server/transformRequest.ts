@@ -48,9 +48,8 @@ export function transformRequest(
   if (!request) {
     request = doTransform(url, server, options)
     server._pendingRequests.set(cacheKey, request)
-    request.finally(() => {
-      server._pendingRequests.delete(cacheKey)
-    })
+    const done = () => server._pendingRequests.delete(cacheKey)
+    request.then(done, done)
   }
   return request
 }
