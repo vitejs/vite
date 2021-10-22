@@ -314,7 +314,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _pendingRequests: Record<string, Promise<TransformResult | null> | null>
+  _pendingRequests: Map<string, Promise<TransformResult | null>>
 }
 
 export async function createServer(
@@ -422,7 +422,7 @@ export async function createServer(
     _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null,
-    _pendingRequests: Object.create(null)
+    _pendingRequests: new Map()
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
