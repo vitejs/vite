@@ -8,6 +8,7 @@ import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
+import { sortUserPlugins } from '..'
 
 function parseWorkerRequest(id: string): Record<string, string> | null {
   const { search } = parseUrl(id)
@@ -55,9 +56,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isBuild) {
         // bundle the file as entry to support imports
         const rollup = require('rollup') as typeof Rollup
+        const [pre, normal, post] = sortUserPlugins([...config.plugins])
         const bundle = await rollup.rollup({
           input: cleanUrl(id),
-          plugins: await resolvePlugins({ ...config }, [], [], []),
+          plugins: await resolvePlugins({ ...config }, pre, normal, post),
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
           }
