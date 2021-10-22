@@ -239,6 +239,7 @@ cli
             configFile: options.config,
             logLevel: options.logLevel,
             server: {
+              host: options.host,
               open: options.open,
               strictPort: options.strictPort,
               https: options.https
