@@ -153,7 +153,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // React elements provided by dependencies will also use the
             // automatic runtime!
             const [restoredAst, isCommonJS] = isNodeModules
-              ? await restoreJSX(babel, code, id)
+              ? await restoreJSX(babel, code, id).catch((err) => {
+                  // TODO: warning about error
+                  return [null, false] as const
+                })
               : [null, false]
 
             if (!isNodeModules || (ast = restoredAst)) {
