@@ -77,6 +77,12 @@ export function esbuildDepPlugin(
         async ({ path: id, importer, kind }) => {
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
+            // BROWSER VITE patch: Fix css import when a .css.js file is present
+            if (resolved.endsWith('.js')) {
+              return {
+                path: path.resolve(resolved)
+              }
+            }
             return {
               path: resolved,
               external: true
