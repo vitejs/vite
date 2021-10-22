@@ -12,7 +12,7 @@ import {
   isWindows,
   slash
 } from '../../utils'
-import { AccessRestrictedError, renderErrorHTML } from './error'
+import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
   dev: true,
