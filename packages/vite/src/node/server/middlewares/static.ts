@@ -12,7 +12,7 @@ import {
   isWindows,
   slash
 } from '../../utils'
-import { AccessRestrictedError } from './error'
+import { AccessRestrictedError, renderErrorHTML } from './error'
 
 const sirvOptions: Options = {
   dev: true,
@@ -83,8 +83,13 @@ export function serveStaticMiddleware(
 
     const resolvedUrl = redirected || url
     const fileUrl = path.resolve(dir, resolvedUrl.startsWith('/') ? resolvedUrl.slice(1) : resolvedUrl)
-    ensureServingAccess(fileUrl, server)
-    
+    if (!isFileServingAllowed(fileUrl, server)) {
+      res.statusCode = 403
+      res.write(renderErrorHTML(fsServeErrorMessage(fileUrl, server)))
+      res.end()
+      return
+    }
+
     if (redirected) {
       req.url = redirected
     }
@@ -146,15 +151,17 @@ export function isFileServingAllowed(
   return false
 }
 
-export function ensureServingAccess(url: string, server: ViteDevServer): void {
-  if (!isFileServingAllowed(url, server)) {
-    const allow = server.config.server.fs.allow
-    throw new AccessRestrictedError(
-      `The request url "${url}" is outside of Vite serving allow list:
+function fsServeErrorMessage(url: string, server: ViteDevServer) {
+  const allow = server.config.server.fs.allow
+  return `The request url "${url}" is outside of Vite serving allow list:
 
 ${allow.map((i) => `- ${i}`).join('\n')}
 
 Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
-    )
+}
+
+export function ensureServingAccess(url: string, server: ViteDevServer): void {
+  if (!isFileServingAllowed(url, server)) {
+    throw new AccessRestrictedError(fsServeErrorMessage(url, server))
   }
 }
