@@ -24,8 +24,8 @@ describe('main', () => {
     })
 
     test('unsafe fetch', async () => {
-      expect(await page.textContent('.unsafe-fetch')).toBe('')
-      expect(await page.textContent('.unsafe-fetch-status')).toBe('404') // TODO: should be 403
+      expect(await page.textContent('.unsafe-fetch')).toMatch('403 Restricted')
+      expect(await page.textContent('.unsafe-fetch-status')).toBe('403')
     })
 
     test('safe fs fetch', async () => {

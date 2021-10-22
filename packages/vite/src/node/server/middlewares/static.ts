@@ -82,15 +82,12 @@ export function serveStaticMiddleware(
     }
 
     const resolvedUrl = redirected || url
-    const fileUrl = path.resolve(
-      dir,
-      resolvedUrl.startsWith('/') ? resolvedUrl.slice(1) : resolvedUrl
-    )
-    // TODO: should use ensureServingAccess(fileUrl, server), so we get a 403
-    if (!isFileServingAllowed(fileUrl, server)) {
-      return next()
+    let fileUrl = path.resolve(dir, resolvedUrl.replace(/^\//, ''))
+    if (resolvedUrl.endsWith('/') && !fileUrl.endsWith('/')) {
+      fileUrl = fileUrl + '/'
     }
-
+    ensureServingAccess(fileUrl, server)
+    
     if (redirected) {
       req.url = redirected
     }
