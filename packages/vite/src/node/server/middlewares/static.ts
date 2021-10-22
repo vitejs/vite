@@ -50,7 +50,7 @@ export function serveStaticMiddleware(
   const serve = sirv(dir, sirvOptions)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return async function viteServeStaticMiddleware(req, res, next) {
+  return function viteServeStaticMiddleware(req, res, next) {
     // only serve the file if it's not an html request
     // so that html requests can fallthrough to our html middleware for
     // special processing
@@ -83,11 +83,8 @@ export function serveStaticMiddleware(
 
     const resolvedUrl = redirected || url
     const fileUrl = path.resolve(dir, resolvedUrl.startsWith('/') ? resolvedUrl.slice(1) : resolvedUrl)
-    // TODO: should use ensureServingAccess(fileUrl, server)
-    if (!isFileServingAllowed(fileUrl, server)) {
-      return next()
-    }
-
+    ensureServingAccess(fileUrl, server)
+    
     if (redirected) {
       req.url = redirected
     }
