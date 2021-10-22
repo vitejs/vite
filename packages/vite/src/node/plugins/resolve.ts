@@ -515,6 +515,7 @@ export function tryNodeResolve(
   if (!pkg) {
     return
   }
+
   let resolved = deepMatch
     ? resolveDeepImport(
         '.' + id.slice(pkgId.length),
