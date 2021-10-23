@@ -525,7 +525,7 @@ export async function createServer(
 
   // serve static files
   middlewares.use(serveRawFsMiddleware(server))
-  middlewares.use(serveStaticMiddleware(root, config))
+  middlewares.use(serveStaticMiddleware(root, server))
 
   // spa fallback
   if (!middlewareMode || middlewareMode === 'html') {

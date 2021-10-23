@@ -1,7 +1,7 @@
 import path from 'path'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
-import { normalizePath, ResolvedConfig, ViteDevServer } from '../..'
+import { normalizePath, ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
@@ -45,7 +45,7 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
 
 export function serveStaticMiddleware(
   dir: string,
-  config: ResolvedConfig
+  server: ViteDevServer
 ): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
 
@@ -66,7 +66,7 @@ export function serveStaticMiddleware(
 
     // apply aliases to static requests as well
     let redirected: string | undefined
-    for (const { find, replacement } of config.resolve.alias) {
+    for (const { find, replacement } of server.config.resolve.alias) {
       const matches =
         typeof find === 'string' ? url.startsWith(find) : find.test(url)
       if (matches) {
@@ -79,6 +79,16 @@ export function serveStaticMiddleware(
       if (redirected.startsWith(dir)) {
         redirected = redirected.slice(dir.length)
       }
+    }
+
+    const resolvedUrl = redirected || url
+    let fileUrl = path.resolve(dir, resolvedUrl.replace(/^\//, ''))
+    if (resolvedUrl.endsWith('/') && !fileUrl.endsWith('/')) {
+      fileUrl = fileUrl + '/'
+    }
+    ensureServingAccess(fileUrl, server)
+    
+    if (redirected) {
       req.url = redirected
     }
 
