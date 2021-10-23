@@ -150,12 +150,14 @@ export function isFileServingAllowed(
 }
 
 export function ensureServingAccess(url: string, server: ViteDevServer): void {
-  const allow = server.config.server.fs.allow
   if (!isFileServingAllowed(url, server)) {
-    throw new AccessRestrictedError(`The request url "${url}" is outside of Vite serving allow list:
+    const allow = server.config.server.fs.allow
+    throw new AccessRestrictedError(
+      `The request url "${url}" is outside of Vite serving allow list:
 
 ${allow.map((i) => `- ${i}`).join('\n')}
 
-Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`)
+Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
+    )
   }
 }
