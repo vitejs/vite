@@ -55,8 +55,8 @@ export interface CSSOptions {
   postcss?:
     | string
     | (Postcss.ProcessOptions & {
-      plugins?: Postcss.Plugin[]
-    })
+        plugins?: Postcss.Plugin[]
+      })
 }
 
 export interface CSSModulesOptions {
