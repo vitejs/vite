@@ -55,8 +55,8 @@ export interface CSSOptions {
   postcss?:
     | string
     | (Postcss.ProcessOptions & {
-        plugins?: Postcss.Plugin[]
-      })
+      plugins?: Postcss.Plugin[]
+    })
 }
 
 export interface CSSModulesOptions {
@@ -308,20 +308,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // build CSS handling ----------------------------------------------------
 
-      const used = usedRE.test(id)
-
       // record css
       if (!inlined) {
         styles.set(id, css)
-      } else if (!modulesCode && used) {
-        css = await minifyCSS(css, config)
       }
 
       return {
         code:
           modulesCode ||
-          (used
-            ? `export default ${JSON.stringify(css)}`
+          (usedRE.test(id)
+            ? `export default ${JSON.stringify(
+              inlined ? await minifyCSS(css, config) : css
+            )}`
             : `export default ''`),
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
