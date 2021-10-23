@@ -158,7 +158,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
               ? await restoreJSX(babel, code, id).catch((err: Error) => {
                   logger?.warn(
                     `[@vitejs/plugin-react] Got ${err.name} while calling restoreJSX(...)` +
-                      ', please open an issue to describing.'
+                      ', please open an issue for describing.'
                   )
                   return [null, false] as const
                 })
