@@ -65,7 +65,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         let code: string
         try {
           const { output } = await bundle.generate({
-            format: 'iife',
+            format: 'es',
             sourcemap: config.build.sourcemap
           })
           code = output[0].code
