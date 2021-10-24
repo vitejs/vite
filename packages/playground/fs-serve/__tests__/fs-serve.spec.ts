@@ -45,10 +45,9 @@ describe('main', () => {
     test('nested entry', async () => {
       expect(await page.textContent('.nested-entry')).toBe('foobar')
     })
-  
+
     test('denied', async () => {
       expect(await page.textContent('.unsafe-dotenv')).toBe('403')
-      expect(await page.textContent('.safe-root-file')).toBe('200')
     })
   } else {
     test('dummy test to make jest happy', async () => {

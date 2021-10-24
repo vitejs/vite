@@ -25,7 +25,6 @@
 
 <h2>Denied</h2>
 <pre class="unsafe-dotenv"></pre>
-<pre class="safe-root-file"></pre>
 
 <script type="module">
   import '../../entry'
@@ -84,15 +83,6 @@
   fetch('/@fs/' + ROOT + '/root/.env')
     .then((r) => {
       text('.unsafe-dotenv', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // other files under the root, ok
-  fetch('/@fs/' + ROOT + '/root/vite.config.js')
-    .then((r) => {
-      text('.safe-root-file', r.status)
     })
     .catch((e) => {
       console.error(e)
