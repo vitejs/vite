@@ -58,6 +58,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const bundle = await rollup.rollup({
           input: cleanUrl(id),
           plugins: await resolvePlugins({ ...config }, [], [], []),
+          preserveEntrySignatures: false,
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
           }
