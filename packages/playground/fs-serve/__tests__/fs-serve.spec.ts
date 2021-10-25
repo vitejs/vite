@@ -24,8 +24,8 @@ describe('main', () => {
     })
 
     test('unsafe fetch', async () => {
-      expect(await page.textContent('.unsafe-fetch')).toMatch('403 Restricted')
-      expect(await page.textContent('.unsafe-fetch-status')).toBe('403')
+      expect(await page.textContent('.unsafe-fetch')).toMatch('')
+      expect(await page.textContent('.unsafe-fetch-status')).toBe('404')
     })
 
     test('safe fs fetch', async () => {
@@ -35,7 +35,7 @@ describe('main', () => {
 
     test('unsafe fs fetch', async () => {
       expect(await page.textContent('.unsafe-fs-fetch')).toBe('')
-      expect(await page.textContent('.unsafe-fs-fetch-status')).toBe('403')
+      expect(await page.textContent('.unsafe-fs-fetch-status')).toBe('404')
     })
 
     test('nested entry', async () => {

@@ -1,4 +1,6 @@
 import path from 'path'
+import fs from 'fs'
+import { ServerResponse } from 'http'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
 import { normalizePath, ViteDevServer } from '../..'
@@ -12,7 +14,6 @@ import {
   isWindows,
   slash
 } from '../../utils'
-import { AccessRestrictedError } from './error'
 
 const sirvOptions: Options = {
   dev: true,
@@ -51,11 +52,12 @@ export function serveStaticMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
-    // only serve the file if it's not an html request
+    // only serve the file if it's not an html request  or ends with /
     // so that html requests can fallthrough to our html middleware for
     // special processing
     // also skip internal requests `/@fs/ /@vite-client` etc...
     if (
+      req.url!.endsWith('/') ||
       path.extname(cleanUrl(req.url!)) === '.html' ||
       isInternalRequest(req.url!)
     ) {
@@ -86,8 +88,10 @@ export function serveStaticMiddleware(
     if (resolvedUrl.endsWith('/') && !fileUrl.endsWith('/')) {
       fileUrl = fileUrl + '/'
     }
-    ensureServingAccess(fileUrl, server)
-    
+    if (!ensureServingAccess(fileUrl, server, res, next)) {
+      return
+    }
+
     if (redirected) {
       req.url = redirected
     }
@@ -110,7 +114,10 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fs.allow`
-      ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server)
+      if (!ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server, res, next)) {
+        return
+      }
+
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
@@ -133,31 +140,52 @@ export function isFileServingAllowed(
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
+  const { allow } = server.config.server.fs
+  if (allow.some((i) => file.startsWith(i + '/')))
     return true
 
   if (!server.config.server.fs.strict) {
-    server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
-    server.config.logger.warnOnce(
-      `For security concerns, accessing files outside of serving allow list will ` +
+    if (fs.existsSync(file)) {
+      server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
+      server.config.logger.warnOnce(
+        `For security concerns, accessing files outside of serving allow list will ` +
         `be restricted by default in the future version of Vite. ` +
         `Refer to https://vitejs.dev/config/#server-fs-allow for more details.`
-    )
+      )
+    }
     return true
+  }
+
+  // if the file doesn't exist, we shouldn't restrict this path as it can
+  // be an API call. Middlewares would issue a 404 if the file isn't handled
+  if (fs.existsSync(file)) {
+    server.config.logger.error(
+      `The request url "${url}" is outside of Vite serving allow list:
+
+  ${allow.map((i) => `- ${i}`).join('\n')}
+
+  Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
+    )
   }
 
   return false
 }
 
-export function ensureServingAccess(url: string, server: ViteDevServer): void {
-  if (!isFileServingAllowed(url, server)) {
-    const allow = server.config.server.fs.allow
-    throw new AccessRestrictedError(
-      `The request url "${url}" is outside of Vite serving allow list:
-
-${allow.map((i) => `- ${i}`).join('\n')}
-
-Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
-    )
+function ensureServingAccess(
+  url: string,
+  server: ViteDevServer,
+  res: ServerResponse, 
+  next: Connect.NextFunction,
+): boolean {
+  if (isFileServingAllowed(url, server)) {
+    return true
   }
+  if (fs.existsSync(url)) {
+    res.statusCode = 404
+    res.end()
+  }
+  else {
+    next()
+  }
+  return false
 }
