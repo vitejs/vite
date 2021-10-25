@@ -162,9 +162,9 @@ export function isFileServingAllowed(
     server.config.logger.error(
       `The request url "${url}" is outside of Vite serving allow list:
 
-  ${allow.map((i) => `- ${i}`).join('\n')}
+${allow.map((i) => `- ${i}`).join('\n')}
 
-  Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
+Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
     )
   }
 
