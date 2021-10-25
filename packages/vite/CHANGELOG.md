@@ -1,3 +1,24 @@
+## [2.6.11](https://github.com/vitejs/vite/compare/v2.6.9...v2.6.11) (2021-10-25)
+
+
+### Bug Fixes
+
+* **build:** let top-level `this` refer to `globalThis` ([#5312](https://github.com/vitejs/vite/issues/5312)) ([7e25429](https://github.com/vitejs/vite/commit/7e254291e7870bdc621b71c3817f001efe9d648c))
+* bundle ws types ([#5340](https://github.com/vitejs/vite/issues/5340)) ([bc4a96c](https://github.com/vitejs/vite/commit/bc4a96c883e849cf4dbd74356d4240763e713aef))
+* **client:** fix typo in overlay config hint ([#5343](https://github.com/vitejs/vite/issues/5343)) ([96591bf](https://github.com/vitejs/vite/commit/96591bf9989529de839ba89958755eafe4c445ae))
+* consider deep imports in isBuiltIn ([#5248](https://github.com/vitejs/vite/issues/5248)) ([269a1b6](https://github.com/vitejs/vite/commit/269a1b672bf954ed68d19d4541b9bdb471fc1937))
+* ensure server.host is passed in preview-mode (fix [#5387](https://github.com/vitejs/vite/issues/5387)) ([#5389](https://github.com/vitejs/vite/issues/5389)) ([61b4b39](https://github.com/vitejs/vite/commit/61b4b39acd4c122b26a6c91c45bb0727728da7a3))
+* load-fallback catch ([#5412](https://github.com/vitejs/vite/issues/5412)) ([e73281c](https://github.com/vitejs/vite/commit/e73281c806276740c337aea69a233e39235f5a0b))
+* restrict static middleware fs access ([#5361](https://github.com/vitejs/vite/issues/5361)) ([1f4723b](https://github.com/vitejs/vite/commit/1f4723bbd82e234e779ee4cbc3a51b85c24463e0))
+* **ssr:** ssrTransfrom with function declaration in scope, fix [#4306](https://github.com/vitejs/vite/issues/4306) ([#5376](https://github.com/vitejs/vite/issues/5376)) ([5306632](https://github.com/vitejs/vite/commit/5306632603fb5bb6d93f06e2412416394166e371))
+
+
+### Performance Improvements
+
+* minify css only when needed ([#5178](https://github.com/vitejs/vite/issues/5178)) ([7970239](https://github.com/vitejs/vite/commit/79702392874d81819e090a4a235313df83a7515c))
+
+
+
 ## [2.6.10](https://github.com/vitejs/vite/compare/v2.6.9...v2.6.10) (2021-10-18)
 
 
