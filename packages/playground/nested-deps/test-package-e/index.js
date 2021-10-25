@@ -1,3 +1,2 @@
-
-export {testIncluded} from 'test-package-e-included'
-export {testExcluded} from 'test-package-e-excluded'
+export { testIncluded } from 'test-package-e-included'
+export { testExcluded } from 'test-package-e-excluded'

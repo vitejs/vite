@@ -185,13 +185,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // the dependency needs to be resolved starting from the original source location of the optimized file
           // because starting from node_modules/.vite will not find the dependency if it was not hoisted
           // (that is, if it is under node_modules directory in the package source of the optimized file)
-          for (const optimizedModule of Object.values(server._optimizeDepsMetadata?.optimized || {})) {
+          for (const optimizedModule of Object.values(
+            server._optimizeDepsMetadata?.optimized || {}
+          )) {
             if (optimizedModule.file === importerModule.file) {
               importerFile = optimizedModule.src
             }
           }
         }
-     
+
         const resolved = await this.resolve(url, importerFile)
 
         if (!resolved) {
