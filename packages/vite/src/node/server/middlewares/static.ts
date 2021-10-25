@@ -161,21 +161,22 @@ export function isFileServingAllowed(
 function ensureServingAccess(
   url: string,
   server: ViteDevServer,
-  res: ServerResponse, 
+  res: ServerResponse,
   next: Connect.NextFunction,
 ): boolean {
   if (isFileServingAllowed(url, server)) {
     return true
   }
   if (fs.existsSync(url)) {
-    server.config.logger.error(
-      `The request url "${url}" is outside of Vite serving allow list:
+    const message = `The request url "${url}" is outside of Vite serving allow list:
 
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 
 Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
-    )
-    res.statusCode = 404
+
+    server.config.logger.error(message + '\n')
+    res.statusCode = 403
+    res.write(renderRestrictedErrorHTML(message))
     res.end()
   }
   else {
@@ -184,4 +185,20 @@ Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and 
     next()
   }
   return false
+}
+
+function renderRestrictedErrorHTML(msg: string): string {
+  // to have syntax highlighting and autocompletion in IDE
+  const html = String.raw
+  return html`
+    <body>
+      <h1>403 Restricted</h1>
+      <p>${msg.replace(/\n/g, '<br/>')}</p>
+      <style>
+        body {
+          padding: 1em 2em;
+        }
+      </style>
+    </body>
+  `
 }
