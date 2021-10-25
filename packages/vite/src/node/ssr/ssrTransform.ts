@@ -302,6 +302,14 @@ function walk(
           onIdentifier(node, parent!, parentStack)
         }
       } else if (isFunction(node)) {
+        // If it is a function declaration, it could be shadowing an import
+        // Add its name to the scope so it won't get replaced
+        if (node.type === 'FunctionDeclaration') {
+          const parentFunction = findParentFunction(parentStack)
+          if (parentFunction) {
+            setScope(parentFunction, node.id!.name)
+          }
+        }
         // walk function expressions and add its arguments to known identifiers
         // so that we don't prefix them
         node.params.forEach((p) =>
