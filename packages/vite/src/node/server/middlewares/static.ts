@@ -140,8 +140,7 @@ export function isFileServingAllowed(
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  const { allow } = server.config.server.fs
-  if (allow.some((i) => file.startsWith(i + '/')))
+  if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
     return true
 
   if (!server.config.server.fs.strict) {
@@ -154,18 +153,6 @@ export function isFileServingAllowed(
       )
     }
     return true
-  }
-
-  // if the file doesn't exist, we shouldn't restrict this path as it can
-  // be an API call. Middlewares would issue a 404 if the file isn't handled
-  if (fs.existsSync(file)) {
-    server.config.logger.error(
-      `The request url "${url}" is outside of Vite serving allow list:
-
-${allow.map((i) => `- ${i}`).join('\n')}
-
-Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
-    )
   }
 
   return false
@@ -181,10 +168,19 @@ function ensureServingAccess(
     return true
   }
   if (fs.existsSync(url)) {
+    server.config.logger.error(
+      `The request url "${url}" is outside of Vite serving allow list:
+
+${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
+
+Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
+    )
     res.statusCode = 404
     res.end()
   }
   else {
+    // if the file doesn't exist, we shouldn't restrict this path as it can
+    // be an API call. Middlewares would issue a 404 if the file isn't handled
     next()
   }
   return false
