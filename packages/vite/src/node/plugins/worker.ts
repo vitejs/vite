@@ -77,7 +77,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               // TODO: Remove when https://github.com/rollup/rollup/issues/3913 is resolved
               // Currently seems that it won't be resolved until Rollup 3
               const dataUrl = sourcemap.toUrl()
-              code = code + `//# sourceMappingURL=${dataUrl}`
+              code += `//# sourceMappingURL=${dataUrl}`
             } else if (
               config.build.sourcemap === 'hidden' ||
               config.build.sourcemap === true
@@ -101,7 +101,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 // inline web workers need to use the full sourcemap path
                 // non-inline web workers can use a relative path
                 const sourceMapUrl = query.inline != null ? filePath : fileName
-                code = code + `//# sourceMappingURL=${sourceMapUrl}`
+                code += `//# sourceMappingURL=${sourceMapUrl}`
               }
             }
           }
