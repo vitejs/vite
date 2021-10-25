@@ -63,19 +63,56 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         })
         let code: string
+        let sourcemap: Rollup.SourceMap | undefined
         try {
           const { output } = await bundle.generate({
             format: 'iife',
             sourcemap: config.build.sourcemap
           })
           code = output[0].code
+          sourcemap = output[0].map
+
+          if (sourcemap) {
+            if (config.build.sourcemap === 'inline') {
+              // TODO: Remove when https://github.com/rollup/rollup/issues/3913 is resolved
+              // Currently seems that it won't be resolved until Rollup 3
+              const dataUrl = sourcemap.toUrl()
+              code = code + `//# sourceMappingURL=${dataUrl}`
+            } else if (
+              config.build.sourcemap === 'hidden' ||
+              config.build.sourcemap === true
+            ) {
+              const basename = path.parse(cleanUrl(id)).name
+              const data = sourcemap.toString()
+              const content = Buffer.from(data)
+              const contentHash = getAssetHash(content)
+              const fileName = `${basename}.${contentHash}.js.map`
+              const filePath = path.posix.join(config.build.assetsDir, fileName)
+              if (!this.cache.has(contentHash)) {
+                this.cache.set(contentHash, true)
+                this.emitFile({
+                  fileName: filePath,
+                  type: 'asset',
+                  source: data
+                })
+              }
+
+              if (config.build.sourcemap === true) {
+                // inline web workers need to use the full sourcemap path
+                // non-inline web workers can use a relative path
+                const sourceMapUrl = query.inline != null ? filePath : fileName
+                code = code + `//# sourceMappingURL=${sourceMapUrl}`
+              }
+            }
+          }
         } finally {
           await bundle.close()
         }
         const content = Buffer.from(code)
         if (query.inline != null) {
           // inline as blob data url
-          return `const encodedJs = "${content.toString('base64')}";
+          return {
+            code: `const encodedJs = "${content.toString('base64')}";
             const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
@@ -84,7 +121,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
-            }`
+            }`,
+
+            // Empty sourcemap to supress Rollup warning
+            map: { mappings: '' }
+          }
         } else {
           const basename = path.parse(cleanUrl(id)).name
           const contentHash = getAssetHash(content)
@@ -107,11 +148,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerOptions = { type: 'module' }
 
-      return `export default function WorkerWrapper() {
-        return new ${workerConstructor}(${JSON.stringify(
-        url
-      )}, ${JSON.stringify(workerOptions, null, 2)})
-      }`
+      return {
+        code: `export default function WorkerWrapper() {
+          return new ${workerConstructor}(${JSON.stringify(
+          url
+        )}, ${JSON.stringify(workerOptions, null, 2)})
+        }`,
+        map: { mappings: '' } // Empty sourcemap to supress Rollup warning
+      }
     }
   }
 }

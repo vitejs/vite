@@ -1,0 +1,57 @@
+<div>Expected values: <span class="mode-true"></span></div>
+<button class="ping">Ping</button>
+<div>
+  Response from worker: <span class="pong"></span><span class="mode"></span>
+</div>
+
+<button class="ping-inline">Ping Inline Worker</button>
+<div>Response from inline worker: <span class="pong-inline"></span></div>
+
+<button class="tick-shared">Tick Shared Worker</button>
+<div>
+  Tick from shared worker, it syncs between pages:
+  <span class="tick-count">0</span>
+</div>
+
+<script type="module">
+  import Worker from './my-worker?worker'
+  import InlineWorker from './my-worker?worker&inline'
+  import SharedWorker from './my-shared-worker?sharedworker&name=shared'
+  import { mode } from './workerImport'
+
+  document.querySelector('.mode-true').textContent = mode
+
+  const worker = new Worker()
+  worker.addEventListener('message', (e) => {
+    text('.pong', e.data.msg)
+    text('.mode', e.data.mode)
+  })
+
+  document.querySelector('.ping').addEventListener('click', () => {
+    worker.postMessage('ping')
+  })
+
+  const inlineWorker = new InlineWorker()
+  inlineWorker.addEventListener('message', (e) => {
+    text('.pong-inline', e.data.msg)
+  })
+
+  document.querySelector('.ping-inline').addEventListener('click', () => {
+    inlineWorker.postMessage('ping')
+  })
+
+  const sharedWorker = new SharedWorker()
+  document.querySelector('.tick-shared').addEventListener('click', () => {
+    sharedWorker.port.postMessage('tick')
+  })
+
+  sharedWorker.port.addEventListener('message', (event) => {
+    text('.tick-count', event.data)
+  })
+
+  sharedWorker.port.start()
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
