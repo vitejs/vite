@@ -116,9 +116,12 @@ importers:
 
   packages/playground/backend-integration:
     specifiers:
+      fast-glob: ^3.2.7
       tailwindcss: ^2.2.4
     dependencies:
       tailwindcss: 2.2.15_ts-node@10.2.1
+    devDependencies:
+      fast-glob: 3.2.7
 
   packages/playground/cli:
     specifiers: {}
