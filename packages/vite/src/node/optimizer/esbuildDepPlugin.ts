@@ -232,15 +232,18 @@ interface ParsedExternalGlob {
   prefix: string
   suffix: string
 }
+
 interface ParsedExternals {
   externalModules: Set<string>
   externalGlobs: ParsedExternalGlob[]
 }
+
 function parseExternals(exclude: string[] = []): ParsedExternals {
   const externals: ParsedExternals = {
     externalModules: new Set<string>(),
     externalGlobs: []
   }
+
   for (const ex of exclude) {
     const p = ex.indexOf('*') // just ignore multiple globs, which is an error in esbuild anyway
     if (p >= 0) {
@@ -252,6 +255,7 @@ function parseExternals(exclude: string[] = []): ParsedExternals {
       externals.externalModules.add(ex)
     }
   }
+
   return externals
 }
 
