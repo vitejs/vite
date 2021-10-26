@@ -121,6 +121,10 @@ async function instantiateModule(
     }
     return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
   }
+  const ssrRequire = (dep: string) => {
+    const { resolve, dirname } = path
+    return require(resolve(dirname(mod.file!), dep))
+  }
 
   const ssrDynamicImport = (dep: string) => {
     // #3087 dynamic import vars is ignored at rewrite import path,
@@ -150,6 +154,7 @@ async function instantiateModule(
     const AsyncFunction = async function () {}.constructor as typeof Function
     const initModule = new AsyncFunction(
       `global`,
+      `require`,
       ssrModuleExportsKey,
       ssrImportMetaKey,
       ssrImportKey,
@@ -159,6 +164,7 @@ async function instantiateModule(
     )
     await initModule(
       context.global,
+      ssrRequire,
       ssrModule,
       ssrImportMeta,
       ssrImport,
@@ -188,27 +194,10 @@ async function nodeImport(
   importer: string | null,
   config: ViteDevServer['config']
 ) {
-  let url: string
-  // `resolve` doesn't handle `node:` builtins, so handle them directly
-  if (id.startsWith('node:') || isBuiltin(id)) {
-    url = id
-  } else {
-    url = resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)
-    if (usingDynamicImport) {
-      url = pathToFileURL(url).toString()
-    }
-  }
-  const mod = await dynamicImport(url)
-  return proxyESM(id, mod)
-}
+  const mod = require(resolve(id, importer, root, preserveSymlinks))
 
-// rollup-style default import interop for cjs
-function proxyESM(id: string, mod: any) {
-  const defaultExport = mod.__esModule
-    ? mod.default
-    : mod.default
-    ? mod.default
-    : mod
+  const defaultExport = mod.__esModule ? mod.default : mod
+  // rollup-style default import interop for cjs
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
