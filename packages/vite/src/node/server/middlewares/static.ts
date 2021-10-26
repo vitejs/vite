@@ -52,7 +52,7 @@ export function serveStaticMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
-    // only serve the file if it's not an html request  or ends with /
+    // only serve the file if it's not an html request or ends with `/`
     // so that html requests can fallthrough to our html middleware for
     // special processing
     // also skip internal requests `/@fs/ /@vite-client` etc...
