@@ -387,8 +387,9 @@ export function isFileReadable(filename: string,) {
   try {
     fs.accessSync(filename, fs.constants.R_OK)
     return true
-  } catch (e) {}
-  return false
+  } catch {
+    return false
+  }
 }
 
 /**
