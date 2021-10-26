@@ -46,7 +46,7 @@ export function isBuiltin(id: string): boolean {
 export function moduleListContains(
   moduleList: string[] | undefined,
   id: string
-) {
+): boolean | undefined {
   return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
 }
 
