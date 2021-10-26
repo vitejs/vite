@@ -199,6 +199,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           ast: !isReasonReact,
           root: projectRoot,
           filename: id,
+          sourceFileName: id,
           parserOpts: {
             ...opts.babel?.parserOpts,
             sourceType: 'module',
