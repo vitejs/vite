@@ -15,6 +15,20 @@ To development and test the core `vite` package:
    - Run `pnpm link vite` in another Vite project to use the locally built Vite;
    - Use the `vite` binary anywhere.
 
+   If your project has `vite` as a nested dependency, you can customize the dependency resolution instead depending on the package manager used. For pnpm, add this in your project's root `package.json`:
+
+   ```json
+   {
+     "pnpm": {
+       "overrides": {
+         "vite": "link:../path/to/vite/packages/vite"
+       }
+     }
+   }
+   ```
+
+   And re-run `pnpm install` to link the package.
+
 ## Running Tests
 
 Each package under `packages/playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
