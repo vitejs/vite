@@ -1,3 +1,12 @@
+## [2.6.12](https://github.com/vitejs/vite/compare/v2.6.11...v2.6.12) (2021-10-26)
+
+
+### Bug Fixes
+
+* allowed files logic (fix [#5416](https://github.com/vitejs/vite/issues/5416)) ([#5420](https://github.com/vitejs/vite/issues/5420)) ([414bc45](https://github.com/vitejs/vite/commit/414bc45693762c330efbe1f3c8c97829cc05695a))
+
+
+
 ## [2.6.11](https://github.com/vitejs/vite/compare/v2.6.9...v2.6.11) (2021-10-25)
 
 
