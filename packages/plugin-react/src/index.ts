@@ -13,6 +13,15 @@ import {
 import { babelImportToRequire } from './jsx-runtime/babel-import-to-require'
 import { restoreJSX } from './jsx-runtime/restore-jsx'
 
+declare module 'vite' {
+  export interface Plugin {
+    /**
+     * Babel configuration applied in both dev and prod.
+     */
+    babel?: Pick<TransformOptions, 'plugins' | 'presets'>
+  }
+}
+
 export interface Options {
   include?: string | RegExp | Array<string | RegExp>
   exclude?: string | RegExp | Array<string | RegExp>
@@ -54,7 +63,9 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
 
-  const userPlugins = opts.babel?.plugins || []
+  let userPlugins = [...(opts.babel?.plugins || [])]
+  let userPresets = [...(opts.babel?.presets || [])]
+
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
 
@@ -88,15 +99,33 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         )
       }
 
-      config.plugins.forEach(
-        (plugin) =>
-          (plugin.name === 'react-refresh' ||
-            (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')) &&
-          config.logger.warn(
+      config.plugins.forEach((plugin) => {
+        const isExtraneous =
+          plugin.name === 'react-refresh' ||
+          (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')
+
+        if (isExtraneous)
+          return config.logger.warn(
             `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
               `since this plugin conflicts with it.`
           )
-      )
+
+        if (plugin.babel) {
+          const { plugins, presets } = plugin.babel
+          if (plugins) {
+            userPlugins =
+              plugin.enforce === 'pre'
+                ? [...plugins, ...userPlugins]
+                : [...userPlugins, ...plugins]
+          }
+          if (presets) {
+            userPresets =
+              plugin.enforce === 'pre'
+                ? [...presets, ...userPresets]
+                : [...userPresets, ...presets]
+          }
+        }
+      })
     },
     async transform(code, id, options) {
       const ssr = typeof options === 'boolean' ? options : options?.ssr === true
@@ -227,6 +256,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             decoratorsBeforeExport: true
           },
           plugins,
+          presets: userPresets,
           sourceMaps: true,
           // Vite handles sourcemap flattening
           inputSourceMap: false as any
