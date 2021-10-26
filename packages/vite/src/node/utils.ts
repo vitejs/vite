@@ -383,7 +383,7 @@ export function writeFile(
  * works and will result in massively slow subsequent checks (which are
  * unnecessary in the first place)
  */
-export function isFileReadable(filename: string,) {
+export function isFileReadable(filename: string): boolean {
   try {
     fs.accessSync(filename, fs.constants.R_OK)
     return true
