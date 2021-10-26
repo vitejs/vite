@@ -6,7 +6,8 @@ import {
   isRunningWithYarnPnp,
   flattenId,
   normalizePath,
-  isExternalUrl
+  isExternalUrl,
+  moduleListContains
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import { ExportsData } from '.'
@@ -67,8 +68,6 @@ export function esbuildDepPlugin(
     return resolver(id, _importer, undefined, ssr)
   }
 
-  const externals = parseExternals(config.optimizeDeps?.exclude)
-
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
@@ -101,7 +100,7 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          if (matchesExternals(id, externals)) {
+          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
             return {
               path: id,
               external: true
@@ -222,52 +221,4 @@ export function esbuildDepPlugin(
       }
     }
   }
-}
-
-// esbuild has 3 kinds of externals: paths, module names and patterns (globs)
-// paths are excluded by the filter in the onResolve above
-// this code reproduces esbuild external handling logic
-// for module names and globs
-interface ParsedExternalGlob {
-  prefix: string
-  suffix: string
-}
-
-interface ParsedExternals {
-  externalModules: Set<string>
-  externalGlobs: ParsedExternalGlob[]
-}
-
-function parseExternals(exclude: string[] = []): ParsedExternals {
-  const externals: ParsedExternals = {
-    externalModules: new Set<string>(),
-    externalGlobs: []
-  }
-
-  for (const ex of exclude) {
-    const p = ex.indexOf('*') // just ignore multiple globs, which is an error in esbuild anyway
-    if (p >= 0) {
-      externals.externalGlobs.push({
-        prefix: ex.substring(0, p),
-        suffix: ex.substring(p + 1)
-      })
-    } else {
-      externals.externalModules.add(ex)
-    }
-  }
-
-  return externals
-}
-
-function matchesExternals(id: string, externals: ParsedExternals): boolean {
-  if (externals.externalModules.has(id)) {
-    return true
-  } else {
-    for (const { prefix, suffix } of externals.externalGlobs) {
-      if (id.startsWith(prefix) && id.endsWith(suffix)) {
-        return true
-      }
-    }
-  }
-  return false
 }
