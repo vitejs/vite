@@ -56,9 +56,10 @@ export function serveStaticMiddleware(
     // so that html requests can fallthrough to our html middleware for
     // special processing
     // also skip internal requests `/@fs/ /@vite-client` etc...
+    const cleanedUrl = cleanUrl(req.url!)
     if (
-      req.url!.endsWith('/') ||
-      path.extname(cleanUrl(req.url!)) === '.html' ||
+      cleanedUrl.endsWith('/') ||
+      path.extname(cleanedUrl) === '.html' ||
       isInternalRequest(req.url!)
     ) {
       return next()
@@ -136,7 +137,8 @@ export function isFileServingAllowed(
   // explicitly disabled
   if (server.config.server.fs.strict === false) return true
 
-  const file = ensureLeadingSlash(normalizePath(cleanUrl(url)))
+  const cleanedUrl = cleanUrl(url)
+  const file = ensureLeadingSlash(normalizePath(cleanedUrl))
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
@@ -144,7 +146,7 @@ export function isFileServingAllowed(
     return true
 
   if (!server.config.server.fs.strict) {
-    if (isFileReadable(file)) {
+    if (isFileReadable(cleanedUrl)) {
       server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
       server.config.logger.warnOnce(
         `For security concerns, accessing files outside of serving allow list will ` +
@@ -168,15 +170,16 @@ function ensureServingAccess(
     return true
   }
   if (isFileReadable(cleanUrl(url))) {
-    const message = `The request url "${url}" is outside of Vite serving allow list:
-
+    const urlMessage = `The request url "${url}" is outside of Vite serving allow list.`
+    const hintMessage = `
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 
 Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
 
-    server.config.logger.error(message + '\n')
+    server.config.logger.error(urlMessage)
+    server.config.logger.warnOnce(hintMessage + '\n')
     res.statusCode = 403
-    res.write(renderRestrictedErrorHTML(message))
+    res.write(renderRestrictedErrorHTML(urlMessage + '\n' + hintMessage))
     res.end()
   }
   else {
