@@ -378,6 +378,21 @@ export function writeFile(
 }
 
 /**
+ * Use instead of fs.existsSync(filename)
+ * #2051 if we don't have read permission on a directory, existsSync() still
+ * works and will result in massively slow subsequent checks (which are
+ * unnecessary in the first place)
+ */
+export function isFileReadable(filename: string): boolean {
+  try {
+    fs.accessSync(filename, fs.constants.R_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Delete every file and subdirectory. **The given directory must exist.**
  * Pass an optional `skip` array to preserve files in the root directory.
  */
