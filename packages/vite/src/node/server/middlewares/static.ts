@@ -1,5 +1,4 @@
 import path from 'path'
-import fs from 'fs'
 import { ServerResponse } from 'http'
 import sirv, { Options } from 'sirv'
 import { Connect } from 'types/connect'
@@ -12,7 +11,8 @@ import {
   isImportRequest,
   isInternalRequest,
   isWindows,
-  slash
+  slash,
+  isFileReadable
 } from '../../utils'
 
 const sirvOptions: Options = {
@@ -144,7 +144,7 @@ export function isFileServingAllowed(
     return true
 
   if (!server.config.server.fs.strict) {
-    if (fs.existsSync(file)) {
+    if (isFileReadable(file)) {
       server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
       server.config.logger.warnOnce(
         `For security concerns, accessing files outside of serving allow list will ` +
@@ -167,7 +167,7 @@ function ensureServingAccess(
   if (isFileServingAllowed(url, server)) {
     return true
   }
-  if (fs.existsSync(url)) {
+  if (isFileReadable(cleanUrl(url))) {
     const message = `The request url "${url}" is outside of Vite serving allow list:
 
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}

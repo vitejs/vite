@@ -24,7 +24,8 @@ import {
   isDataUrl,
   cleanUrl,
   slash,
-  nestedResolveFrom
+  nestedResolveFrom,
+  isFileReadable
 } from '../utils'
 import { ViteDevServer, SSROptions } from '..'
 import { createFilter } from '@rollup/pluginutils'
@@ -372,15 +373,10 @@ function tryResolveFile(
   tryPrefix?: string,
   skipPackageJson?: boolean
 ): string | undefined {
-  let isReadable = false
-  try {
-    // #2051 if we don't have read permission on a directory, existsSync() still
-    // works and will result in massively slow subsequent checks (which are
-    // unnecessary in the first place)
-    fs.accessSync(file, fs.constants.R_OK)
-    isReadable = true
-  } catch (e) {}
-  if (isReadable) {
+  // #2051 if we don't have read permission on a directory, existsSync() still
+  // works and will result in massively slow subsequent checks (which are
+  // unnecessary in the first place)
+  if (isFileReadable(file)) {
     if (!fs.statSync(file).isDirectory()) {
       return getRealPath(file, preserveSymlinks) + postfix
     } else if (tryIndex) {
