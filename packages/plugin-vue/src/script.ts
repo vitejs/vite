@@ -29,7 +29,7 @@ export function isUseInlineTemplate(descriptor: SFCDescriptor, isProd: boolean):
   return (
     isProd &&
     !!descriptor.scriptSetup &&
-    !(descriptor.template && descriptor.template.src)
+    !descriptor.template?.src
   )
 }
 
