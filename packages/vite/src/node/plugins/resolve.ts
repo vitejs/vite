@@ -24,7 +24,8 @@ import {
   isDataUrl,
   cleanUrl,
   slash,
-  nestedResolveFrom
+  nestedResolveFrom,
+  isFileReadable
 } from '../utils'
 import { ViteDevServer, SSROptions } from '..'
 import { createFilter } from '@rollup/pluginutils'
@@ -315,6 +316,24 @@ function tryFsResolve(
   }
 
   let res: string | undefined
+
+  // if we fould postfix exist, we should first try resolving file with postfix. details see #4703.
+  if (
+    postfix &&
+    (res = tryResolveFile(
+      fsPath,
+      '',
+      options,
+      false,
+      targetWeb,
+      preserveSymlinks,
+      options.tryPrefix,
+      options.skipPackageJson
+    ))
+  ) {
+    return res
+  }
+
   if (
     (res = tryResolveFile(
       file,
@@ -332,6 +351,22 @@ function tryFsResolve(
 
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
+      postfix &&
+      (res = tryResolveFile(
+        fsPath + ext,
+        '',
+        options,
+        false,
+        targetWeb,
+        preserveSymlinks,
+        options.tryPrefix,
+        options.skipPackageJson
+      ))
+    ) {
+      return res
+    }
+
+    if (
       (res = tryResolveFile(
         file + ext,
         postfix,
@@ -345,6 +380,22 @@ function tryFsResolve(
     ) {
       return res
     }
+  }
+
+  if (
+    postfix &&
+    (res = tryResolveFile(
+      fsPath,
+      '',
+      options,
+      tryIndex,
+      targetWeb,
+      preserveSymlinks,
+      options.tryPrefix,
+      options.skipPackageJson
+    ))
+  ) {
+    return res
   }
 
   if (
@@ -373,15 +424,10 @@ function tryResolveFile(
   tryPrefix?: string,
   skipPackageJson?: boolean
 ): string | undefined {
-  let isReadable = false
-  try {
-    // #2051 if we don't have read permission on a directory, existsSync() still
-    // works and will result in massively slow subsequent checks (which are
-    // unnecessary in the first place)
-    fs.accessSync(file, fs.constants.R_OK)
-    isReadable = true
-  } catch (e) {}
-  if (isReadable) {
+  // #2051 if we don't have read permission on a directory, existsSync() still
+  // works and will result in massively slow subsequent checks (which are
+  // unnecessary in the first place)
+  if (isFileReadable(file)) {
     if (!fs.statSync(file).isDirectory()) {
       return getRealPath(file, preserveSymlinks) + postfix
     } else if (tryIndex) {

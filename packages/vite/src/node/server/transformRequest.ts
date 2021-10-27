@@ -95,7 +95,7 @@ async function doTransform(
 
   // load
   const loadStart = isDebug ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, ssr)
+  const loadResult = await pluginContainer.load(id, { ssr })
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.
@@ -157,7 +157,7 @@ async function doTransform(
 
   // transform
   const transformStart = isDebug ? performance.now() : 0
-  const transformResult = await pluginContainer.transform(code, id, map, ssr)
+  const transformResult = await pluginContainer.transform(code, id, { inMap: map, ssr })
   if (
     transformResult == null ||
     (isObject(transformResult) && transformResult.code == null)

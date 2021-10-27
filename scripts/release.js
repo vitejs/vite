@@ -154,6 +154,7 @@ async function main() {
     step('\nCommitting changes...')
     await runIfNotDry('git', ['add', '-A'])
     await runIfNotDry('git', ['commit', '-m', `release: ${tag}`])
+    await runIfNotDry('git', ['tag', tag])
   } else {
     console.log('No changes to commit.')
   }
@@ -162,7 +163,6 @@ async function main() {
   await publishPackage(targetVersion, runIfNotDry)
 
   step('\nPushing to GitHub...')
-  await runIfNotDry('git', ['tag', tag])
   await runIfNotDry('git', ['push', 'origin', `refs/tags/${tag}`])
   await runIfNotDry('git', ['push'])
 

@@ -422,6 +422,7 @@ async function doBuild(
   const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
     input,
+    context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions

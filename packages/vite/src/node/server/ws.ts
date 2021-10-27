@@ -5,6 +5,7 @@ import {
   ServerOptions as HttpsServerOptions
 } from 'https'
 import WebSocket from 'ws'
+import { WebSocket as WebSocketTypes } from 'types/ws'
 import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import { ResolvedConfig } from '..'
 import { isObject } from '../utils'
@@ -12,6 +13,8 @@ import { Socket } from 'net'
 export const HMR_HEADER = 'vite-hmr'
 
 export interface WebSocketServer {
+  on: WebSocketTypes.Server['on']
+  off: WebSocketTypes.Server['off']
   send(payload: HMRPayload): void
   close(): Promise<void>
 }
@@ -92,6 +95,8 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    on: wss.on.bind(wss),
+    off: wss.off.bind(wss),
     send(payload: HMRPayload) {
       if (payload.type === 'error' && !wss.clients.size) {
         bufferedError = payload

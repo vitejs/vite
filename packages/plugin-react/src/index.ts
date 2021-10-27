@@ -58,7 +58,14 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
 
-  const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
+  // Support pattens like:
+  // - import * as React from 'react';
+  // - import React from 'react';
+  // - import React, {useEffect} from 'react';
+  const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React(,|\s+)/
+
+  // Any extension, including compound ones like '.bs.js'
+  const fileExtensionRE = /\.[^\/\s\?]+$/
 
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
@@ -91,9 +98,15 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           )
       )
     },
-    async transform(code, id, options) {
-      const ssr = typeof options === 'boolean' ? options : options?.ssr === true
-      if (/\.[tj]sx?$/.test(id)) {
+    async transform(code, id, ssr) {
+      // File extension could be mocked/overriden in querystring.
+      const [filepath, querystring = ''] = id.split('?')
+      const [extension = ''] =
+        querystring.match(fileExtensionRE) ||
+        filepath.match(fileExtensionRE) ||
+        []
+
+      if (/\.(mjs|[tj]sx?)$/.test(extension)) {
         const plugins = [...userPlugins]
 
         const parserPlugins: typeof userParserPlugins = [
@@ -108,11 +121,11 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           'classPrivateMethods'
         ]
 
-        if (!id.endsWith('.ts')) {
+        if (!extension.endsWith('.ts')) {
           parserPlugins.push('jsx')
         }
 
-        const isTypeScript = /\.tsx?$/.test(id)
+        const isTypeScript = /\.tsx?$/.test(extension)
         if (isTypeScript) {
           parserPlugins.push('typescript')
         }
@@ -122,7 +135,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
           // Modules with .js or .ts extension must import React.
-          const isReactModule = id.endsWith('x') || code.includes('react')
+          const isReactModule =
+            extension.endsWith('x') || code.includes('react')
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
@@ -133,7 +147,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         }
 
         let ast: t.File | null | undefined
-        if (isNodeModules || id.endsWith('x')) {
+        if (isNodeModules || extension.endsWith('x')) {
           if (useAutomaticRuntime) {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
@@ -176,7 +190,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           }
         }
 
-        const isReasonReact = id.endsWith('.bs.js')
+        const isReasonReact = extension.endsWith('.bs.js')
 
         const babelOpts: TransformOptions = {
           babelrc: false,
@@ -185,6 +199,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           ast: !isReasonReact,
           root: projectRoot,
           filename: id,
+          sourceFileName: id,
           parserOpts: {
             ...opts.babel?.parserOpts,
             sourceType: 'module',

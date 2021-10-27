@@ -4,7 +4,9 @@ import MagicString from 'magic-string'
 import { AttributeNode, NodeTypes } from '@vue/compiler-dom'
 import { Connect } from 'types/connect'
 import {
+  addToHTMLProxyCache,
   applyHtmlTransforms,
+  assetAttrsConfig,
   getScriptInfo,
   IndexHtmlTransformHook,
   resolveHtmlTransforms,
@@ -14,7 +16,6 @@ import { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId } from '../../utils'
-import { assetAttrsConfig } from '../../plugins/html'
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer
@@ -87,6 +88,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   const s = new MagicString(html)
   let scriptModuleIndex = -1
+  const filePath = cleanUrl(htmlPath)
 
   await traverseHtml(html, htmlPath, (node) => {
     if (node.type !== NodeTypes.ELEMENT) {
@@ -103,12 +105,21 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       if (src) {
         processNodeUrl(src, s, config, htmlPath, originalUrl)
       } else if (isModule) {
+        const url = filePath.replace(config.root, '')
+
+        const contents = node.children
+          .map((child: any) => child.content || '')
+          .join('')
+
+        // add HTML Proxy to Map
+        addToHTMLProxyCache(config, url, scriptModuleIndex, contents)
+
         // inline js module. convert to src="proxy"
         s.overwrite(
           node.loc.start.offset,
           node.loc.end.offset,
           `<script type="module" src="${
-            config.base + htmlPath.slice(1)
+            config.base + url.slice(1)
           }?html-proxy&index=${scriptModuleIndex}.js"></script>`
         )
       }

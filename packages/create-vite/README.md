@@ -20,7 +20,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpm dlx create-vite
+$ pnpm create vite
 ```
 
 Then follow the prompts!
@@ -38,7 +38,7 @@ npm init vite@latest my-vue-app -- --template vue
 yarn create vite my-vue-app --template vue
 
 # pnpm
-pnpm dlx create-vite my-vue-app --template vue
+pnpm create vite my-vue-app -- --template vue
 ```
 
 Currently supported template presets include:
