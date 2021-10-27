@@ -96,7 +96,11 @@ declare module 'rollup-plugin-web-worker-loader' {
 }
 
 declare module 'minimatch' {
-  function match(path: string, pattern: string): boolean
+  function match(
+    path: string,
+    pattern: string,
+    options?: { matchBase?: boolean }
+  ): boolean
   export default match
 }
 

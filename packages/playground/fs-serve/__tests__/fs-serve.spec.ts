@@ -41,6 +41,14 @@ describe('main', () => {
     test('nested entry', async () => {
       expect(await page.textContent('.nested-entry')).toBe('foobar')
     })
+
+    test('nested entry', async () => {
+      expect(await page.textContent('.nested-entry')).toBe('foobar')
+    })
+
+    test('denied', async () => {
+      expect(await page.textContent('.unsafe-dotenv')).toBe('404')
+    })
   } else {
     test('dummy test to make jest happy', async () => {
       // Your test suite must contain at least one test.

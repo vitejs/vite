@@ -14,6 +14,7 @@ import {
   slash,
   isFileReadable
 } from '../../utils'
+import match from 'minimatch'
 
 const sirvOptions: Options = {
   dev: true,
@@ -130,6 +131,8 @@ export function serveRawFsMiddleware(
   }
 }
 
+const _matchOptions = { matchBase: true }
+
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer
@@ -139,6 +142,9 @@ export function isFileServingAllowed(
 
   const cleanedUrl = cleanUrl(url)
   const file = ensureLeadingSlash(normalizePath(cleanedUrl))
+
+  if (server.config.server.fs.deny.some((i) => match(file, i, _matchOptions)))
+    return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
