@@ -167,18 +167,32 @@ if (isBuild) {
 }
 
 describe('noHead', () => {
-  // If there isn't a <head>, scripts are injected after <!DOCTYPE html>
-
   beforeAll(async () => {
     // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
     await page.goto(viteTestUrl + '/noHead.html')
   })
 
-  test('noHead tags transform', async () => {
-    const el = await page.$('meta[name=description]')
+  test('noHead tags injection', async () => {
+    const el = await page.$('html meta[name=description]')
     expect(await el.getAttribute('content')).toBe('a vite app')
 
-    const kw = await page.$('meta[name=keywords]')
+    const kw = await page.$('html meta[name=keywords]')
     expect(await kw.getAttribute('content')).toBe('es modules')
+  })
+})
+
+describe('noBody', () => {
+  beforeAll(async () => {
+    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    await page.goto(viteTestUrl + '/noBody.html')
+  })
+
+  test('noBody tags injection', async () => {
+    // this selects the first noscript in body, even without a body tag
+    const el = await page.$('body noscript')
+    expect(await el.innerHTML()).toMatch(`<!-- this is prepended to body -->`)
+
+    const kw = await page.$('html:last-child')
+    expect(await kw.innerHTML()).toMatch(`<!-- this is appended to body -->`)
   })
 })
