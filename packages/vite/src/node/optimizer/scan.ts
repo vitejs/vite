@@ -14,6 +14,7 @@ import {
   normalizePath,
   isObject,
   cleanUrl,
+  moduleListContains,
   externalRE,
   dataUrlRE,
   multilineCommentsRE,
@@ -302,7 +303,7 @@ function esbuildScanPlugin(
           filter: /^[\w@][^:]/
         },
         async ({ path: id, importer }) => {
-          if (exclude?.some((e) => e === id || id.startsWith(e + '/'))) {
+          if (moduleListContains(exclude, id)) {
             return externalUnlessEntry({ path: id })
           }
           if (depImports[id]) {
