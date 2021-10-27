@@ -12,6 +12,7 @@
     "test-package-a": "link:./test-package-a",
     "test-package-b": "link:./test-package-b",
     "test-package-c": "link:./test-package-c",
-    "test-package-d": "link:./test-package-d"
+    "test-package-d": "link:./test-package-d",
+    "test-package-e": "link:./test-package-e"
   }
 }

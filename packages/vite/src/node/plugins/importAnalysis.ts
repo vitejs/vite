@@ -19,7 +19,8 @@ import {
   timeFrom,
   normalizePath,
   removeImportQuery,
-  unwrapId
+  unwrapId,
+  moduleListContains
 } from '../utils'
 import {
   debugHmr,
@@ -179,13 +180,31 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = url.replace(base, '/')
         }
 
-        const resolved = await this.resolve(url, importer)
+        let importerFile = importer
+        if (
+          moduleListContains(config.optimizeDeps?.exclude, url) &&
+          server._optimizeDepsMetadata
+        ) {
+          // if the dependency encountered in the optimized file was excluded from the optimization
+          // the dependency needs to be resolved starting from the original source location of the optimized file
+          // because starting from node_modules/.vite will not find the dependency if it was not hoisted
+          // (that is, if it is under node_modules directory in the package source of the optimized file)
+          for (const optimizedModule of Object.values(
+            server._optimizeDepsMetadata.optimized
+          )) {
+            if (optimizedModule.file === importerModule.file) {
+              importerFile = optimizedModule.src
+            }
+          }
+        }
+
+        const resolved = await this.resolve(url, importerFile)
 
         if (!resolved) {
           this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
-              importer
+              importerFile
             )}". Does the file exist?`,
             pos
           )
