@@ -26,6 +26,9 @@ export type {
   ResolvedBuildOptions
 } from './build'
 export type {
+  PreviewServer
+} from './preview'
+export type {
   DepOptimizationMetadata,
   DepOptimizationOptions
 } from './optimizer'

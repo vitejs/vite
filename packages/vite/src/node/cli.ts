@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import { performance } from 'perf_hooks'
 import { BuildOptions } from './build'
 import { ServerOptions } from './server'
-import { createLogger, LogLevel, printHttpServerUrls } from './logger'
+import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
 import { preview } from './preview'
 
@@ -218,9 +218,9 @@ cli
   .command('preview [root]')
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
+  .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
-  .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .action(
     async (
       root: string,
@@ -233,25 +233,20 @@ cli
       } & GlobalCLIOptions
     ) => {
       try {
-        const config = await resolveConfig(
-          {
-            root,
-            base: options.base,
-            configFile: options.config,
-            logLevel: options.logLevel,
-            server: {
-              host: options.host,
-              open: options.open,
-              strictPort: options.strictPort,
-              https: options.https
-            }
-          },
-          'serve',
-          'production'
-        )
-        const server = await preview(config, cleanOptions(options))
-
-        printHttpServerUrls(server, config)
+        const server = await preview({
+          root,
+          base: options.base,
+          configFile: options.config,
+          logLevel: options.logLevel,
+          server: {
+            host: options.host,
+            port: options.port ?? 5000,
+            strictPort: options.strictPort,
+            https: options.https,
+            open: options.open
+          }
+        })
+        server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`),
