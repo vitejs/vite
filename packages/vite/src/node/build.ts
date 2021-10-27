@@ -786,15 +786,35 @@ function injectSsrFlagToHooks(p: Plugin): Plugin {
   const { resolveId, load, transform } = p
   return {
     ...p,
-    resolveId: wrapSsrHook(resolveId),
-    load: wrapSsrHook(load),
-    transform: wrapSsrHook(transform)
+    resolveId: wrapSsrResolveId(resolveId),
+    load: wrapSsrLoad(load),
+    transform: wrapSsrTransform(transform)
   }
 }
 
-function wrapSsrHook(fn: Function | undefined) {
+function wrapSsrResolveId(fn: Function | undefined) {
   if (!fn) return
-  return function (this: any, ...args: any[]) {
-    return fn.call(this, ...args, true)
+  return function (this: any, id: any, importer: any, options: any) {
+    return fn.call(this, id, importer, injectSsrFlag(options))
   }
+}
+
+function wrapSsrLoad(fn: Function | undefined) {
+  if (!fn) return
+  // Receiving options param to be future-proof if Rollup adds it
+  return function (this: any, id: any, ...args: any[]) {
+    return fn.call(this, id, injectSsrFlag(args[0]))
+  }
+}
+
+function wrapSsrTransform(fn: Function | undefined) {
+  if (!fn) return
+  // Receiving options param to be future-proof if Rollup adds it
+  return function (this: any, code: any, importer: any, ...args: any[]) {
+    return fn.call(this, code, importer, injectSsrFlag(args[0]))
+  }
+}
+
+function injectSsrFlag(options: any = {}) {
+  return { ...options, ssr: true }
 }

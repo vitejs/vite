@@ -271,7 +271,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
     },
 
-    async transform(css, id, ssr) {
+    async transform(css, id, options) {
       if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
         return
       }
@@ -286,7 +286,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return css
         } else {
           // server only
-          if (ssr) {
+          if (options?.ssr) {
             return modulesCode || `export default ${JSON.stringify(css)}`
           }
           if (inlined) {

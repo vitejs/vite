@@ -106,7 +106,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       server = _server
     },
 
-    async transform(source, importer, ssr) {
+    async transform(source, importer, options) {
+      const ssr = options?.ssr === true
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
