@@ -118,7 +118,7 @@ importers:
     specifiers:
       tailwindcss: ^2.2.4
     dependencies:
-      tailwindcss: 2.2.15_ts-node@10.2.1
+      tailwindcss: 2.2.15
 
   packages/playground/cli:
     specifiers: {}
@@ -510,7 +510,7 @@ importers:
       vue-router: ^4.0.0
     dependencies:
       autoprefixer: 10.3.5
-      tailwindcss: 2.2.15_e444c4a095b9e9ba5c645754953637f2
+      tailwindcss: 2.2.15_autoprefixer@10.3.5
       vue: 3.2.16
       vue-router: 4.0.11_vue@3.2.16
     devDependencies:
@@ -721,7 +721,7 @@ importers:
       '@rollup/plugin-dynamic-import-vars': 1.4.0_rollup@2.57.0
       '@rollup/plugin-json': 4.1.0_rollup@2.57.0
       '@rollup/plugin-node-resolve': 13.0.5_rollup@2.57.0
-      '@rollup/plugin-typescript': 8.2.5_283b0408a190511f1240c12469d64cd5
+      '@rollup/plugin-typescript': 8.2.5_rollup@2.57.0+tslib@2.3.1
       '@rollup/pluginutils': 4.1.1
       '@types/convert-source-map': 1.5.2
       '@types/debug': 4.1.7
@@ -765,7 +765,7 @@ importers:
       open: 8.2.1
       periscopic: 2.0.3
       postcss-import: 14.0.2_postcss@8.3.8
-      postcss-load-config: 3.1.0_ts-node@10.2.1
+      postcss-load-config: 3.1.0
       postcss-modules: 4.2.2_postcss@8.3.8
       resolve.exports: 1.0.2
       rollup-plugin-license: 2.5.0_rollup@2.57.0
@@ -775,7 +775,7 @@ importers:
       source-map-support: 0.5.20
       strip-ansi: 6.0.0
       terser: 5.9.0
-      tsconfck: 1.0.0_typescript@4.4.3
+      tsconfck: 1.0.0
       tslib: 2.3.1
       types: link:types
       ws: 7.5.5
@@ -1892,7 +1892,7 @@ packages:
       rollup: 2.57.0
     dev: true
 
-  /@rollup/plugin-typescript/8.2.5_283b0408a190511f1240c12469d64cd5:
+  /@rollup/plugin-typescript/8.2.5_rollup@2.57.0+tslib@2.3.1:
     resolution: {integrity: sha512-QL/LvDol/PAGB2O0S7/+q2HpSUNodpw7z6nGn9BfoVCPOZ0r4EALrojFU29Bkoi2Hr2jgTocTejJ5GGWZfOxbQ==}
     engines: {node: '>=8.0.0'}
     peerDependencies:
@@ -1904,7 +1904,6 @@ packages:
       resolve: 1.20.0
       rollup: 2.57.0
       tslib: 2.3.1
-      typescript: 4.4.3
     dev: true
 
   /@rollup/pluginutils/3.1.0_rollup@2.57.0:
@@ -6892,7 +6891,7 @@ packages:
       postcss: 8.3.7
     dev: false
 
-  /postcss-load-config/3.1.0_ts-node@10.2.1:
+  /postcss-load-config/3.1.0:
     resolution: {integrity: sha512-ipM8Ds01ZUophjDTQYSVP70slFSYg3T0/zyfII5vzhN6V57YSxMgG5syXuwi5VtS8wSf3iL30v0uBdoIVx4Q0g==}
     engines: {node: '>= 10'}
     peerDependencies:
@@ -6903,7 +6902,6 @@ packages:
     dependencies:
       import-cwd: 3.0.0
       lilconfig: 2.0.3
-      ts-node: 10.2.1_3b624d72c50530188ff09826d1b48ebf
       yaml: 1.10.2
 
   /postcss-modules-extract-imports/3.0.0_postcss@8.3.8:
@@ -8107,7 +8105,51 @@ packages:
       strip-ansi: 6.0.0
     dev: true
 
-  /tailwindcss/2.2.15_e444c4a095b9e9ba5c645754953637f2:
+  /tailwindcss/2.2.15:
+    resolution: {integrity: sha512-WgV41xTMbnSoTNMNnJvShQZ+8GmY86DmXTrCgnsveNZJdlybfwCItV8kAqjYmU49YiFr+ofzmT1JlAKajBZboQ==}
+    engines: {node: '>=12.13.0'}
+    hasBin: true
+    peerDependencies:
+      autoprefixer: ^10.0.2
+      postcss: ^8.0.9
+    dependencies:
+      arg: 5.0.1
+      bytes: 3.1.0
+      chalk: 4.1.2
+      chokidar: 3.5.2
+      color: 4.0.1
+      cosmiconfig: 7.0.1
+      detective: 5.2.0
+      didyoumean: 1.2.2
+      dlv: 1.1.3
+      fast-glob: 3.2.7
+      fs-extra: 10.0.0
+      glob-parent: 6.0.1
+      html-tags: 3.1.0
+      is-color-stop: 1.1.0
+      is-glob: 4.0.1
+      lodash: 4.17.21
+      lodash.topath: 4.5.2
+      modern-normalize: 1.1.0
+      node-emoji: 1.11.0
+      normalize-path: 3.0.0
+      object-hash: 2.2.0
+      postcss-js: 3.0.3
+      postcss-load-config: 3.1.0
+      postcss-nested: 5.0.6
+      postcss-selector-parser: 6.0.6
+      postcss-value-parser: 4.1.0
+      pretty-hrtime: 1.0.3
+      purgecss: 4.0.3
+      quick-lru: 5.1.1
+      reduce-css-calc: 2.1.8
+      resolve: 1.20.0
+      tmp: 0.2.1
+    transitivePeerDependencies:
+      - ts-node
+    dev: false
+
+  /tailwindcss/2.2.15_autoprefixer@10.3.5:
     resolution: {integrity: sha512-WgV41xTMbnSoTNMNnJvShQZ+8GmY86DmXTrCgnsveNZJdlybfwCItV8kAqjYmU49YiFr+ofzmT1JlAKajBZboQ==}
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -8138,51 +8180,7 @@ packages:
       normalize-path: 3.0.0
       object-hash: 2.2.0
       postcss-js: 3.0.3
-      postcss-load-config: 3.1.0_ts-node@10.2.1
-      postcss-nested: 5.0.6
-      postcss-selector-parser: 6.0.6
-      postcss-value-parser: 4.1.0
-      pretty-hrtime: 1.0.3
-      purgecss: 4.0.3
-      quick-lru: 5.1.1
-      reduce-css-calc: 2.1.8
-      resolve: 1.20.0
-      tmp: 0.2.1
-    transitivePeerDependencies:
-      - ts-node
-    dev: false
-
-  /tailwindcss/2.2.15_ts-node@10.2.1:
-    resolution: {integrity: sha512-WgV41xTMbnSoTNMNnJvShQZ+8GmY86DmXTrCgnsveNZJdlybfwCItV8kAqjYmU49YiFr+ofzmT1JlAKajBZboQ==}
-    engines: {node: '>=12.13.0'}
-    hasBin: true
-    peerDependencies:
-      autoprefixer: ^10.0.2
-      postcss: ^8.0.9
-    dependencies:
-      arg: 5.0.1
-      bytes: 3.1.0
-      chalk: 4.1.2
-      chokidar: 3.5.2
-      color: 4.0.1
-      cosmiconfig: 7.0.1
-      detective: 5.2.0
-      didyoumean: 1.2.2
-      dlv: 1.1.3
-      fast-glob: 3.2.7
-      fs-extra: 10.0.0
-      glob-parent: 6.0.1
-      html-tags: 3.1.0
-      is-color-stop: 1.1.0
-      is-glob: 4.0.1
-      lodash: 4.17.21
-      lodash.topath: 4.5.2
-      modern-normalize: 1.1.0
-      node-emoji: 1.11.0
-      normalize-path: 3.0.0
-      object-hash: 2.2.0
-      postcss-js: 3.0.3
-      postcss-load-config: 3.1.0_ts-node@10.2.1
+      postcss-load-config: 3.1.0
       postcss-nested: 5.0.6
       postcss-selector-parser: 6.0.6
       postcss-value-parser: 4.1.0
@@ -8410,7 +8408,7 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /tsconfck/1.0.0_typescript@4.4.3:
+  /tsconfck/1.0.0:
     resolution: {integrity: sha512-9+flUmolxrnyKAYbNzXZX1UPHUuZsVqM42ioZ1H55r0I+UfJgYui4b7zUxhdJ4o5emEuZo89Cx4TiWG/Dd0c/A==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16, pnpm: '>=6.7.0'}
     hasBin: true
@@ -8419,8 +8417,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-    dependencies:
-      typescript: 4.4.3
     dev: true
 
   /tslib/1.14.1:

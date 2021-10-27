@@ -17,9 +17,6 @@ const debug = createDebugger('vite:ssr-external')
 /**
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
- *
- * TODO right now externals are imported using require(), we probably need to
- * rework this when more libraries ship native ESM distributions for Node.
  */
 export function resolveSSRExternal(
   config: ResolvedConfig,
@@ -95,6 +92,10 @@ export function resolveSSRExternal(
       // node resolve and esm resolve resolves to the same file.
       if (!/\.m?js$/.test(entry)) {
         // entry is not js, cannot externalize
+        continue
+      }
+      if (pkg.type === "module" || entry.endsWith('.mjs')) {
+        ssrExternals.add(id)
         continue
       }
       // check if the entry is cjs
