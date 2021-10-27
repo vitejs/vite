@@ -542,18 +542,16 @@ createServer()
 
 ### server.fs.strict
 
-- **Experimental**
 - **Type:** `boolean`
-- **Default:** `false` (will change to `true` in future versions)
+- **Default:** `true` (enabled by default since Vite 2.7)
 
   Restrict serving files outside of workspace root.
 
 ### server.fs.allow
 
-- **Experimental**
 - **Type:** `string[]`
 
-  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list will result in a 403.
+  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
 
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
 
