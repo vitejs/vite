@@ -159,6 +159,18 @@ export interface FileSystemServeOptions {
    * Will try to search up for workspace root by default.
    */
   allow?: string[]
+
+  /**
+   * Restrict accessing files that matches the patterns.
+   *
+   * This will have higher priority than `allow`.
+   * Glob patterns are supported.
+   *
+   * @default ['.env', '.env.*', '*.crt', '*.pem']
+   *
+   * @experimental
+   */
+  deny?: string[]
 }
 
 /**
@@ -522,7 +534,7 @@ export async function createServer(
 
   // serve static files
   middlewares.use(serveRawFsMiddleware(server))
-  middlewares.use(serveStaticMiddleware(root, config))
+  middlewares.use(serveStaticMiddleware(root, server))
 
   // spa fallback
   if (!middlewareMode || middlewareMode === 'html') {
@@ -687,6 +699,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server = raw || {}
   let allowDirs = server.fs?.allow
+  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
@@ -702,7 +715,8 @@ export function resolveServerOptions(
 
   server.fs = {
     strict: server.fs?.strict ?? true,
-    allow: allowDirs
+    allow: allowDirs,
+    deny
   }
   return server as ResolvedServerOptions
 }

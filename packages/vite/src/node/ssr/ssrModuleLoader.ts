@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { pathToFileURL } from 'url'
 import { ViteDevServer } from '..'
-import { cleanUrl, resolveFrom, unwrapId } from '../utils'
+import { dynamicImport, cleanUrl, isBuiltin, resolveFrom, unwrapId, usingDynamicImport } from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -95,12 +95,7 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeRequire(
-        dep,
-        mod.file,
-        server.config.root,
-        !!server.config.resolve.preserveSymlinks
-      )
+      return nodeImport(dep, mod.file, server.config)
     }
     dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
@@ -178,15 +173,29 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
-function nodeRequire(
+// In node@12+ we can use dynamic import to load CJS and ESM
+async function nodeImport(
   id: string,
   importer: string | null,
-  root: string,
-  preserveSymlinks: boolean
+  config: ViteDevServer['config']
 ) {
-  const mod = require(resolve(id, importer, root, preserveSymlinks))
-  const defaultExport = mod.__esModule ? mod.default : mod
-  // rollup-style default import interop for cjs
+  let url: string
+  // `resolve` doesn't handle `node:` builtins, so handle them directly
+  if (id.startsWith('node:') || isBuiltin(id)) {
+    url = id
+  } else {
+    url = resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)
+    if (usingDynamicImport) {
+      url = pathToFileURL(url).toString()
+    }
+  }
+  const mod = await dynamicImport(url)
+  return proxyESM(id, mod)
+}
+
+// rollup-style default import interop for cjs
+function proxyESM(id: string, mod: any) {
+  const defaultExport = mod.__esModule ? mod.default : mod.default ? mod.default : mod
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport

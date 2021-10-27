@@ -1,3 +1,12 @@
+## [1.0.6](https://github.com/vitejs/vite/compare/plugin-react@1.0.5...plugin-react@1.0.6) (2021-10-25)
+
+
+### Bug Fixes
+
+* **plugin-react:** account for querystring in transform hook ([#5333](https://github.com/vitejs/vite/issues/5333)) ([13c3813](https://github.com/vitejs/vite/commit/13c381368caf8302a0c5b7cec07dfc0eb344bede))
+
+
+
 ## [1.0.5](https://github.com/vitejs/vite/compare/plugin-react@1.0.4...plugin-react@1.0.5) (2021-10-18)
 
 
