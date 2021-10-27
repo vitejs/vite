@@ -23,6 +23,9 @@
 <h2>Nested Entry</h2>
 <pre class="nested-entry"></pre>
 
+<h2>Denied</h2>
+<pre class="unsafe-dotenv"></pre>
+
 <script type="module">
   import '../../entry'
   import json, { msg } from '../../safe.json'
@@ -31,7 +34,7 @@
   text('.named', msg)
 
   // inside allowed dir, safe fetch
-  fetch('/src/.env')
+  fetch('/src/safe.txt')
     .then((r) => {
       text('.safe-fetch-status', r.status)
       return r.text()
@@ -41,7 +44,7 @@
     })
 
   // outside of allowed dir, treated as unsafe
-  fetch('/.env')
+  fetch('/unsafe.txt')
     .then((r) => {
       text('.unsafe-fetch-status', r.status)
       return r.text()
@@ -71,6 +74,15 @@
     })
     .then((data) => {
       text('.unsafe-fs-fetch', JSON.stringify(data))
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // .env, denied by default
+  fetch('/@fs/' + ROOT + '/root/.env')
+    .then((r) => {
+      text('.unsafe-dotenv', r.status)
     })
     .catch((e) => {
       console.error(e)
