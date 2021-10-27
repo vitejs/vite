@@ -315,6 +315,24 @@ function tryFsResolve(
   }
 
   let res: string | undefined
+
+  // if we fould postfix exist, we should first try resolving file with postfix. details see #4703.
+  if (
+    postfix &&
+    (res = tryResolveFile(
+      fsPath,
+      '',
+      options,
+      false,
+      targetWeb,
+      preserveSymlinks,
+      options.tryPrefix,
+      options.skipPackageJson
+    ))
+  ) {
+    return res
+  }
+
   if (
     (res = tryResolveFile(
       file,
@@ -332,6 +350,22 @@ function tryFsResolve(
 
   for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
     if (
+      postfix &&
+      (res = tryResolveFile(
+        fsPath + ext,
+        '',
+        options,
+        false,
+        targetWeb,
+        preserveSymlinks,
+        options.tryPrefix,
+        options.skipPackageJson
+      ))
+    ) {
+      return res
+    }
+
+    if (
       (res = tryResolveFile(
         file + ext,
         postfix,
@@ -345,6 +379,22 @@ function tryFsResolve(
     ) {
       return res
     }
+  }
+
+  if (
+    postfix &&
+    (res = tryResolveFile(
+      fsPath,
+      '',
+      options,
+      tryIndex,
+      targetWeb,
+      preserveSymlinks,
+      options.tryPrefix,
+      options.skipPackageJson
+    ))
+  ) {
+    return res
   }
 
   if (

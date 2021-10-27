@@ -89,3 +89,9 @@ test('resolve.mainFields', async () => {
 test('resolve.conditions', async () => {
   expect(await page.textContent('.custom-condition')).toMatch('[success]')
 })
+
+test('resolve package that contains # in path', async () => {
+  expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
+    '[success]'
+  )
+})
