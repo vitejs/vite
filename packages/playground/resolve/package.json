@@ -16,6 +16,7 @@
     "resolve-custom-condition": "link:./custom-condition",
     "@babel/runtime": "^7.12.5",
     "normalize.css": "^8.0.1",
+    "es5-ext": "0.10.53",
     "resolve-linked": "workspace:*"
   }
 }
