@@ -13,6 +13,7 @@ module.exports = {
         scriptMixed: resolve(__dirname, 'scriptMixed.html'),
         zeroJS: resolve(__dirname, 'zeroJS.html'),
         noHead: resolve(__dirname, 'noHead.html'),
+        noBody: resolve(__dirname, 'noBody.html'),
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
         inline3: resolve(__dirname, 'inline/unique.html')
@@ -35,12 +36,11 @@ module.exports = {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
   </head>`
-          return `
-<!DOCTYPE html>
+          return `<!DOCTYPE html>
 <html lang="en">${filename.includes('noHead') ? '' : head}
-<body>
+${filename.includes('noBody') ? html : `<body>
   ${html}
-</body>
+</body>`}
 </html>
   `
         }
