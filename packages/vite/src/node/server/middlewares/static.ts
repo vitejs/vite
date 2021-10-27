@@ -137,8 +137,7 @@ export function isFileServingAllowed(
   url: string,
   server: ViteDevServer
 ): boolean {
-  // explicitly disabled
-  if (server.config.server.fs.strict === false) return true
+  if (!server.config.server.fs.strict) return true
 
   const cleanedUrl = cleanUrl(url)
   const file = ensureLeadingSlash(normalizePath(cleanedUrl))
@@ -150,18 +149,6 @@ export function isFileServingAllowed(
 
   if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
     return true
-
-  if (!server.config.server.fs.strict) {
-    if (isFileReadable(cleanedUrl)) {
-      server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
-      server.config.logger.warnOnce(
-        `For security concerns, accessing files outside of serving allow list will ` +
-        `be restricted by default in the future version of Vite. ` +
-        `Refer to https://vitejs.dev/config/#server-fs-allow for more details.`
-      )
-    }
-    return true
-  }
 
   return false
 }
