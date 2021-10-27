@@ -90,7 +90,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       server = _server
     },
 
-    resolveId(id, importer, resolveOpts, ssr) {
+    resolveId(id, importer, resolveOpts) {
+      const ssr = resolveOpts?.ssr === true
       if (id.startsWith(browserExternalId)) {
         return id
       }

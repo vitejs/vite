@@ -18,7 +18,7 @@ import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset-import-meta-url',
-    async transform(code, id, ssr) {
+    async transform(code, id, options) {
       if (code.includes('new URL') && code.includes(`import.meta.url`)) {
         const importMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\)/g
@@ -30,7 +30,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
           const { 0: exp, 1: rawUrl, index } = match
 
-          if (ssr) {
+          if (options?.ssr) {
             this.error(
               `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
               index

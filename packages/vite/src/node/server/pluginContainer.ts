@@ -450,8 +450,7 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          {},
-          ssr
+          { ssr }
         )
         if (!result) continue
 
@@ -499,7 +498,7 @@ export async function createPluginContainer(
       for (const plugin of plugins) {
         if (!plugin.load) continue
         ctx._activePlugin = plugin
-        const result = await plugin.load.call(ctx as any, id, ssr)
+        const result = await plugin.load.call(ctx as any, id, { ssr })
         if (result != null) {
           return result
         }
@@ -520,7 +519,7 @@ export async function createPluginContainer(
         const start = isDebug ? performance.now() : 0
         let result: TransformResult | string | undefined
         try {
-          result = await plugin.transform.call(ctx as any, code, id, ssr)
+          result = await plugin.transform.call(ctx as any, code, id, { ssr })
         } catch (e) {
           ctx.error(e)
         }

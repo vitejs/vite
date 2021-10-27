@@ -121,18 +121,17 @@ export interface Plugin extends RollupPlugin {
     this: PluginContext,
     source: string,
     importer: string | undefined,
-    options: { custom?: CustomPluginOptions },
-    ssr?: boolean
+    options: { custom?: CustomPluginOptions, ssr?: boolean }
   ): Promise<ResolveIdResult> | ResolveIdResult
   load?(
     this: PluginContext,
     id: string,
-    ssr?: boolean
+    options?: { ssr?: boolean }
   ): Promise<LoadResult> | LoadResult
   transform?(
     this: TransformPluginContext,
     code: string,
     id: string,
-    ssr?: boolean
+    options?: { ssr?: boolean }
   ): Promise<TransformResult> | TransformResult
 }
