@@ -47,7 +47,7 @@ describe('main', () => {
     })
 
     test('denied', async () => {
-      expect(await page.textContent('.unsafe-dotenv')).toBe('403')
+      expect(await page.textContent('.unsafe-dotenv')).toBe('404')
     })
   } else {
     test('dummy test to make jest happy', async () => {
