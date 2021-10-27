@@ -405,7 +405,7 @@ export async function resolveConfig(
             ]
           }))
       }
-      return (await container.resolveId(id, importer, undefined, ssr))?.id
+      return (await container.resolveId(id, importer, { ssr }))?.id
     }
   }
 

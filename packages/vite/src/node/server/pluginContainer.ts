@@ -85,16 +85,25 @@ export interface PluginContainer {
   resolveId(
     id: string,
     importer?: string,
-    skip?: Set<Plugin>,
-    ssr?: boolean
+    options?: {
+      skip?: Set<Plugin>,
+      ssr?: boolean
+    }
   ): Promise<PartialResolvedId | null>
   transform(
     code: string,
     id: string,
-    inMap?: SourceDescription['map'],
-    ssr?: boolean
+    options?: {
+      inMap?: SourceDescription['map'],
+      ssr?: boolean
+    }
   ): Promise<SourceDescription | null>
-  load(id: string, ssr?: boolean): Promise<LoadResult | null>
+  load(
+    id: string,
+    options?: {
+      ssr?: boolean
+    }
+  ): Promise<LoadResult | null>
   close(): Promise<void>
 }
 
@@ -188,12 +197,12 @@ export async function createPluginContainer(
       importer?: string,
       options?: { skipSelf?: boolean }
     ) {
-      let skips: Set<Plugin> | undefined
+      let skip: Set<Plugin> | undefined
       if (options?.skipSelf && this._activePlugin) {
-        skips = new Set(this._resolveSkips)
-        skips.add(this._activePlugin)
+        skip = new Set(this._resolveSkips)
+        skip.add(this._activePlugin)
       }
-      let out = await container.resolveId(id, importer, skips, this.ssr)
+      let out = await container.resolveId(id, importer, { skip, ssr: this.ssr })
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -420,17 +429,19 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(rawId, importer = join(root, 'index.html'), skips, ssr) {
+    async resolveId(rawId, importer = join(root, 'index.html'), options) {
+      const skip = options?.skip
+      const ssr = options?.ssr
       const ctx = new Context()
       ctx.ssr = !!ssr
-      ctx._resolveSkips = skips
+      ctx._resolveSkips = skip
       const resolveStart = isDebug ? performance.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of plugins) {
         if (!plugin.resolveId) continue
-        if (skips?.has(plugin)) continue
+        if (skip?.has(plugin)) continue
 
         ctx._activePlugin = plugin
 
@@ -481,7 +492,8 @@ export async function createPluginContainer(
       }
     },
 
-    async load(id, ssr) {
+    async load(id, options) {
+      const ssr = options?.ssr
       const ctx = new Context()
       ctx.ssr = !!ssr
       for (const plugin of plugins) {
@@ -495,7 +507,9 @@ export async function createPluginContainer(
       return null
     },
 
-    async transform(code, id, inMap, ssr) {
+    async transform(code, id, options) {
+      const inMap = options?.inMap
+      const ssr = options?.ssr
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
       for (const plugin of plugins) {
