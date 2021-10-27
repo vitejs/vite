@@ -66,7 +66,8 @@ cli
 // dev
 cli
   .command('[root]') // default command
-  .alias('serve')
+  .alias('serve') // the command is called 'serve' in Vite's API
+  .alias('dev') // alias to align with the script name
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
