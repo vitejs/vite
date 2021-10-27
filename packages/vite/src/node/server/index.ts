@@ -63,6 +63,10 @@ export interface ServerOptions {
   host?: string | boolean
   port?: number
   /**
+   * If enabled, vite will exit if specified port is already in use
+   */
+  strictPort?: boolean
+  /**
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
@@ -71,19 +75,6 @@ export interface ServerOptions {
    * Open browser window on startup
    */
   open?: boolean | string
-  /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   */
-  force?: boolean
-  /**
-   * Configure HMR-specific options (port, host, path & protocol)
-   */
-  hmr?: HmrOptions | boolean
-  /**
-   * chokidar watch options
-   * https://github.com/paulmillr/chokidar#api
-   */
-  watch?: WatchOptions
   /**
    * Configure custom proxy rules for the dev server. Expects an object
    * of `{ key: options }` pairs.
@@ -114,10 +105,20 @@ export interface ServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
+
   /**
-   * If enabled, vite will exit if specified port is already in use
+   * Force dep pre-optimization regardless of whether deps have changed.
    */
-  strictPort?: boolean
+  force?: boolean
+  /**
+   * Configure HMR-specific options (port, host, path & protocol)
+   */
+  hmr?: HmrOptions | boolean
+  /**
+   * chokidar watch options
+   * https://github.com/paulmillr/chokidar#api
+   */
+  watch?: WatchOptions
   /**
    * Create Vite dev server to be used as a middleware in an existing server
    */
