@@ -7,7 +7,7 @@
     "build": "vite build --debug legacy",
     "build:custom-filename": "vite --config ./vite.config-custom-filename.js build  --debug legacy",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@vitejs/plugin-legacy": "workspace:*"

@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite --force",
     "build": "vite build",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@symlinks/moduleA": "link:./moduleA"
