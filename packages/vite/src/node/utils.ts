@@ -43,6 +43,13 @@ export function isBuiltin(id: string): boolean {
   return builtins.includes(id)
 }
 
+export function moduleListContains(
+  moduleList: string[] | undefined,
+  id: string
+): boolean | undefined {
+  return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
+}
+
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
