@@ -57,7 +57,7 @@ If you want to customize env variables prefix, see [envPrefix](/config/index#env
 
 By default, Vite provides type definition for `import.meta.env`. Make sure to include `"vite/client"` in [`compilerOptions.types` of `tsconfig.json`](https://www.typescriptlang.org/tsconfig/#types):
 
-```json5
+```jsonc
 {
   "compilerOptions": {
     "types": [/* ... */ "vite/client"]
