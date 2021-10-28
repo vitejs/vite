@@ -7,6 +7,16 @@ import { isCSSRequest } from './css'
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
 
+  const processNodeEnv: Record<string, string> = {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
+    'global.process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || config.mode
+    ),
+    'globalThis.process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || config.mode
+    )
+  }
+
   const userDefine: Record<string, string> = {}
   for (const key in config.define) {
     const val = config.define[key]
@@ -30,32 +40,42 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const replacements: Record<string, string | undefined> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
-    'global.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    'globalThis.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    ...userDefine,
-    ...importMetaKeys,
-    'process.env.': `({}).`,
-    'global.process.env.': `({}).`,
-    'globalThis.process.env.': `({}).`
+  function generatePattern(
+    ssr: boolean
+  ): [Record<string, string | undefined>, RegExp] {
+    const processEnv: Record<string, string> = {}
+    if (!ssr || config.ssr?.target === 'webworker') {
+      Object.assign(processEnv, {
+        'process.env.': `({}).`,
+        'global.process.env.': `({}).`,
+        'globalThis.process.env.': `({}).`
+      })
+    }
+
+    const replacements: Record<string, string> = {
+      ...processNodeEnv,
+      ...userDefine,
+      ...importMetaKeys,
+      ...processEnv
+    }
+
+    const pattern = new RegExp(
+      // Do not allow preceding '.', but do allow preceding '...' for spread operations
+      '(?<!(?<!\\.\\.)\\.)\\b(' +
+        Object.keys(replacements)
+          .map((str) => {
+            return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+          })
+          .join('|') +
+        ')\\b',
+      'g'
+    )
+
+    return [replacements, pattern]
   }
 
-  const pattern = new RegExp(
-    // Do not allow preceding '.', but do allow preceding '...' for spread operations
-    '(?<!(?<!\\.\\.)\\.)\\b(' +
-      Object.keys(replacements)
-        .map((str) => {
-          return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-        })
-        .join('|') +
-      ')\\b',
-    'g'
-  )
+  const defaultPattern = generatePattern(false)
+  const ssrPattern = generatePattern(true)
 
   return {
     name: 'vite:define',
@@ -74,6 +94,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
+
+      const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
