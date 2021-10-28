@@ -55,14 +55,10 @@ If you want to customize env variables prefix, see [envPrefix](/config/index#env
 
 ### IntelliSense for TypeScript
 
-By default, Vite provides type definition for `import.meta.env`. Make sure to include `"vite/client"` in [`compilerOptions.types` of `tsconfig.json`](https://www.typescriptlang.org/tsconfig/#types):
+By default, Vite provides type definition for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). Make sure to reference it in your project, for instance in `src/env.d.ts`
 
-```jsonc
-{
-  "compilerOptions": {
-    "types": [/* ... */ "vite/client"]
-  }
-}
+```typescript
+/// <reference types="vite/client" />
 ```
 
 While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables which prefixed with `VITE_`.
