@@ -3,7 +3,9 @@
 // @ts-check
 const fs = require('fs')
 const path = require('path')
-const argv = require('minimist')(process.argv.slice(2))
+// Avoids autoconversion to number of the project name by defining that the args
+// non associated with an option ( _ ) needs to be parsed as a string. See #4606
+const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
 // eslint-disable-next-line node/no-restricted-require
 const prompts = require('prompts')
 const {
@@ -84,16 +86,16 @@ const FRAMEWORKS = [
     ]
   },
   {
-    name: 'lit-element',
+    name: 'lit',
     color: lightRed,
     variants: [
       {
-        name: 'lit-element',
+        name: 'lit',
         display: 'JavaScript',
         color: yellow
       },
       {
-        name: 'lit-element-ts',
+        name: 'lit-ts',
         display: 'TypeScript',
         color: blue
       }
@@ -254,14 +256,23 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2))
 
-  const pkgManager = /yarn/.test(process.env.npm_execpath) ? 'yarn' : 'npm'
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
     console.log(`  cd ${path.relative(cwd, root)}`)
   }
-  console.log(`  ${pkgManager === 'yarn' ? `yarn` : `npm install`}`)
-  console.log(`  ${pkgManager === 'yarn' ? `yarn dev` : `npm run dev`}`)
+  switch (pkgManager) {
+    case 'yarn':
+      console.log('  yarn')
+      console.log('  yarn dev')
+      break
+    default:
+      console.log(`  ${pkgManager} install`)
+      console.log(`  ${pkgManager} run dev`)
+      break
+  }
   console.log()
 }
 
@@ -315,6 +326,20 @@ function emptyDir(dir) {
     } else {
       fs.unlinkSync(abs)
     }
+  }
+}
+
+/**
+ * @param {string | undefined} userAgent process.env.npm_config_user_agent
+ * @returns object | undefined
+ */
+function pkgFromUserAgent(userAgent) {
+  if (!userAgent) return undefined
+  const pkgSpec = userAgent.split(' ')[0]
+  const pkgSpecArr = pkgSpec.split('/')
+  return {
+    name: pkgSpecArr[0],
+    version: pkgSpecArr[1]
   }
 }
 

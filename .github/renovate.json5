@@ -9,18 +9,29 @@
   "pin": false,
   "rangeStrategy": "bump",
   "node": false,
+  "packageRules": [
+    {
+      "depTypeList": ["peerDependencies"],
+      "enabled": false
+    }
+  ],
   "ignoreDeps": [
     // manually bumping
     "esbuild",
     "rollup",
-    "@vue/compiler-sfc",
     "node",
+    "ts-node",
+    "typescript",
 
     // breaking changes
     "source-map",
     "react-refresh",
 
     // breaks since "3.0.1", needs futher investigate
-    "postcss-load-config"
+    "postcss-load-config",
+
+    // ESM Only
+    "strip-ansi",
+    "periscopic"
   ]
 }

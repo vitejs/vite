@@ -55,7 +55,7 @@ Vite also directly supports TS config files. You can use `vite.config.ts` with t
 If the config needs to conditional determine options based on the command (`serve` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
 
 ```js
-export default ({ command, mode }) => {
+export default defineConfig(({ command, mode }) => {
   if (command === 'serve') {
     return {
       // serve specific config
@@ -65,7 +65,7 @@ export default ({ command, mode }) => {
       // build specific config
     }
   }
-}
+})
 ```
 
 ### Async Config
@@ -73,12 +73,12 @@ export default ({ command, mode }) => {
 If the config needs to call async function, it can export a async function instead:
 
 ```js
-export default async ({ command, mode }) => {
+export default defineConfig(async ({ command, mode }) => {
   const data = await asyncFunction()
   return {
     // build specific config
   }
-}
+})
 ```
 
 ## Shared Options
@@ -206,6 +206,16 @@ export default async ({ command, mode }) => {
 
   List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
+### resolve.preserveSymlinks
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  Enabling this setting causes vite to determine file identity by the original file path (i.e. the path without following symlinks) instead of the real file path (i.e. the path after following symlinks).
+
+- **Related:** [esbuild#preserve-symlinks](https://esbuild.github.io/api/#preserve-symlinks), [webpack#resolve.symlinks
+  ](https://webpack.js.org/configuration/resolve/#resolvesymlinks)
+
 ### css.modules
 
 - **Type:**
@@ -213,7 +223,7 @@ export default async ({ command, mode }) => {
   ```ts
   interface CSSModulesOptions {
     scopeBehaviour?: 'global' | 'local'
-    globalModulePaths?: string[]
+    globalModulePaths?: RegExp[]
     generateScopedName?:
       | string
       | ((name: string, filename: string, css: string) => string)
@@ -242,7 +252,7 @@ export default async ({ command, mode }) => {
   Specify options to pass to CSS pre-processors. Example:
 
   ```js
-  export default {
+  export default defineConfig({
     css: {
       preprocessorOptions: {
         scss: {
@@ -250,7 +260,7 @@ export default async ({ command, mode }) => {
         }
       }
     }
-  }
+  })
   ```
 
 ### json.namedExports
@@ -276,12 +286,12 @@ export default async ({ command, mode }) => {
   `ESBuildOptions` extends [ESbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
 
   ```js
-  export default {
+  export default defineConfig({
     esbuild: {
       jsxFactory: 'h',
       jsxFragment: 'Fragment'
     }
-  }
+  })
   ```
 
   By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, both of which expect type of `string | RegExp | (string | RegExp)[]`.
@@ -289,11 +299,11 @@ export default async ({ command, mode }) => {
   In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
 
   ```js
-  export default {
+  export default defineConfig({
     esbuild: {
       jsxInject: `import React from 'react'`
     }
-  }
+  })
   ```
 
   Set to `false` to disable ESbuild transforms.
@@ -303,13 +313,21 @@ export default async ({ command, mode }) => {
 - **Type:** `string | RegExp | (string | RegExp)[]`
 - **Related:** [Static Asset Handling](/guide/assets)
 
-  Specify additional file types to be treated as static assets so that:
+  Specify additional [picomatch patterns](https://github.com/micromatch/picomatch) to be treated as static assets so that:
 
   - They will be excluded from the plugin transform pipeline when referenced from HTML or directly requested over `fetch` or XHR.
 
   - Importing them from JS will return their resolved URL string (this can be overwritten if you have a `enforce: 'pre'` plugin to handle the asset type differently).
 
   The built-in asset type list can be found [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts).
+
+  **Example:**
+
+  ```js
+  export default defineConfig({
+    assetsInclude: ['**/*.gltf']
+  })
+  ```
 
 ### logLevel
 
@@ -333,6 +351,18 @@ export default async ({ command, mode }) => {
 
   See [here](/guide/env-and-mode#env-files) for more about environment files.
 
+### envPrefix
+
+- **Type:** `string | string[]`
+- **Default:** `VITE_`
+
+  Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+
+:::warning SECURITY NOTES
+
+- `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+  :::
+
 ## Server Options
 
 ### server.host
@@ -348,6 +378,7 @@ export default async ({ command, mode }) => {
 ### server.port
 
 - **Type:** `number`
+- **Default:** `3000`
 
   Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
 
@@ -374,11 +405,11 @@ export default async ({ command, mode }) => {
   **Example:**
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       open: '/docs/index.html'
     }
-  }
+  })
   ```
 
 ### server.proxy
@@ -392,11 +423,11 @@ export default async ({ command, mode }) => {
   **Example:**
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       proxy: {
         // string shorthand
-        '/foo': 'http://localhost:4567/foo',
+        '/foo': 'http://localhost:4567',
         // with options
         '/api': {
           target: 'http://jsonplaceholder.typicode.com',
@@ -415,11 +446,11 @@ export default async ({ command, mode }) => {
           changeOrigin: true,
           configure: (proxy, options) => {
             // proxy will be an instance of 'http-proxy'
-          }),
+          }
         }
       }
     }
-  }
+  })
   ```
 
 ### server.cors
@@ -445,13 +476,32 @@ export default async ({ command, mode }) => {
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
-  When using `server.middlewareMode` and `server.https`, setting `server.hmr.server` to your HTTPS server will process HMR secure connection requests through your server. This can be helpful when using self-signed certificates.
+  When using `server.middlewareMode` or `server.https`, assigning `server.hmr.server` to your HTTP(S) server will process HMR connection requests through your server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
 ### server.watch
 
 - **Type:** `object`
 
   File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
+
+  When running Vite on Windows Subsystem for Linux (WSL) 2, if the project folder resides in a Windows filesystem, you'll need to set this option to `{ usePolling: true }`. This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739) with the Windows filesystem.
+
+  The Vite server watcher skips `.git/` and `node_modules/` directories by default. If you want to watch a package inside `node_modules/`, you can pass a negated glob pattern to `server.watch.ignored`. That is:
+
+  ```js
+  export default defineConfig({
+    server: {
+      watch: {
+        ignored: ['!**/node_modules/your-package-name/**']
+      }
+    },
+    // The watched package must be excluded from optimization,
+    // so that it can appear in the dependency graph and trigger hot reload.
+    optimizeDeps: {
+      exclude: ['your-package-name']
+    }
+  })
+  ```
 
 ### server.middlewareMode
 
@@ -473,7 +523,7 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create vite server in middleware mode.
+  // Create Vite server in middleware mode.
   const vite = await createViteServer({
     server: { middlewareMode: 'ssr' }
   })
@@ -492,18 +542,16 @@ createServer()
 
 ### server.fs.strict
 
-- **Experimental**
 - **Type:** `boolean`
-- **Default:** `false` (will change to `true` in future versions)
+- **Default:** `true` (enabled by default since Vite 2.7)
 
   Restrict serving files outside of workspace root.
 
 ### server.fs.allow
 
-- **Experimental**
 - **Type:** `string[]`
 
-  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list will result in a 403.
+  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
 
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
 
@@ -511,24 +559,66 @@ createServer()
   - contains one of the following file
     - `pnpm-workspace.yaml`
 
-  Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example
+  Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example:
 
   ```js
-  export default {
+  export default defineConfig({
     server: {
       fs: {
         // Allow serving files from one level up to the project root
         allow: ['..']
       }
     }
-  }
+  })
   ```
+
+  When `server.fs.allow` is specified, the auto workspace root detection will be disabled. To extend the original behavior, a utility `searchForWorkspaceRoot` is exposed:
+
+  ```js
+  import { defineConfig, searchForWorkspaceRoot } from 'vite'
+
+  export default defineConfig({
+    server: {
+      fs: {
+        allow: [
+          // search up for workspace root
+          searchForWorkspaceRoot(process.cwd()),
+          // your custom rules
+          '/path/to/custom/allow'
+        ]
+      }
+    }
+  })
+  ```
+
+### server.fs.deny
+
+- **Experimental**
+- **Type:** `string[]`
+
+  Blocklist for sensitive files being restricted to be served by Vite dev server.
+
+  Default to `['.env', '.env.*', '*.{pem,crt}']`.
+
+### server.origin
+
+- **Type:** `string`
+
+Defines the origin of the generated asset URLs during development.
+
+```js
+export default defineConfig({
+  server: {
+    origin: 'http://127.0.0.1:8080/'
+  }
+})
+```
 
 ## Build Options
 
 ### build.target
 
-- **Type:** `string`
+- **Type:** `string | string[]`
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
@@ -536,27 +626,25 @@ createServer()
 
   Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
 
-  - If the [`build.minify`](#build-minify) option is `'terser'` (the default), `'esnext'` will be forced down to `'es2019'`.
+  - If the [`build.minify`](#build-minify) option is `'terser'`, `'esnext'` will be forced down to `'es2019'`.
   - In other cases, it will perform no transpilation at all.
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
   Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
-### build.polyfillDynamicImport
+### build.polyfillModulePreload
 
 - **Type:** `boolean`
-- **Default:** `false`
+- **Default:** `true`
 
-  Whether to automatically inject [dynamic import polyfill](https://github.com/GoogleChromeLabs/dynamic-import-polyfill).
+  Whether to automatically inject [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill).
 
-  If set to true, the polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-html custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
+  If set to `true`, the polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-html custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
 
   ```js
-  import 'vite/dynamic-import-polyfill'
+  import 'vite/modulepreload-polyfill'
   ```
-
-  When using [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), the plugin sets this option to `true` automatically.
 
   Note: the polyfill does **not** apply to [Library Mode](/guide/build#library-mode). If you need to support browsers without native dynamic import, you should probably avoid using it in your library.
 
@@ -593,6 +681,17 @@ createServer()
   Enable/disable CSS code splitting. When enabled, CSS imported in async chunks will be inlined into the async chunk itself and inserted when the chunk is loaded.
 
   If disabled, all CSS in the entire project will be extracted into a single CSS file.
+
+### build.cssTarget
+
+- **Type:** `string | string[]`
+- **Default:** the same as [`build.target`](/config/#build-target)
+
+  This options allows users to set a different browser target for CSS minification from the one used for JavaScript transpilation.
+
+  It should only be used when you are targeting a non-mainstream browser.
+  One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
+  In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transform `rgba()` colors into `#RGBA` hexadecimal notations.
 
 ### build.sourcemap
 
@@ -634,24 +733,26 @@ createServer()
 
   When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
 
+### build.ssrManifest
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Related:** [Server-Side Rendering](/guide/ssr)
+
+  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
+
 ### build.minify
 
 - **Type:** `boolean | 'terser' | 'esbuild'`
-- **Default:** `'terser'`
+- **Default:** `'esbuild'`
 
-  Set to `false` to disable minification, or specify the minifier to use. The default is [Terser](https://github.com/terser/terser) which is slower but produces smaller bundles in most cases. Esbuild minification is significantly faster but will result in slightly larger bundles.
+  Set to `false` to disable minification, or specify the minifier to use. The default is [Esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
 ### build.terserOptions
 
 - **Type:** `TerserOptions`
 
   Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
-
-### build.cleanCssOptions
-
-- **Type:** `CleanCSS.Options`
-
-  Constructor options to pass on to [clean-css](https://github.com/jakubpawlowicz/clean-css#constructor-options).
 
 ### build.write
 
@@ -665,7 +766,7 @@ createServer()
 - **Type:** `boolean`
 - **Default:** `true` if `outDir` is inside `root`
 
-  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentially removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
+  By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentally removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
 ### build.brotliSize
 
@@ -698,7 +799,7 @@ createServer()
 
   By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
 
-  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from vite project root. This will overwrite default entries inference.
+  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference.
 
 ### optimizeDeps.exclude
 
@@ -707,7 +808,16 @@ createServer()
   Dependencies to exclude from pre-bundling.
 
   :::warning CommonJS
-  CommonJS dependencies should not be excluded from optimization. If an ESM dependency has a nested CommonJS dependency, it should not be excluded as well.
+  CommonJS dependencies should not be excluded from optimization. If an ESM dependency is excluded from optimization, but has a nested CommonJS dependency, the CommonJS dependency should be added to `optimizeDeps.include`. Example:
+
+  ```js
+  export default defineConfig({
+    optimizeDeps: {
+      include: ['esm-dep > cjs-dep']
+    }
+  })
+  ```
+
   :::
 
 ### optimizeDeps.include
@@ -741,9 +851,9 @@ SSR options may be adjusted in minor releases.
 
 ### ssr.noExternal
 
-- **Type:** `string | RegExp | (string | RegExp)[]`
+- **Type:** `string | RegExp | (string | RegExp)[] | true`
 
-  Prevent listed dependencies from being externalized for SSR.
+  Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized.
 
 ### ssr.target
 

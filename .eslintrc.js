@@ -11,7 +11,7 @@ module.exports = defineConfig({
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
-    ecmaVersion: 2020
+    ecmaVersion: 2021
   },
   rules: {
     eqeqeq: ['warn', 'always', { null: 'never' }],
@@ -29,7 +29,14 @@ module.exports = defineConfig({
     'node/no-missing-import': [
       'error',
       {
-        allowModules: ['types', 'estree', 'testUtils', 'stylus'],
+        allowModules: [
+          'types',
+          'estree',
+          'testUtils',
+          'less',
+          'sass',
+          'stylus'
+        ],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
@@ -37,7 +44,7 @@ module.exports = defineConfig({
       'error',
       {
         // for try-catching yarn pnp
-        allowModules: ['pnpapi'],
+        allowModules: ['pnpapi', 'vite'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
@@ -76,6 +83,7 @@ module.exports = defineConfig({
       'error',
       { allow: ['arrowFunctions'] }
     ],
+    '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-explicit-any': 'off', // maybe we should turn this on in a new PR
     '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
     '@typescript-eslint/no-inferrable-types': 'off',
@@ -88,6 +96,12 @@ module.exports = defineConfig({
       files: ['packages/vite/src/node/**'],
       rules: {
         'no-console': ['error']
+      }
+    },
+    {
+      files: ['packages/vite/types/**'],
+      rules: {
+        'node/no-extraneous-import': 'off'
       }
     },
     {

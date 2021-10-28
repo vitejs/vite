@@ -4,6 +4,17 @@ Vite plugins extends Rollup's well-designed plugin interface with a few extra Vi
 
 **It is recommended to go through [Rollup's plugin documentation](https://rollupjs.org/guide/en/#plugin-development) first before reading the sections below.**
 
+## Authoring a Plugin
+
+Vite strives to offer established patterns out of the box, so before creating a new plugin make sure that you check the [Features guide](https://vitejs.dev/guide/features) to see if your need is covered. Also review available community plugins, both in the form of a [compatible Rollup plugin](https://github.com/rollup/awesome) and [Vite Specific plugins](https://github.com/vitejs/awesome-vite#plugins)
+
+When creating a plugin, you can inline it in your `vite.config.js`. There is no need to create a new package for it. Once you see that a plugin was useful in your projects, consider sharing it to help others [in the ecosystem](https://chat.vitejs.dev).
+
+::: tip
+When learning, debugging, or authoring plugins we suggest including [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect) in your project. It allows you to inspect the intermediate state of Vite plugins. After installing, you can visit `localhost:3000/__inspect/` to inspect the modules and transformation stack of your project. Check out install instructions in the [vite-plugin-inspect docs](https://github.com/antfu/vite-plugin-inspect).
+![vite-plugin-inspect](/images/vite-plugin-inspect.png)
+:::
+
 ## Conventions
 
 If the plugin doesn't use Vite specific hooks and can be implemented as a [Compatible Rollup Plugin](#rollup-plugin-compatibility), then it is recommended to use the [Rollup Plugin naming conventions](https://rollupjs.org/guide/en/#conventions)
@@ -34,9 +45,9 @@ Users will add plugins to the project `devDependencies` and configure them using
 import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
 
-export default {
+export default defineConfig({
   plugins: [vitePlugin(), rollupPlugin()]
-}
+})
 ```
 
 Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins.
@@ -55,11 +66,12 @@ export default function framework(config) {
 
 ```js
 // vite.config.js
+import { defineConfig } from 'vite'
 import framework from 'vite-plugin-framework'
 
-export default {
+export default defineConfig({
   plugins: [framework()]
-}
+})
 ```
 
 ## Simple Examples
@@ -278,7 +290,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `transformIndexHtml`
 
-- **Type:** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post' transform: IndexHtmlTransformHook }`
+- **Type:** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post', transform: IndexHtmlTransformHook }`
 - **Kind:** `async`, `sequential`
 
   Dedicated hook for transforming `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
@@ -413,6 +425,15 @@ function myPlugin() {
 }
 ```
 
+A function can also be used for more precise control:
+
+```js
+apply(config, { command }) {
+  // apply only on build but not for SSR
+  return command === 'build' && !config.build.ssr
+}
+```
+
 ## Rollup Plugin Compatibility
 
 A fair number of Rollup plugins will work directly as a Vite plugin (e.g. `@rollup/plugin-alias` or `@rollup/plugin-json`), but not all of them, since some plugin hooks do not make sense in an unbundled dev server context.
@@ -429,8 +450,9 @@ You can also augment an existing Rollup plugin with Vite-only properties:
 ```js
 // vite.config.js
 import example from 'rollup-plugin-example'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig({
   plugins: [
     {
       ...example(),
@@ -438,7 +460,7 @@ export default {
       apply: 'build'
     }
   ]
-}
+})
 ```
 
 Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions.

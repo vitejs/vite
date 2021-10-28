@@ -31,7 +31,6 @@ import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import { Logger } from './logger'
 import { TransformOptions } from 'esbuild'
-import { CleanCSS } from 'types/clean-css'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
@@ -66,9 +65,16 @@ export interface BuildOptions {
    */
   target?: 'modules' | TransformOptions['target'] | false
   /**
+   * whether to inject module preload polyfill.
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  polyfillModulePreload?: boolean
+  /**
    * whether to inject dynamic import polyfill.
    * Note: does not apply to library mode.
    * @default false
+   * @deprecated use plugin-legacy for browsers that don't support dynamic import
    */
   polyfillDynamicImport?: boolean
   /**
@@ -97,6 +103,15 @@ export interface BuildOptions {
    */
   cssCodeSplit?: boolean
   /**
+   * An optional separate target for CSS minification.
+   * As esbuild only supports configuring targets to mainstream
+   * browsers, users may need this option when they are targeting
+   * a niche browser that comes with most modern JavaScript features
+   * but has poor CSS support, e.g. Android WeChat WebView, which
+   * doesn't support the #RGBA syntax.
+   */
+  cssTarget?: TransformOptions['target'] | false
+  /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
    * 'hidden' works like `true` except that the corresponding sourcemap
@@ -107,7 +122,7 @@ export interface BuildOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
-   * @default 'terser'
+   * @default 'esbuild'
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
@@ -116,10 +131,9 @@ export interface BuildOptions {
    */
   terserOptions?: Terser.MinifyOptions
   /**
-   * Options for clean-css
-   * https://github.com/jakubpawlowicz/clean-css#constructor-options
+   * @deprecated Vite now uses esbuild for CSS minification.
    */
-  cleanCssOptions?: CleanCSS.Options
+  cleanCssOptions?: any
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/guide/en/#big-list-of-options
@@ -180,8 +194,14 @@ export interface BuildOptions {
    */
   ssrManifest?: boolean
   /**
+   * Set to false to disable reporting compressed chunk sizes.
+   * Can slightly improve build speed.
+   */
+  reportCompressedSize?: boolean
+  /**
    * Set to false to disable brotli compressed size reporting for build.
    * Can slightly improve build speed.
+   * @deprecated use `build.reportCompressedSize` instead.
    */
   brotliSize?: boolean
   /**
@@ -205,18 +225,38 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<Omit<BuildOptions, 'base'>>
+export type ResolvedBuildOptions = Required<
+  Omit<
+    BuildOptions,
+    // make deprecated options optional
+    'base' | 'cleanCssOptions' | 'polyfillDynamicImport' | 'brotliSize'
+  >
+>
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
-    polyfillDynamicImport: false,
+    polyfillModulePreload: true,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
     cssCodeSplit: !raw?.lib,
+    cssTarget: false,
     sourcemap: false,
     rollupOptions: {},
+    minify: raw?.ssr ? false : 'esbuild',
+    terserOptions: {},
+    write: true,
+    emptyOutDir: null,
+    manifest: false,
+    lib: false,
+    ssr: false,
+    ssrManifest: false,
+    reportCompressedSize: true,
+    // brotliSize: true,
+    chunkSizeWarningLimit: 500,
+    watch: null,
+    ...raw,
     commonjsOptions: {
       include: [/node_modules/],
       extensions: ['.js', '.cjs'],
@@ -226,20 +266,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    },
-    minify: raw?.ssr ? false : 'terser',
-    terserOptions: {},
-    cleanCssOptions: {},
-    write: true,
-    emptyOutDir: null,
-    manifest: false,
-    lib: false,
-    ssr: false,
-    ssrManifest: false,
-    brotliSize: true,
-    chunkSizeWarningLimit: 500,
-    watch: null,
-    ...raw
+    }
   }
 
   // handle special build targets
@@ -258,9 +285,17 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     resolved.target = 'es2019'
   }
 
+  if (!resolved.cssTarget) {
+    resolved.cssTarget = resolved.target
+  }
+
   // normalize false string into actual false
   if ((resolved.minify as any) === 'false') {
     resolved.minify = false
+  }
+
+  if (resolved.minify === true) {
+    resolved.minify = 'esbuild'
   }
 
   return resolved
@@ -285,9 +320,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     post: [
       buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
-      ...(options.minify && options.minify !== 'esbuild'
-        ? [terserPlugin(options.terserOptions)]
-        : []),
+      ...(options.minify === 'terser' ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       buildReporterPlugin(config),
@@ -389,6 +422,7 @@ async function doBuild(
   const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
     input,
+    context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
@@ -403,21 +437,19 @@ async function doBuild(
   }
 
   const outputBuildError = (e: RollupError) => {
-    config.logger.error(
-      chalk.red(`${e.plugin ? `[${e.plugin}] ` : ''}${e.message}`)
-    )
+    let msg = chalk.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
-      const loc = e.loc ? `:${e.loc.line}:${e.loc.column}` : ''
-      config.logger.error(`file: ${chalk.cyan(`${e.id}${loc}`)}`)
+      msg += `\nfile: ${chalk.cyan(
+        e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : '')
+      )}`
     }
     if (e.frame) {
-      config.logger.error(chalk.yellow(e.frame))
+      msg += `\n` + chalk.yellow(e.frame)
     }
+    config.logger.error(msg, { error: e })
   }
 
   try {
-    const pkgName = libOptions && getPkgName(config.root)
-
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       return {
         dir: outDir,
@@ -428,7 +460,7 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
+          ? resolveLibFilename(libOptions, output.format || 'es', config.root)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
@@ -570,9 +602,7 @@ function prepareOutDir(
 function getPkgName(root: string) {
   const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
 
-  if (!name) throw new Error('no name found in package.json')
-
-  return name.startsWith('@') ? name.split('/')[1] : name
+  return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
 function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
@@ -627,11 +657,20 @@ function staticImportedByEntry(
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
-  pkgName: string
+  root: string
 ): string {
-  return typeof libOptions.fileName === 'function'
-    ? libOptions.fileName(format)
-    : `${libOptions.fileName || pkgName}.${format}.js`
+  if (typeof libOptions.fileName === 'function') {
+    return libOptions.fileName(format)
+  }
+
+  const name = libOptions.fileName || getPkgName(root)
+
+  if (!name)
+    throw new Error(
+      'Name in package.json is required if option "build.lib.fileName" is not provided.'
+    )
+
+  return `${name}.${format}.js`
 }
 
 function resolveBuildOutputs(
@@ -747,15 +786,35 @@ function injectSsrFlagToHooks(p: Plugin): Plugin {
   const { resolveId, load, transform } = p
   return {
     ...p,
-    resolveId: wrapSsrHook(resolveId),
-    load: wrapSsrHook(load),
-    transform: wrapSsrHook(transform)
+    resolveId: wrapSsrResolveId(resolveId),
+    load: wrapSsrLoad(load),
+    transform: wrapSsrTransform(transform)
   }
 }
 
-function wrapSsrHook(fn: Function | undefined) {
+function wrapSsrResolveId(fn: Function | undefined) {
   if (!fn) return
-  return function (this: any, ...args: any[]) {
-    return fn.call(this, ...args, true)
+  return function (this: any, id: any, importer: any, options: any) {
+    return fn.call(this, id, importer, injectSsrFlag(options))
   }
+}
+
+function wrapSsrLoad(fn: Function | undefined) {
+  if (!fn) return
+  // Receiving options param to be future-proof if Rollup adds it
+  return function (this: any, id: any, ...args: any[]) {
+    return fn.call(this, id, injectSsrFlag(args[0]))
+  }
+}
+
+function wrapSsrTransform(fn: Function | undefined) {
+  if (!fn) return
+  // Receiving options param to be future-proof if Rollup adds it
+  return function (this: any, code: any, importer: any, ...args: any[]) {
+    return fn.call(this, code, importer, injectSsrFlag(args[0]))
+  }
+}
+
+function injectSsrFlag(options: any = {}) {
+  return { ...options, ssr: true }
 }

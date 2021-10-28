@@ -27,11 +27,6 @@ declare module 'acorn-static-class-features' {
   export default plugin
 }
 
-declare module 'acorn-numeric-separator' {
-  const plugin: any
-  export default plugin
-}
-
 declare module 'connect-history-api-fallback' {
   const plugin: any
   export = plugin
@@ -40,10 +35,6 @@ declare module 'connect-history-api-fallback' {
 declare module 'launch-editor-middleware' {
   const plugin: any
   export = plugin
-}
-
-declare module 'merge-source-map' {
-  export default function merge(oldMap: object, newMap: object): object
 }
 
 declare module 'postcss-load-config' {
@@ -105,7 +96,11 @@ declare module 'rollup-plugin-web-worker-loader' {
 }
 
 declare module 'minimatch' {
-  function match(path: string, pattern: string): boolean
+  function match(
+    path: string,
+    pattern: string,
+    options?: { matchBase?: boolean }
+  ): boolean
   export default match
 }
 

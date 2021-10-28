@@ -95,6 +95,10 @@ declare module '*.webp' {
   const src: string
   export default src
 }
+declare module '*.avif' {
+  const src: string
+  export default src
+}
 
 // media
 declare module '*.mp4' {
@@ -148,6 +152,20 @@ declare module '*.otf' {
   export default src
 }
 
+// other
+declare module '*.wasm' {
+  const initWasm: (options: WebAssembly.Imports) => Promise<WebAssembly.Exports>
+  export default initWasm
+}
+declare module '*.webmanifest' {
+  const src: string
+  export default src
+}
+declare module '*.pdf' {
+  const src: string
+  export default src
+}
+
 // web worker
 declare module '*?worker' {
   const workerConstructor: {
@@ -176,6 +194,11 @@ declare module '*?raw' {
 }
 
 declare module '*?url' {
+  const src: string
+  export default src
+}
+
+declare module '*?inline' {
   const src: string
   export default src
 }

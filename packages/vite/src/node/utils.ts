@@ -4,7 +4,13 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { pathToFileURL, URL } from 'url'
-import { FS_PREFIX, DEFAULT_EXTENSIONS, VALID_ID_PREFIX } from './constants'
+import {
+  FS_PREFIX,
+  DEFAULT_EXTENSIONS,
+  VALID_ID_PREFIX,
+  CLIENT_PUBLIC_PATH,
+  ENV_PUBLIC_PATH
+} from './constants'
 import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
@@ -13,6 +19,7 @@ import {
   DecodedSourceMap,
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'
+import { performance } from 'perf_hooks'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -24,10 +31,23 @@ export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
 }
 
-export const flattenId = (id: string): string => id.replace(/[\/\.]/g, '_')
+export const flattenId = (id: string): string =>
+  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.]/g, '_')
+
+export const normalizeId = (id: string): string =>
+  id.replace(/(\s*>\s*)/g, ' > ')
 
 export function isBuiltin(id: string): boolean {
+  const deepMatch = id.match(deepImportRE)
+  id = deepMatch ? deepMatch[1] || deepMatch[2] : id
   return builtins.includes(id)
+}
+
+export function moduleListContains(
+  moduleList: string[] | undefined,
+  id: string
+): boolean | undefined {
+  return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
 }
 
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
@@ -38,15 +58,38 @@ try {
   isRunningWithYarnPnp = Boolean(require('pnpapi'))
 } catch {}
 
-const ssrExtensions = ['.js', '.json', '.node']
+const ssrExtensions = ['.js', '.cjs', '.json', '.node']
 
-export function resolveFrom(id: string, basedir: string, ssr = false): string {
+export function resolveFrom(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false,
+  ssr = false
+): string {
   return resolve.sync(id, {
     basedir,
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
-    preserveSymlinks: isRunningWithYarnPnp || false
+    preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false
   })
+}
+
+/**
+ * like `resolveFrom` but supports resolving `>` path in `id`,
+ * for example: `foo > bar > baz`
+ */
+export function nestedResolveFrom(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false
+): string {
+  const pkgs = id.split('>').map((pkg) => pkg.trim())
+  try {
+    for (const pkg of pkgs) {
+      basedir = resolveFrom(pkg, basedir, preserveSymlinks)
+    }
+  } catch {}
+  return basedir
 }
 
 // set in bin/vite.js
@@ -58,13 +101,16 @@ interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
 }
 
+export type ViteDebugScope = `vite:${string}`
+
 export function createDebugger(
-  ns: string,
+  namespace: ViteDebugScope,
   options: DebuggerOptions = {}
 ): debug.Debugger['log'] {
-  const log = debug(ns)
+  const log = debug(namespace)
   const { onlyWhenFocused } = options
-  const focus = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : ns
+  const focus =
+    typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
   return (msg: string, ...args: any[]) => {
     if (filter && !msg.includes(filter)) {
       return
@@ -106,7 +152,7 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -119,8 +165,17 @@ export const isJSRequest = (url: string): boolean => {
 }
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
+const internalPrefixes = [
+  FS_PREFIX,
+  VALID_ID_PREFIX,
+  CLIENT_PUBLIC_PATH,
+  ENV_PUBLIC_PATH
+]
+const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
 const trailingSeparatorRE = /[\?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
+export const isInternalRequest = (url: string): boolean =>
+  InternalPrefixRE.test(url)
 
 export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
@@ -166,8 +221,8 @@ export async function asyncReplace(
 }
 
 export function timeFrom(start: number, subtract = 0): string {
-  const time: number | string = Date.now() - start - subtract
-  const timeString = (time + `ms`).padEnd(5, ' ')
+  const time: number | string = performance.now() - start - subtract
+  const timeString = (time.toFixed(2) + `ms`).padEnd(5, ' ')
   if (time < 10) {
     return chalk.green(timeString)
   } else if (time < 50) {
@@ -255,7 +310,9 @@ export function numberToPos(
 ): { line: number; column: number } {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
-    throw new Error('offset is longer than source length!')
+    throw new Error(
+      `offset is longer than source length! offset ${offset} > length ${source.length}`
+    )
   }
   const lines = source.split(splitRE)
   let counted = 0
@@ -325,6 +382,21 @@ export function writeFile(
     fs.mkdirSync(dir, { recursive: true })
   }
   fs.writeFileSync(filename, content)
+}
+
+/**
+ * Use instead of fs.existsSync(filename)
+ * #2051 if we don't have read permission on a directory, existsSync() still
+ * works and will result in massively slow subsequent checks (which are
+ * unnecessary in the first place)
+ */
+export function isFileReadable(filename: string): boolean {
+  try {
+    fs.accessSync(filename, fs.constants.R_OK)
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -509,3 +581,26 @@ export function resolveHostname(
 
   return { host, name }
 }
+
+export function arraify<T>(target: T | T[]): T[] {
+  return Array.isArray(target) ? target : [target]
+}
+
+export function toUpperCaseDriveLetter(pathName: string): string {
+  return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
+}
+
+export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+export const singlelineCommentsRE = /\/\/.*/g
+
+export const usingDynamicImport = typeof jest === 'undefined';
+/**
+ * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
+ *
+ * As a temporary workaround for Jest's lack of stable ESM support, we fallback to require
+ * if we're in a Jest environment.
+ * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
+ *
+ * @param file File path to import.
+ */
+export const dynamicImport = usingDynamicImport ? new Function('file', 'return import(file)') : require;

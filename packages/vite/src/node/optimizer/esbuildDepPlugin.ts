@@ -6,7 +6,8 @@ import {
   isRunningWithYarnPnp,
   flattenId,
   normalizePath,
-  isExternalUrl
+  isExternalUrl,
+  moduleListContains
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import { ExportsData } from '.'
@@ -25,6 +26,7 @@ const externalTypes = [
   'vue',
   'svelte',
   'marko',
+  'astro',
   // JSX/TSX may be configured to be compiled differently from how esbuild
   // handles it by default, so exclude them as well
   'jsx',
@@ -98,6 +100,13 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
+          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
+            return {
+              path: id,
+              external: true
+            }
+          }
+
           // ensure esbuild uses our resolved entries
           let entry: { path: string; namespace: string } | undefined
           // if this is an entry, return entry namespace resolve result

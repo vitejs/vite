@@ -10,15 +10,18 @@ import {
   lookupFile,
   normalizePath,
   writeFile,
-  flattenId
+  flattenId,
+  normalizeId
 } from '../utils'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
-import { ImportSpecifier, init, parse } from 'es-module-lexer'
+import { init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
+import { transformWithEsbuild } from '../plugins/esbuild'
+import { performance } from 'perf_hooks'
 
 const debug = createDebugger('vite:deps')
 
-export type ExportsData = [ImportSpecifier[], string[]] & {
+export type ExportsData = ReturnType<typeof parse> & {
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
   hasReExports?: true
@@ -183,10 +186,13 @@ export async function optimizeDeps(
   if (include) {
     const resolve = config.createResolver({ asSrc: false })
     for (const id of include) {
-      if (!deps[id]) {
+      // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
+      // and for pretty printing
+      const normalizedId = normalizeId(id)
+      if (!deps[normalizedId]) {
         const entry = await resolve(id)
         if (entry) {
-          deps[id] = entry
+          deps[normalizedId] = entry
         } else {
           throw new Error(
             `Failed to resolve force included dependency: ${chalk.cyan(id)}`
@@ -237,12 +243,32 @@ export async function optimizeDeps(
   const idToExports: Record<string, ExportsData> = {}
   const flatIdToExports: Record<string, ExportsData> = {}
 
+  const { plugins = [], ...esbuildOptions } =
+    config.optimizeDeps?.esbuildOptions ?? {}
+
   await init
   for (const id in deps) {
     const flatId = flattenId(id)
-    flatIdDeps[flatId] = deps[id]
-    const entryContent = fs.readFileSync(deps[id], 'utf-8')
-    const exportsData = parse(entryContent) as ExportsData
+    const filePath = (flatIdDeps[flatId] = deps[id])
+    const entryContent = fs.readFileSync(filePath, 'utf-8')
+    let exportsData: ExportsData
+    try {
+      exportsData = parse(entryContent) as ExportsData
+    } catch {
+      debug(
+        `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
+      )
+      const transformed = await transformWithEsbuild(entryContent, filePath, {
+        loader: 'jsx'
+      })
+      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+      // This is useful for packages such as Gatsby.
+      esbuildOptions.loader = {
+        '.js': 'jsx',
+        ...esbuildOptions.loader
+      }
+      exportsData = parse(transformed.code) as ExportsData
+    }
     for (const { ss, se } of exportsData[0]) {
       const exp = entryContent.slice(ss, se)
       if (/export\s+\*\s+from/.test(exp)) {
@@ -261,22 +287,20 @@ export async function optimizeDeps(
     define[key] = typeof value === 'string' ? value : JSON.stringify(value)
   }
 
-  const start = Date.now()
-
-  const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
+  const start = performance.now()
 
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
+    target: config.build.target || undefined,
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
     outdir: cacheDir,
-    treeShaking: 'ignore-annotations',
+    ignoreAnnotations: true,
     metafile: true,
     define,
     plugins: [
@@ -307,7 +331,7 @@ export async function optimizeDeps(
 
   writeFile(dataPath, JSON.stringify(data, null, 2))
 
-  debug(`deps bundled in ${Date.now() - start}ms`)
+  debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
   return data
 }
 
@@ -355,7 +379,7 @@ function needsInterop(
   return false
 }
 
-function isSingleDefaultExport(exports: string[]) {
+function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 

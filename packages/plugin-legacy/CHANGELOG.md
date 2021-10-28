@@ -1,3 +1,77 @@
+## [1.6.2](https://github.com/vitejs/vite/compare/plugin-legacy@1.6.1...plugin-legacy@1.6.2) (2021-10-11)
+
+
+### Features
+
+* add `build.cssTarget` option ([#5132](https://github.com/vitejs/vite/issues/5132)) ([b17444f](https://github.com/vitejs/vite/commit/b17444fd97b02bc54410c8575e7d3cb25e4058c2)), closes [#4746](https://github.com/vitejs/vite/issues/4746) [#5070](https://github.com/vitejs/vite/issues/5070) [#4930](https://github.com/vitejs/vite/issues/4930)
+
+
+
+## [1.6.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.6.0...plugin-legacy@1.6.1) (2021-10-05)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** use terser as the default minifier ([#5168](https://github.com/vitejs/vite/issues/5168)) ([9ee7234](https://github.com/vitejs/vite/commit/9ee72343884a7d679767833f7a659bbca6b96595))
+
+
+
+# [1.6.0](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.3...plugin-legacy@1.6.0) (2021-09-29)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4545](https://github.com/vitejs/vite/issues/4545)) ([a44fd5d](https://github.com/vitejs/vite/commit/a44fd5d38679da0be2536103e83af730cda73a95))
+* esbuild minification and renderLegacyChunks false ([#5054](https://github.com/vitejs/vite/issues/5054)) ([ed384cf](https://github.com/vitejs/vite/commit/ed384cfeff9e3ccb0fdbb07ec91758308da66226))
+* normalize internal plugin names ([#4976](https://github.com/vitejs/vite/issues/4976)) ([37f0b2f](https://github.com/vitejs/vite/commit/37f0b2fff74109d381513ed052a32b43655ee11d))
+* **plugin-legacy:** fix type errors ([#4762](https://github.com/vitejs/vite/issues/4762)) ([5491143](https://github.com/vitejs/vite/commit/5491143be0b4214d2dab91076a85739d6d106481))
+
+
+### Features
+
+* **plugin-legacy:** add externalSystemJS option ([#5024](https://github.com/vitejs/vite/issues/5024)) ([60b6f55](https://github.com/vitejs/vite/commit/60b6f5595a00cbf014a30d57721081eb79436a97))
+
+
+
+## [1.5.3](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.2...plugin-legacy@1.5.3) (2021-09-07)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** fix regression introduced in [#4536](https://github.com/vitejs/vite/issues/4536) ([#4861](https://github.com/vitejs/vite/issues/4861)) ([fdc3212](https://github.com/vitejs/vite/commit/fdc3212474ff951e7e67810eca6cfb3ef1ed9ea2))
+* **plugin-legacy:** skip in SSR build ([#4536](https://github.com/vitejs/vite/issues/4536)) ([1f068fc](https://github.com/vitejs/vite/commit/1f068fcec38fc07c34e75a19821064386e460907))
+
+
+
+## [1.5.2](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.1...plugin-legacy@1.5.2) (2021-09-01)
+
+
+### Bug Fixes
+
+* **plugin-legacy:** avoid executing blank dynamic import ([#4767](https://github.com/vitejs/vite/issues/4767)) ([de71408](https://github.com/vitejs/vite/commit/de7140853140029a3f48600b60e700464e7662b5)), closes [#4568](https://github.com/vitejs/vite/issues/4568)
+
+
+
+## [1.5.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.5.0...plugin-legacy@1.5.1) (2021-08-03)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4468](https://github.com/vitejs/vite/issues/4468)) ([cd54a22](https://github.com/vitejs/vite/commit/cd54a22b8d5048f5d25a9954697f49b6d65dcc1f))
+* **plugin-legacy:** bake-in Promise polyfill, fix [#4414](https://github.com/vitejs/vite/issues/4414) ([#4440](https://github.com/vitejs/vite/issues/4440)) ([024a2de](https://github.com/vitejs/vite/commit/024a2de63df60a4037f9f7b13a0bc6e2b0d41fb6))
+
+
+
+# [1.5.0](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.4...plugin-legacy@1.5.0) (2021-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4387](https://github.com/vitejs/vite/issues/4387)) ([2f900ba](https://github.com/vitejs/vite/commit/2f900ba4d4ad8061e0046898e8d1de3129e7f784))
+* **plugin-legacy:** legacy fallback for dynamic import ([#3885](https://github.com/vitejs/vite/issues/3885)) ([fc6d8f1](https://github.com/vitejs/vite/commit/fc6d8f1d3efe836f17f3c45375dd3749128b8137))
+
+
+
 ## [1.4.4](https://github.com/vitejs/vite/compare/plugin-legacy@1.4.3...plugin-legacy@1.4.4) (2021-07-12)
 
 

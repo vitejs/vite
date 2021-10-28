@@ -7,10 +7,10 @@ import { ModuleNode } from './moduleGraph'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
-import { prepareError } from './middlewares/error'
 import match from 'minimatch'
 import { Server } from 'http'
-import { cssLangRE } from '../plugins/css'
+import { isCSSRequest } from '../plugins/css'
+import { performance } from 'perf_hooks'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -92,6 +92,7 @@ export async function handleHMRUpdate(
       const filteredModules = await plugin.handleHotUpdate(hmrContext)
       if (filteredModules) {
         hmrContext.modules = filteredModules
+        break
       }
     }
   }
@@ -139,7 +140,7 @@ function updateModules(
       boundary: ModuleNode
       acceptedVia: ModuleNode
     }>()
-    const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
+    const hasDeadEnd = propagateUpdate(mod, boundaries)
     if (hasDeadEnd) {
       needFullReload = true
       continue
@@ -211,7 +212,6 @@ export async function handleFileAddUnlink(
 
 function propagateUpdate(
   node: ModuleNode,
-  timestamp: number,
   boundaries: Set<{
     boundary: ModuleNode
     acceptedVia: ModuleNode
@@ -227,13 +227,8 @@ function propagateUpdate(
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
     for (const importer of node.importers) {
-      if (cssLangRE.test(importer.url) && !currentChain.includes(importer)) {
-        propagateUpdate(
-          importer,
-          timestamp,
-          boundaries,
-          currentChain.concat(importer)
-        )
+      if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
+        propagateUpdate(importer, boundaries, currentChain.concat(importer))
       }
     }
 
@@ -248,8 +243,8 @@ function propagateUpdate(
   // For a non-CSS file, if all of its importers are CSS files (registered via
   // PostCSS plugins) it should be considered a dead end and force full reload.
   if (
-    !cssLangRE.test(node.url) &&
-    [...node.importers].every((i) => cssLangRE.test(i.url))
+    !isCSSRequest(node.url) &&
+    [...node.importers].every((i) => isCSSRequest(i.url))
   ) {
     return true
   }
@@ -269,7 +264,7 @@ function propagateUpdate(
       return true
     }
 
-    if (propagateUpdate(importer, timestamp, boundaries, subChain)) {
+    if (propagateUpdate(importer, boundaries, subChain)) {
       return true
     }
   }
@@ -466,19 +461,21 @@ async function readModifiedFile(file: string): Promise<string> {
 
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
-  global.__vite_start_time = Date.now()
+  global.__vite_start_time = performance.now()
+  const { port } = server.config.server
+
+  await server.close()
+
   let newServer = null
   try {
     newServer = await createServer(server.config.inlineConfig)
-  } catch (err) {
-    server.ws.send({
-      type: 'error',
-      err: prepareError(err)
+  } catch (err: any) {
+    server.config.logger.error(err.message, {
+      timestamp: true
     })
     return
   }
 
-  await server.close()
   for (const key in newServer) {
     if (key !== 'app') {
       // @ts-ignore
@@ -486,7 +483,7 @@ async function restartServer(server: ViteDevServer) {
     }
   }
   if (!server.config.server.middlewareMode) {
-    await server.listen(undefined, true)
+    await server.listen(port, true)
   } else {
     server.config.logger.info('server restarted.', { timestamp: true })
   }

@@ -1,9 +1,12 @@
 /* eslint no-console: 0 */
 
 import chalk from 'chalk'
-import readline from 'readline'
+import { AddressInfo, Server } from 'net'
 import os from 'os'
-import { Hostname } from './utils'
+import readline from 'readline'
+import { RollupError } from 'rollup'
+import { ResolvedConfig } from '.'
+import { Hostname, resolveHostname } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -11,14 +14,19 @@ export interface Logger {
   info(msg: string, options?: LogOptions): void
   warn(msg: string, options?: LogOptions): void
   warnOnce(msg: string, options?: LogOptions): void
-  error(msg: string, options?: LogOptions): void
+  error(msg: string, options?: LogErrorOptions): void
   clearScreen(type: LogType): void
+  hasErrorLogged(error: Error | RollupError): boolean
   hasWarned: boolean
 }
 
 export interface LogOptions {
   clear?: boolean
   timestamp?: boolean
+}
+
+export interface LogErrorOptions extends LogOptions {
+  error?: Error | RollupError | null
 }
 
 export const LogLevels: Record<LogLevel, number> = {
@@ -43,21 +51,26 @@ function clearScreen() {
 export interface LoggerOptions {
   prefix?: string
   allowClearScreen?: boolean
+  customLogger?: Logger
 }
 
 export function createLogger(
   level: LogLevel = 'info',
   options: LoggerOptions = {}
 ): Logger {
-  const { prefix = '[vite]', allowClearScreen = true } = options
+  if (options.customLogger) {
+    return options.customLogger
+  }
 
+  const loggedErrors = new WeakSet<Error | RollupError>()
+  const { prefix = '[vite]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
   const clear =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
       ? clearScreen
       : () => {}
 
-  function output(type: LogType, msg: string, options: LogOptions = {}) {
+  function output(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (thresh >= LogLevels[type]) {
       const method = type === 'info' ? 'log' : type
       const format = () => {
@@ -72,6 +85,9 @@ export function createLogger(
         } else {
           return msg
         }
+      }
+      if (options.error) {
+        loggedErrors.add(options.error)
       }
       if (type === lastType && msg === lastMsg) {
         sameCount++
@@ -114,13 +130,35 @@ export function createLogger(
       if (thresh >= LogLevels[type]) {
         clear()
       }
+    },
+    hasErrorLogged(error) {
+      return loggedErrors.has(error)
     }
   }
 
   return logger
 }
 
-export function printServerUrls(
+export function printHttpServerUrls(
+  server: Server,
+  config: ResolvedConfig
+): void {
+  const address = server.address()
+  const isAddressInfo = (x: any): x is AddressInfo => x?.address
+  if (isAddressInfo(address)) {
+    const hostname = resolveHostname(config.server.host)
+    const protocol = config.server.https ? 'https' : 'http'
+    printServerUrls(
+      hostname,
+      protocol,
+      address.port,
+      config.base,
+      config.logger.info
+    )
+  }
+}
+
+function printServerUrls(
   hostname: Hostname,
   protocol: string,
   port: number,
@@ -136,7 +174,7 @@ export function printServerUrls(
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
-      .filter((detail) => detail.family === 'IPv4')
+      .filter((detail) => detail && detail.address && detail.family === 'IPv4')
       .map((detail) => {
         const type = detail.address.includes('127.0.0.1')
           ? 'Local:   '

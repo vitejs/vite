@@ -38,7 +38,6 @@ import {
   OutputOptions,
   ModuleInfo,
   NormalizedInputOptions,
-  ChangeEvent,
   PartialResolvedId,
   ResolvedId,
   PluginContext as RollupPluginContext,
@@ -51,7 +50,6 @@ import {
 } from 'rollup'
 import * as acorn from 'acorn'
 import acornClassFields from 'acorn-class-fields'
-import acornNumericSeparator from 'acorn-numeric-separator'
 import acornStaticClassFeatures from 'acorn-static-class-features'
 import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
@@ -72,6 +70,7 @@ import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
+import { performance } from 'perf_hooks'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -83,20 +82,28 @@ export interface PluginContainerOptions {
 export interface PluginContainer {
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
-  watchChange(id: string, event?: ChangeEvent): void
   resolveId(
     id: string,
     importer?: string,
-    skip?: Set<Plugin>,
-    ssr?: boolean
+    options?: {
+      skip?: Set<Plugin>,
+      ssr?: boolean
+    }
   ): Promise<PartialResolvedId | null>
   transform(
     code: string,
     id: string,
-    inMap?: SourceDescription['map'],
-    ssr?: boolean
+    options?: {
+      inMap?: SourceDescription['map'],
+      ssr?: boolean
+    }
   ): Promise<SourceDescription | null>
-  load(id: string, ssr?: boolean): Promise<LoadResult | null>
+  load(
+    id: string,
+    options?: {
+      ssr?: boolean
+    }
+  ): Promise<LoadResult | null>
   close(): Promise<void>
 }
 
@@ -116,8 +123,7 @@ type PluginContext = Omit<
 
 export let parser = acorn.Parser.extend(
   acornClassFields,
-  acornStaticClassFeatures,
-  acornNumericSeparator
+  acornStaticClassFeatures
 )
 
 export async function createPluginContainer(
@@ -171,6 +177,7 @@ export async function createPluginContainer(
     _activeId: string | null = null
     _activeCode: string | null = null
     _resolveSkips?: Set<Plugin>
+    _addedImports: Set<string> | null = null
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
@@ -179,7 +186,7 @@ export async function createPluginContainer(
     parse(code: string, opts: any = {}) {
       return parser.parse(code, {
         sourceType: 'module',
-        ecmaVersion: 2020,
+        ecmaVersion: 'latest',
         locations: true,
         ...opts
       })
@@ -190,12 +197,12 @@ export async function createPluginContainer(
       importer?: string,
       options?: { skipSelf?: boolean }
     ) {
-      let skips: Set<Plugin> | undefined
+      let skip: Set<Plugin> | undefined
       if (options?.skipSelf && this._activePlugin) {
-        skips = new Set(this._resolveSkips)
-        skips.add(this._activePlugin)
+        skip = new Set(this._resolveSkips)
+        skip.add(this._activePlugin)
       }
-      let out = await container.resolveId(id, importer, skips, this.ssr)
+      let out = await container.resolveId(id, importer, { skip, ssr: this.ssr })
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -218,6 +225,7 @@ export async function createPluginContainer(
 
     addWatchFile(id: string) {
       watchFiles.add(id)
+      ;(this._addedImports || (this._addedImports = new Set())).add(id)
       if (watcher) ensureWatchedFile(watcher, id, root)
     }
 
@@ -283,9 +291,22 @@ export async function createPluginContainer(
           : // some rollup plugins, e.g. json, sets position instead of pos
             (err as any).position
       if (pos != null) {
+        let errLocation
+        try {
+          errLocation = numberToPos(ctx._activeCode, pos)
+        } catch (err2) {
+          logger.error(
+            chalk.red(
+              `Error in error handler:\n${err2.stack || err2.message}\n`
+            ),
+            // print extra newline to separate the two errors
+            { error: err2 }
+          )
+          throw err
+        }
         err.loc = err.loc || {
           file: err.id,
-          ...numberToPos(ctx._activeCode, pos)
+          ...errLocation
         }
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
       } else if (err.loc) {
@@ -383,11 +404,9 @@ export async function createPluginContainer(
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
-          ...[
-            acornClassFields,
-            acornStaticClassFeatures,
-            acornNumericSeparator
-          ].concat(options.acornInjectPlugins)
+          ...[acornClassFields, acornStaticClassFeatures].concat(
+            options.acornInjectPlugins
+          )
         )
       }
       return {
@@ -410,27 +429,28 @@ export async function createPluginContainer(
       )
     },
 
-    async resolveId(rawId, importer = join(root, 'index.html'), skips, ssr) {
+    async resolveId(rawId, importer = join(root, 'index.html'), options) {
+      const skip = options?.skip
+      const ssr = options?.ssr
       const ctx = new Context()
       ctx.ssr = !!ssr
-      ctx._resolveSkips = skips
-      const resolveStart = isDebug ? Date.now() : 0
+      ctx._resolveSkips = skip
+      const resolveStart = isDebug ? performance.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of plugins) {
         if (!plugin.resolveId) continue
-        if (skips?.has(plugin)) continue
+        if (skip?.has(plugin)) continue
 
         ctx._activePlugin = plugin
 
-        const pluginResolveStart = isDebug ? Date.now() : 0
+        const pluginResolveStart = isDebug ? performance.now() : 0
         const result = await plugin.resolveId.call(
           ctx as any,
           rawId,
           importer,
-          {},
-          ssr
+          { ssr }
         )
         if (!result) continue
 
@@ -471,13 +491,14 @@ export async function createPluginContainer(
       }
     },
 
-    async load(id, ssr) {
+    async load(id, options) {
+      const ssr = options?.ssr
       const ctx = new Context()
       ctx.ssr = !!ssr
       for (const plugin of plugins) {
         if (!plugin.load) continue
         ctx._activePlugin = plugin
-        const result = await plugin.load.call(ctx as any, id, ssr)
+        const result = await plugin.load.call(ctx as any, id, { ssr })
         if (result != null) {
           return result
         }
@@ -485,7 +506,9 @@ export async function createPluginContainer(
       return null
     },
 
-    async transform(code, id, inMap, ssr) {
+    async transform(code, id, options) {
+      const inMap = options?.inMap
+      const ssr = options?.ssr
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
       for (const plugin of plugins) {
@@ -493,10 +516,10 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
-        const start = isDebug ? Date.now() : 0
+        const start = isDebug ? performance.now() : 0
         let result: TransformResult | string | undefined
         try {
-          result = await plugin.transform.call(ctx as any, code, id, ssr)
+          result = await plugin.transform.call(ctx as any, code, id, { ssr })
         } catch (e) {
           ctx.error(e)
         }
@@ -517,17 +540,6 @@ export async function createPluginContainer(
       return {
         code,
         map: ctx._getCombinedSourcemap()
-      }
-    },
-
-    watchChange(id, event = 'update') {
-      const ctx = new Context()
-      if (watchFiles.has(id)) {
-        for (const plugin of plugins) {
-          if (!plugin.watchChange) continue
-          ctx._activePlugin = plugin
-          plugin.watchChange.call(ctx as any, id, { event })
-        }
       }
     },
 

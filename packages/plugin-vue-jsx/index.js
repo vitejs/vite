@@ -45,7 +45,7 @@ function vueJsxPlugin(options = {}) {
   let needSourceMap = true
 
   return {
-    name: 'vue-jsx',
+    name: 'vite:vue-jsx',
 
     config(config) {
       return {
@@ -80,7 +80,8 @@ function vueJsxPlugin(options = {}) {
       }
     },
 
-    transform(code, id, ssr) {
+    transform(code, id, opt) {
+      const ssr = typeof opt === 'boolean' ? opt : (opt && opt.ssr) === true
       const {
         include,
         exclude,
@@ -207,7 +208,7 @@ function vueJsxPlugin(options = {}) {
               ) + `\nexport default __default__`
           }
 
-          if (needHmr && !ssr) {
+          if (needHmr && !ssr && !/\?vue&type=script/.test(id)) {
             let code = result.code
             let callbackCode = ``
             for (const { local, exported, id } of hotComponents) {

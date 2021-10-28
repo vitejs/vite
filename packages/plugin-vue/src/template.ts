@@ -1,17 +1,19 @@
 import path from 'path'
 import slash from 'slash'
 import {
-  compileTemplate,
   SFCDescriptor,
-  SFCTemplateCompileOptions
-} from '@vue/compiler-sfc'
+  SFCTemplateCompileOptions,
+  SFCTemplateCompileResults,
+  CompilerOptions
+} from 'vue/compiler-sfc'
 import { PluginContext, TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
+import { compiler } from './compiler'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function transformTemplateAsModule(
+export async function transformTemplateAsModule(
   code: string,
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
@@ -34,7 +36,7 @@ export function transformTemplateAsModule(
 
   return {
     code: returnCode,
-    map: result.map as any
+    map: result.map
   }
 }
 
@@ -48,7 +50,7 @@ export function transformTemplateInMain(
   options: ResolvedOptions,
   pluginContext: PluginContext,
   ssr: boolean
-) {
+): SFCTemplateCompileResults {
   const result = compile(code, descriptor, options, pluginContext, ssr)
   return {
     ...result,
@@ -68,7 +70,7 @@ export function compile(
   ssr: boolean
 ) {
   const filename = descriptor.filename
-  const result = compileTemplate({
+  const result = compiler.compileTemplate({
     ...resolveTemplateCompilerOptions(descriptor, options, ssr)!,
     source: code
   })
@@ -156,6 +158,14 @@ export function resolveTemplateCompilerOptions(
     }
   }
 
+  // if using TS, support TS syntax in template expressions
+  const expressionPlugins: CompilerOptions['expressionPlugins'] =
+    options.template?.compilerOptions?.expressionPlugins || []
+  const lang = descriptor.scriptSetup?.lang || descriptor.script?.lang
+  if (lang && /tsx?$/.test(lang) && !expressionPlugins.includes('typescript')) {
+    expressionPlugins.push('typescript')
+  }
+
   return {
     ...options.template,
     id,
@@ -172,7 +182,9 @@ export function resolveTemplateCompilerOptions(
     compilerOptions: {
       ...options.template?.compilerOptions,
       scopeId: hasScoped ? `data-v-${id}` : undefined,
-      bindingMetadata: resolvedScript ? resolvedScript.bindings : undefined
+      bindingMetadata: resolvedScript ? resolvedScript.bindings : undefined,
+      expressionPlugins,
+      sourceMap: options.sourceMap
     }
   }
 }

@@ -6,14 +6,13 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.0.8",
-    "vue-router": "^4.0.6"
+    "vue": "^3.2.16",
+    "vue-router": "^4.0.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^1.0.0",
-    "@vue/compiler-sfc": "^3.0.8"
+    "@vitejs/plugin-vue": "workspace:*"
   }
 }

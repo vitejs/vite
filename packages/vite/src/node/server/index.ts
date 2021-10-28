@@ -15,13 +15,12 @@ import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { createWebSocketServer, WebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
+import { spaFallbackMiddleware } from './middlewares/spaFallback'
 import { transformMiddleware } from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
-import history from 'connect-history-api-fallback'
-import { decodeURIMiddleware } from './middlewares/decodeURI'
 import {
   serveRawFsMiddleware,
   servePublicMiddleware,
@@ -30,13 +29,16 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { Connect } from 'types/connect'
-import { createDebugger, ensureLeadingSlash, normalizePath } from '../utils'
+import { ensureLeadingSlash, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
-import { TransformResult } from 'rollup'
-import { TransformOptions, transformRequest } from './transformRequest'
+import {
+  TransformOptions,
+  TransformResult,
+  transformRequest
+} from './transformRequest'
 import {
   transformWithEsbuild,
   ESBuildTransformResult
@@ -50,14 +52,20 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
-import { printServerUrls } from '../logger'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
+import { printHttpServerUrls } from '../logger'
+
+export { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions {
   host?: string | boolean
   port?: number
+  /**
+   * If enabled, vite will exit if specified port is already in use
+   */
+  strictPort?: boolean
   /**
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
@@ -67,19 +75,6 @@ export interface ServerOptions {
    * Open browser window on startup
    */
   open?: boolean | string
-  /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   */
-  force?: boolean
-  /**
-   * Configure HMR-specific options (port, host, path & protocol)
-   */
-  hmr?: HmrOptions | boolean
-  /**
-   * chokidar watch options
-   * https://github.com/paulmillr/chokidar#api
-   */
-  watch?: WatchOptions
   /**
    * Configure custom proxy rules for the dev server. Expects an object
    * of `{ key: options }` pairs.
@@ -110,10 +105,20 @@ export interface ServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
+
   /**
-   * If enabled, vite will exit if specified port is already in use
+   * Force dep pre-optimization regardless of whether deps have changed.
    */
-  strictPort?: boolean
+  force?: boolean
+  /**
+   * Configure HMR-specific options (port, host, path & protocol)
+   */
+  hmr?: HmrOptions | boolean
+  /**
+   * chokidar watch options
+   * https://github.com/paulmillr/chokidar#api
+   */
+  watch?: WatchOptions
   /**
    * Create Vite dev server to be used as a middleware in an existing server
    */
@@ -127,6 +132,10 @@ export interface ServerOptions {
    * Options for files served via '/\@fs/'.
    */
   fs?: FileSystemServeOptions
+  /**
+   * Origin for the generated asset URLs.
+   */
+  origin?: string
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -140,20 +149,29 @@ export interface FileSystemServeOptions {
    * Set to `false` to disable the warning
    * Default to false at this moment, will enabled by default in the future versions.
    *
-   * @expiremental
-   * @default undefined
+   * @default true
    */
-  strict?: boolean | undefined
+  strict?: boolean
 
   /**
    * Restrict accessing files outside the allowed directories.
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
-   *
-   * @expiremental
    */
   allow?: string[]
+
+  /**
+   * Restrict accessing files that matches the patterns.
+   *
+   * This will have higher priority than `allow`.
+   * Glob patterns are supported.
+   *
+   * @default ['.env', '.env.*', '*.crt', '*.pem']
+   *
+   * @experimental
+   */
+  deny?: string[]
 }
 
 /**
@@ -238,6 +256,8 @@ export interface ViteDevServer {
   /**
    * Util for transforming a file with esbuild.
    * Can be useful for certain plugins.
+   *
+   * @deprecated import `transformWithEsbuild` from `vite` instead
    */
   transformWithEsbuild(
     code: string,
@@ -261,6 +281,10 @@ export interface ViteDevServer {
    * Stop the server.
    */
   close(): Promise<void>
+  /**
+   * Print server urls
+   */
+  printUrls(): void
   /**
    * @internal
    */
@@ -297,6 +321,10 @@ export interface ViteDevServer {
    * @internal
    */
   _pendingReload: Promise<void> | null
+  /**
+   * @internal
+   */
+  _pendingRequests: Record<string, Promise<TransformResult | null> | null>
 }
 
 export async function createServer(
@@ -319,7 +347,11 @@ export async function createServer(
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
-    ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+    ignored: [
+      '**/node_modules/**',
+      '**/.git/**',
+      ...(Array.isArray(ignored) ? ignored : [ignored])
+    ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
     disableGlobbing: true,
@@ -335,7 +367,7 @@ export async function createServer(
   let exitProcess: () => void
 
   const server: ViteDevServer = {
-    config: config,
+    config,
     middlewares,
     get app() {
       config.logger.warn(
@@ -387,12 +419,20 @@ export async function createServer(
         closeHttpServer()
       ])
     },
+    printUrls() {
+      if (httpServer) {
+        printHttpServerUrls(httpServer, config)
+      } else {
+        throw new Error('cannot print server URLs in middleware mode.')
+      }
+    },
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
-    _globImporters: {},
+    _globImporters: Object.create(null),
     _isRunningOptimizer: false,
     _registerMissingImport: null,
-    _pendingReload: null
+    _pendingReload: null,
+    _pendingRequests: Object.create(null)
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -435,6 +475,13 @@ export async function createServer(
     handleFileAddUnlink(normalizePath(file), server, true)
   })
 
+  if (!middlewareMode && httpServer) {
+    httpServer.once('listening', () => {
+      // update actual port since this may be different from initial value
+      serverConfig.port = (httpServer.address() as AddressInfo).port
+    })
+  }
+
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const plugin of plugins) {
@@ -476,9 +523,6 @@ export async function createServer(
     res.end('pong')
   })
 
-  //decode request url
-  middlewares.use(decodeURIMiddleware())
-
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
@@ -491,29 +535,11 @@ export async function createServer(
 
   // serve static files
   middlewares.use(serveRawFsMiddleware(server))
-  middlewares.use(serveStaticMiddleware(root, config))
+  middlewares.use(serveStaticMiddleware(root, server))
 
   // spa fallback
   if (!middlewareMode || middlewareMode === 'html') {
-    middlewares.use(
-      history({
-        logger: createDebugger('vite:spa-fallback'),
-        // support /dir/ without explicit index.html
-        rewrites: [
-          {
-            from: /\/$/,
-            to({ parsedUrl }: any) {
-              const rewritten = parsedUrl.pathname + 'index.html'
-              if (fs.existsSync(path.join(root, rewritten))) {
-                return rewritten
-              } else {
-                return `/index.html`
-              }
-            }
-          }
-        ]
-      })
-    )
+    middlewares.use(spaFallbackMiddleware(root))
   }
 
   // run post config hooks
@@ -564,11 +590,6 @@ export async function createServer(
       }
       return listen(port, ...args)
     }) as any
-
-    httpServer.once('listening', () => {
-      // update actual port since this may be different from initial value
-      serverConfig.port = (httpServer.address() as AddressInfo).port
-    })
   } else {
     await container.buildStart({})
     await runOptimize()
@@ -602,26 +623,6 @@ async function startServer(
     logger: server.config.logger
   })
 
-  info(
-    chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-      chalk.green(` dev server running at:\n`),
-    {
-      clear: !server.config.logger.hasWarned
-    }
-  )
-
-  printServerUrls(hostname, protocol, serverPort, base, info)
-
-  // @ts-ignore
-  if (global.__vite_start_time) {
-    info(
-      chalk.cyan(
-        // @ts-ignore
-        `\n  ready in ${Date.now() - global.__vite_start_time}ms.\n`
-      )
-    )
-  }
-
   // @ts-ignore
   const profileSession = global.__vite_profile_session
   if (profileSession) {
@@ -642,7 +643,9 @@ async function startServer(
   if (options.open && !isRestart) {
     const path = typeof options.open === 'string' ? options.open : base
     openBrowser(
-      `${protocol}://${hostname.name}:${serverPort}${path}`,
+      path.startsWith('http')
+        ? path
+        : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
       server.config.logger
     )
@@ -697,6 +700,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server = raw || {}
   let allowDirs = server.fs?.allow
+  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
@@ -711,9 +715,9 @@ export function resolveServerOptions(
   }
 
   server.fs = {
-    // TODO: make strict by default
-    strict: server.fs?.strict,
-    allow: allowDirs
+    strict: server.fs?.strict ?? true,
+    allow: allowDirs,
+    deny
   }
   return server as ResolvedServerOptions
 }

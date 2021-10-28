@@ -32,6 +32,33 @@ test('/about', async () => {
   }
 })
 
+test('/external', async () => {
+  await page.goto(url + '/external')
+  expect(await page.textContent('div')).toMatch(
+    'Example external component content'
+  )
+  // should not have hydration mismatch
+  browserLogs.forEach((msg) => {
+    expect(msg).not.toMatch('mismatch')
+  })
+
+  // fetch sub route
+  const externalHtml = await (await fetch(url + '/external')).text()
+  expect(externalHtml).toMatch('Example external component content')
+  if (isBuild) {
+    // assert correct preload directive generation for async chunks and CSS
+    expect(externalHtml).not.toMatch(
+      /link rel="modulepreload".*?href="\/assets\/Home\.\w{8}\.js"/
+    )
+    expect(externalHtml).not.toMatch(
+      /link rel="stylesheet".*?href="\/assets\/Home\.\w{8}\.css"/
+    )
+    expect(externalHtml).toMatch(
+      /link rel="modulepreload".*?href="\/assets\/External\.\w{8}\.js"/
+    )
+  }
+})
+
 test('/', async () => {
   await page.goto(url)
   expect(await page.textContent('h1')).toMatch('Home')
@@ -114,4 +141,14 @@ test('client navigation', async () => {
   await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
   await untilUpdated(() => page.textContent('h1'), 'changed')
+})
+
+test('import.meta.url', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.protocol')).toEqual('file:')
+})
+
+test('deep import built-in module', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.file-message')).toMatch('fs/promises')
 })

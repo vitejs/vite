@@ -1,3 +1,80 @@
+## [2.6.6](https://github.com/vitejs/vite/compare/create-vite@2.6.5...create-vite@2.6.6) (2021-10-07)
+
+
+
+## [2.6.5](https://github.com/vitejs/vite/compare/create-vite@2.6.4...create-vite@2.6.5) (2021-09-29)
+
+
+### Features
+
+* **create-vite:** migrate lit-element to lit ([#5012](https://github.com/vitejs/vite/issues/5012)) ([d66ea0f](https://github.com/vitejs/vite/commit/d66ea0f420eb7926d927b64e40ecaf83d9388e63))
+
+
+
+## [2.6.4](https://github.com/vitejs/vite/compare/create-vite@2.6.3...create-vite@2.6.4) (2021-09-22)
+
+
+
+## [2.6.3](https://github.com/vitejs/vite/compare/create-vite@2.6.2...create-vite@2.6.3) (2021-09-21)
+
+
+### Bug Fixes
+
+* pnpm create-vite command documentation ([#4902](https://github.com/vitejs/vite/issues/4902)) ([3392a8a](https://github.com/vitejs/vite/commit/3392a8ad5618cc68b6898a327b6c8959de6f4992))
+
+
+### Features
+
+* **create-vite:** update vue templates ([a2be9c1](https://github.com/vitejs/vite/commit/a2be9c11fccb53ed60a33d72025c2d30635be1a7))
+
+
+
+## [2.6.2](https://github.com/vitejs/vite/compare/create-vite@2.6.1...create-vite@2.6.2) (2021-09-07)
+
+
+
+## [2.6.1](https://github.com/vitejs/vite/compare/create-vite@2.5.4...create-vite@2.6.1) (2021-08-31)
+
+
+### Bug Fixes
+
+* **create-vite:** project name with only numbers as an argument ([#4606](https://github.com/vitejs/vite/issues/4606)) ([085a621](https://github.com/vitejs/vite/commit/085a6219ceb89052ac0a269e7ccda081e534a800))
+
+
+### Features
+
+* **create-vite:** update vue templates ([87a9a70](https://github.com/vitejs/vite/commit/87a9a70f75991a8afb06a0b84f4eab43ca76fa89))
+* explicit set `useDefineForClassFields` in ts templates ([#4280](https://github.com/vitejs/vite/issues/4280)) ([fe74173](https://github.com/vitejs/vite/commit/fe74173f19b6e341114723a99043440abce27bd6))
+
+
+
+# [2.6.0](https://github.com/vitejs/vite/compare/create-vite@2.5.4...create-vite@2.6.0) (2021-08-25)
+
+
+### Bug Fixes
+
+* **create-vite:** project name with only numbers as an argument ([#4606](https://github.com/vitejs/vite/issues/4606)) ([085a621](https://github.com/vitejs/vite/commit/085a6219ceb89052ac0a269e7ccda081e534a800))
+
+
+### Features
+
+* **create-vite:** update vue templates ([fe9ebe7](https://github.com/vitejs/vite/commit/fe9ebe7bb227979e9420ba295b892a716daaaf69))
+
+
+
+## [2.5.4](https://github.com/vitejs/vite/compare/create-vite@2.5.3...create-vite@2.5.4) (2021-08-03)
+
+
+### Bug Fixes
+
+* **create-vite:** distinguish pnpm pkgManager ([#4220](https://github.com/vitejs/vite/issues/4220)) ([c0a3dbf](https://github.com/vitejs/vite/commit/c0a3dbfa66266378f6f329f1981d5827b781fdbb))
+
+
+
+## [2.5.3](https://github.com/vitejs/vite/compare/create-vite@2.5.2...create-vite@2.5.3) (2021-07-27)
+
+
+
 ## [2.5.2](https://github.com/vitejs/vite/compare/create-vite@2.5.1...create-vite@2.5.2) (2021-07-20)
 
 
@@ -30,7 +107,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpx create-vite
+$ pnpm dlx create-vite
 ```
 
 

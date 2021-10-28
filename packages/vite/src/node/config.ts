@@ -9,11 +9,13 @@ import {
 } from './server'
 import { CSSOptions } from './plugins/css'
 import {
+  arraify,
   createDebugger,
   isExternalUrl,
   isObject,
   lookupFile,
-  normalizePath
+  normalizePath,
+  dynamicImport
 } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
@@ -21,7 +23,7 @@ import { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { Alias, AliasOptions } from 'types/alias'
-import { CLIENT_DIR, DEFAULT_ASSETS_RE } from './constants'
+import { CLIENT_ENTRY, ENV_ENTRY, DEFAULT_ASSETS_RE } from './constants'
 import {
   InternalResolveOptions,
   ResolveOptions,
@@ -39,6 +41,7 @@ import {
 } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
+import { performance } from 'perf_hooks'
 
 const debug = createDebugger('vite:config')
 
@@ -126,7 +129,7 @@ export interface UserConfig {
    */
   esbuild?: ESBuildOptions | false
   /**
-   * Specify additional files to be treated as static assets.
+   * Specify additional picomatch patterns to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
@@ -152,6 +155,10 @@ export interface UserConfig {
    */
   logLevel?: LogLevel
   /**
+   * Custom logger.
+   */
+  customLogger?: Logger
+  /**
    * Default: true
    */
   clearScreen?: boolean
@@ -161,6 +168,11 @@ export interface UserConfig {
    * @default root
    */
   envDir?: string
+  /**
+   * Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+   * @default 'VITE_'
+   */
+  envPrefix?: string | string[]
   /**
    * Import aliases
    * @deprecated use `resolve.alias` instead
@@ -178,7 +190,7 @@ export type SSRTarget = 'node' | 'webworker'
 
 export interface SSROptions {
   external?: string[]
-  noExternal?: string | RegExp | (string | RegExp)[]
+  noExternal?: string | RegExp | (string | RegExp)[] | true
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
@@ -265,15 +277,25 @@ export async function resolveConfig(
 
   // Define logger
   const logger = createLogger(config.logLevel, {
-    allowClearScreen: config.clearScreen
+    allowClearScreen: config.clearScreen,
+    customLogger: config.customLogger
   })
 
-  // user config may provide an alternative mode
-  mode = config.mode || mode
+  // user config may provide an alternative mode. But --mode has a higher prority
+  mode = inlineConfig.mode || config.mode || mode
+  configEnv.mode = mode
 
   // resolve plugins
   const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
-    return p && (!p.apply || p.apply === command)
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
+    }
   }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
@@ -294,13 +316,16 @@ export async function resolveConfig(
     config.root ? path.resolve(config.root) : process.cwd()
   )
 
+  const clientAlias = [
+    { find: /^[\/]?@vite\/env/, replacement: () => ENV_ENTRY },
+    { find: /^[\/]?@vite\/client/, replacement: () => CLIENT_ENTRY }
+  ]
+
   // resolve alias with internal client alias
   const resolvedAlias = mergeAlias(
-    // #1732 the CLIENT_DIR may contain $$ which cannot be used as direct
-    // replacement string.
     // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
     // replacement, but its implementation does work with function values.
-    [{ find: /^\/@vite\//, replacement: () => CLIENT_DIR + '/' }],
+    clientAlias,
     config.resolve?.alias || config.alias || []
   )
 
@@ -314,7 +339,9 @@ export async function resolveConfig(
   const envDir = config.envDir
     ? normalizePath(path.resolve(resolvedRoot, config.envDir))
     : resolvedRoot
-  const userEnv = inlineConfig.envFile !== false && loadEnv(mode, envDir)
+  const userEnv =
+    inlineConfig.envFile !== false &&
+    loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
@@ -369,7 +396,7 @@ export async function resolveConfig(
                 root: resolvedRoot,
                 isProduction,
                 isBuild: command === 'build',
-                ssrTarget: resolved.ssr?.target,
+                ssrConfig: resolved.ssr,
                 asSrc: true,
                 preferRelative: false,
                 tryIndex: true,
@@ -378,7 +405,7 @@ export async function resolveConfig(
             ]
           }))
       }
-      return (await container.resolveId(id, importer, undefined, ssr))?.id
+      return (await container.resolveId(id, importer, { ssr }))?.id
     }
   }
 
@@ -423,6 +450,7 @@ export async function resolveConfig(
       ...config.optimizeDeps,
       esbuildOptions: {
         keepNames: config.optimizeDeps?.keepNames,
+        preserveSymlinks: config.resolve?.preserveSymlinks,
         ...config.optimizeDeps?.esbuildOptions
       }
     }
@@ -528,6 +556,42 @@ export async function resolveConfig(
     }
   })
 
+  if (config.build?.polyfillDynamicImport) {
+    logDeprecationWarning(
+      'build.polyfillDynamicImport',
+      '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.'
+    )
+  }
+
+  Object.defineProperty(resolvedBuildOptions, 'polyfillDynamicImport', {
+    enumerable: false,
+    get() {
+      logDeprecationWarning(
+        'build.polyfillDynamicImport',
+        '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.',
+        new Error()
+      )
+      return false
+    }
+  })
+
+  if (config.build?.cleanCssOptions) {
+    logDeprecationWarning(
+      'build.cleanCssOptions',
+      'Vite now uses esbuild for CSS minification.'
+    )
+  }
+
+  if (config.build?.terserOptions && config.build.minify === 'esbuild') {
+    logger.warn(
+      chalk.yellow(
+        `build.terserOptions is specified but build.minify is not set to use Terser. ` +
+          `Note Vite now defaults to use esbuild for minification. If you still ` +
+          `prefer Terser, set build.minify to "terser".`
+      )
+    )
+  }
+
   return resolved
 }
 
@@ -614,6 +678,8 @@ function mergeConfigRecursively(
       } else if (key === 'assetsInclude' && rootPath === '') {
         merged[key] = [].concat(existing, value)
         continue
+      } else if (key === 'noExternal' && existing === true) {
+        continue
       }
     }
 
@@ -687,7 +753,8 @@ export async function loadConfigFromFile(
   config: UserConfig
   dependencies: string[]
 } | null> {
-  const start = Date.now()
+  const start = performance.now()
+  const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
   let resolvedPath: string | undefined
   let isTS = false
@@ -706,6 +773,10 @@ export async function loadConfigFromFile(
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
     isTS = configFile.endsWith('.ts')
+
+    if (configFile.endsWith('.mjs')) {
+      isMjs = true
+    }
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
@@ -749,20 +820,16 @@ export async function loadConfigFromFile(
         const bundled = await bundleConfigFile(resolvedPath, true)
         dependencies = bundled.dependencies
         fs.writeFileSync(resolvedPath + '.js', bundled.code)
-        userConfig = (await eval(`import(fileUrl + '.js?t=${Date.now()}')`))
+        userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
           .default
         fs.unlinkSync(resolvedPath + '.js')
-        debug(
-          `TS + native esm config loaded in ${Date.now() - start}ms`,
-          fileUrl
-        )
+        debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
       } else {
-        // using eval to avoid this from being compiled away by TS/Rollup
+        // using Function to avoid this from being compiled away by TS/Rollup
         // append a query so that we force reload fresh config in case of
         // server restart
-        userConfig = (await eval(`import(fileUrl + '?t=${Date.now()}')`))
-          .default
-        debug(`native esm config loaded in ${Date.now() - start}ms`, fileUrl)
+        userConfig = (await dynamicImport(`${fileUrl}?t=${Date.now()}`)).default
+        debug(`native esm config loaded in ${getTime()}`, fileUrl)
       }
     }
 
@@ -772,7 +839,7 @@ export async function loadConfigFromFile(
         // clear cache in case of server restart
         delete require.cache[require.resolve(resolvedPath)]
         userConfig = require(resolvedPath)
-        debug(`cjs config loaded in ${Date.now() - start}ms`)
+        debug(`cjs config loaded in ${getTime()}`)
       } catch (e) {
         const ignored = new RegExp(
           [
@@ -798,7 +865,7 @@ export async function loadConfigFromFile(
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
       userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
-      debug(`bundled config file loaded in ${Date.now() - start}ms`)
+      debug(`bundled config file loaded in ${getTime()}`)
     }
 
     const config = await (typeof userConfig === 'function'
@@ -814,7 +881,8 @@ export async function loadConfigFromFile(
     }
   } catch (e) {
     createLogger(logLevel).error(
-      chalk.red(`failed to load config from ${resolvedPath}`)
+      chalk.red(`failed to load config from ${resolvedPath}`),
+      { error: e }
     )
     throw e
   }
@@ -906,7 +974,7 @@ async function loadConfigFromBundledFile(
 export function loadEnv(
   mode: string,
   envDir: string,
-  prefix = 'VITE_'
+  prefixes: string | string[] = 'VITE_'
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
@@ -914,7 +982,7 @@ export function loadEnv(
         `the .local postfix for .env files.`
     )
   }
-
+  prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
   const envFiles = [
     /** mode local file */ `.env.${mode}.local`,
@@ -926,7 +994,10 @@ export function loadEnv(
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
-    if (key.startsWith(prefix) && env[key] === undefined) {
+    if (
+      prefixes.some((prefix) => key.startsWith(prefix)) &&
+      env[key] === undefined
+    ) {
       env[key] = process.env[key] as string
     }
   }
@@ -947,7 +1018,10 @@ export function loadEnv(
 
       // only keys that start with prefix are exposed to client
       for (const [key, value] of Object.entries(parsed)) {
-        if (key.startsWith(prefix) && env[key] === undefined) {
+        if (
+          prefixes.some((prefix) => key.startsWith(prefix)) &&
+          env[key] === undefined
+        ) {
           env[key] = value
         } else if (key === 'NODE_ENV') {
           // NODE_ENV override in .env file
@@ -956,6 +1030,17 @@ export function loadEnv(
       }
     }
   }
-
   return env
+}
+
+export function resolveEnvPrefix({
+  envPrefix = 'VITE_'
+}: UserConfig): string[] {
+  envPrefix = arraify(envPrefix)
+  if (envPrefix.some((prefix) => prefix === '')) {
+    throw new Error(
+      `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`
+    )
+  }
+  return envPrefix
 }

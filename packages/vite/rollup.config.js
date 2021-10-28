@@ -38,7 +38,7 @@ const envConfig = {
  */
 const clientConfig = {
   input: path.resolve(__dirname, 'src/client/client.ts'),
-  external: ['./env'],
+  external: ['./env', '@vite/env'],
   plugins: [
     typescript({
       target: 'es2018',
@@ -65,9 +65,9 @@ const sharedNodeOptions = {
     tryCatchDeoptimization: false
   },
   output: {
-    dir: path.resolve(__dirname, 'dist/node'),
-    entryFileNames: `[name].js`,
-    chunkFileNames: 'chunks/dep-[hash].js',
+    dir: path.resolve(__dirname, 'dist'),
+    entryFileNames: `node/[name].js`,
+    chunkFileNames: 'node/chunks/dep-[hash].js',
     exports: 'named',
     format: 'cjs',
     externalLiveBindings: false,
@@ -125,8 +125,18 @@ const createNodeConfig = (isProduction) => {
       nodeResolve({ preferBuiltins: true }),
       typescript({
         target: 'es2019',
-        include: ['src/**/*.ts'],
-        esModuleInterop: true
+        include: ['src/**/*.ts', 'types/**'],
+        exclude: ['src/**/__tests__/**'],
+        esModuleInterop: true,
+        // in production we use api-extractor for dts generation
+        // in development we need to rely on the rollup ts plugin
+        ...(isProduction
+          ? {}
+          : {
+              tsconfig: 'tsconfig.base.json',
+              declaration: true,
+              declarationDir: path.resolve(__dirname, 'dist/')
+            })
       }),
       // Some deps have try...catch require of optional deps, but rollup will
       // generate code that force require them upfront for side effects.
@@ -186,7 +196,8 @@ const terserConfig = {
   ...sharedNodeOptions,
   output: {
     ...sharedNodeOptions.output,
-    exports: 'default'
+    exports: 'default',
+    sourcemap: false
   },
   input: {
     terser: require.resolve('terser')
@@ -265,6 +276,20 @@ function licensePlugin() {
       const coreLicense = fs.readFileSync(
         path.resolve(__dirname, '../../LICENSE')
       )
+      function sortLicenses(licenses) {
+        let withParenthesis = []
+        let noParenthesis = []
+        licenses.forEach((license) => {
+          if (/^\(/.test(license)) {
+            withParenthesis.push(license)
+          } else {
+            noParenthesis.push(license)
+          }
+        })
+        withParenthesis = withParenthesis.sort()
+        noParenthesis = noParenthesis.sort()
+        return [...noParenthesis, ...withParenthesis]
+      }
       const licenses = new Set()
       const dependencyLicenseTexts = dependencies
         .sort(({ name: nameA }, { name: nameB }) =>
@@ -336,7 +361,7 @@ function licensePlugin() {
         coreLicense +
         `\n# Licenses of bundled dependencies\n` +
         `The published Vite artifact additionally contains code with the following licenses:\n` +
-        `${Array.from(licenses).join(', ')}\n\n` +
+        `${sortLicenses(licenses).join(', ')}\n\n` +
         `# Bundled dependencies:\n` +
         dependencyLicenseTexts
       const existingLicenseText = fs.readFileSync('LICENSE.md', 'utf8')

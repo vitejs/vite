@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
     "resolve-exports-path": "link:./exports-path",
@@ -15,6 +15,8 @@
     "resolve-custom-main-field": "link:./custom-main-field",
     "resolve-custom-condition": "link:./custom-condition",
     "@babel/runtime": "^7.12.5",
-    "normalize.css": "^8.0.1"
+    "normalize.css": "^8.0.1",
+    "es5-ext": "0.10.53",
+    "resolve-linked": "workspace:*"
   }
 }

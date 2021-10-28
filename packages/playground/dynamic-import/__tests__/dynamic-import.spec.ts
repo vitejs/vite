@@ -45,3 +45,13 @@ test('should load dynamic import with vars', async () => {
   await page.click('.bar')
   await untilUpdated(() => page.textContent('.view'), 'Bar view', true)
 })
+
+// dynamic import css
+test('should load dynamic import with css', async () => {
+  await page.click('.css')
+  await untilUpdated(
+    () => page.$eval('.view', (node) => window.getComputedStyle(node).color),
+    'rgb(255, 0, 0)',
+    true
+  )
+})

@@ -42,6 +42,7 @@ import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-impor
 import type Less from 'less'
 import { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
+import { transform, formatMessages } from 'esbuild'
 
 // const debug = createDebugger('vite:css')
 
@@ -82,11 +83,12 @@ export interface CSSModulesOptions {
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
-export const cssLangRE = new RegExp(cssLangs)
+const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
+const usedRE = /(\?|&)used\b/
 
 const enum PreprocessLang {
   less = 'less',
@@ -101,10 +103,13 @@ const enum PureCssLang {
 type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
 
 export const isCSSRequest = (request: string): boolean =>
-  cssLangRE.test(request) && !directRequestRE.test(request)
+  cssLangRE.test(request)
 
 export const isDirectCSSRequest = (request: string): boolean =>
   cssLangRE.test(request) && directRequestRE.test(request)
+
+export const isDirectRequest = (request: string): boolean =>
+  directRequestRE.test(request)
 
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
@@ -114,6 +119,11 @@ const cssModulesCache = new WeakMap<
 export const chunkToEmittedCssFileMap = new WeakMap<
   RenderedChunk,
   Set<string>
+>()
+
+export const removedPureCssFilesCache = new WeakMap<
+  ResolvedConfig,
+  Map<string, RenderedChunk>
 >()
 
 const postcssConfigCache = new WeakMap<
@@ -146,10 +156,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
       moduleCache = new Map<string, Record<string, string>>()
       cssModulesCache.set(config, moduleCache)
+
+      removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
     },
 
     async transform(raw, id) {
-      if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
+      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
         return
       }
 
@@ -194,17 +206,19 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const thisModule = moduleGraph.getModuleById(id)
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
-          const isSelfAccepting = !modules
+          const isSelfAccepting = !modules && !inlineRE.test(id)
           if (deps) {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
             const depModules = new Set<string | ModuleNode>()
             for (const file of deps) {
               depModules.add(
-                cssLangRE.test(file)
+                isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
-                      await fileToUrl(file, config, this)
+                      (
+                        await fileToUrl(file, config, this)
+                      ).replace(config.base, '/')
                     )
               )
             }
@@ -257,8 +271,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
     },
 
-    async transform(css, id, ssr) {
-      if (!cssLangRE.test(id) || commonjsProxyRE.test(id)) {
+    async transform(css, id, options) {
+      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
         return
       }
 
@@ -272,7 +286,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return css
         } else {
           // server only
-          if (ssr) {
+          if (options?.ssr) {
             return modulesCode || `export default ${JSON.stringify(css)}`
           }
           if (inlined) {
@@ -297,12 +311,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // record css
       if (!inlined) {
         styles.set(id, css)
-      } else {
-        css = await minifyCSS(css, config)
       }
 
       return {
-        code: modulesCode || `export default ${JSON.stringify(css)}`,
+        code:
+          modulesCode ||
+          (usedRE.test(id)
+            ? `export default ${JSON.stringify(
+              inlined ? await minifyCSS(css, config) : css
+            )}`
+            : `export default ''`),
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
@@ -467,7 +485,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
+        const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunks.forEach((fileName) => {
+          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
         })
       }
@@ -537,6 +557,12 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       )
     }
   }
+}
+
+function getCssResolversKeys(
+  resolvers: CSSAtImportResolvers
+): Array<keyof CSSAtImportResolvers> {
+  return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
 async function compileCSS(
@@ -664,6 +690,16 @@ async function compileCSS(
           if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
             modulesOptions.getJSON(cssFileName, _modules, outputFileName)
           }
+        },
+        async resolve(id: string) {
+          for (const key of getCssResolversKeys(atImportResolvers)) {
+            const resolved = await atImportResolvers[key](id)
+            if (resolved) {
+              return path.resolve(resolved)
+            }
+          }
+
+          return id
         }
       })
     )
@@ -866,31 +902,19 @@ async function doUrlReplace(
   return `url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
-let CleanCSS: any
-
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  CleanCSS = CleanCSS || (await import('clean-css')).default
-  const res = new CleanCSS({
-    rebase: false,
-    ...config.build.cleanCssOptions
-  }).minify(css)
-
-  if (res.errors && res.errors.length) {
-    config.logger.error(chalk.red(`error when minifying css:\n${res.errors}`))
-    throw res.errors[0]
-  }
-
-  // do not warn on remote @imports
-  const warnings =
-    res.warnings &&
-    res.warnings.filter((m: string) => !m.includes('remote @import'))
-  if (warnings && warnings.length) {
+  const { code, warnings } = await transform(css, {
+    loader: 'css',
+    minify: true,
+    target: config.build.cssTarget || undefined
+  })
+  if (warnings.length) {
+    const msgs = await formatMessages(warnings, { kind: 'warning' })
     config.logger.warn(
-      chalk.yellow(`warnings when minifying css:\n${warnings.join('\n')}`)
+      chalk.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
     )
   }
-
-  return res.styles
+  return code
 }
 
 // #1845
@@ -970,7 +994,7 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
   try {
     // Search for the preprocessor in the root directory first, and fall back
     // to the default require paths.
-    const fallbackPaths = require.resolve.paths(lang) || []
+    const fallbackPaths = require.resolve.paths?.(lang) || []
     const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
@@ -991,7 +1015,9 @@ const scss: SassStylePreprocessor = async (
   const internalImporter: Sass.Importer = (url, importer, done) => {
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias).then(done)
+        rebaseUrls(resolved, options.filename, options.alias)
+          .then(done)
+          .catch(done)
       } else {
         done(null)
       }

@@ -46,7 +46,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   const pattern = new RegExp(
-    '(?<!\\.)\\b(' +
+    // Do not allow preceding '.', but do allow preceding '...' for spread operations
+    '(?<!(?<!\\.\\.)\\.)\\b(' +
       Object.keys(replacements)
         .map((str) => {
           return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
@@ -58,7 +59,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:define',
-    transform(code, id, ssr) {
+    transform(code, id, options) {
+      const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost.

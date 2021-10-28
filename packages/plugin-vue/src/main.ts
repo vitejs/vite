@@ -1,6 +1,7 @@
 import qs from 'querystring'
 import path from 'path'
-import { rewriteDefault, SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
+import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
+import { compiler } from './compiler'
 import { ResolvedOptions } from '.'
 import {
   createDescriptor,
@@ -14,6 +15,8 @@ import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
+import { transformWithEsbuild } from 'vite'
+import { EXPORT_HELPER_ID } from './helper'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
@@ -24,16 +27,11 @@ export async function transformMain(
   ssr: boolean,
   asCustomElement: boolean
 ) {
-  const { root, devServer, isProduction } = options
+  const { devServer, isProduction } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
-  const { descriptor, errors } = createDescriptor(
-    filename,
-    code,
-    root,
-    isProduction
-  )
+  const { descriptor, errors } = createDescriptor(filename, code, options)
 
   if (errors.length) {
     errors.forEach((error) =>
@@ -43,6 +41,7 @@ export async function transformMain(
   }
 
   // feature information
+  const attachedProps: [string, string][] = []
   const hasScoped = descriptor.styles.some((s) => s.scoped)
 
   // script
@@ -74,11 +73,10 @@ export async function transformMain(
     ))
   }
 
-  let renderReplace = ''
   if (hasTemplateImport) {
-    renderReplace = ssr
-      ? `_sfc_main.ssrRender = _sfc_ssrRender`
-      : `_sfc_main.render = _sfc_render`
+    attachedProps.push(
+      ssr ? ['ssrRender', '_sfc_ssrRender'] : ['render', '_sfc_render']
+    )
   } else {
     // #2128
     // User may empty the template but we didn't provide rerender function before
@@ -86,9 +84,7 @@ export async function transformMain(
       prevDescriptor &&
       !isEqualBlock(descriptor.template, prevDescriptor.template)
     ) {
-      renderReplace = ssr
-        ? `_sfc_main.ssrRender = () => {}`
-        : `_sfc_main.render = () => {}`
+      attachedProps.push([ssr ? 'ssrRender' : 'render', '() => {}'])
     }
   }
 
@@ -96,7 +92,8 @@ export async function transformMain(
   const stylesCode = await genStyleCode(
     descriptor,
     pluginContext,
-    asCustomElement
+    asCustomElement,
+    attachedProps
   )
 
   // custom blocks
@@ -106,17 +103,14 @@ export async function transformMain(
     scriptCode,
     templateCode,
     stylesCode,
-    customBlocksCode,
-    renderReplace
+    customBlocksCode
   ]
   if (hasScoped) {
-    output.push(
-      `_sfc_main.__scopeId = ${JSON.stringify(`data-v-${descriptor.id}`)}`
-    )
+    attachedProps.push([`__scopeId`, JSON.stringify(`data-v-${descriptor.id}`)])
   }
   if (devServer && !isProduction) {
     // expose filename during serve for devtools to pickup
-    output.push(`_sfc_main.__file = ${JSON.stringify(filename)}`)
+    attachedProps.push([`__file`, JSON.stringify(filename)])
   }
 
   // HMR
@@ -136,9 +130,7 @@ export async function transformMain(
       output.push(`export const _rerender_only = true`)
     }
     output.push(
-      `import.meta.hot.accept(({ default: ${
-        asCustomElement ? `{ def: updated }` : `updated`
-      }, _rerender_only }) => {`,
+      `import.meta.hot.accept(({ default: updated, _rerender_only }) => {`,
       `  if (_rerender_only) {`,
       `    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render)`,
       `  } else {`,
@@ -168,8 +160,8 @@ export async function transformMain(
 
   // if the template is inlined into the main module (indicated by the presence
   // of templateMap, we need to concatenate the two source maps.
-  let resolvedMap = map
-  if (map && templateMap) {
+  let resolvedMap = options.sourceMap ? map : undefined
+  if (resolvedMap && templateMap) {
     const generator = SourceMapGenerator.fromSourceMap(
       new SourceMapConsumer(map)
     )
@@ -185,23 +177,42 @@ export async function transformMain(
         }
       })
     })
-    resolvedMap = (generator as any).toJSON()
+    resolvedMap = (generator as any).toJSON() as RawSourceMap
     // if this is a template only update, we will be reusing a cached version
     // of the main module compile result, which has outdated sourcesContent.
     resolvedMap.sourcesContent = templateMap.sourcesContent
   }
 
-  if (asCustomElement) {
-    output.push(
-      `import { defineCustomElement as __ce } from 'vue'`,
-      `export default __ce(_sfc_main)`
-    )
-  } else {
+  if (!attachedProps.length) {
     output.push(`export default _sfc_main`)
+  } else {
+    output.push(
+      `import _export_sfc from '${EXPORT_HELPER_ID}'`,
+      `export default /*#__PURE__*/_export_sfc(_sfc_main, [${attachedProps
+        .map(([key, val]) => `['${key}',${val}]`)
+        .join(',')}])`
+    )
+  }
+
+  // handle TS transpilation
+  let resolvedCode = output.join('\n')
+  if (
+    (descriptor.script?.lang === 'ts' ||
+      descriptor.scriptSetup?.lang === 'ts') &&
+    !descriptor.script?.src // only normal script can have src
+  ) {
+    const { code, map } = await transformWithEsbuild(
+      resolvedCode,
+      filename,
+      { loader: 'ts', sourcemap: options.sourceMap },
+      resolvedMap
+    )
+    resolvedCode = code
+    resolvedMap = resolvedMap ? (map as any) : resolvedMap
   }
 
   return {
-    code: output.join('\n'),
+    code: resolvedCode,
     map: resolvedMap || {
       mappings: ''
     }
@@ -260,23 +271,17 @@ async function genScriptCode(
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
-    if (
-      (!script.lang || (script.lang === 'ts' && options.devServer)) &&
-      !script.src
-    ) {
-      scriptCode = script.content
+    if ((!script.lang || script.lang === 'ts') && !script.src) {
+      scriptCode = compiler.rewriteDefault(
+        script.content,
+        '_sfc_main',
+        script.lang === 'ts'
+          ? ['typescript']
+          : script.lang === 'tsx'
+          ? ['typescript', 'jsx']
+          : undefined
+      )
       map = script.map
-      if (script.lang === 'ts') {
-        const result = await options.devServer!.transformWithEsbuild(
-          scriptCode,
-          descriptor.filename,
-          { loader: 'ts' },
-          map
-        )
-        scriptCode = result.code
-        map = result.map
-      }
-      scriptCode = rewriteDefault(scriptCode, `_sfc_main`)
     } else {
       if (script.src) {
         await linkSrcToDescriptor(script.src, descriptor, pluginContext)
@@ -300,7 +305,8 @@ async function genScriptCode(
 async function genStyleCode(
   descriptor: SFCDescriptor,
   pluginContext: PluginContext,
-  asCustomElement: boolean
+  asCustomElement: boolean,
+  attachedProps: [string, string][]
 ) {
   let stylesCode = ``
   let hasCSSModules = false
@@ -325,7 +331,8 @@ async function genStyleCode(
           )
         }
         if (!hasCSSModules) {
-          stylesCode += `\nconst cssModules = _sfc_main.__cssModules = {}`
+          stylesCode += `\nconst cssModules = {}`
+          attachedProps.push([`__cssModules`, `cssModules`])
           hasCSSModules = true
         }
         stylesCode += genCSSModulesCode(i, styleRequest, style.module)
@@ -341,9 +348,10 @@ async function genStyleCode(
       // TODO SSR critical CSS collection
     }
     if (asCustomElement) {
-      stylesCode += `\n_sfc_main.styles = [${descriptor.styles
-        .map((_, i) => `_style_${i}`)
-        .join(',')}]`
+      attachedProps.push([
+        `styles`,
+        `[${descriptor.styles.map((_, i) => `_style_${i}`).join(',')}]`
+      ])
     }
   }
   return stylesCode

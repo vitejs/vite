@@ -1,3 +1,31 @@
+# [1.2.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.8...plugin-vue-jsx@1.2.0) (2021-09-29)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4545](https://github.com/vitejs/vite/issues/4545)) ([a44fd5d](https://github.com/vitejs/vite/commit/a44fd5d38679da0be2536103e83af730cda73a95))
+* normalize internal plugin names ([#4976](https://github.com/vitejs/vite/issues/4976)) ([37f0b2f](https://github.com/vitejs/vite/commit/37f0b2fff74109d381513ed052a32b43655ee11d))
+
+
+
+## [1.1.8](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.7...plugin-vue-jsx@1.1.8) (2021-09-07)
+
+
+### Bug Fixes
+
+* hmr doesn't work when modifying the code of jsx in sfc ([#4563](https://github.com/vitejs/vite/issues/4563)) ([1012367](https://github.com/vitejs/vite/commit/101236794c5d6d28591302d5552cb1c0ab8f4115))
+
+
+
+## [1.1.7](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.6...plugin-vue-jsx@1.1.7) (2021-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4387](https://github.com/vitejs/vite/issues/4387)) ([2f900ba](https://github.com/vitejs/vite/commit/2f900ba4d4ad8061e0046898e8d1de3129e7f784))
+
+
+
 ## [1.1.6](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.5...plugin-vue-jsx@1.1.6) (2021-06-27)
 
 

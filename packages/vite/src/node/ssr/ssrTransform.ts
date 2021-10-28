@@ -31,14 +31,26 @@ export async function ssrTransform(
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    ecmaVersion: 2021,
-    locations: true
-  }) as any
+  let ast: any
+  try {
+    ast = parser.parse(code, {
+      sourceType: 'module',
+      ecmaVersion: 'latest',
+      locations: true
+    })
+  } catch (err) {
+    if (!err.loc || !err.loc.line) throw err
+    const line = err.loc.line
+    throw new Error(
+      `Parse failure: ${err.message}\nContents of line ${line}: ${
+        code.split('\n')[line - 1]
+      }`
+    )
+  }
 
   let uid = 0
   const deps = new Set<string>()
+  const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
@@ -47,15 +59,16 @@ export async function ssrTransform(
     const importId = `__vite_ssr_import_${uid++}__`
     s.appendLeft(
       node.start,
-      `const ${importId} = ${ssrImportKey}(${JSON.stringify(source)})\n`
+      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`
     )
     return importId
   }
 
-  function defineExport(name: string, local = name) {
-    s.append(
+  function defineExport(position: number, name: string, local = name) {
+    s.appendRight(
+      position,
       `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }})`
+        `{ enumerable: true, configurable: true, get(){ return ${local} }});`
     )
   }
 
@@ -93,32 +106,37 @@ export async function ssrTransform(
           node.declaration.type === 'ClassDeclaration'
         ) {
           // export function foo() {}
-          defineExport(node.declaration.id!.name)
+          defineExport(node.end, node.declaration.id!.name)
         } else {
           // export const foo = 1, bar = 2
           for (const declaration of node.declaration.declarations) {
             const names = extractNames(declaration.id as any)
             for (const name of names) {
-              defineExport(name)
+              defineExport(node.end, name)
             }
           }
         }
         s.remove(node.start, (node.declaration as Node).start)
-      } else if (node.source) {
-        // export { foo, bar } from './foo'
-        const importId = defineImport(node, node.source.value as string)
-        for (const spec of node.specifiers) {
-          defineExport(spec.exported.name, `${importId}.${spec.local.name}`)
-        }
-        s.remove(node.start, node.end)
       } else {
-        // export { foo, bar }
-        for (const spec of node.specifiers) {
-          const local = spec.local.name
-          const binding = idToImportMap.get(local)
-          defineExport(spec.exported.name, binding || local)
-        }
         s.remove(node.start, node.end)
+        if (node.source) {
+          // export { foo, bar } from './foo'
+          const importId = defineImport(node, node.source.value as string)
+          for (const spec of node.specifiers) {
+            defineExport(
+              node.end,
+              spec.exported.name,
+              `${importId}.${spec.local.name}`
+            )
+          }
+        } else {
+          // export { foo, bar }
+          for (const spec of node.specifiers) {
+            const local = spec.local.name
+            const binding = idToImportMap.get(local)
+            defineExport(node.end, spec.exported.name, binding || local)
+          }
+        }
       }
     }
 
@@ -132,7 +150,7 @@ export async function ssrTransform(
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
         s.append(
           `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, value: ${name} })`
+            `{ enumerable: true, value: ${name} });`
         )
       } else {
         // anonymous default exports
@@ -148,12 +166,12 @@ export async function ssrTransform(
     if (node.type === 'ExportAllDeclaration') {
       if (node.exported) {
         const importId = defineImport(node, node.source.value as string)
-        defineExport(node.exported.name, `${importId}`)
         s.remove(node.start, node.end)
+        defineExport(node.end, node.exported.name, `${importId}`)
       } else {
         const importId = defineImport(node, node.source.value as string)
         s.remove(node.start, node.end)
-        s.append(`\n${ssrExportAllKey}(${importId})`)
+        s.appendLeft(node.end, `${ssrExportAllKey}(${importId});`)
       }
     }
   }
@@ -194,6 +212,9 @@ export async function ssrTransform(
     },
     onDynamicImport(node) {
       s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
+      if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
+        dynamicDeps.add(node.source.value as string)
+      }
     }
   })
 
@@ -215,7 +236,8 @@ export async function ssrTransform(
   return {
     code: s.toString(),
     map,
-    deps: [...deps]
+    deps: [...deps],
+    dynamicDeps: [...dynamicDeps]
   }
 }
 
@@ -280,10 +302,18 @@ function walk(
           onIdentifier(node, parent!, parentStack)
         }
       } else if (isFunction(node)) {
+        // If it is a function declaration, it could be shadowing an import
+        // Add its name to the scope so it won't get replaced
+        if (node.type === 'FunctionDeclaration') {
+          const parentFunction = findParentFunction(parentStack)
+          if (parentFunction) {
+            setScope(parentFunction, node.id!.name)
+          }
+        }
         // walk function expressions and add its arguments to known identifiers
         // so that we don't prefix them
         node.params.forEach((p) =>
-          (eswalk as any)(p, {
+          (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
               if (
                 child.type === 'Identifier' &&

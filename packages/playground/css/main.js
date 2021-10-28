@@ -1,3 +1,5 @@
+import './minify.css'
+
 import css from './imported.css'
 text('.imported-css', css)
 
@@ -17,6 +19,21 @@ text('.modules-code', JSON.stringify(mod, null, 2))
 import sassMod from './mod.module.scss'
 document.querySelector('.modules-sass').classList.add(sassMod['apply-color'])
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
+
+import composesPathResolvingMod from './composes-path-resolving.module.css'
+document
+  .querySelector('.path-resolved-modules-css')
+  .classList.add(...composesPathResolvingMod['path-resolving-css'].split(' '))
+document
+  .querySelector('.path-resolved-modules-sass')
+  .classList.add(...composesPathResolvingMod['path-resolving-sass'].split(' '))
+document
+  .querySelector('.path-resolved-modules-less')
+  .classList.add(...composesPathResolvingMod['path-resolving-less'].split(' '))
+text(
+  '.path-resolved-modules-code',
+  JSON.stringify(composesPathResolvingMod, null, 2)
+)
 
 import './dep.css'
 import './glob-dep.css'

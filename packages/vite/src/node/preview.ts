@@ -1,9 +1,9 @@
 import path from 'path'
 import sirv from 'sirv'
-import chalk from 'chalk'
 import connect from 'connect'
 import compression from 'compression'
-import { ResolvedConfig } from '.'
+import { Server } from 'http'
+import { resolveConfig, InlineConfig, ResolvedConfig } from '.'
 import { Connect } from 'types/connect'
 import {
   resolveHttpsConfig,
@@ -13,13 +13,35 @@ import {
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { printServerUrls } from './logger'
 import { resolveHostname } from './utils'
+import { printHttpServerUrls } from './logger'
 
+export interface PreviewServer {
+  /**
+   * The resolved vite config object
+   */
+  config: ResolvedConfig
+  /**
+   * native Node http server instance
+   */
+  httpServer: Server
+  /**
+   * Print server urls
+   */
+  printUrls: () => void
+}
+
+/**
+ * Starts the Vite server in preview mode, to simulate a production deployment
+ * @param config - the resolved Vite config
+ * @param serverOptions - what host and port to use
+ * @experimental
+ */
 export async function preview(
-  config: ResolvedConfig,
-  serverOptions: { host?: string; port?: number }
-): Promise<void> {
+  inlineConfig: InlineConfig
+): Promise<PreviewServer> {
+  const config = await resolveConfig(inlineConfig, 'serve', 'production')
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.server,
@@ -45,14 +67,14 @@ export async function preview(
     config.base,
     sirv(distDir, {
       etag: true,
-      dev: !config.isProduction,
+      dev: true,
       single: true
     })
   )
 
   const options = config.server
-  const hostname = resolveHostname(serverOptions.host ?? options.host)
-  const port = serverOptions.port ?? 5000
+  const hostname = resolveHostname(options.host)
+  const port = options.port ?? 5000
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
@@ -64,19 +86,22 @@ export async function preview(
     logger
   })
 
-  logger.info(
-    chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-      chalk.green(` build preview server running at:\n`)
-  )
-
-  printServerUrls(hostname, protocol, serverPort, base, logger.info)
-
   if (options.open) {
     const path = typeof options.open === 'string' ? options.open : base
     openBrowser(
-      `${protocol}://${hostname.name}:${serverPort}${path}`,
+      path.startsWith('http')
+        ? path
+        : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
       logger
     )
+  }
+
+  return {
+    config,
+    httpServer,
+    printUrls() {
+      printHttpServerUrls(httpServer, config)
+    }
   }
 }
