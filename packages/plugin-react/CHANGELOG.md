@@ -1,3 +1,12 @@
+# [1.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-react@1.0.6...plugin-react@1.1.0-beta.0) (2021-10-28)
+
+
+### Bug Fixes
+
+* **plugin-react:** avoid mangling the sourcemaps of virtual modules ([#5421](https://github.com/vitejs/vite/issues/5421)) ([8556ffe](https://github.com/vitejs/vite/commit/8556ffe3c59952d7e64565422bf433699e97756e))
+
+
+
 ## [1.0.6](https://github.com/vitejs/vite/compare/plugin-react@1.0.5...plugin-react@1.0.6) (2021-10-25)
 
 
