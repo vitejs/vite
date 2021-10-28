@@ -71,6 +71,7 @@ import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import { performance } from 'perf_hooks'
+import { SourceMapConsumer } from 'source-map'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -279,10 +280,14 @@ export async function createPluginContainer(
     ctx: Context
   ) {
     const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
+    if (err.pluginCode) {
+      return err // The plugin likely called `this.error`
+    }
     if (ctx._activePlugin) err.plugin = ctx._activePlugin.name
     if (ctx._activeId && !err.id) err.id = ctx._activeId
     if (ctx._activeCode) {
       err.pluginCode = ctx._activeCode
+
       const pos =
         position != null
           ? position
@@ -290,6 +295,7 @@ export async function createPluginContainer(
           ? err.pos
           : // some rollup plugins, e.g. json, sets position instead of pos
             (err as any).position
+
       if (pos != null) {
         let errLocation
         try {
@@ -328,6 +334,21 @@ export async function createPluginContainer(
           column: (err as any).column
         }
         err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
+      }
+
+      if (err.loc && ctx instanceof TransformContext) {
+        const rawSourceMap = ctx._getCombinedSourcemap()
+        if (rawSourceMap) {
+          const consumer = new SourceMapConsumer(rawSourceMap as any)
+          const { source, line, column } = consumer.originalPositionFor({
+            line: Number(err.loc.line),
+            column: Number(err.loc.column),
+            bias: SourceMapConsumer.GREATEST_LOWER_BOUND
+          })
+          if (source) {
+            err.loc = { file: source, line, column }
+          }
+        }
       }
     }
     return err
