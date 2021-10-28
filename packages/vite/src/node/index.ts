@@ -25,9 +25,7 @@ export type {
   LibraryFormats,
   ResolvedBuildOptions
 } from './build'
-export type {
-  PreviewServer
-} from './preview'
+export type { PreviewServer } from './preview'
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions

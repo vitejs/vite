@@ -116,7 +116,14 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fs.allow`
-      if (!ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server, res, next)) {
+      if (
+        !ensureServingAccess(
+          slash(path.resolve(fsPathFromId(url))),
+          server,
+          res,
+          next
+        )
+      ) {
         return
       }
 
@@ -157,7 +164,7 @@ function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
-  next: Connect.NextFunction,
+  next: Connect.NextFunction
 ): boolean {
   if (isFileServingAllowed(url, server)) {
     return true
@@ -174,8 +181,7 @@ Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and 
     res.statusCode = 403
     res.write(renderRestrictedErrorHTML(urlMessage + '\n' + hintMessage))
     res.end()
-  }
-  else {
+  } else {
     // if the file doesn't exist, we shouldn't restrict this path as it can
     // be an API call. Middlewares would issue a 404 if the file isn't handled
     next()

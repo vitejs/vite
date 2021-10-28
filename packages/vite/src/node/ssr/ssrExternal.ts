@@ -94,7 +94,7 @@ export function resolveSSRExternal(
         // entry is not js, cannot externalize
         continue
       }
-      if (pkg.type === "module" || entry.endsWith('.mjs')) {
+      if (pkg.type === 'module' || entry.endsWith('.mjs')) {
         ssrExternals.add(id)
         continue
       }
