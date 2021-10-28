@@ -15,7 +15,7 @@ export function createMissingImporterRegisterFn(
   const { logger } = server.config
   let knownOptimized = server._optimizeDepsMetadata!.optimized
   let currentMissing: Record<string, string> = {}
-  let handle: NodeJS.Timeout
+  let handle: NodeJS.Timeout | undefined
 
   let pendingResolve: (() => void) | null = null
 
@@ -70,8 +70,11 @@ export function createMissingImporterRegisterFn(
       )
     } finally {
       server._isRunningOptimizer = false
-      pendingResolve && pendingResolve()
-      server._pendingReload = pendingResolve = null
+      if (!handle) {
+        // No other rerun() pending so resolve and let pending requests proceed
+        pendingResolve && pendingResolve()
+        server._pendingReload = pendingResolve = null
+      }
     }
 
     // Cached transform results have stale imports (resolved to
@@ -93,10 +96,15 @@ export function createMissingImporterRegisterFn(
     if (!knownOptimized[id]) {
       currentMissing[id] = resolved
       if (handle) clearTimeout(handle)
-      handle = setTimeout(() => rerun(ssr), debounceMs)
-      server._pendingReload = new Promise((r) => {
-        pendingResolve = r
-      })
+      handle = setTimeout(() => {
+        handle = undefined
+        rerun(ssr)
+      }, debounceMs)
+      if (!server._pendingReload) {
+        server._pendingReload = new Promise((r) => {
+          pendingResolve = r
+        })
+      }
     }
   }
 }
