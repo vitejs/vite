@@ -1,3 +1,21 @@
+# [2.7.0-beta.0](https://github.com/vitejs/vite/compare/v2.6.13...v2.7.0-beta.0) (2021-10-28)
+
+
+### Bug Fixes
+
+* add `import` support to `ssrModuleLoader` ([#5197](https://github.com/vitejs/vite/issues/5197)) ([baba1f9](https://github.com/vitejs/vite/commit/baba1f9e8fb22254b3858bcc1ffe89b334736068))
+* consider # as a valid dir symbol (fix [#4701](https://github.com/vitejs/vite/issues/4701)) ([#4703](https://github.com/vitejs/vite/issues/4703)) ([52689c8](https://github.com/vitejs/vite/commit/52689c88497438a1df5d1b5208e81c74ede7a35f))
+* do not overwrite pendingReload promise (fix [#5448](https://github.com/vitejs/vite/issues/5448)) ([#5452](https://github.com/vitejs/vite/issues/5452)) ([cc9c2da](https://github.com/vitejs/vite/commit/cc9c2da7b816a41987000dd662f04dbc2033a600))
+* exclude dependency of optimized dependency (fix: 5410) ([#5411](https://github.com/vitejs/vite/issues/5411)) ([ebd4027](https://github.com/vitejs/vite/commit/ebd4027292cc5f0b47d17eb53176924dfab10915))
+* missing tags inject fallback ([#5339](https://github.com/vitejs/vite/issues/5339)) ([3c44ac8](https://github.com/vitejs/vite/commit/3c44ac80bbe652c4f0a9cd0561322d223f966435))
+
+
+### Features
+
+* `server.fs.deny` support ([#5378](https://github.com/vitejs/vite/issues/5378)) ([1a15460](https://github.com/vitejs/vite/commit/1a15460bf35325ab9a7c22aacdb1e0afd1703c52))
+
+
+
 ## [2.6.13](https://github.com/vitejs/vite/compare/v2.6.12...v2.6.13) (2021-10-27)
 
 
