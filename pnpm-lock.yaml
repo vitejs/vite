@@ -90,11 +90,11 @@ importers:
     specifiers:
       kolorist: ^1.5.0
       minimist: ^1.2.5
-      prompts: ^2.4.1
+      prompts: ^2.4.2
     dependencies:
       kolorist: 1.5.0
       minimist: 1.2.5
-      prompts: 2.4.1
+      prompts: 2.4.2
 
   packages/playground:
     specifiers:
@@ -7134,6 +7134,15 @@ packages:
     dependencies:
       kleur: 3.0.3
       sisteransi: 1.0.5
+    dev: true
+
+  /prompts/2.4.2:
+    resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
+    engines: {node: '>= 6'}
+    dependencies:
+      kleur: 3.0.3
+      sisteransi: 1.0.5
+    dev: false
 
   /prop-types/15.7.2:
     resolution: {integrity: sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==}
