@@ -157,7 +157,10 @@ async function doTransform(
 
   // transform
   const transformStart = isDebug ? performance.now() : 0
-  const transformResult = await pluginContainer.transform(code, id, { inMap: map, ssr })
+  const transformResult = await pluginContainer.transform(code, id, {
+    inMap: map,
+    ssr
+  })
   if (
     transformResult == null ||
     (isObject(transformResult) && transformResult.code == null)

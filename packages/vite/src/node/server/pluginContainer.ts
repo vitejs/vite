@@ -86,7 +86,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     options?: {
-      skip?: Set<Plugin>,
+      skip?: Set<Plugin>
       ssr?: boolean
     }
   ): Promise<PartialResolvedId | null>
@@ -94,7 +94,7 @@ export interface PluginContainer {
     code: string,
     id: string,
     options?: {
-      inMap?: SourceDescription['map'],
+      inMap?: SourceDescription['map']
       ssr?: boolean
     }
   ): Promise<SourceDescription | null>

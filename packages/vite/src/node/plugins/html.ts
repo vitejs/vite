@@ -703,10 +703,7 @@ function injectToBody(
   }
 }
 
-function prependInjectFallback(
-  html: string,
-  tags: HtmlTagDescriptor[]
-) {
+function prependInjectFallback(html: string, tags: HtmlTagDescriptor[]) {
   // prepend to the html tag, append after doctype, or the document start
   if (htmlPrependInjectRE.test(html)) {
     return html.replace(htmlPrependInjectRE, `$&\n${serializeTags(tags)}`)

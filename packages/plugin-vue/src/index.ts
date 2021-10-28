@@ -106,8 +106,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
   // Temporal handling for 2.7 breaking change
   const isSSR = (opt: { ssr?: boolean } | boolean | undefined) =>
-    opt === undefined ? !!options.ssr :
-      (typeof opt === 'boolean' ? opt : opt?.ssr === true)
+    opt === undefined
+      ? !!options.ssr
+      : typeof opt === 'boolean'
+      ? opt
+      : opt?.ssr === true
 
   return {
     name: 'vite:vue',

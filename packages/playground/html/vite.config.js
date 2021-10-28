@@ -38,9 +38,13 @@ module.exports = {
   </head>`
           return `<!DOCTYPE html>
 <html lang="en">${filename.includes('noHead') ? '' : head}
-${filename.includes('noBody') ? html : `<body>
+${
+  filename.includes('noBody')
+    ? html
+    : `<body>
   ${html}
-</body>`}
+</body>`
+}
 </html>
   `
         }

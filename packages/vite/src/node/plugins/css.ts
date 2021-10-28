@@ -318,8 +318,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           modulesCode ||
           (usedRE.test(id)
             ? `export default ${JSON.stringify(
-              inlined ? await minifyCSS(css, config) : css
-            )}`
+                inlined ? await minifyCSS(css, config) : css
+              )}`
             : `export default ''`),
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
