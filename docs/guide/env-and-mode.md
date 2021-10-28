@@ -53,7 +53,7 @@ If you want to customize env variables prefix, see [envPrefix](/config/index#env
 - Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
   :::
 
-### TypeScript and IntelliSense
+### IntelliSense for TypeScript
 
 By default, Vite provides type definition for `import.meta.env`. Make sure to include `"vite/client"` in [`compilerOptions.types` of `tsconfig.json`](https://www.typescriptlang.org/tsconfig/#types):
 
