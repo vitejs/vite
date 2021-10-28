@@ -8,7 +8,7 @@ test('should have no 404s', () => {
 
 if (isBuild) {
   test('dynamic import', async () => {
-    let appHtml = await page.content()
+    const appHtml = await page.content()
     expect(appHtml).toMatch('This is <b>home</b> page.')
   })
 }
