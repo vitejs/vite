@@ -1,0 +1,76 @@
+{
+  "name": "@vitejs/plugin-vue2",
+  "version": "0.1.0",
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue2#readme",
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/plugin-vue2"
+  },
+  "license": "MIT",
+  "author": "underfin",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsc -w -p . --incremental --skipLibCheck",
+    "test": "jest --clearCache && jest --runInBand --forceExit",
+    "build": "rm -rf dist && tsc -p . --skipLibCheck",
+    "prepublishOnly": "yarn build",
+    "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@vue/compiler-sfc --external:vue/compiler-sfc --external:vite --outfile=dist/index.js",
+    "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-vue",
+    "release": "node ../../scripts/release.js"
+  },
+  "dependencies": {
+    "@babel/core": "^7.15.8",
+    "@babel/parser": "^7.15.8",
+    "@babel/plugin-proposal-class-properties": "^7.14.5",
+    "@babel/plugin-proposal-decorators": "^7.15.8",
+    "@babel/plugin-transform-typescript": "^7.15.8",
+    "@rollup/pluginutils": "^4.1.1",
+    "@vue/babel-helper-vue-jsx-merge-props": "^1.2.1",
+    "@vue/babel-preset-jsx": "^1.2.4",
+    "@vue/component-compiler-utils": "^3.2.2",
+    "babel-preset-env": "^1.7.0",
+    "consolidate": "^0.16.0",
+    "debug": "^4.3.2",
+    "hash-sum": "^2.0.0",
+    "magic-string": "^0.25.7",
+    "querystring": "^0.2.1",
+    "slash": "^3.0.0",
+    "source-map": "^0.7.3",
+    "vue-template-es2015-compiler": "^1.9.1"
+  },
+  "devDependencies": {
+    "bumpp": "^7.1.1",
+    "conventional-changelog-cli": "^2.1.1",
+    "execa": "^4.1.0",
+    "fs-extra": "^9.1.0",
+    "jest": "^26.6.3",
+    "lint-staged": "^10.5.4",
+    "ts-jest": "^26.5.6",
+    "typescript": "^4.4.3",
+    "vite": "workspace:*",
+    "vue-template-compiler": "^2.6.14",
+    "yorkie": "^2.0.0"
+  },
+  "peerDependencies": {
+    "vite": "^2.5.0",
+    "vue-template-compiler": "^2.2.0",
+    "prettier": "^2.4.1"
+  },
+  "peerDependenciesMeta": {
+    "prettier": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}
