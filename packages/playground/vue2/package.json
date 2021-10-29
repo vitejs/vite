@@ -1,0 +1,20 @@
+{
+  "name": "test-vue2",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../vite/bin/vite",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^2.6.14"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue2": "workspace:*",
+    "vue-class-component": "^7.2.6",
+    "vue-property-decorator": "^9.1.2",
+    "vue-template-compiler": "^2.6.14"
+  }
+}

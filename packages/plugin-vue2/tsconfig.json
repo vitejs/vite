@@ -19,5 +19,5 @@
     }
   },
   "exclude": ["**/*.spec.ts"],
-  "include": ["src", "./index.d.ts"]
+  "include": ["src", "shims.d.ts"]
 }

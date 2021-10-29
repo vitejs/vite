@@ -48,6 +48,7 @@
     "rollup": "^2.57.0",
     "tsup": "^5.5.0",
     "vite": "workspace:*",
+    "vue": "^2.6.14",
     "vue-template-compiler": "^2.6.14"
   },
   "peerDependencies": {

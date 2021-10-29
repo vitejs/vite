@@ -554,6 +554,21 @@ importers:
       '@vitejs/plugin-vue': link:../../plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../plugin-vue-jsx
 
+  packages/playground/vue2:
+    specifiers:
+      '@vitejs/plugin-vue2': workspace:*
+      vue: ^2.6.14
+      vue-class-component: ^7.2.6
+      vue-property-decorator: ^9.1.2
+      vue-template-compiler: ^2.6.14
+    dependencies:
+      vue: 2.6.14
+    devDependencies:
+      '@vitejs/plugin-vue2': link:../../plugin-vue2
+      vue-class-component: 7.2.6_vue@2.6.14
+      vue-property-decorator: 9.1.2_cc5a81cd4d75b7f9736a3e9b263f47e5
+      vue-template-compiler: 2.6.14
+
   packages/playground/wasm:
     specifiers: {}
 
@@ -654,6 +669,7 @@ importers:
       source-map: ^0.7.3
       tsup: ^5.5.0
       vite: workspace:*
+      vue: ^2.6.14
       vue-template-compiler: ^2.6.14
       vue-template-es2015-compiler: ^1.9.1
     dependencies:
@@ -679,6 +695,7 @@ importers:
       rollup: 2.57.0
       tsup: 5.5.0_ts-node@10.2.1+typescript@4.4.3
       vite: link:../vite
+      vue: 2.6.14
       vue-template-compiler: 2.6.14
 
   packages/vite:
@@ -9784,6 +9801,24 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: true
 
+  /vue-class-component/7.2.6_vue@2.6.14:
+    resolution: {integrity: sha512-+eaQXVrAm/LldalI272PpDe3+i4mPis0ORiMYxF6Ae4hyuCh15W8Idet7wPUEs4N4YptgFHGys4UrgNQOMyO6w==}
+    peerDependencies:
+      vue: ^2.0.0
+    dependencies:
+      vue: 2.6.14
+    dev: true
+
+  /vue-property-decorator/9.1.2_cc5a81cd4d75b7f9736a3e9b263f47e5:
+    resolution: {integrity: sha512-xYA8MkZynPBGd/w5QFJ2d/NM0z/YeegMqYTphy7NJQXbZcuU6FC6AOdUAcy4SXP+YnkerC6AfH+ldg7PDk9ESQ==}
+    peerDependencies:
+      vue: '*'
+      vue-class-component: '*'
+    dependencies:
+      vue: 2.6.14
+      vue-class-component: 7.2.6_vue@2.6.14
+    dev: true
+
   /vue-router/4.0.11_vue@3.2.16:
     resolution: {integrity: sha512-sha6I8fx9HWtvTrFZfxZkiQQBpqSeT+UCwauYjkdOQYRvwsGwimlQQE2ayqUwuuXGzquFpCPoXzYKWlzL4OuXg==}
     peerDependencies:
@@ -9798,11 +9833,15 @@ packages:
     dependencies:
       de-indent: 1.0.2
       he: 1.2.0
+      vue: 2.6.14
     dev: true
 
   /vue-template-es2015-compiler/1.9.1:
     resolution: {integrity: sha512-4gDntzrifFnCEvyoO8PqyJDmguXgVPxKiIxrBKjIowvL9l+N66196+72XVYR8BBf1Uv1Fgt3bGevJ+sEmxfZzw==}
     dev: false
+
+  /vue/2.6.14:
+    resolution: {integrity: sha512-x2284lgYvjOMj3Za7kqzRcUSxBboHqtgRE2zlos1qWaOye5yUmHn42LB1250NJBLRwEcdrB0JRwyPTEPhfQjiQ==}
 
   /vue/3.2.16:
     resolution: {integrity: sha512-aGm8HbZe6IIj2b/LX6QXpAwwDFrpo8E1jdTkuBX2fS42c1+mQ1n0Wl+Dxnj9cgRM7bp1MIoXbPbDyDsOrXTO0w==}
