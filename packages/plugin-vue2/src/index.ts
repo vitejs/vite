@@ -40,7 +40,7 @@ export interface VueViteOptions {
    */
   jsxOptions?: Record<string, any>
   /**
-   * The options for esbuld to transform script code
+   * The options for esbuild to transform script code
    */
   target?: string
 }
@@ -52,25 +52,24 @@ export interface ResolvedOptions extends VueViteOptions {
   target?: string
 }
 
-export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
+export default function Vue2Plugin(rawOptions: VueViteOptions = {}): Plugin {
   const options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
     ...rawOptions,
-    root: process.cwd(),
+    root: process.cwd()
   }
 
   const filter = createFilter(options.include || /\.vue$/, options.exclude)
 
   return {
-    name: 'vite-plugin-vue2',
-
-    config(config) {
+    name: 'vite:vue2',
+    config() {
       if (options.jsx) {
         return {
           esbuild: {
             include: /\.ts$/,
-            exclude: /\.(tsx|jsx)$/,
-          },
+            exclude: /\.(tsx|jsx)$/
+          }
         }
       }
     },
@@ -131,7 +130,7 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
         if (block) {
           return {
             code: block.content,
-            map: block.map as any,
+            map: block.map as any
           }
         }
       }
@@ -173,6 +172,6 @@ export function createVuePlugin(rawOptions: VueViteOptions = {}): Plugin {
           this
         )
       }
-    },
+    }
   }
 }
