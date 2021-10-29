@@ -2,7 +2,7 @@ import _debug from 'debug'
 import {
   createDescriptor,
   getDescriptor,
-  setPrevDescriptor,
+  setPrevDescriptor
 } from './utils/descriptorCache'
 import { ModuleNode, HmrContext } from 'vite'
 import { ResolvedOptions } from './index'
@@ -89,7 +89,7 @@ export async function handleHotUpdate(
   // custom blocks update causes a reload
   // because the custom block contents is changed and it may be used in JS.
   if (prevCustoms.length !== nextCustoms.length) {
-    // block rmeoved/added, force reload
+    // block removed/added, force reload
     affectedModules.add(mainModule)
   } else {
     for (let i = 0; i < nextCustoms.length; i++) {
@@ -108,7 +108,7 @@ export async function handleHotUpdate(
     }
   }
 
-  let updateType = []
+  const updateType = []
   if (needRerender) {
     updateType.push(`template`)
     // template is inlined into main, add main module instead
